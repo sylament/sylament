@@ -6,4 +6,4 @@ namespace Sylament\Support\Tests;
 
 pest()
     ->extend(TestCase::class)
-    ->in('Feature');
+    ->in('Integration');

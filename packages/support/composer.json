@@ -11,7 +11,8 @@
         }
     ],
     "require": {
-        "php": "^8.5"
+        "php": "^8.5",
+        "twig/twig": "^3.27"
     },
     "autoload": {
         "psr-4": {

@@ -1,6 +1,8 @@
 parameters:
     level: max
 
+    reportUnmatchedIgnoredErrors: false
+
     paths:
         - packages/actions/src
         - packages/forms/src

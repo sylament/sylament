@@ -1,0 +1,19 @@
+parameters:
+    level: max
+
+    paths:
+        - packages/actions/src
+        - packages/forms/src
+        - packages/infolists/src
+        - packages/notifications/src
+        - packages/panels/src
+        - packages/schemas/src
+        - packages/support/src
+        - packages/tables/src
+        - packages/widgets/src
+
+    ignoreErrors:
+        -
+            identifiers:
+                - trait.unused
+                - new.static

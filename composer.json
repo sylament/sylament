@@ -1,0 +1,108 @@
+{
+    "name": "sylament/sylament",
+    "authors": [
+        {
+            "name": "Martin Petricko",
+            "email": "matopetricko@gmail.com"
+        }
+    ],
+    "repositories": [
+        {
+            "type": "path",
+            "url": "packages/*"
+        }
+    ],
+    "require": {
+        "php": "^8.5",
+        "sylament/actions": "self.version",
+        "sylament/forms": "self.version",
+        "sylament/infolists": "self.version",
+        "sylament/notifications": "self.version",
+        "sylament/panels": "self.version",
+        "sylament/schemas": "self.version",
+        "sylament/support": "self.version",
+        "sylament/tables": "self.version",
+        "sylament/widgets": "self.version"
+    },
+    "require-dev": {
+        "doctrine/doctrine-bundle": "^3.2",
+        "doctrine/doctrine-fixtures-bundle": "^4.3",
+        "doctrine/orm": "^3.6",
+        "filament/filament": "^4.0",
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "pestphp/pest": "^4.7",
+        "phpstan/phpstan": "^2.2",
+        "rector/rector": "^2.4",
+        "symfony/asset-mapper": "^8.1",
+        "symfony/framework-bundle": "^8.0",
+        "symfony/test-pack": "^1.2",
+        "symfony/twig-bundle": "^8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sylament\\Actions\\": "packages/actions/src/",
+            "Sylament\\Forms\\": "packages/forms/src/",
+            "Sylament\\Infolists\\": "packages/infolists/src/",
+            "Sylament\\Notifications\\": "packages/notifications/src/",
+            "Sylament\\Panels\\": "packages/panels/src/",
+            "Sylament\\Schemas\\": "packages/schemas/src/",
+            "Sylament\\Support\\": "packages/support/src/",
+            "Sylament\\Tables\\": "packages/tables/src/",
+            "Sylament\\Widgets\\": "packages/widgets/src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Sylament\\Actions\\Tests\\": "packages/actions/tests/",
+            "Sylament\\Forms\\Tests\\": "packages/forms/tests/",
+            "Sylament\\Infolists\\Tests\\": "packages/infolists/tests/",
+            "Sylament\\Notifications\\Tests\\": "packages/notifications/tests/",
+            "Sylament\\Panels\\Tests\\": "packages/panels/tests/",
+            "Sylament\\Schemas\\Tests\\": "packages/schemas/tests/",
+            "Sylament\\Support\\Tests\\": "packages/support/tests/",
+            "Sylament\\Tables\\Tests\\": "packages/tables/tests/",
+            "Sylament\\Widgets\\Tests\\": "packages/widgets/tests/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
+        "sort-packages": true
+    },
+    "scripts": {
+        "format": [
+            "@format:rector",
+            "@format:lint"
+        ],
+        "format:rector": "rector",
+        "format:lint": "php-cs-fixer --diff fix",
+        "test": [
+            "@test:actions",
+            "@test:forms",
+            "@test:infolists",
+            "@test:notifications",
+            "@test:panels",
+            "@test:schemas",
+            "@test:support",
+            "@test:tables",
+            "@test:widgets",
+            "@test:rector",
+            "@test:static"
+        ],
+        "test:actions": "pest -c packages/actions/phpunit.dist.xml --test-directory=packages/actions/tests",
+        "test:forms": "pest -c packages/forms/phpunit.dist.xml --test-directory=packages/forms/tests",
+        "test:infolists": "pest -c packages/infolists/phpunit.dist.xml --test-directory=packages/infolists/tests",
+        "test:notifications": "pest -c packages/notifications/phpunit.dist.xml --test-directory=packages/notifications/tests",
+        "test:panels": "pest -c packages/panels/phpunit.dist.xml --test-directory=packages/panels/tests",
+        "test:schemas": "pest -c packages/schemas/phpunit.dist.xml --test-directory=packages/schemas/tests",
+        "test:support": "pest -c packages/support/phpunit.dist.xml --test-directory=packages/support/tests",
+        "test:tables": "pest -c packages/tables/phpunit.dist.xml --test-directory=packages/tables/tests",
+        "test:widgets": "pest -c packages/widgets/phpunit.dist.xml --test-directory=packages/widgets/tests",
+        "test:static": "phpstan analyse",
+        "test:lint": "php-cs-fixer --dry-run --diff fix",
+        "test:rector": "rector --dry-run"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

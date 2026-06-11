@@ -1,0 +1,20 @@
+{
+  "name": "sylament",
+  "private": true,
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=11"
+  },
+  "scripts": {
+    "clean": "pnpm -r clean",
+    "build": "pnpm -r build",
+    "watch": "pnpm -r --parallel watch",
+    "format": "biome check --write .",
+    "test:lint": "biome check .",
+    "test:types": "pnpm -r test:types"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.16",
+    "typescript": "6.0.3"
+  }
+}

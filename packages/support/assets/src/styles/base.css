@@ -1,0 +1,11 @@
+/* Scoped additions on top of the generated preflight (see preflight.generated.css,
+   built by scripts/scope-preflight.mjs from the installed Tailwind's preflight). */
+
+/*
+  Filament base.css addition: buttons get a pointer cursor.
+*/
+:where(.sy) {
+    :where(button, [role='button']):not(:disabled) {
+        cursor: pointer;
+    }
+}

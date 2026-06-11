@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/controllers/core_controller.ts"],
+  "sourcesContent": ["import { Controller } from \"@hotwired/stimulus\";\n\nexport default class extends Controller {\n  connect() {\n    console.log(\"Sylament core controller connected\");\n  }\n}\n"],
+  "mappings": "AAAA,SAAS,kBAAkB;AAE3B,MAAO,gCAAsB,WAAW;AAAA,EACtC,UAAU;AACR,YAAQ,IAAI,oCAAoC;AAAA,EAClD;AACF;",
+  "names": []
+}

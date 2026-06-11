@@ -1,0 +1,29 @@
+{
+    "name": "sylament/schemas",
+    "type": "symfony-bundle",
+    "keywords": [
+        "symfony-ux"
+    ],
+    "authors": [
+        {
+            "name": "Martin Petricko",
+            "email": "matopetricko@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.5",
+        "sylament/support": "self.version",
+        "symfony/stimulus-bundle": "^3.1",
+        "symfony/ux-live-component": "^3.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Sylament\\Schemas\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Sylament\\Schemas\\Tests\\": "tests/"
+        }
+    }
+}

@@ -1,0 +1,200 @@
+@layer theme, base, components, utilities;
+
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+
+@import './preflight.generated.css' layer(base);
+@import './base.css' layer(base);
+@import './utilities.css' layer(utilities);
+
+@import '../../../../actions/assets/src/styles/index.css';
+@import '../../../../forms/assets/src/styles/index.css';
+@import '../../../../infolists/assets/src/styles/index.css';
+@import '../../../../notifications/assets/src/styles/index.css';
+@import '../../../../panels/assets/src/styles/index.css';
+@import '../../../../schemas/assets/src/styles/index.css';
+@import '../../../../tables/assets/src/styles/index.css';
+@import '../../../../widgets/assets/src/styles/index.css';
+
+@variant dark (&:where(.dark, .dark *));
+
+/* Bridge Tailwind color tokens to runtime `--sy-*` variables: `@apply bg-primary-600`
+   compiles to `background-color: var(--sy-primary-600)`, so consumers retheme by
+   overriding `--sy-*` custom properties — no recompilation. The `color` palette is
+   the per-instance dynamic palette, swapped via `.sy-color-*` classes or inline
+   `--sy-color-*` variables. */
+@theme inline {
+    --color-color-50: var(--sy-color-50);
+    --color-color-100: var(--sy-color-100);
+    --color-color-200: var(--sy-color-200);
+    --color-color-300: var(--sy-color-300);
+    --color-color-400: var(--sy-color-400);
+    --color-color-500: var(--sy-color-500);
+    --color-color-600: var(--sy-color-600);
+    --color-color-700: var(--sy-color-700);
+    --color-color-800: var(--sy-color-800);
+    --color-color-900: var(--sy-color-900);
+    --color-color-950: var(--sy-color-950);
+
+    --color-primary-50: var(--sy-primary-50);
+    --color-primary-100: var(--sy-primary-100);
+    --color-primary-200: var(--sy-primary-200);
+    --color-primary-300: var(--sy-primary-300);
+    --color-primary-400: var(--sy-primary-400);
+    --color-primary-500: var(--sy-primary-500);
+    --color-primary-600: var(--sy-primary-600);
+    --color-primary-700: var(--sy-primary-700);
+    --color-primary-800: var(--sy-primary-800);
+    --color-primary-900: var(--sy-primary-900);
+    --color-primary-950: var(--sy-primary-950);
+
+    --color-gray-50: var(--sy-gray-50);
+    --color-gray-100: var(--sy-gray-100);
+    --color-gray-200: var(--sy-gray-200);
+    --color-gray-300: var(--sy-gray-300);
+    --color-gray-400: var(--sy-gray-400);
+    --color-gray-500: var(--sy-gray-500);
+    --color-gray-600: var(--sy-gray-600);
+    --color-gray-700: var(--sy-gray-700);
+    --color-gray-800: var(--sy-gray-800);
+    --color-gray-900: var(--sy-gray-900);
+    --color-gray-950: var(--sy-gray-950);
+
+    --color-danger-50: var(--sy-danger-50);
+    --color-danger-100: var(--sy-danger-100);
+    --color-danger-200: var(--sy-danger-200);
+    --color-danger-300: var(--sy-danger-300);
+    --color-danger-400: var(--sy-danger-400);
+    --color-danger-500: var(--sy-danger-500);
+    --color-danger-600: var(--sy-danger-600);
+    --color-danger-700: var(--sy-danger-700);
+    --color-danger-800: var(--sy-danger-800);
+    --color-danger-900: var(--sy-danger-900);
+    --color-danger-950: var(--sy-danger-950);
+
+    --color-info-50: var(--sy-info-50);
+    --color-info-100: var(--sy-info-100);
+    --color-info-200: var(--sy-info-200);
+    --color-info-300: var(--sy-info-300);
+    --color-info-400: var(--sy-info-400);
+    --color-info-500: var(--sy-info-500);
+    --color-info-600: var(--sy-info-600);
+    --color-info-700: var(--sy-info-700);
+    --color-info-800: var(--sy-info-800);
+    --color-info-900: var(--sy-info-900);
+    --color-info-950: var(--sy-info-950);
+
+    --color-success-50: var(--sy-success-50);
+    --color-success-100: var(--sy-success-100);
+    --color-success-200: var(--sy-success-200);
+    --color-success-300: var(--sy-success-300);
+    --color-success-400: var(--sy-success-400);
+    --color-success-500: var(--sy-success-500);
+    --color-success-600: var(--sy-success-600);
+    --color-success-700: var(--sy-success-700);
+    --color-success-800: var(--sy-success-800);
+    --color-success-900: var(--sy-success-900);
+    --color-success-950: var(--sy-success-950);
+
+    --color-warning-50: var(--sy-warning-50);
+    --color-warning-100: var(--sy-warning-100);
+    --color-warning-200: var(--sy-warning-200);
+    --color-warning-300: var(--sy-warning-300);
+    --color-warning-400: var(--sy-warning-400);
+    --color-warning-500: var(--sy-warning-500);
+    --color-warning-600: var(--sy-warning-600);
+    --color-warning-700: var(--sy-warning-700);
+    --color-warning-800: var(--sy-warning-800);
+    --color-warning-900: var(--sy-warning-900);
+    --color-warning-950: var(--sy-warning-950);
+}
+
+/* Default token values (Tailwind's blue / zinc / red / sky / green / amber). */
+@layer theme {
+    :root {
+        /* The dynamic palette defaults to `primary`. */
+        --sy-color-50: var(--sy-primary-50);
+        --sy-color-100: var(--sy-primary-100);
+        --sy-color-200: var(--sy-primary-200);
+        --sy-color-300: var(--sy-primary-300);
+        --sy-color-400: var(--sy-primary-400);
+        --sy-color-500: var(--sy-primary-500);
+        --sy-color-600: var(--sy-primary-600);
+        --sy-color-700: var(--sy-primary-700);
+        --sy-color-800: var(--sy-primary-800);
+        --sy-color-900: var(--sy-primary-900);
+        --sy-color-950: var(--sy-primary-950);
+
+        --sy-primary-50: oklch(97% 0.014 254.604);
+        --sy-primary-100: oklch(93.2% 0.032 255.585);
+        --sy-primary-200: oklch(88.2% 0.059 254.128);
+        --sy-primary-300: oklch(80.9% 0.105 251.813);
+        --sy-primary-400: oklch(70.7% 0.165 254.624);
+        --sy-primary-500: oklch(62.3% 0.214 259.815);
+        --sy-primary-600: oklch(54.6% 0.245 262.881);
+        --sy-primary-700: oklch(48.8% 0.243 264.376);
+        --sy-primary-800: oklch(42.4% 0.199 265.638);
+        --sy-primary-900: oklch(37.9% 0.146 265.522);
+        --sy-primary-950: oklch(28.2% 0.091 267.935);
+
+        --sy-gray-50: oklch(98.5% 0 0);
+        --sy-gray-100: oklch(96.7% 0.001 286.375);
+        --sy-gray-200: oklch(92% 0.004 286.32);
+        --sy-gray-300: oklch(87.1% 0.006 286.286);
+        --sy-gray-400: oklch(70.5% 0.015 286.067);
+        --sy-gray-500: oklch(55.2% 0.016 285.938);
+        --sy-gray-600: oklch(44.2% 0.017 285.786);
+        --sy-gray-700: oklch(37% 0.013 285.805);
+        --sy-gray-800: oklch(27.4% 0.006 286.033);
+        --sy-gray-900: oklch(21% 0.006 285.885);
+        --sy-gray-950: oklch(14.1% 0.005 285.823);
+
+        --sy-danger-50: oklch(97.1% 0.013 17.38);
+        --sy-danger-100: oklch(93.6% 0.032 17.717);
+        --sy-danger-200: oklch(88.5% 0.062 18.334);
+        --sy-danger-300: oklch(80.8% 0.114 19.571);
+        --sy-danger-400: oklch(70.4% 0.191 22.216);
+        --sy-danger-500: oklch(63.7% 0.237 25.331);
+        --sy-danger-600: oklch(57.7% 0.245 27.325);
+        --sy-danger-700: oklch(50.5% 0.213 27.518);
+        --sy-danger-800: oklch(44.4% 0.177 26.899);
+        --sy-danger-900: oklch(39.6% 0.141 25.723);
+        --sy-danger-950: oklch(25.8% 0.092 26.042);
+
+        --sy-info-50: oklch(97.7% 0.013 236.62);
+        --sy-info-100: oklch(95.1% 0.026 236.824);
+        --sy-info-200: oklch(90.1% 0.058 230.902);
+        --sy-info-300: oklch(82.8% 0.111 230.318);
+        --sy-info-400: oklch(74.6% 0.16 232.661);
+        --sy-info-500: oklch(68.5% 0.169 237.323);
+        --sy-info-600: oklch(58.8% 0.158 241.966);
+        --sy-info-700: oklch(50% 0.134 242.749);
+        --sy-info-800: oklch(44.3% 0.11 240.79);
+        --sy-info-900: oklch(39.1% 0.09 240.876);
+        --sy-info-950: oklch(29.3% 0.066 243.157);
+
+        --sy-success-50: oklch(98.2% 0.018 155.826);
+        --sy-success-100: oklch(96.2% 0.044 156.743);
+        --sy-success-200: oklch(92.5% 0.084 155.995);
+        --sy-success-300: oklch(87.1% 0.15 154.449);
+        --sy-success-400: oklch(79.2% 0.209 151.711);
+        --sy-success-500: oklch(72.3% 0.219 149.579);
+        --sy-success-600: oklch(62.7% 0.194 149.214);
+        --sy-success-700: oklch(52.7% 0.154 150.069);
+        --sy-success-800: oklch(44.8% 0.119 151.328);
+        --sy-success-900: oklch(39.3% 0.095 152.535);
+        --sy-success-950: oklch(26.6% 0.065 152.934);
+
+        --sy-warning-50: oklch(98.7% 0.022 95.277);
+        --sy-warning-100: oklch(96.2% 0.059 95.617);
+        --sy-warning-200: oklch(92.4% 0.12 95.746);
+        --sy-warning-300: oklch(87.9% 0.169 91.605);
+        --sy-warning-400: oklch(82.8% 0.189 84.429);
+        --sy-warning-500: oklch(76.9% 0.188 70.08);
+        --sy-warning-600: oklch(66.6% 0.179 58.318);
+        --sy-warning-700: oklch(55.5% 0.163 48.998);
+        --sy-warning-800: oklch(47.3% 0.137 46.201);
+        --sy-warning-900: oklch(41.4% 0.112 45.904);
+        --sy-warning-950: oklch(27.9% 0.077 45.635);
+    }
+}

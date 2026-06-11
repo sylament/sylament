@@ -1,0 +1,42 @@
+{
+  "name": "@sylament/support",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "clean": "rm -rf dist",
+    "build": "pnpm clean && pnpm test:types && pnpm build:js && pnpm build:css",
+    "build:js": "esbuild src/**/*.ts --outdir=dist --outbase=src --format=esm --sourcemap=linked",
+    "build:css": "node scripts/scope-preflight.mjs && tailwindcss -i src/styles/index.css -o dist/styles/index.css --minify",
+    "watch": "concurrently -n js,css -c blue,green \"pnpm watch:js\" \"pnpm watch:css\"",
+    "watch:js": "esbuild src/**/*.ts --outdir=dist --outbase=src --format=esm --sourcemap=inline --watch=forever",
+    "watch:css": "node scripts/scope-preflight.mjs && tailwindcss -i src/styles/index.css -o dist/styles/index.css --watch",
+    "test:types": "tsc --noEmit"
+  },
+  "symfony": {
+    "controllers": {
+      "core": {
+        "main": "dist/controllers/core_controller.js",
+        "fetch": "eager",
+        "enabled": true,
+        "autoimport": {
+          "@sylament/support/styles/index.css": true
+        }
+      }
+    },
+    "importmap": {
+      "@hotwired/stimulus": "^3.0.0"
+    }
+  },
+  "peerDependencies": {
+    "@hotwired/stimulus": "^3.0.0"
+  },
+  "devDependencies": {
+    "@hotwired/stimulus": "^3.0.0",
+    "@tailwindcss/cli": "^4.3.0",
+    "concurrently": "^10.0.3",
+    "esbuild": "^0.28.0",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.3"
+  }
+}

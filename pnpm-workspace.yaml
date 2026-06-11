@@ -1,0 +1,17 @@
+packages:
+  - "packages/*/assets"
+
+overrides:
+  "@hotwired/stimulus": "^3.0.0"
+  esbuild: "^0.28.0"
+  tailwindcss: "^4.3.0"
+  "@tailwindcss/cli": "^4.3.0"
+  typescript: "^6.0.3"
+
+hoistPattern: []
+strictPeerDependencies: true
+autoInstallPeers: false
+engineStrict: true
+allowBuilds:
+  '@parcel/watcher': true
+  esbuild: true

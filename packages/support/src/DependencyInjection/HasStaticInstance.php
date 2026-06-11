@@ -25,4 +25,9 @@ trait HasStaticInstance
 
         return $instance;
     }
+
+    public static function unsetInstance(): void
+    {
+        self::$instance = null;
+    }
 }

@@ -29,5 +29,12 @@ class Kernel extends BaseKernel
             'secret' => 'SECRET',
             'test' => true,
         ]);
+
+        $container->services()
+            ->defaults()
+                ->autowire()
+                ->autoconfigure()
+            ->load('Sylament\\Support\\Tests\\Fixtures\\', __DIR__ . '/*')
+                ->exclude([__DIR__ . '/Kernel.php']);
     }
 }

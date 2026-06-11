@@ -20,4 +20,11 @@ final readonly class StaticInstanceRegistry
             $service::setInstance($service);
         }
     }
+
+    public function unsetStaticInstances(): void
+    {
+        foreach ($this->services as $service) {
+            $service::unsetInstance();
+        }
+    }
 }

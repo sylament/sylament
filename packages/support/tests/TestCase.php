@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests;
 
+use Symfony\Component\HttpKernel\KernelInterface;
 use Doctrine\Bundle\FixturesBundle\Fixture;
 use Doctrine\Common\DataFixtures\Executor\ORMExecutor;
 use Doctrine\Common\DataFixtures\Loader;
 use Doctrine\Common\DataFixtures\Purger\ORMPurger;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
+use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
@@ -27,6 +29,15 @@ abstract class TestCase extends KernelTestCase
 
             return $this->entityManager;
         }
+    }
+
+    protected function tearDown(): void
+    {
+        if (self::$kernel instanceof KernelInterface) {
+            self::getContainer()->get(StaticInstanceRegistry::class)->unsetStaticInstances();
+        }
+
+        parent::tearDown();
     }
 
     protected function setUpDatabase(): void

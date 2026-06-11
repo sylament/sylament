@@ -7,10 +7,12 @@ namespace Sylament\Support;
 use Sylament\Support\DependencyInjection\Compiler\StaticInstancePass;
 use Sylament\Support\DependencyInjection\StaticInstanceInterface;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
+use Sylament\Support\Service\Invoker;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
 
 class SylamentSupportBundle extends SylamentBundle
@@ -68,6 +70,13 @@ class SylamentSupportBundle extends SylamentBundle
             ])
             ->alias(StaticInstanceRegistry::class, 'sylament_support.static_instance_registry')
             ->public();
+
+        $services
+            ->set('sylament_support.invoker', Invoker::class)
+            ->args([
+                '$container' => service('service_container'),
+            ])
+            ->alias(Invoker::class, 'sylament_support.invoker');
     }
 
     private function prependAssetMapper(ContainerBuilder $container): void

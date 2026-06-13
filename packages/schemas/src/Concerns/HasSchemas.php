@@ -48,7 +48,7 @@ trait HasSchemas
     public function getCachedSchemas(): array
     {
         foreach ($this->schemas() as $name) {
-            if (!array_key_exists((string)$name, $this->cachedSchemas)) {
+            if (!array_key_exists((string) $name, $this->cachedSchemas)) {
                 $this->getSchema($name);
             }
         }

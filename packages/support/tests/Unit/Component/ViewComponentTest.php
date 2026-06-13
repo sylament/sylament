@@ -99,6 +99,26 @@ it('renders the template through Twig with the template data', function (): void
     expect($component->render($twig))->toBe('Hello world!');
 });
 
+it('exposes the component instance to the template', function (): void {
+    $twig = new Environment(new ArrayLoader([
+        'component.html.twig' => '{{ component.getTemplate() }}',
+    ]));
+
+    $component = new ViewComponentFixture()->template('component.html.twig');
+
+    expect($component->render($twig))->toBe('component.html.twig');
+});
+
+it('lets template data override the component key when rendering', function (): void {
+    $twig = new Environment(new ArrayLoader([
+        'component.html.twig' => '{{ component }}',
+    ]));
+
+    $component = new ViewComponentFixture()->template('component.html.twig', ['component' => 'overridden']);
+
+    expect($component->render($twig))->toBe('overridden');
+});
+
 it('lets template data override extra template data when rendering', function (): void {
     $twig = new Environment(new ArrayLoader([
         'component.html.twig' => '{{ name }} from {{ source }}',

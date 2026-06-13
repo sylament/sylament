@@ -82,6 +82,7 @@ abstract class ViewComponent extends Component
         }
 
         return $twig->render($template, [
+            'component' => $this,
             ...$this->getExtraTemplateData(),
             ...$this->getTemplateData(),
         ]);

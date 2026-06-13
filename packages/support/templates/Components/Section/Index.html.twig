@@ -1,0 +1,86 @@
+{% props
+    afterHeader = block('afterHeader') ?? null,
+    aside = false,
+    compact = false,
+    contained = true,
+    content = block('content') ?? null,
+    description = block('description') ?? null,
+    divided = false,
+    footer = block('footer') ?? null,
+    hasContentEl = true,
+    heading = block('heading') ?? null,
+    headingTag = 'h2',
+    icon = null,
+    iconColor = 'gray',
+    iconSize = null,
+    secondary = false %}
+
+{% set hasAfterHeader = afterHeader is not null %}
+{% set hasHeading = heading is not null %}
+{% set hasDescription = description is not null %}
+{% set hasContent = content is not null %}
+{% set hasFooter = footer is not null %}
+{% set hasHeader = hasHeading or hasDescription or hasAfterHeader %}
+{% set hasBody = hasContent or hasFooter %}
+
+<section
+        {{ attributes.defaults({
+            class: html_classes({
+                'sy': true,
+                'sy-section': true,
+                'sy-section-not-contained': not contained,
+                'sy-section-has-header': hasHeader,
+                'sy-aside': aside,
+                'sy-compact': compact,
+                'sy-divided': divided,
+                'sy-secondary': secondary
+            })
+        }) }}
+>
+    {% if hasHeader %}
+        <header class="sy-section-header">
+            {# TODO: add section icon #}
+
+            {% if hasHeading or hasDescription %}
+                <div class="sy-section-header-text-ctn">
+                    {% if hasHeading %}
+                        <h3 class="sy-section-header-heading">
+                            {{ heading|raw }}
+                        </h3>
+                    {% endif %}
+
+                    {% if hasDescription %}
+                        <p class="sy-section-header-description">
+                            {{ description|raw }}
+                        </p>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            {% if hasAfterHeader %}
+                <div class="sy-section-header-after-ctn">
+                    {{ afterHeader|raw }}
+                </div>
+            {% endif %}
+        </header>
+    {% endif %}
+
+
+    {% if hasBody %}
+        <div class="sy-section-content-ctn">
+            {% if hasContentEl %}
+                <div class="sy-section-content">
+                    {{ content|raw }}
+                </div>
+            {% else %}
+                {{ content|raw }}
+            {% endif %}
+
+            {% if hasFooter %}
+                <footer class="sy-section-footer">
+                    {{ footer|raw }}
+                </footer>
+            {% endif %}
+        </div>
+    {% endif %}
+</section>

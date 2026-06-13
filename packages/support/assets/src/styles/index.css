@@ -6,6 +6,7 @@
 @import './preflight.generated.css' layer(base);
 @import './base.css' layer(base);
 @import './utilities.css' layer(utilities);
+@import './components.css';
 
 @import '../../../../actions/assets/src/styles/index.css';
 @import '../../../../forms/assets/src/styles/index.css';

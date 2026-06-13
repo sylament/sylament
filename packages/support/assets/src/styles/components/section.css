@@ -1,0 +1,234 @@
+/* TODO: verify all styles */
+.sy-section {
+    &:not(.sy-section-not-contained) {
+        &:not(.sy-divided) {
+            & > .sy-section-content-ctn > .sy-section-content {
+                @apply p-6;
+            }
+        }
+
+        &.sy-divided {
+            & > .sy-section-content-ctn > .sy-section-content {
+                & > * {
+                    @apply p-6;
+                }
+            }
+        }
+
+        & > .sy-section-content-ctn > .sy-section-footer {
+            @apply border-t border-gray-200 px-6 py-4 dark:border-white/10;
+        }
+
+        &:not(.sy-aside) {
+            @apply rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10;
+
+            &.sy-compact {
+                @apply rounded-lg;
+            }
+
+            &.sy-secondary {
+                @apply bg-gray-50 dark:bg-white/5;
+            }
+
+            & > .sy-section-header {
+                @apply px-6 py-4;
+            }
+
+            &.sy-section-has-header:not(.sy-collapsed) {
+                & > .sy-section-content-ctn {
+                    @apply border-t border-gray-200 dark:border-white/10;
+                }
+            }
+        }
+
+        &.sy-aside {
+            & > .sy-section-content-ctn {
+                @apply rounded-xl bg-white shadow-sm ring-1 ring-gray-950/5 md:col-span-2 dark:bg-gray-900 dark:ring-white/10;
+            }
+
+            &.sy-compact {
+                & > .sy-section-content-ctn {
+                    @apply rounded-lg;
+                }
+            }
+
+            &.sy-secondary {
+                & > .sy-section-content-ctn {
+                    @apply bg-gray-50 dark:bg-white/5;
+                }
+            }
+        }
+
+        &.sy-compact {
+            &:not(.sy-aside) {
+                & > .sy-section-header {
+                    @apply px-4 py-2.5;
+                }
+            }
+
+            &:not(.sy-divided) {
+                & > .sy-section-content-ctn > .sy-section-content {
+                    @apply p-4;
+                }
+            }
+
+            &.sy-divided {
+                & > .sy-section-content-ctn > .sy-section-content {
+                    & > * {
+                        @apply p-4;
+                    }
+                }
+            }
+
+            & > .sy-section-footer {
+                @apply px-4 py-2.5;
+            }
+        }
+    }
+
+    &.sy-section-not-contained {
+        &.sy-aside {
+            & > .sy-section-content-ctn {
+                @apply md:col-span-2;
+            }
+        }
+
+        &:not(.sy-aside) {
+            @apply grid gap-y-4;
+
+            & > .sy-section-content-ctn {
+                @apply grid gap-y-4;
+            }
+
+            &.sy-divided {
+                & > .sy-section-content-ctn > .sy-section-content {
+                    & > * {
+                        @apply py-6;
+                    }
+                }
+            }
+
+            &.sy-compact {
+                @apply gap-y-2.5;
+
+                & > .sy-section-content-ctn {
+                    @apply gap-y-2.5;
+                }
+
+                &.sy-divided {
+                    & > .sy-section-content-ctn > .sy-section-content {
+                        & > * {
+                            @apply py-4;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    &.sy-divided {
+        & > .sy-section-content-ctn > .sy-section-content {
+            @apply gap-0 divide-y divide-gray-200 dark:divide-white/10;
+        }
+    }
+
+    &.sy-aside {
+        @apply grid grid-cols-1 items-start gap-x-6 gap-y-4 md:grid-cols-3;
+    }
+
+    &.sy-collapsible {
+        & > .sy-section-header {
+            @apply cursor-pointer;
+        }
+    }
+
+    &.sy-collapsed {
+        & > .sy-section-header > .sy-section-collapse-btn {
+            @apply rotate-180;
+        }
+
+        & > .sy-section-content-ctn {
+            @apply invisible absolute h-0 overflow-hidden border-none;
+        }
+    }
+
+    &.sy-section-has-content-before {
+        & > .sy-section-content-ctn {
+            @apply md:order-first;
+        }
+    }
+
+    & > .sy-section-header {
+        @apply flex items-start gap-3;
+
+        & > .sy-icon {
+            @apply shrink-0 text-gray-400 dark:text-gray-500;
+
+            &.sy-color {
+                @apply text-color-500 dark:text-color-400;
+            }
+
+            &.sy-size-sm {
+                @apply mt-1;
+            }
+
+            &.sy-size-md {
+                @apply mt-0.5;
+            }
+        }
+
+        & > .sy-section-header-after-ctn {
+            @apply self-center;
+
+            &
+            .sy-sc-text:not(
+                    .sy-section-header-after-ctn .sy-dropdown-panel *
+                ),
+            & .sy-link:not(.sy-section-header-after-ctn .sy-dropdown-panel *) {
+                @apply leading-6;
+            }
+
+            & .sy-btn:not(.sy-section-header-after-ctn .sy-dropdown-panel *) {
+                &.sy-size-xs {
+                    @apply -my-0.5;
+                }
+
+                &.sy-size-sm {
+                    @apply -my-1;
+                }
+
+                &.sy-size-md {
+                    @apply -my-1.5;
+                }
+
+                &.sy-size-lg {
+                    @apply -my-2;
+                }
+
+                &.sy-size-xl {
+                    @apply -my-2.5;
+                }
+            }
+        }
+
+        & > .sy-section-collapse-btn {
+            @apply -my-1.5 shrink-0;
+        }
+    }
+
+    & .sy-section-header-text-ctn {
+        @apply grid flex-1 gap-y-1;
+    }
+
+    & .sy-section-header-heading {
+        @apply text-base leading-6 font-semibold text-gray-950 dark:text-white;
+    }
+
+    & .sy-section-header-description {
+        @apply overflow-hidden text-sm wrap-break-word text-gray-500 dark:text-gray-400;
+    }
+
+    & .sy-section-content-ctn {
+        @apply dark:text-white;
+    }
+}

@@ -1,0 +1,12 @@
+<div
+        {{ html_attr({
+            class: html_classes({
+                'sy': true,
+                'sy-sc': true
+            })
+        }) }}
+>
+    {% for childComponent in component.getComponents %}
+        {{ renderComponent(childComponent) }}
+    {% endfor %}
+</div>

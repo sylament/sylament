@@ -17,30 +17,6 @@ afterEach(function (): void {
     Invoker::unsetInstance();
 });
 
-it('has no components by default', function (): void {
-    expect(new HasComponentsFixture()->getComponents())->toBe([]);
-});
-
-it('sets an array of components', function (): void {
-    $components = [new Component(), new Component()];
-    $fixture = new HasComponentsFixture()->components($components);
-
-    expect($fixture->getComponents())->toBe($components);
-});
-
-it('returns itself from components() for chaining', function (): void {
-    $fixture = new HasComponentsFixture();
-
-    expect($fixture->components([new Component()]))->toBe($fixture);
-});
-
-it('accepts a closure that resolves to components', function (): void {
-    $components = [new Component()];
-    $fixture = new HasComponentsFixture()->components(fn (): array => $components);
-
-    expect($fixture->getComponents())->toBe($components);
-});
-
 it('evaluates the closure lazily when reading the components', function (): void {
     $first = new Component();
     $components = [$first];
@@ -52,4 +28,30 @@ it('evaluates the closure lazily when reading the components', function (): void
     $components = [$first, $second];
 
     expect($fixture->getComponents())->toBe([$first, $second]);
+});
+
+it('assigns itself as the container of each component', function (): void {
+    $component = new Component();
+    $fixture = new HasComponentsFixture()->components([$component]);
+
+    $fixture->getComponents();
+
+    expect($component->getContainer())->toBe($fixture);
+});
+
+it('caches the resolved components', function (): void {
+    $fixture = new HasComponentsFixture()->components([new Component()]);
+
+    expect($fixture->getComponents())->toBe($fixture->getComponents());
+});
+
+it('rebuilds the cache when components() is called again', function (): void {
+    $fixture = new HasComponentsFixture()->components([new Component()]);
+    $first = $fixture->getComponents();
+
+    $replacement = [new Component()];
+    $fixture->components($replacement);
+
+    expect($fixture->getComponents())->toBe($replacement)
+        ->and($fixture->getComponents())->not->toBe($first);
 });

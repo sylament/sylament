@@ -1,9 +1,6 @@
 <div
-        {# TODO: add architectural test to check if html_classes inside html_attr are always split back to array #}
         {{ html_attr({
-            class: html_classes({
-                'sy': true,
-                'sy-sc': true,
+            class: html_classes('sy sy-sc', {
                 'sy-sc-has-gap': component.hasGap,
                 'sy-sc-dense': component.isDense,
             })|split(' '),

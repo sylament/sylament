@@ -25,9 +25,7 @@
 
 <section
         {{ attributes.defaults({
-            class: html_classes({
-                'sy': true,
-                'sy-section': true,
+            class: html_classes('sy sy-section', {
                 'sy-section-not-contained': not contained,
                 'sy-section-has-header': hasHeader,
                 'sy-aside': aside,

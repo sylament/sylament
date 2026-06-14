@@ -1,3 +1,11 @@
 .sy-sc {
     @apply text-sm;
+
+    &.sy-sc-has-gap {
+        @apply gap-6;
+
+        &.sy-sc-dense {
+            @apply gap-3;
+        }
+    }
 }

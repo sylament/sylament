@@ -24,8 +24,8 @@ class ComponentExtension extends AbstractExtension
         ];
     }
 
-    public function renderComponent(Environment $twig, ViewComponent $component): ?string
+    public function renderComponent(Environment $twig, ?ViewComponent $component): ?string
     {
-        return $component->render($twig);
+        return $component?->render($twig);
     }
 }

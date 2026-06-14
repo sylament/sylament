@@ -4,11 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Fixtures\Concerns;
 
-use Sylament\Schemas\Concerns\HasComponents;
-use Sylament\Support\Concerns\EvaluatesClosures;
+use Sylament\Schemas\Schema;
 
-class HasComponentsFixture
+class HasComponentsFixture extends Schema
 {
-    use EvaluatesClosures;
-    use HasComponents;
 }

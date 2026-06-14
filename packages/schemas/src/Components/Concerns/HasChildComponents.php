@@ -16,11 +16,6 @@ trait HasChildComponents
     protected array $childComponents = [];
 
     /**
-     * @var array<Schema>|null
-     */
-    protected ?array $cachedDefaultChildSchemas = null;
-
-    /**
      * @param Schema|array<Component>|callable():(array<Component>|Schema) $components
      */
     public function components(Schema|array|callable $components): static
@@ -42,15 +37,16 @@ trait HasChildComponents
 
     public function getChildSchema(?string $key = null): ?Schema
     {
-        if ($key !== null && array_key_exists($key, $this->cachedDefaultChildSchemas ?? [])) {
-            return $this->cachedDefaultChildSchemas[$key];
-        }
-
         $key ??= 'default';
 
         $components = $this->evaluate($this->childComponents[$key] ?? []) ?: [];
         if ($components === []) {
-            return null;
+            return $key === 'default'
+                ? $this->configureChildSchema(
+                    $this->makeChildSchema($key),
+                    $key,
+                )
+                : null;
         }
 
         if ($components instanceof Schema) {

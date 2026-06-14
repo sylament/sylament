@@ -22,7 +22,7 @@ trait HasGap
     /**
      * @param bool|callable():bool|null $hasGap
      */
-    public function gap(bool|callable|null $hasGap = null): static
+    public function gap(bool|callable|null $hasGap = true): static
     {
         $this->hasGap = $this->evaluatable($hasGap);
 
@@ -37,7 +37,7 @@ trait HasGap
         }
 
         if ($this instanceof Schema) {
-            return $this->getParentComponent()?->hasGap() ?: true;
+            return $this->getParentComponent()?->hasGap() ?? true;
         }
 
         return $this->getContainer()->hasGap();
@@ -46,7 +46,7 @@ trait HasGap
     /**
      * @param bool|callable():bool|null $isDense
      */
-    public function dense(bool|callable|null $isDense = null): static
+    public function dense(bool|callable|null $isDense = true): static
     {
         $this->isDense = $this->evaluatable($isDense);
 
@@ -61,7 +61,7 @@ trait HasGap
         }
 
         if ($this instanceof Schema) {
-            return $this->getParentComponent()?->isDense() ?: false;
+            return $this->getParentComponent()?->isDense() ?? false;
         }
 
         return $this->getContainer()->isDense();

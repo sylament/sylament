@@ -1,10 +1,13 @@
 <div
+        {# TODO: add architectural test to check if html_classes inside html_attr are always split back to array #}
         {{ html_attr({
             class: html_classes({
                 'sy': true,
-                'sy-sc': true
-            })
-        }) }}
+                'sy-sc': true,
+                'sy-sc-has-gap': component.hasGap,
+                'sy-sc-dense': component.isDense,
+            })|split(' '),
+        }, grid(component.getColumns)) }}
 >
     {% for childComponent in component.getComponents %}
         {{ renderComponent(childComponent) }}

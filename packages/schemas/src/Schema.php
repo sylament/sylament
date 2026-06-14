@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Sylament\Schemas;
 
 use Closure;
+use Sylament\Schemas\Components\Concerns\HasColumns;
+use Sylament\Schemas\Components\Concerns\HasGap;
 use Sylament\Schemas\Concerns\BelongsToLiveComponent;
+use Sylament\Schemas\Concerns\BelongsToParentComponent;
 use Sylament\Schemas\Concerns\HasComponents;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Support\Component\ViewComponent;
@@ -13,7 +16,10 @@ use Sylament\Support\Component\ViewComponent;
 class Schema extends ViewComponent
 {
     use BelongsToLiveComponent;
+    use BelongsToParentComponent;
+    use HasColumns;
     use HasComponents;
+    use HasGap;
 
     protected string|Closure|null $template = '@SylamentSchemas/components/Schema.html.twig';
 

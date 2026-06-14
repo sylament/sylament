@@ -1,0 +1,61 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Cannot call method getAllColumns\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: packages/schemas/src/Components/Component.php
+
+		-
+			message: '#^Cannot call method hasGap\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: packages/schemas/src/Components/Component.php
+
+		-
+			message: '#^Cannot call method isDense\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: packages/schemas/src/Components/Component.php
+
+		-
+			message: '#^Method Sylament\\Schemas\\Components\\Component\:\:getAllColumns\(\) should return array\<string, int\|null\> but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: packages/schemas/src/Components/Component.php
+
+		-
+			message: '#^Method Sylament\\Schemas\\Components\\Component\:\:hasGap\(\) should return bool but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: packages/schemas/src/Components/Component.php
+
+		-
+			message: '#^Method Sylament\\Schemas\\Components\\Component\:\:isDense\(\) should return bool but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: packages/schemas/src/Components/Component.php
+
+		-
+			message: '#^Cannot call method hasGap\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: packages/schemas/src/Schema.php
+
+		-
+			message: '#^Cannot call method isDense\(\) on mixed\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: packages/schemas/src/Schema.php
+
+		-
+			message: '#^Method Sylament\\Schemas\\Schema\:\:hasGap\(\) should return bool but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: packages/schemas/src/Schema.php
+
+		-
+			message: '#^Method Sylament\\Schemas\\Schema\:\:isDense\(\) should return bool but returns mixed\.$#'
+			identifier: return.type
+			count: 1
+			path: packages/schemas/src/Schema.php

@@ -1,0 +1,14 @@
+<div
+        {{ html_attr({
+            class: html_classes({
+                'sy-sc-section': true,
+            })
+        }) }}
+>
+    <twig:SylamentSupport:Section
+            :heading="component.getHeading"
+            :description="component.getDescription"
+    >
+        {{ renderComponent(component.getChildSchema) }}
+    </twig:SylamentSupport:Section>
+</div>

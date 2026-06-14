@@ -29,8 +29,8 @@ it('binds the live component passed to make()', function (): void {
 });
 
 it('has no live component when made without one', function (): void {
-    expect(Schema::make()->getLiveComponent())->toBeNull();
-});
+    Schema::make()->getLiveComponent();
+})->throws('Schema is not part of LiveComponent');
 
 it('uses the schema template by default', function (): void {
     expect(Schema::make()->getTemplate())->toBe('@SylamentSchemas/components/Schema.html.twig');

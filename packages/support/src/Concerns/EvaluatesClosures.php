@@ -28,7 +28,7 @@ trait EvaluatesClosures
     /**
      * @template T
      * @param T|callable():T|null $value
-     * @return ($value is null ? null : T|Closure():T)
+     * @return ($value is null ? null : ($value is callable ? (Closure(): T) : T))
      */
     public function evaluatable(mixed $value): mixed
     {

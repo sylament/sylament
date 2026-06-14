@@ -15,11 +15,17 @@ trait HasComponents
     protected array|Closure $components = [];
 
     /**
+     * @var array<Component>|null
+     */
+    protected ?array $cachedComponents = null;
+
+    /**
      * @param array<Component>|callable():array<Component> $components
      */
     public function components(array|callable $components): static
     {
         $this->components = $this->evaluatable($components);
+        $this->cachedComponents = null;
 
         return $this;
     }
@@ -29,6 +35,16 @@ trait HasComponents
      */
     public function getComponents(): array
     {
-        return $this->evaluate($this->components);
+        return $this->cachedComponents ??= (function (): array {
+            $components = [];
+
+            foreach ($this->evaluate($this->components) as $componentIndex => $component) {
+                $component = $component->container($this);
+
+                $components[$componentIndex] = $component;
+            }
+
+            return $components;
+        })();
     }
 }

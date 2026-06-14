@@ -1,0 +1,45 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sylament\Schemas\Components\Concerns;
+
+use Sylament\Schemas\Contracts\InteractsWithSchemas;
+use Sylament\Schemas\Schema;
+
+trait BelongsToContainer
+{
+    protected Schema $container;
+
+    protected Schema $rootContainer;
+
+    public function container(Schema $schema): static
+    {
+        $this->container = $schema;
+
+        return $this;
+    }
+
+    public function getContainer(): Schema
+    {
+        return $this->container;
+    }
+
+    public function getRootContainer(): Schema
+    {
+        return $this->rootContainer ??= (function (): Schema {
+            $container = $this->getContainer();
+
+            while (($parentComponent = $container->getParentComponent()) !== null) {
+                $container = $parentComponent->getContainer();
+            }
+
+            return $container;
+        })();
+    }
+
+    public function getLiveComponent(): InteractsWithSchemas
+    {
+        return $this->getContainer()->getLiveComponent();
+    }
+}

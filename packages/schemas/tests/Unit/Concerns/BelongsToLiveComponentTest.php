@@ -8,8 +8,8 @@ use Sylament\Schemas\Tests\Fixtures\Concerns\BelongsToLiveComponentFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
 
 it('has no live component by default', function (): void {
-    expect(new BelongsToLiveComponentFixture()->getLiveComponent())->toBeNull();
-});
+    new BelongsToLiveComponentFixture()->getLiveComponent();
+})->throws('Schema is not part of LiveComponent');
 
 it('sets the live component', function (): void {
     $liveComponent = new HasSchemasFixture();
@@ -29,5 +29,5 @@ it('clears the live component when called with no argument', function (): void {
         ->liveComponent(new HasSchemasFixture())
         ->liveComponent();
 
-    expect($fixture->getLiveComponent())->toBeNull();
-});
+    $fixture->getLiveComponent();
+})->throws('Schema is not part of LiveComponent');

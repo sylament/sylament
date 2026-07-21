@@ -26,13 +26,10 @@ Reference:
   chevron disclosure button (v5 ARIA contract — see the stimulus anchor),
   `hasHeader` gains the `collapsible && !aside` term — blocked on
   [stimulus-controllers](../infrastructure.md#stimulus-controllers),
-  [icon-system](../infrastructure.md#icon-system),
-  [keys](../infrastructure.md#keys)
+  [icon-system](../infrastructure.md#icon-system)
 - [ ] Header icon rendering (`HasIcon`/`HasIconColor`/`HasIconSize`; `hasHeader`
   gains the icon term) — blocked on
   [icon-system](../infrastructure.md#icon-system)
-- [ ] Auto `key()` from the heading slug in `setUp()` — blocked on
-  [keys](../infrastructure.md#keys)
 - [ ] Heading level cascade (`getHeadingsCount()` returning 1 when a heading is
   present, else 0) — blocked on
   [heading-cascade](../infrastructure.md#heading-cascade)
@@ -63,7 +60,14 @@ Reference:
 - **An `extraAttributes()` id survives an unset component id.** Filament seeds
   its wrapper bag with `['id' => null]`, whose existing-wins merge clobbers a
   user-supplied extras id; we only emit the component id when set, so the extras
-  id renders. A set component id beats the extras id in both implementations.
+  id renders. A set component id — custom or key-derived (any section with a
+  heading has one) — beats the extras id in both implementations.
+- **Auto-key slugging via `AsciiSlugger`.** Filament slugs the heading with
+  Laravel's `Str::slug(Str::transliterate(..., strict: true))` (bundled
+  portable-ascii, environment-independent); we use `symfony/string`'s
+  `AsciiSlugger` (intl-backed transliteration when available). Identical for
+  ordinary and accented headings; symbol runs become `-` separators where
+  Laravel strips them (`<em>Hi</em>` → `em-hi-em` vs `emhiem`).
 - **`hiddenLabel()` is honored.** Filament's section markup ignores
   `isLabelHidden()`; we render the label with `sr-only` semantics — the meaning
   the flag has on Filament's own fieldset and field-wrapper. Labels stay in the

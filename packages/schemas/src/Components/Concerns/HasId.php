@@ -25,7 +25,7 @@ trait HasId
 
     public function getId(): ?string
     {
-        return $this->getCustomId();
+        return $this->getCustomId() ?? $this->getKey();
     }
 
     public function getCustomId(): ?string

@@ -43,6 +43,20 @@ it('omits the header when the section has no heading or description', function (
     expect($html)->not->toContain('sy-section-header');
 });
 
+it('derives the section ids from the heading key', function (): void {
+    $html = renderSection(Section::make('Profile'));
+
+    expect($html)->toContain('id="profile::section"')
+        ->toContain('id="profile::section-heading"')
+        ->toContain('aria-labelledby="profile::section-heading"');
+});
+
+it('renders no id attribute without a heading or custom id', function (): void {
+    $html = renderSection(Section::make());
+
+    expect($html)->not->toContain(' id=');
+});
+
 it('renders the section child components inside the content area', function (): void {
     $html = renderSection(Section::make('Details')->components([new Component()]));
 
@@ -81,7 +95,7 @@ it('renders a Markup heading and description unescaped', function (): void {
 it('renders the heading in an h2 by default', function (): void {
     $html = renderSection(Section::make('Profile'));
 
-    expect($html)->toMatch('/<h2\s+class="sy-section-header-heading"\s*>/');
+    expect($html)->toMatch('/<h2\s[^>]*class="sy-section-header-heading"\s*>/');
 });
 
 it('omits the header for a blank heading', function (string $heading): void {
@@ -209,8 +223,9 @@ it('prefers the component id over an extra attributes id', function (): void {
 
 it('keeps an extra attributes id when no component id is set', function (): void {
     // Divergence from Filament, which lets the unset component id clobber the
-    // extra attributes id to null (docs/parity/schemas/section.md).
-    $html = renderSection(Section::make('Heading')->extraAttributes(['id' => 'user-id']));
+    // extra attributes id to null (docs/parity/schemas/section.md). Headingless,
+    // because a heading derives a key and the key-derived id wins like a custom one.
+    $html = renderSection(Section::make()->extraAttributes(['id' => 'user-id']));
 
     expect($html)->toContain('id="user-id"');
 });
@@ -246,7 +261,9 @@ it('gives the label no id when a heading is present', function (): void {
 });
 
 it('omits the landmark attributes without a component id', function (): void {
-    $html = renderSection(Section::make('Heading')->description('Details'));
+    // Description-only: the header renders, but with no heading there is no
+    // derived key, so the section has no id for the landmark attributes to target.
+    $html = renderSection(Section::make()->description('Details'));
 
     expect($html)->not->toContain('aria-labelledby')
         ->not->toContain('aria-describedby');

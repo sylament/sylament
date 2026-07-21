@@ -10,6 +10,7 @@ use Sylament\Schemas\Components\Concerns\HasGap;
 use Sylament\Schemas\Concerns\BelongsToLiveComponent;
 use Sylament\Schemas\Concerns\BelongsToParentComponent;
 use Sylament\Schemas\Concerns\HasComponents;
+use Sylament\Schemas\Concerns\HasKey;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Support\Component\Concerns\HasExtraAttributes;
 use Sylament\Support\Component\ViewComponent;
@@ -22,6 +23,7 @@ class Schema extends ViewComponent
     use HasComponents;
     use HasExtraAttributes;
     use HasGap;
+    use HasKey;
 
     protected string $evaluationIdentifier = 'schema';
 

@@ -16,14 +16,6 @@ class (with scoped `during()` runs and `isImportant` ordering), and
 manager is a singleton reachable from non-DI contexts — same static-instance
 shape as `Invoker`.
 
-## keys
-
-A `key()` concept — persistence identity for components (Filament auto-slugs
-Section keys from the heading in `setUp()`). Needed by collapse persistence and
-LiveComponent state targeting. Also wires the pending `getCustomId() ??
-getKey()` fallback into `HasId::getId()`, which returns the custom id only
-until then.
-
 ## icon-system
 
 Support-level icon rendering: a `generate_icon_html` equivalent, icon aliases,
@@ -77,7 +69,11 @@ casts, get/set utilities, `$state`/`$rawState`/`$get`/`$set` closure
 parameters), `HasStateBindingModifiers` (`live()`, `reactive()`, `lazy()`,
 `debounce()`), `CanPoll`, `CanPartiallyRender`, and the `toSchemaHtml()`
 per-child wrapper (`wire:key`, JS visibility, partial-render targeting).
-Blocks most of the base-Component surface in
+Also completes the ported keys: the state-path fallbacks inside
+`HasKey::getKey()` / `getInheritanceKey()` (component and schema level),
+`getLivewireKey()` on both levels (needs a live-component id concept on
+`InteractsWithSchemas`), and the `::{statePath}::` middle segment of Section's
+auto-key. Blocks most of the base-Component surface in
 [schemas/component.md](schemas/component.md) and every future form field.
 
 ## translation

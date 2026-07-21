@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
 
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Schema;
 use Sylament\Support\Service\Invoker;
 use Symfony\Component\DependencyInjection\Container;
 
@@ -55,8 +56,14 @@ it('resets the id with null', function (): void {
     expect(new Component()->id('profile')->id(null)->getId())->toBeNull();
 });
 
-it('matches getCustomId until the keys infrastructure adds a fallback', function (): void {
-    $component = new Component()->id('profile');
+it('falls back to the key when no custom id is set', function (): void {
+    $component = new Component()->key('name');
+    Schema::make()->components([$component])->getComponents();
 
-    expect($component->getId())->toBe($component->getCustomId());
+    expect($component->getId())->toBe('name')
+        ->and($component->getCustomId())->toBeNull();
+});
+
+it('prefers the custom id over the key', function (): void {
+    expect(new Component()->id('custom')->key('name')->getId())->toBe('custom');
 });

@@ -14,6 +14,7 @@ use Sylament\Schemas\Components\Concerns\HasDescription;
 use Sylament\Schemas\Components\Concerns\HasHeading;
 use Sylament\Schemas\Components\Concerns\HasLabel;
 use Sylament\Support\Component\Concerns\CanBeContained;
+use Symfony\Component\String\Slugger\AsciiSlugger;
 use Twig\Markup;
 
 class Section extends Component
@@ -48,6 +49,21 @@ class Section extends Component
         $section->configure();
 
         return $section;
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->key(function (Section $component): ?string {
+            $heading = $component->getHeading();
+
+            if ($heading === null || mb_trim((string) $heading) === '') {
+                return null;
+            }
+
+            return new AsciiSlugger()->slug((string) $heading)->lower()->toString() . '::section';
+        }, isInheritable: false);
     }
 
     /**

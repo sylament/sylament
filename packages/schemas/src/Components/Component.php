@@ -9,6 +9,7 @@ use Sylament\Schemas\Components\Concerns\HasChildComponents;
 use Sylament\Schemas\Components\Concerns\HasColumns;
 use Sylament\Schemas\Components\Concerns\HasGap;
 use Sylament\Schemas\Components\Concerns\HasId;
+use Sylament\Schemas\Components\Concerns\HasKey;
 use Sylament\Support\Component\Concerns\HasExtraAttributes;
 use Sylament\Support\Component\ViewComponent;
 
@@ -20,6 +21,7 @@ class Component extends ViewComponent
     use HasExtraAttributes;
     use HasGap;
     use HasId;
+    use HasKey;
 
     protected string $evaluationIdentifier = 'component';
 }

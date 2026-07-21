@@ -3,7 +3,8 @@
 The abstract base every schemas component extends. Component files (e.g.
 [section.md](section.md)) track only their own surface; the inherited surface
 lives here. Ported so far: `BelongsToContainer`, `HasChildComponents`,
-`HasColumns`, `HasExtraAttributes`, `HasGap`, `HasId` — modulo the items below.
+`HasColumns`, `HasExtraAttributes`, `HasGap`, `HasId`, `HasKey` — modulo the
+items below.
 
 Reference:
 
@@ -20,7 +21,9 @@ Portable now (no blocker):
   concept; `whenTruthy()` / `whenFalsy()` and JS visibility are blocked on
   [live-component-state](../infrastructure.md#live-component-state).
 - [ ] `HasMeta` (`meta()`, `getMeta()`, `hasMeta()`).
-- [ ] `Cloneable` (`getClone()`, `afterCloned()`).
+- [ ] `Cloneable` (`getClone()`, `afterCloned()`; must flush the cached keys —
+  `flushCachedAbsoluteKey()` / `flushCachedAbsoluteInheritanceKey()` — as
+  Filament's does).
 - [ ] `CanBeDisabled` (`disabled()`, `isDisabled()`, `isEnabled()`;
   `disabledOn()` has the same operation caveat as `hiddenOn()`).
 - [ ] `HasMaxWidth` (`maxWidth()`; needs a support `Width` enum port).
@@ -36,10 +39,6 @@ Portable now (no blocker):
 
 Blocked on infrastructure:
 
-- [ ] `HasKey` (`key()`, `getKey()`, LiveComponent key equivalent; includes
-  wiring the `getCustomId() ?? getKey()` fallback into `HasId::getId()`, which
-  returns the custom id only until then) — blocked on
-  [keys](../infrastructure.md#keys)
 - [ ] `HasHeadings` (`getHeadingLevel()` / `getHeadingTag()` /
   `getHeadingsCount()`) — blocked on
   [heading-cascade](../infrastructure.md#heading-cascade)
@@ -51,9 +50,10 @@ Blocked on infrastructure:
 - [ ] `HasActions` (`registerActions()`, `getAction()`, …) — blocked on
   [actions-package](../infrastructure.md#actions-package)
 - [ ] `HasState`, `HasStateBindingModifiers`, `CanPoll`, `CanPartiallyRender`,
-  the `toSchemaHtml()` per-child wrapper, and the state-dependent closure
+  the `toSchemaHtml()` per-child wrapper, the state-dependent closure
   parameters (`$state`, `$rawState`, `$get`, `$set`, `$livewire`,
-  `$operation`) — blocked on
+  `$operation`), and the state-dependent remainder of `HasKey` (state-path
+  fallbacks, `getLivewireKey()`) — blocked on
   [live-component-state](../infrastructure.md#live-component-state)
 - [ ] `CanBeConcealed` (`isConcealed()`, `getConcealingComponent()`) — pairs
   with the `CanConcealComponents` contract from Section's collapse item.
@@ -79,6 +79,14 @@ Revisit with later packages:
   other sources and escapes at render — hence no `escape:` parameter on
   `extraAttributes()` (Filament merges raw with `escape: false`). `View` →
   `Twig` follows the Laravel → Symfony translation conventions, not a rename.
+- **Key closures are typed loosely and checked at runtime.** Filament types
+  `key()` as `string | Closure | null`; PHPStan cannot express a closure whose
+  required parameters are Invoker-injected, and an arity-zero spec
+  (`callable():(string|null)`) would reject `fn (Section $component) => …` in
+  any analyzed caller — ours or a consumer's. `key()` therefore documents the
+  closure contract in prose, inlines `evaluatable()` (whose generics need the
+  arity-zero spec to infer), and `getKey()` fail-fasts with
+  `UnexpectedValueException` on a non-string closure return.
 - **No container-`make()` fallback in closure evaluation.** Filament's last
   resort for a class-typed closure parameter is Laravel's `app()->make()`,
   which auto-wires unbound classes; Symfony's container cannot instantiate ad

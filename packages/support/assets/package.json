@@ -21,6 +21,11 @@
         "autoimport": {
           "@sylament/support/styles/index.css": true
         }
+      },
+      "section": {
+        "main": "dist/controllers/section_controller.js",
+        "fetch": "eager",
+        "enabled": true
       }
     },
     "importmap": {

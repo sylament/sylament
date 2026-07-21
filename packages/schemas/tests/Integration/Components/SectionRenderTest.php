@@ -387,7 +387,7 @@ it('renders headings beyond h6 as paragraphs, honoring the schema root heading l
 it('renders the header icon before the heading at the large default size', function (): void {
     $html = renderSection(Section::make('Profile')->icon('heroicons:x-mark'));
 
-    expect($html)->toMatch('/sy-section-header">\s*<svg[^>]*class="sy-icon sy-size-lg"/')
+    expect($html)->toMatch('/sy-section-header"\s*>\s*<svg[^>]*class="sy-icon sy-size-lg"/')
         ->toContain('aria-hidden="true"');
 });
 
@@ -443,4 +443,132 @@ it('renders the standalone support component from raw icon props', function (): 
     expect($html)->toContain('Standalone')
         ->toContain('class="sy-icon sy-size-sm sy-color sy-color-danger"')
         ->toContain('aria-hidden="true"');
+});
+
+it('renders no collapse markup by default', function (): void {
+    $html = renderSection(Section::make('Profile'));
+
+    expect($html)->not->toContain('data-controller')
+        ->not->toContain('sy-collapsible')
+        ->not->toContain('sy-collapsed')
+        ->not->toContain('sy-section-collapse-btn')
+        ->not->toContain('sy-cloak');
+});
+
+it('wires the Stimulus controller on a collapsible section', function (): void {
+    $html = renderSection(Section::make('Profile')->collapsible());
+
+    expect($html)->toContain('sy-collapsible')
+        ->not->toContain('sy-collapsed')
+        ->toContain('data-controller="sylament--support--section"')
+        ->toContain('collapse-section@window-&gt;sylament--support--section#collapse')
+        ->toContain('expand-section@window-&gt;sylament--support--section#expand')
+        ->toContain('open-section@window-&gt;sylament--support--section#expand')
+        ->toContain('toggle-section@window-&gt;sylament--support--section#toggle')
+        ->toContain('expand-&gt;sylament--support--section#reveal')
+        ->not->toContain('reset-schema-component-state')
+        ->toContain('data-sylament--support--section-id-value="profile::section"')
+        ->toContain('data-sylament--support--section-collapsed-value="false"')
+        ->toContain('data-sylament--support--section-expand-label-value="Expand section"')
+        ->toContain('data-sylament--support--section-collapse-label-value="Collapse section"')
+        ->not->toContain('persist-value');
+});
+
+it('makes the header toggle the collapsible section', function (): void {
+    $html = renderSection(Section::make('Profile')->collapsible());
+
+    expect($html)->toMatch(
+        '/<header\s+class="sy-section-header" data-action="click-&gt;sylament--support--section#toggleFromHeader"/',
+    );
+});
+
+it('renders the disclosure chevron button', function (): void {
+    $html = renderSection(Section::make('Profile')->collapsible());
+
+    expect($html)->toMatch('/<button[^>]*class="sy sy-icon-btn sy-size-md sy-section-collapse-btn"/')
+        ->toContain('data-action="click-&gt;sylament--support--section#toggleFromButton"')
+        ->toContain('data-sylament--support--section-target="button"')
+        ->toContain('aria-expanded="true"')
+        ->toContain('aria-label="Collapse section"')
+        ->toContain('aria-controls="profile::section-content"')
+        ->toContain('<svg')
+        ->not->toContain('title=');
+});
+
+it('marks the content container as the controller content target', function (): void {
+    $html = renderSection(Section::make('Profile')->collapsible());
+
+    expect($html)->toContain('data-sylament--support--section-target="content"');
+});
+
+it('renders an initially collapsed section with matching ARIA', function (): void {
+    $html = renderSection(Section::make('Profile')->collapsed());
+
+    expect($html)->toContain('sy-collapsed')
+        ->toContain('data-sylament--support--section-collapsed-value="true"')
+        ->toContain('aria-expanded="false"')
+        ->toContain('aria-label="Expand section"')
+        ->toContain('data-controller="sylament--support--section"');
+});
+
+it('renders no collapse markup when collapsed() opts out of collapsibility', function (): void {
+    $html = renderSection(Section::make('Profile')->collapsed(shouldMakeComponentCollapsible: false));
+
+    expect($html)->not->toContain('data-controller')
+        ->not->toContain('sy-collapsed')
+        ->not->toContain('sy-section-collapse-btn');
+});
+
+it('resolves a collapsible closure through the real Invoker', function (): void {
+    $html = renderSection(Section::make('Profile')->collapsible(fn (): bool => true));
+
+    expect($html)->toContain('data-controller="sylament--support--section"');
+});
+
+it('cloaks the content container when persisting the collapse state', function (): void {
+    $html = renderSection(Section::make('Profile')->collapsible()->persistCollapsed());
+
+    expect($html)->toContain('data-sylament--support--section-persist-value="true"')
+        ->toContain('sy-cloak');
+});
+
+it('never renders an aside section as collapsible', function (): void {
+    $html = renderSection(Section::make('Profile')->aside()->collapsible());
+
+    expect($html)->not->toContain('data-controller')
+        ->not->toContain('sy-collapsible')
+        ->not->toContain('sy-section-collapse-btn');
+});
+
+it('renders the header for a collapsible section alone', function (): void {
+    // Filament parity: `hasHeader` gains the collapsible term, so a bare
+    // collapsible section still gets a header to hold the chevron.
+    $html = renderSection(Section::make()->collapsible());
+
+    expect($html)->toContain('sy-section-header')
+        ->toContain('sy-section-collapse-btn')
+        ->not->toContain('id-value')
+        ->not->toContain('aria-controls');
+});
+
+it('renders the standalone support component as collapsible from raw props', function (): void {
+    $html = $this::getContainer()->get('twig')->createTemplate(
+        "{{ component('SylamentSupport:Section', { heading: 'Standalone', collapsible: true, collapsed: true }) }}",
+    )->render();
+
+    expect($html)->toContain('data-controller="sylament--support--section"')
+        ->toContain('sy-collapsed')
+        ->toContain('sy-section-collapse-btn')
+        ->toContain('aria-label="Expand section"');
+});
+
+it('leaves the aside decision to the caller in the standalone support component', function (): void {
+    // Filament parity with the support Blade component: the support layer obeys
+    // the caller's `collapsible` verbatim — only the schemas layer resolves aside.
+    $html = $this::getContainer()->get('twig')->createTemplate(
+        "{{ component('SylamentSupport:Section', { heading: 'Standalone', collapsible: true, aside: true }) }}",
+    )->render();
+
+    expect($html)->toContain('data-controller="sylament--support--section"')
+        ->toContain('sy-aside');
 });

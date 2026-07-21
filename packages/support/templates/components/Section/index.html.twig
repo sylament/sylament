@@ -1,6 +1,10 @@
 {% props
     afterHeader = markup(block('afterHeader') ?? null),
     aside = false,
+    collapseId = null,
+    collapseLabel = 'Collapse section',
+    collapsed = false,
+    collapsible = false,
     compact = false,
     contained = true,
     content = markup(block('content') ?? null),
@@ -9,6 +13,7 @@
     description = markup(block('description') ?? null),
     descriptionId = null,
     divided = false,
+    expandLabel = 'Expand section',
     footer = markup(block('footer') ?? null),
     hasContentEl = true,
     heading = markup(block('heading') ?? null),
@@ -18,6 +23,9 @@
     iconColor = 'gray',
     iconSize = null,
     labelledById = null,
+    liveComponentId = null,
+    persistCollapsed = false,
+    schemaKey = null,
     secondary = false %}
 
 {% set iconColorName = iconColor is iterable or iconColor is empty ? 'gray' : iconColor %}
@@ -31,8 +39,21 @@
 {% set hasDescription = (description ?? '')|trim is not empty %}
 {% set hasContent = (content ?? '')|trim is not empty %}
 {% set hasFooter = (footer ?? '')|trim is not empty %}
-{% set hasHeader = hasIcon or hasHeading or hasDescription or hasAfterHeader %}
+{% set hasHeader = hasIcon or hasHeading or hasDescription or collapsible or hasAfterHeader %}
 {% set hasBody = hasContent or hasFooter %}
+
+{% set sectionController = 'sylament--support--section' %}
+{% set collapseActions = collapsible ? [
+    'collapse-section@window->' ~ sectionController ~ '#collapse',
+    'expand-section@window->' ~ sectionController ~ '#expand',
+    'open-section@window->' ~ sectionController ~ '#expand',
+    'toggle-section@window->' ~ sectionController ~ '#toggle',
+    'expand->' ~ sectionController ~ '#reveal',
+]|merge(
+    not persistCollapsed and liveComponentId and schemaKey
+        ? ['reset-schema-component-state@window->' ~ sectionController ~ '#resetState']
+        : []
+)|join(' ') : false %}
 
 <section
         {{ attributes.defaults({
@@ -43,14 +64,30 @@
                 'sy-aside': aside,
                 'sy-compact': compact,
                 'sy-divided': divided,
-                'sy-secondary': secondary
+                'sy-secondary': secondary,
+                'sy-collapsible': collapsible,
+                'sy-collapsed': collapsible and collapsed
             }),
             'aria-labelledby': labelledById ?: false,
-            'aria-describedby': descriptionId ?: false
+            'aria-describedby': descriptionId ?: false,
+            'data-controller': collapsible ? sectionController : false,
+            'data-action': collapseActions,
+            'data-sylament--support--section-id-value': collapsible and collapseId ? collapseId : false,
+            'data-sylament--support--section-collapsed-value': collapsible ? (collapsed ? 'true' : 'false') : false,
+            'data-sylament--support--section-persist-value': collapsible and persistCollapsed ? 'true' : false,
+            'data-sylament--support--section-expand-label-value': collapsible ? expandLabel : false,
+            'data-sylament--support--section-collapse-label-value': collapsible ? collapseLabel : false,
+            'data-sylament--support--section-live-component-id-value': collapsible and liveComponentId ? liveComponentId : false,
+            'data-sylament--support--section-schema-key-value': collapsible and schemaKey ? schemaKey : false
         }) }}
 >
     {% if hasHeader %}
-        <header class="sy-section-header">
+        <header
+            {{ html_attr({
+                class: ['sy-section-header'],
+                'data-action': collapsible ? 'click->' ~ sectionController ~ '#toggleFromHeader' : false,
+            }) }}
+        >
             {% if hasIcon %}
                 {{ iconHtml }}
             {% endif %}
@@ -86,6 +123,20 @@
                     {{ afterHeader }}
                 </div>
             {% endif %}
+
+            {% if collapsible %}
+                <twig:SylamentSupport:IconButton
+                    color="gray"
+                    icon="heroicons:chevron-up"
+                    iconAlias="section.collapse-button"
+                    class="sy-section-collapse-btn"
+                    data-action="{{ 'click->' ~ sectionController ~ '#toggleFromButton' }}"
+                    data-sylament--support--section-target="button"
+                    aria-label="{{ collapsed ? expandLabel : collapseLabel }}"
+                    aria-expanded="{{ collapsed ? 'false' : 'true' }}"
+                    :aria-controls="hasBody and contentId ? contentId : false"
+                />
+            {% endif %}
         </header>
     {% endif %}
 
@@ -94,7 +145,10 @@
         <div
             {{ html_attr({
                 id: contentId,
-                class: ['sy-section-content-ctn'],
+                class: html_classes('sy-section-content-ctn', {
+                    'sy-cloak': collapsible and persistCollapsed,
+                })|split(' '),
+                'data-sylament--support--section-target': collapsible ? 'content' : false,
             }) }}
         >
             {% if hasContentEl %}

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Unit\Components;
 
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Contracts\CanConcealComponents;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
@@ -217,6 +218,18 @@ it('resolves slots identically across repeated reads', function (): void {
     expect($section->getChildSchema(Section::AFTER_HEADER_SCHEMA_KEY))->toBe($slotSchema)
         ->and($section->getChildSchema(Section::AFTER_HEADER_SCHEMA_KEY))->toBe($slotSchema)
         ->and($slotSchema->isInline())->toBeTrue();
+});
+
+it('implements the CanConcealComponents contract', function (): void {
+    expect(Section::make('Profile'))->toBeInstanceOf(CanConcealComponents::class)
+        ->and(Section::make('Profile')->canConcealComponents())->toBeFalse()
+        ->and(Section::make('Profile')->collapsible()->canConcealComponents())->toBeTrue();
+});
+
+it('conceals components even for an aside section', function (): void {
+    // Filament parity: the contract tracks isCollapsible() alone — only the
+    // rendering suppresses collapse for aside sections.
+    expect(Section::make('Profile')->aside()->collapsible()->canConcealComponents())->toBeTrue();
 });
 
 it('counts one heading when a heading is present', function (): void {

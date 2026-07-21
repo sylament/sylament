@@ -6,6 +6,7 @@ namespace Sylament\Schemas\Components;
 
 use Closure;
 use Sylament\Schemas\Components\Concerns\CanBeAside;
+use Sylament\Schemas\Components\Concerns\CanBeCollapsed;
 use Sylament\Schemas\Components\Concerns\CanBeCompact;
 use Sylament\Schemas\Components\Concerns\CanBeDivided;
 use Sylament\Schemas\Components\Concerns\CanBeSecondary;
@@ -13,6 +14,7 @@ use Sylament\Schemas\Components\Concerns\HasContentBefore;
 use Sylament\Schemas\Components\Concerns\HasDescription;
 use Sylament\Schemas\Components\Concerns\HasHeading;
 use Sylament\Schemas\Components\Concerns\HasLabel;
+use Sylament\Schemas\Components\Contracts\CanConcealComponents;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Component\Concerns\CanBeContained;
 use Sylament\Support\Component\Concerns\HasIcon;
@@ -24,9 +26,10 @@ use Twig\Markup;
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 
-class Section extends Component
+class Section extends Component implements CanConcealComponents
 {
     use CanBeAside;
+    use CanBeCollapsed;
     use CanBeCompact;
     use CanBeContained;
     use CanBeDivided;
@@ -173,6 +176,11 @@ class Section extends Component
         return $schema;
     }
 
+    public function canConcealComponents(): bool
+    {
+        return $this->isCollapsible();
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -194,6 +202,9 @@ class Section extends Component
 
         return [
             'id' => $id,
+            'collapsible' => $this->isCollapsible() && !$this->isAside(),
+            'collapsed' => $this->isCollapsed(),
+            'persistCollapsed' => $this->shouldPersistCollapsed(),
             'labelId' => $labelId,
             'labelledById' => $headingId ?? $labelId,
             'headingId' => $headingId,

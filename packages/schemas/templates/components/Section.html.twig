@@ -31,6 +31,9 @@
     <twig:SylamentSupport:Section
             :heading="component.getHeading"
             :description="component.getDescription"
+            :collapseId="id"
+            :collapsed="collapsed"
+            :collapsible="collapsible"
             :compact="component.isCompact"
             :contained="component.isContained"
             :contentBefore="component.hasContentBefore"
@@ -44,6 +47,7 @@
             :iconColor="component.getIconColor"
             :iconSize="component.getIconSize"
             :labelledById="labelledById"
+            :persistCollapsed="persistCollapsed"
             :secondary="component.isSecondary"
             :aside="component.isAside"
     >

@@ -6,17 +6,21 @@ unblocks.
 
 ## stimulus-controllers
 
-Ports of Filament's Alpine behaviors to Stimulus (only `core_controller.ts`
-exists today). First needed: section collapse (v5 semantics) — toggle state;
-id-matched window events (`collapse-section`, `expand-section`, `open-section`,
-`toggle-section`) plus an element-level `expand` event; a
-`reset-schema-component-state` window listener restoring the initial collapse
-state (matched by live-component id + root schema key, skipped when
-persisting); persistence keyed `section-<id>-isCollapsed`; disclosure ARIA on
-the chevron button (translated expand/collapse `aria-label`, `aria-expanded`,
-`aria-controls` pointing at the content-container id — the control carries the
-state, not the region); hide-before-init. Also the `HasExtraAlpineAttributes`
-equivalent (extra Stimulus attributes on components).
+Ports of Filament's Alpine behaviors to Stimulus. Section collapse has landed
+and establishes the pattern: controllers live in the support assets workspace
+(`packages/support/assets/src/controllers/<name>_controller.ts`), are
+registered in the workspace `package.json` `symfony.controllers` block
+(identifiers derive as `sylament--support--<name>`), receive server config via
+Stimulus values, listen for window events via `@window` action descriptors,
+and render the initial state server-side — hide-before-init only where the
+truth is client-side (persisted state), via the generic `sy-cloak` class
+(`base.css`, gated on `@media (scripting: enabled)` so JS-off keeps content
+reachable). Remaining under this anchor: the `HasExtraAlpineAttributes`
+equivalent (extra Stimulus attributes on components); future behavior ports
+(tabs, wizard, dropdown, tooltip, key bindings, …); and a JS unit-test harness
+decision — controllers are currently covered by `tsc --noEmit` strict + Biome
+plus rendered-attribute assertions in the Twig render tests, not by JS-side
+behavioral tests.
 
 ## live-component-state
 

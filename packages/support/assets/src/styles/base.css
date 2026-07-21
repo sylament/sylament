@@ -9,3 +9,16 @@
         cursor: pointer;
     }
 }
+
+/*
+  Hide-before-init for Stimulus-managed markup (Alpine x-cloak equivalent):
+  rendered by the server, removed by the controller on connect. Gated on
+  scripting so the content stays reachable with JS off, where x-cloak would
+  hide it permanently.
+*/
+@media (scripting: enabled) {
+    .sy.sy-cloak,
+    .sy .sy-cloak {
+        display: none !important;
+    }
+}

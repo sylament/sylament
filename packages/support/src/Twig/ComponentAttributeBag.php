@@ -51,6 +51,72 @@ class ComponentAttributeBag
         return $this->attributes;
     }
 
+    /**
+     * Flattens the attributes for rendering: class joins its token list with
+     * spaces, style joins its declarations with "; " (each dropped when empty),
+     * `null` and `false` are omitted, `true` is kept for bare attributes, and
+     * non-stringable values are skipped.
+     *
+     * @return array<string, string|true>
+     */
+    public function toScalarAttributes(): array
+    {
+        $scalars = [];
+
+        foreach ($this->attributes as $name => $value) {
+            if (is_array($value) && in_array($name, self::APPENDABLE_ATTRIBUTES, true)) {
+                $value = implode($name === 'style' ? '; ' : ' ', array_filter($value, is_string(...)));
+
+                if ($value === '') {
+                    continue;
+                }
+            }
+
+            if ($value === null) {
+                continue;
+            }
+
+            if ($value === false) {
+                continue;
+            }
+
+            if ($value === true) {
+                $scalars[$name] = true;
+
+                continue;
+            }
+
+            if (!is_scalar($value) && !$value instanceof Stringable) {
+                continue;
+            }
+
+            $scalars[$name] = (string) $value;
+        }
+
+        return $scalars;
+    }
+
+    /**
+     * Renders the attributes as escaped `name="value"` HTML pairs, matching what
+     * html_attr() would emit: class joins its token list with spaces, style joins
+     * its declarations with "; ", `true` renders as a bare `name=""`, `null` and
+     * `false` are omitted, and non-stringable values are skipped.
+     */
+    public function toHtml(): string
+    {
+        $pairs = [];
+
+        foreach ($this->toScalarAttributes() as $name => $value) {
+            $pairs[] = sprintf(
+                '%s="%s"',
+                htmlspecialchars($name, ENT_QUOTES),
+                htmlspecialchars($value === true ? '' : $value, ENT_QUOTES),
+            );
+        }
+
+        return implode(' ', $pairs);
+    }
+
     private function normalize(string $name, mixed $value): mixed
     {
         return match ($name) {

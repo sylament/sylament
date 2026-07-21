@@ -25,9 +25,6 @@ Reference:
   `hasHeader` gains the `collapsible && !aside` term — blocked on
   [stimulus-controllers](../infrastructure.md#stimulus-controllers),
   [icon-system](../infrastructure.md#icon-system)
-- [ ] Header icon rendering (`HasIcon`/`HasIconColor`/`HasIconSize`; `hasHeader`
-  gains the icon term) — blocked on
-  [icon-system](../infrastructure.md#icon-system)
 - [ ] Extra Stimulus attributes (Filament: `HasExtraAlpineAttributes`) — blocked
   on [stimulus-controllers](../infrastructure.md#stimulus-controllers)
 - [ ] `translateLabel()` — blocked on
@@ -47,7 +44,9 @@ Reference:
   inlined schemas layer, whose role our support component plays. The render-time
   values (ARIA ids, the child schema carrying `sy-section-content` — injected by
   replacing the child schema's `extraAttributes()`, as Filament does) flow
-  through `Section::getExtraTemplateData()`.
+  through `Section::getExtraTemplateData()`; the icon flows as the support
+  component's raw `icon`/`iconColor`/`iconSize` props, same as Filament's
+  support section view.
 - **Extra attribute values are escaped at render.** The wrapper emits extras
   through `html_attr()`, which escapes names and values; Filament merges with
   `escape: false` and renders raw, so its `extraAttributes()` security caveat
@@ -67,6 +66,11 @@ Reference:
   `isLabelHidden()`; we render the label with `sr-only` semantics — the meaning
   the flag has on Filament's own fieldset and field-wrapper. Labels stay in the
   markup for assistive technology.
+- **Unknown `iconSize()` strings degrade to the helper's `Medium` default**
+  (the support component's own default stays `Large`). Filament lets an
+  unrecognized size string reach `generate_icon_html`'s `IconSize` parameter
+  and type-error; our `generateIconHtml` Twig function `tryFrom()`s it and
+  falls back.
 - **`formBefore()` → `contentBefore()`** (`HasContentBefore` trait) — rename
   recorded in [../renames.md](../renames.md).
 - **`Section::make([...])` array shorthand not ported.** `make()` takes a

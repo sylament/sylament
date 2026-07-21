@@ -8,13 +8,16 @@ use Sylament\Support\Component\ComponentManager;
 use Sylament\Support\DependencyInjection\Compiler\StaticInstancePass;
 use Sylament\Support\DependencyInjection\StaticInstanceInterface;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
+use Sylament\Support\Icons\IconManager;
 use Sylament\Support\Service\Invoker;
 use Sylament\Support\Twig\Extension\ComponentExtension;
 use Sylament\Support\Twig\Extension\GridExtension;
+use Sylament\Support\Twig\Extension\IconExtension;
 use Sylament\Support\Twig\Extension\MarkupExtension;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\UX\Icons\IconRendererInterface;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
@@ -84,6 +87,10 @@ class SylamentSupportBundle extends SylamentBundle
             ->tag('twig.extension');
 
         $services
+            ->set('sylament_support.icon_extension', IconExtension::class)
+            ->tag('twig.extension');
+
+        $services
             ->set('sylament_support.markup_extension', MarkupExtension::class)
             ->tag('twig.extension');
 
@@ -98,6 +105,13 @@ class SylamentSupportBundle extends SylamentBundle
             ->set('sylament_support.component_manager', ComponentManager::class)
             ->factory(ComponentManager::resolve(...))
             ->alias(ComponentManager::class, 'sylament_support.component_manager');
+
+        $services
+            ->set('sylament_support.icon_manager', IconManager::class)
+            ->args([
+                '$renderer' => service(IconRendererInterface::class)->nullOnInvalid(),
+            ])
+            ->alias(IconManager::class, 'sylament_support.icon_manager');
     }
 
     private function prependAssetMapper(ContainerBuilder $container): void

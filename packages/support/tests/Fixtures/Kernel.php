@@ -7,8 +7,10 @@ namespace Sylament\Support\Tests\Fixtures;
 use Sylament\Support\SylamentSupportBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
+use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
+use Symfony\UX\Icons\UXIconsBundle;
 
 class Kernel extends BaseKernel
 {
@@ -18,6 +20,8 @@ class Kernel extends BaseKernel
     {
         return [
             new FrameworkBundle(),
+            new TwigBundle(),
+            new UXIconsBundle(),
 
             new SylamentSupportBundle(),
         ];
@@ -28,6 +32,13 @@ class Kernel extends BaseKernel
         $container->extension('framework', [
             'secret' => 'SECRET',
             'test' => true,
+        ]);
+
+        $container->extension('ux_icons', [
+            'icon_dir' => __DIR__ . '/assets/icons',
+            'iconify' => [
+                'enabled' => false,
+            ],
         ]);
 
         $container->services()

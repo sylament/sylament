@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Twig;
 
+use Stringable;
 use Sylament\Support\Twig\ComponentAttributeBag;
 
 it('holds no attributes by default', function (): void {
@@ -70,4 +71,49 @@ it('merge returns a new instance and leaves the original untouched', function ()
 
     expect($merged)->not->toBe($original)
         ->and($original->getAttributes())->toBe(['class' => ['existing']]);
+});
+
+it('toHtml renders an empty bag as an empty string', function (): void {
+    expect(new ComponentAttributeBag()->toHtml())->toBe('');
+});
+
+it('toHtml joins class tokens with spaces and style declarations with semicolons', function (): void {
+    $bag = new ComponentAttributeBag([
+        'class' => ['sy-icon', 'sy-size-md'],
+        'style' => ['color' => 'red', 'margin' => '0'],
+        'data-owner' => 'billing',
+    ]);
+
+    expect($bag->toHtml())->toBe('class="sy-icon sy-size-md" style="color: red; margin: 0" data-owner="billing"');
+});
+
+it('toHtml escapes attribute names and values', function (): void {
+    $bag = new ComponentAttributeBag(['data-x"y' => 'a "quoted" <value>']);
+
+    expect($bag->toHtml())->toBe('data-x&quot;y="a &quot;quoted&quot; &lt;value&gt;"');
+});
+
+it('toHtml renders true as a bare attribute and drops null and false', function (): void {
+    $bag = new ComponentAttributeBag(['required' => true, 'disabled' => false, 'id' => null]);
+
+    expect($bag->toHtml())->toBe('required=""');
+});
+
+it('toHtml drops an empty class or style list', function (): void {
+    $bag = new ComponentAttributeBag(['class' => [], 'style' => '', 'data-a' => '1']);
+
+    expect($bag->toHtml())->toBe('data-a="1"');
+});
+
+it('toHtml renders stringable values and skips non-stringable ones', function (): void {
+    $stringable = new class implements Stringable {
+        public function __toString(): string
+        {
+            return 'stringable';
+        }
+    };
+
+    $bag = new ComponentAttributeBag(['data-a' => $stringable, 'data-b' => ['not', 'stringable']]);
+
+    expect($bag->toHtml())->toBe('data-a="stringable"');
 });

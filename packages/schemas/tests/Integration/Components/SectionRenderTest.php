@@ -8,6 +8,7 @@ use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
+use Sylament\Support\Enum\IconSize;
 use Twig\Markup;
 
 use function Sylament\Schemas\Tests\renderToHtml;
@@ -381,4 +382,65 @@ it('renders headings beyond h6 as paragraphs, honoring the schema root heading l
 
     expect($html)->toMatch('~<h6\s[^>]*id="outer::section-heading"~')
         ->toMatch('~<p\s[^>]*id="inner::section-heading"~');
+});
+
+it('renders the header icon before the heading at the large default size', function (): void {
+    $html = renderSection(Section::make('Profile')->icon('heroicons:x-mark'));
+
+    expect($html)->toMatch('/sy-section-header">\s*<svg[^>]*class="sy-icon sy-size-lg"/')
+        ->toContain('aria-hidden="true"');
+});
+
+it('renders the header for an icon alone', function (): void {
+    $html = renderSection(Section::make()->icon('heroicons:x-mark'));
+
+    expect($html)->toContain('sy-section-header')
+        ->toContain('<svg');
+});
+
+it('renders no icon markup without an icon', function (): void {
+    $html = renderSection(Section::make('Heading'));
+
+    expect($html)->not->toContain('sy-icon')
+        ->not->toContain('<svg');
+});
+
+it('marks the icon with the dynamic color classes for a palette', function (): void {
+    $html = renderSection(Section::make('Heading')->icon('heroicons:x-mark')->iconColor('danger'));
+
+    expect($html)->toContain('class="sy-icon sy-size-lg sy-color sy-color-danger"');
+});
+
+it('applies no color classes for the default or explicit gray icon color', function (): void {
+    expect(renderSection(Section::make('Heading')->icon('heroicons:x-mark')))
+        ->not->toContain('sy-color');
+
+    expect(renderSection(Section::make('Heading')->icon('heroicons:x-mark')->iconColor('gray')))
+        ->not->toContain('sy-color');
+});
+
+it('applies an explicit icon size from an enum case or its string value', function (): void {
+    expect(renderSection(Section::make('Heading')->icon('heroicons:x-mark')->iconSize(IconSize::Small)))
+        ->toContain('sy-size-sm');
+
+    expect(renderSection(Section::make('Heading')->icon('heroicons:x-mark')->iconSize('sm')))
+        ->toContain('sy-size-sm');
+});
+
+it('resolves an icon closure through the real Invoker', function (): void {
+    $html = renderSection(Section::make('Heading')->icon(fn (): string => 'heroicons:x-mark'));
+
+    expect($html)->toContain('<svg');
+});
+
+it('renders the standalone support component from raw icon props', function (): void {
+    // Filament-parity for direct `<twig:SylamentSupport:Section>` use: the support
+    // component itself turns icon/iconColor/iconSize values into the icon HTML.
+    $html = $this::getContainer()->get('twig')->createTemplate(
+        "{{ component('SylamentSupport:Section', { heading: 'Standalone', icon: 'heroicons:x-mark', iconColor: 'danger', iconSize: 'sm' }) }}",
+    )->render();
+
+    expect($html)->toContain('Standalone')
+        ->toContain('class="sy-icon sy-size-sm sy-color sy-color-danger"')
+        ->toContain('aria-hidden="true"');
 });

@@ -6,6 +6,7 @@ namespace Sylament\Schemas\Tests;
 
 use Sylament\Support\Component\ComponentManager;
 use Sylament\Support\Component\ViewComponent;
+use Sylament\Support\Icons\IconManager;
 
 pest()
     ->extend(TestCase::class)
@@ -14,6 +15,7 @@ pest()
 pest()
     ->afterEach(function (): void {
         ComponentManager::unsetInstance();
+        IconManager::unsetInstance();
     })
     ->in('Unit');
 

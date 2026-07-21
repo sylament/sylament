@@ -5,7 +5,7 @@ from Tailwind — with one deliberate divergence: components never depend on Tai
 preflight, because Sylament embeds into arbitrary host apps instead of owning the page.
 
 Tailwind is a **private build-time tool** of `@sylament/support`. The shipped artifact
-(`packages/support/assets/dist/styles/main.css`) is plain CSS, delivered to consumers
+(`packages/support/assets/dist/styles/index.css`) is plain CSS, delivered to consumers
 through the AssetMapper `autoimport` flag in `packages/support/assets/package.json`.
 Consumers never need Tailwind installed.
 
@@ -26,21 +26,22 @@ Consumers never need Tailwind installed.
 3. **Component CSS lives in one file per component**:
    `packages/<pkg>/assets/src/styles/components/<name>.css`, written with `@apply` and
    nested CSS, `dark:`/`hover:` variants inline. Plain CSS only where `@apply` can't
-   express it. Each package's `styles/main.css` is the aggregator that imports its
-   component files with `layer(components)`; `support`'s entry imports the aggregators
-   and is the single Tailwind compile.
+   express it. Each package's `styles/index.css` is the aggregator that imports its
+   component files with `layer(components)` (support's own live in its
+   `styles/components.css`); `support`'s `styles/index.css` entry imports the
+   aggregators and is the single Tailwind compile.
 4. **Dynamic per-instance values are inline CSS variables, never dynamic class names.**
    Example: `Grid.html.twig` sets `style="--sy-grid-cols: {{ ... }}"` and the CSS uses
    `repeat(var(--sy-grid-cols, 1), minmax(0, 1fr))`.
 5. **Colors go through `--sy-*` runtime tokens.** `@theme inline` in support's
-   `main.css` bridges Tailwind color tokens to runtime variables, so
+   `styles/index.css` bridges Tailwind color tokens to runtime variables, so
    `@apply bg-primary-600` compiles to `background-color: var(--sy-primary-600)`.
    Semantic palettes: `primary`, `gray`, `danger`, `info`, `success`, `warning`.
    Important: `@theme inline` variables are **not emitted at runtime** — plain CSS must
    reference the `--sy-*` token (`var(--sy-gray-950)`), not `var(--color-gray-950)`.
 6. **Per-instance color uses the `color` palette** (Filament's trick): component CSS
    writes `@apply bg-color-500`; a `.sy-color-<palette>` class (see
-   `support/assets/src/styles/colors.css`) or inline `--sy-color-*` variables decide
+   `support/assets/src/styles/utilities.css`) or inline `--sy-color-*` variables decide
    what that resolves to. Defaults to `primary`.
 7. **Preflight is scoped, never page-wide.** `support`'s build generates
    `src/styles/preflight.generated.css` (gitignored) from the *installed* Tailwind's

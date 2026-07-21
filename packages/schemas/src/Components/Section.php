@@ -15,6 +15,9 @@ use Sylament\Schemas\Components\Concerns\HasHeading;
 use Sylament\Schemas\Components\Concerns\HasLabel;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Component\Concerns\CanBeContained;
+use Sylament\Support\Component\Concerns\HasIcon;
+use Sylament\Support\Component\Concerns\HasIconColor;
+use Sylament\Support\Component\Concerns\HasIconSize;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Twig\Markup;
 
@@ -31,6 +34,9 @@ class Section extends Component
     use HasContentBefore;
     use HasDescription;
     use HasHeading;
+    use HasIcon;
+    use HasIconColor;
+    use HasIconSize;
     use HasLabel;
 
     public const string AFTER_HEADER_SCHEMA_KEY = 'after_header';

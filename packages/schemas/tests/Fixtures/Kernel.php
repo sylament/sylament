@@ -11,6 +11,7 @@ use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
+use Symfony\UX\Icons\UXIconsBundle;
 use Symfony\UX\TwigComponent\TwigComponentBundle;
 use Twig\Extra\Html\HtmlExtension;
 
@@ -24,6 +25,7 @@ class Kernel extends BaseKernel
             new FrameworkBundle(),
             new TwigBundle(),
             new TwigComponentBundle(),
+            new UXIconsBundle(),
 
             new SylamentSchemasBundle(),
             new SylamentSupportBundle(),
@@ -35,6 +37,13 @@ class Kernel extends BaseKernel
         $container->extension('framework', [
             'secret' => 'SECRET',
             'test' => true,
+        ]);
+
+        $container->extension('ux_icons', [
+            'icon_dir' => __DIR__ . '/assets/icons',
+            'iconify' => [
+                'enabled' => false,
+            ],
         ]);
 
         // The consuming app is responsible for providing the HTML helpers

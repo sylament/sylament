@@ -14,15 +14,24 @@
     heading = markup(block('heading') ?? null),
     headingId = null,
     headingTag = 'h2',
+    icon = null,
+    iconColor = 'gray',
+    iconSize = null,
     labelledById = null,
     secondary = false %}
 
+{% set iconColorName = iconColor is iterable or iconColor is empty ? 'gray' : iconColor %}
+{% set iconHtml = generateIconHtml(icon, attributes: {
+    class: iconColorName != 'gray' ? ['sy-color', 'sy-color-' ~ iconColorName] : [],
+}, size: iconSize ?? 'lg') %}
+
 {% set hasAfterHeader = (afterHeader ?? '')|trim is not empty %}
+{% set hasIcon = iconHtml is not empty %}
 {% set hasHeading = (heading ?? '')|trim is not empty %}
 {% set hasDescription = (description ?? '')|trim is not empty %}
 {% set hasContent = (content ?? '')|trim is not empty %}
 {% set hasFooter = (footer ?? '')|trim is not empty %}
-{% set hasHeader = hasHeading or hasDescription or hasAfterHeader %}
+{% set hasHeader = hasIcon or hasHeading or hasDescription or hasAfterHeader %}
 {% set hasBody = hasContent or hasFooter %}
 
 <section
@@ -42,7 +51,9 @@
 >
     {% if hasHeader %}
         <header class="sy-section-header">
-            {# TODO: add section icon #}
+            {% if hasIcon %}
+                {{ iconHtml }}
+            {% endif %}
 
             {% if hasHeading or hasDescription %}
                 <div class="sy-section-header-text-ctn">

@@ -6,9 +6,13 @@ unblocks.
 
 ## icon-system
 
-Support-level icon rendering: a `generate_icon_html` equivalent, icon aliases,
-size/color enums, an icon-button component. Unblocks: Section header icons and
-the collapse chevron button.
+The icon-button component (Filament's `<x-filament::icon-button>` /
+`CanGenerateIconButtonHtml`) and the `IconPosition` enum that ships with it —
+planned alongside the collapse/stimulus effort that first consumes them. The
+core icon infrastructure is done (`generate_icon_html`, the `IconManager` alias
+service, `IconSize`, `ScalableIcon`, the `HasIcon`/`HasIconColor`/`HasIconSize`
+concerns, ux-icons-backed rendering — see [support/icons.md](support/icons.md)).
+Unblocks: the Section collapse chevron button.
 
 ## stimulus-controllers
 

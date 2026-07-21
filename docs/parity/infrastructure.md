@@ -4,18 +4,6 @@ Component parity files link these anchors instead of restating blockers. When an
 item lands, grep the repo for `infrastructure.md#<anchor>` to find everything it
 unblocks.
 
-## global-configuration
-
-Filament's `Configurable` routes `configure()` through a `ComponentManager`
-(`vendor/filament/support/src/Components/ComponentManager.php`):
-`configureUsing()` registers global closures applied to every new instance of a
-class (with scoped `during()` runs and `isImportant` ordering), and
-`configure()` wraps `setUp()` with them. Ours
-(`packages/support/src/Concerns/Configurable.php`) is a bare
-`configure() → setUp()`. Affects `make()` semantics on every component; the
-manager is a singleton reachable from non-DI contexts — same static-instance
-shape as `Invoker`.
-
 ## icon-system
 
 Support-level icon rendering: a `generate_icon_html` equivalent, icon aliases,

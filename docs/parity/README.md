@@ -29,5 +29,6 @@ layout).
 | Component | Package | Status |
 | --- | --- | --- |
 | [Component (base)](schemas/component.md) | schemas | in progress |
+| [ComponentManager](support/component-manager.md) | support | in progress |
 | [Schema](schemas/schema.md) | schemas | in progress |
 | [Section](schemas/section.md) | schemas | in progress |

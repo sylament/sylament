@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Fixtures\Concerns;
 
-use Sylament\Support\Concerns\Configurable;
+use Sylament\Support\Component\Component;
 
-class ConfigurableWithSetUpFixture
+class ConfigurableWithSetUpFixture extends Component
 {
-    use Configurable;
-
     public int $setUpCalls = 0;
 
     protected function setUp(): void

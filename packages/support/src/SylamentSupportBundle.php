@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support;
 
+use Sylament\Support\Component\ComponentManager;
 use Sylament\Support\DependencyInjection\Compiler\StaticInstancePass;
 use Sylament\Support\DependencyInjection\StaticInstanceInterface;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
@@ -92,6 +93,11 @@ class SylamentSupportBundle extends SylamentBundle
                 '$container' => service('service_container'),
             ])
             ->alias(Invoker::class, 'sylament_support.invoker');
+
+        $services
+            ->set('sylament_support.component_manager', ComponentManager::class)
+            ->factory(ComponentManager::resolve(...))
+            ->alias(ComponentManager::class, 'sylament_support.component_manager');
     }
 
     private function prependAssetMapper(ContainerBuilder $container): void

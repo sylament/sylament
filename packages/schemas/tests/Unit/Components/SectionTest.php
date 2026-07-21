@@ -31,6 +31,14 @@ function wireSection(Section $section): Section
     return $section;
 }
 
+it('applies configureUsing() closures on make()', function (): void {
+    Section::configureUsing(function (Section $section): void {
+        $section->description('configured globally');
+    });
+
+    expect(Section::make('Settings')->getDescription())->toBe('configured globally');
+});
+
 it('passes the section to configuration closures as $component', function (): void {
     $section = Section::make('Settings');
 

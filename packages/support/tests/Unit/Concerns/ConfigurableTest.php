@@ -24,3 +24,20 @@ it('runs setUp() again on each configure() call', function (): void {
 it('does not run setUp() until configure() is called', function (): void {
     expect(new ConfigurableWithSetUpFixture()->setUpCalls)->toBe(0);
 });
+
+it('returns the instance from configure()', function (): void {
+    $fixture = new ConfigurableWithSetUpFixture();
+
+    expect($fixture->configure())->toBe($fixture);
+});
+
+it('applies configureUsing() closures keyed by the calling class', function (): void {
+    ConfigurableWithSetUpFixture::configureUsing(function (ConfigurableWithSetUpFixture $fixture): void {
+        $fixture->setUpCalls += 10;
+    });
+
+    $fixture = new ConfigurableWithSetUpFixture();
+    $fixture->configure();
+
+    expect($fixture->setUpCalls)->toBe(11);
+});

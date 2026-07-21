@@ -36,9 +36,6 @@ Portable now (no blocker):
   `getChildSchemas(withHidden:)`, the container-named aliases, and the
   keyed-slot `cachedChildSchemas` memoization (Filament caches non-closure
   slots; ours rebuilds per `getChildSchema()` call).
-- [ ] Global configuration hooks (`configureUsing()`) — see
-  [global-configuration](../infrastructure.md#global-configuration).
-
 Blocked on infrastructure:
 
 - [ ] `HasActions` (`registerActions()`, `getAction()`, …) — blocked on

@@ -4,11 +4,18 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests;
 
+use Sylament\Support\Component\ComponentManager;
 use Sylament\Support\Component\ViewComponent;
 
 pest()
     ->extend(TestCase::class)
     ->in('Integration');
+
+pest()
+    ->afterEach(function (): void {
+        ComponentManager::unsetInstance();
+    })
+    ->in('Unit');
 
 /**
  * Render a real component through the booted kernel's Twig and return the HTML.

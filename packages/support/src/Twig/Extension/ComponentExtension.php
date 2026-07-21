@@ -7,6 +7,7 @@ namespace Sylament\Support\Twig\Extension;
 use Sylament\Support\Component\ViewComponent;
 use Twig\Environment;
 use Twig\Extension\AbstractExtension;
+use Twig\Markup;
 use Twig\TwigFunction;
 
 class ComponentExtension extends AbstractExtension
@@ -19,13 +20,17 @@ class ComponentExtension extends AbstractExtension
         return [
             new TwigFunction('renderComponent', $this->renderComponent(...), [
                 'needs_environment' => true,
-                'is_safe' => ['html'],
             ]),
         ];
     }
 
-    public function renderComponent(Environment $twig, ?ViewComponent $component): ?string
+    public function renderComponent(Environment $twig, ?ViewComponent $component): ?Markup
     {
-        return $component?->render($twig);
+        $html = $component?->render($twig);
+        if ($html === null) {
+            return null;
+        }
+
+        return new Markup($html, $twig->getCharset());
     }
 }

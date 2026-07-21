@@ -9,6 +9,7 @@ use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Support\Twig\Extension\ComponentExtension;
 use Twig\Environment;
 use Twig\Extension\AbstractExtension;
+use Twig\Markup;
 use Twig\TwigFunction;
 
 class SchemaExtension extends AbstractExtension
@@ -27,7 +28,6 @@ class SchemaExtension extends AbstractExtension
             new TwigFunction('renderSchema', $this->renderSchema(...), [
                 'needs_environment' => true,
                 'needs_context' => true,
-                'is_safe' => ['html'],
             ]),
         ];
     }
@@ -35,7 +35,7 @@ class SchemaExtension extends AbstractExtension
     /**
      * @param array<mixed> $context
      */
-    public function renderSchema(Environment $twig, array $context, string $name): ?string
+    public function renderSchema(Environment $twig, array $context, string $name): ?Markup
     {
         $component = $context['this'] ?? null;
         if (!$component instanceof InteractsWithSchemas) {

@@ -13,6 +13,7 @@ use Sylament\Support\Twig\Extension\ComponentExtension;
 use Symfony\Component\DependencyInjection\Container;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
+use Twig\Markup;
 
 beforeEach(function (): void {
     Invoker::setInstance(new Invoker(new Container()));
@@ -42,19 +43,20 @@ it('renders the named schema of the component in context', function (): void {
 
     $rendered = schemaExtension()->renderSchema($twig, ['this' => new HasSchemasFixture()], 'schema');
 
-    expect($rendered)->toBe('schema:1');
+    expect($rendered)->toBeInstanceOf(Markup::class)
+        ->and((string) $rendered)->toBe('schema:1');
 });
 
 it('throws when the context has no rendering component', function (): void {
     $twig = new Environment(new ArrayLoader());
 
-    expect(fn (): ?string => schemaExtension()->renderSchema($twig, [], 'schema'))
+    expect(fn (): ?Markup => schemaExtension()->renderSchema($twig, [], 'schema'))
         ->toThrow(RuntimeException::class);
 });
 
 it('throws when the rendering component does not interact with schemas', function (): void {
     $twig = new Environment(new ArrayLoader());
 
-    expect(fn (): ?string => schemaExtension()->renderSchema($twig, ['this' => new stdClass()], 'schema'))
+    expect(fn (): ?Markup => schemaExtension()->renderSchema($twig, ['this' => new stdClass()], 'schema'))
         ->toThrow(RuntimeException::class);
 });

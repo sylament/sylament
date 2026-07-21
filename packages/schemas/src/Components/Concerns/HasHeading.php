@@ -5,25 +5,26 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
+use Twig\Markup;
 
 trait HasHeading
 {
     /**
-     * @var string|Closure():string|null
+     * @var string|Markup|Closure():(string|Markup)|null
      */
-    protected string|Closure|null $heading = null;
+    protected string|Markup|Closure|null $heading = null;
 
     /**
-     * @param string|callable():string|null $heading
+     * @param string|Markup|callable():(string|Markup)|null $heading
      */
-    public function heading(string|callable|null $heading): static
+    public function heading(string|Markup|callable|null $heading): static
     {
         $this->heading = $this->evaluatable($heading);
 
         return $this;
     }
 
-    public function getHeading(): ?string
+    public function getHeading(): string|Markup|null
     {
         return $this->evaluate($this->heading);
     }

@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Components;
 use Closure;
 use Sylament\Schemas\Components\Concerns\HasDescription;
 use Sylament\Schemas\Components\Concerns\HasHeading;
+use Twig\Markup;
 
 class Section extends Component
 {
@@ -16,17 +17,17 @@ class Section extends Component
     protected string|Closure|null $template = '@SylamentSchemas/components/Section.html.twig';
 
     /**
-     * @param string|callable():string|null $heading
+     * @param string|Markup|callable():(string|Markup)|null $heading
      */
-    public function __construct(string|callable|null $heading = null)
+    public function __construct(string|Markup|callable|null $heading = null)
     {
         $this->heading($heading);
     }
 
     /**
-     * @param string|callable():string|null $heading
+     * @param string|Markup|callable():(string|Markup)|null $heading
      */
-    public static function make(string|callable|null $heading = null): static
+    public static function make(string|Markup|callable|null $heading = null): static
     {
         $section = new static($heading);
 

@@ -16,4 +16,6 @@ class Component extends ViewComponent
     use HasChildComponents;
     use HasColumns;
     use HasGap;
+
+    protected string $evaluationIdentifier = 'component';
 }

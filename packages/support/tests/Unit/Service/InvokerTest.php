@@ -34,33 +34,102 @@ it('passes null from the parameters array when the key exists', function (): voi
     expect($result)->toBe('fallback');
 });
 
-it('prefers the explicit parameters array over the named-parameter resolver', function (): void {
-    $resolver = fn (string $name): ClosureParameter => ClosureParameter::make('from-resolver');
+it('resolves a parameter from the typed parameters array by class-string', function (): void {
+    $service = new ServiceFixture();
+
+    $result = makeInvoker()->call(
+        fn (ServiceFixture $service): ServiceFixture => $service,
+        [],
+        [ServiceFixture::class => $service],
+    );
+
+    expect($result)->toBe($service);
+});
+
+it('prefers the explicit parameters array over the parameter resolver', function (): void {
+    $resolver = fn (string $name, ?string $typeName): ClosureParameter => ClosureParameter::make('from-resolver');
 
     $result = makeInvoker()->call(
         fn (string $name): string => $name,
         ['name' => 'from-parameters'],
+        [],
         $resolver,
     );
 
     expect($result)->toBe('from-parameters');
 });
 
-it('resolves a parameter via the named-parameter resolver when it returns a ClosureParameter', function (): void {
-    $resolver = fn (string $name): ?ClosureParameter => $name === 'value'
+it('prefers the typed parameters array over the parameter resolver and the container', function (): void {
+    $fromContainer = new ServiceFixture();
+    $container = new Container();
+    $container->set(ServiceFixture::class, $fromContainer);
+
+    $fromResolver = new ServiceFixture();
+    $resolver = fn (string $name, ?string $typeName): ClosureParameter => ClosureParameter::make($fromResolver);
+
+    $fromTyped = new ServiceFixture();
+
+    $result = makeInvoker($container)->call(
+        fn (ServiceFixture $service): ServiceFixture => $service,
+        [],
+        [ServiceFixture::class => $fromTyped],
+        $resolver,
+    );
+
+    expect($result)->toBe($fromTyped);
+});
+
+it('resolves a parameter via the resolver when it returns a ClosureParameter', function (): void {
+    $resolver = fn (string $name, ?string $typeName): ?ClosureParameter => $name === 'value'
         ? ClosureParameter::make('resolved')
         : null;
 
-    $result = makeInvoker()->call(fn (string $value): string => $value, [], $resolver);
+    $result = makeInvoker()->call(fn (string $value): string => $value, [], [], $resolver);
 
     expect($result)->toBe('resolved');
 });
 
+it('passes the parameter name and normalized class type to the resolver', function (): void {
+    $seen = [];
+    $resolver = function (string $name, ?string $typeName) use (&$seen): ClosureParameter {
+        $seen[$name] = $typeName;
+
+        return ClosureParameter::make(null);
+    };
+
+    makeInvoker()->call(
+        fn (?ServiceFixture $service, ?string $title, mixed $anything): mixed => null,
+        [],
+        [],
+        $resolver,
+    );
+
+    expect($seen)->toBe([
+        'service' => ServiceFixture::class,
+        'title' => null,
+        'anything' => null,
+    ]);
+});
+
+it('normalizes a self type hint against the declaring class', function (): void {
+    $fixture = new MethodFixture();
+    $other = new MethodFixture();
+
+    $result = makeInvoker()->call(
+        $fixture->selfTyped(...),
+        [],
+        [MethodFixture::class => $other],
+    );
+
+    expect($result)->toBe('self:' . spl_object_id($other));
+});
+
 it('falls through to other resolution strategies when the resolver returns null', function (): void {
-    $resolver = fn (string $name): ?ClosureParameter => null;
+    $resolver = fn (string $name, ?string $typeName): ?ClosureParameter => null;
 
     $result = makeInvoker()->call(
         fn (string $value = 'default'): string => $value,
+        [],
         [],
         $resolver,
     );
@@ -84,13 +153,41 @@ it('uses the default value when no other resolution applies', function (): void 
     expect($result)->toBe('fallback');
 });
 
+it('prefers the default value over the null fallback for a nullable parameter', function (): void {
+    $result = makeInvoker()->call(fn (?string $name = 'fallback'): string => $name ?? 'was-null');
+
+    expect($result)->toBe('fallback');
+});
+
+it('resolves an unresolvable nullable builtin parameter to null', function (): void {
+    $result = makeInvoker()->call(fn (?string $title): string => $title ?? 'was-null');
+
+    expect($result)->toBe('was-null');
+});
+
+it('resolves an unresolvable mixed parameter to null', function (): void {
+    $result = makeInvoker()->call(fn (mixed $anything): string => $anything === null ? 'was-null' : 'was-set');
+
+    expect($result)->toBe('was-null');
+});
+
+it('resolves a class-typed nullable parameter to null when the container has no such service', function (): void {
+    $result = makeInvoker()->call(fn (?ServiceFixture $service): string => $service instanceof ServiceFixture ? 'was-set' : 'was-null');
+
+    expect($result)->toBe('was-null');
+});
+
 it('throws when a parameter cannot be resolved', function (): void {
     makeInvoker()->call(fn (string $name): string => $name);
-})->throws(RuntimeException::class, 'Cannot resolve parameter name');
+})->throws(RuntimeException::class, 'Cannot resolve parameter $name');
 
 it('throws when a builtin-typed parameter has no default and no explicit value', function (): void {
     makeInvoker()->call(fn (int $count): int => $count);
-})->throws(RuntimeException::class, 'Cannot resolve parameter count');
+})->throws(RuntimeException::class, 'Cannot resolve parameter $count');
+
+it('throws with the type name when a class-typed parameter cannot be resolved', function (): void {
+    makeInvoker()->call(fn (ServiceFixture $service): ServiceFixture => $service);
+})->throws(RuntimeException::class, 'Cannot resolve parameter ' . ServiceFixture::class . ' $service');
 
 it('invokes an instance method via [object, method] callable', function (): void {
     $fixture = new MethodFixture();
@@ -142,15 +239,18 @@ it('combines all resolution strategies for a multi-parameter callable', function
     $container = new Container();
     $container->set(ServiceFixture::class, $service);
 
-    $resolver = fn (string $name): ?ClosureParameter => $name === 'fromResolver'
+    $typed = new MethodFixture();
+
+    $resolver = fn (string $name, ?string $typeName): ?ClosureParameter => $name === 'fromResolver'
         ? ClosureParameter::make('R')
         : null;
 
     $result = makeInvoker($container)->call(
-        fn (string $explicit, string $fromResolver, ServiceFixture $service, string $fromDefault = 'D'): string => "{$explicit}|{$fromResolver}|" . spl_object_id($service) . "|{$fromDefault}",
+        fn (string $explicit, MethodFixture $fromTyped, string $fromResolver, ServiceFixture $service, string $fromDefault = 'D'): string => "{$explicit}|" . spl_object_id($fromTyped) . "|{$fromResolver}|" . spl_object_id($service) . "|{$fromDefault}",
         ['explicit' => 'E'],
+        [MethodFixture::class => $typed],
         $resolver,
     );
 
-    expect($result)->toBe('E|R|' . spl_object_id($service) . '|D');
+    expect($result)->toBe('E|' . spl_object_id($typed) . '|R|' . spl_object_id($service) . '|D');
 });

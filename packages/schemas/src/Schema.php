@@ -21,6 +21,8 @@ class Schema extends ViewComponent
     use HasComponents;
     use HasGap;
 
+    protected string $evaluationIdentifier = 'schema';
+
     protected string|Closure|null $template = '@SylamentSchemas/components/Schema.html.twig';
 
     public function __construct(?InteractsWithSchemas $interactsWithSchemas = null)

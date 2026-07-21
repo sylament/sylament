@@ -31,10 +31,6 @@ Portable now (no blocker):
   accepting single `Component | string | Htmlable` (and, with actions,
   `Action | ActionGroup`) values, `getChildComponents()`,
   `getChildSchemas(withHidden:)`, the container-named aliases.
-- [ ] Closure evaluation identifier: Filament resolves the `$component` named
-  parameter (and self-typed hints) via `$evaluationIdentifier`; our
-  `EvaluatesClosures` has no identifier concept, so
-  `fn (Section $component) => …` does not resolve.
 - [ ] Global configuration hooks (`configureUsing()`) — see
   [global-configuration](../infrastructure.md#global-configuration).
 
@@ -70,3 +66,13 @@ Revisit with later packages:
 - [ ] `CanBeRepeated` — revisit with the forms `Repeater` / `Builder`.
 - [ ] `HasEntryWrapper` — revisit with infolists.
 - [ ] `HasFieldWrapper` — revisit with forms.
+
+## Divergences
+
+- **No container-`make()` fallback in closure evaluation.** Filament's last
+  resort for a class-typed closure parameter is Laravel's `app()->make()`,
+  which auto-wires unbound classes; Symfony's container cannot instantiate ad
+  hoc. After the resolver hooks and the identifier/self-type checks, we consult
+  the DI container for known services only (`has()`), then fall back to the
+  declared default, then `null` for optional/nullable parameters, and otherwise
+  throw.

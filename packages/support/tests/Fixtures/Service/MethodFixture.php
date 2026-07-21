@@ -16,6 +16,11 @@ class MethodFixture
         return "static:{$value}";
     }
 
+    public function selfTyped(self $other): string
+    {
+        return 'self:' . spl_object_id($other);
+    }
+
     /**
      * @return array{0: self, 1: string}
      */

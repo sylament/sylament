@@ -8,6 +8,7 @@ use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
+use Twig\Markup;
 
 use function Sylament\Schemas\Tests\renderToHtml;
 
@@ -57,3 +58,37 @@ it('renders an empty child schema for a section with no components', function ()
 
     expect($html)->toContain('sy-section-content');
 });
+
+it('escapes a plain string heading and description', function (): void {
+    $html = renderSection(Section::make('<b>Heading</b>')->description('<i>Description</i>'));
+
+    expect($html)->toContain('&lt;b&gt;Heading&lt;/b&gt;')
+        ->toContain('&lt;i&gt;Description&lt;/i&gt;')
+        ->not->toContain('<b>Heading</b>')
+        ->not->toContain('<i>Description</i>');
+});
+
+it('renders a Markup heading and description unescaped', function (): void {
+    $html = renderSection(
+        Section::make(new Markup('<em>Rich heading</em>', 'UTF-8'))
+            ->description(new Markup('<em>Rich description</em>', 'UTF-8')),
+    );
+
+    expect($html)->toContain('<em>Rich heading</em>')
+        ->toContain('<em>Rich description</em>');
+});
+
+it('renders the heading in an h2 by default', function (): void {
+    $html = renderSection(Section::make('Profile'));
+
+    expect($html)->toContain('<h2 class="sy-section-header-heading">');
+});
+
+it('omits the header for a blank heading', function (string $heading): void {
+    $html = renderSection(Section::make($heading));
+
+    expect($html)->not->toContain('sy-section-header');
+})->with([
+    'empty string' => [''],
+    'whitespace only' => ['   '],
+]);

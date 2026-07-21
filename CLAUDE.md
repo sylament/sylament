@@ -17,6 +17,10 @@ Filament's source is installed at `vendor/filament/` (dev dep, never shipped). U
 
 When porting, preserve trait names, method names, and the closure-evaluation parameter set (so users carrying Filament mental models stay productive). Translate Laravel idioms to Symfony equivalents (e.g. Eloquent → Doctrine, Livewire → UX LiveComponent, Blade → Twig, `Htmlable` → `Twig\Markup`) but keep the public API shape. The `Htmlable` translation is an escaping contract: wherever Filament types a human-text value as `string | Htmlable | Closure`, we type it `string|Markup|Closure` — plain strings are escaped by templates, `Markup` renders raw (Twig's escaper passes `Markup` instances through untouched, exactly as Blade does with `Htmlable`). When Filament puts a trait on the base class even though only some subclasses use it (e.g. `HasColumns`), assume the choice is for uniform fluent composition and follow suit unless you can articulate why the divergence is worth it.
 
+Preserve Filament's API names by default — migrating users grep for them. Rename only when Filament itself is inconsistent and the better name already exists in their codebase, and record every rename here. Current renames: `Section::formBefore()` → `contentBefore()` (`HasContentBefore` trait; adopts the `contentBefore` prop name Filament's own support-layer section component uses).
+
+Per-component porting state lives in `docs/parity/<package>/<component>.md` (file convention: `docs/parity/README.md`); cross-cutting blockers have anchors in `docs/parity/infrastructure.md` that parity files link instead of restating. Keep these current as work lands — stale entries are bugs.
+
 ## Monorepo wiring (read this before touching deps)
 
 - **One root `vendor/`.** The repo root is a single Composer project. Every bundle is symlinked in via a Composer path repository (`"repositories": [{ "type": "path", "url": "packages/*" }]`) and required as `self.version`. Never run `composer install` inside a sub-package — there is only one lockfile and one vendor at the root. A stray `packages/*/vendor` or `packages/*/composer.lock` is leftover cruft; delete it.

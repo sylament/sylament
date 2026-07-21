@@ -17,6 +17,9 @@
         "twig/html-extra": "^3.24"
     },
     "autoload": {
+        "files": [
+            "src/helpers.php"
+        ],
         "psr-4": {
             "Sylament\\Support\\": "src/"
         }

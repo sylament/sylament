@@ -9,6 +9,8 @@ use Twig\Extension\AbstractExtension;
 use Twig\Markup;
 use Twig\TwigFunction;
 
+use function Sylament\Support\blank;
+
 class MarkupExtension extends AbstractExtension
 {
     /**
@@ -25,7 +27,7 @@ class MarkupExtension extends AbstractExtension
 
     public function markup(Environment $twig, ?string $content): ?Markup
     {
-        if ($content === null || mb_trim($content) === '') {
+        if (blank($content)) {
             return null;
         }
 

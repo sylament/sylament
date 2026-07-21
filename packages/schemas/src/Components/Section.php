@@ -18,6 +18,9 @@ use Sylament\Support\Component\Concerns\CanBeContained;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Twig\Markup;
 
+use function Sylament\Support\blank;
+use function Sylament\Support\filled;
+
 class Section extends Component
 {
     use CanBeAside;
@@ -65,7 +68,7 @@ class Section extends Component
         $this->key(function (Section $component): ?string {
             $heading = $component->getHeading();
 
-            if ($heading === null || mb_trim((string) $heading) === '') {
+            if (blank($heading)) {
                 return null;
             }
 
@@ -174,9 +177,9 @@ class Section extends Component
             $id = null;
         }
 
-        $hasHeading = mb_trim((string) $this->getHeading()) !== '';
-        $hasDescription = mb_trim((string) $this->getDescription()) !== '';
-        $hasLabel = mb_trim((string) $this->getLabel()) !== '';
+        $hasHeading = filled($this->getHeading());
+        $hasDescription = filled($this->getDescription());
+        $hasLabel = filled($this->getLabel());
 
         $labelId = $id !== null && $hasLabel && !$hasHeading ? "{$id}-label" : null;
         $headingId = $id !== null && $hasHeading ? "{$id}-heading" : null;
@@ -202,7 +205,7 @@ class Section extends Component
 
     public function getHeadingsCount(): int
     {
-        if (mb_trim((string) $this->getHeading()) === '') {
+        if (blank($this->getHeading())) {
             return 0;
         }
 

@@ -6,6 +6,8 @@ namespace Sylament\Schemas\Concerns;
 
 use Closure;
 
+use function Sylament\Support\filled;
+
 trait HasKey
 {
     protected string|Closure|null $key = null;
@@ -47,11 +49,11 @@ trait HasKey
         $keyComponents = [];
 
         $parentComponentInheritanceKey = $this->getParentComponent()?->getInheritanceKey();
-        if ($parentComponentInheritanceKey !== null && mb_trim($parentComponentInheritanceKey) !== '') {
+        if (filled($parentComponentInheritanceKey)) {
             $keyComponents[] = $parentComponentInheritanceKey;
         }
 
-        if ($key !== null && mb_trim($key) !== '') {
+        if (filled($key)) {
             $keyComponents[] = $key;
         }
 
@@ -66,7 +68,7 @@ trait HasKey
 
         $key = $this->getKey();
 
-        if ($key !== null && mb_trim($key) !== '') {
+        if (filled($key)) {
             return $this->cacheInheritanceKey($key);
         }
 

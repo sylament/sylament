@@ -49,4 +49,34 @@ class Section extends Component
 
         return $section;
     }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getExtraTemplateData(): array
+    {
+        $id = $this->getId();
+        if ($id === '') {
+            $id = null;
+        }
+
+        $hasHeading = mb_trim((string) $this->getHeading()) !== '';
+        $hasDescription = mb_trim((string) $this->getDescription()) !== '';
+        $hasLabel = mb_trim((string) $this->getLabel()) !== '';
+
+        $labelId = $id !== null && $hasLabel && !$hasHeading ? "{$id}-label" : null;
+        $headingId = $id !== null && $hasHeading ? "{$id}-heading" : null;
+        $descriptionId = $id !== null && $hasDescription ? "{$id}-description" : null;
+        $contentId = $id !== null ? "{$id}-content" : null;
+
+        return [
+            'id' => $id,
+            'labelId' => $labelId,
+            'labelledById' => $headingId ?? $labelId,
+            'headingId' => $headingId,
+            'descriptionId' => $descriptionId,
+            'contentId' => $contentId,
+            'childSchema' => $this->getChildSchema()?->extraAttributes(['class' => 'sy-section-content']),
+        ];
+    }
 }

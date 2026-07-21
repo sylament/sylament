@@ -4,7 +4,7 @@
                 'sy-sc-has-gap': component.hasGap,
                 'sy-sc-dense': component.isDense,
             })|split(' '),
-        }, grid(component.getColumns)) }}
+        }, grid(component.getColumns), component.getExtraAttributes) }}
 >
     {% for childComponent in component.getComponents %}
         {{ renderComponent(childComponent) }}

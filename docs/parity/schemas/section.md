@@ -15,12 +15,6 @@ Reference:
 
 ## Missing
 
-- [ ] `hasContentEl` restructure: pass `hasContentEl: false` and put
-  `sy-section-content` on the child schema root, mirroring Filament — makes
-  `divided()` visually functional (today it only emits the class; the divider
-  CSS targets children of `.sy-section-content`, which currently wraps the
-  schema in one box) — blocked on
-  [extra-attributes](../infrastructure.md#extra-attributes)
 - [ ] `afterHeader()` / `footer()` keyed slot schemas — blocked on
   [schema-slot-apis](../infrastructure.md#schema-slot-apis)
 - [ ] `beforeLabel()` / `afterLabel()` / `aboveContent()` / `belowContent()`
@@ -42,13 +36,6 @@ Reference:
 - [ ] Heading level cascade (`getHeadingsCount()` returning 1 when a heading is
   present, else 0) — blocked on
   [heading-cascade](../infrastructure.md#heading-cascade)
-- [ ] Wrapper `id` + extra-attribute merging on `sy-sc-section` — blocked on
-  [extra-attributes](../infrastructure.md#extra-attributes)
-- [ ] Landmark ARIA (new in v5): name the `<section>` via `aria-labelledby`
-  (heading id, else label id) and `aria-describedby` (description id), emitting
-  `-heading` / `-description` / `-label` / `-content` id suffixes off the
-  component id, each guarded so no reference dangles — blocked on
-  [extra-attributes](../infrastructure.md#extra-attributes)
 - [ ] Extra Stimulus attributes (Filament: `HasExtraAlpineAttributes`) — blocked
   on [stimulus-controllers](../infrastructure.md#stimulus-controllers)
 - [ ] `translateLabel()` — blocked on
@@ -62,7 +49,21 @@ Reference:
   markup into `Section::toEmbeddedHtml()` (dropping the Blade component layer
   for render performance — an overhead Twig does not have); we keep v4's view
   layering — the schemas template wrapping the support Section component — and
-  emit the same DOM.
+  emit the same DOM. Consequence: the support component carries landmark-ARIA
+  props Filament's support section view lacks (`contentId`, `descriptionId`,
+  `headingId`, `labelledById`) because in v5 that markup exists only in the
+  inlined schemas layer, whose role our support component plays. The render-time
+  values (ARIA ids, the child schema carrying `sy-section-content` — injected by
+  replacing the child schema's `extraAttributes()`, as Filament does) flow
+  through `Section::getExtraTemplateData()`.
+- **Extra attribute values are escaped at render.** The wrapper emits extras
+  through `html_attr()`, which escapes names and values; Filament merges with
+  `escape: false` and renders raw, so its `extraAttributes()` security caveat
+  ("never pass unsanitized user input") is relaxed to values here.
+- **An `extraAttributes()` id survives an unset component id.** Filament seeds
+  its wrapper bag with `['id' => null]`, whose existing-wins merge clobbers a
+  user-supplied extras id; we only emit the component id when set, so the extras
+  id renders. A set component id beats the extras id in both implementations.
 - **`hiddenLabel()` is honored.** Filament's section markup ignores
   `isLabelHidden()`; we render the label with `sr-only` semantics — the meaning
   the flag has on Filament's own fieldset and field-wrapper. Labels stay in the

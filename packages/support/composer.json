@@ -12,6 +12,7 @@
     ],
     "require": {
         "php": "^8.5",
+        "ext-mbstring": "*",
         "twig/twig": "^3.27",
         "twig/html-extra": "^3.24"
     },

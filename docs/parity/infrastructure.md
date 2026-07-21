@@ -16,19 +16,13 @@ class (with scoped `during()` runs and `isImportant` ordering), and
 manager is a singleton reachable from non-DI contexts — same static-instance
 shape as `Invoker`.
 
-## extra-attributes
-
-`HasExtraAttributes` + `HasId` on the component model (Filament:
-`vendor/filament/support/src/Concerns/HasExtraAttributes.php`), including schema
-roots accepting extra classes. Unblocks: Section's `hasContentEl` restructure
-(and with it a visually functional `divided()`), id/attribute merging on
-component wrapper elements.
-
 ## keys
 
 A `key()` concept — persistence identity for components (Filament auto-slugs
 Section keys from the heading in `setUp()`). Needed by collapse persistence and
-LiveComponent state targeting.
+LiveComponent state targeting. Also wires the pending `getCustomId() ??
+getKey()` fallback into `HasId::getId()`, which returns the custom id only
+until then.
 
 ## icon-system
 

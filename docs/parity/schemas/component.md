@@ -3,7 +3,7 @@
 The abstract base every schemas component extends. Component files (e.g.
 [section.md](section.md)) track only their own surface; the inherited surface
 lives here. Ported so far: `BelongsToContainer`, `HasChildComponents`,
-`HasColumns`, `HasGap` — modulo the items below.
+`HasColumns`, `HasExtraAttributes`, `HasGap`, `HasId` — modulo the items below.
 
 Reference:
 
@@ -36,10 +36,10 @@ Portable now (no blocker):
 
 Blocked on infrastructure:
 
-- [ ] `HasKey` (`key()`, `getKey()`, LiveComponent key equivalent) — blocked on
+- [ ] `HasKey` (`key()`, `getKey()`, LiveComponent key equivalent; includes
+  wiring the `getCustomId() ?? getKey()` fallback into `HasId::getId()`, which
+  returns the custom id only until then) — blocked on
   [keys](../infrastructure.md#keys)
-- [ ] `HasId` + `HasExtraAttributes` — blocked on
-  [extra-attributes](../infrastructure.md#extra-attributes)
 - [ ] `HasHeadings` (`getHeadingLevel()` / `getHeadingTag()` /
   `getHeadingsCount()`) — blocked on
   [heading-cascade](../infrastructure.md#heading-cascade)
@@ -69,6 +69,16 @@ Revisit with later packages:
 
 ## Divergences
 
+- **Minimal attribute bag.** `HasExtraAttributes` folds entries through
+  `Sylament\Support\Twig\ComponentAttributeBag` — a small value object with
+  Laravel's merge-as-defaults semantics (class/style token lists append,
+  defaults first; other existing keys win) instead of Filament's
+  `Filament\Support\View\ComponentAttributeBag` extending Laravel's full bag.
+  It normalizes `class`/`style` to token lists so templates can pass
+  `getExtraAttributes()` straight into `html_attr()`, which merges them with
+  other sources and escapes at render — hence no `escape:` parameter on
+  `extraAttributes()` (Filament merges raw with `escape: false`). `View` →
+  `Twig` follows the Laravel → Symfony translation conventions, not a rename.
 - **No container-`make()` fallback in closure evaluation.** Filament's last
   resort for a class-typed closure parameter is Laravel's `app()->make()`,
   which auto-wires unbound classes; Symfony's container cannot instantiate ad

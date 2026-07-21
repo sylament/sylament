@@ -11,6 +11,7 @@ use Sylament\Schemas\Concerns\BelongsToLiveComponent;
 use Sylament\Schemas\Concerns\BelongsToParentComponent;
 use Sylament\Schemas\Concerns\HasComponents;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
+use Sylament\Support\Component\Concerns\HasExtraAttributes;
 use Sylament\Support\Component\ViewComponent;
 
 class Schema extends ViewComponent
@@ -19,6 +20,7 @@ class Schema extends ViewComponent
     use BelongsToParentComponent;
     use HasColumns;
     use HasComponents;
+    use HasExtraAttributes;
     use HasGap;
 
     protected string $evaluationIdentifier = 'schema';

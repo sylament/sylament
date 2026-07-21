@@ -66,3 +66,28 @@ it('marks a dense schema with the dense class', function (): void {
     expect(renderToHtml(schema()->dense()))->toContain('sy-sc-dense');
     expect(renderToHtml(schema()))->not->toContain('sy-sc-dense');
 });
+
+it('renders extra attributes on the schema root', function (): void {
+    $html = renderToHtml(schema()->extraAttributes(['data-owner' => 'billing']));
+
+    expect($html)->toContain('data-owner="billing"');
+});
+
+it('appends extra classes after the schema and grid classes', function (): void {
+    $html = renderToHtml(schema()->extraAttributes(['class' => 'custom-class']));
+
+    expect($html)->toMatch('/class="sy sy-sc [^"]*custom-class"/');
+});
+
+it('merges an extra style declaration into the grid style attribute', function (): void {
+    $html = renderToHtml(schema()->extraAttributes(['style' => 'color: red']));
+
+    expect($html)->toMatch('/style="[^"]*--cols-default[^"]*color: red[^"]*"/');
+});
+
+it('escapes extra attribute values', function (): void {
+    $html = renderToHtml(schema()->extraAttributes(['data-x' => '"><script>alert(1)</script>']));
+
+    expect($html)->not->toContain('<script>')
+        ->toContain('&quot;&gt;&lt;script&gt;');
+});

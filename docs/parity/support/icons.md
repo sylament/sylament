@@ -13,7 +13,6 @@ Reference:
 - [`vendor/filament/support/src/Icons/IconManager.php`](../../../vendor/filament/support/src/Icons/IconManager.php)
 - [`vendor/filament/support/src/Icons/Heroicon.php`](../../../vendor/filament/support/src/Icons/Heroicon.php)
 - [`vendor/filament/support/src/Enums/IconSize.php`](../../../vendor/filament/support/src/Enums/IconSize.php)
-- [`vendor/filament/support/src/Enums/IconPosition.php`](../../../vendor/filament/support/src/Enums/IconPosition.php)
 - [`vendor/filament/support/src/Contracts/ScalableIcon.php`](../../../vendor/filament/support/src/Contracts/ScalableIcon.php)
 - [`vendor/filament/support/src/Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php)
 - [`vendor/filament/support/src/Concerns/HasIconColor.php`](../../../vendor/filament/support/src/Concerns/HasIconColor.php)
@@ -23,11 +22,6 @@ Reference:
 
 ## Missing
 
-- [ ] Icon-button component (`<x-filament::icon-button>` /
-  `CanGenerateIconButtonHtml`) and the `IconPosition` enum that ships with it —
-  planned with the collapse/stimulus effort that first consumes them
-  ([../infrastructure.md#icon-system](../infrastructure.md#icon-system),
-  [../infrastructure.md#stimulus-controllers](../infrastructure.md#stimulus-controllers))
 - [ ] Array (custom-palette) icon colors: `iconColor(['500' => …])` needs the
   FilamentColor-style inline `--sy-color-*` emission. Section renders array
   colors with the default gray styling until then.

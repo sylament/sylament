@@ -4,16 +4,6 @@ Component parity files link these anchors instead of restating blockers. When an
 item lands, grep the repo for `infrastructure.md#<anchor>` to find everything it
 unblocks.
 
-## icon-system
-
-The icon-button component (Filament's `<x-filament::icon-button>` /
-`CanGenerateIconButtonHtml`) and the `IconPosition` enum that ships with it —
-planned alongside the collapse/stimulus effort that first consumes them. The
-core icon infrastructure is done (`generate_icon_html`, the `IconManager` alias
-service, `IconSize`, `ScalableIcon`, the `HasIcon`/`HasIconColor`/`HasIconSize`
-concerns, ux-icons-backed rendering — see [support/icons.md](support/icons.md)).
-Unblocks: the Section collapse chevron button.
-
 ## stimulus-controllers
 
 Ports of Filament's Alpine behaviors to Stimulus (only `core_controller.ts`

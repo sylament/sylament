@@ -30,6 +30,7 @@ layout).
 | --- | --- | --- |
 | [Component (base)](schemas/component.md) | schemas | in progress |
 | [ComponentManager](support/component-manager.md) | support | in progress |
+| [Icon button](support/icon-button.md) | support | in progress |
 | [Icons](support/icons.md) | support | in progress |
 | [Schema](schemas/schema.md) | schemas | in progress |
 | [Section](schemas/section.md) | schemas | in progress |

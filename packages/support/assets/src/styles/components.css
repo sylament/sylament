@@ -1,3 +1,4 @@
 @import './components/section.css' layer(components);
 @import './components/grid.css' layer(components);
 @import './components/icon.css' layer(components);
+@import './components/icon-button.css' layer(components);

@@ -23,8 +23,7 @@ Reference:
   `persistCollapsed()`), template props, `CanConcealComponents` contract,
   chevron disclosure button (v5 ARIA contract — see the stimulus anchor),
   `hasHeader` gains the `collapsible && !aside` term — blocked on
-  [stimulus-controllers](../infrastructure.md#stimulus-controllers),
-  [icon-system](../infrastructure.md#icon-system)
+  [stimulus-controllers](../infrastructure.md#stimulus-controllers)
 - [ ] Extra Stimulus attributes (Filament: `HasExtraAlpineAttributes`) — blocked
   on [stimulus-controllers](../infrastructure.md#stimulus-controllers)
 - [ ] `translateLabel()` — blocked on

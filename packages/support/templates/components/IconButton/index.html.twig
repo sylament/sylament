@@ -1,0 +1,41 @@
+{% props
+    color = 'primary',
+    disabled = false,
+    formId = null,
+    href = null,
+    icon = null,
+    iconAlias = null,
+    iconSize = null,
+    label = null,
+    size = 'md',
+    tag = 'button',
+    target = null,
+    type = 'button' %}
+
+{% set knownSizes = ['xs', 'sm', 'md', 'lg', 'xl'] %}
+{% set sizeValue = size.value ?? size %}
+{% set iconSize = iconSize ?? (sizeValue == 'xs' ? 'sm' : (sizeValue in ['lg', 'xl'] ? 'lg' : null)) %}
+{% set colorName = color is iterable or color is empty ? 'gray' : color %}
+{% set ariaLabel = (label ?? '')|striptags|trim %}
+
+<{{ tag }}
+    {{ attributes.defaults({
+        class: html_classes('sy sy-icon-btn', {
+            'sy-disabled': disabled,
+            ('sy-size-' ~ sizeValue): sizeValue in knownSizes,
+            (sizeValue ?? ''): sizeValue is not empty and sizeValue not in knownSizes,
+            'sy-color': colorName != 'gray',
+            ('sy-color-' ~ colorName): colorName != 'gray',
+        }),
+        'aria-disabled': disabled ? 'true' : false,
+        'aria-label': ariaLabel != '' ? ariaLabel : false,
+        disabled: disabled and tag == 'button',
+        form: formId ?: false,
+        href: tag == 'a' and href ? href : false,
+        target: tag == 'a' and target == '_blank' ? '_blank' : false,
+        title: label ?: false,
+        type: tag == 'button' ? type : false,
+    }) }}
+>
+    {{ generateIconHtml(icon, iconAlias, null, iconSize) }}
+</{{ tag }}>

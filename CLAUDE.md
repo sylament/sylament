@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Sylament is a Filament-inspired UI toolkit for Symfony, delivered as a monorepo of nine Symfony bundles under `packages/`: `actions`, `forms`, `infolists`, `notifications`, `panels`, `schemas`, `support`, `tables`, `widgets`. Package names mirror Filament's PHP packages and the same layered dependency idea applies (`support` is the base; `schemas` builds the component model; `forms`/`infolists`/`tables` build on `schemas`; `panels` composes everything). The project is early-stage: today only `support` ships real code; the other bundles ship a bundle class plus a placeholder test.
+Sylament is a Filament-inspired UI toolkit for Symfony, delivered as a monorepo of nine Symfony bundles under `packages/`: `actions`, `forms`, `infolists`, `notifications`, `panels`, `schemas`, `support`, `tables`, `widgets`. Package names mirror Filament's PHP packages and the same layered dependency idea applies (`support` is the base; `schemas` builds the component model; `forms`/`infolists`/`tables` build on `schemas`; `panels` composes everything). The project is early-stage: today only `support` and `schemas` ship real code; the other bundles ship a bundle class plus a placeholder test.
 
 ## Reference Filament's implementation
 

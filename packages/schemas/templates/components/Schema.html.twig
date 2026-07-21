@@ -7,6 +7,10 @@
         }, grid(component.getColumns), component.getExtraAttributes) }}
 >
     {% for childComponent in component.getComponents %}
-        {{ renderComponent(childComponent) }}
+        <div {{ html_attr(gridColumn(childComponent.getColumnSpan, childComponent.getColumnStart, childComponent.getColumnOrder)) }}>
+            <div class="sy-sc-component">
+                {{ renderComponent(childComponent) }}
+            </div>
+        </div>
     {% endfor %}
 </div>

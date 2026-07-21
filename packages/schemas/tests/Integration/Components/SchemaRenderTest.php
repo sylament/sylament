@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Integration\Components;
 
+use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
 
@@ -51,6 +52,48 @@ it('resolves columns from a closure through the real Invoker', function (): void
 
     expect($html)->toContain('md:sy-grid-cols')
         ->toContain('--cols-md: repeat(3, minmax(0, 1fr))');
+});
+
+it('wraps each child in a single-column grid wrapper by default', function (): void {
+    $html = renderToHtml(schema()->components([new Component()]));
+
+    expect($html)->toMatch('/<div class="sy-grid-col"[^>]*>\s*<div class="sy-sc-component">/')
+        ->toContain('--col-span-default: span 1 / span 1');
+});
+
+it('maps an integer column span onto the lg breakpoint of the child wrapper', function (): void {
+    $html = renderToHtml(schema()->components([new Component()->columnSpan(2)]));
+
+    expect($html)->toContain('lg:sy-grid-col-span')
+        ->toContain('--col-span-default: span 1 / span 1')
+        ->toContain('--col-span-lg: span 2 / span 2');
+});
+
+it('spans a child across the full grid width with columnSpanFull()', function (): void {
+    $html = renderToHtml(schema()->components([new Component()->columnSpanFull()]));
+
+    expect($html)->toContain('--col-span-default: 1 / -1');
+});
+
+it('marks a child column start with its class and variable', function (): void {
+    $html = renderToHtml(schema()->components([new Component()->columnStart(2)]));
+
+    expect($html)->toContain('lg:sy-grid-col-start')
+        ->toContain('--col-start-lg: 2');
+});
+
+it('marks a child column order with its class and variable', function (): void {
+    $html = renderToHtml(schema()->components([new Component()->columnOrder(2)]));
+
+    expect($html)->toContain('lg:sy-grid-col-order')
+        ->toContain('--col-order-lg: 2');
+});
+
+it('resolves a column span closure through the real Invoker', function (): void {
+    $html = renderToHtml(schema()->components([new Component()->columnSpan(fn (): array => ['md' => 2])]));
+
+    expect($html)->toContain('md:sy-grid-col-span')
+        ->toContain('--col-span-md: span 2 / span 2');
 });
 
 it('carries the gap class by default and drops it when gap is disabled', function (): void {

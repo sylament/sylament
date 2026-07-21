@@ -8,4 +8,10 @@
             @apply gap-3;
         }
     }
+
+    & > .sy-grid-col {
+        & > .sy-sc-component {
+            @apply h-full;
+        }
+    }
 }

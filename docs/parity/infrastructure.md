@@ -52,14 +52,6 @@ Filament's `HasHeadings`: heading tags derived from nesting depth
 Schema tracking a root heading level and components overriding
 `getHeadingsCount()`.
 
-## column-span
-
-Grid participation for components sized inside a parent grid: `columnSpan()` /
-`columnSpanFull()` / `columnStart()` (`CanSpanColumns`) and `columnOrder()`
-(`CanOrderColumns`), emitted as grid-column attributes by the schema render
-loop's per-child wrapper. Schema-wide gap, affects every component used as a
-schema child.
-
 ## live-component-state
 
 The schema state system on UX LiveComponent — the Livewire-backed heart of

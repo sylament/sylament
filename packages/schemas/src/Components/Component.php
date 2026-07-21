@@ -10,12 +10,16 @@ use Sylament\Schemas\Components\Concerns\HasColumns;
 use Sylament\Schemas\Components\Concerns\HasGap;
 use Sylament\Schemas\Components\Concerns\HasId;
 use Sylament\Schemas\Components\Concerns\HasKey;
+use Sylament\Support\Component\Concerns\CanOrderColumns;
+use Sylament\Support\Component\Concerns\CanSpanColumns;
 use Sylament\Support\Component\Concerns\HasExtraAttributes;
 use Sylament\Support\Component\ViewComponent;
 
 class Component extends ViewComponent
 {
     use BelongsToContainer;
+    use CanOrderColumns;
+    use CanSpanColumns;
     use HasChildComponents;
     use HasColumns;
     use HasExtraAttributes;

@@ -2,9 +2,9 @@
 
 The abstract base every schemas component extends. Component files (e.g.
 [section.md](section.md)) track only their own surface; the inherited surface
-lives here. Ported so far: `BelongsToContainer`, `HasChildComponents`,
-`HasColumns`, `HasExtraAttributes`, `HasGap`, `HasId`, `HasKey` — modulo the
-items below.
+lives here. Ported so far: `BelongsToContainer`, `CanOrderColumns`,
+`CanSpanColumns`, `HasChildComponents`, `HasColumns`, `HasExtraAttributes`,
+`HasGap`, `HasId`, `HasKey` — modulo the items below.
 
 Reference:
 
@@ -42,18 +42,16 @@ Blocked on infrastructure:
 - [ ] `HasHeadings` (`getHeadingLevel()` / `getHeadingTag()` /
   `getHeadingsCount()`) — blocked on
   [heading-cascade](../infrastructure.md#heading-cascade)
-- [ ] `CanSpanColumns` (`columnSpan()`, `columnSpanFull()`, `columnStart()`) +
-  `CanOrderColumns` (`columnOrder()`) — blocked on
-  [column-span](../infrastructure.md#column-span)
 - [ ] `CanGrow` (`grow()`; sizing for inline-schema children) — blocked on
   [schema-slot-apis](../infrastructure.md#schema-slot-apis)
 - [ ] `HasActions` (`registerActions()`, `getAction()`, …) — blocked on
   [actions-package](../infrastructure.md#actions-package)
 - [ ] `HasState`, `HasStateBindingModifiers`, `CanPoll`, `CanPartiallyRender`,
-  the `toSchemaHtml()` per-child wrapper, the state-dependent closure
-  parameters (`$state`, `$rawState`, `$get`, `$set`, `$livewire`,
-  `$operation`), and the state-dependent remainder of `HasKey` (state-path
-  fallbacks, `getLivewireKey()`) — blocked on
+  the state features of the per-child wrapper (`wire:key`, JS visibility,
+  partial-render targeting — the grid-column wrapper itself is ported), the
+  state-dependent closure parameters (`$state`, `$rawState`, `$get`, `$set`,
+  `$livewire`, `$operation`), and the state-dependent remainder of `HasKey`
+  (state-path fallbacks, `getLivewireKey()`) — blocked on
   [live-component-state](../infrastructure.md#live-component-state)
 - [ ] `CanBeConcealed` (`isConcealed()`, `getConcealingComponent()`) — pairs
   with the `CanConcealComponents` contract from Section's collapse item.

@@ -36,15 +36,6 @@ the chevron button (translated expand/collapse `aria-label`, `aria-expanded`,
 state, not the region); hide-before-init. Also the `HasExtraAlpineAttributes`
 equivalent (extra Stimulus attributes on components).
 
-## schema-slot-apis
-
-Schema-side features that keyed slot schemas need: `inline()`,
-`embeddedInParentComponent()`, alignment factories
-(`Schema::start/center/end/between`), `modifyActionsUsing()` /
-`modifyActionGroupsUsing()`. Unblocks: Section's `afterHeader()`, `footer()`,
-`beforeLabel()`/`afterLabel()`, `aboveContent()`/`belowContent()`; Fieldset and
-Wizard will need the same.
-
 ## heading-cascade
 
 Filament's `HasHeadings`: heading tags derived from nesting depth
@@ -77,4 +68,10 @@ instance-shaped problem).
 ## actions-package
 
 The `actions` bundle itself. Unblocks: Section `headerActions()` /
-`footerActions()` (+ alignment), and action support inside slot schemas.
+`footerActions()` (+ footer alignment) and the `setUp()` seeding of the
+`after_header` / `footer` slots with those action defaults; Schema's
+`CanModifyActions` (`modifyActionsUsing()` / `modifyActionGroupsUsing()`,
+applied when `getComponents()` materializes the list) and Section's
+`configureChildSchema()` small/link-styled action defaults for the
+label/content slots; `Action` / `ActionGroup` values in the
+`HasComponents::components()` and child-slot unions.

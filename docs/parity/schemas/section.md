@@ -15,11 +15,9 @@ Reference:
 
 ## Missing
 
-- [ ] `afterHeader()` / `footer()` keyed slot schemas — blocked on
-  [schema-slot-apis](../infrastructure.md#schema-slot-apis)
-- [ ] `beforeLabel()` / `afterLabel()` / `aboveContent()` / `belowContent()`
-  slots — blocked on [schema-slot-apis](../infrastructure.md#schema-slot-apis)
-- [ ] `headerActions()` / `footerActions()` + footer alignment — blocked on
+- [ ] `headerActions()` / `footerActions()` + footer alignment (including the
+  `setUp()` seeding of the `after_header` / `footer` slots and the slot-action
+  defaults in `configureChildSchema()`) — blocked on
   [actions-package](../infrastructure.md#actions-package)
 - [ ] Collapse: `CanBeCollapsed` (`collapsible()`, `collapsed()`,
   `persistCollapsed()`), template props, `CanConcealComponents` contract,

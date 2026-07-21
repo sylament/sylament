@@ -9,6 +9,8 @@
 >
     {% if hasLabel %}
         <div class="sy-sc-section-label-ctn">
+            {{ renderComponent(beforeLabelSchema) }}
+
             <div
                     {{ html_attr({
                         id: labelId,
@@ -19,8 +21,12 @@
             >
                 {{ label }}
             </div>
+
+            {{ renderComponent(afterLabelSchema) }}
         </div>
     {% endif %}
+
+    {{ renderComponent(aboveContentSchema) }}
 
     <twig:SylamentSupport:Section
             :heading="component.getHeading"
@@ -37,6 +43,18 @@
             :secondary="component.isSecondary"
             :aside="component.isAside"
     >
-        {{ renderComponent(childSchema) }}
+        <twig:block name="afterHeader">
+            {{ renderComponent(afterHeaderSchema) }}
+        </twig:block>
+
+        <twig:block name="content">
+            {{ renderComponent(contentSchema) }}
+        </twig:block>
+
+        <twig:block name="footer">
+            {{ renderComponent(footerSchema) }}
+        </twig:block>
     </twig:SylamentSupport:Section>
+
+    {{ renderComponent(belowContentSchema) }}
 </div>

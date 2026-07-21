@@ -1,12 +1,39 @@
 .sy-sc {
     @apply text-sm;
 
+    &.sy-inline {
+        @apply flex grow flex-wrap items-center;
+
+        & > .sy-growable {
+            @apply w-full flex-1;
+        }
+    }
+
     &.sy-sc-has-gap {
         @apply gap-6;
 
         &.sy-sc-dense {
             @apply gap-3;
         }
+    }
+
+    &.sy-align-start,
+    &.sy-align-left {
+        @apply justify-start;
+    }
+
+    &.sy-align-center {
+        @apply justify-center;
+    }
+
+    &.sy-align-end,
+    &.sy-align-right {
+        @apply justify-end;
+    }
+
+    &.sy-align-between,
+    &.sy-align-justify {
+        @apply justify-between;
     }
 
     & > .sy-grid-col {

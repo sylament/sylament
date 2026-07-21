@@ -1,13 +1,22 @@
+{% set isInline = component.isInline %}
+{% set alignment = component.getAlignment %}
+{% set alignmentClass = alignment is null ? null : (alignment.value is defined ? 'sy-align-' ~ alignment.value : alignment) %}
+
 <div
         {{ html_attr({
             class: html_classes('sy sy-sc', {
+                'sy-inline': isInline,
+                (alignmentClass ?? ''): alignmentClass is not null,
                 'sy-sc-has-gap': component.hasGap,
                 'sy-sc-dense': component.isDense,
             })|split(' '),
-        }, grid(component.getColumns), component.getExtraAttributes) }}
+        }, isInline ? null : grid(component.getColumns), component.getExtraAttributes) }}
 >
     {% for childComponent in component.getComponents %}
-        <div {{ html_attr(gridColumn(childComponent.getColumnSpan, childComponent.getColumnStart, childComponent.getColumnOrder)) }}>
+        <div {{ html_attr(
+            isInline ? null : gridColumn(childComponent.getColumnSpan, childComponent.getColumnStart, childComponent.getColumnOrder),
+            isInline and childComponent.canGrow(false) ? { class: ['sy-growable'] } : null,
+        ) }}>
             <div class="sy-sc-component">
                 {{ renderComponent(childComponent) }}
             </div>

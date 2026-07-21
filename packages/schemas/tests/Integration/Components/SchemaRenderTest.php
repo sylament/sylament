@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Tests\Integration\Components;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
+use Sylament\Support\Enum\Alignment;
 
 use function Sylament\Schemas\Tests\renderToHtml;
 
@@ -133,4 +134,49 @@ it('escapes extra attribute values', function (): void {
 
     expect($html)->not->toContain('<script>')
         ->toContain('&quot;&gt;&lt;script&gt;');
+});
+
+it('renders an inline schema as a dense flex row without the grid', function (): void {
+    $html = renderToHtml(schema()->inline()->components([new Component()]));
+
+    expect($html)->toContain('sy-inline')
+        ->toContain('sy-sc-dense')
+        ->toContain('sy-sc-component')
+        ->not->toContain('sy-grid')
+        ->not->toContain('--cols-default')
+        ->not->toContain('--col-span');
+});
+
+it('marks a growing child of an inline schema', function (): void {
+    $html = renderToHtml(schema()->inline()->components([new Component()->grow()]));
+
+    expect($html)->toMatch('/<div class="sy-growable">\s*<div class="sy-sc-component">/');
+});
+
+it('marks no child as growable outside an inline schema or without grow()', function (): void {
+    expect(renderToHtml(schema()->components([new Component()->grow()])))->not->toContain('sy-growable');
+    expect(renderToHtml(schema()->inline()->components([new Component()])))->not->toContain('sy-growable');
+});
+
+it('renders the alignment class from the enum', function (): void {
+    expect(renderToHtml(schema()->alignEnd()))->toContain('sy-align-end');
+    expect(renderToHtml(schema()->alignment(Alignment::Center)))->toContain('sy-align-center');
+});
+
+it('emits a custom alignment string as a class verbatim', function (): void {
+    $html = renderToHtml(schema()->alignment('my-custom-alignment'));
+
+    expect($html)->toMatch('/class="sy sy-sc my-custom-alignment[ "]/')
+        ->not->toContain('sy-align-');
+});
+
+it('renders no alignment class by default', function (): void {
+    expect(renderToHtml(schema()))->not->toContain('sy-align-');
+});
+
+it('keeps the grid on an aligned non-inline schema', function (): void {
+    $html = renderToHtml(schema()->alignEnd());
+
+    expect($html)->toContain('sy-align-end')
+        ->toContain('--cols-default');
 });

@@ -62,7 +62,7 @@ JS/CSS (run from repo root):
 - Tests call `StaticInstanceRegistry::unsetStaticInstances()` in `tearDown` (see `packages/support/tests/TestCase.php`) so state doesn't leak between cases.
   Currently only `Invoker` uses the pattern. Reuse it for future singleton-shaped services that need to be reachable from non-DI contexts.
 
-**Component model (today: in `support`).** The abstract base is `Sylament\Support\Component\Component`, which only composes `EvaluatesClosures`. `Sylament\Support\Component\ViewComponent` extends it with Twig-backed rendering: `template()` / `templateData()` setters (each closure-evaluable), `getTemplate()` / `getTemplateData()`, and `render(Environment $twig)`. `Sylament\Support\Twig\Extension\ComponentExtension` exposes a `renderComponent(component)` Twig function backed by `ViewComponent::render()`. Higher bundles will subclass these (e.g. `schemas`' `Component` and the form fields); today those subclasses don't exist yet. Favor adding a focused `Concerns/Has*` trait over widening an existing class.
+**Component model (today: in `support`).** The abstract base is `Sylament\Support\Component\Component`, which only composes `EvaluatesClosures`. `Sylament\Support\Component\ViewComponent` extends it with Twig-backed rendering: `template()` / `templateData()` setters (each closure-evaluable), `getTemplate()` / `getTemplateData()`, and `render(Environment $twig)`. `Sylament\Support\Twig\Extension\ComponentExtension` exposes a `renderComponent(component)` Twig function backed by `ViewComponent::render()`. Higher bundles subclass these (`schemas`' `Schema` and `Component` do today; the form fields will follow). Favor adding a focused `Concerns/Has*` trait over widening an existing class.
 
 ## Conventions
 

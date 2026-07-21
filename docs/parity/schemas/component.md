@@ -2,7 +2,7 @@
 
 The abstract base every schemas component extends. Component files (e.g.
 [section.md](section.md)) track only their own surface; the inherited surface
-lives here. Ported so far: `BelongsToContainer`, `CanOrderColumns`,
+lives here. Ported so far: `BelongsToContainer`, `CanGrow`, `CanOrderColumns`,
 `CanSpanColumns`, `HasChildComponents`, `HasColumns`, `HasExtraAttributes`,
 `HasGap`, `HasId`, `HasKey` — modulo the items below.
 
@@ -33,7 +33,9 @@ Portable now (no blocker):
 - [ ] `HasChildComponents` gaps: `schema()` alias, `childComponents()`
   accepting single `Component | string | Htmlable` (and, with actions,
   `Action | ActionGroup`) values, `getChildComponents()`,
-  `getChildSchemas(withHidden:)`, the container-named aliases.
+  `getChildSchemas(withHidden:)`, the container-named aliases, and the
+  keyed-slot `cachedChildSchemas` memoization (Filament caches non-closure
+  slots; ours rebuilds per `getChildSchema()` call).
 - [ ] Global configuration hooks (`configureUsing()`) — see
   [global-configuration](../infrastructure.md#global-configuration).
 
@@ -42,8 +44,6 @@ Blocked on infrastructure:
 - [ ] `HasHeadings` (`getHeadingLevel()` / `getHeadingTag()` /
   `getHeadingsCount()`) — blocked on
   [heading-cascade](../infrastructure.md#heading-cascade)
-- [ ] `CanGrow` (`grow()`; sizing for inline-schema children) — blocked on
-  [schema-slot-apis](../infrastructure.md#schema-slot-apis)
 - [ ] `HasActions` (`registerActions()`, `getAction()`, …) — blocked on
   [actions-package](../infrastructure.md#actions-package)
 - [ ] `HasState`, `HasStateBindingModifiers`, `CanPoll`, `CanPartiallyRender`,

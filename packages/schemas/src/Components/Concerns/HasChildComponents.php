@@ -11,14 +11,14 @@ use Sylament\Schemas\Schema;
 trait HasChildComponents
 {
     /**
-     * @var array<string, Schema|array<Component>|Closure>
+     * @var array<string, Schema|array<Component>|Closure|null>
      */
     protected array $childComponents = [];
 
     /**
-     * @param Schema|array<Component>|Closure $components
+     * @param Schema|array<Component>|Closure|null $components
      */
-    public function components(Schema|array|Closure $components): static
+    public function components(Schema|array|Closure|null $components): static
     {
         $this->childComponents($components);
 
@@ -26,9 +26,9 @@ trait HasChildComponents
     }
 
     /**
-     * @param Schema|array<Component>|Closure $childComponents
+     * @param Schema|array<Component>|Closure|null $childComponents
      */
-    public function childComponents(Schema|array|Closure $childComponents, string $key = 'default'): static
+    public function childComponents(Schema|array|Closure|null $childComponents, string $key = 'default'): static
     {
         $this->childComponents[$key] = $childComponents;
 

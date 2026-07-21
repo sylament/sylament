@@ -17,8 +17,10 @@ layout).
 - **Blocked items** link an anchor in [infrastructure.md](infrastructure.md)
   instead of restating the blocker. When infrastructure lands, grep for its
   anchor to find everything it unblocks.
-- **Renames** are not recorded here — CLAUDE.md keeps the single global rename
-  table.
+- **Renames** live in [renames.md](renames.md) — one global table; parity files
+  link it instead of restating entries.
+- **Deprecated Filament methods** (e.g. `HasLabel::disableLabel()`) are not
+  ported and not tracked as missing.
 - **Lifecycle**: tick nothing — delete finished items. When `## Missing` is
   empty, delete it and keep only `## Divergences`; flip the index row to done.
 
@@ -26,4 +28,5 @@ layout).
 
 | Component | Package | Status |
 | --- | --- | --- |
+| [Component (base)](schemas/component.md) | schemas | in progress |
 | [Section](schemas/section.md) | schemas | in progress |

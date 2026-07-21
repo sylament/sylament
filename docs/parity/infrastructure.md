@@ -4,6 +4,18 @@ Component parity files link these anchors instead of restating blockers. When an
 item lands, grep the repo for `infrastructure.md#<anchor>` to find everything it
 unblocks.
 
+## global-configuration
+
+Filament's `Configurable` routes `configure()` through a `ComponentManager`
+(`vendor/filament/support/src/Components/ComponentManager.php`):
+`configureUsing()` registers global closures applied to every new instance of a
+class (with scoped `during()` runs and `isImportant` ordering), and
+`configure()` wraps `setUp()` with them. Ours
+(`packages/support/src/Concerns/Configurable.php`) is a bare
+`configure() → setUp()`. Affects `make()` semantics on every component; the
+manager is a singleton reachable from non-DI contexts — same static-instance
+shape as `Invoker`.
+
 ## extra-attributes
 
 `HasExtraAttributes` + `HasId` on the component model (Filament:
@@ -27,10 +39,16 @@ the collapse chevron button.
 ## stimulus-controllers
 
 Ports of Filament's Alpine behaviors to Stimulus (only `core_controller.ts`
-exists today). First needed: section collapse — toggle state, id-matched window
-events (`collapse-section`, `expand-section`, `open-section`, `toggle-section`),
-persistence, `aria-expanded`, hide-before-init. Also the
-`HasExtraAlpineAttributes` equivalent (extra Stimulus attributes on components).
+exists today). First needed: section collapse (v5 semantics) — toggle state;
+id-matched window events (`collapse-section`, `expand-section`, `open-section`,
+`toggle-section`) plus an element-level `expand` event; a
+`reset-schema-component-state` window listener restoring the initial collapse
+state (matched by live-component id + root schema key, skipped when
+persisting); persistence keyed `section-<id>-isCollapsed`; disclosure ARIA on
+the chevron button (translated expand/collapse `aria-label`, `aria-expanded`,
+`aria-controls` pointing at the content-container id — the control carries the
+state, not the region); hide-before-init. Also the `HasExtraAlpineAttributes`
+equivalent (extra Stimulus attributes on components).
 
 ## schema-slot-apis
 
@@ -50,8 +68,23 @@ Schema tracking a root heading level and components overriding
 
 ## column-span
 
-`columnSpan()` on components so they can size themselves inside a parent grid.
-Schema-wide gap, affects every component used as a schema child.
+Grid participation for components sized inside a parent grid: `columnSpan()` /
+`columnSpanFull()` / `columnStart()` (`CanSpanColumns`) and `columnOrder()`
+(`CanOrderColumns`), emitted as grid-column attributes by the schema render
+loop's per-child wrapper. Schema-wide gap, affects every component used as a
+schema child.
+
+## live-component-state
+
+The schema state system on UX LiveComponent — the Livewire-backed heart of
+Filament's `Component` that everything stateful hangs off: `HasState` (state
+paths, hydration/dehydration hooks, `afterStateUpdated()` + JS variant, state
+casts, get/set utilities, `$state`/`$rawState`/`$get`/`$set` closure
+parameters), `HasStateBindingModifiers` (`live()`, `reactive()`, `lazy()`,
+`debounce()`), `CanPoll`, `CanPartiallyRender`, and the `toSchemaHtml()`
+per-child wrapper (`wire:key`, JS visibility, partial-render targeting).
+Blocks most of the base-Component surface in
+[schemas/component.md](schemas/component.md) and every future form field.
 
 ## translation
 

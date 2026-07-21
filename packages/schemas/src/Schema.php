@@ -13,6 +13,7 @@ use Sylament\Schemas\Concerns\BelongsToParentComponent;
 use Sylament\Schemas\Concerns\CanBeEmbeddedInParentComponent;
 use Sylament\Schemas\Concerns\CanBeInline;
 use Sylament\Schemas\Concerns\HasComponents;
+use Sylament\Schemas\Concerns\HasHeadings;
 use Sylament\Schemas\Concerns\HasKey;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Support\Component\Concerns\HasAlignment;
@@ -30,6 +31,7 @@ class Schema extends ViewComponent
     use HasComponents;
     use HasExtraAttributes;
     use HasGap;
+    use HasHeadings;
     use HasKey;
 
     protected string $evaluationIdentifier = 'schema';

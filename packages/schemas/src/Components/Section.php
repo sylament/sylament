@@ -199,4 +199,13 @@ class Section extends Component
             'belowContentSchema' => $this->getChildSchema(static::BELOW_CONTENT_SCHEMA_KEY),
         ];
     }
+
+    public function getHeadingsCount(): int
+    {
+        if (mb_trim((string) $this->getHeading()) === '') {
+            return 0;
+        }
+
+        return 1;
+    }
 }

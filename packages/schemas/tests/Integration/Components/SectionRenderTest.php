@@ -346,3 +346,39 @@ it('renders the above and below content slots around the section element', funct
 
     expect($html)->toMatch('/data-slot="above-content".*?<section.*?<\/section>.*?data-slot="below-content"/s');
 });
+
+it('cascades heading tags down nested sections', function (): void {
+    $html = renderSection(
+        Section::make('Outer')->components([
+            Section::make('Inner'),
+        ]),
+    );
+
+    expect($html)->toMatch('~<h2\s[^>]*id="outer::section-heading"~')
+        ->toMatch('~<h3\s[^>]*id="inner::section-heading"~');
+});
+
+it('does not bump the heading level under a heading-less section', function (): void {
+    $html = renderSection(
+        Section::make()->components([
+            Section::make('Inner'),
+        ]),
+    );
+
+    expect($html)->toMatch('~<h2\s[^>]*id="inner::section-heading"~');
+});
+
+it('renders headings beyond h6 as paragraphs, honoring the schema root heading level', function (): void {
+    $html = renderToHtml(
+        Schema::make(new HasSchemasFixture())
+            ->rootHeadingLevel(6)
+            ->components([
+                Section::make('Outer')->components([
+                    Section::make('Inner'),
+                ]),
+            ]),
+    );
+
+    expect($html)->toMatch('~<h6\s[^>]*id="outer::section-heading"~')
+        ->toMatch('~<p\s[^>]*id="inner::section-heading"~');
+});

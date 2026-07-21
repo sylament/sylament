@@ -7,7 +7,7 @@ class itself. Ported so far: `BelongsToLiveComponent`,
 state-path rerouting lands with live-component-state), `CanBeInline`,
 `HasAlignment` (+ the `start()` / `end()` / `center()` / `between()`
 factories), `HasColumns`, `HasComponents`, `HasExtraAttributes`, `HasGap`,
-`HasKey` — modulo the items below.
+`HasHeadings`, `HasKey` — modulo the items below.
 
 Reference:
 
@@ -44,8 +44,6 @@ Blocked on infrastructure:
 - [ ] `HasState`, `CanBeValidated`, `HasOperation`, `HasStateBindingModifiers`,
   `getLivewireKey()`, and the state-path key fallbacks — blocked on
   [live-component-state](../infrastructure.md#live-component-state)
-- [ ] `HasHeadings` (root heading level) — blocked on
-  [heading-cascade](../infrastructure.md#heading-cascade)
 
 Revisit with later packages:
 

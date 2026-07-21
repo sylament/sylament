@@ -4,7 +4,7 @@ The abstract base every schemas component extends. Component files (e.g.
 [section.md](section.md)) track only their own surface; the inherited surface
 lives here. Ported so far: `BelongsToContainer`, `CanGrow`, `CanOrderColumns`,
 `CanSpanColumns`, `HasChildComponents`, `HasColumns`, `HasExtraAttributes`,
-`HasGap`, `HasId`, `HasKey` — modulo the items below.
+`HasGap`, `HasHeadings`, `HasId`, `HasKey` — modulo the items below.
 
 Reference:
 
@@ -41,9 +41,6 @@ Portable now (no blocker):
 
 Blocked on infrastructure:
 
-- [ ] `HasHeadings` (`getHeadingLevel()` / `getHeadingTag()` /
-  `getHeadingsCount()`) — blocked on
-  [heading-cascade](../infrastructure.md#heading-cascade)
 - [ ] `HasActions` (`registerActions()`, `getAction()`, …) — blocked on
   [actions-package](../infrastructure.md#actions-package)
 - [ ] `HasState`, `HasStateBindingModifiers`, `CanPoll`, `CanPartiallyRender`,

@@ -36,13 +36,6 @@ the chevron button (translated expand/collapse `aria-label`, `aria-expanded`,
 state, not the region); hide-before-init. Also the `HasExtraAlpineAttributes`
 equivalent (extra Stimulus attributes on components).
 
-## heading-cascade
-
-Filament's `HasHeadings`: heading tags derived from nesting depth
-(`getHeadingLevel()`/`getHeadingTag()` — h2, h3, … capped to `p`), with the
-Schema tracking a root heading level and components overriding
-`getHeadingsCount()`.
-
 ## live-component-state
 
 The schema state system on UX LiveComponent — the Livewire-backed heart of

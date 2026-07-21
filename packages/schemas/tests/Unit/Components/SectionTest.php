@@ -210,3 +210,15 @@ it('resolves slots identically across repeated reads', function (): void {
         ->and($section->getChildSchema(Section::AFTER_HEADER_SCHEMA_KEY))->toBe($slotSchema)
         ->and($slotSchema->isInline())->toBeTrue();
 });
+
+it('counts one heading when a heading is present', function (): void {
+    expect(Section::make('Details')->getHeadingsCount())->toBe(1);
+});
+
+it('counts no headings without a heading', function (): void {
+    expect(Section::make()->getHeadingsCount())->toBe(0);
+});
+
+it('counts no headings for a whitespace-only heading', function (): void {
+    expect(Section::make('   ')->getHeadingsCount())->toBe(0);
+});

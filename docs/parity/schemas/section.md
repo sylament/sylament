@@ -28,9 +28,6 @@ Reference:
 - [ ] Header icon rendering (`HasIcon`/`HasIconColor`/`HasIconSize`; `hasHeader`
   gains the icon term) — blocked on
   [icon-system](../infrastructure.md#icon-system)
-- [ ] Heading level cascade (`getHeadingsCount()` returning 1 when a heading is
-  present, else 0) — blocked on
-  [heading-cascade](../infrastructure.md#heading-cascade)
 - [ ] Extra Stimulus attributes (Filament: `HasExtraAlpineAttributes`) — blocked
   on [stimulus-controllers](../infrastructure.md#stimulus-controllers)
 - [ ] `translateLabel()` — blocked on

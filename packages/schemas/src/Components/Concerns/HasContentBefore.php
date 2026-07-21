@@ -14,8 +14,6 @@ trait HasContentBefore
     protected bool|Closure $hasContentBefore = false;
 
     /**
-     * Renders the content column before the header text in aside() layout.
-     *
      * @param bool|callable():bool $condition
      */
     public function contentBefore(bool|callable $condition = true): static

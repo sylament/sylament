@@ -33,7 +33,7 @@ class Section extends Component
     /**
      * @param string|Markup|callable():(string|Markup)|null $heading
      */
-    public function __construct(string|Markup|callable|null $heading = null)
+    final public function __construct(string|Markup|callable|null $heading = null)
     {
         $this->heading($heading);
     }

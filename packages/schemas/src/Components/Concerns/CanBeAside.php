@@ -9,14 +9,14 @@ use Closure;
 trait CanBeAside
 {
     /**
-     * @var bool|Closure():bool
+     * @var bool|Closure():bool|null
      */
-    protected bool|Closure $isAside = false;
+    protected bool|Closure|null $isAside = null;
 
     /**
-     * @param bool|callable():bool $condition
+     * @param bool|callable():bool|null $condition
      */
-    public function aside(bool|callable $condition = true): static
+    public function aside(bool|callable|null $condition = true): static
     {
         $this->isAside = $this->evaluatable($condition);
 
@@ -25,6 +25,6 @@ trait CanBeAside
 
     public function isAside(): bool
     {
-        return $this->evaluate($this->isAside);
+        return $this->evaluate($this->isAside) ?? false;
     }
 }

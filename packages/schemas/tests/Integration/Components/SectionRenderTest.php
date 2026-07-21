@@ -165,6 +165,14 @@ it('marks an aside section', function (): void {
     expect(renderSection(Section::make('Heading')->aside()))->toContain('sy-aside');
 });
 
+it('resets aside() with a null condition', function (): void {
+    // Tri-state per Filament: null returns the flag to unset, which renders as
+    // not-aside until something (e.g. future global configuration) decides otherwise.
+    $html = renderSection(Section::make('Heading')->aside()->aside(null));
+
+    expect($html)->not->toContain('sy-aside');
+});
+
 it('marks a not-contained section', function (): void {
     expect(renderSection(Section::make('Heading')->contained(false)))
         ->toContain('sy-section-not-contained');

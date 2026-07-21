@@ -13,6 +13,8 @@ trait CanBeContained
      */
     protected bool|Closure $isContained = true;
 
+    protected bool $isContainedCache;
+
     /**
      * @param bool|callable():bool $condition
      */
@@ -25,6 +27,6 @@ trait CanBeContained
 
     public function isContained(): bool
     {
-        return $this->evaluate($this->isContained);
+        return $this->isContainedCache ??= $this->evaluate($this->isContained);
     }
 }

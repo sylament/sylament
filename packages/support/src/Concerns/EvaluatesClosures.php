@@ -13,9 +13,6 @@ trait EvaluatesClosures
     protected string $evaluationIdentifier;
 
     /**
-     * A Closure held in a T-typed slot must return T; its parameters carry no
-     * signature contract — the Invoker resolves each one by name and type.
-     *
      * @template T
      * @param T|Closure $value
      * @param array<string, mixed> $namedInjections

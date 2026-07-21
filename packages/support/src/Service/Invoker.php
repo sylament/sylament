@@ -26,12 +26,8 @@ class Invoker implements StaticInstanceInterface
     }
 
     /**
-     * The callable's parameters carry no signature contract — each is resolved
-     * by name, type, the resolver callback, the container, or its default.
-     *
      * @param array<string, mixed> $namedInjections
      * @param array<class-string, mixed> $typedInjections
-     * @param (callable(string $name, string|null $typeName): (ClosureParameter|null))|null $resolveParameter
      */
     public function call(
         callable $callable,

@@ -1,11 +1,35 @@
+{% set label = component.getLabel %}
+
+{% set hasLabel = (label ?? '')|trim is not empty %}
+
 <div
         {{ html_attr({
             class: ['sy-sc-section'],
         }) }}
 >
+    {% if hasLabel %}
+        <div class="sy-sc-section-label-ctn">
+            <div
+                    {{ html_attr({
+                        class: html_classes('sy-sc-section-label', {
+                            'sy-sc-section-label-hidden': component.isLabelHidden,
+                        })|split(' '),
+                    }) }}
+            >
+                {{ label }}
+            </div>
+        </div>
+    {% endif %}
+
     <twig:SylamentSupport:Section
             :heading="component.getHeading"
             :description="component.getDescription"
+            :compact="component.isCompact"
+            :contained="component.isContained"
+            :contentBefore="component.hasContentBefore"
+            :divided="component.isDivided"
+            :secondary="component.isSecondary"
+            :aside="component.isAside"
     >
         {{ renderComponent(component.getChildSchema) }}
     </twig:SylamentSupport:Section>

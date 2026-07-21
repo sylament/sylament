@@ -92,3 +92,80 @@ it('omits the header for a blank heading', function (string $heading): void {
     'empty string' => [''],
     'whitespace only' => ['   '],
 ]);
+
+it('renders the label above the section', function (): void {
+    $html = renderSection(Section::make('Heading')->label('My label'));
+
+    expect($html)->toContain('sy-sc-section-label')
+        ->toContain('My label')
+        ->not->toContain('sy-sc-section-label-hidden');
+});
+
+it('keeps a hidden label in the markup as screen-reader only', function (): void {
+    // Divergence from Filament (which ignores isLabelHidden() on sections): the label
+    // must stay in the markup for assistive technology, hidden via CSS only.
+    $html = renderSection(Section::make('Heading')->label('My label')->hiddenLabel());
+
+    expect($html)->toContain('sy-sc-section-label-hidden')
+        ->toContain('My label');
+});
+
+it('escapes a plain string label', function (): void {
+    $html = renderSection(Section::make('Heading')->label('<b>Label</b>'));
+
+    expect($html)->toContain('&lt;b&gt;Label&lt;/b&gt;')
+        ->not->toContain('<b>Label</b>');
+});
+
+it('omits the label container for an absent or blank label', function (string|null $label): void {
+    $html = renderSection(Section::make('Heading')->label($label));
+
+    expect($html)->not->toContain('sy-sc-section-label-ctn');
+})->with([
+    'null' => [null],
+    'empty string' => [''],
+    'whitespace only' => ['   '],
+]);
+
+it('marks the section when content is placed before the header', function (): void {
+    expect(renderSection(Section::make('Heading')))
+        ->not->toContain('sy-section-has-content-before');
+
+    // The closure pins the evaluatable path shared by all boolean concerns.
+    $html = renderSection(Section::make('Heading')->contentBefore(fn (): bool => true));
+
+    expect($html)->toContain('sy-section-has-content-before');
+});
+
+it('renders no variant classes by default', function (): void {
+    $html = renderSection(Section::make('Heading'));
+
+    expect($html)->not->toContain('sy-compact')
+        ->not->toContain('sy-divided')
+        ->not->toContain('sy-secondary')
+        ->not->toContain('sy-aside')
+        ->not->toContain('sy-section-not-contained');
+});
+
+it('marks a compact section', function (): void {
+    expect(renderSection(Section::make('Heading')->compact()))->toContain('sy-compact');
+});
+
+it('marks a divided section', function (): void {
+    // Emits the class only: dividers stay invisible until the hasContentEl
+    // restructure puts sy-section-content on the schema root (docs/parity/schemas/section.md).
+    expect(renderSection(Section::make('Heading')->divided()))->toContain('sy-divided');
+});
+
+it('marks a secondary section', function (): void {
+    expect(renderSection(Section::make('Heading')->secondary()))->toContain('sy-secondary');
+});
+
+it('marks an aside section', function (): void {
+    expect(renderSection(Section::make('Heading')->aside()))->toContain('sy-aside');
+});
+
+it('marks a not-contained section', function (): void {
+    expect(renderSection(Section::make('Heading')->contained(false)))
+        ->toContain('sy-section-not-contained');
+});

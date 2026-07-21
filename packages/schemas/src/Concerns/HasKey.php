@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Concerns;
 
 use Closure;
-use UnexpectedValueException;
 
 trait HasKey
 {
@@ -19,15 +18,9 @@ trait HasKey
 
     protected bool $hasCachedInheritanceKey = false;
 
-    /**
-     * @param string|callable|null $key closure parameters are Invoker-injected
-     *                                  (e.g. `$schema`); must return a string or null
-     */
-    public function key(string|callable|null $key): static
+    public function key(string|Closure|null $key): static
     {
-        // Inlined evaluatable(): its generic return needs an arity-zero closure
-        // spec to infer, which would reject the Invoker-injected parameters.
-        $this->key = is_callable($key) ? $key(...) : $key;
+        $this->key = $key;
 
         return $this;
     }
@@ -39,10 +32,6 @@ trait HasKey
         }
 
         $key = $this->evaluate($this->key);
-
-        if ($key !== null && !is_string($key)) {
-            throw new UnexpectedValueException(sprintf('A schema key must evaluate to a string or null, got %s.', get_debug_type($key)));
-        }
 
         if ($key !== null) {
             // Security: strip characters that could break out of a quoted HTML attribute

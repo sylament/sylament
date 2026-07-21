@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Concerns;
 
-use Closure;
 use Sylament\Support\Service\Invoker;
 use Sylament\Support\Tests\Fixtures\Concerns\EvaluatesClosuresFixture;
 use Sylament\Support\Tests\Fixtures\Concerns\EvaluatesClosuresWithIdentifierFixture;
@@ -20,12 +19,21 @@ afterEach(function (): void {
     Invoker::unsetInstance();
 });
 
-it('returns a non-callable value as-is without touching the Invoker', function (): void {
+it('returns a non-Closure value as-is without touching the Invoker', function (): void {
     Invoker::unsetInstance();
 
     expect(new EvaluatesClosuresFixture()->evaluate('plain string'))->toBe('plain string')
         ->and(new EvaluatesClosuresFixture()->evaluate(42))->toBe(42)
         ->and(new EvaluatesClosuresFixture()->evaluate(null))->toBeNull();
+});
+
+it('keeps a callable-string literal instead of invoking it', function (): void {
+    // Regression: only Closure instances are evaluated. A literal string that
+    // happens to name a function ('strtoupper', 'date', …) is a value, not a
+    // callback — Filament's `instanceof Closure` check, not is_callable().
+    Invoker::unsetInstance();
+
+    expect(new EvaluatesClosuresFixture()->evaluate('strtoupper'))->toBe('strtoupper');
 });
 
 it('invokes a callable value through the Invoker static instance', function (): void {
@@ -129,17 +137,4 @@ it('resolves an unresolvable untyped parameter to null when no identifier matche
     $result = new EvaluatesClosuresFixture()->evaluate(fn (mixed $anything): string => $anything === null ? 'was-null' : 'was-set');
 
     expect($result)->toBe('was-null');
-});
-
-it('returns a non-callable value from evaluatable() as-is', function (): void {
-    expect(new EvaluatesClosuresFixture()->evaluatable('plain string'))->toBe('plain string')
-        ->and(new EvaluatesClosuresFixture()->evaluatable(null))->toBeNull();
-});
-
-it('wraps a callable into a Closure via evaluatable()', function (): void {
-    $fixture = new EvaluatesClosuresFixture();
-    $closure = $fixture->evaluatable(fn (): string => 'wrapped');
-
-    expect($closure)->toBeInstanceOf(Closure::class)
-        ->and($closure())->toBe('wrapped');
 });

@@ -8,17 +8,11 @@ use Closure;
 
 trait CanBeSecondary
 {
-    /**
-     * @var bool|Closure():bool
-     */
     protected bool|Closure $isSecondary = false;
 
-    /**
-     * @param bool|callable():bool $condition
-     */
-    public function secondary(bool|callable $condition = true): static
+    public function secondary(bool|Closure $condition = true): static
     {
-        $this->isSecondary = $this->evaluatable($condition);
+        $this->isSecondary = $condition;
 
         return $this;
     }

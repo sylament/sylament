@@ -8,17 +8,11 @@ use Closure;
 
 trait HasId
 {
-    /**
-     * @var string|Closure():string|null
-     */
     protected string|Closure|null $id = null;
 
-    /**
-     * @param string|callable():string|null $id
-     */
-    public function id(string|callable|null $id): static
+    public function id(string|Closure|null $id): static
     {
-        $this->id = $this->evaluatable($id);
+        $this->id = $id;
 
         return $this;
     }

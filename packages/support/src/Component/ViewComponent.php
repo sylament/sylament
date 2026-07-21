@@ -9,25 +9,21 @@ use Twig\Environment;
 
 abstract class ViewComponent extends Component
 {
-    /**
-     * @var string|Closure():string|null
-     */
     protected string|Closure|null $template = null;
 
     /**
-     * @var array<array<mixed>|Closure():array<mixed>>
+     * @var array<array<mixed>|Closure>
      */
     protected array $templateData = [];
 
     /**
-     * @param string|callable():string|null $template
-     * @param array<mixed>|callable():array<mixed> $templateData
+     * @param array<mixed>|Closure $templateData
      */
     public function template(
-        string|callable|null $template,
-        array|callable $templateData = [],
+        string|Closure|null $template,
+        array|Closure $templateData = [],
     ): static {
-        $this->template = $this->evaluatable($template);
+        $this->template = $template;
         if ($templateData !== []) {
             $this->templateData($templateData);
         }
@@ -41,12 +37,12 @@ abstract class ViewComponent extends Component
     }
 
     /**
-     * @param array<mixed>|callable():array<mixed> $templateData
+     * @param array<mixed>|Closure $templateData
      */
     public function templateData(
-        array|callable $templateData,
+        array|Closure $templateData,
     ): static {
-        $this->templateData[] = $this->evaluatable($templateData);
+        $this->templateData[] = $templateData;
 
         return $this;
     }

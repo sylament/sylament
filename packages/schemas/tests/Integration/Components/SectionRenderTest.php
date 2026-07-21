@@ -145,7 +145,7 @@ it('marks the section when content is placed before the header', function (): vo
     expect(renderSection(Section::make('Heading')))
         ->not->toContain('sy-section-has-content-before');
 
-    // The closure pins the evaluatable path shared by all boolean concerns.
+    // The closure pins the closure-evaluated path shared by all boolean concerns.
     $html = renderSection(Section::make('Heading')->contentBefore(fn (): bool => true));
 
     expect($html)->toContain('sy-section-has-content-before');

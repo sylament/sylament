@@ -8,17 +8,11 @@ use Closure;
 
 trait CanBeAside
 {
-    /**
-     * @var bool|Closure():bool|null
-     */
     protected bool|Closure|null $isAside = null;
 
-    /**
-     * @param bool|callable():bool|null $condition
-     */
-    public function aside(bool|callable|null $condition = true): static
+    public function aside(bool|Closure|null $condition = true): static
     {
-        $this->isAside = $this->evaluatable($condition);
+        $this->isAside = $condition;
 
         return $this;
     }

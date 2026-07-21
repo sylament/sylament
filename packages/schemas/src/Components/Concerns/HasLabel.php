@@ -9,22 +9,13 @@ use Twig\Markup;
 
 trait HasLabel
 {
-    /**
-     * @var bool|Closure():bool
-     */
     protected bool|Closure $isLabelHidden = false;
 
-    /**
-     * @var string|Markup|Closure():(string|Markup)|null
-     */
     protected string|Markup|Closure|null $label = null;
 
-    /**
-     * @param bool|callable():bool $condition
-     */
-    public function hiddenLabel(bool|callable $condition = true): static
+    public function hiddenLabel(bool|Closure $condition = true): static
     {
-        $this->isLabelHidden = $this->evaluatable($condition);
+        $this->isLabelHidden = $condition;
 
         return $this;
     }
@@ -34,12 +25,9 @@ trait HasLabel
         return $this->evaluate($this->isLabelHidden);
     }
 
-    /**
-     * @param string|Markup|callable():(string|Markup)|null $label
-     */
-    public function label(string|Markup|callable|null $label): static
+    public function label(string|Markup|Closure|null $label): static
     {
-        $this->label = $this->evaluatable($label);
+        $this->label = $label;
 
         return $this;
     }

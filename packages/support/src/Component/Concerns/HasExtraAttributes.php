@@ -10,19 +10,19 @@ use Sylament\Support\Twig\ComponentAttributeBag;
 trait HasExtraAttributes
 {
     /**
-     * @var array<array<mixed>|Closure():array<mixed>>
+     * @var array<array<mixed>|Closure>
      */
     protected array $extraAttributes = [];
 
     /**
-     * @param array<mixed>|callable():array<mixed> $attributes
+     * @param array<mixed>|Closure $attributes
      */
-    public function extraAttributes(array|callable $attributes, bool $merge = false): static
+    public function extraAttributes(array|Closure $attributes, bool $merge = false): static
     {
         if ($merge) {
-            $this->extraAttributes[] = $this->evaluatable($attributes);
+            $this->extraAttributes[] = $attributes;
         } else {
-            $this->extraAttributes = [$this->evaluatable($attributes)];
+            $this->extraAttributes = [$attributes];
         }
 
         return $this;

@@ -8,17 +8,11 @@ use Closure;
 
 trait CanBeCompact
 {
-    /**
-     * @var bool|Closure():bool
-     */
     protected bool|Closure $isCompact = false;
 
-    /**
-     * @param bool|callable():bool $condition
-     */
-    public function compact(bool|callable $condition = true): static
+    public function compact(bool|Closure $condition = true): static
     {
-        $this->isCompact = $this->evaluatable($condition);
+        $this->isCompact = $condition;
 
         return $this;
     }

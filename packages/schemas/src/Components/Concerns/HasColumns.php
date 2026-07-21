@@ -10,17 +10,17 @@ use Sylament\Schemas\Schema;
 trait HasColumns
 {
     /**
-     * @var array<string|int, int|(Closure(): (array<string, ?int>|int))|null>|null
+     * @var array<string|int, array<string, ?int>|int|Closure|null>|null
      */
     protected ?array $columns = null;
 
     /**
-     * @param array<string, int|null>|int|(callable(): (array<string, ?int>|int))|null $columns
+     * @param array<string, int|null>|int|Closure|null $columns
      */
-    public function columns(array|int|callable|null $columns = 2): static
+    public function columns(array|int|Closure|null $columns = 2): static
     {
-        if (is_callable($columns)) {
-            $this->columns[] = $this->evaluatable($columns);
+        if ($columns instanceof Closure) {
+            $this->columns[] = $columns;
 
             return $this;
         }

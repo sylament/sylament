@@ -79,14 +79,6 @@ Revisit with later packages:
   other sources and escapes at render — hence no `escape:` parameter on
   `extraAttributes()` (Filament merges raw with `escape: false`). `View` →
   `Twig` follows the Laravel → Symfony translation conventions, not a rename.
-- **Key closures are typed loosely and checked at runtime.** Filament types
-  `key()` as `string | Closure | null`; PHPStan cannot express a closure whose
-  required parameters are Invoker-injected, and an arity-zero spec
-  (`callable():(string|null)`) would reject `fn (Section $component) => …` in
-  any analyzed caller — ours or a consumer's. `key()` therefore documents the
-  closure contract in prose, inlines `evaluatable()` (whose generics need the
-  arity-zero spec to infer), and `getKey()` fail-fasts with
-  `UnexpectedValueException` on a non-string closure return.
 - **No container-`make()` fallback in closure evaluation.** Filament's last
   resort for a class-typed closure parameter is Laravel's `app()->make()`,
   which auto-wires unbound classes; Symfony's container cannot instantiate ad

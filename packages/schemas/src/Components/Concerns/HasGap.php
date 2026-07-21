@@ -9,22 +9,13 @@ use Sylament\Schemas\Schema;
 
 trait HasGap
 {
-    /**
-     * @var bool|Closure():bool|null
-     */
     protected bool|Closure|null $hasGap = null;
 
-    /**
-     * @var bool|Closure():bool|null
-     */
     protected bool|Closure|null $isDense = null;
 
-    /**
-     * @param bool|callable():bool|null $hasGap
-     */
-    public function gap(bool|callable|null $hasGap = true): static
+    public function gap(bool|Closure|null $hasGap = true): static
     {
-        $this->hasGap = $this->evaluatable($hasGap);
+        $this->hasGap = $hasGap;
 
         return $this;
     }
@@ -43,12 +34,9 @@ trait HasGap
         return $this->getContainer()->hasGap();
     }
 
-    /**
-     * @param bool|callable():bool|null $isDense
-     */
-    public function dense(bool|callable|null $isDense = true): static
+    public function dense(bool|Closure|null $isDense = true): static
     {
-        $this->isDense = $this->evaluatable($isDense);
+        $this->isDense = $isDense;
 
         return $this;
     }

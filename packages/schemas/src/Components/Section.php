@@ -31,18 +31,12 @@ class Section extends Component
 
     protected string|Closure|null $template = '@SylamentSchemas/components/Section.html.twig';
 
-    /**
-     * @param string|Markup|callable():(string|Markup)|null $heading
-     */
-    final public function __construct(string|Markup|callable|null $heading = null)
+    final public function __construct(string|Markup|Closure|null $heading = null)
     {
         $this->heading($heading);
     }
 
-    /**
-     * @param string|Markup|callable():(string|Markup)|null $heading
-     */
-    public static function make(string|Markup|callable|null $heading = null): static
+    public static function make(string|Markup|Closure|null $heading = null): static
     {
         $section = new static($heading);
 

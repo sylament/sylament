@@ -13,15 +13,18 @@ trait EvaluatesClosures
     protected string $evaluationIdentifier;
 
     /**
+     * A Closure held in a T-typed slot must return T; its parameters carry no
+     * signature contract — the Invoker resolves each one by name and type.
+     *
      * @template T
-     * @param T|callable(): T|null $value
+     * @param T|Closure $value
      * @param array<string, mixed> $namedInjections
      * @param array<class-string, mixed> $typedInjections
-     * @return ($value is null ? null : T)
+     * @return T
      */
     public function evaluate(mixed $value, array $namedInjections = [], array $typedInjections = []): mixed
     {
-        if (!is_callable($value)) {
+        if (!$value instanceof Closure) {
             return $value;
         }
 
@@ -31,20 +34,6 @@ trait EvaluatesClosures
             $typedInjections,
             $this->resolveClosureDependencyForEvaluation(...),
         );
-    }
-
-    /**
-     * @template T
-     * @param T|callable():T|null $value
-     * @return ($value is null ? null : ($value is callable ? (Closure(): T) : T))
-     */
-    public function evaluatable(mixed $value): mixed
-    {
-        if (is_callable($value)) {
-            return $value(...);
-        }
-
-        return $value;
     }
 
     protected function resolveClosureDependencyForEvaluation(string $parameterName, ?string $parameterType): ?ClosureParameter

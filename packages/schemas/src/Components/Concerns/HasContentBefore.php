@@ -8,17 +8,11 @@ use Closure;
 
 trait HasContentBefore
 {
-    /**
-     * @var bool|Closure():bool
-     */
     protected bool|Closure $hasContentBefore = false;
 
-    /**
-     * @param bool|callable():bool $condition
-     */
-    public function contentBefore(bool|callable $condition = true): static
+    public function contentBefore(bool|Closure $condition = true): static
     {
-        $this->hasContentBefore = $this->evaluatable($condition);
+        $this->hasContentBefore = $condition;
 
         return $this;
     }

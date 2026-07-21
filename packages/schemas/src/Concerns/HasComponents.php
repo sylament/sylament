@@ -10,7 +10,7 @@ use Sylament\Schemas\Components\Component;
 trait HasComponents
 {
     /**
-     * @var array<Component>|Closure():array<Component>
+     * @var array<Component>|Closure
      */
     protected array|Closure $components = [];
 
@@ -20,11 +20,11 @@ trait HasComponents
     protected ?array $cachedComponents = null;
 
     /**
-     * @param array<Component>|callable():array<Component> $components
+     * @param array<Component>|Closure $components
      */
-    public function components(array|callable $components): static
+    public function components(array|Closure $components): static
     {
-        $this->components = $this->evaluatable($components);
+        $this->components = $components;
         $this->cachedComponents = null;
 
         return $this;

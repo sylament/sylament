@@ -9,17 +9,11 @@ use Twig\Markup;
 
 trait HasDescription
 {
-    /**
-     * @var string|Markup|Closure():(string|Markup)|null
-     */
     protected string|Markup|Closure|null $description = null;
 
-    /**
-     * @param string|Markup|callable():(string|Markup)|null $description
-     */
-    public function description(string|Markup|callable|null $description): static
+    public function description(string|Markup|Closure|null $description): static
     {
-        $this->description = $this->evaluatable($description);
+        $this->description = $description;
 
         return $this;
     }

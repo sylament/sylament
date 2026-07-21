@@ -8,17 +8,11 @@ use Closure;
 
 trait CanBeDivided
 {
-    /**
-     * @var bool|Closure():bool
-     */
     protected bool|Closure $isDivided = false;
 
-    /**
-     * @param bool|callable():bool $condition
-     */
-    public function divided(bool|callable $condition = true): static
+    public function divided(bool|Closure $condition = true): static
     {
-        $this->isDivided = $this->evaluatable($condition);
+        $this->isDivided = $condition;
 
         return $this;
     }

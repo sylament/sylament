@@ -9,17 +9,11 @@ use Twig\Markup;
 
 trait HasHeading
 {
-    /**
-     * @var string|Markup|Closure():(string|Markup)|null
-     */
     protected string|Markup|Closure|null $heading = null;
 
-    /**
-     * @param string|Markup|callable():(string|Markup)|null $heading
-     */
-    public function heading(string|Markup|callable|null $heading): static
+    public function heading(string|Markup|Closure|null $heading): static
     {
-        $this->heading = $this->evaluatable($heading);
+        $this->heading = $heading;
 
         return $this;
     }

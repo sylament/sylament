@@ -8,19 +8,13 @@ use Closure;
 
 trait CanBeContained
 {
-    /**
-     * @var bool|Closure():bool
-     */
     protected bool|Closure $isContained = true;
 
     protected bool $isContainedCache;
 
-    /**
-     * @param bool|callable():bool $condition
-     */
-    public function contained(bool|callable $condition = true): static
+    public function contained(bool|Closure $condition = true): static
     {
-        $this->isContained = $this->evaluatable($condition);
+        $this->isContained = $condition;
 
         return $this;
     }

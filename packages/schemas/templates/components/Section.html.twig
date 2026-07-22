@@ -32,7 +32,7 @@
             :heading="component.getHeading"
             :description="component.getDescription"
             :collapseId="id"
-            :collapsed="collapsed"
+            :collapsed="component.isCollapsed"
             :collapsible="collapsible"
             :compact="component.isCompact"
             :contained="component.isContained"
@@ -47,7 +47,7 @@
             :iconColor="component.getIconColor"
             :iconSize="component.getIconSize"
             :labelledById="labelledById"
-            :persistCollapsed="persistCollapsed"
+            :persistCollapsed="component.shouldPersistCollapsed"
             :secondary="component.isSecondary"
             :aside="component.isAside"
     >

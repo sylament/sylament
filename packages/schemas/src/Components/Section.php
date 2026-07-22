@@ -203,8 +203,6 @@ class Section extends Component implements CanConcealComponents
         return [
             'id' => $id,
             'collapsible' => $this->isCollapsible() && !$this->isAside(),
-            'collapsed' => $this->isCollapsed(),
-            'persistCollapsed' => $this->shouldPersistCollapsed(),
             'labelId' => $labelId,
             'labelledById' => $headingId ?? $labelId,
             'headingId' => $headingId,

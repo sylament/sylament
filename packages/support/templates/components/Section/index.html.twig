@@ -1,6 +1,10 @@
 {% props
     afterHeader = markup(block('afterHeader') ?? null),
     aside = false,
+    collapseId = null,
+    collapseLabel = 'Collapse section',
+    collapsed = false,
+    collapsible = false,
     compact = false,
     contained = true,
     content = markup(block('content') ?? null),
@@ -9,6 +13,7 @@
     description = markup(block('description') ?? null),
     descriptionId = null,
     divided = false,
+    expandLabel = 'Expand section',
     footer = markup(block('footer') ?? null),
     hasContentEl = true,
     heading = markup(block('heading') ?? null),
@@ -18,6 +23,9 @@
     iconColor = 'gray',
     iconSize = null,
     labelledById = null,
+    liveComponentId = null,
+    persistCollapsed = false,
+    schemaKey = null,
     secondary = false %}
 
 {% set iconColorName = iconColor is iterable or iconColor is empty ? 'gray' : iconColor %}
@@ -31,8 +39,28 @@
 {% set hasDescription = (description ?? '')|trim is not empty %}
 {% set hasContent = (content ?? '')|trim is not empty %}
 {% set hasFooter = (footer ?? '')|trim is not empty %}
-{% set hasHeader = hasIcon or hasHeading or hasDescription or hasAfterHeader %}
+{% set hasHeader = hasIcon or hasHeading or hasDescription or collapsible or hasAfterHeader %}
 {% set hasBody = hasContent or hasFooter %}
+
+{% set sectionController = 'sylament--support--section' %}
+{% set sectionStimulus = collapsible ? stimulus_controller(sectionController, {
+    id: collapseId ?: null,
+    collapsed: collapsed,
+    persist: persistCollapsed ? true : null,
+    expandLabel: expandLabel,
+    collapseLabel: collapseLabel,
+    liveComponentId: liveComponentId ?: null,
+    schemaKey: schemaKey ?: null,
+})
+    |stimulus_action(sectionController, 'collapse', 'collapse-section@window')
+    |stimulus_action(sectionController, 'expand', 'expand-section@window')
+    |stimulus_action(sectionController, 'expand', 'open-section@window')
+    |stimulus_action(sectionController, 'toggle', 'toggle-section@window')
+    |stimulus_action(sectionController, 'reveal', 'expand') : null %}
+
+{% if sectionStimulus and not persistCollapsed and liveComponentId and schemaKey %}
+    {% set sectionStimulus = sectionStimulus|stimulus_action(sectionController, 'resetState', 'reset-schema-component-state@window') %}
+{% endif %}
 
 <section
         {{ attributes.defaults({
@@ -43,41 +71,49 @@
                 'sy-aside': aside,
                 'sy-compact': compact,
                 'sy-divided': divided,
-                'sy-secondary': secondary
+                'sy-secondary': secondary,
+                'sy-collapsible': collapsible,
+                'sy-collapsed': collapsible and collapsed
             }),
             'aria-labelledby': labelledById ?: false,
-            'aria-describedby': descriptionId ?: false
+            'aria-describedby': descriptionId ?: false,
+            ...(sectionStimulus ?: {})
         }) }}
 >
     {% if hasHeader %}
-        <header class="sy-section-header">
+        <header
+                {{ html_attr({
+                    class: ['sy-section-header'],
+                    ...(collapsible ? stimulus_action(sectionController, 'toggleFromHeader', 'click') : {}),
+                }) }}
+        >
             {% if hasIcon %}
                 {{ iconHtml }}
             {% endif %}
 
             {% if hasHeading or hasDescription %}
                 <div class="sy-section-header-text-ctn">
-                    {% if hasHeading %}
-                        <{{ headingTag }}
-                            {{ html_attr({
-                                id: headingId,
-                                class: ['sy-section-header-heading'],
-                            }) }}
-                        >
-                            {{ heading }}
-                        </{{ headingTag }}>
-                    {% endif %}
+                {% if hasHeading %}
+                    <{{ headingTag }}
+                        {{ html_attr({
+                            id: headingId,
+                            class: ['sy-section-header-heading'],
+                        }) }}
+                    >
+                        {{ heading }}
+                    </{{ headingTag }}>
+                {% endif %}
 
-                    {% if hasDescription %}
-                        <p
-                            {{ html_attr({
-                                id: descriptionId,
-                                class: ['sy-section-header-description'],
-                            }) }}
-                        >
-                            {{ description }}
-                        </p>
-                    {% endif %}
+                {% if hasDescription %}
+                    <p
+                        {{ html_attr({
+                            id: descriptionId,
+                            class: ['sy-section-header-description'],
+                        }) }}
+                    >
+                        {{ description }}
+                    </p>
+                {% endif %}
                 </div>
             {% endif %}
 
@@ -86,16 +122,32 @@
                     {{ afterHeader }}
                 </div>
             {% endif %}
+
+            {% if collapsible %}
+                <twig:SylamentSupport:IconButton
+                        color="gray"
+                        icon="heroicons:chevron-up"
+                        iconAlias="section.collapse-button"
+                        class="sy-section-collapse-btn"
+                        {{ ...(stimulus_action(sectionController, 'toggleFromButton', 'click')|stimulus_target(sectionController, 'button')) }}
+                        aria-label="{{ collapsed ? expandLabel : collapseLabel }}"
+                        aria-expanded="{{ collapsed ? 'false' : 'true' }}"
+                        :aria-controls="hasBody and contentId ? contentId : false"
+                />
+            {% endif %}
         </header>
     {% endif %}
 
 
     {% if hasBody %}
         <div
-            {{ html_attr({
-                id: contentId,
-                class: ['sy-section-content-ctn'],
-            }) }}
+                {{ html_attr({
+                    id: contentId,
+                    class: html_classes('sy-section-content-ctn', {
+                        'sy-cloak': collapsible and persistCollapsed,
+                    })|split(' '),
+                    ...(collapsible ? stimulus_target(sectionController, 'content') : {}),
+                }) }}
         >
             {% if hasContentEl %}
                 <div class="sy-section-content">

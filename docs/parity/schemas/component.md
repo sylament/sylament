@@ -47,8 +47,10 @@ Blocked on infrastructure:
   `$livewire`, `$operation`), and the state-dependent remainder of `HasKey`
   (state-path fallbacks, `getLivewireKey()`) — blocked on
   [live-component-state](../infrastructure.md#live-component-state)
-- [ ] `CanBeConcealed` (`isConcealed()`, `getConcealingComponent()`) — pairs
-  with the `CanConcealComponents` contract from Section's collapse item.
+- [ ] `CanBeConcealed` (`isConcealed()`, `getConcealingComponent()`) — the
+  `CanConcealComponents` contract it pairs with exists (Section implements it);
+  the trait itself needs `getHiddenJs()`/`getVisibleJs()` from
+  [live-component-state](../infrastructure.md#live-component-state).
 
 Revisit with later packages:
 

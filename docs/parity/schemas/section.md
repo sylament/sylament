@@ -19,14 +19,18 @@ Reference:
   `setUp()` seeding of the `after_header` / `footer` slots and the slot-action
   defaults in `configureChildSchema()`) — blocked on
   [actions-package](../infrastructure.md#actions-package)
-- [ ] Collapse: `CanBeCollapsed` (`collapsible()`, `collapsed()`,
-  `persistCollapsed()`), template props, `CanConcealComponents` contract,
-  chevron disclosure button (v5 ARIA contract — see the stimulus anchor),
-  `hasHeader` gains the `collapsible && !aside` term — blocked on
-  [stimulus-controllers](../infrastructure.md#stimulus-controllers)
+- [ ] Collapse-button loading state (Filament: `wire:loading.attr="disabled"`)
+  — blocked on [live-component-state](../infrastructure.md#live-component-state)
+- [ ] `reset-schema-component-state` wiring: the schemas template passing
+  `liveComponentId`/`schemaKey` into the support section (the controller's
+  inert reset listener activates once they exist), plus the server-side
+  dispatcher (`Schema::dispatchClientSideStateReset()`) — blocked on
+  [live-component-state](../infrastructure.md#live-component-state)
 - [ ] Extra Stimulus attributes (Filament: `HasExtraAlpineAttributes`) — blocked
   on [stimulus-controllers](../infrastructure.md#stimulus-controllers)
-- [ ] `translateLabel()` — blocked on
+- [ ] `translateLabel()`, and translating the collapse button's
+  expand/collapse `aria-label` strings (hardcoded English defaults in the
+  support section props today) — blocked on
   [translation](../infrastructure.md#translation)
 - [ ] `relationship()` (`EntanglesStateWithSingularRelationship`) — revisit when
   the forms package exists (Doctrine equivalent of Eloquent entangling).
@@ -83,3 +87,35 @@ Reference:
   no layout layer yet, so the section CSS compensates locally — dark mode only,
   light mode inherits the host app. Revisit when a panels/layout layer owns
   base typography.
+- **Collapse is a Stimulus controller, not inline Alpine.** Filament inlines
+  the whole behavior as Alpine expressions in the section markup; we ship
+  `sylament--support--section` (support assets workspace,
+  `section_controller.ts`). Live state is the `sy-collapsed` class on the
+  `<section>` (DOM as source of truth); server config flows through Stimulus
+  values; window events arrive via `@window` action descriptors. The DOM event
+  contract is preserved verbatim (`collapse-section` / `expand-section` /
+  `open-section` / `toggle-section` with `detail.id` matching and element-id
+  fallback, element-level `expand`, `reset-schema-component-state`) — with one
+  translated detail key: the reset event matches on `detail.liveComponentId`
+  where Filament reads `detail.livewireId`, safe because that event's
+  dispatcher is framework-internal (our future
+  `Schema::dispatchClientSideStateReset()`), not user code. The localStorage
+  key/format (`section-<id>-isCollapsed`, JSON booleans) stays
+  Alpine-`$persist`-compatible, so persisted preferences survive a Filament
+  migration.
+- **The server renders the initial collapse state.** Filament renders neutral
+  markup and `x-cloak`s until Alpine hydrates; we emit `sy-collapsed` plus the
+  matching button ARIA server-side (no flash, correct with JS off). Only the
+  persisted case — where the truth lives in localStorage — cloaks the content
+  container with `sy-cloak`, and that rule is gated on
+  `@media (scripting: enabled)`: with JS off the content stays reachable,
+  where Filament's `x-cloak` without Alpine hides it permanently. Pre-2023
+  browsers with JS on trade the cloak for a possible one-time state flash.
+- **Chevron is the IconButton Twig component without `label`.** IconButton's
+  `label` also emits `title`, which the controller would leave stale on
+  toggle; the `aria-label` is passed as a plain attribute instead — matching
+  Filament's raw button, which has no `title` either.
+- **The reset listener markup is emitted conditionally.** Filament always
+  renders the `reset-schema-component-state` listener (unless persisting); we
+  emit the action descriptor only when `liveComponentId` and `schemaKey` are
+  both present — behavior-identical, since the handler no-ops without them.

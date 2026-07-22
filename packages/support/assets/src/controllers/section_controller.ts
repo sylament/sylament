@@ -74,13 +74,13 @@ export default class extends Controller<HTMLElement> {
     this.#setCollapsed(!this.#collapsed);
   }
 
-  resetState(event: CustomEvent<{ livewireId?: unknown; schemaKey?: unknown }>): void {
+  resetState(event: CustomEvent<{ liveComponentId?: unknown; schemaKey?: unknown }>): void {
     if (this.liveComponentIdValue === "" || this.schemaKeyValue === "") {
       return;
     }
 
     if (
-      event.detail?.livewireId !== this.liveComponentIdValue ||
+      event.detail?.liveComponentId !== this.liveComponentIdValue ||
       event.detail?.schemaKey !== this.schemaKeyValue
     ) {
       return;

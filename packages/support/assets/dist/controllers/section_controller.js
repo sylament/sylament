@@ -52,7 +52,7 @@ class section_controller_default extends Controller {
     if (this.liveComponentIdValue === "" || this.schemaKeyValue === "") {
       return;
     }
-    if (event.detail?.livewireId !== this.liveComponentIdValue || event.detail?.schemaKey !== this.schemaKeyValue) {
+    if (event.detail?.liveComponentId !== this.liveComponentIdValue || event.detail?.schemaKey !== this.schemaKeyValue) {
       return;
     }
     this.#setCollapsed(this.collapsedValue);

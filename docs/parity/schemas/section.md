@@ -95,8 +95,12 @@ Reference:
   values; window events arrive via `@window` action descriptors. The DOM event
   contract is preserved verbatim (`collapse-section` / `expand-section` /
   `open-section` / `toggle-section` with `detail.id` matching and element-id
-  fallback, element-level `expand`, `reset-schema-component-state`), and the
-  localStorage key/format (`section-<id>-isCollapsed`, JSON booleans) stays
+  fallback, element-level `expand`, `reset-schema-component-state`) — with one
+  translated detail key: the reset event matches on `detail.liveComponentId`
+  where Filament reads `detail.livewireId`, safe because that event's
+  dispatcher is framework-internal (our future
+  `Schema::dispatchClientSideStateReset()`), not user code. The localStorage
+  key/format (`section-<id>-isCollapsed`, JSON booleans) stays
   Alpine-`$persist`-compatible, so persisted preferences survive a Filament
   migration.
 - **The server renders the initial collapse state.** Filament renders neutral

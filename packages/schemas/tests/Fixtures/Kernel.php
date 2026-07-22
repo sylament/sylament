@@ -14,7 +14,6 @@ use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\UX\Icons\UXIconsBundle;
 use Symfony\UX\StimulusBundle\StimulusBundle;
 use Symfony\UX\TwigComponent\TwigComponentBundle;
-use Twig\Extra\Html\HtmlExtension;
 
 class Kernel extends BaseKernel
 {
@@ -48,16 +47,10 @@ class Kernel extends BaseKernel
             ],
         ]);
 
-        // The consuming app is responsible for providing the HTML helpers
-        // (twig/html-extra) and twig-component config the component templates rely on.
         $container->extension('twig_component', [
             'anonymous_template_directory' => 'components',
             'defaults' => [],
         ]);
-
-        $container->services()
-            ->set(HtmlExtension::class)
-            ->tag('twig.extension');
 
         $container->services()
             ->defaults()

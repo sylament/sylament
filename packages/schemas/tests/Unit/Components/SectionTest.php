@@ -10,16 +10,6 @@ use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
 use Sylament\Support\Enum\Alignment;
-use Sylament\Support\Service\Invoker;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 /**
  * Wire the section into a real parent Schema so its child slot schemas can reach

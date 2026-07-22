@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Sylament\Support;
 
+use RuntimeException;
 use Sylament\Support\Component\ComponentManager;
 use Sylament\Support\DependencyInjection\Compiler\StaticInstancePass;
 use Sylament\Support\DependencyInjection\StaticInstanceInterface;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\Service\Invoker;
+use Sylament\Support\Twig\Extension\AttributeExtension;
 use Sylament\Support\Twig\Extension\ComponentExtension;
 use Sylament\Support\Twig\Extension\GridExtension;
 use Sylament\Support\Twig\Extension\IconExtension;
@@ -55,12 +57,12 @@ class SylamentSupportBundle extends SylamentBundle
     {
         $container = $this->container;
         if (!$container instanceof ContainerInterface) {
-            return;
+            throw new RuntimeException('SylamentSupportBundle booted without a container; static instances cannot boot.');
         }
 
         $registry = $container->get(StaticInstanceRegistry::class);
         if (!$registry instanceof StaticInstanceRegistry) {
-            return;
+            throw new RuntimeException(sprintf('The "%s" service is not a static instance registry.', StaticInstanceRegistry::class));
         }
 
         $registry->bootStaticInstances();
@@ -77,6 +79,10 @@ class SylamentSupportBundle extends SylamentBundle
             ])
             ->alias(StaticInstanceRegistry::class, 'sylament_support.static_instance_registry')
             ->public();
+
+        $services
+            ->set('sylament_support.attribute_extension', AttributeExtension::class)
+            ->tag('twig.extension');
 
         $services
             ->set('sylament_support.component_extension', ComponentExtension::class)

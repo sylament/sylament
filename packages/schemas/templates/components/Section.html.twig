@@ -1,9 +1,9 @@
 {% set label = component.getLabel %}
 
-{% set hasLabel = (label ?? '')|trim is not empty %}
+{% set hasLabel = label is filled %}
 
 <div
-        {{ html_attr({
+        {{ attrs({
             class: ['sy', 'sy-sc-section'],
         }, component.getExtraAttributes, id ? { id: id } : null) }}
 >
@@ -12,11 +12,11 @@
             {{ renderComponent(beforeLabelSchema) }}
 
             <div
-                    {{ html_attr({
+                    {{ attrs({
                         id: labelId,
-                        class: html_classes('sy-sc-section-label', {
+                        class: ['sy-sc-section-label', {
                             'sy-sc-section-label-hidden': component.isLabelHidden,
-                        })|split(' '),
+                        }],
                     }) }}
             >
                 {{ label }}

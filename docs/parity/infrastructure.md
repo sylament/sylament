@@ -20,7 +20,7 @@ reachable), revealed by the shared `uncloak()` helper
 `connect()` once its initial state is applied. Templates author the wiring
 with StimulusBundle's Twig helpers —
 `stimulus_controller()`/`stimulus_action()`/`stimulus_target()` chains spread
-into the `attributes.defaults()`/`html_attr()` maps with Twig's `...`
+into the `attributes.defaults()`/`attrs()` maps with Twig's `...`
 operator (`StimulusAttributes` is iterable; null controller values are
 skipped, so conditional attributes need no ternaries) — which makes
 `symfony/stimulus-bundle` a hard production dependency of `support` (declared
@@ -49,11 +49,37 @@ Also completes the ported keys: the state-path fallbacks inside
 auto-key. Blocks most of the base-Component surface in
 [schemas/component.md](schemas/component.md) and every future form field.
 
+Required knowledge for the port: Filament's `reset-schema-component-state`
+Alpine handler defers via `$nextTick` so the morph lands before state resets;
+the Stimulus controllers have no equivalent deferral yet (inert today — no
+state exists to reset).
+
 ## translation
 
 A Symfony equivalent of Laravel's `__()` for `translateLabel()`-style APIs —
 translator access from non-DI components (likely another `Invoker`/static-
-instance-shaped problem).
+instance-shaped problem). When this lands, back the `Invoker`'s container
+lookup with a curated `ServiceLocator` of injectable services: on a compiled
+container `has()` answers only for public services, so today closure
+parameters can only receive effectively none of the real app services (see the
+divergence note in [schemas/component.md](schemas/component.md)).
+
+## support-managers
+
+Filament's `SupportServiceProvider` boots a family of support singletons none
+of which is mirrored yet; each lands with its first consumer: `ViewManager`
+(render hooks — `registerRenderHook()` / `renderHook()`), `ColorManager`
+(custom palette registration; pairs with the custom-palette item in
+[support/icons.md](support/icons.md)), `TimezoneManager`, `CliManager`, and
+`AssetManager` (we ship assets through Symfony AssetMapper instead — likely a
+permanent divergence to record when panels land).
+
+## html-sanitizer
+
+Filament registers an HTML sanitizer plus the `sanitizeHtml()` /
+`sanitizeUrl()` / `sanitizeCssColor()` helpers. Security-relevant the moment a
+URL- or HTML-emitting component ports (links, images, rich text);
+`symfony/html-sanitizer` is the natural backend.
 
 ## actions-package
 

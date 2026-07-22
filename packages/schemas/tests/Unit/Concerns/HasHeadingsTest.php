@@ -7,16 +7,6 @@ namespace Sylament\Schemas\Tests\Unit\Concerns;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
-use Sylament\Support\Service\Invoker;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('defaults the root heading level to 2', function (): void {
     expect(Schema::make()->getRootHeadingLevel())->toBe(2);

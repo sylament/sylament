@@ -5,16 +5,6 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Unit\Concerns;
 
 use Sylament\Schemas\Tests\Fixtures\Concerns\CanBeEmbeddedInParentComponentFixture;
-use Sylament\Support\Service\Invoker;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('is not embedded in its parent component by default', function (): void {
     expect(CanBeEmbeddedInParentComponentFixture::make()->isEmbeddedInParentComponent())->toBeFalse();

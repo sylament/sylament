@@ -19,6 +19,7 @@ use Twig\Markup;
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 use function Sylament\Support\generate_icon_html;
+use function Sylament\Support\wrap;
 
 it('treats valueless input as blank', function (mixed $value): void {
     expect(blank($value))->toBeTrue()
@@ -72,6 +73,13 @@ it('gives a Markup text semantics despite it being Countable', function (): void
     expect(blank(new Markup('   ', 'UTF-8')))->toBeTrue();
 });
 
+it('wraps a value into an array the way Arr::wrap does', function (): void {
+    expect(wrap(null))->toBe([])
+        ->and(wrap('a'))->toBe(['a'])
+        ->and(wrap(false))->toBe([false])
+        ->and(wrap(['x' => 1]))->toBe(['x' => 1]);
+});
+
 /**
  * Installs an IconManager backed by the recording renderer fixture and returns
  * the fixture; the Unit-suite afterEach hook unsets the static instance.
@@ -106,7 +114,7 @@ it('generate_icon_html applies sy-icon and the medium size class by default', fu
 
     generate_icon_html('heroicons:x-mark');
 
-    expect($renderer->lastAttributes)->toBe(['class' => 'sy-icon sy-size-md']);
+    expect($renderer->lastAttributes)->toBe(['class' => 'sy sy-icon sy-size-md']);
 });
 
 it('generate_icon_html applies an explicit size class', function (): void {
@@ -114,7 +122,7 @@ it('generate_icon_html applies an explicit size class', function (): void {
 
     generate_icon_html('heroicons:x-mark', size: IconSize::TwoExtraLarge);
 
-    expect($renderer->lastAttributes)->toBe(['class' => 'sy-icon sy-size-2xl']);
+    expect($renderer->lastAttributes)->toBe(['class' => 'sy sy-icon sy-size-2xl']);
 });
 
 it('generate_icon_html lets a resolvable alias win over the given icon', function (): void {
@@ -155,9 +163,9 @@ it('generate_icon_html appends caller attributes after the defaults and drops nu
     ]));
 
     expect($renderer->lastAttributes)->toBe([
-        'class' => 'sy-icon sy-size-md custom',
+        'class' => 'sy sy-icon sy-size-md custom',
         'data-x' => '1',
-        'data-on' => true,
+        'data-on' => 'true',
     ]);
 });
 
@@ -166,7 +174,7 @@ it('generate_icon_html wraps a Markup icon raw inside a span', function (): void
 
     $html = generate_icon_html(new Markup('<svg data-custom></svg>', 'UTF-8'));
 
-    expect((string) $html)->toBe('<span class="sy-icon sy-size-md"><svg data-custom></svg></span>');
+    expect((string) $html)->toBe('<span class="sy sy-icon sy-size-md"><svg data-custom></svg></span>');
 });
 
 it('generate_icon_html renders a path icon as a decorative image', function (): void {
@@ -174,7 +182,7 @@ it('generate_icon_html renders a path icon as a decorative image', function (): 
 
     $html = generate_icon_html('images/lo"go.svg');
 
-    expect((string) $html)->toBe('<img src="images/lo&quot;go.svg" alt="" class="sy-icon sy-size-md" />');
+    expect((string) $html)->toBe('<img src="images/lo&quot;go.svg" alt="" class="sy sy-icon sy-size-md" />');
 });
 
 it('generate_icon_html keeps a named path icon non-decorative', function (): void {

@@ -1,5 +1,7 @@
 {
     "name": "sylament/infolists",
+    "description": "Sylament infolists — read-only data display for the Sylament UI toolkit",
+    "license": "MIT",
     "type": "symfony-bundle",
     "keywords": [
         "symfony-ux"

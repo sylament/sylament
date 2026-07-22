@@ -33,6 +33,18 @@ it('sanitizes container and important markers in breakpoint names', function ():
     ]);
 });
 
+it('stringifies a numeric-string breakpoint key instead of raising a TypeError', function (): void {
+    // A numeric-string key is an int at runtime, which the string-typed breakpoint
+    // helpers would reject under strict_types; the array is annotated as the public
+    // signature promises so the coercion is what production hits.
+    /** @var array<string, ?int> $columns */
+    $columns = ['0' => 2];
+
+    $attributes = new GridExtension()->getGridAttributes($columns);
+
+    expect($attributes['style'])->toContain('--cols-0: repeat(2, minmax(0, 1fr))');
+});
+
 it('drops null breakpoints before building attributes', function (): void {
     $attributes = new GridExtension()->getGridAttributes(['md' => 2, 'xl' => null]);
 
@@ -99,6 +111,20 @@ it('sanitizes container and important markers in grid-column breakpoint names', 
 
 it('drops null grid-column breakpoints before building attributes', function (): void {
     $attributes = new GridExtension()->getGridColumnAttributes(['md' => 2, 'xl' => null]);
+
+    expect($attributes['class'])->toBe(['sy-grid-col', 'md:sy-grid-col-span'])
+        ->and($attributes['style'])->toBe(['--col-span-md: span 2 / span 2']);
+});
+
+it('drops blank breakpoint keys from the grid', function (): void {
+    $attributes = new GridExtension()->getGridAttributes([' ' => 3, 'md' => 2]);
+
+    expect($attributes['class'])->toBe(['sy-grid', 'md:sy-grid-cols', 'sy-grid-cols'])
+        ->and($attributes['style'])->toBe(['--cols-md: repeat(2, minmax(0, 1fr))', '--cols-default: repeat(1, minmax(0, 1fr))']);
+});
+
+it('drops blank breakpoint keys from a grid column', function (): void {
+    $attributes = new GridExtension()->getGridColumnAttributes(span: ['' => 4, 'md' => 2]);
 
     expect($attributes['class'])->toBe(['sy-grid-col', 'md:sy-grid-col-span'])
         ->and($attributes['style'])->toBe(['--col-span-md: span 2 / span 2']);

@@ -4,19 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Component\Concerns;
 
-use Sylament\Support\Service\Invoker;
 use Sylament\Support\Tests\Fixtures\Component\Concerns\HasIconFixture;
 use Sylament\Support\Tests\Fixtures\Icons\IconEnumFixture;
-use Symfony\Component\DependencyInjection\Container;
 use Twig\Markup;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('has no icon by default', function (): void {
     $fixture = new HasIconFixture();

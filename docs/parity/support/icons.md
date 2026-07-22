@@ -71,3 +71,7 @@ Reference:
   Blade→Twig translation, not a rename). The component syntax needs
   symfony/ux-twig-component in the consuming app; support ships the template
   without requiring it, same as its Section component template.
+- **The `sy`/`sy-icon`/`sy-size-*` defaults are prepended before caller
+  classes** (`generate_icon_html` merges its defaults first); Filament appends
+  its equivalents after the caller's. Cosmetic — class order has no CSS
+  significance on either side.

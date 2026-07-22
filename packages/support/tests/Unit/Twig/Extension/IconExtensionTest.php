@@ -45,7 +45,7 @@ it('wraps a plain attributes array', function (): void {
     new IconExtension()->generateIconHtml('heroicons:x-mark', attributes: ['class' => 'custom', 'data-x' => '1']);
 
     expect($renderer->lastAttributes)->toBe([
-        'class' => 'sy-icon sy-size-md custom',
+        'class' => 'sy sy-icon sy-size-md custom',
         'data-x' => '1',
     ]);
 });
@@ -55,7 +55,7 @@ it('normalizes a known size string to its enum case', function (): void {
 
     new IconExtension()->generateIconHtml('heroicons:x-mark', size: 'lg');
 
-    expect($renderer->lastAttributes)->toBe(['class' => 'sy-icon sy-size-lg']);
+    expect($renderer->lastAttributes)->toBe(['class' => 'sy sy-icon sy-size-lg']);
 });
 
 it('degrades an unknown size string to the medium default', function (): void {
@@ -63,5 +63,5 @@ it('degrades an unknown size string to the medium default', function (): void {
 
     new IconExtension()->generateIconHtml('heroicons:x-mark', size: 'huge');
 
-    expect($renderer->lastAttributes)->toBe(['class' => 'sy-icon sy-size-md']);
+    expect($renderer->lastAttributes)->toBe(['class' => 'sy sy-icon sy-size-md']);
 });

@@ -4,21 +4,11 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Twig\Extension;
 
-use Sylament\Support\Service\Invoker;
 use Sylament\Support\Tests\Fixtures\Component\ViewComponentFixture;
 use Sylament\Support\Twig\Extension\ComponentExtension;
-use Symfony\Component\DependencyInjection\Container;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
 use Twig\Markup;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('registers the renderComponent function', function (): void {
     $functions = new ComponentExtension()->getFunctions();

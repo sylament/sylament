@@ -64,6 +64,22 @@ trait HasAlignment
         return Alignment::tryFrom($alignment) ?? $alignment;
     }
 
+    /**
+     * The class fragment templates emit for the alignment: `sy-align-<value>`
+     * for the enum cases, a custom string as-is, null when unaligned — so
+     * templates never type-sniff the enum-vs-string union.
+     */
+    public function getAlignmentClass(): ?string
+    {
+        $alignment = $this->getAlignment();
+
+        if ($alignment instanceof Alignment) {
+            return 'sy-align-' . $alignment->value;
+        }
+
+        return $alignment;
+    }
+
     public function hasDynamicAlignment(): bool
     {
         return $this->alignment instanceof Closure;

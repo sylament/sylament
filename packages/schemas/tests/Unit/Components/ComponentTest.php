@@ -6,16 +6,6 @@ namespace Sylament\Schemas\Tests\Unit\Components;
 
 use Sylament\Schemas\Components\Component;
 use Sylament\Support\Component\ViewComponent;
-use Sylament\Support\Service\Invoker;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('resolves the $component closure parameter to itself', function (): void {
     $component = new Component();

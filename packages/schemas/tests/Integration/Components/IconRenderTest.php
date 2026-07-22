@@ -23,7 +23,7 @@ it('renders an icon by name at the medium default size', function (): void {
     $html = renderIcon(['icon' => 'heroicons:x-mark']);
 
     expect($html)->toContain('<svg')
-        ->toContain('class="sy-icon sy-size-md"')
+        ->toContain('class="sy sy-icon sy-size-md"')
         ->toContain('aria-hidden="true"');
 });
 
@@ -33,13 +33,13 @@ it('renders nothing without an icon', function (): void {
 
 it('applies an explicit size', function (): void {
     expect(renderIcon(['icon' => 'heroicons:x-mark', 'size' => 'lg']))
-        ->toContain('class="sy-icon sy-size-lg"');
+        ->toContain('class="sy sy-icon sy-size-lg"');
 });
 
 it('forwards extra attributes into the icon markup', function (): void {
     $html = renderIcon(['icon' => 'heroicons:x-mark', 'class' => 'custom', 'data-owner' => 'billing']);
 
-    expect($html)->toContain('class="sy-icon sy-size-md custom"')
+    expect($html)->toContain('class="sy sy-icon sy-size-md custom"')
         ->toContain('data-owner="billing"');
 });
 

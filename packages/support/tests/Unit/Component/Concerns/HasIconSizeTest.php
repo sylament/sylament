@@ -5,17 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Tests\Unit\Component\Concerns;
 
 use Sylament\Support\Enum\IconSize;
-use Sylament\Support\Service\Invoker;
 use Sylament\Support\Tests\Fixtures\Component\Concerns\HasIconSizeFixture;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('has no icon size by default', function (): void {
     $fixture = new HasIconSizeFixture();

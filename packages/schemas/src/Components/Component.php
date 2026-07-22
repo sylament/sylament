@@ -6,8 +6,8 @@ namespace Sylament\Schemas\Components;
 
 use Sylament\Schemas\Components\Concerns\BelongsToContainer;
 use Sylament\Schemas\Components\Concerns\HasChildComponents;
-use Sylament\Schemas\Components\Concerns\HasColumns;
-use Sylament\Schemas\Components\Concerns\HasGap;
+use Sylament\Schemas\Concerns\HasColumns;
+use Sylament\Schemas\Concerns\HasGap;
 use Sylament\Schemas\Components\Concerns\HasHeadings;
 use Sylament\Schemas\Components\Concerns\HasId;
 use Sylament\Schemas\Components\Concerns\HasKey;

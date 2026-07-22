@@ -5,19 +5,11 @@ declare(strict_types=1);
 namespace Sylament\Support\Tests\Unit\Concerns;
 
 use Sylament\Support\Service\Invoker;
+use RuntimeException;
 use Sylament\Support\Tests\Fixtures\Concerns\EvaluatesClosuresFixture;
 use Sylament\Support\Tests\Fixtures\Concerns\EvaluatesClosuresWithIdentifierFixture;
 use Sylament\Support\Tests\Fixtures\Concerns\EvaluatesClosuresWithResolverFixture;
 use Sylament\Support\Tests\Fixtures\Service\ServiceFixture;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('returns a non-Closure value as-is without touching the Invoker', function (): void {
     Invoker::unsetInstance();
@@ -138,3 +130,7 @@ it('resolves an unresolvable untyped parameter to null when no identifier matche
 
     expect($result)->toBe('was-null');
 });
+
+it('names the evaluating class in the unresolvable error', function (): void {
+    new EvaluatesClosuresFixture()->evaluate(fn (string $missing): string => $missing);
+})->throws(RuntimeException::class, 'An attempt was made to evaluate a closure for [' . EvaluatesClosuresFixture::class . '], but [$missing] was unresolvable.');

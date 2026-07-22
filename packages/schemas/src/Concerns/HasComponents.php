@@ -7,6 +7,8 @@ namespace Sylament\Schemas\Concerns;
 use Closure;
 use Sylament\Schemas\Components\Component;
 
+use function Sylament\Support\wrap;
+
 trait HasComponents
 {
     /**
@@ -38,7 +40,7 @@ trait HasComponents
         return $this->cachedComponents ??= (function (): array {
             $components = [];
 
-            foreach ($this->evaluate($this->components) as $componentIndex => $component) {
+            foreach (wrap($this->evaluate($this->components)) as $componentIndex => $component) {
                 $component = $component->container($this);
 
                 $components[$componentIndex] = $component;

@@ -4,17 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Component\Concerns;
 
-use Sylament\Support\Service\Invoker;
 use Sylament\Support\Tests\Fixtures\Component\Concerns\CanGrowFixture;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('defers to the given default while unset', function (): void {
     expect(new CanGrowFixture()->canGrow())->toBeTrue()

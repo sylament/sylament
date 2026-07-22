@@ -22,3 +22,26 @@
         display: none !important;
     }
 }
+
+/*
+  Honor the OS "reduce motion" setting for every framework
+  animation/transition (WCAG 2.3.3, and 2.2.2 for indefinite
+  animations). This reduces rather than removes motion: a near-instant
+  `0.01ms` (not `0`) keeps `transitionend` / `animationend` firing so the
+  section controller's collapse transition still resolves, and end-states
+  (chevron rotation) land instantly. `!important` beats component-layer
+  transitions without per-rule guards.
+*/
+@media (prefers-reduced-motion: reduce) {
+    .sy,
+    .sy::before,
+    .sy::after,
+    .sy *,
+    .sy *::before,
+    .sy *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

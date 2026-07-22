@@ -32,5 +32,7 @@ layout).
 | [ComponentManager](support/component-manager.md) | support | in progress |
 | [Icon button](support/icon-button.md) | support | in progress |
 | [Icons](support/icons.md) | support | in progress |
+| [InteractsWithSchemas](schemas/interacts-with-schemas.md) | schemas | in progress |
 | [Schema](schemas/schema.md) | schemas | in progress |
 | [Section](schemas/section.md) | schemas | in progress |
+| [ViewComponent (base)](support/view-component.md) | support | in progress |

@@ -5,10 +5,10 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "pnpm clean && pnpm test:types && pnpm build:js && pnpm build:css",
-    "build:js": "esbuild src/**/*.ts --outdir=dist --outbase=src --format=esm --sourcemap=linked",
+    "build:js": "esbuild $(find src -name '*.ts') --outdir=dist --outbase=src --format=esm --sourcemap=linked",
     "build:css": "node scripts/scope-preflight.mjs && tailwindcss -i src/styles/index.css -o dist/styles/index.css --minify",
     "watch": "concurrently -n js,css -c blue,green \"pnpm watch:js\" \"pnpm watch:css\"",
-    "watch:js": "esbuild src/**/*.ts --outdir=dist --outbase=src --format=esm --sourcemap=inline --watch=forever",
+    "watch:js": "esbuild $(find src -name '*.ts') --outdir=dist --outbase=src --format=esm --sourcemap=inline --watch=forever",
     "watch:css": "node scripts/scope-preflight.mjs && tailwindcss -i src/styles/index.css -o dist/styles/index.css --watch",
     "test:types": "tsc --noEmit"
   },

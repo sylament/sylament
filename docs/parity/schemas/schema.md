@@ -23,7 +23,11 @@ Portable now (no blocker):
 - [ ] `CanBeHidden` / `CanBeDisabled` schema-level flags — including
   suppressing the render of an empty or all-hidden schema (Filament returns an
   empty string; ours still renders the root div, observable when a slot is
-  given an empty `Schema` instance).
+  given an empty `Schema` instance). Related emptiness nuance to revisit with
+  [live-component-state](../infrastructure.md#live-component-state): Filament's
+  `is_slot_empty()` strips HTML comments (`<!-- -->` counts as empty), while
+  our templates' `|trim is not empty` checks count them as content — it starts
+  mattering once live-component markers render into slots.
 - [ ] `HasInlineLabels` (`inlineLabel()`, cascading to fields).
 - [ ] `HasComponents` traversal remainder: `getComponents(withHidden:)` (pairs
   with `CanBeHidden`), `getFlatComponents()`, `getComponent()`;
@@ -49,5 +53,28 @@ Revisit with later packages:
 
 - [ ] `BelongsToModel` — Doctrine equivalent of Eloquent record binding;
   revisit when forms/infolists exist.
+- [ ] `HasDefaultDataFormattingSettings` (eight defaultDateDisplayFormat-style
+  setter/getter pairs) — consumers are the formatting components; revisit with
+  infolists/tables.
 - [ ] `HasEntryWrapper` — revisit with infolists.
 - [ ] `HasFieldWrapper` — revisit with forms.
+
+## Divergences
+
+- **`getComponents()` preserves caller array keys** (Filament reindexes the
+  list). Revisit when the `CanBeHidden` filter ports — filtering must not leave
+  key gaps that Filament's reindexed output wouldn't have.
+- **The `sy-grid-cols` marker class is emitted unconditionally**; Filament
+  guards its equivalent behind `columns > 1`. Inert either way — the class has
+  no CSS of its own on either side.
+- **No schema-level `schema()` alias.** Filament aliases `schema($components)`
+  → `components()` on the container as well; deliberately not ported — one
+  canonical name on the container. (The component-level `components()` alias
+  over `childComponents()` is ported.)
+- **Schema-side fallbacks are `Schema` overrides.** Filament's schemas-level
+  `HasGap::hasGap()` / `isDense()` and `HasColumns::getAllColumns()` resolve
+  their Schema flavor behind `$this instanceof Schema` checks inside the shared
+  trait; here the traits carry the component flavor (container delegation) and
+  `Schema` overrides the getters (aliasing the trait's `getAllColumns` as its
+  own-columns fallback). PHPStan cannot type the cross-hierarchy `instanceof`
+  branches in trait context; the public API is identical.

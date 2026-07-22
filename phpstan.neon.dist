@@ -1,10 +1,7 @@
-includes:
-	- phpstan-baseline.neon
-
 parameters:
     level: max
 
-    reportUnmatchedIgnoredErrors: false
+    reportUnmatchedIgnoredErrors: true
 
     paths:
         - packages/actions/src
@@ -21,4 +18,3 @@ parameters:
         -
             identifiers:
                 - trait.unused
-                - new.static

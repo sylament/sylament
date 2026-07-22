@@ -11,7 +11,7 @@ trait HasHeading
 {
     protected string|Markup|Closure|null $heading = null;
 
-    public function heading(string|Markup|Closure|null $heading): static
+    public function heading(string|Markup|Closure|null $heading = null): static
     {
         $this->heading = $heading;
 

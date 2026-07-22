@@ -30,6 +30,7 @@ trait EvaluatesClosures
             $namedInjections,
             $typedInjections,
             $this->resolveClosureDependencyForEvaluation(...),
+            $this::class,
         );
     }
 

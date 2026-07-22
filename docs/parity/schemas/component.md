@@ -35,7 +35,10 @@ Portable now (no blocker):
   `Action | ActionGroup`) values, `getChildComponents()`,
   `getChildSchemas(withHidden:)`, the container-named aliases, and the
   keyed-slot `cachedChildSchemas` memoization (Filament caches non-closure
-  slots; ours rebuilds per `getChildSchema()` call).
+  slots; ours rebuilds per `getChildSchema()` call) together with the
+  schema-level `clearCachedChildSchemas()` flush that pairs with it.
+- [ ] `EvaluatesClosures::evaluationValueIsFunctionAndHasParameter()` — used
+  by Filament's `CanOpenUrl` twins; port with the first of them.
 Blocked on infrastructure:
 
 - [ ] `HasActions` (`registerActions()`, `getAction()`, …) — blocked on
@@ -60,23 +63,41 @@ Revisit with later packages:
 - [ ] `CanBeRepeated` — revisit with the forms `Repeater` / `Builder`.
 - [ ] `HasEntryWrapper` — revisit with infolists.
 - [ ] `HasFieldWrapper` — revisit with forms.
+- [ ] Support-level `VerticalAlignment` enum + `HasVerticalAlignment` — first
+  consumers are tables/`Flex`; revisit when those land.
 
 ## Divergences
 
+- **Component-level `components()` union is widened** to
+  `Schema|array|Closure|null` — Filament reserves `Schema` and `null` for
+  `childComponents()` and types `components()` `array|Closure` (plus the
+  single-value coercions tracked above). Passing a `Schema` straight to
+  `components()` is accepted convenience here.
 - **Minimal attribute bag.** `HasExtraAttributes` folds entries through
   `Sylament\Support\Twig\ComponentAttributeBag` — a small value object with
   Laravel's merge-as-defaults semantics (class/style token lists append,
   defaults first; other existing keys win) instead of Filament's
   `Filament\Support\View\ComponentAttributeBag` extending Laravel's full bag.
   It normalizes `class`/`style` to token lists so templates can pass
-  `getExtraAttributes()` straight into `html_attr()`, which merges them with
-  other sources and escapes at render — hence no `escape:` parameter on
-  `extraAttributes()` (Filament merges raw with `escape: false`). `View` →
-  `Twig` follows the Laravel → Symfony translation conventions, not a rename.
+  `getExtraAttributes()` straight into `attrs()` (the bag-backed `html_attr()`
+  replacement), which merges them with other sources and escapes at render —
+  hence no `escape:` parameter on `extraAttributes()` (Filament merges raw with
+  `escape: false`). `View` → `Twig` follows the Laravel → Symfony translation
+  conventions, not a rename.
 - **No container-`make()` fallback in closure evaluation.** Filament's last
   resort for a class-typed closure parameter is Laravel's `app()->make()`,
   which auto-wires unbound classes; Symfony's container cannot instantiate ad
   hoc. After the resolver hooks and the identifier/self-type checks, we consult
-  the DI container for known services only (`has()`), then fall back to the
+  the DI container for **public services only** — on a compiled container
+  `has()` answers `false` for private services, i.e. nearly every real app
+  service (Twig, the entity manager, the translator) — then fall back to the
   declared default, then `null` for optional/nullable parameters, and otherwise
-  throw.
+  throw. The planned sharpening (a curated `ServiceLocator` of injectable
+  services) is recorded on the
+  [translation](../infrastructure.md#translation) anchor.
+- **Closure results are type-checked, not coerced.** Filament wraps evaluated
+  flags in `(bool)` casts (`CanBeCollapsed`, `HasGap`, `CanBeContained`, …);
+  under `strict_types=1` we return the evaluated value against the declared
+  native return type, so a closure returning `1` / `'yes'` TypeErrors here
+  where Filament silently coerces. One policy across every trait — new ports
+  drop Filament's casts rather than reintroducing coercion.

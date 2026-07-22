@@ -4,17 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Component\Concerns;
 
-use Sylament\Support\Service\Invoker;
 use Sylament\Support\Tests\Fixtures\Component\Concerns\CanSpanColumnsFixture;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('spans a single column on every breakpoint by default', function (): void {
     $fixture = new CanSpanColumnsFixture();

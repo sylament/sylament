@@ -43,3 +43,18 @@ it('uses the environment charset', function (): void {
 
     expect($markup?->getCharset())->toBe($twig->getCharset());
 });
+
+it('registers the filled test with the PHP helper semantics', function (): void {
+    $tests = new MarkupExtension()->getTests();
+
+    expect($tests)->toHaveCount(1)
+        ->and($tests[0]->getName())->toBe('filled');
+
+    $callable = $tests[0]->getCallable();
+
+    expect($callable('Billing'))->toBeTrue()
+        ->and($callable('   '))->toBeFalse()
+        ->and($callable(null))->toBeFalse()
+        ->and($callable(new Markup('  ', 'UTF-8')))->toBeFalse()
+        ->and($callable(new Markup('<em>Hi</em>', 'UTF-8')))->toBeTrue();
+});

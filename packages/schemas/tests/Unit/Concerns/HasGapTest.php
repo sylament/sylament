@@ -2,19 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
+namespace Sylament\Schemas\Tests\Unit\Concerns;
 
 use Sylament\Schemas\Schema;
-use Sylament\Support\Service\Invoker;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('is not dense by default', function (): void {
     expect(Schema::make()->isDense())->toBeFalse();

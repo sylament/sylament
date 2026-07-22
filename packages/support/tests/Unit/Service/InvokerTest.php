@@ -7,6 +7,7 @@ namespace Sylament\Support\Tests\Unit\Service;
 use RuntimeException;
 use Sylament\Support\Data\ClosureParameter;
 use Sylament\Support\Service\Invoker;
+use Sylament\Support\Tests\Fixtures\Service\InvokableFixture;
 use Sylament\Support\Tests\Fixtures\Service\MethodFixture;
 use Sylament\Support\Tests\Fixtures\Service\ServiceFixture;
 use Symfony\Component\DependencyInjection\Container;
@@ -253,4 +254,70 @@ it('combines all resolution strategies for a multi-parameter callable', function
     );
 
     expect($result)->toBe('E|' . spl_object_id($typed) . '|R|' . spl_object_id($service) . '|D');
+});
+
+it('invokes a closure passed as a named injection value and injects its result', function (): void {
+    $result = makeInvoker()->call(fn (string $name): string => $name, ['name' => fn (): string => 'lazy']);
+
+    expect($result)->toBe('lazy');
+});
+
+it('invokes a closure passed as a typed injection value and injects its result', function (): void {
+    $service = new ServiceFixture();
+
+    $result = makeInvoker()->call(
+        fn (ServiceFixture $service): ServiceFixture => $service,
+        [],
+        [ServiceFixture::class => fn (): ServiceFixture => $service],
+    );
+
+    expect($result)->toBe($service);
+});
+
+it('keeps a closure wrapped in a resolver ClosureParameter un-invoked', function (): void {
+    $closure = fn (): string => 'wrapped';
+
+    $result = makeInvoker()->call(
+        fn ($anything) => $anything,
+        resolveParameter: fn (): ClosureParameter => ClosureParameter::make($closure),
+    );
+
+    expect($result)->toBe($closure);
+});
+
+it('calls a Class::method string callable', function (): void {
+    $result = makeInvoker()->call(MethodFixture::class . '::staticMethod', ['value' => 'x']);
+
+    expect($result)->toBe('static:x');
+});
+
+it('calls an invokable object', function (): void {
+    $result = makeInvoker()->call(new InvokableFixture(), ['value' => 'x']);
+
+    expect($result)->toBe('invoked:x');
+});
+
+it('calls a plain function name string', function (): void {
+    $result = makeInvoker()->call('strtoupper', ['string' => 'abc']);
+
+    expect($result)->toBe('ABC');
+});
+
+it('names the context in the unresolvable error when given', function (): void {
+    makeInvoker()->call(fn (string $missing): string => $missing, context: 'App\Dashboard');
+})->throws(RuntimeException::class, 'An attempt was made to evaluate a closure for [App\Dashboard], but [$missing] was unresolvable.');
+
+it('skips variadic parameters instead of passing a spurious null', function (): void {
+    $result = makeInvoker()->call(fn (string $first, ...$rest): array => [$first, $rest], ['first' => 'x']);
+
+    expect($result)->toBe(['x', []]);
+});
+
+it('still passes an explicit injection to a variadic parameter', function (): void {
+    $result = makeInvoker()->call(
+        fn (string $first, string ...$rest): array => [$first, $rest],
+        ['first' => 'x', 'rest' => 'y'],
+    );
+
+    expect($result)->toBe(['x', ['y']]);
 });

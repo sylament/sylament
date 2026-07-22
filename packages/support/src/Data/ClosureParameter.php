@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Data;
 
-class ClosureParameter
+final readonly class ClosureParameter
 {
     public function __construct(
-        protected readonly mixed $value,
+        private mixed $value,
     ) {
         //
     }

@@ -39,7 +39,7 @@ class SchemaExtension extends AbstractExtension
     {
         $component = $context['this'] ?? null;
         if (!$component instanceof InteractsWithSchemas) {
-            throw new RuntimeException('Component must be a instance of ' . InteractsWithSchemas::class);
+            throw new RuntimeException('Component must be an instance of ' . InteractsWithSchemas::class);
         }
 
         return $this->componentExtension->renderComponent($twig, $component->getSchema($name));

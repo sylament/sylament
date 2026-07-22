@@ -1,5 +1,7 @@
 {
     "name": "sylament/support",
+    "description": "Sylament support — shared foundations for the Sylament UI bundles: closure evaluation, the component base, icons, and the styling runtime",
+    "license": "MIT",
     "type": "symfony-bundle",
     "keywords": [
         "symfony-ux"
@@ -15,8 +17,10 @@
         "ext-mbstring": "*",
         "symfony/stimulus-bundle": "^3.1",
         "symfony/ux-icons": "^3.3",
-        "twig/twig": "^3.27",
-        "twig/html-extra": "^3.24"
+        "twig/twig": "^3.27"
+    },
+    "suggest": {
+        "symfony/ux-twig-component": "To render the shipped Twig components (Icon, IconButton, Section)"
     },
     "autoload": {
         "files": [

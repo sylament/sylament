@@ -24,7 +24,7 @@ it('renders a primary medium button by default', function (): void {
         ->toContain('class="sy sy-icon-btn sy-size-md sy-color sy-color-primary"')
         ->toContain('type="button"')
         ->toContain('<svg')
-        ->toContain('class="sy-icon sy-size-md"');
+        ->toContain('class="sy sy-icon sy-size-md"');
 });
 
 it('renders without an icon', function (): void {
@@ -37,7 +37,7 @@ it('renders without an icon', function (): void {
 it('derives the icon size from the button size', function (string $size, string $iconSize): void {
     expect(renderIconButton(['icon' => 'heroicons:x-mark', 'size' => $size]))
         ->toContain("sy-size-{$size}")
-        ->toContain("class=\"sy-icon sy-size-{$iconSize}\"");
+        ->toContain("class=\"sy sy-icon sy-size-{$iconSize}\"");
 })->with([
     'extra-small buttons shrink the icon' => ['xs', 'sm'],
     'large buttons grow the icon' => ['lg', 'lg'],
@@ -46,14 +46,14 @@ it('derives the icon size from the button size', function (string $size, string 
 
 it('prefers an explicit icon size over the derived one', function (): void {
     expect(renderIconButton(['icon' => 'heroicons:x-mark', 'size' => 'xs', 'iconSize' => 'lg']))
-        ->toContain('class="sy-icon sy-size-lg"');
+        ->toContain('class="sy sy-icon sy-size-lg"');
 });
 
 it('emits an unknown size string as a literal class', function (): void {
     expect(renderIconButton(['icon' => 'heroicons:x-mark', 'size' => 'huge']))
         ->toContain('class="sy sy-icon-btn huge sy-color sy-color-primary"')
         ->not->toContain('sy-size-huge')
-        ->toContain('class="sy-icon sy-size-md"');
+        ->toContain('class="sy sy-icon sy-size-md"');
 });
 
 it('renders a link with an href and a blank target', function (): void {

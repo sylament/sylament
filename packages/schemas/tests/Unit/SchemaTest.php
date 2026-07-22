@@ -6,17 +6,8 @@ namespace Sylament\Schemas\Tests\Unit;
 
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
 use Sylament\Support\Enum\Alignment;
-use Sylament\Support\Service\Invoker;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('resolves the $schema closure parameter to itself', function (): void {
     $schema = Schema::make();
@@ -32,6 +23,31 @@ it('resolves a self-typed closure parameter to itself', function (): void {
     $result = $schema->evaluate(fn (Schema $instance): Schema => $instance);
 
     expect($result)->toBe($schema);
+});
+
+it('resolves the $container closure parameter to itself', function (): void {
+    $schema = Schema::make();
+
+    $result = $schema->evaluate(fn ($container) => $container);
+
+    expect($result)->toBe($schema);
+});
+
+it('resolves the $liveComponent closure parameter to the bound live component', function (): void {
+    $liveComponent = new HasSchemasFixture();
+    $schema = Schema::make($liveComponent);
+
+    $result = $schema->evaluate(fn ($liveComponent) => $liveComponent);
+
+    expect($result)->toBe($liveComponent);
+});
+
+it('resolves the $liveComponent closure parameter to null on a standalone schema', function (): void {
+    $schema = Schema::make();
+
+    $result = $schema->evaluate(fn ($liveComponent): string => $liveComponent === null ? 'unbound' : 'bound');
+
+    expect($result)->toBe('unbound');
 });
 
 it('builds an aligned schema via each alignment factory', function (): void {

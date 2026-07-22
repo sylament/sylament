@@ -37,9 +37,7 @@ trait HasSchemas
             throw new RuntimeException('Schema must be an instance of ' . Schema::class);
         }
 
-        $this->cachedSchemas[$name] = $schema;
-
-        return $schema;
+        return $this->cachedSchemas[$name] = $schema->key($name);
     }
 
     /**

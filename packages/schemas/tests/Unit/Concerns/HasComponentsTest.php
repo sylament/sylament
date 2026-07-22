@@ -6,16 +6,6 @@ namespace Sylament\Schemas\Tests\Unit\Concerns;
 
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasComponentsFixture;
-use Sylament\Support\Service\Invoker;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('evaluates the closure lazily when reading the components', function (): void {
     $first = new Component();
@@ -54,4 +44,10 @@ it('rebuilds the cache when components() is called again', function (): void {
 
     expect($fixture->getComponents())->toBe($replacement)
         ->and($fixture->getComponents())->not->toBe($first);
+});
+
+it('treats a components closure returning null as empty', function (): void {
+    $fixture = new HasComponentsFixture()->components(fn (): ?array => null);
+
+    expect($fixture->getComponents())->toBe([]);
 });

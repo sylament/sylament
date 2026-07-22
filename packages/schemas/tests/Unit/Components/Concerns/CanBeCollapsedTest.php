@@ -6,16 +6,6 @@ namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
 
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
-use Sylament\Support\Service\Invoker;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('is not collapsible, collapsed, or persisting by default', function (): void {
     $section = Section::make('Profile');

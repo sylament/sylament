@@ -33,12 +33,12 @@
     class: iconColorName != 'gray' ? ['sy-color', 'sy-color-' ~ iconColorName] : [],
 }, size: iconSize ?? 'lg') %}
 
-{% set hasAfterHeader = (afterHeader ?? '')|trim is not empty %}
+{% set hasAfterHeader = afterHeader is filled %}
 {% set hasIcon = iconHtml is not empty %}
-{% set hasHeading = (heading ?? '')|trim is not empty %}
-{% set hasDescription = (description ?? '')|trim is not empty %}
-{% set hasContent = (content ?? '')|trim is not empty %}
-{% set hasFooter = (footer ?? '')|trim is not empty %}
+{% set hasHeading = heading is filled %}
+{% set hasDescription = description is filled %}
+{% set hasContent = content is filled %}
+{% set hasFooter = footer is filled %}
 {% set hasHeader = hasIcon or hasHeading or hasDescription or collapsible or hasAfterHeader %}
 {% set hasBody = hasContent or hasFooter %}
 
@@ -64,7 +64,7 @@
 
 <section
         {{ attributes.defaults({
-            class: html_classes('sy sy-section', {
+            class: classes('sy sy-section', {
                 'sy-section-not-contained': not contained,
                 'sy-section-has-header': hasHeader,
                 'sy-section-has-content-before': contentBefore,
@@ -82,7 +82,7 @@
 >
     {% if hasHeader %}
         <header
-                {{ html_attr({
+                {{ attrs({
                     class: ['sy-section-header'],
                     ...(collapsible ? stimulus_action(sectionController, 'toggleFromHeader', 'click') : {}),
                 }) }}
@@ -95,7 +95,7 @@
                 <div class="sy-section-header-text-ctn">
                 {% if hasHeading %}
                     <{{ headingTag }}
-                        {{ html_attr({
+                        {{ attrs({
                             id: headingId,
                             class: ['sy-section-header-heading'],
                         }) }}
@@ -106,7 +106,7 @@
 
                 {% if hasDescription %}
                     <p
-                        {{ html_attr({
+                        {{ attrs({
                             id: descriptionId,
                             class: ['sy-section-header-description'],
                         }) }}
@@ -141,11 +141,11 @@
 
     {% if hasBody %}
         <div
-                {{ html_attr({
+                {{ attrs({
                     id: contentId,
-                    class: html_classes('sy-section-content-ctn', {
+                    class: ['sy-section-content-ctn', {
                         'sy-cloak': collapsible and persistCollapsed,
-                    })|split(' '),
+                    }],
                     ...(collapsible ? stimulus_target(sectionController, 'content') : {}),
                 }) }}
         >

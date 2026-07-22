@@ -26,11 +26,11 @@ trait HasChildComponents
     }
 
     /**
-     * @param Schema|array<Component>|Closure|null $childComponents
+     * @param Schema|array<Component>|Closure|null $components
      */
-    public function childComponents(Schema|array|Closure|null $childComponents, string $key = 'default'): static
+    public function childComponents(Schema|array|Closure|null $components, string $key = 'default'): static
     {
-        $this->childComponents[$key] = $childComponents;
+        $this->childComponents[$key] = $components;
 
         return $this;
     }

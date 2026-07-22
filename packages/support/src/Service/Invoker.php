@@ -34,6 +34,7 @@ class Invoker implements StaticInstanceInterface
         array $namedInjections = [],
         array $typedInjections = [],
         ?callable $resolveParameter = null,
+        ?string $context = null,
     ): mixed {
         $reflection = $this->getCallableReflection($callable);
 
@@ -43,14 +44,16 @@ class Invoker implements StaticInstanceInterface
             $name = $parameter->getName();
 
             if (array_key_exists($name, $namedInjections)) {
-                $args[] = $namedInjections[$name];
+                $injection = $namedInjections[$name];
+                $args[] = $injection instanceof Closure ? $injection() : $injection;
                 continue;
             }
 
             $typeName = $this->getParameterClassName($parameter);
 
             if ($typeName !== null && array_key_exists($typeName, $typedInjections)) {
-                $args[] = $typedInjections[$typeName];
+                $injection = $typedInjections[$typeName];
+                $args[] = $injection instanceof Closure ? $injection() : $injection;
                 continue;
             }
 
@@ -60,6 +63,10 @@ class Invoker implements StaticInstanceInterface
                     $args[] = $resolvedParameter->getValue();
                     continue;
                 }
+            }
+
+            if ($parameter->isVariadic()) {
+                continue;
             }
 
             if ($typeName !== null && $this->container->has($typeName)) {
@@ -75,6 +82,10 @@ class Invoker implements StaticInstanceInterface
             if ($parameter->isOptional() || $parameter->allowsNull()) {
                 $args[] = null;
                 continue;
+            }
+
+            if ($context !== null) {
+                throw new RuntimeException("An attempt was made to evaluate a closure for [{$context}], but [\${$name}] was unresolvable.");
             }
 
             throw new RuntimeException($typeName === null
@@ -120,14 +131,20 @@ class Invoker implements StaticInstanceInterface
             return new ReflectionMethod($callable[0], $callable[1]);
         }
 
-        if (is_string($callable) && class_exists($callable)) {
-            return new ReflectionMethod($callable, '__invoke');
-        }
-
-        if (is_string($callable) || $callable instanceof Closure) {
+        if ($callable instanceof Closure) {
             return new ReflectionFunction($callable);
         }
 
-        throw new RuntimeException('Can not create reflection for callable');
+        if (is_object($callable)) {
+            return new ReflectionMethod($callable, '__invoke');
+        }
+
+        if (is_string($callable)) {
+            return str_contains($callable, '::')
+                ? ReflectionMethod::createFromMethodName($callable)
+                : new ReflectionFunction($callable);
+        }
+
+        throw new RuntimeException('Cannot reflect callable of type ' . get_debug_type($callable));
     }
 }

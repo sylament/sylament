@@ -17,7 +17,11 @@ Consumers never need Tailwind installed.
    hook-class convention: `sy-<package code>-<component>`, e.g. `sy-fo-input`,
    `sy-sc-grid`. Package codes: `sy-ac` (actions), `sy-fo` (forms), `sy-in`
    (infolists), `sy-no` (notifications), `sy-sc` (schemas), `sy-ta` (tables), `sy-wi`
-   (widgets); support-level classes have no code (`sy-color-danger`).
+   (widgets); support-level classes have no code (`sy-color-danger`). Not every
+   emitted class has its own CSS rule: templates also emit code-less state/modifier
+   classes (`sy-collapsed`, `sy-inline`, `sy-growable`, `sy-size-*`, breakpoint-
+   prefixed grid markers) that exist as styling hooks, selectors for variant rules,
+   and JS targets — inert until a component file or controller cares.
 2. **Every component template's root element carries the bare `sy` marker class**
    (`<div class="sy sy-fo-field">`). It is how the scoped preflight identifies
    Sylament markup — exact-class matching, so a host app's own `sy-*`-like class names
@@ -31,8 +35,13 @@ Consumers never need Tailwind installed.
    `styles/components.css`); `support`'s `styles/index.css` entry imports the
    aggregators and is the single Tailwind compile.
 4. **Dynamic per-instance values are inline CSS variables, never dynamic class names.**
-   Example: `Grid.html.twig` sets `style="--sy-grid-cols: {{ ... }}"` and the CSS uses
-   `repeat(var(--sy-grid-cols, 1), minmax(0, 1fr))`.
+   The grid system is the reference implementation: the `grid()` / `gridColumn()` Twig
+   functions (`GridExtension`) return class + style maps whose inline styles set
+   Filament-verbatim, deliberately *un*-prefixed variables (`--cols-lg: repeat(3,
+   minmax(0, 1fr))`, `--col-span-default: span 2 / span 2`) that `grid.css` consumes;
+   the classes (`sy-grid`, `lg:sy-grid-cols`, …) only gate *which* breakpoint variable
+   applies. Variables invented on our side (not part of a Filament-verbatim set) use
+   the `--sy-*` prefix.
 5. **Colors go through `--sy-*` runtime tokens.** `@theme inline` in support's
    `styles/index.css` bridges Tailwind color tokens to runtime variables, so
    `@apply bg-primary-600` compiles to `background-color: var(--sy-primary-600)`.
@@ -42,7 +51,9 @@ Consumers never need Tailwind installed.
 6. **Per-instance color uses the `color` palette** (Filament's trick): component CSS
    writes `@apply bg-color-500`; a `.sy-color-<palette>` class (see
    `support/assets/src/styles/utilities.css`) or inline `--sy-color-*` variables decide
-   what that resolves to. Defaults to `primary`.
+   what that resolves to. Defaults to `primary` — including for *unknown* color names,
+   which produce a `.sy-color-<unknown>` class no rule matches, so the `--sy-color-*`
+   root defaults (primary) win; Filament falls through to `inherit` instead.
 7. **Preflight is scoped, never page-wide.** `support`'s build generates
    `src/styles/preflight.generated.css` (gitignored) from the *installed* Tailwind's
    `preflight.css` via `assets/scripts/scope-preflight.mjs`, rewriting every rule to
@@ -55,7 +66,8 @@ Consumers never need Tailwind installed.
    consequences: Filament component CSS can be ported essentially verbatim, and host
    content nested *inside* a Sylament container also gets preflight semantics
    (unlayered host CSS still always wins).
-8. **Everything ships inside cascade layers** (`theme`, `base`, `components`), so any
+8. **Everything ships inside cascade layers** (`theme`, `base`, `components`,
+   `utilities` — the last carrying the `.sy-color-<palette>` swap classes), so any
    unlayered consumer CSS overrides Sylament without `!important`.
 9. **Dark mode is class-based**: `@variant dark (&:where(.dark, .dark *))`.
 

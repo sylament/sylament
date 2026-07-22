@@ -1,5 +1,7 @@
 {
     "name": "sylament/actions",
+    "description": "Sylament actions — actions for the Sylament UI toolkit",
+    "license": "MIT",
     "type": "symfony-bundle",
     "keywords": [
         "symfony-ux"

@@ -8,20 +8,10 @@ use RuntimeException;
 use stdClass;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
 use Sylament\Schemas\Twig\Extension\SchemaExtension;
-use Sylament\Support\Service\Invoker;
 use Sylament\Support\Twig\Extension\ComponentExtension;
-use Symfony\Component\DependencyInjection\Container;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
 use Twig\Markup;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 function schemaExtension(): SchemaExtension
 {

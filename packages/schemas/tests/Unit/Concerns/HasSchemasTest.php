@@ -7,16 +7,6 @@ namespace Sylament\Schemas\Tests\Unit\Concerns;
 use RuntimeException;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
-use Sylament\Support\Service\Invoker;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('declares a single "schema" by default', function (): void {
     expect(new HasSchemasFixture()->schemas())->toBe(['schema']);
@@ -78,4 +68,10 @@ it('reuses already cached schemas in getCachedSchemas()', function (): void {
     $schema = $fixture->getSchema();
 
     expect($fixture->getCachedSchemas()['schema'])->toBe($schema);
+});
+
+it('keys a schema by its name when caching it', function (): void {
+    $fixture = new HasSchemasFixture();
+
+    expect($fixture->getSchema()->getKey())->toBe('schema');
 });

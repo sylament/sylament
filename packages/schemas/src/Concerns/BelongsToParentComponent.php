@@ -10,9 +10,9 @@ trait BelongsToParentComponent
 {
     protected ?Component $parentComponent = null;
 
-    public function parentComponent(?Component $parentComponent): static
+    public function parentComponent(?Component $component): static
     {
-        $this->parentComponent = $parentComponent;
+        $this->parentComponent = $component;
 
         return $this;
     }
@@ -20,5 +20,10 @@ trait BelongsToParentComponent
     public function getParentComponent(): ?Component
     {
         return $this->parentComponent;
+    }
+
+    public function isRoot(): bool
+    {
+        return $this->parentComponent === null;
     }
 }

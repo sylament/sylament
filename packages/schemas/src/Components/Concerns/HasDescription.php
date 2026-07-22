@@ -11,7 +11,7 @@ trait HasDescription
 {
     protected string|Markup|Closure|null $description = null;
 
-    public function description(string|Markup|Closure|null $description): static
+    public function description(string|Markup|Closure|null $description = null): static
     {
         $this->description = $description;
 

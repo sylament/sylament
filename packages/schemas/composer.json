@@ -1,5 +1,7 @@
 {
     "name": "sylament/schemas",
+    "description": "Sylament schemas — the component and schema container model Sylament UIs are built from",
+    "license": "MIT",
     "type": "symfony-bundle",
     "keywords": [
         "symfony-ux"

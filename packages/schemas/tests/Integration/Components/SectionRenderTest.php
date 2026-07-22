@@ -387,7 +387,7 @@ it('renders headings beyond h6 as paragraphs, honoring the schema root heading l
 it('renders the header icon before the heading at the large default size', function (): void {
     $html = renderSection(Section::make('Profile')->icon('heroicons:x-mark'));
 
-    expect($html)->toMatch('/sy-section-header"\s*>\s*<svg[^>]*class="sy-icon sy-size-lg"/')
+    expect($html)->toMatch('/sy-section-header"\s*>\s*<svg[^>]*class="sy sy-icon sy-size-lg"/')
         ->toContain('aria-hidden="true"');
 });
 
@@ -408,7 +408,7 @@ it('renders no icon markup without an icon', function (): void {
 it('marks the icon with the dynamic color classes for a palette', function (): void {
     $html = renderSection(Section::make('Heading')->icon('heroicons:x-mark')->iconColor('danger'));
 
-    expect($html)->toContain('class="sy-icon sy-size-lg sy-color sy-color-danger"');
+    expect($html)->toContain('class="sy sy-icon sy-size-lg sy-color sy-color-danger"');
 });
 
 it('applies no color classes for the default or explicit gray icon color', function (): void {
@@ -441,7 +441,7 @@ it('renders the standalone support component from raw icon props', function (): 
     )->render();
 
     expect($html)->toContain('Standalone')
-        ->toContain('class="sy-icon sy-size-sm sy-color sy-color-danger"')
+        ->toContain('class="sy sy-icon sy-size-sm sy-color sy-color-danger"')
         ->toContain('aria-hidden="true"');
 });
 

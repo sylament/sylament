@@ -5,17 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Tests\Unit\Component\Concerns;
 
 use Sylament\Support\Enum\Alignment;
-use Sylament\Support\Service\Invoker;
 use Sylament\Support\Tests\Fixtures\Component\Concerns\HasAlignmentFixture;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('has no alignment by default', function (): void {
     expect(new HasAlignmentFixture()->getAlignment())->toBeNull();
@@ -75,4 +65,20 @@ it('reports dynamic alignment only for stored closures', function (): void {
         ->and(new HasAlignmentFixture()->alignment(fn (): ?Alignment => null)->hasDynamicAlignment())->toBeTrue()
         // The align helpers always store a condition-wrapping closure, even for literal conditions.
         ->and(new HasAlignmentFixture()->alignStart()->hasDynamicAlignment())->toBeTrue();
+});
+
+it('builds the alignment class from the enum value', function (): void {
+    $fixture = new HasAlignmentFixture()->alignment(Alignment::Center);
+
+    expect($fixture->getAlignmentClass())->toBe('sy-align-center');
+});
+
+it('passes a custom alignment class string through', function (): void {
+    $fixture = new HasAlignmentFixture()->alignment('my-align');
+
+    expect($fixture->getAlignmentClass())->toBe('my-align');
+});
+
+it('has no alignment class when unaligned', function (): void {
+    expect(new HasAlignmentFixture()->getAlignmentClass())->toBeNull();
 });

@@ -2,10 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Components\Concerns;
+namespace Sylament\Schemas\Concerns;
 
 use Closure;
-use Sylament\Schemas\Schema;
 
 trait HasColumns
 {
@@ -63,10 +62,6 @@ trait HasColumns
      */
     public function getAllColumns(): array
     {
-        if ($this instanceof Schema && ($parentComponent = $this->getParentComponent())) {
-            return $parentComponent->getAllColumns();
-        }
-
         if ($this->columns === null) {
             return [
                 'default' => 1,

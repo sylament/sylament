@@ -8,6 +8,8 @@ use Sylament\Support\Enum\GridDirection;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
+use function Sylament\Support\filled;
+
 class GridExtension extends AbstractExtension
 {
     /**
@@ -31,7 +33,8 @@ class GridExtension extends AbstractExtension
             $columns = ['lg' => $columns];
         }
 
-        $columns = array_filter($columns);
+        // Drop blank breakpoint keys, which would emit a garbage `<ws>:sy-grid-*` class.
+        $columns = array_filter(array_filter($columns), filled(...), ARRAY_FILTER_USE_KEY);
 
         $columns['default'] ??= 1;
 
@@ -120,7 +123,8 @@ class GridExtension extends AbstractExtension
             ];
         }
 
-        return array_filter($value);
+        // Drop blank breakpoint keys, which would emit a garbage `<ws>:sy-grid-*` class.
+        return array_filter(array_filter($value), filled(...), ARRAY_FILTER_USE_KEY);
     }
 
     /**
@@ -198,8 +202,8 @@ class GridExtension extends AbstractExtension
         return $styles;
     }
 
-    private function sanitizeBreakpoint(string $breakpoint): string
+    private function sanitizeBreakpoint(int|string $breakpoint): string
     {
-        return str_replace(['@', '!'], ['c', 'n'], $breakpoint);
+        return str_replace(['@', '!'], ['c', 'n'], (string) $breakpoint);
     }
 }

@@ -20,7 +20,7 @@
 
 <{{ tag }}
     {{ attributes.defaults({
-        class: html_classes('sy sy-icon-btn', {
+        class: classes('sy sy-icon-btn', {
             'sy-disabled': disabled,
             ('sy-size-' ~ sizeValue): sizeValue in knownSizes,
             (sizeValue ?? ''): sizeValue is not empty and sizeValue not in knownSizes,

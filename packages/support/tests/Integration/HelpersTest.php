@@ -17,7 +17,7 @@ it('renders a local icon through the real ux-icons renderer', function (): void 
     $html = (string) generate_icon_html('heroicons:x-mark');
 
     expect($html)->toContain('<svg')
-        ->toContain('class="sy-icon sy-size-md"')
+        ->toContain('class="sy sy-icon sy-size-md"')
         ->toContain('aria-hidden="true"');
 });
 
@@ -25,7 +25,7 @@ it('applies an explicit icon size class', function (): void {
     $this::getContainer();
 
     expect((string) generate_icon_html('heroicons:x-mark', size: IconSize::Large))
-        ->toContain('class="sy-icon sy-size-lg"');
+        ->toContain('class="sy sy-icon sy-size-lg"');
 });
 
 it('renders an icon resolved from a registered alias', function (): void {

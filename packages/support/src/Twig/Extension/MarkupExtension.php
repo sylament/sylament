@@ -8,8 +8,10 @@ use Twig\Environment;
 use Twig\Extension\AbstractExtension;
 use Twig\Markup;
 use Twig\TwigFunction;
+use Twig\TwigTest;
 
 use function Sylament\Support\blank;
+use function Sylament\Support\filled;
 
 class MarkupExtension extends AbstractExtension
 {
@@ -22,6 +24,16 @@ class MarkupExtension extends AbstractExtension
             new TwigFunction('markup', $this->markup(...), [
                 'needs_environment' => true,
             ]),
+        ];
+    }
+
+    /**
+     * @return array<TwigTest>
+     */
+    public function getTests(): array
+    {
+        return [
+            new TwigTest('filled', filled(...)),
         ];
     }
 

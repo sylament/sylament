@@ -71,3 +71,8 @@ Reference:
   [section.md](../schemas/section.md).
 - **Enum home is `Sylament\Support\Enum`** (singular) — see
   [icons.md](icons.md).
+- **`aria-label` double-encodes pre-escaped entities.** Filament escapes the
+  label with `doubleEncode: false`, so a caller passing `Jane &amp; Co` renders
+  singly-encoded; Twig's escaper has no double-encode toggle, so the same input
+  renders `&amp;amp;`. Pass unescaped labels (the normal case) and both sides
+  agree.

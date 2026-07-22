@@ -51,7 +51,7 @@ Reference:
   component's raw `icon`/`iconColor`/`iconSize` props, same as Filament's
   support section view.
 - **Extra attribute values are escaped at render.** The wrapper emits extras
-  through `html_attr()`, which escapes names and values; Filament merges with
+  through `attrs()`, which escapes names and values; Filament merges with
   `escape: false` and renders raw, so its `extraAttributes()` security caveat
   ("never pass unsanitized user input") is relaxed to values here.
 - **An `extraAttributes()` id survives an unset component id.** Filament seeds

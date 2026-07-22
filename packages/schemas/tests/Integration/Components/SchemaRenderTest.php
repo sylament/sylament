@@ -174,6 +174,15 @@ it('renders no alignment class by default', function (): void {
     expect(renderToHtml(schema()))->not->toContain('sy-align-');
 });
 
+it('drops a blank alignment instead of emitting an empty class token', function (): void {
+    $html = renderToHtml(schema()->alignment(''));
+
+    preg_match('/<div\s+class="([^"]*)"/', $html, $matches);
+
+    expect($matches[1] ?? 'no-class-attribute')->not->toContain('  ')
+        ->and($html)->not->toContain('sy-align-');
+});
+
 it('keeps the grid on an aligned non-inline schema', function (): void {
     $html = renderToHtml(schema()->alignEnd());
 

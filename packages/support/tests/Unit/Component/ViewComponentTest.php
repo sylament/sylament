@@ -4,20 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Component;
 
-use Sylament\Support\Service\Invoker;
 use Sylament\Support\Tests\Fixtures\Component\ViewComponentFixture;
 use Sylament\Support\Tests\Fixtures\Component\ViewComponentWithExtraTemplateDataFixture;
-use Symfony\Component\DependencyInjection\Container;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('has no template by default', function (): void {
     expect(new ViewComponentFixture()->getTemplate())->toBeNull();

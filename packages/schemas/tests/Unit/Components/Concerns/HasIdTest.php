@@ -6,16 +6,6 @@ namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
 
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
-use Sylament\Support\Service\Invoker;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('has no id by default', function (): void {
     $component = new Component();

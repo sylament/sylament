@@ -5,17 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Tests\Unit\Component\Concerns;
 
 use Sylament\Support\Enum\IconPosition;
-use Sylament\Support\Service\Invoker;
 use Sylament\Support\Tests\Fixtures\Component\Concerns\HasIconPositionFixture;
-use Symfony\Component\DependencyInjection\Container;
-
-beforeEach(function (): void {
-    Invoker::setInstance(new Invoker(new Container()));
-});
-
-afterEach(function (): void {
-    Invoker::unsetInstance();
-});
 
 it('defaults to the Before position without reporting one set', function (): void {
     $fixture = new HasIconPositionFixture();

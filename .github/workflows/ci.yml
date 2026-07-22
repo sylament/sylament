@@ -1,0 +1,119 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+    tags:
+      - '*'
+
+permissions:
+  contents: read
+
+jobs:
+  php:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+
+      - name: Resolve Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ hashFiles('composer.json', 'packages/*/composer.json') }}
+          restore-keys: composer-
+
+      - run: composer install --no-interaction --no-progress
+
+      - run: composer test
+
+      - run: composer test:lint
+
+  assets:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm test:lint
+
+      - run: pnpm test:types
+
+      - name: Verify committed dist matches a fresh build
+        run: |
+          pnpm build
+          git add -A
+          git diff --cached --exit-code
+
+  split-monorepo:
+    if: github.event_name == 'push'
+
+    needs:
+      - php
+      - assets
+
+    runs-on: ubuntu-latest
+
+    env:
+      GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          - actions
+          - forms
+          - infolists
+          - notifications
+          - panels
+          - schemas
+          - support
+          - tables
+          - widgets
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # no tag
+      -
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: danharrin/monorepo-split-github-action@v2.4.5
+        with:
+          package_directory: 'packages/${{ matrix.package }}'
+          repository_organization: 'sylament'
+          repository_name: '${{ matrix.package }}'
+          user_name: "Martin Petricko"
+          user_email: "matopetricko@gmail.com"
+
+      # with tag
+      -
+        if: "startsWith(github.ref, 'refs/tags/')"
+        uses: danharrin/monorepo-split-github-action@v2.4.5
+        with:
+          tag: ${GITHUB_REF#refs/tags/}
+          package_directory: 'packages/${{ matrix.package }}'
+          repository_organization: 'sylament'
+          repository_name: '${{ matrix.package }}'
+          user_name: "Martin Petricko"
+          user_email: "matopetricko@gmail.com"

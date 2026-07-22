@@ -18,6 +18,16 @@
     "enabled": true,
     "rules": {
       "recommended": true,
+      "correctness": {
+        "useImportExtensions": {
+          "level": "error",
+          "options": {
+            "extensionMappings": {
+              "ts": "js"
+            }
+          }
+        }
+      },
       "style": {
         "useConst": "error",
         "useImportType": "error",

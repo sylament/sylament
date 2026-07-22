@@ -1,24 +1,8 @@
 import { Controller } from "@hotwired/stimulus";
+import { uncloak } from "../utils/cloak.js";
 
 const COLLAPSED_CLASS = "sy-collapsed";
-const CLOAK_CLASS = "sy-cloak";
 
-/**
- * Filament v5 section collapse (Alpine → Stimulus port).
- *
- * Event contract preserved verbatim from Filament:
- * - window `collapse-section` / `expand-section` / `open-section` / `toggle-section`,
- *   matched by `detail.id` against the id value (falling back to the element id);
- * - element-level `expand` (dispatched directly on the section during ancestor
- *   walks, e.g. revealing a validation error) — unconditional;
- * - window `reset-schema-component-state`, matched by live-component id + root
- *   schema key, restores the server default; the template omits the descriptor
- *   when persisting.
- *
- * Live state is the `sy-collapsed` class on the element; `collapsedValue` stays
- * the immutable server default. Persistence key `section-<id>-isCollapsed` with
- * JSON booleans — interoperable with Alpine $persist storage written by Filament.
- */
 export default class extends Controller<HTMLElement> {
   static targets = ["button", "content"];
 
@@ -50,7 +34,7 @@ export default class extends Controller<HTMLElement> {
     }
 
     if (this.hasContentTarget) {
-      this.contentTarget.classList.remove(CLOAK_CLASS);
+      uncloak(this.contentTarget);
     }
   }
 
@@ -102,8 +86,6 @@ export default class extends Controller<HTMLElement> {
       return;
     }
 
-    // Filament defers with $nextTick for Livewire morph timing; revisit when
-    // live-component state lands.
     this.#setCollapsed(this.collapsedValue);
   }
 

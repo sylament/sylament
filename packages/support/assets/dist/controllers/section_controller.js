@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
+import { uncloak } from "../utils/cloak.js";
 const COLLAPSED_CLASS = "sy-collapsed";
-const CLOAK_CLASS = "sy-cloak";
 class section_controller_default extends Controller {
   static targets = ["button", "content"];
   static values = {
@@ -17,7 +17,7 @@ class section_controller_default extends Controller {
       this.#setCollapsed(this.#readPersisted() ?? this.collapsedValue);
     }
     if (this.hasContentTarget) {
-      this.contentTarget.classList.remove(CLOAK_CLASS);
+      uncloak(this.contentTarget);
     }
   }
   collapse(event) {

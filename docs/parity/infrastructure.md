@@ -15,9 +15,13 @@ Stimulus values, listen for window events via `@window` action descriptors,
 and render the initial state server-side — hide-before-init only where the
 truth is client-side (persisted state), via the generic `sy-cloak` class
 (`base.css`, gated on `@media (scripting: enabled)` so JS-off keeps content
-reachable). Templates author the wiring with StimulusBundle's Twig helpers —
-`stimulus_controller()`/`stimulus_action()`/`stimulus_target()` chains merged
-into `attributes.defaults()`/`html_attr()` via `.toArray()` (null values are
+reachable), revealed by the shared `uncloak()` helper
+(`assets/src/utils/cloak.ts`) that the owning controller calls from
+`connect()` once its initial state is applied. Templates author the wiring
+with StimulusBundle's Twig helpers —
+`stimulus_controller()`/`stimulus_action()`/`stimulus_target()` chains spread
+into the `attributes.defaults()`/`html_attr()` maps with Twig's `...`
+operator (`StimulusAttributes` is iterable; null controller values are
 skipped, so conditional attributes need no ternaries) — which makes
 `symfony/stimulus-bundle` a hard production dependency of `support` (declared
 there; the helper functions resolve at Twig compile time, so templates fail

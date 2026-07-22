@@ -498,7 +498,8 @@ it('renders the disclosure chevron button', function (): void {
 it('marks the content container as the controller content target', function (): void {
     $html = renderSection(Section::make('Profile')->collapsible());
 
-    expect($html)->toContain('data-sylament--support--section-target="content"');
+    expect($html)->toContain('data-sylament--support--section-target="content"')
+        ->not->toContain('sy-cloak');
 });
 
 it('renders an initially collapsed section with matching ARIA', function (): void {

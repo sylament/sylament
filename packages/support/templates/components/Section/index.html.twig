@@ -76,14 +76,16 @@
                 'sy-collapsed': collapsible and collapsed
             }),
             'aria-labelledby': labelledById ?: false,
-            'aria-describedby': descriptionId ?: false
-        }|merge(sectionStimulus ? sectionStimulus.toArray() : {})) }}
+            'aria-describedby': descriptionId ?: false,
+            ...(sectionStimulus ?: {})
+        }) }}
 >
     {% if hasHeader %}
         <header
                 {{ html_attr({
                     class: ['sy-section-header'],
-                }|merge(collapsible ? stimulus_action(sectionController, 'toggleFromHeader', 'click').toArray() : {})) }}
+                    ...(collapsible ? stimulus_action(sectionController, 'toggleFromHeader', 'click') : {}),
+                }) }}
         >
             {% if hasIcon %}
                 {{ iconHtml }}
@@ -93,21 +95,21 @@
                 <div class="sy-section-header-text-ctn">
                 {% if hasHeading %}
                     <{{ headingTag }}
-                    {{ html_attr({
-                        id: headingId,
-                        class: ['sy-section-header-heading'],
-                    }) }}
+                        {{ html_attr({
+                            id: headingId,
+                            class: ['sy-section-header-heading'],
+                        }) }}
                     >
-                    {{ heading }}
+                        {{ heading }}
                     </{{ headingTag }}>
                 {% endif %}
 
                 {% if hasDescription %}
                     <p
-                            {{ html_attr({
-                                id: descriptionId,
-                                class: ['sy-section-header-description'],
-                            }) }}
+                        {{ html_attr({
+                            id: descriptionId,
+                            class: ['sy-section-header-description'],
+                        }) }}
                     >
                         {{ description }}
                     </p>
@@ -127,7 +129,7 @@
                         icon="heroicons:chevron-up"
                         iconAlias="section.collapse-button"
                         class="sy-section-collapse-btn"
-                        {{ ...(stimulus_action(sectionController, 'toggleFromButton', 'click')|stimulus_target(sectionController, 'button')).toArray() }}
+                        {{ ...(stimulus_action(sectionController, 'toggleFromButton', 'click')|stimulus_target(sectionController, 'button')) }}
                         aria-label="{{ collapsed ? expandLabel : collapseLabel }}"
                         aria-expanded="{{ collapsed ? 'false' : 'true' }}"
                         :aria-controls="hasBody and contentId ? contentId : false"
@@ -144,7 +146,8 @@
                     class: html_classes('sy-section-content-ctn', {
                         'sy-cloak': collapsible and persistCollapsed,
                     })|split(' '),
-                }|merge(collapsible ? stimulus_target(sectionController, 'content').toArray() : {})) }}
+                    ...(collapsible ? stimulus_target(sectionController, 'content') : {}),
+                }) }}
         >
             {% if hasContentEl %}
                 <div class="sy-section-content">

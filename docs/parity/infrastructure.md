@@ -15,7 +15,14 @@ Stimulus values, listen for window events via `@window` action descriptors,
 and render the initial state server-side — hide-before-init only where the
 truth is client-side (persisted state), via the generic `sy-cloak` class
 (`base.css`, gated on `@media (scripting: enabled)` so JS-off keeps content
-reachable). Remaining under this anchor: the `HasExtraAlpineAttributes`
+reachable). Templates author the wiring with StimulusBundle's Twig helpers —
+`stimulus_controller()`/`stimulus_action()`/`stimulus_target()` chains merged
+into `attributes.defaults()`/`html_attr()` via `.toArray()` (null values are
+skipped, so conditional attributes need no ternaries) — which makes
+`symfony/stimulus-bundle` a hard production dependency of `support` (declared
+there; the helper functions resolve at Twig compile time, so templates fail
+without the bundle even when nothing is collapsible). Remaining under this
+anchor: the `HasExtraAlpineAttributes`
 equivalent (extra Stimulus attributes on components); future behavior ports
 (tabs, wizard, dropdown, tooltip, key bindings, …); and a JS unit-test harness
 decision — controllers are currently covered by `tsc --noEmit` strict + Biome

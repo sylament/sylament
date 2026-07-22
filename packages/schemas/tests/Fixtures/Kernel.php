@@ -12,6 +12,7 @@ use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
 use Symfony\UX\Icons\UXIconsBundle;
+use Symfony\UX\StimulusBundle\StimulusBundle;
 use Symfony\UX\TwigComponent\TwigComponentBundle;
 use Twig\Extra\Html\HtmlExtension;
 
@@ -26,6 +27,7 @@ class Kernel extends BaseKernel
             new TwigBundle(),
             new TwigComponentBundle(),
             new UXIconsBundle(),
+            new StimulusBundle(),
 
             new SylamentSchemasBundle(),
             new SylamentSupportBundle(),

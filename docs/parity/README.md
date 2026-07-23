@@ -6,6 +6,10 @@ Filament component, homed under the Sylament package that owns its public API
 Twig template/CSS — the tracking unit is the Filament component, not the file
 layout).
 
+For the epic-level view — how the whole port is sectioned into epics and in what
+order they run — see [roadmap.md](roadmap.md). This file is the per-component
+detail beneath it.
+
 ## Conventions
 
 - **File**: `docs/parity/<package>/<component>.md`, kebab-case component name.

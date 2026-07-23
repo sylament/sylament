@@ -58,8 +58,11 @@ shared/descendant-path handling, the `dehydrated`/`saved`/`dehydratedWhenHidden`
 conditions, `beforeStateDehydrated`, `mutateDehydratedState`, and a minimal
 `CanBeHidden` slice for the hidden gate), and **T5** (cast-aware `$get`/`$set`
 component resolution — `getComponentByStatePath()` returning cast state, with the
-raw-bag fallback for undeclared paths) have landed; T6–T7 (relationships,
-poll/renderless) remain. Per-item state lives in
+raw-bag fallback for undeclared paths) have landed. **T7** was resolved as a
+documented divergence (renderless-after-update doesn't port — wire-identical to a
+non-live field in UX — and `CanPoll` → `data-poll` is deferred until a first-party
+host can emit it; see [schemas/component.md](schemas/component.md)); only **T6**
+(Doctrine relationship loading) remains. Per-item state lives in
 [schemas/component.md](schemas/component.md) /
 [schemas/schema.md](schemas/schema.md).
 

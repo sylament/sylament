@@ -77,12 +77,12 @@ Blocked on infrastructure:
   path (new `getComponentByStatePath()` on the schema `HasComponents`) and
   return/route its **cast** state, falling back to a raw bag read/write for a path
   owned by no component (T5). Still missing:
-  relationship loading (T6). `CanPoll` +
-  the renderless arms (T7), `CanPartiallyRender` (permanent divergence — see
-  below), the per-child wrapper state features (`wire:key`, JS visibility,
-  partial-render targeting — the grid-column wrapper itself is ported),
-  `$operation`, and the state-dependent remainder of `HasKey` (state-path
-  fallbacks, `getLivewireKey()`) remain blocked on
+  relationship loading (T6). `CanPartiallyRender` and renderless-after-update do
+  **not** port, and `CanPoll` → `data-poll` is **deferred** to a first-party host
+  (T7 — see the divergences below); the per-child wrapper state features
+  (`wire:key`, JS visibility, partial-render targeting — the grid-column wrapper
+  itself is ported), `$operation`, and the state-dependent remainder of `HasKey`
+  (state-path fallbacks, `getLivewireKey()`) remain blocked on
   [live-component-state](../infrastructure.md#live-component-state)
 - [ ] `CanBeConcealed` (`isConcealed()`, `getConcealingComponent()`) — the
   `CanConcealComponents` contract it pairs with exists (Section implements it);
@@ -147,7 +147,9 @@ Revisit with later packages:
   on the raw-write fallback (no repeaters/builders whose child schemas depend on
   state). `shouldCallUpdatedHooks` fires `callAfterStateUpdatedHooks()` only —
   Filament's fuller `callAfterStateUpdated()` (partial render, renderless,
-  parent-bubble) is T7 / the partial-render divergence.
+  parent-bubble) has no `Set`-side equivalent: partial render and parent-bubble are
+  the partial-render divergence, and renderless-after-update doesn't port (T7 —
+  see below).
 - **Closure results are type-checked, not coerced.** Filament wraps evaluated
   flags in `(bool)` casts (`CanBeCollapsed`, `HasGap`, `CanBeContained`, …);
   under `strict_types=1` we return the evaluated value against the declared
@@ -174,11 +176,29 @@ Revisit with later packages:
   dedup** and **no per-write parent-bubbling** — a field→sibling cascade fires only
   when the target is visited after the source in flat order (true bubbling pairs
   with nested layouts, T4); `$oldState` roughly doubles wire state (accepted).
-- **No server-side partial render.**
+- **No server-side partial render — and the reactivity features that fall out of it (T7).**
   `CanPartiallyRender::partiallyRenderComponentsAfterStateUpdated` has no UX
-  equivalent; every round-trip re-renders the whole schema and client Idiomorph
-  diffs. Permanent divergence (design §3). `skipRender`/renderless **does** port
-  (T7, `norender` / suppress re-render).
+  equivalent: every round-trip re-renders the whole schema and client Idiomorph
+  diffs (permanent divergence, design §3). Two adjacent Filament reactivity features
+  collapse for the same reason (UX always re-renders the whole component per request)
+  and were **deliberately not shipped** in T7:
+  - **Renderless-after-update** (`skipRenderAfterStateUpdated` /
+    `isRenderlessAfterStateUpdated`) means "run the update round-trip, skip the
+    repaint." UX has no such mode; the only lever is the client `norender` model
+    modifier, which suppresses the round-trip *entirely* (the hook then fires
+    batched on the next request via the `#[PostHydrate]` diff). That is
+    wire-identical to a plain non-live field, so the setter would be a redundant,
+    misleading alias — a field that should sync without re-rendering simply omits
+    `live()` (the default binding is already `norender|<path>`). Not ported.
+  - **Polling** (`CanPoll` → `data-poll`) is **deferred**, not rejected. UX honors
+    `data-poll` only on the live-controller root — the host's `#[AsLiveComponent]`
+    template — and only as a whole-component `$render`, never Filament's
+    per-component `wire:poll` + `partiallyRenderSchemaComponent(...)`. The schemas
+    package renders *inside* that root and doesn't own it, so `poll()` cannot
+    auto-emit until a first-party host/form base (forms/panels) owns the live
+    template. A bring-your-own host meanwhile sets
+    `data-poll="delay(<ms>)|$render"` on its own root directly (the native UX way).
+    Revisit when that base lands.
 - **State casts operate on the bespoke `$data` bag (T3).** The `StateCast`
   `set`/`get` pipeline transforms raw bag values ↔ typed application values with no
   Eloquent-casting analogue (design locked decision). Casts apply on **both** fill

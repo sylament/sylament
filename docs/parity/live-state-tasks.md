@@ -484,8 +484,18 @@ checkpoint.)
 
 ## T7 — Renderless / poll / partial-render divergence
 
-- [ ] **T7** — renderless-after-update (`norender`/`skipRender`), `CanPoll` →
-  `data-poll`, and the recorded `CanPartiallyRender` divergence.
+- [x] **T7** — resolved as documentation, not code. Investigated all three against
+  UX Live Components and recorded the disposition in
+  [schemas/component.md](schemas/component.md): `CanPartiallyRender` is a permanent
+  divergence (no server-side per-region render); **renderless-after-update is not
+  ported** — UX has no "round-trip but skip repaint", the only lever is the client
+  `norender` modifier which suppresses the round-trip entirely and is wire-identical
+  to a plain non-live field, so `skipRenderAfterStateUpdated()` would be a redundant,
+  misleading alias; **`CanPoll` → `data-poll` is deferred** — UX honors `data-poll`
+  only on the live-controller root (the host's `#[AsLiveComponent]` template), which
+  the schemas package doesn't own, so `poll()` can't auto-emit until a first-party
+  host/form base lands (a bring-your-own host sets `data-poll="delay(<ms>)|$render"`
+  natively meanwhile).
 
 **Goal.** Port the reactivity behaviors that *do* map to UX and formally record
 the one that doesn't.

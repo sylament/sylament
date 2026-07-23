@@ -17,8 +17,18 @@ final readonly class Get
 
     public function __invoke(string|Component $path = '', bool $isAbsolute = false): mixed
     {
+        $liveComponent = $this->component->getLiveComponent();
+
         $path = $this->component->resolveRelativeStatePath($path, $isAbsolute);
 
-        return PropertyAccessor::getInstance()->get($this->component->getLiveComponent(), $path);
+        $component = ($this->component->getStatePath() === $path)
+            ? $this->component
+            : $this->component->getRootContainer()->getComponentByStatePath($path, [$this->component]);
+
+        if (!$component instanceof Component) {
+            return PropertyAccessor::getInstance()->get($liveComponent, $path);
+        }
+
+        return $component->getState();
     }
 }

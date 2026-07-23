@@ -15,15 +15,27 @@ final readonly class Set
         //
     }
 
-    public function __invoke(string|Component $path, mixed $state, bool $isAbsolute = false): mixed
+    public function __invoke(string|Component $path, mixed $state, bool $isAbsolute = false, bool $shouldCallUpdatedHooks = false): mixed
     {
+        $liveComponent = $this->component->getLiveComponent();
+
         $path = $this->component->resolveRelativeStatePath($path, $isAbsolute);
 
-        PropertyAccessor::getInstance()->set(
-            $this->component->getLiveComponent(),
-            $path,
-            $this->component->evaluate($state),
-        );
+        $component = ($this->component->getStatePath() === $path)
+            ? $this->component
+            : $this->component->getRootContainer()->getComponentByStatePath($path, [$this->component]);
+
+        $state = $this->component->evaluate($state);
+
+        if ($component instanceof Component) {
+            $component->state($state);
+
+            if ($shouldCallUpdatedHooks) {
+                $component->callAfterStateUpdatedHooks();
+            }
+        } else {
+            PropertyAccessor::getInstance()->set($liveComponent, $path, $state);
+        }
 
         return $state;
     }

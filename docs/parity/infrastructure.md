@@ -56,8 +56,10 @@ pipeline — `stateCast()` + the `StateCast` contract, applied `set` on hydrate 
 `get` on read), and **T4** (correct dehydration — `dehydrateState()` with
 shared/descendant-path handling, the `dehydrated`/`saved`/`dehydratedWhenHidden`
 conditions, `beforeStateDehydrated`, `mutateDehydratedState`, and a minimal
-`CanBeHidden` slice for the hidden gate) have landed; T5–T7 (`$get`/`$set`
-resolution, relationships, poll/renderless) remain. Per-item state lives in
+`CanBeHidden` slice for the hidden gate), and **T5** (cast-aware `$get`/`$set`
+component resolution — `getComponentByStatePath()` returning cast state, with the
+raw-bag fallback for undeclared paths) have landed; T6–T7 (relationships,
+poll/renderless) remain. Per-item state lives in
 [schemas/component.md](schemas/component.md) /
 [schemas/schema.md](schemas/schema.md).
 

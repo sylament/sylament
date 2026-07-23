@@ -52,7 +52,7 @@ Blocked on infrastructure:
 - [ ] `HasActions` (`registerActions()`, `getAction()`, …) — blocked on
   [actions-package](../infrastructure.md#actions-package)
 - [ ] `HasState` **partially ported** (T1 substrate + T2 reactive loop + T3 casts +
-  T4 dehydration):
+  T4 dehydration + T5 cast-aware `$get`/`$set` resolution):
   state paths (`statePath()`, absolute `getStatePath()`, `resolveRelativeStatePath()`),
   `getRawState()`/`rawState()`/`state()`/`getState()`, `default()`,
   `afterStateHydrated()`/`formatStateUsing()`, `hydrateState()`/`fillStateWithNull()`,
@@ -73,9 +73,11 @@ Blocked on infrastructure:
   concrete cast ported so far), and the
   `$state`/`$rawState`/`$get`/`$set`/`$liveComponent`/`$old`/`$oldRaw` closure
   parameters — `$state`/`$old` are now the **cast** values (the container half is in
-  [schema.md](schema.md)). Still missing:
-  cast-aware component-resolving `$get`/`$set` (T5), relationship loading (T6).
-  `CanPoll` +
+  [schema.md](schema.md)); `$get`/`$set` resolve the owning **component** by state
+  path (new `getComponentByStatePath()` on the schema `HasComponents`) and
+  return/route its **cast** state, falling back to a raw bag read/write for a path
+  owned by no component (T5). Still missing:
+  relationship loading (T6). `CanPoll` +
   the renderless arms (T7), `CanPartiallyRender` (permanent divergence — see
   below), the per-child wrapper state features (`wire:key`, JS visibility,
   partial-render targeting — the grid-column wrapper itself is ported),
@@ -131,8 +133,21 @@ Revisit with later packages:
 - **`$get`/`$set` built with `new`, not the container.** Following the divergence
   above, `makeGetUtility()`/`makeSetUtility()` return `new Get($this)` /
   `new Set($this)`, where Filament resolves `app(Get::class, ['component' => $this])`.
-  T1's `Get`/`Set` are raw path read/write over the `$data` bag; the cast-aware,
-  `getComponentByStatePath()`-resolving form is T5.
+  `Get`/`Set` now resolve the owning component via
+  `getRootContainer()->getComponentByStatePath()` and return its cast `getState()`
+  / route writes through cast `state()` + optional `afterStateUpdated`
+  (`shouldCallUpdatedHooks`), keeping the T1 raw bag read/write as the fallback for a
+  path owned by no component (T5). Minimal port — deferred until the components that
+  exercise them exist: Filament's static *accumulating* skip-stack in `Get`
+  (a single-element `[$this->component]` skip suffices absent computed-getter chains,
+  and keeps both utilities `final readonly`), `getComponentByStatePath`'s `withHidden`
+  / `withAbsoluteStatePath` params and result cache (our `getComponents()` /
+  `getChildSchemas()` never prune hidden, callers always resolve to an absolute path
+  first, and the O(components) walk needs no cache yet), and `clearCachedChildSchemas()`
+  on the raw-write fallback (no repeaters/builders whose child schemas depend on
+  state). `shouldCallUpdatedHooks` fires `callAfterStateUpdatedHooks()` only —
+  Filament's fuller `callAfterStateUpdated()` (partial render, renderless,
+  parent-bubble) is T7 / the partial-render divergence.
 - **Closure results are type-checked, not coerced.** Filament wraps evaluated
   flags in `(bool)` casts (`CanBeCollapsed`, `HasGap`, `CanBeContained`, …);
   under `strict_types=1` we return the evaluated value against the declared

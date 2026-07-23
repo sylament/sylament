@@ -417,9 +417,16 @@ correct pruned array. DoD gates green.
 
 ## T5 — `$get`/`$set` component resolution (cast-aware)
 
-- [ ] **T5** — upgrade `Get`/`Set` to resolve the target **component** by state
-  path and return its cast `getState()` (Filament's fuller form), with
-  child-container skipping.
+- [x] **T5** — upgraded `Get`/`Set` to resolve the target **component** by state
+  path (new `getComponentByStatePath()` on the schema `HasComponents`) and return
+  its cast `getState()` / route writes through the cast `state()` setter + optional
+  `afterStateUpdated`, with single-element child-container skipping and the T1
+  raw-bag fallback preserved for undeclared paths. Minimal port (session decision):
+  Filament's static accumulating skip-stack, the `withHidden`/`withAbsoluteStatePath`
+  params, the `getComponentByStatePath` result cache, and `clearCachedChildSchemas`
+  on the raw-write fallback are deferred (unreachable until computed fields /
+  repeaters / hidden-filtering land) — recorded in
+  [schemas/component.md](schemas/component.md).
 
 **Goal.** Make `$get('../sibling')` return the sibling's *cast* state (not a raw
 bag read), matching Filament, now that casts (T3) and nesting exist.

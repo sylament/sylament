@@ -10,6 +10,8 @@ use Sylament\Schemas\Components\Html;
 use Sylament\Schemas\Components\Text;
 use Twig\Markup;
 
+use function Sylament\Support\blank;
+use function Sylament\Support\filled;
 use function Sylament\Support\wrap;
 
 trait HasComponents
@@ -80,5 +82,40 @@ trait HasComponents
         }
 
         return $flatComponents;
+    }
+
+    /**
+     * Resolve the component owning an absolute state path, descending into child
+     * schemas. Never descends into the children of a component in
+     * `$skipComponentsChildContainersWhileSearching` (identity), so a component's
+     * own `$get`/`$set` cannot recurse into itself. Callers pass absolute paths.
+     *
+     * @param array<Component> $skipComponentsChildContainersWhileSearching
+     */
+    public function getComponentByStatePath(string $statePath, array $skipComponentsChildContainersWhileSearching = []): ?Component
+    {
+        foreach ($this->getComponents() as $component) {
+            $componentStatePath = $component->getStatePath();
+
+            if (filled($componentStatePath) && $componentStatePath === $statePath) {
+                return $component;
+            }
+
+            if (in_array($component, $skipComponentsChildContainersWhileSearching, strict: true)) {
+                continue;
+            }
+
+            if (blank($componentStatePath) || str_starts_with($statePath, "{$componentStatePath}.")) {
+                foreach ($component->getChildSchemas() as $childSchema) {
+                    $found = $childSchema->getComponentByStatePath($statePath, $skipComponentsChildContainersWhileSearching);
+
+                    if ($found !== null) {
+                        return $found;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 }

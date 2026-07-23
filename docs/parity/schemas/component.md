@@ -45,12 +45,20 @@ Blocked on infrastructure:
 
 - [ ] `HasActions` (`registerActions()`, `getAction()`, …) — blocked on
   [actions-package](../infrastructure.md#actions-package)
-- [ ] `HasState`, `HasStateBindingModifiers`, `CanPoll`, `CanPartiallyRender`,
-  the state features of the per-child wrapper (`wire:key`, JS visibility,
-  partial-render targeting — the grid-column wrapper itself is ported), the
-  state-dependent closure parameters (`$state`, `$rawState`, `$get`, `$set`,
-  `$livewire`, `$operation`), and the state-dependent remainder of `HasKey`
-  (state-path fallbacks, `getLivewireKey()`) — blocked on
+- [ ] `HasState` **partially ported** (T1 deterministic substrate): state paths
+  (`statePath()`, absolute `getStatePath()`, `resolveRelativeStatePath()`),
+  `getRawState()`/`rawState()`/`state()`/`getState()`, `default()`,
+  `afterStateHydrated()`/`formatStateUsing()`, `hydrateState()`/`fillStateWithNull()`,
+  minimal `dehydrated()`/`isDehydrated()`, `makeGet/SetUtility()`, and the
+  `$state`/`$rawState`/`$get`/`$set`/`$liveComponent` closure parameters (the
+  container half is in [schema.md](schema.md)). Still missing: `afterStateUpdated()`
+  + the change bridge (T2), state casts (T3), full dehydration /
+  `mutateDehydratedState` / conditions (T4), cast-aware component-resolving
+  `$get`/`$set` (T5), relationship loading (T6). `HasStateBindingModifiers`,
+  `CanPoll`, `CanPartiallyRender`, the per-child wrapper state features (`wire:key`,
+  JS visibility, partial-render targeting — the grid-column wrapper itself is
+  ported), `$operation`, and the state-dependent remainder of `HasKey` (state-path
+  fallbacks, `getLivewireKey()`) remain blocked on
   [live-component-state](../infrastructure.md#live-component-state)
 - [ ] `CanBeConcealed` (`isConcealed()`, `getConcealingComponent()`) — the
   `CanConcealComponents` contract it pairs with exists (Section implements it);
@@ -98,6 +106,11 @@ Revisit with later packages:
   throw. The planned sharpening (a curated `ServiceLocator` of injectable
   services) is recorded on the
   [translation](../infrastructure.md#translation) anchor.
+- **`$get`/`$set` built with `new`, not the container.** Following the divergence
+  above, `makeGetUtility()`/`makeSetUtility()` return `new Get($this)` /
+  `new Set($this)`, where Filament resolves `app(Get::class, ['component' => $this])`.
+  T1's `Get`/`Set` are raw path read/write over the `$data` bag; the cast-aware,
+  `getComponentByStatePath()`-resolving form is T5.
 - **Closure results are type-checked, not coerced.** Filament wraps evaluated
   flags in `(bool)` casts (`CanBeCollapsed`, `HasGap`, `CanBeContained`, …);
   under `strict_types=1` we return the evaluated value against the declared

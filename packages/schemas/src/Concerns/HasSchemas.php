@@ -7,6 +7,15 @@ namespace Sylament\Schemas\Concerns;
 use RuntimeException;
 use Sylament\Schemas\Schema;
 
+/**
+ * Host-side schema management. The host declares its own state as
+ * `#[LiveProp(writable: true)]` properties — a `data` array bag, individual
+ * typed props, or one bag per form — and each schema-defining method binds to
+ * them via `->statePath(...)`, mirroring Filament's
+ * `->statePath($this->getFormStatePath())` (which likewise defaults to no path,
+ * i.e. top-level binding). The trait presumes no state shape, so a single host
+ * can carry several independently-bound schemas without them colliding.
+ */
 trait HasSchemas
 {
     /**
@@ -38,6 +47,19 @@ trait HasSchemas
         }
 
         return $this->cachedSchemas[$name] = $schema->key($name);
+    }
+
+    /**
+     * Fill the default schema. Multi-schema hosts fill each explicitly via
+     * `getSchema($name)->fill(...)`.
+     *
+     * @param array<string, mixed>|null $state
+     */
+    public function fill(?array $state = null): static
+    {
+        $this->getSchema()->fill($state);
+
+        return $this;
     }
 
     /**

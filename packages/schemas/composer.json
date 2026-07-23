@@ -16,6 +16,7 @@
         "php": "^8.5",
         "ext-mbstring": "*",
         "sylament/support": "self.version",
+        "symfony/property-access": "^8.1",
         "symfony/string": "^8.1",
         "symfony/translation-contracts": "^3.6",
         "symfony/ux-live-component": "^3.1"

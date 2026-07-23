@@ -36,6 +36,29 @@ trait HasChildComponents
         return $this;
     }
 
+    /**
+     * The child schemas configured on this component, one per set key. A component
+     * with no child components returns an empty array — it never materializes the
+     * implicit `default` schema (that only happens on an explicit
+     * {@see getChildSchema()} call), so state walks don't spawn phantom schemas.
+     *
+     * @return array<Schema>
+     */
+    public function getChildSchemas(): array
+    {
+        $schemas = [];
+
+        foreach (array_keys($this->childComponents) as $key) {
+            $schema = $this->getChildSchema((string) $key);
+
+            if ($schema instanceof Schema) {
+                $schemas[] = $schema;
+            }
+        }
+
+        return $schemas;
+    }
+
     public function getChildSchema(?string $key = null): ?Schema
     {
         $key ??= 'default';

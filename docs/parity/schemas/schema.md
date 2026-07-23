@@ -30,8 +30,10 @@ Portable now (no blocker):
   mattering once live-component markers render into slots.
 - [ ] `HasInlineLabels` (`inlineLabel()`, cascading to fields).
 - [ ] `HasComponents` traversal remainder: `getComponents(withHidden:)` (pairs
-  with `CanBeHidden`), `getFlatComponents()`, `getComponent()`;
-  `getFlatFields()` / `getComponentByStatePath()` revisit with forms/state.
+  with `CanBeHidden`) and `getComponent()`. `getFlatComponents()` is **ported**
+  (depth-first flatten through each component's child schemas, added for the state
+  walk; degrades to `getComponents()` for a flat schema);
+  `getFlatFields()` / `getComponentByStatePath()` revisit with forms/state (T5).
 
 Blocked on infrastructure:
 
@@ -46,8 +48,15 @@ Blocked on infrastructure:
 - [ ] `CanModifyActions` (`modifyActionsUsing()` / `modifyActionGroupsUsing()`,
   applied in `getComponents()`) — blocked on
   [actions-package](../infrastructure.md#actions-package)
-- [ ] `HasState`, `CanBeValidated`, `HasOperation`, `HasStateBindingModifiers`,
-  `getLivewireKey()`, and the state-path key fallbacks — blocked on
+- [ ] `HasState` **partially ported** (T1 container substrate): `statePath()` /
+  absolute `getStatePath()` composition, `rawState()`, `fill()`, `hydrateState()`,
+  `fillStateWithNull()`, `callAfterStateHydrated()`, and a minimal flat `getState()`
+  walking `getFlatComponents()` and skipping `!isDehydrated()` components. Still
+  missing: the `#[PreDehydrate]`/`#[PostHydrate]` `afterStateUpdated` bridge + the
+  framework `$oldState` LiveProp's reactive round-trip (T2), full `dehydrateState()`
+  with shared/descendant paths + `mutateDehydratedState` (T4), and relationship
+  loading (T6). `CanBeValidated`, `HasOperation`, `HasStateBindingModifiers`,
+  `getLivewireKey()`, and the state-path key fallbacks remain blocked on
   [live-component-state](../infrastructure.md#live-component-state)
 
 Revisit with later packages:
@@ -79,3 +88,11 @@ Revisit with later packages:
   `Schema` overrides the getters (aliasing the trait's `getAllColumns` as its
   own-columns fallback). PHPStan cannot type the cross-hierarchy `instanceof`
   branches in trait context; the public API is identical.
+- **`getState()` is a minimal flat assembler (T1).** It keys each dehydrated
+  component by its **own** (relative) state path over one `getFlatComponents()`
+  walk, and drives `hydrateState()` / `fillStateWithNull()` /
+  `callAfterStateHydrated()` the same flattened way — where Filament recurses per
+  component into child schemas. Same visitation set for flat and layout-nested
+  (Section) schemas; correct nested-path assembly, prune, casts, conditions, and
+  `mutateDehydratedState` land in T3/T4, and dynamic per-item repeater schemas
+  (which the flatten can't enumerate) in T6.

@@ -56,4 +56,29 @@ trait HasComponents
             return $components;
         })();
     }
+
+    /**
+     * Every component in this container flattened depth-first, descending through
+     * each component's child schemas. Degrades to {@see getComponents()} for a flat
+     * schema whose components have no child schemas.
+     *
+     * @return array<Component>
+     */
+    public function getFlatComponents(): array
+    {
+        $flatComponents = [];
+
+        foreach ($this->getComponents() as $component) {
+            $flatComponents[] = $component;
+
+            foreach ($component->getChildSchemas() as $childSchema) {
+                $flatComponents = [
+                    ...$flatComponents,
+                    ...$childSchema->getFlatComponents(),
+                ];
+            }
+        }
+
+        return $flatComponents;
+    }
 }

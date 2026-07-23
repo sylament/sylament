@@ -105,6 +105,30 @@ it('assigns itself as the container of a coerced component', function (): void {
     expect($fixture->getComponents()[0]->getContainer())->toBe($fixture);
 });
 
+it('returns all components including hidden ones by default', function (): void {
+    $visible = new Component();
+    $hidden = new Component()->hidden();
+    $fixture = new HasComponentsFixture()->components([$visible, $hidden]);
+
+    expect($fixture->getComponents())->toBe([$visible, $hidden]);
+});
+
+it('excludes hidden components when withHidden is false', function (): void {
+    $visible = new Component();
+    $hidden = new Component()->hidden();
+    $fixture = new HasComponentsFixture()->components([$visible, $hidden]);
+
+    expect($fixture->getComponents(false))->toBe([$visible]);
+});
+
+it('excludes a component hidden by a closure when withHidden is false', function (): void {
+    $shown = new Component();
+    $gone = new Component()->hidden(fn (): bool => true);
+    $fixture = new HasComponentsFixture()->components([$shown, $gone]);
+
+    expect($fixture->getComponents(false))->toBe([$shown]);
+});
+
 it('resolves a top-level component by its absolute state path', function (): void {
     $schema = Schema::make(new StateHostFixture())->statePath('data')->components([
         StateField::make('title'),

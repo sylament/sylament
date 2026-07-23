@@ -16,16 +16,21 @@ Reference:
 
 Portable now (no blocker):
 
-- [ ] `CanBeHidden` **partially ported** (T4, dehydration is the first consumer):
+- [ ] `CanBeHidden` **partially ported** (T4 dehydration gating + render skipping):
   `hidden()` / `visible()` closures + `isHidden()` / `isVisible()` (the non-cached
-  branch) landed so `dehydratedWhenHidden` can gate `isDehydrated()`. Still
-  missing: `hiddenWhenAllChildComponentsHidden()`, the schema render loop skipping
-  hidden children (and the paired `getComponents(withHidden:)` /
-  `getChildSchemas(withHidden:)` filtering — a hidden component still renders
-  today), the static visibility cache (`withVisibilityCache()`), `hiddenOn()` /
-  `visibleOn()` (need the schema operation concept), and `whenTruthy()` /
-  `whenFalsy()` + JS visibility (blocked on
-  [live-component-state](../infrastructure.md#live-component-state)).
+  branch) gate `dehydratedWhenHidden` → `isDehydrated()`, and the schema render
+  loop now skips hidden children — `HasComponents::getComponents(bool $withHidden =
+  true)` filters `isVisible()` children when passed `withHidden: false`, which
+  `Schema.html.twig` does. `hiddenWhenAllChildComponentsHidden()` landed with it.
+  Two deliberate divergences from Filament: our `getComponents()` defaults to
+  `withHidden: true` (Filament's default is `false`), so every existing state
+  caller is untouched and `$get` / `$set` component resolution keeps seeing hidden
+  fields — only the render template opts into filtering; and `getChildSchemas()`
+  gains **no** `withHidden` param, because our `Schema` is not `CanBeHidden` so it
+  would be a no-op. Still missing: the static visibility cache
+  (`withVisibilityCache()`), `hiddenOn()` / `visibleOn()` (need the schema
+  operation concept), and `whenTruthy()` / `whenFalsy()` + JS visibility (blocked
+  on [live-component-state](../infrastructure.md#live-component-state)).
 - [ ] `HasMeta` (`meta()`, `getMeta()`, `hasMeta()`).
 - [ ] `Cloneable` (`getClone()`, `afterCloned()`; must flush the cached keys —
   `flushCachedAbsoluteKey()` / `flushCachedAbsoluteInheritanceKey()` — as

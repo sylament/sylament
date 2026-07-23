@@ -29,8 +29,11 @@ Portable now (no blocker):
   our templates' `|trim is not empty` checks count them as content — it starts
   mattering once live-component markers render into slots.
 - [ ] `HasInlineLabels` (`inlineLabel()`, cascading to fields).
-- [ ] `HasComponents` traversal remainder: `getComponents(withHidden:)` (pairs
-  with `CanBeHidden`) and `getComponent()`. `getFlatComponents()` is **ported**
+- [ ] `HasComponents` traversal remainder: `getComponent()`.
+  `getComponents(withHidden:)` is **ported** (the `withHidden` flag filters hidden
+  children when `false`; the render loop passes `false`, state walks keep the
+  `true` default — see [component.md](component.md) `CanBeHidden`).
+  `getFlatComponents()` is **ported**
   (depth-first flatten through each component's child schemas, added for the state
   walk; degrades to `getComponents()` for a flat schema);
   `getFlatFields()` / `getComponentByStatePath()` revisit with forms/state (T5).

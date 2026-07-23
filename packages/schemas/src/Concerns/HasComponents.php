@@ -40,9 +40,9 @@ trait HasComponents
     /**
      * @return array<Component>
      */
-    public function getComponents(): array
+    public function getComponents(bool $withHidden = true): array
     {
-        return $this->cachedComponents ??= (function (): array {
+        $components = $this->cachedComponents ??= (function (): array {
             $components = [];
 
             foreach (wrap($this->evaluate($this->components)) as $componentIndex => $component) {
@@ -57,6 +57,15 @@ trait HasComponents
 
             return $components;
         })();
+
+        if ($withHidden) {
+            return $components;
+        }
+
+        return array_filter(
+            $components,
+            static fn (Component $component): bool => $component->isVisible(),
+        );
     }
 
     /**

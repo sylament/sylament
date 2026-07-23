@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Integration\Components;
 
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Section;
+use Sylament\Schemas\Components\Text;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
 use Sylament\Support\Enum\Alignment;
@@ -203,4 +205,45 @@ it('renders a Markup child raw through an Html component', function (): void {
     $html = renderToHtml(schema()->components([new Markup('<hr class="rule">', 'UTF-8')]));
 
     expect($html)->toContain('<hr class="rule">');
+});
+
+it('does not render a hidden child component', function (): void {
+    $html = renderToHtml(schema()->components([Text::make('VISIBLE'), Text::make('HIDDEN')->hidden()]));
+
+    expect($html)->toContain('VISIBLE')
+        ->not->toContain('HIDDEN')
+        ->and(mb_substr_count($html, 'sy-sc-component'))->toBe(1);
+});
+
+it('does not render a child hidden by a false visible() condition', function (): void {
+    $html = renderToHtml(schema()->components([Text::make('SHOWN'), Text::make('GONE')->visible(false)]));
+
+    expect($html)->toContain('SHOWN')
+        ->not->toContain('GONE');
+});
+
+it('does not render a hidden section', function (): void {
+    $html = renderToHtml(schema()->components([Section::make('Secret')->components(['body'])->hidden()]));
+
+    expect($html)->not->toContain('sy-sc-section')
+        ->not->toContain('Secret');
+});
+
+it('renders a visible section while omitting its hidden child', function (): void {
+    $html = renderToHtml(schema()->components([
+        Section::make('Shown')->components([Text::make('INNER'), Text::make('DROPPED')->hidden()]),
+    ]));
+
+    expect($html)->toContain('sy-sc-section')
+        ->toContain('INNER')
+        ->not->toContain('DROPPED');
+});
+
+it('hides a section whose children are all hidden with hiddenWhenAllChildComponentsHidden', function (): void {
+    $html = renderToHtml(schema()->components([
+        Section::make('Empty')->components([Text::make('x')->hidden()])->hiddenWhenAllChildComponentsHidden(),
+    ]));
+
+    expect($html)->not->toContain('sy-sc-section')
+        ->not->toContain('Empty');
 });

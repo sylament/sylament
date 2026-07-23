@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
 
+use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
+use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
+use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 
 it('is visible by default', function (): void {
     $field = StateField::make('title');
@@ -26,4 +29,29 @@ it('hides on a false visible() condition', function (): void {
 it('evaluates hidden()/visible() closures', function (): void {
     expect(StateField::make('title')->hidden(fn (): bool => true)->isHidden())->toBeTrue()
         ->and(StateField::make('title')->visible(fn (): bool => false)->isHidden())->toBeTrue();
+});
+
+it('hides a component when all its child components are hidden', function (): void {
+    $group = StateGroup::make()
+        ->components([StateField::make('a')->hidden(), StateField::make('b')->hidden()])
+        ->hiddenWhenAllChildComponentsHidden();
+    Schema::make(new StateHostFixture())->components([$group])->getComponents();
+
+    expect($group->isHidden())->toBeTrue();
+});
+
+it('keeps a component visible when any child component is visible', function (): void {
+    $group = StateGroup::make()
+        ->components([StateField::make('a')->hidden(), StateField::make('b')])
+        ->hiddenWhenAllChildComponentsHidden();
+    Schema::make(new StateHostFixture())->components([$group])->getComponents();
+
+    expect($group->isHidden())->toBeFalse();
+});
+
+it('treats a component with no child components as all-hidden', function (): void {
+    $group = StateGroup::make()->hiddenWhenAllChildComponentsHidden();
+    Schema::make(new StateHostFixture())->components([$group])->getComponents();
+
+    expect($group->isHidden())->toBeTrue();
 });

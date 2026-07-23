@@ -14,7 +14,7 @@
             ],
         }, isInline ? null : grid(component.getColumns), component.getExtraAttributes) }}
 >
-    {% for childComponent in component.getComponents %}
+    {% for childComponent in component.getComponents(false) %}
         <div {{ attrs(
             isInline ? null : gridColumn(childComponent.getColumnSpan, childComponent.getColumnStart, childComponent.getColumnOrder),
             isInline and childComponent.canGrow(false) ? { class: ['sy-growable'] } : null,

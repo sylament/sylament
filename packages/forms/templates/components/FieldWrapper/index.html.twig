@@ -1,0 +1,49 @@
+{% props
+    field,
+    content = markup(block('content') ?? '')
+%}
+
+<div
+        {{ attrs({
+            class: ['sy', 'sy-fo-field'],
+        }, field.getExtraAttributes) }}
+>
+    {% if field.getLabel is not null and field.isLabelHidden %}
+        <label for="{{ field.getId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</label>
+    {% endif %}
+
+    {% set showVisibleLabel = field.getLabel is not null and not field.isLabelHidden %}
+    {% if showVisibleLabel or field.hasHint or field.hasHintIcon %}
+        <div class="sy-fo-field-label-ctn">
+            {% if showVisibleLabel %}
+                <label for="{{ field.getId }}" class="sy-fo-field-label">
+                    <span class="sy-fo-field-label-content">{{ field.getLabel }}{% if field.isMarkedAsRequired %}<sup class="sy-fo-field-label-required-mark">*</sup>{% endif %}</span>
+                </label>
+            {% endif %}
+
+            {% if field.hasHint or field.hasHintIcon %}
+                <span class="sy-fo-field-hint">
+                    {%- if field.hasHint %}{{ field.getHint }}{% endif -%}
+                    {%- if field.hasHintIcon %}{{ generateIconHtml(field.getHintIcon, attributes: {
+                        class: 'sy-fo-field-hint-icon',
+                        ...(field.getHintIconTooltip ? { title: field.getHintIconTooltip } : {}),
+                    }, size: 'sm') }}{% endif -%}
+                </span>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    {{ content }}
+
+    {% if field.getHelperText is not empty %}
+        <div class="sy-fo-field-helper">{{ field.getHelperText }}</div>
+    {% endif %}
+
+    {% if field.getErrorMessages is not empty %}
+        <ul data-validation-error class="sy-fo-field-error-list">
+            {% for message in field.getErrorMessages %}
+                <li class="sy-fo-field-error-message">{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+</div>

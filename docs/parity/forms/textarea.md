@@ -4,8 +4,8 @@
 directly (not `TextInput`), so the label / required-mark / hint / helper / error
 chrome and the `data-model` live binding are inherited unchanged; this file tracks
 the textarea-specific surface (`rows()` / `cols()`) plus the length-constraint
-setters shared with [`TextInput`](text-input.md). `Textarea.html.twig` embeds the
-exact same `field-wrapper.html.twig` as `TextInput.html.twig`, unmodified — the
+setters shared with [`TextInput`](text-input.md). `Textarea.html.twig` renders the
+exact same `FieldWrapper` Twig component as `TextInput.html.twig`, unmodified — the
 reuse proof that the wrapper is shared chrome, not `TextInput`-specific.
 
 Reference:
@@ -15,7 +15,7 @@ Reference:
 - [`vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php)
   — `minLength()` / `maxLength()` (HTML-attr side only), shared with `TextInput`
 - [`vendor/filament/forms/resources/views/components/field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/field-wrapper.blade.php)
-  — the wrapper chrome skeleton, translated to `field-wrapper.html.twig` (F2;
+  — the wrapper chrome skeleton, translated to the `FieldWrapper` Twig component (F2;
   reused here unchanged)
 
 ## Missing
@@ -38,9 +38,9 @@ Reference:
 - **Rendered from a Twig `$template` via `ViewComponent`, not `toEmbeddedHtml()`.**
   Same stance as [text-input.md](text-input.md#divergences). [#2]
 - **Field-wrapper chrome rendered from direct getters (no slot schema, no hint
-  actions).** `Textarea.html.twig` embeds the exact same
-  `field-wrapper.html.twig` as `TextInput.html.twig`, unmodified. Concern-side
-  detail lives in [field.md](field.md). [#1]
+  actions).** `Textarea.html.twig` renders the exact same `FieldWrapper` Twig
+  component as `TextInput.html.twig`, unmodified. Concern-side detail lives in
+  [field.md](field.md). [#1]
 - **The textarea's `required` attribute is driven by `isMarkedAsRequired()`.**
   Filament emits `required` from `isRequired()` (validation); with no validation
   surface yet, the attribute follows the visual required flag. The validation

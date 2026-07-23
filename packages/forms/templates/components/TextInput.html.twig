@@ -1,5 +1,5 @@
-{% embed '@SylamentForms/components/field-wrapper.html.twig' %}
-    {% block content %}
+<twig:SylamentForms:FieldWrapper :field="component">
+    <twig:block name="content">
         <input
                 class="sy-fo-input"
                 type="{{ component.getType }}"
@@ -14,5 +14,5 @@
                 {%- if component.isMarkedAsRequired %} required{% endif %}
                 {%- if component.isAutofocused %} autofocus{% endif %}
         >
-    {% endblock %}
-{% endembed %}
+    </twig:block>
+</twig:SylamentForms:FieldWrapper>

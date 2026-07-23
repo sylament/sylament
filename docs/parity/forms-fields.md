@@ -236,8 +236,10 @@ the host, type into `title`, watch `slug` update live, record a GIF).
 3. **`HasName` placed in `schemas`** (Filament parity placement), not `forms`.
 4. **Assets ride support's central aggregation** — forms contributes CSS only, no
    build of its own (schemas precedent).
-5. **Wrapper reuse via Twig `{% embed %}` + `{% block content %}`** — idiomatic,
-   no new machinery; `component` inherited into the embedded scope.
+5. **Wrapper reuse via a shared `FieldWrapper` Twig component** (revised from the
+   original `{% embed %}` plan) — `<twig:SylamentForms:FieldWrapper :field="component">`
+   with a `content` slot, matching the support `<twig:SylamentSupport:…>` components
+   and Filament v4's `<x-filament-forms::field-wrapper :field>` Blade component + slot.
 6. **`Textarea extends Field`** directly (Filament-parity), not `TextInput`.
 7. **Field styling rides support's existing `--sy-primary-*`/`--sy-gray-*` tokens**
    — no dependency on the (skipped) color/UI-kit epics.

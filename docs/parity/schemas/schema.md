@@ -36,12 +36,13 @@ Portable now (no blocker):
 Blocked on infrastructure:
 
 - [ ] `components()` / the alignment factories accepting a single
-  `Component | Action | ActionGroup | string | Htmlable`, a `Schema`, or
-  `null`, with `getComponents()` normalizing strings to `Text` and other
-  non-components to `Html` — needs those schemas components ported;
-  `Action | ActionGroup` values are blocked on
-  [actions-package](../infrastructure.md#actions-package). Until then the
-  unions are `array | Closure`.
+  `Action | ActionGroup` value (with `getComponents()` seeding it via
+  `modifyAction()` / `modifyActionGroup()`) — blocked on
+  [actions-package](../infrastructure.md#actions-package). The
+  `Component | string | Markup` coercion (single value or array) is **ported**:
+  `components()` / `start()` / `end()` / `center()` / `between()` take that
+  union, and `getComponents()` normalizes a string to [`Text`](text.md) and any
+  other non-component to [`Html`](html.md).
 - [ ] `CanModifyActions` (`modifyActionsUsing()` / `modifyActionGroupsUsing()`,
   applied in `getComponents()`) — blocked on
   [actions-package](../infrastructure.md#actions-package)

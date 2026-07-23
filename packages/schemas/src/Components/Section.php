@@ -86,9 +86,9 @@ class Section extends Component implements CanConcealComponents
     }
 
     /**
-     * @param Schema|array<Component>|Closure|null $components
+     * @param Schema|array<Component|string|Markup>|Component|string|Markup|Closure|null $components
      */
-    public function afterHeader(Schema|array|Closure|null $components): static
+    public function afterHeader(Schema|array|Component|string|Markup|Closure|null $components): static
     {
         $this->childComponents($components, static::AFTER_HEADER_SCHEMA_KEY);
 
@@ -96,9 +96,9 @@ class Section extends Component implements CanConcealComponents
     }
 
     /**
-     * @param Schema|array<Component>|Closure|null $components
+     * @param Schema|array<Component|string|Markup>|Component|string|Markup|Closure|null $components
      */
-    public function footer(Schema|array|Closure|null $components): static
+    public function footer(Schema|array|Component|string|Markup|Closure|null $components): static
     {
         $this->childComponents($components, static::FOOTER_SCHEMA_KEY);
 
@@ -106,9 +106,9 @@ class Section extends Component implements CanConcealComponents
     }
 
     /**
-     * @param Schema|array<Component>|Closure|null $components
+     * @param Schema|array<Component|string|Markup>|Component|string|Markup|Closure|null $components
      */
-    public function beforeLabel(Schema|array|Closure|null $components): static
+    public function beforeLabel(Schema|array|Component|string|Markup|Closure|null $components): static
     {
         $this->childComponents($components, static::BEFORE_LABEL_SCHEMA_KEY);
 
@@ -116,9 +116,9 @@ class Section extends Component implements CanConcealComponents
     }
 
     /**
-     * @param Schema|array<Component>|Closure|null $components
+     * @param Schema|array<Component|string|Markup>|Component|string|Markup|Closure|null $components
      */
-    public function afterLabel(Schema|array|Closure|null $components): static
+    public function afterLabel(Schema|array|Component|string|Markup|Closure|null $components): static
     {
         $this->childComponents($components, static::AFTER_LABEL_SCHEMA_KEY);
 
@@ -126,9 +126,9 @@ class Section extends Component implements CanConcealComponents
     }
 
     /**
-     * @param Schema|array<Component>|Closure|null $components
+     * @param Schema|array<Component|string|Markup>|Component|string|Markup|Closure|null $components
      */
-    public function aboveContent(Schema|array|Closure|null $components): static
+    public function aboveContent(Schema|array|Component|string|Markup|Closure|null $components): static
     {
         $this->childComponents($components, static::ABOVE_CONTENT_SCHEMA_KEY);
 
@@ -136,9 +136,9 @@ class Section extends Component implements CanConcealComponents
     }
 
     /**
-     * @param Schema|array<Component>|Closure|null $components
+     * @param Schema|array<Component|string|Markup>|Component|string|Markup|Closure|null $components
      */
-    public function belowContent(Schema|array|Closure|null $components): static
+    public function belowContent(Schema|array|Component|string|Markup|Closure|null $components): static
     {
         $this->childComponents($components, static::BELOW_CONTENT_SCHEMA_KEY);
 

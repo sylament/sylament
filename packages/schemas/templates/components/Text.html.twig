@@ -1,0 +1,11 @@
+{% set sizeClass = component.getSizeClass %}
+{% set weightClass = component.getWeightClass %}
+{% set fontFamilyClass = component.getFontFamilyClass %}
+
+<span
+        {{ attrs({
+            class: ['sy', 'sy-sc-text', sizeClass, weightClass, fontFamilyClass],
+        }, component.getExtraAttributes) }}
+>
+    {{- component.getContent -}}
+</span>

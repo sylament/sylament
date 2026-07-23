@@ -8,6 +8,7 @@ use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
 use Sylament\Support\Enum\Alignment;
+use Twig\Markup;
 
 use function Sylament\Schemas\Tests\renderToHtml;
 
@@ -188,4 +189,18 @@ it('keeps the grid on an aligned non-inline schema', function (): void {
 
     expect($html)->toContain('sy-align-end')
         ->toContain('--cols-default');
+});
+
+it('renders a string child as an escaped text span', function (): void {
+    $html = renderToHtml(schema()->components(['<b>x</b>']));
+
+    expect($html)->toContain('sy-sc-text')
+        ->toContain('&lt;b&gt;x&lt;/b&gt;')
+        ->not->toContain('<b>x</b>');
+});
+
+it('renders a Markup child raw through an Html component', function (): void {
+    $html = renderToHtml(schema()->components([new Markup('<hr class="rule">', 'UTF-8')]));
+
+    expect($html)->toContain('<hr class="rule">');
 });

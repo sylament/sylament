@@ -31,8 +31,10 @@ Portable now (no blocker):
 - [ ] `CanBeGridContainer` (`gridContainer()`).
 - [ ] `CanBeLiberatedFromContainerGrid` (`liberatedFromContainerGrid()`).
 - [ ] `HasChildComponents` gaps: `schema()` alias, `childComponents()`
-  accepting single `Component | string | Htmlable` (and, with actions,
-  `Action | ActionGroup`) values, `getChildComponents()`,
+  accepting single `Action | ActionGroup` values (the `Component | string |
+  Markup` single-or-array coercion is **ported** — the string→`Text` /
+  other→`Html` normalization runs in the child schema's `getComponents()`, see
+  [schema.md](schema.md)), `getChildComponents()`,
   `getChildSchemas(withHidden:)`, the container-named aliases, and the
   keyed-slot `cachedChildSchemas` memoization (Filament caches non-closure
   slots; ours rebuilds per `getChildSchema()` call) together with the
@@ -69,10 +71,11 @@ Revisit with later packages:
 ## Divergences
 
 - **Component-level `components()` union is widened** to
-  `Schema|array|Closure|null` — Filament reserves `Schema` and `null` for
-  `childComponents()` and types `components()` `array|Closure` (plus the
-  single-value coercions tracked above). Passing a `Schema` straight to
-  `components()` is accepted convenience here.
+  `Schema|Component|string|Markup|array|Closure|null` — Filament omits `Schema`
+  from `components()` (reserving it, with `null`, for `childComponents()`).
+  Passing a `Schema` straight to `components()` is accepted convenience here; the
+  `Component|string|Markup` single/array values are the ported coercion (Filament
+  accepts those too, minus `Schema`).
 - **Minimal attribute bag.** `HasExtraAttributes` folds entries through
   `Sylament\Support\Twig\ComponentAttributeBag` — a small value object with
   Laravel's merge-as-defaults semantics (class/style token lists append,

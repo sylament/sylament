@@ -573,3 +573,19 @@ it('leaves the aside decision to the caller in the standalone support component'
     expect($html)->toContain('data-controller="sylament--support--section"')
         ->toContain('sy-aside');
 });
+
+it('coerces a string slot argument into a text component', function (): void {
+    $html = renderSection(Section::make('Details')->footer('Footer note'));
+
+    expect($html)->toContain('sy-section-footer')
+        ->toContain('sy-sc-text')
+        ->toContain('Footer note');
+});
+
+it('coerces a Markup slot argument into a raw html component', function (): void {
+    $html = renderSection(
+        Section::make('Details')->afterHeader(new Markup('<span class="sy-badge">New</span>', 'UTF-8')),
+    );
+
+    expect($html)->toContain('<span class="sy-badge">New</span>');
+});

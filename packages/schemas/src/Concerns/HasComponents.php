@@ -6,15 +6,18 @@ namespace Sylament\Schemas\Concerns;
 
 use Closure;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Html;
+use Sylament\Schemas\Components\Text;
+use Twig\Markup;
 
 use function Sylament\Support\wrap;
 
 trait HasComponents
 {
     /**
-     * @var array<Component>|Closure
+     * @var array<Component|string|Markup>|Component|string|Markup|Closure
      */
-    protected array|Closure $components = [];
+    protected array|Component|string|Markup|Closure $components = [];
 
     /**
      * @var array<Component>|null
@@ -22,9 +25,9 @@ trait HasComponents
     protected ?array $cachedComponents = null;
 
     /**
-     * @param array<Component>|Closure $components
+     * @param array<Component|string|Markup>|Component|string|Markup|Closure $components
      */
-    public function components(array|Closure $components): static
+    public function components(array|Component|string|Markup|Closure $components): static
     {
         $this->components = $components;
         $this->cachedComponents = null;
@@ -41,9 +44,13 @@ trait HasComponents
             $components = [];
 
             foreach (wrap($this->evaluate($this->components)) as $componentIndex => $component) {
-                $component = $component->container($this);
+                if (is_string($component)) {
+                    $component = Text::make($component);
+                } elseif (!$component instanceof Component) {
+                    $component = Html::make($component);
+                }
 
-                $components[$componentIndex] = $component;
+                $components[$componentIndex] = $component->container($this);
             }
 
             return $components;

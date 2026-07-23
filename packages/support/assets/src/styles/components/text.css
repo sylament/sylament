@@ -1,0 +1,63 @@
+.sy-sc-text {
+    @apply inline-block text-sm break-words text-gray-600 dark:text-gray-400;
+
+    &.sy-font-sans {
+        @apply font-sans;
+    }
+
+    &.sy-font-serif {
+        @apply font-serif;
+    }
+
+    &.sy-font-mono {
+        @apply font-mono;
+    }
+
+    &.sy-font-thin {
+        @apply font-thin;
+    }
+
+    &.sy-font-extralight {
+        @apply font-extralight;
+    }
+
+    &.sy-font-light {
+        @apply font-light;
+    }
+
+    &.sy-font-normal {
+        @apply font-normal;
+    }
+
+    &.sy-font-medium {
+        @apply font-medium;
+    }
+
+    &.sy-font-semibold {
+        @apply font-semibold;
+    }
+
+    &.sy-font-bold {
+        @apply font-bold;
+    }
+
+    &.sy-font-extrabold {
+        @apply font-extrabold;
+    }
+
+    &.sy-font-black {
+        @apply font-black;
+    }
+
+    &.sy-size-xs {
+        @apply text-xs;
+    }
+
+    &.sy-size-md {
+        @apply text-base;
+    }
+
+    &.sy-size-lg {
+        @apply text-lg;
+    }
+}

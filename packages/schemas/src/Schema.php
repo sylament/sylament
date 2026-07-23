@@ -20,6 +20,7 @@ use Sylament\Support\Component\Concerns\HasAlignment;
 use Sylament\Support\Component\Concerns\HasExtraAttributes;
 use Sylament\Support\Component\ViewComponent;
 use Sylament\Support\Data\ClosureParameter;
+use Twig\Markup;
 
 class Schema extends ViewComponent
 {
@@ -94,9 +95,9 @@ class Schema extends ViewComponent
     }
 
     /**
-     * @param array<Component>|Closure $components
+     * @param array<Component|string|Markup>|Component|string|Markup|Closure $components
      */
-    public static function start(array|Closure $components): static
+    public static function start(array|Component|string|Markup|Closure $components): static
     {
         return static::make()
             ->components($components)
@@ -104,9 +105,9 @@ class Schema extends ViewComponent
     }
 
     /**
-     * @param array<Component>|Closure $components
+     * @param array<Component|string|Markup>|Component|string|Markup|Closure $components
      */
-    public static function end(array|Closure $components): static
+    public static function end(array|Component|string|Markup|Closure $components): static
     {
         return static::make()
             ->components($components)
@@ -114,9 +115,9 @@ class Schema extends ViewComponent
     }
 
     /**
-     * @param array<Component>|Closure $components
+     * @param array<Component|string|Markup>|Component|string|Markup|Closure $components
      */
-    public static function center(array|Closure $components): static
+    public static function center(array|Component|string|Markup|Closure $components): static
     {
         return static::make()
             ->components($components)
@@ -124,9 +125,9 @@ class Schema extends ViewComponent
     }
 
     /**
-     * @param array<Component>|Closure $components
+     * @param array<Component|string|Markup>|Component|string|Markup|Closure $components
      */
-    public static function between(array|Closure $components): static
+    public static function between(array|Component|string|Markup|Closure $components): static
     {
         return static::make()
             ->components($components)

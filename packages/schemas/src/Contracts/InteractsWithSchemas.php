@@ -16,4 +16,10 @@ interface InteractsWithSchemas
     public function getSchema(string $name): Schema;
 
     public function makeSchema(): Schema;
+
+    /**
+     * The pre-change raw state snapshotted for the given absolute state path at
+     * the end of the previous render, used by the `afterStateUpdated` diff.
+     */
+    public function getOldSchemaState(?string $path): mixed;
 }

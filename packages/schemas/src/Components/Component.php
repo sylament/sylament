@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Components;
 use Sylament\Schemas\Components\Concerns\BelongsToContainer;
 use Sylament\Schemas\Components\Concerns\HasChildComponents;
 use Sylament\Schemas\Components\Concerns\HasState;
+use Sylament\Schemas\Components\Concerns\HasStateBindingModifiers;
 use Sylament\Schemas\Concerns\HasColumns;
 use Sylament\Schemas\Concerns\HasGap;
 use Sylament\Schemas\Components\Concerns\HasHeadings;
@@ -33,6 +34,7 @@ class Component extends ViewComponent
     use HasId;
     use HasKey;
     use HasState;
+    use HasStateBindingModifiers;
 
     protected string $evaluationIdentifier = 'component';
 

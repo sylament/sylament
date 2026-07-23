@@ -6,6 +6,9 @@ namespace Sylament\Schemas\Concerns;
 
 use RuntimeException;
 use Sylament\Schemas\Schema;
+use Symfony\UX\LiveComponent\Attribute\LiveProp;
+use Symfony\UX\LiveComponent\Attribute\PostHydrate;
+use Symfony\UX\LiveComponent\Attribute\PreDehydrate;
 
 /**
  * Host-side schema management. The host declares its own state as
@@ -18,6 +21,18 @@ use Sylament\Schemas\Schema;
  */
 trait HasSchemas
 {
+    /**
+     * Raw state snapshot keyed by absolute state path, captured at the end of
+     * each render (`#[PreDehydrate]`) and diffed against the next request's
+     * hydrated state (`#[PostHydrate]`) to fire `afterStateUpdated` — the port's
+     * stand-in for Livewire's path-keyed `updated*` hook, which UX Live
+     * Components lack. Roughly doubles the wire state; accepted (design §2).
+     *
+     * @var array<string, mixed>
+     */
+    #[LiveProp]
+    public array $oldState = [];
+
     /**
      * @var array<string, Schema>
      */
@@ -74,6 +89,61 @@ trait HasSchemas
         }
 
         return $this->cachedSchemas;
+    }
+
+    public function getOldSchemaState(?string $path): mixed
+    {
+        if ($path === null) {
+            return null;
+        }
+
+        return $this->oldState[$path] ?? null;
+    }
+
+    /**
+     * Snapshot every bound component's raw state at the end of the render, keyed
+     * by absolute state path, so the next round-trip can diff against it.
+     */
+    #[PreDehydrate]
+    public function persistOldState(): void
+    {
+        $oldState = [];
+
+        foreach ($this->getCachedSchemas() as $schema) {
+            foreach ($schema->getFlatComponents() as $component) {
+                if (!$component->hasStatePath()) {
+                    continue;
+                }
+
+                $oldState[(string) $component->getStatePath()] = $component->getRawState();
+            }
+        }
+
+        $this->oldState = $oldState;
+    }
+
+    /**
+     * After the round-trip re-hydrates state, fire the `afterStateUpdated` hooks
+     * of every component whose raw state changed since the snapshot. Named
+     * distinctly from the component-level `afterStateUpdated()` setter (the
+     * prototype collided both).
+     */
+    #[PostHydrate]
+    public function callAfterSchemaStateUpdated(): void
+    {
+        foreach ($this->getCachedSchemas() as $schema) {
+            foreach ($schema->getFlatComponents() as $component) {
+                if (!$component->hasStatePath()) {
+                    continue;
+                }
+
+                if ($this->getOldSchemaState($component->getStatePath()) === $component->getRawState()) {
+                    continue;
+                }
+
+                $component->callAfterStateUpdatedHooks();
+            }
+        }
     }
 
     public function makeSchema(): Schema

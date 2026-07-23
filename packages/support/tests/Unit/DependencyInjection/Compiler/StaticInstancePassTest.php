@@ -9,6 +9,7 @@ use Sylament\Support\DependencyInjection\StaticInstanceInterface;
 use Sylament\Support\Tests\Fixtures\DependencyInjection\AnotherStaticInstanceFixture;
 use Sylament\Support\Tests\Fixtures\DependencyInjection\PlainFixture;
 use Sylament\Support\Tests\Fixtures\DependencyInjection\StaticInstanceFixture;
+use Sylament\Support\Tests\Fixtures\DependencyInjection\UnloadableServiceFixture;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 
@@ -39,4 +40,13 @@ it('skips definitions without a class', function (): void {
     new StaticInstancePass()->process($container);
 
     expect($container->getDefinition('no_class')->getTags())->toBe([]);
+});
+
+it('skips service classes that cannot be autoloaded', function (): void {
+    $container = new ContainerBuilder();
+    $container->setDefinition('unloadable', new Definition(UnloadableServiceFixture::class));
+
+    new StaticInstancePass()->process($container);
+
+    expect($container->getDefinition('unloadable')->hasTag(StaticInstanceInterface::class))->toBeFalse();
 });

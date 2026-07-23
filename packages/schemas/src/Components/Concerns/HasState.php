@@ -27,6 +27,11 @@ trait HasState
 
     protected ?Closure $afterStateHydrated = null;
 
+    /**
+     * @var array<Closure>
+     */
+    protected array $afterStateUpdated = [];
+
     protected bool|Closure $isDehydrated = true;
 
     public function statePath(?string $path): static
@@ -141,6 +146,59 @@ trait HasState
         $this->afterStateHydrated(fn (Component $component): Component => $component->state($component->evaluate($callback)));
 
         return $this;
+    }
+
+    public function afterStateUpdated(?Closure $callback): static
+    {
+        if (!$callback instanceof Closure) {
+            $this->afterStateUpdated = [];
+
+            return $this;
+        }
+
+        $this->afterStateUpdated[] = $callback;
+
+        return $this;
+    }
+
+    public function clearAfterStateUpdatedHooks(): static
+    {
+        $this->afterStateUpdated = [];
+
+        return $this;
+    }
+
+    /**
+     * Fire every registered `afterStateUpdated` hook. Invoked by the host's
+     * `#[PostHydrate]` pass for each component whose state changed on the
+     * round-trip; each hook receives the pre-change `$old` (cast) / `$oldRaw`
+     * (raw) values injected by name.
+     */
+    public function callAfterStateUpdatedHooks(): static
+    {
+        foreach ($this->afterStateUpdated as $callback) {
+            $this->callAfterStateUpdatedHook($callback);
+        }
+
+        return $this;
+    }
+
+    public function getOldState(): mixed
+    {
+        return $this->getOldRawState();
+    }
+
+    public function getOldRawState(): mixed
+    {
+        return $this->getLiveComponent()->getOldSchemaState($this->getStatePath());
+    }
+
+    protected function callAfterStateUpdatedHook(Closure $hook): void
+    {
+        $this->evaluate($hook, [
+            'old' => $this->getOldState(),
+            'oldRaw' => $this->getOldRawState(),
+        ]);
     }
 
     public function hydrateState(): void

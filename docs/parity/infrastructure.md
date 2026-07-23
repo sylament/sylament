@@ -49,6 +49,13 @@ Also completes the ported keys: the state-path fallbacks inside
 auto-key. Blocks most of the base-Component surface in
 [schemas/component.md](schemas/component.md) and every future form field.
 
+Status: the epic is executing per [live-state-tasks.md](live-state-tasks.md).
+**T1** (deterministic `$data` substrate) and **T2** (the reactive `data-model` +
+`afterStateUpdated` loop, `HasStateBindingModifiers`) have landed; T3–T7 (casts,
+full dehydration, `$get`/`$set` resolution, relationships, poll/renderless)
+remain. Per-item state lives in [schemas/component.md](schemas/component.md) /
+[schemas/schema.md](schemas/schema.md).
+
 Required knowledge for the port: Filament's `reset-schema-component-state`
 Alpine handler defers via `$nextTick` so the morph lands before state resets;
 the Stimulus controllers have no equivalent deferral yet (inert today — no

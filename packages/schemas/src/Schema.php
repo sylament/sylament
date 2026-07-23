@@ -6,6 +6,7 @@ namespace Sylament\Schemas;
 
 use Closure;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Concerns\HasStateBindingModifiers;
 use Sylament\Schemas\Concerns\HasColumns;
 use Sylament\Schemas\Concerns\HasGap;
 use Sylament\Schemas\Concerns\BelongsToLiveComponent;
@@ -23,6 +24,8 @@ use Sylament\Support\Component\ViewComponent;
 use Sylament\Support\Data\ClosureParameter;
 use Twig\Markup;
 
+use function Sylament\Support\filled;
+
 class Schema extends ViewComponent
 {
     use BelongsToLiveComponent;
@@ -39,6 +42,7 @@ class Schema extends ViewComponent
     use HasHeadings;
     use HasKey;
     use HasState;
+    use HasStateBindingModifiers;
 
     protected string $evaluationIdentifier = 'schema';
 
@@ -65,6 +69,46 @@ class Schema extends ViewComponent
             'liveComponent' => ClosureParameter::make($this->liveComponent),
             default => parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
         };
+    }
+
+    public function isLive(): bool
+    {
+        return $this->evaluate($this->isLive) ?? $this->getParentComponent()?->isLive() ?? false;
+    }
+
+    public function isLiveOnBlur(): bool
+    {
+        if ($this->evaluate($this->isLive) !== null) {
+            return $this->isLiveOnBlur;
+        }
+
+        return $this->getParentComponent()?->isLiveOnBlur() ?? false;
+    }
+
+    public function isLiveDebounced(): bool
+    {
+        if ($this->isLiveOnBlur) {
+            return false;
+        }
+
+        if (filled($this->liveDebounce)) {
+            return true;
+        }
+
+        return $this->getParentComponent()?->isLiveDebounced() ?? false;
+    }
+
+    public function getLiveDebounce(): int|string|null
+    {
+        if ($this->isLiveOnBlur) {
+            return null;
+        }
+
+        if (filled($this->liveDebounce)) {
+            return $this->liveDebounce;
+        }
+
+        return $this->getParentComponent()?->getLiveDebounce();
     }
 
     public function hasGap(): bool

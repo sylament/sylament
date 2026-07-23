@@ -4,7 +4,8 @@ The abstract base every schemas component extends. Component files (e.g.
 [section.md](section.md)) track only their own surface; the inherited surface
 lives here. Ported so far: `BelongsToContainer`, `CanGrow`, `CanOrderColumns`,
 `CanSpanColumns`, `HasChildComponents`, `HasColumns`, `HasExtraAttributes`,
-`HasGap`, `HasHeadings`, `HasId`, `HasKey` — modulo the items below.
+`HasGap`, `HasHeadings`, `HasId`, `HasKey`, `HasStateBindingModifiers` — modulo
+the items below.
 
 Reference:
 
@@ -45,19 +46,23 @@ Blocked on infrastructure:
 
 - [ ] `HasActions` (`registerActions()`, `getAction()`, …) — blocked on
   [actions-package](../infrastructure.md#actions-package)
-- [ ] `HasState` **partially ported** (T1 deterministic substrate): state paths
+- [ ] `HasState` **partially ported** (T1 substrate + T2 reactive loop): state paths
   (`statePath()`, absolute `getStatePath()`, `resolveRelativeStatePath()`),
   `getRawState()`/`rawState()`/`state()`/`getState()`, `default()`,
   `afterStateHydrated()`/`formatStateUsing()`, `hydrateState()`/`fillStateWithNull()`,
-  minimal `dehydrated()`/`isDehydrated()`, `makeGet/SetUtility()`, and the
-  `$state`/`$rawState`/`$get`/`$set`/`$liveComponent` closure parameters (the
-  container half is in [schema.md](schema.md)). Still missing: `afterStateUpdated()`
-  + the change bridge (T2), state casts (T3), full dehydration /
-  `mutateDehydratedState` / conditions (T4), cast-aware component-resolving
-  `$get`/`$set` (T5), relationship loading (T6). `HasStateBindingModifiers`,
-  `CanPoll`, `CanPartiallyRender`, the per-child wrapper state features (`wire:key`,
-  JS visibility, partial-render targeting — the grid-column wrapper itself is
-  ported), `$operation`, and the state-dependent remainder of `HasKey` (state-path
+  minimal `dehydrated()`/`isDehydrated()`, `makeGet/SetUtility()`,
+  `afterStateUpdated()` + `clearAfterStateUpdatedHooks()` /
+  `callAfterStateUpdatedHooks()` + `getOldState()`/`getOldRawState()` (the change
+  bridge, fired from the host's `#[PostHydrate]` diff — see [schema.md](schema.md)),
+  and the `$state`/`$rawState`/`$get`/`$set`/`$liveComponent`/`$old`/`$oldRaw`
+  closure parameters (the container half is in [schema.md](schema.md)). Still
+  missing: state casts (T3, on which `getOldState()` still returns raw), full
+  dehydration / `mutateDehydratedState` / conditions (T4), cast-aware
+  component-resolving `$get`/`$set` (T5), relationship loading (T6). `CanPoll` +
+  the renderless arms (T7), `CanPartiallyRender` (permanent divergence — see
+  below), the per-child wrapper state features (`wire:key`, JS visibility,
+  partial-render targeting — the grid-column wrapper itself is ported),
+  `$operation`, and the state-dependent remainder of `HasKey` (state-path
   fallbacks, `getLivewireKey()`) remain blocked on
   [live-component-state](../infrastructure.md#live-component-state)
 - [ ] `CanBeConcealed` (`isConcealed()`, `getConcealingComponent()`) — the
@@ -117,3 +122,28 @@ Revisit with later packages:
   native return type, so a closure returning `1` / `'yes'` TypeErrors here
   where Filament silently coerces. One policy across every trait — new ports
   drop Filament's casts rather than reintroducing coercion.
+- **`getDataModel()` replaces Filament's `wire:model` emitter (T2).** Filament's
+  `HasStateBindingModifiers` returns a Livewire modifier array
+  (`getStateBindingModifiers()`) that `applyStateBindingModifiers()` joins onto
+  `wire:model`; here `getDataModel()` emits the UX `data-model` string against the
+  **absolute** state path — `norender|<path>` (not live: syncs, no re-render),
+  `<path>` (live), `on(change)|<path>` (`lazy()`), `debounce(<n>)|<path>` — the
+  grammar `live_controller.js` parses. `$entangle` fields have no UX analogue and
+  are not ported (each complex field needs a bespoke Stimulus translation, flagged
+  at the field ports). Container inheritance follows the `HasGap` shape (trait =
+  component flavor, `Schema` overrides the getters), so both levels stay statically
+  typed.
+- **`afterStateUpdated` fires from a host `#[PostHydrate]` whole-bag diff (T2).**
+  UX has no path-keyed `updated*` hook, so the host snapshots each bound
+  component's raw state in `#[PreDehydrate]` (`$oldState` LiveProp) and diffs it
+  after the next hydrate, firing each changed component's hooks with `$old`/`$oldRaw`
+  injected. Consequences vs Filament's Livewire `callAfterStateUpdated()`: the
+  single-pass walk visits each component once, so there is **no `store()`-backed
+  dedup** and **no per-write parent-bubbling** — a field→sibling cascade fires only
+  when the target is visited after the source in flat order (true bubbling pairs
+  with nested layouts, T4); `$oldState` roughly doubles wire state (accepted).
+- **No server-side partial render.**
+  `CanPartiallyRender::partiallyRenderComponentsAfterStateUpdated` has no UX
+  equivalent; every round-trip re-renders the whole schema and client Idiomorph
+  diffs. Permanent divergence (design §3). `skipRender`/renderless **does** port
+  (T7, `norender` / suppress re-render).

@@ -232,7 +232,7 @@ accessor + native array ops cover the minimal dehydrate.
 
 ## T2 — Live reactivity loop + `afterStateUpdated` bridge
 
-- [ ] **T2** — `data-model` binding, the `#[PreDehydrate]`/`#[PostHydrate]`
+- [x] **T2** — `data-model` binding, the `#[PreDehydrate]`/`#[PostHydrate]`
   change-detection bridge, and a fixture live host proving change →
   `afterStateUpdated` → re-render, verified with the UX live-component test
   harness **and** a browser drive.

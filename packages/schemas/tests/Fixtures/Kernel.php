@@ -11,7 +11,9 @@ use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
+use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\UX\Icons\UXIconsBundle;
+use Symfony\UX\LiveComponent\LiveComponentBundle;
 use Symfony\UX\StimulusBundle\StimulusBundle;
 use Symfony\UX\TwigComponent\TwigComponentBundle;
 
@@ -27,10 +29,16 @@ class Kernel extends BaseKernel
             new TwigComponentBundle(),
             new UXIconsBundle(),
             new StimulusBundle(),
+            new LiveComponentBundle(),
 
             new SylamentSchemasBundle(),
             new SylamentSupportBundle(),
         ];
+    }
+
+    private function configureRoutes(RoutingConfigurator $routes): void
+    {
+        $routes->import('@LiveComponentBundle/config/routes.php');
     }
 
     private function configureContainer(ContainerConfigurator $container): void
@@ -44,6 +52,12 @@ class Kernel extends BaseKernel
             'icon_dir' => __DIR__ . '/assets/icons',
             'iconify' => [
                 'enabled' => false,
+            ],
+        ]);
+
+        $container->extension('twig', [
+            'paths' => [
+                __DIR__ . '/Twig/templates' => 'SchemasFixtures',
             ],
         ]);
 

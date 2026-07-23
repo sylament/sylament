@@ -48,16 +48,20 @@ Blocked on infrastructure:
 - [ ] `CanModifyActions` (`modifyActionsUsing()` / `modifyActionGroupsUsing()`,
   applied in `getComponents()`) — blocked on
   [actions-package](../infrastructure.md#actions-package)
-- [ ] `HasState` **partially ported** (T1 container substrate): `statePath()` /
-  absolute `getStatePath()` composition, `rawState()`, `fill()`, `hydrateState()`,
-  `fillStateWithNull()`, `callAfterStateHydrated()`, and a minimal flat `getState()`
-  walking `getFlatComponents()` and skipping `!isDehydrated()` components. Still
-  missing: the `#[PreDehydrate]`/`#[PostHydrate]` `afterStateUpdated` bridge + the
-  framework `$oldState` LiveProp's reactive round-trip (T2), full `dehydrateState()`
-  with shared/descendant paths + `mutateDehydratedState` (T4), and relationship
-  loading (T6). `CanBeValidated`, `HasOperation`, `HasStateBindingModifiers`,
-  `getLivewireKey()`, and the state-path key fallbacks remain blocked on
-  [live-component-state](../infrastructure.md#live-component-state)
+- [ ] `HasState` **partially ported** (T1 container substrate; T2 reactive loop):
+  `statePath()` / absolute `getStatePath()` composition, `rawState()`, `fill()`,
+  `hydrateState()`, `fillStateWithNull()`, `callAfterStateHydrated()`, and a minimal
+  flat `getState()` walking `getFlatComponents()` and skipping `!isDehydrated()`
+  components. The T2 `afterStateUpdated` change bridge landed on the **host**
+  (`Concerns\HasSchemas`): a `#[PreDehydrate]` raw-state snapshot + the framework
+  `$oldState` LiveProp + a `#[PostHydrate]` diff that fires each changed component's
+  hooks; and `Schema` overrides the `HasStateBindingModifiers` getters
+  (`isLive()` / `isLiveOnBlur()` / `isLiveDebounced()` / `getLiveDebounce()`) so
+  container inheritance walks parent components (the `HasGap`/`HasColumns` shape).
+  Still missing: full `dehydrateState()` with shared/descendant paths +
+  `mutateDehydratedState` (T4), and relationship loading (T6). `CanBeValidated`,
+  `HasOperation`, `getLivewireKey()`, and the state-path key fallbacks remain
+  blocked on [live-component-state](../infrastructure.md#live-component-state)
 
 Revisit with later packages:
 

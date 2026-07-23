@@ -46,19 +46,26 @@ Blocked on infrastructure:
 
 - [ ] `HasActions` (`registerActions()`, `getAction()`, …) — blocked on
   [actions-package](../infrastructure.md#actions-package)
-- [ ] `HasState` **partially ported** (T1 substrate + T2 reactive loop): state paths
-  (`statePath()`, absolute `getStatePath()`, `resolveRelativeStatePath()`),
+- [ ] `HasState` **partially ported** (T1 substrate + T2 reactive loop + T3 casts):
+  state paths (`statePath()`, absolute `getStatePath()`, `resolveRelativeStatePath()`),
   `getRawState()`/`rawState()`/`state()`/`getState()`, `default()`,
   `afterStateHydrated()`/`formatStateUsing()`, `hydrateState()`/`fillStateWithNull()`,
   minimal `dehydrated()`/`isDehydrated()`, `makeGet/SetUtility()`,
   `afterStateUpdated()` + `clearAfterStateUpdatedHooks()` /
   `callAfterStateUpdatedHooks()` + `getOldState()`/`getOldRawState()` (the change
   bridge, fired from the host's `#[PostHydrate]` diff — see [schema.md](schema.md)),
-  and the `$state`/`$rawState`/`$get`/`$set`/`$liveComponent`/`$old`/`$oldRaw`
-  closure parameters (the container half is in [schema.md](schema.md)). Still
-  missing: state casts (T3, on which `getOldState()` still returns raw), full
-  dehydration / `mutateDehydratedState` / conditions (T4), cast-aware
-  component-resolving `$get`/`$set` (T5), relationship loading (T6). `CanPoll` +
+  the state-cast pipeline (`stateCast()`, `getStateCasts()`/`getDefaultStateCasts()`,
+  `hasCustomStateCasts()`, applied reverse-`set` in `state()`, forward-`get` in
+  `getState()`/`getOldState()`, and a single forward-`set` pass in `hydrateState()`
+  deduped by absolute path via `appliedStateCastPaths`; `BooleanStateCast` is the one
+  concrete cast ported so far), and the
+  `$state`/`$rawState`/`$get`/`$set`/`$liveComponent`/`$old`/`$oldRaw` closure
+  parameters — `$state`/`$old` are now the **cast** values (the container half is in
+  [schema.md](schema.md)). Still missing: full dehydration / `mutateDehydratedState` /
+  conditions and the dedicated `getStateToDehydrate()` seam + `dehydrateStateUsing`
+  (T4 — dehydration currently reads cast values through the component `getState()`),
+  cast-aware component-resolving `$get`/`$set` (T5), relationship loading (T6).
+  `CanPoll` +
   the renderless arms (T7), `CanPartiallyRender` (permanent divergence — see
   below), the per-child wrapper state features (`wire:key`, JS visibility,
   partial-render targeting — the grid-column wrapper itself is ported),
@@ -147,3 +154,12 @@ Revisit with later packages:
   equivalent; every round-trip re-renders the whole schema and client Idiomorph
   diffs. Permanent divergence (design §3). `skipRender`/renderless **does** port
   (T7, `norender` / suppress re-render).
+- **State casts operate on the bespoke `$data` bag (T3).** The `StateCast`
+  `set`/`get` pipeline transforms raw bag values ↔ typed application values with no
+  Eloquent-casting analogue (design locked decision). Casts apply on **both** fill
+  paths: `Schema::fill()` always runs `hydrateState()`, gated by an `applyDefaults`
+  flag (`fill()` = defaults mode; `fill($state)` = provided-state mode, defaults
+  skipped) — where T1 skipped `hydrateState()` entirely for provided state, so a
+  provided-state fill now applies the `set` pass too. Default values are written
+  **raw** (`rawState()`, not `state()`), so the single deduped `set` pass casts them
+  exactly once.

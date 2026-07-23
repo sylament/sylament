@@ -48,11 +48,15 @@ Blocked on infrastructure:
 - [ ] `CanModifyActions` (`modifyActionsUsing()` / `modifyActionGroupsUsing()`,
   applied in `getComponents()`) — blocked on
   [actions-package](../infrastructure.md#actions-package)
-- [ ] `HasState` **partially ported** (T1 container substrate; T2 reactive loop):
-  `statePath()` / absolute `getStatePath()` composition, `rawState()`, `fill()`,
-  `hydrateState()`, `fillStateWithNull()`, `callAfterStateHydrated()`, and a minimal
+- [ ] `HasState` **partially ported** (T1 container substrate; T2 reactive loop;
+  T3 casts): `statePath()` / absolute `getStatePath()` composition, `rawState()`,
+  `fill()` (now always runs `hydrateState()`, gated by an `applyDefaults` flag so a
+  provided-state fill applies the cast `set` pass without re-seeding defaults),
+  `hydrateState(applyDefaults:)` threading the per-schema `appliedStateCastPaths`
+  dedup map, `fillStateWithNull()`, `callAfterStateHydrated()`, and a minimal
   flat `getState()` walking `getFlatComponents()` and skipping `!isDehydrated()`
-  components. The T2 `afterStateUpdated` change bridge landed on the **host**
+  components (each dehydrated component read via its cast-aware `getState()`). The T2
+  `afterStateUpdated` change bridge landed on the **host**
   (`Concerns\HasSchemas`): a `#[PreDehydrate]` raw-state snapshot + the framework
   `$oldState` LiveProp + a `#[PostHydrate]` diff that fires each changed component's
   hooks; and `Schema` overrides the `HasStateBindingModifiers` getters
@@ -97,6 +101,7 @@ Revisit with later packages:
   walk, and drives `hydrateState()` / `fillStateWithNull()` /
   `callAfterStateHydrated()` the same flattened way — where Filament recurses per
   component into child schemas. Same visitation set for flat and layout-nested
-  (Section) schemas; correct nested-path assembly, prune, casts, conditions, and
-  `mutateDehydratedState` land in T3/T4, and dynamic per-item repeater schemas
-  (which the flatten can't enumerate) in T6.
+  (Section) schemas. Per-component state casts are applied (T3, through each
+  component's `getState()`); correct nested-path assembly, prune, conditions,
+  `getStateToDehydrate()`/`dehydrateStateUsing`, and `mutateDehydratedState` land in
+  T4, and dynamic per-item repeater schemas (which the flatten can't enumerate) in T6.

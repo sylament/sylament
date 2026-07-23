@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sylament\Schemas\Components\StateCasts;
+
+use Sylament\Schemas\Components\StateCasts\Contracts\StateCast;
+
+use function Sylament\Support\blank;
+
+class BooleanStateCast implements StateCast
+{
+    public function __construct(
+        protected bool $isNullable = true,
+        protected bool $isStoredAsInt = false,
+    ) {
+    }
+
+    public function get(mixed $state): ?bool
+    {
+        if ($this->isNullable && blank($state)) {
+            return null;
+        }
+
+        return (bool) $state;
+    }
+
+    public function set(mixed $state): bool|int|null
+    {
+        if ($this->isNullable && blank($state)) {
+            return null;
+        }
+
+        if ($this->isStoredAsInt) {
+            return $state ? 1 : 0;
+        }
+
+        return (bool) $state;
+    }
+}

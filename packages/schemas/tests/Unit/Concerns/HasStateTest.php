@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\Concerns;
 
+use Sylament\Schemas\Components\StateCasts\BooleanStateCast;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Concerns\MultiSchemaHostFixture;
@@ -44,4 +45,16 @@ it('drops a component key when dehydrated(false)', function (): void {
     $schema->fill(['title' => 'Hi', 'secret' => 'shh']);
 
     expect($schema->getState())->toBe(['title' => 'Hi']);
+});
+
+it('dehydrates cast values as their typed form', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateField::make('flag')->stateCast(new BooleanStateCast(isStoredAsInt: true))->default(true),
+    ]);
+
+    $schema->fill();
+
+    expect($host->data['flag'])->toBe(1)
+        ->and($schema->getState())->toBe(['flag' => true]);
 });

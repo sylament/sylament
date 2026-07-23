@@ -85,9 +85,10 @@ trait HasState
     public function fill(?array $state = null): static
     {
         if ($state === null) {
-            $this->hydrateState();
+            $this->hydrateState(applyDefaults: true);
         } else {
             $this->rawState($state);
+            $this->hydrateState(applyDefaults: false);
         }
 
         $this->fillStateWithNull();
@@ -96,10 +97,12 @@ trait HasState
         return $this;
     }
 
-    public function hydrateState(): void
+    public function hydrateState(bool $applyDefaults = true): void
     {
+        $appliedStateCastPaths = [];
+
         foreach ($this->getFlatComponents() as $component) {
-            $component->hydrateState();
+            $component->hydrateState($applyDefaults, $appliedStateCastPaths);
         }
     }
 

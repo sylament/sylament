@@ -336,7 +336,7 @@ double-firing.
 
 ## T3 — State casts
 
-- [ ] **T3** — `stateCast()` + the `StateCast` contract, applied on hydrate
+- [x] **T3** — `stateCast()` + the `StateCast` contract, applied on hydrate
   (`set`) and dehydrate/read (`get`).
 
 **Goal.** Port Filament's state-cast pipeline so a component can transform its

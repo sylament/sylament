@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
 
+use Sylament\Schemas\Components\StateCasts\BooleanStateCast;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\Tests\Fixtures\Components\DefaultCastField;
+use Sylament\Schemas\Tests\Fixtures\Components\StateCasts\AppendStateCast;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 
@@ -72,4 +75,51 @@ it('resolves relative, absolute and parent-walked state paths', function (): voi
     expect($field->resolveRelativeStatePath('subtitle'))->toBe('data.subtitle')
         ->and($field->resolveRelativeStatePath('/data.title'))->toBe('data.title')
         ->and($field->resolveRelativeStatePath('../sibling'))->toBe('sibling');
+});
+
+it('round-trips a state cast: set on hydrate, get on read', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateField::make('flag')->stateCast(new BooleanStateCast(isStoredAsInt: true))->default(true),
+    ]);
+
+    $schema->fill();
+
+    expect($host->data['flag'])->toBe(1)
+        ->and($schema->getComponents()[0]->getState())->toBeTrue();
+});
+
+it('composes default state casts before custom ones', function (): void {
+    $host = new StateHostFixture();
+    $host->data = ['x' => 'v'];
+
+    $field = Schema::make($host)->statePath('data')->components([
+        DefaultCastField::make('x')->stateCast(new AppendStateCast('custom')),
+    ])->getComponents()[0];
+
+    expect($field->getState())->toBe('v>default>custom');
+});
+
+it('applies state casts once across components sharing a state path', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateField::make('flag')->stateCast(new AppendStateCast('X')),
+        StateField::make('flag')->stateCast(new AppendStateCast('X')),
+    ]);
+
+    $schema->fill(['flag' => 'v']);
+
+    expect($host->data['flag'])->toBe('v<X');
+});
+
+it('returns the cast old state, leaving raw old state untouched', function (): void {
+    $host = new StateHostFixture();
+    $host->oldState = ['data.flag' => 0];
+
+    $field = Schema::make($host)->statePath('data')->components([
+        StateField::make('flag')->stateCast(new BooleanStateCast(isStoredAsInt: true)),
+    ])->getComponents()[0];
+
+    expect($field->getOldState())->toBeFalse()
+        ->and($field->getOldRawState())->toBe(0);
 });

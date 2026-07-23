@@ -6,6 +6,7 @@ namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\StateCasts\Contracts\StateCast;
 use Sylament\Schemas\Components\Utilities\Get;
 use Sylament\Schemas\Components\Utilities\Set;
 use Sylament\Schemas\State\PropertyAccessor;
@@ -33,6 +34,11 @@ trait HasState
     protected array $afterStateUpdated = [];
 
     protected bool|Closure $isDehydrated = true;
+
+    /**
+     * @var array<StateCast|Closure>
+     */
+    protected array $stateCasts = [];
 
     public function statePath(?string $path): static
     {
@@ -100,8 +106,46 @@ trait HasState
         return $this;
     }
 
+    public function stateCast(StateCast|Closure $cast): static
+    {
+        $this->stateCasts[] = $cast;
+
+        return $this;
+    }
+
+    /**
+     * @return array<StateCast>
+     */
+    public function getStateCasts(): array
+    {
+        $casts = $this->getDefaultStateCasts();
+
+        foreach ($this->stateCasts as $cast) {
+            $casts[] = $this->evaluate($cast);
+        }
+
+        return $casts;
+    }
+
+    /**
+     * @return array<StateCast>
+     */
+    public function getDefaultStateCasts(): array
+    {
+        return [];
+    }
+
+    public function hasCustomStateCasts(): bool
+    {
+        return $this->stateCasts !== [];
+    }
+
     public function state(mixed $state): static
     {
+        foreach (array_reverse($this->getStateCasts()) as $stateCast) {
+            $state = $stateCast->set($state);
+        }
+
         $this->rawState($state);
 
         return $this;
@@ -109,7 +153,13 @@ trait HasState
 
     public function getState(): mixed
     {
-        return $this->getRawState();
+        $state = $this->getRawState();
+
+        foreach ($this->getStateCasts() as $stateCast) {
+            $state = $stateCast->get($state);
+        }
+
+        return $state;
     }
 
     public function default(mixed $state): static
@@ -185,7 +235,17 @@ trait HasState
 
     public function getOldState(): mixed
     {
-        return $this->getOldRawState();
+        $state = $this->getOldRawState();
+
+        if (blank($state)) {
+            return null;
+        }
+
+        foreach ($this->getStateCasts() as $stateCast) {
+            $state = $stateCast->get($state);
+        }
+
+        return $state;
     }
 
     public function getOldRawState(): mixed
@@ -201,15 +261,47 @@ trait HasState
         ]);
     }
 
-    public function hydrateState(): void
+    /**
+     * @param array<string, true> $appliedStateCastPaths
+     */
+    public function hydrateState(bool $applyDefaults = true, array &$appliedStateCastPaths = []): void
     {
         if (! $this->hasStatePath()) {
             return;
         }
 
-        if ($this->hasDefaultState) {
-            $this->state($this->getDefaultState());
+        if ($applyDefaults && $this->hasDefaultState) {
+            $this->rawState($this->getDefaultState());
         }
+
+        $stateCasts = $this->getStateCasts();
+
+        if ($stateCasts === []) {
+            return;
+        }
+
+        $statePath = $this->getStatePath();
+
+        if (blank($statePath)) {
+            return;
+        }
+
+        if (isset($appliedStateCastPaths[$statePath])) {
+            return;
+        }
+
+        $rawState = $this->getRawState();
+        $originalRawState = $rawState;
+
+        foreach ($stateCasts as $stateCast) {
+            $rawState = $stateCast->set($rawState);
+        }
+
+        if ($rawState !== $originalRawState) {
+            $this->rawState($rawState);
+        }
+
+        $appliedStateCastPaths[$statePath] = true;
     }
 
     public function fillStateWithNull(): void

@@ -5,30 +5,12 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests\Integration\Components;
 
 use Sylament\Forms\Components\Textarea;
-use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
-use Sylament\Schemas\Schema;
 use Symfony\Component\DomCrawler\Crawler;
 
-use function Sylament\Forms\Tests\renderToHtml;
-
-/**
- * Render a field as the child of a real Schema bound to a `data`-bag host, mirroring
- * how a field is used: the parent Schema is its container, supplying the id/state-path
- * cascade and the live binding context. The `->statePath('data')` container prefixes
- * the field's absolute path (so `excerpt` becomes `data.excerpt`), and the host's empty
- * `$data` bag lets `getState()` read back null — an unset field renders no content.
- *
- * Named distinctly from TextInputTest's `renderField()`: both files share the
- * `Sylament\Forms\Tests\Integration\Components` namespace, and PHP fatals on two
- * same-named function declarations in one namespace regardless of parameter types.
- */
-function renderTextareaField(Textarea $textarea): string
-{
-    return renderToHtml(Schema::make(new FieldRenderHost())->statePath('data')->components([$textarea]));
-}
+use function Sylament\Forms\Tests\renderField;
 
 it('renders the same field wrapper chrome as TextInput around the textarea', function (): void {
-    $crawler = new Crawler(renderTextareaField(
+    $crawler = new Crawler(renderField(
         Textarea::make('excerpt')->label('Excerpt')->markAsRequired(),
     ));
 
@@ -50,16 +32,16 @@ it('renders the same field wrapper chrome as TextInput around the textarea', fun
 
 it('binds the textarea to its absolute state path via data-model', function (): void {
     // Standalone default: state syncs but suppresses the re-render.
-    $default = new Crawler(renderTextareaField(Textarea::make('excerpt')));
+    $default = new Crawler(renderField(Textarea::make('excerpt')));
     expect($default->filter('textarea.sy-fo-input')->attr('data-model'))->toBe('norender|data.excerpt');
 
     // live() drops the modifier to a bare path (re-render on input).
-    $live = new Crawler(renderTextareaField(Textarea::make('excerpt')->live()));
+    $live = new Crawler(renderField(Textarea::make('excerpt')->live()));
     expect($live->filter('textarea.sy-fo-input')->attr('data-model'))->toBe('data.excerpt');
 });
 
 it('renders the rows and cols attributes', function (): void {
-    $textarea = new Crawler(renderTextareaField(
+    $textarea = new Crawler(renderField(
         Textarea::make('excerpt')->rows(6)->cols(40),
     ))->filter('textarea.sy-fo-input');
 
@@ -68,7 +50,7 @@ it('renders the rows and cols attributes', function (): void {
 });
 
 it('omits the rows and cols attributes when unset', function (): void {
-    $textarea = new Crawler(renderTextareaField(
+    $textarea = new Crawler(renderField(
         Textarea::make('excerpt'),
     ))->filter('textarea.sy-fo-input');
 
@@ -77,7 +59,7 @@ it('omits the rows and cols attributes when unset', function (): void {
 });
 
 it('renders helper text in the helper slot', function (): void {
-    $crawler = new Crawler(renderTextareaField(
+    $crawler = new Crawler(renderField(
         Textarea::make('excerpt')->helperText('Some help'),
     ));
 
@@ -87,7 +69,7 @@ it('renders helper text in the helper slot', function (): void {
 });
 
 it('renders the hint text in the hint slot', function (): void {
-    $crawler = new Crawler(renderTextareaField(
+    $crawler = new Crawler(renderField(
         Textarea::make('excerpt')->hint('Need a hand'),
     ));
 
@@ -97,7 +79,7 @@ it('renders the hint text in the hint slot', function (): void {
 });
 
 it('renders the remaining html attributes', function (): void {
-    $textarea = new Crawler(renderTextareaField(
+    $textarea = new Crawler(renderField(
         Textarea::make('excerpt')
             ->placeholder('Type here')
             ->maxLength(500)

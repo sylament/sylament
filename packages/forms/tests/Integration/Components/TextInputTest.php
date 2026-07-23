@@ -5,23 +5,9 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests\Integration\Components;
 
 use Sylament\Forms\Components\TextInput;
-use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
-use Sylament\Schemas\Schema;
 use Symfony\Component\DomCrawler\Crawler;
 
-use function Sylament\Forms\Tests\renderToHtml;
-
-/**
- * Render a field as the child of a real Schema bound to a `data`-bag host, mirroring
- * how a field is used: the parent Schema is its container, supplying the id/state-path
- * cascade and the live binding context. The `->statePath('data')` container prefixes
- * the field's absolute path (so `title` becomes `data.title`), and the host's empty
- * `$data` bag lets `getState()` read back null — an unset field renders `value=""`.
- */
-function renderField(TextInput $input): string
-{
-    return renderToHtml(Schema::make(new FieldRenderHost())->statePath('data')->components([$input]));
-}
+use function Sylament\Forms\Tests\renderField;
 
 it('renders the field wrapper chrome around the input', function (): void {
     $crawler = new Crawler(renderField(

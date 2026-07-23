@@ -58,22 +58,22 @@ it('omits the rows and cols attributes when unset', function (): void {
         ->and($textarea->attr('cols'))->toBeNull();
 });
 
-it('renders helper text in the helper slot', function (): void {
+it('renders helper text in the below-content slot', function (): void {
     $crawler = new Crawler(renderField(
         Textarea::make('excerpt')->helperText('Some help'),
     ));
 
-    $helper = $crawler->filter('.sy-fo-field-helper');
+    $helper = $crawler->filter('.sy-fo-field-content-col .sy-sc-text');
     expect($helper->count())->toBe(1)
         ->and($helper->text())->toBe('Some help');
 });
 
-it('renders the hint text in the hint slot', function (): void {
+it('renders the hint text in the after-label slot', function (): void {
     $crawler = new Crawler(renderField(
         Textarea::make('excerpt')->hint('Need a hand'),
     ));
 
-    $hint = $crawler->filter('.sy-fo-field-hint');
+    $hint = $crawler->filter('.sy-fo-field-label-ctn .sy-sc-text');
     expect($hint->count())->toBe(1)
         ->and($hint->text())->toContain('Need a hand');
 });

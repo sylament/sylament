@@ -31,6 +31,13 @@ it('returns a Markup content unchanged', function (): void {
     expect(Text::make($markup)->getContent())->toBe($markup);
 });
 
+it('round-trips the color', function (): void {
+    expect(Text::make('x')->color('primary')->getColor())->toBe('primary')
+        ->and(Text::make('x')->getColor())->toBeNull()
+        ->and(Text::make('x')->hasColor())->toBeFalse()
+        ->and(Text::make('x')->color('danger')->hasColor())->toBeTrue();
+});
+
 it('normalizes a known size string to the TextSize enum', function (): void {
     expect(Text::make('x')->size('sm')->getSize())->toBe(TextSize::Small);
 });

@@ -4,7 +4,12 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Unit\Components;
 
+use Sylament\Forms\Components\Field;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureField;
+use Sylament\Schemas\Components\Icon;
+use Sylament\Schemas\Components\Text;
+
+use function Sylament\Forms\Tests\wireField;
 
 it('seeds the name and state path from make', function (): void {
     $field = FixtureField::make('title');
@@ -47,10 +52,29 @@ it('marks the field as required', function (): void {
         ->and(FixtureField::make('title')->markAsRequired(fn (): bool => true)->isMarkedAsRequired())->toBeTrue();
 });
 
-it('round-trips the helper text', function (): void {
-    expect(FixtureField::make('title')->helperText('Some help')->getHelperText())->toBe('Some help')
-        ->and(FixtureField::make('title')->helperText(fn (): string => 'Lazy help')->getHelperText())->toBe('Lazy help')
-        ->and(FixtureField::make('title')->getHelperText())->toBeNull();
+it('seeds the helper text into the below-content slot', function (): void {
+    $slot = wireField(FixtureField::make('title')->helperText('Some help'))
+        ->getChildSchema(Field::BELOW_CONTENT_SCHEMA_KEY);
+
+    expect($slot)->not->toBeNull();
+
+    $components = $slot->getComponents();
+
+    expect($components)->toHaveCount(1)
+        ->and($components[0])->toBeInstanceOf(Text::class)
+        ->and($components[0]->getContent())->toBe('Some help');
+});
+
+it('resolves closure helper text into the below-content slot', function (): void {
+    $slot = wireField(FixtureField::make('title')->helperText(fn (): string => 'Lazy help'))
+        ->getChildSchema(Field::BELOW_CONTENT_SCHEMA_KEY);
+
+    expect($slot)->not->toBeNull()
+        ->and($slot->getComponents()[0]->getContent())->toBe('Lazy help');
+});
+
+it('adds no below-content slot without helper text', function (): void {
+    expect(wireField(FixtureField::make('title'))->getChildSchema(Field::BELOW_CONTENT_SCHEMA_KEY))->toBeNull();
 });
 
 it('has no hint or hint icon by default', function (): void {
@@ -94,6 +118,25 @@ it('keeps the hint icon tooltip when the icon is set again without one', functio
         ->hintIcon('heroicon-o-star');
 
     expect($field->getHintIconTooltip())->toBe('A tooltip');
+});
+
+it('seeds the hint text and icon into the after-label slot', function (): void {
+    $slot = wireField(FixtureField::make('title')->hint('A hint')->hintIcon('heroicon-o-star'))
+        ->getChildSchema(Field::AFTER_LABEL_SCHEMA_KEY);
+
+    expect($slot)->not->toBeNull();
+
+    $components = $slot->getComponents();
+
+    expect($components)->toHaveCount(2)
+        ->and($components[0])->toBeInstanceOf(Text::class)
+        ->and($components[0]->getContent())->toBe('A hint')
+        ->and($components[1])->toBeInstanceOf(Icon::class)
+        ->and($components[1]->getIcon())->toBe('heroicon-o-star');
+});
+
+it('adds no after-label slot without a hint', function (): void {
+    expect(wireField(FixtureField::make('title'))->getChildSchema(Field::AFTER_LABEL_SCHEMA_KEY))->toBeNull();
 });
 
 it('round-trips the placeholder', function (): void {

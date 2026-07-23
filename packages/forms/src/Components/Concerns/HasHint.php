@@ -6,6 +6,9 @@ namespace Sylament\Forms\Components\Concerns;
 
 use BackedEnum;
 use Closure;
+use Sylament\Forms\Components\Field;
+use Sylament\Schemas\Components\Icon;
+use Sylament\Schemas\Components\Text;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
@@ -22,6 +25,63 @@ trait HasHint
     protected string|BackedEnum|Markup|Closure|null $hintIcon = null;
 
     protected string|Closure|null $hintIconTooltip = null;
+
+    protected function setUpHint(): void
+    {
+        $this->afterLabel(function (Field $component): array {
+            $components = [];
+
+            if ($component->hasHint()) {
+                $components[] = Text::make(static function (Text $text): string|Markup|null {
+                    /** @var Field $field */
+                    $field = $text->getContainer()->getParentComponent();
+
+                    return $field->getHint();
+                })
+                    ->color(static function (Text $text): string|array|null {
+                        /** @var Field $field */
+                        $field = $text->getContainer()->getParentComponent();
+
+                        return $field->getHintColor();
+                    })
+                    ->visible(static function (Text $text): bool {
+                        /** @var Field $field */
+                        $field = $text->getContainer()->getParentComponent();
+
+                        return filled($field->getHint());
+                    });
+            }
+
+            if ($component->hasHintIcon()) {
+                $components[] = Icon::make(static function (Icon $icon): string|BackedEnum|Markup|null {
+                    /** @var Field $field */
+                    $field = $icon->getContainer()->getParentComponent();
+
+                    return $field->getHintIcon();
+                })
+                    ->tooltip(static function (Icon $icon): ?string {
+                        /** @var Field $field */
+                        $field = $icon->getContainer()->getParentComponent();
+
+                        return $field->getHintIconTooltip();
+                    })
+                    ->visible(static function (Icon $icon): bool {
+                        /** @var Field $field */
+                        $field = $icon->getContainer()->getParentComponent();
+
+                        return filled($field->getHintIcon());
+                    })
+                    ->color(static function (Icon $icon): string|array|null {
+                        /** @var Field $field */
+                        $field = $icon->getContainer()->getParentComponent();
+
+                        return $field->getHintColor();
+                    });
+            }
+
+            return $components;
+        });
+    }
 
     public function hint(string|Markup|Closure|null $hint): static
     {

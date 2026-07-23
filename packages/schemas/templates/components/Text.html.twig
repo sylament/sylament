@@ -1,10 +1,15 @@
 {% set sizeClass = component.getSizeClass %}
 {% set weightClass = component.getWeightClass %}
 {% set fontFamilyClass = component.getFontFamilyClass %}
+{% set color = component.getColor %}
+{% set colorName = color is iterable or color is empty ? 'gray' : color %}
 
 <span
         {{ attrs({
-            class: ['sy', 'sy-sc-text', sizeClass, weightClass, fontFamilyClass],
+            class: ['sy', 'sy-sc-text', sizeClass, weightClass, fontFamilyClass, {
+                'sy-color': colorName != 'gray',
+                ('sy-color-' ~ colorName): colorName != 'gray',
+            }],
         }, component.getExtraAttributes) }}
 >
     {{- component.getContent -}}

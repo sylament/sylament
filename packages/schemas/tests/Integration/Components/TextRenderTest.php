@@ -51,3 +51,13 @@ it('renders extra attributes on the span', function (): void {
 
     expect($html)->toContain('data-role="label"');
 });
+
+it('renders the color palette classes', function (): void {
+    expect(renderToHtml(Text::make('x')->color('primary')))
+        ->toContain('sy-color')
+        ->toContain('sy-color-primary');
+});
+
+it('omits color classes for the default gray', function (): void {
+    expect(renderToHtml(Text::make('x')))->not->toContain('sy-color-');
+});

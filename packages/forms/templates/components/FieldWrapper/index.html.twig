@@ -3,6 +3,20 @@
     content = markup(block('content') ?? '')
 %}
 
+{% set aboveLabelSchema = field.getChildSchema('above_label') %}
+{% set belowLabelSchema = field.getChildSchema('below_label') %}
+{% set beforeLabelSchema = field.getChildSchema('before_label') %}
+{% set afterLabelSchema = field.getChildSchema('after_label') %}
+{% set aboveContentSchema = field.getChildSchema('above_content') %}
+{% set belowContentSchema = field.getChildSchema('below_content') %}
+{% set beforeContentSchema = field.getChildSchema('before_content') %}
+{% set afterContentSchema = field.getChildSchema('after_content') %}
+{% set aboveErrorMessageSchema = field.getChildSchema('above_error_message') %}
+{% set belowErrorMessageSchema = field.getChildSchema('below_error_message') %}
+
+{% set showVisibleLabel = field.getLabel is not null and not field.isLabelHidden %}
+{% set hasErrors = field.getErrorMessages is not empty %}
+
 <div
         {{ attrs({
             class: ['sy', 'sy-fo-field'],
@@ -12,38 +26,55 @@
         <label for="{{ field.getId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</label>
     {% endif %}
 
-    {% set showVisibleLabel = field.getLabel is not null and not field.isLabelHidden %}
-    {% if showVisibleLabel or field.hasHint or field.hasHintIcon %}
-        <div class="sy-fo-field-label-ctn">
-            {% if showVisibleLabel %}
-                <label for="{{ field.getId }}" class="sy-fo-field-label">
-                    <span class="sy-fo-field-label-content">{{ field.getLabel }}{% if field.isMarkedAsRequired %}<sup class="sy-fo-field-label-required-mark">*</sup>{% endif %}</span>
-                </label>
-            {% endif %}
+    {% if showVisibleLabel or aboveLabelSchema or belowLabelSchema or beforeLabelSchema or afterLabelSchema %}
+        <div class="sy-fo-field-label-col">
+            {{ renderComponent(aboveLabelSchema) }}
 
-            {% if field.hasHint or field.hasHintIcon %}
-                <span class="sy-fo-field-hint">
-                    {%- if field.hasHint %}{{ field.getHint }}{% endif -%}
-                    {%- if field.hasHintIcon %}{{ generateIconHtml(field.getHintIcon, attributes: {
-                        class: 'sy-fo-field-hint-icon',
-                        ...(field.getHintIconTooltip ? { title: field.getHintIconTooltip } : {}),
-                    }, size: 'sm') }}{% endif -%}
-                </span>
-            {% endif %}
+            <div class="sy-fo-field-label-ctn">
+                {{ renderComponent(beforeLabelSchema) }}
+
+                {% if showVisibleLabel %}
+                    <label for="{{ field.getId }}" class="sy-fo-field-label">
+                        <span class="sy-fo-field-label-content">{{ field.getLabel }}{% if field.isMarkedAsRequired %}<sup class="sy-fo-field-label-required-mark">*</sup>{% endif %}</span>
+                    </label>
+                {% endif %}
+
+                {{ renderComponent(afterLabelSchema) }}
+            </div>
+
+            {{ renderComponent(belowLabelSchema) }}
         </div>
     {% endif %}
 
-    {{ content }}
+    {% if content is not empty or hasErrors or aboveContentSchema or belowContentSchema or beforeContentSchema or afterContentSchema or aboveErrorMessageSchema or belowErrorMessageSchema %}
+        <div class="sy-fo-field-content-col">
+            {{ renderComponent(aboveContentSchema) }}
 
-    {% if field.getHelperText is not empty %}
-        <div class="sy-fo-field-helper">{{ field.getHelperText }}</div>
-    {% endif %}
+            {% if beforeContentSchema or afterContentSchema %}
+                <div class="sy-fo-field-content-ctn">
+                    {{ renderComponent(beforeContentSchema) }}
 
-    {% if field.getErrorMessages is not empty %}
-        <ul data-validation-error class="sy-fo-field-error-list">
-            {% for message in field.getErrorMessages %}
-                <li class="sy-fo-field-error-message">{{ message }}</li>
-            {% endfor %}
-        </ul>
+                    <div class="sy-fo-field-content">{{ content }}</div>
+
+                    {{ renderComponent(afterContentSchema) }}
+                </div>
+            {% else %}
+                {{ content }}
+            {% endif %}
+
+            {{ renderComponent(belowContentSchema) }}
+
+            {% if hasErrors %}
+                {{ renderComponent(aboveErrorMessageSchema) }}
+
+                <ul data-validation-error class="sy-fo-field-error-list">
+                    {% for message in field.getErrorMessages %}
+                        <li class="sy-fo-field-error-message">{{ message }}</li>
+                    {% endfor %}
+                </ul>
+
+                {{ renderComponent(belowErrorMessageSchema) }}
+            {% endif %}
+        </div>
     {% endif %}
 </div>

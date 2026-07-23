@@ -233,6 +233,11 @@ the host, type into `title`, watch `slug` update live, record a GIF).
    (user-approved). The demoable reactive loop needs no validation.
 2. **Wrapper chrome via direct getters, not Filament's 10-slot schema system**
    (user-approved). Public API preserved; slot system + hint actions deferred.
+   **Superseded (follow-on epic):** the 10-slot system was later ported — helper
+   text → `below_content`, hint text/icon → `after_label` (via `setUpHint()`), plus
+   a new schemas `Icon` component and `Text::color()`; only hint **actions** remain
+   deferred. Current state: [forms/field.md](forms/field.md),
+   [schemas/icon.md](schemas/icon.md).
 3. **`HasName` placed in `schemas`** (Filament parity placement), not `forms`.
 4. **Assets ride support's central aggregation** — forms contributes CSS only, no
    build of its own (schemas precedent).
@@ -249,6 +254,8 @@ the host, type into `title`, watch `slug` update live, record a GIF).
 - **Field-wrapper chrome via direct getters**, not Filament's slot-schema system
   (`aboveLabel`…`belowErrorMessage` + `Text`/`Icon`-in-slot). Public API identical;
   the slot system is deferred until a consumer needs arbitrary slot injection.
+  **Reconciled in the follow-on slots epic** — the wrapper now renders the ten
+  child-schema slots; see [forms/field.md](forms/field.md).
 - **Hint actions omitted** (`hintAction()`/`hintActions()`) — needs the actions
   package; hint text/icon/tooltip ship now.
 - **Render via Twig template**, not Filament's `HasEmbeddedView`/`toEmbeddedHtml()`

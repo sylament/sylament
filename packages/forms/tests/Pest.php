@@ -53,3 +53,15 @@ function renderField(Field $field): string
 {
     return renderToHtml(Schema::make(new FieldRenderHost())->statePath('data')->components([$field]));
 }
+
+/**
+ * Wire a field into a real parent Schema so its child slot schemas can reach the
+ * live component through the container chain, as happens in a real render. Returns
+ * the field for chaining slot assertions (mirrors schemas' `wireSection()`).
+ */
+function wireField(Field $field): Field
+{
+    Schema::make(new FieldRenderHost())->components([$field])->getComponents();
+
+    return $field;
+}

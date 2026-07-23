@@ -1,6 +1,10 @@
 .sy-sc-text {
     @apply inline-block text-sm break-words text-gray-600 dark:text-gray-400;
 
+    &.sy-color {
+        @apply text-color-600 dark:text-color-400;
+    }
+
     &.sy-font-sans {
         @apply font-sans;
     }

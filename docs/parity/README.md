@@ -36,6 +36,7 @@ detail beneath it.
 | [ComponentManager](support/component-manager.md) | support | in progress |
 | [Field](forms/field.md) | forms | in progress |
 | [Html](schemas/html.md) | schemas | done |
+| [Icon](schemas/icon.md) | schemas | in progress |
 | [Icon button](support/icon-button.md) | support | in progress |
 | [Icons](support/icons.md) | support | in progress |
 | [InteractsWithSchemas](schemas/interacts-with-schemas.md) | schemas | in progress |

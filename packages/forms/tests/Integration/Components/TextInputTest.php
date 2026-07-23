@@ -45,28 +45,30 @@ it('binds the input to its absolute state path via data-model', function (): voi
     expect($live->filter('input.sy-fo-input')->attr('data-model'))->toBe('data.title');
 });
 
-it('renders helper text in the helper slot', function (): void {
+it('renders helper text in the below-content slot', function (): void {
     $crawler = new Crawler(renderField(
         TextInput::make('title')->helperText('Some help'),
     ));
 
-    $helper = $crawler->filter('.sy-fo-field-helper');
+    // Helper text is a Text component seeded into the below_content slot.
+    $helper = $crawler->filter('.sy-fo-field-content-col .sy-sc-text');
     expect($helper->count())->toBe(1)
         ->and($helper->text())->toBe('Some help');
 });
 
-it('renders the hint text in the hint slot', function (): void {
+it('renders the hint text in the after-label slot', function (): void {
     $crawler = new Crawler(renderField(
         TextInput::make('title')->hint('Need a hand'),
     ));
 
-    $hint = $crawler->filter('.sy-fo-field-hint');
+    // Hint text is a Text component seeded into the after_label slot.
+    $hint = $crawler->filter('.sy-fo-field-label-ctn .sy-sc-text');
     expect($hint->count())->toBe(1)
         ->and($hint->text())->toContain('Need a hand');
 
     // The label and hint share one row (the label container), not stacked rows.
     expect($crawler->filter('.sy-fo-field-label-ctn > label.sy-fo-field-label')->count())->toBe(1)
-        ->and($crawler->filter('.sy-fo-field-label-ctn > .sy-fo-field-hint')->count())->toBe(1);
+        ->and($crawler->filter('.sy-fo-field-label-ctn .sy-sc-text')->count())->toBe(1);
 });
 
 it('renders the hint icon through the support icon mechanism', function (): void {
@@ -74,9 +76,8 @@ it('renders the hint icon through the support icon mechanism', function (): void
         TextInput::make('title')->hint('Need a hand')->hintIcon('heroicons:star'),
     ));
 
-    $hint = $crawler->filter('.sy-fo-field-hint');
-    expect($hint->count())->toBe(1)
-        ->and($hint->filter('svg')->count())->toBe(1);
+    $icon = $crawler->filter('.sy-fo-field-label-ctn svg.sy-sc-icon');
+    expect($icon->count())->toBe(1);
 });
 
 it('renders the hint icon tooltip as the svg title attribute', function (): void {
@@ -84,7 +85,7 @@ it('renders the hint icon tooltip as the svg title attribute', function (): void
         TextInput::make('title')->hint('Need a hand')->hintIcon('heroicons:star', 'More info'),
     ));
 
-    $icon = $crawler->filter('.sy-fo-field-hint svg');
+    $icon = $crawler->filter('.sy-fo-field-label-ctn svg.sy-sc-icon');
     expect($icon->count())->toBe(1)
         ->and($icon->attr('title'))->toBe('More info');
 });
@@ -94,9 +95,35 @@ it('renders the hint independent of a hidden label', function (): void {
         TextInput::make('title')->hint('Need a hand')->hiddenLabel(),
     ));
 
-    $hint = $crawler->filter('.sy-fo-field-hint');
+    $hint = $crawler->filter('.sy-fo-field-label-ctn .sy-sc-text');
     expect($hint->count())->toBe(1)
         ->and($hint->text())->toContain('Need a hand');
+});
+
+it('renders arbitrary content in the label and content wrapper slots', function (): void {
+    $crawler = new Crawler(renderField(
+        TextInput::make('title')
+            ->aboveLabel('Above label')
+            ->belowContent('Below content'),
+    ));
+
+    // A string slot is coerced to a Text component in the matching wrapper column.
+    expect($crawler->filter('.sy-fo-field-label-col')->text())->toContain('Above label')
+        ->and($crawler->filter('.sy-fo-field-content-col')->text())->toContain('Below content')
+        // Above-label sits before the label row within the label column.
+        ->and($crawler->filter('.sy-fo-field-label-col > .sy-sc .sy-sc-text')->text())->toContain('Above label');
+});
+
+it('wraps the input in a content container when before/after content is present', function (): void {
+    $crawler = new Crawler(renderField(
+        TextInput::make('title')->beforeContent('Before')->afterContent('After'),
+    ));
+
+    $ctn = $crawler->filter('.sy-fo-field-content-ctn');
+    expect($ctn->count())->toBe(1)
+        ->and($ctn->filter('.sy-fo-field-content > input.sy-fo-input')->count())->toBe(1)
+        ->and($ctn->text())->toContain('Before')
+        ->and($ctn->text())->toContain('After');
 });
 
 it('makes the label screen-reader-only with hiddenLabel', function (): void {

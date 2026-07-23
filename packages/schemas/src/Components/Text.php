@@ -6,6 +6,7 @@ namespace Sylament\Schemas\Components;
 
 use BackedEnum;
 use Closure;
+use Sylament\Support\Component\Concerns\HasColor;
 use Sylament\Support\Component\Concerns\HasFontFamily;
 use Sylament\Support\Component\Concerns\HasWeight;
 use Sylament\Support\Enum\Size;
@@ -16,6 +17,7 @@ use function Sylament\Support\blank;
 
 class Text extends Component
 {
+    use HasColor;
     use HasFontFamily;
     use HasWeight;
 

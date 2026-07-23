@@ -49,23 +49,26 @@ Blocked on infrastructure:
   applied in `getComponents()`) — blocked on
   [actions-package](../infrastructure.md#actions-package)
 - [ ] `HasState` **partially ported** (T1 container substrate; T2 reactive loop;
-  T3 casts): `statePath()` / absolute `getStatePath()` composition, `rawState()`,
-  `fill()` (now always runs `hydrateState()`, gated by an `applyDefaults` flag so a
-  provided-state fill applies the cast `set` pass without re-seeding defaults),
+  T3 casts; T4 dehydration): `statePath()` / absolute `getStatePath()` composition,
+  `getRawState()` (the whole bound bag), `rawState()`, `fill()` (now always runs
+  `hydrateState()`, gated by an `applyDefaults` flag so a provided-state fill
+  applies the cast `set` pass without re-seeding defaults),
   `hydrateState(applyDefaults:)` threading the per-schema `appliedStateCastPaths`
-  dedup map, `fillStateWithNull()`, `callAfterStateHydrated()`, and a minimal
-  flat `getState()` walking `getFlatComponents()` and skipping `!isDehydrated()`
-  components (each dehydrated component read via its cast-aware `getState()`). The T2
+  dedup map, `fillStateWithNull()`, `callAfterStateHydrated()`, and the full
+  `getState()` dehydration spine — `getRawState()` seed → `callBeforeStateDehydrated()`
+  → `dehydrateState()` → `mutateDehydratedState()` → unwrap, backed by
+  `buildDehydratedComponentsCache()` / `hasDehydratedComponent()` (T4). The T2
   `afterStateUpdated` change bridge landed on the **host**
   (`Concerns\HasSchemas`): a `#[PreDehydrate]` raw-state snapshot + the framework
   `$oldState` LiveProp + a `#[PostHydrate]` diff that fires each changed component's
   hooks; and `Schema` overrides the `HasStateBindingModifiers` getters
   (`isLive()` / `isLiveOnBlur()` / `isLiveDebounced()` / `getLiveDebounce()`) so
   container inheritance walks parent components (the `HasGap`/`HasColumns` shape).
-  Still missing: full `dehydrateState()` with shared/descendant paths +
-  `mutateDehydratedState` (T4), and relationship loading (T6). `CanBeValidated`,
-  `HasOperation`, `getLivewireKey()`, and the state-path key fallbacks remain
-  blocked on [live-component-state](../infrastructure.md#live-component-state)
+  Still missing: relationship loading (T6) and — deferred to the validation epic —
+  `validate()` / `pruneStateToMatchKeys()` (the spine reads from the raw bag
+  instead). `CanBeValidated`, `HasOperation`, `getLivewireKey()`, and the
+  state-path key fallbacks remain blocked on
+  [live-component-state](../infrastructure.md#live-component-state)
 
 Revisit with later packages:
 
@@ -96,12 +99,18 @@ Revisit with later packages:
   `Schema` overrides the getters (aliasing the trait's `getAllColumns` as its
   own-columns fallback). PHPStan cannot type the cross-hierarchy `instanceof`
   branches in trait context; the public API is identical.
-- **`getState()` is a minimal flat assembler (T1).** It keys each dehydrated
-  component by its **own** (relative) state path over one `getFlatComponents()`
-  walk, and drives `hydrateState()` / `fillStateWithNull()` /
-  `callAfterStateHydrated()` the same flattened way — where Filament recurses per
-  component into child schemas. Same visitation set for flat and layout-nested
-  (Section) schemas. Per-component state casts are applied (T3, through each
-  component's `getState()`); correct nested-path assembly, prune, conditions,
-  `getStateToDehydrate()`/`dehydrateStateUsing`, and `mutateDehydratedState` land in
-  T4, and dynamic per-item repeater schemas (which the flatten can't enumerate) in T6.
+- **`getState()` ports Filament's `getStateSnapshot()`, not its `getState()` (T4).**
+  Filament's public `getState()` opens with `validate()` and threads relationship
+  save/load and a `pruneStateToMatchKeys()` step that only exists to reconcile
+  validation-mutated data; none of that is ported yet, so we model the
+  validation-, prune- and relationship-free `getStateSnapshot()` spine instead
+  (seed from `getRawState()` → `dehydrateState()` → `mutateDehydratedState()` →
+  unwrap), inserting `callBeforeStateDehydrated()` before the dehydrate walk.
+  Consequences vs Filament: **no `validate()`** (the raw bag is read directly —
+  validation lands as its own epic) and **no `withVisibilityCache` wrapper** (a
+  pure `isHidden()` memoization; correctness is unaffected, hidden state is just
+  re-evaluated per walk). The hydrate walk (`hydrateState()` /
+  `fillStateWithNull()` / `callAfterStateHydrated()`) still flattens via
+  `getFlatComponents()`, where the dehydrate walk recurses per component into
+  child schemas. Dynamic per-item repeater schemas (which the flatten can't
+  enumerate) land in T6.

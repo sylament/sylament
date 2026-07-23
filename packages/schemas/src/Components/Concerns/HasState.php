@@ -33,7 +33,19 @@ trait HasState
      */
     protected array $afterStateUpdated = [];
 
-    protected bool|Closure $isDehydrated = true;
+    protected bool|Closure|null $isDehydrated = null;
+
+    protected bool|Closure $isSaved = true;
+
+    protected bool|Closure $isDehydratedWhenHidden = false;
+
+    protected ?Closure $beforeStateDehydrated = null;
+
+    protected bool $shouldUpdateValidatedStateAfterBeforeStateDehydratedRuns = false;
+
+    protected ?Closure $dehydrateStateUsing = null;
+
+    protected ?Closure $mutateDehydratedStateUsing = null;
 
     /**
      * @var array<StateCast|Closure>
@@ -322,9 +334,265 @@ trait HasState
         return $this;
     }
 
+    public function dehydratedWhenHidden(bool|Closure $condition = true): static
+    {
+        $this->isDehydratedWhenHidden = $condition;
+
+        return $this;
+    }
+
+    public function saved(bool|Closure $condition = true): static
+    {
+        $this->isSaved = $condition;
+
+        return $this;
+    }
+
+    public function dehydrateStateUsing(?Closure $callback): static
+    {
+        $this->dehydrateStateUsing = $callback;
+
+        return $this;
+    }
+
+    public function beforeStateDehydrated(?Closure $callback, bool $shouldUpdateValidatedStateAfter = false): static
+    {
+        $this->beforeStateDehydrated = $callback;
+        $this->shouldUpdateValidatedStateAfterBeforeStateDehydratedRuns = $shouldUpdateValidatedStateAfter;
+
+        return $this;
+    }
+
+    public function mutateDehydratedStateUsing(?Closure $callback): static
+    {
+        $this->mutateDehydratedStateUsing = $callback;
+
+        return $this;
+    }
+
     public function isDehydrated(): bool
     {
-        return (bool) $this->evaluate($this->isDehydrated);
+        $isDehydrated = $this->evaluate($this->isDehydrated) ?? $this->isSaved();
+
+        if (! $isDehydrated) {
+            return false;
+        }
+
+        return ! $this->isHiddenAndNotDehydratedWhenHidden();
+    }
+
+    public function isDehydratedWhenHidden(): bool
+    {
+        return (bool) $this->evaluate($this->isDehydratedWhenHidden);
+    }
+
+    public function isSaved(): bool
+    {
+        return (bool) $this->evaluate($this->isSaved);
+    }
+
+    public function isHiddenAndNotDehydratedWhenHidden(): bool
+    {
+        if (! $this->isHidden()) {
+            return false;
+        }
+
+        return ! $this->isDehydratedWhenHidden();
+    }
+
+    public function mutatesDehydratedState(): bool
+    {
+        return $this->mutateDehydratedStateUsing instanceof Closure;
+    }
+
+    public function mutateDehydratedState(mixed $state): mixed
+    {
+        if (! $this->mutateDehydratedStateUsing instanceof Closure) {
+            return $state;
+        }
+
+        return $this->evaluate($this->mutateDehydratedStateUsing, [
+            'state' => $state,
+        ]);
+    }
+
+    /**
+     * @param array<string, mixed> $state
+     */
+    public function callBeforeStateDehydrated(array &$state = []): static
+    {
+        if (! $this->beforeStateDehydrated instanceof Closure) {
+            return $this;
+        }
+
+        $this->evaluate($this->beforeStateDehydrated);
+
+        if ($this->shouldUpdateValidatedStateAfterBeforeStateDehydratedRuns) {
+            $statePath = $this->getStatePath();
+
+            if ($statePath !== null) {
+                PropertyAccessor::getInstance()->setInArray($state, $statePath, $this->getState());
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * The dehydration read: apply state casts forward (`get`) and the optional
+     * `dehydrateStateUsing` transform, returning the single `[absolutePath => value]`
+     * entry to merge into the assembled bag.
+     *
+     * @return array<string, mixed>
+     */
+    public function getStateToDehydrate(mixed $state): array
+    {
+        if ($state === '') {
+            $state = null;
+        }
+
+        foreach ($this->getStateCasts() as $stateCast) {
+            $state = $stateCast->get($state);
+        }
+
+        if ($this->dehydrateStateUsing instanceof Closure) {
+            return [(string) $this->getStatePath() => $this->evaluate($this->dehydrateStateUsing, [
+                'state' => $state,
+            ])];
+        }
+
+        return [(string) $this->getStatePath() => $state];
+    }
+
+    /**
+     * Merge this component's dehydrated value into the assembled `$state` bag,
+     * pruning it (and only it) when not dehydrated. `$isDehydrated` is the
+     * parent's verdict flowing down; a component ANDs it with its own
+     * {@see isDehydrated()}.
+     *
+     * @param array<string, mixed> $state
+     */
+    public function dehydrateState(array &$state, bool $isDehydrated = true): void
+    {
+        if (!$isDehydrated || !$this->isDehydrated()) {
+            if ($this->hasStatePath()) {
+                $statePath = $this->getStatePath();
+
+                if ($statePath === null) {
+                    return;
+                }
+
+                if ($this->getRootContainer()->hasDehydratedComponent($statePath)) {
+                    // Another dehydrated component owns this exact path — leave the key intact.
+                    return;
+                }
+
+                if ($this->hasComponentWithStatePath($statePath)) {
+                    // A sibling shares this path: removing the whole key would
+                    // destroy its data, so forget only this component's descendants…
+                    PropertyAccessor::getInstance()->forgetFromArray($state, $this->getDescendantStatePathsToForget($statePath));
+
+                    // …then clean up the shared parent when nothing meaningful remains.
+                    if (blank(PropertyAccessor::getInstance()->getFromArray($state, $statePath))) {
+                        PropertyAccessor::getInstance()->forgetFromArray($state, $statePath);
+                    }
+
+                    return;
+                }
+
+                PropertyAccessor::getInstance()->forgetFromArray($state, $statePath);
+
+                return;
+            }
+
+            // A pathless (layout) component: recurse into children telling them
+            // they are not dehydrated, so their descendants get pruned too.
+            foreach ($this->getChildSchemas() as $childSchema) {
+                $childSchema->dehydrateState($state, isDehydrated: false);
+            }
+
+            return;
+        }
+
+        foreach ($this->getChildSchemas() as $childSchema) {
+            $childSchema->dehydrateState($state, $isDehydrated);
+        }
+
+        if ($this->hasStatePath()) {
+            $statePath = $this->getStatePath();
+
+            if ($statePath === null) {
+                return;
+            }
+
+            foreach ($this->getStateToDehydrate(PropertyAccessor::getInstance()->getFromArray($state, $statePath)) as $key => $value) {
+                PropertyAccessor::getInstance()->setInArray($state, $key, $value);
+            }
+        }
+    }
+
+    /**
+     * Whether another component in the same schema scope shares the given
+     * absolute `statePath`. The scope walks up through pathless layout ancestors
+     * (Section, Tabs, …) until a `statePath`-bearing ancestor bounds it.
+     */
+    protected function hasComponentWithStatePath(string $statePath): bool
+    {
+        $container = $this->getContainer();
+
+        while (($parentComponent = $container->getParentComponent()) !== null) {
+            $parentContainer = $parentComponent->getContainer();
+
+            if ($parentComponent->hasStatePath()) {
+                break;
+            }
+
+            if ($parentContainer->getStatePath() !== $container->getStatePath()) {
+                break;
+            }
+
+            $container = $parentContainer;
+        }
+
+        foreach ($container->getFlatComponents() as $component) {
+            if ($component === $this) {
+                continue;
+            }
+
+            if ($component->hasStatePath() && $component->getStatePath() === $statePath) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * The absolute paths owned by this component's descendants that live under
+     * `$statePath`, so a shared-path prune removes only its own subtree.
+     *
+     * @return array<string>
+     */
+    protected function getDescendantStatePathsToForget(string $statePath): array
+    {
+        $descendantStatePathPrefix = "{$statePath}.";
+        $paths = [];
+
+        foreach ($this->getChildSchemas() as $childSchema) {
+            foreach ($childSchema->getFlatComponents() as $component) {
+                if (! $component->hasStatePath()) {
+                    continue;
+                }
+
+                $childStatePath = $component->getStatePath();
+
+                if ($childStatePath !== null && str_starts_with($childStatePath, $descendantStatePathPrefix)) {
+                    $paths[] = $childStatePath;
+                }
+            }
+        }
+
+        return $paths;
     }
 
     public function resolveRelativeStatePath(string|Component $path = '', bool $isAbsolute = false): string

@@ -16,11 +16,16 @@ Reference:
 
 Portable now (no blocker):
 
-- [ ] `CanBeHidden` core: `hidden()` / `visible()` closures,
-  `hiddenWhenAllChildComponentsHidden()`, and the schema render loop skipping
-  hidden children. `hiddenOn()` / `visibleOn()` need the schema operation
-  concept; `whenTruthy()` / `whenFalsy()` and JS visibility are blocked on
-  [live-component-state](../infrastructure.md#live-component-state).
+- [ ] `CanBeHidden` **partially ported** (T4, dehydration is the first consumer):
+  `hidden()` / `visible()` closures + `isHidden()` / `isVisible()` (the non-cached
+  branch) landed so `dehydratedWhenHidden` can gate `isDehydrated()`. Still
+  missing: `hiddenWhenAllChildComponentsHidden()`, the schema render loop skipping
+  hidden children (and the paired `getComponents(withHidden:)` /
+  `getChildSchemas(withHidden:)` filtering — a hidden component still renders
+  today), the static visibility cache (`withVisibilityCache()`), `hiddenOn()` /
+  `visibleOn()` (need the schema operation concept), and `whenTruthy()` /
+  `whenFalsy()` + JS visibility (blocked on
+  [live-component-state](../infrastructure.md#live-component-state)).
 - [ ] `HasMeta` (`meta()`, `getMeta()`, `hasMeta()`).
 - [ ] `Cloneable` (`getClone()`, `afterCloned()`; must flush the cached keys —
   `flushCachedAbsoluteKey()` / `flushCachedAbsoluteInheritanceKey()` — as
@@ -46,11 +51,18 @@ Blocked on infrastructure:
 
 - [ ] `HasActions` (`registerActions()`, `getAction()`, …) — blocked on
   [actions-package](../infrastructure.md#actions-package)
-- [ ] `HasState` **partially ported** (T1 substrate + T2 reactive loop + T3 casts):
+- [ ] `HasState` **partially ported** (T1 substrate + T2 reactive loop + T3 casts +
+  T4 dehydration):
   state paths (`statePath()`, absolute `getStatePath()`, `resolveRelativeStatePath()`),
   `getRawState()`/`rawState()`/`state()`/`getState()`, `default()`,
   `afterStateHydrated()`/`formatStateUsing()`, `hydrateState()`/`fillStateWithNull()`,
-  minimal `dehydrated()`/`isDehydrated()`, `makeGet/SetUtility()`,
+  the dehydration surface (`dehydrateState()` with shared-path / descendant-forget
+  handling via `hasComponentWithStatePath()` / `getDescendantStatePathsToForget()`,
+  `getStateToDehydrate()` + `dehydrateStateUsing()`, the `dehydrated()` /
+  `saved()` / `dehydratedWhenHidden()` conditions feeding the full `isDehydrated()`
+  chain, `beforeStateDehydrated()` / `callBeforeStateDehydrated()`, and
+  `mutateDehydratedStateUsing()` / `mutateDehydratedState()` — T4),
+  `makeGet/SetUtility()`,
   `afterStateUpdated()` + `clearAfterStateUpdatedHooks()` /
   `callAfterStateUpdatedHooks()` + `getOldState()`/`getOldRawState()` (the change
   bridge, fired from the host's `#[PostHydrate]` diff — see [schema.md](schema.md)),
@@ -61,9 +73,7 @@ Blocked on infrastructure:
   concrete cast ported so far), and the
   `$state`/`$rawState`/`$get`/`$set`/`$liveComponent`/`$old`/`$oldRaw` closure
   parameters — `$state`/`$old` are now the **cast** values (the container half is in
-  [schema.md](schema.md)). Still missing: full dehydration / `mutateDehydratedState` /
-  conditions and the dedicated `getStateToDehydrate()` seam + `dehydrateStateUsing`
-  (T4 — dehydration currently reads cast values through the component `getState()`),
+  [schema.md](schema.md)). Still missing:
   cast-aware component-resolving `$get`/`$set` (T5), relationship loading (T6).
   `CanPoll` +
   the renderless arms (T7), `CanPartiallyRender` (permanent divergence — see
@@ -163,3 +173,13 @@ Revisit with later packages:
   provided-state fill now applies the `set` pass too. Default values are written
   **raw** (`rawState()`, not `state()`), so the single deduped `set` pass casts them
   exactly once.
+- **Dehydration array ops are native `Arr` ports (T4).** Filament's `dehydrateState`
+  addresses the assembled `$state` bag with Laravel `Arr::get`/`Arr::set`/`Arr::forget`
+  (dot notation over a detached nested array); Laravel is banned in shipped code and
+  Symfony PropertyAccess has no key removal, so `Schemas\State\PropertyAccessor`
+  grows `getFromArray()` / `setInArray()` / `forgetFromArray()` — faithful ports
+  (`set` clobbers a non-array intermediate to `[]`; `forget` unsets only the leaf and
+  **leaves an emptied parent behind**, so the walk cleans up shared parents
+  explicitly, exactly as Filament does). The dedicated `getStateToDehydrate()` seam
+  applies casts `.get` + `dehydrateStateUsing`, where T1–T3 had dehydration read
+  values through the component's cast-aware `getState()`.

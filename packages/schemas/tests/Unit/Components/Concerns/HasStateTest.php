@@ -123,3 +123,25 @@ it('returns the cast old state, leaving raw old state untouched', function (): v
     expect($field->getOldState())->toBeFalse()
         ->and($field->getOldRawState())->toBe(0);
 });
+
+it('reports saved(false) as not dehydrated', function (): void {
+    expect(StateField::make('title')->isSaved())->toBeTrue()
+        ->and(StateField::make('title')->saved(false)->isDehydrated())->toBeFalse()
+        ->and(StateField::make('title')->saved(false)->isSaved())->toBeFalse();
+});
+
+it('drops a hidden component from dehydration unless dehydratedWhenHidden', function (): void {
+    expect(StateField::make('title')->hidden()->isDehydrated())->toBeFalse()
+        ->and(StateField::make('title')->hidden()->dehydratedWhenHidden()->isDehydrated())->toBeTrue();
+});
+
+it('applies casts then dehydrateStateUsing in getStateToDehydrate', function (): void {
+    $host = new StateHostFixture();
+    $field = Schema::make($host)->statePath('data')->components([
+        StateField::make('flag')
+            ->stateCast(new BooleanStateCast(isStoredAsInt: true))
+            ->dehydrateStateUsing(fn ($state): string => $state ? 'on' : 'off'),
+    ])->getComponents()[0];
+
+    expect($field->getStateToDehydrate(1))->toBe(['data.flag' => 'on']);
+});

@@ -374,9 +374,12 @@ using the cast fills and dehydrates to the expected typed values. DoD gates gree
 
 ## T4 — Dehydration correctness, conditions & mutation
 
-- [ ] **T4** — full `dehydrateState` (shared-path / descendant handling),
+- [x] **T4** — full `dehydrateState` (shared-path / descendant handling),
   `dehydrated`/`saved`/`dehydratedWhenHidden`, `beforeStateDehydrated`, and
-  `mutateDehydratedState`.
+  `mutateDehydratedState`. (Also ported a minimal `CanBeHidden` core —
+  `hidden()`/`visible()`/`isHidden()`/`isVisible()` — as the first consumer of the
+  hidden gate, per the approved scope decision; render-loop skipping and the rest
+  remain, see [schemas/component.md](schemas/component.md).)
 
 **Goal.** Replace T1's minimal assembler with Filament's correct dehydration:
 conditional dehydration, sibling-safe key removal, and the dehydrated-state

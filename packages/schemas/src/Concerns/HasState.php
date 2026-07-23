@@ -6,7 +6,6 @@ namespace Sylament\Schemas\Concerns;
 
 use Sylament\Schemas\State\PropertyAccessor;
 
-use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 
 trait HasState
@@ -16,6 +15,11 @@ trait HasState
     protected ?string $cachedAbsoluteStatePath = null;
 
     protected bool $hasCachedAbsoluteStatePath = false;
+
+    /**
+     * @var array<string, bool>|null
+     */
+    protected ?array $dehydratedComponentsCache = null;
 
     public function statePath(?string $path): static
     {
@@ -57,6 +61,31 @@ trait HasState
     public function hasStatePath(): bool
     {
         return filled($this->statePath);
+    }
+
+    /**
+     * The whole raw bag this schema is bound to — the seed the dehydration walk
+     * prunes down. A blank state path (top-level binding) has no single bag to
+     * read, so it seeds empty.
+     *
+     * @return array<string, mixed>
+     */
+    public function getRawState(): array
+    {
+        $statePath = $this->getStatePath();
+
+        if ($statePath === null || $statePath === '') {
+            return [];
+        }
+
+        $state = PropertyAccessor::getInstance()->get($this->getLiveComponent(), $statePath);
+
+        if (! is_array($state)) {
+            return [];
+        }
+
+        /** @var array<string, mixed> $state */
+        return $state;
     }
 
     /**
@@ -121,26 +150,152 @@ trait HasState
     }
 
     /**
+     * Assemble the dehydrated state bag: seed from the raw bag, fire
+     * `beforeStateDehydrated`, prune/transform via {@see dehydrateState()}, apply
+     * `mutateDehydratedState`, then unwrap this schema's own subtree. Modeled on
+     * Filament's `getStateSnapshot()` — the validation-, prune- and
+     * relationship-free variant of its `getState()`; those layers land with their
+     * own epics (validation) / T6 (relationships).
+     *
      * @return array<string, mixed>
      */
     public function getState(): array
     {
-        $state = [];
+        $this->dehydratedComponentsCache = null;
 
-        foreach ($this->getFlatComponents() as $component) {
-            $ownStatePath = $component->getStatePath(isAbsolute: false);
-            if (blank($ownStatePath)) {
-                continue;
-            }
+        $accessor = PropertyAccessor::getInstance();
+        $statePath = $this->getStatePath();
 
+        if ($statePath !== null && $statePath !== '') {
+            /** @var array<string, mixed> $state */
+            $state = [];
+            $accessor->setInArray($state, $statePath, $this->getRawState());
+        } else {
+            $state = $this->getRawState();
+        }
+
+        $this->callBeforeStateDehydrated($state);
+        $this->dehydrateState($state);
+        $this->mutateDehydratedState($state);
+
+        if ($statePath !== null && $statePath !== '') {
+            $unwrapped = $accessor->getFromArray($state, $statePath);
+            $state = is_array($unwrapped) ? $unwrapped : [];
+        }
+
+        /** @var array<string, mixed> $state */
+        return $state;
+    }
+
+    /**
+     * @param array<string, mixed> $state
+     * @return array<string, mixed>
+     */
+    public function dehydrateState(array &$state = [], bool $isDehydrated = true): array
+    {
+        foreach ($this->getComponents() as $component) {
+            $component->dehydrateState($state, $isDehydrated);
+        }
+
+        return $state;
+    }
+
+    /**
+     * @param array<string, mixed> $state
+     * @return array<string, mixed>
+     */
+    public function mutateDehydratedState(array &$state = []): array
+    {
+        $accessor = PropertyAccessor::getInstance();
+
+        foreach ($this->getComponents() as $component) {
             if (! $component->isDehydrated()) {
                 continue;
             }
 
-            $state[$ownStatePath] = $component->getState();
+            foreach ($component->getChildSchemas() as $childSchema) {
+                $childSchema->mutateDehydratedState($state);
+            }
+
+            if (! filled($component->getStatePath(isAbsolute: false))) {
+                continue;
+            }
+
+            if (! $component->mutatesDehydratedState()) {
+                continue;
+            }
+
+            $componentStatePath = $component->getStatePath();
+
+            if ($componentStatePath === null) {
+                continue;
+            }
+
+            $accessor->setInArray(
+                $state,
+                $componentStatePath,
+                $component->mutateDehydratedState($accessor->getFromArray($state, $componentStatePath)),
+            );
         }
 
         return $state;
+    }
+
+    /**
+     * @param array<string, mixed> $state
+     */
+    public function callBeforeStateDehydrated(array &$state = []): void
+    {
+        foreach ($this->getComponents() as $component) {
+            if ($component->isHiddenAndNotDehydratedWhenHidden()) {
+                continue;
+            }
+
+            $component->callBeforeStateDehydrated($state);
+
+            foreach ($component->getChildSchemas() as $childSchema) {
+                $childSchema->callBeforeStateDehydrated($state);
+            }
+        }
+    }
+
+    public function hasDehydratedComponent(string $statePath): bool
+    {
+        if ($this->dehydratedComponentsCache === null) {
+            $this->dehydratedComponentsCache = $this->buildDehydratedComponentsCache();
+        }
+
+        return $this->dehydratedComponentsCache[$statePath] ?? false;
+    }
+
+    /**
+     * Map every dehydrated, path-bearing component in the tree to its absolute
+     * state path, so a non-dehydrated component sharing a path can tell whether
+     * to leave the key for a dehydrated owner. Built once per {@see getState()}.
+     *
+     * @return array<string, bool>
+     */
+    protected function buildDehydratedComponentsCache(): array
+    {
+        $cache = [];
+
+        foreach ($this->getComponents() as $component) {
+            if (! $component->isDehydrated()) {
+                continue;
+            }
+
+            $componentStatePath = $component->getStatePath();
+
+            if ($component->hasStatePath() && $componentStatePath !== null) {
+                $cache[$componentStatePath] = true;
+            }
+
+            foreach ($component->getChildSchemas() as $childSchema) {
+                $cache = [...$cache, ...$childSchema->buildDehydratedComponentsCache()];
+            }
+        }
+
+        return $cache;
     }
 
     protected function cacheAbsoluteStatePath(?string $path): ?string

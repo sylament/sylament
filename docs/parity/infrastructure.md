@@ -51,10 +51,13 @@ auto-key. Blocks most of the base-Component surface in
 
 Status: the epic is executing per [live-state-tasks.md](live-state-tasks.md).
 **T1** (deterministic `$data` substrate), **T2** (the reactive `data-model` +
-`afterStateUpdated` loop, `HasStateBindingModifiers`), and **T3** (the state-cast
+`afterStateUpdated` loop, `HasStateBindingModifiers`), **T3** (the state-cast
 pipeline — `stateCast()` + the `StateCast` contract, applied `set` on hydrate and
-`get` on read) have landed; T4–T7 (full dehydration, `$get`/`$set` resolution,
-relationships, poll/renderless) remain. Per-item state lives in
+`get` on read), and **T4** (correct dehydration — `dehydrateState()` with
+shared/descendant-path handling, the `dehydrated`/`saved`/`dehydratedWhenHidden`
+conditions, `beforeStateDehydrated`, `mutateDehydratedState`, and a minimal
+`CanBeHidden` slice for the hidden gate) have landed; T5–T7 (`$get`/`$set`
+resolution, relationships, poll/renderless) remain. Per-item state lives in
 [schemas/component.md](schemas/component.md) /
 [schemas/schema.md](schemas/schema.md).
 

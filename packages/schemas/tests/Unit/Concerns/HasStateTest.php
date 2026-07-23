@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Tests\Unit\Concerns;
 use Sylament\Schemas\Components\StateCasts\BooleanStateCast;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
+use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Concerns\MultiSchemaHostFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 
@@ -57,4 +58,80 @@ it('dehydrates cast values as their typed form', function (): void {
 
     expect($host->data['flag'])->toBe(1)
         ->and($schema->getState())->toBe(['flag' => true]);
+});
+
+it('caches which components are dehydrated by absolute path', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateField::make('title'),
+        StateField::make('secret')->dehydrated(false),
+    ]);
+
+    expect($schema->hasDehydratedComponent('data.title'))->toBeTrue()
+        ->and($schema->hasDehydratedComponent('data.secret'))->toBeFalse();
+});
+
+it('keeps a shared state path when a dehydrated sibling owns it', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateField::make('shared')->dehydrated(false),
+        StateField::make('shared'),
+    ]);
+    $host->data = ['shared' => 'v'];
+
+    expect($schema->getState())->toBe(['shared' => 'v']);
+});
+
+it('forgets only its own descendants when a sibling shares the path', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('shared')->components([StateField::make('a')])->dehydrated(false),
+        StateGroup::make()->statePath('shared')->components([StateField::make('b')])->dehydrated(false),
+        StateField::make('keep'),
+    ]);
+    $host->data = ['shared' => ['a' => 'AA', 'b' => 'BB'], 'keep' => 'KK'];
+
+    expect($schema->getState())->toBe(['keep' => 'KK']);
+});
+
+it('assembles a nested (layout-wrapped) schema, dropping a non-dehydrated leaf', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->components([
+            StateField::make('a'),
+            StateField::make('b')->dehydrated(false),
+        ]),
+    ]);
+    $host->data = ['a' => 'AA', 'b' => 'BB'];
+
+    expect($schema->getState())->toBe(['a' => 'AA']);
+});
+
+it('mutates dehydrated state through nested schemas', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->components([
+            StateField::make('a')->mutateDehydratedStateUsing(fn ($state): string => "[{$state}]"),
+        ]),
+    ]);
+    $host->data = ['a' => 'x'];
+
+    expect($schema->getState())->toBe(['a' => '[x]']);
+});
+
+it('fires beforeStateDehydrated and re-syncs mutated state when asked', function (): void {
+    $host = new StateHostFixture();
+    $fired = false;
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateField::make('title')->beforeStateDehydrated(function ($component) use (&$fired): void {
+            $fired = true;
+            $component->state('rewritten');
+        }, shouldUpdateValidatedStateAfter: true),
+    ]);
+    $schema->fill(['title' => 'original']);
+
+    $state = $schema->getState();
+
+    expect($fired)->toBeTrue()
+        ->and($state)->toBe(['title' => 'rewritten']);
 });

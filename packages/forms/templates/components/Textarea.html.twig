@@ -1,0 +1,17 @@
+{% embed '@SylamentForms/components/field-wrapper.html.twig' %}
+    {% block content %}
+        <textarea
+                class="sy-fo-input"
+                id="{{ component.getId }}"
+                name="{{ component.getName }}"
+                data-model="{{ component.getDataModel }}"
+                {%- if component.getRows is not null %} rows="{{ component.getRows }}"{% endif %}
+                {%- if component.getCols is not null %} cols="{{ component.getCols }}"{% endif %}
+                {%- if component.getPlaceholder %} placeholder="{{ component.getPlaceholder }}"{% endif %}
+                {%- if component.getMaxLength is not null %} maxlength="{{ component.getMaxLength }}"{% endif %}
+                {%- if component.getMinLength is not null %} minlength="{{ component.getMinLength }}"{% endif %}
+                {%- if component.isMarkedAsRequired %} required{% endif %}
+                {%- if component.isAutofocused %} autofocus{% endif %}
+        ></textarea>
+    {% endblock %}
+{% endembed %}

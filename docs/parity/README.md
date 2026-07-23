@@ -43,4 +43,5 @@ detail beneath it.
 | [Section](schemas/section.md) | schemas | in progress |
 | [Text](schemas/text.md) | schemas | in progress |
 | [Text input](forms/text-input.md) | forms | in progress |
+| [Textarea](forms/textarea.md) | forms | in progress |
 | [ViewComponent (base)](support/view-component.md) | support | in progress |

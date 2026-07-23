@@ -50,7 +50,7 @@ the tracer bullet spikes the first four.
 
 | Thread | What it is | Anchor | Status |
 | --- | --- | --- | --- |
-| **⚡ Livewire → UX LiveComponent** | schema state loop, action mounting stack, table runtime host, panel pages | [live-component-state](infrastructure.md#live-component-state) | in progress (T1–T4) |
+| **⚡ Livewire → UX LiveComponent** | schema state loop, action mounting stack, table runtime host, panel pages | [live-component-state](infrastructure.md#live-component-state) | T1–T5/T7 done; T6 (Doctrine) next; first consumer = [forms fields](forms-fields.md) (designed) |
 | **🔶 Doctrine** | Eloquent → Doctrine everywhere records appear: record-binding (`BelongsToModel`→`BelongsToEntity`), table query/aggregates/summaries, record actions, tenancy scopes, DB notifications, relationship fields | *new anchor when the binding epic starts* | not started |
 | **🎨 Alpine → Stimulus** | ~20 interactive behaviors: modal, dropdown, tooltip, editable columns, charts, file-upload, rich-editor, date-picker | [stimulus-controllers](infrastructure.md#stimulus-controllers) | pattern set (section collapse) |
 | **🎨 Color / theming** | palettes + color math + ColorManager + ColorMaps + `attrs().color()`; unblocks every colored component | [support-managers](infrastructure.md#support-managers) (partial) | not started |
@@ -81,6 +81,13 @@ defines a `Resource` for a Doctrine entity and gets an auto-routed List page
 | 11 | **Panels — Resources CRUD spine** — `Resource` + List/Create/Edit pages + record routing + minimal authorization | panels | 🔶 🔒 ★ | ViewRecord, relation managers, global search, resource nav depth |
 
 ★ = dominant-risk step; spike it first within its epic.
+
+**Active epic — step 6, first slice:** Forms fields (`Field` + `TextInput` +
+`Textarea`; validation and Select/Checkbox deferred) — design
+[forms-fields.md](forms-fields.md) + plan
+[forms-fields-tasks.md](forms-fields-tasks.md). Taken ahead of steps 1–2/4–5 to
+give the landed live-state loop a first-party consumer; scoped to depend on none of
+them (see the design's sequencing note).
 
 **Not in the tracer at all** (whole packages deferred to Milestone 3): infolists,
 widgets, notifications real-time. Flash-toast notifications (success on save) are

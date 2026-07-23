@@ -42,4 +42,5 @@ detail beneath it.
 | [Schema](schemas/schema.md) | schemas | in progress |
 | [Section](schemas/section.md) | schemas | in progress |
 | [Text](schemas/text.md) | schemas | in progress |
+| [Text input](forms/text-input.md) | forms | in progress |
 | [ViewComponent (base)](support/view-component.md) | support | in progress |

@@ -1,0 +1,35 @@
+.sy-fo-field {
+    @apply grid content-start gap-y-1.5;
+}
+
+.sy-fo-field-label {
+    @apply text-sm font-medium text-gray-950 dark:text-white;
+}
+
+.sy-fo-field-label-content {
+    @apply inline-flex items-center gap-x-1;
+}
+
+.sy-fo-field-label-required-mark {
+    @apply text-danger-600 dark:text-danger-400;
+}
+
+.sy-fo-field-hint {
+    @apply inline-flex items-center gap-x-1 text-sm text-gray-500 dark:text-gray-400;
+}
+
+.sy-fo-field-helper {
+    @apply text-sm text-gray-500 dark:text-gray-400;
+}
+
+.sy-fo-field-error-list {
+    @apply grid gap-y-1;
+}
+
+.sy-fo-field-error-message {
+    @apply text-sm text-danger-600 dark:text-danger-400;
+}
+
+.sy-fo-sr-only {
+    @apply sr-only;
+}

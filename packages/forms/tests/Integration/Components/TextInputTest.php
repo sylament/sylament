@@ -86,6 +86,26 @@ it('renders the hint icon through the support icon mechanism', function (): void
         ->and($hint->filter('svg')->count())->toBe(1);
 });
 
+it('renders the hint icon tooltip as the svg title attribute', function (): void {
+    $crawler = new Crawler(renderField(
+        TextInput::make('title')->hint('Need a hand')->hintIcon('heroicons:star', 'More info'),
+    ));
+
+    $icon = $crawler->filter('.sy-fo-field-hint svg');
+    expect($icon->count())->toBe(1)
+        ->and($icon->attr('title'))->toBe('More info');
+});
+
+it('renders the hint independent of a hidden label', function (): void {
+    $crawler = new Crawler(renderField(
+        TextInput::make('title')->hint('Need a hand')->hiddenLabel(),
+    ));
+
+    $hint = $crawler->filter('.sy-fo-field-hint');
+    expect($hint->count())->toBe(1)
+        ->and($hint->text())->toContain('Need a hand');
+});
+
 it('makes the label screen-reader-only with hiddenLabel', function (): void {
     $crawler = new Crawler(renderField(
         TextInput::make('title')->hiddenLabel(),

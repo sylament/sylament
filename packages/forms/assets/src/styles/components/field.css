@@ -2,6 +2,10 @@
     @apply grid content-start gap-y-1.5;
 }
 
+.sy-fo-field-label-ctn {
+    @apply flex items-start justify-between gap-x-3;
+}
+
 .sy-fo-field-label {
     @apply text-sm font-medium text-gray-950 dark:text-white;
 }

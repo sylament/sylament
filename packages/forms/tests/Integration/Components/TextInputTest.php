@@ -77,6 +77,10 @@ it('renders the hint text in the hint slot', function (): void {
     $hint = $crawler->filter('.sy-fo-field-hint');
     expect($hint->count())->toBe(1)
         ->and($hint->text())->toContain('Need a hand');
+
+    // The label and hint share one row (the label container), not stacked rows.
+    expect($crawler->filter('.sy-fo-field-label-ctn > label.sy-fo-field-label')->count())->toBe(1)
+        ->and($crawler->filter('.sy-fo-field-label-ctn > .sy-fo-field-hint')->count())->toBe(1);
 });
 
 it('renders the hint icon through the support icon mechanism', function (): void {

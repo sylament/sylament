@@ -50,7 +50,7 @@ the tracer bullet spikes the first four.
 
 | Thread | What it is | Anchor | Status |
 | --- | --- | --- | --- |
-| **⚡ Livewire → UX LiveComponent** | schema state loop, action mounting stack, table runtime host, panel pages | [live-component-state](infrastructure.md#live-component-state) | T1–T5/T7 done; T6 (Doctrine) next; first consumer = [forms fields](forms-fields.md) (designed) |
+| **⚡ Livewire → UX LiveComponent** | schema state loop, action mounting stack, table runtime host, panel pages | [live-component-state](infrastructure.md#live-component-state) | T1–T5/T7 done; T6 (Doctrine) next; first consumer = [forms fields](forms-fields.md) **landed** (`Field`+`TextInput`+`Textarea` shipped and driven through the loop; validation + Select/Checkbox remain) |
 | **🔶 Doctrine** | Eloquent → Doctrine everywhere records appear: record-binding (`BelongsToModel`→`BelongsToEntity`), table query/aggregates/summaries, record actions, tenancy scopes, DB notifications, relationship fields | *new anchor when the binding epic starts* | not started |
 | **🎨 Alpine → Stimulus** | ~20 interactive behaviors: modal, dropdown, tooltip, editable columns, charts, file-upload, rich-editor, date-picker | [stimulus-controllers](infrastructure.md#stimulus-controllers) | pattern set (section collapse) |
 | **🎨 Color / theming** | palettes + color math + ColorManager + ColorMaps + `attrs().color()`; unblocks every colored component | [support-managers](infrastructure.md#support-managers) (partial) | not started |
@@ -82,10 +82,13 @@ defines a `Resource` for a Doctrine entity and gets an auto-routed List page
 
 ★ = dominant-risk step; spike it first within its epic.
 
-**Active epic — step 6, first slice:** Forms fields (`Field` + `TextInput` +
-`Textarea`; validation and Select/Checkbox deferred) — design
-[forms-fields.md](forms-fields.md) + plan
-[forms-fields-tasks.md](forms-fields-tasks.md). Taken ahead of steps 1–2/4–5 to
+**Step 6, first slice — landed:** Forms fields (`Field` + `TextInput` +
+`Textarea`) shipped and proven end to end on the live-state loop — a shipped-shape
+`#[AsLiveComponent]` host slugifies `title` into `slug` via `afterStateUpdated`,
+verified under `InteractsWithLiveComponents` (`packages/forms/tests/Integration/LiveFieldTest.php`).
+Design [forms-fields.md](forms-fields.md) + plan
+[forms-fields-tasks.md](forms-fields-tasks.md). **Remaining in step 6:** validation
+(Symfony Validator mapping) and Select/Checkbox. Taken ahead of steps 1–2/4–5 to
 give the landed live-state loop a first-party consumer; scoped to depend on none of
 them (see the design's sequencing note).
 

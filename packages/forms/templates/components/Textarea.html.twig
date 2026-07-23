@@ -12,6 +12,6 @@
                 {%- if component.getMinLength is not null %} minlength="{{ component.getMinLength }}"{% endif %}
                 {%- if component.isMarkedAsRequired %} required{% endif %}
                 {%- if component.isAutofocused %} autofocus{% endif %}
-        ></textarea>
+        >{{- component.getState -}}</textarea>
     {% endblock %}
 {% endembed %}

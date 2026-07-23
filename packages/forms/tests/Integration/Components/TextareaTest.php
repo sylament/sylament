@@ -5,17 +5,18 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests\Integration\Components;
 
 use Sylament\Forms\Components\Textarea;
-use Sylament\Forms\Tests\Fixtures\Concerns\HasSchemasFixture;
+use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Schemas\Schema;
 use Symfony\Component\DomCrawler\Crawler;
 
 use function Sylament\Forms\Tests\renderToHtml;
 
 /**
- * Render a field as the child of a real Schema, mirroring how a field is used: the
- * parent Schema is its container, supplying the id/state-path cascade and the live
- * binding context. A bare Schema (no state path) leaves the absolute path unprefixed,
- * so `excerpt` stays `excerpt`.
+ * Render a field as the child of a real Schema bound to a `data`-bag host, mirroring
+ * how a field is used: the parent Schema is its container, supplying the id/state-path
+ * cascade and the live binding context. The `->statePath('data')` container prefixes
+ * the field's absolute path (so `excerpt` becomes `data.excerpt`), and the host's empty
+ * `$data` bag lets `getState()` read back null — an unset field renders no content.
  *
  * Named distinctly from TextInputTest's `renderField()`: both files share the
  * `Sylament\Forms\Tests\Integration\Components` namespace, and PHP fatals on two
@@ -23,7 +24,7 @@ use function Sylament\Forms\Tests\renderToHtml;
  */
 function renderTextareaField(Textarea $textarea): string
 {
-    return renderToHtml(Schema::make(new HasSchemasFixture())->components([$textarea]));
+    return renderToHtml(Schema::make(new FieldRenderHost())->statePath('data')->components([$textarea]));
 }
 
 it('renders the same field wrapper chrome as TextInput around the textarea', function (): void {
@@ -50,11 +51,11 @@ it('renders the same field wrapper chrome as TextInput around the textarea', fun
 it('binds the textarea to its absolute state path via data-model', function (): void {
     // Standalone default: state syncs but suppresses the re-render.
     $default = new Crawler(renderTextareaField(Textarea::make('excerpt')));
-    expect($default->filter('textarea.sy-fo-input')->attr('data-model'))->toBe('norender|excerpt');
+    expect($default->filter('textarea.sy-fo-input')->attr('data-model'))->toBe('norender|data.excerpt');
 
     // live() drops the modifier to a bare path (re-render on input).
     $live = new Crawler(renderTextareaField(Textarea::make('excerpt')->live()));
-    expect($live->filter('textarea.sy-fo-input')->attr('data-model'))->toBe('excerpt');
+    expect($live->filter('textarea.sy-fo-input')->attr('data-model'))->toBe('data.excerpt');
 });
 
 it('renders the rows and cols attributes', function (): void {

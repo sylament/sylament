@@ -5,21 +5,22 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests\Integration\Components;
 
 use Sylament\Forms\Components\TextInput;
-use Sylament\Forms\Tests\Fixtures\Concerns\HasSchemasFixture;
+use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Schemas\Schema;
 use Symfony\Component\DomCrawler\Crawler;
 
 use function Sylament\Forms\Tests\renderToHtml;
 
 /**
- * Render a field as the child of a real Schema, mirroring how a field is used: the
- * parent Schema is its container, supplying the id/state-path cascade and the live
- * binding context. A bare Schema (no state path) leaves the absolute path unprefixed,
- * so `title` stays `title`.
+ * Render a field as the child of a real Schema bound to a `data`-bag host, mirroring
+ * how a field is used: the parent Schema is its container, supplying the id/state-path
+ * cascade and the live binding context. The `->statePath('data')` container prefixes
+ * the field's absolute path (so `title` becomes `data.title`), and the host's empty
+ * `$data` bag lets `getState()` read back null — an unset field renders `value=""`.
  */
 function renderField(TextInput $input): string
 {
-    return renderToHtml(Schema::make(new HasSchemasFixture())->components([$input]));
+    return renderToHtml(Schema::make(new FieldRenderHost())->statePath('data')->components([$input]));
 }
 
 it('renders the field wrapper chrome around the input', function (): void {
@@ -43,17 +44,19 @@ it('renders the field wrapper chrome around the input', function (): void {
         ->and($input->attr('id'))->toBe('title')
         ->and($input->attr('maxlength'))->toBe('120')
         ->and($input->attr('required'))->not->toBeNull()
-        ->and($input->attr('data-model'))->toBe('norender|title');
+        ->and($input->attr('data-model'))->toBe('norender|data.title')
+        // Unset field: getState reads back null from the empty $data bag -> value="".
+        ->and($input->attr('value'))->toBe('');
 });
 
 it('binds the input to its absolute state path via data-model', function (): void {
     // Standalone default: state syncs but suppresses the re-render.
     $default = new Crawler(renderField(TextInput::make('title')));
-    expect($default->filter('input.sy-fo-input')->attr('data-model'))->toBe('norender|title');
+    expect($default->filter('input.sy-fo-input')->attr('data-model'))->toBe('norender|data.title');
 
     // live() drops the modifier to a bare path (re-render on input).
     $live = new Crawler(renderField(TextInput::make('title')->live()));
-    expect($live->filter('input.sy-fo-input')->attr('data-model'))->toBe('title');
+    expect($live->filter('input.sy-fo-input')->attr('data-model'))->toBe('data.title');
 });
 
 it('renders helper text in the helper slot', function (): void {

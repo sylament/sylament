@@ -6,6 +6,7 @@
                 id="{{ component.getId }}"
                 name="{{ component.getName }}"
                 data-model="{{ component.getDataModel }}"
+                value="{{ component.getState }}"
                 {%- if component.getInputMode %} inputmode="{{ component.getInputMode }}"{% endif %}
                 {%- if component.getPlaceholder %} placeholder="{{ component.getPlaceholder }}"{% endif %}
                 {%- if component.getMaxLength is not null %} maxlength="{{ component.getMaxLength }}"{% endif %}

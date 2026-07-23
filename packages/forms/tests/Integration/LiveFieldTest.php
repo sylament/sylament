@@ -14,9 +14,10 @@ uses(InteractsWithLiveComponents::class);
  * deliberate deltas forced by the shipped field surface:
  *
  *  - The field templates bind via Symfony UX `data-model` (not Livewire's
- *    `wire:model`, which auto-hydrates a server-side `value`), so an input carries
- *    NO rendered `value` attribute. The round-tripped state is therefore read from
- *    the live component's props rather than an input `value` attr.
+ *    `wire:model`), and render the resolved state into the control (an input's
+ *    `value` attribute, a textarea's content), so the round-tripped state is
+ *    visible in the server HTML — Symfony UX repaints the field from it. Both the
+ *    live component's props and slug's rendered `value` are asserted below.
  *  - The `afterStateUpdated` hook slugifies the *current* title, so it is
  *    deterministic; the "does not re-fire" case hand-edits the derived slug and
  *    proves an unchanged title leaves that edit intact (a re-fire would clobber it).
@@ -37,13 +38,17 @@ it('slugifies the new title into slug via afterStateUpdated', function (): void 
 
     // The round-trip fired title's afterStateUpdated, which slugified the new
     // value into the sibling slug; the re-render assembles the whole schema again.
-    $component->render();
+    $crawler = $component->render()->crawler();
 
     expect($component->component()->data)->toBe([
         'title' => 'Hello World',
         'slug' => 'hello-world',
         'excerpt' => null,
     ]);
+
+    // The browser payoff: slug's derived state is rendered into its input's `value`
+    // attribute, so Symfony UX repaints the visible field on the round-trip.
+    expect($crawler->filter('input[data-model="norender|data.slug"]')->attr('value'))->toBe('hello-world');
 });
 
 it('does not re-fire afterStateUpdated when the title is unchanged', function (): void {

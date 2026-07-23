@@ -21,6 +21,15 @@ it('returns the set key', function (): void {
     expect(new Component()->key('name')->getKey(isAbsolute: false))->toBe('name');
 });
 
+it('falls back to the state path when no key is set', function (): void {
+    // With no explicit key, the key mirrors the state path so id/for wiring resolves.
+    expect(new Component()->statePath('foo')->getKey(isAbsolute: false))->toBe('foo');
+});
+
+it('uses the state path for a non-inheritable inheritance key', function (): void {
+    expect(new Component()->statePath('foo')->key(null, isInheritable: false)->getInheritanceKey(isAbsolute: false))->toBe('foo');
+});
+
 it('resets the key with null', function (): void {
     expect(new Component()->key('name')->key(null)->getKey(isAbsolute: false))->toBeNull();
 });

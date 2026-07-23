@@ -54,6 +54,14 @@ it('falls back to the key when no custom id is set', function (): void {
         ->and($component->getCustomId())->toBeNull();
 });
 
+it('falls back to the state path when no custom id or key is set', function (): void {
+    $component = new Component()->statePath('foo');
+    Schema::make()->components([$component])->getComponents();
+
+    expect($component->getId())->toBe('foo')
+        ->and($component->getCustomId())->toBeNull();
+});
+
 it('prefers the custom id over the key', function (): void {
     expect(new Component()->id('custom')->key('name')->getId())->toBe('custom');
 });

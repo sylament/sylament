@@ -81,9 +81,11 @@ Blocked on infrastructure:
   **not** port, and `CanPoll` → `data-poll` is **deferred** to a first-party host
   (T7 — see the divergences below); the per-child wrapper state features
   (`wire:key`, JS visibility, partial-render targeting — the grid-column wrapper
-  itself is ported), `$operation`, and the state-dependent remainder of `HasKey`
-  (state-path fallbacks, `getLivewireKey()`) remain blocked on
-  [live-component-state](../infrastructure.md#live-component-state)
+  itself is ported), `$operation`, and the live-id half of `HasKey`
+  (`getLivewireKey()`) remains blocked on
+  [live-component-state](../infrastructure.md#live-component-state) (the `HasKey`
+  state-path fallbacks landed with the forms `Field` — see
+  [../forms/field.md](../forms/field.md))
 - [ ] `CanBeConcealed` (`isConcealed()`, `getConcealingComponent()`) — the
   `CanConcealComponents` contract it pairs with exists (Section implements it);
   the trait itself needs `getHiddenJs()`/`getVisibleJs()` from

@@ -37,7 +37,9 @@ trait HasKey
             return $this->cachedAbsoluteKey;
         }
 
-        $key = $this->evaluate($this->key);
+        $key = ($this->isKeyInheritable() || (!$this->hasStatePath()))
+            ? ($this->evaluate($this->key) ?? $this->getStatePath(isAbsolute: false))
+            : $this->getStatePath(isAbsolute: false);
 
         if ($key !== null) {
             // Security: strip characters that could break out of a quoted HTML attribute
@@ -73,7 +75,7 @@ trait HasKey
         }
 
         if (!$isAbsolute) {
-            return $this->isKeyInheritable() ? $this->getKey(isAbsolute: false) : null;
+            return $this->isKeyInheritable() ? $this->getKey(isAbsolute: false) : $this->getStatePath(isAbsolute: false);
         }
 
         if ($this->isKeyInheritable()) {
@@ -82,6 +84,17 @@ trait HasKey
             if (filled($key)) {
                 return $this->cacheAbsoluteInheritanceKey($key);
             }
+        } elseif ($this->hasStatePath()) {
+            $keyComponents = [];
+
+            $containerInheritanceKey = $this->getContainer()->getInheritanceKey();
+            if (filled($containerInheritanceKey)) {
+                $keyComponents[] = $containerInheritanceKey;
+            }
+
+            $keyComponents[] = $this->getStatePath(isAbsolute: false);
+
+            return $this->cacheAbsoluteInheritanceKey(implode('.', $keyComponents));
         }
 
         return $this->cacheAbsoluteInheritanceKey($this->getContainer()->getInheritanceKey());

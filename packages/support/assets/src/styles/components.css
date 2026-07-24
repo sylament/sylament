@@ -3,3 +3,5 @@
 @import './components/grid.css' layer(components);
 @import './components/icon.css' layer(components);
 @import './components/icon-button.css' layer(components);
+@import './components/button.css' layer(components);
+@import './components/modal.css' layer(components);

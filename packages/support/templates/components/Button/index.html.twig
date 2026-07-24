@@ -1,0 +1,36 @@
+{% props
+    color = 'primary',
+    content = markup(block('content') ?? null),
+    disabled = false,
+    href = null,
+    icon = null,
+    iconAlias = null,
+    iconSize = null,
+    size = 'md',
+    tag = 'button',
+    target = null,
+    type = 'button' %}
+
+{% set knownSizes = ['xs', 'sm', 'md', 'lg', 'xl'] %}
+{% set sizeValue = size.value ?? size %}
+{% set colorName = color is iterable or color is empty ? 'gray' : color %}
+
+<{{ tag }}
+    {{ attributes.defaults({
+        class: classes('sy sy-btn', {
+            'sy-disabled': disabled,
+            ('sy-size-' ~ sizeValue): sizeValue in knownSizes,
+            (sizeValue ?? ''): sizeValue is not empty and sizeValue not in knownSizes,
+            'sy-color': colorName != 'gray',
+            ('sy-color-' ~ colorName): colorName != 'gray',
+        }),
+        'aria-disabled': disabled ? 'true' : false,
+        disabled: disabled and tag == 'button',
+        href: tag == 'a' and href ? href : false,
+        target: tag == 'a' and target == '_blank' ? '_blank' : false,
+        type: tag == 'button' ? type : false,
+    }) }}
+>
+    {% if icon %}{{ generateIconHtml(icon, iconAlias, null, iconSize) }}{% endif %}
+    {{ content }}
+</{{ tag }}>

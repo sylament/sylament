@@ -1,0 +1,76 @@
+{% props
+    content = markup(block('content') ?? null),
+    description = null,
+    footer = markup(block('footer') ?? null),
+    heading = null,
+    icon = null,
+    iconAlias = null,
+    iconColor = 'primary',
+    id = null,
+    returnsFocus = true,
+    width = 'md' %}
+
+{% set iconColorName = iconColor is iterable or iconColor is empty ? 'gray' : iconColor %}
+{% set iconHtml = generateIconHtml(icon, iconAlias, {
+    class: iconColorName != 'gray' ? ['sy-color', 'sy-color-' ~ iconColorName] : [],
+}, 'lg') %}
+
+{% set hasIcon = iconHtml is not empty %}
+{% set hasHeading = heading is filled %}
+{% set hasDescription = description is filled %}
+{% set hasHeader = hasIcon or hasHeading or hasDescription %}
+{% set hasFooter = footer is filled %}
+{% set hasContent = content is filled %}
+
+{% set sizeValue = width.value ?? width %}
+{% set headingId = id ? id ~ '-heading' : null %}
+{% set descriptionId = (hasDescription and hasHeading and id) ? id ~ '-description' : null %}
+
+{% set modalController = 'sylament--support--modal' %}
+{% set modalStimulus = stimulus_controller(modalController, {
+    id: id ?: null,
+    returnsFocus: returnsFocus ? null : false,
+})
+    |stimulus_action(modalController, 'open', 'sylament-open-modal@window')
+    |stimulus_action(modalController, 'close', 'sylament-close-modal@window')
+    |stimulus_action(modalController, 'restoreFocus', 'close') %}
+
+<dialog
+    {{ attributes.defaults({
+        class: classes('sy sy-modal', {
+            ('sy-modal-' ~ sizeValue): sizeValue is not empty,
+        }),
+        id: id ?: false,
+        'aria-labelledby': hasHeading and headingId ? headingId : false,
+        'aria-describedby': descriptionId ?: false,
+        ...modalStimulus,
+    }) }}
+>
+    {% if hasHeader %}
+        <header class="sy-modal-header">
+            {% if hasIcon %}
+                <div class="sy-modal-icon-ctn">{{ iconHtml }}</div>
+            {% endif %}
+
+            {% if hasHeading or hasDescription %}
+                <div class="sy-modal-header-text-ctn">
+                    {% if hasHeading %}
+                        <h2 {{ attrs({ id: headingId, class: ['sy-modal-heading'] }) }}>{{ heading }}</h2>
+                    {% endif %}
+
+                    {% if hasDescription %}
+                        <p {{ attrs({ id: descriptionId, class: ['sy-modal-description'] }) }}>{{ description }}</p>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </header>
+    {% endif %}
+
+    {% if hasContent %}
+        <div class="sy-modal-content">{{ content }}</div>
+    {% endif %}
+
+    {% if hasFooter %}
+        <footer class="sy-modal-footer">{{ footer }}</footer>
+    {% endif %}
+</dialog>

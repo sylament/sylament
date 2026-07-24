@@ -26,6 +26,11 @@
         "main": "dist/controllers/section_controller.js",
         "fetch": "eager",
         "enabled": true
+      },
+      "modal": {
+        "main": "dist/controllers/modal_controller.js",
+        "fetch": "eager",
+        "enabled": true
       }
     },
     "importmap": {

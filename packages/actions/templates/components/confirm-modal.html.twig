@@ -1,4 +1,4 @@
-{% set submitColor = action.getColor is iterable or action.getColor is empty ? 'primary' : action.getColor %}
+{% set submitColor = action.getColor is iterable or action.getColor is empty or action.getColor == 'gray' ? 'primary' : action.getColor %}
 <twig:SylamentSupport:Modal
     id="{{ id }}"
     :heading="action.getModalHeading"

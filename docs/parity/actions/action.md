@@ -184,3 +184,32 @@ Blocked on infrastructure / other threads:
   Livewire `getDefaultActionUrl()` fallback (neither concept exists yet) and
   `postToUrl()`/`shouldPostToUrl()` (no POST actions in the MVP); a component
   with a URL renders as a plain `<a>` and skips the mount wiring entirely.
+
+## Consumer notes / MVP limitations
+
+- **Record injection is call-time only.** `$record`/`$arguments` are bound
+  onto the action inside `HasActions::callMountedAction()`; the instance
+  returned by `getMountedAction()` — used for the mount-time
+  `isConfirmationRequired()` gate and for render-time modal config — is a
+  separately-resolved, unbound instance (see the "config object, re-resolved
+  every round-trip" divergence above), so modal-config closures —
+  `modalHeading(fn ($record) => …)`, `requiresConfirmation(fn ($record) => …)`
+  — evaluate with `$record = null`. Use static modal config in the
+  confirm-only MVP; record-aware modal config lands with the full mounting
+  stack (breadth-fill).
+- **Register `resolveRecordUsing` in the host constructor, not `mount()`.** It
+  is a plain, non-serialized `?Closure` property, not a `#[LiveProp]`, and
+  `mount()` runs only on the component's initial render — a resolver assigned
+  there is gone by the `callMountedAction` round-trip (`RecordActionHost`'s
+  fixture constructor is the pattern to copy). The host now throws
+  `LogicException` (fail-fast, Filament-faithful —
+  `InteractsWithRecord::getRecord()` throws the same way) when an action
+  context carries a `recordKey` but no resolver is registered, instead of
+  silently resolving to no record.
+- **The confirm modal's default icon requires heroicons.** `getModalIcon()`
+  defaults to `heroicons:exclamation-triangle` for confirmation-required
+  actions — the same shipped-icon-set assumption as the `Section` collapse
+  chevron precedent (`heroicons:chevron-up`) and the `symfony/ux-icons`
+  dependency both ride on. Consumers must have that icon resolvable via their
+  ux-icons config, or set `modalIcon()` explicitly; an unresolvable icon
+  throws `Symfony\UX\Icons\Exception\IconNotFoundException` at render.

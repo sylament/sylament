@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions\Concerns;
 
 use Closure;
+use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\Enum\ActionStatus;
 use Sylament\Support\Exception\Cancel;
@@ -37,8 +38,12 @@ trait HasActions
     {
         $recordKey = $this->mountedActions[0]['context']['recordKey'] ?? null;
 
-        if ($recordKey === null || $this->resolveRecordUsing === null) {
+        if ($recordKey === null) {
             return null;
+        }
+
+        if ($this->resolveRecordUsing === null) {
+            throw new LogicException('An action context supplied a recordKey but the host registered no resolveRecordUsing() callback to resolve it.');
         }
 
         return ($this->resolveRecordUsing)($recordKey);

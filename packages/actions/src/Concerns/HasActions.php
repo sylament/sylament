@@ -4,7 +4,11 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Concerns;
 
+use Closure;
 use Sylament\Actions\Action;
+use Sylament\Actions\Enum\ActionStatus;
+use Sylament\Support\Exception\Cancel;
+use Sylament\Support\Exception\Halt;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -19,6 +23,26 @@ trait HasActions
      */
     #[LiveProp]
     public array $mountedActions = [];
+
+    protected ?Closure $resolveRecordUsing = null;
+
+    public function resolveRecordUsing(?Closure $callback): static
+    {
+        $this->resolveRecordUsing = $callback;
+
+        return $this;
+    }
+
+    protected function getMountedActionRecord(): mixed
+    {
+        $recordKey = $this->mountedActions[0]['context']['recordKey'] ?? null;
+
+        if ($recordKey === null || $this->resolveRecordUsing === null) {
+            return null;
+        }
+
+        return ($this->resolveRecordUsing)($recordKey);
+    }
 
     /**
      * @param array<mixed> $arguments
@@ -58,12 +82,30 @@ trait HasActions
             return null;
         }
 
-        $arguments = $this->mountedActions[0]['arguments'] ?? [];
-        $closure = $action->getAction();
+        $action->mergeArguments($this->mountedActions[0]['arguments'] ?? []);
+        $action->record($this->getMountedActionRecord());
 
-        $result = $closure !== null
-            ? $action->evaluate($closure, ['arguments' => $arguments])
-            : null;
+        if ($action->isDisabled()) {
+            return null;
+        }
+
+        $result = null;
+
+        try {
+            $action->callBefore();
+            $result = $action->call();
+            $result = $action->callAfter() ?? $result;
+
+            if ($action->getStatus() === ActionStatus::Success) {
+                $action->sendSuccessNotification();
+            } else {
+                $action->sendFailureNotification();
+            }
+        } catch (Halt) {
+            return null;
+        } catch (Cancel) {
+            // Falls through to unmount — Cancel closes the modal.
+        }
 
         $this->unmountAction();
 

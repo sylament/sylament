@@ -344,7 +344,16 @@ deferred).
 **Notes / pitfalls.** Keep the union on `HasSize` off the `Size` enum only where
 Filament does; match `HasAlignment`'s spacing after `composer format`. `getLabel()`
 must not be copied from `Field` (`afterLast` vs `before`). A URL action renders a
-link and must **not** emit the mount wiring.
+link and must **not** emit the mount wiring. **Button-component reuse (revisit —
+AC2 follow-up):** AC2 shipped a raw `<button>` that hand-derives `sy sy-btn`,
+because `live_action()` returns an `html_attr` string that can't splat onto a
+`<twig:…>` tag (the tag's only spread form, `{{ ...map }}`, needs a key/value map —
+verified in `TwigPreLexer::consumeAttributes`) and AC1 locked `Button`
+LiveComponent-agnostic. Before hand-rolling a third `sy-btn` derivation here,
+decide between (a) sharing the derivation across `Button`/`IconButton`/
+`button-action` via a Twig macro or include, or (b) giving `Button` an explicit
+`liveAction` prop so it emits the mount wiring internally and stays the single
+button primitive — (b) is the only way live wiring composes onto the component tag.
 
 ---
 

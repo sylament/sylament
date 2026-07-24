@@ -1,0 +1,6 @@
+<button
+        {{ attrs({ type: 'button', class: ['sy', 'sy-btn', 'sy-ac'] }) }}
+        {{ live_action('mountAction', { name: component.getName }) }}
+>
+    {{- component.getLabel ?? component.getName -}}
+</button>

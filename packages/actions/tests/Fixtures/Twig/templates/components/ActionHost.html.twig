@@ -1,0 +1,12 @@
+<div {{ attributes }}>
+    {{ renderComponent(this.deleteAction()) }}
+
+    {% if this.mountedActions is not empty %}
+        <twig:SylamentSupport:Modal id="{{ this.getMountedModalId }}" heading="Confirm delete">
+            <twig:block name="footer">
+                <button type="button" {{ live_action('callMountedAction') }}>Confirm</button>
+                <button type="button" {{ live_action('unmountAction') }}>Cancel</button>
+            </twig:block>
+        </twig:SylamentSupport:Modal>
+    {% endif %}
+</div>

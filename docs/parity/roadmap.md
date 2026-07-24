@@ -68,7 +68,7 @@ defines a `Resource` for a Doctrine entity and gets an auto-routed List page
 
 | # | Epic (thin cut) | Package | Threads | Defers to breadth-fill |
 | --- | --- | --- | --- | --- |
-| 1 | **Support enablers (slice subset)** — Operation/Width/VerticalAlignment enums; a minimal color layer (primary/gray CSS vars); the shared `Has*/Can*` traits the slice touches | support | 🎨 color | full color math/palettes, full enum batch, full trait roster |
+| 1 | **[Support enablers (slice subset)](support-enablers.md)** — Operation/Width/VerticalAlignment enums; the `HasWidth`/`HasVerticalAlignment` traits; a `color()` helper centralizing the already-shipped palette CSS | support | 🎨 color | full color math/palettes/`ColorManager`, full enum batch, full trait roster |
 | 2 | **Shared UI kit (slice subset)** — button, input + field wrapper, modal, dropdown, badge, plus their CSS; Stimulus for modal + dropdown | support | 🎨 Stimulus | link, pagination, breadcrumbs, tabs, callout, avatar, toggle, tooltip |
 | 3 | **Finish live-state** — T5 (`$get`/`$set` component resolution), T7 (poll/renderless) | schemas | ⚡ | — (epic already scoped) |
 | 4 | **Layout containers (slice subset)** — Grid (Section exists); enough to lay out a form | schemas | — | Tabs, Wizard, Flex, Fieldset, Group |
@@ -81,6 +81,15 @@ defines a `Resource` for a Doctrine entity and gets an auto-routed List page
 | 11 | **Panels — Resources CRUD spine** — `Resource` + List/Create/Edit pages + record routing + minimal authorization | panels | 🔶 🔒 ★ | ViewRecord, relation managers, global search, resource nav depth |
 
 ★ = dominant-risk step; spike it first within its epic.
+
+**Step 1 — design + plan prepared (not yet landed):** scope tightened after
+forms/live-state landed ahead of order — the color **CSS** already ships all
+seven palettes (`packages/support/assets/src/styles/index.css`), so this epic is
+3 bare enums + 2 paired traits + a `color()` consumption helper, not a color
+build-out. Design [support-enablers.md](support-enablers.md) + plan
+[support-enablers-tasks.md](support-enablers-tasks.md). Deferred to breadth-fill:
+the PHP `Color`/`ColorManager`/math, `Operation`'s closure-arm wiring (→ step 5),
+and the `getVerticalAlignmentClass`-style class fragments (→ their consumer epics).
 
 **Step 6, first slice — landed:** Forms fields (`Field` + `TextInput` +
 `Textarea`) shipped and proven end to end on the live-state loop — a shipped-shape

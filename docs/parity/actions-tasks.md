@@ -60,7 +60,7 @@ brief.
 
 ## AC1 — Modal + Button primitives (`support`) + the actions test kernel
 
-- [ ] **AC1** — a native-`<dialog>` `<twig:SylamentSupport:Modal>` + a
+- [x] **AC1** — a native-`<dialog>` `<twig:SylamentSupport:Modal>` + a
   `<twig:SylamentSupport:Button>`, their Stimulus modal controller and CSS, and
   the actions Integration test kernel that render-tests them.
 
@@ -162,7 +162,7 @@ primitive; AC4's action-modal usage may pass `false` if the host manages focus.
 
 ## AC2 — the ⚡ mount/call spike (actions host round-trip)
 
-- [ ] **AC2** — a skeletal `Action` + the `HasActions` host trait +
+- [x] **AC2** — a skeletal `Action` + the `HasActions` host trait +
   `InteractsWithActions` contract, proving click → `mountAction` → modal →
   `callMountedAction` → closure over the UX round-trip on a synthetic host.
 
@@ -285,7 +285,7 @@ Don't try to serialize the `Action` — only the descriptor travels; re-resolve 
 
 ## AC3 — Action styling (presentation concerns + button template)
 
-- [ ] **AC3** — the full static presentation surface on `Action`, reusing support
+- [x] **AC3** — the full static presentation surface on `Action`, reusing support
   concerns and adding the actions-level identity/size/visibility/url concerns, with
   a styled button template + `sy-ac` CSS.
 
@@ -329,7 +329,8 @@ deferred).
 
 **Acceptance criteria.**
 - **Unit** — one test per new concern (mirror `HasAlignmentTest`): `HasLabel`
-  name-default (`'delete'` → `'Delete'`, `'user.edit'` → `'Edit'` via `before('.')`),
+  name-default (`'delete'` → `'Delete'`, `'user.edit'` → `'User'` via `before('.')` —
+  the segment *before* the first dot, unlike Field's `afterLast('.')`),
   explicit label wins; `HasSize` default/size/`defaultSize` precedence; `CanBeDisabled`
   `isDisabled()` true when disabled **or** hidden; `CanBeHidden` visible/hidden;
   `CanOpenUrl` url + newTab.

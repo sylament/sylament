@@ -9,6 +9,7 @@ use Sylament\Actions\Concerns\BelongsToLiveComponent;
 use Sylament\Actions\Concerns\CanBeDisabled;
 use Sylament\Actions\Concerns\CanBeHidden;
 use Sylament\Actions\Concerns\CanNotify;
+use Sylament\Actions\Concerns\CanOpenModal;
 use Sylament\Actions\Concerns\CanOpenUrl;
 use Sylament\Actions\Concerns\CanRequireConfirmation;
 use Sylament\Actions\Concerns\HasAction;
@@ -31,6 +32,7 @@ class Action extends ViewComponent
     use CanBeDisabled;
     use CanBeHidden;
     use CanNotify;
+    use CanOpenModal;
     use CanOpenUrl;
     use CanRequireConfirmation;
     use HasAction;

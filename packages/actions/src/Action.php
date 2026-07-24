@@ -10,9 +10,11 @@ use Sylament\Actions\Concerns\CanBeDisabled;
 use Sylament\Actions\Concerns\CanBeHidden;
 use Sylament\Actions\Concerns\CanOpenUrl;
 use Sylament\Actions\Concerns\HasAction;
+use Sylament\Actions\Concerns\HasArguments;
 use Sylament\Actions\Concerns\HasLabel;
 use Sylament\Actions\Concerns\HasName;
 use Sylament\Actions\Concerns\HasSize;
+use Sylament\Actions\Concerns\InteractsWithRecord;
 use Sylament\Support\Component\Concerns\HasColor;
 use Sylament\Support\Component\Concerns\HasExtraAttributes;
 use Sylament\Support\Component\Concerns\HasIcon;
@@ -28,6 +30,7 @@ class Action extends ViewComponent
     use CanBeHidden;
     use CanOpenUrl;
     use HasAction;
+    use HasArguments;
     use HasColor;
     use HasExtraAttributes;
     use HasIcon;
@@ -37,6 +40,7 @@ class Action extends ViewComponent
     use HasName;
     use HasSize;
     use HasTooltip;
+    use InteractsWithRecord;
 
     protected string $evaluationIdentifier = 'action';
 

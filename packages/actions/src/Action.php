@@ -8,7 +8,9 @@ use Closure;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
 use Sylament\Actions\Concerns\CanBeDisabled;
 use Sylament\Actions\Concerns\CanBeHidden;
+use Sylament\Actions\Concerns\CanNotify;
 use Sylament\Actions\Concerns\CanOpenUrl;
+use Sylament\Actions\Concerns\CanRequireConfirmation;
 use Sylament\Actions\Concerns\HasAction;
 use Sylament\Actions\Concerns\HasArguments;
 use Sylament\Actions\Concerns\HasLabel;
@@ -28,7 +30,9 @@ class Action extends ViewComponent
     use BelongsToLiveComponent;
     use CanBeDisabled;
     use CanBeHidden;
+    use CanNotify;
     use CanOpenUrl;
+    use CanRequireConfirmation;
     use HasAction;
     use HasArguments;
     use HasColor;
@@ -46,8 +50,6 @@ class Action extends ViewComponent
 
     protected string|Closure|null $template = '@SylamentActions/components/button-action.html.twig';
 
-    protected bool|Closure $isConfirmationRequired = false;
-
     final public function __construct(?string $name)
     {
         $this->name($name);
@@ -60,17 +62,5 @@ class Action extends ViewComponent
         $action->configure();
 
         return $action;
-    }
-
-    public function requiresConfirmation(bool|Closure $condition = true): static
-    {
-        $this->isConfirmationRequired = $condition;
-
-        return $this;
-    }
-
-    public function isConfirmationRequired(): bool
-    {
-        return $this->evaluate($this->isConfirmationRequired);
     }
 }

@@ -1,0 +1,14 @@
+{% set submitColor = action.getColor is iterable or action.getColor is empty ? 'primary' : action.getColor %}
+<twig:SylamentSupport:Modal
+    id="{{ id }}"
+    :heading="action.getModalHeading"
+    :description="action.getModalDescription"
+    :icon="action.getModalIcon"
+    :iconColor="action.getModalIconColor"
+    :width="action.getModalWidth"
+>
+    <twig:block name="footer">
+        <button type="button" class="sy sy-btn sy-color sy-color-{{ submitColor }}" {{ live_action('callMountedAction') }}>{{ action.getModalSubmitActionLabel }}</button>
+        <button type="button" class="sy sy-btn" {{ live_action('unmountAction') }}>{{ action.getModalCancelActionLabel }}</button>
+    </twig:block>
+</twig:SylamentSupport:Modal>

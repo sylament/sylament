@@ -25,8 +25,20 @@ operator (`StimulusAttributes` is iterable; null controller values are
 skipped, so conditional attributes need no ternaries) — which makes
 `symfony/stimulus-bundle` a hard production dependency of `support` (declared
 there; the helper functions resolve at Twig compile time, so templates fail
-without the bundle even when nothing is collapsible). Remaining under this
-anchor: the `HasExtraAlpineAttributes`
+without the bundle even when nothing is collapsible).
+
+The `sylament--support--modal` controller (actions epic, AC1) lands a second
+instance of the same pattern for a native `<dialog>`: `static values` (`id`,
+`returnsFocus`) configure it, and `@window`-bound `open`/`close` methods answer
+id-matched `sylament-open-modal` / `sylament-close-modal` events — the same
+id-matching shape as the section controller's collapse events — by calling
+`showModal()` / `close()`. The platform supplies focus-trap, ESC, top-layer
+stacking, and `::backdrop`, so the controller itself stays near-trivial (~30
+lines) compared to a faithful div-overlay port. See
+[actions/action.md](actions/action.md) for the config surface (`CanOpenModal`)
+that drives it and the open/close event contract.
+
+Remaining under this anchor: the `HasExtraAlpineAttributes`
 equivalent (extra Stimulus attributes on components); future behavior ports
 (tabs, wizard, dropdown, tooltip, key bindings, …); and a JS unit-test harness
 decision — controllers are currently covered by `tsc --noEmit` strict + Biome
@@ -65,6 +77,23 @@ host can emit it; see [schemas/component.md](schemas/component.md)); only **T6**
 (Doctrine relationship loading) remains. Per-item state lives in
 [schemas/component.md](schemas/component.md) /
 [schemas/schema.md](schemas/schema.md).
+
+**⚡ mounting sub-thread (actions).** The action-mounting loop reuses this same
+live-component substrate rather than standing up a new one:
+`Sylament\Actions\Concerns\HasActions` mounts an argument-carrying
+`#[LiveAction] mountAction(#[LiveArg] string $name, #[LiveArg] array $arguments
+= [], #[LiveArg] array $context = [])` — the first `#[LiveArg]`-bound
+`#[LiveAction]` in the repo — into a single, non-writable
+`#[LiveProp] $mountedActions` descriptor (`name`/`arguments`/`context`; no
+stack, no form data), with the plain arg-less `#[LiveAction]` methods
+`callMountedAction()` and `unmountAction()` completing the loop. The `Action`
+object itself never
+joins that state — it is re-resolved every round-trip through a host
+`{name}Action(): Action` method, the same re-resolve-from-a-host-method shape
+the schemas/forms loop uses for components rather than serializing them. See
+[actions/action.md](actions/action.md) for the full divergence list (the
+single non-writable prop, host-side record resolution via a synthetic
+`resolveRecordUsing`, …).
 
 Required knowledge for the port: Filament's `reset-schema-component-state`
 Alpine handler defers via `$nextTick` so the morph lands before state resets;

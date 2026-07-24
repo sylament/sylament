@@ -101,6 +101,20 @@ Design [forms-fields.md](forms-fields.md) + plan
 give the landed live-state loop a first-party consumer; scoped to depend on none of
 them (see the design's sequencing note).
 
+**Step 7 — landed:** Actions (the `Action` config object + button styling, the
+native-`<dialog>` modal system in `support`, and a confirm-modal
+mount/call/lifecycle path for record actions) shipped and proven end to end on a
+synthetic host — `RecordActionHost` mounts a Delete-shaped `Action`, opens the
+confirm modal, and runs the closure against an in-memory record via a
+host-supplied `resolveRecordUsing`, honoring `Halt`/`Cancel`, verified under
+`InteractsWithLiveComponents` (`packages/actions/tests/Integration/Concerns/HasActionsLifecycleTest.php`,
+`HasActionsTest.php`, `packages/actions/tests/Integration/Components/ConfirmModalRenderTest.php`).
+Design [actions.md](actions.md) + plan [actions-tasks.md](actions-tasks.md).
+**Remaining in step 7:** the full mounting stack (nested/parent actions,
+`cachedMountedActions`, the writable `mountedActionData` bag for form data),
+`ActionGroup`, bulk actions, import/export, and form-in-modal (the Edit shape) —
+all breadth-fill (Milestone 2).
+
 **Not in the tracer at all** (whole packages deferred to Milestone 3): infolists,
 widgets, notifications real-time. Flash-toast notifications (success on save) are
 an optional thin add (notification core + toast JS) if the demo wants them.

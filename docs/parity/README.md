@@ -32,6 +32,7 @@ detail beneath it.
 
 | Component | Package | Status |
 | --- | --- | --- |
+| [Action](actions/action.md) | actions | in progress |
 | [Component (base)](schemas/component.md) | schemas | in progress |
 | [ComponentManager](support/component-manager.md) | support | in progress |
 | [Field](forms/field.md) | forms | in progress |

@@ -14,7 +14,7 @@ is a Sylament-invented supporting surface.
 
 Reference — the Filament source this is diffed against:
 
-- none — Sylament-invented; see the [divergence](#schemaextension-has-no-11-filament-source-it-is-the-twig-side-parallel-of-supports-componentextension) below
+- none — Sylament-invented; see the [divergence](#schemaextension-has-no-11-filament-source--it-is-the-twig-side-parallel-of-supports-componentextension) below
 
 ## Surface
 
@@ -24,7 +24,7 @@ _Detail_ carries a **diverges** link to the permanent note in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`getFunctions()` exposes `renderSchema` (`needs_environment` + `needs_context`)](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php) | — (no Filament equivalent) | done | — | [diverges](#schemaextension-has-no-11-filament-source-it-is-the-twig-side-parallel-of-supports-componentextension) |
+| [`getFunctions()` exposes `renderSchema` (`needs_environment` + `needs_context`)](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php) | — (no Filament equivalent) | done | — | [diverges](#schemaextension-has-no-11-filament-source--it-is-the-twig-side-parallel-of-supports-componentextension) |
 | [`renderSchema()` resolves the host from context and renders the named schema to `Markup` via `ComponentExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php) | — (no Filament equivalent) | done | — | — |
 | [`renderSchema()` type-guard: throws `RuntimeException` when the host is missing or not `InteractsWithSchemas`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php) | — (no Filament equivalent) | done | — | — |
 

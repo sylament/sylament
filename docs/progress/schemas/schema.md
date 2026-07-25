@@ -1,0 +1,284 @@
+# Schema (schemas)
+
+[`Sylament\Schemas\Schema`](../../../packages/schemas/src/Schema.php) — the root
+container of the component model: the object a live component holds, the state
+root every field binds through, and the grid/flex layout that renders the child
+tree. It extends `support`'s [`ViewComponent`](../support/component.md) and ports
+[`schemas/src/Schema.php`](../../../vendor/filament/schemas/src/Schema.php),
+folding the single-use container concerns Filament splits across
+`Concerns/` — each is a surface row below rather than a file of its own.
+
+The **shared** concerns Schema composes keep their own detail files and are named
+in prose here without a status row:
+[`HasColumns`](has-columns.md) (Schema aliases `getAllColumns` →
+`getOwnAllColumns` and wraps it for parent inheritance),
+[`HasGap`](has-gap.md) (Schema overrides `hasGap()`),
+[`HasStateBindingModifiers`](has-state-binding-modifiers.md) (Schema overrides
+`isLive*()`/`getLiveDebounce()`), the host contract
+[`InteractsWithSchemas`](interacts-with-schemas.md), the bound-host trait
+[`BelongsToLiveComponent`](belongs-to-live-component.md), and the PropertyAccess
+state backend [`property-accessor.md`](property-accessor.md) — the one place the
+`data_get`/`data_set` → Symfony `PropertyAccess` translation is derived, referenced
+by every state read/write here. From `support` it composes
+[`HasAlignment`](../support/has-alignment.md) (the four alignment factories build
+on it) and `HasExtraAttributes`.
+
+**Status:** in progress — see the
+[status vocabulary](../README.md#statuses).
+
+Reference — the Filament source this is diffed against:
+
+- [`schemas/src/Schema.php`](../../../vendor/filament/schemas/src/Schema.php)
+  — the container class and its inline overrides
+- [`schemas/src/Concerns/`](../../../vendor/filament/schemas/src/Concerns)
+  — the folded concern implementations behind the rows below
+
+## Surface
+
+Every point of this container, plus one row per folded concern. _Blocked by_
+names what has to land first. _Detail_ carries either or both: **detail** → the
+write-up in [Details](#details), deleted once the row is **done**; **diverges** →
+the permanent note in [Divergences](#divergences). Rows never disappear — only
+their detail sections do.
+
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [Construction + `make()`](../../../packages/schemas/src/Schema.php) | [`Schema::make()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
+| [`resolveDefaultClosureDependencyForEvaluationByName` (`$container`/`$liveComponent`)](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#model-and-record-closure-injection-are-unported) |
+| [alignment factories `start`/`end`/`center`/`between`](../../../packages/schemas/src/Schema.php) | [`Schema::start()` …](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
+| [`isLive`/`isLiveOnBlur`/`isLiveDebounced`/`getLiveDebounce` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | in progress | — | [detail](#the-parent-walk-inheritance-overrides-are-untested) |
+| [`hasGap`/`isDense` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
+| [`getAllColumns` parent inheritance override](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | in progress | — | [detail](#the-parent-walk-inheritance-overrides-are-untested) |
+| [Twig-template rendering (`Schema.html.twig`)](../../../packages/schemas/templates/components/Schema.html.twig) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
+| Root Livewire/Alpine render wiring (`wire:partial`, `x-data filamentSchema`, client-side state reset) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | skipped | — | [diverges](#the-root-schema-drops-livewire-partial-render-and-alpine-wiring) |
+| [`BelongsToParentComponent`](../../../packages/schemas/src/Concerns/BelongsToParentComponent.php) | [`Concerns/BelongsToParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToParentComponent.php) | done | — | [diverges](#parentcomponent-accepts-null-to-detach) |
+| [`CanBeEmbeddedInParentComponent`](../../../packages/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | [`Concerns/CanBeEmbeddedInParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | done | — | — |
+| [`CanBeInline`](../../../packages/schemas/src/Concerns/CanBeInline.php) | [`Concerns/CanBeInline.php`](../../../vendor/filament/schemas/src/Concerns/CanBeInline.php) | done | — | — |
+| [`HasComponents`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | in progress | — | [detail](#hascomponents-ports-the-non-action-subset) |
+| [`HasState`](../../../packages/schemas/src/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Concerns/HasState.php) | in progress | — | [detail](#hasstate-ships-the-snapshot-path-only) |
+| [`HasKey`](../../../packages/schemas/src/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Concerns/HasKey.php) | in progress | live-component id | [detail](#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) |
+| [`HasHeadings`](../../../packages/schemas/src/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Concerns/HasHeadings.php) | done | — | — |
+
+Beyond the folded concerns, eleven of Filament's composed traits are not yet
+ported at all — `BelongsToModel`, `CanBeDisabled`, `CanBeHidden`,
+`CanBeValidated`, `CanModifyActions`, `Cloneable`, `HasEntryWrapper`,
+`HasFieldWrapper`, `HasInlineLabels`, `HasOperation`, and support's
+`HasDefaultDataFormattingSettings` — and earn their own README rows as they land.
+
+## Details
+
+Specifics for rows that are not finished — what is already in, what is left, and
+the next step. Delete a subsection when its row flips to **done**; the table row
+and any divergence it earned stay behind.
+
+### The parent-walk inheritance overrides are untested
+
+`isLive()`/`isLiveOnBlur()`/`isLiveDebounced()`/`getLiveDebounce()` and
+`getAllColumns()` each fall through to `getParentComponent()?->…()` when the
+schema declares no own value — the container's inheritance semantics. The
+own-value branches are exercised (state-binding-modifier reads, `SchemaRenderTest`
+column counts), but no test builds a parent→child schema pair and asserts the
+child inherits the parent's live mode or column count. **In:** the override
+bodies, ported faithfully. **Left:** direct coverage of the fall-through.
+**Next:** add a unit case that parents one schema under another and asserts the
+inherited `isLive`/`getAllColumns` result.
+
+### `HasComponents` ports the non-action subset
+
+`components()`/`getComponents()`/`getFlatComponents()`/`getComponentByStatePath()`
+are ported and covered (20 unit cases plus the `SchemaRenderTest` coercion and
+hidden-filtering paths). **In:** lazy closure resolution, container assignment,
+`string`→`Text` and other→`Html` child coercion, visibility filtering, and
+top-level/nested/skip-container state-path lookup. **Left:** `getAction()`,
+`getComponent()`, `getFlatFields()` (depend on Actions and Fields),
+`cloneComponents()`/`clearCachedChildSchemas()` (depend on `Cloneable` and
+child-schema caching), and the deprecated `schema()` alias. **Next:** port those
+as Actions/Fields/`Cloneable` land. The two structural differences it already
+carries — no action items in the unions, and a single `$cachedComponents` slot
+instead of Filament's flag-keyed memoization — are permanent and written up in
+[Divergences](#actions-and-actiongroups-are-absent-from-the-component-unions).
+
+### `HasState` ships the snapshot path only
+
+Schema is the state root; this trait assembles the dehydrated bag. **In** and
+tested (11 unit + 4 integration cases through a real UX LiveComponent):
+`fill()` → `hydrateState()` → `fillStateWithNull()` → `callAfterStateHydrated()`;
+`getRawState()`/`rawState()` and `statePath()`/`getStatePath()`/`hasStatePath()`
+with the absolute-path cache; and the `getState()` snapshot assembly
+(`callBeforeStateDehydrated` → `dehydrateState` → `mutateDehydratedState` →
+unwrap) including `hasDehydratedComponent()`/`buildDehydratedComponentsCache()`
+and the shared-state-path sibling handling. **Left**, all unported:
+
+- **Constant state** (`state()`/`constantState()`/`getConstantState()`) — the
+  infolist static-state path; **blocked** on the infolists + `BelongsToModel`
+  record epic (the record fallback chain).
+- **Partial rendering** (`partiallyRender()`/`shouldPartiallyRender()`/
+  `fillPartially()`/`hydrateStatePartially()`) — **blocked** on a UX
+  LiveComponent partial-render equivalent; decide whether targeted re-render is
+  a goal before porting.
+- **The validating `getState()`** (`validate` + `pruneStateToMatchKeys` +
+  `mutateStateForValidation`) — **blocked** on the validation epic; lands as a
+  second method alongside the snapshot one (see the
+  [divergence](#getstate-ports-filaments-getstatesnapshot-not-its-validating-getstate)).
+- `getStateOnly()`/`getStateExcept()` — a trivial `array_intersect_key`/
+  `array_diff_key` over `getState()`; add when a consumer needs them.
+- The recursive public `flushCachedAbsoluteStatePaths()` — only the single
+  protected `flushCachedAbsoluteStatePath()` exists; add the tree-walking flush
+  when post-cache mutation (dynamic repeaters) becomes reachable.
+
+**Next:** port each with the epic named in its bullet. Two small additions over
+Filament's container trait already ship: `hasStatePath()` is defined here (Filament
+inlines `filled($this->statePath)`), and `getState()` resets the dehydrated cache
+on entry so each assembly rebuilds it.
+
+### `HasKey` ports the schema key chain, minus the state-path fallback
+
+The schema-scope key model — `key()` setter, absolute prefix from the parent
+component's inheritance key, `getInheritanceKey()` fallback, attribute/JS-char
+sanitization, and absolute/inheritance-key caching with flush hooks — is ported
+and covered. **Left:** two pieces. `getLiveComponentKey()` (Filament's
+`getLivewireKey()`, the DOM key from the live-component id) is **blocked** on the
+live-component id being reachable. More importantly, `getKey()` silently omits
+Filament's `?? getStatePath(isAbsolute: false)` fallback even though
+`getStatePath()` is live on the schema via `HasState` and the sibling
+component-level `HasKey` keeps it — an unflagged, untested deviation, not a
+recorded decision (commit `7aad138` gives no rationale). **Next:** reconcile it —
+either restore `$key = $this->evaluate($this->key) ?? $this->getStatePath(isAbsolute: false)`
+with a covering test (a keyless schema carrying a state path), or, if the drop is
+intentional, promote it to a deliberate divergence explaining why a schema key
+never falls back to its state path while a component key does. The deprecated
+`name()`/`getName()` aliases are a separate, deliberate
+[skip](#the-deprecated-name-and-getname-aliases-are-not-ported).
+
+## Divergences
+
+Deliberate deviations from Filament — permanent, and the reason they hold. Each
+says what would reverse it when the decision is provisional.
+
+### Schema is the state root; Filament splits state across the Livewire base and the schema
+
+Filament divides container state between its `Livewire\Component` base (which
+holds the `$data` array, the updated-lifecycle hooks, and partial rendering) and
+`Schema`. Sylament has no Livewire base to inherit: a schema binds to a plain UX
+LiveComponent — the [`InteractsWithSchemas`](interacts-with-schemas.md) host —
+reached through
+[`BelongsToLiveComponent`](belongs-to-live-component.md),
+and `HasState` reads and writes the host's bound properties through
+[PropertyAccess](property-accessor.md). Everything Filament kept on the Livewire
+base that the schema depends on (the state bag, the updated dispatch) is
+relocated: state lives on the host's typed properties, and the updated-lifecycle
+dispatch moves to the host's
+[`#[PostHydrate]` pass](#schema-level-afterstateupdated-dispatch-moves-to-the-hosts-posthydrate-pass).
+The schema becomes the single state root, and the render-time Livewire coupling
+below drops out with the base class. Reverses only if a Livewire-shaped base is
+reintroduced — not planned.
+
+### The root schema drops Livewire partial-render and Alpine wiring
+
+Filament's `renderEmbeddedHtml()` emits `wire:partial` (`schema.{key}`),
+`x-data="filamentSchema({ livewireId, schemaKey })"`, and
+`x-on:form-validation-error`/`reset-schema-component-state` on the root div, and
+exposes `dispatchClientSideStateReset()`. Sylament's `Schema.html.twig` emits none
+of these. Live binding runs field-side through UX LiveComponent `data-model`
+attributes plus a full component re-render (proven by `LiveStateTest`), so
+per-schema partial rendering, the client-side Alpine state object, and client-side
+state reset have no port. Reverses if per-schema partial rendering or client-side
+state reset become goals.
+
+### Model and record closure injection are unported
+
+Filament's `resolveDefaultClosureDependencyForEvaluationByName` also resolves the
+`$model`/`$record` closure parameters, and it overrides
+`resolveDefaultClosureDependencyForEvaluationByType` for `Model`/`self` hints.
+Sylament resolves only `$container` (the schema itself) and `$liveComponent` (the
+bound host, read from the raw nullable property so a standalone schema injects
+`null`); the model/record cases and the whole `…ByType` override are dropped
+because `BelongsToModel`/Doctrine record binding is unported. The self/static-type
+identity is instead handled by the base `EvaluatesClosures` own-class mechanism.
+Reverses when `BelongsToModel` lands and the record injection cases are restored.
+
+### `parentComponent()` accepts null to detach
+
+Filament types `parentComponent(Component $component)` non-nullable. Sylament
+widens it to `?Component`, so a schema can be reset to root (`isRoot()` true
+again). Harmless superset of Filament's contract; reversible if a caller ever
+needs the non-null guarantee.
+
+### Actions and ActionGroups are absent from the component unions
+
+Filament's components prop and every accessor union in `HasComponents` include
+`Action|ActionGroup`, and `getComponents()` calls
+`modifyAction()`/`modifyActionGroup()`/`schemaContainer()` on them. Sylament types
+the prop `array<Component|string|Markup>|Component|string|Markup|Closure` and only
+coerces `string`→`Text` and other→`Html`. The actions↔schemas integration is
+unported, so action items, `getAction()`, and action modification have no port
+here yet. Converges when Actions land.
+
+### The component collection keeps a single cache and drops the flag-keyed memoization
+
+Filament memoizes `getComponents` (with/without hidden), `getFlatComponents`, and
+`getComponentByStatePath` under multi-dimensional caches keyed by
+`withActions`/`withHidden`/`withOriginalKeys`/`withAbsoluteKeys`/`containerKey`/
+`spl_object_id`. Sylament keeps only `$cachedComponents` (the raw resolved list)
+and recomputes flat/by-state-path each call. `getComponents` also defaults
+`withHidden = true` (Filament `false`, the template calls `getComponents(false)`
+explicitly) and filters on `isVisible()` rather than `isHidden()`. Correct but not
+memoized; revisit if flat/state-path lookups become hot.
+
+### `getState()` ports Filament's `getStateSnapshot()`, not its validating `getState()`
+
+Filament has two container reads: `getState()` runs `validate()`, prunes with
+`pruneStateToMatchKeys()`, and re-syncs clean Livewire values; `getStateSnapshot()`
+is the validation-, prune-, and relationship-free variant. Sylament ships ONE
+method named `getState()` whose body is Filament's `getStateSnapshot()`. The
+validation layer (`validate`/`prepareForValidation`/`mutateStateForValidation`/
+`pruneStateToMatchKeys`) and relationship layer (`saveRelationships`/
+`loadStateFromRelationships`) are unported; the docblock says so. It also omits
+Filament's `Component::withVisibilityCache(...)` wrapper and the child-schema
+`isHiddenAndNotDehydratedWhenHidden()` guards, consistent with actions and full
+visibility handling not yet wired. Reverses when the validation epic lands and a
+validating `getState()` is added alongside the snapshot.
+
+### `getRawState()` seeds an empty array on a blank or top-level path
+
+Filament's container `getRawState()` returns `data_get($livewire, $statePath) ?? []`
+typed `array|Arrayable`. Sylament returns `array` only and, when the schema has no
+state path (top-level binding, no single bag to read), returns `[]` rather than
+reading the host — the intended seed for the dehydration prune. `Arrayable`
+support is dropped (Doctrine collections are not `Arrayable`-shaped here).
+
+### The absolute-path cache is a nullable field plus a boolean flag, not an unset typed property
+
+Filament declares `protected string $cachedAbsoluteStatePath;` and detects a hit
+with `isset()`, flushing via `unset()` (with a phpstan-ignore for
+`unset.possiblyHookedProperty`). Sylament declares
+`?string $cachedAbsoluteStatePath = null` plus `bool $hasCachedAbsoluteStatePath`,
+caching through a try/finally that sets value then flag and flushing both — to
+avoid `unset()` of a typed property and keep PHPStan level max clean without an
+ignore. Behaviourally identical; not provisional.
+
+### Schema-level afterStateUpdated dispatch moves to the host's PostHydrate pass
+
+Filament's `Schema::callAfterStateUpdated(string $path)` walks components matching
+the updated path inside a partial-render `finally` block. Sylament omits it from
+the trait and dispatches from `InteractsWithSchemas::callAfterSchemaStateUpdated()`
+under UX LiveComponent's `#[PostHydrate]`: after re-hydration it iterates
+`getFlatComponents` and fires `callAfterStateUpdatedHooks()` on every component
+whose `getRawState` differs from the snapshot `getOldSchemaState`. This is the
+Symfony-idiom translation of Livewire's updated lifecycle; the path-matching-plus-
+bubbling shape and the `partiallyRender` `finally` block are not reproduced.
+Reverses only if per-path targeted dispatch is needed.
+
+### The deprecated `name()` and `getName()` aliases are not ported
+
+Filament's schema-level `HasKey` carries `name()`/`getName()` as `@deprecated`
+forwarders to `key()`/`getKey()`. Sylament omits them: they were dead on arrival
+in the source we port from, so shipping them only reintroduces the ambiguity the
+deprecation was retiring. The recommended `key()`/`getKey()` are ported.
+Reversible only if a migrating consumer proves it still calls the old names.
+
+_See also: the global [rename table](../renames.md) — the Livewire → UX
+LiveComponent renames (`BelongsToLivewire`→`BelongsToLiveComponent`,
+`livewire()`→`liveComponent()`, `getLivewire()`→`getLiveComponent()`,
+`getLivewireKey()`→`getLiveComponentKey()`) and the `viewIdentifier`→`template`
+idiom translation are recorded there, not as per-component divergences._

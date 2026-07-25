@@ -81,9 +81,9 @@ unrelated file.
 - `<package>/<component>.md` — the detail: a surface table of everything the
   component covers, a write-up per unfinished row, and the divergences. What
   earns a file of its own is [the rule above](#one-row-per-file-one-file-per-thing).
-- [`support/component.md`](support/component.md) — the worked example every
-  detail file copies: a surface table on top, per-row detail sections beneath,
-  divergences at the bottom.
+- [`support/component.md`](support/component.md) — the first finished detail
+  file, a filled-in reference: a surface table on top, per-row detail sections
+  beneath, divergences at the bottom.
 
 One file cuts across every package rather than belonging to one:
 

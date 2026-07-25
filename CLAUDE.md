@@ -19,7 +19,7 @@ When porting, preserve trait names, method names, and the closure-evaluation par
 
 Preserve Filament's API names by default — migrating users grep for them. Rename only when Filament itself is inconsistent and the better name already exists in their codebase; every rename is recorded in the global rename table, `docs/progress/renames.md` (which also documents the systematic idiom/namespace translations that are *not* renames).
 
-Porting state lives in `docs/progress/` — read `docs/progress/README.md` first: it carries the rules (what earns a file of its own, how to keep the trail in sync) and the status vocabulary every table uses. Per-component state is `docs/progress/<package>/<component>.md`, a surface table over the component's features with per-row detail sections and divergences at the bottom (`docs/progress/support/component.md` is the worked example). Keep these current in the same commit as the code they describe — stale entries are bugs.
+Porting state lives in `docs/progress/` — read `docs/progress/README.md` first: it carries the rules (what earns a file of its own, how to keep the trail in sync) and the status vocabulary every table uses. Per-component state is `docs/progress/<package>/<component>.md`, a surface table over the component's features with per-row detail sections and divergences at the bottom (see `docs/progress/support/component.md` for a filled-in example). Keep these current in the same commit as the code they describe — stale entries are bugs.
 
 `docs/parity/` is the superseded predecessor, kept until its per-component write-ups and epic design/task docs are migrated into `docs/progress/`. Don't add to it, and don't link to it from new work — its `renames.md` is now a stale copy of `docs/progress/renames.md`.
 

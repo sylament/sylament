@@ -9,7 +9,7 @@ class's registered closures after it, and `isImportant` closures last. It is the
 Filament `configureUsing()` port and is reached through the static-instance
 pattern (`resolve()`), so components need no constructor injection.
 
-**Status:** done — see the
+**Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -33,7 +33,7 @@ detail sections do.
 | [`configure()`](../../../packages/support/src/Component/ComponentManager.php) | [`ComponentManager::configure()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | — |
 | [`resolve()`](../../../packages/support/src/Component/ComponentManager.php) | [`ComponentManager::resolve()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | [diverges](#resolve-uses-the-static-instance-pattern-not-a-scoped-container) |
 | `extractPublicMethods()` | [`ComponentManager::extractPublicMethods()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | skipped | — | [diverges](#extractpublicmethods-is-not-ported) |
-| Scoped manager (`resolveScoped()` / `clone()`) | [`Contracts/ScopedComponentManager.php`](../../../vendor/filament/support/src/Components/Contracts/ScopedComponentManager.php) | skipped | — | [diverges](#the-scoped-component-manager-is-not-ported) |
+| Scoped manager (`resolveScoped()` / `clone()`) | [`Contracts/ScopedComponentManager.php`](../../../vendor/filament/support/src/Components/Contracts/ScopedComponentManager.php) | blocked | live-component-state work | [detail](#the-scoped-component-manager-is-not-ported) |
 
 ## Details
 
@@ -41,8 +41,18 @@ Specifics for rows that are not finished — what is already in, what is left, a
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
 
-Every row above is settled — **done** or **skipped** — so none has a write-up
-here now. A row moving to **in progress** or **blocked** grows one.
+### The scoped component manager is not ported
+
+Filament clones the manager per Livewire request via `clone()` and binds the copy
+under `ScopedComponentManager`, so `configureUsing()` calls made during one
+request don't leak into the next; `resolveScoped()` fetches that per-request copy.
+Sylament ships a single static instance shared across the process — neither
+`resolveScoped()`, `clone()`, nor the `ScopedComponentManager` contract is ported
+yet. Per-request config isolation is wanted, but it belongs to the
+live-component-state work, not this class in isolation — so the row is **blocked**
+on that work: it lands there as Sylament's own per-request scope (not necessarily
+a `clone()`). The `ScopedComponentManager` contract is separately tracked as
+**todo** in the [package README](README.md).
 
 ## Divergences
 
@@ -60,7 +70,7 @@ creates one via the
 [static-instance pattern](../../../packages/support/src/DependencyInjection/HasStaticInstance.php)
 (`StaticInstanceInterface` + `HasStaticInstance`) — the same object the bundle
 defines with `factory(ComponentManager::resolve(...))`. The behavioral delta is
-the missing scope layer, covered by its own note below.
+the missing scope layer, covered by its own **blocked** row in [Details](#the-scoped-component-manager-is-not-ported).
 
 _See also:_ the global [rename table](../renames.md) — the
 `Support\Components\` → `Support\Component\` namespace singularization is a
@@ -77,14 +87,3 @@ renders through Twig with the instance itself in context, so templates call
 `extractPublicMethods()` and the `methodCache` property that backed it are
 therefore dropped. Reversible only if a Twig-side reason to expose bound closures
 by name appears.
-
-### The scoped component manager is not ported
-
-Filament clones the manager per Livewire request via `clone()` and binds the copy
-under `ScopedComponentManager`, so `configureUsing()` calls made during one
-request don't leak into the next; `resolveScoped()` fetches that per-request copy.
-Sylament ships a single static instance shared across the process — neither
-`resolveScoped()`, `clone()`, nor the `ScopedComponentManager` contract is
-ported. The contract is separately tracked as **todo** in the
-[package README](README.md); wiring per-request scoping belongs to the
-live-component-state work, not this class in isolation.

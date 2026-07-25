@@ -81,9 +81,9 @@ unrelated file.
 - `<package>/<component>.md` — the detail: a surface table of everything the
   component covers, a write-up per unfinished row, and the divergences. What
   earns a file of its own is [the rule above](#one-row-per-file-one-file-per-thing).
-- [`support/component.md`](support/component.md) — the first finished detail
-  file, a filled-in reference: a surface table on top, per-row detail sections
-  beneath, divergences at the bottom.
+- [`support/component.md`](support/component.md) — the reference detail file, a
+  filled-in example: a surface table on top, per-row detail sections beneath,
+  divergences at the bottom.
 
 One file cuts across every package rather than belonging to one:
 
@@ -99,12 +99,15 @@ One vocabulary, used by every table in this tree.
 | --- | --- |
 | **todo** | Not started. |
 | **in progress** | Partly ported — the gap is written up in the row's detail section. |
-| **blocked** | Cannot proceed until the item in _Blocked by_ lands. |
+| **blocked** | Wanted for parity, but a prerequisite named in _Blocked by_ must land first. |
 | **done** | Ported and covered by a test. The detail section is deleted; the row stays. |
-| **skipped** | Deliberately not built. Nothing blocks it — we just don't want it yet, or ever. |
+| **skipped** | A deliberate non-goal — the toolkit works without it, so we are not porting it (whether or not Filament ships it). |
 
-**skipped** vs **blocked**: blocked has something concrete to wait on, named in
-_Blocked by_; skipped is our own call and can be picked up any time.
+**skipped** vs **blocked** is a question of intent, not mechanics. **blocked** is
+something we _want_ for parity and will build once the prerequisite in _Blocked
+by_ lands — even where we could stub it now. **skipped** is something we have
+decided the toolkit does not need. An item we simply have not reached yet, with
+nothing to wait on, is **todo**.
 
 Divergence is **not** a status — it is orthogonal, and any row can carry one.
 A row we ported differently from Filament stays **done** and links its reasoning

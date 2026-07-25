@@ -7,7 +7,7 @@ Twig-rendering subclass `ViewComponent` and the `ComponentManager` that
 `Configurable` calls into have their own rows in the [package README](README.md)
 and earn detail files of their own when they are audited.
 
-**Status:** done — see the
+**Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -29,7 +29,7 @@ detail sections do.
 | --- | --- | --- | --- | --- |
 | [`Configurable`](../../../packages/support/src/Concerns/Configurable.php) | [`Concerns/Configurable.php`](../../../vendor/filament/support/src/Concerns/Configurable.php) | done | — | — |
 | [`EvaluatesClosures`](../../../packages/support/src/Concerns/EvaluatesClosures.php) | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | done | — | [diverges](#closure-resolution-lives-in-a-service) |
-| Arity probe | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | skipped | — | [diverges](#the-arity-probe-is-deferred) |
+| Arity probe | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | blocked | state-based-URL consumer | [detail](#the-arity-probe-is-deferred) |
 | Conditionable | [`Illuminate\Support\Traits\Conditionable`](../../../vendor/laravel/framework/src/Illuminate/Conditionable/Traits/Conditionable.php) | skipped | — | [diverges](#conditionable-and-tappable-are-not-ported) |
 | Tappable | [`Illuminate\Support\Traits\Tappable`](../../../vendor/laravel/framework/src/Illuminate/Support/Traits/Tappable.php) | skipped | — | [diverges](#conditionable-and-tappable-are-not-ported) |
 | Macroable | [`Concerns/Macroable.php`](../../../vendor/filament/support/src/Concerns/Macroable.php) | skipped | — | [diverges](#macroable-is-not-ported) |
@@ -40,8 +40,20 @@ Specifics for rows that are not finished — what is already in, what is left, a
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
 
-Every row above is settled — **done** or **skipped** — so none has a write-up
-here now. A row moving to **in progress** or **blocked** grows one.
+### The arity probe is deferred
+
+`evaluationValueIsFunctionAndHasParameter()` — reports whether a closure declares
+a given parameter — is the one method of Filament's `EvaluatesClosures` we leave
+out. Its only callers are `hasStateBasedUrls()` on the **schemas** and **tables**
+`CanOpenUrl` concerns
+([schemas](../../../vendor/filament/schemas/src/Components/Concerns/CanOpenUrl.php),
+[tables](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php)),
+which ask whether a `url` closure wants a `state` argument. Neither is ported yet,
+and the `actions` `CanOpenUrl` we did port drops state-based URLs for now — so
+nothing consumes the probe today. State-based URLs are on the 1.0 roadmap, so the
+probe is **blocked** on their first consumer, not a non-goal: it returns in the
+same change as the `schemas` / `tables` `CanOpenUrl` port, where it finally has
+behavior to test against.
 
 ## Divergences
 
@@ -63,21 +75,6 @@ consequences worth their own note:
 - **No container auto-wiring.** Filament falls back to `app()->make()` for any
   unbound class; Symfony's container cannot, so only types the container `has()`
   resolve. Anything else throws instead of being silently constructed.
-
-### The arity probe is deferred
-
-`evaluationValueIsFunctionAndHasParameter()` — reports whether a closure declares
-a given parameter — is the one method of Filament's `EvaluatesClosures` we leave
-out. Its only callers are `hasStateBasedUrls()` on the **schemas** and **tables**
-`CanOpenUrl` concerns
-([schemas](../../../vendor/filament/schemas/src/Components/Concerns/CanOpenUrl.php),
-[tables](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php)),
-which ask whether a `url` closure wants a `state` argument. Neither is ported,
-and the `actions` `CanOpenUrl` we did port drops state-based URLs entirely — so
-nothing here consumes the probe. It is a self-contained reflection method blocked
-by nothing, so it is **skipped**, not blocked: re-add it in the same change as
-the first state-based-URL consumer, where it finally has behavior to test
-against.
 
 ### Conditionable and Tappable are not ported
 

@@ -26,9 +26,9 @@ widgets in [`src/View/Components`](../../../vendor/filament/support/src/View/Com
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| [`Component`](../../../packages/support/src/Component/Component.php) | [`Components/Component.php`](../../../vendor/filament/support/src/Components/Component.php) | done | [component.md](component.md) |
+| [`Component`](../../../packages/support/src/Component/Component.php) | [`Components/Component.php`](../../../vendor/filament/support/src/Components/Component.php) | in progress | [component.md](component.md) |
 | [`ViewComponent`](../../../packages/support/src/Component/ViewComponent.php) | [`Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | [view-component.md](view-component.md) |
-| [`ComponentManager`](../../../packages/support/src/Component/ComponentManager.php) | [`Components/ComponentManager.php`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | [component-manager.md](component-manager.md) |
+| [`ComponentManager`](../../../packages/support/src/Component/ComponentManager.php) | [`Components/ComponentManager.php`](../../../vendor/filament/support/src/Components/ComponentManager.php) | in progress | [component-manager.md](component-manager.md) |
 | Actions | [`views/components/actions.blade.php`](../../../vendor/filament/support/resources/views/components/actions.blade.php) | todo | — |
 | Avatar | [`views/components/avatar.blade.php`](../../../vendor/filament/support/resources/views/components/avatar.blade.php) | todo | — |
 | Badge | [`View/Components/BadgeComponent.php`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | todo | — |
@@ -155,8 +155,8 @@ services, root value classes, translations, and the bundle wiring —
 | ColorMaps | [`View/Components/ColorMaps/`](../../../vendor/filament/support/src/View/Components/ColorMaps) | todo | — |
 | Color contracts | [`View/Components/Contracts/`](../../../vendor/filament/support/src/View/Components/Contracts) | todo | — |
 | HTML generators | [`View/Concerns/`](../../../vendor/filament/support/src/View/Concerns) | todo | — |
-| [`Cancel`](../../../packages/support/src/Exception/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | done | [cancel.md](cancel.md) |
-| [`Halt`](../../../packages/support/src/Exception/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | done | [halt.md](halt.md) |
+| [`Cancel`](../../../packages/support/src/Exception/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | in progress | [cancel.md](cancel.md) |
+| [`Halt`](../../../packages/support/src/Exception/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | in progress | [halt.md](halt.md) |
 | FilamentUpgraded | [`Events/FilamentUpgraded.php`](../../../vendor/filament/support/src/Events/FilamentUpgraded.php) | todo | — |
 | Facades | [`Facades/`](../../../vendor/filament/support/src/Facades) | todo | — |
 | Commands | [`Commands/`](../../../vendor/filament/support/src/Commands) | todo | — |

@@ -35,7 +35,7 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | Close button + `ModalComponent` static config | [`ModalComponent.php`](../../../vendor/filament/support/src/View/Components/ModalComponent.php) | todo | — | [detail](#details) |
 | Slide-over, sticky header/footer, alignment, alert, clickThrough, trigger, teleport, visible, extra attribute bags | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) props | todo | — | [detail](#details) |
 | Configurable / quiet-close event names | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `openEventName`/`closeEventName`/`closeQuietlyEventName` | skipped | — | [diverges](#event-names-are-fixed-and-there-is-no-quiet-close) |
-| `wire:submit` form wrapper / `wire:key` | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `wireSubmitHandler` | skipped | — | [diverges](#livewire-form-in-modal-wiring-is-not-ported) |
+| `wire:submit` form wrapper / `wire:key` | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `wireSubmitHandler` | blocked | forms (LiveComponent form-in-modal) | [detail](#livewire-form-in-modal-wiring-is-not-ported) |
 
 The done rows are exercised by
 [`actions/tests/Integration/Components/ModalRenderTest.php`](../../../packages/actions/tests/Integration/Components/ModalRenderTest.php)
@@ -72,6 +72,16 @@ The full Filament view carries a large prop surface the port omits: `slideOver` 
 `extraModalOverlayAttributeBag`. These are Milestone-2 breadth-fill, not rejected —
 each returns with the first consumer that needs it. Until then the template is the
 confirm-modal chrome subset only.
+
+### Livewire form-in-modal wiring is not ported
+
+Filament swaps the modal window element to a `<form wire:submit.prevent=…>` when a
+`wire:submit.prevent` attribute is present, and stamps `wire:key` on each region.
+Sylament renders a plain `<dialog>` with no form wrapper or `wire:*` keys — the
+confirm-modal drives its buttons through `live_action(...)` instead. Form-in-modal
+is **blocked** on the `schemas` / `forms` form-in-modal breadth: it lands there as
+the UX LiveComponent form wrapper (not `wire:*`) and the per-region keys the modal
+needs, in the same change.
 
 ## Divergences
 
@@ -130,11 +140,3 @@ Filament lets each modal name its `openEventName` / `closeEventName` /
 Sylament hard-codes `sylament-open-modal` / `sylament-close-modal` (id-matched in
 the controller) and has no quiet-close variant — the quiet path exists in Filament
 to suppress a Livewire re-render round-trip that the native dialog does not incur.
-
-### Livewire form-in-modal wiring is not ported
-
-Filament swaps the modal window element to a `<form wire:submit.prevent=…>` when a
-`wire:submit.prevent` attribute is present, and stamps `wire:key` on each region.
-Sylament renders a plain `<dialog>` with no form wrapper or `wire:*` keys —
-form-in-modal is deferred with the rest of the schemas/form-in-modal breadth, and
-the confirm-modal drives its buttons through `live_action(...)` instead.

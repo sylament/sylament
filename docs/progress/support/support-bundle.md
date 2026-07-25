@@ -29,7 +29,7 @@ _Detail_ carries **detail** → the write-up in [Details](#details) and/or
 | [Service wiring](../../../packages/support/src/SylamentSupportBundle.php) — `loadExtension()` PHP DSL: `ComponentManager`, `IconManager`, `Invoker`, `StaticInstanceRegistry`, five Twig extensions | [`packageRegistered()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | done | — | — |
 | [Static-instance boot](../../../packages/support/src/SylamentSupportBundle.php) — `build()` adds `StaticInstancePass`; `boot()` runs `StaticInstanceRegistry::bootStaticInstances()` | [`packageRegistered()`](../../../vendor/filament/support/src/SupportServiceProvider.php) (`scoped`/`singleton` + `app->booted`) | done | — | [diverges](#static-instance-boot-replaces-laravels-container-scoping) |
 | [Asset registration](../../../packages/support/src/SylamentSupportBundle.php) — `prependExtension()` → `prependAssetMapper()` guarded by [`isAssetMapperAvailable()`](../../../packages/support/src/SylamentBundle.php) | [`FilamentAsset::register([Js::make('support', …)])`](../../../vendor/filament/support/src/SupportServiceProvider.php) | in progress | — | [detail](#asset-registration) |
-| Livewire request / component wiring | [`packageRegistered()`/`packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | skipped | — | [diverges](#livewire-request-and-component-wiring-is-not-ported) |
+| Livewire request / component wiring | [`packageRegistered()`/`packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | blocked | live-component-state work | [detail](#livewire-request-and-component-wiring-is-not-ported) |
 | Blade directives & string macros | [`packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | skipped | — | [diverges](#blade-directives-and-string-macros-are-not-ported) |
 | PackageServiceProvider bootstrapping — config/views/translations publishing, commands, `AboutCommand`, `optimizes` | [`configurePackage()`/`packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php) | skipped | — | [diverges](#packageserviceprovider-bootstrapping-is-replaced-by-abstractbundle-mechanics) |
 
@@ -55,6 +55,20 @@ Integration test asserting the compiled `framework.asset_mapper.paths` contains
 `@sylament/support`, plus a Unit test for the guard's false branch — then this
 row flips to **done**.
 
+### Livewire request and component wiring is not ported
+
+The provider's `DataStore` override, `PartialsComponentHook`, the
+`originalRequest` scoped binding, and the `ScopedComponentManager` clone are all
+Livewire-runtime plumbing — request-scoped state, per-request component hooks, and
+config isolation. There is no Livewire here (the idiom translation is UX
+LiveComponent), and Filament's specific seams won't be ported verbatim; but the
+equivalent live-component request wiring is wanted, so the row is **blocked** on
+the live-component-state work, where Sylament grows its own data store, component
+hooks, and per-request scope.
+
+_See also: the [Livewire → UX LiveComponent](../renames.md#idiom) idiom
+translation._
+
 ## Divergences
 
 ### Static-instance boot replaces Laravel's container scoping
@@ -70,17 +84,6 @@ which sets each tagged service as its class's static instance. The
 `ScopedComponentManager` clone and the `RequestReceived` re-resolution have no
 analog and are dropped; `ScopedComponentManager` is tracked as its own **todo**
 row in the [package README](README.md).
-
-### Livewire request and component wiring is not ported
-
-The provider's `DataStore` override, `PartialsComponentHook`, the
-`originalRequest` scoped binding, and the `ScopedComponentManager` clone are all
-Livewire-runtime plumbing. There is no Livewire here (the idiom translation is UX
-LiveComponent, which does not expose these seams), so none is ported. This is a
-structural deletion, not a rename.
-
-_See also: the [Livewire → UX LiveComponent](../renames.md#idiom) idiom
-translation._
 
 ### Blade directives and string macros are not ported
 

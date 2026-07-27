@@ -13,7 +13,7 @@
         target: component.shouldOpenUrlInNewTab ? '_blank' : false,
         title: component.getTooltip ?: false,
     }, component.getExtraAttributes) }}
-    {%- if not component.getUrl %} {{ live_action('mountAction', { name: component.getName }) }}{% endif %}
+    {%- if not component.getUrl %} {{ live_action('mountAction', { name: component.getName, ...(component.getContext ? { context: component.getContext } : {}) }) }}{% endif %}
 >
     {{- iconHtml -}}
     <span class="sy-dropdown-item-label">{{ component.getLabel ?? component.getName }}</span>

@@ -8,12 +8,16 @@ use Closure;
 use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\Enums\ActionStatus;
+use Sylament\Schemas\Concerns\HasSchemas;
+use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\ComponentToolsTrait;
+
+use function Sylament\Support\filled;
 
 trait HasActions
 {
@@ -174,6 +178,47 @@ trait HasActions
      */
     protected function resolveAction(array $descriptor): ?Action
     {
+        if (filled($descriptor['context']['schemaComponent'] ?? null)) {
+            return $this->resolveSchemaComponentAction($descriptor);
+        }
+
         return $this->getAction($descriptor['name']);
+    }
+
+    /**
+     * Resolve the descriptor against the host schema its `context['schemaComponent']`
+     * key names: the segment before the first dot is the schema name, the rest is
+     * the nested container key handed to `Schema::getAction()`. Unresolvable
+     * client references — unknown schema name, unknown action — return null so the
+     * mount no-ops; a host that cannot carry schemas at all is a wiring bug and
+     * throws. The schema-name miss check mirrors the method discovery
+     * `HasSchemas::getSchema()` itself performs, because that getter throws
+     * instead of returning null.
+     *
+     * @param array{name: string, arguments: array<mixed>, context: array<mixed>} $descriptor
+     */
+    protected function resolveSchemaComponentAction(array $descriptor): ?Action
+    {
+        if (! $this instanceof InteractsWithSchemas) {
+            throw new LogicException('An action context supplied a schemaComponent key but ' . static::class . ' is not a schema host — implement ' . InteractsWithSchemas::class . ' and use the ' . HasSchemas::class . ' trait.');
+        }
+
+        $key = $descriptor['context']['schemaComponent'] ?? null;
+
+        if (! is_string($key)) {
+            return null;
+        }
+
+        $dotPosition = mb_strpos($key, '.');
+        $schemaName = ($dotPosition === false) ? $key : mb_substr($key, 0, $dotPosition);
+        $nestedContainerKey = ($dotPosition === false) ? null : mb_substr($key, $dotPosition + 1);
+
+        if (! method_exists($this, $schemaName) && ! method_exists($this, "{$schemaName}Schema")) {
+            return null;
+        }
+
+        $action = $this->getSchema($schemaName)->getAction($descriptor['name'], $nestedContainerKey);
+
+        return $action?->liveComponent($this);
     }
 }

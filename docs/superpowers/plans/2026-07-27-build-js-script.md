@@ -39,7 +39,7 @@ Spec: `docs/superpowers/specs/2026-07-27-build-js-script-design.md`.
 
 ```js
 /**
- * Builds src/**/*.ts into dist/ for AssetMapper consumption.
+ * Builds src/**\/*.ts into dist/ for AssetMapper consumption.
  *
  * Two shipping modes, driven by BUNDLED_ENTRIES:
  *   - default: per-file, unbundled — import specifiers ship verbatim to the

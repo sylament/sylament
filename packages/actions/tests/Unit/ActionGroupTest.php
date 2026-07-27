@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Unit;
 
+use Sylament\Actions\Tests\Fixtures\Twig\Components\ActionHost;
+use stdClass;
 use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
@@ -49,4 +51,73 @@ it('defaults its label to Actions and accepts an override', function (): void {
 it('falls back to an ellipsis icon that an explicit icon overrides', function (): void {
     expect(ActionGroup::make([])->getIcon(ActionGroup::DEFAULT_ICON))->toBe('heroicons:ellipsis-vertical')
         ->and(ActionGroup::make([])->icon('heroicons:x-mark')->getIcon(ActionGroup::DEFAULT_ICON))->toBe('heroicons:x-mark');
+});
+
+it('is hidden when every child is hidden', function (): void {
+    $group = ActionGroup::make([Action::make('edit')->hidden(), Action::make('delete')->hidden()]);
+
+    expect($group->isHidden())->toBeTrue()
+        ->and($group->isVisible())->toBeFalse();
+});
+
+it('is visible while any child is visible', function (): void {
+    expect(ActionGroup::make([Action::make('edit')->hidden(), Action::make('delete')])->isHidden())
+        ->toBeFalse();
+});
+
+it('hides on its own flag even with visible children', function (): void {
+    expect(ActionGroup::make([Action::make('edit')])->hidden()->isHidden())->toBeTrue();
+});
+
+it('is hidden when empty', function (): void {
+    expect(ActionGroup::make([])->isHidden())->toBeTrue();
+});
+
+it('forwards the live component to nested flat actions', function (): void {
+    $liveComponent = new ActionHost();
+    $delete = Action::make('delete');
+    $group = ActionGroup::make([Action::make('edit'), ActionGroup::make([$delete])]);
+
+    $group->liveComponent($liveComponent);
+
+    expect($delete->getLiveComponent())->toBe($liveComponent);
+});
+
+it('forwards the record and lets actions fall back to it', function (): void {
+    $record = new stdClass();
+    $edit = Action::make('edit');
+
+    ActionGroup::make([$edit])->record($record);
+
+    expect($edit->getRecord())->toBe($record);
+});
+
+it('lets an action record win over the group record', function (): void {
+    $own = new stdClass();
+    $edit = Action::make('edit')->record($own);
+
+    ActionGroup::make([$edit])->record(new stdClass());
+
+    expect($edit->getRecord())->toBe($own);
+});
+
+it('pushes the grouped item template onto action children as a default', function (): void {
+    $edit = Action::make('edit');
+    ActionGroup::make([$edit])->getActions();
+
+    expect($edit->getTemplate())->toBe(Action::GROUPED_TEMPLATE);
+});
+
+it('keeps the normal action template under dropdown(false)', function (): void {
+    $edit = Action::make('edit');
+    ActionGroup::make([$edit])->dropdown(false)->getActions();
+
+    expect($edit->getTemplate())->toBe('@SylamentActions/components/button-action.html.twig');
+});
+
+it('never clobbers an explicit action template', function (): void {
+    $edit = Action::make('edit')->template('custom.html.twig');
+    ActionGroup::make([$edit])->getActions();
+
+    expect($edit->getTemplate())->toBe('custom.html.twig');
 });

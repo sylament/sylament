@@ -50,8 +50,8 @@ permanent note in [Divergences](#divergences).
 | [`HasIconSize`](../../../packages/support/src/Components/Concerns/HasIconSize.php) (support) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — | - |
 | [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) (support) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | - |
 | `HasDropdown` | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) | done | — | [diverges](#dropdownwidth-is-a-css-string-dropdownteleport-and-dropdownautoplacement-are-deferred) |
-| Visibility composition (`isHidden()` group-iteration) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`isHidden()`/`resolveIsHidden()`) | todo | Task 6 | - |
-| Propagation to children (dropdown placement, trigger-view defaults) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`actions()`/`getActions()`) | todo | Task 6 | - |
+| Visibility composition (`isHidden()` group-iteration) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`isHidden()`/`resolveIsHidden()`) | done | — | [diverges](#no-ishiddeningroup-or-visibility-caching) |
+| Propagation to children (dropdown placement, trigger-view defaults) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`actions()`/`getActions()`) | done | — | [diverges](#livecomponent-propagates-eagerly-unlike-filaments-lazy-getgroup-fallback), [diverges](#getrecord-is-duplicated-onto-action-and-actiongroup-to-satisfy-phpstan) |
 | Grouped item template | [`components/dropdown/list/item.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | todo | Task 7 | - |
 | Trigger machinery | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getTriggerView()`/`toTriggerHtml()`) | todo | Task 8 | - |
 | Rendering (`toEmbeddedHtml()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | todo | Task 9 | - |
@@ -101,8 +101,11 @@ also gives its parameter a default of `null` (Filament's is required); harmless
 since `null` is the effective value every caller passes today, and it lets
 `->group()` clear the association without spelling out the `null` argument.
 Reversible: port `getRootGroup()` the moment a consumer needs to walk to the
-top of a nested-group chain — Task 6's propagation work (pushing dropdown
-placement/attributes across nested groups) looks like the first candidate.
+top of a nested-group chain in one jump. Task 6's `liveComponent()`/`getRecord()`
+propagation turned out not to need it — each level's own `getGroup()` call is
+enough for the fallback to cascade one hop at a time through nested groups; a
+submenu or trigger feature that needs the outermost group directly is the more
+likely trigger now.
 
 ### `getLabel()` falls back to a plain string, not a translated label
 
@@ -128,3 +131,55 @@ takes a CSS length string directly — `support` has no `Width` enum, and the va
 into a `--sy-dropdown-width` CSS variable. `dropdownTeleport()` and `dropdownAutoPlacement()`
 are not ported; they configure template-only features deferred with the dropdown rendering
 tasks (Task 9's template integration and later dropdown UX features).
+
+### No `isHiddenInGroup()` or visibility caching
+
+Filament's `CanBeHidden` gives `Action` two visibility methods — `isHidden()`
+and a distinct `isHiddenInGroup()` — both backed by
+`$cachedIsHidden`/`$cachedIsHiddenInGroup` and a
+`hasVisibilityCache`/`$cachedVisibilityRecordKey` pair that invalidates the
+cache only when the acting record changes; `ActionGroup::resolveIsHidden()`
+iterates `getActions()` calling `$action->isHiddenInGroup()`, not `isHidden()`.
+The port's [`ActionGroup::isHidden()`](../../../packages/actions/src/ActionGroup.php)
+has neither: no `isHiddenInGroup()` exists on `Action` at all — children are
+checked via their ordinary `isVisible()` — and nothing is cached, so every call
+re-evaluates the `isHidden`/`isVisible` closures fresh. Reversible: port
+`isHiddenInGroup()` plus the caching pair together, most naturally alongside
+the `tables` package's row rendering, which is what Filament's per-record cache
+invalidation exists to serve.
+
+### `liveComponent()` propagates eagerly, unlike Filament's lazy `getGroup()` fallback
+
+Filament resolves `Action::getLivewire()` through a lazy chain that bottoms out
+in `getGroup()?->getLivewire()`, walked only when the getter is called —
+[`Concerns/BelongsToLivewire.php`](../../../vendor/filament/actions/src/Concerns/BelongsToLivewire.php).
+The port's `BelongsToLiveComponent::getLiveComponent()` has no such fallback
+(it throws when unset), so
+[`ActionGroup::liveComponent()`](../../../packages/actions/src/ActionGroup.php)
+instead propagates eagerly — overriding the setter to walk `$this->actions`
+and call `$action->liveComponent(...)` on every child immediately, rather than
+resolving it lazily on read the way this task's `getRecord()` fallback does
+(see the next divergence). One consequence: an action added to a group via a
+second `actions()` call *after* `liveComponent()` was already set will not
+pick up the live component — the push only fires at `liveComponent()`-call
+time. Reversible: fold `getLiveComponent()` into the same lazy
+`getGroup()?->getLiveComponent()` shape the moment a use case needs it.
+
+### `getRecord()` is duplicated onto `Action` and `ActionGroup` to satisfy PHPStan
+
+[`InteractsWithRecord::getRecord()`](../../../packages/actions/src/Concerns/InteractsWithRecord.php)
+falls back to `getGroup()?->getRecord()` when its own `$record` evaluates to
+`null`, guarded by `method_exists($this, 'getGroup')` so the trait stays safe
+for a class that composes it standalone (the `InteractsWithRecordFixture` test
+fixture). Both `Action` and `ActionGroup` compose `BelongsToGroup` alongside
+`InteractsWithRecord`, so PHPStan (level max) proves that guard always
+evaluates to `true` in either class's context — `function.alreadyNarrowedType`.
+Rather than suppress it, both classes override `getRecord()` directly with the
+same one-line, unguarded body (`$this->evaluate($this->record) ??
+$this->getGroup()?->getRecord()`), which is what the guarded trait method
+reduces to for a class that always has `getGroup()`. The trait's own guarded
+version is unreached by `src/` code today and stays solely for a future class
+that mixes in `InteractsWithRecord` without `BelongsToGroup`. Reversible only
+by relaxing the guard's shape (e.g. an interface `BelongsToGroup` doesn't
+currently pair with) enough that PHPStan can no longer prove it either way —
+not attempted here since it would add a type purely to dodge the checker.

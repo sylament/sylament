@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Actions;
 
+use Closure;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
 use Sylament\Actions\Concerns\CanBeDisabled;
@@ -59,6 +60,10 @@ class Action extends ViewComponent
 
     public const string GROUPED_TEMPLATE = '@SylamentActions/components/grouped-action.html.twig';
 
+    public const string BUTTON_TEMPLATE = '@SylamentActions/components/button-action.html.twig';
+
+    protected string|Closure|null $defaultTemplate = self::BUTTON_TEMPLATE;
+
     protected ?ActionStatus $status = null;
 
     final public function __construct(?string $name)
@@ -106,16 +111,6 @@ class Action extends ViewComponent
     public function getStatus(): ActionStatus
     {
         return $this->status ?? ActionStatus::Success;
-    }
-
-    /**
-     * Falls back to the button trigger template beneath an explicit `template()`
-     * and whatever `ActionGroup::getActions()` pushes onto `defaultTemplate()` —
-     * a bare, ungrouped `Action` still renders as a button by default.
-     */
-    public function getTemplate(): ?string
-    {
-        return parent::getTemplate() ?? '@SylamentActions/components/button-action.html.twig';
     }
 
     public function getRecord(): mixed

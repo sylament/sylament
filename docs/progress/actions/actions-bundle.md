@@ -133,9 +133,10 @@ registers nothing in the bundle file (its body is a bare `//`):
 `AbstractBundle::getPath()` returns `packages/actions`, and TwigBundle
 auto-maps `packages/actions/templates` → `@SylamentActions`. The wiring is
 therefore invisible in the bundle — intentional, and the reason
-[`Action`](../../../packages/actions/src/Action.php) can set `$template =
-'@SylamentActions/components/button-action.html.twig'` with no explicit twig
-path config. Same divergence as
+[`Action`](../../../packages/actions/src/Action.php) can default
+`$defaultTemplate` to `self::BUTTON_TEMPLATE`
+(`'@SylamentActions/components/button-action.html.twig'`) with no explicit
+twig path config. Same divergence as
 [forms-bundle.md](../forms/forms-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call)
 and
 [schemas-bundle.md](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call).

@@ -101,7 +101,7 @@ class ActionGroup extends ViewComponent
 
         foreach ($this->actions as $action) {
             if ($action instanceof Action) {
-                $action->defaultTemplate($grouped ? Action::GROUPED_TEMPLATE : null);
+                $action->defaultTemplate($grouped ? Action::GROUPED_TEMPLATE : Action::BUTTON_TEMPLATE);
             }
         }
 

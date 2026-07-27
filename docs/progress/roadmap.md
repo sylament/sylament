@@ -26,7 +26,18 @@ stops mid-M2, M1 still demos on its own.
 
 ## Now
 
-**M1 · 1 — form validation vertical.** The next epic to pick up.
+**Pulled forward · 2 — schemas↔actions integration.** The next epic to pick up.
+
+## Pulled forward
+
+Epics taken out of milestone order by decision — recorded here so the thin-path
+story stays honest. Spec for both:
+`docs/superpowers/specs/2026-07-27-action-group-base-design.md`.
+
+| # | Epic | Packages | Delivers | Status |
+| --- | --- | --- | --- | --- |
+| 1 | Dropdown primitive + ActionGroup base | [support](support/README.md), [actions](actions/README.md) | `<twig:SylamentSupport:Dropdown>` with a bundled Floating-UI Stimulus controller; `ActionGroup` model (eager `getFlatActions()`, visibility composition, propagation), icon-button/button triggers, grouped item rendering. Trigger-view catalog, submenus, badges, table/bulk deferred. | done |
+| 2 | Schemas↔actions integration | [schemas](schemas/README.md), [actions](actions/README.md) | Actions as schema children, `prepareAction`/`prepareActionGroup`, `Schema::getAction()`, Section header/footer actions — flips the three blocked Section rows. | todo |
 
 ## Milestones
 

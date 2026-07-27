@@ -101,6 +101,24 @@ it('lets an action record win over the group record', function (): void {
     expect($edit->getRecord())->toBe($own);
 });
 
+it('injects its own record into evaluated closures via $record', function (): void {
+    $record = new stdClass();
+    $group = ActionGroup::make([Action::make('edit')])
+        ->record($record)
+        ->hidden(fn ($record): bool => $record !== null);
+
+    expect($group->isHidden())->toBeTrue();
+});
+
+it('injects its live component into evaluated closures via $liveComponent', function (): void {
+    $liveComponent = new ActionHost();
+    $group = ActionGroup::make([Action::make('edit')])
+        ->liveComponent($liveComponent)
+        ->hidden(fn ($liveComponent): bool => $liveComponent !== null);
+
+    expect($group->isHidden())->toBeTrue();
+});
+
 it('pushes the grouped item template onto action children as a default', function (): void {
     $edit = Action::make('edit');
     ActionGroup::make([$edit])->getActions();

@@ -107,3 +107,24 @@ it('does not fire afterStateUpdated hooks by default', function (): void {
 
     expect($fired)->toBe(0);
 });
+
+it('writes into its own child containers through the component state path once the skip is turned off', function (): void {
+    $host = new StateHostFixture();
+    $host->data = ['address' => ['city' => 'Prague']];
+
+    $fired = 0;
+    $group = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('address')->components([
+            StateField::make('city')->afterStateUpdated(function () use (&$fired): void {
+                $fired++;
+            }),
+        ]),
+    ])->getComponents()[0];
+
+    $set = $group->makeSetUtility()->skipComponentsChildContainersWhileSearching(false);
+
+    $set('/data.address.city', 'Brno', shouldCallUpdatedHooks: true);
+
+    expect($fired)->toBe(1)
+        ->and($host->data['address']['city'])->toBe('Brno');
+});

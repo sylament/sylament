@@ -12,6 +12,7 @@ use Sylament\Actions\Tests\Fixtures\Concerns\BothContractsHostFixture;
 use Sylament\Actions\Tests\Fixtures\StateFieldFixture;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
+use Sylament\Schemas\Components\StateCasts\BooleanStateCast;
 use Sylament\Schemas\Components\Utilities\Get;
 use Sylament\Schemas\Components\Utilities\Set;
 use Sylament\Schemas\Schema;
@@ -127,6 +128,24 @@ it('injects $get and $set utilities scoped to the schema component', function ()
     });
 
     expect($host->data['title'])->toBe('Grace');
+});
+
+it('lets $get and $set reach into the bound schema component\'s own child schema, disabling the self-skip', function (): void {
+    $host = new BothContractsHostFixture();
+    $host->data = ['address' => ['city' => 1]];
+
+    $group = StateFieldFixture::make('address')->components([
+        StateFieldFixture::make('city')->stateCast(new BooleanStateCast(isStoredAsInt: true)),
+    ]);
+    Schema::make($host)->statePath('data')->components([$group])->getComponents();
+
+    $action = Action::make('save')->schemaComponent($group);
+
+    expect($action->evaluate(fn ($get): mixed => $get('/data.address.city')))->toBe(true);
+
+    $action->evaluate(fn (Set $set): mixed => $set('/data.address.city', false));
+
+    expect($host->data['address']['city'])->toBe(0);
 });
 
 it('injects $state from the nearest state-path-bearing parent component', function (): void {

@@ -127,14 +127,21 @@ Filament's leading `HasExtraItemActions` branch — that contract is unported.
 The `get`/`set` arms keep Filament's **non-null-safe**
 `getSchemaComponent()` deref (behind an inline PHPStan ignore): a
 schema-less action evaluating a `$get`/`$set` closure fatals, exactly as in
-Filament, pinned by `ActionTest`. Sylament's `Get`/`Set` utilities have no
-`skipComponentsChildContainersWhileSearching()` fluent — the self-skip is
-baked into their `__invoke` — so that trailing call is not mirrored.
-`ActionGroup` mirrors Filament's own group subset (`schema`,
-`schemaComponent`/`component`, `schemaGet`/`get`,
+Filament, pinned by `ActionTest`. Both arms also chain
+`->skipComponentsChildContainersWhileSearching(false)` onto the returned
+[`Get`](../schemas/get.md) / [`Set`](../schemas/set.md) utility, Filament-exact:
+without it, the utility's default self-skip blocks it from descending into the
+bound schema component's *own* child schema, so a container-hosted action's
+`$get`/`$set` (e.g. a `Section` with a registered action reading a field
+nested inside that same `Section`) would silently fall back to a raw,
+uncast `PropertyAccessor` read/write instead of going through the owning
+field's `getState()`/`state()` — the call is not redundant, it disables a
+self-skip that would otherwise misfire here. `ActionGroup` mirrors Filament's
+own group subset (`schema`, `schemaComponent`/`component`, `schemaGet`/`get`,
 `schemaComponentState`/`state`, `schemaState` and the two duplicated state
-helpers — vendor's `ActionGroup` carries no `set` arm, and that asymmetry is
-kept). Still missing, each blocked on its backing concern: `data`/`model`
+helpers — vendor's `ActionGroup` carries no `set` arm, and its `get` arm does
+not chain the skip-toggle call either, unlike `Action`'s; both asymmetries are
+vendor-verified and kept). Still missing, each blocked on its backing concern: `data`/`model`
 (`HasData`/model metadata), `mountedActions` (mounted-actions introspection
 beyond today's `HasActions`), `selectedRecords`/`records` +
 `selectedRecordsQuery`/`recordsQuery` (`InteractsWithSelectedRecords` +

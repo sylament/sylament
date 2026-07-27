@@ -99,3 +99,33 @@ it('falls back to a raw bag read for a path owned by no component', function ():
 
     expect($get('undeclared'))->toBe('raw');
 });
+
+it('self-skips its own child containers by default, falling back to a raw bag read', function (): void {
+    $host = new StateHostFixture();
+    $host->data = ['address' => ['city' => 1]];
+
+    $group = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('address')->components([
+            StateField::make('city')->stateCast(new BooleanStateCast(isStoredAsInt: true)),
+        ]),
+    ])->getComponents()[0];
+
+    $get = $group->makeGetUtility();
+
+    expect($get('/data.address.city'))->toBe(1);
+});
+
+it('resolves into its own child containers once the skip is turned off', function (): void {
+    $host = new StateHostFixture();
+    $host->data = ['address' => ['city' => 1]];
+
+    $group = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('address')->components([
+            StateField::make('city')->stateCast(new BooleanStateCast(isStoredAsInt: true)),
+        ]),
+    ])->getComponents()[0];
+
+    $get = $group->makeGetUtility()->skipComponentsChildContainersWhileSearching(false);
+
+    expect($get('/data.address.city'))->toBe(true);
+});

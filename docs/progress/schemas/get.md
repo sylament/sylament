@@ -29,7 +29,7 @@ the row is **done**), a **diverges** link to the permanent note in
 | [`__invoke()` — own-state / sibling / cross-container resolution + raw-bag fallback](../../../packages/schemas/src/Components/Utilities/Get.php) | [`__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | done | — | — |
 | Typed accessors: [`string()` / `integer()` / `float()` / `boolean()` / `array()` / `date()` / `enum()`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | [`string()` …](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | todo | — | [detail](#typed-accessors-are-not-ported) |
 | [`filled()` / `blank()` convenience predicates](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | [`filled()` / `blank()`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | todo | — | [detail](#typed-accessors-are-not-ported) |
-| [`skipComponentsChildContainersWhileSearching(bool)` toggle + search stack](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | [`skipComponentsChildContainersWhileSearching()`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | todo | — | [diverges](#the-skip-child-containers-search-state-collapses-from-a-static-stack-to-a-per-call-array) |
+| [`skipComponentsChildContainersWhileSearching(bool)` toggle](../../../packages/schemas/src/Components/Utilities/Get.php) | [`skipComponentsChildContainersWhileSearching()`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | done | — | [diverges](#the-skip-child-containers-search-state-is-per-call-with-no-static-re-entrancy-stack) |
 
 `__invoke`'s raw fallback reads through
 [`PropertyAccessor`](property-accessor.md) rather than Laravel's `data_get` —
@@ -56,19 +56,26 @@ express it on a native signature. Add a `GetTest` case per accessor.
 
 ## Divergences
 
-### The skip-child-containers search state collapses from a static stack to a per-call array
+### The skip-child-containers search state is per-call, with no static re-entrancy stack
 
 Filament keeps a static `array<Component> $skipComponentsChildContainersWhileSearching`,
 pushing the current component onto it and popping in a `finally` around the
 `getRootContainer()->getComponentByStatePath()` call, and threads
 `withHidden: true`, `withAbsoluteStatePath: true`, plus that stack (or `[]` when
 the `shouldSkipComponentsChildContainersWhileSearching` flag is off) as named
-arguments. Sylament passes a flat `[$this->component]` to a two-argument
-`getComponentByStatePath(string, array)` — no static stack, no `withHidden` /
-`withAbsoluteStatePath`, no mutable flag. This tracks Sylament's simpler
+arguments. Sylament's
+[`skipComponentsChildContainersWhileSearching(bool $shouldSkip = true): static`](../../../packages/schemas/src/Components/Utilities/Get.php)
+faithfully ports the mutable flag and its mutator shape — it mutates
+`$this` in place and returns it, not a wither — and `__invoke` now threads
+`[$this->component]` or `[]` (the flag's current value) into the two-argument
 [`HasComponents::getComponentByStatePath(string, array)`](../../../packages/schemas/src/Concerns/HasComponents.php)
-signature, and is why
-the class is `final readonly` here while Filament's is mutable (the dropped flag
-is the only mutable state). It reverses if nested-repeater search — where
-re-entrancy makes the stack matter — is ported, at which point the toggle and
-its state return together.
+accordingly. What stays unported is the static stack itself: each `Get`
+instance still tracks only its own single bound component rather than a
+re-entrant chain of nested `Get` calls, and the call still carries no
+`withHidden` / `withAbsoluteStatePath` (Sylament's narrower
+`getComponentByStatePath` signature has neither). The class dropped its
+blanket `readonly` modifier to hold the mutable flag — only the
+constructor-promoted `$component` property stays `readonly` — which brings it
+in line with Filament's own `Get`, never `readonly` either. The static stack
+returns if nested-repeater search, where re-entrancy makes it matter, is
+ported.

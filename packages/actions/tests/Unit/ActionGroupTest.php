@@ -9,6 +9,8 @@ use stdClass;
 use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
+use Sylament\Actions\Tests\Fixtures\Concerns\BothContractsHostFixture;
+use Sylament\Actions\Tests\Fixtures\StateFieldFixture;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 
@@ -132,6 +134,19 @@ it('injects the schema container and component into evaluated closures', functio
     expect($group->evaluate(fn ($schema): Schema => $schema))->toBe($schema)
         ->and($group->evaluate(fn ($component): Section => $component))->toBe($section)
         ->and($group->evaluate(fn ($state): mixed => $state))->toBeNull();
+});
+
+it('injects $get scoped to the schema component', function (): void {
+    $host = new BothContractsHostFixture();
+    $host->data = ['title' => 'Ada', 'subtitle' => 'Bo'];
+
+    $title = StateFieldFixture::make('title');
+    $subtitle = StateFieldFixture::make('subtitle');
+    Schema::make($host)->statePath('data')->components([$title, $subtitle])->getComponents();
+
+    $group = ActionGroup::make([])->schemaComponent($subtitle);
+
+    expect($group->evaluate(fn ($get): mixed => $get('title')))->toBe('Ada');
 });
 
 it('pushes the grouped item template onto action children as a default', function (): void {

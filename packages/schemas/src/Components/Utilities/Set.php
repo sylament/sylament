@@ -7,10 +7,12 @@ namespace Sylament\Schemas\Components\Utilities;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\State\PropertyAccessor;
 
-final readonly class Set
+final class Set
 {
+    private bool $shouldSkipComponentsChildContainersWhileSearching = true;
+
     public function __construct(
-        private Component $component,
+        private readonly Component $component,
     ) {
         //
     }
@@ -23,7 +25,10 @@ final readonly class Set
 
         $component = ($this->component->getStatePath() === $path)
             ? $this->component
-            : $this->component->getRootContainer()->getComponentByStatePath($path, [$this->component]);
+            : $this->component->getRootContainer()->getComponentByStatePath(
+                $path,
+                $this->shouldSkipComponentsChildContainersWhileSearching ? [$this->component] : [],
+            );
 
         $state = $this->component->evaluate($state);
 
@@ -38,5 +43,12 @@ final readonly class Set
         }
 
         return $state;
+    }
+
+    public function skipComponentsChildContainersWhileSearching(bool $shouldSkip = true): static
+    {
+        $this->shouldSkipComponentsChildContainersWhileSearching = $shouldSkip;
+
+        return $this;
     }
 }

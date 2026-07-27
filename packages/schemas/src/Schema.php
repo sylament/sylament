@@ -13,6 +13,7 @@ use Sylament\Schemas\Concerns\BelongsToLiveComponent;
 use Sylament\Schemas\Concerns\BelongsToParentComponent;
 use Sylament\Schemas\Concerns\CanBeEmbeddedInParentComponent;
 use Sylament\Schemas\Concerns\CanBeInline;
+use Sylament\Schemas\Concerns\CanModifyActions;
 use Sylament\Schemas\Concerns\HasComponents;
 use Sylament\Schemas\Concerns\HasHeadings;
 use Sylament\Schemas\Concerns\HasKey;
@@ -32,6 +33,7 @@ class Schema extends ViewComponent
     use BelongsToParentComponent;
     use CanBeEmbeddedInParentComponent;
     use CanBeInline;
+    use CanModifyActions;
     use HasAlignment;
     use HasColumns {
         getAllColumns as private getOwnAllColumns;

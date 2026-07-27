@@ -5,11 +5,10 @@
 Alpine/floating-ui-driven `<x-filament::dropdown>`. It is template-only: there is
 no Sylament PHP `DropdownComponent` class, mirroring Filament itself — the Blade
 view has no matching static-config class either (only its `list`/`header`
-sub-components do, out of scope here). This task ships the markup shell that
-`actions`' `ActionGroup` will compose in a later task: the root/trigger/panel
-structure, the `placement`/`offset`/`flip`/`width`/`maxHeight` props, and the
-`sylament--support--dropdown` Stimulus controller/target/action wiring — the
-controller class itself lands in the next task.
+sub-components do, out of scope here). The markup shell — root/trigger/panel
+structure, the `placement`/`offset`/`flip`/`width`/`maxHeight` props — and the
+`sylament--support--dropdown` Stimulus controller/target/action wiring are both
+in place; `actions`' `ActionGroup` composes this shell in a later task.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -30,7 +29,7 @@ write-up in [Details](#details).
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Root/trigger/panel shell + `placement`/`offset`/`flip`/`width`/`maxHeight` props | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) props, `$trigger`, `$slot` | done | — | — |
-| `sylament--support--dropdown` positioning controller (toggle + floating placement) | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `x-data="filamentDropdown"` / `x-float` | in progress | — | [detail](#details) |
+| `sylament--support--dropdown` positioning controller (toggle + floating placement) | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `x-data="filamentDropdown"` / `x-float` | done | — | — |
 | Teleport (render panel outside the stacking context) | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `teleport` prop | todo | — | [detail](#details) |
 | Auto-placement when no explicit placement is given | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `placement` default `null` | todo | — | [detail](#details) |
 | Size middleware (`size` / `availableHeight` / `availableWidth` / `sizePadding`) | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `size`, `sizePadding`, `availableHeight`, `availableWidth` | todo | — | [detail](#details) |
@@ -43,28 +42,9 @@ exercised by
 placement as the Button/Modal render tests — asserting the `sy-dropdown` shell,
 the `sylament--support--dropdown` controller/target/action attributes, the
 rendered `placement`/`offset`/`flip` values, the hidden panel, and the
-`width`/`maxHeight` CSS custom properties. The controller's actual behavior
-(toggling, positioning) has no test yet — there is no controller to run.
+`width`/`maxHeight` CSS custom properties.
 
 ## Details
-
-### `sylament--support--dropdown` positioning controller
-
-This task renders only the markup: the `.sy-dropdown` root carries
-`data-controller="sylament--support--dropdown"` plus the `placement`/`offset`/
-`flip` Stimulus values; the `.sy-dropdown-trigger` wrapper carries the `trigger`
-target and a `click→toggle` action; the `.sy-dropdown-panel` carries the `panel`
-target and starts `hidden`. No `sylament--support--dropdown` controller class
-exists yet, so `toggle` currently has nothing listening — the next task adds it:
-showing/hiding the panel on `toggle()` and positioning it against the trigger
-using the `placement`/`offset`/`flip` values already rendered here. Filament's
-equivalent is the `x-data="filamentDropdown"` object plus the `x-float`
-directive (registered by the `@awcodes/alpine-floating-ui` plugin imported in
-[`resources/js/index.js`](../../../vendor/filament/support/resources/js/index.js)),
-which also binds `x-on:keyup.enter`, `x-on:keyup.space`, and
-`x-on:mousedown` on the trigger rather than a plain `click` — the controller
-task should decide whether Stimulus needs the same keyboard/pointer surface or
-a plain `click`/`keydown` pair suffices.
 
 ### Teleport
 

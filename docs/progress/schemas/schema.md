@@ -58,11 +58,12 @@ their detail sections do.
 | [`HasState`](../../../packages/schemas/src/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Concerns/HasState.php) | in progress | — | [detail](#hasstate-ships-the-snapshot-path-only) |
 | [`HasKey`](../../../packages/schemas/src/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Concerns/HasKey.php) | in progress | live-component id | [detail](#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) |
 | [`HasHeadings`](../../../packages/schemas/src/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Concerns/HasHeadings.php) | done | — | — |
+| [`CanModifyActions`](../../../packages/schemas/src/Concerns/CanModifyActions.php) | [`Concerns/CanModifyActions.php`](../../../vendor/filament/schemas/src/Concerns/CanModifyActions.php) | done | — | [diverges](#modifyaction-and-modifyactiongroup-guard-a-callbacks-return-type-at-runtime) |
 
-Beyond the folded concerns, eleven of Filament's composed traits are not yet
+Beyond the folded concerns, ten of Filament's composed traits are not yet
 ported at all — `BelongsToModel`, `CanBeDisabled`, `CanBeHidden`,
-`CanBeValidated`, `CanModifyActions`, `Cloneable`, `HasEntryWrapper`,
-`HasFieldWrapper`, `HasInlineLabels`, `HasOperation`, and support's
+`CanBeValidated`, `Cloneable`, `HasEntryWrapper`, `HasFieldWrapper`,
+`HasInlineLabels`, `HasOperation`, and support's
 `HasDefaultDataFormattingSettings` — and earn their own README rows as they land.
 
 ## Details
@@ -294,6 +295,22 @@ or has no visible components, so an empty slot emits nothing. Sylament's
 `getComponents(false)` loop, so a slot handed an empty or fully-hidden `Schema`
 still emits the root element. Reversible by guarding the template on a
 visible-component count.
+
+### `modifyAction()` and `modifyActionGroup()` guard a callback's return type at runtime
+
+Filament's `($this->modifyActionsUsing)($action) ?? $action` relies on PHP's native
+return-type coercion: a callback that returns neither an `Action` nor `null` trips
+the method's own `: Action` return type, which throws a `TypeError` implicitly.
+PHPStan cannot infer the return type of invoking a bare `?Closure` property, so it
+flags the expression itself as returning `mixed` — and this codebase writes no
+`Closure(Action): ?Action` signature spec anywhere, even for a callback invoked
+plainly with fixed arguments. Sylament instead narrows explicitly: it holds the
+coalesced result in a local variable, `instanceof`-checks it, and throws the same
+`TypeError` itself on a mismatch. Observable behavior is unchanged — a conforming
+callback or a `null` return works exactly as Filament's; a non-conforming one still
+throws `TypeError`, just raised explicitly rather than by implicit return-type
+coercion. `modifyActionGroup()` carries the identical guard. Reverses only if
+PHPStan gains inference for arbitrary closure invocations.
 
 _See also: the global [rename table](../renames.md) — the Livewire → UX
 LiveComponent renames (`BelongsToLivewire`→`BelongsToLiveComponent`,

@@ -79,8 +79,8 @@ single component is tracked in that component's detail file, not here:
   `CanBeSecondary`, `HasDescription`, `HasHeading`, `CanBeAside`,
   `HasContentBefore`) → [`section.md`](section.md);
 - **Schema**'s (`BelongsToParentComponent`, `CanBeEmbeddedInParentComponent`,
-  `CanBeInline`, `HasComponents`, and the schema-level `HasState` / `HasKey` /
-  `HasHeadings`) → [`schema.md`](schema.md).
+  `CanBeInline`, `CanModifyActions`, `HasComponents`, and the schema-level
+  `HasState` / `HasKey` / `HasHeadings`) → [`schema.md`](schema.md).
 
 `HasLabel`, `CanBeHidden`, and `BelongsToLiveComponent` are **not** folded — each
 is shared with `actions`/`forms` components, so it keeps its own row below.
@@ -141,7 +141,6 @@ shared with the base `Component` or not yet started.
 | `CanBeDisabled` | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Concerns/CanBeDisabled.php) | todo | — |
 | `CanBeHidden` | [`Concerns/CanBeHidden.php`](../../../vendor/filament/schemas/src/Concerns/CanBeHidden.php) | todo | — |
 | `CanBeValidated` | [`Concerns/CanBeValidated.php`](../../../vendor/filament/schemas/src/Concerns/CanBeValidated.php) | todo | — |
-| `CanModifyActions` | [`Concerns/CanModifyActions.php`](../../../vendor/filament/schemas/src/Concerns/CanModifyActions.php) | todo | — |
 | `Cloneable` | [`Concerns/Cloneable.php`](../../../vendor/filament/schemas/src/Concerns/Cloneable.php) | todo | — |
 | [`HasColumns`](../../../packages/schemas/src/Concerns/HasColumns.php) | [`Concerns/HasColumns.php`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | [has-columns.md](has-columns.md) |
 | [`HasGap`](../../../packages/schemas/src/Concerns/HasGap.php) | [`Concerns/HasGap.php`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) | done | [has-gap.md](has-gap.md) |

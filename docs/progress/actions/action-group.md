@@ -16,8 +16,8 @@ map, and the group back-reference wiring), the dropdown trigger config,
 visibility composition, and context propagation to children (`liveComponent()`,
 `getRecord()` fallback, default-template push onto `Action` children) have
 landed across this epic's first six tasks. Still to come: propagating dropdown
-placement and trigger-view defaults to nested groups, the trigger machinery,
-and the render pipeline (see _Blocked by_ below).
+placement and trigger-view defaults to nested groups, and the render pipeline
+(see _Blocked by_ below).
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -54,9 +54,9 @@ permanent note in [Divergences](#divergences).
 | Visibility composition (`isHidden()` group-iteration) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`isHidden()`/`resolveIsHidden()`) | done | — | [diverges](#no-ishiddeningroup-or-visibility-caching) |
 | Context propagation to children (`liveComponent()`, `getRecord()` fallback, default-template push onto `Action` children) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`liveComponent()`/`getActions()`) | done | — | [diverges](#livecomponent-propagates-eagerly-unlike-filaments-lazy-getgroup-fallback), [diverges](#getrecord-is-duplicated-onto-action-and-actiongroup-to-satisfy-phpstan), [diverges](#getactions-always-pushes-a-concrete-default-template-never-null) |
 | Dropdown-placement propagation to nested groups (`defaultDropdownPlacement('right-top')`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`actions()`) | todo | submenu rendering | - |
-| Trigger-view-default propagation to nested groups (`defaultTriggerView()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getActions()`) | todo | Task 8 | - |
+| Trigger-view-default propagation to nested groups (`defaultTriggerView()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getActions()`) | todo | submenu rendering | - |
 | Grouped item template | [`components/dropdown/list/item.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | done | — | - |
-| Trigger machinery | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getTriggerView()`/`toTriggerHtml()`) | todo | Task 8 | - |
+| Trigger machinery | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getTriggerView()`/`toTriggerHtml()`) | done | — | [diverges](#trigger-defaults-diverge-from-filament-gray-over-primary-and-the-ellipsis-icon-is-per-template) |
 | Rendering (`toEmbeddedHtml()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | todo | Task 9 | - |
 | Badge/button-group/grouped/link triggers | [`View/Concerns/CanGenerate*Html.php`](../../../vendor/filament/support/src/View/Concerns) | todo | — | - |
 | Submenu rendering (nested non-dropdown groups) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()` action-list branch) | todo | — | - |
@@ -210,3 +210,47 @@ that mixes in `InteractsWithRecord` without `BelongsToGroup`. Reversible only
 by relaxing the guard's shape (e.g. an interface `BelongsToGroup` doesn't
 currently pair with) enough that PHPStan can no longer prove it either way —
 not attempted here since it would add a type purely to dodge the checker.
+
+### Trigger defaults diverge from Filament: gray over primary, and the ellipsis icon is per-template
+
+Two defaults baked into the new trigger templates depart from Filament's
+`ActionGroup` on purpose:
+
+- **Color.** Filament's
+  [`CanGenerateButtonHtml`](../../../vendor/filament/support/src/View/Concerns/CanGenerateButtonHtml.php)
+  and
+  [`CanGenerateIconButtonHtml`](../../../vendor/filament/support/src/View/Concerns/CanGenerateIconButtonHtml.php)
+  both coerce an unset color to `'primary'` (`$color ??= 'primary';`), so an
+  unconfigured Filament trigger renders primary-colored. The port's
+  [`icon-button-trigger.html.twig`](../../../packages/actions/templates/components/action-group/icon-button-trigger.html.twig)
+  and
+  [`button-trigger.html.twig`](../../../packages/actions/templates/components/action-group/button-trigger.html.twig)
+  instead force `group.getColor() ?? 'gray'` — `'gray'` being the value
+  support's [`IconButton`](../../../packages/support/templates/components/IconButton/index.html.twig)
+  and [`Button`](../../../packages/support/templates/components/Button/index.html.twig)
+  templates treat as "no color class"
+  (`colorName = color is iterable or color is empty ? 'gray' : color`),
+  overriding those components' own `color = 'primary'` prop default. This
+  follows the same gray-when-unset convention `Action`'s own
+  [`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)
+  and [`grouped-action.html.twig`](../../../packages/actions/templates/components/grouped-action.html.twig)
+  already render (an undocumented divergence there too; noted here since Task 8
+  is the first time the convention crosses into a template that delegates to a
+  color-defaulting component instead of building its own markup).
+- **Icon.** Filament's
+  [`ActionGroup::getIcon()`](../../../vendor/filament/actions/src/ActionGroup.php)
+  overrides `HasIcon::getIcon` (aliased `getBaseIcon`) unconditionally —
+  `$this->getBaseIcon() ?? FilamentIcon::resolve(...) ??
+  Heroicon::EllipsisVertical` — so every one of its five `to*TriggerHtml()`
+  methods, including the plain button trigger, always renders some icon. The
+  port leaves
+  [`HasIcon::getIcon(?default)`](../../../packages/support/src/Components/Concerns/HasIcon.php)
+  un-overridden; only `icon-button-trigger.html.twig` passes
+  `ActionGroup::DEFAULT_ICON` as that `$default` argument —
+  `button-trigger.html.twig` calls `group.getIcon` bare, so a `button()`-mode
+  group with no icon set renders no icon at all, unlike Filament's button
+  trigger.
+
+Reversible for either point independently: drop the `?? 'gray'` fallback, or
+override `getIcon()` on `ActionGroup`, the moment product direction wants an
+unconfigured trigger to match Filament's primary/always-ellipsis defaults.

@@ -7,7 +7,7 @@ namespace Sylament\Schemas\Tests\Unit;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
-use Sylament\Support\Enum\Alignment;
+use Sylament\Support\Enums\Alignment;
 
 it('resolves the $schema closure parameter to itself', function (): void {
     $schema = Schema::make();

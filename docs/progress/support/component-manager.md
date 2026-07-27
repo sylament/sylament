@@ -1,6 +1,6 @@
 # ComponentManager (support)
 
-`Sylament\Support\Component\ComponentManager` — the registry behind
+`Sylament\Support\Components\ComponentManager` — the registry behind
 `configureUsing()`. The [`Configurable`](../../../packages/support/src/Concerns/Configurable.php)
 trait calls into it: `X::configureUsing($closure)` registers a class-keyed
 closure, and every `make()` runs `configure()`, which walks the component's class
@@ -29,9 +29,9 @@ detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`configureUsing()`](../../../packages/support/src/Component/ComponentManager.php) | [`ComponentManager::configureUsing()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | — |
-| [`configure()`](../../../packages/support/src/Component/ComponentManager.php) | [`ComponentManager::configure()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | — |
-| [`resolve()`](../../../packages/support/src/Component/ComponentManager.php) | [`ComponentManager::resolve()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | [diverges](#resolve-uses-the-static-instance-pattern-not-a-scoped-container) |
+| [`configureUsing()`](../../../packages/support/src/Components/ComponentManager.php) | [`ComponentManager::configureUsing()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | — |
+| [`configure()`](../../../packages/support/src/Components/ComponentManager.php) | [`ComponentManager::configure()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | — |
+| [`resolve()`](../../../packages/support/src/Components/ComponentManager.php) | [`ComponentManager::resolve()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | [diverges](#resolve-uses-the-static-instance-pattern-not-a-scoped-container) |
 | `extractPublicMethods()` | [`ComponentManager::extractPublicMethods()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | skipped | — | [diverges](#extractpublicmethods-is-not-ported) |
 | Scoped manager (`resolveScoped()` / `clone()`) | [`Contracts/ScopedComponentManager.php`](../../../vendor/filament/support/src/Components/Contracts/ScopedComponentManager.php) | blocked | live-component-state work | [detail](#the-scoped-component-manager-is-not-ported) |
 
@@ -72,16 +72,12 @@ creates one via the
 defines with `factory(ComponentManager::resolve(...))`. The behavioral delta is
 the missing scope layer, covered by its own **blocked** row in [Details](#the-scoped-component-manager-is-not-ported).
 
-_See also:_ the global [rename table](../renames.md) — the
-`Support\Components\` → `Support\Component\` namespace singularization is a
-systematic translation recorded there, not a divergence.
-
 ### `extractPublicMethods()` is not ported
 
 Filament's manager exposes a component's public, non-fluent methods to its Blade
 view (`{{ $getHeading() }}`) by reflecting them into a name→bound-closure map,
 cached in a `methodCache` property. Sylament's
-[`ViewComponent`](../../../packages/support/src/Component/ViewComponent.php)
+[`ViewComponent`](../../../packages/support/src/Components/ViewComponent.php)
 renders through Twig with the instance itself in context, so templates call
 `component.getHeading()` directly — no method extraction is needed. Both
 `extractPublicMethods()` and the `methodCache` property that backed it are

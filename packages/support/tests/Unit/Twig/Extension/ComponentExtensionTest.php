@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Twig\Extension;
 
-use Sylament\Support\Tests\Fixtures\Component\ViewComponentFixture;
+use Sylament\Support\Tests\Fixtures\Components\ViewComponentFixture;
 use Sylament\Support\Twig\Extension\ComponentExtension;
 use Twig\Environment;
 use Twig\Loader\ArrayLoader;

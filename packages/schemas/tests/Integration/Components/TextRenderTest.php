@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Integration\Components;
 
 use Sylament\Schemas\Components\Text;
-use Sylament\Support\Enum\FontFamily;
-use Sylament\Support\Enum\FontWeight;
-use Sylament\Support\Enum\TextSize;
+use Sylament\Support\Enums\FontFamily;
+use Sylament\Support\Enums\FontWeight;
+use Sylament\Support\Enums\TextSize;
 use Twig\Markup;
 
 use function Sylament\Schemas\Tests\renderToHtml;

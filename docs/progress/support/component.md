@@ -1,6 +1,6 @@
 # Component (support)
 
-`Sylament\Support\Component\Component` — the abstract root every Sylament
+`Sylament\Support\Components\Component` — the abstract root every Sylament
 component extends. It composes two of the five traits Filament's base composes;
 all five are rows below, tracked here rather than in files of their own. The
 Twig-rendering subclass `ViewComponent` and the `ComponentManager` that
@@ -64,13 +64,13 @@ pointing here. Say what would reverse the decision when it is provisional.
 ### Closure resolution lives in a service
 
 Filament inlines the reflection loop in `EvaluatesClosures`; we delegate to
-[`Invoker`](../../../packages/support/src/Service/Invoker.php), reached through
+[`Invoker`](../../../packages/support/src/Evaluation/Invoker.php), reached through
 the static-instance pattern so components need no constructor injection. Two
 consequences worth their own note:
 
 - **`ClosureParameter` replaces the array-wrapping hack.** Filament wraps
   resolver results in an array to tell "resolved null" from "not resolved"; we
-  return a [`ClosureParameter`](../../../packages/support/src/Data/ClosureParameter.php)
+  return a [`ClosureParameter`](../../../packages/support/src/Evaluation/ClosureParameter.php)
   value object or `null`.
 - **No container auto-wiring.** Filament falls back to `app()->make()` for any
   unbound class; Symfony's container cannot, so only types the container `has()`
@@ -102,7 +102,3 @@ return type, dropping the cast wherever a flag concern is ported (schemas'
 today). Under `strict_types=1` a closure returning `1` or `'yes'` therefore
 `TypeError`s here where Filament silently coerces it — one policy applied to every
 flag getter as it lands, resting on `evaluate()` returning its value untouched.
-
-_See also: the global [rename table](../renames.md) — namespace
-singularization (`Support\Components\` → `Support\Component\`) is a systematic
-translation recorded there, not a per-component divergence._

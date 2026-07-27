@@ -19,17 +19,17 @@ use Sylament\Actions\Concerns\HasLifecycleHooks;
 use Sylament\Actions\Concerns\HasName;
 use Sylament\Actions\Concerns\HasSize;
 use Sylament\Actions\Concerns\InteractsWithRecord;
-use Sylament\Actions\Enum\ActionStatus;
-use Sylament\Support\Component\Concerns\HasColor;
-use Sylament\Support\Component\Concerns\HasExtraAttributes;
-use Sylament\Support\Component\Concerns\HasIcon;
-use Sylament\Support\Component\Concerns\HasIconPosition;
-use Sylament\Support\Component\Concerns\HasIconSize;
-use Sylament\Support\Component\Concerns\HasTooltip;
-use Sylament\Support\Component\ViewComponent;
-use Sylament\Support\Data\ClosureParameter;
-use Sylament\Support\Exception\Cancel;
-use Sylament\Support\Exception\Halt;
+use Sylament\Actions\Enums\ActionStatus;
+use Sylament\Support\Components\Concerns\HasColor;
+use Sylament\Support\Components\Concerns\HasExtraAttributes;
+use Sylament\Support\Components\Concerns\HasIcon;
+use Sylament\Support\Components\Concerns\HasIconPosition;
+use Sylament\Support\Components\Concerns\HasIconSize;
+use Sylament\Support\Components\Concerns\HasTooltip;
+use Sylament\Support\Components\ViewComponent;
+use Sylament\Support\Evaluation\ClosureParameter;
+use Sylament\Support\Exceptions\Cancel;
+use Sylament\Support\Exceptions\Halt;
 
 class Action extends ViewComponent
 {

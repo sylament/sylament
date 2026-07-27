@@ -157,7 +157,7 @@ rows rather than carrying rows here.
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | in progress | [interacts-with-actions.md](interacts-with-actions.md) |
-| [`ActionStatus`](../../../packages/actions/src/Enum/ActionStatus.php) | [`Enums/ActionStatus.php`](../../../vendor/filament/actions/src/Enums/ActionStatus.php) | done | - |
+| [`ActionStatus`](../../../packages/actions/src/Enums/ActionStatus.php) | [`Enums/ActionStatus.php`](../../../vendor/filament/actions/src/Enums/ActionStatus.php) | done | - |
 | ActionCalled | [`Events/ActionCalled.php`](../../../vendor/filament/actions/src/Events/ActionCalled.php) | todo | - |
 | ActionCalling | [`Events/ActionCalling.php`](../../../vendor/filament/actions/src/Events/ActionCalling.php) | todo | - |
 | ActionNotResolvableException | [`Exceptions/ActionNotResolvableException.php`](../../../vendor/filament/actions/src/Exceptions/ActionNotResolvableException.php) | todo | - |

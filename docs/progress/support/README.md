@@ -26,9 +26,9 @@ widgets in [`src/View/Components`](../../../vendor/filament/support/src/View/Com
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| [`Component`](../../../packages/support/src/Component/Component.php) | [`Components/Component.php`](../../../vendor/filament/support/src/Components/Component.php) | in progress | [component.md](component.md) |
-| [`ViewComponent`](../../../packages/support/src/Component/ViewComponent.php) | [`Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | [view-component.md](view-component.md) |
-| [`ComponentManager`](../../../packages/support/src/Component/ComponentManager.php) | [`Components/ComponentManager.php`](../../../vendor/filament/support/src/Components/ComponentManager.php) | in progress | [component-manager.md](component-manager.md) |
+| [`Component`](../../../packages/support/src/Components/Component.php) | [`Components/Component.php`](../../../vendor/filament/support/src/Components/Component.php) | in progress | [component.md](component.md) |
+| [`ViewComponent`](../../../packages/support/src/Components/ViewComponent.php) | [`Components/ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | [view-component.md](view-component.md) |
+| [`ComponentManager`](../../../packages/support/src/Components/ComponentManager.php) | [`Components/ComponentManager.php`](../../../vendor/filament/support/src/Components/ComponentManager.php) | in progress | [component-manager.md](component-manager.md) |
 | Actions | [`views/components/actions.blade.php`](../../../vendor/filament/support/resources/views/components/actions.blade.php) | todo | — |
 | Avatar | [`views/components/avatar.blade.php`](../../../vendor/filament/support/resources/views/components/avatar.blade.php) | todo | — |
 | Badge | [`View/Components/BadgeComponent.php`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | todo | — |
@@ -66,35 +66,35 @@ not here.
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | CanAggregateRelatedModels | [`Concerns/CanAggregateRelatedModels.php`](../../../vendor/filament/support/src/Concerns/CanAggregateRelatedModels.php) | todo | — |
-| [`CanBeContained`](../../../packages/support/src/Component/Concerns/CanBeContained.php) | [`Concerns/CanBeContained.php`](../../../vendor/filament/support/src/Concerns/CanBeContained.php) | done | — |
+| [`CanBeContained`](../../../packages/support/src/Components/Concerns/CanBeContained.php) | [`Concerns/CanBeContained.php`](../../../vendor/filament/support/src/Concerns/CanBeContained.php) | done | — |
 | CanBeCopied | [`Concerns/CanBeCopied.php`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | todo | — |
 | CanBeLazy | [`Concerns/CanBeLazy.php`](../../../vendor/filament/support/src/Concerns/CanBeLazy.php) | todo | — |
 | CanConfigureCommonMark | [`Concerns/CanConfigureCommonMark.php`](../../../vendor/filament/support/src/Concerns/CanConfigureCommonMark.php) | todo | — |
-| [`CanGrow`](../../../packages/support/src/Component/Concerns/CanGrow.php) | [`Concerns/CanGrow.php`](../../../vendor/filament/support/src/Concerns/CanGrow.php) | done | — |
-| [`CanOrderColumns`](../../../packages/support/src/Component/Concerns/CanOrderColumns.php) | [`Concerns/CanOrderColumns.php`](../../../vendor/filament/support/src/Concerns/CanOrderColumns.php) | done | — |
-| [`CanSpanColumns`](../../../packages/support/src/Component/Concerns/CanSpanColumns.php) | [`Concerns/CanSpanColumns.php`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | [can-span-columns.md](can-span-columns.md) |
+| [`CanGrow`](../../../packages/support/src/Components/Concerns/CanGrow.php) | [`Concerns/CanGrow.php`](../../../vendor/filament/support/src/Concerns/CanGrow.php) | done | — |
+| [`CanOrderColumns`](../../../packages/support/src/Components/Concerns/CanOrderColumns.php) | [`Concerns/CanOrderColumns.php`](../../../vendor/filament/support/src/Concerns/CanOrderColumns.php) | done | — |
+| [`CanSpanColumns`](../../../packages/support/src/Components/Concerns/CanSpanColumns.php) | [`Concerns/CanSpanColumns.php`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | [can-span-columns.md](can-span-columns.md) |
 | CanWrap | [`Concerns/CanWrap.php`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | todo | — |
 | CanWrapHeader | [`Concerns/CanWrapHeader.php`](../../../vendor/filament/support/src/Concerns/CanWrapHeader.php) | todo | — |
-| [`HasAlignment`](../../../packages/support/src/Component/Concerns/HasAlignment.php) | [`Concerns/HasAlignment.php`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | [has-alignment.md](has-alignment.md) |
+| [`HasAlignment`](../../../packages/support/src/Components/Concerns/HasAlignment.php) | [`Concerns/HasAlignment.php`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | [has-alignment.md](has-alignment.md) |
 | HasBadge | [`Concerns/HasBadge.php`](../../../vendor/filament/support/src/Concerns/HasBadge.php) | todo | — |
 | HasBadgeTooltip | [`Concerns/HasBadgeTooltip.php`](../../../vendor/filament/support/src/Concerns/HasBadgeTooltip.php) | todo | — |
 | HasCellState | [`Concerns/HasCellState.php`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — |
-| [`HasColor`](../../../packages/support/src/Component/Concerns/HasColor.php) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — |
+| [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — |
 | HasDefaultDataFormattingSettings | [`Concerns/HasDefaultDataFormattingSettings.php`](../../../vendor/filament/support/src/Concerns/HasDefaultDataFormattingSettings.php) | todo | — |
 | HasExtraAlpineAttributes | [`Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — |
-| [`HasExtraAttributes`](../../../packages/support/src/Component/Concerns/HasExtraAttributes.php) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — |
-| [`HasFontFamily`](../../../packages/support/src/Component/Concerns/HasFontFamily.php) | [`Concerns/HasFontFamily.php`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | [has-font-family.md](has-font-family.md) |
+| [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — |
+| [`HasFontFamily`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`Concerns/HasFontFamily.php`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | [has-font-family.md](has-font-family.md) |
 | HasFromBreakpoint | [`Concerns/HasFromBreakpoint.php`](../../../vendor/filament/support/src/Concerns/HasFromBreakpoint.php) | todo | — |
-| [`HasIcon`](../../../packages/support/src/Component/Concerns/HasIcon.php) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | [has-icon.md](has-icon.md) |
-| [`HasIconColor`](../../../packages/support/src/Component/Concerns/HasIconColor.php) | [`Concerns/HasIconColor.php`](../../../vendor/filament/support/src/Concerns/HasIconColor.php) | done | — |
-| [`HasIconPosition`](../../../packages/support/src/Component/Concerns/HasIconPosition.php) | [`Concerns/HasIconPosition.php`](../../../vendor/filament/support/src/Concerns/HasIconPosition.php) | done | — |
-| [`HasIconSize`](../../../packages/support/src/Component/Concerns/HasIconSize.php) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — |
+| [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | [has-icon.md](has-icon.md) |
+| [`HasIconColor`](../../../packages/support/src/Components/Concerns/HasIconColor.php) | [`Concerns/HasIconColor.php`](../../../vendor/filament/support/src/Concerns/HasIconColor.php) | done | — |
+| [`HasIconPosition`](../../../packages/support/src/Components/Concerns/HasIconPosition.php) | [`Concerns/HasIconPosition.php`](../../../vendor/filament/support/src/Concerns/HasIconPosition.php) | done | — |
+| [`HasIconSize`](../../../packages/support/src/Components/Concerns/HasIconSize.php) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — |
 | HasLineClamp | [`Concerns/HasLineClamp.php`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | todo | — |
 | HasPlaceholder | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | todo | — |
 | HasReorderAnimationDuration | [`Concerns/HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php) | todo | — |
-| [`HasTooltip`](../../../packages/support/src/Component/Concerns/HasTooltip.php) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — |
+| [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — |
 | HasVerticalAlignment | [`Concerns/HasVerticalAlignment.php`](../../../vendor/filament/support/src/Concerns/HasVerticalAlignment.php) | todo | — |
-| [`HasWeight`](../../../packages/support/src/Component/Concerns/HasWeight.php) | [`Concerns/HasWeight.php`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | [has-weight.md](has-weight.md) |
+| [`HasWeight`](../../../packages/support/src/Components/Concerns/HasWeight.php) | [`Concerns/HasWeight.php`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | [has-weight.md](has-weight.md) |
 | HasWidth | [`Concerns/HasWidth.php`](../../../vendor/filament/support/src/Concerns/HasWidth.php) | todo | — |
 
 ## Supporting surface
@@ -112,18 +112,18 @@ services, root value classes, translations, and the bundle wiring —
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| [`Alignment`](../../../packages/support/src/Enum/Alignment.php) | [`Enums/Alignment.php`](../../../vendor/filament/support/src/Enums/Alignment.php) | done | — |
+| [`Alignment`](../../../packages/support/src/Enums/Alignment.php) | [`Enums/Alignment.php`](../../../vendor/filament/support/src/Enums/Alignment.php) | done | — |
 | ArgumentValue | [`Enums/ArgumentValue.php`](../../../vendor/filament/support/src/Enums/ArgumentValue.php) | todo | — |
-| [`FontFamily`](../../../packages/support/src/Enum/FontFamily.php) | [`Enums/FontFamily.php`](../../../vendor/filament/support/src/Enums/FontFamily.php) | done | — |
-| [`FontWeight`](../../../packages/support/src/Enum/FontWeight.php) | [`Enums/FontWeight.php`](../../../vendor/filament/support/src/Enums/FontWeight.php) | done | — |
-| [`GridDirection`](../../../packages/support/src/Enum/GridDirection.php) | [`Enums/GridDirection.php`](../../../vendor/filament/support/src/Enums/GridDirection.php) | done | — |
-| [`IconPosition`](../../../packages/support/src/Enum/IconPosition.php) | [`Enums/IconPosition.php`](../../../vendor/filament/support/src/Enums/IconPosition.php) | done | — |
-| [`IconSize`](../../../packages/support/src/Enum/IconSize.php) | [`Enums/IconSize.php`](../../../vendor/filament/support/src/Enums/IconSize.php) | done | [icon-size.md](icon-size.md) |
+| [`FontFamily`](../../../packages/support/src/Enums/FontFamily.php) | [`Enums/FontFamily.php`](../../../vendor/filament/support/src/Enums/FontFamily.php) | done | — |
+| [`FontWeight`](../../../packages/support/src/Enums/FontWeight.php) | [`Enums/FontWeight.php`](../../../vendor/filament/support/src/Enums/FontWeight.php) | done | — |
+| [`GridDirection`](../../../packages/support/src/Enums/GridDirection.php) | [`Enums/GridDirection.php`](../../../vendor/filament/support/src/Enums/GridDirection.php) | done | — |
+| [`IconPosition`](../../../packages/support/src/Enums/IconPosition.php) | [`Enums/IconPosition.php`](../../../vendor/filament/support/src/Enums/IconPosition.php) | done | — |
+| [`IconSize`](../../../packages/support/src/Enums/IconSize.php) | [`Enums/IconSize.php`](../../../vendor/filament/support/src/Enums/IconSize.php) | done | [icon-size.md](icon-size.md) |
 | Operation | [`Enums/Operation.php`](../../../vendor/filament/support/src/Enums/Operation.php) | todo | — |
 | Platform | [`Enums/Platform.php`](../../../vendor/filament/support/src/Enums/Platform.php) | todo | — |
-| [`Size`](../../../packages/support/src/Enum/Size.php) | [`Enums/Size.php`](../../../vendor/filament/support/src/Enums/Size.php) | done | — |
+| [`Size`](../../../packages/support/src/Enums/Size.php) | [`Enums/Size.php`](../../../vendor/filament/support/src/Enums/Size.php) | done | — |
 | SlideOverPosition | [`Enums/SlideOverPosition.php`](../../../vendor/filament/support/src/Enums/SlideOverPosition.php) | todo | — |
-| [`TextSize`](../../../packages/support/src/Enum/TextSize.php) | [`Enums/TextSize.php`](../../../vendor/filament/support/src/Enums/TextSize.php) | done | — |
+| [`TextSize`](../../../packages/support/src/Enums/TextSize.php) | [`Enums/TextSize.php`](../../../vendor/filament/support/src/Enums/TextSize.php) | done | — |
 | VerticalAlignment | [`Enums/VerticalAlignment.php`](../../../vendor/filament/support/src/Enums/VerticalAlignment.php) | todo | — |
 | Width | [`Enums/Width.php`](../../../vendor/filament/support/src/Enums/Width.php) | todo | — |
 | Collapsible | [`Contracts/Collapsible.php`](../../../vendor/filament/support/src/Contracts/Collapsible.php) | todo | — |
@@ -155,8 +155,8 @@ services, root value classes, translations, and the bundle wiring —
 | ColorMaps | [`View/Components/ColorMaps/`](../../../vendor/filament/support/src/View/Components/ColorMaps) | todo | — |
 | Color contracts | [`View/Components/Contracts/`](../../../vendor/filament/support/src/View/Components/Contracts) | todo | — |
 | HTML generators | [`View/Concerns/`](../../../vendor/filament/support/src/View/Concerns) | todo | — |
-| [`Cancel`](../../../packages/support/src/Exception/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | in progress | [cancel.md](cancel.md) |
-| [`Halt`](../../../packages/support/src/Exception/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | in progress | [halt.md](halt.md) |
+| [`Cancel`](../../../packages/support/src/Exceptions/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | in progress | [cancel.md](cancel.md) |
+| [`Halt`](../../../packages/support/src/Exceptions/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | in progress | [halt.md](halt.md) |
 | FilamentUpgraded | [`Events/FilamentUpgraded.php`](../../../vendor/filament/support/src/Events/FilamentUpgraded.php) | todo | — |
 | Facades | [`Facades/`](../../../vendor/filament/support/src/Facades) | todo | — |
 | Commands | [`Commands/`](../../../vendor/filament/support/src/Commands) | todo | — |

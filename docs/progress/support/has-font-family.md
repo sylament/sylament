@@ -1,6 +1,6 @@
 # HasFontFamily (support)
 
-`Sylament\Support\Component\Concerns\HasFontFamily` — the shared component trait
+`Sylament\Support\Components\Concerns\HasFontFamily` — the shared component trait
 that ports Filament's `HasFontFamily`. It holds a closure-evaluable
 `FontFamily | string | null` value and normalizes a string that names a known
 enum case back to the `FontFamily` enum, so text-rendering components (schemas'
@@ -28,10 +28,10 @@ permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`fontFamily()`](../../../packages/support/src/Component/Concerns/HasFontFamily.php) | [`HasFontFamily::fontFamily()`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | — |
-| [`getFontFamily()`](../../../packages/support/src/Component/Concerns/HasFontFamily.php) | [`HasFontFamily::getFontFamily()`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | [diverges](#getfontfamily-drops-the-state-parameter) |
-| [`getFontFamilyClass()`](../../../packages/support/src/Component/Concerns/HasFontFamily.php) | _(no Filament equivalent — inlined at each call site)_ | done | — | [diverges](#getfontfamilyclass-centralizes-the-class-ternary) |
-| [`hasFontFamily()`](../../../packages/support/src/Component/Concerns/HasFontFamily.php) | [`HasFontFamily::hasFontFamily()`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | — |
+| [`fontFamily()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`HasFontFamily::fontFamily()`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | — |
+| [`getFontFamily()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`HasFontFamily::getFontFamily()`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | [diverges](#getfontfamily-drops-the-state-parameter) |
+| [`getFontFamilyClass()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | _(no Filament equivalent — inlined at each call site)_ | done | — | [diverges](#getfontfamilyclass-centralizes-the-class-ternary) |
+| [`hasFontFamily()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`HasFontFamily::hasFontFamily()`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | — |
 
 ## Details
 
@@ -72,6 +72,5 @@ the `fi-*`→`sy-*` prefix rewrite (a systematic translation) in PHP rather than
 scattered across templates.
 
 _See also: the global [rename table](../renames.md) — the `fi-*` → `sy-*` class
-prefix and the `Support\Concerns\` → `Support\Component\Concerns\` /
-`Enums\` → `Enum\` namespace moves are systematic translations recorded there,
-not per-trait divergences._
+prefix and the `Support\Concerns\` → `Support\Components\Concerns\` trait split
+are systematic translations recorded there, not per-trait divergences._

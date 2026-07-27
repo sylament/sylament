@@ -1,9 +1,9 @@
 # SchemaExtension (schemas)
 
 [`Sylament\Schemas\Twig\Extension\SchemaExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)
-— the Twig extension that exposes the `renderSchema(name)` function. Given a
-render context, it resolves the schema-host component (`context['this']`), calls
-`host.getSchema(name)`, and delegates to support's
+— the Twig extension that exposes the `renderSchema(name = 'schema')` function.
+Given a render context, it resolves the schema-host component (`context['this']`),
+calls `host.getSchema(name)`, and delegates to support's
 [`ComponentExtension`](../support/component.md)`.renderComponent()` for the
 actual Twig render. It is the schemas-layer parallel of support's
 `renderComponent` — same layering, one level up — and has no single Filament
@@ -25,7 +25,7 @@ _Detail_ carries a **diverges** link to the permanent note in
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getFunctions()` exposes `renderSchema` (`needs_environment` + `needs_context`)](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php) | — (no Filament equivalent) | done | — | [diverges](#schemaextension-has-no-11-filament-source--it-is-the-twig-side-parallel-of-supports-componentextension) |
-| [`renderSchema()` resolves the host from context and renders the named schema to `Markup` via `ComponentExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php) | — (no Filament equivalent) | done | — | — |
+| [`renderSchema()` resolves the host from context and renders the named schema to `Markup` via `ComponentExtension`, defaulting the name to `'schema'`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php) | — (no Filament equivalent) | done | — | — |
 | [`renderSchema()` type-guard: throws `RuntimeException` when the host is missing or not `InteractsWithSchemas`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php) | — (no Filament equivalent) | done | — | — |
 
 ## Divergences
@@ -34,7 +34,7 @@ _Detail_ carries a **diverges** link to the permanent note in
 
 Filament renders schemas through Blade directives and Livewire view partials, so
 there is no single PHP file to port. Sylament factors schema rendering into a
-Twig extension instead: `renderSchema(name)` reads the host from the render
+Twig extension instead: `renderSchema(name = 'schema')` reads the host from the render
 context (`context['this']`, the UX LiveComponent that carries the schema),
 type-checks it against the Sylament interface
 [`InteractsWithSchemas`](interacts-with-schemas.md), calls `host.getSchema(name)`,

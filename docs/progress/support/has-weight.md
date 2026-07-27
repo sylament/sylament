@@ -1,10 +1,10 @@
 # HasWeight (support)
 
-`Sylament\Support\Component\Concerns\HasWeight` — the shared concern that gives a
+`Sylament\Support\Components\Concerns\HasWeight` — the shared concern that gives a
 component a configurable font weight. It ports Filament's `HasWeight`: a
 `FontWeight | string | Closure | null` property, a fluent `weight()` setter, a
 `getWeight()` reader that normalizes a known string to its
-[`FontWeight`](../../../packages/support/src/Enum/FontWeight.php) case, and a
+[`FontWeight`](../../../packages/support/src/Enums/FontWeight.php) case, and a
 `hasWeight()` probe. Sylament adds one method with no Filament counterpart —
 `getWeightClass()` — and drops the `$state` argument from `getWeight()`, so this
 port carries two divergences.
@@ -28,16 +28,15 @@ once the row is **done**; **diverges** → the permanent note in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`weight()` setter + property](../../../packages/support/src/Component/Concerns/HasWeight.php) | [`HasWeight::weight()`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | — | — |
-| [`getWeight()` normalization](../../../packages/support/src/Component/Concerns/HasWeight.php) | [`HasWeight::getWeight()`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | — | [diverges](#getweight-drops-the-state-argument) |
-| [`hasWeight()`](../../../packages/support/src/Component/Concerns/HasWeight.php) | [`HasWeight::hasWeight()`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | — | — |
-| [`getWeightClass()`](../../../packages/support/src/Component/Concerns/HasWeight.php) | — (no Filament equivalent) | done | — | [diverges](#getweightclass-centralizes-the-weight-to-class-mapping) |
+| [`weight()` setter + property](../../../packages/support/src/Components/Concerns/HasWeight.php) | [`HasWeight::weight()`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | — | — |
+| [`getWeight()` normalization](../../../packages/support/src/Components/Concerns/HasWeight.php) | [`HasWeight::getWeight()`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | — | [diverges](#getweight-drops-the-state-argument) |
+| [`hasWeight()`](../../../packages/support/src/Components/Concerns/HasWeight.php) | [`HasWeight::hasWeight()`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | — | — |
+| [`getWeightClass()`](../../../packages/support/src/Components/Concerns/HasWeight.php) | — (no Filament equivalent) | done | — | [diverges](#getweightclass-centralizes-the-weight-to-class-mapping) |
 
 ## Details
 
-Every row above is **done** — the port is faithful (allowing the systematic
-namespace translation `Enums\` → `Enum\`) and every method, including the added
-`getWeightClass()`, is exercised by the concern's sole consumer, schemas' `Text`:
+Every row above is **done** — the port is faithful and every method, including the
+added `getWeightClass()`, is exercised by the concern's sole consumer, schemas' `Text`:
 the string-normalization and class-fragment cases in
 [`TextTest`](../../../packages/schemas/tests/Unit/Components/TextTest.php) cover
 `getWeight()` (enum normalization and verbatim custom string) and
@@ -69,7 +68,3 @@ injections. There is no state concept at this layer of the port and the only
 consumer — schemas' `Text` — has no per-record state, so nothing supplies or
 consumes the argument. Re-add it in the same change as the first state-bearing
 consumer, where it finally has behavior to test against.
-
-_See also: the global [rename table](../renames.md) — the `Enums\` → `Enum\`
-namespace singularization the `FontWeight` reference uses is a systematic
-translation recorded there, not a per-component divergence._

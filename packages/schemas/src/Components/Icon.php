@@ -6,9 +6,9 @@ namespace Sylament\Schemas\Components;
 
 use BackedEnum;
 use Closure;
-use Sylament\Support\Component\Concerns\HasColor;
-use Sylament\Support\Component\Concerns\HasTooltip;
-use Sylament\Support\Enum\IconSize;
+use Sylament\Support\Components\Concerns\HasColor;
+use Sylament\Support\Components\Concerns\HasTooltip;
+use Sylament\Support\Enums\IconSize;
 use Twig\Markup;
 
 use function Sylament\Support\blank;

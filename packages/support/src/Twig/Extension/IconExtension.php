@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Twig\Extension;
 
 use BackedEnum;
-use Sylament\Support\Enum\IconSize;
+use Sylament\Support\Enums\IconSize;
 use Sylament\Support\Twig\ComponentAttributeBag;
 use Twig\Extension\AbstractExtension;
 use Twig\Markup;

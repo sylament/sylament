@@ -16,10 +16,10 @@ use Sylament\Schemas\Components\Concerns\HasHeading;
 use Sylament\Schemas\Components\Concerns\HasLabel;
 use Sylament\Schemas\Components\Contracts\CanConcealComponents;
 use Sylament\Schemas\Schema;
-use Sylament\Support\Component\Concerns\CanBeContained;
-use Sylament\Support\Component\Concerns\HasIcon;
-use Sylament\Support\Component\Concerns\HasIconColor;
-use Sylament\Support\Component\Concerns\HasIconSize;
+use Sylament\Support\Components\Concerns\CanBeContained;
+use Sylament\Support\Components\Concerns\HasIcon;
+use Sylament\Support\Components\Concerns\HasIconColor;
+use Sylament\Support\Components\Concerns\HasIconSize;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Twig\Markup;
 

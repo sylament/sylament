@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Twig\Extension;
 
-use Sylament\Support\Enum\GridDirection;
+use Sylament\Support\Enums\GridDirection;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Twig\Extension;
 
-use Sylament\Support\Component\ViewComponent;
+use Sylament\Support\Components\ViewComponent;
 use Twig\Environment;
 use Twig\Extension\AbstractExtension;
 use Twig\Markup;

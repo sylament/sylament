@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Sylament\Support;
 
 use RuntimeException;
-use Sylament\Support\Component\ComponentManager;
+use Sylament\Support\Components\ComponentManager;
 use Sylament\Support\DependencyInjection\Compiler\StaticInstancePass;
 use Sylament\Support\DependencyInjection\StaticInstanceInterface;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
 use Sylament\Support\Icons\IconManager;
-use Sylament\Support\Service\Invoker;
+use Sylament\Support\Evaluation\Invoker;
 use Sylament\Support\Twig\Extension\AttributeExtension;
 use Sylament\Support\Twig\Extension\ComponentExtension;
 use Sylament\Support\Twig\Extension\GridExtension;

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Unit\Components;
 
 use Sylament\Schemas\Components\Icon;
-use Sylament\Support\Enum\IconSize;
+use Sylament\Support\Enums\IconSize;
 
 it('returns the icon', function (): void {
     expect(Icon::make('heroicon-o-star')->getIcon())->toBe('heroicon-o-star');

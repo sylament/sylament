@@ -1,7 +1,7 @@
 # Action (actions)
 
 `Sylament\Actions\Action` — the base class every actions-package action
-extends. It composes `Sylament\Support\Component\ViewComponent` (Twig-backed
+extends. It composes `Sylament\Support\Components\ViewComponent` (Twig-backed
 rendering) and folds in 14 actions-package concerns — `BelongsToLiveComponent`,
 `CanBeDisabled`, `CanBeHidden`, `CanNotify`, `CanOpenModal`, `CanOpenUrl`,
 `CanRequireConfirmation`, `HasAction`, `HasArguments`, `HasLabel`,
@@ -41,12 +41,12 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | todo | schemas/tables/InteractsWithSelectedRecords ports | [detail](#resolvedefaultclosuredependencyforevaluationbytype-is-not-overridden) |
 | Button rendering ([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#one-unified-template-replaces-the-view-switch) |
 | Modal rendering ([`confirm-modal.html.twig`](../../../packages/actions/templates/components/confirm-modal.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | CanOpenModal (footer actions, content, slideover, sticky) | [detail](#confirm-modal-template-only-renders-the-confirmation-shape-not-the-full-action-modal), [diverges](#the-footer-buttons-are-hardcoded-markup-not-rendered-action-instances) |
-| [`HasColor`](../../../packages/support/src/Component/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
-| [`HasExtraAttributes`](../../../packages/support/src/Component/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | — |
-| [`HasIcon`](../../../packages/support/src/Component/Concerns/HasIcon.php) (support) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | — |
-| [`HasIconPosition`](../../../packages/support/src/Component/Concerns/HasIconPosition.php) (support) | [`Concerns/HasIconPosition.php`](../../../vendor/filament/support/src/Concerns/HasIconPosition.php) | done | — | — |
-| [`HasIconSize`](../../../packages/support/src/Component/Concerns/HasIconSize.php) (support) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — | — |
-| [`HasTooltip`](../../../packages/support/src/Component/Concerns/HasTooltip.php) (support) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | — |
+| [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
+| [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | — |
+| [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) (support) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | — |
+| [`HasIconPosition`](../../../packages/support/src/Components/Concerns/HasIconPosition.php) (support) | [`Concerns/HasIconPosition.php`](../../../vendor/filament/support/src/Concerns/HasIconPosition.php) | done | — | — |
+| [`HasIconSize`](../../../packages/support/src/Components/Concerns/HasIconSize.php) (support) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — | — |
+| [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) (support) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | — |
 | [`BelongsToLiveComponent`](../../../packages/actions/src/Concerns/BelongsToLiveComponent.php) | [`Concerns/BelongsToLivewire.php`](../../../vendor/filament/actions/src/Concerns/BelongsToLivewire.php) | in progress | — | [detail](#belongstolivecomponent-has-no-test-coverage), [diverges](#the-livewire-resolution-fallback-chain-and-gethasactionslivewire-are-dropped) |
 | [`CanBeDisabled`](../../../packages/actions/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/actions/src/Concerns/CanBeDisabled.php) | done | — | [diverges](#canbedisabled-drops-the-authorization-short-circuits) |
 | [`CanBeHidden`](../../../packages/actions/src/Concerns/CanBeHidden.php) | [`Concerns/CanBeHidden.php`](../../../vendor/filament/actions/src/Concerns/CanBeHidden.php) | in progress | CanBeAuthorized, ActionGroup, BelongsToTable | [detail](#canbehidden-omits-authorization-group-and-table-cache-integration) |
@@ -91,8 +91,8 @@ Filament's `cancel(bool $shouldRollBackDatabaseTransaction = false)` and
 `halt(bool $shouldRollBackDatabaseTransaction = false)` construct their
 exception and call `->rollBackDatabaseTransaction($condition)` on it before
 throwing; both
-[`Sylament\Support\Exception\Cancel`](../../../packages/support/src/Exception/Cancel.php)
-and [`Halt`](../../../packages/support/src/Exception/Halt.php) are plain
+[`Sylament\Support\Exceptions\Cancel`](../../../packages/support/src/Exceptions/Cancel.php)
+and [`Halt`](../../../packages/support/src/Exceptions/Halt.php) are plain
 `Exception` subclasses with no such flag or method. The port's
 [`cancel()`/`halt()`](../../../packages/actions/src/Action.php) take no
 parameter and just `throw new Cancel()` / `throw new Halt()`. Covered by
@@ -590,7 +590,7 @@ There is no badge/grouped/icon-button/link view, no view-switching API, no
 is instead `{% include %}`-d directly by the *host* live component's own
 template (see the `HasActions` concern and its fixtures), driven by
 `CanOpenModal`'s getters, not by an `Action` method. The generic `template()` /
-`getTemplate()` swap point ([`ViewComponent`](../../../packages/support/src/Component/ViewComponent.php),
+`getTemplate()` swap point ([`ViewComponent`](../../../packages/support/src/Components/ViewComponent.php),
 the systematic `view()` → `template()` translation) is inherited, so a caller
 can still point one `Action` at a custom template by hand; what is missing is
 the named convenience methods and the four alternate shapes themselves

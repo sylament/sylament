@@ -9,7 +9,7 @@ use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Components\Text;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
-use Sylament\Support\Enum\Alignment;
+use Sylament\Support\Enums\Alignment;
 use Twig\Markup;
 
 use function Sylament\Schemas\Tests\renderToHtml;

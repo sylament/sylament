@@ -37,6 +37,17 @@ it('renders the named schema of the component in context', function (): void {
         ->and((string) $rendered)->toBe('schema:1');
 });
 
+it('defaults to the "schema" name', function (): void {
+    $twig = new Environment(new ArrayLoader([
+        '@SylamentSchemas/components/Schema.html.twig' => 'schema:{{ component.getComponents()|length }}',
+    ]));
+    $twig->addExtension(new ComponentExtension());
+
+    $rendered = schemaExtension()->renderSchema($twig, ['this' => new HasSchemasFixture()]);
+
+    expect((string) $rendered)->toBe('schema:1');
+});
+
 it('throws when the context has no rendering component', function (): void {
     $twig = new Environment(new ArrayLoader());
 

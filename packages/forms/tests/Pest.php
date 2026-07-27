@@ -8,10 +8,10 @@ use Sylament\Forms\Components\Field;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\PropertyAccessor;
-use Sylament\Support\Component\ComponentManager;
-use Sylament\Support\Component\ViewComponent;
+use Sylament\Support\Components\ComponentManager;
+use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\Icons\IconManager;
-use Sylament\Support\Service\Invoker;
+use Sylament\Support\Evaluation\Invoker;
 use Symfony\Component\DependencyInjection\Container;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 

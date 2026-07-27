@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Tests\Fixtures\Concerns;
 
 use Sylament\Support\Concerns\EvaluatesClosures;
-use Sylament\Support\Data\ClosureParameter;
+use Sylament\Support\Evaluation\ClosureParameter;
 
 class EvaluatesClosuresWithResolverFixture
 {

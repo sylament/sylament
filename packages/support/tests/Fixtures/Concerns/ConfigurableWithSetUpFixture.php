@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Fixtures\Concerns;
 
-use Sylament\Support\Component\Component;
+use Sylament\Support\Components\Component;
 
 class ConfigurableWithSetUpFixture extends Component
 {

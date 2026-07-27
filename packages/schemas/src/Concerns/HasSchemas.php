@@ -18,6 +18,11 @@ use Symfony\UX\LiveComponent\Attribute\PreDehydrate;
  * `->statePath($this->getFormStatePath())` (which likewise defaults to no path,
  * i.e. top-level binding). The trait presumes no state shape, so a single host
  * can carry several independently-bound schemas without them colliding.
+ *
+ * Each name in `schemas()` resolves to a public method taking a `Schema` and
+ * returning one, named either for the schema itself (`article()`) or with
+ * Filament's suffix (`articleSchema()`); the bare name wins when both exist.
+ * The schema is keyed by the declared name either way, never the method name.
  */
 trait HasSchemas
 {
@@ -52,11 +57,13 @@ trait HasSchemas
             return $cachedSchema;
         }
 
-        if (!method_exists($this, $name)) {
-            throw new RuntimeException("Schema {$name} does not exist on component " . $this::class);
-        }
+        $method = match (true) {
+            method_exists($this, $name) => $name,
+            method_exists($this, "{$name}Schema") => "{$name}Schema",
+            default => throw new RuntimeException("Schema {$name} does not exist on component " . $this::class . " — expected a {$name}() or {$name}Schema() method."),
+        };
 
-        $schema = $this->$name($this->makeSchema());
+        $schema = $this->{$method}($this->makeSchema());
         if (!$schema instanceof Schema) {
             throw new RuntimeException('Schema must be an instance of ' . Schema::class);
         }

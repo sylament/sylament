@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Concerns;
 
-use Sylament\Support\Service\Invoker;
+use Sylament\Support\Evaluation\Invoker;
 use RuntimeException;
 use Sylament\Support\Tests\Fixtures\Concerns\EvaluatesClosuresFixture;
 use Sylament\Support\Tests\Fixtures\Concerns\EvaluatesClosuresWithIdentifierFixture;
 use Sylament\Support\Tests\Fixtures\Concerns\EvaluatesClosuresWithResolverFixture;
-use Sylament\Support\Tests\Fixtures\Service\ServiceFixture;
+use Sylament\Support\Tests\Fixtures\Evaluation\ServiceFixture;
 
 it('returns a non-Closure value as-is without touching the Invoker', function (): void {
     Invoker::unsetInstance();

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Concerns;
 
 use Closure;
-use Sylament\Support\Component\ComponentManager;
+use Sylament\Support\Components\ComponentManager;
 
 trait Configurable
 {

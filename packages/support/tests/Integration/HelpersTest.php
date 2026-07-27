@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Integration;
 
-use Sylament\Support\Enum\IconSize;
+use Sylament\Support\Enums\IconSize;
 use Sylament\Support\Icons\IconManager;
 use Symfony\UX\Icons\Exception\IconNotFoundException;
 use Twig\Markup;

@@ -8,7 +8,7 @@ use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
-use Sylament\Support\Enum\IconSize;
+use Sylament\Support\Enums\IconSize;
 use Twig\Markup;
 
 use function Sylament\Schemas\Tests\renderToHtml;

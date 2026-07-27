@@ -7,7 +7,7 @@ namespace Sylament\Forms\Tests\Unit\Components;
 use Sylament\Forms\Components\Field;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureField;
 use Sylament\Schemas\Components\Component;
-use Sylament\Support\Enum\Alignment;
+use Sylament\Support\Enums\Alignment;
 
 use function Sylament\Forms\Tests\wireField;
 

@@ -6,9 +6,9 @@ namespace Sylament\Actions\Tests\Unit;
 
 use LogicException;
 use Sylament\Actions\Action;
-use Sylament\Actions\Enum\ActionStatus;
-use Sylament\Support\Exception\Cancel;
-use Sylament\Support\Exception\Halt;
+use Sylament\Actions\Enums\ActionStatus;
+use Sylament\Support\Exceptions\Cancel;
+use Sylament\Support\Exceptions\Halt;
 
 it('exposes the name passed to make()', function (): void {
     expect(Action::make('delete')->getName())->toBe('delete');

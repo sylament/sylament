@@ -8,7 +8,7 @@ use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
-use Sylament\Support\Component\ViewComponent;
+use Sylament\Support\Components\ViewComponent;
 
 it('resolves the $component closure parameter to itself', function (): void {
     $component = new Component();

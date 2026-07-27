@@ -40,7 +40,8 @@ row is **done**, or **diverges** → the permanent note in
 | [`oldState` `#[LiveProp]` + `persistOldState()` `#[PreDehydrate]`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::updatingInteractsWithSchemas()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#livewires-updatingupdated-state-hooks-become-a-predehydrateposthydrate-snapshot-and-diff) |
 | [`callAfterSchemaStateUpdated()` `#[PostHydrate]` — diff snapshot, fire hooks](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::updatedInteractsWithSchemas()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-host-level-afterstateupdated-hook-is-renamed-to-callafterschemastateupdated) |
 | [`getOldSchemaState(?string)` — path-keyed pre-change lookup](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::getOldSchemaState()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
-| Reflection schema auto-discovery (`<name>Schema` suffix, `default<Name>` hooks, `discoveredSchemaNames`, return-type detection) | [`InteractsWithSchemas::cacheSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [diverges](#schema-discovery-is-explicit-via-schemas-not-reflection-based) |
+| [`<name>Schema` method-name fallback — bare name first, suffix second](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::cacheSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
+| Reflection schema auto-discovery (`default<Name>` hooks, `discoveredSchemaNames`, return-type detection) | [`InteractsWithSchemas::cacheSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [diverges](#schema-discovery-is-explicit-via-schemas-not-reflection-based) |
 | `getSchemaComponent()` absolute-key addressing | [`InteractsWithSchemas::getSchemaComponent()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#component-addressing-and-the-exposedlivewiremethod-dispatch-are-not-ported) |
 | `callSchemaComponentMethod()` / `partiallyRenderSchemaComponent()` | [`InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#component-addressing-and-the-exposedlivewiremethod-dispatch-are-not-ported) |
 | Validation integration (`validate`/`validateOnly`/`getRules`/`currentlyValidatingSchema`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `CanBeValidated` | [detail](#the-validation-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
@@ -49,13 +50,17 @@ row is **done**, or **diverges** → the permanent note in
 | Translatable content driver (`getFilamentTranslatableContentDriver`, `getActiveSchemaLocale`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-translatable-content-driver-is-not-ported) |
 | Testing helpers (`fillFormDataForTesting`, `disable/enableSchemaStateUpdateHooksForTesting`, `getDefaultTestingSchemaName`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `TestsSchemas` | [detail](#the-validation-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
 
-The eight **done** rows are the schema-hosting core (`schemas()`, `getSchema()`,
-`getCachedSchemas()`, `makeSchema()`, `fill()`) and the full PreDehydrate/
-PostHydrate state-hook loop (`oldState`, `persistOldState`,
-`callAfterSchemaStateUpdated`, `getOldSchemaState`). The core is covered by
+The nine **done** rows are the schema-hosting core (`schemas()`, `getSchema()`
+with its `<name>Schema` method-name fallback, `getCachedSchemas()`,
+`makeSchema()`, `fill()`) and the full PreDehydrate/PostHydrate state-hook loop
+(`oldState`, `persistOldState`, `callAfterSchemaStateUpdated`,
+`getOldSchemaState`). The core is covered by
 [`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php)
 (build-from-method, default name, caching, throw-on-missing/non-`Schema`,
-key-by-name, and `getCachedSchemas`/`makeSchema` fresh-vs-bound); `fill()` by
+key-by-name, `getCachedSchemas`/`makeSchema` fresh-vs-bound, and — via the
+[`SuffixedSchemaHostFixture`](../../../packages/schemas/tests/Fixtures/Concerns/SuffixedSchemaHostFixture.php)
+— suffix resolution, bare-wins precedence, and keying by the declared name);
+`fill()` by
 [`HasStateTest`](../../../packages/schemas/tests/Unit/Concerns/HasStateTest.php)
 (single + multi-schema); and the snapshot-and-diff loop end-to-end by
 [`LiveStateTest`](../../../packages/schemas/tests/Integration/LiveStateTest.php)
@@ -120,12 +125,29 @@ Filament's `cacheSchema()` auto-discovers schema-defining methods by reflection:
 it accepts a bare name or an `<name>Schema` suffix, inspects the method's
 first-parameter type or return type to confirm it is a `Schema`, records the name
 in `discoveredSchemaNames`, and runs a `default<Name>()` hook if present.
-Sylament's `getSchema()` requires `schemas()` to enumerate names and each name to
-be a same-named public method taking a `Schema` and returning one; there is no
-suffix convention, no `default<Name>` hook, and no `discoveredSchemaNames`.
-Simpler and statically obvious, at the cost of Filament's convention-based
-discovery. Reversing means porting the reflection loop when a consumer needs
-implicit discovery.
+Sylament's `getSchema()` ports the **method-name half** — it tries the bare name,
+then `"{$name}Schema"`, bare winning when both exist, and keys the schema by the
+declared name either way — but requires `schemas()` to enumerate the names, and
+has no reflection guard, no return-type detection, no `default<Name>` hook, and
+no `discoveredSchemaNames`. A method that resolves but does not return a `Schema`
+still fails on the post-call `instanceof` check rather than being skipped by
+reflection.
+
+`discoveredSchemaNames` in particular is not merely deferred. It is a `#[Locked]`
+Livewire property memoising names the *view* resolved, and it works only because
+Livewire dehydrates **after** render. UX LiveComponent dehydrates in
+[`AddLiveAttributesSubscriber::onPreRender()`](../../../vendor/symfony/ux-live-component/src/EventListener/AddLiveAttributesSubscriber.php),
+**before** the template body runs, so a name first resolved by
+`{{ renderSchema('article') }}` would be appended after the props are already
+frozen and would never reach the next request. That is a correctness hole, not an
+inefficiency: `callAfterSchemaStateUpdated()` is `#[PostHydrate]` and iterates
+`getCachedSchemas()`, so a template-only schema would silently miss its
+`afterStateUpdated` hooks. Names resolved before dehydration — in `mount()`, in
+`#[PostHydrate]`, or in a `#[LiveAction]` — would persist, but the partial
+guarantee is worse than none. `schemas()` therefore stays the declaration that
+works in every case. Reversing the rest means porting the reflection loop when a
+consumer needs the `default<Name>` seeding hook or the no-parameter
+`articleSchema(): Schema` shape.
 
 ### The host-level afterStateUpdated hook is renamed to `callAfterSchemaStateUpdated`
 

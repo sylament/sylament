@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions\Tests\Unit\Concerns;
 
 use Sylament\Actions\Tests\Fixtures\Concerns\HasSizeFixture;
-use Sylament\Support\Enum\Size;
+use Sylament\Support\Enums\Size;
 
 it('has no size by default', function (): void {
     expect(new HasSizeFixture()->getSize())->toBeNull();

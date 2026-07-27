@@ -6,9 +6,9 @@ default). It ports Filament's schema
 [`Text`](../../../vendor/filament/schemas/src/Components/Text.php). The content
 core is ported and tested — `content()`/`getContent()`, `size()`/`getSize()`
 with its `getSizeClass()` template helper, and the shared
-[`HasColor`](../../../packages/support/src/Component/Concerns/HasColor.php) /
-[`HasWeight`](../../../packages/support/src/Component/Concerns/HasWeight.php) /
-[`HasFontFamily`](../../../packages/support/src/Component/Concerns/HasFontFamily.php)
+[`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) /
+[`HasWeight`](../../../packages/support/src/Components/Concerns/HasWeight.php) /
+[`HasFontFamily`](../../../packages/support/src/Components/Concerns/HasFontFamily.php)
 styling concerns — all rendered through the
 [`Text.html.twig`](../../../packages/schemas/templates/components/Text.html.twig)
 template on the `ViewComponent` path (the house replacement for Filament's
@@ -52,9 +52,9 @@ row is **done**), **diverges** → the permanent note in
 | [`content()` / `getContent()`](../../../packages/schemas/src/Components/Text.php) | [`Text::content()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | [`size()` / `getSize()` normalization](../../../packages/schemas/src/Components/Text.php) | [`Text::size()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | [`getSizeClass()` (Sylament template helper)](../../../packages/schemas/src/Components/Text.php) | — (no Filament equivalent) | done | — | — |
-| [`HasColor` color/getColor/hasColor + default gray](../../../packages/support/src/Component/Concerns/HasColor.php) | [`HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | [diverges](#the-default-gray-color-lives-in-the-template-not-setup) |
-| [`HasWeight` weight/getWeight/getWeightClass](../../../packages/support/src/Component/Concerns/HasWeight.php) | [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | — | — |
-| [`HasFontFamily` fontFamily/getFontFamily/getFontFamilyClass](../../../packages/support/src/Component/Concerns/HasFontFamily.php) | [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | — |
+| [`HasColor` color/getColor/hasColor + default gray](../../../packages/support/src/Components/Concerns/HasColor.php) | [`HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | [diverges](#the-default-gray-color-lives-in-the-template-not-setup) |
+| [`HasWeight` weight/getWeight/getWeightClass](../../../packages/support/src/Components/Concerns/HasWeight.php) | [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | — | — |
+| [`HasFontFamily` fontFamily/getFontFamily/getFontFamilyClass](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | — |
 | [Twig span render: `sy`/`sy-sc-text` classes, escaping, raw `Markup`, extra attrs](../../../packages/schemas/templates/components/Text.html.twig) | [`Text::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | `badge()` / `isBadge()` badge mode | [`Text::badge()`](../../../vendor/filament/schemas/src/Components/Text.php) | todo | — | [detail](#badge-mode) |
 | `CanBeCopied` (copyable + copy JS) | [`CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | todo | — | [detail](#copyable) |
@@ -111,7 +111,7 @@ The three icon concerns —
 (`IconPosition` Before/After), and
 [`HasIconSize`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) —
 and the icon markup around the label are not ported. The `IconPosition` /
-`IconSize` enums already exist under `Sylament\Support\Enum`, and the [`Icon`
+`IconSize` enums already exist under `Sylament\Support\Enums`, and the [`Icon`
 component](icon.md) already renders icons. Next: port the three concerns and emit
 the icon before/after the label via `renderComponent` in `Text.html.twig`.
 

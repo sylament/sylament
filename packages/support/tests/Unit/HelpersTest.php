@@ -8,7 +8,7 @@ use stdClass;
 use ArrayObject;
 use Countable;
 use Stringable;
-use Sylament\Support\Enum\IconSize;
+use Sylament\Support\Enums\IconSize;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\Tests\Fixtures\Icons\IconEnumFixture;
 use Sylament\Support\Tests\Fixtures\Icons\IconRendererFixture;

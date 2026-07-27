@@ -56,7 +56,7 @@ The three rendering helpers Filament macro-registers onto the bag are absent.
   its color source exists would have nothing to resolve against and nothing to
   test.
 - **`grid()`** and **`gridColumn()`** depend only on
-  [`GridDirection`](../../../packages/support/src/Enum/GridDirection.php) (ported)
+  [`GridDirection`](../../../packages/support/src/Enums/GridDirection.php) (ported)
   plus `sy-grid*` CSS classes and `--cols-*` / `--col-*` custom properties. They
   are **todo** — unblocked and not started, unbuilt because no consumer renders
   a grid yet (the schemas `Grid`/`Section` column layout that will call them is

@@ -18,10 +18,10 @@ use Sylament\Schemas\Concerns\HasHeadings;
 use Sylament\Schemas\Concerns\HasKey;
 use Sylament\Schemas\Concerns\HasState;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
-use Sylament\Support\Component\Concerns\HasAlignment;
-use Sylament\Support\Component\Concerns\HasExtraAttributes;
-use Sylament\Support\Component\ViewComponent;
-use Sylament\Support\Data\ClosureParameter;
+use Sylament\Support\Components\Concerns\HasAlignment;
+use Sylament\Support\Components\Concerns\HasExtraAttributes;
+use Sylament\Support\Components\ViewComponent;
+use Sylament\Support\Evaluation\ClosureParameter;
 use Twig\Markup;
 
 use function Sylament\Support\filled;

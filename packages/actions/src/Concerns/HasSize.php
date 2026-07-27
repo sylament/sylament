@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions\Concerns;
 
 use Closure;
-use Sylament\Support\Enum\Size;
+use Sylament\Support\Enums\Size;
 
 trait HasSize
 {

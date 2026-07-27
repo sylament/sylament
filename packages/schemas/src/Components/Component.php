@@ -14,12 +14,12 @@ use Sylament\Schemas\Concerns\HasGap;
 use Sylament\Schemas\Components\Concerns\HasHeadings;
 use Sylament\Schemas\Components\Concerns\HasId;
 use Sylament\Schemas\Components\Concerns\HasKey;
-use Sylament\Support\Component\Concerns\CanGrow;
-use Sylament\Support\Component\Concerns\CanOrderColumns;
-use Sylament\Support\Component\Concerns\CanSpanColumns;
-use Sylament\Support\Component\Concerns\HasExtraAttributes;
-use Sylament\Support\Component\ViewComponent;
-use Sylament\Support\Data\ClosureParameter;
+use Sylament\Support\Components\Concerns\CanGrow;
+use Sylament\Support\Components\Concerns\CanOrderColumns;
+use Sylament\Support\Components\Concerns\CanSpanColumns;
+use Sylament\Support\Components\Concerns\HasExtraAttributes;
+use Sylament\Support\Components\ViewComponent;
+use Sylament\Support\Evaluation\ClosureParameter;
 
 class Component extends ViewComponent
 {

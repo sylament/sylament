@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Support\Concerns;
 
 use Closure;
-use Sylament\Support\Data\ClosureParameter;
-use Sylament\Support\Service\Invoker;
+use Sylament\Support\Evaluation\ClosureParameter;
+use Sylament\Support\Evaluation\Invoker;
 
 trait EvaluatesClosures
 {

@@ -9,7 +9,7 @@ use Sylament\Schemas\Components\Contracts\CanConcealComponents;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
-use Sylament\Support\Enum\Alignment;
+use Sylament\Support\Enums\Alignment;
 
 /**
  * Wire the section into a real parent Schema so its child slot schemas can reach

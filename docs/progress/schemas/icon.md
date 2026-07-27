@@ -4,7 +4,7 @@
 is the schema content component that renders a single icon. It ports Filament's
 [`Schemas\Components\Icon`](../../../vendor/filament/schemas/src/Components/Icon.php):
 an `icon()` value (name / `BackedEnum` / `Markup` / closure), a `size()` that
-normalizes a known string to an [`IconSize`](../../../packages/support/src/Enum/IconSize.php)
+normalizes a known string to an [`IconSize`](../../../packages/support/src/Enums/IconSize.php)
 case, plus color, tooltip, and visibility folded in from support concerns. The
 fluent API and the basic Twig render are ported and tested; Filament's
 accessibility render path (a visually-hidden text alternative + `aria-label`
@@ -94,7 +94,7 @@ verbatim as a string (the render-side `generate_icon_html` then `IconSize::tryFr
 it to `null` anyway). Behaviorally equivalent at render time, but the getter
 contract differs — Sylament's `IconSize` enum has no `base` token.
 
-_See also: the global [rename table](../renames.md) — the `Enums\` → `Enum\`
-namespace singularization, the `Htmlable` → `Markup` escaping-contract translation,
-and the Blade/`toEmbeddedHtml()` → Twig-template render idiom are systematic
-translations recorded there, not per-component divergences._
+_See also: the global [rename table](../renames.md) — the `Htmlable` → `Markup`
+escaping-contract translation and the Blade/`toEmbeddedHtml()` → Twig-template
+render idiom are systematic translations recorded there, not per-component
+divergences._

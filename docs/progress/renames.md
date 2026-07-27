@@ -63,17 +63,34 @@ Full contract: [`docs/styling.md`](../styling.md).
 
 ### Namespace segments
 
-| Filament | Sylament | Note |
+Segments carry over from Filament **verbatim** — `Components\`, `Enums\`,
+`Exceptions\`, `Concerns\`, `Contracts\`, `Icons\` and the rest all keep
+Filament's spelling, so `Filament\Support\Components\Concerns\` is
+`Sylament\Support\Components\Concerns\`. Exactly one segment is translated, and
+only because the thing it names was replaced:
+
+| Filament | Sylament | Why |
 | --- | --- | --- |
-| `Components\` | `Component\` | Plural segments singularize — `Filament\Support\Components\` → `Sylament\Support\Component\`. |
-| `Enums\` | `Enum\` | Same rule — `Filament\Support\Enums\` → `Sylament\Support\Enum\`. |
-| `View\` | `Twig\` | Laravel's `ComponentAttributeBag` and Filament's `SupportIconAlias` both live in `Sylament\Support\Twig\`. |
-| `Concerns\`, `Contracts\`, `Icons\` | unchanged | Carry over as-is. |
+| `View\` | `Twig\` | The Blade → Twig idiom — the template engine itself changed. Laravel's `ComponentAttributeBag` and Filament's `SupportIconAlias` both live in `Sylament\Support\Twig\`. |
+
+No segment is renamed for style. Symfony's own habit of singular `Exception\`
+(its components and bundles both use it) is **not** followed here: matching
+Filament costs a migrating user nothing to learn, and one carve-out is worse
+than none.
 
 Support-level traits split by what they do, so `Filament\Support\Concerns\` has
 two destinations:
 
 | Filament | Sylament | Which traits |
 | --- | --- | --- |
-| `Filament\Support\Concerns\` | `Sylament\Support\Component\Concerns\` | Component traits — `HasIcon`, `HasColor`, `HasExtraAttributes`, … |
+| `Filament\Support\Concerns\` | `Sylament\Support\Components\Concerns\` | Component traits — `HasIcon`, `HasColor`, `HasExtraAttributes`, … |
 | `Filament\Support\Concerns\` | `Sylament\Support\Concerns\` | Evaluation / configuration plumbing — `EvaluatesClosures`, `Configurable`. |
+
+### Namespaces with no Filament source
+
+Segments that exist only here, because a port needed classes Filament does not
+have. Nothing to rename from, so they are listed rather than mapped.
+
+| Sylament | Holds | Why it exists |
+| --- | --- | --- |
+| `Sylament\Support\Evaluation\` | `Invoker`, `ClosureParameter` | Filament inlines the closure-resolution loop in `EvaluatesClosures` and falls back to `app()->make()`; Symfony's container cannot, so the loop is extracted into a container-aware `Invoker`, and `ClosureParameter` replaces Filament's `[$value]`-vs-`[]` array wrap. See [component.md](support/component.md#closure-resolution-lives-in-a-service). |

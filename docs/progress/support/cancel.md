@@ -1,6 +1,6 @@
 # Cancel (support)
 
-`Sylament\Support\Exception\Cancel` — the control-flow exception an action
+`Sylament\Support\Exceptions\Cancel` — the control-flow exception an action
 closure throws to abort the lifecycle and unmount the action (closing the
 modal) without a failure notification. It ports Filament's
 `Filament\Support\Exceptions\Cancel`, and `Sylament\Actions\Action` throws it
@@ -21,7 +21,7 @@ _Detail_ links the write-up in [Details](#details), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [Marker exception](../../../packages/support/src/Exception/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | done | — | — |
+| [Marker exception](../../../packages/support/src/Exceptions/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | done | — | — |
 | Rollback-transaction control | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | blocked | panels DB-transaction pages | [detail](#details) |
 
 ## Details
@@ -41,7 +41,3 @@ So the control is **blocked**, not dropped: it re-lands — flag, setter, reader
 and the surrounding Doctrine transaction wrapping — in the same change as the
 first panel page that needs it, where it finally has behavior to test. Its sibling
 [`Halt`](halt.md) is blocked on the same layer for the same reason.
-
-_See also: the global [rename table](../renames.md) — the `Exceptions\` →
-`Exception\` namespace singularization is a systematic translation recorded
-there, not a per-component divergence._

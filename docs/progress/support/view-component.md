@@ -1,6 +1,6 @@
 # ViewComponent (support)
 
-`Sylament\Support\Component\ViewComponent` — the abstract `Component` subclass
+`Sylament\Support\Components\ViewComponent` — the abstract `Component` subclass
 that adds Twig-backed rendering. It ports Filament's `ViewComponent`: a
 closure-evaluable template name plus one or more layers of closure-evaluable
 template data, merged and handed to the view at render time. Every rendered
@@ -29,10 +29,10 @@ detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`template()` / `getTemplate()`](../../../packages/support/src/Component/ViewComponent.php) | [`view()` / `getView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](#one-nullable-template-replaces-the-view--defaultview-pair) |
-| [`templateData()` / `getTemplateData()`](../../../packages/support/src/Component/ViewComponent.php) | [`viewData()` / `getViewData()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | — |
-| [`getExtraTemplateData()`](../../../packages/support/src/Component/ViewComponent.php) | [`getExtraViewData()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | — |
-| [`render(Environment)`](../../../packages/support/src/Component/ViewComponent.php) | [`render()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](#render-returns-a-string-the-htmlable--embedded-view-machinery-is-dropped) |
+| [`template()` / `getTemplate()`](../../../packages/support/src/Components/ViewComponent.php) | [`view()` / `getView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](#one-nullable-template-replaces-the-view--defaultview-pair) |
+| [`templateData()` / `getTemplateData()`](../../../packages/support/src/Components/ViewComponent.php) | [`viewData()` / `getViewData()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | — |
+| [`getExtraTemplateData()`](../../../packages/support/src/Components/ViewComponent.php) | [`getExtraViewData()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | — |
+| [`render(Environment)`](../../../packages/support/src/Components/ViewComponent.php) | [`render()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](#render-returns-a-string-the-htmlable--embedded-view-machinery-is-dropped) |
 | Embedded view / `Htmlable` | [`toHtml()` / `toEmbeddedHtml()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | skipped | — | [diverges](#render-returns-a-string-the-htmlable--embedded-view-machinery-is-dropped) |
 | `extractPublicMethods()` | [`extractPublicMethods()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | skipped | — | [diverges](#extractpublicmethods-is-not-ported) |
 | `attributes` seeding | [`renderView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | skipped | — | [diverges](#the-template-context-does-not-seed-an-attributes-bag) |
@@ -117,6 +117,5 @@ view sees `$section`). Sylament fixes the key to `component` for every subclass.
 The schemas base sets the closure-evaluation identifier to `component` too, so
 the template variable and the `fn ($component) => …` injection name agree.
 
-_See also:_ the [rename table](../renames.md) — namespace singularization
-(`Support\Components\` → `Support\Component\`) and `view()` → `template()` are
-systematic translations recorded there, not per-component divergences.
+_See also:_ the [rename table](../renames.md) — `view()` → `template()` is a
+systematic translation recorded there, not a per-component divergence.

@@ -6,7 +6,7 @@ namespace Sylament\Support\Tests\Unit\Twig;
 
 use stdClass;
 use Stringable;
-use Sylament\Support\Enum\IconSize;
+use Sylament\Support\Enums\IconSize;
 use Sylament\Support\Twig\ComponentAttributeBag;
 
 it('holds no attributes by default', function (): void {

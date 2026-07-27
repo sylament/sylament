@@ -1,6 +1,6 @@
 # CanSpanColumns (support)
 
-`Sylament\Support\Component\Concerns\CanSpanColumns` — the shared trait that lets
+`Sylament\Support\Components\Concerns\CanSpanColumns` — the shared trait that lets
 a component declare how many grid columns it spans (`columnSpan`) and which column
 it starts on (`columnStart`), per responsive breakpoint. Values are literals or
 closures, resolved through `EvaluatesClosures`; getters fold the accumulated
@@ -24,17 +24,17 @@ or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`columnSpan()`](../../../packages/support/src/Component/Concerns/CanSpanColumns.php) | [`columnSpan()`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | — | — |
-| [`columnSpanFull()`](../../../packages/support/src/Component/Concerns/CanSpanColumns.php) | [`columnSpanFull()`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | — | — |
-| [`columnStart()`](../../../packages/support/src/Component/Concerns/CanSpanColumns.php) | [`columnStart()`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | — | — |
-| [`getColumnSpan()`](../../../packages/support/src/Component/Concerns/CanSpanColumns.php) | [`getColumnSpan()`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | — | [diverges](#empty-breakpoint-keys-are-dropped-by-strict-equality-not-blank) |
-| [`getColumnStart()`](../../../packages/support/src/Component/Concerns/CanSpanColumns.php) | [`getColumnStart()`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | — | [diverges](#empty-breakpoint-keys-are-dropped-by-strict-equality-not-blank) |
+| [`columnSpan()`](../../../packages/support/src/Components/Concerns/CanSpanColumns.php) | [`columnSpan()`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | — | — |
+| [`columnSpanFull()`](../../../packages/support/src/Components/Concerns/CanSpanColumns.php) | [`columnSpanFull()`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | — | — |
+| [`columnStart()`](../../../packages/support/src/Components/Concerns/CanSpanColumns.php) | [`columnStart()`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | — | — |
+| [`getColumnSpan()`](../../../packages/support/src/Components/Concerns/CanSpanColumns.php) | [`getColumnSpan()`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | — | [diverges](#empty-breakpoint-keys-are-dropped-by-strict-equality-not-blank) |
+| [`getColumnStart()`](../../../packages/support/src/Components/Concerns/CanSpanColumns.php) | [`getColumnStart()`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | — | [diverges](#empty-breakpoint-keys-are-dropped-by-strict-equality-not-blank) |
 
 ## Details
 
 Every row above is **done** — the setters, `columnSpanFull()`, and both getters
 are ported faithfully and covered directly by
-[`CanSpanColumnsTest.php`](../../../packages/support/tests/Unit/Component/Concerns/CanSpanColumnsTest.php)
+[`CanSpanColumnsTest.php`](../../../packages/support/tests/Unit/Components/Concerns/CanSpanColumnsTest.php)
 (defaults, scalar→`lg` mapping and the `columnStart` asymmetry, `columnSpanFull`,
 successive-call merge, appended scalar/array-returning/keyed closures, empty-key
 drop, single-breakpoint lookup) — so none has a write-up here.

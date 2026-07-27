@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Twig\Extension;
 
-use Sylament\Support\Enum\GridDirection;
+use Sylament\Support\Enums\GridDirection;
 use Sylament\Support\Twig\Extension\GridExtension;
 
 // The common paths (row direction, numeric breakpoints → grid classes/styles;

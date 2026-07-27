@@ -1,6 +1,6 @@
 # HasIcon (support)
 
-`Sylament\Support\Component\Concerns\HasIcon` — the shared trait that gives a
+`Sylament\Support\Components\Concerns\HasIcon` — the shared trait that gives a
 component a configurable icon. It ports Filament's `HasIcon` concern: an
 `icon()` setter that stores a literal, enum, `Markup`, or closure (collapsing a
 blank value to a `false` sentinel), a `getIcon()` that evaluates the stored
@@ -19,7 +19,7 @@ Reference — the Filament source this is diffed against:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`icon()` / `getIcon()` / `hasIcon()`](../../../packages/support/src/Component/Concerns/HasIcon.php) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | [diverges](#the-renderable-normalization-branch-is-dropped) |
+| [`icon()` / `getIcon()` / `hasIcon()`](../../../packages/support/src/Components/Concerns/HasIcon.php) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | [diverges](#the-renderable-normalization-branch-is-dropped) |
 
 ## Details
 

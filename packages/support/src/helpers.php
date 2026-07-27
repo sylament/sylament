@@ -8,7 +8,7 @@ use BackedEnum;
 use Countable;
 use Stringable;
 use Sylament\Support\Contracts\ScalableIcon;
-use Sylament\Support\Enum\IconSize;
+use Sylament\Support\Enums\IconSize;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\Twig\ComponentAttributeBag;
 use Twig\Markup;

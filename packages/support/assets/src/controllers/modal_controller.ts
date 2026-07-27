@@ -1,11 +1,5 @@
 import { Controller } from "@hotwired/stimulus";
 
-/**
- * Drives a native `<dialog>` modal. Id-matched window events open and close it,
- * and focus returns to the opener on close. The platform supplies focus-trap,
- * ESC, top-layer stacking and `::backdrop` — this controller only bridges the
- * events to `showModal()` / `close()`.
- */
 export default class extends Controller<HTMLDialogElement> {
   static values = {
     id: String,

@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Tests\Unit\Concerns;
 use RuntimeException;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
+use Sylament\Schemas\Tests\Fixtures\Concerns\SuffixedSchemaHostFixture;
 
 it('declares a single "schema" by default', function (): void {
     expect(new HasSchemasFixture()->schemas())->toBe(['schema']);
@@ -47,6 +48,24 @@ it('throws when the method does not return a Schema', function (): void {
         ->toThrow(RuntimeException::class, 'Schema must be an instance of ' . Schema::class);
 });
 
+it('falls back to the "<name>Schema" method', function (): void {
+    $schema = new SuffixedSchemaHostFixture()->getSchema('article');
+
+    expect($schema)->toBeInstanceOf(Schema::class)
+        ->and($schema->getStatePath())->toBe('article');
+});
+
+it('prefers the bare method over the suffixed one', function (): void {
+    expect(new SuffixedSchemaHostFixture()->getSchema('report')->getStatePath())->toBe('bare');
+});
+
+it('builds a suffix-resolved declared schema in getCachedSchemas()', function (): void {
+    $cachedSchemas = new SuffixedSchemaHostFixture()->getCachedSchemas();
+
+    expect($cachedSchemas)->toHaveKey('article')
+        ->and($cachedSchemas['article'])->toBeInstanceOf(Schema::class);
+});
+
 it('makes a fresh schema bound to the component', function (): void {
     $fixture = new HasSchemasFixture();
     $schema = $fixture->makeSchema();
@@ -74,4 +93,8 @@ it('keys a schema by its name when caching it', function (): void {
     $fixture = new HasSchemasFixture();
 
     expect($fixture->getSchema()->getKey())->toBe('schema');
+});
+
+it('keys a suffix-resolved schema by the declared name, not the method name', function (): void {
+    expect(new SuffixedSchemaHostFixture()->getSchema('article')->getKey())->toBe('article');
 });

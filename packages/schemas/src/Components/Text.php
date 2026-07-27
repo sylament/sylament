@@ -6,11 +6,11 @@ namespace Sylament\Schemas\Components;
 
 use BackedEnum;
 use Closure;
-use Sylament\Support\Component\Concerns\HasColor;
-use Sylament\Support\Component\Concerns\HasFontFamily;
-use Sylament\Support\Component\Concerns\HasWeight;
-use Sylament\Support\Enum\Size;
-use Sylament\Support\Enum\TextSize;
+use Sylament\Support\Components\Concerns\HasColor;
+use Sylament\Support\Components\Concerns\HasFontFamily;
+use Sylament\Support\Components\Concerns\HasWeight;
+use Sylament\Support\Enums\Size;
+use Sylament\Support\Enums\TextSize;
 use Twig\Markup;
 
 use function Sylament\Support\blank;

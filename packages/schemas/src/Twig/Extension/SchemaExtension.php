@@ -35,7 +35,7 @@ class SchemaExtension extends AbstractExtension
     /**
      * @param array<mixed> $context
      */
-    public function renderSchema(Environment $twig, array $context, string $name): ?Markup
+    public function renderSchema(Environment $twig, array $context, string $name = 'schema'): ?Markup
     {
         $component = $context['this'] ?? null;
         if (!$component instanceof InteractsWithSchemas) {

@@ -1,6 +1,6 @@
 # Halt (support)
 
-`Sylament\Support\Exception\Halt` — the control-flow exception an action closure
+`Sylament\Support\Exceptions\Halt` — the control-flow exception an action closure
 throws to stop the lifecycle cleanly while keeping its modal mounted (no failure
 notification). Filament keeps it in `support` because several packages throw it;
 [`actions`](../../../packages/actions/src/Action.php) is the port's first thrower
@@ -24,7 +24,7 @@ _Detail_ links the write-up in [Details](#details), deleted once the row is
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [Marker exception](../../../packages/support/src/Exception/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | done | — | — |
+| [Marker exception](../../../packages/support/src/Exceptions/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | done | — | — |
 | Rollback control | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | blocked | panels DB-transaction pages | [detail](#details) |
 
 ## Details

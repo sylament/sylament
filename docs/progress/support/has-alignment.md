@@ -1,11 +1,11 @@
 # HasAlignment (support)
 
-`Sylament\Support\Component\Concerns\HasAlignment` — the shared concern that
+`Sylament\Support\Components\Concerns\HasAlignment` — the shared concern that
 gives a component a configurable horizontal alignment. It ports Filament's
 `HasAlignment`: an `Alignment | string | Closure | null` property, a fluent
 `alignment()` setter, seven `align*()` shortcut helpers each taking a
 `bool | Closure` condition, a `getAlignment()` reader that normalizes a known
-string to its [`Alignment`](../../../packages/support/src/Enum/Alignment.php)
+string to its [`Alignment`](../../../packages/support/src/Enums/Alignment.php)
 case, and a `hasDynamicAlignment()` probe. Sylament adds one method with no
 Filament counterpart — `getAlignmentClass()` — so this port carries a
 divergence.
@@ -29,18 +29,17 @@ once the row is **done**; **diverges** → the permanent note in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`alignment()` setter + property](../../../packages/support/src/Component/Concerns/HasAlignment.php) | [`HasAlignment::alignment()`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | — |
-| [`align*()` helpers](../../../packages/support/src/Component/Concerns/HasAlignment.php) | [`HasAlignment::alignStart()` …](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | — |
-| [`getAlignment()` normalization](../../../packages/support/src/Component/Concerns/HasAlignment.php) | [`HasAlignment::getAlignment()`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | — |
-| [`hasDynamicAlignment()`](../../../packages/support/src/Component/Concerns/HasAlignment.php) | [`HasAlignment::hasDynamicAlignment()`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | — |
-| [`getAlignmentClass()`](../../../packages/support/src/Component/Concerns/HasAlignment.php) | — (no Filament equivalent) | done | — | [diverges](#getalignmentclass-centralizes-the-alignment-to-class-mapping) |
+| [`alignment()` setter + property](../../../packages/support/src/Components/Concerns/HasAlignment.php) | [`HasAlignment::alignment()`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | — |
+| [`align*()` helpers](../../../packages/support/src/Components/Concerns/HasAlignment.php) | [`HasAlignment::alignStart()` …](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | — |
+| [`getAlignment()` normalization](../../../packages/support/src/Components/Concerns/HasAlignment.php) | [`HasAlignment::getAlignment()`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | — |
+| [`hasDynamicAlignment()`](../../../packages/support/src/Components/Concerns/HasAlignment.php) | [`HasAlignment::hasDynamicAlignment()`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | — |
+| [`getAlignmentClass()`](../../../packages/support/src/Components/Concerns/HasAlignment.php) | — (no Filament equivalent) | done | — | [diverges](#getalignmentclass-centralizes-the-alignment-to-class-mapping) |
 
 ## Details
 
-Every row above is **done** — the port is faithful (allowing the systematic
-namespace translation `Enums\` → `Enum\`) and every method, including the added
-`getAlignmentClass()`, is exercised by
-[`HasAlignmentTest`](../../../packages/support/tests/Unit/Component/Concerns/HasAlignmentTest.php).
+Every row above is **done** — the port is faithful and every method, including the
+added `getAlignmentClass()`, is exercised by
+[`HasAlignmentTest`](../../../packages/support/tests/Unit/Components/Concerns/HasAlignmentTest.php).
 No row has a write-up here.
 
 ## Divergences
@@ -55,8 +54,4 @@ custom string as-is, and `null` when unaligned — so Twig templates emit
 `component.getAlignmentClass` without type-sniffing the enum-vs-string union that
 `getAlignment()` returns. It is additive (nothing in Filament is removed or
 renamed) and covered by the class-building cases in
-[`HasAlignmentTest`](../../../packages/support/tests/Unit/Component/Concerns/HasAlignmentTest.php).
-
-_See also: the global [rename table](../renames.md) — the `Enums\` → `Enum\`
-namespace singularization the `Alignment` reference uses is a systematic
-translation recorded there, not a per-component divergence._
+[`HasAlignmentTest`](../../../packages/support/tests/Unit/Components/Concerns/HasAlignmentTest.php).

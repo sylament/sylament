@@ -20,6 +20,7 @@ use Sylament\Support\Components\Concerns\HasIcon;
 use Sylament\Support\Components\Concerns\HasIconSize;
 use Sylament\Support\Components\Concerns\HasTooltip;
 use Sylament\Support\Components\ViewComponent;
+use Sylament\Support\Evaluation\ClosureParameter;
 use Twig\Environment;
 use Twig\Markup;
 
@@ -218,5 +219,14 @@ class ActionGroup extends ViewComponent
         }
 
         return parent::render($twig);
+    }
+
+    protected function resolveDefaultClosureDependencyForEvaluationByName(string $parameterName): ?ClosureParameter
+    {
+        return match ($parameterName) {
+            'record' => ClosureParameter::make($this->getRecord()),
+            'liveComponent' => ClosureParameter::make($this->getLiveComponent()),
+            default => parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
+        };
     }
 }

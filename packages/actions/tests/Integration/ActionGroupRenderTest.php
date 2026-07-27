@@ -21,7 +21,9 @@ it('renders the dropdown with trigger and grouped items', function (): void {
         ->toContain('sy sy-icon-btn')
         ->toContain('sy-dropdown-item')
         ->toContain('data-live-name-param="edit"')
-        ->toContain('data-live-name-param="delete"');
+        ->toContain('data-live-name-param="delete"')
+        ->toContain('data-sylament--support--dropdown-placement-value="bottom-start"')
+        ->toContain('data-sylament--support--dropdown-offset-value="8"');
 });
 
 it('feeds dropdown configuration into the primitive', function (): void {
@@ -54,4 +56,17 @@ it('renders an inline row under dropdown(false)', function (): void {
 
 it('refuses to render a nested group', function (): void {
     renderGroup(ActionGroup::make([ActionGroup::make([Action::make('edit')])]));
+})->throws(LogicException::class, 'Submenu');
+
+it('renders fine when a nested group is hidden', function (): void {
+    $html = renderGroup(ActionGroup::make([
+        Action::make('edit'),
+        ActionGroup::make([Action::make('archive')])->hidden(),
+    ]));
+
+    expect($html)->toContain('data-live-name-param="edit"');
+});
+
+it('refuses to render a visible nested group under dropdown(false) too', function (): void {
+    renderGroup(ActionGroup::make([ActionGroup::make([Action::make('edit')])])->dropdown(false));
 })->throws(LogicException::class, 'Submenu');

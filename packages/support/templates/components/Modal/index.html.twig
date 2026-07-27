@@ -7,6 +7,7 @@
     iconAlias = null,
     iconColor = 'primary',
     id = null,
+    open = false,
     returnsFocus = true,
     width = 'md' %}
 
@@ -29,6 +30,7 @@
 {% set modalController = 'sylament--support--modal' %}
 {% set modalStimulus = stimulus_controller(modalController, {
     id: id ?: null,
+    open: open ?: null,
     returnsFocus: returnsFocus ? null : false,
 })
     |stimulus_action(modalController, 'open', 'sylament-open-modal@window')

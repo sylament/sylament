@@ -1,0 +1,6 @@
+{% set liveComponent = this.getLiveComponent() %}
+{% set action = liveComponent.getMountedAction %}
+
+{% if action and liveComponent.mountedActionShouldOpenModal(action) %}
+    <twig:SylamentActions:ConfirmModal :action="action" :id="liveComponent.getMountedModalId" />
+{% endif %}

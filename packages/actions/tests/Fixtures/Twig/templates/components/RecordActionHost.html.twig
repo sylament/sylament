@@ -1,8 +1,5 @@
 <div {{ attributes }}>
     {{ renderComponent(this.deleteAction()) }}
 
-    {% set mounted = this.getMountedAction %}
-    {% if mounted and this.mountedActionShouldOpenModal %}
-        {% include '@SylamentActions/components/confirm-modal.html.twig' with { action: mounted, id: this.getMountedModalId } %}
-    {% endif %}
+    <twig:SylamentActions:Modals />
 </div>

@@ -24,9 +24,10 @@ Reference — the Filament source this is diffed against:
   — the interface this ports (name-swapped)
 - [`actions/src/Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php)
   — the trait whose `mountAction` / `callMountedAction` / `unmountAction` /
-  `getMountedAction` / `getAction` implementations this contract's declared
-  methods are diffed against (the trait itself is **not** on Filament's
-  `Contracts\HasActions`; three of its methods are promoted onto Sylament's
+  `getMountedAction` / `mountedActionShouldOpenModal` / `getAction`
+  implementations this contract's declared methods are diffed against (the trait
+  itself is **not** on Filament's `Contracts\HasActions`; four of its methods,
+  plus the Sylament-only `getMountedModalId`, are promoted onto Sylament's
   interface — see [Divergences](#divergences))
 
 ## Surface
@@ -40,9 +41,11 @@ permanent note in [Divergences](#divergences).
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`mountAction()`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | — |
-| `callMountedAction()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#three-lifecycle-methods-are-promoted-onto-the-interface-with-reduced-signatures) |
-| `unmountAction()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#three-lifecycle-methods-are-promoted-onto-the-interface-with-reduced-signatures) |
-| `getMountedAction()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#three-lifecycle-methods-are-promoted-onto-the-interface-with-reduced-signatures) |
+| `callMountedAction()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#five-host-methods-are-promoted-onto-the-interface-with-reduced-signatures) |
+| `unmountAction()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#five-host-methods-are-promoted-onto-the-interface-with-reduced-signatures) |
+| `getMountedAction()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#five-host-methods-are-promoted-onto-the-interface-with-reduced-signatures) |
+| `mountedActionShouldOpenModal()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#five-host-methods-are-promoted-onto-the-interface-with-reduced-signatures) |
+| `getMountedModalId()` | — (no Filament counterpart; see [has-actions.md](has-actions.md#the-modal-id-is-name-only-not-instance-scoped-or-nesting-scoped)) | done | — | [diverges](#five-host-methods-are-promoted-onto-the-interface-with-reduced-signatures) |
 | `getAction()` | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [diverges](#getaction-drops-grouparray-lookup-and-the-ismounting-flag) |
 | `mergeMountedActionArguments()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `HasSchema` concern / schemas-actions integration | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
 | `getMountedActionSchemaName()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `HasSchema` concern / schemas-actions integration | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
@@ -95,7 +98,7 @@ specifically, a Doctrine relation equivalent to Eloquent's `Relation`).
 Deliberate deviations from Filament — permanent, and the reason they hold.
 These outlive the detail sections above.
 
-### Three lifecycle methods are promoted onto the interface, with reduced signatures
+### Five host methods are promoted onto the interface, with reduced signatures
 
 Filament's `Contracts\HasActions` does **not** declare `callMountedAction()`,
 `unmountAction()`, or `getMountedAction()` — they exist only on the
@@ -103,13 +106,26 @@ Filament's `Contracts\HasActions` does **not** declare `callMountedAction()`,
 component but never through the abstract contract. Sylament's interface
 promotes all three, because both the modal template and the trigger button
 call back into the host by name regardless of its concrete class —
-[`confirm-modal.html.twig`](../../../packages/actions/templates/components/confirm-modal.html.twig)
+[`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig)
 wires `live_action('callMountedAction')` / `live_action('unmountAction')`, and
 [`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)
 wires `live_action('mountAction', ...)` — and because
 [`BelongsToLiveComponent`](../../../packages/actions/src/Concerns/BelongsToLiveComponent.php)
 types `Action`'s host reference as the interface, not a concrete class. Naming
 the behavior on the contract keeps that reference meaningful.
+
+Two more follow from the same rule once the host-side
+[`<twig:SylamentActions:Modals />`](../../../packages/actions/templates/components/Modals.html.twig)
+renderer ships: it reads its host through this interface, so
+`mountedActionShouldOpenModal(?Action $mountedAction = null): bool` and
+`getMountedModalId(): string` are declared here too. Without them the contract
+would under-declare what the package's own template requires, and a host
+implementing only the interface would render a modal-less page with no compile-
+or run-time signal until the `<dialog>` failed to appear. `getMountedModalId()`
+is the one promoted method with **no Filament counterpart at all** — Filament
+computes the id inline in `action-modal.blade.php` (see
+[has-actions.md](has-actions.md#the-modal-id-is-name-only-not-instance-scoped-or-nesting-scoped)) —
+so it is promoted as a Sylament-only host obligation, not a ported declaration.
 
 Each promoted method also drops the nesting/argument richness Filament's trait
 version has, since Sylament has no `ActionGroup` yet (`ActionGroup`,

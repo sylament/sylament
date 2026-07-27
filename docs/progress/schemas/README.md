@@ -114,7 +114,7 @@ own single-use concerns folded into [`component.md`](component.md).
 | `CanTrimState` | [`Components/Concerns/CanTrimState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanTrimState.php) | todo | — |
 | `Cloneable` | [`Components/Concerns/Cloneable.php`](../../../vendor/filament/schemas/src/Components/Concerns/Cloneable.php) | todo | — |
 | `EntanglesStateWithSingularRelationship` | [`Components/Concerns/EntanglesStateWithSingularRelationship.php`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | todo | — |
-| `HasActions` | [`Components/Concerns/HasActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | todo | — |
+| [`HasActions`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`Components/Concerns/HasActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | in progress | [has-actions.md](has-actions.md) |
 | `HasContainerGridLayout` | [`Components/Concerns/HasContainerGridLayout.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php) | todo | — |
 | `HasEntryWrapper` | [`Components/Concerns/HasEntryWrapper.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasEntryWrapper.php) | todo | — |
 | `HasFieldWrapper` | [`Components/Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasFieldWrapper.php) | todo | — |

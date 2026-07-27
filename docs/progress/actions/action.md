@@ -593,9 +593,11 @@ There is no badge/icon-button/link view or view-switching API —
 `badge()`/`button()`/`iconButton()`/`link()` do not exist. A grouped default
 does exist structurally since the ActionGroup base epic
 (`Action::GROUPED_TEMPLATE`, pushed automatically rather than toggled by a
-method call), but its own template file doesn't land until Task 7, so a
-rendered grouped shape is still absent today — only the plumbing. No
-`toArray()`/`fromArray()` serialization, and no `renderModal()`/
+method call), and its own template file
+([`grouped-action.html.twig`](../../../packages/actions/templates/components/grouped-action.html.twig))
+landed in Task 7, so a rendered grouped shape exists today, exercised end to
+end by [`ActionGroupRenderTest`](../../../packages/actions/tests/Integration/ActionGroupRenderTest.php).
+No `toArray()`/`fromArray()` serialization, and no `renderModal()`/
 `toModalHtmlable()` method on `Action` itself — the confirmation modal
 ([`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig))
 is instead `{% include %}`-d directly by the *host* live component's own

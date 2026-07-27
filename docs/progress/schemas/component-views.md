@@ -36,7 +36,7 @@ in-progress features, a **diverges** note here for a structural one, or `—`.
 | --- | --- | --- | --- | --- |
 | [`Html.html.twig`](../../../packages/schemas/templates/components/Html.html.twig) | [`Html::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Html.php) | done | — | — |
 | [`Icon.html.twig`](../../../packages/schemas/templates/components/Icon.html.twig) | [`Icon::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Icon.php) | in progress | — | [icon.md](icon.md) |
-| [`Schema.html.twig`](../../../packages/schemas/templates/components/Schema.html.twig) | [`Schema::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-template-omits-the-livecomponent-wiring-and-action-child-handling) |
+| [`Schema.html.twig`](../../../packages/schemas/templates/components/Schema.html.twig) | [`Schema::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-template-omits-the-livecomponent-wiring-hidden-placeholders-and-grid-liberation) |
 | [`Section.html.twig`](../../../packages/schemas/templates/components/Section.html.twig) | [`Section::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [section.md](section.md) |
 | [`Text.html.twig`](../../../packages/schemas/templates/components/Text.html.twig) | [`Text::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Text.php) | in progress | — | [text.md](text.md) |
 | Fieldset template | [`fieldset.blade.php`](../../../vendor/filament/schemas/resources/views/components/fieldset.blade.php) | todo | Fieldset component | — |
@@ -93,17 +93,21 @@ Blade paths are historical references, not live sources; nothing reverses this.
 The two actual Blades (`fieldset`, `grid`) stay unported alongside their
 components.
 
-### The Schema template omits the LiveComponent wiring and Action child handling
+### The Schema template omits the LiveComponent wiring, hidden placeholders, and grid liberation
 
 Filament's `Schema::toEmbeddedHtml` emits root state wiring (the client
-data-object, partial markers, window listeners), wraps `Action` / `ActionGroup`
-children in an action wrapper (hidden-flagging invisible ones), and honors
-`isLiberatedFromContainerGrid()`. `Schema.html.twig` renders none of these: it
-iterates `component.getComponents(true, false)` (already visibility-filtered, so
-no hidden-wrapper branch), has no Action branch, and no liberated-from-grid
-branch.
-This is a genuine feature gap, not the client-runtime idiom translation — it
-reverses when the live-component-state epic and the Actions port land.
+data-object, partial markers, window listeners), keeps hidden children in the
+DOM as placeholder wrappers, and honors `isLiberatedFromContainerGrid()`.
+`Schema.html.twig` renders none of these: it loops the `visibleChildren` pairs
+`Schema::getExtraTemplateData()` precomputes (visible children only — see the
+[hidden-placeholder divergence](schema.md#the-schema-renders-visible-children-only-without-hidden-placeholders))
+and has no liberated-from-grid branch. What it does render now matches
+Filament: an `Action`/`ActionGroup` child (flagged `isAction` in the pair) goes
+into a bare `div.sy-sc-action` wrapper instead of the grid-cell +
+`sy-sc-component` wrappers, and `Schema::render()` returns `null` when nothing
+is visible — Filament's `''`-on-empty contract. The remaining gaps are genuine,
+not the client-runtime idiom translation — they reverse when the
+live-component-state epic and grid liberation land.
 
 _See also: the global [rename table](../renames.md) — the Blade/`toEmbeddedHtml`
 → Twig render, `Htmlable` → `Twig\Markup`, the client-runtime and attribute-bag

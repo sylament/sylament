@@ -66,12 +66,12 @@ it('renders the section child components inside the content area', function (): 
         ->toContain('sy-grid');
 });
 
-it('renders an empty child schema for a section with no components', function (): void {
-    // Regression: an empty default slot must still resolve to a schema (not null),
-    // so the content container renders rather than collapsing.
+it('collapses the content container for a section with no components', function (): void {
+    // Filament parity: an empty child schema renders nothing, so a section without
+    // components or footer emits no content container at all.
     $html = renderSection(Section::make('Empty'));
 
-    expect($html)->toContain('sy-section-content');
+    expect($html)->not->toContain('sy-section-content');
 });
 
 it('escapes a plain string heading and description', function (): void {
@@ -169,7 +169,7 @@ it('marks a compact section', function (): void {
 it('marks a divided section', function (): void {
     // With sy-section-content on the schema root, each schema child is a direct
     // child of the content element — the shape the divider CSS targets.
-    $html = renderSection(Section::make('Heading')->divided());
+    $html = renderSection(Section::make('Heading')->divided()->components([new Component()]));
 
     expect($html)->toContain('sy-divided')
         ->toMatch('/class="sy sy-sc[^"]*sy-section-content"/');
@@ -278,12 +278,12 @@ it('associates the description with the section', function (): void {
 });
 
 it('identifies the content container', function (): void {
-    expect(renderSection(Section::make('Heading')->id('profile')))
+    expect(renderSection(Section::make('Heading')->id('profile')->components([new Component()])))
         ->toContain('id="profile-content"');
 });
 
 it('places the content class on the child schema root', function (): void {
-    $html = renderSection(Section::make('Heading'));
+    $html = renderSection(Section::make('Heading')->components([new Component()]));
 
     expect($html)->not->toContain('<div class="sy-section-content">')
         ->toMatch('/class="sy sy-sc[^"]*sy-section-content"/');
@@ -320,8 +320,8 @@ it('renders the label slots around the label', function (): void {
     $html = renderSection(
         Section::make('Heading')
             ->label('My label')
-            ->beforeLabel(Schema::make()->extraAttributes(['data-slot' => 'before-label']))
-            ->afterLabel(Schema::make()->extraAttributes(['data-slot' => 'after-label'])),
+            ->beforeLabel(Schema::make()->components([new Component()])->extraAttributes(['data-slot' => 'before-label']))
+            ->afterLabel(Schema::make()->components([new Component()])->extraAttributes(['data-slot' => 'after-label'])),
     );
 
     expect($html)->toMatch(
@@ -331,7 +331,7 @@ it('renders the label slots around the label', function (): void {
 
 it('does not render label slots without a label', function (): void {
     $html = renderSection(
-        Section::make('Heading')->beforeLabel(Schema::make()->extraAttributes(['data-slot' => 'before-label'])),
+        Section::make('Heading')->beforeLabel(Schema::make()->components([new Component()])->extraAttributes(['data-slot' => 'before-label'])),
     );
 
     expect($html)->not->toContain('sy-sc-section-label-ctn')
@@ -341,8 +341,8 @@ it('does not render label slots without a label', function (): void {
 it('renders the above and below content slots around the section element', function (): void {
     $html = renderSection(
         Section::make('Heading')
-            ->aboveContent(Schema::make()->extraAttributes(['data-slot' => 'above-content']))
-            ->belowContent(Schema::make()->extraAttributes(['data-slot' => 'below-content'])),
+            ->aboveContent(Schema::make()->components([new Component()])->extraAttributes(['data-slot' => 'above-content']))
+            ->belowContent(Schema::make()->components([new Component()])->extraAttributes(['data-slot' => 'below-content'])),
     );
 
     expect($html)->toMatch('/data-slot="above-content".*?<section.*?<\/section>.*?data-slot="below-content"/s');
@@ -483,7 +483,7 @@ it('makes the header toggle the collapsible section', function (): void {
 });
 
 it('renders the disclosure chevron button', function (): void {
-    $html = renderSection(Section::make('Profile')->collapsible());
+    $html = renderSection(Section::make('Profile')->collapsible()->components([new Component()]));
 
     expect($html)->toMatch('/<button[^>]*class="sy sy-icon-btn sy-size-md sy-section-collapse-btn"/')
         ->toContain('data-action="click-&gt;sylament--support--section#toggleFromButton"')
@@ -496,7 +496,7 @@ it('renders the disclosure chevron button', function (): void {
 });
 
 it('marks the content container as the controller content target', function (): void {
-    $html = renderSection(Section::make('Profile')->collapsible());
+    $html = renderSection(Section::make('Profile')->collapsible()->components([new Component()]));
 
     expect($html)->toContain('data-sylament--support--section-target="content"')
         ->not->toContain('sy-cloak');
@@ -527,7 +527,7 @@ it('resolves a collapsible closure through the real Invoker', function (): void 
 });
 
 it('cloaks the content container when persisting the collapse state', function (): void {
-    $html = renderSection(Section::make('Profile')->collapsible()->persistCollapsed());
+    $html = renderSection(Section::make('Profile')->collapsible()->persistCollapsed()->components([new Component()]));
 
     expect($html)->toContain('data-sylament--support--section-persist-value="true"')
         ->toContain('sy-cloak');

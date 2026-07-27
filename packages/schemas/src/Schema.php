@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Schemas;
 
 use Closure;
+use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Concerns\HasStateBindingModifiers;
 use Sylament\Schemas\Concerns\HasColumns;
@@ -23,6 +25,7 @@ use Sylament\Support\Components\Concerns\HasAlignment;
 use Sylament\Support\Components\Concerns\HasExtraAttributes;
 use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\Evaluation\ClosureParameter;
+use Twig\Environment;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
@@ -140,6 +143,36 @@ class Schema extends ViewComponent
     public function getAllColumns(): array
     {
         return $this->getParentComponent()?->getAllColumns() ?? $this->getOwnAllColumns();
+    }
+
+    /**
+     * Renders nothing when no child is visible — Filament's `renderEmbeddedHtml()`
+     * returns `''` in that case, which is what lets `Section` suppress an empty
+     * slot's chrome.
+     */
+    public function render(Environment $twig): ?string
+    {
+        if ($this->getComponents(withHidden: false) === []) {
+            return null;
+        }
+
+        return parent::render($twig);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getExtraTemplateData(): array
+    {
+        return [
+            'visibleChildren' => array_map(
+                static fn (Component|Action|ActionGroup $childComponent): array => [
+                    'component' => $childComponent,
+                    'isAction' => ($childComponent instanceof Action) || ($childComponent instanceof ActionGroup),
+                ],
+                $this->getComponents(withHidden: false),
+            ),
+        ];
     }
 
     /**

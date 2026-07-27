@@ -233,10 +233,13 @@ Two defaults baked into the new trigger templates depart from Filament's
   overriding those components' own `color = 'primary'` prop default. This
   follows the same gray-when-unset convention `Action`'s own
   [`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)
-  and [`grouped-action.html.twig`](../../../packages/actions/templates/components/grouped-action.html.twig)
-  already render (an undocumented divergence there too; noted here since Task 8
-  is the first time the convention crosses into a template that delegates to a
-  color-defaulting component instead of building its own markup).
+  already renders (an undocumented divergence there too; noted here since
+  Task 8 is the first time the convention crosses into a template that
+  delegates to a color-defaulting component instead of building its own
+  markup).
+  [`grouped-action.html.twig`](../../../packages/actions/templates/components/grouped-action.html.twig)
+  has no color handling at all — dropdown-list rows render uniformly
+  regardless of the wrapped action's color.
 - **Icon.** Filament's
   [`ActionGroup::getIcon()`](../../../vendor/filament/actions/src/ActionGroup.php)
   overrides `HasIcon::getIcon` (aliased `getBaseIcon`) unconditionally —

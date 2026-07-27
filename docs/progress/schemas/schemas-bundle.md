@@ -92,6 +92,22 @@ nothing in the bundle file: `AbstractBundle::getPath()` returns
 and the reason component templates can reference `@SylamentSchemas/...` with no
 explicit twig path config.
 
+### `sylament/actions` becomes a hard composer requirement
+
+`packages/schemas/composer.json` now requires `sylament/actions` — the first
+requirement this package declares beyond `sylament/support`. It lands together
+with the reverse edge (`actions` requiring `sylament/schemas`, for
+[`BelongsToSchemaComponent`](../../../packages/actions/src/Concerns/BelongsToSchemaComponent.php)'s
+direct `Schemas\Components\Component`/`Schemas\Schema` type-hints — see
+[actions-bundle.md](../actions/actions-bundle.md#every-package-declares-what-its-own-source-needs-transitives-notwithstanding))
+in the same commit, ahead of the schemas-side code that will import
+`Action`/`ActionGroup` starting the next task in the schemas↔actions integration
+epic. Filament's own graph already has this cycle — `filament/schemas` requires
+`filament/actions` directly, `filament/actions` reaches back to
+`filament/schemas` only transitively, through `filament/forms` — so this is not
+a new coupling, just the direct form of an edge Filament already has, declared
+here because the three intermediate packages don't exist in this port yet.
+
 ### Livewire-specific provider responsibilities are dropped, not ported
 
 The provider's `Testable::mixin(new TestsSchemas)` and the `on('call', ...)` hook

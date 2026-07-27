@@ -7,6 +7,7 @@ namespace Sylament\Actions;
 use Closure;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
+use Sylament\Actions\Concerns\BelongsToSchemaComponent;
 use Sylament\Actions\Concerns\CanBeDisabled;
 use Sylament\Actions\Concerns\CanBeHidden;
 use Sylament\Actions\Concerns\CanNotify;
@@ -36,6 +37,7 @@ class Action extends ViewComponent
 {
     use BelongsToGroup;
     use BelongsToLiveComponent;
+    use BelongsToSchemaComponent;
     use CanBeDisabled;
     use CanBeHidden;
     use CanNotify;

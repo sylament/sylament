@@ -8,6 +8,7 @@ use Closure;
 use LogicException;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
+use Sylament\Actions\Concerns\BelongsToSchemaComponent;
 use Sylament\Actions\Concerns\CanBeHidden;
 use Sylament\Actions\Concerns\HasDropdown;
 use Sylament\Actions\Concerns\HasLabel;
@@ -28,6 +29,7 @@ class ActionGroup extends ViewComponent
 {
     use BelongsToGroup;
     use BelongsToLiveComponent;
+    use BelongsToSchemaComponent;
     use CanBeHidden;
     use HasColor;
     use HasDropdown;

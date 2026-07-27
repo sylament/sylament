@@ -15,6 +15,7 @@
     "require": {
         "php": "^8.5",
         "ext-mbstring": "*",
+        "sylament/actions": "self.version",
         "sylament/support": "self.version",
         "symfony/property-access": "^8.1",
         "symfony/string": "^8.1",

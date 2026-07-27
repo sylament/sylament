@@ -93,7 +93,7 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| BelongsToSchemaComponent | [`Concerns/BelongsToSchemaComponent.php`](../../../vendor/filament/actions/src/Concerns/BelongsToSchemaComponent.php) | todo | - |
+| [`BelongsToSchemaComponent`](../../../packages/actions/src/Concerns/BelongsToSchemaComponent.php) | [`Concerns/BelongsToSchemaComponent.php`](../../../vendor/filament/actions/src/Concerns/BelongsToSchemaComponent.php) | done | - |
 | BelongsToTable | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php) | todo | - |
 | CanBeAuthorized | [`Concerns/CanBeAuthorized.php`](../../../vendor/filament/actions/src/Concerns/CanBeAuthorized.php) | todo | - |
 | CanBeBooted | [`Concerns/CanBeBooted.php`](../../../vendor/filament/actions/src/Concerns/CanBeBooted.php) | todo | - |

@@ -27,6 +27,7 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Native `<dialog>` + Stimulus open/close/restore | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) x-data `filamentModal` | done | — | [diverges](#the-modal-is-re-architected-onto-native-dialog) |
+| `open` state value (server-rendered open/close) | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) Alpine `isOpen` | done | — | [diverges](#the-open-state-is-a-stimulus-value-not-only-an-event) |
 | Header — heading / description / icon / iconColor + `aria-*` | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) heading block | done | — | [diverges](#the-header-icon-drops-filaments-background-wrapper) |
 | Content slot | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `$slot` | done | — | — |
 | Footer slot | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `$footer` | done | — | [diverges](#footer-actions-header-slot-and-alignment-are-not-ported) |
@@ -97,8 +98,10 @@ and a stacking model, plus a separate `fi-modal-close-overlay` element and an
 platform supply focus-trap, ESC, top-layer stacking, and `::backdrop`; the
 `sylament--support--modal`
 [Stimulus controller](../../../packages/support/assets/src/controllers/modal_controller.ts)
-only bridges id-matched `sylament-open-modal` / `sylament-close-modal` window
-events to `showModal()` / `close()` and restores opener focus on close. This drops
+only drives `showModal()` / `close()` from an `open` Stimulus value (see
+[the open state is a value, not only an event](#the-open-state-is-a-stimulus-value-not-only-an-event)),
+bridges id-matched `sylament-open-modal` / `sylament-close-modal` window events to
+the same calls, and restores opener focus on close. This drops
 the overlay div, the JS transitions, the scroll-lock, click-away close, and the
 `clickThrough` mode along with it. This is more than the systematic
 Alpine→Stimulus / Blade→Twig translations — it is a structural rewrite recorded
@@ -132,6 +135,29 @@ custom-header forms.
 Filament defaults `width` to `'sm'`; Sylament defaults it to `'md'`. The width is
 emitted verbatim as a `sy-modal-<value>` class rather than resolved through the
 `Width` enum's `fi-width-*` / `fi-width-screen` logic.
+
+### The open state is a Stimulus value, not only an event
+
+Filament opens a modal purely by event — `x-on:open-modal.window="… open()"` — and
+Sylament started the same way. That cannot work for a modal whose element is
+created by the very response that asks it to open, which is exactly what a mounted
+action does: UX LiveComponent's `processRerender()` morphs the new DOM and
+dispatches the queued browser events **synchronously in one task**, while Stimulus
+binds `data-action` listeners from a `MutationObserver` callback — a microtask that
+runs afterwards. The freshly-inserted `<dialog>` is not listening yet, so the first
+click rendered a closed dialog and only a second click (by when the element existed
+and was bound) opened it.
+
+So the authoritative signal is state, not a notification: `Modal` takes an `open`
+prop rendered as a `data-sylament--support--modal-open-value` attribute, and the
+controller's `openValueChanged()` calls `showModal()` / `close()`. Stimulus invokes
+that callback on connect and on every later attribute change, whenever those
+happen, so no ordering can defeat it — and it is the honest encoding, since "this
+modal is open" *is* server state (`mountedActions` being non-empty). Both calls are
+guarded on `element.open`, so the value and event paths are idempotent and can
+coexist. The window events are kept for imperative open/close from code that has no
+server state to render. Nothing reverses this; the event-only form is unsound for
+server-rendered modals.
 
 ### Event names are fixed, and there is no quiet-close
 

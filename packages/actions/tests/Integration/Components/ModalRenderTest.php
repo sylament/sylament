@@ -29,6 +29,14 @@ it('renders a closed dialog with the modal controller wiring', function (): void
         ->not->toMatch('/<dialog[^>]*\sopen[\s>]/');
 });
 
+it('declares its open state for the controller, defaulting to closed', function (): void {
+    expect(renderModal('<twig:SylamentSupport:Modal id="m" />'))
+        ->not->toContain('data-sylament--support--modal-open-value');
+
+    expect(renderModal('<twig:SylamentSupport:Modal id="m" :open="true" />'))
+        ->toContain('data-sylament--support--modal-open-value="true"');
+});
+
 it('renders header pieces only when filled', function (): void {
     expect(renderModal('<twig:SylamentSupport:Modal id="m" />'))
         ->not->toContain('sy-modal-header')

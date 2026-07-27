@@ -9,12 +9,22 @@ slot, the `mountAction` / `callMountedAction` / `unmountAction` `#[LiveAction]`
 trio, action lookup (`getAction`, `getMountedAction`, `resolveAction`), the
 modal-open gate (`mountedActionShouldOpenModal`) and confirm-modal id helper,
 and a host-supplied `resolveRecordUsing()` callback for resolving a mounted
-action's record. Filament's `InteractsWithActions` is a
+action's record. Its rendered counterpart —
+[`<twig:SylamentActions:Modals />`](../../../packages/actions/templates/components/Modals.html.twig)
+plus the [`Modals`](../../../packages/actions/src/Twig/Components/Modals.php)
+component class behind it — folds in here rather than earning its own file,
+because it is a pure view over three of those methods (`getMountedAction` /
+`mountedActionShouldOpenModal` / `getMountedModalId`), the same relationship
+`ConfirmModal` has to `Action`. Filament's `InteractsWithActions` is a
 ~870-line trait built around a **stack** of mounted actions (nested/parent
 actions, per-action `Schema` mounting, authorization, rate limiting, database
 transactions, redirects, URL-bound default actions, table/schema-scoped action
 resolution); Sylament ships a lean **single-slot** MVP that covers the
 confirmation-modal round-trip the `actions` epic spikes on and defers the rest.
+The single slot is why the renderer needs no loop: Filament's
+`@foreach (getMountedActions()) @if (! $loop->last || mountedActionShouldOpenModal())`
+runs 0-or-1 times here, and when it runs it *is* last, so the whole construct
+collapses to a null check plus the gate.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -29,6 +39,9 @@ Reference — the Filament source this is diffed against:
 - [`actions/resources/views/action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php)
   — where Filament computes the per-nesting-index modal id this file's
   `getMountedModalId()` substitutes for
+- [`actions/resources/views/components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php)
+  — the host-side renderer ported as `<twig:SylamentActions:Modals />` (its row
+  below)
 
 ## Surface
 
@@ -48,6 +61,7 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` | in progress | nested action stack; action caching | [detail](#resolveaction-has-no-parent-nesting-or-failure-signal) |
 | Action caching (`cacheAction`, `mergeCachedActions`, `cacheTraitActions`) | `Concerns/InteractsWithActions.php` `cacheAction()` / `mergeCachedActions()` / `cacheTraitActions()` | todo | — | [detail](#action-caching-is-not-ported) |
 | [`getMountedModalId()`](../../../packages/actions/src/Concerns/HasActions.php) | `action-modal.blade.php` inline `$actionModalId` | done | — | [diverges](#the-modal-id-is-name-only-not-instance-scoped-or-nesting-scoped) |
+| Modals rendering ([`Modals.html.twig`](../../../packages/actions/templates/components/Modals.html.twig) + [`Twig\Components\Modals`](../../../packages/actions/src/Twig/Components/Modals.php)) | [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php) | done | — | [diverges](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope) · [diverges](#the-modal-is-opened-by-rendered-state-not-by-the-dispatched-event) · [diverges](#the-modals-renderer-emits-no-wrapper-element) · [diverges](#there-is-no-single-render-guard) · [diverges](#an-unresolvable-host-throws-instead-of-rendering-nothing) |
 | `replaceMountedAction()` | `Concerns/InteractsWithActions.php` `replaceMountedAction()` | todo | nested action stack | [detail](#replacemountedaction-is-not-ported) |
 | Action-schema/form integration (`mountedActionHasSchema`, `getMountedActionSchema*`, deprecated `mountedActionHasForm`/`getMountedActionForm`) | `Concerns/InteractsWithActions.php` (same methods) | blocked | `HasSchema` (actions) + schemas/forms mounted-action wiring | [detail](#action-schema-integration-is-entirely-unported) |
 | `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | [detail](#url-bound-default-action-state-is-not-ported) |
@@ -139,11 +153,14 @@ nested actions.
 
 [`mountedActionShouldOpenModal(?Action $mountedAction = null): bool`](../../../packages/actions/src/Concerns/HasActions.php)
 is ported under Filament's name and signature, and is the single gate both
-`mountAction()` and a host template read (the
-[`ActionHost`](../../../packages/actions/tests/Fixtures/Twig/templates/components/ActionHost.html.twig)
-/ [`RecordActionHost`](../../../packages/actions/tests/Fixtures/Twig/templates/components/RecordActionHost.html.twig)
-fixtures gate their `confirm-modal.html.twig` include on
-`this.mountedActionShouldOpenModal`), so the rule cannot drift between the two.
+`mountAction()` and the [Modals renderer](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope)
+read, so the rule cannot drift between the two. It is on the
+[`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php)
+contract, because that renderer calls it on an abstractly-typed host.
+The renderer passes the already-resolved action in
+(`mountedActionShouldOpenModal(action)`) rather than calling it bare: with
+[action caching unported](#action-caching-is-not-ported) the no-argument form
+resolves a second, distinct `Action` on every render.
 The body diverges: Filament delegates to
 `$action->shouldOpenModal(checkForSchemaUsing: $this->mountedActionHasSchema(...))`,
 which is `hasCustomModalHeading() || hasModalDescription() || hasModalContent()
@@ -334,7 +351,12 @@ components on the same page (or two nested actions) never collide. The port's
 [`getMountedModalId()`](../../../packages/actions/src/Concerns/HasActions.php)
 returns `"{$name}-modal"` — scoped only to the action name, which the
 `HasActionsTest` render assertion covers for the single-host, single-slot case
-the MVP targets. Two `ActionHost`-style components on the same page mounting
+the MVP targets. It is on the
+[`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php)
+contract despite having no Filament counterpart, because the shipped
+[Modals renderer](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope)
+calls it on an abstractly-typed host.
+Two `ActionHost`-style components on the same page mounting
 an action of the same name would collide on the emitted DOM id. Acceptable
 while every consumer mounts at most one live component with action modals per
 page; reversible by folding the LiveComponent's own id into the string once a
@@ -370,6 +392,92 @@ integrity rides on a checksum round-tripped from the browser. Sylament's
 action therefore carries no user-editable payload and there is no tampering
 surface to guard for free. Reverses if a writable per-action data bag (Filament's
 `$mountedActionData`) is added once form-in-modal input lands.
+
+### The modals renderer resolves its host from the render stack, not from template scope
+
+Filament's `modals.blade.php` reads `$this` because a Blade component inherits the
+Livewire component's scope. A Twig component gets a fresh context: ux-twig-component
+spreads the caller's context in and then **overwrites** `this` with the component
+being rendered ([`ComponentRenderer::preRender()`](../../../vendor/symfony/ux-twig-component/src/ComponentRenderer.php)),
+so inside `<twig:…>` `this` is that component, never the host. The two implicit
+Twig equivalents — `outerScope.this`, or staying an `{% include %}` — both bind to
+whatever render context encloses the tag, which is the host **only** when the tag
+sits directly in the host's own template; nest it in any other Twig component and
+they silently bind to that component's `AnonymousComponent`. (The
+[`NestedActionHost`](../../../packages/actions/tests/Fixtures/Twig/templates/components/NestedActionHost.html.twig)
+fixture keeps its trigger button outside the `Section` for exactly this reason —
+`this.deleteAction()` cannot resolve in there.)
+
+So `Modals` is the repo's first **class-based** Twig component (every other one is
+an anonymous template): [`getLiveComponent()`](../../../packages/actions/src/Twig/Components/Modals.php)
+walks `Symfony\UX\TwigComponent\ComponentStack` innermost-first to the nearest
+`InteractsWithActions`, skipping frames that are not hosts. That keeps Filament's
+zero-argument call site — `<twig:SylamentActions:Modals />` against
+`<x-filament-actions::modals />` — and stays correct at any nesting depth. An
+optional `:liveComponent="this"` prop overrides the walk, named for the vocabulary
+`BelongsToLiveComponent` / `Action::getLiveComponent()` already use for this object.
+
+`ComponentStack` is marked `@internal` in ux-twig-component — a real maintenance
+liability, accepted deliberately because the two supported alternatives are
+silently position-dependent. It is contained: the walk is one method, so a vendor
+change has a single repair site, and
+[`ModalsTest`](../../../packages/actions/tests/Unit/Twig/Components/ModalsTest.php)
+pins the contract against a hand-built stack so a break fails loudly in Unit rather
+than subtly in a render.
+
+### The modal is opened by rendered state, not by the dispatched event
+
+`mountAction()` dispatches `sylament-open-modal`, but that event alone cannot open
+a modal the same response is rendering for the first time: UX LiveComponent's
+`processRerender()` morphs the DOM and dispatches queued browser events
+synchronously in one task, while Stimulus binds `data-action` listeners from a
+`MutationObserver` microtask that runs after it — so the new `<dialog>` is not yet
+listening. The authoritative signal is therefore the markup: `ConfirmModal`
+passes `:open="true"` to `<twig:SylamentSupport:Modal>` (it is rendered only while
+[`mountedActionShouldOpenModal()`](#the-modal-open-gate-is-confirmation-only) holds),
+and the controller opens itself from that Stimulus value. The dispatch stays for
+imperative callers and is harmless — the controller guards on `element.open`, so
+value and event are idempotent. Full reasoning in
+[support/modal.md](../support/modal.md#the-open-state-is-a-stimulus-value-not-only-an-event).
+
+### The modals renderer emits no wrapper element
+
+Filament wraps its loop in `<div wire:partial="action-modals" x-data="filamentActionModals({ livewireId })" style="height: 0">`
+— a partial-render target, an Alpine data component, and an inline height so the
+always-present div costs no layout. Sylament's renderer emits the modal or nothing
+at all. All three reasons for the wrapper are absent: partial re-render is
+[not ported](#partial-re-render-is-not-ported), the open/close behavior lives on
+the `sylament--support--modal` Stimulus controller attached to the `<dialog>`
+itself rather than an ancestor, and a native `<dialog>` is `display: none` until
+opened so it needs no layout-neutral host. Reverses only if a partial-render
+mechanism lands and needs a stable DOM anchor.
+
+### There is no single-render guard
+
+Filament's `modals.blade.php` short-circuits on a `hasActionsModalRendered` flag
+(a `protected bool` on the trait, set from inside the view) so that the component
+renders at most once per request. It needs that because
+`<x-filament-actions::modals />` is baked into shared panel layouts —
+[`page/index.blade.php`](../../../vendor/filament/filament/resources/views/components/page/index.blade.php),
+`topbar.blade.php`, `sidebar.blade.php` — which can nest, so a page can include it
+several times without asking. Sylament has no `panels` package and therefore no
+layout that places the tag implicitly: every call site is a host author writing the
+tag, and writing it twice would emit two `<dialog>`s with the same
+[name-scoped id](#the-modal-id-is-name-only-not-instance-scoped-or-nesting-scoped).
+No flag is ported, and none is on `HasActions`. Reverses with `panels`, if a shared
+layout ever places the tag on the author's behalf.
+
+### An unresolvable host throws instead of rendering nothing
+
+Filament guards with `@if ($this instanceof \Filament\Actions\Contracts\HasActions …)`,
+silently rendering nothing when the surrounding Livewire component is not an action
+host — again because the shared panel layouts render it for every component,
+host or not. With no such layout here, every occurrence of the tag is deliberate,
+so `getLiveComponent()` throws a `LogicException` naming both fixes (place it inside
+a host, or pass `:liveComponent`) rather than rendering nothing. Silence is the
+worse failure for the problem this component exists to solve — a modal that never
+appears and says nothing about why. Reverses with `panels` if a shared layout needs
+the tolerant form; at that point the guard belongs in the layout, not here.
 
 _See also:_ the [rename table](../renames.md) for the `Has*` / `InteractsWith*`
 **swap** this whole file is the Sylament side of, and the systematic

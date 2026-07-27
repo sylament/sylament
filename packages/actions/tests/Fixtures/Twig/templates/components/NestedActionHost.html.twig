@@ -1,0 +1,10 @@
+{# The trigger stays outside the Section on purpose: inside a Twig component `this` is
+   that component's AnonymousComponent, so `this.deleteAction()` cannot resolve there.
+   The Modals tag is nested precisely because it does not read `this` from context. #}
+<div {{ attributes }}>
+    {{ renderComponent(this.deleteAction()) }}
+
+    <twig:SylamentSupport:Section heading="Records">
+        <twig:SylamentActions:Modals />
+    </twig:SylamentSupport:Section>
+</div>

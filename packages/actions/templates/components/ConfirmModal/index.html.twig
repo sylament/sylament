@@ -1,6 +1,14 @@
+{% props
+    action,
+    id %}
+
 {% set submitColor = action.getColor is iterable or action.getColor is empty or action.getColor == 'gray' ? 'primary' : action.getColor %}
+{# Rendered only while the action is mounted and its modal should be open, so the open
+   state is declared here rather than left to the `sylament-open-modal` event, which a
+   modal first rendered by that same response is not yet listening for. #}
 <twig:SylamentSupport:Modal
     id="{{ id }}"
+    :open="true"
     :heading="action.getModalHeading"
     :description="action.getModalDescription"
     :icon="action.getModalIcon"

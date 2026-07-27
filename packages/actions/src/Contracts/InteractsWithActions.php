@@ -20,5 +20,9 @@ interface InteractsWithActions
 
     public function getMountedAction(): ?Action;
 
+    public function mountedActionShouldOpenModal(?Action $mountedAction = null): bool;
+
+    public function getMountedModalId(): string;
+
     public function getAction(string $name): ?Action;
 }

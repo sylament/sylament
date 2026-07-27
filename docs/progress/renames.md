@@ -53,6 +53,7 @@ the table above.
 | Livewire | UX LiveComponent | `getLivewire()` → `getLiveComponent()` |
 | Eloquent | Doctrine | — |
 | Blade view | Twig template | `view()` → `template()`, `viewData()` → `templateData()` |
+| Blade component scope inheritance (`$this` is the Livewire component) | an explicit host — resolved from the Twig component stack, or passed as a prop | `<x-filament-actions::modals />` → `<twig:SylamentActions:Modals />` (see [has-actions.md](actions/has-actions.md#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope)) |
 | Alpine.js | Stimulus | `x-data` / `x-on:` → a controller under `packages/*/assets/src/controllers/`, wired with StimulusBundle's Twig helpers |
 | `fi-*` classes | `sy-*` classes | `fi-icon-btn` → `sy-icon-btn`, `fi-disabled` → `sy-disabled` |
 

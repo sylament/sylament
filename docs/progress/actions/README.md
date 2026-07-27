@@ -149,10 +149,14 @@ for a directory collapses that whole subtree into one navigational entry.
 [`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)
 (a Sylament composition with **no** single Filament source; Filament renders
 action buttons through the support-layer button/link component views) and
-[`confirm-modal.html.twig`](../../../packages/actions/templates/components/confirm-modal.html.twig)
+[`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig)
 (porting [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php))
 — are folded into [`action.md`](action.md) as its button- and modal-rendering
-rows rather than carrying rows here.
+rows rather than carrying rows here. The host-side
+[`Modals`](../../../packages/actions/templates/components/Modals.html.twig)
+component (porting [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php))
+folds the same way into [`has-actions.md`](has-actions.md), being a pure view over
+that trait's mounted-action state.
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -186,7 +190,6 @@ rows rather than carrying rows here.
 | ActionsIconAlias | [`View/ActionsIconAlias.php`](../../../vendor/filament/actions/src/View/ActionsIconAlias.php) | todo | - |
 | ActionsRenderHook | [`View/ActionsRenderHook.php`](../../../vendor/filament/actions/src/View/ActionsRenderHook.php) | todo | - |
 | views/components/group | [`views/components/group.blade.php`](../../../vendor/filament/actions/resources/views/components/group.blade.php) | todo | - |
-| views/components/modals | [`views/components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php) | todo | - |
 | Translations | [`resources/lang/`](../../../vendor/filament/actions/resources/lang) | todo | - |
 | Assets (JS/CSS) | [`resources/js/`](../../../vendor/filament/actions/resources/js) | todo | - |
 | [`SylamentActionsBundle`](../../../packages/actions/src/SylamentActionsBundle.php) | [`ActionsServiceProvider.php`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | in progress | [actions-bundle.md](actions-bundle.md) |

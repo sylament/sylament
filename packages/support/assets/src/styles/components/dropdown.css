@@ -19,3 +19,7 @@
         @apply pointer-events-none opacity-70;
     }
 }
+
+.sy-dropdown-item-label {
+    @apply grow truncate;
+}

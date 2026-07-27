@@ -1,0 +1,20 @@
+{% set tag = component.getUrl ? 'a' : 'button' %}
+{% set iconHtml = component.getIcon ? generateIconHtml(component.getIcon, null, null, component.getIconSize ?? 'sm') : null %}
+
+<{{ tag }}
+    {{ attrs({
+        class: classes('sy sy-dropdown-item sy-ac', {
+            'sy-disabled': component.isDisabled,
+        }),
+        type: component.getUrl ? false : 'button',
+        disabled: component.isDisabled and not component.getUrl,
+        'aria-disabled': component.isDisabled ? 'true' : false,
+        href: component.getUrl ?: false,
+        target: component.shouldOpenUrlInNewTab ? '_blank' : false,
+        title: component.getTooltip ?: false,
+    }, component.getExtraAttributes) }}
+    {%- if not component.getUrl %} {{ live_action('mountAction', { name: component.getName }) }}{% endif %}
+>
+    {{- iconHtml -}}
+    <span class="sy-dropdown-item-label">{{ component.getLabel ?? component.getName }}</span>
+</{{ tag }}>

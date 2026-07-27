@@ -77,7 +77,9 @@ const groups = [
 ];
 
 if (watch) {
-    throw new Error('--watch is not implemented yet.');
+    const contexts = await Promise.all(groups.map((group) => esbuild.context(group)));
+    await Promise.all(contexts.map((ctx) => ctx.watch()));
+    console.log(`[build-js] watching ${allEntries.length} entries (${Object.keys(BUNDLED_ENTRIES).length} bundled)`);
+} else {
+    await Promise.all(groups.map((group) => esbuild.build(group)));
 }
-
-await Promise.all(groups.map((group) => esbuild.build(group)));

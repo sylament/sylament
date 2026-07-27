@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions;
 
 use Sylament\Actions\Concerns\BelongsToGroup;
+use Sylament\Actions\Concerns\HasDropdown;
 use Sylament\Actions\Concerns\HasLabel;
 use Sylament\Actions\Concerns\HasSize;
 use Sylament\Support\Components\Concerns\HasColor;
@@ -19,6 +20,7 @@ class ActionGroup extends ViewComponent
 {
     use BelongsToGroup;
     use HasColor;
+    use HasDropdown;
     use HasExtraAttributes;
     use HasIcon;
     use HasIconSize;

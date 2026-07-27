@@ -6,6 +6,7 @@ namespace Sylament\Schemas\Components;
 
 use Sylament\Schemas\Components\Concerns\BelongsToContainer;
 use Sylament\Schemas\Components\Concerns\CanBeHidden;
+use Sylament\Schemas\Components\Concerns\HasActions;
 use Sylament\Schemas\Components\Concerns\HasChildComponents;
 use Sylament\Schemas\Components\Concerns\HasState;
 use Sylament\Schemas\Components\Concerns\HasStateBindingModifiers;
@@ -28,6 +29,7 @@ class Component extends ViewComponent
     use CanGrow;
     use CanOrderColumns;
     use CanSpanColumns;
+    use HasActions;
     use HasChildComponents;
     use HasColumns;
     use HasExtraAttributes;

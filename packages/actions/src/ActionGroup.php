@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Actions;
 
+use Closure;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
 use Sylament\Actions\Concerns\CanBeHidden;
@@ -37,6 +38,10 @@ class ActionGroup extends ViewComponent
 
     public const string DEFAULT_ICON = 'heroicons:ellipsis-vertical';
 
+    public const string ICON_BUTTON_TEMPLATE = '@SylamentActions/components/action-group/icon-button-trigger.html.twig';
+
+    public const string BUTTON_TEMPLATE = '@SylamentActions/components/action-group/button-trigger.html.twig';
+
     protected string $evaluationIdentifier = 'group';
 
     /**
@@ -48,6 +53,10 @@ class ActionGroup extends ViewComponent
      * @var array<string, Action>
      */
     protected array $flatActions = [];
+
+    protected string|Closure|null $triggerTemplate = null;
+
+    protected string|Closure|null $defaultTriggerTemplate = null;
 
     /**
      * @param array<Action|ActionGroup> $actions
@@ -67,6 +76,13 @@ class ActionGroup extends ViewComponent
         $group->configure();
 
         return $group;
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->defaultTriggerTemplate(static::ICON_BUTTON_TEMPLATE);
     }
 
     /**
@@ -114,6 +130,47 @@ class ActionGroup extends ViewComponent
     public function getFlatActions(): array
     {
         return $this->flatActions;
+    }
+
+    public function triggerTemplate(string|Closure|null $template): static
+    {
+        $this->triggerTemplate = $template;
+
+        return $this;
+    }
+
+    public function defaultTriggerTemplate(string|Closure|null $template): static
+    {
+        $this->defaultTriggerTemplate = $template;
+
+        return $this;
+    }
+
+    public function getTriggerTemplate(): string
+    {
+        return $this->evaluate($this->triggerTemplate)
+            ?? $this->evaluate($this->defaultTriggerTemplate)
+            ?? static::ICON_BUTTON_TEMPLATE;
+    }
+
+    public function iconButton(): static
+    {
+        return $this->triggerTemplate(static::ICON_BUTTON_TEMPLATE);
+    }
+
+    public function button(): static
+    {
+        return $this->triggerTemplate(static::BUTTON_TEMPLATE);
+    }
+
+    public function isIconButton(): bool
+    {
+        return $this->getTriggerTemplate() === static::ICON_BUTTON_TEMPLATE;
+    }
+
+    public function isButton(): bool
+    {
+        return $this->getTriggerTemplate() === static::BUTTON_TEMPLATE;
     }
 
     public function isHidden(): bool

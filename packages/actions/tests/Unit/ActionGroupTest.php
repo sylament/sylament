@@ -121,3 +121,26 @@ it('never clobbers an explicit action template', function (): void {
 
     expect($edit->getTemplate())->toBe('custom.html.twig');
 });
+
+it('defaults to the icon-button trigger template', function (): void {
+    $group = ActionGroup::make([]);
+
+    expect($group->getTriggerTemplate())->toBe(ActionGroup::ICON_BUTTON_TEMPLATE)
+        ->and($group->isIconButton())->toBeTrue()
+        ->and($group->isButton())->toBeFalse();
+});
+
+it('switches to the button trigger template', function (): void {
+    $group = ActionGroup::make([])->button();
+
+    expect($group->getTriggerTemplate())->toBe(ActionGroup::BUTTON_TEMPLATE)
+        ->and($group->isButton())->toBeTrue()
+        ->and($group->isIconButton())->toBeFalse();
+});
+
+it('lets an explicit trigger template win over the default', function (): void {
+    $group = ActionGroup::make([])->triggerTemplate('custom-trigger.html.twig');
+
+    expect($group->getTriggerTemplate())->toBe('custom-trigger.html.twig')
+        ->and($group->isIconButton())->toBeFalse();
+});

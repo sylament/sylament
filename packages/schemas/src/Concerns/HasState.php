@@ -130,21 +130,21 @@ trait HasState
     {
         $appliedStateCastPaths = [];
 
-        foreach ($this->getFlatComponents() as $component) {
+        foreach ($this->getFlatComponents(withActions: false) as $component) {
             $component->hydrateState($applyDefaults, $appliedStateCastPaths);
         }
     }
 
     public function fillStateWithNull(): void
     {
-        foreach ($this->getFlatComponents() as $component) {
+        foreach ($this->getFlatComponents(withActions: false) as $component) {
             $component->fillStateWithNull();
         }
     }
 
     public function callAfterStateHydrated(): void
     {
-        foreach ($this->getFlatComponents() as $component) {
+        foreach ($this->getFlatComponents(withActions: false) as $component) {
             $component->callAfterStateHydrated();
         }
     }
@@ -193,7 +193,7 @@ trait HasState
      */
     public function dehydrateState(array &$state = [], bool $isDehydrated = true): array
     {
-        foreach ($this->getComponents() as $component) {
+        foreach ($this->getComponents(withActions: false) as $component) {
             $component->dehydrateState($state, $isDehydrated);
         }
 
@@ -208,7 +208,7 @@ trait HasState
     {
         $accessor = PropertyAccessor::getInstance();
 
-        foreach ($this->getComponents() as $component) {
+        foreach ($this->getComponents(withActions: false) as $component) {
             if (! $component->isDehydrated()) {
                 continue;
             }
@@ -246,7 +246,7 @@ trait HasState
      */
     public function callBeforeStateDehydrated(array &$state = []): void
     {
-        foreach ($this->getComponents() as $component) {
+        foreach ($this->getComponents(withActions: false) as $component) {
             if ($component->isHiddenAndNotDehydratedWhenHidden()) {
                 continue;
             }
@@ -279,7 +279,7 @@ trait HasState
     {
         $cache = [];
 
-        foreach ($this->getComponents() as $component) {
+        foreach ($this->getComponents(withActions: false) as $component) {
             if (! $component->isDehydrated()) {
                 continue;
             }

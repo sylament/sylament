@@ -54,7 +54,7 @@ their detail sections do.
 | [`BelongsToParentComponent`](../../../packages/schemas/src/Concerns/BelongsToParentComponent.php) | [`Concerns/BelongsToParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToParentComponent.php) | done | — | [diverges](#parentcomponent-accepts-null-to-detach) |
 | [`CanBeEmbeddedInParentComponent`](../../../packages/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | [`Concerns/CanBeEmbeddedInParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | done | — | — |
 | [`CanBeInline`](../../../packages/schemas/src/Concerns/CanBeInline.php) | [`Concerns/CanBeInline.php`](../../../vendor/filament/schemas/src/Concerns/CanBeInline.php) | done | — | — |
-| [`HasComponents`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | in progress | — | [detail](#hascomponents-ports-the-non-action-subset) · [diverges](#getcomponents-preserves-the-callers-array-keys-instead-of-reindexing) |
+| [`HasComponents`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | in progress | — | [detail](#hascomponents-still-lacks-the-lookup-and-clone-layer) · [diverges](#getcomponents-preserves-the-callers-array-keys-instead-of-reindexing) |
 | [`HasState`](../../../packages/schemas/src/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Concerns/HasState.php) | in progress | — | [detail](#hasstate-ships-the-snapshot-path-only) |
 | [`HasKey`](../../../packages/schemas/src/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Concerns/HasKey.php) | in progress | live-component id | [detail](#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) |
 | [`HasHeadings`](../../../packages/schemas/src/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Concerns/HasHeadings.php) | done | — | — |
@@ -84,20 +84,29 @@ bodies, ported faithfully. **Left:** direct coverage of the fall-through.
 **Next:** add a unit case that parents one schema under another and asserts the
 inherited `isLive`/`getAllColumns` result.
 
-### `HasComponents` ports the non-action subset
+### `HasComponents` still lacks the lookup and clone layer
 
 `components()`/`getComponents()`/`getFlatComponents()`/`getComponentByStatePath()`
-are ported and covered (20 unit cases plus the `SchemaRenderTest` coercion and
+are ported and covered (26 unit cases plus the `SchemaRenderTest` coercion and
 hidden-filtering paths). **In:** lazy closure resolution, container assignment,
-`string`→`Text` and other→`Html` child coercion, visibility filtering, and
-top-level/nested/skip-container state-path lookup. **Left:** `getAction()`,
-`getComponent()`, `getFlatFields()` (depend on Actions and Fields),
-`cloneComponents()`/`clearCachedChildSchemas()` (depend on `Cloneable` and
-child-schema caching), and the deprecated `schema()` alias. **Next:** port those
-as Actions/Fields/`Cloneable` land. The two structural differences it already
-carries — no action items in the unions, and a single `$cachedComponents` slot
-instead of Filament's flag-keyed memoization — are permanent and written up in
-[Divergences](#actions-and-actiongroups-are-absent-from-the-component-unions).
+`string`→`Text` and other→`Html` child coercion, visibility filtering,
+top-level/nested/skip-container state-path lookup, and — matching Filament's
+unions — `Action`/`ActionGroup` children: each is passed through the container's
+`modifyAction()`/`modifyActionGroup()` hook, stamped `schemaContainer($this)`,
+and left uncoerced; `getComponents(bool $withActions = true, bool $withHidden = true)`
+and `getFlatComponents(bool $withActions = true)` drop them when `$withActions`
+is false (the state walks in `HasState`/`HasSchemas` and
+`getComponentByStatePath()` all pass `withActions: false`; `getFlatComponents()`
+appends actions but never descends into them). Both accessors declare PHPStan
+conditional return types, so `withActions: false` call sites keep
+`array<Component>` inference. **Left:** `getAction()` (next in the
+actions-integration epic), `getComponent()`, `getFlatFields()` (depend on
+Fields), `cloneComponents()`/`clearCachedChildSchemas()` (depend on `Cloneable`
+and child-schema caching), and the deprecated `schema()` alias. **Next:** port
+`getAction()`, then the rest as Fields/`Cloneable` land. The structural
+difference it keeps — a single `$cachedComponents` slot instead of Filament's
+flag-keyed memoization — is permanent and written up in
+[Divergences](#the-component-collection-keeps-a-single-cache-and-drops-the-flag-keyed-memoization).
 
 ### `HasState` ships the snapshot path only
 
@@ -205,26 +214,22 @@ widens it to `?Component`, so a schema can be reset to root (`isRoot()` true
 again). Harmless superset of Filament's contract; reversible if a caller ever
 needs the non-null guarantee.
 
-### Actions and ActionGroups are absent from the component unions
-
-Filament's components prop and every accessor union in `HasComponents` include
-`Action|ActionGroup`, and `getComponents()` calls
-`modifyAction()`/`modifyActionGroup()`/`schemaContainer()` on them. Sylament types
-the prop `array<Component|string|Markup>|Component|string|Markup|Closure` and only
-coerces `string`→`Text` and other→`Html`. The actions↔schemas integration is
-unported, so action items, `getAction()`, and action modification have no port
-here yet. Converges when Actions land.
-
 ### The component collection keeps a single cache and drops the flag-keyed memoization
 
 Filament memoizes `getComponents` (with/without hidden), `getFlatComponents`, and
 `getComponentByStatePath` under multi-dimensional caches keyed by
 `withActions`/`withHidden`/`withOriginalKeys`/`withAbsoluteKeys`/`containerKey`/
 `spl_object_id`. Sylament keeps only `$cachedComponents` (the raw resolved list)
-and recomputes flat/by-state-path each call. `getComponents` also defaults
-`withHidden = true` (Filament `false`, the template calls `getComponents(false)`
-explicitly) and filters on `isVisible()` rather than `isHidden()`. Correct but not
-memoized; revisit if flat/state-path lookups become hot.
+and recomputes flat/by-state-path each call. `getComponents(bool $withActions = true,
+bool $withHidden = true)` matches Filament's `withActions` default but keeps the
+flipped `withHidden = true` default (Filament `false`; the template calls
+`getComponents(true, false)` explicitly), drops `withOriginalKeys` (see the
+key-preservation divergence below), and filters on `isVisible()` rather than
+`isHidden()`. `getFlatComponents(bool $withActions = true)` keeps only that one
+flag — Filament's `withHidden`/`withAbsoluteKeys`/`containerKey` parameters and
+its key-indexed carry are dropped: the flat list stays hidden-inclusive, ordered,
+and unkeyed. Correct but not memoized; revisit if flat/state-path lookups become
+hot.
 
 ### `getState()` ports Filament's `getStateSnapshot()`, not its validating `getState()`
 
@@ -292,8 +297,8 @@ consumer ever needs a dense list.
 Filament's `renderEmbeddedHtml()` returns `''` when the schema is directly hidden
 or has no visible components, so an empty slot emits nothing. Sylament's
 `Schema.html.twig` always renders the outer `<div>` around the (possibly empty)
-`getComponents(false)` loop, so a slot handed an empty or fully-hidden `Schema`
-still emits the root element. Reversible by guarding the template on a
+`getComponents(true, false)` loop, so a slot handed an empty or fully-hidden
+`Schema` still emits the root element. Reversible by guarding the template on a
 visible-component count.
 
 ### `modifyAction()` and `modifyActionGroup()` guard a callback's return type at runtime

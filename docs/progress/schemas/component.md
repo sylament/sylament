@@ -196,12 +196,10 @@ cache returns with the render pipeline where repeated materialization would show
 
 Filament types `components()` as `array | Closure` and `childComponents()` as a
 wide `array | Schema | Component | Action | ActionGroup | string | Htmlable |
-Closure | null` union. Sylament widens `components()` to
-`Schema|array|Component|string|Markup|Closure|null` (single-value convenience,
-matching how Section/`Field` pass one component) and drops the
-`Action`/`ActionGroup` arms (Actions not ported). Reversible if the single-value
-form proves ambiguous; the `Action`/`ActionGroup` arms return with the actions
-integration.
+Closure | null` union. Sylament widens `components()` to the same full
+`Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null` union as
+`childComponents()` (single-value convenience, matching how Section/`Field` pass
+one component). Reversible if the single-value form proves ambiguous.
 
 ### getChildSchemas() drops the withHidden parameter
 

@@ -99,8 +99,9 @@ Filament's `Schema::toEmbeddedHtml` emits root state wiring (the client
 data-object, partial markers, window listeners), wraps `Action` / `ActionGroup`
 children in an action wrapper (hidden-flagging invisible ones), and honors
 `isLiberatedFromContainerGrid()`. `Schema.html.twig` renders none of these: it
-iterates `component.getComponents(false)` (already visibility-filtered, so no
-hidden-wrapper branch), has no Action branch, and no liberated-from-grid branch.
+iterates `component.getComponents(true, false)` (already visibility-filtered, so
+no hidden-wrapper branch), has no Action branch, and no liberated-from-grid
+branch.
 This is a genuine feature gap, not the client-runtime idiom translation — it
 reverses when the live-component-state epic and the Actions port land.
 

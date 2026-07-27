@@ -49,7 +49,7 @@ permanent note in [Divergences](#divergences).
 | [`HasLabel`](../../../packages/actions/src/Concerns/HasLabel.php) (shared with `Action`) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | - |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) (shared with `Action`) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | - |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | - |
-| [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | - |
+| [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | [diverges](#extra-attributes-are-never-rendered-onto-the-groups-own-trigger-or-dropdown-wrapper) |
 | [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) (support) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | - |
 | [`HasIconSize`](../../../packages/support/src/Components/Concerns/HasIconSize.php) (support) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — | - |
 | [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) (support) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | - |
@@ -60,7 +60,7 @@ permanent note in [Divergences](#divergences).
 | Trigger-view-default propagation to nested groups (`defaultTriggerView()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getActions()`) | todo | submenu rendering | - |
 | Grouped item template | [`components/dropdown/list/item.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | done | — | - |
 | Trigger machinery | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getTriggerView()`/`toTriggerHtml()`) | done | — | [diverges](#trigger-defaults-diverge-from-filament-gray-over-primary-and-the-ellipsis-icon-is-per-template) |
-| Rendering (`toEmbeddedHtml()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | done | — | [diverges](#rendering-refuses-any-visible-nested-group-eagerly-instead-of-filaments-flattenembed-behavior) |
+| Rendering (`toEmbeddedHtml()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | done | — | [diverges](#rendering-refuses-any-visible-nested-group-eagerly-instead-of-filaments-flattenembed-behavior), [diverges](#dropdownfalse-wraps-its-inline-row-in-a-bare-divsysy-ac-group-unlike-filaments-unwrapped-concatenation) |
 | Badge/button-group/grouped/link triggers | [`View/Concerns/CanGenerate*Html.php`](../../../vendor/filament/support/src/View/Concerns) | todo | — | - |
 | Submenu rendering (nested non-dropdown groups) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()` action-list branch) | todo | — | - |
 | Dropdown teleport & auto-placement | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) (`dropdownTeleport()`/`dropdownAutoPlacement()`) | todo | — | - |
@@ -128,6 +128,33 @@ also means `ActionGroup` never runs the `HasLabel` trait's own `getLabel()`
 class-defined method over the trait's, no aliasing needed, and a group has no
 name for that default to derive from anyway. Reverses if/when a translation
 layer lands, same as the linked `Action` divergence.
+
+### Extra attributes are never rendered onto the group's own trigger or dropdown wrapper
+
+`HasExtraAttributes` is folded in and fully functional as an API —
+`extraAttributes()`/`getExtraAttributes()`/`getExtraAttributeBag()`/
+`hasExtraAttributes()` all work exactly as they do on `Action` — but nothing
+in the render path consumes `group.getExtraAttributes`. Filament's five
+`to*TriggerHtml()` methods each merge `$this->getExtraAttributes()` onto the
+trigger element
+([`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php)
+lines 631/648/670/688/706), and a second, separate pair —
+`extraDropdownAttributes()`/`getExtraDropdownAttributes()`/
+`getExtraDropdownAttributeBag()` (`ActionGroup.php:759-789`) — lets a caller
+attach attributes to the dropdown panel wrapper specifically, independent of
+the trigger. Neither
+[`icon-button-trigger.html.twig`](../../../packages/actions/templates/components/action-group/icon-button-trigger.html.twig)
+nor
+[`button-trigger.html.twig`](../../../packages/actions/templates/components/action-group/button-trigger.html.twig)
+reads `group.getExtraAttributes`, and
+[`action-group.html.twig`](../../../packages/actions/templates/components/action-group.html.twig)
+has no `extraDropdownAttributes` port at all — a caller can set attributes on
+an `ActionGroup` and read them back programmatically, but none reach rendered
+markup today. Todo: wire `group.getExtraAttributes` into both trigger
+templates the way `button-action.html.twig`/`grouped-action.html.twig` already
+do for `Action`, and port `extraDropdownAttributes()` onto the dropdown
+wrapper, the moment a consumer needs to style or instrument a group's
+trigger/panel directly.
 
 ### `dropdownWidth` is a CSS string; `dropdownTeleport` and `dropdownAutoPlacement` are deferred
 
@@ -303,3 +330,34 @@ only refuses when a *visible* `ActionGroup` is discovered as one of the
 rendering group's own children, which is the one case that is genuinely
 unbuilt. Reversible the moment submenu/nested-dropdown rendering lands: replace
 the guard with the real flatten/embed branching this divergence describes.
+
+One more consequence of that eager placement: the `LogicException` contract
+above holds only when `render()` is called directly from PHP, the way
+[`ActionGroupRenderTest`](../../../packages/actions/tests/Integration/ActionGroupRenderTest.php)'s
+own `renderGroup()` helper does. A host template that instead embeds the group
+via the `renderComponent(group)` Twig function — the normal path for any
+`ActionGroup` nested inside another template's own rendering — has that
+`render()` call happen while Twig's `Template::yield()` is executing the
+*host* template, so the same `\Throwable`-catching behavior cited above
+applies to it too: the exception arrives at that caller wrapped in a
+`Twig\Error\RuntimeError`, with the original `LogicException` reachable via
+`getPrevious()`, not as a bare `LogicException`. Nothing under
+`packages/actions/tests` exercises that second call shape today.
+
+### `dropdown(false)` wraps its inline row in a bare `div.sy.sy-ac-group`, unlike Filament's unwrapped concatenation
+
+Filament's non-dropdown branch of `toEmbeddedHtml()`
+([`ActionGroup.php:484-489`](../../../vendor/filament/actions/src/ActionGroup.php))
+returns `collect($this->getActions())->filter(...)->map(fn ($action) =>
+$action->toHtml())->implode('')` — the visible children's markup concatenated
+directly, with no wrapper element of any kind. The port's
+[`action-group.html.twig`](../../../packages/actions/templates/components/action-group.html.twig)
+instead wraps the same loop in `<div class="sy sy-ac-group">…</div>` before
+the `{% else %}` branch's children. Unlike Filament's bare concatenation, the
+wrapper is a real layout hook: actions'
+[`action-group.css`](../../../packages/actions/assets/src/styles/components/action-group.css)
+gives `.sy-ac-group` `@apply inline-flex items-center gap-2`, so the inline
+row's children lay out horizontally with spacing — a rule Filament's
+unwrapped output has no element to carry. Reversible by dropping the wrapper
+(and its CSS rule) and emitting the loop bare the moment parity with
+Filament's unwrapped shape matters more than the flex layout.

@@ -16,10 +16,13 @@ map, and the group back-reference wiring), the dropdown trigger config,
 visibility composition, and context propagation to children (`liveComponent()`,
 `getRecord()` fallback, default-template push onto `Action` children) have
 landed across this epic's first six tasks. Still to come: propagating dropdown
-placement and trigger-view defaults to nested groups, and the render pipeline
-(see _Blocked by_ below).
+placement and trigger-view defaults to nested groups (see _Blocked by_ below).
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+**Status:** in progress — the dropdown-rendering base (model, visibility,
+triggers, and `render()` producing the complete dropdown or inline row) is
+complete; the remaining rows are deferred (nested-group propagation and
+rendering, additional trigger kinds, teleport/auto-placement, `Arrayable`,
+table/bulk integration) — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
@@ -57,7 +60,7 @@ permanent note in [Divergences](#divergences).
 | Trigger-view-default propagation to nested groups (`defaultTriggerView()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getActions()`) | todo | submenu rendering | - |
 | Grouped item template | [`components/dropdown/list/item.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | done | — | - |
 | Trigger machinery | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getTriggerView()`/`toTriggerHtml()`) | done | — | [diverges](#trigger-defaults-diverge-from-filament-gray-over-primary-and-the-ellipsis-icon-is-per-template) |
-| Rendering (`toEmbeddedHtml()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | todo | Task 9 | - |
+| Rendering (`toEmbeddedHtml()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | done | — | [diverges](#rendering-refuses-any-visible-nested-group-eagerly-instead-of-filaments-flattenembed-behavior) |
 | Badge/button-group/grouped/link triggers | [`View/Concerns/CanGenerate*Html.php`](../../../vendor/filament/support/src/View/Concerns) | todo | — | - |
 | Submenu rendering (nested non-dropdown groups) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()` action-list branch) | todo | — | - |
 | Dropdown teleport & auto-placement | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) (`dropdownTeleport()`/`dropdownAutoPlacement()`) | todo | — | - |
@@ -257,3 +260,46 @@ Two defaults baked into the new trigger templates depart from Filament's
 Reversible for either point independently: drop the `?? 'gray'` fallback, or
 override `getIcon()` on `ActionGroup`, the moment product direction wants an
 unconfigured trigger to match Filament's primary/always-ellipsis defaults.
+
+### Rendering refuses any visible nested group eagerly, instead of Filament's flatten/embed behavior
+
+Filament's `toEmbeddedHtml()` has no guard against nesting at all: a nested
+`ActionGroup` with `hasDropdown() === false` gets flattened into its own
+`fi-dropdown-list` section inside the parent's panel (a visual divider, not a
+real submenu), and a nested `ActionGroup` that still has a dropdown is embedded
+directly via its own `toHtml()` call — Filament happily renders a dropdown
+inside a dropdown. Neither behavior is ported yet (tracked by the "Submenu
+rendering" and nested-group-propagation rows above); the port's
+[`ActionGroup::render()`](../../../packages/actions/src/ActionGroup.php)
+instead fails fast for both cases alike — any direct child that is itself a
+visible `ActionGroup` throws
+`LogicException('Submenu rendering is not supported yet: an ActionGroup
+cannot be rendered inside another ActionGroup.')` — so a caller gets a loud,
+immediate error instead of silently wrong markup.
+
+Task 9's plan drafted this guard as a self-check inside `render()`
+(`if ($this->getGroup() !== null) { throw ...; }`), fired lazily only when a
+nested group's own `render()` happens to be invoked. That shape doesn't
+survive contact with Twig: a nested group is reached via
+`{{ renderComponent(action) }}` inside the parent's own
+`action-group.html.twig`, so the throw would occur while the parent's template
+is still executing inside `Twig\Template::yield()`. Twig's own
+`yield()` (`vendor/twig/twig/src/Template.php`) catches any `\Throwable` that
+isn't already a `Twig\Error\Error` and rewraps it as a `Twig\Error\RuntimeError`
+carrying the original as `getPrevious()` — confirmed by running the brief's own
+test unmodified, which failed with exactly that wrapped type. The implemented
+guard instead checks eagerly, in `render()` itself, before any Twig rendering
+starts: `array_any($this->getActions(), fn (Action|ActionGroup $action):
+bool => $action instanceof self && $action->isVisible())`. Checking
+`getActions()` (not the raw `$actions` property) and gating on `isVisible()`
+mirrors exactly what the template's own `|filter(action => action.isVisible)`
+would have reached — a *hidden* nested group is not an error, since it would
+never have been rendered anyway. One behavior change from the drafted shape:
+the original would also refuse a nested group rendered **directly** in
+isolation (`$nestedGroup->render($twig)` called on its own, bypassing its
+parent's template) purely because `getGroup() !== null`, even though nothing
+about rendering it stand-alone is actually unsupported; the implemented guard
+only refuses when a *visible* `ActionGroup` is discovered as one of the
+rendering group's own children, which is the one case that is genuinely
+unbuilt. Reversible the moment submenu/nested-dropdown rendering lands: replace
+the guard with the real flatten/embed branching this divergence describes.

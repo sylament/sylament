@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions;
 
 use Closure;
+use LogicException;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
 use Sylament\Actions\Concerns\CanBeHidden;
@@ -19,6 +20,7 @@ use Sylament\Support\Components\Concerns\HasIcon;
 use Sylament\Support\Components\Concerns\HasIconSize;
 use Sylament\Support\Components\Concerns\HasTooltip;
 use Sylament\Support\Components\ViewComponent;
+use Twig\Environment;
 use Twig\Markup;
 
 class ActionGroup extends ViewComponent
@@ -43,6 +45,8 @@ class ActionGroup extends ViewComponent
     public const string BUTTON_TEMPLATE = '@SylamentActions/components/action-group/button-trigger.html.twig';
 
     protected string $evaluationIdentifier = 'group';
+
+    protected string|Closure|null $template = '@SylamentActions/components/action-group.html.twig';
 
     /**
      * @var array<Action|ActionGroup>
@@ -205,5 +209,14 @@ class ActionGroup extends ViewComponent
     public function getLabel(): string|Markup|null
     {
         return $this->evaluate($this->label) ?? 'Actions';
+    }
+
+    public function render(Environment $twig): ?string
+    {
+        if (array_any($this->getActions(), fn (Action|ActionGroup $action): bool => $action instanceof self && $action->isVisible())) {
+            throw new LogicException('Submenu rendering is not supported yet: an ActionGroup cannot be rendered inside another ActionGroup.');
+        }
+
+        return parent::render($twig);
     }
 }

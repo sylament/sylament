@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "pnpm clean && pnpm test:types && pnpm build:js && pnpm build:css",
-    "build:js": "esbuild $(find src -name '*.ts' ! -name 'dropdown_controller.ts') --outdir=dist --outbase=src --format=esm --sourcemap=linked && esbuild src/controllers/dropdown_controller.ts --bundle --external:@hotwired/stimulus --banner:js='/*! @floating-ui/dom ^1.8.0 | MIT License | Copyright (c) 2021-present Floating UI contributors | https://github.com/floating-ui/floating-ui */' --outdir=dist --outbase=src --format=esm --sourcemap=linked",
+    "build:js": "node scripts/build-js.mjs",
     "build:css": "node scripts/scope-preflight.mjs && tailwindcss -i src/styles/index.css -o dist/styles/index.css --minify",
     "watch": "concurrently -n js,css -c blue,green \"pnpm watch:js\" \"pnpm watch:css\"",
     "watch:js": "concurrently -n js,dropdown -c blue,magenta \"esbuild $(find src -name '*.ts' ! -name 'dropdown_controller.ts') --outdir=dist --outbase=src --format=esm --sourcemap=inline --watch=forever\" \"esbuild src/controllers/dropdown_controller.ts --bundle --external:@hotwired/stimulus --banner:js='/*! @floating-ui/dom ^1.8.0 | MIT License | Copyright (c) 2021-present Floating UI contributors | https://github.com/floating-ui/floating-ui */' --outdir=dist --outbase=src --format=esm --sourcemap=inline --watch=forever\"",

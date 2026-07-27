@@ -1,4 +1,4 @@
-/*! @floating-ui/dom ^1.8.0 | MIT License | Copyright (c) 2021-present Floating UI contributors | https://github.com/floating-ui/floating-ui */
+/*! @floating-ui/dom 1.8.0 | MIT License | Copyright (c) 2021-present Floating UI contributors | https://floating-ui.com */
 
 // ../../../node_modules/.pnpm/@floating-ui+utils@0.2.12/node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs
 var min = Math.min;

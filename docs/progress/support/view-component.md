@@ -29,8 +29,8 @@ detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`template()` / `getTemplate()`](../../../packages/support/src/Components/ViewComponent.php) | [`view()` / `getView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](#one-nullable-template-replaces-the-view--defaultview-pair) |
-| [`defaultTemplate()`](../../../packages/support/src/Components/ViewComponent.php) | [`defaultView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | — |
+| [`template()` / `getTemplate()`](../../../packages/support/src/Components/ViewComponent.php) | [`view()` / `getView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](#two-level-template-resolution-with-null-vs-throw-tail-difference) |
+| [`defaultTemplate()`](../../../packages/support/src/Components/ViewComponent.php) | [`defaultView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](#two-level-template-resolution-with-null-vs-throw-tail-difference) |
 | [`templateData()` / `getTemplateData()`](../../../packages/support/src/Components/ViewComponent.php) | [`viewData()` / `getViewData()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | — |
 | [`getExtraTemplateData()`](../../../packages/support/src/Components/ViewComponent.php) | [`getExtraViewData()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | — |
 | [`render(Environment)`](../../../packages/support/src/Components/ViewComponent.php) | [`render()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](#render-returns-a-string-the-htmlable--embedded-view-machinery-is-dropped) |
@@ -80,20 +80,21 @@ _See also:_ the [rename table](../renames.md) — `Htmlable` → `Twig\Markup` a
 Blade `view()` → Twig `template()` are the systematic translations underneath
 this divergence.
 
-### One nullable template replaces the `$view` + `$defaultView` pair
+### Two-level template resolution with null vs. throw tail difference
 
 Filament carries two properties: `$view` (the resolved template, set by a
 subclass or a `view()` call) and `$defaultView` (a closure-evaluable fallback),
-with `getView()` throwing `LogicException` when neither is set. Sylament collapses
-both into a single closure-evaluable, nullable `$template`. Subclasses set their
+with `getView()` throwing `LogicException` when neither is set. Sylament mirrors
+this with two properties: `$template` (explicit) and `$defaultTemplate` (fallback),
+both closure-evaluable and nullable. `getTemplate()` performs a two-level lookup
+(explicit first, then default) exactly as Filament does. Subclasses set their
 default by overriding the property directly — e.g.
 [`Schema`](../../../packages/schemas/src/Schema.php) and
 [`Action`](../../../packages/actions/src/Action.php) — exactly as Filament
-subclasses override `$view`. With no embedded-view fallback to arbitrate,
-`getDefaultView()` and the two-level lookup have nothing to do, so `getTemplate()`
-simply returns the (possibly null) value and `render()` returns null on a null
-template rather than throwing. The throw was Filament's guard against a component
-reaching Blade with no view; here a null template is a valid "render nothing".
+subclasses override `$view`. The sole divergence is the null-vs-throw tail:
+`render()` returns null on a null template rather than throwing. The throw was
+Filament's guard against a component reaching Blade with no view; here a null
+template is a valid "render nothing".
 
 ### `extractPublicMethods()` is not ported
 

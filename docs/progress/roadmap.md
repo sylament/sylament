@@ -31,8 +31,7 @@ stops mid-M2, M1 still demos on its own.
 ## Pulled forward
 
 Epics taken out of milestone order by decision — recorded here so the thin-path
-story stays honest. Spec for both:
-`docs/superpowers/specs/2026-07-27-action-group-base-design.md`.
+story stays honest.
 
 | # | Epic | Packages | Delivers | Status |
 | --- | --- | --- | --- | --- |

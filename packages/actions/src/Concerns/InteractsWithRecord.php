@@ -17,6 +17,16 @@ trait InteractsWithRecord
 
     public function getRecord(): mixed
     {
-        return $this->evaluate($this->record);
+        $record = $this->evaluate($this->record);
+
+        if ($record !== null) {
+            return $record;
+        }
+
+        if (method_exists($this, 'getGroup')) {
+            return $this->getGroup()?->getRecord();
+        }
+
+        return null;
     }
 }

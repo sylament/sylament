@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Actions;
 
-use Closure;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
 use Sylament\Actions\Concerns\CanBeDisabled;
@@ -58,7 +57,7 @@ class Action extends ViewComponent
 
     protected string $evaluationIdentifier = 'action';
 
-    protected string|Closure|null $template = '@SylamentActions/components/button-action.html.twig';
+    public const string GROUPED_TEMPLATE = '@SylamentActions/components/grouped-action.html.twig';
 
     protected ?ActionStatus $status = null;
 
@@ -107,6 +106,21 @@ class Action extends ViewComponent
     public function getStatus(): ActionStatus
     {
         return $this->status ?? ActionStatus::Success;
+    }
+
+    /**
+     * Falls back to the button trigger template beneath an explicit `template()`
+     * and whatever `ActionGroup::getActions()` pushes onto `defaultTemplate()` —
+     * a bare, ungrouped `Action` still renders as a button by default.
+     */
+    public function getTemplate(): ?string
+    {
+        return parent::getTemplate() ?? '@SylamentActions/components/button-action.html.twig';
+    }
+
+    public function getRecord(): mixed
+    {
+        return $this->evaluate($this->record) ?? $this->getGroup()?->getRecord();
     }
 
     protected function resolveDefaultClosureDependencyForEvaluationByName(string $parameterName): ?ClosureParameter

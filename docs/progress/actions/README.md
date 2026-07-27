@@ -49,7 +49,7 @@ service provider live in [Supporting surface](#supporting-surface).)
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`Action`](../../../packages/actions/src/Action.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | [action.md](action.md) |
-| ActionGroup | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | todo | - |
+| [`ActionGroup`](../../../packages/actions/src/ActionGroup.php) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | in progress | [action-group.md](action-group.md) |
 | AssociateAction | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | todo | - |
 | AttachAction | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | todo | - |
 | BulkAction | [`BulkAction.php`](../../../vendor/filament/actions/src/BulkAction.php) | todo | - |
@@ -82,14 +82,17 @@ Most are mixed onto the `Action` base; the `InteractsWith*` traits are host-side
 (mixed onto the Livewire / LiveComponent page that mounts actions). The 14
 concerns `Action` composes are folded into [`action.md`](action.md) and no longer
 carry rows here — the remaining rows are the not-yet-started concerns plus the
-host-side `HasActions` trait. Ordered by the name in the first column: the
+host-side `HasActions` trait. `BelongsToGroup` folds the same way into
+[`action-group.md`](action-group.md) instead: `Action` and `ActionGroup` both
+compose it, but its own surface (the back-reference pair) is small enough to
+write up once, in the file for the class it primarily describes, rather than
+spinning up a third detail file. Ordered by the name in the first column: the
 Sylament `HasActions` row (in the `H` block) is the port of Filament's
 `Concerns/InteractsWithActions` trait — see the
 [swap note above](#actions--port-progress).
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| BelongsToGroup | [`Concerns/BelongsToGroup.php`](../../../vendor/filament/actions/src/Concerns/BelongsToGroup.php) | todo | - |
 | BelongsToSchemaComponent | [`Concerns/BelongsToSchemaComponent.php`](../../../vendor/filament/actions/src/Concerns/BelongsToSchemaComponent.php) | todo | - |
 | BelongsToTable | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php) | todo | - |
 | CanBeAuthorized | [`Concerns/CanBeAuthorized.php`](../../../vendor/filament/actions/src/Concerns/CanBeAuthorized.php) | todo | - |

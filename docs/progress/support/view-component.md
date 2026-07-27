@@ -30,6 +30,7 @@ detail sections do.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`template()` / `getTemplate()`](../../../packages/support/src/Components/ViewComponent.php) | [`view()` / `getView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](#one-nullable-template-replaces-the-view--defaultview-pair) |
+| [`defaultTemplate()`](../../../packages/support/src/Components/ViewComponent.php) | [`defaultView()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | — |
 | [`templateData()` / `getTemplateData()`](../../../packages/support/src/Components/ViewComponent.php) | [`viewData()` / `getViewData()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | — |
 | [`getExtraTemplateData()`](../../../packages/support/src/Components/ViewComponent.php) | [`getExtraViewData()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | — |
 | [`render(Environment)`](../../../packages/support/src/Components/ViewComponent.php) | [`render()`](../../../vendor/filament/support/src/Components/ViewComponent.php) | done | — | [diverges](#render-returns-a-string-the-htmlable--embedded-view-machinery-is-dropped) |

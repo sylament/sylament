@@ -554,7 +554,7 @@ trait HasState
             $container = $parentContainer;
         }
 
-        foreach ($container->getFlatComponents() as $component) {
+        foreach ($container->getFlatComponents(withActions: false) as $component) {
             if ($component === $this) {
                 continue;
             }
@@ -579,7 +579,7 @@ trait HasState
         $paths = [];
 
         foreach ($this->getChildSchemas() as $childSchema) {
-            foreach ($childSchema->getFlatComponents() as $component) {
+            foreach ($childSchema->getFlatComponents(withActions: false) as $component) {
                 if (! $component->hasStatePath()) {
                     continue;
                 }

@@ -117,7 +117,7 @@ trait HasSchemas
         $oldState = [];
 
         foreach ($this->getCachedSchemas() as $schema) {
-            foreach ($schema->getFlatComponents() as $component) {
+            foreach ($schema->getFlatComponents(withActions: false) as $component) {
                 if (!$component->hasStatePath()) {
                     continue;
                 }
@@ -139,7 +139,7 @@ trait HasSchemas
     public function callAfterSchemaStateUpdated(): void
     {
         foreach ($this->getCachedSchemas() as $schema) {
-            foreach ($schema->getFlatComponents() as $component) {
+            foreach ($schema->getFlatComponents(withActions: false) as $component) {
                 if (!$component->hasStatePath()) {
                     continue;
                 }

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
+use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
 use Twig\Markup;
@@ -12,14 +14,14 @@ use Twig\Markup;
 trait HasChildComponents
 {
     /**
-     * @var array<string, Schema|array<Component|string|Markup>|Component|string|Markup|Closure|null>
+     * @var array<string, Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null>
      */
     protected array $childComponents = [];
 
     /**
-     * @param Schema|array<Component|string|Markup>|Component|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
      */
-    public function components(Schema|array|Component|string|Markup|Closure|null $components): static
+    public function components(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components): static
     {
         $this->childComponents($components);
 
@@ -27,9 +29,9 @@ trait HasChildComponents
     }
 
     /**
-     * @param Schema|array<Component|string|Markup>|Component|string|Markup|Closure|null $components
+     * @param Schema|array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure|null $components
      */
-    public function childComponents(Schema|array|Component|string|Markup|Closure|null $components, string $key = 'default'): static
+    public function childComponents(Schema|array|Component|Action|ActionGroup|string|Markup|Closure|null $components, string $key = 'default'): static
     {
         $this->childComponents[$key] = $components;
 

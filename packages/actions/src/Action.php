@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Actions;
 
+use Sylament\Schemas\Schema;
+use Sylament\Schemas\Components\Component;
 use Closure;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
@@ -32,6 +34,8 @@ use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\Evaluation\ClosureParameter;
 use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
+
+use function Sylament\Support\filled;
 
 class Action extends ViewComponent
 {
@@ -120,13 +124,75 @@ class Action extends ViewComponent
         return $this->evaluate($this->record) ?? $this->getGroup()?->getRecord();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function getContext(): array
+    {
+        $context = [];
+
+        if (filled($schemaComponentKey = ($this->getSchemaContainer() ?? $this->getSchemaComponent())?->getKey())) {
+            $context['schemaComponent'] = $schemaComponentKey;
+        }
+
+        return $context;
+    }
+
     protected function resolveDefaultClosureDependencyForEvaluationByName(string $parameterName): ?ClosureParameter
     {
         return match ($parameterName) {
             'record' => ClosureParameter::make($this->getRecord()),
             'arguments' => ClosureParameter::make($this->getArguments()),
             'liveComponent' => ClosureParameter::make($this->getLiveComponent()),
+            'schema' => ClosureParameter::make($this->getSchemaContainer()),
+            'schemaComponent', 'component' => ClosureParameter::make($this->getSchemaComponent()),
+            'schemaGet', 'get' => ClosureParameter::make($this->getSchemaComponent()->makeGetUtility()), // @phpstan-ignore method.nonObject (Filament-faithful: fatals without a schema component)
+            'schemaSet', 'set' => ClosureParameter::make($this->getSchemaComponent()->makeSetUtility()), // @phpstan-ignore method.nonObject (Filament-faithful: fatals without a schema component)
+            'schemaComponentState', 'state' => ClosureParameter::make($this->getSchemaComponentState()),
+            'schemaState' => ClosureParameter::make($this->getSchemaState()),
             default => parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
         };
+    }
+
+    public function getSchemaComponentState(): mixed
+    {
+        $schemaContainer = $this->getSchemaContainer();
+
+        while ($schemaContainer instanceof Schema) {
+            $parentComponent = $schemaContainer->getParentComponent();
+
+            if (!$parentComponent instanceof Component) {
+                break;
+            }
+
+            if ($parentComponent->hasStatePath()) {
+                return $parentComponent->getState();
+            }
+
+            $schemaContainer = $parentComponent->getContainer();
+        }
+
+        return $this->getSchemaComponent()?->getState();
+    }
+
+    public function getSchemaState(): mixed
+    {
+        $schemaContainer = $this->getSchemaContainer();
+
+        while ($schemaContainer instanceof Schema) {
+            if (filled($schemaContainer->getStatePath(isAbsolute: false))) {
+                return $schemaContainer->getState();
+            }
+
+            $parentComponent = $schemaContainer->getParentComponent();
+
+            if (!$parentComponent instanceof Component) {
+                return $schemaContainer->getState();
+            }
+
+            $schemaContainer = $parentComponent->getContainer();
+        }
+
+        return null;
     }
 }

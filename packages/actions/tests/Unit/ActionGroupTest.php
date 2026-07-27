@@ -9,6 +9,8 @@ use stdClass;
 use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
+use Sylament\Schemas\Components\Section;
+use Sylament\Schemas\Schema;
 
 it('keeps its actions and back-references each one', function (): void {
     $edit = Action::make('edit');
@@ -117,6 +119,19 @@ it('injects its live component into evaluated closures via $liveComponent', func
         ->hidden(fn ($liveComponent): bool => $liveComponent !== null);
 
     expect($group->isHidden())->toBeTrue();
+});
+
+it('injects the schema container and component into evaluated closures', function (): void {
+    $schema = Schema::make();
+    $section = Section::make('Box')->container($schema);
+
+    $group = ActionGroup::make([])
+        ->schemaContainer($schema)
+        ->schemaComponent($section);
+
+    expect($group->evaluate(fn ($schema): Schema => $schema))->toBe($schema)
+        ->and($group->evaluate(fn ($component): Section => $component))->toBe($section)
+        ->and($group->evaluate(fn ($state): mixed => $state))->toBeNull();
 });
 
 it('pushes the grouped item template onto action children as a default', function (): void {

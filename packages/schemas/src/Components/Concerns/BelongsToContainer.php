@@ -42,4 +42,14 @@ trait BelongsToContainer
     {
         return $this->getContainer()->getLiveComponent();
     }
+
+    /**
+     * The nullable twin of {@see getLiveComponent()}, for callers probing an
+     * optional binding (the action-side live-component chain) rather than
+     * requiring one; also null while the container back-reference is unbound.
+     */
+    public function getLiveComponentOrNull(): ?InteractsWithSchemas
+    {
+        return isset($this->container) ? $this->container->getLiveComponentOrNull() : null;
+    }
 }

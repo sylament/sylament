@@ -11,6 +11,8 @@ abstract class ViewComponent extends Component
 {
     protected string|Closure|null $template = null;
 
+    protected string|Closure|null $defaultTemplate = null;
+
     /**
      * @var array<array<mixed>|Closure>
      */
@@ -31,9 +33,16 @@ abstract class ViewComponent extends Component
         return $this;
     }
 
+    public function defaultTemplate(string|Closure|null $template): static
+    {
+        $this->defaultTemplate = $template;
+
+        return $this;
+    }
+
     public function getTemplate(): ?string
     {
-        return $this->evaluate($this->template);
+        return $this->evaluate($this->template) ?? $this->evaluate($this->defaultTemplate);
     }
 
     /**

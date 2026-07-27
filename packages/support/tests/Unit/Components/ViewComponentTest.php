@@ -120,3 +120,25 @@ it('lets template data override extra template data when rendering', function ()
 
     expect($component->render($twig))->toBe('override from extra');
 });
+
+it('resolves the default template when no explicit template is set', function (): void {
+    $component = new class extends ViewComponentFixture {};
+
+    expect($component->getTemplate())->toBeNull()
+        ->and($component->defaultTemplate('default.html.twig')->getTemplate())->toBe('default.html.twig');
+});
+
+it('lets an explicit template win over the default', function (): void {
+    $component = new class extends ViewComponentFixture {};
+
+    $component->defaultTemplate('default.html.twig')->template('explicit.html.twig');
+
+    expect($component->getTemplate())->toBe('explicit.html.twig');
+});
+
+it('evaluates a default template closure', function (): void {
+    $component = new class extends ViewComponentFixture {};
+
+    expect($component->defaultTemplate(fn (): string => 'closure.html.twig')->getTemplate())
+        ->toBe('closure.html.twig');
+});

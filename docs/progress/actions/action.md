@@ -580,12 +580,21 @@ fast path for the common case) plus a `toEmbeddedHtml()` fallback, and
 exposes `badge()`/`button()`/`grouped()`/`iconButton()`/`link()` to switch
 between them, `toArray()`/`fromArray()` to serialize an action across a
 Livewire round-trip, and `renderModal()`/`toModalHtmlable()` to render the
-action's own modal. The port's `$template` is the single
+action's own modal. The port's default template is
 [`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)
+(`Action::BUTTON_TEMPLATE`, held in `$defaultTemplate` — not a hardcoded
+`$template`, so `ActionGroup` can push a different default without an explicit
+`template()` call ever having been made; see
+[action-group.md](action-group.md#getactions-always-pushes-a-concrete-default-template-never-null))
 — one root element that switches only between `<button>` and `<a>` (based on
 `getUrl()`) inside the same markup, tested end to end by
 [`ActionRenderTest`](../../../packages/actions/tests/Integration/ActionRenderTest.php).
-There is no badge/grouped/icon-button/link view, no view-switching API, no
+There is no badge/icon-button/link view or view-switching API —
+`badge()`/`button()`/`iconButton()`/`link()` do not exist. A grouped default
+does exist structurally since the ActionGroup base epic
+(`Action::GROUPED_TEMPLATE`, pushed automatically rather than toggled by a
+method call), but its own template file doesn't land until Task 7, so a
+rendered grouped shape is still absent today — only the plumbing. No
 `toArray()`/`fromArray()` serialization, and no `renderModal()`/
 `toModalHtmlable()` method on `Action` itself — the confirmation modal
 ([`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig))

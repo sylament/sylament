@@ -11,12 +11,13 @@ already-folded `Action` concerns unchanged — `HasLabel` and `HasSize`, tracked
 in [`action.md`](action.md) — and five support-level traits (`HasColor`,
 `HasExtraAttributes`, `HasIcon`, `HasIconSize`, `HasTooltip`) that stay tracked
 in the [`support`](../support/README.md) package and appear here only as
-reference rows. This task ports the model core only: the children list, the
-eager name-keyed flat map, and the group back-reference wiring. Everything
-that makes the class an actual UI control — the dropdown trigger config,
-visibility composition, propagation to children, the grouped-item template,
-the trigger machinery, and the render pipeline itself — lands in later tasks
-of the same epic (see _Blocked by_ below).
+reference rows. The model core (the children list, the eager name-keyed flat
+map, and the group back-reference wiring), the dropdown trigger config,
+visibility composition, and context propagation to children (`liveComponent()`,
+`getRecord()` fallback, default-template push onto `Action` children) have
+landed across this epic's first six tasks. Still to come: propagating dropdown
+placement and trigger-view defaults to nested groups, the grouped-item template
+itself, the trigger machinery, and the render pipeline (see _Blocked by_ below).
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -51,7 +52,9 @@ permanent note in [Divergences](#divergences).
 | [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) (support) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | - |
 | `HasDropdown` | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) | done | — | [diverges](#dropdownwidth-is-a-css-string-dropdownteleport-and-dropdownautoplacement-are-deferred) |
 | Visibility composition (`isHidden()` group-iteration) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`isHidden()`/`resolveIsHidden()`) | done | — | [diverges](#no-ishiddeningroup-or-visibility-caching) |
-| Propagation to children (dropdown placement, trigger-view defaults) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`actions()`/`getActions()`) | done | — | [diverges](#livecomponent-propagates-eagerly-unlike-filaments-lazy-getgroup-fallback), [diverges](#getrecord-is-duplicated-onto-action-and-actiongroup-to-satisfy-phpstan) |
+| Context propagation to children (`liveComponent()`, `getRecord()` fallback, default-template push onto `Action` children) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`liveComponent()`/`getActions()`) | done | — | [diverges](#livecomponent-propagates-eagerly-unlike-filaments-lazy-getgroup-fallback), [diverges](#getrecord-is-duplicated-onto-action-and-actiongroup-to-satisfy-phpstan), [diverges](#getactions-always-pushes-a-concrete-default-template-never-null) |
+| Dropdown-placement propagation to nested groups (`defaultDropdownPlacement('right-top')`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`actions()`) | todo | submenu rendering | - |
+| Trigger-view-default propagation to nested groups (`defaultTriggerView()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getActions()`) | todo | Task 8 | - |
 | Grouped item template | [`components/dropdown/list/item.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | todo | Task 7 | - |
 | Trigger machinery | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getTriggerView()`/`toTriggerHtml()`) | todo | Task 8 | - |
 | Rendering (`toEmbeddedHtml()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | todo | Task 9 | - |
@@ -164,6 +167,30 @@ second `actions()` call *after* `liveComponent()` was already set will not
 pick up the live component — the push only fires at `liveComponent()`-call
 time. Reversible: fold `getLiveComponent()` into the same lazy
 `getGroup()?->getLiveComponent()` shape the moment a use case needs it.
+
+### `getActions()` always pushes a concrete default template, never `null`
+
+Filament's `getActions()` always pushes a concrete view —
+`$action->defaultView($this->isButtonGroup() ? $action::BUTTON_VIEW :
+$action::GROUPED_VIEW)` — never `null`. An earlier draft of this port's
+[`getActions()`](../../../packages/actions/src/ActionGroup.php) pushed `null`
+in the non-grouped branch instead, and relied on a bespoke
+`Action::getTemplate()` override as a third precedence layer beneath
+`ViewComponent`'s normal `template()` ?? `defaultTemplate()` pair, to keep a
+button-action baseline alive underneath a cleared default. Corrected to match
+Filament's own shape: `Action::BUTTON_TEMPLATE`
+(`@SylamentActions/components/button-action.html.twig`) is pushed in the
+non-grouped branch instead of `null`, `Action::GROUPED_TEMPLATE` in the grouped
+one — always a concrete value — and the `getTemplate()` override is gone.
+`Action`'s own baseline now lives in
+`protected string|Closure|null $defaultTemplate = self::BUTTON_TEMPLATE;`, a
+plain property default rather than Filament's `setUp()`-time
+`$this->defaultView(static::BUTTON_VIEW)` call — matching this repo's existing
+convention of a `ViewComponent` subclass overriding the property directly (the
+same shape the old, since-removed hardcoded `$template` default used), rather
+than introducing a `setUp()` override for a single static literal. See
+[action.md](action.md#one-unified-template-replaces-the-view-switch) for the
+`Action`-side detail.
 
 ### `getRecord()` is duplicated onto `Action` and `ActionGroup` to satisfy PHPStan
 

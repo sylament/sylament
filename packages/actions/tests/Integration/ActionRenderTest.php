@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions\Tests\Integration;
 
 use Sylament\Actions\Action;
+use Sylament\Schemas\Schema;
 
 function renderAction(Action $action): string
 {
@@ -26,6 +27,30 @@ it('wires the trigger button to the mountAction live action', function (): void 
     expect($html)->toContain('data-action="live#action"')
         ->toContain('data-live-action-param="mountAction"')
         ->toContain('data-live-name-param="delete"');
+});
+
+it('emits the schema mount context on a schema-bound trigger', function (): void {
+    $schema = Schema::make()->key('schema')->components([Action::make('publish')]);
+
+    $html = renderAction($schema->getAction('publish'));
+
+    expect($html)->toContain('data-live-context-param="{&quot;schemaComponent&quot;:&quot;schema&quot;}"');
+});
+
+it('emits the schema mount context on a schema-bound grouped trigger', function (): void {
+    $schema = Schema::make()->key('schema')->components([
+        Action::make('publish')->template(Action::GROUPED_TEMPLATE),
+    ]);
+
+    $html = renderAction($schema->getAction('publish'));
+
+    expect($html)->toContain('sy-dropdown-item')
+        ->toContain('data-live-context-param="{&quot;schemaComponent&quot;:&quot;schema&quot;}"');
+});
+
+it('emits no mount context on an unbound trigger', function (): void {
+    expect(renderAction(Action::make('delete')))
+        ->not->toContain('data-live-context-param');
 });
 
 it('renders a url action as a link without mount wiring', function (): void {

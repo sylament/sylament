@@ -20,7 +20,9 @@ because it is a pure view over three of those methods (`getMountedAction` /
 actions, per-action `Schema` mounting, authorization, rate limiting, database
 transactions, redirects, URL-bound default actions, table/schema-scoped action
 resolution); Sylament ships a lean **single-slot** MVP that covers the
-confirmation-modal round-trip the `actions` epic spikes on and defers the rest.
+confirmation-modal round-trip the `actions` epic spikes on plus the
+schema-scoped resolution branch (`resolveSchemaComponentAction()`, from the
+schemas↔actions integration) and defers the rest.
 The single slot is why the renderer needs no loop: Filament's
 `@foreach (getMountedActions()) @if (! $loop->last || mountedActionShouldOpenModal())`
 runs 0-or-1 times here, and when it runs it *is* last, so the whole construct
@@ -57,8 +59,9 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | [`unmountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | nested action stack (multi-slot `mountedActions`) | [detail](#unmountaction-has-no-cascade-because-there-is-no-stack) |
 | [`getMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedAction()` | done | — | [diverges](#lookup-methods-drop-caching-and-nesting) |
 | [`mountedActionShouldOpenModal()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountedActionShouldOpenModal()` | in progress | `CanOpenModal`'s `shouldOpenModal()`; `HasSchema` (actions) for the schema check | [detail](#the-modal-open-gate-is-confirmation-only) |
-| [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` | in progress | `BelongsToSchemaComponent`, `BelongsToTable` | [detail](#getaction-only-resolves-plain-host-methods) |
-| [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` | in progress | nested action stack; action caching | [detail](#resolveaction-has-no-parent-nesting-or-failure-signal) |
+| [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` | in progress | `BelongsToTable` (tables) | [detail](#getaction-only-resolves-plain-host-methods) |
+| [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` | in progress | nested action stack; action caching | [detail](#resolveaction-dispatches-on-schema-context-but-has-no-parent-nesting) · [diverges](#there-is-no-actionnotresolvableexception) |
+| [`resolveSchemaComponentAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveSchemaComponentAction()` | done | — | [diverges](#there-is-no-actionnotresolvableexception) |
 | Action caching (`cacheAction`, `mergeCachedActions`, `cacheTraitActions`) | `Concerns/InteractsWithActions.php` `cacheAction()` / `mergeCachedActions()` / `cacheTraitActions()` | todo | — | [detail](#action-caching-is-not-ported) |
 | [`getMountedModalId()`](../../../packages/actions/src/Concerns/HasActions.php) | `action-modal.blade.php` inline `$actionModalId` | done | — | [diverges](#the-modal-id-is-name-only-not-instance-scoped-or-nesting-scoped) |
 | Modals rendering ([`Modals.html.twig`](../../../packages/actions/templates/components/Modals.html.twig) + [`Twig\Components\Modals`](../../../packages/actions/src/Twig/Components/Modals.php)) | [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php) | done | — | [diverges](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope) · [diverges](#the-modal-is-opened-by-rendered-state-not-by-the-dispatched-event) · [diverges](#the-modals-renderer-emits-no-wrapper-element) · [diverges](#there-is-no-single-render-guard) · [diverges](#an-unresolvable-host-throws-instead-of-rendering-nothing) |
@@ -183,34 +186,40 @@ integration below.
 
 Filament's `getAction(string | array $actions, bool $isMounting = true)`
 accepts a single name or a list of nested action descriptors and resolves them
-through `resolveActions()`, which branches on `context['schemaComponent']`
-(via `resolveSchemaComponentAction()`, requiring `HasSchemas`),
-`context['table']` (via `resolveTableAction()`, requiring `HasTable`, with
-bulk/record-key handling), or the generic `resolveAction()` (parent-modal
+through `resolveActions()`, which dispatches each entry on its context —
+`context['schemaComponent']` → `resolveSchemaComponentAction()`,
+`context['table']` → `resolveTableAction()` (requiring `HasTable`, with
+bulk/record-key handling) — before the generic `resolveAction()` (parent-modal
 lookup, `cachedActions` lookup, `{name}Action()` **or** bare `{name}` method
 with a reflection check that the return type includes `Action`). The port's
 [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php)
 only tries `"{$name}Action"` — no bare-method fallback, no return-type
-reflection, no `cachedActions` lookup, no table- or schema-scoped resolution,
-and no nesting/array-of-descriptors form. **Next step:** the table- and
-schema-scoped branches return once `BelongsToSchemaComponent` /
-`BelongsToTable` (currently `todo` in the [package README](README.md)) land;
-the bare-method fallback and its reflection guard are unblocked already and
-could be added independently.
+reflection, no `cachedActions` lookup, and no nesting/array-of-descriptors
+form, so context-scoped entries cannot reach it. The schema dispatch landed on
+[`resolveAction()`](#resolveaction-dispatches-on-schema-context-but-has-no-parent-nesting)
+instead, which agrees with Filament on what a bare string resolves to: their
+`getAction('x')` normalizes to a context-less entry, which skips both scoped
+branches too. **Next step:** the table branch waits on `BelongsToTable` and
+the `tables` package; the bare-method fallback and its reflection guard are
+unblocked already and could be added independently.
 
-### `resolveAction()` has no parent nesting or failure signal
+### `resolveAction()` dispatches on schema context but has no parent nesting
 
 Filament's `resolveAction(array $action, array $parentActions)` looks up a
 parent action's `getModalAction($name)` when `$parentActions` is non-empty,
 otherwise checks `cachedActions` before falling back to
-`{name}Action()`/`{name}`, and throws `ActionNotResolvableException` when
-nothing resolves. The port's
+`{name}Action()`/`{name}` — the schema/table dispatch sits one level up in
+`resolveActions()`, the per-stack-entry loop a single-slot port has no
+equivalent of. The port's
 [`resolveAction(array $descriptor)`](../../../packages/actions/src/Concerns/HasActions.php)
-is `return $this->getAction($descriptor['name']);` — no parent-action lookup
-(there is only ever one slot), no cache check, and a `null` return instead of
-a thrown exception on failure (silently swallowed by `mountAction()`'s
-`$action === null` branch, which mirrors Filament's own catch-and-null-out
-behavior for that exception, so the externally observable outcome matches).
+therefore carries that dispatch itself: a filled
+`$descriptor['context']['schemaComponent']` branches to
+`resolveSchemaComponentAction()` before the `getAction($descriptor['name'])`
+fallback, preserving Filament's precedence (schema context first, table
+context next once tables exist, host methods last). Still absent: the
+parent-action lookup (there is only ever one slot) and the `cachedActions`
+check. Resolution failures return `null` rather than throwing — see
+[There is no ActionNotResolvableException](#there-is-no-actionnotresolvableexception).
 **Next step:** parent-action lookup returns with the nested-action stack;
 the cache check returns with action caching (below).
 
@@ -328,6 +337,32 @@ reverse: it is what lets a plain host page (no table, no schema) mount a
 record-bound confirm action today. When table/schema action resolution lands,
 each will likely supply its own record via this same seam or a dedicated one;
 either way this stays as the generic fallback for hosts with neither.
+
+### There is no ActionNotResolvableException
+
+Filament's resolution paths throw `ActionNotResolvableException` — nameless
+descriptor, unknown modal child, unknown table/schema/action, host missing the
+schemas contract — and catch it themselves in `mountAction()`,
+`cacheMountedActions()`, and `unmountAction()`, so its observable result is a
+silently no-opped mount. Sylament ships no exception class: every resolution
+miss is a `null` return that `mountAction()`'s `$action === null` branch turns
+into an unmount — the same observable outcome without the internal-control-flow
+exception. Two consequences worth pinning. First, a host that receives a
+`schemaComponent` context without implementing schemas'
+[`InteractsWithSchemas`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php)
+is a wiring bug, not a client-data miss, so
+[`resolveSchemaComponentAction()`](../../../packages/actions/src/Concerns/HasActions.php)
+throws a `LogicException` naming both fixes (implement the contract, compose
+the `HasSchemas` trait) where Filament folds the case into the same swallowable
+exception. Second, an unknown schema *name* must stay a miss, but schemas'
+`HasSchemas::getSchema()` throws where Filament's returns `null` — so the
+resolver pre-checks the same `{$name}()` / `{$name}Schema()` method discovery
+`getSchema()` itself performs and returns `null` without calling it, keeping a
+crash inside a host's schema-builder method loud instead of swallowed by a
+catch. The dropped `$parentActions` parameter is not part of this divergence:
+Filament accepts and ignores it on the schema branch, and the single-slot port
+has no parent frames to pass. Reverses if the nested-action stack ever needs a
+typed failure signal to distinguish frames; the exception class returns then.
 
 ### Lookup methods drop caching and nesting
 

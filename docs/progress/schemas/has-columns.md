@@ -26,7 +26,7 @@ is **done**), a **diverges** link to the permanent note in
 | --- | --- | --- | --- | --- |
 | [`columns()` setter — closure append, int→`lg` wrap, spread-merge](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::columns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | — |
 | [`getAllColumns()` — null→default map, per-entry `evaluate()`, breakpoint/int-key resolution](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::getAllColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | [diverges](#the-breakpoint-loop-rebuilds-a-fresh-map-instead-of-filaments-seed-and-unset-and-gates-empty-keys-with---rather-than-blank) |
-| [`getColumns()` — no-arg full map (`Schema.html.twig` `grid()`)](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::getColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | — |
+| [`getColumns()` — no-arg full map (`Schema.html.twig` `grid()`)](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::getColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | [diverges](#the-sy-grid-cols-marker-class-is-emitted-unconditionally) |
 | [`getColumns(breakpoint)` — single-breakpoint lookup](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::getColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | in progress | — | [detail](#getcolumnsbreakpoint--single-breakpoint-lookup) |
 | [`hasCustomColumns()` — has-user-set-columns predicate](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::hasCustomColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | in progress | — | [detail](#hascustomcolumns--has-user-set-columns-predicate) |
 
@@ -79,6 +79,17 @@ pin it. The one edge where `blank()` and `=== ''` disagree is a whitespace-only
 string key, which the real breakpoint set never produces; reversible by switching
 the guard to the ported [`blank()`](../../../packages/support/src/helpers.php)
 helper if that parity ever matters.
+
+### The `sy-grid-cols` marker class is emitted unconditionally
+
+Filament's `grid()` bag helper emits the base grid-cols class only when the
+`default` breakpoint resolves to more than one column
+(`($columns['default'] > 1) ? 'fi-grid-cols' : ''`). Sylament's
+[`grid()`](../../../packages/support/src/Twig/Extension/GridExtension.php) Twig
+function always appends `sy-grid-cols` for the `default` breakpoint. Inert either
+way — the marker carries no CSS of its own on either side — but the emission is
+unguarded here. The emission actually lives in the support `GridExtension`; if a
+support grid-extension doc is ever created, that is the more precise home.
 
 _See also: the global [rename table](../renames.md) — the `Concerns\` namespace
 root swap and the `blank()` → `=== ''` idiom translation are systematic

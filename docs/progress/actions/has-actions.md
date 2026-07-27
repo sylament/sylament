@@ -38,7 +38,7 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`resolveRecordUsing()`](../../../packages/actions/src/Concerns/HasActions.php) / `getMountedActionRecord()` | — (new; replaces Filament's per-source record resolution) | done | — | [diverges](#record-resolution-is-a-single-host-callback-not-per-source) |
-| [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountAction()` | in progress | Action-schema integration, `CanBeAuthorized` | [detail](#mountaction-drops-authorization-schema-mounting-and-halt-handling) |
+| [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountAction()` | in progress | Action-schema integration, `CanBeAuthorized` | [detail](#mountaction-drops-authorization-schema-mounting-and-halt-handling) · [diverges](#the-mounted-action-slot-is-a-server-controlled-liveprop-not-a-client-writable-stack) |
 | [`callMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `callMountedAction()` | in progress | `CanBeRateLimited`, `CanBeAuthorized`, `CanUseDatabaseTransactions`, `CanRedirect`, action-schema integration | [detail](#callmountedaction-drops-rate-limiting-authorization-transactions-and-redirects) |
 | [`unmountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | nested action stack (multi-slot `mountedActions`) | [detail](#unmountaction-has-no-cascade-because-there-is-no-stack) |
 | [`getMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedAction()` | done | — | [diverges](#lookup-methods-drop-caching-and-nesting) |
@@ -324,6 +324,18 @@ pulled in, and rate limiting is out of scope until `CanBeRateLimited` (already
 `todo`/`blocked`, since neither has an identified next consumer yet — reversible
 the moment persisted cross-request mounted-action state, or an `Action`
 rate-limit, actually needs one.
+
+### The mounted-action slot is a server-controlled LiveProp, not a client-writable stack
+
+Filament's `$mountedActions` is a client-writable Livewire property whose
+integrity rides on a checksum round-tripped from the browser. Sylament's
+[`$mountedActions`](../../../packages/actions/src/Concerns/HasActions.php) is a
+`#[LiveProp]` with **no `writable: true`**: its descriptor
+(`name`/`arguments`/`context`) is written only from inside the
+`mountAction()`/`unmountAction()` LiveActions, never from the client. A confirm
+action therefore carries no user-editable payload and there is no tampering
+surface to guard for free. Reverses if a writable per-action data bag (Filament's
+`$mountedActionData`) is added once form-in-modal input lands.
 
 _See also:_ the [rename table](../renames.md) for the `Has*` / `InteractsWith*`
 **swap** this whole file is the Sylament side of, and the systematic

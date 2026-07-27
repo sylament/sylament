@@ -49,12 +49,12 @@ their detail sections do.
 | [`isLive`/`isLiveOnBlur`/`isLiveDebounced`/`getLiveDebounce` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | in progress | — | [detail](#the-parent-walk-inheritance-overrides-are-untested) |
 | [`hasGap`/`isDense` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
 | [`getAllColumns` parent inheritance override](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | in progress | — | [detail](#the-parent-walk-inheritance-overrides-are-untested) |
-| [Twig-template rendering (`Schema.html.twig`)](../../../packages/schemas/templates/components/Schema.html.twig) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
+| [Twig-template rendering (`Schema.html.twig`)](../../../packages/schemas/templates/components/Schema.html.twig) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#an-empty-or-all-hidden-schema-still-renders-its-root-div) |
 | Root Livewire/Alpine render wiring (`wire:partial`, `x-data filamentSchema`, client-side state reset) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | skipped | — | [diverges](#the-root-schema-drops-livewire-partial-render-and-alpine-wiring) |
 | [`BelongsToParentComponent`](../../../packages/schemas/src/Concerns/BelongsToParentComponent.php) | [`Concerns/BelongsToParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToParentComponent.php) | done | — | [diverges](#parentcomponent-accepts-null-to-detach) |
 | [`CanBeEmbeddedInParentComponent`](../../../packages/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | [`Concerns/CanBeEmbeddedInParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | done | — | — |
 | [`CanBeInline`](../../../packages/schemas/src/Concerns/CanBeInline.php) | [`Concerns/CanBeInline.php`](../../../vendor/filament/schemas/src/Concerns/CanBeInline.php) | done | — | — |
-| [`HasComponents`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | in progress | — | [detail](#hascomponents-ports-the-non-action-subset) |
+| [`HasComponents`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | in progress | — | [detail](#hascomponents-ports-the-non-action-subset) · [diverges](#getcomponents-preserves-the-callers-array-keys-instead-of-reindexing) |
 | [`HasState`](../../../packages/schemas/src/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Concerns/HasState.php) | in progress | — | [detail](#hasstate-ships-the-snapshot-path-only) |
 | [`HasKey`](../../../packages/schemas/src/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Concerns/HasKey.php) | in progress | live-component id | [detail](#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) |
 | [`HasHeadings`](../../../packages/schemas/src/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Concerns/HasHeadings.php) | done | — | — |
@@ -276,6 +276,24 @@ forwarders to `key()`/`getKey()`. Sylament omits them: they were dead on arrival
 in the source we port from, so shipping them only reintroduces the ambiguity the
 deprecation was retiring. The recommended `key()`/`getKey()` are ported.
 Reversible only if a migrating consumer proves it still calls the old names.
+
+### `getComponents()` preserves the caller's array keys instead of reindexing
+
+Filament's `filterComponents()` calls `array_values()` unless `withOriginalKeys`
+is set, so `getComponents()` returns a list reindexed from zero. Sylament keeps
+each entry under its source index, and the visibility `array_filter` preserves
+keys too, so a filtered result can carry the numeric gaps Filament's reindexed
+output never has. Reversible by wrapping the return in `array_values()` if a
+consumer ever needs a dense list.
+
+### An empty or all-hidden schema still renders its root div
+
+Filament's `renderEmbeddedHtml()` returns `''` when the schema is directly hidden
+or has no visible components, so an empty slot emits nothing. Sylament's
+`Schema.html.twig` always renders the outer `<div>` around the (possibly empty)
+`getComponents(false)` loop, so a slot handed an empty or fully-hidden `Schema`
+still emits the root element. Reversible by guarding the template on a
+visible-component count.
 
 _See also: the global [rename table](../renames.md) — the Livewire → UX
 LiveComponent renames (`BelongsToLivewire`→`BelongsToLiveComponent`,

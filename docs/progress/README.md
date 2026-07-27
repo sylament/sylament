@@ -3,9 +3,7 @@
 The working tracker for the Filament → Sylament port: what the rules are, what
 is done, and what is next.
 
-This is the system of record. [`docs/parity/`](../parity/README.md) still holds
-the per-component write-ups and the epic design/task docs that have not been
-migrated yet — mine it for content, but link to files here.
+This is the system of record for the Filament → Sylament port.
 
 ## Rules
 
@@ -55,8 +53,7 @@ a package done while a listed row is unfinished.
 One `###` heading per divergence under `## Divergences`, phrased as a statement:
 `### Macroable is not ported`. Never a bullet list — a surface table links its
 divergence by anchor (`[diverges](#macroable-is-not-ported)`), and a bullet has
-no anchor to point at. Migrating a `docs/parity/` write-up means reshaping its
-bullets into headings, not copying them across.
+no anchor to point at — reshape a deviation into a heading, never a bullet.
 
 Headings also make the whole tree retrievable, so no index file has to be kept
 in sync:

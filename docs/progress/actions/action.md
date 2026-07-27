@@ -672,8 +672,7 @@ Filament's `isDisabled()` falls through `isHidden()` into three more branches �
 (so it can show a tooltip or fire a notification on click instead of vanishing
 or graying out). Sylament's port stops at `isHidden()`: a component is disabled
 when `$isDisabled` is truthy or the component is hidden, full stop. This is
-a deliberate MVP simplification (recorded in `docs/parity/actions.md` Decision 9,
-predating this progress tree) — the toolkit has no authorization-tooltip or
+a deliberate MVP simplification — the toolkit has no authorization-tooltip or
 authorization-notification concept yet. Reverses once those two concerns
 (and the `isAuthorized()` contract they lean on) are ported and wired onto
 `Action`.

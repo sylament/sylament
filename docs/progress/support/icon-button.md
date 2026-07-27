@@ -33,7 +33,7 @@ once the row is **done**; **diverges** → the permanent note in
 | --- | --- | --- | --- | --- |
 | [Tag + size classes](../../../packages/support/templates/components/IconButton/index.html.twig) | [`icon-button.blade.php` `->class([…])`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | — |
 | [Icon rendering + derived size](../../../packages/support/templates/components/IconButton/index.html.twig) | [`generate_icon_html(…)`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | — |
-| [Label → `aria-label` + `title`](../../../packages/support/templates/components/IconButton/index.html.twig) | [`aria-label`/`title` merge](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | — |
+| [Label → `aria-label` + `title`](../../../packages/support/templates/components/IconButton/index.html.twig) | [`aria-label`/`title` merge](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | [diverges](#the-aria-label-is-double-encoded-where-filament-suppresses-it) |
 | [`disabled` / `aria-disabled`](../../../packages/support/templates/components/IconButton/index.html.twig) | [`disabled`/`aria-disabled` merge](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | [diverges](#the-disabled-attribute-is-emitted-only-on-button) |
 | [Link `href` / `target`](../../../packages/support/templates/components/IconButton/index.html.twig) | [`generate_href_html(…)`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | [detail](#details) |
 | [`type` / `form` association](../../../packages/support/templates/components/IconButton/index.html.twig) | [`type`/`form` merge](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | — |
@@ -120,6 +120,16 @@ defers all shade/contrast resolution to the CSS layer. The `HasDefaultGrayColor`
 behaviour (gray ⇒ no color styling) survives as the `colorName != 'gray'` guard.
 This holds only while the color system (`Colors/`, `HasColor`) is unported — it
 is the blocker on the Color row above, not a permanent decision.
+
+### The `aria-label` is double-encoded, where Filament suppresses it
+
+Filament escapes the accessible name with
+`e(trim(strip_tags($label)), doubleEncode: false)` and merges it with
+`escape: false`, so a label already carrying an escaped entity stays singly
+encoded. Sylament runs `label|striptags|trim` through `attributes.defaults(...)`,
+whose Twig escaper has no double-encode toggle, so the same pre-escaped input
+renders doubly encoded (`&amp;` → `&amp;amp;`). Unescaped labels — the normal
+case — render identically; only labels that already contain HTML entities differ.
 
 _See also: the global [rename table](../renames.md) — `fi-*` → `sy-*` classes,
 Blade → Twig (`view()` → `template()`), Alpine → Stimulus and `Htmlable` →

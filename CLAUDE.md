@@ -21,8 +21,6 @@ Preserve Filament's API names by default — migrating users grep for them. Rena
 
 Porting state lives in `docs/progress/` — read `docs/progress/README.md` first: it carries the rules (what earns a file of its own, how to keep the trail in sync) and the status vocabulary every table uses. Per-component state is `docs/progress/<package>/<component>.md`, a surface table over the component's features with per-row detail sections and divergences at the bottom (see `docs/progress/support/component.md` for a filled-in example). Keep these current in the same commit as the code they describe — stale entries are bugs.
 
-`docs/parity/` is the superseded predecessor, kept until its per-component write-ups and epic design/task docs are migrated into `docs/progress/`. Don't add to it, and don't link to it from new work — its `renames.md` is now a stale copy of `docs/progress/renames.md`.
-
 ## Monorepo wiring (read this before touching deps)
 
 - **One root `vendor/`.** The repo root is a single Composer project. Every bundle is symlinked in via a Composer path repository (`"repositories": [{ "type": "path", "url": "packages/*" }]`) and required as `self.version`. Never run `composer install` inside a sub-package — there is only one lockfile and one vendor at the root. A stray `packages/*/vendor` or `packages/*/composer.lock` is leftover cruft; delete it. Lockfile policy (deliberate): the root `composer.lock` is **not** committed — this is a library monorepo, resolution floats within constraints and CI resolves fresh — while `pnpm-lock.yaml` **is** committed, because the pinned JS toolchain must reproduce the committed `assets/dist` byte-for-byte.

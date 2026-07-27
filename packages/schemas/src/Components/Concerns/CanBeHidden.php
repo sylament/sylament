@@ -18,7 +18,7 @@ use Sylament\Schemas\Components\Component;
  * unported: `whenTruthy()` / `whenFalsy()` and the JS visibility variants (blocked
  * on live-component-state), `hiddenOn()` / `visibleOn()` (need an operation
  * concept), and the static visibility cache — see
- * docs/parity/schemas/component.md.
+ * docs/progress/schemas/can-be-hidden.md.
  */
 trait CanBeHidden
 {

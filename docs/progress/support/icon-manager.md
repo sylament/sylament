@@ -24,7 +24,7 @@ note in [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`register()`](../../../packages/support/src/Icons/IconManager.php) | [`IconManager::register()`](../../../vendor/filament/support/src/Icons/IconManager.php) | done | — | — |
+| [`register()`](../../../packages/support/src/Icons/IconManager.php) | [`IconManager::register()`](../../../vendor/filament/support/src/Icons/IconManager.php) | done | — | [diverges](#the-manager-is-a-process-lifetime-singleton-not-request-scoped) |
 | [`resolve()`](../../../packages/support/src/Icons/IconManager.php) | [`IconManager::resolve()`](../../../vendor/filament/support/src/Icons/IconManager.php) | done | — | — |
 | [`renderIcon()`](../../../packages/support/src/Icons/IconManager.php) | no Filament equivalent | done | — | [diverges](#icon-rendering-is-delegated-to-symfony-ux-icons) |
 | Static-instance registration | [`FilamentIcon`](../../../vendor/filament/support/src/Facades/FilamentIcon.php) facade | done | — | [diverges](#the-facade-is-replaced-by-the-static-instance-pattern) |
@@ -65,6 +65,17 @@ via `StaticInstanceInterface` + `HasStaticInstance`, tagged and booted through
 `StaticInstanceRegistry` — the same mechanism `Invoker` and `ComponentManager`
 use. There is no facade class and no `FilamentIcon::register()` deferred-resolve
 wrapper; callers hold the service or the static instance directly.
+
+### The manager is a process-lifetime singleton, not request-scoped
+
+Filament binds `IconManager` with `$this->app->scoped(...)`, so it is rebuilt at
+each request boundary and a mid-request `register()` cannot leak into the next.
+Sylament's is one process-lifetime static instance (`$icons` mutated by
+`register()`) with no per-request reset: harmless under a classic per-request
+kernel, but under a FrankenPHP/RoadRunner worker a request-time `register()` would
+persist across requests. Same shape and resolution path as
+[`component-manager.md`](component-manager.md)'s scoped-manager gap; a Symfony
+reset seam lands with the live-component-state work.
 
 _See also: the static-instance pattern documented in
 [CLAUDE.md](../../../CLAUDE.md)._

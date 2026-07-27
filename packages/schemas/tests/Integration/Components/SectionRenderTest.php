@@ -224,7 +224,7 @@ it('prefers the component id over an extra attributes id', function (): void {
 
 it('keeps an extra attributes id when no component id is set', function (): void {
     // Divergence from Filament, which lets the unset component id clobber the
-    // extra attributes id to null (docs/parity/schemas/section.md). Headingless,
+    // extra attributes id to null. Headingless,
     // because a heading derives a key and the key-derived id wins like a custom one.
     $html = renderSection(Section::make()->extraAttributes(['id' => 'user-id']));
 

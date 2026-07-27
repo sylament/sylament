@@ -11,8 +11,8 @@ use function Symfony\Component\String\u;
 
 /**
  * Ports Filament's actions `HasLabel`. The name-derived default uses
- * `before('.')` (the segment before the first dot), a deliberate divergence from
- * `Field`'s `afterLast('.')` — see docs/parity/actions.md. Filament's
+ * `before('.')` (the segment before the first dot), matching Filament's own
+ * actions `HasLabel` — which itself differs from `Field`'s `afterLast('.')`. Filament's
  * `translateLabel()`/`$shouldTranslateLabel` is dropped (no translator in the
  * repo, mirroring schemas' port), and `hiddenLabel()`/`isLabelHidden()` are
  * deferred to the iconButton variant (breadth-fill); the button-only MVP never

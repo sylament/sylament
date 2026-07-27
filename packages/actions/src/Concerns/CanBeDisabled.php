@@ -7,8 +7,8 @@ namespace Sylament\Actions\Concerns;
 use Closure;
 
 /**
- * Ports Filament's actions `CanBeDisabled`, simplified per docs/parity/actions.md
- * Decision 9: the authorization branches (`hasAuthorizationNotification()`,
+ * Ports Filament's actions `CanBeDisabled`, simplified per
+ * docs/progress/actions/action.md: the authorization branches (`hasAuthorizationNotification()`,
  * `hasAuthorizationTooltip()`, `isAuthorized()`) are dropped, so a component is
  * disabled when its `$isDisabled` condition is truthy or it is hidden. Requires
  * {@see CanBeHidden} on the same class.

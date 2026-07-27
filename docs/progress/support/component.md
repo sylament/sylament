@@ -28,7 +28,7 @@ detail sections do.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`Configurable`](../../../packages/support/src/Concerns/Configurable.php) | [`Concerns/Configurable.php`](../../../vendor/filament/support/src/Concerns/Configurable.php) | done | — | — |
-| [`EvaluatesClosures`](../../../packages/support/src/Concerns/EvaluatesClosures.php) | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | done | — | [diverges](#closure-resolution-lives-in-a-service) |
+| [`EvaluatesClosures`](../../../packages/support/src/Concerns/EvaluatesClosures.php) | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | done | — | [diverges](#closure-resolution-lives-in-a-service) · [diverges](#evaluated-flag-getters-are-not-re-cast-to-bool) |
 | Arity probe | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | blocked | state-based-URL consumer | [detail](#the-arity-probe-is-deferred) |
 | Conditionable | [`Illuminate\Support\Traits\Conditionable`](../../../vendor/laravel/framework/src/Illuminate/Conditionable/Traits/Conditionable.php) | skipped | — | [diverges](#conditionable-and-tappable-are-not-ported) |
 | Tappable | [`Illuminate\Support\Traits\Tappable`](../../../vendor/laravel/framework/src/Illuminate/Support/Traits/Tappable.php) | skipped | — | [diverges](#conditionable-and-tappable-are-not-ported) |
@@ -90,6 +90,18 @@ deferral, not a principled rejection.
 No runtime method injection. The extension points are subclassing and
 `configureUsing()`. Reversing this means accepting `__call()`-based APIs that
 neither PHPStan nor an IDE can see.
+
+### Evaluated flag getters are not re-cast to bool
+
+Filament wraps every evaluated flag in a `(bool)` cast — `hasGap()`, `isDense()`,
+`isCollapsed()`, `isCollapsible()` each `return (bool) $this->evaluate(...)`.
+Sylament returns the evaluated value directly against the getter's native `bool`
+return type, dropping the cast wherever a flag concern is ported (schemas'
+[`HasGap`](../../../packages/schemas/src/Concerns/HasGap.php) and
+[`CanBeCollapsed`](../../../packages/schemas/src/Components/Concerns/CanBeCollapsed.php)
+today). Under `strict_types=1` a closure returning `1` or `'yes'` therefore
+`TypeError`s here where Filament silently coerces it — one policy applied to every
+flag getter as it lands, resting on `evaluate()` returning its value untouched.
 
 _See also: the global [rename table](../renames.md) — namespace
 singularization (`Support\Components\` → `Support\Component\`) is a systematic

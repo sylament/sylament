@@ -7,7 +7,7 @@ namespace Sylament\Actions\Concerns;
 use Closure;
 
 /**
- * Ports Filament's actions `CanOpenUrl`, minimal per docs/parity/actions.md §1.
+ * Ports Filament's actions `CanOpenUrl`, minimal per docs/progress/actions/action.md.
  * `getUrl()` drops Filament's `hasModal()` guard and the Livewire
  * `getDefaultActionUrl()` fallback (neither exists here); `postToUrl()`/
  * `shouldPostToUrl()` are deferred (no POST actions in the MVP). A component

@@ -30,7 +30,7 @@ CSS. _Detail_ carries a **diverges** link to a permanent note in
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`schema.css` — `.sy-sc` grid/inline/gap/dense/alignment](../../../packages/schemas/assets/src/styles/components/schema.css) | [`schema.css`](../../../vendor/filament/schemas/resources/css/schema.css) | in progress | — | [diverges](#schema-css-drops-the-fi-width-max-width-variants-and-the-hidden-and-action-rules) |
-| [`section.css` — `.sy-sc-section` label container](../../../packages/schemas/assets/src/styles/components/section.css) | [`components/section.css`](../../../vendor/filament/schemas/resources/css/components/section.css) | done | — | [diverges](#section-css-adds-the-sr-only-hidden-label-rule) |
+| [`section.css` — `.sy-sc-section` label container](../../../packages/schemas/assets/src/styles/components/section.css) | [`components/section.css`](../../../vendor/filament/schemas/resources/css/components/section.css) | done | — | [diverges](#section-css-adds-the-sr-only-hidden-label-rule) · [diverges](#section-css-adds-a-dark-mode-text-color-to-the-content-container) |
 | [`icon.css` — `.sy-sc-icon` color override](../../../packages/schemas/assets/src/styles/components/icon.css) | [`components/icon.css`](../../../vendor/filament/schemas/resources/css/components/icon.css) | in progress | — | [diverges](#icon-css-drops-the-default-gray-base-color) |
 | [`text.css` — `.sy-sc-text` (lives in the support package)](../../../packages/support/assets/src/styles/components/text.css) | [`components/text.css`](../../../vendor/filament/schemas/resources/css/components/text.css) | done | — | [diverges](#text-css-was-ported-into-the-support-package) |
 | `actions.css` / `flex.css` / `form.css` / `fused-group.css` / `image.css` / `tabs.css` / `unordered-list.css` / `wizard.css` | [`components/`](../../../vendor/filament/schemas/resources/css/components/) | blocked | Actions, Flex, Form, FusedGroup, Image, Tabs, UnorderedList, Wizard | [detail](#the-eight-remaining-stylesheets-are-unported) |
@@ -82,6 +82,16 @@ which Filament's `section.css` has no equivalent for. It is the styling side of
 the deliberate divergence where a hidden section label stays in the DOM as
 screen-reader-only text (Filament drops it entirely); documented and asserted in
 `SectionRenderTest`.
+
+### Section CSS adds a dark-mode text color to the content container
+
+Sylament's support `section.css` applies
+`.sy-section-content-ctn { @apply dark:text-white }`, which Filament's
+`section.css` has no counterpart for — Filament colors only the label container
+(`.fi-sc-section-label-ctn`) and lets the content inherit its base text color from
+the panels layout. With no layout layer ported yet, the section CSS supplies it
+locally on the content container, dark mode only; light mode still inherits the
+host app. Reverses when a panels/layout layer owns base typography.
 
 ### Text CSS was ported into the support package
 

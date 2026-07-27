@@ -58,7 +58,7 @@ trait HasActions
         #[LiveArg] string $name,
         #[LiveArg] array $arguments = [],
         #[LiveArg] array $context = [],
-    ): void {
+    ): mixed {
         $this->mountedActions = [[
             'name' => $name,
             'arguments' => $arguments,
@@ -67,15 +67,19 @@ trait HasActions
 
         $action = $this->getMountedAction();
 
-        if ($action === null) {
+        if ($action === null || $action->isDisabled()) {
             $this->unmountAction();
 
-            return;
+            return null;
         }
 
-        if ($action->isConfirmationRequired()) {
-            $this->dispatchBrowserEvent('sylament-open-modal', ['id' => $this->getMountedModalId()]);
+        if (! $this->mountedActionShouldOpenModal($action)) {
+            return $this->callMountedAction();
         }
+
+        $this->dispatchBrowserEvent('sylament-open-modal', ['id' => $this->getMountedModalId()]);
+
+        return null;
     }
 
     #[LiveAction]
@@ -136,6 +140,13 @@ trait HasActions
         }
 
         return $this->resolveAction($descriptor);
+    }
+
+    public function mountedActionShouldOpenModal(?Action $mountedAction = null): bool
+    {
+        $action = $mountedAction ?? $this->getMountedAction();
+
+        return $action?->isConfirmationRequired() ?? false;
     }
 
     public function getAction(string $name): ?Action

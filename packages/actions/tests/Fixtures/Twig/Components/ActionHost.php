@@ -24,10 +24,30 @@ class ActionHost implements InteractsWithActions
     #[LiveProp]
     public bool $called = false;
 
+    /**
+     * Set by the two non-confirming actions below; `blocked` shares it so the
+     * disabled test asserts the closure never ran.
+     */
+    #[LiveProp]
+    public bool $notified = false;
+
     public function deleteAction(): Action
     {
         return Action::make('delete')
             ->requiresConfirmation()
             ->action(fn (): true => $this->called = true);
+    }
+
+    public function notifyAction(): Action
+    {
+        return Action::make('notify')
+            ->action(fn (): true => $this->notified = true);
+    }
+
+    public function blockedAction(): Action
+    {
+        return Action::make('blocked')
+            ->disabled()
+            ->action(fn (): true => $this->notified = true);
     }
 }

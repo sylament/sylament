@@ -272,9 +272,11 @@ Absent entirely, with no property, setter, or getter:
   action, none of which exist on Sylament's `Action` yet — real parity here
   waits on `ActionGroup` and the schema/table wiring, not just more trait code.
 - **Modal presence/visibility control**: `modal()` / `hasModal()` / `modalHidden()`
-  / `isModalHidden` / `shouldOpenModal()` / `hasCustomModalPresence()`. Today a
-  Sylament action always opens its modal when mounted with confirmation or
-  custom content; there is no way to suppress it or force it open.
+  / `isModalHidden` / `shouldOpenModal()` / `hasCustomModalPresence()`. A Sylament
+  action opens its modal when mounted **iff** `isConfirmationRequired()` — see
+  [`HasActions`' modal-open gate](has-actions.md#the-modal-open-gate-is-confirmation-only),
+  which stands in for `shouldOpenModal()` — so there is no way to suppress it, to
+  force it open, or to earn one from custom modal content.
 - **Slide-over and layout**: `slideOver()` / `slideOverPosition()` /
   `isModalSlideOver()` / `getModalSlideOverPosition()`, `modalAlignment()` /
   `getModalAlignment()`, `modalFooterActionsAlignment()` /
@@ -731,8 +733,11 @@ alias resolution) and `isConfirmationRequired()` only tweaks defaults inside
 that machinery (alignment, width, icon, submit label, description).
 Sylament's `CanOpenModal` ports only the fields a confirm dialog needs —
 heading, description, icon, icon color, submit/cancel labels, width — so
-`isConfirmationRequired()` here drives a fixed confirm-modal template via
-`HasActions::mountAction()` rather than a general configurable modal. The
+`isConfirmationRequired()` here is the whole body of
+[`HasActions::mountedActionShouldOpenModal()`](../../../packages/actions/src/Concerns/HasActions.php),
+driving a fixed confirm-modal template rather than a general configurable modal;
+an action carrying only `modalHeading()` opens a modal in Filament and runs
+straight through here. The
 dropped surface (footer action composition, slide-over, sticky panes,
 click-through/escape/autofocus toggles, `modalContent`/`modalContentFooter`,
 `hasModal`/`shouldOpenModal`) is `CanOpenModal`'s own gap — recorded on the

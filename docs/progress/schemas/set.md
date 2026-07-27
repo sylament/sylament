@@ -2,8 +2,8 @@
 
 [`Sylament\Schemas\Components\Utilities\Set`](../../../packages/schemas/src/Components/Utilities/Set.php)
 is the `$set` writer handed to closures during evaluation — the write-side twin of
-[`Get`](get.md). A `readonly` invokable bound to one
-[`Component`](component.md), its `__invoke($path, $state, $isAbsolute, $shouldCallUpdatedHooks)`
+[`Get`](get.md). An invokable bound to one [`Component`](component.md) (only
+that binding is `readonly`), its `__invoke($path, $state, $isAbsolute, $shouldCallUpdatedHooks)`
 resolves the (relative-or-absolute) state path to a component, closure-evaluates
 `$state`, then either writes through the owning component's `state()` (optionally
 firing its after-update hooks) or, when no component owns the path, sets it on the
@@ -25,7 +25,7 @@ Reference — the Filament source this is diffed against:
 | [Closure-valued state evaluated before writing; evaluated value returned](../../../packages/schemas/src/Components/Utilities/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
 | [`shouldCallUpdatedHooks` gating of after-update hooks](../../../packages/schemas/src/Components/Utilities/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | in progress | — | [diverges](#shouldcallupdatedhooks-fires-the-non-bubbling-hook-set-dropping-filaments-parent-bubbling) |
 | [Raw-bag else-branch: `PropertyAccessor::set` + `clearCachedChildSchemas`](../../../packages/schemas/src/Components/Utilities/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | in progress | — | [detail](#raw-bag-else-branch) |
-| [`skipComponentsChildContainersWhileSearching(bool)` toggle](../../../packages/schemas/src/Components/Utilities/Set.php) | [`Set::skipComponentsChildContainersWhileSearching()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | todo | — | [detail](#skipcomponentschildcontainerswhilesearching-toggle) |
+| [`skipComponentsChildContainersWhileSearching(bool)` toggle](../../../packages/schemas/src/Components/Utilities/Set.php) | [`Set::skipComponentsChildContainersWhileSearching()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
 
 ## Details
 
@@ -43,16 +43,6 @@ component, so the raw path never runs), and it omits Filament's
 Next: add a `SetTest` case writing an undeclared path and asserting the bag
 receives it via `PropertyAccessor`; restore the cache-invalidation call when the
 child-schema cache lands (see the [divergence](#the-raw-write-branch-skips-clearcachedchildschemas-because-no-child-schema-cache-exists-yet)).
-
-### `skipComponentsChildContainersWhileSearching` toggle
-
-Filament's `Set` carries a mutable `$shouldSkipComponentsChildContainersWhileSearching`
-flag (default `true`) and a fluent setter, feeding
-`getComponentByStatePath(skipComponentsChildContainersWhileSearching: …)`.
-Sylament passes `[$this->component]` positionally and unconditionally and, being
-a `readonly final class` (same rationale as [`Get`](get.md) — no mutable skip
-flag), exposes no setter yet. Next: add the toggle alongside `Get`'s when the
-matching `getComponentByStatePath` parameter is ported.
 
 ## Divergences
 

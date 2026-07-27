@@ -74,7 +74,7 @@ export default class extends Controller<HTMLElement> {
   }
 
   close(): void {
-    if (this.panelTarget.hidden) {
+    if (this.#stopPositioning === null) {
       return;
     }
 

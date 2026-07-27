@@ -24,7 +24,8 @@ it('renders a grouped action as a dropdown item row wired to mountAction', funct
         ->toContain('type="button"')
         ->toContain('data-action="live#action"')
         ->toContain('data-live-action-param="mountAction"')
-        ->toContain('data-live-name-param="delete"');
+        ->toContain('data-live-name-param="delete"')
+        ->toContain('sy-dropdown-item-label');
 });
 
 it('renders a url grouped action as a link without mount wiring', function (): void {

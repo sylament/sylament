@@ -51,11 +51,13 @@ trait HasActions
 
     public function getAction(?string $name = null): ?Action
     {
+        $actions = $this->getActions();
+
         if (blank($name)) {
             return $this->action;
         }
 
-        return $this->getActions()[$name] ?? null;
+        return $actions[$name] ?? null;
     }
 
     /**

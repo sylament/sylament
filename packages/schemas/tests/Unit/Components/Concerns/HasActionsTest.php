@@ -89,6 +89,14 @@ it('resolves getAction by default to the main action, by name, and by miss', fun
         ->and($component->getAction('missing'))->toBeNull();
 });
 
+it('warms the actions cache when resolving the main action by blank name', function (): void {
+    $component = new Component();
+    $action = Action::make('save');
+    $component->action($action);
+
+    expect($component->getAction()->getSchemaComponent())->toBe($component);
+});
+
 it('reports hasAction by presence in the actions cache', function (): void {
     $component = new Component();
     $component->registerActions([Action::make('save')]);

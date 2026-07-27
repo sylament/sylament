@@ -39,7 +39,7 @@ permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`mountAction()`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | in progress | — | [detail](#mountaction-never-auto-runs-a-non-confirming-action) |
+| [`mountAction()`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | — |
 | `callMountedAction()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#three-lifecycle-methods-are-promoted-onto-the-interface-with-reduced-signatures) |
 | `unmountAction()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#three-lifecycle-methods-are-promoted-onto-the-interface-with-reduced-signatures) |
 | `getMountedAction()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#three-lifecycle-methods-are-promoted-onto-the-interface-with-reduced-signatures) |
@@ -53,31 +53,6 @@ permanent note in [Divergences](#divergences).
 Specifics for rows that are not finished — what is already in, what is left,
 and the next step. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
-
-### `mountAction()` never auto-runs a non-confirming action
-
-Filament's `mountAction(): mixed` mounts the descriptor, then — when
-`mountedActionShouldOpenModal()` is `false` (no confirmation required and no
-schema to fill) — immediately calls `callMountedAction()` and returns its
-result, so a plain `Action::make('foo')->action(...)` with no
-`->requiresConfirmation()` runs end-to-end on a single `mountAction` round
-trip. Sylament's
-[`mountAction(): void`](../../../packages/actions/src/Concerns/HasActions.php)
-only branches on `isConfirmationRequired()` to decide whether to dispatch the
-open-modal browser event; when it is `false` — the default, since
-[`CanRequireConfirmation::$isConfirmationRequired`](../../../packages/actions/src/Concerns/CanRequireConfirmation.php)
-defaults `false` — nothing further happens. The action stays mounted in
-`$mountedActions` with no modal opened and no invocation: it never runs until
-something else calls `callMountedAction()`, which nothing in the port does
-automatically today. Both integration fixtures
-([`ActionHost`](../../../packages/actions/tests/Fixtures/Twig/Components/ActionHost.php),
-[`RecordActionHost`](../../../packages/actions/tests/Fixtures/Twig/Components/RecordActionHost.php))
-call `->requiresConfirmation()` on every action they define, so this branch
-has no test coverage in either direction. **Next step:** call
-`$this->callMountedAction()` from `mountAction()` when
-`! $action->isConfirmationRequired()`, mirroring Filament's
-`mountedActionShouldOpenModal()` gate, and add a fixture action with no
-`requiresConfirmation()` to cover it.
 
 ### Schema-mount plumbing is not on the contract
 

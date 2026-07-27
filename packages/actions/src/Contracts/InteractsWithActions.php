@@ -12,7 +12,7 @@ interface InteractsWithActions
      * @param array<mixed> $arguments
      * @param array<mixed> $context
      */
-    public function mountAction(string $name, array $arguments = [], array $context = []): void;
+    public function mountAction(string $name, array $arguments = [], array $context = []): mixed;
 
     public function callMountedAction(): mixed;
 

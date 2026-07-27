@@ -7,8 +7,9 @@ trait (see the [rename table](../renames.md)). It composes `ComponentToolsTrait`
 for `dispatchBrowserEvent()` and owns the single `#[LiveProp] $mountedActions`
 slot, the `mountAction` / `callMountedAction` / `unmountAction` `#[LiveAction]`
 trio, action lookup (`getAction`, `getMountedAction`, `resolveAction`), the
-confirm-modal id helper, and a host-supplied `resolveRecordUsing()` callback for
-resolving a mounted action's record. Filament's `InteractsWithActions` is a
+modal-open gate (`mountedActionShouldOpenModal`) and confirm-modal id helper,
+and a host-supplied `resolveRecordUsing()` callback for resolving a mounted
+action's record. Filament's `InteractsWithActions` is a
 ~870-line trait built around a **stack** of mounted actions (nested/parent
 actions, per-action `Schema` mounting, authorization, rate limiting, database
 transactions, redirects, URL-bound default actions, table/schema-scoped action
@@ -42,12 +43,13 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | [`callMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `callMountedAction()` | in progress | `CanBeRateLimited`, `CanBeAuthorized`, `CanUseDatabaseTransactions`, `CanRedirect`, action-schema integration | [detail](#callmountedaction-drops-rate-limiting-authorization-transactions-and-redirects) |
 | [`unmountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | nested action stack (multi-slot `mountedActions`) | [detail](#unmountaction-has-no-cascade-because-there-is-no-stack) |
 | [`getMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedAction()` | done | — | [diverges](#lookup-methods-drop-caching-and-nesting) |
+| [`mountedActionShouldOpenModal()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountedActionShouldOpenModal()` | in progress | `CanOpenModal`'s `shouldOpenModal()`; `HasSchema` (actions) for the schema check | [detail](#the-modal-open-gate-is-confirmation-only) |
 | [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` | in progress | `BelongsToSchemaComponent`, `BelongsToTable` | [detail](#getaction-only-resolves-plain-host-methods) |
 | [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` | in progress | nested action stack; action caching | [detail](#resolveaction-has-no-parent-nesting-or-failure-signal) |
 | Action caching (`cacheAction`, `mergeCachedActions`, `cacheTraitActions`) | `Concerns/InteractsWithActions.php` `cacheAction()` / `mergeCachedActions()` / `cacheTraitActions()` | todo | — | [detail](#action-caching-is-not-ported) |
 | [`getMountedModalId()`](../../../packages/actions/src/Concerns/HasActions.php) | `action-modal.blade.php` inline `$actionModalId` | done | — | [diverges](#the-modal-id-is-name-only-not-instance-scoped-or-nesting-scoped) |
 | `replaceMountedAction()` | `Concerns/InteractsWithActions.php` `replaceMountedAction()` | todo | nested action stack | [detail](#replacemountedaction-is-not-ported) |
-| Action-schema/form integration (`mountedActionHasSchema`/`ShouldOpenModal`, `getMountedActionSchema*`, deprecated `mountedActionHasForm`/`getMountedActionForm`) | `Concerns/InteractsWithActions.php` (same methods) | blocked | `HasSchema` (actions) + schemas/forms mounted-action wiring | [detail](#action-schema-integration-is-entirely-unported) |
+| Action-schema/form integration (`mountedActionHasSchema`, `getMountedActionSchema*`, deprecated `mountedActionHasForm`/`getMountedActionForm`) | `Concerns/InteractsWithActions.php` (same methods) | blocked | `HasSchema` (actions) + schemas/forms mounted-action wiring | [detail](#action-schema-integration-is-entirely-unported) |
 | `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | [detail](#url-bound-default-action-state-is-not-ported) |
 | `getDefaultAction*` host override hooks (Record/Title/Model/ModelLabel/Url/SuccessRedirectUrl/FailureRedirectUrl/Relationship/SchemaResolver/AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionRecord()` etc. | todo | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
 | `forceRender()` / `partiallyRenderActionParentSchema()` | `Concerns/InteractsWithActions.php` `forceRender()` / `partiallyRenderActionParentSchema()` | blocked | schemas partial-render infrastructure (`PartialsComponentHook`) | [detail](#partial-re-render-is-not-ported) |
@@ -73,15 +75,18 @@ modal when `mountedActionShouldOpenModal()` says the resolved action actually
 needs one (schema present, or explicit `modalHeading()`/description, etc.) —
 otherwise it calls the action immediately. The port's
 [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) sets
-the single-slot descriptor, resolves the action, unmounts silently if it is
-`null`, and opens the modal **only** when `isConfirmationRequired()` is true —
-there is no disabled check before mounting, no authorization check, no schema
-mount/fill lifecycle, no `Halt`/`Cancel`/`ValidationException` handling during
-mount, and no immediate-call path for schema-less, non-confirmation actions
-mounted without a modal. **Next step:** land `CanBeAuthorized` for the
-authorization branch; the schema-mount branch and the general
-`mountedActionShouldOpenModal()` check wait on the actions/forms schema
-integration.
+the single-slot descriptor, resolves the action, unmounts when it is `null` or
+`isDisabled()`, opens the modal when
+[`mountedActionShouldOpenModal()`](#the-modal-open-gate-is-confirmation-only)
+says so, and otherwise returns `callMountedAction()`'s result — matching
+Filament's shape and `mixed` return. Still absent: the authorization check
+(`hasAuthorizationNotification()` / `getAuthorizationResponseWithMessage()` and
+its unauthorized notification), the schema mount/fill lifecycle
+(`callBeforeFormFilled()` / `$action->mount([...])` / `callAfterFormFilled()`,
+plus the `ExposesStateToActionData` child-schema validation), and the
+`Halt`/`Cancel`/`ValidationException` handling that wraps them. **Next step:**
+land `CanBeAuthorized` for the authorization branch; the schema-mount branch
+waits on the actions/forms schema integration.
 
 ### `callMountedAction()` drops rate limiting, authorization, transactions, and redirects
 
@@ -129,6 +134,33 @@ parent/child cascade (nothing to cascade to with one slot), no
 properties are not ported), and no `resetErrorBag()` call. **Next step:**
 returns in the same change that lands the multi-slot mounted-action stack for
 nested actions.
+
+### The modal-open gate is confirmation-only
+
+[`mountedActionShouldOpenModal(?Action $mountedAction = null): bool`](../../../packages/actions/src/Concerns/HasActions.php)
+is ported under Filament's name and signature, and is the single gate both
+`mountAction()` and a host template read (the
+[`ActionHost`](../../../packages/actions/tests/Fixtures/Twig/templates/components/ActionHost.html.twig)
+/ [`RecordActionHost`](../../../packages/actions/tests/Fixtures/Twig/templates/components/RecordActionHost.html.twig)
+fixtures gate their `confirm-modal.html.twig` include on
+`this.mountedActionShouldOpenModal`), so the rule cannot drift between the two.
+The body diverges: Filament delegates to
+`$action->shouldOpenModal(checkForSchemaUsing: $this->mountedActionHasSchema(...))`,
+which is `hasCustomModalHeading() || hasModalDescription() || hasModalContent()
+|| hasModalContentFooter() || <has schema>` behind a `hasModal()` / `isModalHidden`
+override pair — confirmation implies a modal there only because
+`getModalDescription()` falls back to the confirmation string when
+`isConfirmationRequired()`. The port returns `isConfirmationRequired()` outright,
+because none of that chain exists: `CanOpenModal` ships no `shouldOpenModal()`,
+no `hasModal()`/`isModalHidden`, no `hasCustomModalHeading()`/`hasModalDescription()`,
+and no confirmation fallback in `getModalDescription()` (recorded on
+[`action.md`'s CanOpenModal row](action.md#only-the-modal-content-config-is-ported-the-behavior-and-footer-action-surface-is-not)).
+Observable gap: an action configured with only `modalHeading('…')` and no
+`requiresConfirmation()` opens a modal in Filament and auto-runs here. It is
+also null-safe where Filament's is not, so a template can call it with nothing
+mounted. **Next step:** delegate to `Action::shouldOpenModal()` once `CanOpenModal`
+grows it; the `checkForSchemaUsing:` argument arrives with the schema
+integration below.
 
 ### `getAction()` only resolves plain host methods
 
@@ -195,12 +227,14 @@ than one can be mounted at a time.
 
 ### Action-schema integration is entirely unported
 
-Filament's `mountedActionHasSchema()` / `mountedActionShouldOpenModal()` /
-`getMountedActionSchema()` / `getMountedActionSchemaName()` /
-`getMountedActionSchemaModel()` (plus the deprecated `mountedActionHasForm()`
-/ `getMountedActionForm()` aliases) build and cache a per-mounted-action
-`Schema` keyed by nesting index, seeded with the action's record/model,
-state path `mountedActions.{index}.data`, and dotted `operation` name. None of
+Filament's `mountedActionHasSchema()` / `getMountedActionSchema()` /
+`getMountedActionSchemaName()` / `getMountedActionSchemaModel()` (plus the
+deprecated `mountedActionHasForm()` / `getMountedActionForm()` aliases) build
+and cache a per-mounted-action `Schema` keyed by nesting index, seeded with the
+action's record/model, state path `mountedActions.{index}.data`, and dotted
+`operation` name; `mountedActionShouldOpenModal()` (ported
+[confirmation-only](#the-modal-open-gate-is-confirmation-only)) consumes
+`mountedActionHasSchema()` as its `checkForSchemaUsing:` argument. None of
 this exists in the port — `Action` does not compose `HasSchema`, and
 `HasActions` has no schema-building method at all; a mounted action's "form"
 today is whatever the confirm-modal template renders (heading/description/icon

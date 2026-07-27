@@ -43,3 +43,31 @@ it('renders the trigger wired to the mountAction live action', function (): void
         ->toContain('data-live-action-param="mountAction"')
         ->toContain('data-live-name-param="delete"');
 });
+
+it('runs a non-confirming action immediately on mount and leaves nothing mounted', function (): void {
+    $component = $this->createLiveComponent('ActionHost')
+        ->call('mountAction', ['name' => 'notify', 'arguments' => [], 'context' => []]);
+
+    expect($component->component()->notified)->toBeTrue()
+        ->and($component->component()->mountedActions)->toBe([]);
+});
+
+it('renders no modal for a non-confirming action', function (): void {
+    $html = (string) $this->createLiveComponent('ActionHost')
+        ->call('mountAction', ['name' => 'notify', 'arguments' => [], 'context' => []])
+        ->render();
+
+    expect($html)->not->toContain('sy-modal');
+});
+
+it('returns the auto-run result from mountAction', function (): void {
+    expect($this->createLiveComponent('ActionHost')->component()->mountAction('notify'))->toBeTrue();
+});
+
+it('unmounts a disabled action without calling it', function (): void {
+    $component = $this->createLiveComponent('ActionHost')
+        ->call('mountAction', ['name' => 'blocked', 'arguments' => [], 'context' => []]);
+
+    expect($component->component()->notified)->toBeFalse()
+        ->and($component->component()->mountedActions)->toBe([]);
+});

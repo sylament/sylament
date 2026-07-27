@@ -49,7 +49,7 @@ permanent note in [Divergences](#divergences).
 | [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) (support) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | - |
 | [`HasIconSize`](../../../packages/support/src/Components/Concerns/HasIconSize.php) (support) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — | - |
 | [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) (support) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | - |
-| `HasDropdown` | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) | todo | Task 5 | - |
+| `HasDropdown` | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) | done | — | [diverges](#dropdownwidth-is-a-css-string-dropdownteleport-and-dropdownautoplacement-are-deferred) |
 | Visibility composition (`isHidden()` group-iteration) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`isHidden()`/`resolveIsHidden()`) | todo | Task 6 | - |
 | Propagation to children (dropdown placement, trigger-view defaults) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`actions()`/`getActions()`) | todo | Task 6 | - |
 | Grouped item template | [`components/dropdown/list/item.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | todo | Task 7 | - |
@@ -119,3 +119,12 @@ also means `ActionGroup` never runs the `HasLabel` trait's own `getLabel()`
 class-defined method over the trait's, no aliasing needed, and a group has no
 name for that default to derive from anyway. Reverses if/when a translation
 layer lands, same as the linked `Action` divergence.
+
+### `dropdownWidth` is a CSS string; `dropdownTeleport` and `dropdownAutoPlacement` are deferred
+
+Filament's `HasDropdown` carries a `Width` enum and types `dropdownWidth(Width|Closure|null)`.
+The port's [`dropdownWidth(string|Closure|null)`](../../../packages/actions/src/Concerns/HasDropdown.php)
+takes a CSS length string directly — `support` has no `Width` enum, and the value flows
+into a `--sy-dropdown-width` CSS variable. `dropdownTeleport()` and `dropdownAutoPlacement()`
+are not ported; they configure template-only features deferred with the dropdown rendering
+tasks (Task 9's template integration and later dropdown UX features).

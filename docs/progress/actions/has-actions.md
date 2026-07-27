@@ -356,10 +356,21 @@ throws a `LogicException` naming both fixes (implement the contract, compose
 the `HasSchemas` trait) where Filament folds the case into the same swallowable
 exception. Second, an unknown schema *name* must stay a miss, but schemas'
 `HasSchemas::getSchema()` throws where Filament's returns `null` — so the
-resolver pre-checks the same `{$name}()` / `{$name}Schema()` method discovery
-`getSchema()` itself performs and returns `null` without calling it, keeping a
-crash inside a host's schema-builder method loud instead of swallowed by a
-catch. The dropped `$parentActions` parameter is not part of this divergence:
+resolver ports the discovery guard of Filament's `cacheSchema()` and returns
+`null` without calling `getSchema()` unless the candidate `{$name}()` /
+`{$name}Schema()` method exists **and** is schema-shaped: first parameter typed
+`Schema`, or parameterless with a `Schema` return type. The shape half is
+load-bearing, not pedantry — the context key is a client-writable `#[LiveArg]`
+and `getSchema()` invokes whatever method discovery finds, so a bare
+`method_exists` check would let a crafted context remotely invoke any host
+method (`unmountAction`, `callMountedAction` — which recurses — or a consumer's
+parameterless `save()`); Filament no-ops all of these, and the guard makes the
+port miss exactly where Filament's `cacheSchema()` misses. A crash inside a
+real schema-builder method still propagates loud instead of being swallowed by
+a catch. The guard duplicates discovery knowledge actions-side because
+`getSchema()` deliberately stays permissive for host-side callers (an untyped
+builder parameter works when the host calls it directly); if the trait's
+resolution rules ever change, both sites must move together. The dropped `$parentActions` parameter is not part of this divergence:
 Filament accepts and ignores it on the schema branch, and the single-slot port
 has no parent frames to pass. Reverses if the nested-action stack ever needs a
 typed failure signal to distinguish frames; the exception class returns then.

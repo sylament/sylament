@@ -6,10 +6,13 @@ namespace Sylament\Actions\Concerns;
 
 use Closure;
 use LogicException;
+use ReflectionMethod;
+use ReflectionNamedType;
 use Sylament\Actions\Action;
 use Sylament\Actions\Enums\ActionStatus;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
+use Sylament\Schemas\Schema;
 use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -191,9 +194,13 @@ trait HasActions
      * the nested container key handed to `Schema::getAction()`. Unresolvable
      * client references — unknown schema name, unknown action — return null so the
      * mount no-ops; a host that cannot carry schemas at all is a wiring bug and
-     * throws. The schema-name miss check mirrors the method discovery
-     * `HasSchemas::getSchema()` itself performs, because that getter throws
-     * instead of returning null.
+     * throws. The schema-name miss check ports the discovery guard of Filament's
+     * `cacheSchema()`: the candidate `{$name}()` / `{$name}Schema()` method must
+     * be schema-shaped — first parameter typed `Schema`, or parameterless with a
+     * `Schema` return type. It runs here because `HasSchemas::getSchema()` throws
+     * on unknown names and invokes whatever method discovery finds; with a
+     * client-writable context key, the shape guard is what keeps every other host
+     * method from being remotely invocable.
      *
      * @param array{name: string, arguments: array<mixed>, context: array<mixed>} $descriptor
      */
@@ -213,8 +220,37 @@ trait HasActions
         $schemaName = ($dotPosition === false) ? $key : mb_substr($key, 0, $dotPosition);
         $nestedContainerKey = ($dotPosition === false) ? null : mb_substr($key, $dotPosition + 1);
 
-        if (! method_exists($this, $schemaName) && ! method_exists($this, "{$schemaName}Schema")) {
+        $methodName = match (true) {
+            method_exists($this, $schemaName) => $schemaName,
+            method_exists($this, "{$schemaName}Schema") => "{$schemaName}Schema",
+            default => null,
+        };
+
+        if ($methodName === null) {
             return null;
+        }
+
+        $methodReflection = new ReflectionMethod($this, $methodName);
+        $firstParameter = $methodReflection->getParameters()[0] ?? null;
+
+        if ($firstParameter === null) {
+            $returnType = $methodReflection->getReturnType();
+
+            if (! $returnType instanceof ReflectionNamedType || ! is_a($returnType->getName(), Schema::class, allow_string: true)) {
+                return null;
+            }
+        } else {
+            $parameterType = $firstParameter->getType();
+
+            if (! $parameterType instanceof ReflectionNamedType) {
+                return null;
+            }
+
+            $parameterTypeName = $parameterType->getName();
+
+            if (! class_exists($parameterTypeName) || ! is_a($parameterTypeName, Schema::class, allow_string: true)) {
+                return null;
+            }
         }
 
         $action = $this->getSchema($schemaName)->getAction($descriptor['name'], $nestedContainerKey);

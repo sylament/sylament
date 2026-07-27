@@ -86,24 +86,34 @@ inherited `isLive`/`getAllColumns` result.
 
 ### `HasComponents` still lacks the lookup and clone layer
 
-`components()`/`getComponents()`/`getFlatComponents()`/`getComponentByStatePath()`
-are ported and covered (26 unit cases plus the `SchemaRenderTest` coercion and
-hidden-filtering paths). **In:** lazy closure resolution, container assignment,
-`string`→`Text` and other→`Html` child coercion, visibility filtering,
-top-level/nested/skip-container state-path lookup, and — matching Filament's
-unions — `Action`/`ActionGroup` children: each is passed through the container's
-`modifyAction()`/`modifyActionGroup()` hook, stamped `schemaContainer($this)`,
-and left uncoerced; `getComponents(bool $withActions = true, bool $withHidden = true)`
+`components()`/`getComponents()`/`getFlatComponents()`/`getComponentByStatePath()`/
+`getAction()` are ported and covered (35 unit cases plus the `SchemaRenderTest`
+coercion and hidden-filtering paths). **In:** lazy closure resolution, container
+assignment, `string`→`Text` and other→`Html` child coercion, visibility
+filtering, top-level/nested/skip-container state-path lookup, and — matching
+Filament's unions — `Action`/`ActionGroup` children: each is passed through the
+container's `modifyAction()`/`modifyActionGroup()` hook, stamped
+`schemaContainer($this)`, and left uncoerced;
+`getComponents(bool $withActions = true, bool $withHidden = true)`
 and `getFlatComponents(bool $withActions = true)` drop them when `$withActions`
 is false (the state walks in `HasState`/`HasSchemas` and
 `getComponentByStatePath()` all pass `withActions: false`; `getFlatComponents()`
 appends actions but never descends into them). Both accessors declare PHPStan
 conditional return types, so `withActions: false` call sites keep
-`array<Component>` inference. **Left:** `getAction()` (next in the
-actions-integration epic), `getComponent()`, `getFlatFields()` (depend on
-Fields), `cloneComponents()`/`clearCachedChildSchemas()` (depend on `Cloneable`
+`array<Component>` inference. The container-wide
+`getAction(string $actionName, ?string $nestedContainerKey = null)` walks the
+visible components: a direct `Action` child matches by name, a direct
+`ActionGroup` child by its flat-actions map, a component-registered action only
+when `$nestedContainerKey` exactly equals the owning component's relative key,
+and every component's child schemas recursively — keyed child schemas are
+entered only when the remaining key matches or prefixes them, unkeyed ones pass
+it through, and a keyed component's inheritance-key prefix is stripped before
+descending (`str_starts_with`/`mb_substr`, no Laravel `str()`). Depth-first,
+first match wins; hidden components are skipped. **Left:** `getComponent()`,
+`getFlatFields()` (depend on Fields),
+`cloneComponents()`/`clearCachedChildSchemas()` (depend on `Cloneable`
 and child-schema caching), and the deprecated `schema()` alias. **Next:** port
-`getAction()`, then the rest as Fields/`Cloneable` land. The structural
+the rest as Fields/`Cloneable` land. The structural
 difference it keeps — a single `$cachedComponents` slot instead of Filament's
 flag-keyed memoization — is permanent and written up in
 [Divergences](#the-component-collection-keeps-a-single-cache-and-drops-the-flag-keyed-memoization).

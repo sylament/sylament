@@ -37,7 +37,7 @@ widgets in [`src/View/Components`](../../../vendor/filament/support/src/View/Com
 | Callout | [`View/Components/CalloutComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent.php) | todo | — |
 | Card | [`views/components/card.blade.php`](../../../vendor/filament/support/resources/views/components/card.blade.php) | todo | — |
 | Checkbox | [`views/components/input/checkbox.blade.php`](../../../vendor/filament/support/resources/views/components/input/checkbox.blade.php) | todo | — |
-| Dropdown | [`views/components/dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) | todo | — |
+| [`Dropdown`](../../../packages/support/templates/components/Dropdown/index.html.twig) | [`views/components/dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) | in progress | [dropdown.md](dropdown.md) |
 | Empty state | [`views/components/empty-state.blade.php`](../../../vendor/filament/support/resources/views/components/empty-state.blade.php) | todo | — |
 | Fieldset | [`views/components/fieldset.blade.php`](../../../vendor/filament/support/resources/views/components/fieldset.blade.php) | todo | — |
 | [`Icon`](../../../packages/support/templates/components/Icon/index.html.twig) | [`views/components/icon.blade.php`](../../../vendor/filament/support/resources/views/components/icon.blade.php) | done | — |

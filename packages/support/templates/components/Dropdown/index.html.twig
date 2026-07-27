@@ -1,0 +1,38 @@
+{% props
+    content = markup(block('content') ?? null),
+    flip = true,
+    maxHeight = null,
+    offset = 8,
+    placement = 'bottom-start',
+    trigger = markup(block('trigger') ?? null),
+    width = null %}
+
+{% set dropdownController = 'sylament--support--dropdown' %}
+
+<div
+    {{ attributes.defaults({
+        class: classes('sy sy-dropdown'),
+    }) }}
+    {{ stimulus_controller(dropdownController, {
+        placement: placement,
+        offset: offset,
+        flip: flip,
+    }) }}
+>
+    <div
+        class="sy-dropdown-trigger"
+        {{ stimulus_target(dropdownController, 'trigger') }}
+        {{ stimulus_action(dropdownController, 'toggle', 'click') }}
+    >
+        {{ trigger }}
+    </div>
+
+    <div
+        class="sy-dropdown-panel"
+        hidden
+        {{ stimulus_target(dropdownController, 'panel') }}
+        {% if width or maxHeight %}style="{{ width ? '--sy-dropdown-width: ' ~ width ~ ';' }}{{ maxHeight ? '--sy-dropdown-max-height: ' ~ maxHeight ~ ';' }}"{% endif %}
+    >
+        {{ content }}
+    </div>
+</div>

@@ -1,0 +1,21 @@
+.sy-dropdown {
+    @apply relative inline-block;
+}
+
+.sy-dropdown-trigger {
+    @apply inline-flex;
+}
+
+.sy-dropdown-panel {
+    @apply absolute z-10 overflow-y-auto rounded-lg bg-white p-1 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10;
+    width: var(--sy-dropdown-width, max-content);
+    max-height: var(--sy-dropdown-max-height, none);
+}
+
+.sy-dropdown-item {
+    @apply flex w-full items-center gap-2 rounded-md px-3 py-2 text-start text-sm text-gray-700 outline-none hover:bg-gray-950/5 focus-visible:bg-gray-950/5 dark:text-gray-200 dark:hover:bg-white/5 dark:focus-visible:bg-white/5;
+
+    &.sy-disabled {
+        @apply pointer-events-none opacity-70;
+    }
+}

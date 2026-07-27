@@ -1,3 +1,5 @@
+/*! @floating-ui/dom ^1.8.0 | MIT License | Copyright (c) 2021-present Floating UI contributors | https://github.com/floating-ui/floating-ui */
+
 // ../../../node_modules/.pnpm/@floating-ui+utils@0.2.12/node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs
 var min = Math.min;
 var max = Math.max;
@@ -1372,7 +1374,7 @@ var dropdown_controller_default = class extends Controller {
     document.addEventListener("keydown", this.#onKeyDown);
   }
   close() {
-    if (this.panelTarget.hidden) {
+    if (this.#stopPositioning === null) {
       return;
     }
     this.#stopPositioning?.();

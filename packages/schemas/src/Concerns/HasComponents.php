@@ -40,6 +40,108 @@ trait HasComponents
     }
 
     /**
+     * Resolve an action anywhere in this container by name: a direct `Action`
+     * child, an action inside a direct `ActionGroup` child, a
+     * component-registered action (reached only when `$nestedContainerKey`
+     * exactly matches the owning component's relative key), or recursively
+     * through each component's child schemas — keyed child schemas are entered
+     * only when the remaining nested key targets them, unkeyed ones pass it
+     * through. Depth-first, first match wins; hidden components are not
+     * searched.
+     */
+    public function getAction(string $actionName, ?string $nestedContainerKey = null): ?Action
+    {
+        foreach ($this->getComponents(withHidden: false) as $component) {
+            if (blank($nestedContainerKey)) {
+                if (
+                    ($component instanceof Action)
+                    && ($component->getName() === $actionName)
+                ) {
+                    return $component;
+                }
+
+                if ($component instanceof ActionGroup) {
+                    $groupAction = $component->getFlatActions()[$actionName] ?? null;
+
+                    if ($groupAction !== null) {
+                        return $groupAction;
+                    }
+                }
+            }
+
+            if ($component instanceof Action) {
+                continue;
+            }
+
+            if ($component instanceof ActionGroup) {
+                continue;
+            }
+
+            $componentKey = $component->getKey(isAbsolute: false);
+
+            if (filled($componentKey)) {
+                $componentInheritanceKey = $component->getInheritanceKey(isAbsolute: false);
+
+                if (
+                    filled($nestedContainerKey)
+                    && ($nestedContainerKey !== $componentKey)
+                    && filled($componentInheritanceKey)
+                    && !str_starts_with($nestedContainerKey, "{$componentInheritanceKey}.")
+                ) {
+                    continue;
+                }
+
+                if ($nestedContainerKey === $componentKey) {
+                    $componentAction = $component->getAction($actionName);
+
+                    if ($componentAction !== null) {
+                        return $componentAction;
+                    }
+
+                    $componentNestedContainerKey = null;
+                } elseif (filled($nestedContainerKey) && filled($componentInheritanceKey)) {
+                    $componentNestedContainerKey = mb_substr($nestedContainerKey, mb_strlen("{$componentInheritanceKey}."));
+                } else {
+                    $componentNestedContainerKey = $nestedContainerKey;
+                }
+            } else {
+                $componentNestedContainerKey = $nestedContainerKey;
+            }
+
+            foreach ($component->getChildSchemas() as $childSchema) {
+                $childSchemaName = $childSchema->getKey(isAbsolute: false);
+
+                if (filled($childSchemaName)) {
+                    if (blank($componentNestedContainerKey)) {
+                        continue;
+                    }
+
+                    if (
+                        ($componentNestedContainerKey !== $childSchemaName)
+                        && !str_starts_with($componentNestedContainerKey, "{$childSchemaName}.")
+                    ) {
+                        continue;
+                    }
+
+                    $childSchemaNestedContainerKey = ($componentNestedContainerKey === $childSchemaName)
+                        ? null
+                        : mb_substr($componentNestedContainerKey, mb_strlen("{$childSchemaName}."));
+                } else {
+                    $childSchemaNestedContainerKey = $componentNestedContainerKey;
+                }
+
+                $childSchemaAction = $childSchema->getAction($actionName, $childSchemaNestedContainerKey);
+
+                if ($childSchemaAction !== null) {
+                    return $childSchemaAction;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @return ($withActions is true ? array<Component|Action|ActionGroup> : array<Component>)
      */
     public function getComponents(bool $withActions = true, bool $withHidden = true): array

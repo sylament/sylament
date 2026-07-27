@@ -8,6 +8,7 @@ use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Html;
+use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Components\Text;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
@@ -249,4 +250,86 @@ it('does not descend into a skipped component while still matching it exactly', 
 
     expect($schema->getComponentByStatePath('data.address.city', [$group]))->toBeNull()
         ->and($schema->getComponentByStatePath('data.address', [$group]))->toBe($group);
+});
+
+it('resolves a direct Action child by name', function (): void {
+    $action = Action::make('save');
+    $schema = Schema::make()->components([new Component(), $action]);
+
+    expect($schema->getAction('save'))->toBe($action);
+});
+
+it('resolves an action inside a direct ActionGroup child through its flat actions', function (): void {
+    $inner = Action::make('delete');
+    $schema = Schema::make()->components([ActionGroup::make([$inner])]);
+
+    expect($schema->getAction('delete'))->toBe($inner);
+});
+
+it('resolves a nested action through an unkeyed child schema', function (): void {
+    $action = Action::make('publish');
+    $schema = Schema::make(new StateHostFixture())->components([
+        Section::make()->components([$action]),
+    ]);
+
+    expect($schema->getAction('publish'))->toBe($action);
+});
+
+it('resolves a component-registered action only with the exact nested container key', function (): void {
+    $action = Action::make('feature');
+    $schema = Schema::make()->components([
+        Section::make('Settings')->registerActions([$action]),
+    ]);
+
+    expect($schema->getAction('feature', 'settings::section'))->toBe($action)
+        ->and($schema->getAction('feature'))->toBeNull();
+});
+
+it('strips a keyed component inheritance prefix when descending', function (): void {
+    $action = Action::make('feature');
+    $inner = StateGroup::make()->key('inner')->registerActions([$action]);
+    $schema = Schema::make(new StateHostFixture())->components([
+        StateGroup::make()->key('wrapper')->components([$inner]),
+    ]);
+
+    expect($schema->getAction('feature', 'wrapper.inner'))->toBe($action);
+});
+
+it('enters a keyed child schema only when the nested container key targets it', function (): void {
+    $action = Action::make('approve');
+    $slot = Schema::make()->key('slot')->components([$action]);
+    $schema = Schema::make(new StateHostFixture())->components([
+        StateGroup::make()->components($slot),
+    ]);
+
+    expect($schema->getAction('approve', 'slot'))->toBe($action)
+        ->and($schema->getAction('approve'))->toBeNull();
+});
+
+it('does not resolve actions inside a hidden component', function (): void {
+    $child = Action::make('inline');
+    $registered = Action::make('feature');
+    $schema = Schema::make(new StateHostFixture())->components([
+        Section::make('Hidden zone')->components([$child])->registerActions([$registered])->hidden(),
+    ]);
+
+    expect($schema->getAction('inline'))->toBeNull()
+        ->and($schema->getAction('feature', 'hidden-zone::section'))->toBeNull();
+});
+
+it('returns the first match in traversal order for a duplicate action name', function (): void {
+    $nested = Action::make('save');
+    $direct = Action::make('save');
+    $schema = Schema::make(new StateHostFixture())->components([
+        Section::make()->components([$nested]),
+        $direct,
+    ]);
+
+    expect($schema->getAction('save'))->toBe($nested);
+});
+
+it('returns null for an unknown action name', function (): void {
+    $schema = Schema::make()->components([Action::make('save')]);
+
+    expect($schema->getAction('missing'))->toBeNull();
 });

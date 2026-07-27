@@ -206,6 +206,22 @@ nothing. `twig/twig` and the ambient `symfony/dependency-injection` /
 `symfony/http-kernel` omissions are deliberate and recorded in
 [CLAUDE.md](../../../CLAUDE.md).
 
+The schemas↔actions integration epic adds the rule's first genuinely mutual
+edge: [`BelongsToSchemaComponent`](../../../packages/actions/src/Concerns/BelongsToSchemaComponent.php)
+type-hints `Schemas\Components\Component` and `Schemas\Schema` directly, so
+`actions` now requires `sylament/schemas`. `schemas` requires `sylament/actions`
+back in the same commit, ahead of the schemas-side code (the component-level
+`HasActions` registration trait, `CanModifyActions`, the `HasComponents`
+child-schema unions) that starts importing `Action`/`ActionGroup` the very next
+task — see
+[schemas-bundle.md](../schemas/schemas-bundle.md#sylamentactions-becomes-a-hard-composer-requirement).
+Filament already carries this cycle: `filament/schemas`'s composer.json requires
+`filament/actions` directly, and `filament/actions` reaches `filament/schemas`
+back only transitively, through `filament/forms` (which requires both). Sylament
+states the edge the two packages already share in Filament's graph directly,
+rather than through three packages — `forms`, `infolists`, `notifications` — that
+don't provide it here yet.
+
 ### Livewire-specific provider responsibilities are dropped, not ported
 
 `packageBooted()` registers `Testable::mixin(new TestsActions)` — a Livewire

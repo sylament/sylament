@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Fixtures;
 
+use Sylament\Actions\SylamentActionsBundle;
 use Sylament\Schemas\SylamentSchemasBundle;
 use Sylament\Support\SylamentSupportBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -31,6 +32,7 @@ class Kernel extends BaseKernel
             new StimulusBundle(),
             new LiveComponentBundle(),
 
+            new SylamentActionsBundle(),
             new SylamentSchemasBundle(),
             new SylamentSupportBundle(),
         ];

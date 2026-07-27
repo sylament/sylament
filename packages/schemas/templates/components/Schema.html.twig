@@ -14,14 +14,18 @@
             ],
         }, isInline ? null : grid(component.getColumns), component.getExtraAttributes) }}
 >
-    {% for childComponent in component.getComponents(true, false) %}
-        <div {{ attrs(
-            isInline ? null : gridColumn(childComponent.getColumnSpan, childComponent.getColumnStart, childComponent.getColumnOrder),
-            isInline and childComponent.canGrow(false) ? { class: ['sy-growable'] } : null,
-        ) }}>
-            <div class="sy-sc-component">
-                {{ renderComponent(childComponent) }}
+    {% for childComponent in visibleChildren %}
+        {% if childComponent.isAction %}
+            <div class="sy-sc-action">{{ renderComponent(childComponent.component) }}</div>
+        {% else %}
+            <div {{ attrs(
+                isInline ? null : gridColumn(childComponent.component.getColumnSpan, childComponent.component.getColumnStart, childComponent.component.getColumnOrder),
+                isInline and childComponent.component.canGrow(false) ? { class: ['sy-growable'] } : null,
+            ) }}>
+                <div class="sy-sc-component">
+                    {{ renderComponent(childComponent.component) }}
+                </div>
             </div>
-        </div>
+        {% endif %}
     {% endfor %}
 </div>

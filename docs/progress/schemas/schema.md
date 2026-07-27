@@ -49,7 +49,7 @@ their detail sections do.
 | [`isLive`/`isLiveOnBlur`/`isLiveDebounced`/`getLiveDebounce` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | in progress | — | [detail](#the-parent-walk-inheritance-overrides-are-untested) |
 | [`hasGap`/`isDense` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
 | [`getAllColumns` parent inheritance override](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | in progress | — | [detail](#the-parent-walk-inheritance-overrides-are-untested) |
-| [Twig-template rendering (`Schema.html.twig`)](../../../packages/schemas/templates/components/Schema.html.twig) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#an-empty-or-all-hidden-schema-still-renders-its-root-div) |
+| [Twig-template rendering (`Schema.html.twig`)](../../../packages/schemas/templates/components/Schema.html.twig) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-renders-visible-children-only-without-hidden-placeholders) |
 | Root Livewire/Alpine render wiring (`wire:partial`, `x-data filamentSchema`, client-side state reset) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | skipped | — | [diverges](#the-root-schema-drops-livewire-partial-render-and-alpine-wiring) |
 | [`BelongsToParentComponent`](../../../packages/schemas/src/Concerns/BelongsToParentComponent.php) | [`Concerns/BelongsToParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToParentComponent.php) | done | — | [diverges](#parentcomponent-accepts-null-to-detach) |
 | [`CanBeEmbeddedInParentComponent`](../../../packages/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | [`Concerns/CanBeEmbeddedInParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | done | — | — |
@@ -232,8 +232,9 @@ Filament memoizes `getComponents` (with/without hidden), `getFlatComponents`, an
 `spl_object_id`. Sylament keeps only `$cachedComponents` (the raw resolved list)
 and recomputes flat/by-state-path each call. `getComponents(bool $withActions = true,
 bool $withHidden = true)` matches Filament's `withActions` default but keeps the
-flipped `withHidden = true` default (Filament `false`; the template calls
-`getComponents(true, false)` explicitly), drops `withOriginalKeys` (see the
+flipped `withHidden = true` default (Filament `false`; the render pipeline —
+`Schema::render()`'s empty guard and `getExtraTemplateData()` — passes
+`withHidden: false` explicitly), drops `withOriginalKeys` (see the
 key-preservation divergence below), and filters on `isVisible()` rather than
 `isHidden()`. `getFlatComponents(bool $withActions = true)` keeps only that one
 flag — Filament's `withHidden`/`withAbsoluteKeys`/`containerKey` parameters and
@@ -302,14 +303,22 @@ keys too, so a filtered result can carry the numeric gaps Filament's reindexed
 output never has. Reversible by wrapping the return in `array_values()` if a
 consumer ever needs a dense list.
 
-### An empty or all-hidden schema still renders its root div
+### The schema renders visible children only, without hidden placeholders
 
-Filament's `renderEmbeddedHtml()` returns `''` when the schema is directly hidden
-or has no visible components, so an empty slot emits nothing. Sylament's
-`Schema.html.twig` always renders the outer `<div>` around the (possibly empty)
-`getComponents(true, false)` loop, so a slot handed an empty or fully-hidden
-`Schema` still emits the root element. Reversible by guarding the template on a
-visible-component count.
+Filament's `renderEmbeddedHtml()` walks `getComponents(withHidden: true)` and
+keeps every hidden child in the DOM as an empty placeholder (`div.fi-sc-action
+fi-hidden` for actions, a `toSchemaHtml(isVisible: false)` wrapper for
+components) so Livewire's DOM diffing stays aligned across re-renders. Sylament
+renders visible children only: `Schema::render()` returns `null` when
+`getComponents(withHidden: false)` is empty — matching Filament's `''`-on-empty
+contract, which is what lets `Section` suppress the chrome around an empty
+slot — and `getExtraTemplateData()` hands the template the visible set as
+`visibleChildren` pairs, each carrying the child and a precomputed `isAction`
+flag (the Twig-side stand-in for the template's `instanceof` branch). No
+placeholder element is ever emitted for a hidden child. Revisit together with
+the live-component morphing strategy: if UX LiveComponent morphing needs stable
+placeholders the way Livewire's does, the loop switches to with-hidden
+visibility pairs like Filament's `$componentsWithVisibility`.
 
 ### `modifyAction()` and `modifyActionGroup()` guard a callback's return type at runtime
 

@@ -7,6 +7,10 @@
         & > .sy-growable {
             @apply w-full flex-1;
         }
+
+        & > .sy-sc-action {
+            @apply contents;
+        }
     }
 
     &.sy-sc-has-gap {

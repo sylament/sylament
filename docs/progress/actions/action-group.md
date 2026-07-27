@@ -16,8 +16,8 @@ map, and the group back-reference wiring), the dropdown trigger config,
 visibility composition, and context propagation to children (`liveComponent()`,
 `getRecord()` fallback, default-template push onto `Action` children) have
 landed across this epic's first six tasks. Still to come: propagating dropdown
-placement and trigger-view defaults to nested groups, the grouped-item template
-itself, the trigger machinery, and the render pipeline (see _Blocked by_ below).
+placement and trigger-view defaults to nested groups, the trigger machinery,
+and the render pipeline (see _Blocked by_ below).
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 

@@ -82,11 +82,15 @@ unrelated file.
   filled-in example: a surface table on top, per-row detail sections beneath,
   divergences at the bottom.
 
-One file cuts across every package rather than belonging to one:
+Two files cut across every package rather than belonging to one:
 
 - [`renames.md`](renames.md) — the global rename table, plus the systematic
   idiom and namespace translations that are **not** renames. Divergence sections
   link it rather than repeating an entry.
+- [`roadmap.md`](roadmap.md) — the build order: the milestone ladder, the epics
+  inside each milestone, and the `Now` cursor naming the next epic to pick up.
+  The tables here answer _how complete is the port_; the roadmap answers _what
+  do we build next_.
 
 ## Statuses
 

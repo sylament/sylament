@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Integration\Components;
 
+use Sylament\Actions\Action;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
+use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Enums\IconSize;
 use Twig\Markup;
 
@@ -572,6 +574,54 @@ it('leaves the aside decision to the caller in the standalone support component'
 
     expect($html)->toContain('data-controller="sylament--support--section"')
         ->toContain('sy-aside');
+});
+
+it('renders a header action button inside the after-header container at its default size', function (): void {
+    $html = renderSection(Section::make('Profile')->headerActions([Action::make('publish')]));
+
+    expect($html)->toMatch('/sy-section-header-after-ctn">\s*<div\s+class="sy sy-sc sy-inline[^"]*sy-align-end[^"]*".*?<button[^>]*class="sy sy-btn sy-ac"/s')
+        ->toContain('Publish')
+        ->not->toContain('sy-size-sm');
+});
+
+it('keeps header actions inside the container the collapse toggle ignores', function (): void {
+    $html = renderSection(Section::make('Profile')->collapsible()->headerActions([Action::make('publish')]));
+
+    expect($html)->toMatch('/sy-section-header-after-ctn">\s*<div\s+class="sy sy-sc sy-inline[^"]*sy-align-end[^"]*".*?Publish/s')
+        ->toContain('toggleFromHeader');
+});
+
+it('renders a footer action button inside a start-aligned footer schema', function (): void {
+    $html = renderSection(Section::make('Profile')->footerActions([Action::make('save')]));
+
+    expect($html)->toMatch('/<footer class="sy-section-footer">\s*<div\s+class="sy sy-sc sy-inline sy-align-start.*?<button[^>]*class="sy sy-btn sy-ac"/s')
+        ->toContain('Save');
+});
+
+it('aligns the footer actions schema from footerActionsAlignment', function (): void {
+    $html = renderSection(
+        Section::make('Profile')
+            ->footerActions([Action::make('save')])
+            ->footerActionsAlignment(Alignment::End),
+    );
+
+    expect($html)->toMatch('/<footer class="sy-section-footer">\s*<div\s+class="sy sy-sc sy-inline sy-align-end/');
+});
+
+it('renders no footer element without footer actions', function (): void {
+    $html = renderSection(Section::make('Profile')->components([new Component()]));
+
+    expect($html)->not->toContain('sy-section-footer')
+        ->not->toContain('<footer');
+});
+
+it('downsizes actions in the label slots', function (): void {
+    $html = renderSection(
+        Section::make('Profile')->label('My label')->afterLabel([Action::make('edit')]),
+    );
+
+    expect($html)->toMatch('/<button[^>]*class="sy sy-btn sy-ac sy-size-sm"/')
+        ->toContain('Edit');
 });
 
 it('coerces a string slot argument into a text component', function (): void {

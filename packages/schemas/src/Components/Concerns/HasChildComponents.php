@@ -78,7 +78,7 @@ trait HasChildComponents
         if ($components instanceof Schema) {
             return $this->configureChildSchema(
                 $components
-                    ->liveComponent($this->getLiveComponent())
+                    ->liveComponent($this->getLiveComponentOrNull())
                     ->parentComponent($this),
                 $key,
             );

@@ -9,11 +9,18 @@ label, above/below content). It extends the schemas base
 
 The single-use concerns Filament composes onto `Section` — `CanBeCollapsed`,
 `CanBeCompact`, `CanBeDivided`, `CanBeSecondary`, `HasHeading`, `HasDescription`,
+`HasHeaderActions`, `HasFooterActions` (with its `HasFooterActionsAlignment`),
 plus the extracted `CanBeAside` and `HasContentBefore` — are tracked as rows here
 rather than in files of their own. Shared concerns keep their own rows in the
 [package README](README.md): the label surface is the `HasLabel` concern (also
 used by forms' `Field`), the icon surface is the support `HasIcon`/`HasIconColor`/
 `HasIconSize` trio, and the contained flag is support's `CanBeContained`.
+
+`setUp()` seeds the after-header slot with a closure returning
+`getHeaderActions()` and the footer slot with a closure building an
+alignment-matched `Schema` of `getFooterActions()`. Slot setters replace, so a
+user `->afterHeader(...)`/`->footer(...)` call discards the seeded actions —
+Filament-exact, test-pinned.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -40,10 +47,10 @@ permanent note in [Divergences](#divergences).
 | [Slot setters + key constants](../../../packages/schemas/src/Components/Section.php) | [`Section::afterHeader()` …](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
 | [`makeChildSchema()` end-alignment](../../../packages/schemas/src/Components/Section.php) | [`Section::makeChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
 | [`configureChildSchema()` inline + embedded](../../../packages/schemas/src/Components/Section.php) | [`Section::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
-| [`configureChildSchema()` action size/view branch](../../../packages/schemas/src/Components/Section.php) | [`Section::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | blocked | schemas Actions integration | [detail](#header-footer-and-inline-actions-are-not-integrated) |
+| [`configureChildSchema()` action size/view branch](../../../packages/schemas/src/Components/Section.php) | [`Section::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [diverges](#label-and-content-slot-actions-default-to-the-small-size-only-not-the-link-view) |
 | [Key derivation from heading slug](../../../packages/schemas/src/Components/Section.php) | [`Section::setUp()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [diverges](#the-heading-derived-key-omits-the-state-path-segment) |
-| Header actions (`HasHeaderActions` + `setUp` seed) | [`Concerns/HasHeaderActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeaderActions.php) | blocked | schemas Actions integration | [detail](#header-footer-and-inline-actions-are-not-integrated) |
-| Footer actions + alignment (`HasFooterActions`) | [`Concerns/HasFooterActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasFooterActions.php) | blocked | schemas Actions integration | [detail](#header-footer-and-inline-actions-are-not-integrated) |
+| [Header actions (`HasHeaderActions` + `setUp` seed)](../../../packages/schemas/src/Components/Concerns/HasHeaderActions.php) | [`Concerns/HasHeaderActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeaderActions.php) | done | — | — |
+| [Footer actions + alignment (`HasFooterActions`)](../../../packages/schemas/src/Components/Concerns/HasFooterActions.php) | [`Concerns/HasFooterActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasFooterActions.php) | done | — | — |
 | Singular-relationship entanglement (`EntanglesStateWithSingularRelationship`) | [`Concerns/EntanglesStateWithSingularRelationship.php`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | blocked | schemas state / Doctrine layer | [detail](#singular-relationship-state-entanglement-is-not-ported) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](#extra-alpine-attribute-passthrough-is-not-ported) |
 | [`canConcealComponents()`](../../../packages/schemas/src/Components/Section.php) | [`Section::canConcealComponents()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
@@ -64,19 +71,6 @@ Specifics for rows that are not finished — what is already in, what is left, a
 the next step. Delete a subsection when its row flips to **done**; the table row
 and any divergence it earned stay behind.
 
-### Header, footer, and inline actions are not integrated
-
-Filament composes `HasHeaderActions` and `HasFooterActions`, and in `setUp()`
-seeds the after-header slot with `getHeaderActions()` and the footer slot with an
-alignment-derived `Schema` of `getFooterActions()`; `configureChildSchema()` also
-downsizes actions in the label/content slots (`Size::Small`, link view).
-Sylament's `setUp()` registers only the key closure, and its
-`configureChildSchema()` stops after `inline()->embeddedInParentComponent()` — the
-action-modifier branch is absent. The slot plumbing that would carry these is
-already in place, so the missing piece is entirely the actions layer. **Blocked**
-on schemas gaining an Actions integration; it lands in the same change that ports
-`Action`/`ActionGroup` into schemas, not a non-goal.
-
 ### Singular-relationship state entanglement is not ported
 
 Filament's `Section` uses `EntanglesStateWithSingularRelationship` and implements
@@ -90,6 +84,16 @@ relationship entanglement land.
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
 what would reverse the decision when it is provisional.
+
+### Label and content slot actions default to the small size only, not the link view
+
+Filament's `configureChildSchema()` gives actions in the before/after-label and
+above/below-content slots `defaultSize(Size::Small)` **and**
+`defaultView(Action::LINK_VIEW)`; Sylament applies only the size default,
+because the actions package has no link trigger template to default to. The
+header and footer slots escape both defaults in either codebase. **Provisional:**
+reverses when actions grows a link template — add the matching
+`defaultTemplate(...)` call to the same `modifyActionsUsing()` closure.
 
 ### The array-heading constructor shorthand is dropped
 

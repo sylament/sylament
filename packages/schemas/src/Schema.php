@@ -176,9 +176,9 @@ class Schema extends ViewComponent
     }
 
     /**
-     * @param array<Component|string|Markup>|Component|string|Markup|Closure $components
+     * @param array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure $components
      */
-    public static function start(array|Component|string|Markup|Closure $components): static
+    public static function start(array|Component|Action|ActionGroup|string|Markup|Closure $components): static
     {
         return static::make()
             ->components($components)
@@ -186,9 +186,9 @@ class Schema extends ViewComponent
     }
 
     /**
-     * @param array<Component|string|Markup>|Component|string|Markup|Closure $components
+     * @param array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure $components
      */
-    public static function end(array|Component|string|Markup|Closure $components): static
+    public static function end(array|Component|Action|ActionGroup|string|Markup|Closure $components): static
     {
         return static::make()
             ->components($components)
@@ -196,9 +196,9 @@ class Schema extends ViewComponent
     }
 
     /**
-     * @param array<Component|string|Markup>|Component|string|Markup|Closure $components
+     * @param array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure $components
      */
-    public static function center(array|Component|string|Markup|Closure $components): static
+    public static function center(array|Component|Action|ActionGroup|string|Markup|Closure $components): static
     {
         return static::make()
             ->components($components)
@@ -206,9 +206,9 @@ class Schema extends ViewComponent
     }
 
     /**
-     * @param array<Component|string|Markup>|Component|string|Markup|Closure $components
+     * @param array<Component|Action|ActionGroup|string|Markup>|Component|Action|ActionGroup|string|Markup|Closure $components
      */
-    public static function between(array|Component|string|Markup|Closure $components): static
+    public static function between(array|Component|Action|ActionGroup|string|Markup|Closure $components): static
     {
         return static::make()
             ->components($components)

@@ -47,7 +47,7 @@ disappear; only their detail sections do.
 | [`toSchemaHtml()` render wrapper](../../../packages/schemas/src/Components/Component.php) | [`toSchemaHtml()`](../../../vendor/filament/schemas/src/Components/Component.php) | blocked | live-component-state | [diverges](#the-livewirealpine-render-wrapper-toschemahtml-is-not-ported) |
 | [`renderWrapperBladeComponent()`](../../../packages/schemas/src/Components/Component.php) | [`renderWrapperBladeComponent()`](../../../vendor/filament/schemas/src/Components/Component.php) | skipped | — | [diverges](#the-livewirealpine-render-wrapper-toschemahtml-is-not-ported) |
 | [`viewIdentifier = 'schemaComponent'`](../../../packages/schemas/src/Components/Component.php) | [`Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) | todo | — | [detail](#viewidentifier-is-not-set) |
-| [`BelongsToContainer`](../../../packages/schemas/src/Components/Concerns/BelongsToContainer.php) | [`Concerns/BelongsToContainer.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToContainer.php) | in progress | — | [detail](#belongstocontainer-getmodelrootcontainer-awaits-belongstomodel) |
+| [`BelongsToContainer`](../../../packages/schemas/src/Components/Concerns/BelongsToContainer.php) | [`Concerns/BelongsToContainer.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToContainer.php) | in progress | — | [detail](#belongstocontainer-getmodelrootcontainer-awaits-belongstomodel), [diverges](#belongstocontainer-gains-a-sylament-only-getlivecomponentornull-peek) |
 | [`HasChildComponents`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | [`Concerns/HasChildComponents.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php) | in progress | — | [detail](#haschildcomponents-only-the-materialization-core-is-ported) |
 | [`HasId`](../../../packages/schemas/src/Components/Concerns/HasId.php) | [`Concerns/HasId.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasId.php) | done | — | — |
 | [`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | in progress | — | [detail](#hasstate-the-getset-core-is-in-relationship-validation-and-partial-render-state-are-out) |
@@ -159,6 +159,20 @@ change that wires `getLiveComponent()->getId()`, with a render/id test.
 
 Deliberate deviations from Filament, and the reason each holds. These outlive the
 detail sections above. Provisional ones say what would reverse them.
+
+### BelongsToContainer gains a Sylament-only getLiveComponentOrNull() peek
+
+`getLiveComponent()` (like its schema-level counterpart) throws when the chain
+is unbound, where Filament's `getLivewire()` is nullable — so the actions
+package's live-component fallback chain, which probes a bound schema component
+for its host, needs a non-throwing read. `getLiveComponentOrNull()` is that
+peek: `null` while the `$container` back-reference is uninitialized, otherwise
+the container's own
+[`getLiveComponentOrNull()`](belongs-to-live-component.md) (the raw nullable
+property). Filament has no counterpart method because its primary getters
+already return `null`. Exercised by the actions-side
+[`BelongsToLiveComponentTest`](../../../packages/actions/tests/Unit/Concerns/BelongsToLiveComponentTest.php)
+schema-component hop.
 
 ### The Livewire/Alpine render wrapper (toSchemaHtml) is not ported
 

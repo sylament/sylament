@@ -37,8 +37,9 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `call()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | blocked | bulk actions (`InteractsWithSelectedRecords`), visibility cache | [detail](#call-drops-the-post-call-cleanup) |
 | `cancel()` / `halt()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | Doctrine transaction integration | [detail](#cancel-and-halt-drop-the-rollback-flag) |
 | `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getstatus-drops-the-bulk-record-tally) |
-| `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | schemas/tables/HasData/InteractsWithSelectedRecords ports | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-3-of-15-names) |
+| `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/HasData/InteractsWithSelectedRecords ports, operation concept | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-9-of-16-names) |
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | todo | schemas/tables/InteractsWithSelectedRecords ports | [detail](#resolvedefaultclosuredependencyforevaluationbytype-is-not-overridden) |
+| `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables (`table`/`bulk` flags), modal nesting (`getParentAction()` short-circuit) | [diverges](#getcontext-emits-only-the-schemacomponent-key) |
 | Button rendering ([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#one-unified-template-replaces-the-view-switch) |
 | Modal rendering ([`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | CanOpenModal (footer actions, content, slideover, sticky) | [detail](#confirm-modal-template-only-renders-the-confirmation-shape-not-the-full-action-modal), [diverges](#the-confirm-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-footer-buttons-are-hardcoded-markup-not-rendered-action-instances) |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
@@ -47,7 +48,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`HasIconPosition`](../../../packages/support/src/Components/Concerns/HasIconPosition.php) (support) | [`Concerns/HasIconPosition.php`](../../../vendor/filament/support/src/Concerns/HasIconPosition.php) | done | — | — |
 | [`HasIconSize`](../../../packages/support/src/Components/Concerns/HasIconSize.php) (support) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — | — |
 | [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) (support) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | — |
-| [`BelongsToLiveComponent`](../../../packages/actions/src/Concerns/BelongsToLiveComponent.php) | [`Concerns/BelongsToLivewire.php`](../../../vendor/filament/actions/src/Concerns/BelongsToLivewire.php) | in progress | — | [detail](#belongstolivecomponent-has-no-test-coverage), [diverges](#the-livewire-resolution-fallback-chain-and-gethasactionslivewire-are-dropped) |
+| [`BelongsToLiveComponent`](../../../packages/actions/src/Concerns/BelongsToLiveComponent.php) | [`Concerns/BelongsToLivewire.php`](../../../vendor/filament/actions/src/Concerns/BelongsToLivewire.php) | done | — | [diverges](#the-live-component-chain-narrows-inline-and-drops-the-table-and-group-hops) |
 | [`CanBeDisabled`](../../../packages/actions/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/actions/src/Concerns/CanBeDisabled.php) | done | — | [diverges](#canbedisabled-drops-the-authorization-short-circuits) |
 | [`CanBeHidden`](../../../packages/actions/src/Concerns/CanBeHidden.php) | [`Concerns/CanBeHidden.php`](../../../vendor/filament/actions/src/Concerns/CanBeHidden.php) | in progress | CanBeAuthorized, ActionGroup, BelongsToTable | [detail](#canbehidden-omits-authorization-group-and-table-cache-integration) |
 | [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | notifications package | [detail](#cannotify-only-ports-notification-titles-not-sending) |
@@ -102,34 +103,48 @@ not exist. **Blocked** on Doctrine transaction wiring (there is no database
 transaction to roll back yet); restore the parameter and the flag on both
 exception classes in the same change that lands it.
 
-### `resolveDefaultClosureDependencyForEvaluationByName` covers 3 of 15 names
+### `resolveDefaultClosureDependencyForEvaluationByName` covers 9 of 16 names
 
-Filament's override resolves 15 dependency names: `arguments`, `data`,
+Filament's override resolves 16 dependency-name groups: `arguments`, `data`,
 `livewire`, `model`, `mountedActions`, `record`, `selectedRecords`/`records`,
 `selectedRecordsQuery`/`recordsQuery`, `schema`, `schemaComponent`/`component`,
 `schemaOperation`/`context`/`operation`, `schemaGet`/`get`, `schemaSet`/`set`,
 `schemaComponentState`/`state`, `schemaState`, `table`. The port's
 [`resolveDefaultClosureDependencyForEvaluationByName()`](../../../packages/actions/src/Action.php)
-resolves `record`, `arguments`, and `liveComponent` (the systematic
+resolves 9 of them: `record`, `arguments`, `liveComponent` (the systematic
 `livewire` → `liveComponent` rename tracked in
-[`../renames.md`](../renames.md) — not a divergence). Everything else is
-missing because its backing concern is not ported: `data`/`model` need
-`HasData`; `mountedActions` needs the live component's mounted-actions API
-surface beyond what `HasActions` (Concerns/HasActions.php) exposes today;
-`selectedRecords`/`selectedRecordsQuery`/`records`/`recordsQuery` need
-`InteractsWithSelectedRecords` + `CanFetchSelectedRecords`; every `schema*`
-name needs `HasSchema`/`BelongsToSchemaComponent` wired to the **schemas**
-package; `table` needs `BelongsToTable` wired to the **tables** package.
-Covered for the `record`/`arguments` names by `ActionTest`'s "calls the
-action closure, injecting the record and arguments" (via `call()`, which
-routes through `evaluate()`). `liveComponent` has no test at all — `Concerns\
-BelongsToLiveComponent` has no dedicated test file, and while
-`HasActions::getAction()` calls `$action->liveComponent($this)` and is
-exercised indirectly by `HasActionsTest`'s `mountAction`/`callMountedAction`
-flow, nothing asserts `getLiveComponent()`'s return value or injects it into
-an evaluated closure. **Blocked** on the schemas/tables/`HasData`/
-`InteractsWithSelectedRecords` ports for the missing names; the
-`liveComponent` gap is a plain missing-test todo, addressable independently.
+[`../renames.md`](../renames.md) — not a divergence), and — since the
+schemas-actions integration — `schema`, `schemaComponent`/`component`,
+`schemaGet`/`get`, `schemaSet`/`set`, `schemaComponentState`/`state`, and
+`schemaState`, backed by `BelongsToSchemaComponent` plus two state helpers
+ported onto `Action` itself: `getSchemaComponentState()` (the upward walk to
+the nearest state-path-bearing parent component, vendor L602–621) and
+`getSchemaState()` (the first state-path-bearing container; Filament's
+`getStateSnapshot()` call maps to Sylament's `Schema::getState()`, which
+[schemas' HasState](../../../packages/schemas/src/Concerns/HasState.php)
+documents as its `getStateSnapshot` equivalent). `getSchemaState()` drops
+Filament's leading `HasExtraItemActions` branch — that contract is unported.
+The `get`/`set` arms keep Filament's **non-null-safe**
+`getSchemaComponent()` deref (behind an inline PHPStan ignore): a
+schema-less action evaluating a `$get`/`$set` closure fatals, exactly as in
+Filament, pinned by `ActionTest`. Sylament's `Get`/`Set` utilities have no
+`skipComponentsChildContainersWhileSearching()` fluent — the self-skip is
+baked into their `__invoke` — so that trailing call is not mirrored.
+`ActionGroup` mirrors Filament's own group subset (`schema`,
+`schemaComponent`/`component`, `schemaGet`/`get`,
+`schemaComponentState`/`state`, `schemaState` and the two duplicated state
+helpers — vendor's `ActionGroup` carries no `set` arm, and that asymmetry is
+kept). Still missing, each blocked on its backing concern: `data`/`model`
+(`HasData`/model metadata), `mountedActions` (mounted-actions introspection
+beyond today's `HasActions`), `selectedRecords`/`records` +
+`selectedRecordsQuery`/`recordsQuery` (`InteractsWithSelectedRecords` +
+`CanFetchSelectedRecords`), `schemaOperation`/`context`/`operation`
+(no operation concept — Sylament's `Schema` has no `getOperation()`), and
+`table` (`BelongsToTable`). Coverage: `record`/`arguments` via `ActionTest`'s
+"calls the action closure…", `liveComponent` via
+[`BelongsToLiveComponentTest`](../../../packages/actions/tests/Unit/Concerns/BelongsToLiveComponentTest.php),
+and the schema names via `ActionTest`'s injection cases (plus
+`ActionGroupTest` for the group subset).
 
 ### `resolveDefaultClosureDependencyForEvaluationByType` is not overridden
 
@@ -144,20 +159,6 @@ type-hinted `Model`/`Doctrine` parameter falls through to
 and is not resolved. **Blocked** on the same
 schemas/tables/`InteractsWithSelectedRecords` prerequisites as the by-name
 resolver above; no test exists because no code exists.
-
-### BelongsToLiveComponent has no test coverage
-
-The setter/getter round trip (`liveComponent()` → `getLiveComponent()`) and the
-`RuntimeException` thrown when no live component has been set are both
-unexercised — `grep -rn "liveComponent\|getLiveComponent" packages/actions/tests`
-returns nothing, and `ActionTest.php` never calls either method. The only
-runtime exercise is indirect, through `HasActions::getAction()` calling
-`$action->liveComponent($this)`, which never hits the throwing branch. Sibling
-package `schemas` already has the equivalent test
-([`tests/Unit/Concerns/BelongsToLiveComponentTest.php`](../../../packages/schemas/tests/Unit/Concerns/BelongsToLiveComponentTest.php))
-covering the same two-method shape — porting it to
-`packages/actions/tests/Unit/Concerns/BelongsToLiveComponentTest.php` against a
-fixture implementing `InteractsWithActions` is the next step.
 
 ### CanBeHidden omits authorization, group, and table-cache integration
 
@@ -415,13 +416,14 @@ closure is covered by
 `pluralModelLabel()` and their Title-Case variants, `recordTitle()` /
 `recordTitleAttribute()` and their `getRecordTitle()` / `getCustomRecordTitle()`
 / `hasCustomRecordTitle()` family, `resolveRecordKey()`, `hasRecord()`, and the
-`ensureCorrectRecordType()` custom-model guard. `getRecord()` also drops the
-whole fallback chain Filament walks when no record is set directly —
-`getGroup()?->getRecord()`, `getSchemaContainer()?->getRecord()`,
-`getSchemaComponent()?->getRecord()`, and the
-`getHasActionsLivewire()?->getDefaultActionRecord()` tail — because Sylament's
-`Action` has no `ActionGroup`, schema-container/schema-component accessors, or
-default-action-record hook yet. The `$record` property is typed `mixed`
+`ensureCorrectRecordType()` custom-model guard. Of the fallback chain Filament
+walks when no record is set directly — `getGroup()?->getRecord()`,
+`getSchemaContainer()?->getRecord()`, `getSchemaComponent()?->getRecord()`,
+and the `getHasActionsLivewire()?->getDefaultActionRecord()` tail — only the
+group hop is ported: the schema accessors exist on `Action` now
+(`BelongsToSchemaComponent`), but schemas' `Schema`/`Component` have no
+`getRecord()` to hop to, and there is no default-action-record host hook. The
+`$record` property is typed `mixed`
 instead of Filament's `Model | string | array | Closure | null`, since there is
 no Doctrine-entity-aware resolution to type it against.
 
@@ -626,8 +628,9 @@ since none of it has started:
   `toModalHtmlable()`, `HasExtraModalOverlayAttributes`/
   `HasExtraModalWindowAttributes`.
 - **Forms/schemas/infolists integration**: `HasSchema`, `HasInfolist`,
-  `HasData`, `HasWizard`, `CanSubmitForm`, `BelongsToSchemaComponent`, and
-  every `schema*` closure-dependency name (see the Details section above).
+  `HasData`, `HasWizard`, `CanSubmitForm` (`BelongsToSchemaComponent` and the
+  `schema*` closure-dependency names landed with the schemas-actions
+  integration — see the Details section above).
 - **Tables/bulk-action integration**: `BelongsToTable`, `HasTableIcon`,
   `InteractsWithSelectedRecords`, `CanFetchSelectedRecords`,
   `CanDeselectRecordsAfterCompletion`, `bulk()`/`isBulk()`.
@@ -653,29 +656,56 @@ likely their own detail files, per the
 [one-row-per-file rule](../README.md#one-row-per-file-one-file-per-thing))
 the moment work starts on each.
 
-### The livewire resolution fallback chain and getHasActionsLivewire are dropped
+### The live-component chain narrows inline and drops the table and group hops
 
-Filament's `getLivewire()` is a multi-step resolver: an explicitly-set
-`$livewire` wins, otherwise it walks `getSchemaContainer()?->getLivewire()`,
-`getSchemaComponent()?->getLivewire()`, `getTable()?->getLivewire()`, and
-`getGroup()?->getLivewire()` in turn, and a second method,
-`getHasActionsLivewire()`, narrows that generic result down to
-`Contracts\HasActions` (`null` if the resolved host doesn't implement it).
-Sylament's `getLiveComponent()` only reads the explicitly-set property and
-throws if it is unset — no fallback through a hosting schema, table, or action
-group. Two things make this closer to a scoping decision than a straight
-omission: `getLiveComponent()` is already typed to
-`InteractsWithActions` (the [renamed](../renames.md#interface-and-trait-names-are-swapped)
-counterpart of Filament's `HasActions`), so it does not need a separate
-`getHasActionsLivewire()`-style narrowing step; and the current MVP mounting
-model ([`HasActions::getAction()`](../../../packages/actions/src/Concerns/HasActions.php))
-always sets `liveComponent($this)` explicitly the moment an `Action` is
-resolved, so nothing today needs the fallback to discover a host. The gap
-becomes real the moment an `Action` can be reached through a nested
-`Schema`/`Component` or a `tables` column/group without that direct call site —
-`schemas` and `tables` don't yet host actions that way, so there is no
-consumer to test the fallback against. Reverses once one of those packages
-grows action-hosting that doesn't explicitly call `liveComponent()`.
+Filament's `getLivewire()` is a multi-step resolver — explicit `$livewire`,
+then `getSchemaContainer()?->getLivewire()`,
+`getSchemaComponent()?->getLivewire()`, `getTable()?->getLivewire()`,
+`getGroup()?->getLivewire()` — plus a second method,
+`getHasActionsLivewire()`, narrowing the generic result to
+`Contracts\HasActions`. Sylament's
+[`getLiveComponent()`](../../../packages/actions/src/Concerns/BelongsToLiveComponent.php)
+now walks the two schema hops lazily: explicit `$liveComponent`, then the
+bound schema container's host, then the bound schema component's host — each
+read through the schemas side's Sylament-only `getLiveComponentOrNull()`
+peeks (schemas' primary getters throw, see
+[`schemas/belongs-to-live-component.md`](../schemas/belongs-to-live-component.md))
+and narrowed inline by a private `asActionsHost()` guard, so a host
+implementing only schemas' `InteractsWithSchemas` never satisfies the chain.
+Three deltas stay deliberate: (1) the getter keeps its non-nullable
+`InteractsWithActions` return and throws when nothing resolves — the
+fail-fast stand-in for Filament's nullable return + separate
+`getHasActionsLivewire()` narrowing step; (2) no table hop —
+`BelongsToTable` is unported, restore it with the `tables` package; (3) no
+group hop — Sylament's
+[`ActionGroup::liveComponent()`](../../../packages/actions/src/ActionGroup.php)
+eagerly propagates the host to child actions at set time, so the lazy group
+hop has nothing left to resolve (reverses if group binding ever becomes
+lazy). Covered by
+[`BelongsToLiveComponentTest`](../../../packages/actions/tests/Unit/Concerns/BelongsToLiveComponentTest.php):
+explicit-set precedence, both schema hops, the schemas-only-host refusal, and
+the unbound throw.
+
+### `getContext()` emits only the schemaComponent key
+
+Filament's `getContext()` assembles up to four entries: `recordKey` (via
+`resolveRecordKey()`, guarded by table-model type checks), an early return
+carrying only `recordKey` for child modal actions (`getParentAction()`),
+`table`/`bulk` flags, and `schemaComponent`. The port's
+[`getContext()`](../../../packages/actions/src/Action.php) emits only
+`['schemaComponent' => $key]` — the key of the bound schema container,
+falling back to the bound schema component, exactly Filament's precedence —
+and `[]` otherwise. The `recordKey` half is a consequence of the
+[record-key-resolution hoist to HasActions](#record-key-resolution-is-hoisted-to-hasactions):
+the action side has no `resolveRecordKey()` to emit it, while the host still
+consumes an inbound `context.recordKey` at mount time
+(`getMountedActionRecord()`), so the consuming half of the contract is
+intact; the emitting half returns when record-key resolution lands on the
+action side with the `tables` integration. The `table`/`bulk` flags wait on
+`BelongsToTable`/bulk actions, and the `getParentAction()` short-circuit on
+modal nesting — none has a Sylament backing surface yet. Covered by
+`ActionTest`'s context cases (empty without a binding, container key,
+component-key fallback, keyless container).
 
 ### CanBeDisabled drops the authorization short-circuits
 

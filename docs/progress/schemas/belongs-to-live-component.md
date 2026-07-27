@@ -26,12 +26,15 @@ note in [Divergences](#divergences), or `—`.
 | --- | --- | --- | --- | --- |
 | [`liveComponent()`](../../../packages/schemas/src/Concerns/BelongsToLiveComponent.php) | [`livewire()`](../../../vendor/filament/schemas/src/Concerns/BelongsToLivewire.php) | done | — | — |
 | [`getLiveComponent()`](../../../packages/schemas/src/Concerns/BelongsToLiveComponent.php) | [`getLivewire()`](../../../vendor/filament/schemas/src/Concerns/BelongsToLivewire.php) | done | — | [diverges](#getlivecomponent-throws-instead-of-returning-a-possibly-null-component) |
+| [`getLiveComponentOrNull()`](../../../packages/schemas/src/Concerns/BelongsToLiveComponent.php) | — (Sylament-only) | done | — | [diverges](#getlivecomponent-throws-instead-of-returning-a-possibly-null-component) |
 
-Both rows are **done** — the setter (nullable, so it also detaches) and the
+All rows are **done** — the setter (nullable, so it also detaches) and the
 throwing accessor are covered directly by
 [`BelongsToLiveComponentTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToLiveComponentTest.php)
-(default throw, set-and-return, chaining, clear-and-re-throw), so neither has a
-write-up here.
+(default throw, set-and-return, chaining, clear-and-re-throw), and the nullable
+peek by the actions-side
+[`BelongsToLiveComponentTest`](../../../packages/actions/tests/Unit/Concerns/BelongsToLiveComponentTest.php)
+(its live-component chain reads through it), so none has a write-up here.
 
 ## Divergences
 
@@ -48,6 +51,18 @@ property type also collapses Filament's `Livewire\Component & HasSchemas`
 intersection to the bare host contract
 [`InteractsWithSchemas`](interacts-with-schemas.md): UX LiveComponents have no
 marker base class to intersect with.
+
+The throw creates one need Filament doesn't have: a caller probing for an
+*optional* binding. `getLiveComponentOrNull()` is that Sylament-only public
+peek — it returns the raw nullable property, and exists because the actions
+package's live-component fallback chain
+([`actions/action.md`](../actions/action.md#the-live-component-chain-narrows-inline-and-drops-the-table-and-group-hops))
+walks `getSchemaContainer()`/`getSchemaComponent()` looking for a host and must
+get `null`, not an exception, from an unbound schema. In Filament the nullable
+`getLivewire()` itself plays this role, so there is no counterpart method to
+port. The component-level twin lives on
+[`BelongsToContainer`](component.md#belongstocontainer-gains-a-sylament-only-getlivecomponentornull-peek),
+delegating through the container back-reference.
 
 _See also: the global [rename table](../renames.md) — `BelongsToLivewire` →
 `BelongsToLiveComponent`, `livewire()` → `liveComponent()`, and `getLivewire()`

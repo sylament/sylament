@@ -28,7 +28,7 @@ Reference — the Filament source this is diffed against:
 - [`actions/src/Concerns/BelongsToGroup.php`](../../../vendor/filament/actions/src/Concerns/BelongsToGroup.php)
   — the back-reference concern audited below
 - [`actions/src/Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php)
-  — the trigger-config concern, `todo` (Task 5)
+  — the trigger-config concern, audited below
 
 ## Surface
 

@@ -14,6 +14,8 @@ use Sylament\Schemas\Components\Concerns\CanBeDivided;
 use Sylament\Schemas\Components\Concerns\CanBeSecondary;
 use Sylament\Schemas\Components\Concerns\HasContentBefore;
 use Sylament\Schemas\Components\Concerns\HasDescription;
+use Sylament\Schemas\Components\Concerns\HasFooterActions;
+use Sylament\Schemas\Components\Concerns\HasHeaderActions;
 use Sylament\Schemas\Components\Concerns\HasHeading;
 use Sylament\Schemas\Components\Concerns\HasLabel;
 use Sylament\Schemas\Components\Contracts\CanConcealComponents;
@@ -22,6 +24,8 @@ use Sylament\Support\Components\Concerns\CanBeContained;
 use Sylament\Support\Components\Concerns\HasIcon;
 use Sylament\Support\Components\Concerns\HasIconColor;
 use Sylament\Support\Components\Concerns\HasIconSize;
+use Sylament\Support\Enums\Alignment;
+use Sylament\Support\Enums\Size;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Twig\Markup;
 
@@ -38,6 +42,8 @@ class Section extends Component implements CanConcealComponents
     use CanBeSecondary;
     use HasContentBefore;
     use HasDescription;
+    use HasFooterActions;
+    use HasHeaderActions;
     use HasHeading;
     use HasIcon;
     use HasIconColor;
@@ -85,6 +91,14 @@ class Section extends Component implements CanConcealComponents
 
             return new AsciiSlugger()->slug((string) $heading)->lower()->toString() . '::section';
         }, isInheritable: false);
+
+        $this->afterHeader(fn (Section $component): array => $component->getHeaderActions());
+        $this->footer(fn (Section $component): Schema => match ($component->getFooterActionsAlignment()) {
+            Alignment::End, Alignment::Right => Schema::end($component->getFooterActions()),
+            Alignment::Center => Schema::center($component->getFooterActions()),
+            Alignment::Between, Alignment::Justify => Schema::between($component->getFooterActions()),
+            default => Schema::start($component->getFooterActions()),
+        });
     }
 
     /**
@@ -173,6 +187,17 @@ class Section extends Component implements CanConcealComponents
             $schema
                 ->inline()
                 ->embeddedInParentComponent();
+        }
+
+        if (in_array($key, [
+            static::BEFORE_LABEL_SCHEMA_KEY,
+            static::AFTER_LABEL_SCHEMA_KEY,
+            static::ABOVE_CONTENT_SCHEMA_KEY,
+            static::BELOW_CONTENT_SCHEMA_KEY,
+        ], true)) {
+            $schema
+                ->modifyActionsUsing(fn (Action $action): Action => $action->defaultSize(Size::Small))
+                ->modifyActionGroupsUsing(fn (ActionGroup $group): ActionGroup => $group->defaultSize(Size::Small));
         }
 
         return $schema;

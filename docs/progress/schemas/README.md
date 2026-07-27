@@ -76,7 +76,8 @@ single component is tracked in that component's detail file, not here:
   `HasChildComponents`, `HasId`, and the component-level `HasState` / `HasKey` /
   `HasHeadings`) → [`component.md`](component.md);
 - **Section**'s (`CanBeCollapsed`, `CanBeCompact`, `CanBeDivided`,
-  `CanBeSecondary`, `HasDescription`, `HasHeading`, `CanBeAside`,
+  `CanBeSecondary`, `HasDescription`, `HasHeading`, `HasHeaderActions`,
+  `HasFooterActions`, `HasFooterActionsAlignment`, `CanBeAside`,
   `HasContentBefore`) → [`section.md`](section.md);
 - **Schema**'s (`BelongsToParentComponent`, `CanBeEmbeddedInParentComponent`,
   `CanBeInline`, `CanModifyActions`, `HasComponents`, and the schema-level
@@ -118,9 +119,6 @@ own single-use concerns folded into [`component.md`](component.md).
 | `HasContainerGridLayout` | [`Components/Concerns/HasContainerGridLayout.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php) | todo | — |
 | `HasEntryWrapper` | [`Components/Concerns/HasEntryWrapper.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasEntryWrapper.php) | todo | — |
 | `HasFieldWrapper` | [`Components/Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasFieldWrapper.php) | todo | — |
-| `HasFooterActions` | [`Components/Concerns/HasFooterActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasFooterActions.php) | todo | — |
-| `HasFooterActionsAlignment` | [`Components/Concerns/HasFooterActionsAlignment.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasFooterActionsAlignment.php) | todo | — |
-| `HasHeaderActions` | [`Components/Concerns/HasHeaderActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeaderActions.php) | todo | — |
 | `HasInlineLabel` | [`Components/Concerns/HasInlineLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasInlineLabel.php) | todo | — |
 | [`HasLabel`](../../../packages/schemas/src/Components/Concerns/HasLabel.php) | [`Components/Concerns/HasLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasLabel.php) | done | [has-label.md](has-label.md) |
 | `HasMaxWidth` | [`Components/Concerns/HasMaxWidth.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasMaxWidth.php) | todo | — |

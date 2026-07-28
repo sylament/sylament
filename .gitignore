@@ -15,3 +15,5 @@ packages/*/assets/src/styles/*.generated.css
 /.php-cs-fixer.cache
 /.php-cs-fixer.php
 /phpstan.neon
+/docs/superpowers
+/.superpowers

@@ -310,7 +310,9 @@ it('scopes modal ids to the host and nesting index, stable across reads', functi
     expect($host->getMountedModalId())->toMatch('/^sy-[0-9a-f]{8}-action-1$/')
         ->and($host->getMountedModalId(0))->toMatch('/^sy-[0-9a-f]{8}-action-0$/')
         ->and($host->getMountedModalId())->toBe($host->getMountedModalId())
-        ->and($host->actionsHostId)->not->toBeNull();
+        ->and($host->actionsHostId)->not->toBeNull()
+        ->and($this->createLiveComponent('ActionHost')->component()->getActionsHostId())
+            ->not->toBe($host->getActionsHostId());
 });
 
 /*
@@ -352,4 +354,21 @@ it('keeps parents open under an overlaying child', function (): void {
 
     expect($host->isMountedActionModalOpen(0))->toBeTrue()
         ->and($host->isMountedActionModalOpen(1))->toBeTrue();
+});
+
+/*
+ * A footer action with no modal heading opens no modal, so mountAction() routes it
+ * straight into callMountedAction() (HasActions.php:105-107); haltingChild's closure
+ * then throws Halt, which callMountedAction() catches and returns from without
+ * reaching unmountAction() — so the frame stays on the stack (the same halt-keeps-it-
+ * mounted contract HasActionsLifecycleTest pins). A frame with no modal covers
+ * nothing, so it must not hide its parent: the parent must stay open.
+ */
+it('keeps a parent open when a non-modal child halts on top of it', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('edit');
+    $host->mountAction('haltingChild');
+
+    expect($host->isMountedActionModalOpen(0))->toBeTrue()
+        ->and($host->isMountedActionModalOpen(1))->toBeFalse();
 });

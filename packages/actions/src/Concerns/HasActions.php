@@ -464,6 +464,10 @@ trait HasActions
                 continue;
             }
 
+            if (! $this->mountedActionShouldOpenModal($mountedAction)) {
+                continue;
+            }
+
             if (! $mountedAction->shouldOverlayParentActions()) {
                 return false;
             }

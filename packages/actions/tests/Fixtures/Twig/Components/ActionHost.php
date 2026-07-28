@@ -84,6 +84,7 @@ class ActionHost implements InteractsWithActions
                     Action::make('deepest')->modalHeading('Deepest'),
                 ]),
                 Action::make('overlayChild')->modalHeading('Over the top')->overlayParentActions(),
+                Action::make('haltingChild')->action(fn (Action $action) => $action->halt()),
             ]);
     }
 

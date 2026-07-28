@@ -233,6 +233,21 @@ it('exposes the merged dropdown attributes as a bag', function (): void {
         ->and($bag->getAttributes())->toBe(['class' => ['custom']]);
 });
 
+it('is not outlined by default and toggles through outlined()', function (): void {
+    expect(ActionGroup::make([])->isOutlined())->toBeFalse()
+        ->and(ActionGroup::make([])->outlined()->isOutlined())->toBeTrue()
+        ->and(ActionGroup::make([])->outlined(fn (): bool => false)->isOutlined())->toBeFalse()
+        ->and(ActionGroup::make([])->outlined()->hasOutlined())->toBeTrue();
+});
+
+it('round-trips a grouped icon', function (): void {
+    expect(ActionGroup::make([])->getGroupedIcon())->toBeNull()
+        ->and(ActionGroup::make([])->hasGroupedIcon())->toBeFalse()
+        ->and(ActionGroup::make([])->groupedIcon('heroicons:pencil')->getGroupedIcon())->toBe('heroicons:pencil')
+        ->and(ActionGroup::make([])->groupedIcon(fn (): string => 'heroicons:trash')->getGroupedIcon())->toBe('heroicons:trash')
+        ->and(ActionGroup::make([])->groupedIcon(fn (): string => 'heroicons:trash')->hasGroupedIcon())->toBeTrue();
+});
+
 it('keeps the trigger and dropdown attribute bags independent', function (): void {
     $group = ActionGroup::make([])
         ->extraAttributes(['data-trigger' => '1'])

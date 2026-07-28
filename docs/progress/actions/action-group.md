@@ -6,8 +6,9 @@ into one control. It composes `Sylament\Support\Components\ViewComponent`
 (Twig-backed rendering, the same base `Action` extends) and folds in its own
 actions-package concern, `BelongsToGroup` — shared with `Action` (both now
 compose it), written up here rather than split into a third detail file, since
-its whole surface is a two-method back-reference pair. It also reuses two
-already-folded `Action` concerns unchanged — `HasLabel` and `HasSize`, tracked
+its whole surface is a two-method back-reference pair. It also reuses four
+already-folded `Action` concerns unchanged — `CanBeOutlined`, `HasGroupedIcon`,
+`HasLabel`, and `HasSize`, tracked
 in [`action.md`](action.md) — and five support-level traits (`HasColor`,
 `HasExtraAttributes`, `HasIcon`, `HasIconSize`, `HasTooltip`) that stay tracked
 in the [`support`](../support/README.md) package and appear here only as
@@ -48,6 +49,8 @@ permanent note in [Divergences](#divergences).
 | Construction, `make()` & `actions()`/`getActions()`/`getFlatActions()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | done | — | [diverges](#make-drops-di-construction) |
 | [`BelongsToGroup`](../../../packages/actions/src/Concerns/BelongsToGroup.php) | [`Concerns/BelongsToGroup.php`](../../../vendor/filament/actions/src/Concerns/BelongsToGroup.php) | done | — | [diverges](#getrootgroup-is-not-ported) |
 | `getLabel()` default | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getLabel()`) | done | — | [diverges](#getlabel-falls-back-to-a-plain-string-not-a-translated-label) |
+| [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) (shared with `Action`; consumed by the button trigger only, Filament-same) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | - |
+| [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) (shared with `Action`) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | in progress | submenu rendering | [detail](#hasgroupedicon-is-api-only-on-the-group) |
 | [`HasLabel`](../../../packages/actions/src/Concerns/HasLabel.php) (shared with `Action`) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | - |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) (shared with `Action`) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | - |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | - |
@@ -71,6 +74,18 @@ permanent note in [Divergences](#divergences).
 | Table and bulk concerns | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php), `hasNonBulkAction()` | blocked | tables package, BulkAction | [detail](#table-and-bulk-concerns-are-blocked-on-the-tables-and-bulkaction-ports) |
 
 ## Details
+
+### `HasGroupedIcon` is API-only on the group
+
+The trait itself is the same file `Action` already composes (folded into
+[`action.md`](action.md)); composing it onto `ActionGroup` pins the fluent API
+(`groupedIcon()`/`getGroupedIcon()`/`hasGroupedIcon()` round-trip and are
+unit-tested on the group). Nothing renders it yet, matching where Filament
+consumes a *group's* grouped icon: only `toDropdownItemHtml()` — the shape a
+group takes when it nests inside another group's dropdown — reads it, and
+submenu rendering is unbuilt here (see the "Submenu rendering" row). Wire the
+grouped icon into the dropdown-item trigger in the same change that lands
+submenus.
 
 ### Table and bulk concerns are blocked on the tables and BulkAction ports
 

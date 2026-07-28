@@ -39,3 +39,17 @@ it('renders group extra attributes on the button trigger root', function (): voi
     expect($html)->toContain('data-x="1"')
         ->toMatch('/class="[^"]*sy-btn[^"]*custom-trigger/');
 });
+
+it('renders the outlined variant on the button trigger', function (): void {
+    $html = renderTrigger(ActionGroup::make([])->button()->outlined());
+
+    expect($html)->toMatch('/class="[^"]*sy-btn[^"]*sy-outlined/');
+});
+
+it('token-merges the outlined class with extra attribute classes', function (): void {
+    $html = renderTrigger(
+        ActionGroup::make([])->button()->outlined()->extraAttributes(['class' => 'custom-trigger']),
+    );
+
+    expect($html)->toMatch('/class="[^"]*sy-btn[^"]*sy-outlined[^"]*custom-trigger/');
+});

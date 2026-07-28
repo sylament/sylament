@@ -7,6 +7,7 @@ namespace Sylament\Actions\Concerns;
 use Closure;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
+use Sylament\Support\Enums\SlideOverPosition;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
@@ -72,6 +73,24 @@ trait CanOpenModal
     protected string|Closure|null $modalCancelActionLabel = null;
 
     protected string|Closure|null $modalWidth = null;
+
+    protected bool|Closure|null $hasModalCloseButton = null;
+
+    protected bool|Closure|null $isModalAutofocused = null;
+
+    protected bool|Closure|null $isModalClickThrough = null;
+
+    protected bool|Closure|null $isModalClosedByClickingAway = null;
+
+    protected bool|Closure|null $isModalClosedByEscaping = null;
+
+    protected bool|Closure|null $isModalFooterSticky = null;
+
+    protected bool|Closure|null $isModalHeaderSticky = null;
+
+    protected bool|Closure $isModalSlideOver = false;
+
+    protected SlideOverPosition|Closure|null $modalSlideOverPosition = null;
 
     public function modal(bool|Closure|null $condition = true): static
     {
@@ -196,6 +215,69 @@ trait CanOpenModal
     public function modalWidth(string|Closure|null $width = null): static
     {
         $this->modalWidth = $width;
+
+        return $this;
+    }
+
+    public function slideOver(bool|Closure $condition = true): static
+    {
+        $this->isModalSlideOver = $condition;
+
+        return $this;
+    }
+
+    public function slideOverPosition(SlideOverPosition|Closure|null $position = null): static
+    {
+        $this->modalSlideOverPosition = $position;
+
+        return $this;
+    }
+
+    public function stickyModalHeader(bool|Closure $condition = true): static
+    {
+        $this->isModalHeaderSticky = $condition;
+
+        return $this;
+    }
+
+    public function stickyModalFooter(bool|Closure $condition = true): static
+    {
+        $this->isModalFooterSticky = $condition;
+
+        return $this;
+    }
+
+    public function modalCloseButton(bool|Closure|null $condition = true): static
+    {
+        $this->hasModalCloseButton = $condition;
+
+        return $this;
+    }
+
+    public function closeModalByClickingAway(bool|Closure|null $condition = true): static
+    {
+        $this->isModalClosedByClickingAway = $condition;
+
+        return $this;
+    }
+
+    public function closeModalByEscaping(bool|Closure|null $condition = true): static
+    {
+        $this->isModalClosedByEscaping = $condition;
+
+        return $this;
+    }
+
+    public function modalAutofocus(bool|Closure|null $condition = true): static
+    {
+        $this->isModalAutofocused = $condition;
+
+        return $this;
+    }
+
+    public function modalClickThrough(bool|Closure|null $condition = true): static
+    {
+        $this->isModalClickThrough = $condition;
 
         return $this;
     }
@@ -512,5 +594,50 @@ trait CanOpenModal
     public function getModalWidth(): string
     {
         return $this->evaluate($this->modalWidth) ?? 'md';
+    }
+
+    public function isModalSlideOver(): bool
+    {
+        return (bool) $this->evaluate($this->isModalSlideOver);
+    }
+
+    public function getModalSlideOverPosition(): ?SlideOverPosition
+    {
+        return $this->evaluate($this->modalSlideOverPosition);
+    }
+
+    public function isModalHeaderSticky(): bool
+    {
+        return (bool) ($this->evaluate($this->isModalHeaderSticky) ?? $this->isModalSlideOver());
+    }
+
+    public function isModalFooterSticky(): bool
+    {
+        return (bool) ($this->evaluate($this->isModalFooterSticky) ?? $this->isModalSlideOver());
+    }
+
+    public function hasModalCloseButton(): bool
+    {
+        return $this->evaluate($this->hasModalCloseButton) ?? true;
+    }
+
+    public function isModalClosedByClickingAway(): bool
+    {
+        return (bool) ($this->evaluate($this->isModalClosedByClickingAway) ?? true);
+    }
+
+    public function isModalClosedByEscaping(): bool
+    {
+        return (bool) ($this->evaluate($this->isModalClosedByEscaping) ?? true);
+    }
+
+    public function isModalAutofocused(): bool
+    {
+        return $this->evaluate($this->isModalAutofocused) ?? true;
+    }
+
+    public function isModalClickThrough(): bool
+    {
+        return (bool) $this->evaluate($this->isModalClickThrough);
     }
 }

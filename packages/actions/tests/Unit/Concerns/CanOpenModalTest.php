@@ -9,6 +9,7 @@ use Sylament\Actions\ActionGroup;
 use Sylament\Actions\Tests\Fixtures\Concerns\BothContractsHostFixture;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
+use Sylament\Support\Enums\SlideOverPosition;
 use Twig\Markup;
 
 it('defaults the modal heading to the label', function (): void {
@@ -222,4 +223,47 @@ it('prepares modal actions with the schema binding and a record fallback', funct
     $keepsOwn = $owner->prepareModalAction(Action::make('other')->record('Grace'));
 
     expect($keepsOwn->getRecord())->toBe('Grace');
+});
+
+it('defaults the chrome toggles to Filament values', function (): void {
+    $action = Action::make('delete');
+
+    expect($action->isModalSlideOver())->toBeFalse()
+        ->and($action->getModalSlideOverPosition())->toBeNull()
+        ->and($action->isModalHeaderSticky())->toBeFalse()
+        ->and($action->isModalFooterSticky())->toBeFalse()
+        ->and($action->hasModalCloseButton())->toBeTrue()
+        ->and($action->isModalClosedByClickingAway())->toBeTrue()
+        ->and($action->isModalClosedByEscaping())->toBeTrue()
+        ->and($action->isModalAutofocused())->toBeTrue()
+        ->and($action->isModalClickThrough())->toBeFalse();
+});
+
+it('round-trips the chrome toggles, closures included', function (): void {
+    $action = Action::make('delete')
+        ->slideOver()
+        ->slideOverPosition(SlideOverPosition::Start)
+        ->modalCloseButton(false)
+        ->closeModalByClickingAway(fn (): bool => false)
+        ->closeModalByEscaping(false)
+        ->modalAutofocus(false)
+        ->modalClickThrough(fn (): bool => true);
+
+    expect($action->isModalSlideOver())->toBeTrue()
+        ->and($action->getModalSlideOverPosition())->toBe(SlideOverPosition::Start)
+        ->and($action->hasModalCloseButton())->toBeFalse()
+        ->and($action->isModalClosedByClickingAway())->toBeFalse()
+        ->and($action->isModalClosedByEscaping())->toBeFalse()
+        ->and($action->isModalAutofocused())->toBeFalse()
+        ->and($action->isModalClickThrough())->toBeTrue();
+});
+
+it('defaults sticky header and footer to the slide-over state', function (): void {
+    $slideOver = Action::make('delete')->slideOver();
+
+    expect($slideOver->isModalHeaderSticky())->toBeTrue()
+        ->and($slideOver->isModalFooterSticky())->toBeTrue()
+        ->and($slideOver->stickyModalHeader(false)->isModalHeaderSticky())->toBeFalse()
+        ->and($slideOver->stickyModalFooter(false)->isModalFooterSticky())->toBeFalse()
+        ->and(Action::make('other')->stickyModalHeader()->isModalHeaderSticky())->toBeTrue();
 });

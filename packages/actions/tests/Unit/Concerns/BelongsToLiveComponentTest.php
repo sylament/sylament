@@ -43,6 +43,13 @@ it('resolves the live component through the schema component', function (): void
     expect($action->getLiveComponent())->toBe($host);
 });
 
+it('peeks the live component through getLiveComponentOrNull() without throwing', function (): void {
+    $host = new BothContractsHostFixture();
+
+    expect(Action::make('save')->liveComponent($host)->getLiveComponentOrNull())->toBe($host)
+        ->and(Action::make('save')->getLiveComponentOrNull())->toBeNull();
+});
+
 it('throws when the schema-bound host does not implement the actions contract', function (): void {
     Action::make('save')
         ->schemaContainer(Schema::make(new SchemasOnlyHostFixture()))

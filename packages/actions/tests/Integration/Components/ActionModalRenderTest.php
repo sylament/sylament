@@ -21,7 +21,23 @@ it('renders the action modal composing the modal config and mount/call wiring', 
         ->toContain('Cancel')
         ->toContain('<svg')
         ->toContain('data-live-action-param="callMountedAction"')
-        ->toContain('data-live-action-param="unmountAction"');
+        ->toContain('data-live-action-param="unmountAction"')
+        ->toContain('sy-btn');
+});
+
+it('renders extra footer actions between submit and cancel', function (): void {
+    $html = (string) $this->createLiveComponent('RecordActionHost')
+        ->call('mountAction', ['name' => 'briefed', 'arguments' => [], 'context' => []])
+        ->render();
+
+    $submitPosition = mb_strpos($html, 'data-live-action-param="callMountedAction"');
+    $extraPosition = mb_strpos($html, '>Extra<');
+    $cancelPosition = mb_strpos($html, 'data-live-action-param="unmountAction"');
+
+    expect($submitPosition)->not->toBeFalse()
+        ->and($extraPosition)->not->toBeFalse()
+        ->and($submitPosition)->toBeLessThan($extraPosition)
+        ->and($extraPosition)->toBeLessThan($cancelPosition);
 });
 
 it('renders modal content and the content footer between description and footer', function (): void {

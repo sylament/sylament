@@ -54,6 +54,7 @@ class RecordActionHost implements InteractsWithActions
                 "<p class=\"test-modal-content-footer\">{$action->getName()}</p>",
                 'UTF-8',
             ))
+            ->extraModalFooterActions([Action::make('extra')->label('Extra')])
             ->action(fn (): null => null);
     }
 

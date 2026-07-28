@@ -5,15 +5,52 @@ declare(strict_types=1);
 namespace Sylament\Actions\Concerns;
 
 use Closure;
+use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
+use function Sylament\Support\wrap;
 
 trait CanOpenModal
 {
     protected bool|Closure|null $hasModal = null;
 
     protected bool|Closure|null $isModalHidden = null;
+
+    /**
+     * @var array<Action|ActionGroup>
+     */
+    protected array $cachedExtraModalFooterActions;
+
+    /**
+     * @var array<Action|ActionGroup>|Closure
+     */
+    protected array|Closure $extraModalFooterActions = [];
+
+    /**
+     * @var array<string, Action>
+     */
+    protected array $cachedModalActions;
+
+    /**
+     * @var array<Action|Closure>
+     */
+    protected array $modalActions = [];
+
+    /**
+     * @var array<Action|ActionGroup>
+     */
+    protected array $cachedModalFooterActions;
+
+    /**
+     * @var array<Action>|Closure|null
+     */
+    protected array|Closure|null $modalFooterActions = null;
+
+    protected Action|bool|Closure|null $modalCancelAction = null;
+
+    protected Action|bool|Closure|null $modalSubmitAction = null;
 
     protected string|Markup|Closure|null $modalHeading = null;
 
@@ -60,6 +97,53 @@ trait CanOpenModal
     public function modalDescription(string|Markup|Closure|null $description = null): static
     {
         $this->modalDescription = $description;
+
+        return $this;
+    }
+
+    /**
+     * @param array<Action>|Closure|null $actions
+     */
+    public function modalFooterActions(array|Closure|null $actions = null): static
+    {
+        $this->modalFooterActions = $actions;
+
+        return $this;
+    }
+
+    /**
+     * @param array<Action|ActionGroup>|Closure $actions
+     */
+    public function extraModalFooterActions(array|Closure $actions): static
+    {
+        $this->extraModalFooterActions = $actions;
+
+        return $this;
+    }
+
+    /**
+     * @param array<Action|Closure> $actions
+     */
+    public function registerModalActions(array $actions): static
+    {
+        $this->modalActions = [
+            ...$this->modalActions,
+            ...$actions,
+        ];
+
+        return $this;
+    }
+
+    public function modalSubmitAction(Action|bool|Closure|null $action = null): static
+    {
+        $this->modalSubmitAction = $action;
+
+        return $this;
+    }
+
+    public function modalCancelAction(Action|bool|Closure|null $action = null): static
+    {
+        $this->modalCancelAction = $action;
 
         return $this;
     }
@@ -211,6 +295,183 @@ trait CanOpenModal
     public function hasModalContentFooter(): bool
     {
         return $this->modalContentFooter !== null;
+    }
+
+    /**
+     * @return array<Action|ActionGroup>
+     */
+    public function getModalFooterActions(): array
+    {
+        if (isset($this->cachedModalFooterActions)) {
+            return $this->cachedModalFooterActions;
+        }
+
+        if ($this->modalFooterActions !== null) {
+            $actions = [];
+
+            foreach ($this->evaluate($this->modalFooterActions) as $modalAction) {
+                $actions[$modalAction->getName()] = $this->prepareModalAction($modalAction);
+            }
+
+            return $this->cachedModalFooterActions = $actions;
+        }
+
+        $actions = [];
+
+        if ($submitAction = $this->getModalSubmitAction()) {
+            $actions['submit'] = $submitAction;
+        }
+
+        $actions = [
+            ...$actions,
+            ...$this->getExtraModalFooterActions(),
+        ];
+
+        if ($cancelAction = $this->getModalCancelAction()) {
+            $actions['cancel'] = $cancelAction;
+        }
+
+        return $this->cachedModalFooterActions = $actions;
+    }
+
+    /**
+     * @return array<Action|ActionGroup>
+     */
+    public function getVisibleModalFooterActions(): array
+    {
+        return array_filter(
+            $this->getModalFooterActions(),
+            fn (Action|ActionGroup $action): bool => $action->isVisible(),
+        );
+    }
+
+    public function getModalSubmitAction(): ?Action
+    {
+        $color = $this->getColor();
+
+        $action = static::makeModalAction('submit')
+            ->label($this->getModalSubmitActionLabel())
+            ->action($this->getLiveComponentCallMountedActionName())
+            ->color(match ($color) {
+                'gray', null => 'primary',
+                default => $color,
+            });
+
+        $action = $this->evaluate($this->modalSubmitAction, ['action' => $action]) ?? $action;
+
+        return $action instanceof Action ? $action : null;
+    }
+
+    public function getModalCancelAction(): ?Action
+    {
+        $action = static::makeModalAction('cancel')
+            ->label($this->getModalCancelActionLabel())
+            ->close()
+            ->color('gray');
+
+        $action = $this->evaluate($this->modalCancelAction, ['action' => $action]) ?? $action;
+
+        return $action instanceof Action ? $action : null;
+    }
+
+    /**
+     * @return array<Action|ActionGroup>
+     */
+    public function getExtraModalFooterActions(): array
+    {
+        if (isset($this->cachedExtraModalFooterActions)) {
+            return $this->cachedExtraModalFooterActions;
+        }
+
+        $actions = [];
+
+        foreach ($this->evaluate($this->extraModalFooterActions) as $action) {
+            if ($action instanceof ActionGroup) {
+                $actions[] = $this->prepareModalActionGroup($action);
+            } else {
+                $actions[$action->getName()] = $this->prepareModalAction($action);
+            }
+        }
+
+        return $this->cachedExtraModalFooterActions = $actions;
+    }
+
+    /**
+     * @return array<string, Action>
+     */
+    public function getModalActions(): array
+    {
+        if (isset($this->cachedModalActions)) {
+            return $this->cachedModalActions;
+        }
+
+        $actions = [];
+
+        foreach ($this->getModalFooterActions() as $key => $action) {
+            if ($action instanceof ActionGroup) {
+                foreach ($action->getFlatActions() as $flatAction) {
+                    $actions[$flatAction->getName()] = $flatAction;
+                }
+            } else {
+                $actions[(string) $key] = $action;
+            }
+        }
+
+        foreach ($this->modalActions as $action) {
+            foreach (wrap($this->evaluate($action)) as $modalAction) {
+                $actions[$modalAction->getName()] = $this->prepareModalAction($modalAction);
+            }
+        }
+
+        return $this->cachedModalActions = $actions;
+    }
+
+    public function getModalAction(string $name): ?Action
+    {
+        return $this->getModalActions()[$name] ?? null;
+    }
+
+    public function prepareModalAction(Action $action): Action
+    {
+        $action
+            ->schemaContainer($this->getSchemaContainer())
+            ->schemaComponent($this->getSchemaComponent())
+            ->liveComponent($this->getLiveComponentOrNull());
+
+        if (! $action->hasRecord()) {
+            $action->record($this->getRecord());
+        }
+
+        return $action;
+    }
+
+    protected function prepareModalActionGroup(ActionGroup $group): ActionGroup
+    {
+        $group
+            ->schemaContainer($this->getSchemaContainer())
+            ->schemaComponent($this->getSchemaComponent())
+            ->liveComponent($this->getLiveComponentOrNull());
+
+        if (! $group->hasRecord()) {
+            $group->record($this->getRecord());
+        }
+
+        foreach ($group->getActions() as $nestedAction) {
+            if ($nestedAction instanceof ActionGroup) {
+                $this->prepareModalActionGroup($nestedAction);
+
+                continue;
+            }
+
+            $this->prepareModalAction($nestedAction);
+        }
+
+        return $group;
+    }
+
+    public function makeModalAction(string $name): Action
+    {
+        return Action::make($name)->button();
     }
 
     public function getModalIcon(): ?string

@@ -48,7 +48,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | todo | schemas/tables/InteractsWithSelectedRecords ports | [detail](#resolvedefaultclosuredependencyforevaluationbytype-is-not-overridden) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables (`table`/`bulk` flags), modal nesting (`getParentAction()` short-circuit) | [diverges](#getcontext-emits-only-the-schemacomponent-key) |
 | Trigger rendering ([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig) + the [`link-action`](../../../packages/actions/templates/components/link-action.html.twig) / [`badge-action`](../../../packages/actions/templates/components/badge-action.html.twig) / [`icon-button-action`](../../../packages/actions/templates/components/icon-button-action.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
-| Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | CanOpenModal (footer actions, slideover, sticky) | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal), [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-footer-buttons-are-hardcoded-markup-not-rendered-action-instances) |
+| Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | CanOpenModal (slideover, sticky) | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal), [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-modal-footer-renders-real-action-instances) |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
 | [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | — |
 | [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) (support) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | — |
@@ -61,7 +61,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | [diverges](#outlined-styling-is-a-state-class-not-a-color-map) |
 | [`CanClose`](../../../packages/actions/src/Concerns/CanClose.php) | [`Concerns/CanClose.php`](../../../vendor/filament/actions/src/Concerns/CanClose.php) | done | — | [diverges](#string-click-handlers-are-live-action-names-and-close-dispatches-the-server-unmount) |
 | [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | notifications package | [detail](#cannotify-only-ports-notification-titles-not-sending) |
-| [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#only-the-modal-content-config-is-ported-the-behavior-and-footer-action-surface-is-not), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
+| [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
 | [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-drops-the-default-action-url-fallback) |
 | POST-to-url support | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | skipped | — | [diverges](#post-to-url-support-is-not-ported) |
 | [`CanRequireConfirmation`](../../../packages/actions/src/Concerns/CanRequireConfirmation.php) | [`Concerns/CanRequireConfirmation.php`](../../../vendor/filament/actions/src/Concerns/CanRequireConfirmation.php) | done | — | [diverges](#confirmation-is-a-flag-not-a-modal-config-layer) |
@@ -261,7 +261,7 @@ rewire `sendSuccessNotification()` / `sendFailureNotification()` to build one
 `rateLimitedNotification*` wait on an authorization-response equivalent and a
 rate-limiting concern respectively; the bulk injections wait on `BulkAction`.
 
-### Only the modal-content config is ported; the behavior and footer-action surface is not
+### CanOpenModal's chrome, layout, and wizard surface is not ported
 
 **Ported and test-covered** (`tests/Unit/Concerns/CanOpenModalTest.php`): the
 seven content-config properties and their getters — `modalHeading` (falls back
@@ -294,23 +294,38 @@ the modal's content slot
 ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)).
 The `checkForSchemaUsing` slot exists but no caller passes it until the
 action-schema integration.
+The **footer-action family** is ported: `modalFooterActions()` (full
+override, prepared and keyed by name) / `extraModalFooterActions()` (slotted
+between submit and cancel, `ActionGroup`-aware) / `registerModalActions()` /
+`modalSubmitAction()` / `modalCancelAction()` (the `Action|bool|Closure`
+customization hooks — a closure receives the default via the `action` named
+injection; `false` removes the button) / `getModalFooterActions()` /
+`getVisibleModalFooterActions()` / `getModalSubmitAction()` (string click
+handler from `getLiveComponentCallMountedActionName()`, color
+primary-for-gray-or-unset) / `getModalCancelAction()` (`close()` + gray) /
+`getExtraModalFooterActions()` / `getModalActions()` (group-flattening) /
+`getModalAction()` / `prepareModalAction()` / `prepareModalActionGroup()` /
+`makeModalAction()` (`Action::make($name)->button()`), each memoized in the
+`cached*` properties Filament uses. Scoped deltas, each deliberate:
+`getModalFooterActions()` drops the `isWizard()` early return and the
+center-alignment `array_reverse` (deferred chrome, with
+`modalFooterActionsAlignment()` itself); `getModalSubmitAction()` has no
+`hasFormWrapper()`/`submit()` arm (`CanSubmitForm` deferred) and matches
+`null` alongside `'gray'` to primary (Filament's `getColor()` never returns
+null there; ours does for an unset color — observably identical);
+`makeModalSubmitAction()` (the `callParent` factory) is skipped with the
+nested-action stack; `prepareModalAction()` drops
+`->parentAction($this)` (same deferral) and `->table(...)` (tables), and
+translates `->livewire(...)` to
+`->liveComponent($this->getLiveComponentOrNull())`; the `=== false` removal
+check is `$action instanceof Action`, so a nonsense `modalSubmitAction(true)`
+nulls the button instead of fataling. The footer renders through
+[`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)'s
+`getVisibleModalFooterActions()` loop as real `Action` buttons.
 
 **Missing vs Filament** — Filament's trait is ~800 lines; the port keeps ~130.
 Absent entirely, with no property, setter, or getter:
 
-- **Footer action composition**: `modalFooterActions()` / `extraModalFooterActions()`
-  / `registerModalActions()` / `modalActions()` (deprecated alias) / `getModalFooterActions()`
-  / `getModalActions()` / `getModalAction()` / `getVisibleModalFooterActions()` /
-  `prepareModalAction()` / `prepareModalActionGroup()` / `makeModalAction()` /
-  `makeModalSubmitAction()`. The port's confirm/cancel buttons are two `<button>`
-  elements hardcoded in the template (`live_action('callMountedAction')` /
-  `live_action('unmountAction')`), not `Action` objects built by
-  `getModalSubmitAction()` / `getModalCancelAction()` — so `modalSubmitAction()`
-  and `modalCancelAction()` (the `Action|bool|Closure` customization hooks) don't
-  exist either. This whole surface composes `ActionGroup` (`todo`, no file yet)
-  and calls `getSchemaContainer()` / `getTable()` / `isWizard()` on the host
-  action, none of which exist on Sylament's `Action` yet — real parity here
-  waits on `ActionGroup` and the schema/table wiring, not just more trait code.
 - **Slide-over and layout**: `slideOver()` / `slideOverPosition()` /
   `isModalSlideOver()` / `getModalSlideOverPosition()`, `modalAlignment()` /
   `getModalAlignment()`, `modalFooterActionsAlignment()` /
@@ -341,11 +356,10 @@ is a bare string (`'md'`) vs Filament's `Width` enum (no `Width` enum ported to
 Sylament yet — every width value here is just whatever string a template's CSS
 happens to key on, e.g. `sy-modal-md`).
 
-**Next step**: land `ActionGroup` and the action-to-schema/table wiring first —
-they gate the entire footer-actions surface (`getModalFooterActions()` and
-everything it calls). The presence/visibility, slide-over/layout, and body-content
-groups can each be picked up independently once someone decides they're wanted;
-none of them are blocked on anything else in this repo today.
+**Next step**: the slide-over/layout and interaction-chrome groups can each be
+picked up independently once someone decides they're wanted (the support
+`Modal` component needs matching props in lockstep); the wizard suppression
+and `callParent` wiring return with their deferred features.
 
 ### getUrl() drops the default-action-url fallback
 
@@ -440,7 +454,7 @@ closure is covered by
 `model()` / `getModel()` / `getCustomModel()`, `modelLabel()` /
 `pluralModelLabel()` and their Title-Case variants, `recordTitle()` /
 `recordTitleAttribute()` and their `getRecordTitle()` / `getCustomRecordTitle()`
-/ `hasCustomRecordTitle()` family, `resolveRecordKey()`, `hasRecord()`, and the
+/ `hasCustomRecordTitle()` family, `resolveRecordKey()`, and the
 `ensureCorrectRecordType()` custom-model guard. Of the fallback chain Filament
 walks when no record is set directly — `getGroup()?->getRecord()`,
 `getSchemaContainer()?->getRecord()`, `getSchemaComponent()?->getRecord()`,
@@ -488,15 +502,11 @@ Sylament counterpart yet:
   `MODAL_CUSTOM_CONTENT_FOOTER_{BEFORE,AFTER}`) have no counterpart (no
   render-hook facility exists) — so a form-collecting action cannot render
   its fields inside this modal today.
-- **Only two fixed footer buttons, not `getVisibleModalFooterActions()`.**
-  Filament resolves an ordered `array<Action|ActionGroup>` (custom submit/cancel
-  actions, `extraModalFooterActions()`, alignment-driven reversal) and renders
-  each as a real `Action`. Sylament's `CanOpenModal` exposes no
-  `getModalSubmitAction()` / `getModalCancelAction()` / `getModalFooterActions()`
-  — the template hardcodes exactly submit + cancel as plain `<button>` markup,
-  so `extraModalFooterActions()`, custom `modalSubmitAction()` /
-  `modalCancelAction()` overrides, and footer alignment don't exist to be
-  rendered.
+- **No footer alignment.** The footer now renders
+  `getVisibleModalFooterActions()` as real `Action`s (submit, extras, cancel —
+  custom overrides included), but the alignment-driven `array_reverse` and the
+  `modalFooterActionsAlignment()` surface behind it are deferred chrome, so a
+  confirmation modal does not center-reverse its buttons as Filament's does.
 - **No modal-chrome configuration reaches the `Modal` component.** Filament's
   `<x-filament::modal>` call also threads `alert`, `alignment`, `autofocus`,
   `click-through`, `close-button`, `close-by-clicking-away`,
@@ -511,10 +521,10 @@ Sylament counterpart yet:
   renders as a plain, non-slide-over, click-to-dismiss dialog.
 - **No form-wrapper wiring.** Filament conditionally sets `wire:submit.prevent`
   to `getLivewireCallMountedActionName()` when `hasFormWrapper()` is true, and
-  actually submits the form via that binding; Sylament's footer submit button
-  always calls `callMountedAction` directly via `live_action`, and
-  `hasFormWrapper()` / `getLivewireCallMountedActionName()` don't exist on the
-  port (there is no forms integration in `actions` yet).
+  actually submits the form via that binding; Sylament's footer submit action
+  always calls `callMountedAction` through its string click handler, and
+  `hasFormWrapper()` doesn't exist on the port (there is no forms integration
+  in `actions` yet — the string-action path is the deliberate stand-in).
 - **No nested-modal-close event chain.** Filament computes a
   `x-on:modal-closed` handler that also unmounts every parent action named in
   `getParentActionsToCancelOnClose()`, for stacked/nested actions. Sylament's
@@ -699,7 +709,11 @@ implementing only schemas' `InteractsWithSchemas` never satisfies the chain.
 Three deltas stay deliberate: (1) the getter keeps its non-nullable
 `InteractsWithActions` return and throws when nothing resolves — the
 fail-fast stand-in for Filament's nullable return + separate
-`getHasActionsLivewire()` narrowing step; (2) no table hop —
+`getHasActionsLivewire()` narrowing step — while the chain itself lives in
+the Sylament-only `getLiveComponentOrNull()` peek (mirroring the schemas-side
+precedent by name), which `prepareModalAction()`/`prepareModalActionGroup()`
+use to bind footer actions without forcing an unbound owner to throw; (2) no
+table hop —
 `BelongsToTable` is unported, restore it with the `tables` package; (3) no
 group hop — Sylament's
 [`ActionGroup::liveComponent()`](../../../packages/actions/src/ActionGroup.php)
@@ -862,7 +876,7 @@ confirmation only *tweaks* in Filament (footer action composition, slide-over,
 sticky panes, click-through/escape/autofocus toggles,
 `modalContent`/`modalContentFooter`, alignment/width defaults keyed off
 confirmation) — `CanOpenModal`'s own gap, recorded on the
-[CanOpenModal detail row](#only-the-modal-content-config-is-ported-the-behavior-and-footer-action-surface-is-not),
+[CanOpenModal detail row](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported),
 not this trait's.
 
 ### Label translation and the deprecated `disableLabel()` alias are not ported
@@ -961,27 +975,23 @@ include was strictly isolated. Inert here — the template declares both props a
 references nothing else — but it is a real reduction in isolation, and the reason to
 keep the props list explicit rather than leaning on inherited variables.
 
-### The footer buttons are hardcoded markup, not rendered Action instances
+### The modal footer renders real Action instances
 
 Filament's `getModalSubmitAction()` / `getModalCancelAction()` build real
 `Action` objects (colored, labeled, wired to `submit`/`action`/`close`) that
-the modal view renders through the normal action-rendering pipeline. Sylament's
+the modal view renders through the normal action-rendering pipeline — and so
+does Sylament:
 [`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)
-instead writes two literal `<button class="sy sy-btn …">` elements
-and inlines the submit color computation itself:
-`action.getColor is iterable or action.getColor is empty or action.getColor == 'gray' ? 'primary' : action.getColor`
-mirrors Filament's `match ($color) { 'gray' => 'primary', default => $color }`
-in `getModalSubmitAction()`, but adds `is iterable` / `is empty` guards
-Filament's version doesn't need — because the template interpolates the color
-directly into a `sy-color-{{ submitColor }}` CSS class name rather than
-delegating to a color-aware button component, an array-of-shades color (a
-value `getColor(): string|array|null` explicitly allows) cannot be represented
-in a class name and is silently coerced to `primary` instead of being passed
-through. This is a consequence of there being no footer-actions API yet (see
-the [modal-content detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal)
-above), not an independent design choice — reversible once the footer buttons
-render through a real color-aware Action/button component instead of literal
-class interpolation.
+loops `getVisibleModalFooterActions()` through `renderComponent()`, so every
+footer button is a `makeModalAction()`-built `Action` rendering via
+`button-action.html.twig` (submit reaches `live_action('callMountedAction')`
+through its string click handler; cancel reaches `live_action('unmountAction')`
+through `close()`). One limitation moved rather than vanished: an
+array-of-shades color (a value `getColor(): string|array<string>|null`
+explicitly allows) still cannot be represented in the rendered classes — that
+is now the general button-template limitation (`button-action.html.twig`
+coerces iterable/empty colors to gray, and `getModalSubmitAction()` maps
+gray/unset to primary), not a hardcoded-footer artifact.
 
 _See also:_ the global [rename table](../renames.md) — the
 `Filament\Actions\Concerns\InteractsWithActions` ⇄ `HasActions` /

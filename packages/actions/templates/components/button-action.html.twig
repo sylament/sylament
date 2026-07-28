@@ -8,6 +8,7 @@
     {{ attrs({
         class: classes('sy sy-btn sy-ac', {
             'sy-disabled': component.isDisabled,
+            'sy-outlined': component.isOutlined,
             ('sy-size-' ~ sizeValue): sizeValue in knownSizes,
             (sizeValue ?? ''): sizeValue is not empty and sizeValue not in knownSizes,
             'sy-color': colorName != 'gray',

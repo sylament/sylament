@@ -40,6 +40,15 @@ it('renders a url grouped action as a link without mount wiring', function (): v
         ->not->toContain('type=');
 });
 
+it('renders the grouped icon as the icon default inside a dropdown item', function (): void {
+    $delete = Action::make('delete')->groupedIcon('heroicons:x-mark');
+    ActionGroup::make([$delete])->getActions();
+
+    $html = renderGroupedAction($delete);
+
+    expect($html)->toContain('<svg');
+});
+
 it('renders a disabled grouped action', function (): void {
     $delete = Action::make('delete')->disabled();
     ActionGroup::make([$delete])->getActions();

@@ -6,11 +6,24 @@
    mid-flight renders nothing, exactly as Filament's `(! loop.last) or …` does. #}
 {% for action in liveComponent.getMountedActions %}
     {% if not loop.last or liveComponent.mountedActionShouldOpenModal(action) %}
+        {# The schema is resolved here, not inside ActionModal: only the host exposes
+           `getMountedActionSchema()`, and this template is the one place that already
+           holds a host — `Modals` walks the render stack for it. Both the nesting index
+           and the action instance are passed, mirroring Filament's `mountedAction:`
+           argument, so the schema is built for the exact action this iteration renders
+           rather than one re-resolved from the cache. `mountedActionHasSchema()` gates
+           the call because it is the memoised check; a schema with no components must
+           stay `null` so nothing renders an empty container. #}
+        {% set actionSchema = liveComponent.mountedActionHasSchema(action)
+            ? liveComponent.getMountedActionSchema(action.getNestingIndex, action)
+            : null %}
+
         <twig:SylamentActions:ActionModal
             :action="action"
             :id="liveComponent.getMountedModalId(action.getNestingIndex)"
             :open="liveComponent.isMountedActionModalOpen(action.getNestingIndex)"
             :overlaid="not loop.last"
+            :schema="actionSchema"
         />
     {% endif %}
 {% endfor %}

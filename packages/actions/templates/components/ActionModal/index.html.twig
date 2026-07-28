@@ -2,7 +2,28 @@
     action,
     id,
     open = true,
-    overlaid = false %}
+    overlaid = false,
+    schema = null %}
+
+{# `schema` arrives as a prop rather than being resolved here: the host lives on
+   `Modals`, and reaching for it from this template would either repeat that
+   component-stack walk per modal or read an inherited-scope variable the
+   `{% props %}` contract never declares — `<twig:>` has no `only`, so that would
+   be silent coupling.
+
+   `submitHandler` is derived locally instead, because it follows from this
+   template's own props. It is gated on `hasFormWrapper()` and nothing else,
+   which is the same single predicate `CanOpenModal::getModalSubmitAction()`
+   branches on: with a wrapper that method makes the submit button a bare
+   `type="submit"` and gives it no click handler, so the window must be the
+   `<form>` that button submits — including for a schema-less confirmation
+   modal, which would otherwise have a submit button and nothing to submit to.
+   Without a wrapper the button keeps its click handler and the window stays a
+   `<div>`. Filament couples the two the same way
+   (`action-modal.blade.php:27`). #}
+{% set submitHandler = action.hasFormWrapper
+    ? action.getLiveComponentCallMountedActionName
+    : null %}
 
 {# The dismissal wrapper maps the controller's client-close event (ESC, click-away,
    close button, cancel) to a server unmount — without it the next live re-render
@@ -52,9 +73,17 @@
         :extraOverlayAttributes="action.getExtraModalOverlayAttributes"
         :footerActions="action.getVisibleModalFooterActions"
         :footerActionsAlignment="action.getModalFooterActionsAlignment"
+        :submitHandler="submitHandler"
     >
+        {# Filament's slot order: modal content, then the schema, then the content
+           footer (`action-modal.blade.php:63-84`). The whitespace control keeps the
+           block empty when every slot is, so `Modal`'s `content is filled` test still
+           suppresses `.sy-modal-content` for a bare confirmation modal. #}
         <twig:block name="content">
             {{- action.getModalContent -}}
+            {%- if schema is not null -%}
+                {{- renderComponent(schema) -}}
+            {%- endif -%}
             {{- action.getModalContentFooter -}}
         </twig:block>
     </twig:SylamentSupport:Modal>

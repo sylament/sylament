@@ -25,7 +25,7 @@ The 16 concerns Filament composes onto the `Action` base —
 `InteractsWithRecord` — are single-consumer in the port (only `Action` exists
 today), so they have folded into [`action.md`](action.md) and left the Features
 table, per [one row per file](../README.md#one-row-per-file-one-file-per-thing);
-the host-side `HasActions` trait keeps its own row. `Action`'s two rendering
+the host-side `HasActions` trait keeps its own row. `Action`'s rendering
 templates fold in the same way (see the [Supporting surface](#supporting-surface)
 note). [`support/component.md`](../support/component.md) is the shape each detail
 file follows.
@@ -149,13 +149,17 @@ rendered views, the translations and assets, and the bundle wiring —
 [`src/View`](../../../vendor/filament/actions/src/View),
 [`resources/views`](../../../vendor/filament/actions/resources/views). A row named
 for a directory collapses that whole subtree into one navigational entry.
-`Action`'s own rendering templates —
-[`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)
-(a Sylament composition with **no** single Filament source; Filament renders
-action buttons through the support-layer button/link component views) and
+`Action`'s own rendering templates — the trigger family
+([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig),
+[`link-action.html.twig`](../../../packages/actions/templates/components/link-action.html.twig),
+[`badge-action.html.twig`](../../../packages/actions/templates/components/badge-action.html.twig),
+[`icon-button-action.html.twig`](../../../packages/actions/templates/components/icon-button-action.html.twig);
+Sylament compositions with **no** single Filament source; Filament renders
+action triggers through the support-layer button/link/badge/icon-button
+component views) and
 [`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig)
 (porting [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php))
-— are folded into [`action.md`](action.md) as its button- and modal-rendering
+— are folded into [`action.md`](action.md) as its trigger- and modal-rendering
 rows rather than carrying rows here. The host-side
 [`Modals`](../../../packages/actions/templates/components/Modals.html.twig)
 component (porting [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php))

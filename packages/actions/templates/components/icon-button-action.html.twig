@@ -1,0 +1,20 @@
+{% set mountAttributes = component.getUrl or component.isDisabled
+    ? {}
+    : stimulus_action('live', 'action', null, {
+        action: 'mountAction',
+        name: component.getName,
+    }).toArray() %}
+
+{% component 'SylamentSupport:IconButton' with {
+    icon: component.getIcon,
+    label: component.getLabel ?? component.getName,
+    color: component.getColor,
+    size: component.getSize ?? 'md',
+    iconSize: component.getIconSize,
+    disabled: component.isDisabled,
+    tag: component.getUrl ? 'a' : 'button',
+    href: component.getUrl,
+    target: component.shouldOpenUrlInNewTab ? '_blank' : null,
+    class: 'sy-ac',
+    title: component.getTooltip ?: false,
+}|merge(component.getExtraAttributes)|merge(mountAttributes) %}{% endcomponent %}

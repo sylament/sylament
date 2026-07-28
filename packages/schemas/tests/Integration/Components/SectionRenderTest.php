@@ -615,9 +615,18 @@ it('renders no footer element without footer actions', function (): void {
         ->not->toContain('<footer');
 });
 
-it('downsizes actions in the label slots', function (): void {
+it('defaults label slot actions to the small link template', function (): void {
     $html = renderSection(
         Section::make('Profile')->label('My label')->afterLabel([Action::make('edit')]),
+    );
+
+    expect($html)->toMatch('/<button[^>]*class="sy sy-ac-link sy-ac sy-size-sm"/')
+        ->toContain('Edit');
+});
+
+it('lets an explicit button() beat the label slot link default', function (): void {
+    $html = renderSection(
+        Section::make('Profile')->label('My label')->afterLabel([Action::make('edit')->button()]),
     );
 
     expect($html)->toMatch('/<button[^>]*class="sy sy-btn sy-ac sy-size-sm"/')

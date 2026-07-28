@@ -20,7 +20,11 @@ used by forms' `Field`), the icon surface is the support `HasIcon`/`HasIconColor
 `getHeaderActions()` and the footer slot with a closure building an
 alignment-matched `Schema` of `getFooterActions()`. Slot setters replace, so a
 user `->afterHeader(...)`/`->footer(...)` call discards the seeded actions —
-Filament-exact, test-pinned.
+Filament-exact, test-pinned. `configureChildSchema()` defaults actions in the
+four label/content slots to `Size::Small` and the link trigger template
+(`Action::LINK_TEMPLATE`, Filament's `LINK_VIEW`) and action groups to the
+small size only; header/footer slot actions keep the button default —
+Filament-exact, and an explicit `->button()` on a slot action still wins.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -47,7 +51,7 @@ permanent note in [Divergences](#divergences).
 | [Slot setters + key constants](../../../packages/schemas/src/Components/Section.php) | [`Section::afterHeader()` …](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
 | [`makeChildSchema()` end-alignment](../../../packages/schemas/src/Components/Section.php) | [`Section::makeChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
 | [`configureChildSchema()` inline + embedded](../../../packages/schemas/src/Components/Section.php) | [`Section::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
-| [`configureChildSchema()` action size/view branch](../../../packages/schemas/src/Components/Section.php) | [`Section::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [diverges](#label-and-content-slot-actions-default-to-the-small-size-only-not-the-link-view) |
+| [`configureChildSchema()` action size/template branch](../../../packages/schemas/src/Components/Section.php) | [`Section::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
 | [Key derivation from heading slug](../../../packages/schemas/src/Components/Section.php) | [`Section::setUp()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [diverges](#the-heading-derived-key-omits-the-state-path-segment) |
 | [Header actions (`HasHeaderActions` + `setUp` seed)](../../../packages/schemas/src/Components/Concerns/HasHeaderActions.php) | [`Concerns/HasHeaderActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeaderActions.php) | done | — | — |
 | [Footer actions + alignment (`HasFooterActions`)](../../../packages/schemas/src/Components/Concerns/HasFooterActions.php) | [`Concerns/HasFooterActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasFooterActions.php) | done | — | — |
@@ -84,16 +88,6 @@ relationship entanglement land.
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
 what would reverse the decision when it is provisional.
-
-### Label and content slot actions default to the small size only, not the link view
-
-Filament's `configureChildSchema()` gives actions in the before/after-label and
-above/below-content slots `defaultSize(Size::Small)` **and**
-`defaultView(Action::LINK_VIEW)`; Sylament applies only the size default,
-because the actions package has no link trigger template to default to. The
-header and footer slots escape both defaults in either codebase. **Provisional:**
-reverses when actions grows a link template — add the matching
-`defaultTemplate(...)` call to the same `modifyActionsUsing()` closure.
 
 ### The array-heading constructor shorthand is dropped
 

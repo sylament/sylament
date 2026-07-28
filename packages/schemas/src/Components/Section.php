@@ -196,7 +196,9 @@ class Section extends Component implements CanConcealComponents
             static::BELOW_CONTENT_SCHEMA_KEY,
         ], true)) {
             $schema
-                ->modifyActionsUsing(fn (Action $action): Action => $action->defaultSize(Size::Small))
+                ->modifyActionsUsing(fn (Action $action): Action => $action
+                    ->defaultSize(Size::Small)
+                    ->defaultTemplate(Action::LINK_TEMPLATE))
                 ->modifyActionGroupsUsing(fn (ActionGroup $group): ActionGroup => $group->defaultSize(Size::Small));
         }
 

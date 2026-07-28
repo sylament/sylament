@@ -170,9 +170,7 @@ trait HasActions
 
     public function mountedActionShouldOpenModal(?Action $mountedAction = null): bool
     {
-        $action = $mountedAction ?? $this->getMountedAction();
-
-        return $action?->isConfirmationRequired() ?? false;
+        return ($mountedAction ?? $this->getMountedAction())?->shouldOpenModal() ?? false;
     }
 
     public function getAction(string $name): ?Action

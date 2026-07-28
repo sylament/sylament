@@ -59,7 +59,7 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | [`callMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `callMountedAction()` | in progress | `CanBeRateLimited`, `CanBeAuthorized`, `CanUseDatabaseTransactions`, `CanRedirect`, action-schema integration | [detail](#callmountedaction-drops-rate-limiting-authorization-transactions-and-redirects) |
 | [`unmountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | nested action stack (multi-slot `mountedActions`) | [detail](#unmountaction-has-no-cascade-because-there-is-no-stack) |
 | [`getMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedAction()` | done | — | [diverges](#lookup-methods-drop-nesting) |
-| [`mountedActionShouldOpenModal()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountedActionShouldOpenModal()` | in progress | `CanOpenModal`'s `shouldOpenModal()`; `HasSchema` (actions) for the schema check | [detail](#the-modal-open-gate-is-confirmation-only) |
+| [`mountedActionShouldOpenModal()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountedActionShouldOpenModal()` | done | — | [diverges](#the-modal-open-gate-is-null-safe) |
 | [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` + `resolveAction()`'s method-discovery arm | in progress | `BelongsToTable` (tables — only the table-scoped branch remains) | [detail](#getaction-ports-the-generic-method-discovery-arm-in-full) |
 | [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` + `resolveActions()`'s blank-name guard | in progress | nested action stack | [detail](#resolveaction-has-no-parent-nesting) |
 | [`resolveSchemaComponentAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveSchemaComponentAction()` | done | — | [diverges](#schema-context-resolution-returns-null-instead-of-throwing) |
@@ -96,7 +96,7 @@ otherwise it calls the action immediately. The port's
 the single-slot descriptor, resolves the action (swallowing
 `ActionNotResolvableException` into the unmount branch, Filament-same),
 unmounts when it is `null` or `isDisabled()`, opens the modal when
-[`mountedActionShouldOpenModal()`](#the-modal-open-gate-is-confirmation-only)
+[`mountedActionShouldOpenModal()`](#the-modal-open-gate-is-null-safe)
 says so, and otherwise returns `callMountedAction()`'s result — matching
 Filament's shape and `mixed` return. Still absent: the authorization check
 (`hasAuthorizationNotification()` / `getAuthorizationResponseWithMessage()` and
@@ -155,37 +155,6 @@ parent/child cascade (nothing to cascade to with one slot), no
 properties are not ported), and no `resetErrorBag()` call. **Next step:**
 returns in the same change that lands the multi-slot mounted-action stack for
 nested actions.
-
-### The modal-open gate is confirmation-only
-
-[`mountedActionShouldOpenModal(?Action $mountedAction = null): bool`](../../../packages/actions/src/Concerns/HasActions.php)
-is ported under Filament's name and signature, and is the single gate both
-`mountAction()` and the [Modals renderer](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope)
-read, so the rule cannot drift between the two. It is on the
-[`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php)
-contract, because that renderer calls it on an abstractly-typed host.
-The renderer passes the already-resolved action in
-(`mountedActionShouldOpenModal(action)`) rather than calling it bare — a
-habit from before the [per-name action cache](#only-the-per-name-action-cache-is-ported)
-landed (the no-argument form now serves the same cached instance anyway), and
-still the cheaper call since it skips a redundant lookup.
-The body diverges: Filament delegates to
-`$action->shouldOpenModal(checkForSchemaUsing: $this->mountedActionHasSchema(...))`,
-which is `hasCustomModalHeading() || hasModalDescription() || hasModalContent()
-|| hasModalContentFooter() || <has schema>` behind a `hasModal()` / `isModalHidden`
-override pair — confirmation implies a modal there only because
-`getModalDescription()` falls back to the confirmation string when
-`isConfirmationRequired()`. The port returns `isConfirmationRequired()` outright,
-because none of that chain exists: `CanOpenModal` ships no `shouldOpenModal()`,
-no `hasModal()`/`isModalHidden`, no `hasCustomModalHeading()`/`hasModalDescription()`,
-and no confirmation fallback in `getModalDescription()` (recorded on
-[`action.md`'s CanOpenModal row](action.md#only-the-modal-content-config-is-ported-the-behavior-and-footer-action-surface-is-not)).
-Observable gap: an action configured with only `modalHeading('…')` and no
-`requiresConfirmation()` opens a modal in Filament and auto-runs here. It is
-also null-safe where Filament's is not, so a template can call it with nothing
-mounted. **Next step:** delegate to `Action::shouldOpenModal()` once `CanOpenModal`
-grows it; the `checkForSchemaUsing:` argument arrives with the schema
-integration below.
 
 ### `getAction()` ports the generic method-discovery arm in full
 
@@ -254,8 +223,9 @@ Filament's `mountedActionHasSchema()` / `getMountedActionSchema()` /
 deprecated `mountedActionHasForm()` / `getMountedActionForm()` aliases) build
 and cache a per-mounted-action `Schema` keyed by nesting index, seeded with the
 action's record/model, state path `mountedActions.{index}.data`, and dotted
-`operation` name; `mountedActionShouldOpenModal()` (ported
-[confirmation-only](#the-modal-open-gate-is-confirmation-only)) consumes
+`operation` name; `mountedActionShouldOpenModal()` (which
+[delegates to `Action::shouldOpenModal()`](#the-modal-open-gate-is-null-safe)
+but does not pass the argument yet) consumes
 `mountedActionHasSchema()` as its `checkForSchemaUsing:` argument. None of
 this exists in the port — `Action` does not compose `HasSchema`, and
 `HasActions` has no schema-building method at all; a mounted action's "form"
@@ -376,6 +346,26 @@ whose `getAction()` call now serves repeated lookups from the per-name
 divergence is a direct consequence of the single-slot MVP design, not an
 independent decision, and resolves itself once the stack lands.
 
+### The modal-open gate is null-safe
+
+[`mountedActionShouldOpenModal(?Action $mountedAction = null): bool`](../../../packages/actions/src/Concerns/HasActions.php)
+delegates to `Action::shouldOpenModal()` — Filament's own body — so modal
+presence (`modal()` / `modalHidden()`), a custom heading, and a description
+(including the confirmation-string fallback that makes `requiresConfirmation()`
+imply a modal, Filament-exact) all flow through the single gate both
+`mountAction()` and the
+[Modals renderer](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope)
+read, so the rule cannot drift between the two. It is on the
+[`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php)
+contract, because that renderer calls it on an abstractly-typed host. Two
+deltas from Filament: the port is null-safe — it returns `false` instead of
+fataling when nothing is mounted, so a template can call it bare — and the
+`checkForSchemaUsing:` argument is not passed yet (that arrives with the
+[action-schema integration](#action-schema-integration-is-entirely-unported)).
+The renderer keeps passing the already-resolved action in
+(`mountedActionShouldOpenModal(action)`), still the cheaper call since it
+skips a redundant lookup.
+
 ### Only the per-name action cache is ported
 
 Filament populates `$cachedActions` from three sources: `cacheAction()`
@@ -487,7 +477,7 @@ synchronously in one task, while Stimulus binds `data-action` listeners from a
 `MutationObserver` microtask that runs after it — so the new `<dialog>` is not yet
 listening. The authoritative signal is therefore the markup: `ConfirmModal`
 passes `:open="true"` to `<twig:SylamentSupport:Modal>` (it is rendered only while
-[`mountedActionShouldOpenModal()`](#the-modal-open-gate-is-confirmation-only) holds),
+[`mountedActionShouldOpenModal()`](#the-modal-open-gate-is-null-safe) holds),
 and the controller opens itself from that Stimulus value. The dispatch stays for
 imperative callers and is harmless — the controller guards on `element.open`, so
 value and event are idempotent. Full reasoning in

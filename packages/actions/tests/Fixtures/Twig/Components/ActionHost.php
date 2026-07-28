@@ -44,6 +44,17 @@ class ActionHost implements InteractsWithActions
             ->action(fn (): true => $this->notified = true);
     }
 
+    /**
+     * Carries only a modal heading — no confirmation. Pins the general
+     * shouldOpenModal() gate: this must mount and open a modal, not auto-run.
+     */
+    public function headedAction(): Action
+    {
+        return Action::make('headed')
+            ->modalHeading('Headed?')
+            ->action(fn (): true => $this->notified = true);
+    }
+
     public function blockedAction(): Action
     {
         return Action::make('blocked')

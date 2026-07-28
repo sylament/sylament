@@ -61,7 +61,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | [diverges](#outlined-styling-is-a-state-class-not-a-color-map) |
 | [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | notifications package | [detail](#cannotify-only-ports-notification-titles-not-sending) |
 | [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#only-the-modal-content-config-is-ported-the-behavior-and-footer-action-surface-is-not), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
-| [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-drops-the-modal-precedence-guard-and-default-action-url-fallback) |
+| [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-drops-the-default-action-url-fallback) |
 | POST-to-url support | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | skipped | — | [diverges](#post-to-url-support-is-not-ported) |
 | [`CanRequireConfirmation`](../../../packages/actions/src/Concerns/CanRequireConfirmation.php) | [`Concerns/CanRequireConfirmation.php`](../../../vendor/filament/actions/src/Concerns/CanRequireConfirmation.php) | done | — | [diverges](#confirmation-is-a-flag-not-a-modal-config-layer) |
 | [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) | [`Concerns/HasAction.php`](../../../vendor/filament/actions/src/Concerns/HasAction.php) | in progress | — | [detail](#hasaction-drops-the-string-click-handler-and-livewire-click-gating) |
@@ -264,14 +264,29 @@ rate-limiting concern respectively; the bulk injections wait on `BulkAction`.
 
 **Ported and test-covered** (`tests/Unit/Concerns/CanOpenModalTest.php`): the
 seven content-config properties and their getters — `modalHeading` (falls back
-to `getLabel()`), `modalDescription`, `modalIcon` (falls back to
+to `getLabel()`), `modalDescription` (falls back to Filament's confirmation
+string, `'Are you sure you would like to do this?'`, when
+`isConfirmationRequired()` — the fallback that makes confirmation imply a
+modal through the general predicate), `modalIcon` (falls back to
 `heroicons:exclamation-triangle` only when `isConfirmationRequired()`),
 `modalIconColor` (falls back to `getColor() ?? 'primary'`),
 `modalSubmitActionLabel` (`'Confirm'`/`'Submit'` by confirmation state),
 `modalCancelActionLabel` (`'Cancel'`), and `modalWidth` (`'md'`). These are the
 exact fields [`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig)
 reads to drive `<twig:SylamentSupport:Modal>`, and `ConfirmModalRenderTest`
-exercises the full mount → render path through `RecordActionHost`.
+exercises the full mount → render path through `RecordActionHost`. The
+**presence/visibility surface** is ported too, Filament-exact: `modal()` /
+`modalHidden()` / `hasModal()` / `hasCustomModalPresence()` /
+`shouldOpenModal(?Closure $checkForSchemaUsing = null)` plus the
+`getCustomModalHeading()` / `hasCustomModalHeading()` / `hasModalDescription()`
+predicates it reads —
+[`HasActions::mountedActionShouldOpenModal()`](has-actions.md#the-modal-open-gate-is-null-safe)
+now delegates to `shouldOpenModal()`, so an action carrying only
+`modalHeading()` mounts and opens its modal instead of auto-running.
+`shouldOpenModal()`'s content arms (`hasModalContent()` /
+`hasModalContentFooter()`) are still absent along with the content surface
+itself (below); the `checkForSchemaUsing` slot exists but no caller passes it
+until the action-schema integration.
 
 **Missing vs Filament** — Filament's trait is ~800 lines; the port keeps ~130.
 Absent entirely, with no property, setter, or getter:
@@ -289,12 +304,6 @@ Absent entirely, with no property, setter, or getter:
   and calls `getSchemaContainer()` / `getTable()` / `isWizard()` on the host
   action, none of which exist on Sylament's `Action` yet — real parity here
   waits on `ActionGroup` and the schema/table wiring, not just more trait code.
-- **Modal presence/visibility control**: `modal()` / `hasModal()` / `modalHidden()`
-  / `isModalHidden` / `shouldOpenModal()` / `hasCustomModalPresence()`. A Sylament
-  action opens its modal when mounted **iff** `isConfirmationRequired()` — see
-  [`HasActions`' modal-open gate](has-actions.md#the-modal-open-gate-is-confirmation-only),
-  which stands in for `shouldOpenModal()` — so there is no way to suppress it, to
-  force it open, or to earn one from custom modal content.
 - **Slide-over and layout**: `slideOver()` / `slideOverPosition()` /
   `isModalSlideOver()` / `getModalSlideOverPosition()`, `modalAlignment()` /
   `getModalAlignment()`, `modalFooterActionsAlignment()` /
@@ -334,36 +343,34 @@ everything it calls). The presence/visibility, slide-over/layout, and body-conte
 groups can each be picked up independently once someone decides they're wanted;
 none of them are blocked on anything else in this repo today.
 
-### getUrl() drops the modal-precedence guard and default-action-url fallback
+### getUrl() drops the default-action-url fallback
 
 Ported and test-covered: `url()`, `openUrlInNewTab()`, `getUrl()`'s closure
-evaluation, `hasUrl()`, and `shouldOpenUrlInNewTab()` all match Filament and are
-exercised in
+evaluation, `hasUrl()`, `shouldOpenUrlInNewTab()`, and the modal-precedence
+guard — `getUrl()` returns `null` outright when `hasModal()` is true, with
+Filament's exact precision: the guard reads `hasModal()` (an explicit
+`->modal()` call), **not** `shouldOpenModal()`, so `->url(…)` +
+`->modalHeading(…)` still renders a link while `->url(…)` + `->modal()`
+suppresses the URL. Exercised in
 [`CanOpenUrlTest`](../../../packages/actions/tests/Unit/Concerns/CanOpenUrlTest.php)
 against the
-[`CanOpenUrlFixture`](../../../packages/actions/tests/Fixtures/Concerns/CanOpenUrlFixture.php).
+[`CanOpenUrlFixture`](../../../packages/actions/tests/Fixtures/Concerns/CanOpenUrlFixture.php)
+(which stubs `hasModal()`, since the trait expects the composing class to
+supply it — `Action` does via `CanOpenModal`) plus `Action`-level precedence
+cases.
 
-Missing vs Filament: Filament's `getUrl()` returns `null` outright when
-`$this->hasModal()` is true — a modal takes precedence over a link — and, when
-no explicit `url` closure resolves a value, falls back to
-`$this->getHasActionsLivewire()?->getDefaultActionUrl($this)`. Sylament's
-`getUrl()` is a bare `evaluate($this->url)` with neither check. Both are
-genuinely missing rather than deliberately dropped: `CanOpenModal`
-(`../../../packages/actions/src/Concerns/CanOpenModal.php`) has no `hasModal()`
-method for the guard to call, and there is no live-component-side
-`getDefaultActionUrl()` hook (`BelongsToLiveComponent` carries no such method)
-for the fallback to call. Filament's `Action::render()` also consults a plain
-introspection helper, `hasShouldOpenUrlInNewTab()`, when deciding button vs.
-link markup; Sylament has no equivalent (only the evaluated
-`shouldOpenUrlInNewTab()` exists). Today no consumer needs the precedence
-check — `Action` has no modal/url conflict in practice yet, since the template
-only branches on `getUrl` truthiness — so nothing currently observably
-regresses, but a caller that sets both `modalHeading()` and `url()` would
-render an `<a>` where Filament renders a modal trigger.
+Missing vs Filament: when no explicit `url` closure resolves a value,
+Filament's `getUrl()` falls back to
+`$this->getHasActionsLivewire()?->getDefaultActionUrl($this)`; that hook stays
+with the deferred
+[`getDefaultAction*` host-hook cluster](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported).
+Filament's `Action::render()` also consults a plain introspection helper,
+`hasShouldOpenUrlInNewTab()`, when deciding button vs. link markup; Sylament
+has no equivalent (only the evaluated `shouldOpenUrlInNewTab()` exists).
 
-Next step: add `hasModal()` to `CanOpenModal` (or `Action` itself) and a
-`getDefaultActionUrl()` hook on the live-component side, then wire the
-precedence check plus `hasShouldOpenUrlInNewTab()` back into `getUrl()`.
+Next step: restore the `getDefaultActionUrl()` fallback alongside the host-hook
+cluster; add `hasShouldOpenUrlInNewTab()` with the optimized-render pipeline
+that consumes it.
 
 ### HasAction drops the string click-handler and Livewire-click gating
 
@@ -804,19 +811,19 @@ custom width/alignment, arbitrary modal/footer actions with an
 `hasModal()`/`shouldOpenModal()` presence logic, wizard suppression, icon
 alias resolution) and `isConfirmationRequired()` only tweaks defaults inside
 that machinery (alignment, width, icon, submit label, description).
-Sylament's `CanOpenModal` ports only the fields a confirm dialog needs —
-heading, description, icon, icon color, submit/cancel labels, width — so
-`isConfirmationRequired()` here is the whole body of
-[`HasActions::mountedActionShouldOpenModal()`](../../../packages/actions/src/Concerns/HasActions.php),
-driving a fixed confirm-modal template rather than a general configurable modal;
-an action carrying only `modalHeading()` opens a modal in Filament and runs
-straight through here. The
-dropped surface (footer action composition, slide-over, sticky panes,
-click-through/escape/autofocus toggles, `modalContent`/`modalContentFooter`,
-`hasModal`/`shouldOpenModal`) is `CanOpenModal`'s own gap — recorded on the
+Sylament's `CanOpenModal` now carries the presence layer (`modal()` /
+`modalHidden()` / `shouldOpenModal()`), and confirmation flows through it
+exactly as in Filament: `isConfirmationRequired()` no longer gates the modal
+directly — it feeds `getModalDescription()`'s confirmation-string fallback,
+and a filled description is what `shouldOpenModal()` reads
+([`HasActions::mountedActionShouldOpenModal()`](has-actions.md#the-modal-open-gate-is-null-safe)
+delegates to it). What remains divergent is the still-unported modal surface
+confirmation only *tweaks* in Filament (footer action composition, slide-over,
+sticky panes, click-through/escape/autofocus toggles,
+`modalContent`/`modalContentFooter`, alignment/width defaults keyed off
+confirmation) — `CanOpenModal`'s own gap, recorded on the
 [CanOpenModal detail row](#only-the-modal-content-config-is-ported-the-behavior-and-footer-action-surface-is-not),
-not this trait's — reversible once `CanOpenModal` grows a general modal (not
-just confirm-modal) feature set.
+not this trait's.
 
 ### Label translation and the deprecated `disableLabel()` alias are not ported
 

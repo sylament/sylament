@@ -13,6 +13,7 @@ use Sylament\Actions\Concerns\BelongsToSchemaComponent;
 use Sylament\Actions\Concerns\CanBeDisabled;
 use Sylament\Actions\Concerns\CanBeHidden;
 use Sylament\Actions\Concerns\CanBeOutlined;
+use Sylament\Actions\Concerns\CanClose;
 use Sylament\Actions\Concerns\CanNotify;
 use Sylament\Actions\Concerns\CanOpenModal;
 use Sylament\Actions\Concerns\CanOpenUrl;
@@ -48,6 +49,7 @@ class Action extends ViewComponent
     use CanBeDisabled;
     use CanBeHidden;
     use CanBeOutlined;
+    use CanClose;
     use CanNotify;
     use CanOpenModal;
     use CanOpenUrl;
@@ -141,6 +143,11 @@ class Action extends ViewComponent
     public function isLink(): bool
     {
         return $this->getTemplate() === static::LINK_TEMPLATE;
+    }
+
+    public function getLiveComponentCallMountedActionName(): string
+    {
+        return 'callMountedAction';
     }
 
     /**

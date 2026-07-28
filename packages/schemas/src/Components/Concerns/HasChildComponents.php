@@ -93,7 +93,7 @@ trait HasChildComponents
 
     protected function makeChildSchema(string $key): Schema
     {
-        return Schema::make($this->getLiveComponent())
+        return Schema::make($this->getLiveComponentOrNull())
             ->parentComponent($this);
     }
 

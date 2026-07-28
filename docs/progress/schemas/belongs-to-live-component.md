@@ -54,11 +54,17 @@ marker base class to intersect with.
 
 The throw creates one need Filament doesn't have: a caller probing for an
 *optional* binding. `getLiveComponentOrNull()` is that Sylament-only public
-peek — it returns the raw nullable property, and exists because the actions
-package's live-component fallback chain
-([`actions/action.md`](../actions/action.md#the-live-component-chain-narrows-inline-and-drops-the-table-and-group-hops))
-walks `getSchemaContainer()`/`getSchemaComponent()` looking for a host and must
-get `null`, not an exception, from an unbound schema. In Filament the nullable
+peek — it returns the raw nullable property, and has two consumers. The first
+is the actions package's live-component fallback chain
+([`actions/action.md`](../actions/action.md#the-live-component-chain-narrows-inline-and-drops-the-table-and-group-hops)),
+which walks `getSchemaContainer()`/`getSchemaComponent()` looking for a host
+and must get `null`, not an exception, from an unbound schema. The second is
+[`HasChildComponents::makeChildSchema()`](component.md#haschildcomponents-only-the-materialization-core-is-ported),
+which binds a materialized child `Schema` to the parent component's own live
+component — or `null` — so a component whose own container has no live
+component (a preview render, or any `Schema::make()` built with no host) can
+still materialize an array-valued child slot instead of throwing while trying
+to inherit a binding that was never there. In Filament the nullable
 `getLivewire()` itself plays this role, so there is no counterpart method to
 port. The component-level twin lives on
 [`BelongsToContainer`](component.md#belongstocontainer-gains-a-sylament-only-getlivecomponentornull-peek),

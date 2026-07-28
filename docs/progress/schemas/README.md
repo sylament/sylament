@@ -52,7 +52,7 @@ the layout/content components in
 | `Tabs\Tab` | [`Components/Tabs/Tab.php`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | todo | — |
 | `Wizard` | [`Components/Wizard.php`](../../../vendor/filament/schemas/src/Components/Wizard.php) | todo | — |
 | `Wizard\Step` | [`Components/Wizard/Step.php`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | todo | — |
-| `Actions` | [`Components/Actions.php`](../../../vendor/filament/schemas/src/Components/Actions.php) | todo | — |
+| [`Actions`](../../../packages/schemas/src/Components/Actions.php) | [`Components/Actions.php`](../../../vendor/filament/schemas/src/Components/Actions.php) | in progress | [actions.md](actions.md) |
 | `Callout` | [`Components/Callout.php`](../../../vendor/filament/schemas/src/Components/Callout.php) | todo | — |
 | `EmbeddedSchema` | [`Components/EmbeddedSchema.php`](../../../vendor/filament/schemas/src/Components/EmbeddedSchema.php) | todo | — |
 | `EmbeddedTable` | [`Components/EmbeddedTable.php`](../../../vendor/filament/schemas/src/Components/EmbeddedTable.php) | todo | — |

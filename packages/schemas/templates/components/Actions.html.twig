@@ -1,0 +1,29 @@
+{% set id = component.getId %}
+{% set label = component.getLabel %}
+{% set visibleActions = component.getChildSchema.getComponents(true, false) %}
+
+<div
+        {{ attrs({
+            class: ['sy', 'sy-sc-actions'],
+        }, component.getExtraAttributes, id ? { id: id } : null) }}
+>
+    {% if label is filled %}
+        <div class="sy-sc-actions-label-ctn">
+            <div class="sy-sc-actions-label">
+                {{- label -}}
+            </div>
+        </div>
+    {% endif %}
+
+    {% if visibleActions is not empty %}
+        <div
+                {{ attrs({
+                    class: ['sy-sc-actions-ctn', component.isFullWidth ? 'sy-width-full' : component.getAlignmentClass],
+                }) }}
+        >
+            {% for action in visibleActions %}
+                {{ renderComponent(action) }}
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>

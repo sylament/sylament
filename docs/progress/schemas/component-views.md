@@ -2,21 +2,23 @@
 
 The Twig templates in
 [`packages/schemas/templates/components/`](../../../packages/schemas/templates/components)
-— `Html`, `Icon`, `Schema`, `Section`, `Text` — that render the schemas
-components through Support's
+— `Actions`, `Html`, `Icon`, `Schema`, `Section`, `Text` — that render the
+schemas components through Support's
 [`ViewComponent`](../support/component.md). Each ports the HTML that a Filament
 schemas component emits from its PHP `toEmbeddedHtml()` (Filament v5 no longer
 ships Blade files for these — see the divergence below). This file is a thin
-cross-index over the five templates; per-feature specifics live in the
-per-component files ([`icon.md`](icon.md), [`text.md`](text.md),
-[`section.md`](section.md), [`schema.md`](schema.md)), not here.
+cross-index over the six templates; per-feature specifics live in the
+per-component files ([`actions.md`](actions.md), [`icon.md`](icon.md),
+[`text.md`](text.md), [`section.md`](section.md), [`schema.md`](schema.md)),
+not here.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
-- [`schemas/src/Components/Html.php`](../../../vendor/filament/schemas/src/Components/Html.php),
+- [`schemas/src/Components/Actions.php`](../../../vendor/filament/schemas/src/Components/Actions.php),
+  [`Html.php`](../../../vendor/filament/schemas/src/Components/Html.php),
   [`Icon.php`](../../../vendor/filament/schemas/src/Components/Icon.php),
   [`Section.php`](../../../vendor/filament/schemas/src/Components/Section.php),
   [`Text.php`](../../../vendor/filament/schemas/src/Components/Text.php),
@@ -34,6 +36,7 @@ in-progress features, a **diverges** note here for a structural one, or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
+| [`Actions.html.twig`](../../../packages/schemas/templates/components/Actions.html.twig) | [`Actions::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Actions.php) | in progress | — | [actions.md](actions.md) |
 | [`Html.html.twig`](../../../packages/schemas/templates/components/Html.html.twig) | [`Html::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Html.php) | done | — | — |
 | [`Icon.html.twig`](../../../packages/schemas/templates/components/Icon.html.twig) | [`Icon::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Icon.php) | in progress | — | [icon.md](icon.md) |
 | [`Schema.html.twig`](../../../packages/schemas/templates/components/Schema.html.twig) | [`Schema::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-template-omits-the-livecomponent-wiring-hidden-placeholders-and-grid-liberation) |
@@ -45,15 +48,23 @@ in-progress features, a **diverges** note here for a structural one, or `—`.
 Every template carries a render test in schemas' Integration suite (only the
 schemas Kernel registers TwigComponentBundle/StimulusBundle, so these templates
 are exercised from here, not from support):
-[`HtmlRenderTest`](../../../packages/schemas/tests/Integration),
-`IconComponentRenderTest`, `SchemaRenderTest`, `SectionRenderTest`,
-`TextRenderTest`. Architecture/`TemplateConventionsTest` guards all bundle
-templates against `html_attr()` / `html_classes()`.
+[`ActionsRenderTest`](../../../packages/schemas/tests/Integration),
+`HtmlRenderTest`, `IconComponentRenderTest`, `SchemaRenderTest`,
+`SectionRenderTest`, `TextRenderTest`. Architecture/`TemplateConventionsTest`
+guards all bundle templates against `html_attr()` / `html_classes()`.
 
 ## Details
 
 Write-ups for the rows that are not **done** — what is in, what is left, the next
 step. Feature-level state stays in the per-component file each row links.
+
+### Actions template — label and row rendered
+
+`Actions.html.twig` renders the outer column, the label heading, and the
+visible-actions row with alignment/full-width classes. The sticky Alpine wiring,
+the `fi-vertical-align-*` class, and the four label/content slot schemas are
+unported; each is tracked against the component in [`actions.md`](actions.md).
+Next step: close those component gaps — their render halves land here with them.
 
 ### Icon template — subset rendered
 

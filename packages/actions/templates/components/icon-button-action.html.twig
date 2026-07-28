@@ -3,6 +3,8 @@
     : stimulus_action('live', 'action', null, {
         action: 'mountAction',
         name: component.getName,
+        ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
+        ...(component.getContext ? { context: component.getContext } : {}),
     }).toArray() %}
 
 {% component 'SylamentSupport:IconButton' with {
@@ -16,5 +18,5 @@
     href: component.getUrl,
     target: component.shouldOpenUrlInNewTab ? '_blank' : null,
     class: 'sy-ac',
-    title: component.getTooltip ?: false,
+    ...(component.getTooltip ? { title: component.getTooltip } : {}),
 }|merge(component.getExtraAttributes)|merge(mountAttributes) %}{% endcomponent %}

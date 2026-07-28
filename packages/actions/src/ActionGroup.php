@@ -7,7 +7,6 @@ namespace Sylament\Actions;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Components\Component;
 use Closure;
-use LogicException;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
 use Sylament\Actions\Concerns\BelongsToSchemaComponent;
@@ -27,7 +26,6 @@ use Sylament\Support\Components\Concerns\HasTooltip;
 use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\Evaluation\ClosureParameter;
 use Sylament\Support\Twig\ComponentAttributeBag;
-use Twig\Environment;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
@@ -55,6 +53,8 @@ class ActionGroup extends ViewComponent
     public const string ICON_BUTTON_TEMPLATE = '@SylamentActions/components/action-group/icon-button-trigger.html.twig';
 
     public const string BUTTON_TEMPLATE = '@SylamentActions/components/action-group/button-trigger.html.twig';
+
+    public const string GROUPED_TEMPLATE = '@SylamentActions/components/action-group/grouped-trigger.html.twig';
 
     protected string $evaluationIdentifier = 'group';
 
@@ -118,6 +118,8 @@ class ActionGroup extends ViewComponent
             $action->group($this);
 
             if ($action instanceof self) {
+                $action->defaultDropdownPlacement('right-start');
+
                 $this->flatActions = [...$this->flatActions, ...$action->getFlatActions()];
             } else {
                 $this->flatActions[$action->getName()] = $action;
@@ -130,19 +132,28 @@ class ActionGroup extends ViewComponent
     }
 
     /**
+     * @param array<Action|ActionGroup> $actions
+     * @return array<Action|ActionGroup>
+     */
+    protected function stampTriggerTemplates(array $actions, bool $grouped): array
+    {
+        foreach ($actions as $action) {
+            if ($action instanceof Action) {
+                $action->defaultTemplate($grouped ? Action::GROUPED_TEMPLATE : Action::BUTTON_TEMPLATE);
+            } else {
+                $action->defaultTriggerTemplate($grouped ? self::GROUPED_TEMPLATE : self::BUTTON_TEMPLATE);
+            }
+        }
+
+        return $actions;
+    }
+
+    /**
      * @return array<Action|ActionGroup>
      */
     public function getActions(): array
     {
-        $grouped = $this->hasDropdown();
-
-        foreach ($this->actions as $action) {
-            if ($action instanceof Action) {
-                $action->defaultTemplate($grouped ? Action::GROUPED_TEMPLATE : Action::BUTTON_TEMPLATE);
-            }
-        }
-
-        return $this->actions;
+        return $this->stampTriggerTemplates($this->actions, $this->hasDropdown());
     }
 
     /**
@@ -151,6 +162,56 @@ class ActionGroup extends ViewComponent
     public function getFlatActions(): array
     {
         return $this->flatActions;
+    }
+
+    /**
+     * Dropdown rendering plan, Filament's toEmbeddedHtml() loop: runs of visible
+     * plain actions (and dropdown-enabled subgroups, which embed as submenus)
+     * share a section; a non-dropdown subgroup never renders its own trigger —
+     * its visible children splice in as a fresh section, flushing any
+     * accumulated run into its own section first.
+     *
+     * @return array<array<Action|ActionGroup>>
+     */
+    public function getDropdownActionLists(): array
+    {
+        $actionLists = [];
+        $singleActions = [];
+
+        foreach ($this->getActions() as $action) {
+            if (! $action->isVisible()) {
+                continue;
+            }
+
+            if ($action instanceof self && ! $action->hasDropdown()) {
+                if ($singleActions !== []) {
+                    $actionLists[] = $singleActions;
+                    $singleActions = [];
+                }
+
+                // Re-stamp as grouped: the child's own getActions() stamped from its
+                // hasDropdown() (false — that is why it flattens), which would render
+                // standalone buttons inside this dropdown panel. These children are
+                // being spliced into THIS group's panel, so they are dropdown items.
+                // Last write wins on the *default*, so an explicit template() or
+                // triggerTemplate() on a child still overrides both.
+                $actionLists[] = $this->stampTriggerTemplates(
+                    array_values(array_filter(
+                        $action->getActions(),
+                        fn (Action|ActionGroup $childAction): bool => $childAction->isVisible(),
+                    )),
+                    true,
+                );
+            } else {
+                $singleActions[] = $action;
+            }
+        }
+
+        if ($singleActions !== []) {
+            $actionLists[] = $singleActions;
+        }
+
+        return $actionLists;
     }
 
     public function triggerTemplate(string|Closure|null $template): static
@@ -264,15 +325,6 @@ class ActionGroup extends ViewComponent
     public function getLabel(): string|Markup|null
     {
         return $this->evaluate($this->label) ?? 'Actions';
-    }
-
-    public function render(Environment $twig): ?string
-    {
-        if (array_any($this->getActions(), fn (Action|ActionGroup $action): bool => $action instanceof self && $action->isVisible())) {
-            throw new LogicException('Submenu rendering is not supported yet: an ActionGroup cannot be rendered inside another ActionGroup.');
-        }
-
-        return parent::render($twig);
     }
 
     protected function resolveDefaultClosureDependencyForEvaluationByName(string $parameterName): ?ClosureParameter

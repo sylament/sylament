@@ -256,3 +256,51 @@ it('keeps the trigger and dropdown attribute bags independent', function (): voi
     expect($group->getExtraAttributes())->toBe(['data-trigger' => '1'])
         ->and($group->getExtraDropdownAttributes())->toBe(['data-dropdown' => '2']);
 });
+
+it('splits dropdown children into divider sections around flattened subgroups', function (): void {
+    $group = ActionGroup::make([
+        $a = Action::make('a'),
+        $b = Action::make('b'),
+        ActionGroup::make([$c = Action::make('c'), $d = Action::make('d'), Action::make('hiddenChild')->hidden()])->dropdown(false),
+        $e = Action::make('e'),
+    ]);
+
+    expect($group->getDropdownActionLists())->toBe([[$a, $b], [$c, $d], [$e]]);
+});
+
+it('keeps a dropdown-enabled subgroup inline as a submenu entry', function (): void {
+    $group = ActionGroup::make([
+        $a = Action::make('a'),
+        $sub = ActionGroup::make([Action::make('b')]),
+    ]);
+
+    expect($group->getDropdownActionLists())->toBe([[$a, $sub]]);
+});
+
+it('skips hidden children when building the section lists', function (): void {
+    $group = ActionGroup::make([
+        $a = Action::make('a'),
+        Action::make('b')->hidden(),
+        ActionGroup::make([Action::make('c')->hidden()])->dropdown(false),
+    ]);
+
+    expect($group->getDropdownActionLists())->toBe([[$a]]);
+});
+
+it('stamps the submenu placement default on nested groups without overriding explicit placements', function (): void {
+    $sub = ActionGroup::make([Action::make('a')]);
+    $explicit = ActionGroup::make([Action::make('b')])->dropdownPlacement('left-start');
+    ActionGroup::make([$sub, $explicit]);
+
+    expect($sub->getDropdownPlacement())->toBe('right-start')
+        ->and($explicit->getDropdownPlacement())->toBe('left-start');
+});
+
+it('propagates the grouped trigger template default to nested groups', function (): void {
+    $sub = ActionGroup::make([Action::make('a')]);
+    $group = ActionGroup::make([$sub]);
+    $group->getActions();
+
+    expect($sub->getTriggerTemplate())->toBe(ActionGroup::GROUPED_TEMPLATE)
+        ->and($sub->iconButton()->getTriggerTemplate())->toBe(ActionGroup::ICON_BUTTON_TEMPLATE);
+});

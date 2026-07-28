@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Integration;
 
-use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 
@@ -54,10 +53,6 @@ it('renders an inline row under dropdown(false)', function (): void {
         ->not->toContain('sy-dropdown-panel');
 });
 
-it('refuses to render a nested group', function (): void {
-    renderGroup(ActionGroup::make([ActionGroup::make([Action::make('edit')])]));
-})->throws(LogicException::class, 'Submenu');
-
 it('renders fine when a nested group is hidden', function (): void {
     $html = renderGroup(ActionGroup::make([
         Action::make('edit'),
@@ -67,9 +62,13 @@ it('renders fine when a nested group is hidden', function (): void {
     expect($html)->toContain('data-live-name-param="edit"');
 });
 
-it('refuses to render a visible nested group under dropdown(false) too', function (): void {
-    renderGroup(ActionGroup::make([ActionGroup::make([Action::make('edit')])])->dropdown(false));
-})->throws(LogicException::class, 'Submenu');
+it('renders a nested group inline when the parent is not a dropdown', function (): void {
+    $html = renderGroup(ActionGroup::make([ActionGroup::make([Action::make('edit')])])->dropdown(false));
+
+    expect($html)->toContain('sy-ac-group')
+        ->toContain('sy sy-dropdown')
+        ->toContain('data-live-name-param="edit"');
+});
 
 it('renders extra dropdown attributes on the dropdown root, not the trigger', function (): void {
     $html = renderGroup(
@@ -86,4 +85,40 @@ it('keeps trigger extra attributes off the dropdown root', function (): void {
 
     expect(mb_substr_count($html, 'data-x="1"'))->toBe(1)
         ->and(mb_strpos($html, 'data-x="1"'))->toBeGreaterThan(mb_strpos($html, 'sy-dropdown-trigger'));
+});
+
+it('renders a nested dropdown group as an embedded submenu instead of throwing', function (): void {
+    $html = renderGroup(ActionGroup::make([
+        Action::make('one'),
+        ActionGroup::make([Action::make('two')])->label('More'),
+    ]));
+
+    expect(mb_substr_count($html, 'sy-dropdown-trigger'))->toBe(2)
+        ->and($html)->toContain('data-sylament--support--dropdown-placement-value="right-start"')
+        ->and($html)->toContain('More');
+});
+
+it('renders flattened subgroups as separate dropdown list sections', function (): void {
+    $html = renderGroup(ActionGroup::make([
+        Action::make('one'),
+        ActionGroup::make([Action::make('two'), Action::make('three')])->dropdown(false),
+    ]));
+
+    expect(mb_substr_count($html, 'sy-dropdown-list'))->toBe(2)
+        ->and(mb_substr_count($html, 'sy-dropdown-trigger'))->toBe(1)
+        ->and($html)->toContain('two')
+        ->and($html)->toContain('three')
+        // Flattened children must render as dropdown items, not standalone buttons:
+        // three item labels, and no `sy-btn` anywhere (the group's own trigger is the
+        // icon-button template, which emits `sy-icon-btn` — a different string).
+        ->and(mb_substr_count($html, 'sy-dropdown-item-label'))->toBe(3)
+        ->and($html)->not->toContain('sy-btn');
+});
+
+it('renders the nested group trigger as a grouped dropdown item', function (): void {
+    $html = renderGroup(ActionGroup::make([
+        ActionGroup::make([Action::make('a')])->label('Sub'),
+    ]));
+
+    expect($html)->toMatch('/sy-dropdown-item[^>]*>.*Sub/s');
 });

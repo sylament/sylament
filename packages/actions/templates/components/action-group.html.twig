@@ -10,8 +10,12 @@
             {% include component.getTriggerTemplate with { group: component } only %}
         {% endblock %}
         {% block content %}
-            {% for action in component.getActions|filter(action => action.isVisible) %}
-                {{ renderComponent(action) }}
+            {% for actionList in component.getDropdownActionLists %}
+                <div class="sy-dropdown-list">
+                    {% for action in actionList %}
+                        {{ renderComponent(action) }}
+                    {% endfor %}
+                </div>
             {% endfor %}
         {% endblock %}
     {% endcomponent %}

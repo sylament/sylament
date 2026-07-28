@@ -1,0 +1,12 @@
+{% set iconHtml = group.getIcon(group.getGroupedIcon) ? generateIconHtml(group.getIcon(group.getGroupedIcon), null, null, group.getIconSize ?? 'sm') : null %}
+
+<button
+    {{ attrs({
+        class: classes('sy sy-dropdown-item sy-ac'),
+        type: 'button',
+        title: group.getTooltip ?: false,
+    }, group.getExtraAttributes) }}
+>
+    {{- iconHtml -}}
+    <span class="sy-dropdown-item-label">{{ group.getLabel }}</span>
+</button>

@@ -94,3 +94,17 @@ it('emits the schema mount context on schema-bound variant triggers', function (
     'badge' => Action::BADGE_TEMPLATE,
     'icon button' => Action::ICON_BUTTON_TEMPLATE,
 ]);
+
+it('flattens extra attributes onto the icon-button root, merging class tokens', function (): void {
+    $html = renderVariant(
+        Action::make('delete')
+            ->iconButton()
+            ->icon('heroicons:x-mark')
+            ->extraAttributes(['class' => 'custom-hook', 'data-x' => '1']),
+    );
+
+    expect($html)->toContain('data-x="1"')
+        ->toContain('custom-hook')
+        ->toContain('sy-ac')
+        ->toContain('sy-icon-btn');
+});

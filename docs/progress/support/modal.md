@@ -222,6 +222,12 @@ behavior matches Filament's out-of-the-box behavior exactly; what is missing is
 only the global override seam, tracked as its own
 [**todo** row](#modalcomponent-static-config).
 
+One more nuance on the close button: Sylament's header-rendering condition
+(`hasIcon or hasHeading or hasDescription`) is a superset of Filament's
+(`$heading || $header`) — an icon-only or description-only modal renders a
+header, and therefore a close button, in Sylament where Filament renders
+neither.
+
 ### Alignment strings pass through verbatim where Filament drops them
 
 Filament's modal accepts `Alignment|string|null` and renders a class only for the
@@ -242,6 +248,12 @@ passes an explicit value — `getModalFooterActionsAlignment()` returns `null` f
 a non-confirmation action in both codebases — so both render a `<footer>` with no
 alignment class there, and both leave the footer-actions layout rules (all scoped
 under an alignment class) inactive. Parity, including the sharp edge.
+
+One more breadcrumb: Filament v5.7.1's own start+icon indent rules are dead
+selectors upstream — their `fi-align-*` rules key off the `.fi-modal` root
+while v5.7.1's blade stamps `fi-align-*` only on the window, so real Filament
+renders `px-6` everywhere. Sylament re-keyed the rules to the window, making
+the indent live — following the source's intent over its rendered output.
 
 ### `returnsFocus` stays `true` where Filament's action modal hardcodes `false`
 

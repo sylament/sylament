@@ -12,6 +12,8 @@
     ? {}
     : stimulus_action('live', 'action', null, clickParameters).toArray() %}
 
+{% set extraAttributes = component.getExtraAttributeBag.toScalarAttributes %}
+{% set rootClasses = classes('sy-ac', extraAttributes.class ?? null) %}
 {% component 'SylamentSupport:IconButton' with {
     icon: component.getIcon,
     label: component.getLabel ?? component.getName,
@@ -22,6 +24,5 @@
     tag: component.getUrl ? 'a' : 'button',
     href: component.getUrl,
     target: component.shouldOpenUrlInNewTab ? '_blank' : null,
-    class: 'sy-ac',
     ...(component.getTooltip ? { title: component.getTooltip } : {}),
-}|merge(component.getExtraAttributes)|merge(mountAttributes) %}{% endcomponent %}
+}|merge(extraAttributes)|merge({ class: rootClasses })|merge(mountAttributes) %}{% endcomponent %}

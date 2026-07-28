@@ -217,6 +217,20 @@ found by rendering the built CSS in a browser rather than by any test:
   scrollbar also stole 15px of container width, which moved the inline-end
   resting position of a slide-over panel, so it appeared to settle short of the
   edge and then snap flush when the scrollbar went away.
+- **A slide-over container must be `overflow: clip` in both axes, not just the
+  inline one.** `overflow-x: clip` against the UA's `overflow-y: auto` computes
+  to `hidden`, and a `hidden` box is still programmatically scrollable — so
+  `showModal()`, which focuses the close button while the panel is still parked
+  off-viewport at `translate: 100%`, made the browser scroll the container by the
+  panel's entire width to reveal it. That offset is clamped back toward zero on
+  the main thread as the transition shrinks the overflow, always a step behind
+  the compositor-driven transform, and the difference is painted as the panel
+  overshooting its resting place and drifting back. Clipping both axes removes
+  the scroll port entirely; the window keeps its own `overflow-y: auto`, so
+  nothing on the container needs to scroll. Note that no DOM measurement sees
+  this: `offsetLeft` ignores scroll, computed `translate` ignores it too, and
+  `getBoundingClientRect()` nets the two against each other — it is visible only
+  in `scrollLeft` or in pixels.
 - **No layout property may be gated on `[open]`.** The attribute drops the
   instant a close begins, but `display` is held for the transition's length by
   allow-discrete, so anything keyed to `[open]` collapses under a modal that is

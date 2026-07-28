@@ -290,6 +290,17 @@
     }
 
     &.sy-modal-slide-over {
+        /* `clip` in BOTH axes, so the container is not a scroll container at all —
+           `overflow-x: clip` alone computes to `hidden` against the UA's `overflow-y:
+           auto`, and `hidden` still scrolls programmatically. `showModal()` focuses the
+           close button while the panel is still parked off-viewport, so the browser
+           scrolled this container by the panel's full width to reveal it; that offset
+           is then clamped back to zero on the main thread as the transition shrinks the
+           overflow, one step behind the compositor-driven transform. The visible effect
+           was the panel sliding past its resting place and drifting back. The window
+           keeps its own `overflow-y: auto`, so nothing needs to scroll here. */
+        @apply overflow-clip;
+
         & > .sy-modal-window {
             @apply scale-100 overflow-y-auto opacity-100 transition-transform;
 

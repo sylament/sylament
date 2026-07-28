@@ -12,12 +12,15 @@ registration makes available to `Action::$template`
 partial. Most of what the bundle does is still convention rather than code: it
 inherits the `@SylamentActions` Twig namespace by AbstractBundle/TwigBundle
 convention, and `Action` and its modal render through support's/schemas'
-`ViewComponent::render()` with nothing to wire. Its one `loadExtension()`
-responsibility has no Filament counterpart — `ActionsServiceProvider` binds no
-container services — and exists because the host-side
+`ViewComponent::render()` with nothing to wire. Its two `loadExtension()`
+responsibilities have no Filament counterpart — `ActionsServiceProvider` binds no
+container services: the host-side
 [`Modals`](../../../packages/actions/src/Twig/Components/Modals.php) component is
 a **class**-based Twig component, so it must be registered and tagged
-`twig.component` (see its own row). Asset registration,
+`twig.component`, and the
+[`ActionExtension`](../../../packages/actions/src/Twig/Extension/ActionExtension.php)
+supplying the `renderAction()` template helper is registered and tagged
+`twig.extension` (see their rows). Asset registration,
 the `filament.actions` middleware group, the export/import routes and
 migrations, the `Make*Exporter`/`Make*Importer` commands, translations, and the
 `TestsActions` `Testable` mixin are not ported yet — all of them either serve
@@ -45,6 +48,7 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | --- | --- | --- | --- | --- |
 | [Bundle registration + `@SylamentActions` view namespace](../../../packages/actions/src/SylamentActionsBundle.php) | [`->hasViews()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | done | — | [diverges](#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | [Twig component service registration](../../../packages/actions/src/SylamentActionsBundle.php) (`loadExtension()`) | — (new; Filament's Blade components need no service) | done | — | [diverges](#the-bundle-registers-a-twig-component-service-which-filament-has-no-counterpart-for) |
+| [Twig extension service registration](../../../packages/actions/src/SylamentActionsBundle.php) (`loadExtension()`, `renderAction()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-renderaction-twig-extension-which-filament-has-no-counterpart-for) |
 | Asset registration (`Js::make('actions', dist/index.js)`) | [`packageBooted()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | todo | — | [detail](#asset-registration) |
 | Exports/Imports provider wiring (`hasMigrations`, `hasRoutes('web')`, `filament.actions` middleware group, `hasCommands`) | [`configurePackage()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php), [`packageRegistered()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | blocked | Exports/Imports subsystem | [detail](#exportsimports-provider-wiring) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | todo | — | [detail](#translations) |
@@ -63,7 +67,11 @@ and the `Concerns/HasActions*` Integration tests all boot
 `@SylamentActions/components/ConfirmModal/index.html.twig` templates resolve.
 [`ModalsRenderTest`](../../../packages/actions/tests/Integration/Components/ModalsRenderTest.php)
 covers the Twig-component registration row: `<twig:SylamentActions:Modals />`
-only resolves if the service was registered and tagged. The unported
+only resolves if the service was registered and tagged.
+[`ActionExtensionTest`](../../../packages/actions/tests/Integration/Twig/Extension/ActionExtensionTest.php)
+covers the Twig-extension row the same way: its fixture host template's
+`{{ renderAction('delete') }}` only renders if the service was registered and
+tagged `twig.extension`. The unported
 responsibilities have no coverage because they have no code.
 
 ## Details
@@ -163,6 +171,27 @@ Registration is unconditional, unlike
 optional-dependency guard, because `symfony/ux-twig-component` is a hard `require`
 of this package — see
 [the dependency rule](#every-package-declares-what-its-own-source-needs-transitives-notwithstanding).
+
+### The bundle registers a `renderAction()` Twig extension, which Filament has no counterpart for
+
+Filament host templates render an action by echoing the object itself —
+`Action` extends a `ViewComponent` that implements `Htmlable`
+([`ViewComponent.php`](../../../vendor/filament/support/src/Components/ViewComponent.php)),
+so Blade renders `{{ $action }}` via `toHtml()` and the provider wires nothing.
+Twig has no equivalent implicit-render path, so the bundle registers
+[`ActionExtension`](../../../packages/actions/src/Twig/Extension/ActionExtension.php)
+(`sylament_actions.action_extension`, tagged `twig.extension`) supplying
+`renderAction(name)` — the actions twin of schemas'
+[`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php),
+with the wiring mirrored deliberately: support's
+`sylament_support.component_extension` is constructor-injected by service id, and
+the function registers with `needs_environment` + `needs_context`. The helper
+resolves the name through the **surrounding live component's** `getAction()` (so
+the rendered action is bound to its host), renders nothing when the name does not
+resolve or the action is hidden, and throws a `RuntimeException` when the
+enclosing `this` is not an
+[`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php)
+host.
 
 ### Every package declares what its own source needs, transitives notwithstanding
 

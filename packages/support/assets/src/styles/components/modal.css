@@ -181,6 +181,15 @@
     /* Centered (non-slide-over, non-screen) frame: container padding, rounded window,
        container scroll unless a sticky pane moves the scroll inside the window. */
     &:not(.sy-modal-slide-over):not(.sy-modal-screen) {
+        /* Neither this padding nor the container scroll below may be gated on `[open]`:
+           the attribute drops the instant a close starts, while `display` is held for
+           the transition's length by allow-discrete, so a gated layout property
+           collapses under a modal that is still fully visible — the padding took the
+           centered window 8px up the screen, and the container scroll dropped a
+           scrolled modal back to its top. Both are inert while the dialog is
+           `display: none`, so the gate bought nothing. */
+        @apply p-4;
+
         & > .sy-modal-window {
             @apply mx-auto rounded-xl;
 
@@ -189,11 +198,7 @@
             }
         }
 
-        &[open] {
-            @apply p-4;
-        }
-
-        &:not(.sy-modal-has-sticky-header):not(.sy-modal-has-sticky-footer)[open] {
+        &:not(.sy-modal-has-sticky-header):not(.sy-modal-has-sticky-footer) {
             @apply overflow-y-auto;
         }
 

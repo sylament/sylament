@@ -213,7 +213,20 @@ found by rendering the built CSS in a browser rather than by any test:
   scrollable area, so the container grew a horizontal scrollbar for the duration
   of every slide-in — indistinguishable from a page scrollbar, since the dialog
   covers the viewport. `overflow-x: clip` on the container closes it while
-  leaving the block axis free for the centered-modal container scroll.
+  leaving the block axis free for the centered-modal container scroll. The same
+  scrollbar also stole 15px of container width, which moved the inline-end
+  resting position of a slide-over panel, so it appeared to settle short of the
+  edge and then snap flush when the scrollbar went away.
+- **No layout property may be gated on `[open]`.** The attribute drops the
+  instant a close begins, but `display` is held for the transition's length by
+  allow-discrete, so anything keyed to `[open]` collapses under a modal that is
+  still fully opaque on screen. The centered frame's `p-4` did exactly that — a
+  `1fr auto 3fr` grid losing 16px of block padding takes its centered row 8px up,
+  visible as a jump at the start of every close — and the container's
+  `overflow-y: auto` dropped a scrolled modal back to its top in the same frame.
+  Both now apply unconditionally; they are inert while the dialog is
+  `display: none`. Only paint-level state (the dim) and `display` itself belong
+  on `[open]`.
 
 ### The client-side close reports itself with a `dismissed` event
 

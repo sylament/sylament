@@ -128,6 +128,15 @@ export default class extends Controller<HTMLDialogElement> {
     this.#captureOpener();
 
     if (this.element.open) {
+      if (this.clickThroughValue) {
+        // A parse-time `open` attribute already leaves a click-through dialog in exactly
+        // the non-modal state show() would produce, so there is nothing to re-show — only
+        // the Escape listener (never persisted in markup) is still missing.
+        this.#setupEscapeListener();
+
+        return;
+      }
+
       this.#normalizeModality();
 
       return;

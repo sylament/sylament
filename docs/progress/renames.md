@@ -96,3 +96,27 @@ have. Nothing to rename from, so they are listed rather than mapped.
 | Sylament | Holds | Why it exists |
 | --- | --- | --- |
 | `Sylament\Support\Evaluation\` | `Invoker`, `ClosureParameter` | Filament inlines the closure-resolution loop in `EvaluatesClosures` and falls back to `app()->make()`; Symfony's container cannot, so the loop is extracted into a container-aware `Invoker`, and `ClosureParameter` replaces Filament's `[$value]`-vs-`[]` array wrap. See [component.md](support/component.md#closure-resolution-lives-in-a-service). |
+
+## Divergences
+
+Deliberate deviations from Filament's `make()` mechanics, applying to every
+ported component — permanent, and the reason they hold.
+
+### `make()` arguments move from constructors to setters
+
+Filament passes `make()` arguments through `app(static::class, ['name' => $name])`,
+letting the container fill a constructor parameter positionally. Symfony's
+container cannot pass constructor arguments through a service locator lookup,
+so `make()` resolves the instance first — through
+[`Component::newInstance()`](../../packages/support/src/Components/Component.php),
+see [component.md](support/component.md#newinstance-routes-every-make-through-a-locator)
+— and applies the value via the existing setter instead. Behaviour is
+identical either way: the setter still runs before `configure()`/`setUp()`.
+
+### The `final` constructors are deleted
+
+Filament seals `Action::__construct` (and its siblings) `final`; Sylament
+removes the constructor entirely so a user subclass can declare its own
+constructor dependencies, autowired through
+[`ComponentResolver`](support/component.md#newinstance-routes-every-make-through-a-locator).
+This is the entire point of the mechanism.

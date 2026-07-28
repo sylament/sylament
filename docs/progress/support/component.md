@@ -29,6 +29,7 @@ detail sections do.
 | --- | --- | --- | --- | --- |
 | [`Configurable`](../../../packages/support/src/Concerns/Configurable.php) | [`Concerns/Configurable.php`](../../../vendor/filament/support/src/Concerns/Configurable.php) | done | — | — |
 | [`EvaluatesClosures`](../../../packages/support/src/Concerns/EvaluatesClosures.php) | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | done | — | [diverges](#closure-resolution-lives-in-a-service) · [diverges](#evaluated-flag-getters-are-not-re-cast-to-bool) |
+| [`newInstance()`](../../../packages/support/src/Components/Component.php) | `make()`'s `app(static::class, …)` call, inlined | done | — | [diverges](#newinstance-routes-every-make-through-a-locator) |
 | Arity probe | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | blocked | state-based-URL consumer | [detail](#the-arity-probe-is-deferred) |
 | Conditionable | [`Illuminate\Support\Traits\Conditionable`](../../../vendor/laravel/framework/src/Illuminate/Conditionable/Traits/Conditionable.php) | skipped | — | [diverges](#conditionable-and-tappable-are-not-ported) |
 | Tappable | [`Illuminate\Support\Traits\Tappable`](../../../vendor/laravel/framework/src/Illuminate/Support/Traits/Tappable.php) | skipped | — | [diverges](#conditionable-and-tappable-are-not-ported) |
@@ -90,6 +91,50 @@ deferral, not a principled rejection.
 No runtime method injection. The extension points are subclassing and
 `configureUsing()`. Reversing this means accepting `__call()`-based APIs that
 neither PHPStan nor an IDE can see.
+
+### `newInstance()` routes every `make()` through a locator
+
+`Component::newInstance()` is the single construction seam every `make()`
+factory calls instead of `new static()`. It delegates to
+[`ComponentResolver::instantiate()`](../../../packages/support/src/DependencyInjection/ComponentResolver.php),
+reached through the static-instance pattern (see "Static instance pattern" in
+[CLAUDE.md](../../../CLAUDE.md)) so components need no constructor injection
+of their own to get there.
+
+- **`sylament.component` autoconfiguration.** `SylamentSupportBundle::build()`
+  calls `registerForAutoconfiguration(Component::class)->addTag('sylament.component')`,
+  so any `Component` subclass the application registers as a service — directly,
+  or by falling under an `autoconfigure: true` PSR-4 resource — is tagged
+  automatically, with no per-class opt-in.
+- **`setShared(false)`.** [`ComponentResolverPass`](../../../packages/support/src/DependencyInjection/Compiler/ComponentResolverPass.php)
+  marks every tagged definition non-shared before collecting it, so each
+  locator `get()` returns a fresh, fully autowired instance — components carry
+  per-instance configuration and must never be shared, the same reasoning
+  Symfony UX's `TwigComponentPass` applies to live components.
+- **The class-keyed locator.** The pass builds a `ServiceLocator` keyed by each
+  tagged definition's class and injects it into
+  `sylament_support.component_resolver`'s `$components` argument, mirroring
+  Symfony Form's `FormPass`. `ComponentResolver::instantiate()` checks
+  `$components->has($class)` and, when true, resolves through the locator —
+  this is the only path that can satisfy a subclass's own constructor
+  dependencies, including **private** services.
+- **The `new $class()` fallback.** When the container doesn't know the class,
+  `instantiate()` falls back to direct construction. Two cases hit this path:
+  Sylament's own components (`Action`, `TextInput`, `Section`, …) — they live
+  in vendor and are never registered as services — and any kernel-free Unit
+  test, where `ComponentResolver::resolve()` lazily creates an instance with no
+  `$components` locator at all (`Invoker::getInstance()` / `ComponentManager::resolve()`
+  parity). A user subclass that declares constructor dependencies only works
+  through `make()` once it is registered as a service; an unregistered
+  subclass with a constructor throws the ordinary "too few arguments" error
+  `new $class()` produces.
+
+One consequence worth flagging for future porting: **a class whose
+constructor is removed must give any previously-constructor-assigned typed
+property a default.** `Html::$content` and `Text::$content` used to be
+assigned by a now-deleted constructor; without a default, a typed property
+left unassigned between `new $class()` and its first setter call violates
+PHP's typed-property contract. Both now default to `null`.
 
 ### Evaluated flag getters are not re-cast to bool
 

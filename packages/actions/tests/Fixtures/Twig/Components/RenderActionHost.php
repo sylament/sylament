@@ -12,8 +12,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * Exercises the `renderAction()` Twig function: its template renders one
- * resolvable action, one name with no factory method, and one hidden action,
- * each wrapped in a marker `<span>` so the empty-output cases are assertable.
+ * resolvable action, the same action with bound arguments, one name with no
+ * factory method, and one hidden action, each wrapped in a marker `<span>` so
+ * the empty-output cases are assertable.
  */
 #[AsLiveComponent(name: 'RenderActionHost', template: '@ActionsFixtures/components/RenderActionHost.html.twig')]
 class RenderActionHost implements InteractsWithActions

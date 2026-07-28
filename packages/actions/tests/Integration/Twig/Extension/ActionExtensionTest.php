@@ -6,6 +6,7 @@ namespace Sylament\Actions\Tests\Integration\Twig\Extension;
 
 use RuntimeException;
 use stdClass;
+use Sylament\Actions\Tests\Fixtures\Twig\Components\RenderActionHost;
 use Sylament\Actions\Twig\Extension\ActionExtension;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Twig\Environment;
@@ -56,6 +57,23 @@ it('renders nothing for a hidden action', function (): void {
 
     expect($html)->toContain('<span data-test="hidden"></span>')
         ->not->toContain('data-live-name-param="hidden"');
+});
+
+it('renders serialized arguments when the template passes them', function (): void {
+    $html = (string) $this->createLiveComponent('RenderActionHost')->render();
+
+    expect($html)->toContain('data-live-arguments-param="{&quot;id&quot;:5}"');
+});
+
+it('binds arguments onto a clone, leaving the cached action argument-free', function (): void {
+    $twig = $this::getContainer()->get('twig');
+    $host = new RenderActionHost();
+
+    $html = (string) actionExtension()->renderAction($twig, ['this' => $host], 'delete', ['id' => 5]);
+
+    expect($html)->toContain('data-live-arguments-param="{&quot;id&quot;:5}"')
+        ->and($host->getAction('delete')?->getArguments())->toBe([])
+        ->and($host->getAction('delete')?->getInvokedArguments())->toBeNull();
 });
 
 it('throws when the context has no rendering component', function (): void {

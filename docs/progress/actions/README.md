@@ -198,7 +198,7 @@ that trait's mounted-action state.
 | Commands / FileGenerators | [`Commands/FileGenerators/`](../../../vendor/filament/actions/src/Commands/FileGenerators) | todo | - |
 | TestAction | [`Testing/TestAction.php`](../../../vendor/filament/actions/src/Testing/TestAction.php) | todo | - |
 | TestsActions | [`Testing/TestsActions.php`](../../../vendor/filament/actions/src/Testing/TestsActions.php) | todo | - |
-| [`ActionExtension`](../../../packages/actions/src/Twig/Extension/ActionExtension.php) (`renderAction()`) | — (Sylament-only; mirrors schemas' [`SchemaExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | [actions-bundle.md](actions-bundle.md#the-bundle-registers-a-renderaction-twig-extension-which-filament-has-no-counterpart-for) |
+| [`ActionExtension`](../../../packages/actions/src/Twig/Extension/ActionExtension.php) (`renderAction(name, arguments)`) | — (Sylament-only; mirrors schemas' [`SchemaExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | [actions-bundle.md](actions-bundle.md#the-bundle-registers-a-renderaction-twig-extension-which-filament-has-no-counterpart-for) |
 | ActionsIconAlias | [`View/ActionsIconAlias.php`](../../../vendor/filament/actions/src/View/ActionsIconAlias.php) | todo | - |
 | ActionsRenderHook | [`View/ActionsRenderHook.php`](../../../vendor/filament/actions/src/View/ActionsRenderHook.php) | todo | - |
 | views/components/group | [`views/components/group.blade.php`](../../../vendor/filament/actions/resources/views/components/group.blade.php) | todo | - |

@@ -19,6 +19,10 @@ trait CanOpenModal
 
     protected string|Markup|Closure|null $modalDescription = null;
 
+    protected Markup|Closure|null $modalContent = null;
+
+    protected Markup|Closure|null $modalContentFooter = null;
+
     protected string|Closure|null $modalIcon = null;
 
     /**
@@ -56,6 +60,20 @@ trait CanOpenModal
     public function modalDescription(string|Markup|Closure|null $description = null): static
     {
         $this->modalDescription = $description;
+
+        return $this;
+    }
+
+    public function modalContent(Markup|Closure|null $content = null): static
+    {
+        $this->modalContent = $content;
+
+        return $this;
+    }
+
+    public function modalContentFooter(Markup|Closure|null $footer = null): static
+    {
+        $this->modalContentFooter = $footer;
 
         return $this;
     }
@@ -126,6 +144,14 @@ trait CanOpenModal
             return true;
         }
 
+        if ($this->hasModalContent()) {
+            return true;
+        }
+
+        if ($this->hasModalContentFooter()) {
+            return true;
+        }
+
         return (bool) ($checkForSchemaUsing instanceof Closure ? $checkForSchemaUsing($this) : false);
     }
 
@@ -160,6 +186,26 @@ trait CanOpenModal
     public function hasModalDescription(): bool
     {
         return filled($this->getModalDescription());
+    }
+
+    public function getModalContent(): ?Markup
+    {
+        return $this->evaluate($this->modalContent);
+    }
+
+    public function getModalContentFooter(): ?Markup
+    {
+        return $this->evaluate($this->modalContentFooter);
+    }
+
+    public function hasModalContent(): bool
+    {
+        return $this->modalContent !== null;
+    }
+
+    public function hasModalContentFooter(): bool
+    {
+        return $this->modalContentFooter !== null;
     }
 
     public function getModalIcon(): ?string

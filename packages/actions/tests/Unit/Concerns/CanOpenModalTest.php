@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions\Tests\Unit\Concerns;
 
 use Sylament\Actions\Action;
+use Twig\Markup;
 
 it('defaults the modal heading to the label', function (): void {
     expect(Action::make('delete')->getModalHeading())->toBe('Delete');
@@ -78,4 +79,38 @@ it('does not count the label fallback as a custom modal heading', function (): v
 it('reports a custom modal presence only when modal() was called', function (): void {
     expect(Action::make('delete')->hasCustomModalPresence())->toBeFalse()
         ->and(Action::make('delete')->modal(false)->hasCustomModalPresence())->toBeTrue();
+});
+
+it('has no modal content or content footer by default', function (): void {
+    expect(Action::make('delete')->getModalContent())->toBeNull()
+        ->and(Action::make('delete')->getModalContentFooter())->toBeNull()
+        ->and(Action::make('delete')->hasModalContent())->toBeFalse()
+        ->and(Action::make('delete')->hasModalContentFooter())->toBeFalse();
+});
+
+it('round-trips modal content and content footer markup', function (): void {
+    $content = new Markup('<p>Body</p>', 'UTF-8');
+    $footer = new Markup('<p>Fine print</p>', 'UTF-8');
+
+    expect(Action::make('delete')->modalContent($content)->getModalContent())->toBe($content)
+        ->and(Action::make('delete')->modalContentFooter($footer)->getModalContentFooter())->toBe($footer);
+});
+
+it('evaluates modal content closures with the action injected', function (): void {
+    $action = Action::make('delete')
+        ->modalContent(fn (Action $action): Markup => new Markup("<p>{$action->getName()}</p>", 'UTF-8'));
+
+    expect((string) $action->getModalContent())->toBe('<p>delete</p>');
+});
+
+it('reports modal content presence from the raw value, not the evaluated result', function (): void {
+    expect(Action::make('delete')->modalContent(fn (): null => null)->hasModalContent())->toBeTrue()
+        ->and(Action::make('delete')->modalContentFooter(fn (): null => null)->hasModalContentFooter())->toBeTrue();
+});
+
+it('opens a modal from content or a content footer alone', function (): void {
+    $markup = new Markup('<p>Body</p>', 'UTF-8');
+
+    expect(Action::make('delete')->modalContent($markup)->shouldOpenModal())->toBeTrue()
+        ->and(Action::make('delete')->modalContentFooter($markup)->shouldOpenModal())->toBeTrue();
 });

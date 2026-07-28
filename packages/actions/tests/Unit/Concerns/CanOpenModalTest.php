@@ -42,3 +42,40 @@ it('defaults the cancel label and modal width', function (): void {
         ->and(Action::make('delete')->getModalWidth())->toBe('md')
         ->and(Action::make('delete')->modalWidth('lg')->getModalWidth())->toBe('lg');
 });
+
+it('does not open a modal for a bare action', function (): void {
+    expect(Action::make('delete')->shouldOpenModal())->toBeFalse();
+});
+
+it('forces the modal open or closed through modal()', function (): void {
+    expect(Action::make('delete')->modal()->shouldOpenModal())->toBeTrue()
+        ->and(Action::make('delete')->requiresConfirmation()->modal(false)->shouldOpenModal())->toBeFalse();
+});
+
+it('suppresses an implied modal through modalHidden()', function (): void {
+    expect(Action::make('delete')->modalHeading('Delete?')->modalHidden()->shouldOpenModal())->toBeFalse();
+});
+
+it('opens a modal from a custom heading alone', function (): void {
+    expect(Action::make('delete')->modalHeading('Delete?')->shouldOpenModal())->toBeTrue();
+});
+
+it('opens a modal when confirmation is required, through the description fallback', function (): void {
+    expect(Action::make('delete')->requiresConfirmation()->shouldOpenModal())->toBeTrue();
+});
+
+it('falls back the modal description to the confirmation string only when confirming', function (): void {
+    expect(Action::make('delete')->requiresConfirmation()->getModalDescription())
+        ->toBe('Are you sure you would like to do this?')
+        ->and(Action::make('delete')->getModalDescription())->toBeNull();
+});
+
+it('does not count the label fallback as a custom modal heading', function (): void {
+    expect(Action::make('delete')->hasCustomModalHeading())->toBeFalse()
+        ->and(Action::make('delete')->modalHeading('Delete?')->hasCustomModalHeading())->toBeTrue();
+});
+
+it('reports a custom modal presence only when modal() was called', function (): void {
+    expect(Action::make('delete')->hasCustomModalPresence())->toBeFalse()
+        ->and(Action::make('delete')->modal(false)->hasCustomModalPresence())->toBeTrue();
+});

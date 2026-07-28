@@ -16,6 +16,7 @@ it('renders the confirm modal composing the action modal config and mount/call w
     expect($html)
         ->toContain('sy-modal')
         ->toContain('Delete?')
+        ->toContain('Are you sure you would like to do this?')
         ->toContain('Confirm')
         ->toContain('Cancel')
         ->toContain('<svg')

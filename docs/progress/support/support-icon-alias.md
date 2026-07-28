@@ -23,34 +23,35 @@ the permanent note in [Divergences](#divergences).
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`SECTION_COLLAPSE_BUTTON`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias::SECTION_COLLAPSE_BUTTON`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | [diverges](#the-section-alias-is-a-pinned-literal-not-referenced-from-the-template) |
-| Badge / breadcrumbs / modal / pagination aliases (the other 12) | [`SupportIconAlias.php`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | blocked | Badge, Breadcrumbs, Modal, Pagination components | [detail](#details) |
+| [`MODAL_CLOSE_BUTTON`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias::MODAL_CLOSE_BUTTON`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | exercised by the close-button case in [`ModalRenderTest`](../../../packages/actions/tests/Integration/Components/ModalRenderTest.php), which renders the constant through the template; it needs no pinned-literal test because the [Modal template](../../../packages/support/templates/components/Modal/index.html.twig) references the constant itself rather than a copy of its value |
+| Badge / breadcrumbs / pagination aliases (the other 11) | [`SupportIconAlias.php`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | blocked | Badge, Breadcrumbs, Pagination components | [detail](#details) |
 
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is.
 
-### Badge / breadcrumbs / modal / pagination aliases
+### Badge / breadcrumbs / pagination aliases
 
 Filament defines 13 alias constants up front — every overridable icon slot in
-the whole support kit. Sylament ships **one**: `SECTION_COLLAPSE_BUTTON`, the
-only slot whose consuming component (Section) is ported. The remaining twelve
-all belong to components that have not been built yet:
+the whole support kit. Sylament ships **two**: `SECTION_COLLAPSE_BUTTON` and
+`MODAL_CLOSE_BUTTON`, the slots whose consuming components (Section, Modal) are
+ported. The remaining eleven all belong to components that have not been built
+yet:
 
 - `BADGE_DELETE_BUTTON` — Badge (todo)
 - `BREADCRUMBS_SEPARATOR`, `BREADCRUMBS_SEPARATOR_RTL` — Breadcrumbs (todo)
-- `MODAL_CLOSE_BUTTON` — Modal (template exists but does not yet wire a
-  close-button icon alias)
 - `PAGINATION_FIRST_BUTTON`(`_RTL`), `PAGINATION_LAST_BUTTON`(`_RTL`),
   `PAGINATION_NEXT_BUTTON`(`_RTL`), `PAGINATION_PREVIOUS_BUTTON`(`_RTL`) —
   Pagination (todo)
 
 An alias constant is meaningful only when a template renders through it, so each
 missing constant lands in the same change as its consuming component rather than
-being copied wholesale now. Next step: add each literal (and stop hardcoding it
-in the corresponding template — see the divergence) as Badge, Breadcrumbs,
-Modal's close button, and Pagination are ported. The class flips to **done**
-once its constant set matches Filament's and each is exercised.
+being copied wholesale now. Next step: add each literal as Badge, Breadcrumbs,
+and Pagination are ported, referencing the constant from the template the way
+[Modal's close button](../../../packages/support/templates/components/Modal/index.html.twig)
+does rather than hardcoding the string (see the divergence). The class flips to
+**done** once its constant set matches Filament's and each is exercised.
 
 ## Divergences
 
@@ -62,10 +63,13 @@ Filament's Section blade wires the alias by referencing the constant directly:
 Sylament's [Section template](../../../packages/support/templates/components/Section/index.html.twig)
 hardcodes the string literal `iconAlias="section.collapse-button"` instead, and
 [`SupportIconAliasTest`](../../../packages/support/tests/Unit/Twig/SupportIconAliasTest.php)
-pins the constant to that literal — so the class is a documentation-and-guard
-mirror of the alias the template already carries, not the template's single
-source of truth. Reversible by threading the constant into the Twig context, but
-currently deliberate.
+pins the constant to that literal — so for that one slot the class is a
+documentation-and-guard mirror of the alias the template already carries, not the
+template's single source of truth. The Modal close button does it Filament's way
+instead: its template reads
+`:iconAlias="constant('Sylament\\Support\\Twig\\SupportIconAlias::MODAL_CLOSE_BUTTON')"`,
+Twig's equivalent of Blade's constant reference. Section reverses by adopting the
+same `constant()` call.
 
 _See also: the global [rename table](../renames.md) — the `View\` → `Twig\`
 namespace move is a systematic translation recorded there, not a divergence._

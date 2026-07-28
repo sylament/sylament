@@ -14,7 +14,10 @@ outside this file — `BelongsToGroup` (shared with `ActionGroup`, written up in
 [`action-group.md`](action-group.md)) and `BelongsToSchemaComponent` (shared
 with `ActionGroup`, a `done` row with no detail file in the
 [package README](README.md#features), since its whole surface is a two-method
-back-reference pair) — plus 6 support-level traits (`HasColor`,
+back-reference pair) and the two modal attribute-bag concerns
+`HasExtraModalOverlayAttributes` / `HasExtraModalWindowAttributes` (`done` rows
+in the same README, each a two-method pair as well) — plus 6 support-level
+traits (`HasColor`,
 `HasExtraAttributes`, `HasIcon`, `HasIconPosition`, `HasIconSize`,
 `HasTooltip`) that stay tracked in the [`support`](../support/README.md)
 package and appear here only as reference rows. The port is a deliberate MVP
@@ -48,7 +51,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | todo | schemas/tables/InteractsWithSelectedRecords ports | [detail](#resolvedefaultclosuredependencyforevaluationbytype-is-not-overridden) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables (`table`/`bulk` flags), modal nesting (`getParentAction()` short-circuit) | [diverges](#getcontext-emits-only-the-schemacomponent-key) |
 | Trigger rendering ([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig) + the [`link-action`](../../../packages/actions/templates/components/link-action.html.twig) / [`badge-action`](../../../packages/actions/templates/components/badge-action.html.twig) / [`icon-button-action`](../../../packages/actions/templates/components/icon-button-action.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
-| Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | CanOpenModal (slideover, sticky) | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal), [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-modal-footer-renders-real-action-instances) |
+| Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | — | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal), [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-modal-footer-renders-real-action-instances) |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
 | [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | — |
 | [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) (support) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | — |
@@ -307,9 +310,11 @@ primary-for-gray-or-unset) / `getModalCancelAction()` (`close()` + gray) /
 `getModalAction()` / `prepareModalAction()` / `prepareModalActionGroup()` /
 `makeModalAction()` (`Action::make($name)->button()`), each memoized in the
 `cached*` properties Filament uses. Scoped deltas, each deliberate:
-`getModalFooterActions()` drops the `isWizard()` early return and the
-center-alignment `array_reverse` (deferred chrome, with
-`modalFooterActionsAlignment()` itself); `getModalSubmitAction()` has no
+`getModalFooterActions()` drops the `isWizard()` early return (wizards are
+unported) but carries Filament's center-alignment `array_reverse` — applied only
+in the composed submit/extras/cancel branch, matching both `Alignment::Center`
+and the `'center'` string, so a confirmation modal renders cancel-first;
+`getModalSubmitAction()` has no
 `hasFormWrapper()`/`submit()` arm (`CanSubmitForm` deferred) and matches
 `null` alongside `'gray'` to primary (Filament's `getColor()` never returns
 null there; ours does for an unset color — observably identical);
@@ -323,22 +328,39 @@ nulls the button instead of fataling. The footer renders through
 [`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)'s
 `getVisibleModalFooterActions()` loop as real `Action` buttons.
 
-**Missing vs Filament** — Filament's trait is ~800 lines; the port keeps ~130.
+The **chrome group** is ported, Filament-exact in names, signatures, and
+effective defaults, and covered by `CanOpenModalTest`: `slideOver()` /
+`isModalSlideOver()`, `slideOverPosition()` / `getModalSlideOverPosition()`
+(typed against support's new
+[`SlideOverPosition`](../../../packages/support/src/Enums/SlideOverPosition.php)
+enum),
+`stickyModalHeader()` / `stickyModalFooter()` and their
+`isModalHeaderSticky()` / `isModalFooterSticky()` getters (each falling back to
+`isModalSlideOver()`, so a slide-over sticks both panes by default),
+`modalAlignment()` / `getModalAlignment()` (explicit, else `Center` on
+confirmation or an `xs`/`sm` width, else `Start`),
+`modalFooterActionsAlignment()` / `getModalFooterActionsAlignment()` (explicit,
+else `Center` on confirmation, else `null`), `modalCloseButton()` /
+`hasModalCloseButton()`, `closeModalByClickingAway()` /
+`isModalClosedByClickingAway()`, `closeModalByEscaping()` /
+`isModalClosedByEscaping()`, `modalAutofocus()` / `isModalAutofocused()`, and
+`modalClickThrough()` / `isModalClickThrough()`. Every one of them reaches the
+support `Modal` primitive through
+[`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig).
+The one scoped delta: Filament's last four getters fall back to static
+`ModalComponent` properties, and the port writes the same values as literal
+`?? true` fallbacks because that global-defaults seam is deferred — those four
+`?? true` expressions in `hasModalCloseButton()` /
+`isModalClosedByClickingAway()` / `isModalClosedByEscaping()` /
+`isModalAutofocused()` are the seam's insertion points when it lands (tracked on
+support's [`ModalComponent` static-config row](../support/modal.md#modalcomponent-static-config)).
+
+**Missing vs Filament** — Filament's trait is ~800 lines; the port is now ~690.
 Absent entirely, with no property, setter, or getter:
 
-- **Slide-over and layout**: `slideOver()` / `slideOverPosition()` /
-  `isModalSlideOver()` / `getModalSlideOverPosition()`, `modalAlignment()` /
-  `getModalAlignment()`, `modalFooterActionsAlignment()` /
-  `getModalFooterActionsAlignment()`, `stickyModalFooter()` / `stickyModalHeader()`
-  / `isModalFooterSticky()` / `isModalHeaderSticky()`.
-- **Interaction chrome toggles**: `modalClickThrough()` / `isModalClickThrough()`,
-  `closeModalByClickingAway()` / `isModalClosedByClickingAway()`,
-  `closeModalByEscaping()` / `isModalClosedByEscaping()`, `modalCloseButton()` /
-  `hasModalCloseButton()`, `modalAutofocus()` / `isModalAutofocused()`. Filament
-  defaults these from static `ModalComponent` properties; Sylament's
-  `<twig:SylamentSupport:Modal>` primitive has its own fixed Stimulus-driven
-  open/close/escape/focus-restore behavior instead (see
-  `ModalRenderTest`), so these toggles have no host to bind to yet.
+- **Wizard suppression**: `getModalFooterActions()`'s `isWizard()` early return
+  and the `makeModalSubmitAction()` `callParent` factory, deferred with
+  `HasWizard` and the nested-action stack respectively.
 - **Deprecated aliases**: `centerModal()`, `modalButton()`, `modalSubheading()`,
   `extraModalActions()`, `makeExtraModalAction()` are not carried over — expected;
   Sylament has no deprecation-shim policy and these all have live equivalents
@@ -356,10 +378,13 @@ is a bare string (`'md'`) vs Filament's `Width` enum (no `Width` enum ported to
 Sylament yet — every width value here is just whatever string a template's CSS
 happens to key on, e.g. `sy-modal-md`).
 
-**Next step**: the slide-over/layout and interaction-chrome groups can each be
-picked up independently once someone decides they're wanted (the support
-`Modal` component needs matching props in lockstep); the wizard suppression
-and `callParent` wiring return with their deferred features.
+**Next step**: the wizard suppression and `callParent` wiring return with their
+deferred features (`HasWizard`, the nested-action stack); the four `?? true`
+literals become reads of the `ModalComponent`-equivalent global-defaults seam if
+and when that lands. What is left beyond those is the scoped deltas listed
+above — the `hasFormWrapper()` submit arm and `prepareModalAction()`'s dropped
+`->parentAction()` / `->table()` binding — each waiting on an unported concern
+(`CanSubmitForm`, the nested-action stack, `BelongsToTable`).
 
 ### getUrl() drops the default-action-url fallback
 
@@ -474,20 +499,38 @@ Doctrine entity boundary is decided.
 
 ### The action-modal template only renders part of the full action modal
 
-**In:** a ~14-line `<twig:SylamentSupport:Modal>` include driven entirely by
+**In:** a `<twig:SylamentSupport:Modal>` call driven entirely by
 [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php)'s
-current (minimal) surface — `heading`, `description`, `icon`, `iconColor`, and
-`width` pass straight through the evaluated getters, and the footer renders two
-fixed `<button>` elements wired to `live_action('callMountedAction')` /
-`live_action('unmountAction')`, labeled from `getModalSubmitActionLabel()` /
-`getModalCancelActionLabel()`. Rendered by the host's
-`<twig:SylamentActions:Modals />` tag (see the `RecordActionHost` /
-`ActionHost` Twig fixtures) once the mounted action's `shouldOpenModal()`
-holds — Filament's own gate. Covered by
+getters — Filament's whole binding list minus the deferred `alert` and the
+`wire:*` keys. Content config (`heading`, `description`, `icon`, `iconColor`,
+`width`) and the full chrome (`alignment`, `slideOver` + `slideOverPosition`,
+`stickyHeader` / `stickyFooter`, `closeButton`, `closeByClickingAway`,
+`closeByEscaping`, `autofocus`, `clickThrough`, both extra attribute bags)
+pass straight through, the `content` block renders `getModalContent()` then
+`getModalContentFooter()`, and the footer renders
+`getVisibleModalFooterActions()` as real `Action` instances with
+`getModalFooterActionsAlignment()` as their alignment.
+
+The whole thing sits inside a **dismissal wrapper**: a `<div>` binding the
+support controller's `sylament--support--modal:dismissed` event to
+`live_action('unmountAction')`, so a client-side close (ESC, click-away, close
+button) unmounts the action server-side and the next live re-render does not
+resurrect a modal the user already closed — Filament's `x-on:modal-closed`
+equivalent. It is a wrapper element rather than a binding on the component tag
+because a caller `data-action` would replace the dialog's own Stimulus wiring
+inside `attributes.defaults()`; the event bubbles from the dialog, so the
+wrapper catches it.
+
+Rendered by the host's `<twig:SylamentActions:Modals />` tag (see the
+`RecordActionHost` / `ActionHost` Twig fixtures) once the mounted action's
+`shouldOpenModal()` holds — Filament's own gate. Covered by
 [`ActionModalRenderTest`](../../../packages/actions/tests/Integration/Components/ActionModalRenderTest.php),
-which asserts the modal class, heading, submit/cancel labels, the confirmation
-icon `<svg>`, and both `live_action` data attributes render through a full
-`mountAction` → render cycle.
+which asserts, through a full `mountAction` → render cycle: the modal class,
+heading, submit/cancel labels and `live_action` wiring, the confirmation icon
+`<svg>`, extra footer actions slotted between submit and cancel, content +
+content-footer placement, the chrome pass-through, the confirmation modal's
+centered cancel-first footer, and the dismissal wrapper's `unmountAction`
+binding.
 
 **Missing vs Filament:** `action-modal.blade.php` is a general-purpose action
 modal, not a confirmation-only one, and most of that generality has no
@@ -502,23 +545,17 @@ Sylament counterpart yet:
   `MODAL_CUSTOM_CONTENT_FOOTER_{BEFORE,AFTER}`) have no counterpart (no
   render-hook facility exists) — so a form-collecting action cannot render
   its fields inside this modal today.
-- **No footer alignment.** The footer now renders
-  `getVisibleModalFooterActions()` as real `Action`s (submit, extras, cancel —
-  custom overrides included), but the alignment-driven `array_reverse` and the
-  `modalFooterActionsAlignment()` surface behind it are deferred chrome, so a
-  confirmation modal does not center-reverse its buttons as Filament's does.
-- **No modal-chrome configuration reaches the `Modal` component.** Filament's
-  `<x-filament::modal>` call also threads `alert`, `alignment`, `autofocus`,
-  `click-through`, `close-button`, `close-by-clicking-away`,
-  `close-by-escaping`, `slide-over` (+ position), `sticky-footer`,
-  `sticky-header`, and the extra window/overlay attribute bags.
+- **No `alert` mode.** Filament threads `alert` through to the modal's
+  `role="alertdialog"`; neither `CanOpenModal` nor
   [`Modal/index.html.twig`](../../../packages/support/templates/components/Modal/index.html.twig)
-  accepts none of these props, and `CanOpenModal` tracks none of the
-  corresponding state (no `isModalSlideOver`, `isModalFooterSticky`,
-  `isModalHeaderSticky`, `getModalAlignment`, `hasModalCloseButton`,
-  `isModalClosedByClickingAway/Escaping`, `isModalAutofocused`,
-  `isModalClickThrough`, extra attribute bags) — a confirmation modal always
-  renders as a plain, non-slide-over, click-to-dismiss dialog.
+  carries it (tracked on support's
+  [breadth-fill row](../support/modal.md#deferred-filament-modal-surface-breadth-fill)).
+  Every other chrome prop Filament threads now passes through; two bindings
+  differ deliberately: `returnsFocus` stays at its `true` default where Filament
+  hardcodes `focus-trap-returns-focus="false"`
+  ([why](../support/modal.md#returnsfocus-stays-true-where-filaments-action-modal-hardcodes-false)),
+  and the modal `id` plus `:open="true"` are Sylament's server-state open
+  signal rather than Filament's event-only open.
 - **No form-wrapper wiring.** Filament conditionally sets `wire:submit.prevent`
   to `getLivewireCallMountedActionName()` when `hasFormWrapper()` is true, and
   actually submits the form via that binding; Sylament's footer submit action
@@ -537,12 +574,11 @@ Sylament counterpart yet:
   alone, noted here because it is one of the things the Filament view relies
   on).
 
-**Next step:** this row tracks the *rendering* gap; the state to drive it lives
-in `CanOpenModal`, which needs to grow `modalContent` / `modalContentFooter`, a
-`getModalFooterActions()`-style API, and the close/slideover/sticky/alert flags
-before this template (or a fuller `action-modal.html.twig` alongside it) can
-stop being confirmation-only. The support `Modal` component needs the matching
-props added in lockstep.
+**Next step:** what is left on this row is no longer chrome — it is the
+schema/form slot (with `HasSchema` / `CanSubmitForm` and the form-wrapper
+binding), the nested-modal close chain (with the nested-action stack), `alert`,
+and render hooks. Each lands with the concern named beside it; the support
+`Modal` component takes its matching prop in the same change.
 
 ### Tooltip, icon position, and extra-attribute rendering are untested
 
@@ -658,9 +694,9 @@ equivalent at all today — captured here as one list rather than one row each,
 since none of it has started:
 
 - **Mounting & modal chrome beyond `CanOpenModal`'s data**: `CanBeMounted`,
-  `HasKeyBindings`, `CanBeBooted`, `renderModal()`/
-  `toModalHtmlable()`, `HasExtraModalOverlayAttributes`/
-  `HasExtraModalWindowAttributes`.
+  `HasKeyBindings`, `CanBeBooted`, `renderModal()`/`toModalHtmlable()`
+  (`HasExtraModalOverlayAttributes` / `HasExtraModalWindowAttributes` are
+  ported — see the [package README](README.md#features)).
 - **Forms/schemas/infolists integration**: `HasSchema`, `HasInfolist`,
   `HasData`, `HasWizard`, `CanSubmitForm` (`BelongsToSchemaComponent` and the
   `schema*` closure-dependency names landed with the schemas-actions

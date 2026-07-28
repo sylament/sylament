@@ -46,7 +46,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/HasData/InteractsWithSelectedRecords ports, operation concept | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-9-of-16-names) |
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | todo | schemas/tables/InteractsWithSelectedRecords ports | [detail](#resolvedefaultclosuredependencyforevaluationbytype-is-not-overridden) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables (`table`/`bulk` flags), modal nesting (`getParentAction()` short-circuit) | [diverges](#getcontext-emits-only-the-schemacomponent-key) |
-| Button rendering ([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#one-unified-template-replaces-the-view-switch) |
+| Trigger rendering ([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig) + the [`link-action`](../../../packages/actions/templates/components/link-action.html.twig) / [`badge-action`](../../../packages/actions/templates/components/badge-action.html.twig) / [`icon-button-action`](../../../packages/actions/templates/components/icon-button-action.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
 | Modal rendering ([`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | CanOpenModal (footer actions, content, slideover, sticky) | [detail](#confirm-modal-template-only-renders-the-confirmation-shape-not-the-full-action-modal), [diverges](#the-confirm-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-footer-buttons-are-hardcoded-markup-not-rendered-action-instances) |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
 | [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | — |
@@ -575,47 +575,46 @@ tally to fall through to; every non-bulk action correctly defaults to
 `ActionTest`'s "defaults the status to Success and flips to Failure on
 failure()" covers. Reversible in the same change that ports bulk actions.
 
-### One unified template replaces the view switch
+### The view switch renders through Twig templates, not toHtml() fast paths
 
-Filament's `Action` renders through `toHtml()`, which dispatches on
-`getView()` to five distinct renderers (`toBadgeHtml`, `toButtonHtml`,
-`toGroupedHtml`, `toIconButtonHtml`, `toLinkHtml`, each with an "optimized"
-fast path for the common case) plus a `toEmbeddedHtml()` fallback, and
-exposes `badge()`/`button()`/`grouped()`/`iconButton()`/`link()` to switch
-between them, `toArray()`/`fromArray()` to serialize an action across a
-Livewire round-trip, and `renderModal()`/`toModalHtmlable()` to render the
-action's own modal. The port's default template is
-[`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)
-(`Action::BUTTON_TEMPLATE`, held in `$defaultTemplate` — not a hardcoded
-`$template`, so `ActionGroup` can push a different default without an explicit
-`template()` call ever having been made; see
-[action-group.md](action-group.md#getactions-always-pushes-a-concrete-default-template-never-null))
-— one root element that switches only between `<button>` and `<a>` (based on
-`getUrl()`) inside the same markup, tested end to end by
-[`ActionRenderTest`](../../../packages/actions/tests/Integration/ActionRenderTest.php).
-There is no badge/icon-button/link view or view-switching API —
-`badge()`/`button()`/`iconButton()`/`link()` do not exist. A grouped default
-does exist structurally since the ActionGroup base epic
-(`Action::GROUPED_TEMPLATE`, pushed automatically rather than toggled by a
-method call), and its own template file
-([`grouped-action.html.twig`](../../../packages/actions/templates/components/grouped-action.html.twig))
-landed in Task 7, so a rendered grouped shape exists today, exercised end to
-end by [`ActionGroupRenderTest`](../../../packages/actions/tests/Integration/ActionGroupRenderTest.php).
-No `toArray()`/`fromArray()` serialization, and no `renderModal()`/
-`toModalHtmlable()` method on `Action` itself — the confirmation modal
-([`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig))
-is instead `{% include %}`-d directly by the *host* live component's own
-template (see the `HasActions` concern and its fixtures), driven by
-`CanOpenModal`'s getters, not by an `Action` method. The generic `template()` /
-`getTemplate()` swap point ([`ViewComponent`](../../../packages/support/src/Components/ViewComponent.php),
-the systematic `view()` → `template()` translation) is inherited, so a caller
-can still point one `Action` at a custom template by hand; what is missing is
-the named convenience methods and the four alternate shapes themselves
-(`iconButton()` in particular wants the support
+Filament's five-way view switch is ported: `badge()`/`button()`/`grouped()`/
+`iconButton()`/`link()` each point `template()` at one of the five template
+constants (`BADGE_TEMPLATE`/`BUTTON_TEMPLATE`/`GROUPED_TEMPLATE`/
+`ICON_BUTTON_TEMPLATE`/`LINK_TEMPLATE` — the systematic `*_VIEW` → `*_TEMPLATE`
+translation), with the `isBadge()`/`isButton()`/`isIconButton()`/`isLink()`
+predicates comparing `getTemplate()` against them (no `isGrouped()` —
+Filament has none either). The default stays `BUTTON_TEMPLATE` via
+`$defaultTemplate`, so `ActionGroup` can push `GROUPED_TEMPLATE` as a default
+while an explicit switcher call survives the push — Filament-identical
+precedence, pinned by `ActionTest`. Each shape has its own template beside
+[`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig):
+[`link-action.html.twig`](../../../packages/actions/templates/components/link-action.html.twig)
+and [`badge-action.html.twig`](../../../packages/actions/templates/components/badge-action.html.twig)
+mirror the button skeleton on `sy-ac-link`/`sy-ac-badge` classes (CSS in
+`packages/actions/assets/src/styles/components/`, riding support's single
+Tailwind compile), and
+[`icon-button-action.html.twig`](../../../packages/actions/templates/components/icon-button-action.html.twig)
+composes the support
 [`IconButton`](../../../packages/support/templates/components/IconButton/index.html.twig)
-primitive this template does not yet compose). This is the largest structural
-gap between the two classes and is unlikely to close in one step; see the
-unported-surface list below rather than a single reversal condition.
+primitive through the `{% component %}` tag (the only syntax that can spread a
+computed attribute map), building its mount wiring with
+`stimulus_action('live', 'action', …).toArray()` — byte-equivalent to what
+`live_action()` emits. All five are exercised by
+[`ActionViewVariantsRenderTest`](../../../packages/actions/tests/Integration/ActionViewVariantsRenderTest.php)
+/ [`ActionRenderTest`](../../../packages/actions/tests/Integration/ActionRenderTest.php)
+/ [`ActionGroupRenderTest`](../../../packages/actions/tests/Integration/ActionGroupRenderTest.php).
+
+What stays divergent: **no string fast paths** — Filament's `toHtml()`
+dispatch, the `toBadgeHtml()`/`toButtonHtml()`/… renderers and their
+"optimized" hand-built-HTML variants, and the `toEmbeddedHtml()` fallback have
+no counterpart; every shape renders through Twig via `ViewComponent::render()`.
+**`badge()` is argless** — Filament's `badge(string|Closure|null $badge)`
+doubles as the badge-*text* setter via `func_num_args()`; `HasBadge` is
+deferred, so the overload widens when it lands. **No `toArray()`/`fromArray()`**
+serialization, and no `renderModal()`/`toModalHtmlable()` — the confirmation
+modal ([`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig))
+is rendered host-side, driven by `CanOpenModal`'s getters, not by an `Action`
+method.
 
 ### The rest of Filament's `Action` surface is unported
 

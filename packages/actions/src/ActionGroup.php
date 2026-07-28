@@ -58,12 +58,12 @@ class ActionGroup extends ViewComponent
     /**
      * @var array<Action|ActionGroup>
      */
-    protected array $actions = [];
+    protected array $actions;
 
     /**
      * @var array<string, Action>
      */
-    protected array $flatActions = [];
+    protected array $flatActions;
 
     protected string|Closure|null $triggerTemplate = null;
 

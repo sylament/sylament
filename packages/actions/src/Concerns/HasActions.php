@@ -284,8 +284,23 @@ trait HasActions
      * Filament's bootedInteractsWithActions() stale-stack drop: a hydrated stack
      * that no longer resolves (renamed action, changed schema) self-heals to closed
      * instead of rendering a broken modal chain.
+     *
+     * That resolution is also what puts every frame's schema back into
+     * `mountedActionSchema{$i}` — {@see resolveActions()} registers one per frame as
+     * it walks. A mounted-action schema is cache-only — `HasSchemas::$cachedSchemas`
+     * is a plain property, not a `#[LiveProp]` — so on a request that is not a
+     * `mountAction()` call nothing else puts it back before
+     * `callAfterSchemaStateUpdated()` walks `getCachedSchemas()`, and every field
+     * inside an open modal would be skipped: `live()` and `afterStateUpdated()` would
+     * silently never fire there. The explicit `#[PostHydrate]` priorities on this hook
+     * (10) and on that one (-10) are what order the two; equal priorities would sort
+     * by reverse declaration order, which is not a contract worth depending on.
+     *
+     * Not extra work: the same schemas are built during the render that follows. It
+     * also makes the `#[PreDehydrate]` old-state snapshot independent of whether the
+     * modal body actually rendered this pass.
      */
-    #[PostHydrate]
+    #[PostHydrate(priority: 10)]
     public function afterMountedActionsHydrated(): void
     {
         if ($this->mountedActions === []) {
@@ -519,14 +534,30 @@ trait HasActions
      * which for the array_slice() prefixes this is called with is also the output
      * position; the cache stays positional (Filament-exact quirk).
      *
-     * The schemaComponent branch below is gated to the root frame only
-     * (`$resolvedActions === []`): a nested frame must always descend through its
-     * parent's declared modal actions, never through the host's schema-hosted ones.
-     * Filament can branch on context alone because its `Action::getContext()` never
-     * emits schemaComponent for a child frame, but a hand-built stack entry could
-     * still carry both keys, so the guard is explicit here — together with the
-     * `break` below, it is what stops a deeper frame from ever resolving against
-     * the host.
+     * The schemaComponent branch is now taken for any frame carrying the key, and
+     * `resolveSchemaComponentAction()` owns the root-frame policy itself: it refuses
+     * a deeper frame unless the container named is already in the schema cache. The
+     * one case that admits is an action declared inside a mounted-action schema,
+     * whose `mountedActionSchema{$i}` container is server-minted and has no declaring
+     * method — everything method-discovered stays root-only, so a deeper frame can
+     * still never re-root itself against a host schema. Filament branches on the
+     * context alone (their `Action::getContext()` never emits schemaComponent for a
+     * child frame), but a hand-built stack entry could carry both keys, so the check
+     * stays explicit here — it just lives one call down, next to the cache lookup it
+     * depends on.
+     *
+     * Each resolved frame's schema is registered under `mountedActionSchema{$i}` before
+     * the walk moves on, which is where Filament registers it too
+     * (`InteractsWithActions::resolveActions()`). Per frame rather than after the walk,
+     * because the next frame may *be* one of that schema's actions: a descriptor
+     * carrying `context['schemaComponent'] = 'mountedActionSchema0'` is resolved by
+     * reading exactly the entry the previous iteration just wrote. Registering the
+     * whole set afterwards would leave every such frame unresolvable on any request
+     * that did not mount it — and, worse, leave *its* schema uncached for
+     * `callAfterSchemaStateUpdated()`, silently killing `live()` one modal deeper.
+     * Filament gates this on an `$isMounting` flag for its dynamic-property lookups;
+     * `resolveActions()` has one caller here and it only ever passes a prefix of
+     * `$mountedActions`, so there is no non-mounting path to gate.
      *
      * Two deliberate deltas from Filament. A frame that resolves to null stops the walk
      * (they `continue`): their resolvers throw where ours return null, so continuing
@@ -548,8 +579,8 @@ trait HasActions
                 throw new ActionNotResolvableException('An action tried to resolve without a name.');
             }
 
-            if (filled($descriptor['context']['schemaComponent'] ?? null) && $resolvedActions === []) {
-                $resolvedAction = $this->resolveSchemaComponentAction($descriptor);
+            if (filled($descriptor['context']['schemaComponent'] ?? null)) {
+                $resolvedAction = $this->resolveSchemaComponentAction($descriptor, $resolvedActions);
             } else {
                 $resolvedAction = $this->resolveAction($descriptor, $resolvedActions);
             }
@@ -565,6 +596,17 @@ trait HasActions
             $resolvedAction->nestingIndex($actionNestingIndex);
 
             $resolvedActions[] = $resolvedAction;
+
+            // A host that cannot carry schemas is skipped rather than thrown at: an
+            // action that has a schema can never have been mounted on one —
+            // mountAction() throws first — so every stack reaching here is
+            // schema-less anyway.
+            if ($this instanceof InteractsWithSchemas) {
+                $this->cacheSchema(
+                    "mountedActionSchema{$actionNestingIndex}",
+                    $this->getMountedActionSchema($actionNestingIndex, $resolvedAction),
+                );
+            }
         }
 
         return $resolvedActions;
@@ -708,17 +750,33 @@ trait HasActions
      * the nested container key handed to `Schema::getAction()`. Unresolvable
      * client references — unknown schema name, unknown action — return null so the
      * mount no-ops; a host that cannot carry schemas at all is a wiring bug and
-     * throws. The schema-name miss check ports the discovery guard of Filament's
-     * `cacheSchema()`: the candidate `{$name}()` / `{$name}Schema()` method must
-     * be schema-shaped — first parameter typed `Schema`, or parameterless with a
-     * `Schema` return type. It runs here because `HasSchemas::getSchema()` throws
-     * on unknown names and invokes whatever method discovery finds; with a
-     * client-writable context key, the shape guard is what keeps every other host
-     * method from being remotely invocable.
+     * throws.
+     *
+     * The schema cache is consulted first, and a registered name takes the branch
+     * whole: it skips the discovery guard, and it is the one thing a non-root frame
+     * may resolve through. Both concessions are the same argument — only
+     * `getMountedActionSchema()` registers a cache-only schema, under a
+     * server-minted `mountedActionSchema{$i}`, so the client can name one but never
+     * mint one. That is what makes an action declared *inside* a mounted-action
+     * schema resolvable at all: its container has no declaring method, and it sits
+     * at frame 1 or deeper. Filament reaches the same case through a bare
+     * `getSchema($name)` (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:643`).
+     *
+     * Everything else keeps the old contract. A non-root frame naming a
+     * method-discovered schema still returns null — a nested frame must descend
+     * through its parent's declared modal actions, never re-root itself against a
+     * host-declared schema. And the discovery path keeps the full shape guard,
+     * which ports Filament's `cacheSchema()` check: the candidate `{$name}()` /
+     * `{$name}Schema()` method must be schema-shaped — first parameter typed
+     * `Schema`, or parameterless with a `Schema` return type. It runs here because
+     * `HasSchemas::getSchema()` throws on unknown names and invokes whatever method
+     * discovery finds; with a client-writable context key, the shape guard is what
+     * keeps every other host method from being remotely invocable.
      *
      * @param array{name: string, arguments: array<mixed>, context: array<mixed>} $descriptor
+     * @param array<Action> $parentActions
      */
-    protected function resolveSchemaComponentAction(array $descriptor): ?Action
+    protected function resolveSchemaComponentAction(array $descriptor, array $parentActions): ?Action
     {
         if (! $this instanceof InteractsWithSchemas) {
             throw new LogicException('An action context supplied a schemaComponent key but ' . static::class . ' is not a schema host — implement ' . InteractsWithSchemas::class . ' and use the ' . HasSchemas::class . ' trait.');
@@ -734,36 +792,44 @@ trait HasActions
         $schemaName = ($dotPosition === false) ? $key : mb_substr($key, 0, $dotPosition);
         $nestedContainerKey = ($dotPosition === false) ? null : mb_substr($key, $dotPosition + 1);
 
-        $methodName = match (true) {
-            method_exists($this, $schemaName) => $schemaName,
-            method_exists($this, "{$schemaName}Schema") => "{$schemaName}Schema",
-            default => null,
-        };
+        $isCachedSchema = $this->hasCachedSchema($schemaName);
 
-        if ($methodName === null) {
+        if (($parentActions !== []) && (! $isCachedSchema)) {
             return null;
         }
 
-        $methodReflection = new ReflectionMethod($this, $methodName);
-        $firstParameter = $methodReflection->getParameters()[0] ?? null;
+        if (! $isCachedSchema) {
+            $methodName = match (true) {
+                method_exists($this, $schemaName) => $schemaName,
+                method_exists($this, "{$schemaName}Schema") => "{$schemaName}Schema",
+                default => null,
+            };
 
-        if ($firstParameter === null) {
-            $returnType = $methodReflection->getReturnType();
-
-            if (! $returnType instanceof ReflectionNamedType || ! is_a($returnType->getName(), Schema::class, allow_string: true)) {
-                return null;
-            }
-        } else {
-            $parameterType = $firstParameter->getType();
-
-            if (! $parameterType instanceof ReflectionNamedType) {
+            if ($methodName === null) {
                 return null;
             }
 
-            $parameterTypeName = $parameterType->getName();
+            $methodReflection = new ReflectionMethod($this, $methodName);
+            $firstParameter = $methodReflection->getParameters()[0] ?? null;
 
-            if (! class_exists($parameterTypeName) || ! is_a($parameterTypeName, Schema::class, allow_string: true)) {
-                return null;
+            if ($firstParameter === null) {
+                $returnType = $methodReflection->getReturnType();
+
+                if (! $returnType instanceof ReflectionNamedType || ! is_a($returnType->getName(), Schema::class, allow_string: true)) {
+                    return null;
+                }
+            } else {
+                $parameterType = $firstParameter->getType();
+
+                if (! $parameterType instanceof ReflectionNamedType) {
+                    return null;
+                }
+
+                $parameterTypeName = $parameterType->getName();
+
+                if (! class_exists($parameterTypeName) || ! is_a($parameterTypeName, Schema::class, allow_string: true)) {
+                    return null;
+                }
             }
         }
 

@@ -172,8 +172,15 @@ trait HasSchemas
      * of every component whose raw state changed since the snapshot. Named
      * distinctly from the component-level `afterStateUpdated()` setter (the
      * prototype collided both).
+     *
+     * The explicit low `#[PostHydrate]` priority is load-bearing: schemas that no
+     * `schemas()` name can rebuild — a mounted action's, registered by the stack
+     * resolution that `Sylament\Actions\Concerns\HasActions`'s own
+     * `#[PostHydrate(priority: 10)]` hook runs — must already be in
+     * `$cachedSchemas` when this walks them, or fields inside an open modal never
+     * fire. Higher priority runs earlier (`PostHydrate::$priority`).
      */
-    #[PostHydrate]
+    #[PostHydrate(priority: -10)]
     public function callAfterSchemaStateUpdated(): void
     {
         foreach ($this->getCachedSchemas() as $schema) {

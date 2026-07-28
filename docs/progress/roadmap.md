@@ -101,6 +101,12 @@ whole UI — Filament's pitch, running on Symfony._
 stats; global search; relation managers; infolists and the view page;
 multi-panel; tenancy.
 
+**Carried decision — read before epic 3.** `Resource` is a service collected by
+tag, not a static class-string registry, and `form()`/`table()` are instance
+methods; the class-string stays the user-facing identifier. Rationale, cost,
+and the one open question are in
+[panels/README.md](panels/README.md#carried-decisions).
+
 **Done when:** the demo app serves `/admin` — sidebar navigation, an Articles
 resource with a paginated, sorted list, create, edit, and confirmed delete
 with notifications — end to end.

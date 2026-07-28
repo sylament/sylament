@@ -3,7 +3,7 @@
 `packages/support/templates/components/Modal/index.html.twig` — the shared
 `<twig:SylamentSupport:Modal>` primitive, a native-`<dialog>` re-architecture of
 Filament's Alpine-driven `<x-filament::modal>`. It is template-only: there is no
-Sylament PHP `ModalComponent` class. The port covers the confirm-modal chrome the
+Sylament PHP `ModalComponent` class. The port covers the action-modal chrome the
 `actions` layer drives (heading/description/icon header, body + footer slots, a
 semantic width, and the `sylament--support--modal` Stimulus open/close/restore
 wiring); the broad remainder of Filament's modal surface is deliberately deferred.
@@ -59,7 +59,7 @@ properties + configurators (`autofocus()`, `closeButton()`, `closedByClickingAwa
 `closedByEscaping()`) let an app change the modal defaults globally. Neither is
 ported: the Sylament modal renders no close button, and there is no PHP config
 class — the native `<dialog>` relies on ESC and the consumer-supplied footer
-buttons (the confirm-modal supplies its own Cancel button) to dismiss. Next step,
+buttons (the action modal supplies its own Cancel footer action) to dismiss. Next step,
 when a non-confirm consumer needs it: add the close button to the header and, if a
 global default toggle is still wanted, a Sylament config seam for it.
 
@@ -72,14 +72,14 @@ The full Filament view carries a large prop surface the port omits: `slideOver` 
 `ariaLabelledby` prop, and `extraModalWindowAttributeBag` /
 `extraModalOverlayAttributeBag`. These are Milestone-2 breadth-fill, not rejected —
 each returns with the first consumer that needs it. Until then the template is the
-confirm-modal chrome subset only.
+action-modal chrome subset only.
 
 ### Livewire form-in-modal wiring is not ported
 
 Filament swaps the modal window element to a `<form wire:submit.prevent=…>` when a
 `wire:submit.prevent` attribute is present, and stamps `wire:key` on each region.
 Sylament renders a plain `<dialog>` with no form wrapper or `wire:*` keys — the
-confirm-modal drives its buttons through `live_action(...)` instead. Form-in-modal
+action modal drives its footer actions through `live_action(...)` instead. Form-in-modal
 is **blocked** on the `schemas` / `forms` form-in-modal breadth: it lands there as
 the UX LiveComponent form wrapper (not `wire:*`) and the per-region keys the modal
 needs, in the same change.
@@ -127,7 +127,7 @@ array/slot rendered inside `fi-modal-footer-actions` and aligned by
 `footerActionsAlignment`; its header can be replaced wholesale by a `header` slot.
 Sylament exposes a single `footer` block slot and a fixed heading/description/icon
 header with no alignment control — the consumer composes its own footer buttons
-(as the confirm-modal does). Reversible when a consumer needs the action-list or
+(as actions' `ActionModal` does). Reversible when a consumer needs the action-list or
 custom-header forms.
 
 ### The default width is `md`, not `sm`

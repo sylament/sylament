@@ -20,12 +20,15 @@ stays **todo**.
 The 18 concerns Filament composes onto the `Action` base —
 `BelongsToLiveComponent`, `CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`,
 `CanClose`, `CanNotify`, `CanOpenModal`, `CanOpenUrl`,
-`CanRequireConfirmation`, `HasAction`, `HasArguments`, `HasGroupedIcon`,
-`HasLabel`, `HasLifecycleHooks`, `HasMountableArguments`, `HasName`,
-`HasSize`, and
-`InteractsWithRecord` — are single-consumer in the port (only `Action` exists
-today), so they have folded into [`action.md`](action.md) and left the Features
-table, per [one row per file](../README.md#one-row-per-file-one-file-per-thing);
+`CanRequireConfirmation`,
+`HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`,
+`HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasSize`, and
+`InteractsWithRecord` — have folded into [`action.md`](action.md) and left the
+Features table, per
+[one row per file](../README.md#one-row-per-file-one-file-per-thing). Most are
+single-consumer in the port; the four `ActionGroup` also composes —
+`CanBeOutlined`, `HasGroupedIcon`, `HasLabel`, `HasSize` — stay written up once
+in `action.md`, with reference rows in [`action-group.md`](action-group.md);
 the host-side `HasActions` trait keeps its own row. `Action`'s rendering
 templates fold in the same way (see the [Supporting surface](#supporting-surface)
 note). [`support/component.md`](../support/component.md) is the shape each detail

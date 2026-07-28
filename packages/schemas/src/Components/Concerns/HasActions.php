@@ -49,7 +49,10 @@ trait HasActions
         return $this;
     }
 
-    public function getAction(?string $name = null): ?Action
+    /**
+     * @param string|array<string>|null $name
+     */
+    public function getAction(string|array|null $name = null): ?Action
     {
         $actions = $this->getActions();
 
@@ -57,7 +60,36 @@ trait HasActions
             return $this->action;
         }
 
-        return $actions[$name] ?? null;
+        $modalActionNames = [];
+
+        if (is_string($name) && str_contains($name, '.')) {
+            $name = explode('.', $name);
+        }
+
+        if (is_array($name)) {
+            $modalActionNames = $name;
+            $name = array_shift($modalActionNames);
+        }
+
+        if ($name === null) {
+            return null;
+        }
+
+        $action = $actions[$name] ?? null;
+
+        if (!$action instanceof Action) {
+            return null;
+        }
+
+        foreach ($modalActionNames as $modalActionName) {
+            $action = $action->getModalAction($modalActionName);
+
+            if (!$action instanceof Action) {
+                return null;
+            }
+        }
+
+        return $action;
     }
 
     /**

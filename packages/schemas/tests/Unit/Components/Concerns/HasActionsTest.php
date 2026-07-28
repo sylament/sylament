@@ -121,3 +121,43 @@ it('memoizes the actions cache across repeated calls', function (): void {
 
     expect($calls)->toBe(1);
 });
+
+it("descends a dotted name into a registered action's modal actions", function (): void {
+    $component = new Component();
+    $component->registerActions([
+        Action::make('save')->extraModalFooterActions([Action::make('confirm')->label('Really?')]),
+    ]);
+
+    $modalAction = $component->getAction('save.confirm');
+
+    expect($modalAction)->toBeInstanceOf(Action::class)
+        ->and($modalAction->getName())->toBe('confirm');
+});
+
+it('accepts the array form of a dotted modal-action path', function (): void {
+    $component = new Component();
+    $component->registerActions([
+        Action::make('save')->extraModalFooterActions([Action::make('confirm')]),
+    ]);
+
+    expect($component->getAction(['save', 'confirm'])?->getName())->toBe('confirm');
+});
+
+it('walks every dotted segment through getModalAction()', function (): void {
+    $component = new Component();
+    $component->registerActions([
+        Action::make('save')->extraModalFooterActions([
+            Action::make('confirm')->extraModalFooterActions([Action::make('really')]),
+        ]),
+    ]);
+
+    expect($component->getAction('save.confirm.really')?->getName())->toBe('really');
+});
+
+it('returns null when a dotted tail does not resolve', function (): void {
+    $component = new Component();
+    $component->registerActions([Action::make('save')]);
+
+    expect($component->getAction('save.missing'))->toBeNull()
+        ->and($component->getAction('missing.confirm'))->toBeNull();
+});

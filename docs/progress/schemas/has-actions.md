@@ -31,7 +31,7 @@ carries a **diverges** link to [Divergences](#divergences), or `—`.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`registerActions()` / `action()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`registerActions()` / `action()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | done | — | — |
-| [`getAction()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`getAction()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | done | — | [diverges](#getaction-does-not-support-dotted-modal-action-descent) |
+| [`getAction()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) — incl. dotted/array modal-action descent | [`getAction()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | done | — | — |
 | [`getActions()` / `cacheActions()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`getActions()` / `cacheActions()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | done | — | — |
 | [`getDefaultActions()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`getDefaultActions()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | done | — | — |
 | [`prepareAction()` / `prepareActionGroup()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`prepareAction()` / `prepareActionGroup()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | done | — | — |
@@ -42,18 +42,6 @@ carries a **diverges** link to [Divergences](#divergences), or `—`.
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
-
-### `getAction()` does not support dotted modal-action descent
-
-Filament's `getAction(string | array | null $name = null)` accepts a dotted
-string (`'primary.modal-action'`) or an array `[actionName, ...modalActionNames]`,
-exploding it and walking each subsequent segment through
-`$action->getModalAction($modalActionName)` to reach an action nested inside
-another action's modal footer. The port's `getAction(?string $name = null)`
-only resolves `blank($name)` to the main action, or a direct
-`getActions()[$name] ?? null` lookup — no dotted/array form, because
-`CanOpenModal::getModalAction()` does not exist on the `actions` package yet.
-Reverses once `CanOpenModal` grows modal-action nesting.
 
 ### Affix and extra-item action merging is not ported
 

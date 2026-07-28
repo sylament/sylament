@@ -9,6 +9,7 @@ use Sylament\Actions\ActionGroup;
 use Sylament\Actions\Tests\Fixtures\Concerns\BothContractsHostFixture;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
+use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Enums\SlideOverPosition;
 use Twig\Markup;
 
@@ -123,7 +124,7 @@ it('opens a modal from content or a content footer alone', function (): void {
 it('builds the default footer as submit and cancel actions', function (): void {
     $actions = Action::make('delete')->requiresConfirmation()->getModalFooterActions();
 
-    expect(array_keys($actions))->toBe(['submit', 'cancel']);
+    expect(array_keys($actions))->toBe(['cancel', 'submit']);
 
     $submit = $actions['submit'];
     $cancel = $actions['cancel'];
@@ -266,4 +267,37 @@ it('defaults sticky header and footer to the slide-over state', function (): voi
         ->and($slideOver->stickyModalHeader(false)->isModalHeaderSticky())->toBeFalse()
         ->and($slideOver->stickyModalFooter(false)->isModalFooterSticky())->toBeFalse()
         ->and(Action::make('other')->stickyModalHeader()->isModalHeaderSticky())->toBeTrue();
+});
+
+it('defaults the modal alignment from confirmation and width', function (): void {
+    expect(Action::make('view')->getModalAlignment())->toBe(Alignment::Start)
+        ->and(Action::make('view')->modalWidth('xs')->getModalAlignment())->toBe(Alignment::Center)
+        ->and(Action::make('view')->modalWidth('sm')->getModalAlignment())->toBe(Alignment::Center)
+        ->and(Action::make('delete')->requiresConfirmation()->getModalAlignment())->toBe(Alignment::Center)
+        ->and(Action::make('view')->modalAlignment(Alignment::End)->getModalAlignment())->toBe(Alignment::End)
+        ->and(Action::make('view')->modalAlignment('custom')->getModalAlignment())->toBe('custom');
+});
+
+it('defaults the footer actions alignment to center only for confirmation', function (): void {
+    expect(Action::make('view')->getModalFooterActionsAlignment())->toBeNull()
+        ->and(Action::make('delete')->requiresConfirmation()->getModalFooterActionsAlignment())->toBe(Alignment::Center)
+        ->and(Action::make('view')->modalFooterActionsAlignment('end')->getModalFooterActionsAlignment())->toBe('end');
+});
+
+it('reverses composed footer actions for center alignment', function (): void {
+    $centered = Action::make('delete')
+        ->extraModalFooterActions([Action::make('extra')])
+        ->modalFooterActionsAlignment(Alignment::Center);
+
+    expect(array_keys($centered->getModalFooterActions()))->toBe(['cancel', 'extra', 'submit']);
+
+    $stringCentered = Action::make('delete')->modalFooterActionsAlignment('center');
+
+    expect(array_keys($stringCentered->getModalFooterActions()))->toBe(['cancel', 'submit']);
+
+    $overridden = Action::make('delete')
+        ->modalFooterActions([Action::make('one'), Action::make('two')])
+        ->modalFooterActionsAlignment(Alignment::Center);
+
+    expect(array_keys($overridden->getModalFooterActions()))->toBe(['one', 'two']);
 });

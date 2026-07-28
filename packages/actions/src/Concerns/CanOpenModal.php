@@ -7,6 +7,7 @@ namespace Sylament\Actions\Concerns;
 use Closure;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
+use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Enums\SlideOverPosition;
 use Twig\Markup;
 
@@ -91,6 +92,10 @@ trait CanOpenModal
     protected bool|Closure $isModalSlideOver = false;
 
     protected SlideOverPosition|Closure|null $modalSlideOverPosition = null;
+
+    protected Alignment|string|Closure|null $modalAlignment = null;
+
+    protected Alignment|string|Closure|null $modalFooterActionsAlignment = null;
 
     public function modal(bool|Closure|null $condition = true): static
     {
@@ -229,6 +234,20 @@ trait CanOpenModal
     public function slideOverPosition(SlideOverPosition|Closure|null $position = null): static
     {
         $this->modalSlideOverPosition = $position;
+
+        return $this;
+    }
+
+    public function modalAlignment(Alignment|string|Closure|null $alignment = null): static
+    {
+        $this->modalAlignment = $alignment;
+
+        return $this;
+    }
+
+    public function modalFooterActionsAlignment(Alignment|string|Closure|null $alignment = null): static
+    {
+        $this->modalFooterActionsAlignment = $alignment;
 
         return $this;
     }
@@ -413,6 +432,10 @@ trait CanOpenModal
             $actions['cancel'] = $cancelAction;
         }
 
+        if (in_array($this->getModalFooterActionsAlignment(), [Alignment::Center, 'center'], true)) {
+            $actions = array_reverse($actions);
+        }
+
         return $this->cachedModalFooterActions = $actions;
     }
 
@@ -594,6 +617,32 @@ trait CanOpenModal
     public function getModalWidth(): string
     {
         return $this->evaluate($this->modalWidth) ?? 'md';
+    }
+
+    public function getModalAlignment(): Alignment|string
+    {
+        if ($alignment = $this->evaluate($this->modalAlignment)) {
+            return $alignment;
+        }
+
+        if ($this->isConfirmationRequired() || in_array($this->getModalWidth(), ['xs', 'sm'], true)) {
+            return Alignment::Center;
+        }
+
+        return Alignment::Start;
+    }
+
+    public function getModalFooterActionsAlignment(): Alignment|string|null
+    {
+        if ($alignment = $this->evaluate($this->modalFooterActionsAlignment)) {
+            return $alignment;
+        }
+
+        if ($this->isConfirmationRequired()) {
+            return Alignment::Center;
+        }
+
+        return null;
     }
 
     public function isModalSlideOver(): bool

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions\Tests\Integration\Concerns;
 
 use Sylament\Actions\Action;
+use Sylament\Actions\Exceptions\ActionNotResolvableException;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\ActionHost;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
@@ -87,6 +88,39 @@ it('binds the live component when caching an action directly', function (): void
 
     expect($host->cacheAction($action))->toBe($action)
         ->and($action->getLiveComponent())->toBe($host);
+});
+
+it('resolves a bare method with an Action return type', function (): void {
+    expect(new ActionHost()->getAction('publish'))->toBeInstanceOf(Action::class);
+});
+
+it('prefers the {name}Action method over the bare method', function (): void {
+    expect(new ActionHost()->getAction('delete')?->getName())->toBe('delete');
+});
+
+it('does not resolve a bare method without a declared Action return type', function (): void {
+    $host = new ActionHost();
+
+    expect($host->getAction('untyped'))->toBeNull()
+        ->and($host->getAction('notAnAction'))->toBeNull();
+});
+
+it('throws when a factory method returns a non-Action at runtime', function (): void {
+    new ActionHost()->getAction('liar');
+})->throws(ActionNotResolvableException::class);
+
+it('throws when resolving a mounted action without a name', function (): void {
+    $host = new ActionHost();
+    $host->mountedActions = [['name' => '', 'arguments' => [], 'context' => []]];
+
+    $host->getMountedAction();
+})->throws(ActionNotResolvableException::class);
+
+it('unmounts instead of crashing when mounting an unresolvable action', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+
+    expect($host->mountAction('liar'))->toBeNull()
+        ->and($host->mountedActions)->toBe([]);
 });
 
 it('unmounts a disabled action without calling it', function (): void {

@@ -169,7 +169,7 @@ that trait's mounted-action state.
 | [`ActionStatus`](../../../packages/actions/src/Enums/ActionStatus.php) | [`Enums/ActionStatus.php`](../../../vendor/filament/actions/src/Enums/ActionStatus.php) | done | - |
 | ActionCalled | [`Events/ActionCalled.php`](../../../vendor/filament/actions/src/Events/ActionCalled.php) | todo | - |
 | ActionCalling | [`Events/ActionCalling.php`](../../../vendor/filament/actions/src/Events/ActionCalling.php) | todo | - |
-| ActionNotResolvableException | [`Exceptions/ActionNotResolvableException.php`](../../../vendor/filament/actions/src/Exceptions/ActionNotResolvableException.php) | todo | - |
+| [`ActionNotResolvableException`](../../../packages/actions/src/Exceptions/ActionNotResolvableException.php) | [`Exceptions/ActionNotResolvableException.php`](../../../vendor/filament/actions/src/Exceptions/ActionNotResolvableException.php) | done | - |
 | ActionName | [`ActionName.php`](../../../vendor/filament/actions/src/ActionName.php) | todo | - |
 | Exporter | [`Exports/Exporter.php`](../../../vendor/filament/actions/src/Exports/Exporter.php) | todo | - |
 | ExportColumn | [`Exports/ExportColumn.php`](../../../vendor/filament/actions/src/Exports/ExportColumn.php) | todo | - |

@@ -17,12 +17,13 @@ source) to a real [status](../README.md#statuses) — **done**, **in progress**,
 gap, or real sub-structure earns one. A plain-text name is not built yet and
 stays **todo**.
 
-The 18 concerns Filament composes onto the `Action` base —
+The 20 concerns Filament composes onto the `Action` base —
 `BelongsToLiveComponent`, `CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`,
-`CanClose`, `CanNotify`, `CanOpenModal`, `CanOpenUrl`,
+`CanCallParentAction`, `CanClose`, `CanNotify`, `CanOpenModal`, `CanOpenUrl`,
 `CanRequireConfirmation`,
 `HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`,
-`HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasSize`, and
+`HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasParentActions`,
+`HasSize`, and
 `InteractsWithRecord` — have folded into [`action.md`](action.md) and left the
 Features table, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). Most are
@@ -84,7 +85,7 @@ service provider live in [Supporting surface](#supporting-surface).)
 
 Cross-cutting action concerns — [`src/Concerns`](../../../vendor/filament/actions/src/Concerns).
 Most are mixed onto the `Action` base; the `InteractsWith*` traits are host-side
-(mixed onto the Livewire / LiveComponent page that mounts actions). The 18
+(mixed onto the Livewire / LiveComponent page that mounts actions). The 20
 concerns `Action` composes are folded into [`action.md`](action.md) and no longer
 carry rows here — the remaining rows are the not-yet-started concerns, the
 host-side `HasActions` trait, and the two-method extra-modal-attribute traits
@@ -110,7 +111,6 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 | CanBeMounted | [`Concerns/CanBeMounted.php`](../../../vendor/filament/actions/src/Concerns/CanBeMounted.php) | todo | - |
 | CanBeRateLimited | [`Concerns/CanBeRateLimited.php`](../../../vendor/filament/actions/src/Concerns/CanBeRateLimited.php) | todo | - |
 | CanBeSorted | [`Concerns/CanBeSorted.php`](../../../vendor/filament/actions/src/Concerns/CanBeSorted.php) | todo | - |
-| CanCallParentAction | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | todo | - |
 | CanCustomizeProcess | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | todo | - |
 | CanDeselectRecordsAfterCompletion | [`Concerns/CanDeselectRecordsAfterCompletion.php`](../../../vendor/filament/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php) | todo | - |
 | CanDispatchEvent | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | todo | - |
@@ -126,7 +126,6 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 | [`HasId`](../../../packages/actions/src/Concerns/HasId.php) | [`Concerns/HasId.php`](../../../vendor/filament/actions/src/Concerns/HasId.php) | done | Filament-exact two-method port; not composed onto `Action` (Filament composes it only on `SelectAction`, its future consumer here) |
 | HasInfolist | [`Concerns/HasInfolist.php`](../../../vendor/filament/actions/src/Concerns/HasInfolist.php) | todo | - |
 | HasKeyBindings | [`Concerns/HasKeyBindings.php`](../../../vendor/filament/actions/src/Concerns/HasKeyBindings.php) | todo | - |
-| HasParentActions | [`Concerns/HasParentActions.php`](../../../vendor/filament/actions/src/Concerns/HasParentActions.php) | todo | - |
 | HasSchema | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) | todo | - |
 | HasTableIcon | [`Concerns/HasTableIcon.php`](../../../vendor/filament/actions/src/Concerns/HasTableIcon.php) | todo | - |
 | HasTooltip | [`Concerns/HasTooltip.php`](../../../vendor/filament/actions/src/Concerns/HasTooltip.php) | todo | - |

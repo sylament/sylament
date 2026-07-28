@@ -321,9 +321,12 @@ trait HasActions
     /**
      * Resolves stack descriptors root-to-leaf, passing the growing resolved list as
      * the parent chain: index 0 resolves against the host, every deeper frame against
-     * the previous action's declared modal actions. The result can be shorter than the
-     * stack; nestingIndex is the source array key, not the output position — the cache
-     * is positional (Filament-exact quirk).
+     * the previous action's declared modal actions. Because the walk stops at the
+     * first null (see below) and only the root frame can resolve to null — deeper
+     * frames throw — the result is either empty or as long as the input, never a
+     * list with a hole in it. nestingIndex is stamped from the source array key,
+     * which for the array_slice() prefixes this is called with is also the output
+     * position; the cache stays positional (Filament-exact quirk).
      *
      * The schemaComponent branch below is gated to the root frame only
      * (`$resolvedActions === []`): a nested frame must always descend through its

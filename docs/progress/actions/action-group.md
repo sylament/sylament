@@ -17,15 +17,17 @@ map, and the group back-reference wiring), the dropdown trigger config,
 visibility composition, context propagation to children (`liveComponent()`,
 `getRecord()` fallback, default-template push onto `Action` children), and the
 rendering of both extra-attribute bags (the shared trigger bag plus the
-group-only `extraDropdownAttributes()` family) have landed. Still to come:
-propagating dropdown placement and trigger-view defaults to nested groups (see
-_Blocked by_ below).
+group-only `extraDropdownAttributes()` family) have landed. Submenus have
+landed too: `getDropdownActionLists()` ports Filament's dropdown rendering
+plan, so a nested group either flattens into its own divider-separated section
+or embeds as a real dropdown-in-dropdown, with placement and trigger-template
+defaults propagated to it.
 
 **Status:** in progress — the dropdown-rendering base (model, visibility,
-triggers, and `render()` producing the complete dropdown or inline row) is
-complete; the remaining rows are deferred (nested-group propagation and
-rendering, additional trigger kinds, teleport/auto-placement, `Arrayable`,
-table/bulk integration) — see the [status vocabulary](../README.md#statuses).
+triggers, submenus, and `render()` producing the complete dropdown or inline
+row) is complete; the remaining rows are deferred (additional trigger kinds,
+teleport/auto-placement, `Arrayable`, table/bulk integration) — see the
+[status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
@@ -50,7 +52,7 @@ permanent note in [Divergences](#divergences).
 | [`BelongsToGroup`](../../../packages/actions/src/Concerns/BelongsToGroup.php) | [`Concerns/BelongsToGroup.php`](../../../vendor/filament/actions/src/Concerns/BelongsToGroup.php) | done | — | [diverges](#getrootgroup-is-not-ported) |
 | `getLabel()` default | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getLabel()`) | done | — | [diverges](#getlabel-falls-back-to-a-plain-string-not-a-translated-label) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) (shared with `Action`; consumed by the button trigger only, Filament-same) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | - |
-| [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) (shared with `Action`) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | in progress | submenu rendering | [detail](#hasgroupedicon-is-api-only-on-the-group) |
+| [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) (shared with `Action`) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | Consumed by [`grouped-trigger.html.twig`](../../../packages/actions/templates/components/action-group/grouped-trigger.html.twig) as `group.getIcon(group.getGroupedIcon)` — the shape a group takes inside another group's dropdown, exactly where Filament's `toGroupedTriggerHtml()` reads it |
 | [`HasLabel`](../../../packages/actions/src/Concerns/HasLabel.php) (shared with `Action`) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | - |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) (shared with `Action`) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | - |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | - |
@@ -62,30 +64,66 @@ permanent note in [Divergences](#divergences).
 | `HasDropdown` | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) | done | — | [diverges](#dropdownwidth-is-a-css-string-dropdownteleport-and-dropdownautoplacement-are-deferred) |
 | Visibility composition (`isHidden()` group-iteration) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`isHidden()`/`resolveIsHidden()`) | done | — | [diverges](#no-ishiddeningroup-or-visibility-caching) |
 | Context propagation to children (`liveComponent()`, `getRecord()` fallback, default-template push onto `Action` children) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`liveComponent()`/`getActions()`) | done | — | [diverges](#livecomponent-propagates-eagerly-unlike-filaments-lazy-getgroup-fallback), [diverges](#getrecord-is-duplicated-onto-action-and-actiongroup-to-satisfy-phpstan), [diverges](#getactions-always-pushes-a-concrete-default-template-never-null) |
-| Dropdown-placement propagation to nested groups (`defaultDropdownPlacement('right-top')`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`actions()`) | todo | submenu rendering | - |
-| Trigger-view-default propagation to nested groups (`defaultTriggerView()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getActions()`) | todo | submenu rendering | - |
+| Dropdown-placement propagation to nested groups | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`actions()`, `defaultDropdownPlacement('right-top')`) | done | — | [diverges](#nested-groups-default-to-right-start-where-filament-writes-right-top) |
+| Trigger-template-default propagation to nested groups (`defaultTriggerTemplate()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getActions()`, `defaultTriggerView()`) | done | — | [diverges](#the-child-template-split-keys-off-hasdropdown-where-filament-keys-off-isbuttongroup) |
 | Grouped item template | [`components/dropdown/list/item.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | done | — | - |
+| Grouped **trigger** template ([`action-group/grouped-trigger.html.twig`](../../../packages/actions/templates/components/action-group/grouped-trigger.html.twig)) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toGroupedTriggerHtml()`) | in progress | badge support | [detail](#the-grouped-trigger-drops-the-badge-and-filaments-default-ellipsis-icon) |
 | Trigger machinery | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getTriggerView()`/`toTriggerHtml()`) | done | — | [diverges](#trigger-defaults-diverge-from-filament-gray-over-primary-and-the-ellipsis-icon-is-per-template) |
-| Rendering (`toEmbeddedHtml()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | done | — | [diverges](#rendering-refuses-any-visible-nested-group-eagerly-instead-of-filaments-flattenembed-behavior), [diverges](#dropdownfalse-wraps-its-inline-row-in-a-bare-divsysy-ac-group-unlike-filaments-unwrapped-concatenation) |
-| Badge/button-group/grouped/link triggers | [`View/Concerns/CanGenerate*Html.php`](../../../vendor/filament/support/src/View/Concerns) | todo | — | - |
-| Submenu rendering (nested non-dropdown groups) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()` action-list branch) | todo | — | - |
+| Rendering (`toEmbeddedHtml()`) incl. [`getDropdownActionLists()`](../../../packages/actions/src/ActionGroup.php) — flattened sections and embedded submenus | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | done | — | [diverges](#the-dropdown-plan-is-a-php-method-the-template-loops-not-an-inline-output-buffer), [diverges](#dropdownfalse-wraps-its-inline-row-in-a-bare-divsysy-ac-group-unlike-filaments-unwrapped-concatenation) |
+| Badge/button-group/link triggers | [`View/Concerns/CanGenerate*Html.php`](../../../vendor/filament/support/src/View/Concerns) | todo | — | [detail](#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup) |
 | Dropdown teleport & auto-placement | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) (`dropdownTeleport()`/`dropdownAutoPlacement()`) | todo | — | - |
 | `toArray()`/`fromArray()` (`Arrayable`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toArray()`/`fromArray()`) | todo | — | - |
 | Table and bulk concerns | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php), `hasNonBulkAction()` | blocked | tables package, BulkAction | [detail](#table-and-bulk-concerns-are-blocked-on-the-tables-and-bulkaction-ports) |
 
 ## Details
 
-### `HasGroupedIcon` is API-only on the group
+### The grouped trigger drops the badge and Filament's default ellipsis icon
 
-The trait itself is the same file `Action` already composes (folded into
-[`action.md`](action.md)); composing it onto `ActionGroup` pins the fluent API
-(`groupedIcon()`/`getGroupedIcon()`/`hasGroupedIcon()` round-trip and are
-unit-tested on the group). Nothing renders it yet, matching where Filament
-consumes a *group's* grouped icon: only `toDropdownItemHtml()` — the shape a
-group takes when it nests inside another group's dropdown — reads it, and
-submenu rendering is unbuilt here (see the "Submenu rendering" row). Wire the
-grouped icon into the dropdown-item trigger in the same change that lands
-submenus.
+[`grouped-trigger.html.twig`](../../../packages/actions/templates/components/action-group/grouped-trigger.html.twig)
+is the shape a nested group takes as a row inside its parent's dropdown panel —
+the port of Filament's `toGroupedTriggerHtml()`. It renders the icon
+(`group.getIcon(group.getGroupedIcon)`), the label in a
+`span.sy-dropdown-item-label`, the tooltip as `title`, and the extra-attribute
+bag, on a `<button type="button">` classed
+`sy sy-dropdown-item sy-ac` — matching what the sibling
+[`grouped-action.html.twig`](../../../packages/actions/templates/components/grouped-action.html.twig)
+emits for a plain action, so a submenu row and an action row line up.
+
+Two gaps. **Badge**: Filament threads `badge` / `badgeColor` / `badgeTooltip`
+through `generateDropdownItemHtml()`; no `HasBadge` concern exists in the port
+at all, so the whole family is absent here and everywhere else — this row
+returns with it. **Default icon**: Filament's `ActionGroup::getIcon()` override
+falls back to `FilamentIcon::resolve(ActionsIconAlias::ACTION_GROUP) ??
+Heroicon::EllipsisVertical`, so *every* Filament trigger always renders an icon;
+the port leaves support's `HasIcon::getIcon(?default)` un-overridden and each
+template supplies its own default, so a submenu row with neither `icon()` nor
+`groupedIcon()` set renders label-only. That is the same
+[per-template ellipsis choice](#trigger-defaults-diverge-from-filament-gray-over-primary-and-the-ellipsis-icon-is-per-template)
+the icon-button and button triggers already make, extended to this fourth
+template; reverse it by passing `ActionGroup::DEFAULT_ICON` as the fallback
+here, or by overriding `getIcon()` once for all four.
+
+Filament also has no submenu **affordance** to port on this element — no
+chevron — and the port drops its `fi-ac-grouped-group` marker class, so a
+submenu row is not distinguishable from a plain action row by CSS today. Add
+the marker class first if a chevron is ever wanted.
+
+### The button-group trigger is unported, which is why `hasDropdown()` stands in for `isButtonGroup()`
+
+Filament ships five trigger views —
+`BADGE_VIEW`, `BUTTON_VIEW`, `BUTTON_GROUP_VIEW`, `GROUPED_VIEW`,
+`ICON_BUTTON_VIEW`, `LINK_VIEW` — with `buttonGroup()` / `isButtonGroup()`
+selecting a **non-dropdown row of buttons** (`div.fi-btn-group`), distinct from
+`button()`, which is a dropdown whose trigger happens to look like a button.
+The port has `BUTTON_TEMPLATE`, `ICON_BUTTON_TEMPLATE`, and now
+`GROUPED_TEMPLATE`; badge, link, and **button-group** have none, which is why
+`isButtonGroup()` has nothing to be ported as and
+[`hasDropdown()` stands in for it](#the-child-template-split-keys-off-hasdropdown-where-filament-keys-off-isbuttongroup).
+The port's inline-row shape is `dropdown(false)`, which Filament also supports
+and which is the closer analogue to `fi-btn-group` in practice. **Next step:**
+port the remaining `CanGenerate*Html` trigger shapes; adding
+`BUTTON_GROUP_TEMPLATE` is the point at which the `isButtonGroup()` predicate
+becomes portable and the stand-in can be retired.
 
 ### Table and bulk concerns are blocked on the tables and BulkAction ports
 
@@ -315,61 +353,86 @@ Reversible for either point independently: drop the `?? 'gray'` fallback, or
 override `getIcon()` on `ActionGroup`, the moment product direction wants an
 unconfigured trigger to match Filament's primary/always-ellipsis defaults.
 
-### Rendering refuses any visible nested group eagerly, instead of Filament's flatten/embed behavior
+### The dropdown plan is a PHP method the template loops, not an inline output buffer
 
-Filament's `toEmbeddedHtml()` has no guard against nesting at all: a nested
-`ActionGroup` with `hasDropdown() === false` gets flattened into its own
-`fi-dropdown-list` section inside the parent's panel (a visual divider, not a
-real submenu), and a nested `ActionGroup` that still has a dropdown is embedded
-directly via its own `toHtml()` call — Filament happily renders a dropdown
-inside a dropdown. Neither behavior is ported yet (tracked by the "Submenu
-rendering" and nested-group-propagation rows above); the port's
-[`ActionGroup::render()`](../../../packages/actions/src/ActionGroup.php)
-instead fails fast for both cases alike — any direct child that is itself a
-visible `ActionGroup` throws
-`LogicException('Submenu rendering is not supported yet: an ActionGroup
-cannot be rendered inside another ActionGroup.')` — so a caller gets a loud,
-immediate error instead of silently wrong markup.
+Filament builds its dropdown's sections inline inside `toEmbeddedHtml()`: a
+`foreach` accumulates `$singleActions`, flushes them into `$actionLists`
+whenever a non-dropdown subgroup needs to splice its children in as their own
+section, and then an `ob_start()` block prints one `fi-dropdown-list` per list.
+Sylament has no `toEmbeddedHtml()` — rendering goes through Twig — so the plan
+moves into a getter,
+[`getDropdownActionLists(): array<array<Action|ActionGroup>>`](../../../packages/actions/src/ActionGroup.php),
+and [`action-group.html.twig`](../../../packages/actions/templates/components/action-group.html.twig)
+loops it into `div.sy-dropdown-list` sections. The branching is Filament's,
+line for line:
 
-Task 9's plan drafted this guard as a self-check inside `render()`
-(`if ($this->getGroup() !== null) { throw ...; }`), fired lazily only when a
-nested group's own `render()` happens to be invoked. That shape doesn't
-survive contact with Twig: a nested group is reached via
-`{{ renderComponent(action) }}` inside the parent's own
-`action-group.html.twig`, so the throw would occur while the parent's template
-is still executing inside `Twig\Template::yield()`. Twig's own
-`yield()` (`vendor/twig/twig/src/Template.php`) catches any `\Throwable` that
-isn't already a `Twig\Error\Error` and rewraps it as a `Twig\Error\RuntimeError`
-carrying the original as `getPrevious()` — confirmed by running the brief's own
-test unmodified, which failed with exactly that wrapped type. The implemented
-guard instead checks eagerly, in `render()` itself, before any Twig rendering
-starts: `array_any($this->getActions(), fn (Action|ActionGroup $action):
-bool => $action instanceof self && $action->isVisible())`. Checking
-`getActions()` (not the raw `$actions` property) and gating on `isVisible()`
-mirrors exactly what the template's own `|filter(action => action.isVisible)`
-would have reached — a *hidden* nested group is not an error, since it would
-never have been rendered anyway. One behavior change from the drafted shape:
-the original would also refuse a nested group rendered **directly** in
-isolation (`$nestedGroup->render($twig)` called on its own, bypassing its
-parent's template) purely because `getGroup() !== null`, even though nothing
-about rendering it stand-alone is actually unsupported; the implemented guard
-only refuses when a *visible* `ActionGroup` is discovered as one of the
-rendering group's own children, which is the one case that is genuinely
-unbuilt. Reversible the moment submenu/nested-dropdown rendering lands: replace
-the guard with the real flatten/embed branching this divergence describes.
+- A visible plain action, or a visible subgroup that **has** its own dropdown,
+  joins the current run of single actions. A dropdown-bearing subgroup
+  therefore renders as one item in the parent's panel whose markup is that
+  subgroup's own complete dropdown — a real dropdown-in-dropdown, positioned
+  [`right-start`](#nested-groups-default-to-right-start-where-filament-writes-right-top).
+- A visible subgroup **without** a dropdown flushes the accumulated run into
+  its own section and then contributes its visible children as a fresh section.
+  Two adjacent sections are what draws the divider — support's
+  `.sy-dropdown-list + .sy-dropdown-list` rule — so a flattened subgroup reads
+  as a titled-less group of rows rather than a submenu.
 
-One more consequence of that eager placement: the `LogicException` contract
-above holds only when `render()` is called directly from PHP, the way
-[`ActionGroupRenderTest`](../../../packages/actions/tests/Integration/ActionGroupRenderTest.php)'s
-own `renderGroup()` helper does. A host template that instead embeds the group
-via the `renderComponent(group)` Twig function — the normal path for any
-`ActionGroup` nested inside another template's own rendering — has that
-`render()` call happen while Twig's `Template::yield()` is executing the
-*host* template, so the same `\Throwable`-catching behavior cited above
-applies to it too: the exception arrives at that caller wrapped in a
-`Twig\Error\RuntimeError`, with the original `LogicException` reachable via
-`getPrevious()`, not as a bare `LogicException`. Nothing under
-`packages/actions/tests` exercises that second call shape today.
+One thing the port has to do that Filament does not: **re-stamp** the flattened
+children's trigger templates as grouped. Filament gets this for free because
+its stamping keys off `isButtonGroup()`, which is false for a plain
+`dropdown(false)` subgroup, so its children were already `GROUPED_VIEW`. Ours
+[keys off `hasDropdown()`](#the-child-template-split-keys-off-hasdropdown-where-filament-keys-off-isbuttongroup),
+which is exactly the flag that made the subgroup flatten — so its children
+arrive stamped as standalone buttons and would render as buttons inside a
+dropdown panel. `getDropdownActionLists()` runs them back through
+`stampTriggerTemplates($children, grouped: true)`. That call writes only the
+*default* slot, so an explicit `template()` / `triggerTemplate()` on a child
+still wins, and the visibility filter is applied before the re-stamp so a
+hidden child is never touched.
+
+An earlier version of this port had no flatten/embed branch at all and instead
+threw `LogicException('Submenu rendering is not supported yet…')` from an
+overridden `render()`. That override and its import are gone; nothing in
+`ActionGroup::render()` throws any more, so the caveat that used to live here —
+that a `renderComponent(group)` call site would receive the exception rewrapped
+by `Twig\Template::yield()` as a `Twig\Error\RuntimeError` — no longer applies
+to anything. It is recorded only so a reader who remembers the guard knows it
+was removed deliberately rather than lost.
+
+### Nested groups default to `right-start` where Filament writes `right-top`
+
+Filament's `actions()` stamps `$action->defaultDropdownPlacement('right-top')`
+on every nested `ActionGroup`, so a submenu opens to the side rather than
+below. The port stamps `'right-start'` in the same place, and the difference is
+a **correction, not a preference**: the value is passed straight through to
+Floating UI, whose `Placement` type is `Side | AlignedPlacement`, where
+`AlignedPlacement` is the template literal `${Side}-${Alignment}` and
+`Alignment = 'start' | 'end'`
+(`@floating-ui/utils`'s `floating-ui.utils.d.ts`, the bundled copy this repo
+ships). `right-top` is not a member of that union — `top` is not an alignment —
+so Floating UI does not resolve it as "right, top-aligned"; `right-start` is
+the typed spelling of what Filament visibly means. Only the default is stamped,
+so an explicit `dropdownPlacement()` on the child still wins. Revisit only if
+Floating UI ever adds `-top`/`-bottom` aliases.
+
+### The child template split keys off `hasDropdown()` where Filament keys off `isButtonGroup()`
+
+Filament decides which template to stamp on a group's children with
+`$this->isButtonGroup() ? BUTTON_VIEW : GROUPED_VIEW` — i.e. "am I a row of
+buttons, or a dropdown panel?". The port uses
+`$this->hasDropdown() ? GROUPED_TEMPLATE : BUTTON_TEMPLATE`, because
+[`BUTTON_GROUP_VIEW` has no port](#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup)
+and `isButtonGroup()` would therefore be a predicate over a template that does
+not exist. The two agree on both shapes that matter — a dropdown group stamps
+grouped, an inline row stamps buttons — and differ on exactly one input:
+Filament's plain `dropdown(false)` group stamps its children `GROUPED_VIEW`
+(dropdown-item styling, concatenated inline), where ours stamps
+`BUTTON_TEMPLATE`. Ours is the better-looking default for a standalone inline
+row, and it is the reason the flatten branch has to
+[re-stamp](#the-dropdown-plan-is-a-php-method-the-template-loops-not-an-inline-output-buffer).
+The same rule applies one level down through `defaultTriggerTemplate()` on a
+nested group, mirroring Filament's `defaultTriggerView()`. Retire the stand-in
+when the button-group trigger lands.
 
 ### `dropdown(false)` wraps its inline row in a bare `div.sy.sy-ac-group`, unlike Filament's unwrapped concatenation
 

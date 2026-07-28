@@ -11,6 +11,11 @@ class modal_controller_default extends Controller {
   #opener = null;
   #pointerDownOnBackdrop = false;
   #escapeListener = null;
+  #openAttributeObserver = null;
+  connect() {
+    this.#observeOpenAttribute();
+    this.#normalizeModality();
+  }
   /**
    * Server-driven open state, and the only path that works for a modal rendered by the
    * same response that asks it to open. A `sylament-open-modal` event dispatched then is
@@ -26,7 +31,9 @@ class modal_controller_default extends Controller {
     }
     if (this.element.open) {
       this.element.close();
+      return;
     }
+    this.#teardownEscapeListener();
   }
   open(event) {
     if (this.#matches(event)) {
@@ -61,35 +68,107 @@ class modal_controller_default extends Controller {
     this.#pointerDownOnBackdrop = false;
   }
   /**
-   * Emitted only for client-initiated closes (ESC, click-away, close button): a
-   * server-driven close flips the open value to false before calling close(), so the
-   * value still being true here means the server does not know yet.
+   * Emitted only for client-initiated closes (ESC, click-away, close button, cancel):
+   * a server-driven close flips the open value to false before calling close(), so the
+   * value still being true here means the server does not know yet. The `close` event
+   * arrives from a queued task, so a dialog re-shown in the meantime is not a dismissal.
    */
   notifyDismissed() {
+    if (this.element.open) {
+      return;
+    }
     this.#teardownEscapeListener();
     if (this.openValue) {
       this.dispatch("dismissed");
     }
   }
   restoreFocus() {
-    if (this.returnsFocusValue) {
-      this.#opener?.focus();
-    }
-    this.#opener = null;
-  }
-  disconnect() {
-    this.#teardownEscapeListener();
-  }
-  #show() {
     if (this.element.open) {
       return;
     }
-    this.#opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    this.#restoreOpenerFocus();
+  }
+  /**
+   * The element left the DOM: the frame is gone rather than hidden, so whatever the
+   * server-driven close skipped is settled here. A dialog removed while still open
+   * never fires `close`, and the browser drops focus to the body, so this is the only
+   * place a fully server-closed stack can hand focus back to its opener.
+   */
+  disconnect() {
+    this.#openAttributeObserver?.disconnect();
+    this.#openAttributeObserver = null;
+    this.#teardownEscapeListener();
+    this.#restoreOpenerFocus();
+  }
+  #show() {
+    this.#captureOpener();
+    if (this.element.open) {
+      if (this.clickThroughValue) {
+        this.#setupEscapeListener();
+        return;
+      }
+      this.#normalizeModality();
+      return;
+    }
     if (this.clickThroughValue) {
       this.element.show();
       this.#setupEscapeListener();
       return;
     }
+    this.element.showModal();
+  }
+  /**
+   * Never overwrites: a frame that stays open across a morph — or is hidden under a
+   * child and later re-opened — keeps the trigger it was opened from, rather than
+   * picking up whatever a child dialog left focused. Cleared in #restoreOpenerFocus()
+   * once the frame really closes or leaves the DOM, so the next open captures fresh.
+   */
+  #captureOpener() {
+    if (this.#opener === null) {
+      this.#opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    }
+  }
+  #restoreOpenerFocus() {
+    if (this.returnsFocusValue) {
+      this.#opener?.focus();
+    }
+    this.#opener = null;
+  }
+  /**
+   * The `open` attribute can change without any Stimulus callback firing: after a
+   * client-side dismissal the open value is still true in the DOM, so a live re-render
+   * landing before the `dismissed` round-trip completes morphs the attribute back onto
+   * this same element — no connect(), no openValueChanged(), and the dialog reappears
+   * open but not modal (no top layer, no backdrop, no focus trap, no `cancel`, and a
+   * dead closeOnClickAway — there is no backdrop for its target check to match). An
+   * attribute observer is the only hook that fires for that. It converges rather than
+   * loops: the removeAttribute()/showModal() pair that normalizing performs queues one
+   * more callback, and that one finds the dialog already `:modal` and returns.
+   */
+  #observeOpenAttribute() {
+    if (this.#openAttributeObserver !== null) {
+      return;
+    }
+    this.#openAttributeObserver = new MutationObserver(() => {
+      this.#normalizeModality();
+    });
+    this.#openAttributeObserver.observe(this.element, {
+      attributes: true,
+      attributeFilter: ["open"]
+    });
+  }
+  /**
+   * A dialog whose `open` attribute arrived with the markup — a freshly morphed-in
+   * stack frame — is open but not modal: no top layer, no focus trap, no `cancel`
+   * event. Removing the attribute (rather than calling close()) runs the dialog
+   * cleanup steps without firing `close`, so re-showing it modally emits no spurious
+   * dismissal and never paints a closed frame.
+   */
+  #normalizeModality() {
+    if (!this.element.open || this.clickThroughValue || this.element.matches(":modal")) {
+      return;
+    }
+    this.element.removeAttribute("open");
     this.element.showModal();
   }
   /**

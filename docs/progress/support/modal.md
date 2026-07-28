@@ -33,7 +33,8 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | Native `<dialog>` + Stimulus open/close/restore | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) x-data `filamentModal` | done | — | [diverges](#the-modal-is-re-architected-onto-native-dialog) |
 | Dismissal — ESC (`closeByEscaping`), click-away (`closeByClickingAway`), close button | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `keydown.window.escape` / `click.self` + [`modal.js`](../../../vendor/filament/support/resources/js/components/modal.js) `isTopmost()` | done | — | [diverges](#esc-closes-through-the-native-cancel-event), [diverges](#click-away-closes-on-a-pointerdown-and-click-origin-pair), [diverges](#the-client-side-close-reports-itself-with-a-dismissed-event) |
 | Open/close transitions | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `x-transition` | done | — | [diverges](#transitions-are-css-native-not-js-driven) |
-| `open` state value (server-rendered open/close) | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) Alpine `isOpen` | done | — | [diverges](#the-open-state-is-a-stimulus-value-not-only-an-event) |
+| `open` state value (server-rendered open/close), mirrored into the native `open` attribute | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) Alpine `isOpen` | done | — | [diverges](#the-open-state-is-a-stimulus-value-not-only-an-event), [diverges](#the-open-attribute-is-rendered-too-and-the-controller-re-normalizes-a-morphed-in-dialog) |
+| Stacking (a modal opened over another) | [`modal.js`](../../../vendor/filament/support/resources/js/components/modal.js) `isTopmost()` + the `fi-modal-open` sibling rules | done | — | [diverges](#stacking-is-the-native-top-layer-and-the-overlaid-scrim-is-server-stamped) |
 | Header — heading / description / icon / iconColor + `aria-*` | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) heading block | done | — | [diverges](#the-header-icon-drops-filaments-background-wrapper) |
 | Content slot | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `$slot` | done | — | — |
 | Footer slot | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `$footer` | done | — | — |
@@ -56,7 +57,24 @@ consumer that boots a Twig-component kernel), asserting the closed `<dialog>`, t
 window, `aria-labelledby`/`aria-describedby`, the gray-icon color suppression, the
 close button and its tab-order/window-autofocus juggling, the slide-over/sticky/
 click-through/alignment variant classes, the footer-actions wrapper and its
-alignment class, and both extra attribute bags landing on their own elements.
+alignment class, both extra attribute bags landing on their own elements, and
+the bare `open` attribute plus the `sy-modal-overlaid` class.
+
+**What no test in this repo can reach.** There is no JS test rig — no jsdom, no
+browser driver, nothing that instantiates a Stimulus controller — so every
+render test asserts *markup* and nothing asserts *behavior*. Everything the
+[`modal_controller`](../../../packages/support/assets/src/controllers/modal_controller.ts)
+does is verified by reasoning and by tracing the installed vendor sources
+(Stimulus' value-callback ordering, Idiomorph's attribute diffing, the
+`<dialog>` spec's close steps), never by execution. That covers, specifically:
+the [modality normalization](#the-open-attribute-is-rendered-too-and-the-controller-re-normalizes-a-morphed-in-dialog)
+and its `MutationObserver`; the Escape listener a click-through dialog that
+starts open needs; the teardown path when a server-driven close lands on a
+dialog whose `open` attribute the morph already removed; and focus restoration
+across the hide/re-open cycle of a stacked frame. A manual browser smoke test
+of those paths was planned for the nested-actions epic and **was not
+performed** — treat this whole controller as unverified-at-merge until either a
+JS test rig lands or someone drives it in a browser.
 
 ## Details
 
@@ -356,11 +374,86 @@ prop rendered as a `data-sylament--support--modal-open-value` attribute, and the
 controller's `openValueChanged()` calls `showModal()` / `close()`. Stimulus invokes
 that callback on connect and on every later attribute change, whenever those
 happen, so no ordering can defeat it — and it is the honest encoding, since "this
-modal is open" *is* server state (`mountedActions` being non-empty). Both calls are
-guarded on `element.open`, so the value and event paths are idempotent and can
-coexist. The window events are kept for imperative open/close from code that has no
+modal is open" *is* server state (`mountedActions` being non-empty). The
+`show()` path guards on `element.open`, so the value and event paths are
+idempotent and can coexist. The window events are kept for imperative
+open/close from code that has no
 server state to render. Nothing reverses this; the event-only form is unsound for
 server-rendered modals.
+
+### The `open` attribute is rendered too, and the controller re-normalizes a morphed-in dialog
+
+The Stimulus value alone is not enough once a *stack* of modals persists across
+live re-renders. `open` is therefore rendered twice from one prop: as
+`data-sylament--support--modal-open-value` (**intent**, what the server wants)
+and as the bare native `open` attribute (**state**, what the DOM is). The
+reason is Idiomorph, which diffs attributes: with only the value rendered, a
+re-render of a page containing an already-open dialog would morph `open` *off*
+that element — it is not in the incoming markup — and close it behind the
+controller's back. Rendering it makes the incoming markup agree with reality.
+
+That fix creates its own problem, which the controller then absorbs. A dialog
+whose `open` attribute arrived **with the markup** is open but **not modal**:
+no top layer, no backdrop, no focus trap, no `cancel` event, and
+`closeOnClickAway` is dead because there is no backdrop for its target check to
+hit. Only `showModal()` produces the modal state, and the parser never calls
+it. So `#normalizeModality()` runs on connect and, for the top frame, at value
+time: if the dialog is open, not click-through, and not already `:modal`, it
+`removeAttribute("open")` and calls `showModal()`. Removing the attribute rather
+than calling `close()` is deliberate — the spec's close steps fire a `close`
+event, which the dismissal listener would read as a user close and round-trip
+an unmount; attribute removal runs the same cleanup silently, and nothing ever
+paints a closed frame in between.
+
+Three follow-on cases, all handled in the controller and none of them
+observable from a Twig render test:
+
+- **A morph can re-add `open` to a dialog the user just dismissed.** After a
+  client dismissal the attribute is gone but the open *value* is still `"true"`
+  until the round-trip completes; a re-render landing in that window re-adds
+  `open` to the same element — no `connect()`, no `openValueChanged()` — leaving
+  a visible, non-modal, undismissable overlay. A `MutationObserver` on the
+  `open` attribute calls `#normalizeModality()`, which is the only hook that
+  fires for that. It converges rather than loops: the remove/`showModal()` pair
+  queues one more callback, and that one finds the dialog `:modal` and returns.
+- **A server-driven close on a *persisting* element loses its `close` event.**
+  `openValueChanged(false)` would call `element.close()`, but the morph already
+  removed the mirrored attribute, so `element.open` is false and `close()` bails
+  per spec — no event, no teardown. The callback therefore runs the teardown
+  itself. It tears down **only** the Escape listener: a hidden frame is still
+  rendered and may re-open when the frame above it unmounts, so `#opener` is
+  kept as the eventual restore target and focus is left where the newly opened
+  child put it. The gone-for-good case is `disconnect()`, which does restore
+  focus.
+- **`#captureOpener()` runs before `#show()`'s early return** and never
+  overwrites an existing opener. With the attribute always rendered, a
+  freshly-mounted dialog is already open when the controller connects, so an
+  opener-capture placed after the early return would never run and
+  `restoreFocus()` would silently break for every modal in the app. Never
+  overwriting is what lets a frame that was hidden under a child and later
+  re-opened still point at the trigger it was originally opened from.
+
+### Stacking is the native top layer, and the overlaid scrim is server-stamped
+
+Filament maintains its stack in JS: `isTopmost()` scans
+`document.querySelectorAll` to decide which modal ESC should close, and a
+`:has(~ .fi-modal-open)` sibling rule suppresses the dim of any modal that has
+an open one after it — both legal because its modals are plain `<div>`s in DOM
+order.
+
+Sylament inherits the first for free and cannot use the second. `showModal()`
+promotes a dialog into the **top layer**, and the browser fires `cancel` on the
+topmost modal dialog only, so ESC already targets the right frame with no stack
+bookkeeping — see
+[ESC closes through the native `cancel` event](#esc-closes-through-the-native-cancel-event).
+But top-layer paint order is `showModal()` **call** order, which has no
+relationship to DOM order, so no sibling selector can answer "is there a dialog
+above me". The port answers it on the server instead: an `overlaid` prop stamps
+`sy-modal-overlaid`, whose rule zeroes that dialog's own background so only the
+topmost frame paints a scrim (N stacked dims would otherwise compound). The
+hand-off animates for free — `background-color` is already in the container's
+transition list. Actions' `Modals` renderer is what computes the flag; see
+[has-actions.md](../actions/has-actions.md#the-parent-overlay-flag-is-server-stamped-not-a-sibling-css-selector).
 
 ### Event names are fixed, and there is no quiet-close
 

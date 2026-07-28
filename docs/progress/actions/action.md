@@ -49,7 +49,10 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getstatus-drops-the-bulk-record-tally) |
 | `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/HasData/InteractsWithSelectedRecords ports, operation concept | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-9-of-16-names) |
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | todo | schemas/tables/InteractsWithSelectedRecords ports | [detail](#resolvedefaultclosuredependencyforevaluationbytype-is-not-overridden) |
-| `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables (`table`/`bulk` flags), modal nesting (`getParentAction()` short-circuit) | [diverges](#getcontext-emits-only-the-schemacomponent-key) |
+| `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables (`table`/`bulk` flags, `recordKey`) | [diverges](#getcontext-emits-only-the-schemacomponent-key) |
+| `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](has-actions.md#resolveactions-drops-the-table-branch-and-the-ismounting-schema-cache), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-emits-only-the-schemacomponent-key) decidable |
+| [`CanCallParentAction`](../../../packages/actions/src/Concerns/CanCallParentAction.php) | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | done | — | Filament-exact two-method port (`callParent()` + getter). The getter is `getParentActionCallLiveComponentClickHandler()` against Filament's `…Livewire…`, the systematic Livewire → UX LiveComponent naming translation from the [rename table](../renames.md), not a rename of its own. Read by all five trigger templates, ranked **above** `shouldClose()` in the click precedence |
+| [`HasParentActions`](../../../packages/actions/src/Concerns/HasParentActions.php) | [`Concerns/HasParentActions.php`](../../../vendor/filament/actions/src/Concerns/HasParentActions.php) | done | — | Complete, method-for-method and body-for-body. Three of its accessors (`shouldCancelParentActionsOnClose()`, `shouldCancelAllParentActionsOnClose()`, `getParentActionToCancelToOnClose()`) have no consumer here — and none in `vendor/filament` either, so they are kept as declared API rather than trimmed |
 | Trigger rendering ([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig) + the [`link-action`](../../../packages/actions/templates/components/link-action.html.twig) / [`badge-action`](../../../packages/actions/templates/components/badge-action.html.twig) / [`icon-button-action`](../../../packages/actions/templates/components/icon-button-action.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
 | Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | — | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal), [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-modal-footer-renders-real-action-instances) |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
@@ -62,13 +65,13 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanBeDisabled`](../../../packages/actions/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/actions/src/Concerns/CanBeDisabled.php) | done | — | [diverges](#canbedisabled-drops-the-authorization-short-circuits) |
 | [`CanBeHidden`](../../../packages/actions/src/Concerns/CanBeHidden.php) | [`Concerns/CanBeHidden.php`](../../../vendor/filament/actions/src/Concerns/CanBeHidden.php) | in progress | CanBeAuthorized, ActionGroup, BelongsToTable | [detail](#canbehidden-omits-authorization-group-and-table-cache-integration) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | [diverges](#outlined-styling-is-a-state-class-not-a-color-map) |
-| [`CanClose`](../../../packages/actions/src/Concerns/CanClose.php) | [`Concerns/CanClose.php`](../../../vendor/filament/actions/src/Concerns/CanClose.php) | done | — | [diverges](#string-click-handlers-are-live-action-names-and-close-dispatches-the-server-unmount) |
+| [`CanClose`](../../../packages/actions/src/Concerns/CanClose.php) | [`Concerns/CanClose.php`](../../../vendor/filament/actions/src/Concerns/CanClose.php) | done | — | [diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
 | [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | notifications package | [detail](#cannotify-only-ports-notification-titles-not-sending) |
 | [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
 | [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-drops-the-default-action-url-fallback) |
 | POST-to-url support | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | skipped | — | [diverges](#post-to-url-support-is-not-ported) |
 | [`CanRequireConfirmation`](../../../packages/actions/src/Concerns/CanRequireConfirmation.php) | [`Concerns/CanRequireConfirmation.php`](../../../vendor/filament/actions/src/Concerns/CanRequireConfirmation.php) | done | — | [diverges](#confirmation-is-a-flag-not-a-modal-config-layer) |
-| [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) | [`Concerns/HasAction.php`](../../../vendor/filament/actions/src/Concerns/HasAction.php) | in progress | — | [detail](#hasaction-drops-the-livewire-click-gating), [diverges](#string-click-handlers-are-live-action-names-and-close-dispatches-the-server-unmount) |
+| [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) | [`Concerns/HasAction.php`](../../../vendor/filament/actions/src/Concerns/HasAction.php) | in progress | — | [detail](#hasaction-drops-the-livewire-click-gating), [diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
 | [`HasArguments`](../../../packages/actions/src/Concerns/HasArguments.php) | [`Concerns/HasArguments.php`](../../../vendor/filament/actions/src/Concerns/HasArguments.php) | done | — | — |
 | [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | [diverges](#hasgroupedicon-narrows-its-icon-type-to-string) |
 | [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`label()` / `getLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
@@ -318,9 +321,10 @@ and the `'center'` string, so a confirmation modal renders cancel-first;
 `hasFormWrapper()`/`submit()` arm (`CanSubmitForm` deferred) and matches
 `null` alongside `'gray'` to primary (Filament's `getColor()` never returns
 null there; ours does for an unset color — observably identical);
-`makeModalSubmitAction()` (the `callParent` factory) is skipped with the
-nested-action stack; `prepareModalAction()` drops
-`->parentAction($this)` (same deferral) and `->table(...)` (tables), and
+`makeModalSubmitAction()` (the `callParent` factory) is ported, with no
+constructor yet; `prepareModalAction()` now stamps `->parentAction(...)`
+(narrowed by an `instanceof Action` check the composing class needs) and still
+drops `->table(...)` (tables), and
 translates `->livewire(...)` to
 `->liveComponent($this->getLiveComponentOrNull())`; the `=== false` removal
 check is `$action instanceof Action`, so a nonsense `modalSubmitAction(true)`
@@ -358,9 +362,14 @@ support's [`ModalComponent` static-config row](../support/modal.md#modalcomponen
 **Missing vs Filament** — Filament's trait is ~800 lines; the port is now ~690.
 Absent entirely, with no property, setter, or getter:
 
-- **Wizard suppression**: `getModalFooterActions()`'s `isWizard()` early return
-  and the `makeModalSubmitAction()` `callParent` factory, deferred with
-  `HasWizard` and the nested-action stack respectively.
+- **Wizard suppression**: `getModalFooterActions()`'s `isWizard()` early return,
+  deferred with `HasWizard`.
+  `makeModalSubmitAction(string $name, ?array $arguments = null)` itself is now
+  ported — `makeModalAction($name)->callParent($this->getLiveComponentCallMountedActionName())->arguments($arguments)->color('gray')`,
+  Filament's body — so a modal footer action can call its **parent** action
+  rather than mounting itself. Nothing in the port constructs one yet (Filament's
+  only caller is the wizard), but it is the factory a consumer reaches for, and
+  the trigger templates already rank its `callParent` handler above `shouldClose()`.
 - **Deprecated aliases**: `centerModal()`, `modalButton()`, `modalSubheading()`,
   `extraModalActions()`, `makeExtraModalAction()` are not carried over — expected;
   Sylament has no deprecation-shim policy and these all have live equivalents
@@ -378,13 +387,22 @@ is a bare string (`'md'`) vs Filament's `Width` enum (no `Width` enum ported to
 Sylament yet — every width value here is just whatever string a template's CSS
 happens to key on, e.g. `sy-modal-md`).
 
-**Next step**: the wizard suppression and `callParent` wiring return with their
-deferred features (`HasWizard`, the nested-action stack); the four `?? true`
-literals become reads of the `ModalComponent`-equivalent global-defaults seam if
-and when that lands. What is left beyond those is the scoped deltas listed
-above — the `hasFormWrapper()` submit arm and `prepareModalAction()`'s dropped
-`->parentAction()` / `->table()` binding — each waiting on an unported concern
-(`CanSubmitForm`, the nested-action stack, `BelongsToTable`).
+`prepareModalAction()` now also stamps `->parentAction($this instanceof Action ? $this : null)`
+alongside the schema-container/schema-component/live-component bindings, so
+every action an action declares — footer actions, `getModalAction()` targets —
+knows its parent. That single line is what makes the host's parent-modal
+descent addressable from the action side and what lets
+[`getContext()`](#getcontext-emits-only-the-schemacomponent-key) recognize a
+child frame. The `instanceof` narrowing exists because the trait is also
+composed by non-`Action` classes; Filament passes `$this` unconditionally from
+a class that is always an `Action`.
+
+**Next step**: the wizard suppression returns with `HasWizard`; the four
+`?? true` literals become reads of the `ModalComponent`-equivalent
+global-defaults seam if and when that lands. What is left beyond those is the
+scoped deltas listed above — the `hasFormWrapper()` submit arm and
+`prepareModalAction()`'s still-dropped `->table()` binding — each waiting on an
+unported concern (`CanSubmitForm`, `BelongsToTable`).
 
 ### getUrl() drops the default-action-url fallback
 
@@ -424,11 +442,12 @@ Ported: both value shapes. `action(Closure|string|null $action): static` /
 no-op semantics) — covered by `ActionTest`. The string branch renders through
 `getClientClickHandler(): ?string` — the Sylament port of
 `getLivewireClickHandler()`'s string arm — which every trigger template reads
-first in its click precedence (string handler, then `shouldClose()` →
-`unmountAction`, then the `mountAction` round-trip); the reinterpretation of
+first in its click precedence (string handler, then a `callParent()` handler,
+then `shouldClose()` → a client-side dismiss, then the `mountAction`
+round-trip); the reinterpretation of
 the string as a live-action name rather than a raw client expression is
 recorded as a
-[divergence](#string-click-handlers-are-live-action-names-and-close-dispatches-the-server-unmount).
+[divergence](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side).
 
 Missing vs Filament's `HasAction`:
 - **`livewireClickHandlerEnabled()` / `isLivewireClickHandlerEnabled()`.** Entirely absent — no way to force-disable the live dispatch. Filament's default logic also stands down when `getUrl()` is filled (ported, hardcoded in the template) or when `canSubmitForm()` is true; the latter has no Sylament equivalent because no `CanSubmitForm` concern exists yet (forms/actions form-submission integration is unbuilt), so this half of the gap is blocked on that future work rather than a simple omission.
@@ -513,24 +532,35 @@ pass straight through, the `content` block renders `getModalContent()` then
 
 The whole thing sits inside a **dismissal wrapper**: a `<div>` binding the
 support controller's `sylament--support--modal:dismissed` event to
-`live_action('unmountAction')`, so a client-side close (ESC, click-away, close
-button) unmounts the action server-side and the next live re-render does not
+`live_action('unmountAction', { cancelParentActions: action.getParentActionsToCancelOnClose })`,
+so a client-side close (ESC, click-away, close button, a `close()` action)
+unmounts that frame server-side — cancelling as far up the stack as the action
+asked — and the next live re-render does not
 resurrect a modal the user already closed — Filament's `x-on:modal-closed`
 equivalent. It is a wrapper element rather than a binding on the component tag
 because a caller `data-action` would replace the dialog's own Stimulus wiring
 inside `attributes.defaults()`; the event bubbles from the dialog, so the
-wrapper catches it.
+wrapper catches it. Its id is name-scoped where the dialog's is index-scoped —
+[why](has-actions.md#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper).
 
 Rendered by the host's `<twig:SylamentActions:Modals />` tag (see the
-`RecordActionHost` / `ActionHost` Twig fixtures) once the mounted action's
-`shouldOpenModal()` holds — Filament's own gate. Covered by
+`RecordActionHost` / `ActionHost` Twig fixtures), once per mounted frame, with
+the top frame gated on `shouldOpenModal()` — Filament's own loop and gate. Each
+instance takes its `id` and its `open` state from the host
+([per-frame ids](has-actions.md#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper),
+[server-computed open state](has-actions.md#the-stack-is-choreographed-declaratively-not-by-client-events)),
+plus `overlaid` for every frame that is not the top one. Covered by
 [`ActionModalRenderTest`](../../../packages/actions/tests/Integration/Components/ActionModalRenderTest.php),
 which asserts, through a full `mountAction` → render cycle: the modal class,
-heading, submit/cancel labels and `live_action` wiring, the confirmation icon
+heading, submit/cancel labels and click wiring, the confirmation icon
 `<svg>`, extra footer actions slotted between submit and cancel, content +
 content-footer placement, the chrome pass-through, the confirmation modal's
 centered cancel-first footer, and the dismissal wrapper's `unmountAction`
-binding.
+binding — and by
+[`ModalsRenderTest`](../../../packages/actions/tests/Integration/Components/ModalsRenderTest.php)
+for the stacked cases: one dialog per frame with distinct ids, per-frame open
+and overlaid state, per-frame `cancelParentActions`, and the modal-less top
+frame that renders nothing.
 
 **Missing vs Filament:** `action-modal.blade.php` is a general-purpose action
 modal, not a confirmation-only one, and most of that generality has no
@@ -554,31 +584,25 @@ Sylament counterpart yet:
   differ deliberately: `returnsFocus` stays at its `true` default where Filament
   hardcodes `focus-trap-returns-focus="false"`
   ([why](../support/modal.md#returnsfocus-stays-true-where-filaments-action-modal-hardcodes-false)),
-  and the modal `id` plus `:open="true"` are Sylament's server-state open
-  signal rather than Filament's event-only open.
+  and the modal `id` plus the per-frame `open` value are Sylament's
+  server-state open signal rather than Filament's event-only open.
 - **No form-wrapper wiring.** Filament conditionally sets `wire:submit.prevent`
   to `getLivewireCallMountedActionName()` when `hasFormWrapper()` is true, and
   actually submits the form via that binding; Sylament's footer submit action
   always calls `callMountedAction` through its string click handler, and
   `hasFormWrapper()` doesn't exist on the port (there is no forms integration
   in `actions` yet — the string-action path is the deliberate stand-in).
-- **No nested-modal-close event chain.** Filament computes a
-  `x-on:modal-closed` handler that also unmounts every parent action named in
-  `getParentActionsToCancelOnClose()`, for stacked/nested actions. Sylament's
-  `HasActions::unmountAction()` always dispatches a single
-  `sylament-close-modal` event for the current modal id — nested action
-  stacking (`getNestingIndex()`, per-parent cancellation) is not modeled.
 - **No render hooks.** Filament brackets custom content and the schema in four
   `FilamentView::renderHook()` pairs; Sylament has no render-hook facility, so
   none of that extensibility point exists (a broader gap than this template
   alone, noted here because it is one of the things the Filament view relies
   on).
 
-**Next step:** what is left on this row is no longer chrome — it is the
-schema/form slot (with `HasSchema` / `CanSubmitForm` and the form-wrapper
-binding), the nested-modal close chain (with the nested-action stack), `alert`,
-and render hooks. Each lands with the concern named beside it; the support
-`Modal` component takes its matching prop in the same change.
+**Next step:** what is left on this row is no longer chrome, and no longer
+stacking — it is the schema/form slot (with `HasSchema` / `CanSubmitForm` and
+the form-wrapper binding), `alert`, and render hooks. Each lands with the
+concern named beside it; the support `Modal` component takes its matching prop
+in the same change.
 
 ### Tooltip, icon position, and extra-attribute rendering are untested
 
@@ -776,10 +800,20 @@ consumes an inbound `context.recordKey` at mount time
 (`getMountedActionRecord()`), so the consuming half of the contract is
 intact; the emitting half returns when record-key resolution lands on the
 action side with the `tables` integration. The `table`/`bulk` flags wait on
-`BelongsToTable`/bulk actions, and the `getParentAction()` short-circuit on
-modal nesting — none has a Sylament backing surface yet. Covered by
-`ActionTest`'s context cases (empty without a binding, container key,
-component-key fallback, keyless container).
+`BelongsToTable`/bulk actions.
+
+The **child-frame short-circuit is ported**: `if ($this->parentAction instanceof self) { return $context; }`
+runs before the schema branch, so a modal action declared by another action
+emits an empty context even when it inherited a schema binding from
+`prepareModalAction()`. Without it, a nested frame would carry a
+`schemaComponent` key up to the host and — but for the host's own
+[root-only gate](has-actions.md#resolution-stops-at-the-first-null-frame-and-only-the-root-frame-may-use-schema-context) —
+try to resolve against the host's schema instead of its parent's declared modal
+actions. Filament returns `$context` (already holding `recordKey`) at the same
+point; ours returns it empty, because `recordKey` is not emitted here yet.
+Covered by `ActionTest`'s context cases (empty without a binding, container key,
+component-key fallback, keyless container, and a bound-schema action whose
+`parentAction` suppresses the key the binding alone would emit).
 
 ### CanBeDisabled drops the authorization short-circuits
 
@@ -809,31 +843,41 @@ contract (semantic classes + runtime tokens, no per-color class maps). The
 button template is the only consumer, matching Filament (its link/badge/
 icon-button/grouped views ignore `outlined`).
 
-### String click handlers are live-action names, and close dispatches the server unmount
+### String click handlers are live-action names, and `close()` dismisses client-side
 
-Two connected translations of the client-side click surface, both permanent
-until an arbitrary-JS surface exists (none is planned):
+**A string `action(...)` value is a live-action method name, not a raw client
+expression.** Filament's `getLivewireClickHandler()` returns a string action
+verbatim as the Livewire click-handler JS; Sylament emits it through
+`live_action(component.getClientClickHandler)`, so the string names a
+`#[LiveAction]` method on the host (`'callMountedAction'` being the canonical
+consumer, via the submit footer action). There is no way to inject arbitrary
+JS through this seam — deliberate, and permanent until an arbitrary-JS surface
+exists (none is planned). The same reading applies to
+`CanCallParentAction`'s handler, which is likewise a
+live-action name.
 
-- **A string `action(...)` value is a live-action method name, not a raw
-  client expression.** Filament's `getLivewireClickHandler()` returns a string
-  action verbatim as the Livewire click-handler JS; Sylament emits it through
-  `live_action(component.getClientClickHandler)`, so the string names a
-  `#[LiveAction]` method on the host (`'callMountedAction'` being the canonical
-  consumer, via the submit footer action). There is no way to inject arbitrary
-  JS through this seam — deliberate.
-- **`close()` round-trips `unmountAction` instead of closing client-side.**
-  Filament's `getJsClickHandler()` nulls out the Livewire handler when
-  `shouldClose()` and closes the modal via Alpine, letting the modal-close
-  event round-trip `unmountAction` afterwards; the single-slot port has no
-  client-side close chain, so a closing trigger dispatches
-  `live_action('unmountAction')` directly and the server close event does the
-  rest. Same observable outcome (modal closes, slot empties), one round-trip
-  instead of an event chain.
+All five trigger templates share one click precedence, the port of
+`getLivewireClickHandler()`'s arm order: a string handler first, then a
+`callParent()` handler (with the action's own `arguments` attached), then
+`shouldClose()`, then the `mountAction` round-trip — and the whole chain is
+suppressed when `getUrl()` is filled, because a link navigates. `shouldClose()`
+now emits `data-action="sylament--support--modal#dismiss"`, a **client-side**
+close, matching Filament's `getJsClickHandler()`: the dialog closes in the
+browser, and the controller's `dismissed` event carries the
+[`cancelParentActions` round-trip](has-actions.md#the-stack-is-choreographed-declaratively-not-by-client-events)
+back to `unmountAction`. Until the nested-actions epic this branch dispatched
+`live_action('unmountAction')` directly — correct for a single slot, but it
+could not express "close this frame *and* cancel back to a named parent", which
+is per-action state the close chain has to carry.
 
-All five trigger templates share the same click precedence: string handler
-first, then `shouldClose()`, then the `mountAction` round-trip — the port of
-`getLivewireClickHandler()`'s arm order. Pinned by `ActionRenderTest`'s
-string/close/precedence cases (button and icon-button shapes).
+Pinned by `ActionRenderTest`'s string/close/parent-call/precedence cases across
+the button and icon-button shapes.
+
+One shape delta among the five templates, deliberate and now commented in
+place: `icon-button-action.html.twig` suppresses click wiring for a **disabled**
+action as well as a URL-bearing one, where its four siblings emit the binding
+and lean on the rendered `disabled` attribute. Both bindings on that template
+read one hoisted `clickWiringSuppressed` flag so they cannot drift apart again.
 
 ### HasGroupedIcon narrows its icon type to string
 
@@ -1021,8 +1065,14 @@ does Sylament:
 loops `getVisibleModalFooterActions()` through `renderComponent()`, so every
 footer button is a `makeModalAction()`-built `Action` rendering via
 `button-action.html.twig` (submit reaches `live_action('callMountedAction')`
-through its string click handler; cancel reaches `live_action('unmountAction')`
-through `close()`). One limitation moved rather than vanished: an
+through its string click handler; cancel closes the dialog client-side via
+`data-action="sylament--support--modal#dismiss"` from `close()`, and the
+dismissal wrapper turns that into the `unmountAction` round-trip — see the
+[click-precedence divergence](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side)).
+A third shape exists but has no constructor yet:
+`makeModalSubmitAction()` builds a footer action whose `callParent()` handler
+calls the **parent** action's `callMountedAction`, ranked above `close()` in
+the same precedence chain. One limitation moved rather than vanished: an
 array-of-shades color (a value `getColor(): string|array<string>|null`
 explicitly allows) still cannot be represented in the rendered classes — that
 is now the general button-template limitation (`button-action.html.twig`

@@ -9,10 +9,16 @@
    would resurrect a modal the user already closed. The event bubbles from the dialog;
    the binding cannot sit on the component tag itself because a caller data-action
    would replace the dialog's own Stimulus wiring in attributes.defaults().
-   The wrapper id is name-scoped while the dialog id is index-scoped: a
-   replaceMountedAction() at the same index swaps a differently-named subtree
-   wholesale (fresh dialog, fresh open transition), while an unchanged frame morphs
-   in place and keeps its native open state. #}
+   The dialog id is index-scoped, which is what gives a frame morph stability: an
+   unchanged frame keeps the same id across re-renders, so idiomorph matches it and
+   it keeps its native open state instead of being replaced.
+
+   The wrapper id is name-scoped, but do NOT read that as forcing a subtree swap on
+   replaceMountedAction(). Idiomorph matches by id-set INTERSECTION, not by node
+   identity, and the dialog id inside this wrapper is unchanged, so the wrapper
+   still matches and morphs in place. That is fine: a morphed node has its
+   attributes synced from the new markup, so the cancelParentActions argument below
+   (per-action, not per-index) is rewritten for the replacing action either way. #}
 <div id="{{ id }}-w-{{ action.getName }}" {{ live_action(
     'unmountAction',
     { cancelParentActions: action.getParentActionsToCancelOnClose },

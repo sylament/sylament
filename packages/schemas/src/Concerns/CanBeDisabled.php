@@ -30,6 +30,7 @@ trait CanBeDisabled
         if ($this->evaluate($this->isDisabled)) {
             return true;
         }
+
         return (bool) $this->getParentComponent()?->isDisabled();
     }
 

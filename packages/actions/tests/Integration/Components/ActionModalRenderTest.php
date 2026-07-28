@@ -20,7 +20,7 @@ it('renders the action modal composing the modal config and mount/call wiring', 
         ->toContain('Confirm')
         ->toContain('Cancel')
         ->toContain('<svg')
-        ->toContain('data-live-action-param="callMountedAction"')
+        ->toContain('type="submit"')
         ->toContain('data-live-action-param="unmountAction"')
         ->toContain('sy-btn');
 });
@@ -30,7 +30,7 @@ it('renders extra footer actions between submit and cancel', function (): void {
         ->call('mountAction', ['name' => 'briefed', 'arguments' => [], 'context' => []])
         ->render();
 
-    $submitPosition = mb_strpos($html, 'data-live-action-param="callMountedAction"');
+    $submitPosition = mb_strpos($html, 'type="submit"');
     $extraPosition = mb_strpos($html, '>Extra<');
     $cancelPosition = mb_strpos($html, 'data-action="sylament--support--modal#dismiss"', $submitPosition);
 
@@ -79,7 +79,7 @@ it('centers and reverses the confirmation modal footer', function (): void {
     expect($footerActionsPosition)->not->toBeFalse();
 
     $cancelPosition = mb_strpos($html, 'data-action="sylament--support--modal#dismiss"', $footerActionsPosition);
-    $submitPosition = mb_strpos($html, 'data-live-action-param="callMountedAction"', $footerActionsPosition);
+    $submitPosition = mb_strpos($html, 'type="submit"', $footerActionsPosition);
 
     expect($html)->toContain('sy-align-center')
         ->and($cancelPosition)->not->toBeFalse()

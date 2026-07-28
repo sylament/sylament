@@ -454,9 +454,12 @@ trait CanOpenModal
     {
         $color = $this->getColor();
 
+        $hasFormWrapper = $this->hasFormWrapper();
+
         $action = static::makeModalAction('submit')
             ->label($this->getModalSubmitActionLabel())
-            ->action($this->getLiveComponentCallMountedActionName())
+            ->submit($hasFormWrapper ? $this->getLiveComponentCallMountedActionName() : null)
+            ->action($hasFormWrapper ? null : $this->getLiveComponentCallMountedActionName())
             ->color(match ($color) {
                 'gray', null => 'primary',
                 default => $color,

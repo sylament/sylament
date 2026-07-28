@@ -41,5 +41,7 @@
     tag: component.getUrl ? 'a' : 'button',
     href: component.getUrl,
     target: component.shouldOpenUrlInNewTab ? '_blank' : null,
+    type: component.canSubmitForm ? 'submit' : 'button',
+    formId: component.getFormId,
     ...(component.getTooltip ? { title: component.getTooltip } : {}),
 }|merge(extraAttributes)|merge({ class: rootClasses })|merge(mountAttributes)|merge(closeAttributes) %}{% endcomponent %}

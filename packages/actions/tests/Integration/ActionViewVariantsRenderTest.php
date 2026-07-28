@@ -108,3 +108,21 @@ it('flattens extra attributes onto the icon-button root, merging class tokens', 
         ->toContain('sy-ac')
         ->toContain('sy-icon-btn');
 });
+
+it('renders type="submit" and the wired form id for a submit-capable action', function (string $template): void {
+    $html = renderVariant(
+        Action::make('save')
+            ->template($template)
+            ->icon('heroicons:x-mark')
+            ->submit('callMountedAction')
+            ->formId('my-form'),
+    );
+
+    expect($html)->toContain('type="submit"')
+        ->toContain('form="my-form"');
+})->with([
+    'button' => Action::BUTTON_TEMPLATE,
+    'link' => Action::LINK_TEMPLATE,
+    'badge' => Action::BADGE_TEMPLATE,
+    'icon button' => Action::ICON_BUTTON_TEMPLATE,
+]);

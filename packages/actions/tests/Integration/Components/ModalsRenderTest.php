@@ -55,7 +55,7 @@ it('renders the mounted action modal from a zero-argument tag', function (): voi
     expect($html)
         ->toContain('<dialog')
         ->toMatch('/id="sy-[0-9a-f]{8}-action-0"/')
-        ->toContain('data-live-action-param="callMountedAction"')
+        ->toContain('type="submit"')
         ->toContain('data-live-action-param="unmountAction"');
 });
 

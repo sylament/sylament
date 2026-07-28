@@ -6,7 +6,8 @@
         class: classes('sy sy-dropdown-item sy-ac', {
             'sy-disabled': component.isDisabled,
         }),
-        type: component.getUrl ? false : 'button',
+        type: component.getUrl ? false : (component.canSubmitForm ? 'submit' : 'button'),
+        form: component.getFormId ?: false,
         disabled: component.isDisabled and not component.getUrl,
         'aria-disabled': component.isDisabled ? 'true' : false,
         href: component.getUrl ?: false,

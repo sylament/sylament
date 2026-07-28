@@ -216,6 +216,12 @@ it('injects $schemaState from the first state-path-bearing schema container', fu
         ->toBe(['title' => 'Ada', 'subtitle' => 'Bo']);
 });
 
+it('injects $data from getData()', function (): void {
+    $action = Action::make('save')->data(['title' => 'Ada']);
+
+    expect($action->evaluate(fn ($data): array => $data))->toBe(['title' => 'Ada']);
+});
+
 it('fatals when $get is requested without a schema component, as in Filament', function (): void {
     expect(fn (): mixed => Action::make('save')->evaluate(fn (Get $get): mixed => $get('title')))
         ->toThrow(Error::class);

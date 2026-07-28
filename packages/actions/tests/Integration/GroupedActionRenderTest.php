@@ -59,3 +59,13 @@ it('renders a disabled grouped action', function (): void {
         ->toContain('aria-disabled="true"')
         ->toContain('sy-disabled');
 });
+
+it('renders type="submit" and the wired form id for a submit-capable grouped action', function (): void {
+    $save = Action::make('save')->submit('callMountedAction')->formId('my-form');
+    ActionGroup::make([$save])->getActions();
+
+    $html = renderGroupedAction($save);
+
+    expect($html)->toContain('type="submit"')
+        ->toContain('form="my-form"');
+});

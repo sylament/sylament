@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions\Concerns;
 
 use Closure;
+use TypeError;
 
 trait HasData
 {
@@ -23,6 +24,13 @@ trait HasData
     }
 
     /**
+     * `mutateDataUsing` is a bare `?Closure` (no arity spec, per convention),
+     * so PHPStan cannot know it returns an array once this trait is composed
+     * onto a real class — the explicit is_array() check (mirroring the
+     * TypeError guard in Sylament\Schemas\Concerns\CanModifyActions) gives it
+     * that guarantee instead of an unchecked assignment silently trusting a
+     * misbehaving callback.
+     *
      * @param  array<string, mixed>  $data
      */
     public function data(array $data, bool $shouldMutate = true): static
@@ -31,6 +39,10 @@ trait HasData
             $data = $this->evaluate($this->mutateDataUsing, [
                 'data' => $data,
             ]);
+        }
+
+        if (!is_array($data)) {
+            throw new TypeError(sprintf('%s::mutateDataUsing() must return an array.', static::class));
         }
 
         $this->data = $data;

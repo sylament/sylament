@@ -131,12 +131,21 @@ it('builds the default footer as submit and cancel actions', function (): void {
 
     expect($submit)->toBeInstanceOf(Action::class)
         ->and($submit->getLabel())->toBe('Confirm')
-        ->and($submit->getClientClickHandler())->toBe('callMountedAction')
+        ->and($submit->canSubmitForm())->toBeTrue()
+        ->and($submit->getFormToSubmit())->toBe('callMountedAction')
+        ->and($submit->getClientClickHandler())->toBeNull()
         ->and($submit->isButton())->toBeTrue()
         ->and($cancel)->toBeInstanceOf(Action::class)
         ->and($cancel->getLabel())->toBe('Cancel')
         ->and($cancel->shouldClose())->toBeTrue()
         ->and($cancel->getColor())->toBe('gray');
+});
+
+it('keeps a click handler on the submit action when the owner has no form wrapper', function (): void {
+    $submit = Action::make('delete')->formWrapper(false)->getModalSubmitAction();
+
+    expect($submit?->canSubmitForm())->toBeFalse()
+        ->and($submit?->getClientClickHandler())->toBe('callMountedAction');
 });
 
 it('colors the submit action primary when the action color is gray or unset', function (): void {

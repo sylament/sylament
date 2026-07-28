@@ -32,28 +32,26 @@ trait CanBeMounted
     }
 
     /**
-     * Filament types this closure's first parameter `Action $action`. Here it
-     * is left untyped and resolved by name instead, against the
-     * `evaluationIdentifier` set on {@see \Sylament\Actions\Action} ('action').
-     * The Invoker's type-based resolution (`is_a($this, $parameterType)`,
-     * packages/support/src/Concerns/EvaluatesClosures.php:55) resolves an
-     * `Action`-typed parameter to the evaluating instance identically to the
-     * name-based path when that instance really is an Action — but the
-     * Invoker never casts: PHP itself enforces the declared parameter type at
-     * the `$callable(...$args)` call (packages/support/src/Evaluation/Invoker.php:95),
-     * regardless of which path resolved the value. An `Action` type hint would
-     * therefore reject this trait's own bare Unit-test fixture, which is not
-     * an Action. Leaving the parameter untyped and matching by name carries no
-     * such constraint and is exactly as reliable wherever this trait is
-     * actually used (only Action, which declares evaluationIdentifier =
-     * 'action').
+     * Filament types this closure's first parameter `Action $action` and
+     * calls `$action->evaluate($data)`. Here the closure omits that
+     * parameter and calls `$this->evaluate($data)` instead: `mountUsing` is
+     * stored on `$this`, and `mount()` always evaluates it back through that
+     * very same instance (Invoker::call() never rebinds a closure's `$this`,
+     * packages/support/src/Evaluation/Invoker.php:95), so a non-static
+     * closure's captured `$this` is always the value an `$action` parameter
+     * would have received. An untyped `$action` parameter would still
+     * resolve correctly at runtime (by name, against `evaluationIdentifier`),
+     * but its static type is `mixed`, so PHPStan cannot verify a method call
+     * on it once this trait is actually composed onto a class; `$this`,
+     * resolved through ordinary trait-in-context analysis, is properly typed
+     * as the composing class instead.
      *
      * @param array<string, mixed>|Closure|null $data
      */
     public function fillForm(array|Closure|null $data): static
     {
-        $this->mountUsing(static function ($action, ?Schema $schema) use ($data): void {
-            $schema?->fill($action->evaluate($data));
+        $this->mountUsing(function (?Schema $schema) use ($data): void {
+            $schema?->fill($this->evaluate($data));
         });
 
         return $this;

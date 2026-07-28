@@ -12,6 +12,7 @@ use Sylament\Actions\Concerns\BelongsToLiveComponent;
 use Sylament\Actions\Concerns\BelongsToSchemaComponent;
 use Sylament\Actions\Concerns\CanBeDisabled;
 use Sylament\Actions\Concerns\CanBeHidden;
+use Sylament\Actions\Concerns\CanBeMounted;
 use Sylament\Actions\Concerns\CanBeOutlined;
 use Sylament\Actions\Concerns\CanCallParentAction;
 use Sylament\Actions\Concerns\CanClose;
@@ -19,8 +20,10 @@ use Sylament\Actions\Concerns\CanNotify;
 use Sylament\Actions\Concerns\CanOpenModal;
 use Sylament\Actions\Concerns\CanOpenUrl;
 use Sylament\Actions\Concerns\CanRequireConfirmation;
+use Sylament\Actions\Concerns\CanSubmitForm;
 use Sylament\Actions\Concerns\HasAction;
 use Sylament\Actions\Concerns\HasArguments;
+use Sylament\Actions\Concerns\HasData;
 use Sylament\Actions\Concerns\HasExtraModalOverlayAttributes;
 use Sylament\Actions\Concerns\HasExtraModalWindowAttributes;
 use Sylament\Actions\Concerns\HasGroupedIcon;
@@ -29,6 +32,7 @@ use Sylament\Actions\Concerns\HasLifecycleHooks;
 use Sylament\Actions\Concerns\HasMountableArguments;
 use Sylament\Actions\Concerns\HasName;
 use Sylament\Actions\Concerns\HasParentActions;
+use Sylament\Actions\Concerns\HasSchema;
 use Sylament\Actions\Concerns\HasSize;
 use Sylament\Actions\Concerns\InteractsWithRecord;
 use Sylament\Actions\Enums\ActionStatus;
@@ -52,6 +56,7 @@ class Action extends ViewComponent
     use BelongsToSchemaComponent;
     use CanBeDisabled;
     use CanBeHidden;
+    use CanBeMounted;
     use CanBeOutlined;
     use CanCallParentAction;
     use CanClose;
@@ -59,9 +64,11 @@ class Action extends ViewComponent
     use CanOpenModal;
     use CanOpenUrl;
     use CanRequireConfirmation;
+    use CanSubmitForm;
     use HasAction;
     use HasArguments;
     use HasColor;
+    use HasData;
     use HasExtraAttributes;
     use HasExtraModalOverlayAttributes;
     use HasExtraModalWindowAttributes;
@@ -74,6 +81,7 @@ class Action extends ViewComponent
     use HasMountableArguments;
     use HasName;
     use HasParentActions;
+    use HasSchema;
     use HasSize;
     use HasTooltip;
     use InteractsWithRecord;
@@ -254,6 +262,7 @@ class Action extends ViewComponent
         return match ($parameterName) {
             'record' => ClosureParameter::make($this->getRecord()),
             'arguments' => ClosureParameter::make($this->getArguments()),
+            'data' => ClosureParameter::make($this->getData()),
             'liveComponent' => ClosureParameter::make($this->getLiveComponent()),
             'schema' => ClosureParameter::make($this->getSchemaContainer()),
             'schemaComponent', 'component' => ClosureParameter::make($this->getSchemaComponent()),

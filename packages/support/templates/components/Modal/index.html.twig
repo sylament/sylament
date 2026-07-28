@@ -24,6 +24,7 @@
     slideOverPosition = 'end',
     stickyHeader = false,
     stickyFooter = false,
+    submitHandler = null,
     width = 'md' %}
 
 {% set iconColorName = iconColor is iterable or iconColor is empty ? 'gray' : iconColor %}
@@ -40,6 +41,7 @@
 {% set hasFooterActions = footerActions is not empty %}
 {% set hasFooter = hasFooterSlot or hasFooterActions %}
 {% set hasContent = content is filled %}
+{% set hasSubmitHandler = submitHandler is filled %}
 
 {% set clickThrough = clickThrough ?: false %}
 {% set closeByClickingAway = clickThrough ? false : closeByClickingAway %}
@@ -104,7 +106,7 @@
         ...(overlayExtra|filter((value, name) => name != 'class')),
     }) }}
 >
-    <div {{ attrs({
+    <{{ hasSubmitHandler ? 'form' : 'div' }} {{ attrs({
         class: classes('sy-modal-window', {
             ('sy-modal-' ~ sizeValue): sizeValue is not empty,
             (alignmentClass ?? ''): alignmentClass is not empty,
@@ -115,7 +117,7 @@
         }),
         autofocus: windowGetsInitialFocus,
         tabindex: windowGetsInitialFocus ? '-1' : false,
-    }, extraWindowAttributes ?: {}) }}>
+    }, extraWindowAttributes ?: {}) }}{% if hasSubmitHandler %} {{ live_action(submitHandler ~ ':prevent', {}, {}, 'submit') }}{% endif %}>
         {% if hasHeader %}
             <header {{ attrs({ class: classes('sy-modal-header', { 'sy-vertical-align-center': verticalAlignCenter }) }) }}>
                 {% if hasCloseButton %}
@@ -166,5 +168,5 @@
                 {% endif %}
             </footer>
         {% endif %}
-    </div>
+    </{{ hasSubmitHandler ? 'form' : 'div' }}>
 </dialog>

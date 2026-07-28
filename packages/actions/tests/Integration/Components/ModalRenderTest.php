@@ -213,3 +213,21 @@ it('marks an overlaid modal so its dim is suppressed', function (): void {
     expect(renderModal('<twig:SylamentSupport:Modal id="m" :open="true" />'))
         ->not->toContain('sy-modal-overlaid');
 });
+
+it('renders the window as a plain div when no submit handler is set', function (): void {
+    $html = renderModal('<twig:SylamentSupport:Modal id="m" />');
+
+    expect($html)->toMatch('/<div[^>]*\bsy-modal-window\b/')
+        ->not->toContain('<form')
+        ->not->toContain('data-live-action-param');
+});
+
+it('renders the window as a form carrying the live submit action when a submit handler is set', function (): void {
+    $html = renderModal('<twig:SylamentSupport:Modal id="m" submitHandler="callMountedAction" />');
+
+    expect($html)->toMatch('/<form[^>]*\bsy-modal-window\b/')
+        ->toContain('data-action="submit->live#action:prevent"')
+        ->toContain('data-live-action-param="callMountedAction"')
+        ->toMatch('#</form>\s*</dialog>#')
+        ->not->toMatch('/<div[^>]*\bsy-modal-window\b/');
+});

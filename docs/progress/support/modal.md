@@ -45,7 +45,8 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | Slide-over (+ position), sticky header/footer, alignment, footer actions + their alignment, clickThrough, extra window/overlay attribute bags | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) props | done | — | [diverges](#alignment-strings-pass-through-verbatim-where-filament-drops-them), [diverges](#click-through-is-a-non-modal-dialogshow) |
 | `alert`, `trigger`, `teleport`, `visible`, `header` slot, `ariaLabelledby` | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) props | todo | — | [detail](#deferred-filament-modal-surface-breadth-fill) |
 | Configurable / quiet-close event names | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `openEventName`/`closeEventName`/`closeQuietlyEventName` | skipped | — | [diverges](#event-names-are-fixed-and-there-is-no-quiet-close) |
-| `wire:submit` form wrapper / `wire:key` | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `wireSubmitHandler` | blocked | forms (LiveComponent form-in-modal) | [detail](#livewire-form-in-modal-wiring-is-not-ported) |
+| Form wrapper (`submitHandler` swaps the window `<div>` to `<form>` + `live_action`) | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `wireSubmitHandler` | done | — | [diverges](#the-form-wrapper-carries-live_action-not-wiresubmit) |
+| Per-region `wire:key` equivalent | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `wire:key` on header/content/footer | blocked | forms (LiveComponent form-in-modal) | [detail](#livewire-form-in-modal-wiring-is-not-ported) |
 
 The done rows are exercised by
 [`actions/tests/Integration/Components/ModalRenderTest.php`](../../../packages/actions/tests/Integration/Components/ModalRenderTest.php)
@@ -110,13 +111,13 @@ first consumer that needs it.
 
 ### Livewire form-in-modal wiring is not ported
 
-Filament swaps the modal window element to a `<form wire:submit.prevent=…>` when a
-`wire:submit.prevent` attribute is present, and stamps `wire:key` on each region.
-Sylament renders a plain `<dialog>` with no form wrapper or `wire:*` keys — the
-action modal drives its footer actions through `live_action(...)` instead. Form-in-modal
-is **blocked** on the `schemas` / `forms` form-in-modal breadth: it lands there as
-the UX LiveComponent form wrapper (not `wire:*`) and the per-region keys the modal
-needs, in the same change.
+Filament stamps `wire:key` on the modal's header/content/footer regions so a
+Livewire morph tracks each one across a form's own re-renders. Sylament has no
+per-region key equivalent yet — only the outer window-element swap is ported
+(see [the form wrapper carries `live_action()`, not `wire:submit`](#the-form-wrapper-carries-live_action-not-wiresubmit)).
+The remaining `wire:key` piece is **blocked** on the `schemas` / `forms`
+form-in-modal breadth, which is what first needs region-level re-render
+stability.
 
 ## Divergences
 
@@ -159,6 +160,20 @@ of the modal work.
 
 _See also: the [rename table](../renames.md) for the Alpine→Stimulus and
 Blade→Twig (`view()`→`template()`) translations this builds on._
+
+### The form wrapper carries `live_action()`, not `wire:submit`
+
+Filament swaps the modal window element to `<form wire:submit.prevent="{{ $wireSubmitHandler }}">`
+when `wireSubmitHandler` is filled. Sylament's `submitHandler` prop does the same
+tag swap — `.sy-modal-window` renders as `<form>` instead of `<div>`, carrying the
+exact same classes, so no CSS rule (all keyed off `.sy-modal-window`, never the
+tag — see `packages/support/assets/src/styles/components/modal.css:222,226,232,244`)
+needed to change — but wires the submit through
+`live_action(submitHandler ~ ':prevent', {}, {}, 'submit')` instead of
+`wire:submit.prevent`, emitting `data-action="submit->live#action:prevent"` and
+`data-live-action-param="<submitHandler>"`. The action layer passes
+`Action::getLiveComponentCallMountedActionName()` here once `HasSchema` /
+`CanSubmitForm` land.
 
 ### ESC closes through the native `cancel` event
 

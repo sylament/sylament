@@ -11,16 +11,13 @@ class Html extends Component
 {
     protected string|Closure|null $template = '@SylamentSchemas/components/Html.html.twig';
 
-    protected string|Markup|Closure|null $content;
-
-    final public function __construct(string|Markup|Closure|null $content)
-    {
-        $this->content($content);
-    }
+    protected string|Markup|Closure|null $content = null;
 
     public static function make(string|Markup|Closure|null $content): static
     {
-        $html = new static($content);
+        $html = static::newInstance();
+
+        $html->content($content);
 
         $html->configure();
 

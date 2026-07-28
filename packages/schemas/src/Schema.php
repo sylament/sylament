@@ -55,14 +55,11 @@ class Schema extends ViewComponent
 
     protected string|Closure|null $template = '@SylamentSchemas/components/Schema.html.twig';
 
-    final public function __construct(?InteractsWithSchemas $liveComponent = null)
-    {
-        $this->liveComponent($liveComponent);
-    }
-
     public static function make(?InteractsWithSchemas $liveComponent = null): static
     {
-        $schema = new static($liveComponent);
+        $schema = static::newInstance();
+
+        $schema->liveComponent($liveComponent);
 
         $schema->configure();
 

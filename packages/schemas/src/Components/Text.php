@@ -23,18 +23,15 @@ class Text extends Component
 
     protected string|Closure|null $template = '@SylamentSchemas/components/Text.html.twig';
 
-    protected string|Markup|Closure|null $content;
+    protected string|Markup|Closure|null $content = null;
 
     protected TextSize|Size|string|Closure|null $size = null;
 
-    final public function __construct(string|Markup|Closure|null $content)
-    {
-        $this->content($content);
-    }
-
     public static function make(string|Markup|Closure|null $content): static
     {
-        $text = new static($content);
+        $text = static::newInstance();
+
+        $text->content($content);
 
         $text->configure();
 

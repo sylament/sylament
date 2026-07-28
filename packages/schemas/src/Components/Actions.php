@@ -22,21 +22,15 @@ class Actions extends Component
     /**
      * @param array<Action|ActionGroup>|Closure $actions
      */
-    final public function __construct(array|Closure $actions)
-    {
-        $this->actions($actions);
-    }
-
-    /**
-     * @param array<Action|ActionGroup>|Closure $actions
-     */
     public static function make(array|Closure $actions): static
     {
-        $actions = new static($actions);
+        $component = static::newInstance();
 
-        $actions->configure();
+        $component->actions($actions);
 
-        return $actions;
+        $component->configure();
+
+        return $component;
     }
 
     /**

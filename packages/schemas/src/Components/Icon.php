@@ -24,18 +24,15 @@ class Icon extends Component
 
     protected IconSize|string|Closure|null $size = null;
 
-    final public function __construct(string|BackedEnum|Markup|Closure $icon)
-    {
-        $this->icon($icon);
-    }
-
     public static function make(string|BackedEnum|Markup|Closure $icon): static
     {
-        $icon = new static($icon);
+        $component = static::newInstance();
 
-        $icon->configure();
+        $component->icon($icon);
 
-        return $icon;
+        $component->configure();
+
+        return $component;
     }
 
     public function icon(string|BackedEnum|Markup|Closure $icon): static

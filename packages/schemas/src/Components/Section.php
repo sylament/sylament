@@ -64,14 +64,11 @@ class Section extends Component implements CanConcealComponents
 
     protected string|Closure|null $template = '@SylamentSchemas/components/Section.html.twig';
 
-    final public function __construct(string|Markup|Closure|null $heading = null)
-    {
-        $this->heading($heading);
-    }
-
     public static function make(string|Markup|Closure|null $heading = null): static
     {
-        $section = new static($heading);
+        $section = static::newInstance();
+
+        $section->heading($heading);
 
         $section->configure();
 

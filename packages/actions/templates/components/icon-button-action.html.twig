@@ -25,7 +25,13 @@
                 ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
                 ...(component.getContext ? { context: component.getContext } : {}),
             })) %}
-{% set mountAttributes = clickWiringSuppressed or clickParameters is null
+{# A submit trigger carries no live click binding either: the enclosing form's submit
+   event already calls the action, so a click binding would fire a second, unrelated
+   live request on the same click — for a modal submit action, `mountAction('submit')`.
+   Filament suppresses it in `isLivewireClickHandlerEnabled()`; its close binding is a
+   separate attribute (`x-on:click`), so this guard sits on the live binding only and
+   leaves `closeAttributes` above alone. #}
+{% set mountAttributes = clickWiringSuppressed or component.canSubmitForm or clickParameters is null
     ? {}
     : stimulus_action('live', 'action', null, clickParameters).toArray() %}
 

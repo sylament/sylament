@@ -1,6 +1,14 @@
 {% set tag = component.getUrl ? 'a' : 'button' %}
 {% set iconHtml = component.getIcon(component.getGroupedIcon) ? generateIconHtml(component.getIcon(component.getGroupedIcon), null, null, component.getIconSize ?? 'sm') : null %}
 
+{# A submit trigger carries no live click binding: the enclosing form's submit event
+   already calls the action, so a click binding would fire a second, unrelated live
+   request on the same click — for a modal submit action, `mountAction('submit')`.
+   Filament suppresses it for the same reason, in `isLivewireClickHandlerEnabled()`;
+   its close binding sits on a separate attribute (`x-on:click`) and is unaffected,
+   so the close arm below stays reachable too. #}
+{% set hasLiveClickBinding = not component.getUrl and not component.canSubmitForm %}
+
 <{{ tag }}
     {{ attrs({
         class: classes('sy sy-dropdown-item sy-ac', {
@@ -15,12 +23,12 @@
         title: component.getTooltip ?: false,
     }, component.getExtraAttributes) }}
     {%- if not component.getUrl %}
-        {%- if component.getClientClickHandler %} {{ live_action(component.getClientClickHandler) }}
-        {%- elseif component.getParentActionCallLiveComponentClickHandler %} {{ live_action(component.getParentActionCallLiveComponentClickHandler, {
+        {%- if hasLiveClickBinding and component.getClientClickHandler %} {{ live_action(component.getClientClickHandler) }}
+        {%- elseif hasLiveClickBinding and component.getParentActionCallLiveComponentClickHandler %} {{ live_action(component.getParentActionCallLiveComponentClickHandler, {
             ...(component.getArguments ? { arguments: component.getArguments } : {}),
         }) }}
         {%- elseif component.shouldClose %} data-action="sylament--support--modal#dismiss"
-        {%- else %} {{ live_action('mountAction', {
+        {%- elseif hasLiveClickBinding %} {{ live_action('mountAction', {
             name: component.getName,
             ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
             ...(component.getContext ? { context: component.getContext } : {}),

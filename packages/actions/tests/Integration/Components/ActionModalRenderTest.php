@@ -113,7 +113,10 @@ it('renders a schema-less confirmation modal as a submitting form with no schema
         ->toContain('submit->live#action:prevent')
         ->toContain('data-live-action-param="callMountedAction"')
         ->not->toMatch('/<div[^>]*class="[^"]*sy-modal-window/')
-        ->not->toContain('sy-sc');
+        ->not->toContain('sy-sc')
+        // The submit button reaches the server through the form and nothing
+        // else: a click binding here would be `mountAction('submit')`.
+        ->not->toContain('data-live-name-param="submit"');
 });
 
 it('renders the mounted action schema between the modal content and the content footer', function (): void {

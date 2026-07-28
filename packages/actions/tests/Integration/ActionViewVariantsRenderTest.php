@@ -109,7 +109,16 @@ it('flattens extra attributes onto the icon-button root, merging class tokens', 
         ->toContain('sy-icon-btn');
 });
 
-it('renders type="submit" and the wired form id for a submit-capable action', function (string $template): void {
+/*
+ * The second assertion is the one that matters at runtime: a submit trigger's
+ * click must reach the server through its form's submit event and nothing else.
+ * `getModalSubmitAction()` gives a form-wrapped action `->submit(…)->action(null)`,
+ * so without this suppression the trigger falls through its click cascade to the
+ * `mountAction` default and every click fires a second live request — for the
+ * modal submit button, `mountAction('submit')`, naming an action that does not
+ * exist. Filament suppresses the same binding in `isLivewireClickHandlerEnabled()`.
+ */
+it('renders type="submit" and the wired form id for a submit-capable action, with no click binding', function (string $template): void {
     $html = renderVariant(
         Action::make('save')
             ->template($template)
@@ -119,10 +128,13 @@ it('renders type="submit" and the wired form id for a submit-capable action', fu
     );
 
     expect($html)->toContain('type="submit"')
-        ->toContain('form="my-form"');
+        ->toContain('form="my-form"')
+        ->not->toContain('live#action')
+        ->not->toContain('data-live-action-param');
 })->with([
     'button' => Action::BUTTON_TEMPLATE,
     'link' => Action::LINK_TEMPLATE,
     'badge' => Action::BADGE_TEMPLATE,
+    'grouped' => Action::GROUPED_TEMPLATE,
     'icon button' => Action::ICON_BUTTON_TEMPLATE,
 ]);

@@ -2,10 +2,11 @@
 
 `Sylament\Actions\Action` — the base class every actions-package action
 extends. It composes `Sylament\Support\Components\ViewComponent` (Twig-backed
-rendering) and folds in 14 actions-package concerns — `BelongsToLiveComponent`,
-`CanBeDisabled`, `CanBeHidden`, `CanNotify`, `CanOpenModal`, `CanOpenUrl`,
-`CanRequireConfirmation`, `HasAction`, `HasArguments`, `HasLabel`,
-`HasLifecycleHooks`, `HasName`, `HasSize`, `InteractsWithRecord` — each a
+rendering) and folds in 16 actions-package concerns — `BelongsToLiveComponent`,
+`CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`, `CanNotify`, `CanOpenModal`,
+`CanOpenUrl`, `CanRequireConfirmation`, `HasAction`, `HasArguments`,
+`HasGroupedIcon`, `HasLabel`, `HasLifecycleHooks`, `HasName`, `HasSize`,
+`InteractsWithRecord` — each a
 Surface row below with its own detail/divergence spliced in from its own
 audit. It also composes two multi-consumer actions-package concerns tracked
 outside this file — `BelongsToGroup` (shared with `ActionGroup`, written up in
@@ -56,6 +57,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`BelongsToLiveComponent`](../../../packages/actions/src/Concerns/BelongsToLiveComponent.php) | [`Concerns/BelongsToLivewire.php`](../../../vendor/filament/actions/src/Concerns/BelongsToLivewire.php) | done | — | [diverges](#the-live-component-chain-narrows-inline-and-drops-the-table-and-group-hops) |
 | [`CanBeDisabled`](../../../packages/actions/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/actions/src/Concerns/CanBeDisabled.php) | done | — | [diverges](#canbedisabled-drops-the-authorization-short-circuits) |
 | [`CanBeHidden`](../../../packages/actions/src/Concerns/CanBeHidden.php) | [`Concerns/CanBeHidden.php`](../../../vendor/filament/actions/src/Concerns/CanBeHidden.php) | in progress | CanBeAuthorized, ActionGroup, BelongsToTable | [detail](#canbehidden-omits-authorization-group-and-table-cache-integration) |
+| [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | [diverges](#outlined-styling-is-a-state-class-not-a-color-map) |
 | [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | notifications package | [detail](#cannotify-only-ports-notification-titles-not-sending) |
 | [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#only-the-modal-content-config-is-ported-the-behavior-and-footer-action-surface-is-not), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
 | [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-drops-the-modal-precedence-guard-and-default-action-url-fallback) |
@@ -63,6 +65,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanRequireConfirmation`](../../../packages/actions/src/Concerns/CanRequireConfirmation.php) | [`Concerns/CanRequireConfirmation.php`](../../../vendor/filament/actions/src/Concerns/CanRequireConfirmation.php) | done | — | [diverges](#confirmation-is-a-flag-not-a-modal-config-layer) |
 | [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) | [`Concerns/HasAction.php`](../../../vendor/filament/actions/src/Concerns/HasAction.php) | in progress | — | [detail](#hasaction-drops-the-string-click-handler-and-livewire-click-gating) |
 | [`HasArguments`](../../../packages/actions/src/Concerns/HasArguments.php) | [`Concerns/HasArguments.php`](../../../vendor/filament/actions/src/Concerns/HasArguments.php) | done | — | — |
+| [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | [diverges](#hasgroupedicon-narrows-its-icon-type-to-string) |
 | [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`label()` / `getLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
 | `hiddenLabel()` / `isLabelHidden()` | [`hiddenLabel()` / `isLabelHidden()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
 | `translateLabel()` / `disableLabel()` (deprecated) | [`translateLabel()` / `disableLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported) |
@@ -633,7 +636,7 @@ since none of it has started:
 - **Tables/bulk-action integration**: `BelongsToTable`, `HasTableIcon`,
   `InteractsWithSelectedRecords`, `CanFetchSelectedRecords`,
   `CanDeselectRecordsAfterCompletion`, `bulk()`/`isBulk()`.
-- **Grouping & nesting**: `CanBeSorted`, `HasGroupedIcon`,
+- **Grouping & nesting**: `CanBeSorted`,
   `CanCallParentAction`, `HasParentActions`, `parentAction()`/
   `getParentAction()`, `nestingIndex()`/`getNestingIndex()`, `getClone()`
   (`BelongsToGroup` itself is ported — see [action-group.md](action-group.md)).
@@ -645,7 +648,7 @@ since none of it has started:
   `markAsRead()`/`markAsUnread()`, `livewireTarget()`, custom
   `alpineClickHandler()`/`actionJs()` (the port's click wiring is the single
   `live_action('mountAction', …)` call baked into the template).
-- **Rendering variants**: `HasBadge`, `HasBadgeTooltip`, `CanBeOutlined`,
+- **Rendering variants**: `HasBadge`, `HasBadgeTooltip`,
   `CanBeLabeledFrom`, and the `toArray()`/`fromArray()` serialization pair
   (folded into the view-switch divergence above).
 
@@ -718,6 +721,35 @@ a deliberate MVP simplification — the toolkit has no authorization-tooltip or
 authorization-notification concept yet. Reverses once those two concerns
 (and the `isAuthorized()` contract they lean on) are ported and wired onto
 `Action`.
+
+### Outlined styling is a state class, not a color map
+
+Filament's outlined button resolves through `ButtonSize`/color-map machinery in
+`button.blade.php` (per-color class maps composed in PHP). Sylament's
+`CanBeOutlined` port is API-identical (`outlined()` / `isOutlined()` /
+`hasOutlined()`), but the rendering side is a single code-less state class:
+[`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)
+adds `sy-outlined` to the root class list and
+[`button.css`](../../../packages/support/assets/src/styles/components/button.css)
+carries one `.sy-btn.sy-outlined` variant rule driven by the same
+`--sy-color-*` runtime tokens the filled button uses — per the repo styling
+contract (semantic classes + runtime tokens, no per-color class maps). The
+button template is the only consumer, matching Filament (its link/badge/
+icon-button/grouped views ignore `outlined`).
+
+### HasGroupedIcon narrows its icon type to string
+
+Filament types the grouped icon `string|BackedEnum|Htmlable|Closure|null`;
+the port narrows it to `string|Closure|null` — no enum or `Markup` icon
+values exist in the actions package yet, the same narrowing `CanOpenModal`'s
+`modalIcon` already applies (support's `HasIcon` keeps the wide type, so
+`getIcon(default:)` accepts the narrowed value unchanged). Consumed exactly
+where Filament consumes it:
+[`grouped-action.html.twig`](../../../packages/actions/templates/components/grouped-action.html.twig)
+resolves its icon as `component.getIcon(component.getGroupedIcon)` — Filament's
+`icon: $this->getIcon(default: $this->getGroupedIcon())` — so the grouped icon
+only surfaces inside a dropdown item, never on the button shape. Widen the
+type in lockstep with `HasIcon`'s enum/Markup support if that ever lands here.
 
 ### `getModalIcon()`'s confirmation fallback bypasses icon-alias resolution
 

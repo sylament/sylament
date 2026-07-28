@@ -52,4 +52,25 @@
             @apply text-white;
         }
     }
+
+    &.sy-outlined {
+        @apply bg-transparent shadow-none ring-1;
+
+        &:not(.sy-color) {
+            @apply text-gray-950 ring-gray-950/10 dark:bg-transparent dark:text-white dark:ring-white/20;
+        }
+
+        &.sy-color {
+            @apply text-color-600 ring-color-600/50 dark:bg-transparent dark:text-color-400 dark:ring-color-400/50;
+
+            &.sy-force-enabled,
+            &:not(.sy-disabled):not([disabled]) {
+                @apply hover:bg-color-50 dark:hover:bg-color-400/10;
+            }
+
+            & > .sy-icon {
+                @apply text-color-600 dark:text-color-400;
+            }
+        }
+    }
 }

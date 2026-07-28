@@ -17,10 +17,11 @@ source) to a real [status](../README.md#statuses) — **done**, **in progress**,
 gap, or real sub-structure earns one. A plain-text name is not built yet and
 stays **todo**.
 
-The 14 concerns Filament composes onto the `Action` base —
-`BelongsToLiveComponent`, `CanBeDisabled`, `CanBeHidden`, `CanNotify`,
-`CanOpenModal`, `CanOpenUrl`, `CanRequireConfirmation`, `HasAction`,
-`HasArguments`, `HasLabel`, `HasLifecycleHooks`, `HasName`, `HasSize`, and
+The 16 concerns Filament composes onto the `Action` base —
+`BelongsToLiveComponent`, `CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`,
+`CanNotify`, `CanOpenModal`, `CanOpenUrl`, `CanRequireConfirmation`,
+`HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`,
+`HasLifecycleHooks`, `HasName`, `HasSize`, and
 `InteractsWithRecord` — are single-consumer in the port (only `Action` exists
 today), so they have folded into [`action.md`](action.md) and left the Features
 table, per [one row per file](../README.md#one-row-per-file-one-file-per-thing);
@@ -79,7 +80,7 @@ service provider live in [Supporting surface](#supporting-surface).)
 
 Cross-cutting action concerns — [`src/Concerns`](../../../vendor/filament/actions/src/Concerns).
 Most are mixed onto the `Action` base; the `InteractsWith*` traits are host-side
-(mixed onto the Livewire / LiveComponent page that mounts actions). The 14
+(mixed onto the Livewire / LiveComponent page that mounts actions). The 16
 concerns `Action` composes are folded into [`action.md`](action.md) and no longer
 carry rows here — the remaining rows are the not-yet-started concerns plus the
 host-side `HasActions` trait. `BelongsToGroup` folds the same way into
@@ -102,7 +103,6 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 | CanBeBooted | [`Concerns/CanBeBooted.php`](../../../vendor/filament/actions/src/Concerns/CanBeBooted.php) | todo | - |
 | CanBeLabeledFrom | [`Concerns/CanBeLabeledFrom.php`](../../../vendor/filament/actions/src/Concerns/CanBeLabeledFrom.php) | todo | - |
 | CanBeMounted | [`Concerns/CanBeMounted.php`](../../../vendor/filament/actions/src/Concerns/CanBeMounted.php) | todo | - |
-| CanBeOutlined | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | todo | - |
 | CanBeRateLimited | [`Concerns/CanBeRateLimited.php`](../../../vendor/filament/actions/src/Concerns/CanBeRateLimited.php) | todo | - |
 | CanBeSorted | [`Concerns/CanBeSorted.php`](../../../vendor/filament/actions/src/Concerns/CanBeSorted.php) | todo | - |
 | CanCallParentAction | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | todo | - |
@@ -119,8 +119,7 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 | HasData | [`Concerns/HasData.php`](../../../vendor/filament/actions/src/Concerns/HasData.php) | todo | - |
 | HasExtraModalOverlayAttributes | [`Concerns/HasExtraModalOverlayAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | todo | - |
 | HasExtraModalWindowAttributes | [`Concerns/HasExtraModalWindowAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalWindowAttributes.php) | todo | - |
-| HasGroupedIcon | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | todo | - |
-| HasId | [`Concerns/HasId.php`](../../../vendor/filament/actions/src/Concerns/HasId.php) | todo | - |
+| [`HasId`](../../../packages/actions/src/Concerns/HasId.php) | [`Concerns/HasId.php`](../../../vendor/filament/actions/src/Concerns/HasId.php) | done | Filament-exact two-method port; not composed onto `Action` (Filament composes it only on `SelectAction`, its future consumer here) |
 | HasInfolist | [`Concerns/HasInfolist.php`](../../../vendor/filament/actions/src/Concerns/HasInfolist.php) | todo | - |
 | HasKeyBindings | [`Concerns/HasKeyBindings.php`](../../../vendor/filament/actions/src/Concerns/HasKeyBindings.php) | todo | - |
 | HasMountableArguments | [`Concerns/HasMountableArguments.php`](../../../vendor/filament/actions/src/Concerns/HasMountableArguments.php) | todo | - |

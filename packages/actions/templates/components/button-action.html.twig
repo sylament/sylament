@@ -16,6 +16,7 @@
         type: component.getUrl ? false : 'button',
         disabled: component.isDisabled and not component.getUrl,
         'aria-disabled': component.isDisabled ? 'true' : false,
+        'aria-label': component.isLabelHidden ? (component.getLabel ?? component.getName)|striptags|trim : false,
         href: component.getUrl ?: false,
         target: component.shouldOpenUrlInNewTab ? '_blank' : false,
         title: component.getTooltip ?: false,
@@ -23,6 +24,6 @@
     {%- if not component.getUrl %} {{ live_action('mountAction', { name: component.getName, ...(component.getContext ? { context: component.getContext } : {}) }) }}{% endif %}
 >
     {%- if iconHtml and component.getIconPosition.value == 'before' %}{{ iconHtml }}{% endif -%}
-    {{- component.getLabel ?? component.getName -}}
+    {%- if not component.isLabelHidden %}{{ component.getLabel ?? component.getName }}{% endif -%}
     {%- if iconHtml and component.getIconPosition.value == 'after' %}{{ iconHtml }}{% endif -%}
 </{{ tag }}>

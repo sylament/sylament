@@ -1,19 +1,32 @@
 {% props
     action,
-    id %}
+    id,
+    open = true,
+    overlaid = false %}
 
 {# The dismissal wrapper maps the controller's client-close event (ESC, click-away,
-   close button) to a server unmount — without it the next live re-render would
-   resurrect a modal the user already closed. The event bubbles from the dialog;
+   close button, cancel) to a server unmount — without it the next live re-render
+   would resurrect a modal the user already closed. The event bubbles from the dialog;
    the binding cannot sit on the component tag itself because a caller data-action
-   would replace the dialog's own Stimulus wiring in attributes.defaults(). #}
-<div {{ live_action('unmountAction', {}, {}, 'sylament--support--modal:dismissed') }}>
-    {# Rendered only while the action is mounted and its modal should be open, so the open
-       state is declared here rather than left to the `sylament-open-modal` event, which a
-       modal first rendered by that same response is not yet listening for. #}
+   would replace the dialog's own Stimulus wiring in attributes.defaults().
+   The wrapper id is name-scoped while the dialog id is index-scoped: a
+   replaceMountedAction() at the same index swaps a differently-named subtree
+   wholesale (fresh dialog, fresh open transition), while an unchanged frame morphs
+   in place and keeps its native open state. #}
+<div id="{{ id }}-w-{{ action.getName }}" {{ live_action(
+    'unmountAction',
+    { cancelParentActions: action.getParentActionsToCancelOnClose },
+    {},
+    'sylament--support--modal:dismissed',
+) }}>
+    {# The open state is declared in the markup rather than left to the
+       `sylament-open-modal` event, which a modal first rendered by that same response
+       is not yet listening for. A parent frame stays rendered but closed while a
+       non-overlaying child is on top, so it can morph back open in place. #}
     <twig:SylamentSupport:Modal
         id="{{ id }}"
-        :open="true"
+        :open="open"
+        :overlaid="overlaid and open"
         :heading="action.getModalHeading"
         :description="action.getModalDescription"
         :icon="action.getModalIcon"

@@ -23,7 +23,10 @@ export default class extends Controller<HTMLDialogElement> {
 
   #escapeListener: ((event: KeyboardEvent) => void) | null = null;
 
+  #openAttributeObserver: MutationObserver | null = null;
+
   connect(): void {
+    this.#observeOpenAttribute();
     this.#normalizeModality();
   }
 
@@ -44,7 +47,18 @@ export default class extends Controller<HTMLDialogElement> {
 
     if (this.element.open) {
       this.element.close();
+
+      return;
     }
+
+    // The `open` attribute mirrors this value, so a morph that hides a frame already
+    // removed it: close() would bail (the spec's close steps require the attribute) and
+    // fire no `close` event, leaving the teardown its handlers own undone. A hidden
+    // frame is still rendered and may re-open when the frame above it unmounts, so only
+    // the Escape listener is dropped here — focus stays where the newly-opened child
+    // put it, and #opener is kept so the original trigger is still the restore target.
+    // The gone-for-good case is disconnect(), which restores focus.
+    this.#teardownEscapeListener();
   }
 
   open(event: CustomEvent<{ id?: unknown }>): void {
@@ -113,15 +127,20 @@ export default class extends Controller<HTMLDialogElement> {
       return;
     }
 
-    if (this.returnsFocusValue) {
-      this.#opener?.focus();
-    }
-
-    this.#opener = null;
+    this.#restoreOpenerFocus();
   }
 
+  /**
+   * The element left the DOM: the frame is gone rather than hidden, so whatever the
+   * server-driven close skipped is settled here. A dialog removed while still open
+   * never fires `close`, and the browser drops focus to the body, so this is the only
+   * place a fully server-closed stack can hand focus back to its opener.
+   */
   disconnect(): void {
+    this.#openAttributeObserver?.disconnect();
+    this.#openAttributeObserver = null;
     this.#teardownEscapeListener();
+    this.#restoreOpenerFocus();
   }
 
   #show(): void {
@@ -153,14 +172,49 @@ export default class extends Controller<HTMLDialogElement> {
   }
 
   /**
-   * Never overwrites: a frame that stays open across a morph keeps the trigger it was
-   * opened from, rather than picking up whatever a child dialog left focused. Cleared
-   * in restoreFocus() once the dialog actually closes, so the next open captures fresh.
+   * Never overwrites: a frame that stays open across a morph — or is hidden under a
+   * child and later re-opened — keeps the trigger it was opened from, rather than
+   * picking up whatever a child dialog left focused. Cleared in #restoreOpenerFocus()
+   * once the frame really closes or leaves the DOM, so the next open captures fresh.
    */
   #captureOpener(): void {
     if (this.#opener === null) {
       this.#opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     }
+  }
+
+  #restoreOpenerFocus(): void {
+    if (this.returnsFocusValue) {
+      this.#opener?.focus();
+    }
+
+    this.#opener = null;
+  }
+
+  /**
+   * The `open` attribute can change without any Stimulus callback firing: after a
+   * client-side dismissal the open value is still true in the DOM, so a live re-render
+   * landing before the `dismissed` round-trip completes morphs the attribute back onto
+   * this same element — no connect(), no openValueChanged(), and the dialog reappears
+   * open but not modal (no top layer, no backdrop, no focus trap, no `cancel`, and a
+   * dead closeOnClickAway — there is no backdrop for its target check to match). An
+   * attribute observer is the only hook that fires for that. It converges rather than
+   * loops: the removeAttribute()/showModal() pair that normalizing performs queues one
+   * more callback, and that one finds the dialog already `:modal` and returns.
+   */
+  #observeOpenAttribute(): void {
+    if (this.#openAttributeObserver !== null) {
+      return;
+    }
+
+    this.#openAttributeObserver = new MutationObserver((): void => {
+      this.#normalizeModality();
+    });
+
+    this.#openAttributeObserver.observe(this.element, {
+      attributes: true,
+      attributeFilter: ["open"],
+    });
   }
 
   /**

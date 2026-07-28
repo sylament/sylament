@@ -80,9 +80,11 @@ class ActionHost implements InteractsWithActions
             })
             ->extraModalFooterActions([
                 Action::make('confirmDelete')->modalHeading('Really delete?'),
-                Action::make('deeper')->modalHeading('Deeper')->extraModalFooterActions([
-                    Action::make('deepest')->modalHeading('Deepest'),
-                ]),
+                Action::make('deeper')->modalHeading('Deeper')
+                    ->cancelParentActionsOnClose('edit')
+                    ->extraModalFooterActions([
+                        Action::make('deepest')->modalHeading('Deepest'),
+                    ]),
                 Action::make('overlayChild')->modalHeading('Over the top')->overlayParentActions(),
                 Action::make('haltingChild')->action(fn (Action $action) => $action->halt()),
             ]);

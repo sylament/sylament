@@ -100,11 +100,43 @@ it('wires a string action straight to its live action, skipping the mount round-
         ->not->toContain('mountAction');
 });
 
-it('wires a closing action to unmountAction', function (): void {
+it('closes the modal client-side for a closing action', function (): void {
     $html = renderAction(Action::make('cancel')->close());
 
-    expect($html)->toContain('data-live-action-param="unmountAction"')
+    expect($html)->toContain('data-action="sylament--support--modal#dismiss"')
+        ->not->toContain('data-live-action-param="mountAction"')
+        ->not->toContain('data-live-action-param="unmountAction"');
+});
+
+it('wires a parent-call action to the named handler with its arguments', function (): void {
+    $html = renderAction(Action::make('save')->callParent('callMountedAction')->arguments(['key' => 'value']));
+
+    expect($html)->toContain('data-live-action-param="callMountedAction"')
+        ->toContain('data-live-arguments-param="{&quot;key&quot;:&quot;value&quot;}"')
         ->not->toContain('data-live-action-param="mountAction"');
+});
+
+it('wires a parent-call action on the icon-button variant', function (): void {
+    $html = renderAction(
+        Action::make('save')->iconButton()->icon('heroicons:x-mark')
+            ->callParent('callMountedAction')->arguments(['key' => 'value']),
+    );
+
+    expect($html)->toContain('data-live-action-param="callMountedAction"')
+        ->toContain('data-live-arguments-param="{&quot;key&quot;:&quot;value&quot;}"')
+        ->not->toContain('data-live-action-param="mountAction"');
+});
+
+it('lets a parent-call action win over close() on both trigger shapes', function (): void {
+    $button = renderAction(Action::make('save')->callParent('callMountedAction')->close());
+    $iconButton = renderAction(
+        Action::make('save')->iconButton()->icon('heroicons:x-mark')->callParent('callMountedAction')->close(),
+    );
+
+    expect($button)->toContain('data-live-action-param="callMountedAction"')
+        ->not->toContain('sylament--support--modal#dismiss')
+        ->and($iconButton)->toContain('data-live-action-param="callMountedAction"')
+        ->not->toContain('sylament--support--modal#dismiss');
 });
 
 it('lets a string action win over close()', function (): void {
@@ -121,11 +153,12 @@ it('wires a string action on the icon-button variant', function (): void {
         ->not->toContain('mountAction');
 });
 
-it('wires a closing icon-button to unmountAction', function (): void {
+it('closes the modal client-side for a closing icon-button', function (): void {
     $html = renderAction(Action::make('cancel')->iconButton()->icon('heroicons:x-mark')->close());
 
-    expect($html)->toContain('data-live-action-param="unmountAction"')
-        ->not->toContain('data-live-action-param="mountAction"');
+    expect($html)->toContain('data-action="sylament--support--modal#dismiss"')
+        ->not->toContain('data-live-action-param="mountAction"')
+        ->not->toContain('data-live-action-param="unmountAction"');
 });
 
 it('renders a disabled button', function (): void {

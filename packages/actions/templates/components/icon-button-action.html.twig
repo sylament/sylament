@@ -1,14 +1,22 @@
+{% set closeAttributes = component.shouldClose and not component.getClientClickHandler and not component.getParentActionCallLiveComponentClickHandler
+    ? { 'data-action': 'sylament--support--modal#dismiss' }
+    : {} %}
 {% set clickParameters = component.getClientClickHandler
     ? { action: component.getClientClickHandler }
-    : (component.shouldClose
-        ? { action: 'unmountAction' }
-        : {
-            action: 'mountAction',
-            name: component.getName,
-            ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
-            ...(component.getContext ? { context: component.getContext } : {}),
-        }) %}
-{% set mountAttributes = component.getUrl or component.isDisabled
+    : (component.getParentActionCallLiveComponentClickHandler
+        ? {
+            action: component.getParentActionCallLiveComponentClickHandler,
+            ...(component.getArguments ? { arguments: component.getArguments } : {}),
+        }
+        : (component.shouldClose
+            ? null
+            : {
+                action: 'mountAction',
+                name: component.getName,
+                ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
+                ...(component.getContext ? { context: component.getContext } : {}),
+            })) %}
+{% set mountAttributes = component.getUrl or component.isDisabled or clickParameters is null
     ? {}
     : stimulus_action('live', 'action', null, clickParameters).toArray() %}
 
@@ -25,4 +33,4 @@
     href: component.getUrl,
     target: component.shouldOpenUrlInNewTab ? '_blank' : null,
     ...(component.getTooltip ? { title: component.getTooltip } : {}),
-}|merge(extraAttributes)|merge({ class: rootClasses })|merge(mountAttributes) %}{% endcomponent %}
+}|merge(extraAttributes)|merge({ class: rootClasses })|merge(mountAttributes)|merge(closeAttributes) %}{% endcomponent %}

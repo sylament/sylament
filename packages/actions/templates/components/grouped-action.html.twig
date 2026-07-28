@@ -15,7 +15,10 @@
     }, component.getExtraAttributes) }}
     {%- if not component.getUrl %}
         {%- if component.getClientClickHandler %} {{ live_action(component.getClientClickHandler) }}
-        {%- elseif component.shouldClose %} {{ live_action('unmountAction') }}
+        {%- elseif component.getParentActionCallLiveComponentClickHandler %} {{ live_action(component.getParentActionCallLiveComponentClickHandler, {
+            ...(component.getArguments ? { arguments: component.getArguments } : {}),
+        }) }}
+        {%- elseif component.shouldClose %} data-action="sylament--support--modal#dismiss"
         {%- else %} {{ live_action('mountAction', {
             name: component.getName,
             ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),

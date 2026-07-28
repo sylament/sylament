@@ -1,6 +1,16 @@
 {% set liveComponent = this.getLiveComponent() %}
-{% set action = liveComponent.getMountedAction %}
 
-{% if action and liveComponent.mountedActionShouldOpenModal(action) %}
-    <twig:SylamentActions:ActionModal :action="action" :id="liveComponent.getMountedModalId" />
-{% endif %}
+{# One modal per mounted frame: parents stay in the DOM so a hide-mode frame can
+   re-open instantly (and morph in place) when the child unmounts. Only the top
+   frame is gated on whether its action opens a modal at all — a modal-less action
+   mid-flight renders nothing, exactly as Filament's `(! loop.last) or …` does. #}
+{% for action in liveComponent.getMountedActions %}
+    {% if not loop.last or liveComponent.mountedActionShouldOpenModal(action) %}
+        <twig:SylamentActions:ActionModal
+            :action="action"
+            :id="liveComponent.getMountedModalId(action.getNestingIndex)"
+            :open="liveComponent.isMountedActionModalOpen(action.getNestingIndex)"
+            :overlaid="not loop.last"
+        />
+    {% endif %}
+{% endfor %}

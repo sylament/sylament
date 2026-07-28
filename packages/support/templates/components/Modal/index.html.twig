@@ -1,7 +1,17 @@
 {% props
+    alignment = 'start',
+    autofocus = true,
+    clickThrough = false,
+    closeButton = true,
+    closeByClickingAway = true,
+    closeByEscaping = true,
     content = markup(block('content') ?? null),
     description = null,
+    extraOverlayAttributes = {},
+    extraWindowAttributes = {},
     footer = markup(block('footer') ?? null),
+    footerActions = [],
+    footerActionsAlignment = null,
     heading = null,
     icon = null,
     iconAlias = null,
@@ -9,6 +19,10 @@
     id = null,
     open = false,
     returnsFocus = true,
+    slideOver = false,
+    slideOverPosition = 'end',
+    stickyHeader = false,
+    stickyFooter = false,
     width = 'md' %}
 
 {% set iconColorName = iconColor is iterable or iconColor is empty ? 'gray' : iconColor %}
@@ -20,10 +34,28 @@
 {% set hasHeading = heading is filled %}
 {% set hasDescription = description is filled %}
 {% set hasHeader = hasIcon or hasHeading or hasDescription %}
-{% set hasFooter = footer is filled %}
+{% set hasCloseButton = closeButton and hasHeader %}
+{% set hasFooterSlot = footer is filled %}
+{% set hasFooterActions = footerActions is not empty %}
+{% set hasFooter = hasFooterSlot or hasFooterActions %}
 {% set hasContent = content is filled %}
 
+{% set clickThrough = clickThrough ?: false %}
+{% set closeByClickingAway = clickThrough ? false : closeByClickingAway %}
 {% set sizeValue = width.value ?? width %}
+{% set slideOverPositionValue = slideOverPosition.value ?? slideOverPosition ?? 'end' %}
+{% set knownAlignments = ['start', 'left', 'center', 'end', 'right'] %}
+{% set alignmentValue = alignment.value ?? alignment %}
+{% set alignmentClass = alignmentValue is empty
+    ? null
+    : (alignmentValue in knownAlignments ? 'sy-align-' ~ alignmentValue : alignmentValue) %}
+{% set footerAlignmentValue = footerActionsAlignment.value ?? footerActionsAlignment %}
+{% set footerAlignmentClass = footerAlignmentValue is empty
+    ? null
+    : (footerAlignmentValue in knownAlignments ? 'sy-align-' ~ footerAlignmentValue : footerAlignmentValue) %}
+{% set verticalAlignCenter = hasIcon and hasHeading and not hasDescription and alignmentValue in ['start', 'left'] %}
+{% set windowGetsInitialFocus = (hasCloseButton and not closeByEscaping and hasHeading) or not autofocus %}
+
 {% set headingId = id ? id ~ '-heading' : null %}
 {% set descriptionId = (hasDescription and hasHeading and id) ? id ~ '-description' : null %}
 
@@ -32,47 +64,100 @@
     id: id ?: null,
     open: open ?: null,
     returnsFocus: returnsFocus ? null : false,
+    closeByEscaping: closeByEscaping ? null : false,
+    closeByClickingAway: closeByClickingAway ? null : false,
+    clickThrough: clickThrough ?: null,
 })
     |stimulus_action(modalController, 'open', 'sylament-open-modal@window')
     |stimulus_action(modalController, 'close', 'sylament-close-modal@window')
+    |stimulus_action(modalController, 'handleCancel', 'cancel')
+    |stimulus_action(modalController, 'trackPointerDown', 'pointerdown')
+    |stimulus_action(modalController, 'closeOnClickAway', 'click')
+    |stimulus_action(modalController, 'notifyDismissed', 'close')
     |stimulus_action(modalController, 'restoreFocus', 'close') %}
+
+{% set overlayExtra = extraOverlayAttributes ?: {} %}
 
 <dialog
     {{ attributes.defaults({
         class: classes('sy sy-modal', {
-            ('sy-modal-' ~ sizeValue): sizeValue is not empty,
-        }),
+            'sy-modal-slide-over': slideOver,
+            'sy-modal-slide-over-from-start': slideOver and slideOverPositionValue == 'start',
+            'sy-modal-slide-over-from-end': slideOver and slideOverPositionValue == 'end',
+            'sy-modal-has-sticky-header': stickyHeader,
+            'sy-modal-has-sticky-footer': stickyFooter,
+            'sy-modal-click-through': clickThrough,
+            'sy-modal-screen': sizeValue == 'screen',
+            'sy-clickable': closeByClickingAway,
+        }, overlayExtra.class ?? null),
         id: id ?: false,
         'aria-labelledby': hasHeading and headingId ? headingId : false,
         'aria-describedby': descriptionId ?: false,
         ...modalStimulus,
+        ...(overlayExtra|filter((value, name) => name != 'class')),
     }) }}
 >
-    {% if hasHeader %}
-        <header class="sy-modal-header">
-            {% if hasIcon %}
-                <div class="sy-modal-icon-ctn">{{ iconHtml }}</div>
-            {% endif %}
+    <div {{ attrs({
+        class: classes('sy-modal-window', {
+            ('sy-modal-' ~ sizeValue): sizeValue is not empty,
+            (alignmentClass ?? ''): alignmentClass is not empty,
+            'sy-modal-window-has-close-btn': hasCloseButton,
+            'sy-modal-window-has-icon': hasIcon,
+            'sy-modal-window-has-content': hasContent,
+            'sy-modal-window-has-footer': hasFooter,
+        }),
+        autofocus: windowGetsInitialFocus,
+        tabindex: windowGetsInitialFocus ? '-1' : false,
+    }, extraWindowAttributes ?: {}) }}>
+        {% if hasHeader %}
+            <header {{ attrs({ class: classes('sy-modal-header', { 'sy-vertical-align-center': verticalAlignCenter }) }) }}>
+                {% if hasCloseButton %}
+                    <twig:SylamentSupport:IconButton
+                        class="sy-modal-close-btn"
+                        color="gray"
+                        icon="heroicons:x-mark"
+                        :iconAlias="constant('Sylament\\Support\\Twig\\SupportIconAlias::MODAL_CLOSE_BUTTON')"
+                        iconSize="lg"
+                        label="Close"
+                        :tabindex="closeByEscaping ? '-1' : false"
+                        data-action="sylament--support--modal#dismiss"
+                    />
+                {% endif %}
 
-            {% if hasHeading or hasDescription %}
-                <div class="sy-modal-header-text-ctn">
-                    {% if hasHeading %}
-                        <h2 {{ attrs({ id: headingId, class: ['sy-modal-heading'] }) }}>{{ heading }}</h2>
-                    {% endif %}
+                {% if hasIcon %}
+                    <div class="sy-modal-icon-ctn">{{ iconHtml }}</div>
+                {% endif %}
 
-                    {% if hasDescription %}
-                        <p {{ attrs({ id: descriptionId, class: ['sy-modal-description'] }) }}>{{ description }}</p>
-                    {% endif %}
-                </div>
-            {% endif %}
-        </header>
-    {% endif %}
+                {% if hasHeading or hasDescription %}
+                    <div class="sy-modal-header-text-ctn">
+                        {% if hasHeading %}
+                            <h2 {{ attrs({ id: headingId, class: ['sy-modal-heading'] }) }}>{{ heading }}</h2>
+                        {% endif %}
 
-    {% if hasContent %}
-        <div class="sy-modal-content">{{ content }}</div>
-    {% endif %}
+                        {% if hasDescription %}
+                            <p {{ attrs({ id: descriptionId, class: ['sy-modal-description'] }) }}>{{ description }}</p>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </header>
+        {% endif %}
 
-    {% if hasFooter %}
-        <footer class="sy-modal-footer">{{ footer }}</footer>
-    {% endif %}
+        {% if hasContent %}
+            <div class="sy-modal-content">{{ content }}</div>
+        {% endif %}
+
+        {% if hasFooter %}
+            <footer {{ attrs({ class: classes('sy-modal-footer', { (footerAlignmentClass ?? ''): footerAlignmentClass is not empty }) }) }}>
+                {% if hasFooterSlot %}
+                    {{ footer }}
+                {% else %}
+                    <div class="sy-modal-footer-actions">
+                        {% for footerAction in footerActions %}
+                            {{- renderComponent(footerAction) -}}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </footer>
+        {% endif %}
+    </div>
 </dialog>

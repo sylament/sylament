@@ -39,3 +39,26 @@ it('clears the mounted action when the closure cancels', function (): void {
 
     expect($component->component()->mountedActions)->toBe([]);
 });
+
+it('fires afterActionCalled once with the called action on success', function (): void {
+    $host = $this->createLiveComponent('AfterActionCalledHost')->component();
+    $host->mountAction('notify');
+
+    expect($host->calledWith)->toBe([$host->getAction('notify')]);
+});
+
+it('does not fire afterActionCalled when the closure halts', function (): void {
+    $host = $this->createLiveComponent('AfterActionCalledHost')->component();
+    $host->mountAction('halting');
+
+    expect($host->calledWith)->toBe([])
+        ->and($host->mountedActions)->toHaveCount(1);
+});
+
+it('does not fire afterActionCalled when the closure cancels', function (): void {
+    $host = $this->createLiveComponent('AfterActionCalledHost')->component();
+    $host->mountAction('cancelling');
+
+    expect($host->calledWith)->toBe([])
+        ->and($host->mountedActions)->toBe([]);
+});

@@ -125,6 +125,8 @@ trait HasActions
             $result = $action->call();
             $result = $action->callAfter() ?? $result;
 
+            $this->afterActionCalled($action);
+
             if ($action->getStatus() === ActionStatus::Success) {
                 $action->sendSuccessNotification();
             } else {
@@ -139,6 +141,10 @@ trait HasActions
         $this->unmountAction();
 
         return $result;
+    }
+
+    protected function afterActionCalled(Action $action): void
+    {
     }
 
     #[LiveAction]

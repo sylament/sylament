@@ -212,8 +212,9 @@ type-hints `Schemas\Components\Component` and `Schemas\Schema` directly, so
 `actions` now requires `sylament/schemas`. `schemas` requires `sylament/actions`
 back in the same commit, ahead of the schemas-side code (the component-level
 `HasActions` registration trait, `CanModifyActions`, the `HasComponents`
-child-schema unions) that starts importing `Action`/`ActionGroup` the very next
-task — see
+child-schema unions, and everything the rest of the epic built on top) that
+goes on to import `Action`/`ActionGroup` throughout the schemas↔actions
+integration epic — see
 [schemas-bundle.md](../schemas/schemas-bundle.md#sylamentactions-becomes-a-hard-composer-requirement).
 Filament already carries this cycle: `filament/schemas`'s composer.json requires
 `filament/actions` directly, and `filament/actions` reaches `filament/schemas`

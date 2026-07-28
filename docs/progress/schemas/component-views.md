@@ -47,7 +47,13 @@ in-progress features, a **diverges** note here for a structural one, or `—`.
 
 Every template carries a render test in schemas' Integration suite (only the
 schemas Kernel registers TwigComponentBundle/StimulusBundle, so these templates
-are exercised from here, not from support):
+are exercised from here, not from support). Since the schemas↔actions
+integration, [the schemas test Kernel](../../../packages/schemas/tests/Fixtures/Kernel.php)
+also registers `SylamentActionsBundle`: rendering an `Action`/`ActionGroup`
+child — from `Schema.html.twig`'s action branch, `Section.html.twig`'s
+header/footer slots, or `Actions.html.twig` — resolves actions' own
+`@SylamentActions`-namespaced templates (`button-action.html.twig` and
+friends), which only that bundle's registration makes loadable:
 [`ActionsRenderTest`](../../../packages/schemas/tests/Integration),
 `HtmlRenderTest`, `IconComponentRenderTest`, `SchemaRenderTest`,
 `SectionRenderTest`, `TextRenderTest`. Architecture/`TemplateConventionsTest`

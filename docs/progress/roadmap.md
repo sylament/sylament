@@ -26,7 +26,7 @@ stops mid-M2, M1 still demos on its own.
 
 ## Now
 
-**Pulled forward · 2 — schemas↔actions integration.** The next epic to pick up.
+**M1 · 1 — form validation vertical.** The next epic to pick up.
 
 ## Pulled forward
 
@@ -36,7 +36,7 @@ story stays honest.
 | # | Epic | Packages | Delivers | Status |
 | --- | --- | --- | --- | --- |
 | 1 | Dropdown primitive + ActionGroup base | [support](support/README.md), [actions](actions/README.md) | `<twig:SylamentSupport:Dropdown>` with a bundled Floating-UI Stimulus controller; `ActionGroup` model (eager `getFlatActions()`, visibility composition, propagation), icon-button/button triggers, grouped item rendering. Trigger-view catalog, submenus, badges, table/bulk deferred. | done |
-| 2 | Schemas↔actions integration | [schemas](schemas/README.md), [actions](actions/README.md) | Actions as schema children, `prepareAction`/`prepareActionGroup`, `Schema::getAction()`, Section header/footer actions — flips the three blocked Section rows. | todo |
+| 2 | Schemas↔actions integration | [schemas](schemas/README.md), [actions](actions/README.md) | Actions as schema children, `prepareAction`/`prepareActionGroup`, `Schema::getAction()`, Section header/footer actions — flips the three blocked Section rows. | done |
 
 ## Milestones
 
@@ -69,8 +69,9 @@ defines it._
 forms wait on actions' `HasSchema`); table pagination, sorting, and search;
 relation-backed selects; file uploads; date pickers; i18n; advanced layouts
 (`Flex`, `FusedGroup`, `Tabs`, `Wizard`); [`Section`](schemas/section.md)'s
-blocked rows — header/footer actions wait on the schemas Actions integration,
-relationship entanglement on the Doctrine relation layer.
+one remaining blocked row — singular-relationship state entanglement, on the
+Doctrine relation layer (header/footer actions landed with the schemas↔actions
+integration).
 
 **Done when:** the demo script runs end to end in the demo app,
 `composer test` is green, and the parity tables reflect everything the slice

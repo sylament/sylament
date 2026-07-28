@@ -11,4 +11,13 @@ class CanOpenUrlFixture
 {
     use CanOpenUrl;
     use EvaluatesClosures;
+
+    /**
+     * Stands in for `CanOpenModal::hasModal()`, which `getUrl()`'s modal
+     * precedence guard requires the composing class to supply.
+     */
+    public function hasModal(): ?bool
+    {
+        return null;
+    }
 }

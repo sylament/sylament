@@ -63,6 +63,18 @@ it('renders no modal for a non-confirming action', function (): void {
     expect($html)->not->toContain('sy-modal');
 });
 
+it('mounts an action with only a modal heading and opens its modal instead of auto-running', function (): void {
+    $component = $this->createLiveComponent('ActionHost')
+        ->call('mountAction', ['name' => 'headed', 'arguments' => [], 'context' => []]);
+
+    expect($component->component()->notified)->toBeFalse()
+        ->and($component->component()->mountedActions)->toHaveCount(1);
+
+    expect((string) $component->render())
+        ->toContain('sy-modal')
+        ->toContain('Headed?');
+});
+
 it('returns the auto-run result from mountAction', function (): void {
     expect($this->createLiveComponent('ActionHost')->component()->mountAction('notify'))->toBeTrue();
 });

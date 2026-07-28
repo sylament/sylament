@@ -1,6 +1,6 @@
-<twig:SylamentSupport:IconButton
-    :icon="group.getIcon(constant('Sylament\\Actions\\ActionGroup::DEFAULT_ICON'))"
-    :label="group.getLabel"
-    :color="group.getColor ?? 'gray'"
-    :size="group.getSize ?? 'md'"
-/>
+{% component 'SylamentSupport:IconButton' with {
+    icon: group.getIcon(constant('Sylament\\Actions\\ActionGroup::DEFAULT_ICON')),
+    label: group.getLabel,
+    color: group.getColor ?? 'gray',
+    size: group.getSize ?? 'md',
+}|merge(group.getExtraAttributeBag.toScalarAttributes) %}{% endcomponent %}

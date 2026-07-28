@@ -70,3 +70,20 @@ it('renders fine when a nested group is hidden', function (): void {
 it('refuses to render a visible nested group under dropdown(false) too', function (): void {
     renderGroup(ActionGroup::make([ActionGroup::make([Action::make('edit')])])->dropdown(false));
 })->throws(LogicException::class, 'Submenu');
+
+it('renders extra dropdown attributes on the dropdown root, not the trigger', function (): void {
+    $html = renderGroup(
+        ActionGroup::make([Action::make('edit')])
+            ->extraDropdownAttributes(['data-y' => '2', 'class' => 'custom-dropdown']),
+    );
+
+    expect($html)->toContain('class="sy sy-dropdown custom-dropdown" data-y="2"')
+        ->and(mb_substr_count($html, 'data-y="2"'))->toBe(1);
+});
+
+it('keeps trigger extra attributes off the dropdown root', function (): void {
+    $html = renderGroup(ActionGroup::make([Action::make('edit')])->extraAttributes(['data-x' => '1']));
+
+    expect(mb_substr_count($html, 'data-x="1"'))->toBe(1)
+        ->and(mb_strpos($html, 'data-x="1"'))->toBeGreaterThan(mb_strpos($html, 'sy-dropdown-trigger'));
+});

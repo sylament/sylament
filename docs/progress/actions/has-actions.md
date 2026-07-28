@@ -229,8 +229,9 @@ but does not pass the argument yet) consumes
 `mountedActionHasSchema()` as its `checkForSchemaUsing:` argument. None of
 this exists in the port — `Action` does not compose `HasSchema`, and
 `HasActions` has no schema-building method at all; a mounted action's "form"
-today is whatever the confirm-modal template renders (heading/description/icon
-only). **Blocked** on porting `HasSchema` onto `Action` and wiring the
+today is whatever the action-modal template renders (heading, description,
+icon, custom content, footer actions — no schema-driven fields). **Blocked**
+on porting `HasSchema` onto `Action` and wiring the
 mounted-action `Schema` construction into `HasActions`, which in turn needs the
 forms/schemas action integration point to exist.
 

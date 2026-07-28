@@ -197,6 +197,24 @@ plays for client-side closes (ESC, click-away, close button). A server-driven
 unmount removes the element from the DOM in the same morph that flips the open
 state, so there is nothing left to transition out.
 
+Two `<dialog>`-plus-Tailwind-v4 traps this stylesheet has to work around, both
+found by rendering the built CSS in a browser rather than by any test:
+
+- **Tailwind v4 compiles `scale-*` / `translate-*` to the independent transform
+  properties**, not to `transform: scale()` / `transform: translate()`. A
+  `transition-[transform,opacity]` list therefore animates neither, and the
+  centered window snapped to full size while only its opacity faded. The window
+  rule names `transform, translate, scale, rotate, opacity` explicitly — what
+  Tailwind's own `transition-transform` expands to, plus opacity. Any future
+  motion added here must extend that list, not assume `transform` covers it.
+- **An open `<dialog>` is a UA-level scroll container** (`overflow: auto` in both
+  axes, for `show()` as well as `showModal()`; author sheets set none of it). A
+  slide-over window parked off-viewport at `translate: 100%` sits inside that
+  scrollable area, so the container grew a horizontal scrollbar for the duration
+  of every slide-in — indistinguishable from a page scrollbar, since the dialog
+  covers the viewport. `overflow-x: clip` on the container closes it while
+  leaving the block axis free for the centered-modal container scroll.
+
 ### The client-side close reports itself with a `dismissed` event
 
 Filament's modal dispatches `modal-closed` and the action layer listens for it to

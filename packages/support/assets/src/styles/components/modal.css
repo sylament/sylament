@@ -2,8 +2,14 @@
     /* Container = overlay: fullscreen in the top layer, paints the dim, centers the window.
        Closed dialogs are hidden by the author rule (not just UA) so `display` can
        transition out via allow-discrete. */
-    @apply fixed inset-0 m-0 hidden size-auto max-h-none max-w-none grid-rows-[1fr_auto_1fr] justify-items-center bg-transparent p-0 text-gray-950 outline-none transition-discrete duration-300 sm:grid-rows-[1fr_auto_3fr] dark:text-white;
+    @apply fixed inset-0 m-0 hidden size-auto max-h-none max-w-none grid-rows-[1fr_auto_1fr] justify-items-center overflow-x-clip bg-transparent p-0 text-gray-950 outline-none transition-discrete duration-300 sm:grid-rows-[1fr_auto_3fr] dark:text-white;
     transition-property: display, overlay, background-color;
+
+    /* `overflow-x-clip` is load-bearing: the UA stylesheet makes an open dialog a
+       scroll container in both axes, so a slide-over window parked at
+       `translate: 100%` would raise a horizontal scrollbar across the viewport for
+       the length of its transition. Clipping the inline axis leaves the block axis
+       free for the centered-modal container scroll below. */
 
     &[open] {
         @apply grid bg-gray-950/50 dark:bg-gray-950/75;
@@ -22,7 +28,11 @@
     }
 
     & > .sy-modal-window {
-        @apply pointer-events-auto relative row-start-2 flex w-full scale-95 cursor-default flex-col bg-white opacity-0 shadow-xl ring-1 ring-gray-950/5 outline-none transition-[transform,opacity] duration-300 dark:bg-gray-900 dark:ring-white/10;
+        /* The transition list names `translate`/`scale`/`rotate` alongside `transform`
+           because Tailwind v4 compiles `scale-95` and `-translate-x-full` to the
+           independent transform properties, which `transition-[transform]` does not
+           cover — this is what `transition-transform` expands to, plus opacity. */
+        @apply pointer-events-auto relative row-start-2 flex w-full scale-95 cursor-default flex-col bg-white opacity-0 shadow-xl ring-1 ring-gray-950/5 outline-none transition-[transform,translate,scale,rotate,opacity] duration-300 dark:bg-gray-900 dark:ring-white/10;
 
         &.sy-modal-3xs { @apply max-w-3xs; }
         &.sy-modal-2xs { @apply max-w-2xs; }

@@ -7,9 +7,9 @@ Each stylesheet is `@apply`-authored into `components/<name>.css` and `@import`e
 into [`index.css`](../../../packages/schemas/assets/src/styles/index.css) under
 `layer(components)`, mirroring Filament's `index.css` structure. The `fi-*` class
 prefix is translated to the schemas component code `sy-sc-*` (see the
-[CSS contract](../../styling.md)). Three of Filament's stylesheets are ported so
-far (schema, section, icon), each dropping variants from its source; the rest wait
-on the components they style.
+[CSS contract](../../styling.md)). Four of Filament's stylesheets are ported so
+far (schema, section, icon, actions), each dropping variants from its source; the
+rest wait on the components they style.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -32,12 +32,13 @@ CSS. _Detail_ carries a **diverges** link to a permanent note in
 | [`schema.css` — `.sy-sc` grid/inline/gap/dense/alignment/action](../../../packages/schemas/assets/src/styles/components/schema.css) | [`schema.css`](../../../vendor/filament/schemas/resources/css/schema.css) | in progress | — | [diverges](#schema-css-drops-the-fi-width-max-width-variants-and-the-hidden-rule) |
 | [`section.css` — `.sy-sc-section` label container](../../../packages/schemas/assets/src/styles/components/section.css) | [`components/section.css`](../../../vendor/filament/schemas/resources/css/components/section.css) | done | — | [diverges](#section-css-adds-the-sr-only-hidden-label-rule) · [diverges](#section-css-adds-a-dark-mode-text-color-to-the-content-container) |
 | [`icon.css` — `.sy-sc-icon` color override](../../../packages/schemas/assets/src/styles/components/icon.css) | [`components/icon.css`](../../../vendor/filament/schemas/resources/css/components/icon.css) | in progress | — | [diverges](#icon-css-drops-the-default-gray-base-color) |
+| [`actions.css` — `.sy-sc-actions` column + `.sy-sc-actions-ctn` row](../../../packages/schemas/assets/src/styles/components/actions.css) | [`components/actions.css`](../../../vendor/filament/schemas/resources/css/components/actions.css) | in progress | — | [diverges](#actions-css-folds-in-the-actions-package-row-stylesheet-and-drops-the-sticky-and-vertical-alignment-variants) |
 | [`text.css` — `.sy-sc-text` (lives in the support package)](../../../packages/support/assets/src/styles/components/text.css) | [`components/text.css`](../../../vendor/filament/schemas/resources/css/components/text.css) | done | — | [diverges](#text-css-was-ported-into-the-support-package) |
-| `actions.css` / `flex.css` / `form.css` / `fused-group.css` / `image.css` / `tabs.css` / `unordered-list.css` / `wizard.css` | [`components/`](../../../vendor/filament/schemas/resources/css/components/) | blocked | Actions, Flex, Form, FusedGroup, Image, Tabs, UnorderedList, Wizard | [detail](#the-eight-remaining-stylesheets-are-unported) |
+| `flex.css` / `form.css` / `fused-group.css` / `image.css` / `tabs.css` / `unordered-list.css` / `wizard.css` | [`components/`](../../../vendor/filament/schemas/resources/css/components/) | blocked | Flex, Form, FusedGroup, Image, Tabs, UnorderedList, Wizard | [detail](#the-seven-remaining-stylesheets-are-unported) |
 
 No test exercises CSS. The render tests assert that the class hooks these rules
 attach to (`sy-sc`, `sy-sc-section`, `sy-sc-section-label-hidden`, `sy-sc-icon`,
-`sy-color`, `sy-grid-*`) are emitted into the HTML, but the styling itself never
+`sy-sc-actions-ctn`, `sy-color`, `sy-grid-*`) are emitted into the HTML, but the styling itself never
 runs — CSS cannot reach **done** through a behavior test, so its status rests on
 faithfulness of the port. The `pnpm build` (clean → tsc → esbuild → tailwind, with
 a `.sy`-scoped preflight) compiles them; the only guard is the CI check that the
@@ -45,16 +46,35 @@ committed `assets/dist` matches a fresh build.
 
 ## Details
 
-### The eight remaining stylesheets are unported
+### The seven remaining stylesheets are unported
 
-`actions.css`, `flex.css`, `form.css`, `fused-group.css`, `image.css`, `tabs.css`,
+`flex.css`, `form.css`, `fused-group.css`, `image.css`, `tabs.css`,
 `unordered-list.css`, and `wizard.css` have no `sy-sc-*` counterpart yet. Each is
-**blocked** on its component (Actions, Flex, Form, FusedGroup, Image, Tabs,
+**blocked** on its component (Flex, Form, FusedGroup, Image, Tabs,
 UnorderedList, Wizard) — the styling lands in the same change as the Twig template
 it targets, so there is nothing to author against until then. Next step for each:
 port when its component does.
 
 ## Divergences
+
+### Actions CSS folds in the actions-package row stylesheet and drops the sticky and vertical-alignment variants
+
+Filament splits the Actions component's styling across two packages: schemas'
+`components/actions.css` (`.fi-sc-actions` column, the label container, the
+`.fi-sticky` bottom-pinning variant, `fi-vertical-align-*`) and the **actions**
+package's `actions.css` (the `.fi-ac` row: base gap, wrap + centering when not
+full-width, the `fi-align-end`/`fi-align-right` `flex-row-reverse` order flip,
+the full-width auto-fit grid). Sylament merges both into schemas'
+[`actions.css`](../../../packages/schemas/assets/src/styles/components/actions.css)
+next to the only component emitting the classes — the same
+tracks-its-emitter reasoning as text.css, in the other direction. The row
+container is classed `sy-sc-actions-ctn`, not a `fi-ac` translation, because
+bare `sy-ac` is already the action trigger marker (see the
+[actions.md divergence](actions.md#the-actions-row-container-class-is-sy-sc-actions-ctn-not-a-fi-ac-translation));
+the `flex-row-reverse` end/right flip is copied verbatim, not "fixed" to
+`justify-end`. Dropped variants: `.fi-sticky` (no Stimulus sticky controller
+yet) and the `fi-vertical-align-*` set (support `HasVerticalAlignment`
+unported) — both return with their component rows in `actions.md`.
 
 ### Schema CSS drops the fi-width max-width variants and the hidden rule
 

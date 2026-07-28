@@ -1,0 +1,42 @@
+.sy-sc-actions {
+    @apply flex h-full flex-col gap-2;
+
+    & .sy-sc-actions-label-ctn {
+        @apply flex items-center gap-x-3;
+
+        & .sy-sc-actions-label {
+            @apply text-sm leading-6 font-medium text-gray-950 dark:text-white;
+        }
+    }
+}
+
+.sy-sc-actions-ctn {
+    @apply gap-3;
+
+    &:not(.sy-width-full) {
+        @apply flex flex-wrap items-center;
+
+        &.sy-align-start,
+        &.sy-align-left {
+            @apply justify-start;
+        }
+
+        &.sy-align-center {
+            @apply justify-center;
+        }
+
+        &.sy-align-end,
+        &.sy-align-right {
+            @apply flex-row-reverse;
+        }
+
+        &.sy-align-between,
+        &.sy-align-justify {
+            @apply justify-between;
+        }
+    }
+
+    &.sy-width-full {
+        @apply grid grid-cols-[repeat(auto-fit,minmax(0,1fr))];
+    }
+}

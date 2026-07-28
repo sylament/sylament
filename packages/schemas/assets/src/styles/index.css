@@ -1,3 +1,4 @@
+@import './components/actions.css' layer(components);
 @import './components/icon.css' layer(components);
 @import './components/schema.css' layer(components);
 @import './components/section.css' layer(components);

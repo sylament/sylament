@@ -95,6 +95,10 @@ trait HasActions
         if ($action === null || $action->isDisabled()) {
             array_pop($this->mountedActions);
 
+            while (count($this->cachedMountedActions ?? []) > count($this->mountedActions)) {
+                array_pop($this->cachedMountedActions);
+            }
+
             return null;
         }
 
@@ -116,7 +120,6 @@ trait HasActions
             return null;
         }
 
-        $action->mergeArguments($this->mountedActions[0]['arguments'] ?? []);
         $action->record($this->getMountedActionRecord());
 
         if ($action->isDisabled()) {
@@ -158,6 +161,10 @@ trait HasActions
         $id = $this->getMountedModalId();
 
         $this->mountedActions = [];
+
+        while (count($this->cachedMountedActions ?? []) > count($this->mountedActions)) {
+            array_pop($this->cachedMountedActions);
+        }
 
         $this->dispatchBrowserEvent('sylament-close-modal', ['id' => $id]);
     }
@@ -235,6 +242,15 @@ trait HasActions
      * the previous action's declared modal actions. The result can be shorter than the
      * stack; nestingIndex is the source array key, not the output position — the cache
      * is positional (Filament-exact quirk).
+     *
+     * The schemaComponent branch below is gated to the root frame only
+     * (`$resolvedActions === []`): a nested frame must always descend through its
+     * parent's declared modal actions, never through the host's schema-hosted ones.
+     * Filament can branch on context alone because its `Action::getContext()` never
+     * emits schemaComponent for a child frame, but a hand-built stack entry could
+     * still carry both keys, so the guard is explicit here — together with the
+     * `break` below, it is what stops a deeper frame from ever resolving against
+     * the host.
      *
      * Two deliberate deltas from Filament. A frame that resolves to null stops the walk
      * (they `continue`): their resolvers throw where ours return null, so continuing
@@ -335,7 +351,11 @@ trait HasActions
 
     public function getMountedModalId(): string
     {
-        $name = $this->mountedActions[0]['name'] ?? 'action';
+        $descriptor = $this->mountedActions === []
+            ? null
+            : array_last($this->mountedActions);
+
+        $name = $descriptor['name'] ?? 'action';
 
         return "{$name}-modal";
     }

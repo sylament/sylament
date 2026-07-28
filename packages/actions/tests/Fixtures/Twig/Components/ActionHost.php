@@ -83,6 +83,7 @@ class ActionHost implements InteractsWithActions
                 Action::make('deeper')->modalHeading('Deeper')->extraModalFooterActions([
                     Action::make('deepest')->modalHeading('Deepest'),
                 ]),
+                Action::make('overlayChild')->modalHeading('Over the top')->overlayParentActions(),
             ]);
     }
 

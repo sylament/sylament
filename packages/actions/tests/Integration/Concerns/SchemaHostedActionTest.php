@@ -29,7 +29,7 @@ it('mounts the schema-hosted action from its context and renders the confirm mod
         ->render();
 
     expect($html)->toContain('<dialog')
-        ->toContain('id="publish-modal"')
+        ->toMatch('/id="sy-[0-9a-f]{8}-action-0"/')
         ->toContain('sy-modal-heading')
         ->toContain('>Publish</h2>');
 });

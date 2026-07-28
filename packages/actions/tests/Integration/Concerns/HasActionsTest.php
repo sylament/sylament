@@ -28,7 +28,7 @@ it('mounts an action into the live prop and renders its modal', function (): voi
 
     expect((string) $component->render())
         ->toContain('sy-modal')
-        ->toContain('data-sylament--support--modal-id-value="delete-modal"');
+        ->toMatch('/data-sylament--support--modal-id-value="sy-[0-9a-f]{8}-action-0"/');
 });
 
 it('runs the mounted closure and unmounts on callMountedAction', function (): void {
@@ -300,4 +300,56 @@ it('replaceMountedAction clears the whole stack before mounting', function (): v
     expect($host->mountedActions)->toHaveCount(1)
         ->and($host->mountedActions[0]['name'])->toBe('headed')
         ->and($host->getMountedAction()?->getNestingIndex())->toBe(0);
+});
+
+it('scopes modal ids to the host and nesting index, stable across reads', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('edit');
+    $host->mountAction('confirmDelete');
+
+    expect($host->getMountedModalId())->toMatch('/^sy-[0-9a-f]{8}-action-1$/')
+        ->and($host->getMountedModalId(0))->toMatch('/^sy-[0-9a-f]{8}-action-0$/')
+        ->and($host->getMountedModalId())->toBe($host->getMountedModalId())
+        ->and($host->actionsHostId)->not->toBeNull();
+});
+
+/*
+ * $actionsHostId is a #[LiveProp] with a same-named getter (getActionsHostId()) —
+ * the same shape that made getMountedActions() collide with $mountedActions in
+ * Task 1: PropertyAccessor::getValue() prefers a same-named getter over the raw
+ * property, so LiveComponentHydrator::dehydrate() calls getActionsHostId() rather
+ * than reading the property directly (harmless here, unlike Task 1's collision,
+ * since the getter returns the same string type dehydrate expects). This test
+ * exercises a real HTTP round trip through ->call() (dehydrate -> DOM -> next
+ * request -> hydrate) rather than calling methods directly on one in-memory
+ * object, so it would catch the id silently resetting between requests even
+ * though the two prior assertions could not.
+ */
+it('keeps actionsHostId stable across a real hydrate/dehydrate round trip', function (): void {
+    $component = $this->createLiveComponent('ActionHost')
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => []]);
+
+    $firstId = $component->component()->getActionsHostId();
+
+    $component = $component->call('unmountAction');
+
+    expect($component->component()->getActionsHostId())->toBe($firstId);
+});
+
+it('opens only the top frame when the child does not overlay its parents', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('edit');
+    $host->mountAction('confirmDelete');
+
+    expect($host->isMountedActionModalOpen(0))->toBeFalse()
+        ->and($host->isMountedActionModalOpen(1))->toBeTrue();
+});
+
+it('keeps parents open under an overlaying child', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('edit');
+    $host->mountAction('overlayChild');
+
+    expect($host->isMountedActionModalOpen(0))->toBeTrue()
+        ->and($host->isMountedActionModalOpen(1))->toBeTrue();
 });

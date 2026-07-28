@@ -32,7 +32,7 @@ it('renders the mounted action modal from a zero-argument tag', function (): voi
 
     expect($html)
         ->toContain('<dialog')
-        ->toContain('id="delete-modal"')
+        ->toMatch('/id="sy-[0-9a-f]{8}-action-0"/')
         ->toContain('data-live-action-param="callMountedAction"')
         ->toContain('data-live-action-param="unmountAction"');
 });
@@ -56,7 +56,7 @@ it('resolves the host through an intervening Twig component', function (): void 
     expect($html)
         ->toContain('sy-section')
         ->toContain('<dialog')
-        ->toContain('id="delete-modal"')
+        ->toMatch('/id="sy-[0-9a-f]{8}-action-0"/')
         ->toContain('Delete?');
 });
 
@@ -79,7 +79,7 @@ it('renders the modal of an explicitly passed host', function (): void {
 
     expect(renderModals('<twig:SylamentActions:Modals :liveComponent="host" />', ['host' => $host]))
         ->toContain('<dialog')
-        ->toContain('id="delete-modal"');
+        ->toMatch('/id="sy-[0-9a-f]{8}-action-0"/');
 });
 
 it('throws when no action host is in scope', function (): void {

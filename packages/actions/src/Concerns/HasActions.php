@@ -37,6 +37,9 @@ trait HasActions
     #[LiveProp(dehydrateWith: 'dehydrateMountedActions')]
     public array $mountedActions = [];
 
+    #[LiveProp]
+    public ?string $actionsHostId = null;
+
     /**
      * @var array<string, Action>
      */
@@ -428,15 +431,45 @@ trait HasActions
         return $this->cachedActions[$action->getName()] = $action;
     }
 
-    public function getMountedModalId(): string
+    public function getActionsHostId(): string
     {
-        $descriptor = $this->mountedActions === []
-            ? null
-            : array_last($this->mountedActions);
+        return $this->actionsHostId ??= bin2hex(random_bytes(4));
+    }
 
-        $name = $descriptor['name'] ?? 'action';
+    public function getMountedModalId(?int $actionNestingIndex = null): string
+    {
+        $actionNestingIndex ??= ($this->mountedActions === []) ? 0 : array_key_last($this->mountedActions);
 
-        return "{$name}-modal";
+        return "sy-{$this->getActionsHostId()}-action-{$actionNestingIndex}";
+    }
+
+    /**
+     * Sylament-only declarative-choreography helper (no Filament equivalent — their
+     * client JS decides visibility): the top frame is open when its modal should
+     * open; a parent frame stays open only while every deeper resolved frame
+     * declares overlayParentActions().
+     */
+    public function isMountedActionModalOpen(int $actionNestingIndex): bool
+    {
+        if ($this->mountedActions === []) {
+            return false;
+        }
+
+        if ($actionNestingIndex === array_key_last($this->mountedActions)) {
+            return $this->mountedActionShouldOpenModal();
+        }
+
+        foreach ($this->getMountedActions() as $mountedAction) {
+            if (($mountedAction->getNestingIndex() ?? 0) <= $actionNestingIndex) {
+                continue;
+            }
+
+            if (! $mountedAction->shouldOverlayParentActions()) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

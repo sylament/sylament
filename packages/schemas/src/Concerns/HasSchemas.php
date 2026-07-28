@@ -23,6 +23,13 @@ use Symfony\UX\LiveComponent\Attribute\PreDehydrate;
  * returning one, named either for the schema itself (`article()`) or with
  * Filament's suffix (`articleSchema()`); the bare name wins when both exist.
  * The schema is keyed by the declared name either way, never the method name.
+ *
+ * `cacheSchema()` lets a caller register a built `Schema` directly, bypassing
+ * method discovery entirely — the mounted-action modal uses it to cache the
+ * action's schema under a synthetic name. Because `getCachedSchemas()` returns
+ * the whole `$cachedSchemas` map, a schema registered this way is picked up by
+ * `persistOldState()` and `callAfterSchemaStateUpdated()` for free — that is
+ * what makes reactive fields work inside a mounted-action modal.
  */
 trait HasSchemas
 {
@@ -69,6 +76,37 @@ trait HasSchemas
         }
 
         return $this->cachedSchemas[$name] = $schema->key($name);
+    }
+
+    /**
+     * Register a schema instance under a name, or unset the cache entry when
+     * `$schema` is null. Filament's counterpart also builds the schema itself
+     * when called with a single argument (its `func_num_args() === 1` arm
+     * triggers method-name discovery); ours has no such arm — `getSchema()`
+     * already owns discovery — so `$schema` is required, and passing null is
+     * always an explicit unset, never a build trigger.
+     */
+    public function cacheSchema(string $name, ?Schema $schema): ?Schema
+    {
+        if ($schema instanceof Schema) {
+            return $this->cachedSchemas[$name] = $schema->key($name);
+        }
+
+        unset($this->cachedSchemas[$name]);
+
+        return null;
+    }
+
+    /**
+     * A pure membership test against the raw `$cachedSchemas` property, unlike
+     * Filament's `hasCachedSchema()`, which checks `getCachedSchemas()` and so
+     * builds every method-discovered schema just to answer the question. Both
+     * Sylament callers — the mounted-action schema lookup and the
+     * schema-component action resolver — want membership without the build.
+     */
+    public function hasCachedSchema(string $name): bool
+    {
+        return array_key_exists($name, $this->cachedSchemas);
     }
 
     /**

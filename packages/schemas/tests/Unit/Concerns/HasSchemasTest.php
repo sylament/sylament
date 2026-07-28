@@ -6,6 +6,7 @@ namespace Sylament\Schemas\Tests\Unit\Concerns;
 
 use RuntimeException;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\Tests\Fixtures\Concerns\DiscoveryThrowingSchemaHostFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\SuffixedSchemaHostFixture;
 
@@ -97,4 +98,34 @@ it('keys a schema by its name when caching it', function (): void {
 
 it('keys a suffix-resolved schema by the declared name, not the method name', function (): void {
     expect(new SuffixedSchemaHostFixture()->getSchema('article')->getKey())->toBe('article');
+});
+
+it('caches a given schema instance under the given name, keyed by that name', function (): void {
+    $fixture = new HasSchemasFixture();
+    $schema = $fixture->makeSchema();
+
+    $cached = $fixture->cacheSchema('extra', $schema);
+
+    expect($cached)->toBe($schema)
+        ->and($schema->getKey())->toBe('extra')
+        ->and($fixture->hasCachedSchema('extra'))->toBeTrue()
+        ->and($fixture->getCachedSchemas())->toHaveKey('extra');
+});
+
+it('unsets a cached schema when null is passed, without triggering discovery', function (): void {
+    $fixture = new HasSchemasFixture();
+    $fixture->getSchema();
+
+    expect($fixture->hasCachedSchema('schema'))->toBeTrue();
+
+    $result = $fixture->cacheSchema('schema', null);
+
+    expect($result)->toBeNull()
+        ->and($fixture->hasCachedSchema('schema'))->toBeFalse();
+});
+
+it('checks membership against the raw cache without discovering the schema', function (): void {
+    $fixture = new DiscoveryThrowingSchemaHostFixture();
+
+    expect($fixture->hasCachedSchema('schema'))->toBeFalse();
 });

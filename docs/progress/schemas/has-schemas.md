@@ -41,6 +41,8 @@ row is **done**, or **diverges** → the permanent note in
 | [`callAfterSchemaStateUpdated()` `#[PostHydrate]` — diff snapshot, fire hooks](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::updatedInteractsWithSchemas()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-host-level-afterstateupdated-hook-is-renamed-to-callafterschemastateupdated) |
 | [`getOldSchemaState(?string)` — path-keyed pre-change lookup](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::getOldSchemaState()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
 | [`<name>Schema` method-name fallback — bare name first, suffix second](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::cacheSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | — |
+| [`cacheSchema()` — register/unset a schema instance by name](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::cacheSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#cacheschema-has-no-discovery-arm-and-requires-its-second-argument) |
+| [`hasCachedSchema()` — raw-cache membership test](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::hasCachedSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#hascachedschema-checks-the-raw-cache-not-getcachedschemas) |
 | Reflection schema auto-discovery (`default<Name>` hooks, `discoveredSchemaNames`, return-type detection) | [`InteractsWithSchemas::cacheSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [diverges](#schema-discovery-is-explicit-via-schemas-not-reflection-based) |
 | `getSchemaComponent()` absolute-key addressing | [`InteractsWithSchemas::getSchemaComponent()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#component-addressing-and-the-exposedlivewiremethod-dispatch-are-not-ported) |
 | `callSchemaComponentMethod()` / `partiallyRenderSchemaComponent()` | [`InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#component-addressing-and-the-exposedlivewiremethod-dispatch-are-not-ported) |
@@ -50,16 +52,20 @@ row is **done**, or **diverges** → the permanent note in
 | Translatable content driver (`getFilamentTranslatableContentDriver`, `getActiveSchemaLocale`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-translatable-content-driver-is-not-ported) |
 | Testing helpers (`fillFormDataForTesting`, `disable/enableSchemaStateUpdateHooksForTesting`, `getDefaultTestingSchemaName`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `TestsSchemas` | [detail](#the-validation-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
 
-The nine **done** rows are the schema-hosting core (`schemas()`, `getSchema()`
+The eleven **done** rows are the schema-hosting core (`schemas()`, `getSchema()`
 with its `<name>Schema` method-name fallback, `getCachedSchemas()`,
-`makeSchema()`, `fill()`) and the full PreDehydrate/PostHydrate state-hook loop
-(`oldState`, `persistOldState`, `callAfterSchemaStateUpdated`,
-`getOldSchemaState`). The core is covered by
+`makeSchema()`, `fill()`, `cacheSchema()`, `hasCachedSchema()`) and the full
+PreDehydrate/PostHydrate state-hook loop (`oldState`, `persistOldState`,
+`callAfterSchemaStateUpdated`, `getOldSchemaState`). The core is covered by
 [`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php)
 (build-from-method, default name, caching, throw-on-missing/non-`Schema`,
-key-by-name, `getCachedSchemas`/`makeSchema` fresh-vs-bound, and — via the
-[`SuffixedSchemaHostFixture`](../../../packages/schemas/tests/Fixtures/Concerns/SuffixedSchemaHostFixture.php)
-— suffix resolution, bare-wins precedence, and keying by the declared name);
+key-by-name, `getCachedSchemas`/`makeSchema` fresh-vs-bound, register/unset via
+`cacheSchema`, and raw-cache membership via `hasCachedSchema` — including, via
+the
+[`DiscoveryThrowingSchemaHostFixture`](../../../packages/schemas/tests/Fixtures/Concerns/DiscoveryThrowingSchemaHostFixture.php),
+that `hasCachedSchema` never triggers a build — and, via the
+[`SuffixedSchemaHostFixture`](../../../packages/schemas/tests/Fixtures/Concerns/SuffixedSchemaHostFixture.php),
+suffix resolution, bare-wins precedence, and keying by the declared name);
 `fill()` by
 [`HasStateTest`](../../../packages/schemas/tests/Unit/Concerns/HasStateTest.php)
 (single + multi-schema); and the snapshot-and-diff loop end-to-end by
@@ -148,6 +154,32 @@ guarantee is worse than none. `schemas()` therefore stays the declaration that
 works in every case. Reversing the rest means porting the reflection loop when a
 consumer needs the `default<Name>` seeding hook or the no-parameter
 `articleSchema(): Schema` shape.
+
+### cacheSchema() has no discovery arm and requires its second argument
+
+Filament's `cacheSchema(string $name, Schema | Closure | null $schema = null)`
+overloads a single call three ways via `func_num_args()`: pass a built schema
+to register it, pass nothing to run method-name discovery (mirroring
+`getSchema()`'s own resolution), or explicitly pass `null` to unset the cache
+entry — the last two are told apart only by argument count. Sylament's
+`cacheSchema(string $name, ?Schema $schema)` drops the discovery arm — that
+logic already lives in `getSchema()`, so duplicating it here would be a second
+copy to keep in sync — and makes `$schema` required, so there is no
+argument-count ambiguity: a non-null `Schema` registers, `null` always unsets.
+Reverses only if a caller needs single-argument discovery through this method
+specifically rather than through `getSchema()`.
+
+### hasCachedSchema() checks the raw cache, not getCachedSchemas()
+
+Filament's `hasCachedSchema()` is `array_key_exists($name, $this->getCachedSchemas())`,
+which builds every schema declared in `schemas()` before answering a membership
+question. Sylament's checks `array_key_exists($name, $this->cachedSchemas)` — the
+raw property — instead, so a lookup for a name that was never built (or was
+explicitly unset via `cacheSchema($name, null)`) never triggers a build. Both
+Sylament call sites want a pure membership test: the mounted-action schema
+lookup (`HasActions::mountedActionHasSchema()`) and the schema-component action
+resolver, neither of which should force-build unrelated declared schemas just to
+check whether one specific name is cached.
 
 ### The host-level afterStateUpdated hook is renamed to `callAfterSchemaStateUpdated`
 

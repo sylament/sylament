@@ -157,7 +157,7 @@ for a directory collapses that whole subtree into one navigational entry.
 Sylament compositions with **no** single Filament source; Filament renders
 action triggers through the support-layer button/link/badge/icon-button
 component views) and
-[`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig)
+[`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)
 (porting [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php))
 — are folded into [`action.md`](action.md) as its trigger- and modal-rendering
 rows rather than carrying rows here. The host-side

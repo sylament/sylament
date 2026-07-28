@@ -106,7 +106,7 @@ Filament's `Contracts\HasActions` does **not** declare `callMountedAction()`,
 component but never through the abstract contract. Sylament's interface
 promotes all three, because both the modal template and the trigger button
 call back into the host by name regardless of its concrete class —
-[`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig)
+[`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)
 wires `live_action('callMountedAction')` / `live_action('unmountAction')`, and
 [`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)
 wires `live_action('mountAction', ...)` — and because

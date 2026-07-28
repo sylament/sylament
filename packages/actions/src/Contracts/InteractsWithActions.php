@@ -18,7 +18,12 @@ interface InteractsWithActions
 
     public function unmountAction(): void;
 
-    public function getMountedAction(): ?Action;
+    public function getMountedAction(?int $actionNestingIndex = null): ?Action;
+
+    /**
+     * @return array<Action>
+     */
+    public function getMountedActions(): array;
 
     public function mountedActionShouldOpenModal(?Action $mountedAction = null): bool;
 

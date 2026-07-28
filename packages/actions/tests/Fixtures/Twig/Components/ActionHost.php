@@ -62,6 +62,15 @@ class ActionHost implements InteractsWithActions
             ->action(fn (): true => $this->notified = true);
     }
 
+    public function editAction(): Action
+    {
+        return Action::make('edit')
+            ->modalHeading('Edit thing')
+            ->extraModalFooterActions([
+                Action::make('confirmDelete')->modalHeading('Really delete?'),
+            ]);
+    }
+
     /**
      * Bare method (no `Action` suffix) with a declared Action return type —
      * resolvable through getAction()'s reflection gate.

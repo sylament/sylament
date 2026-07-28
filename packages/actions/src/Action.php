@@ -90,6 +90,8 @@ class Action extends ViewComponent
 
     protected ?ActionStatus $status = null;
 
+    protected ?int $nestingIndex = null;
+
     final public function __construct(?string $name)
     {
         $this->name($name);
@@ -185,6 +187,18 @@ class Action extends ViewComponent
     public function getStatus(): ActionStatus
     {
         return $this->status ?? ActionStatus::Success;
+    }
+
+    public function nestingIndex(?int $index): static
+    {
+        $this->nestingIndex = $index;
+
+        return $this;
+    }
+
+    public function getNestingIndex(): ?int
+    {
+        return $this->nestingIndex;
     }
 
     public function getRecord(): mixed

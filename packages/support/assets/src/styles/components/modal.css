@@ -230,27 +230,27 @@
         }
     }
 
-    /* Start-aligned content indent under the heading when an icon is present:
+    /* Base padding for content/footer, overridden below by the start-aligned
+       content indent under the heading when an icon is present:
        px-6 (1.5rem) + lg icon (1.5rem) + gap-x-5 (1.25rem) = 4.25rem. */
     &:not(.sy-modal-has-sticky-header) {
-        & > .sy-modal-window.sy-modal-window-has-icon {
-            &.sy-align-start,
-            &.sy-align-left {
-                & .sy-modal-content {
-                    @apply ps-[4.25rem] pe-6;
-                }
-
-                & .sy-modal-footer:not(.sy-align-center) {
-                    @apply ps-[4.25rem] pe-6;
-                }
-            }
-        }
-
-        & > .sy-modal-window:not(.sy-modal-window-has-icon),
-        & > .sy-modal-window.sy-align-center {
+        & > .sy-modal-window {
             & .sy-modal-content,
             & .sy-modal-footer {
                 @apply px-6;
+            }
+
+            &.sy-modal-window-has-icon {
+                &.sy-align-start,
+                &.sy-align-left {
+                    & .sy-modal-content {
+                        @apply ps-[4.25rem] pe-6;
+                    }
+
+                    & .sy-modal-footer:not(.sy-align-center) {
+                        @apply ps-[4.25rem] pe-6;
+                    }
+                }
             }
         }
     }

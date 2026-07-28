@@ -449,8 +449,10 @@ trait HasActions
     /**
      * Sylament-only declarative-choreography helper (no Filament equivalent — their
      * client JS decides visibility): the top frame is open when its modal should
-     * open; a parent frame stays open only while every deeper resolved frame
-     * declares overlayParentActions().
+     * open; a parent frame stays open only while every deeper resolved frame *that
+     * opens a modal of its own* declares overlayParentActions(). The qualifier is
+     * load-bearing, not hedging — a modal-less deeper frame (Action::halt() mid-flow)
+     * must not close the parent modal that halt() exists to keep open.
      */
     public function isMountedActionModalOpen(int $actionNestingIndex): bool
     {

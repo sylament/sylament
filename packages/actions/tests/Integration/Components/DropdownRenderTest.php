@@ -48,5 +48,24 @@ it('applies placement, width, and max-height configuration', function (): void {
     expect($html)->toContain('data-sylament--support--dropdown-placement-value="top-end"')
         ->toContain('data-sylament--support--dropdown-flip-value="false"')
         ->toContain('--sy-dropdown-width: 16rem;')
-        ->toContain('--sy-dropdown-max-height: 20rem;');
+        ->toContain('--sy-dropdown-max-height: 20rem;')
+        ->toContain('--sy-dropdown-overflow: auto;');
+});
+
+/**
+ * The panel is a scroll container only when a max-height bounds it — Filament's
+ * `fi-scrollable` gate. Both halves are asserted because an unconditional
+ * `--sy-dropdown-overflow` would satisfy the positive case above on its own, and an
+ * unconditionally scrollable panel clips a nested submenu in both axes.
+ */
+it('emits the scroll-container variable only alongside a max-height', function (): void {
+    $html = renderDropdown(<<<'TWIG'
+        <twig:SylamentSupport:Dropdown width="16rem">
+            <twig:block name="trigger"><button type="button">Open</button></twig:block>
+            <span>Panel content</span>
+        </twig:SylamentSupport:Dropdown>
+        TWIG);
+
+    expect($html)->toContain('--sy-dropdown-width: 16rem;')
+        ->not->toContain('--sy-dropdown-overflow');
 });

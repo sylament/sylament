@@ -106,10 +106,17 @@ Deliberate deviations from Filament — permanent, and the reason they hold.
 ### The panel scrolls only when a max-height is set, and the gate is a CSS variable
 
 Filament gives the panel its own scrollbar by adding a `fi-scrollable` class,
-and adds it **only** when a max-height exists
-(`ActionGroup.php`'s `'fi-scrollable' => $maxHeight`, and the same condition in
-[`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php));
-the `overflow-y-auto` rule keys off that class. Sylament's port applied
+and never adds it unconditionally. The port mirrors
+[`ActionGroup.php:525`](../../../vendor/filament/actions/src/ActionGroup.php)'s
+gate, `'fi-scrollable' => $maxHeight` — scrollable exactly when a max-height is
+set. (Filament's *generic* dropdown view is slightly wider,
+`'fi-scrollable' => $maxHeight || $size` at
+[`dropdown/index.blade.php:57`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php),
+because its `size` prop enables the viewport-fitting middleware that can shrink
+the panel below its content height. Sylament has no `size` prop — that is the
+still-`todo` [size-middleware row](#size-middleware) — so the two conditions
+coincide here, and the second disjunct returns with that row.)
+The `overflow-y-auto` rule keys off that class. Sylament's port applied
 `overflow-y-auto` **unconditionally** for its first two epics — a porting
 fidelity bug, not a design choice, and one with a real consequence: a
 non-`visible` `overflow-y` makes the UA re-adjust an `overflow-x: visible` to

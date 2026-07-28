@@ -110,9 +110,11 @@ the marker class first if a chevron is ever wanted.
 
 ### The button-group trigger is unported, which is why `hasDropdown()` stands in for `isButtonGroup()`
 
-Filament ships five trigger views —
+Filament ships six trigger views —
 `BADGE_VIEW`, `BUTTON_VIEW`, `BUTTON_GROUP_VIEW`, `GROUPED_VIEW`,
-`ICON_BUTTON_VIEW`, `LINK_VIEW` — with `buttonGroup()` / `isButtonGroup()`
+`ICON_BUTTON_VIEW`, `LINK_VIEW`
+([`ActionGroup.php:70-80`](../../../vendor/filament/actions/src/ActionGroup.php)) —
+with `buttonGroup()` / `isButtonGroup()`
 selecting a **non-dropdown row of buttons** (`div.fi-btn-group`), distinct from
 `button()`, which is a dropdown whose trigger happens to look like a button.
 The port has `BUTTON_TEMPLATE`, `ICON_BUTTON_TEMPLATE`, and now

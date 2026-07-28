@@ -364,12 +364,6 @@ Absent entirely, with no property, setter, or getter:
 
 - **Wizard suppression**: `getModalFooterActions()`'s `isWizard()` early return,
   deferred with `HasWizard`.
-  `makeModalSubmitAction(string $name, ?array $arguments = null)` itself is now
-  ported — `makeModalAction($name)->callParent($this->getLiveComponentCallMountedActionName())->arguments($arguments)->color('gray')`,
-  Filament's body — so a modal footer action can call its **parent** action
-  rather than mounting itself. Nothing in the port constructs one yet (Filament's
-  only caller is the wizard), but it is the factory a consumer reaches for, and
-  the trigger templates already rank its `callParent` handler above `shouldClose()`.
 - **Deprecated aliases**: `centerModal()`, `modalButton()`, `modalSubheading()`,
   `extraModalActions()`, `makeExtraModalAction()` are not carried over — expected;
   Sylament has no deprecation-shim policy and these all have live equivalents
@@ -386,6 +380,24 @@ is `string|Closure|null` here vs Filament's `string|BackedEnum|Htmlable|Closure|
 is a bare string (`'md'`) vs Filament's `Width` enum (no `Width` enum ported to
 Sylament yet — every width value here is just whatever string a template's CSS
 happens to key on, e.g. `sy-modal-md`).
+
+`makeModalSubmitAction(string $name, ?array $arguments = null)` is **ported**,
+Filament's body exactly:
+`makeModalAction($name)->callParent($this->getLiveComponentCallMountedActionName())->arguments($arguments)->color('gray')`.
+It builds a footer action that calls its **parent** action instead of mounting
+itself, and the trigger templates already rank its `callParent` handler above
+`shouldClose()`. Nothing in the port constructs one yet, and the reason is worth
+naming precisely, because it is not a wizard thing: Filament's four call sites
+are `CreateAction` (`createAnother`), `AttachAction` (`attachAnother`),
+`AssociateAction` (`associateAnother`), and forms' `Select` (`createAnother`
+again) — the documented "create another / attach another" pattern
+([`actions/docs/02-modals.md`](../../../vendor/filament/actions/docs/02-modals.md)),
+where an extra footer button re-runs the same action with an `['another' => true]`
+argument flag instead of closing the modal. Every one of those is a **prebuilt
+action**, and none is ported. So the first consumer arrives with the prebuilt
+record actions (or with forms' `Select`), not with `HasWizard`. Filament's
+`makeExtraModalAction()` is the deprecated alias of this same method, which is
+why the deprecated-aliases bullet above lists it.
 
 `prepareModalAction()` now also stamps `->parentAction($this instanceof Action ? $this : null)`
 alongside the schema-container/schema-component/live-component bindings, so
@@ -1072,7 +1084,9 @@ dismissal wrapper turns that into the `unmountAction` round-trip — see the
 A third shape exists but has no constructor yet:
 `makeModalSubmitAction()` builds a footer action whose `callParent()` handler
 calls the **parent** action's `callMountedAction`, ranked above `close()` in
-the same precedence chain. One limitation moved rather than vanished: an
+the same precedence chain — Filament's `createAnother` / `attachAnother`
+pattern, which arrives here with the prebuilt actions
+([detail](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported)). One limitation moved rather than vanished: an
 array-of-shades color (a value `getColor(): string|array<string>|null`
 explicitly allows) still cannot be represented in the rendered classes — that
 is now the general button-template limitation (`button-action.html.twig`

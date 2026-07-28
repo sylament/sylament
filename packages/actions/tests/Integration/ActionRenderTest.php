@@ -53,6 +53,16 @@ it('emits no mount context on an unbound trigger', function (): void {
         ->not->toContain('data-live-context-param');
 });
 
+it('emits invoked arguments as a mount param', function (): void {
+    $html = renderAction(Action::make('delete')(['id' => 5]));
+
+    expect($html)->toContain('data-live-arguments-param="{&quot;id&quot;:5}"');
+});
+
+it('emits no arguments mount param without invoked arguments', function (): void {
+    expect(renderAction(Action::make('delete')))->not->toContain('data-live-arguments-param');
+});
+
 it('renders a url action as a link without mount wiring', function (): void {
     $html = renderAction(Action::make('edit')->url('/users/1/edit')->openUrlInNewTab());
 

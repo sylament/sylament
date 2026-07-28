@@ -22,6 +22,7 @@ use Sylament\Actions\Concerns\HasArguments;
 use Sylament\Actions\Concerns\HasGroupedIcon;
 use Sylament\Actions\Concerns\HasLabel;
 use Sylament\Actions\Concerns\HasLifecycleHooks;
+use Sylament\Actions\Concerns\HasMountableArguments;
 use Sylament\Actions\Concerns\HasName;
 use Sylament\Actions\Concerns\HasSize;
 use Sylament\Actions\Concerns\InteractsWithRecord;
@@ -61,6 +62,7 @@ class Action extends ViewComponent
     use HasIconSize;
     use HasLabel;
     use HasLifecycleHooks;
+    use HasMountableArguments;
     use HasName;
     use HasSize;
     use HasTooltip;

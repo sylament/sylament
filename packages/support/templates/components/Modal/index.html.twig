@@ -18,6 +18,7 @@
     iconColor = 'primary',
     id = null,
     open = false,
+    overlaid = false,
     returnsFocus = true,
     slideOver = false,
     slideOverPosition = 'end',
@@ -78,6 +79,10 @@
 
 {% set overlayExtra = extraOverlayAttributes ?: {} %}
 
+{# The `open` attribute mirrors the Stimulus value: the value is intent, the attribute
+   is native state. Rendering both from one prop keeps a live re-render from morphing
+   the attribute off an already-open dialog and closing it (Idiomorph diffs attributes,
+   and a stack keeps parent dialogs open across renders). #}
 <dialog
     {{ attributes.defaults({
         class: classes('sy sy-modal', {
@@ -87,10 +92,12 @@
             'sy-modal-has-sticky-header': stickyHeader,
             'sy-modal-has-sticky-footer': stickyFooter,
             'sy-modal-click-through': clickThrough,
+            'sy-modal-overlaid': overlaid,
             'sy-modal-screen': sizeValue == 'screen',
             'sy-clickable': closeByClickingAway,
         }, overlayExtra.class ?? null),
         id: id ?: false,
+        open: open ?: false,
         'aria-labelledby': hasHeading and headingId ? headingId : false,
         'aria-describedby': descriptionId ?: false,
         ...modalStimulus,

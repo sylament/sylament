@@ -196,3 +196,20 @@ it('spreads extra overlay and window attributes onto their elements', function (
         ->toMatch('/sy-modal-window[^>]*data-window="w"/')
         ->toMatch('/class="[^"]*sy-modal-window[^"]*window-extra/');
 });
+
+it('mirrors the open state into the native open attribute', function (): void {
+    expect(renderModal('<twig:SylamentSupport:Modal id="m" :open="true" />'))
+        ->toMatch('/<dialog[^>]*\sopen[\s>]/')
+        ->toContain('data-sylament--support--modal-open-value="true"');
+
+    expect(renderModal('<twig:SylamentSupport:Modal id="m" />'))
+        ->not->toMatch('/<dialog[^>]*\sopen[\s>]/');
+});
+
+it('marks an overlaid modal so its dim is suppressed', function (): void {
+    expect(renderModal('<twig:SylamentSupport:Modal id="m" :open="true" :overlaid="true" />'))
+        ->toContain('sy-modal-overlaid');
+
+    expect(renderModal('<twig:SylamentSupport:Modal id="m" :open="true" />'))
+        ->not->toContain('sy-modal-overlaid');
+});

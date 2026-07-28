@@ -1,5 +1,5 @@
 {% set tag = component.getUrl ? 'a' : 'button' %}
-{% set iconHtml = component.getIcon ? generateIconHtml(component.getIcon, null, null, component.getIconSize ?? 'sm') : null %}
+{% set iconHtml = component.getIcon(component.getGroupedIcon) ? generateIconHtml(component.getIcon(component.getGroupedIcon), null, null, component.getIconSize ?? 'sm') : null %}
 
 <{{ tag }}
     {{ attrs({

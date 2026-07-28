@@ -63,6 +63,18 @@ it('renders a url action as a link without mount wiring', function (): void {
         ->not->toContain('type=');
 });
 
+it('renders an outlined button', function (): void {
+    $html = renderAction(Action::make('delete')->outlined());
+
+    expect($html)->toContain('sy-outlined');
+});
+
+it('does not render the grouped icon on a button', function (): void {
+    $html = renderAction(Action::make('delete')->groupedIcon('heroicons:x-mark'));
+
+    expect($html)->not->toContain('<svg');
+});
+
 it('renders a hidden label as an aria-label only', function (): void {
     $html = renderAction(Action::make('delete')->hiddenLabel()->icon('heroicons:x-mark'));
 

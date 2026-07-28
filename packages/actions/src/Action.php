@@ -20,6 +20,8 @@ use Sylament\Actions\Concerns\CanOpenUrl;
 use Sylament\Actions\Concerns\CanRequireConfirmation;
 use Sylament\Actions\Concerns\HasAction;
 use Sylament\Actions\Concerns\HasArguments;
+use Sylament\Actions\Concerns\HasExtraModalOverlayAttributes;
+use Sylament\Actions\Concerns\HasExtraModalWindowAttributes;
 use Sylament\Actions\Concerns\HasGroupedIcon;
 use Sylament\Actions\Concerns\HasLabel;
 use Sylament\Actions\Concerns\HasLifecycleHooks;
@@ -58,6 +60,8 @@ class Action extends ViewComponent
     use HasArguments;
     use HasColor;
     use HasExtraAttributes;
+    use HasExtraModalOverlayAttributes;
+    use HasExtraModalWindowAttributes;
     use HasGroupedIcon;
     use HasIcon;
     use HasIconPosition;

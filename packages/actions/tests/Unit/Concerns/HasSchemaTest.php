@@ -77,3 +77,19 @@ it('lets formWrapper(false) override the default', function (): void {
 
     expect($fixture->hasFormWrapper())->toBeFalse();
 });
+
+it('accepts a closure returning an already-built schema, not just a component array', function (): void {
+    $prepared = Schema::make()->components([new Component()]);
+
+    $fixture = new HasSchemaFixture()->schema(fn (): Schema => $prepared);
+
+    expect($fixture->getSchema(Schema::make()))->toBe($prepared);
+});
+
+it('applies disabledSchema() to a closure-returned schema too', function (): void {
+    $fixture = new HasSchemaFixture()
+        ->schema(fn (): Schema => Schema::make()->components([new Component()]))
+        ->disabledSchema();
+
+    expect($fixture->getSchema(Schema::make())->isDisabled())->toBeTrue();
+});

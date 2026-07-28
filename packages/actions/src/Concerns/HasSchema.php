@@ -13,9 +13,22 @@ use Sylament\Schemas\Schema;
 trait HasSchema
 {
     /**
-     * @var array<Component|Action|ActionGroup>|Closure|null
+     * Wider than the `schema()` setter by one member: a `Closure` stored here
+     * may return a `Schema` rather than a component array, which Filament
+     * tolerates at runtime (its `getSchema()` guards the array-to-Schema
+     * conversion with `is_array()` precisely so a closure can hand back a
+     * prepared `Schema`). Filament's own property is the narrower
+     * `array|Closure|null`, so that capability is invisible to its type
+     * system; this port's `evaluate()` carries a PHPStan generic Filament's
+     * does not, which would turn the same latent gap into a hard error. The
+     * native type is widened rather than the branch dropped, so the
+     * capability survives with the guard live instead of dead. The public
+     * setter stays Filament-exact — a bare `Schema` still cannot be assigned
+     * directly, only returned from a closure.
+     *
+     * @var Schema|array<Component|Action|ActionGroup>|Closure|null
      */
-    protected array|Closure|null $schema = null;
+    protected Schema|array|Closure|null $schema = null;
 
     protected bool|Closure $isSchemaDisabled = false;
 
@@ -61,19 +74,9 @@ trait HasSchema
      * to schema() receives the Schema being built by this call, not the
      * action's pre-existing schema container.
      *
-     * Divergence: Filament also tolerates a schema()-closure returning a bare
-     * Schema instance directly, guarding the array-to-Schema conversion below
-     * with an is_array() check either way. `$schema` is declared
-     * array|Closure|null here (Filament-identical — its own equivalent
-     * property carries the same narrow union), so that possibility is
-     * already invisible to the type system in Filament's own source; this
-     * port's evaluate() additionally carries a PHPStan generic
-     * (`@template T`, CLAUDE.md "Closure typing convention") that Filament's
-     * does not, which turns that latent gap into an enforced one —
-     * is_array($modifiedSchema) is always true given $schema's own declared
-     * type, so PHPStan rejects it as redundant. Untested either side (no
-     * schema()-closure in this codebase returns anything but an array), so
-     * the branch is dropped rather than carried as dead code.
+     * A closure may return either a component array or an already-built
+     * Schema; the is_array() guard is what lets both through, and is why
+     * the backing property is typed wider than the setter (see above).
      */
     public function getSchema(Schema $schema): ?Schema
     {
@@ -91,7 +94,9 @@ trait HasSchema
             return null;
         }
 
-        $modifiedSchema = $schema->components($modifiedSchema);
+        if (is_array($modifiedSchema)) {
+            $modifiedSchema = $schema->components($modifiedSchema);
+        }
 
         if ($this->isSchemaDisabled()) {
             return $modifiedSchema->disabled();

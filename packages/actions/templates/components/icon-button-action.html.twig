@@ -1,4 +1,13 @@
-{% set closeAttributes = component.shouldClose and not component.getClientClickHandler and not component.getParentActionCallLiveComponentClickHandler
+{# A URL navigates and a disabled control cannot be clicked, so neither carries click
+   wiring. The URL half matches the other four trigger templates, which wrap their whole
+   click branch in `{% if not component.getUrl %}`; the disabled half is this template's
+   own long-standing extra (the others emit the binding and lean on the `disabled`
+   attribute). Hoisted so the close and mount attributes cannot drift apart again. #}
+{% set clickWiringSuppressed = component.getUrl or component.isDisabled %}
+{% set closeAttributes = component.shouldClose
+    and not component.getClientClickHandler
+    and not component.getParentActionCallLiveComponentClickHandler
+    and not clickWiringSuppressed
     ? { 'data-action': 'sylament--support--modal#dismiss' }
     : {} %}
 {% set clickParameters = component.getClientClickHandler
@@ -16,7 +25,7 @@
                 ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
                 ...(component.getContext ? { context: component.getContext } : {}),
             })) %}
-{% set mountAttributes = component.getUrl or component.isDisabled or clickParameters is null
+{% set mountAttributes = clickWiringSuppressed or clickParameters is null
     ? {}
     : stimulus_action('live', 'action', null, clickParameters).toArray() %}
 

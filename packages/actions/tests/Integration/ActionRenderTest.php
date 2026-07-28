@@ -161,6 +161,20 @@ it('closes the modal client-side for a closing icon-button', function (): void {
         ->not->toContain('data-live-action-param="unmountAction"');
 });
 
+/*
+ * The icon-button gates its close binding on the same `url or disabled` test as its mount
+ * binding, so a click that navigates (or cannot happen at all) carries no dismiss. The
+ * plain case is asserted alongside it: without it, deleting the binding outright would
+ * satisfy the other two.
+ */
+it('drops the icon-button dismiss for a url or disabled closing action', function (): void {
+    $icon = fn (Action $action): string => renderAction($action->iconButton()->icon('heroicons:x-mark')->close());
+
+    expect($icon(Action::make('cancel')))->toContain('sylament--support--modal#dismiss')
+        ->and($icon(Action::make('cancel')->url('/somewhere')))->not->toContain('sylament--support--modal#dismiss')
+        ->and($icon(Action::make('cancel')->disabled()))->not->toContain('sylament--support--modal#dismiss');
+});
+
 it('renders a disabled button', function (): void {
     $html = renderAction(Action::make('delete')->disabled());
 

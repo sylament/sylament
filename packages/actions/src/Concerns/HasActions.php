@@ -8,8 +8,11 @@ use Closure;
 use LogicException;
 use ReflectionMethod;
 use ReflectionNamedType;
+use ReflectionType;
+use ReflectionUnionType;
 use Sylament\Actions\Action;
 use Sylament\Actions\Enums\ActionStatus;
+use Sylament\Actions\Exceptions\ActionNotResolvableException;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
@@ -20,6 +23,7 @@ use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\ComponentToolsTrait;
 
+use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 
 trait HasActions
@@ -77,7 +81,11 @@ trait HasActions
             'context' => $context,
         ]];
 
-        $action = $this->getMountedAction();
+        try {
+            $action = $this->getMountedAction();
+        } catch (ActionNotResolvableException) {
+            $action = null;
+        }
 
         if ($action === null || $action->isDisabled()) {
             $this->unmountAction();
@@ -167,15 +175,41 @@ trait HasActions
             return $this->cachedActions[$name];
         }
 
-        $method = "{$name}Action";
-
-        if (! method_exists($this, $method)) {
+        if ((! str_ends_with($name, 'Action')) && method_exists($this, $method = "{$name}Action")) {
+            $methodName = $method;
+        } elseif (method_exists($this, $name)) {
+            $methodName = $name;
+        } else {
             return null;
         }
 
-        $action = $this->{$method}();
+        $returnTypeReflection = new ReflectionMethod($this, $methodName)->getReturnType();
 
-        return $action instanceof Action ? $this->cacheAction($action) : null;
+        if ($returnTypeReflection === null) {
+            return null;
+        }
+
+        $returnTypes = $returnTypeReflection instanceof ReflectionUnionType
+            ? $returnTypeReflection->getTypes()
+            : [$returnTypeReflection];
+
+        $hasActionReturnType = array_any(
+            $returnTypes,
+            fn (ReflectionType $returnType): bool => $returnType instanceof ReflectionNamedType
+                && is_a($returnType->getName(), Action::class, allow_string: true),
+        );
+
+        if (! $hasActionReturnType) {
+            return null;
+        }
+
+        $action = $this->{$methodName}();
+
+        if (! $action instanceof Action) {
+            throw new ActionNotResolvableException('Actions must be an instance of ' . Action::class . ". The [{$methodName}] method on the live component returned an instance of [" . get_debug_type($action) . '].');
+        }
+
+        return $this->cacheAction($action);
     }
 
     public function cacheAction(Action $action): Action
@@ -197,6 +231,10 @@ trait HasActions
      */
     protected function resolveAction(array $descriptor): ?Action
     {
+        if (blank($descriptor['name'])) {
+            throw new ActionNotResolvableException('An action tried to resolve without a name.');
+        }
+
         if (filled($descriptor['context']['schemaComponent'] ?? null)) {
             return $this->resolveSchemaComponentAction($descriptor);
         }

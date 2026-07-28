@@ -50,4 +50,46 @@ class ActionHost implements InteractsWithActions
             ->disabled()
             ->action(fn (): true => $this->notified = true);
     }
+
+    /**
+     * Bare method (no `Action` suffix) with a declared Action return type —
+     * resolvable through getAction()'s reflection gate.
+     */
+    public function publish(): Action
+    {
+        return Action::make('publish');
+    }
+
+    /**
+     * Bare sibling of deleteAction(): getAction('delete') must prefer the
+     * suffixed method, so the resolved action is named `delete`, never `delete-bare`.
+     */
+    public function delete(): Action
+    {
+        return Action::make('delete-bare');
+    }
+
+    /**
+     * Deliberately missing a native return type: the reflection gate must
+     * refuse to invoke it. The dynamic call keeps Rector's type-declaration
+     * set from inferring (and re-adding) a return type.
+     */
+    public function untyped()
+    {
+        return $this->{'publish'}();
+    }
+
+    public function notAnAction(): string
+    {
+        return 'not-an-action';
+    }
+
+    /**
+     * Lying factory: the declared union passes the reflection gate, but the
+     * runtime value is not an Action — getAction() must throw.
+     */
+    public function liar(): Action|string
+    {
+        return 'x';
+    }
 }

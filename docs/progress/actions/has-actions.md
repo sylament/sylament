@@ -60,9 +60,9 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | [`unmountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | nested action stack (multi-slot `mountedActions`) | [detail](#unmountaction-has-no-cascade-because-there-is-no-stack) |
 | [`getMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedAction()` | done | — | [diverges](#lookup-methods-drop-nesting) |
 | [`mountedActionShouldOpenModal()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountedActionShouldOpenModal()` | in progress | `CanOpenModal`'s `shouldOpenModal()`; `HasSchema` (actions) for the schema check | [detail](#the-modal-open-gate-is-confirmation-only) |
-| [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` | in progress | `BelongsToTable` (tables) | [detail](#getaction-only-resolves-plain-host-methods) |
-| [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` | in progress | nested action stack | [detail](#resolveaction-dispatches-on-schema-context-but-has-no-parent-nesting) · [diverges](#there-is-no-actionnotresolvableexception) |
-| [`resolveSchemaComponentAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveSchemaComponentAction()` | done | — | [diverges](#there-is-no-actionnotresolvableexception) |
+| [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` + `resolveAction()`'s method-discovery arm | in progress | `BelongsToTable` (tables — only the table-scoped branch remains) | [detail](#getaction-ports-the-generic-method-discovery-arm-in-full) |
+| [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` + `resolveActions()`'s blank-name guard | in progress | nested action stack | [detail](#resolveaction-has-no-parent-nesting) |
+| [`resolveSchemaComponentAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveSchemaComponentAction()` | done | — | [diverges](#schema-context-resolution-returns-null-instead-of-throwing) |
 | Action caching ([`cacheAction()`](../../../packages/actions/src/Concerns/HasActions.php), `$cachedActions`) | `Concerns/InteractsWithActions.php` `cacheAction()` / `mergeCachedActions()` / `cacheTraitActions()` | done | — | [diverges](#only-the-per-name-action-cache-is-ported) |
 | [`getMountedModalId()`](../../../packages/actions/src/Concerns/HasActions.php) | `action-modal.blade.php` inline `$actionModalId` | done | — | [diverges](#the-modal-id-is-name-only-not-instance-scoped-or-nesting-scoped) |
 | Modals rendering ([`Modals.html.twig`](../../../packages/actions/templates/components/Modals.html.twig) + [`Twig\Components\Modals`](../../../packages/actions/src/Twig/Components/Modals.php)) | [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php) | done | — | [diverges](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope) · [diverges](#the-modal-is-opened-by-rendered-state-not-by-the-dispatched-event) · [diverges](#the-modals-renderer-emits-no-wrapper-element) · [diverges](#there-is-no-single-render-guard) · [diverges](#an-unresolvable-host-throws-instead-of-rendering-nothing) |
@@ -93,8 +93,9 @@ modal when `mountedActionShouldOpenModal()` says the resolved action actually
 needs one (schema present, or explicit `modalHeading()`/description, etc.) —
 otherwise it calls the action immediately. The port's
 [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) sets
-the single-slot descriptor, resolves the action, unmounts when it is `null` or
-`isDisabled()`, opens the modal when
+the single-slot descriptor, resolves the action (swallowing
+`ActionNotResolvableException` into the unmount branch, Filament-same),
+unmounts when it is `null` or `isDisabled()`, opens the modal when
 [`mountedActionShouldOpenModal()`](#the-modal-open-gate-is-confirmation-only)
 says so, and otherwise returns `callMountedAction()`'s result — matching
 Filament's shape and `mixed` return. Still absent: the authorization check
@@ -184,46 +185,55 @@ mounted. **Next step:** delegate to `Action::shouldOpenModal()` once `CanOpenMod
 grows it; the `checkForSchemaUsing:` argument arrives with the schema
 integration below.
 
-### `getAction()` only resolves plain host methods
+### `getAction()` ports the generic method-discovery arm in full
 
 Filament's `getAction(string | array $actions, bool $isMounting = true)`
 accepts a single name or a list of nested action descriptors and resolves them
-through `resolveActions()`, which dispatches each entry on its context —
-`context['schemaComponent']` → `resolveSchemaComponentAction()`,
-`context['table']` → `resolveTableAction()` (requiring `HasTable`, with
-bulk/record-key handling) — before the generic `resolveAction()` (parent-modal
-lookup, `cachedActions` lookup, `{name}Action()` **or** bare `{name}` method
-with a reflection check that the return type includes `Action`). The port's
+through `resolveActions()`, which branches on `context['schemaComponent']`
+(via `resolveSchemaComponentAction()`, requiring `HasSchemas`),
+`context['table']` (via `resolveTableAction()`, requiring `HasTable`, with
+bulk/record-key handling), or the generic `resolveAction()`. The port's
 [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php)
-tries the `$cachedActions` lookup and then `"{$name}Action"` — no bare-method
-fallback, no return-type reflection, and no nesting/array-of-descriptors
-form, so context-scoped entries cannot reach it. The schema dispatch landed on
-[`resolveAction()`](#resolveaction-dispatches-on-schema-context-but-has-no-parent-nesting)
-instead, which agrees with Filament on what a bare string resolves to: their
-`getAction('x')` normalizes to a context-less entry, which skips both scoped
-branches too. **Next step:** the table branch waits on `BelongsToTable` and
-the `tables` package; the bare-method fallback and its reflection guard are
-unblocked already and could be added independently.
+now carries that generic arm Filament-exact: the `$cachedActions` lookup
+first, then `"{$name}Action"` preferred over the bare `"{$name}"` method
+(the suffixed form is skipped when the name itself already ends in `Action`),
+then a `ReflectionMethod` return-type gate that refuses to invoke any method
+whose declared return type does not include `Action` — and, when a
+gate-passing factory returns a non-`Action` at runtime, throws
+[`ActionNotResolvableException`](../../../packages/actions/src/Exceptions/ActionNotResolvableException.php).
+An unknown name still returns `null` (Filament-same for the no-context path).
+The reflection-before-invoke order is load-bearing security-wise:
+`mountAction()`'s `$name` is a client-writable `#[LiveArg]`, and the
+return-type gate is what keeps `getAction($clientName)` from invoking
+arbitrary host methods. `resolveAction()` adds Filament's blank-name guard
+(throwing the same exception), and `mountAction()` swallows the exception
+into its unmount branch, Filament-same. Still absent: the
+nesting/array-of-descriptors form, the `$isMounting` flag, and the
+table-scoped resolution branch — the schema-scoped branch lives on
+`resolveAction()`'s dispatch, below. **Next step:** the table branch returns
+once `BelongsToTable` and the `tables` package land.
 
-### `resolveAction()` dispatches on schema context but has no parent nesting
+### `resolveAction()` has no parent nesting
 
 Filament's `resolveAction(array $action, array $parentActions)` looks up a
-parent action's `getModalAction($name)` when `$parentActions` is non-empty,
-otherwise checks `cachedActions` before falling back to
-`{name}Action()`/`{name}` — the schema/table dispatch sits one level up in
-`resolveActions()`, the per-stack-entry loop a single-slot port has no
-equivalent of. The port's
+parent action's `getModalAction($name)` when `$parentActions` is non-empty
+(throwing `ActionNotResolvableException` when the parent has no such modal
+action), otherwise checks `cachedActions` before falling back to
+`{name}Action()`/`{name}`; its caller `resolveActions()` throws the same
+exception for a blank descriptor name. The port's
 [`resolveAction(array $descriptor)`](../../../packages/actions/src/Concerns/HasActions.php)
-therefore carries that dispatch itself: a filled
-`$descriptor['context']['schemaComponent']` branches to
-`resolveSchemaComponentAction()` before the `getAction($descriptor['name'])`
-fallback, preserving Filament's precedence (schema context first, table
-context next once tables exist, host methods last). Still absent: the
-parent-action lookup (there is only ever one slot; the `cachedActions` check
-happens inside `getAction()` now). Resolution failures return `null` rather
-than throwing — see
-[There is no ActionNotResolvableException](#there-is-no-actionnotresolvableexception).
-**Next step:** parent-action lookup returns with the nested-action stack.
+carries the blank-name guard itself (there is no `resolveActions()` loop over
+a single slot), then dispatches a filled
+`$descriptor['context']['schemaComponent']` to
+`resolveSchemaComponentAction()` — preserving Filament's precedence (schema
+context first, table context next once tables exist, host methods last) —
+and finally delegates to `getAction()`, which owns the cache
+check, the method discovery, and the
+[lying-factory throw](#getaction-ports-the-generic-method-discovery-arm-in-full).
+What is missing is the parent-action lookup — there is only ever one slot, so
+no parent exists to look into. **Next step:** parent-action lookup returns
+with the nested-action stack.
+
 
 ### `replaceMountedAction()` is not ported
 
@@ -322,16 +332,17 @@ record-bound confirm action today. When table/schema action resolution lands,
 each will likely supply its own record via this same seam or a dedicated one;
 either way this stays as the generic fallback for hosts with neither.
 
-### There is no ActionNotResolvableException
+### Schema-context resolution returns null instead of throwing
 
-Filament's resolution paths throw `ActionNotResolvableException` — nameless
-descriptor, unknown modal child, unknown table/schema/action, host missing the
-schemas contract — and catch it themselves in `mountAction()`,
-`cacheMountedActions()`, and `unmountAction()`, so its observable result is a
-silently no-opped mount. Sylament ships no exception class: every resolution
-miss is a `null` return that `mountAction()`'s `$action === null` branch turns
-into an unmount — the same observable outcome without the internal-control-flow
-exception. Two consequences worth pinning. First, a host that receives a
+Filament folds every schema-context resolution failure — unknown
+table/schema/action, host missing the schemas contract — into the same
+swallowable `ActionNotResolvableException` its mount pipeline catches. The
+port ships that exception class for the generic arm (blank descriptor names,
+lying factories — see
+[getAction()](#getaction-ports-the-generic-method-discovery-arm-in-full)),
+but the schema-context path keeps its null-miss shape: a miss is a `null`
+return that `mountAction()`'s null branch turns into an unmount — the same
+observable outcome without the internal-control-flow exception. Two consequences worth pinning. First, a host that receives a
 `schemaComponent` context without implementing schemas'
 [`InteractsWithSchemas`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php)
 is a wiring bug, not a client-data miss, so
@@ -357,7 +368,8 @@ builder parameter works when the host calls it directly); if the trait's
 resolution rules ever change, both sites must move together. The dropped `$parentActions` parameter is not part of this divergence:
 Filament accepts and ignores it on the schema branch, and the single-slot port
 has no parent frames to pass. Reverses if the nested-action stack ever needs a
-typed failure signal to distinguish frames; the exception class returns then.
+typed failure signal to distinguish frames; the schema path would adopt the
+now-existing exception class then.
 
 ### Lookup methods drop nesting
 

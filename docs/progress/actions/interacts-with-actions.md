@@ -157,13 +157,16 @@ accepts an array path to reach into a nested `ActionGroup`, and throws
 cannot be resolved (non-mounting callers want to know resolution failed
 outright; mounting flows treat "unresolvable" as "do nothing"). Sylament's
 [`getAction(string $name): ?Action`](../../../packages/actions/src/Concerns/HasActions.php)
-only resolves a single-level `"{$name}Action"` method on the host and always
-returns `null` silently when it is missing — no `array`-path group traversal
-(the ported `ActionGroup` component exists and exposes `getFlatActions()`, but
-nothing in this host-side `getAction()` walks into one by dotted/array path
-yet) and no resolution exception (`ActionNotResolvableException` is not
-ported either, per the [actions README](README.md#supporting-surface)).
-Reversible once the array-path lookup and the resolution exception land.
+now carries Filament's generic method-discovery arm — cache lookup,
+`"{$name}Action"` preferred over the bare `"{$name}"` method behind a
+return-type reflection gate, and a thrown
+[`ActionNotResolvableException`](../../../packages/actions/src/Exceptions/ActionNotResolvableException.php)
+for a factory whose runtime value is not an `Action` (see
+[has-actions.md](has-actions.md#getaction-ports-the-generic-method-discovery-arm-in-full)) —
+but the contract signature stays `string`-only with no `$isMounting` flag: no
+group traversal (the array path waits on nested `ActionGroup` mounting), and
+an unknown name always returns `null` silently, the mounting-flow behavior.
+Reversible once nested `ActionGroup` mounting lands.
 
 _See also: the global [rename table](../renames.md) — the `Has*` /
 `InteractsWith*` **interface/trait swap** and the Livewire → UX LiveComponent

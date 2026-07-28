@@ -191,7 +191,12 @@ the rendered action is bound to its host), renders nothing when the name does no
 resolve or the action is hidden, and throws a `RuntimeException` when the
 enclosing `this` is not an
 [`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php)
-host.
+host. An optional second parameter binds per-render arguments —
+`renderAction('delete', { id: 5 })` — through `HasMountableArguments`'s
+`__invoke()`, which Twig syntax cannot call directly: the bound instance is a
+clone, so the host-cached action stays argument-free, and the serialized
+`arguments` mount param reaches the trigger markup. The order is resolve →
+bind → hidden-check, so a visibility closure can read the bound arguments.
 
 ### Every package declares what its own source needs, transitives notwithstanding
 

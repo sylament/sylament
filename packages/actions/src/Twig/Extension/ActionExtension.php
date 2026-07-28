@@ -35,8 +35,9 @@ class ActionExtension extends AbstractExtension
 
     /**
      * @param array<mixed> $context
+     * @param array<string, mixed> $arguments
      */
-    public function renderAction(Environment $twig, array $context, string $name): ?Markup
+    public function renderAction(Environment $twig, array $context, string $name, array $arguments = []): ?Markup
     {
         $component = $context['this'] ?? null;
         if (!$component instanceof InteractsWithActions) {
@@ -45,7 +46,15 @@ class ActionExtension extends AbstractExtension
 
         $action = $component->getAction($name);
 
-        if (!$action instanceof Action || $action->isHidden()) {
+        if (!$action instanceof Action) {
+            return null;
+        }
+
+        if ($arguments !== []) {
+            $action = $action($arguments);
+        }
+
+        if ($action->isHidden()) {
             return null;
         }
 

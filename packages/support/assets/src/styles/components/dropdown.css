@@ -7,9 +7,34 @@
 }
 
 .sy-dropdown-panel {
-    @apply absolute z-10 overflow-y-auto rounded-lg bg-white p-1 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10;
+    @apply absolute z-10 rounded-lg bg-white py-1 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10;
     width: var(--sy-dropdown-width, max-content);
     max-height: var(--sy-dropdown-max-height, none);
+
+    /* Scroll container only when a max-height is actually set (Filament's
+       `fi-scrollable`, gated on the same condition — ActionGroup.php's `'fi-scrollable'
+       => $maxHeight`). Unconditional `overflow-y-auto` would force `overflow-x: auto`
+       too (the UA readjusts an `overflow-x: visible` paired with a non-visible
+       `overflow-y`), making every panel a clipping container in both axes — a nested
+       submenu panel is a laid-out descendant (Floating UI's default `strategy:
+       'absolute'` keeps it in flow under its positioned `.sy-dropdown` wrapper) and
+       would be clipped or forced to scroll sideways. `--sy-dropdown-max-height` is
+       only ever written inline by `Dropdown/index.html.twig` when its `maxHeight` prop
+       is set, so its presence in the `style` attribute is a reliable, template-free
+       signal. Accepted limitation, matching Filament exactly: when a max-height *is*
+       set, the panel is a scroll container again and a submenu nested inside it will
+       still clip. */
+    &[style*="--sy-dropdown-max-height"] {
+        @apply overflow-y-auto;
+    }
+}
+
+.sy-dropdown-list {
+    @apply grid gap-px px-1;
+
+    & + & {
+        @apply mt-1 border-t border-gray-100 pt-1 dark:border-white/5;
+    }
 }
 
 .sy-dropdown-item {

@@ -19,6 +19,16 @@
         }
     }
 
+    /* A parent frame kept open beneath an overlaying child: only the topmost dialog
+       should paint a scrim, or N stacked dims compound. Filament suppresses theirs
+       with a `:has(~ .fi-modal-open)` sibling rule; top-layer stacking order is call
+       order rather than DOM order, so the state is stamped server-side instead. The
+       hand-off animates for free — `background-color` is already in the container's
+       transition list above. */
+    &.sy-modal-overlaid[open] {
+        @apply bg-transparent;
+    }
+
     &::backdrop {
         @apply hidden;
     }

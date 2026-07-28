@@ -48,7 +48,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | todo | schemas/tables/InteractsWithSelectedRecords ports | [detail](#resolvedefaultclosuredependencyforevaluationbytype-is-not-overridden) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables (`table`/`bulk` flags), modal nesting (`getParentAction()` short-circuit) | [diverges](#getcontext-emits-only-the-schemacomponent-key) |
 | Trigger rendering ([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig) + the [`link-action`](../../../packages/actions/templates/components/link-action.html.twig) / [`badge-action`](../../../packages/actions/templates/components/badge-action.html.twig) / [`icon-button-action`](../../../packages/actions/templates/components/icon-button-action.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
-| Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | CanOpenModal (footer actions, content, slideover, sticky) | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal), [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-footer-buttons-are-hardcoded-markup-not-rendered-action-instances) |
+| Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | CanOpenModal (footer actions, slideover, sticky) | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal), [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-footer-buttons-are-hardcoded-markup-not-rendered-action-instances) |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
 | [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | — |
 | [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) (support) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | — |
@@ -283,10 +283,16 @@ predicates it reads —
 [`HasActions::mountedActionShouldOpenModal()`](has-actions.md#the-modal-open-gate-is-null-safe)
 now delegates to `shouldOpenModal()`, so an action carrying only
 `modalHeading()` mounts and opens its modal instead of auto-running.
-`shouldOpenModal()`'s content arms (`hasModalContent()` /
-`hasModalContentFooter()`) are still absent along with the content surface
-itself (below); the `checkForSchemaUsing` slot exists but no caller passes it
-until the action-schema integration.
+The **custom body content** group is ported too: `modalContent()` /
+`modalContentFooter()` / `getModalContent()` / `getModalContentFooter()` /
+`hasModalContent()` / `hasModalContentFooter()` (Filament's `View|Htmlable`
+typed as `Markup`, the systematic translation; the deprecated `modalFooter()`
+alias is not carried, per the no-deprecation-shims policy), with both feeding
+`shouldOpenModal()`'s content arms and rendering in Filament's order inside
+the modal's content slot
+([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)).
+The `checkForSchemaUsing` slot exists but no caller passes it until the
+action-schema integration.
 
 **Missing vs Filament** — Filament's trait is ~800 lines; the port keeps ~130.
 Absent entirely, with no property, setter, or getter:
@@ -309,10 +315,6 @@ Absent entirely, with no property, setter, or getter:
   `getModalAlignment()`, `modalFooterActionsAlignment()` /
   `getModalFooterActionsAlignment()`, `stickyModalFooter()` / `stickyModalHeader()`
   / `isModalFooterSticky()` / `isModalHeaderSticky()`.
-- **Custom body content**: `modalContent()` / `modalContentFooter()` (+ the
-  deprecated `modalFooter()` alias) / `getModalContent()` / `getModalContentFooter()`
-  / `hasModalContent()` / `hasModalContentFooter()`. A Sylament action can only
-  show the fixed heading/description/icon layout — no arbitrary Twig/Markup body.
 - **Interaction chrome toggles**: `modalClickThrough()` / `isModalClickThrough()`,
   `closeModalByClickingAway()` / `isModalClosedByClickingAway()`,
   `closeModalByEscaping()` / `isModalClosedByEscaping()`, `modalCloseButton()` /
@@ -465,15 +467,15 @@ icon `<svg>`, and both `live_action` data attributes render through a full
 modal, not a confirmation-only one, and most of that generality has no
 Sylament counterpart yet:
 
-- **No dynamic content or schema/form rendering.** Filament interpolates
-  `$action->getModalContent()`, the mounted action's schema
-  (`$this->getMountedActionSchema()`), and `$action->getModalContentFooter()`
-  between four pairs of render hooks
+- **No schema/form rendering.** The template now fills the support Modal's
+  `content` block with `getModalContent()` then `getModalContentFooter()` —
+  Filament's order — but the mounted action's schema
+  (`$this->getMountedActionSchema()`, which Filament interpolates between
+  them) has no slot, and the four render-hook pairs bracketing the three
   (`MODAL_CUSTOM_CONTENT_{BEFORE,AFTER}`, `MODAL_SCHEMA_{BEFORE,AFTER}`,
-  `MODAL_CUSTOM_CONTENT_FOOTER_{BEFORE,AFTER}`). `CanOpenModal` has no
-  `modalContent` / `modalContentFooter` properties and there is no schema slot
-  at all — the template has no `content` block to fill, so a form-collecting
-  action cannot render its fields inside this modal today.
+  `MODAL_CUSTOM_CONTENT_FOOTER_{BEFORE,AFTER}`) have no counterpart (no
+  render-hook facility exists) — so a form-collecting action cannot render
+  its fields inside this modal today.
 - **Only two fixed footer buttons, not `getVisibleModalFooterActions()`.**
   Filament resolves an ordered `array<Action|ActionGroup>` (custom submit/cancel
   actions, `extraModalFooterActions()`, alignment-driven reversal) and renders

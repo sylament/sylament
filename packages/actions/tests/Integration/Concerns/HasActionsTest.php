@@ -194,3 +194,110 @@ it('merges frame arguments into the resolved action during resolution', function
 
     expect($host->getMountedAction()?->getArguments())->toBe(['key' => 'value']);
 });
+
+it('pops one frame for cancelParentActions false and clears all for true', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('edit');
+    $host->mountAction('confirmDelete');
+
+    $host->unmountAction(false);
+
+    expect($host->mountedActions)->toHaveCount(1);
+
+    $host->mountAction('confirmDelete');
+    $host->unmountAction(true);
+
+    expect($host->mountedActions)->toBe([]);
+});
+
+it('cancels to a named parent and closes that parent too', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('edit');
+    $host->mountAction('deeper');
+    $host->mountAction('deepest');
+
+    $host->unmountAction('deeper');
+
+    expect($host->mountedActions)->toHaveCount(1)
+        ->and($host->mountedActions[0]['name'])->toBe('edit');
+});
+
+it('consults the mounted action for a null cancel argument', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('edit');
+    $host->getMountedAction()?->cancelParentActions();
+    $host->mountAction('confirmDelete');
+    $host->getMountedAction()?->cancelParentActions(true);
+
+    $host->unmountAction();
+
+    expect($host->mountedActions)->toBe([]);
+});
+
+it('truncates the resolved cache alongside the stack', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('edit');
+    $host->mountAction('confirmDelete');
+    $host->getMountedActions();
+
+    $host->unmountAction(false);
+
+    expect($host->getMountedAction()?->getName())->toBe('edit');
+});
+
+it('merges call arguments into the top action and restores them afterwards', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('edit', ['a' => 1]);
+
+    $edit = $host->getMountedAction();
+
+    $host->callMountedAction(['b' => 2]);
+
+    expect($host->argumentsSeen)->toBe(['a' => 1, 'b' => 2])
+        ->and($edit?->getArguments())->toBe(['a' => 1]);
+});
+
+/*
+ * The above test alone cannot tell "merges into the top action" apart from the
+ * deleted `mergeArguments($this->mountedActions[0]['arguments'] ?? [])` bug: with
+ * a single frame, index 0 and the top are the same object. This variant pushes a
+ * second, argument-less frame on top of `edit` so the two are provably distinct —
+ * a regression of that exact line would leak edit's `a` into the child's arguments.
+ */
+it('merges call arguments into the top action specifically, not the root frame', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('edit', ['a' => 1]);
+    $host->mountAction('confirmDelete');
+
+    $edit = $host->getMountedAction(0);
+    $top = $host->getMountedAction();
+    $top?->action(function (array $arguments) use ($host): void {
+        $host->argumentsSeen = $arguments;
+    });
+
+    $host->callMountedAction(['b' => 2]);
+
+    expect($host->argumentsSeen)->toBe(['b' => 2])
+        ->and($top?->getArguments())->toBe([])
+        ->and($edit?->getArguments())->toBe(['a' => 1]);
+});
+
+it('does not unmount when the stack was replaced mid-call', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('replacer');
+
+    expect($host->mountedActions)->toHaveCount(1)
+        ->and($host->mountedActions[0]['name'])->toBe('headed');
+});
+
+it('replaceMountedAction clears the whole stack before mounting', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('edit');
+    $host->mountAction('confirmDelete');
+
+    $host->replaceMountedAction('headed');
+
+    expect($host->mountedActions)->toHaveCount(1)
+        ->and($host->mountedActions[0]['name'])->toBe('headed')
+        ->and($host->getMountedAction()?->getNestingIndex())->toBe(0);
+});

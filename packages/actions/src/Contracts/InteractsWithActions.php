@@ -14,9 +14,12 @@ interface InteractsWithActions
      */
     public function mountAction(string $name, array $arguments = [], array $context = []): mixed;
 
-    public function callMountedAction(): mixed;
+    /**
+     * @param array<mixed> $arguments
+     */
+    public function callMountedAction(array $arguments = []): mixed;
 
-    public function unmountAction(): void;
+    public function unmountAction(bool|string|null $cancelParentActions = null): void;
 
     public function getMountedAction(?int $actionNestingIndex = null): ?Action;
 

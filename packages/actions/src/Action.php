@@ -27,6 +27,7 @@ use Sylament\Actions\Concerns\HasLabel;
 use Sylament\Actions\Concerns\HasLifecycleHooks;
 use Sylament\Actions\Concerns\HasMountableArguments;
 use Sylament\Actions\Concerns\HasName;
+use Sylament\Actions\Concerns\HasParentActions;
 use Sylament\Actions\Concerns\HasSize;
 use Sylament\Actions\Concerns\InteractsWithRecord;
 use Sylament\Actions\Enums\ActionStatus;
@@ -70,6 +71,7 @@ class Action extends ViewComponent
     use HasLifecycleHooks;
     use HasMountableArguments;
     use HasName;
+    use HasParentActions;
     use HasSize;
     use HasTooltip;
     use InteractsWithRecord;

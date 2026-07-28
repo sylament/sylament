@@ -21,6 +21,7 @@ use Sylament\Support\Exceptions\Halt;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
+use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Symfony\UX\LiveComponent\ComponentToolsTrait;
 
 use function Sylament\Support\blank;
@@ -93,11 +94,7 @@ trait HasActions
         $action = $this->getMountedAction();
 
         if ($action === null || $action->isDisabled()) {
-            array_pop($this->mountedActions);
-
-            while (count($this->cachedMountedActions ?? []) > count($this->mountedActions)) {
-                array_pop($this->cachedMountedActions);
-            }
+            $this->unmountAction(cancelParentActions: false);
 
             return null;
         }
@@ -111,8 +108,11 @@ trait HasActions
         return null;
     }
 
+    /**
+     * @param array<mixed> $arguments
+     */
     #[LiveAction]
-    public function callMountedAction(): mixed
+    public function callMountedAction(#[LiveArg] array $arguments = []): mixed
     {
         $action = $this->getMountedAction();
 
@@ -120,11 +120,16 @@ trait HasActions
             return null;
         }
 
+        $originalArguments = $action->getArguments();
+        $action->mergeArguments($arguments);
+
         $action->record($this->getMountedActionRecord());
 
         if ($action->isDisabled()) {
             return null;
         }
+
+        $originallyMountedActions = $this->mountedActions;
 
         $result = null;
 
@@ -146,6 +151,22 @@ trait HasActions
             // Falls through to unmount — Cancel closes the modal.
         }
 
+        $action->arguments($originalArguments);
+
+        $onlyNamesAndContexts = static fn (array $mountedActions): array => array_map(
+            static fn (array $mountedAction): array => [
+                'name' => $mountedAction['name'],
+                'context' => $mountedAction['context'],
+            ],
+            $mountedActions,
+        );
+
+        // If the action replaced the stack while it was being called, don't unmount
+        // the replacement (Filament-exact: names + contexts compared, arguments ignored).
+        if ($onlyNamesAndContexts($originallyMountedActions) !== $onlyNamesAndContexts($this->mountedActions)) {
+            return null;
+        }
+
         $this->unmountAction();
 
         return $result;
@@ -155,12 +176,70 @@ trait HasActions
     {
     }
 
+    /**
+     * @param array<mixed> $arguments
+     * @param array<mixed> $context
+     */
+    public function replaceMountedAction(string $name, array $arguments = [], array $context = []): void
+    {
+        $this->mountedActions = [];
+        $this->cachedMountedActions = null;
+        // Epic-6 seam: Filament also purges its mountedActionSchema* caches here.
+
+        $this->mountAction($name, $arguments, $context);
+    }
+
+    /**
+     * Filament's bootedInteractsWithActions() stale-stack drop: a hydrated stack
+     * that no longer resolves (renamed action, changed schema) self-heals to closed
+     * instead of rendering a broken modal chain.
+     */
+    #[PostHydrate]
+    public function afterMountedActionsHydrated(): void
+    {
+        if ($this->mountedActions === []) {
+            return;
+        }
+
+        if ($this->cacheMountedActions($this->mountedActions) === []) {
+            $this->mountedActions = [];
+        }
+    }
+
     #[LiveAction]
-    public function unmountAction(): void
+    public function unmountAction(#[LiveArg] bool|string|null $cancelParentActions = null): void
     {
         $id = $this->getMountedModalId();
 
-        $this->mountedActions = [];
+        // No try/catch around this read: getMountedAction() never throws (the
+        // resolution loop swallows into an empty cache) — Filament's catch here
+        // would be dead code under PHPStan level max.
+        $action = $this->getMountedAction();
+
+        if (($cancelParentActions === false) || ($action === null)) {
+            array_pop($this->mountedActions);
+        } elseif (
+            ($cancelParentActions === true)
+            || (($cancelParentActions === null) && $action->shouldCancelAllParentActions())
+        ) {
+            $this->mountedActions = [];
+        } else {
+            $parentActionToCancelTo = is_string($cancelParentActions)
+                ? $cancelParentActions
+                : $action->getParentActionToCancelTo();
+
+            while (true) {
+                $recentlyClosedParentAction = array_pop($this->mountedActions);
+
+                if (
+                    blank($parentActionToCancelTo)
+                    || ($recentlyClosedParentAction === null)
+                    || ($recentlyClosedParentAction['name'] === $parentActionToCancelTo)
+                ) {
+                    break;
+                }
+            }
+        }
 
         while (count($this->cachedMountedActions ?? []) > count($this->mountedActions)) {
             array_pop($this->cachedMountedActions);

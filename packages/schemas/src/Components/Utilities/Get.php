@@ -37,9 +37,9 @@ final class Get
         return $component->getState();
     }
 
-    public function skipComponentsChildContainersWhileSearching(bool $shouldSkip = true): static
+    public function skipComponentsChildContainersWhileSearching(bool $condition = true): static
     {
-        $this->shouldSkipComponentsChildContainersWhileSearching = $shouldSkip;
+        $this->shouldSkipComponentsChildContainersWhileSearching = $condition;
 
         return $this;
     }

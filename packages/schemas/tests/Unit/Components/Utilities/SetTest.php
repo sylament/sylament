@@ -128,3 +128,18 @@ it('writes into its own child containers through the component state path once t
     expect($fired)->toBe(1)
         ->and($host->data['address']['city'])->toBe('Brno');
 });
+
+it('accepts the skip toggle by its vendor-exact named argument', function (): void {
+    $host = new StateHostFixture();
+    $host->data = ['address' => ['city' => 'Prague']];
+
+    $group = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('address')->components([StateField::make('city')]),
+    ])->getComponents()[0];
+
+    $set = $group->makeSetUtility()->skipComponentsChildContainersWhileSearching(condition: false);
+
+    $set('/data.address.city', 'Brno');
+
+    expect($host->data['address']['city'])->toBe('Brno');
+});

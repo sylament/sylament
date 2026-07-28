@@ -225,7 +225,6 @@ it('cancels to a named parent and closes that parent too', function (): void {
 it('consults the mounted action for a null cancel argument', function (): void {
     $host = $this->createLiveComponent('ActionHost')->component();
     $host->mountAction('edit');
-    $host->getMountedAction()?->cancelParentActions();
     $host->mountAction('confirmDelete');
     $host->getMountedAction()?->cancelParentActions(true);
 
@@ -242,7 +241,8 @@ it('truncates the resolved cache alongside the stack', function (): void {
 
     $host->unmountAction(false);
 
-    expect($host->getMountedAction()?->getName())->toBe('edit');
+    expect($host->getMountedAction()?->getName())->toBe('edit')
+        ->and($host->getMountedActions())->toHaveCount(1);
 });
 
 it('merges call arguments into the top action and restores them afterwards', function (): void {

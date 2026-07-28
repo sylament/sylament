@@ -13,10 +13,12 @@ in [`action.md`](action.md) — and five support-level traits (`HasColor`,
 in the [`support`](../support/README.md) package and appear here only as
 reference rows. The model core (the children list, the eager name-keyed flat
 map, and the group back-reference wiring), the dropdown trigger config,
-visibility composition, and context propagation to children (`liveComponent()`,
-`getRecord()` fallback, default-template push onto `Action` children) have
-landed across this epic's first six tasks. Still to come: propagating dropdown
-placement and trigger-view defaults to nested groups (see _Blocked by_ below).
+visibility composition, context propagation to children (`liveComponent()`,
+`getRecord()` fallback, default-template push onto `Action` children), and the
+rendering of both extra-attribute bags (the shared trigger bag plus the
+group-only `extraDropdownAttributes()` family) have landed. Still to come:
+propagating dropdown placement and trigger-view defaults to nested groups (see
+_Blocked by_ below).
 
 **Status:** in progress — the dropdown-rendering base (model, visibility,
 triggers, and `render()` producing the complete dropdown or inline row) is
@@ -49,7 +51,8 @@ permanent note in [Divergences](#divergences).
 | [`HasLabel`](../../../packages/actions/src/Concerns/HasLabel.php) (shared with `Action`) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | - |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) (shared with `Action`) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | - |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | - |
-| [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | [diverges](#extra-attributes-are-never-rendered-onto-the-groups-own-trigger-or-dropdown-wrapper) |
+| [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support; rendered onto the trigger root) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | [diverges](#extra-attribute-bags-flatten-through-toscalarattributes-before-reaching-the-ux-component-attribute-bag) |
+| `extraDropdownAttributes()` family (`getExtraDropdownAttributes()`/`getExtraDropdownAttributeBag()`/`hasExtraDropdownAttributes()`; rendered onto the outer dropdown wrapper) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`extraDropdownAttributes()`) | done | — | [diverges](#extra-attribute-bags-flatten-through-toscalarattributes-before-reaching-the-ux-component-attribute-bag) |
 | [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) (support) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | - |
 | [`HasIconSize`](../../../packages/support/src/Components/Concerns/HasIconSize.php) (support) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — | - |
 | [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) (support) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | - |
@@ -131,32 +134,39 @@ class-defined method over the trait's, no aliasing needed, and a group has no
 name for that default to derive from anyway. Reverses if/when a translation
 layer lands, same as the linked `Action` divergence.
 
-### Extra attributes are never rendered onto the group's own trigger or dropdown wrapper
+### Extra attribute bags flatten through `toScalarAttributes()` before reaching the ux component attribute bag
 
-`HasExtraAttributes` is folded in and fully functional as an API —
-`extraAttributes()`/`getExtraAttributes()`/`getExtraAttributeBag()`/
-`hasExtraAttributes()` all work exactly as they do on `Action` — but nothing
-in the render path consumes `group.getExtraAttributes`. Filament's five
+Both group bags now render, in the Filament-parallel places: the trigger bag
+(`HasExtraAttributes`, shared support trait) lands on the trigger root — both
+[`icon-button-trigger.html.twig`](../../../packages/actions/templates/components/action-group/icon-button-trigger.html.twig)
+and
+[`button-trigger.html.twig`](../../../packages/actions/templates/components/action-group/button-trigger.html.twig)
+merge it into the composed support component, mirroring how Filament's five
 `to*TriggerHtml()` methods each merge `$this->getExtraAttributes()` onto the
 trigger element
 ([`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php)
-lines 631/648/670/688/706), and a second, separate pair —
-`extraDropdownAttributes()`/`getExtraDropdownAttributes()`/
-`getExtraDropdownAttributeBag()` (`ActionGroup.php:759-789`) — lets a caller
-attach attributes to the dropdown panel wrapper specifically, independent of
-the trigger. Neither
-[`icon-button-trigger.html.twig`](../../../packages/actions/templates/components/action-group/icon-button-trigger.html.twig)
-nor
-[`button-trigger.html.twig`](../../../packages/actions/templates/components/action-group/button-trigger.html.twig)
-reads `group.getExtraAttributes`, and
-[`action-group.html.twig`](../../../packages/actions/templates/components/action-group.html.twig)
-has no `extraDropdownAttributes` port at all — a caller can set attributes on
-an `ActionGroup` and read them back programmatically, but none reach rendered
-markup today. Todo: wire `group.getExtraAttributes` into both trigger
-templates the way `button-action.html.twig`/`grouped-action.html.twig` already
-do for `Action`, and port `extraDropdownAttributes()` onto the dropdown
-wrapper, the moment a consumer needs to style or instrument a group's
-trigger/panel directly.
+lines 631/648/670/688/706) — and the dropdown bag
+(`extraDropdownAttributes()`/`getExtraDropdownAttributes()`/
+`getExtraDropdownAttributeBag()`/`hasExtraDropdownAttributes()`, duplicated
+onto [`ActionGroup`](../../../packages/actions/src/ActionGroup.php) in
+support's exact `HasExtraAttributes` shape from Filament's hand-written pair,
+`ActionGroup.php:759-789`) lands on the outer dropdown wrapper (Filament: the
+`fi-dropdown` root, ours: the `sy sy-dropdown` root) via
+[`action-group.html.twig`](../../../packages/actions/templates/components/action-group.html.twig).
+
+The one mechanical divergence: all three templates were converted from the
+`<twig:>` HTML syntax to the `{% component %}` tag (the HTML syntax cannot
+spread a computed attribute map), and each merges the bag as
+`getExtra…AttributeBag.toScalarAttributes` rather than the raw
+`getExtra…Attributes` array. That flattening seam is load-bearing, not
+cosmetic: support's `ComponentAttributeBag` normalizes `class` to a token
+**array** and passes `null` values through, and ux-twig-component's
+`ComponentAttributes` fatals on both (`LogicException` for a non-scalar value,
+`RuntimeException` for `null` — `vendor/symfony/ux-twig-component/src/ComponentAttributes.php`).
+`toScalarAttributes()` joins class tokens to a string and drops
+`null`/`false`, so a caller's `class` token-merges with the component root's
+own classes through `attributes.defaults()` instead of crashing. Filament has
+no such seam because its Blade side renders its own attribute bag directly.
 
 ### `dropdownWidth` is a CSS string; `dropdownTeleport` and `dropdownAutoPlacement` are deferred
 

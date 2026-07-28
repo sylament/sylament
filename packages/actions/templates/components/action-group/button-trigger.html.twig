@@ -1,5 +1,7 @@
-<twig:SylamentSupport:Button
-    :icon="group.getIcon"
-    :color="group.getColor ?? 'gray'"
-    :size="group.getSize ?? 'md'"
->{{ group.getLabel }}</twig:SylamentSupport:Button>
+{% component 'SylamentSupport:Button' with {
+    icon: group.getIcon,
+    color: group.getColor ?? 'gray',
+    size: group.getSize ?? 'md',
+}|merge(group.getExtraAttributeBag.toScalarAttributes) %}
+    {% block content %}{{ group.getLabel }}{% endblock %}
+{% endcomponent %}

@@ -1,19 +1,20 @@
 {% if component.hasDropdown %}
-    <twig:SylamentSupport:Dropdown
-        :placement="component.getDropdownPlacement ?? 'bottom-start'"
-        :offset="component.getDropdownOffset ?? 8"
-        :flip="component.hasDropdownFlip"
-        :width="component.getDropdownWidth"
-        :maxHeight="component.getDropdownMaxHeight"
-    >
-        <twig:block name="trigger">
+    {% component 'SylamentSupport:Dropdown' with {
+        placement: component.getDropdownPlacement ?? 'bottom-start',
+        offset: component.getDropdownOffset ?? 8,
+        flip: component.hasDropdownFlip,
+        width: component.getDropdownWidth,
+        maxHeight: component.getDropdownMaxHeight,
+    }|merge(component.getExtraDropdownAttributeBag.toScalarAttributes) %}
+        {% block trigger %}
             {% include component.getTriggerTemplate with { group: component } only %}
-        </twig:block>
-
-        {% for action in component.getActions|filter(action => action.isVisible) %}
-            {{ renderComponent(action) }}
-        {% endfor %}
-    </twig:SylamentSupport:Dropdown>
+        {% endblock %}
+        {% block content %}
+            {% for action in component.getActions|filter(action => action.isVisible) %}
+                {{ renderComponent(action) }}
+            {% endfor %}
+        {% endblock %}
+    {% endcomponent %}
 {% else %}
     <div class="sy sy-ac-group">
         {% for action in component.getActions|filter(action => action.isVisible) %}

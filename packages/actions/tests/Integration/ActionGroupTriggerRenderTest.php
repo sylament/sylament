@@ -25,3 +25,17 @@ it('renders the labeled button trigger', function (): void {
     expect($html)->toContain('sy sy-btn')
         ->toContain('More');
 });
+
+it('renders group extra attributes on the icon-button trigger root', function (): void {
+    $html = renderTrigger(ActionGroup::make([])->extraAttributes(['data-x' => '1', 'class' => 'custom-trigger']));
+
+    expect($html)->toContain('data-x="1"')
+        ->toMatch('/class="[^"]*sy-icon-btn[^"]*custom-trigger/');
+});
+
+it('renders group extra attributes on the button trigger root', function (): void {
+    $html = renderTrigger(ActionGroup::make([])->button()->extraAttributes(['data-x' => '1', 'class' => 'custom-trigger']));
+
+    expect($html)->toContain('data-x="1"')
+        ->toMatch('/class="[^"]*sy-btn[^"]*custom-trigger/');
+});

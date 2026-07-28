@@ -13,6 +13,7 @@ use Sylament\Actions\Tests\Fixtures\Concerns\BothContractsHostFixture;
 use Sylament\Actions\Tests\Fixtures\StateFieldFixture;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
+use Sylament\Support\Twig\ComponentAttributeBag;
 
 it('keeps its actions and back-references each one', function (): void {
     $edit = Action::make('edit');
@@ -191,4 +192,52 @@ it('lets an explicit trigger template win over the default', function (): void {
 
     expect($group->getTriggerTemplate())->toBe('custom-trigger.html.twig')
         ->and($group->isIconButton())->toBeFalse();
+});
+
+it('has no extra dropdown attributes by default', function (): void {
+    $group = ActionGroup::make([]);
+
+    expect($group->hasExtraDropdownAttributes())->toBeFalse()
+        ->and($group->getExtraDropdownAttributes())->toBe([]);
+});
+
+it('replaces previously set extra dropdown attributes by default', function (): void {
+    $group = ActionGroup::make([])
+        ->extraDropdownAttributes(['data-a' => '1'])
+        ->extraDropdownAttributes(['data-b' => '2']);
+
+    expect($group->getExtraDropdownAttributes())->toBe(['data-b' => '2']);
+});
+
+it('appends extra dropdown attribute entries with merge', function (): void {
+    $group = ActionGroup::make([])
+        ->extraDropdownAttributes(['data-a' => '1'])
+        ->extraDropdownAttributes(['data-b' => '2'], merge: true);
+
+    expect($group->getExtraDropdownAttributes())->toEqualCanonicalizing(['data-a' => '1', 'data-b' => '2']);
+});
+
+it('evaluates extra dropdown attribute closures', function (): void {
+    $group = ActionGroup::make([])
+        ->extraDropdownAttributes(fn (): array => ['data-computed' => 'yes']);
+
+    expect($group->getExtraDropdownAttributes())->toBe(['data-computed' => 'yes']);
+});
+
+it('exposes the merged dropdown attributes as a bag', function (): void {
+    $bag = ActionGroup::make([])
+        ->extraDropdownAttributes(['class' => 'custom'])
+        ->getExtraDropdownAttributeBag();
+
+    expect($bag)->toBeInstanceOf(ComponentAttributeBag::class)
+        ->and($bag->getAttributes())->toBe(['class' => ['custom']]);
+});
+
+it('keeps the trigger and dropdown attribute bags independent', function (): void {
+    $group = ActionGroup::make([])
+        ->extraAttributes(['data-trigger' => '1'])
+        ->extraDropdownAttributes(['data-dropdown' => '2']);
+
+    expect($group->getExtraAttributes())->toBe(['data-trigger' => '1'])
+        ->and($group->getExtraDropdownAttributes())->toBe(['data-dropdown' => '2']);
 });

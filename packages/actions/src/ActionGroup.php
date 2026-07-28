@@ -24,6 +24,7 @@ use Sylament\Support\Components\Concerns\HasIconSize;
 use Sylament\Support\Components\Concerns\HasTooltip;
 use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\Evaluation\ClosureParameter;
+use Sylament\Support\Twig\ComponentAttributeBag;
 use Twig\Environment;
 use Twig\Markup;
 
@@ -68,6 +69,11 @@ class ActionGroup extends ViewComponent
     protected string|Closure|null $triggerTemplate = null;
 
     protected string|Closure|null $defaultTriggerTemplate = null;
+
+    /**
+     * @var array<array<mixed>|Closure>
+     */
+    protected array $extraDropdownAttributes = [];
 
     /**
      * @param array<Action|ActionGroup> $actions
@@ -162,6 +168,44 @@ class ActionGroup extends ViewComponent
         return $this->evaluate($this->triggerTemplate)
             ?? $this->evaluate($this->defaultTriggerTemplate)
             ?? static::ICON_BUTTON_TEMPLATE;
+    }
+
+    /**
+     * @param array<mixed>|Closure $attributes
+     */
+    public function extraDropdownAttributes(array|Closure $attributes, bool $merge = false): static
+    {
+        if ($merge) {
+            $this->extraDropdownAttributes[] = $attributes;
+        } else {
+            $this->extraDropdownAttributes = [$attributes];
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getExtraDropdownAttributes(): array
+    {
+        $attributeBag = new ComponentAttributeBag();
+
+        foreach ($this->extraDropdownAttributes as $extraDropdownAttributes) {
+            $attributeBag = $attributeBag->merge($this->evaluate($extraDropdownAttributes) ?: []);
+        }
+
+        return $attributeBag->getAttributes();
+    }
+
+    public function getExtraDropdownAttributeBag(): ComponentAttributeBag
+    {
+        return new ComponentAttributeBag($this->getExtraDropdownAttributes());
+    }
+
+    public function hasExtraDropdownAttributes(): bool
+    {
+        return $this->extraDropdownAttributes !== [];
     }
 
     public function iconButton(): static

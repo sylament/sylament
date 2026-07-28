@@ -32,6 +32,11 @@ trait HasActions
     #[LiveProp]
     public array $mountedActions = [];
 
+    /**
+     * @var array<string, Action>
+     */
+    protected array $cachedActions = [];
+
     protected ?Closure $resolveRecordUsing = null;
 
     public function resolveRecordUsing(?Closure $callback): static
@@ -158,6 +163,10 @@ trait HasActions
 
     public function getAction(string $name): ?Action
     {
+        if (array_key_exists($name, $this->cachedActions)) {
+            return $this->cachedActions[$name];
+        }
+
         $method = "{$name}Action";
 
         if (! method_exists($this, $method)) {
@@ -166,7 +175,14 @@ trait HasActions
 
         $action = $this->{$method}();
 
-        return $action instanceof Action ? $action->liveComponent($this) : null;
+        return $action instanceof Action ? $this->cacheAction($action) : null;
+    }
+
+    public function cacheAction(Action $action): Action
+    {
+        $action->liveComponent($this);
+
+        return $this->cachedActions[$action->getName()] = $action;
     }
 
     public function getMountedModalId(): string

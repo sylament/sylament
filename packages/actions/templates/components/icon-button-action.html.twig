@@ -1,11 +1,16 @@
+{% set clickParameters = component.getClientClickHandler
+    ? { action: component.getClientClickHandler }
+    : (component.shouldClose
+        ? { action: 'unmountAction' }
+        : {
+            action: 'mountAction',
+            name: component.getName,
+            ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
+            ...(component.getContext ? { context: component.getContext } : {}),
+        }) %}
 {% set mountAttributes = component.getUrl or component.isDisabled
     ? {}
-    : stimulus_action('live', 'action', null, {
-        action: 'mountAction',
-        name: component.getName,
-        ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
-        ...(component.getContext ? { context: component.getContext } : {}),
-    }).toArray() %}
+    : stimulus_action('live', 'action', null, clickParameters).toArray() %}
 
 {% component 'SylamentSupport:IconButton' with {
     icon: component.getIcon,

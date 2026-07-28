@@ -7,7 +7,12 @@ rendering) and folds in 14 actions-package concerns — `BelongsToLiveComponent`
 `CanRequireConfirmation`, `HasAction`, `HasArguments`, `HasLabel`,
 `HasLifecycleHooks`, `HasName`, `HasSize`, `InteractsWithRecord` — each a
 Surface row below with its own detail/divergence spliced in from its own
-audit. It also composes 6 support-level traits (`HasColor`,
+audit. It also composes two multi-consumer actions-package concerns tracked
+outside this file — `BelongsToGroup` (shared with `ActionGroup`, written up in
+[`action-group.md`](action-group.md)) and `BelongsToSchemaComponent` (shared
+with `ActionGroup`, a `done` row with no detail file in the
+[package README](README.md#features), since its whole surface is a two-method
+back-reference pair) — plus 6 support-level traits (`HasColor`,
 `HasExtraAttributes`, `HasIcon`, `HasIconPosition`, `HasIconSize`,
 `HasTooltip`) that stay tracked in the [`support`](../support/README.md)
 package and appear here only as reference rows. The port is a deliberate MVP
@@ -641,10 +646,10 @@ since none of it has started:
 - **Tables/bulk-action integration**: `BelongsToTable`, `HasTableIcon`,
   `InteractsWithSelectedRecords`, `CanFetchSelectedRecords`,
   `CanDeselectRecordsAfterCompletion`, `bulk()`/`isBulk()`.
-- **Grouping & nesting**: `BelongsToGroup`, `CanBeSorted`, `HasGroupedIcon`,
+- **Grouping & nesting**: `CanBeSorted`, `HasGroupedIcon`,
   `CanCallParentAction`, `HasParentActions`, `parentAction()`/
-  `getParentAction()`, `nestingIndex()`/`getNestingIndex()`,
-  `getClone()`.
+  `getParentAction()`, `nestingIndex()`/`getNestingIndex()`, `getClone()`
+  (`BelongsToGroup` itself is ported — see [action-group.md](action-group.md)).
 - **Authorization & policy**: `CanBeAuthorized`, `hasAuthorization()`.
 - **Rate limiting & transactions**: `CanBeRateLimited`,
   `CanUseDatabaseTransactions` (see the `cancel()`/`halt()` rollback-flag

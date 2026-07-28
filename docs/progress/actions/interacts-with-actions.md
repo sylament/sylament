@@ -128,9 +128,12 @@ computes the id inline in `action-modal.blade.php` (see
 so it is promoted as a Sylament-only host obligation, not a ported declaration.
 
 Each promoted method also drops the nesting/argument richness Filament's trait
-version has, since Sylament has no `ActionGroup` yet (`ActionGroup`,
-`BelongsToGroup`, and `HasParentActions` are all `todo` per the [actions
-README](README.md)):
+version has, because the host-side mount pipeline still has only a single
+`$mountedActions` slot: `ActionGroup` and `BelongsToGroup` are both ported now
+(see [action-group.md](action-group.md)), but the nested *mounted-action*
+stack they would feed into — and `HasParentActions`, which drives the
+cancel-on-unmount cascade below — remain `todo` per the [actions
+README](README.md):
 
 - `callMountedAction()` has no `array $arguments = []` parameter — Filament
   merges caller-supplied arguments on top of the mounted ones at call time (a
@@ -155,10 +158,12 @@ cannot be resolved (non-mounting callers want to know resolution failed
 outright; mounting flows treat "unresolvable" as "do nothing"). Sylament's
 [`getAction(string $name): ?Action`](../../../packages/actions/src/Concerns/HasActions.php)
 only resolves a single-level `"{$name}Action"` method on the host and always
-returns `null` silently when it is missing — no group traversal (`ActionGroup`
-is not ported) and no resolution exception (`ActionNotResolvableException` is
-not ported either, per the [actions README](README.md#supporting-surface)).
-Reversible once `ActionGroup` and the resolution exception land.
+returns `null` silently when it is missing — no `array`-path group traversal
+(the ported `ActionGroup` component exists and exposes `getFlatActions()`, but
+nothing in this host-side `getAction()` walks into one by dotted/array path
+yet) and no resolution exception (`ActionNotResolvableException` is not
+ported either, per the [actions README](README.md#supporting-surface)).
+Reversible once the array-path lookup and the resolution exception land.
 
 _See also: the global [rename table](../renames.md) — the `Has*` /
 `InteractsWith*` **interface/trait swap** and the Livewire → UX LiveComponent

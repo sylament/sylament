@@ -100,8 +100,8 @@ with the reverse edge (`actions` requiring `sylament/schemas`, for
 [`BelongsToSchemaComponent`](../../../packages/actions/src/Concerns/BelongsToSchemaComponent.php)'s
 direct `Schemas\Components\Component`/`Schemas\Schema` type-hints — see
 [actions-bundle.md](../actions/actions-bundle.md#every-package-declares-what-its-own-source-needs-transitives-notwithstanding))
-in the same commit, ahead of the schemas-side code that will import
-`Action`/`ActionGroup` starting the next task in the schemas↔actions integration
+in the same commit, ahead of the schemas-side code that goes on to import
+`Action`/`ActionGroup` throughout the rest of the schemas↔actions integration
 epic. Filament's own graph already has this cycle — `filament/schemas` requires
 `filament/actions` directly, `filament/actions` reaches back to
 `filament/schemas` only transitively, through `filament/forms` — so this is not

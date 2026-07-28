@@ -71,13 +71,15 @@ permanent note in [Divergences](#divergences).
 
 ### Table and bulk concerns are blocked on the tables and BulkAction ports
 
-Filament's `ActionGroup` composes `BelongsToTable` and `BelongsToSchemaComponent`,
-and exposes `hasNonBulkAction()` (iterates `getFlatActions()` calling
-`$action->isBulk()`). None of this has a Sylament target yet: there is no
-`tables`-package integration point (`BelongsToTable`'s host) and no `BulkAction`
-class (`isBulk()`'s only caller) in the port. **Blocked** on both landing; add
-`BelongsToTable`/`BelongsToSchemaComponent` (or their Sylament equivalents) and
-`hasNonBulkAction()` in the same change that ports whichever comes first.
+Filament's `ActionGroup` composes `BelongsToTable`, and exposes
+`hasNonBulkAction()` (iterates `getFlatActions()` calling `$action->isBulk()`).
+`BelongsToSchemaComponent` — Filament's other composed `ActionGroup` concern —
+already landed (see the [package README](README.md#features)); `BelongsToTable`
+has no Sylament target yet: there is no `tables`-package integration point
+(`BelongsToTable`'s host) and no `BulkAction` class (`isBulk()`'s only caller)
+in the port. **Blocked** on both landing; add `BelongsToTable` (or its Sylament
+equivalent) and `hasNonBulkAction()` in the same change that ports whichever
+comes first.
 
 ## Divergences
 

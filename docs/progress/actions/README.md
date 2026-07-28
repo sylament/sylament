@@ -86,7 +86,10 @@ host-side `HasActions` trait. `BelongsToGroup` folds the same way into
 [`action-group.md`](action-group.md) instead: `Action` and `ActionGroup` both
 compose it, but its own surface (the back-reference pair) is small enough to
 write up once, in the file for the class it primarily describes, rather than
-spinning up a third detail file. Ordered by the name in the first column: the
+spinning up a third detail file. `HasDropdown` folds into
+[`action-group.md`](action-group.md) too, single-consumer (`ActionGroup`
+only) and audited there, and so leaves this table the same way `Action`'s own
+single-consumer concerns do. Ordered by the name in the first column: the
 Sylament `HasActions` row (in the `H` block) is the port of Filament's
 `Concerns/InteractsWithActions` trait — see the
 [swap note above](#actions--port-progress).
@@ -114,7 +117,6 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 | CanUseDatabaseTransactions | [`Concerns/CanUseDatabaseTransactions.php`](../../../vendor/filament/actions/src/Concerns/CanUseDatabaseTransactions.php) | todo | - |
 | [`HasActions`](../../../packages/actions/src/Concerns/HasActions.php) | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) | in progress | [has-actions.md](has-actions.md) |
 | HasData | [`Concerns/HasData.php`](../../../vendor/filament/actions/src/Concerns/HasData.php) | todo | - |
-| HasDropdown | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) | todo | - |
 | HasExtraModalOverlayAttributes | [`Concerns/HasExtraModalOverlayAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | todo | - |
 | HasExtraModalWindowAttributes | [`Concerns/HasExtraModalWindowAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalWindowAttributes.php) | todo | - |
 | HasGroupedIcon | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | todo | - |

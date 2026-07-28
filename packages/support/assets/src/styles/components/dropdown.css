@@ -18,15 +18,14 @@
        `overflow-y`), making every panel a clipping container in both axes — a nested
        submenu panel is a laid-out descendant (Floating UI's default `strategy:
        'absolute'` keeps it in flow under its positioned `.sy-dropdown` wrapper) and
-       would be clipped or forced to scroll sideways. `--sy-dropdown-max-height` is
-       only ever written inline by `Dropdown/index.html.twig` when its `maxHeight` prop
-       is set, so its presence in the `style` attribute is a reliable, template-free
-       signal. Accepted limitation, matching Filament exactly: when a max-height *is*
-       set, the panel is a scroll container again and a submenu nested inside it will
-       still clip. */
-    &[style*="--sy-dropdown-max-height"] {
-        @apply overflow-y-auto;
-    }
+       would be clipped or forced to scroll sideways. `Dropdown/index.html.twig` writes
+       `--sy-dropdown-overflow: auto` inline in the same branch that writes
+       `--sy-dropdown-max-height`, so this follows the same asserted-by-the-template,
+       consumed-by-`var()` convention as the width/max-height lines above rather than
+       re-deriving the condition by pattern-matching another property's name. Accepted
+       limitation, matching Filament exactly: when a max-height *is* set, the panel is
+       a scroll container again and a submenu nested inside it will still clip. */
+    overflow-y: var(--sy-dropdown-overflow, visible);
 }
 
 .sy-dropdown-list {

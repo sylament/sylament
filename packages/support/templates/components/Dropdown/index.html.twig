@@ -31,7 +31,7 @@
         class="sy-dropdown-panel"
         hidden
         {{ stimulus_target(dropdownController, 'panel') }}
-        {% if width or maxHeight %}style="{{ width ? '--sy-dropdown-width: ' ~ width ~ ';' }}{{ maxHeight ? '--sy-dropdown-max-height: ' ~ maxHeight ~ ';' }}"{% endif %}
+        {% if width or maxHeight %}style="{{ width ? '--sy-dropdown-width: ' ~ width ~ ';' }}{{ maxHeight ? '--sy-dropdown-max-height: ' ~ maxHeight ~ '; --sy-dropdown-overflow: auto;' }}"{% endif %}
     >
         {{ content }}
     </div>

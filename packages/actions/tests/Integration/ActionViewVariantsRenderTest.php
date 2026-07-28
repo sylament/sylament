@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions\Tests\Integration;
 
 use Sylament\Actions\Action;
+use Sylament\Schemas\Schema;
 
 function renderVariant(Action $action): string
 {
@@ -66,6 +67,12 @@ it('renders an icon button action composing the support IconButton', function ()
         ->not->toContain('Delete<');
 });
 
+it('emits invoked arguments on the icon button mount wiring', function (): void {
+    $html = renderVariant(Action::make('delete')->iconButton()->icon('heroicons:x-mark')(['id' => 5]));
+
+    expect($html)->toContain('data-live-arguments-param="{&quot;id&quot;:5}"');
+});
+
 it('renders a url icon button action as an anchor without mount wiring', function (): void {
     $html = renderVariant(Action::make('edit')->iconButton()->icon('heroicons:x-mark')->url('/users/1/edit'));
 
@@ -73,3 +80,17 @@ it('renders a url icon button action as an anchor without mount wiring', functio
         ->toContain('href="/users/1/edit"')
         ->not->toContain('live#action');
 });
+
+it('emits the schema mount context on schema-bound variant triggers', function (string $template): void {
+    $schema = Schema::make()->key('schema')->components([
+        Action::make('publish')->template($template),
+    ]);
+
+    $html = renderVariant($schema->getAction('publish'));
+
+    expect($html)->toContain('data-live-context-param="{&quot;schemaComponent&quot;:&quot;schema&quot;}"');
+})->with([
+    'link' => Action::LINK_TEMPLATE,
+    'badge' => Action::BADGE_TEMPLATE,
+    'icon button' => Action::ICON_BUTTON_TEMPLATE,
+]);

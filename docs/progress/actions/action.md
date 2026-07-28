@@ -2,10 +2,11 @@
 
 `Sylament\Actions\Action` — the base class every actions-package action
 extends. It composes `Sylament\Support\Components\ViewComponent` (Twig-backed
-rendering) and folds in 16 actions-package concerns — `BelongsToLiveComponent`,
+rendering) and folds in 17 actions-package concerns — `BelongsToLiveComponent`,
 `CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`, `CanNotify`, `CanOpenModal`,
 `CanOpenUrl`, `CanRequireConfirmation`, `HasAction`, `HasArguments`,
-`HasGroupedIcon`, `HasLabel`, `HasLifecycleHooks`, `HasName`, `HasSize`,
+`HasGroupedIcon`, `HasLabel`, `HasLifecycleHooks`, `HasMountableArguments`,
+`HasName`, `HasSize`,
 `InteractsWithRecord` — each a
 Surface row below with its own detail/divergence spliced in from its own
 audit. It also composes two multi-consumer actions-package concerns tracked
@@ -70,6 +71,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `hiddenLabel()` / `isLabelHidden()` | [`hiddenLabel()` / `isLabelHidden()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
 | `translateLabel()` / `disableLabel()` (deprecated) | [`translateLabel()` / `disableLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported) |
 | [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | in progress | HasSchema / CanSubmitForm (form-mounting concerns) | [detail](#the-form-lifecycle-hooks-and-actioncallingactioncalled-events-are-not-ported) |
+| [`HasMountableArguments`](../../../packages/actions/src/Concerns/HasMountableArguments.php) | [`Concerns/HasMountableArguments.php`](../../../vendor/filament/actions/src/Concerns/HasMountableArguments.php) | done | — | [diverges](#action-invocation-is-a-php-side-seam-only) |
 | [`HasName`](../../../packages/actions/src/Concerns/HasName.php) | [`Concerns/HasName.php`](../../../vendor/filament/actions/src/Concerns/HasName.php) | done | — | [diverges](#getname-tightens-its-return-type-to-non-nullable-string) |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | [diverges](#hassize-drops-the-optimized-render-fast-path-helper) |
 | [`InteractsWithRecord`](../../../packages/actions/src/Concerns/InteractsWithRecord.php) | [`Concerns/InteractsWithRecord.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithRecord.php) | in progress | — | [detail](#the-record-title-and-model-metadata-surface-is-not-ported), [diverges](#record-key-resolution-is-hoisted-to-hasactions) |
@@ -394,9 +396,9 @@ is the sole consumer.
 with the `beforeFormFilled` / `afterFormFilled` / `beforeFormValidated` /
 `afterFormValidated` closure properties that back them. These fire around an
 action's mounted-form fill/validate cycle, which has no port yet: the actions
-package composes no `HasSchema`-equivalent, `CanSubmitForm`, or mountable-form
-concern (`vendor/filament/actions/src/Concerns/HasSchema.php`,
-`CanSubmitForm.php`, `HasMountableArguments.php` have no Sylament counterpart).
+package composes no `HasSchema`-equivalent or `CanSubmitForm`
+(`vendor/filament/actions/src/Concerns/HasSchema.php` and
+`CanSubmitForm.php` have no Sylament counterpart).
 Additionally, Filament's `callBefore()` / `callAfter()` dispatch
 `ActionCalling` / `ActionCalled` events (`Event::dispatch(...)`,
 the latter from a `finally` block so it always fires); the port has no
@@ -827,6 +829,24 @@ three — no framework-wide translation helper is wired into the repo yet
 and a fresh codebase has no reason to ship the deprecated alias. Reverses for
 translation if/when a translation layer lands; the deprecated alias stays out
 regardless.
+
+### Action invocation is a PHP-side seam only
+
+`HasMountableArguments` is a verbatim port — `$action(['id' => 5])` clones the
+action, binds the arguments through `arguments()`, and records them as
+`invokedArguments`, so a per-render binding never mutates a host-cached
+instance. All five trigger templates serialize **only**
+`getInvokedArguments()` into the mount emission
+(`live_action('mountAction', { name, arguments })` — Filament-exact:
+`getLivewireClickHandler()` serializes the invoked arguments, never
+`getArguments()`), and emit no `arguments` param when the action was never
+invoked. The divergence is the call site: Blade is PHP, so Filament templates
+can invoke `($action)(['id' => 5])` inline; Twig has no call syntax for
+invokable objects, so the invocation seams are PHP-side configuration and the
+`renderAction()` Twig helper's argument binding (`renderAction(name,
+arguments)`, the Twig-facing wrapper for `__invoke`). Permanent — a Twig-side
+call syntax would require a helper function anyway, which `renderAction()`
+already is.
 
 ### `getName()` tightens its return type to non-nullable `string`
 

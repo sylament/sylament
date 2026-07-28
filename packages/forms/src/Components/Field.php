@@ -51,12 +51,6 @@ abstract class Field extends Component
 
     public const string BELOW_ERROR_MESSAGE_SCHEMA_KEY = 'below_error_message';
 
-    final public function __construct(?string $name = null)
-    {
-        $this->name($name);
-        $this->statePath($name);
-    }
-
     protected function setUp(): void
     {
         parent::setUp();
@@ -66,7 +60,10 @@ abstract class Field extends Component
 
     public static function make(?string $name = null): static
     {
-        $field = new static($name);
+        $field = static::newInstance();
+
+        $field->name($name);
+        $field->statePath($name);
 
         $field->configure();
 

@@ -12,4 +12,13 @@ class ResolvableComponentFixture extends Component
         public readonly ?ComponentDependencyFixture $dependency = null,
     ) {
     }
+
+    public static function make(): static
+    {
+        $component = static::newInstance();
+
+        $component->configure();
+
+        return $component;
+    }
 }

@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace Sylament\Support;
 
 use RuntimeException;
+use Sylament\Support\Components\Component;
 use Sylament\Support\Components\ComponentManager;
+use Sylament\Support\DependencyInjection\Compiler\ComponentResolverPass;
 use Sylament\Support\DependencyInjection\Compiler\StaticInstancePass;
+use Sylament\Support\DependencyInjection\ComponentResolver;
 use Sylament\Support\DependencyInjection\StaticInstanceInterface;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
 use Sylament\Support\Icons\IconManager;
@@ -31,6 +34,10 @@ class SylamentSupportBundle extends SylamentBundle
         parent::build($container);
 
         $container->addCompilerPass(new StaticInstancePass());
+        $container->addCompilerPass(new ComponentResolverPass());
+
+        $container->registerForAutoconfiguration(Component::class)
+            ->addTag('sylament.component');
     }
 
     public function boot(): void
@@ -118,6 +125,13 @@ class SylamentSupportBundle extends SylamentBundle
                 '$renderer' => service(IconRendererInterface::class)->nullOnInvalid(),
             ])
             ->alias(IconManager::class, 'sylament_support.icon_manager');
+
+        $services
+            ->set('sylament_support.component_resolver', ComponentResolver::class)
+            ->args([
+                '$components' => null,
+            ])
+            ->alias(ComponentResolver::class, 'sylament_support.component_resolver');
     }
 
     private function prependAssetMapper(ContainerBuilder $container): void

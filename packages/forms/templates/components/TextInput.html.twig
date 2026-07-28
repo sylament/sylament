@@ -12,6 +12,7 @@
                 {%- if component.getMaxLength is not null %} maxlength="{{ component.getMaxLength }}"{% endif %}
                 {%- if component.getMinLength is not null %} minlength="{{ component.getMinLength }}"{% endif %}
                 {%- if component.isMarkedAsRequired %} required{% endif %}
+                {%- if component.isDisabled %} disabled{% endif %}
                 {%- if component.isAutofocused %} autofocus{% endif %}
         >
     </twig:block>

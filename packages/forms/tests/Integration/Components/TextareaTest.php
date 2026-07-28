@@ -92,3 +92,11 @@ it('renders the remaining html attributes', function (): void {
         ->and($textarea->attr('minlength'))->toBe('3')
         ->and($textarea->attr('autofocus'))->not->toBeNull();
 });
+
+it('renders the disabled attribute when disabled', function (): void {
+    $enabled = new Crawler(renderField(Textarea::make('excerpt')));
+    expect($enabled->filter('textarea.sy-fo-input')->attr('disabled'))->toBeNull();
+
+    $disabled = new Crawler(renderField(Textarea::make('excerpt')->disabled()));
+    expect($disabled->filter('textarea.sy-fo-input')->attr('disabled'))->not->toBeNull();
+});

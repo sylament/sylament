@@ -181,3 +181,11 @@ it('honors an explicit type over the sugar', function (): void {
 
     expect($input->attr('type'))->toBe('search');
 });
+
+it('renders the disabled attribute when disabled', function (): void {
+    $enabled = new Crawler(renderField(TextInput::make('title')));
+    expect($enabled->filter('input.sy-fo-input')->attr('disabled'))->toBeNull();
+
+    $disabled = new Crawler(renderField(TextInput::make('title')->disabled()));
+    expect($disabled->filter('input.sy-fo-input')->attr('disabled'))->not->toBeNull();
+});

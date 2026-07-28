@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components;
 
 use Sylament\Schemas\Components\Concerns\BelongsToContainer;
+use Sylament\Schemas\Components\Concerns\CanBeDisabled;
 use Sylament\Schemas\Components\Concerns\CanBeHidden;
 use Sylament\Schemas\Components\Concerns\HasActions;
 use Sylament\Schemas\Components\Concerns\HasChildComponents;
@@ -25,6 +26,7 @@ use Sylament\Support\Evaluation\ClosureParameter;
 class Component extends ViewComponent
 {
     use BelongsToContainer;
+    use CanBeDisabled;
     use CanBeHidden;
     use CanGrow;
     use CanOrderColumns;

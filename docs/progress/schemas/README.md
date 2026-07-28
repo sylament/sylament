@@ -101,7 +101,7 @@ own single-use concerns folded into [`component.md`](component.md).
 | --- | --- | --- | --- |
 | `BelongsToModel` | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | todo | — |
 | `CanBeConcealed` | [`Components/Concerns/CanBeConcealed.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeConcealed.php) | todo | — |
-| `CanBeDisabled` | [`Components/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | todo | — |
+| [`CanBeDisabled`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`Components/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | in progress | [can-be-disabled.md](can-be-disabled.md) |
 | `CanBeGridContainer` | [`Components/Concerns/CanBeGridContainer.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeGridContainer.php) | todo | — |
 | [`CanBeHidden`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`Components/Concerns/CanBeHidden.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | in progress | [can-be-hidden.md](can-be-hidden.md) |
 | `CanBeLiberatedFromContainerGrid` | [`Components/Concerns/CanBeLiberatedFromContainerGrid.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeLiberatedFromContainerGrid.php) | todo | — |
@@ -136,7 +136,7 @@ shared with the base `Component` or not yet started.
 | --- | --- | --- | --- |
 | [`BelongsToLivewire`](../../../packages/schemas/src/Concerns/BelongsToLiveComponent.php) | [`Concerns/BelongsToLivewire.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToLivewire.php) | done | [belongs-to-live-component.md](belongs-to-live-component.md) |
 | `BelongsToModel` | [`Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | todo | — |
-| `CanBeDisabled` | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Concerns/CanBeDisabled.php) | todo | — |
+| [`CanBeDisabled`](../../../packages/schemas/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Concerns/CanBeDisabled.php) | done | [can-be-disabled.md](can-be-disabled.md) |
 | `CanBeHidden` | [`Concerns/CanBeHidden.php`](../../../vendor/filament/schemas/src/Concerns/CanBeHidden.php) | todo | — |
 | `CanBeValidated` | [`Concerns/CanBeValidated.php`](../../../vendor/filament/schemas/src/Concerns/CanBeValidated.php) | todo | — |
 | `Cloneable` | [`Concerns/Cloneable.php`](../../../vendor/filament/schemas/src/Concerns/Cloneable.php) | todo | — |

@@ -129,3 +129,18 @@ it('resolves into its own child containers once the skip is turned off', functio
 
     expect($get('/data.address.city'))->toBe(true);
 });
+
+it('accepts the skip toggle by its vendor-exact named argument', function (): void {
+    $host = new StateHostFixture();
+    $host->data = ['address' => ['city' => 1]];
+
+    $group = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('address')->components([
+            StateField::make('city')->stateCast(new BooleanStateCast(isStoredAsInt: true)),
+        ]),
+    ])->getComponents()[0];
+
+    $get = $group->makeGetUtility()->skipComponentsChildContainersWhileSearching(condition: false);
+
+    expect($get('/data.address.city'))->toBe(true);
+});

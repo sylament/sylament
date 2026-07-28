@@ -45,9 +45,9 @@ final class Set
         return $state;
     }
 
-    public function skipComponentsChildContainersWhileSearching(bool $shouldSkip = true): static
+    public function skipComponentsChildContainersWhileSearching(bool $condition = true): static
     {
-        $this->shouldSkipComponentsChildContainersWhileSearching = $shouldSkip;
+        $this->shouldSkipComponentsChildContainersWhileSearching = $condition;
 
         return $this;
     }

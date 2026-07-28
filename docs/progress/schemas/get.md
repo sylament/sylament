@@ -64,8 +64,9 @@ pushing the current component onto it and popping in a `finally` around the
 `withHidden: true`, `withAbsoluteStatePath: true`, plus that stack (or `[]` when
 the `shouldSkipComponentsChildContainersWhileSearching` flag is off) as named
 arguments. Sylament's
-[`skipComponentsChildContainersWhileSearching(bool $shouldSkip = true): static`](../../../packages/schemas/src/Components/Utilities/Get.php)
-faithfully ports the mutable flag and its mutator shape — it mutates
+[`skipComponentsChildContainersWhileSearching(bool $condition = true): static`](../../../packages/schemas/src/Components/Utilities/Get.php)
+faithfully ports the mutable flag and its mutator shape, parameter name
+included — it mutates
 `$this` in place and returns it, not a wither — and `__invoke` now threads
 `[$this->component]` or `[]` (the flag's current value) into the two-argument
 [`HasComponents::getComponentByStatePath(string, array)`](../../../packages/schemas/src/Concerns/HasComponents.php)

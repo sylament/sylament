@@ -32,7 +32,7 @@ it('renders extra footer actions between submit and cancel', function (): void {
 
     $submitPosition = mb_strpos($html, 'data-live-action-param="callMountedAction"');
     $extraPosition = mb_strpos($html, '>Extra<');
-    $cancelPosition = mb_strpos($html, 'data-live-action-param="unmountAction"');
+    $cancelPosition = mb_strpos($html, 'data-live-action-param="unmountAction"', $submitPosition);
 
     expect($submitPosition)->not->toBeFalse()
         ->and($extraPosition)->not->toBeFalse()
@@ -55,4 +55,38 @@ it('renders modal content and the content footer between description and footer'
 
     expect($contentPosition)->toBeLessThan($contentFooterPosition)
         ->and($contentFooterPosition)->toBeLessThan($footerPosition);
+});
+
+it('passes the chrome config through to the modal', function (): void {
+    $html = (string) $this->createLiveComponent('RecordActionHost')
+        ->call('mountAction', ['name' => 'sideSheet', 'arguments' => [], 'context' => []])
+        ->render();
+
+    expect($html)->toContain('sy-modal-slide-over')
+        ->toContain('sy-modal-slide-over-from-end')
+        ->toContain('sy-modal-has-sticky-header')
+        ->toContain('sy-modal-has-sticky-footer')
+        ->toContain('sy-modal-close-btn');
+});
+
+it('centers and reverses the confirmation modal footer', function (): void {
+    $html = (string) $this->createLiveComponent('RecordActionHost')
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['recordKey' => 1]])
+        ->render();
+
+    $cancelPosition = mb_strpos($html, 'data-live-action-param="unmountAction"');
+    $submitPosition = mb_strpos($html, 'data-live-action-param="callMountedAction"');
+
+    expect($html)->toContain('sy-align-center')
+        ->and($cancelPosition)->not->toBeFalse()
+        ->and($submitPosition)->not->toBeFalse()
+        ->and($cancelPosition)->toBeLessThan($submitPosition);
+});
+
+it('unmounts the action when the modal reports a client-side dismissal', function (): void {
+    $html = (string) $this->createLiveComponent('RecordActionHost')
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['recordKey' => 1]])
+        ->render();
+
+    expect($html)->toContain('sylament--support--modal:dismissed->live#action');
 });

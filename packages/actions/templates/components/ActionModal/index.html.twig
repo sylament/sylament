@@ -2,25 +2,41 @@
     action,
     id %}
 
-{# Rendered only while the action is mounted and its modal should be open, so the open
-   state is declared here rather than left to the `sylament-open-modal` event, which a
-   modal first rendered by that same response is not yet listening for. #}
-<twig:SylamentSupport:Modal
-    id="{{ id }}"
-    :open="true"
-    :heading="action.getModalHeading"
-    :description="action.getModalDescription"
-    :icon="action.getModalIcon"
-    :iconColor="action.getModalIconColor"
-    :width="action.getModalWidth"
->
-    <twig:block name="content">
-        {{- action.getModalContent -}}
-        {{- action.getModalContentFooter -}}
-    </twig:block>
-    <twig:block name="footer">
-        {% for footerAction in action.getVisibleModalFooterActions %}
-            {{- renderComponent(footerAction) -}}
-        {% endfor %}
-    </twig:block>
-</twig:SylamentSupport:Modal>
+{# The dismissal wrapper maps the controller's client-close event (ESC, click-away,
+   close button) to a server unmount — without it the next live re-render would
+   resurrect a modal the user already closed. The event bubbles from the dialog;
+   the binding cannot sit on the component tag itself because a caller data-action
+   would replace the dialog's own Stimulus wiring in attributes.defaults(). #}
+<div {{ live_action('unmountAction', {}, {}, 'sylament--support--modal:dismissed') }}>
+    {# Rendered only while the action is mounted and its modal should be open, so the open
+       state is declared here rather than left to the `sylament-open-modal` event, which a
+       modal first rendered by that same response is not yet listening for. #}
+    <twig:SylamentSupport:Modal
+        id="{{ id }}"
+        :open="true"
+        :heading="action.getModalHeading"
+        :description="action.getModalDescription"
+        :icon="action.getModalIcon"
+        :iconColor="action.getModalIconColor"
+        :width="action.getModalWidth"
+        :alignment="action.getModalAlignment"
+        :slideOver="action.isModalSlideOver"
+        :slideOverPosition="action.getModalSlideOverPosition"
+        :stickyHeader="action.isModalHeaderSticky"
+        :stickyFooter="action.isModalFooterSticky"
+        :closeButton="action.hasModalCloseButton"
+        :closeByClickingAway="action.isModalClosedByClickingAway"
+        :closeByEscaping="action.isModalClosedByEscaping"
+        :autofocus="action.isModalAutofocused"
+        :clickThrough="action.isModalClickThrough"
+        :extraWindowAttributes="action.getExtraModalWindowAttributes"
+        :extraOverlayAttributes="action.getExtraModalOverlayAttributes"
+        :footerActions="action.getVisibleModalFooterActions"
+        :footerActionsAlignment="action.getModalFooterActionsAlignment"
+    >
+        <twig:block name="content">
+            {{- action.getModalContent -}}
+            {{- action.getModalContentFooter -}}
+        </twig:block>
+    </twig:SylamentSupport:Modal>
+</div>

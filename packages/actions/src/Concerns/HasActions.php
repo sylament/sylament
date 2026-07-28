@@ -37,6 +37,28 @@ trait HasActions
     #[LiveProp(dehydrateWith: 'dehydrateMountedActions')]
     public array $mountedActions = [];
 
+    /**
+     * Per-mount form state, one frame per `$mountedActions` index, bound at
+     * `->statePath("mountedActionsData.{$actionNestingIndex}")`. A sibling bag
+     * rather than Filament's `mountedActions.{i}.data`, because
+     * `Sylament\Schemas\State\PropertyAccessor` turns that path into the Symfony
+     * property path `mountedActions[0][data][title]`, whose first segment
+     * resolves through `getMountedActions()` — Symfony's `ReflectionExtractor`
+     * prefers a same-named getter over the property — and hands back resolved
+     * `Action` objects, so every read *and* write raises `NoSuchIndexException`.
+     * Same precedence trap that already forces `dehydrateWith:`.
+     *
+     * Writable, so the client can invent an index: presence in this bag is
+     * never evidence of a mount — `$mountedActions` alone is, and it stays
+     * server-controlled. Never add a `getMountedActionsData()` method; the
+     * contract reader below is deliberately named in the singular so it cannot
+     * collide.
+     *
+     * @var array<int, array<string, mixed>>
+     */
+    #[LiveProp(writable: true)]
+    public array $mountedActionsData = [];
+
     #[LiveProp]
     public ?string $actionsHostId = null;
 
@@ -49,6 +71,18 @@ trait HasActions
      * @var array<Action>|null
      */
     protected ?array $cachedMountedActions = null;
+
+    /**
+     * Has-schema answers by nesting index. Not an optimisation:
+     * {@see isMountedActionModalOpen()} runs the modal-open gate once per frame
+     * per render (`Modals.html.twig:8,12`), so an unmemoised build is
+     * O(frames²) schema constructions. It cannot live in `$cachedSchemas` —
+     * that map is typed `array<string, Schema>` and the answer we need to cache
+     * for a schema-less action is exactly the *absence* of a schema.
+     *
+     * @var array<int, bool>
+     */
+    protected array $cachedMountedActionHasSchema = [];
 
     protected ?Closure $resolveRecordUsing = null;
 
@@ -94,9 +128,39 @@ trait HasActions
             'context' => $context,
         ];
 
+        // Before anything can render: `live_controller`'s `getDeepData()`
+        // dereferences every `[data-model]` path segment unguarded after every
+        // render, so a field at `mountedActionsData.0.title` with no index 0 in
+        // the dehydrated props is an uncaught TypeError that kills live updates
+        // for the whole component.
+        $this->mountedActionsData[array_key_last($this->mountedActions)] = [];
+
         $action = $this->getMountedAction();
 
         if ($action === null || $action->isDisabled()) {
+            $this->unmountAction(cancelParentActions: false);
+
+            return null;
+        }
+
+        try {
+            $hasSchema = $this->mountedActionHasSchema($action);
+
+            if ($hasSchema) {
+                $action->callBeforeFormFilled();
+            }
+
+            $schema = $this->getMountedActionSchema(mountedAction: $action);
+
+            $action->mount([
+                'form' => $schema,
+                'schema' => $schema,
+            ]);
+
+            if ($hasSchema) {
+                $action->callAfterFormFilled();
+            }
+        } catch (Halt|Cancel) {
             $this->unmountAction(cancelParentActions: false);
 
             return null;
@@ -139,6 +203,13 @@ trait HasActions
         $result = null;
 
         try {
+            // Filament's exact pipeline position (`InteractsWithActions.php:251-262`)
+            // minus the `afterValidate` wrapper, so M1 · 1 can swap in
+            // `getState(afterValidate: …)` here without moving anything else.
+            if ($this->mountedActionHasSchema($action)) {
+                $action->data($this->getMountedActionSchema(mountedAction: $action)?->getState() ?? []);
+            }
+
             $action->callBefore();
             $result = $action->call();
             $result = $action->callAfter() ?? $result;
@@ -187,9 +258,24 @@ trait HasActions
      */
     public function replaceMountedAction(string $name, array $arguments = [], array $context = []): void
     {
+        // The stack's own indices as well as the bag's: a surviving
+        // `mountedActionSchema{$i}` would belong to the action being replaced,
+        // keyed to the frame its replacement now occupies. The stack is the
+        // authoritative half of that union — the bag is client-writable and
+        // could arrive missing a slot.
+        $staleSchemaIndexes = array_unique([
+            ...array_keys($this->mountedActions),
+            ...array_keys($this->mountedActionsData),
+        ]);
+
         $this->mountedActions = [];
         $this->cachedMountedActions = null;
-        // Epic-6 seam: Filament also purges its mountedActionSchema* caches here.
+        $this->mountedActionsData = [];
+        $this->cachedMountedActionHasSchema = [];
+
+        foreach ($staleSchemaIndexes as $actionNestingIndex) {
+            $this->forgetMountedActionSchema($actionNestingIndex);
+        }
 
         $this->mountAction($name, $arguments, $context);
     }
@@ -250,6 +336,22 @@ trait HasActions
             array_pop($this->cachedMountedActions);
         }
 
+        // Every frame index the stack no longer has, dropped in lockstep with it.
+        // Selected by index *value*, not by position in the bag: $mountedActions
+        // is a server-controlled list, so its valid indices are always
+        // 0..count-1, whereas $mountedActionsData is client-writable and can
+        // arrive re-ordered or with holes. A frame that still exists must never
+        // lose its slot — see the property docblock for why.
+        foreach (array_keys($this->mountedActionsData) as $actionNestingIndex) {
+            if ($actionNestingIndex < count($this->mountedActions)) {
+                continue;
+            }
+
+            unset($this->mountedActionsData[$actionNestingIndex], $this->cachedMountedActionHasSchema[$actionNestingIndex]);
+
+            $this->forgetMountedActionSchema($actionNestingIndex);
+        }
+
         $this->dispatchBrowserEvent('sylament-close-modal', ['id' => $id]);
     }
 
@@ -286,6 +388,93 @@ trait HasActions
         }
 
         return $this->cacheMountedActions($this->mountedActions);
+    }
+
+    /**
+     * Read one frame of {@see $mountedActionsData}. Deliberately singular:
+     * a `getMountedActionsData()` would be picked up by Symfony's
+     * `ReflectionExtractor` as the bag property's read accessor, putting a
+     * method between the schema state layer and the array it must address by
+     * index — the trap documented on the property.
+     *
+     * @return array<string, mixed>
+     */
+    public function getMountedActionData(?int $actionNestingIndex = null): array
+    {
+        if ($this->mountedActions === []) {
+            return [];
+        }
+
+        $actionNestingIndex ??= array_key_last($this->mountedActions);
+
+        return $this->mountedActionsData[$actionNestingIndex] ?? [];
+    }
+
+    /**
+     * Filament's `->model()` and `->operation()` arms are not ported: schemas
+     * has no model binding and no `Operation` concept, so the per-mount schema
+     * carries only its key, its state path and the modal heading level.
+     */
+    public function getMountedActionSchema(?int $actionNestingIndex = null, ?Action $mountedAction = null): ?Schema
+    {
+        if ($this->mountedActions === []) {
+            return null;
+        }
+
+        $actionNestingIndex ??= $mountedAction?->getNestingIndex() ?? array_key_last($this->mountedActions);
+
+        $mountedAction ??= $this->getMountedAction($actionNestingIndex);
+
+        if (! $mountedAction instanceof Action) {
+            return null;
+        }
+
+        if (! $this instanceof InteractsWithSchemas) {
+            // Probed against a schema detached from this host — it can never
+            // carry state — purely to tell "this host cannot build schemas" (a
+            // wiring bug) from "this action declares none" (normal, and the
+            // overwhelmingly common case).
+            if ($mountedAction->getSchema(Schema::make()) instanceof Schema) {
+                throw new LogicException("Action [{$mountedAction->getName()}] declares a schema but " . static::class . ' is not a schema host — implement ' . InteractsWithSchemas::class . ' and use the ' . HasSchemas::class . ' trait.');
+            }
+
+            return null;
+        }
+
+        $schemaName = "mountedActionSchema{$actionNestingIndex}";
+
+        if ($this->hasCachedSchema($schemaName)) {
+            return $this->getSchema($schemaName);
+        }
+
+        return $this->cacheSchema($schemaName, $mountedAction->getSchema(
+            $this->makeSchema()
+                ->key($schemaName)
+                ->statePath("mountedActionsData.{$actionNestingIndex}")
+                ->rootHeadingLevel(3),
+        ));
+    }
+
+    public function mountedActionHasSchema(?Action $mountedAction = null): bool
+    {
+        if ($this->mountedActions === []) {
+            return false;
+        }
+
+        $actionNestingIndex = $mountedAction?->getNestingIndex() ?? array_key_last($this->mountedActions);
+
+        return $this->cachedMountedActionHasSchema[$actionNestingIndex] ??= count(
+            $this->getMountedActionSchema($actionNestingIndex, $mountedAction)?->getComponents() ?? [],
+        ) > 0;
+    }
+
+    protected function forgetMountedActionSchema(int $actionNestingIndex): void
+    {
+        if (! $this instanceof InteractsWithSchemas) {
+            return;
+        }
+
+        $this->cacheSchema("mountedActionSchema{$actionNestingIndex}", null);
     }
 
     /**
@@ -383,7 +572,9 @@ trait HasActions
 
     public function mountedActionShouldOpenModal(?Action $mountedAction = null): bool
     {
-        return ($mountedAction ?? $this->getMountedAction())?->shouldOpenModal() ?? false;
+        return ($mountedAction ?? $this->getMountedAction())?->shouldOpenModal(
+            checkForSchemaUsing: $this->mountedActionHasSchema(...),
+        ) ?? false;
     }
 
     public function getAction(string $name): ?Action

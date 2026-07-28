@@ -41,17 +41,20 @@ permanent note in [Divergences](#divergences).
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`mountAction()`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | — |
-| `callMountedAction(array $arguments = [])` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#seven-host-methods-are-promoted-onto-the-interface) |
-| `unmountAction(bool\|string\|null $cancelParentActions = null)` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#seven-host-methods-are-promoted-onto-the-interface) |
-| `getMountedAction(?int $actionNestingIndex = null)` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#seven-host-methods-are-promoted-onto-the-interface) |
-| `getMountedActions()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#seven-host-methods-are-promoted-onto-the-interface) |
-| `mountedActionShouldOpenModal()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#seven-host-methods-are-promoted-onto-the-interface) |
-| `getMountedModalId(?int $actionNestingIndex = null)` | — (no Filament counterpart; see [has-actions.md](has-actions.md#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper)) | done | — | [diverges](#seven-host-methods-are-promoted-onto-the-interface) |
-| `isMountedActionModalOpen(int $actionNestingIndex)` | — (no Filament counterpart; see [has-actions.md](has-actions.md#the-stack-is-choreographed-declaratively-not-by-client-events)) | done | — | [diverges](#seven-host-methods-are-promoted-onto-the-interface) |
+| `callMountedAction(array $arguments = [])` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#host-methods-are-promoted-onto-the-interface-when-a-template-calls-them) |
+| `unmountAction(bool\|string\|null $cancelParentActions = null)` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#host-methods-are-promoted-onto-the-interface-when-a-template-calls-them) |
+| `getMountedAction(?int $actionNestingIndex = null)` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#host-methods-are-promoted-onto-the-interface-when-a-template-calls-them) |
+| `getMountedActions()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#host-methods-are-promoted-onto-the-interface-when-a-template-calls-them) |
+| `mountedActionShouldOpenModal()` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#host-methods-are-promoted-onto-the-interface-when-a-template-calls-them) |
+| `getMountedModalId(?int $actionNestingIndex = null)` | — (no Filament counterpart; see [has-actions.md](has-actions.md#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper)) | done | — | [diverges](#host-methods-are-promoted-onto-the-interface-when-a-template-calls-them) |
+| `isMountedActionModalOpen(int $actionNestingIndex)` | — (no Filament counterpart; see [has-actions.md](has-actions.md#the-stack-is-choreographed-declaratively-not-by-client-events)) | done | — | [diverges](#host-methods-are-promoted-onto-the-interface-when-a-template-calls-them) |
+| `getMountedActionData(?int $actionNestingIndex = null)` | — (no Filament counterpart; the bag it reads replaces the `mountedActions.{i}.data` state path — see [has-actions.md](has-actions.md#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor)) | done | — | [diverges](#host-methods-are-promoted-onto-the-interface-when-a-template-calls-them) |
+| `getMountedActionSchema(?int $actionNestingIndex = null, ?Action $mountedAction = null)` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (protected trait method — not on the contract) | done | — | [diverges](#host-methods-are-promoted-onto-the-interface-when-a-template-calls-them) |
+| `mountedActionHasSchema(?Action $mountedAction = null)` | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | done | — | [diverges](#host-methods-are-promoted-onto-the-interface-when-a-template-calls-them) |
 | `getAction()` | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [diverges](#getaction-drops-grouparray-lookup-and-the-ismounting-flag) |
-| `replaceMountedAction()` (trait-only here, as in Filament) | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | skipped | — | [diverges](#seven-host-methods-are-promoted-onto-the-interface) |
-| `mergeMountedActionArguments()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `HasSchema` concern / schemas-actions integration | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
-| `getMountedActionSchemaName()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `HasSchema` concern / schemas-actions integration | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
+| `replaceMountedAction()` (trait-only here, as in Filament) | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | skipped | — | [diverges](#host-methods-are-promoted-onto-the-interface-when-a-template-calls-them) |
+| `mergeMountedActionArguments()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | todo | — | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
+| `getMountedActionSchemaName()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | skipped | — | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
 | The ten `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `panels` package | [detail](#the-panel-level-default-hooks-are-not-on-the-contract) |
 
 ## Details
@@ -67,11 +70,18 @@ Filament's contract declares `mergeMountedActionArguments(array $arguments): voi
 and the live `Action`, used when a schema-backed action's form is
 re-submitted) and `getMountedActionSchemaName(): ?string` (names the `Schema`
 instance the mounted action's form validates against). Sylament's interface
-declares neither. There is no schema integration for actions yet — the
-`HasSchema` concern is `todo` in the [actions README](README.md#features), and
-nothing in the port resolves a `Schema` for a mounted action's form — so
-neither method has anything to merge into or name. **Blocked** on the
-`HasSchema` concern and the wider schemas-actions wiring landing.
+declares neither, even though the schema integration itself now exists
+(`getMountedActionSchema()` / `mountedActionHasSchema()` /
+`getMountedActionData()` are all on the contract — see
+[has-actions.md](has-actions.md#the-per-mount-schema-carries-no-model-or-operation)).
+`getMountedActionSchemaName()` has no port at all: the name is computed inline
+at the one place it is needed, so there is nothing to declare — **skipped**, and
+it returns only if a second caller ever wants it. `mergeMountedActionArguments()`
+is a real gap rather than a naming one: `callMountedAction()` merges the caller's
+arguments transiently and restores them afterwards, so nothing writes them back
+into the persisted descriptor, which is what a form resubmit at the same frame
+would need. **Next step:** it lands with M1 · 1's keep-modal-open validation
+loop, the first flow that resubmits a mounted frame.
 
 ### The panel-level default hooks are not on the contract
 
@@ -101,7 +111,7 @@ specifically, a Doctrine relation equivalent to Eloquent's `Relation`).
 Deliberate deviations from Filament — permanent, and the reason they hold.
 These outlive the detail sections above.
 
-### Seven host methods are promoted onto the interface
+### Host methods are promoted onto the interface when a template calls them
 
 Filament's `Contracts\HasActions` does **not** declare `callMountedAction()`,
 `unmountAction()`, `getMountedAction()`, or `getMountedActions()` — they exist
@@ -133,6 +143,21 @@ in `action-modal.blade.php` (see
 and decides open state on the client (see
 [declarative choreography](has-actions.md#the-stack-is-choreographed-declaratively-not-by-client-events)) —
 so they are promoted as Sylament-only host obligations, not ported declarations.
+
+The forms-in-modals epic added three more under the same rule.
+`getMountedActionSchema(?int, ?Action): ?Schema` and
+`mountedActionHasSchema(?Action): bool` are what the modal renderer reads to
+decide whether a mounted action has a schema slot and to render it; like
+`Modals`, that renderer holds its host through this interface, so the pair has
+to be declared here. The first is `protected` in Filament, so promoting it is a
+visibility widening as well as a contract addition — the same trade the modal
+templates already forced on `callMountedAction()`. `getMountedActionData(?int):
+array` is not called from a template at all, but from
+[`HasData::getRawData()`](../../../packages/actions/src/Concerns/HasData.php) on
+an `Action` whose host reference is this interface; Filament reads the raw
+Livewire property directly there, which Sylament cannot — the
+[sibling-bag divergence](has-actions.md#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor)
+explains why, and why the name is singular.
 
 The nesting-actions epic restored the full signatures the single-slot MVP had
 reduced, so no promoted method is a narrowing any more:

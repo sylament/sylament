@@ -7,8 +7,8 @@ Filament's [`Contracts\HasSchemas`](../../../vendor/filament/schemas/src/Contrac
 under a swapped name: Filament's interface is `HasSchemas` and its trait is
 `InteractsWithSchemas`; Sylament reverses the pair, so this interface is
 `InteractsWithSchemas` and the implementing trait is
-[`Concerns\HasSchemas`](has-schemas.md). The four methods it declares are all
-supplied by that trait.
+[`Concerns\HasSchemas`](has-schemas.md). Every method it declares is supplied by
+that trait.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -33,17 +33,23 @@ _Detail_ carries a **detail** link to the write-up in [Details](#details)
 | [`schemas(): array<string>`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-host-contract-declares-schemas-and-makeschema-that-filament-keeps-only-on-the-trait) |
 | [`getSchema(string $name): Schema`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Contracts\HasSchemas::getSchema()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | done | — | [diverges](#getschema-returns-a-non-null-schema-and-throws-on-a-missing-name) |
 | [`makeSchema(): Schema`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-host-contract-declares-schemas-and-makeschema-that-filament-keeps-only-on-the-trait) |
+| [`cacheSchema(string $name, ?Schema $schema): ?Schema`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-host-contract-declares-schemas-and-makeschema-that-filament-keeps-only-on-the-trait) |
+| [`hasCachedSchema(string $name): bool`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-host-contract-declares-schemas-and-makeschema-that-filament-keeps-only-on-the-trait) |
 | [`getOldSchemaState(?string $path): mixed`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Contracts\HasSchemas::getOldSchemaState()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | done | — | [diverges](#getoldschemastate-takes-a-nullable-path) |
 | `getSchemaComponent($key, $withHidden, $skip…)` — absolute-key component addressing | [`Contracts\HasSchemas::getSchemaComponent()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | todo | — | [detail](#getschemacomponent-absolute-key-addressing-is-not-declared) |
 | `makeFilamentTranslatableContentDriver()` | [`Contracts\HasSchemas::makeFilamentTranslatableContentDriver()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | todo | — | [detail](#the-translatable-content-driver-method-is-not-declared) |
 | `currentlyValidatingSchema(?Schema)` | [`Contracts\HasSchemas::currentlyValidatingSchema()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | blocked | CanBeValidated (schemas validation concern) | [detail](#the-validation-and-testing-contract-methods-are-not-declared) |
 | `getDefaultTestingSchemaName()` | [`Contracts\HasSchemas::getDefaultTestingSchemaName()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | blocked | TestsSchemas (testing helper) | [detail](#the-validation-and-testing-contract-methods-are-not-declared) |
 
-The four declared methods are all covered: `schemas()`, `getSchema()`, and
-`makeSchema()` directly by
+Every declared method is covered: `schemas()`, `getSchema()`, `makeSchema()`,
+`cacheSchema()` and `hasCachedSchema()` directly by
 [`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php);
 `getOldSchemaState()` indirectly through the `afterStateUpdated` diff in
 [`LiveStateTest`](../../../packages/schemas/tests/Integration/LiveStateTest.php).
+`cacheSchema()`/`hasCachedSchema()` are also exercised through the interface by
+actions' [`HasActionsSchemaTest`](../../../packages/actions/tests/Integration/Concerns/HasActionsSchemaTest.php),
+which is why they are declared here at all: `HasActions::getMountedActionSchema()`
+calls them on a `$this` narrowed to this interface.
 
 ## Details
 
@@ -91,7 +97,12 @@ Filament's `Contracts\HasSchemas` declares neither `schemas()` nor
 `makeSchema()` — both live only on the trait. Sylament promotes both onto the
 interface, so any host must expose the schema-name list and the host-bound schema
 factory even if it does not use the [`HasSchemas`](has-schemas.md) trait.
-Consequence: the interface is a slightly wider shape than Filament's, not a 1:1
+`cacheSchema()` and `hasCachedSchema()` are promoted for the same reason, with a
+concrete forcing case: actions'
+[`HasActions::getMountedActionSchema()`](../actions/has-actions.md#the-per-mount-schema-carries-no-model-or-operation)
+narrows `$this` to *this interface* before registering a mounted action's schema,
+so under PHPStan level max the calls are only legal if the interface carries
+them. Consequence: the interface is a wider shape than Filament's, not a 1:1
 port of the contract's method set.
 
 ### `getSchema()` returns a non-null `Schema` and throws on a missing name

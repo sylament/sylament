@@ -11,7 +11,7 @@ class Html extends Component
 {
     protected string|Closure|null $template = '@SylamentSchemas/components/Html.html.twig';
 
-    protected string|Markup|Closure|null $content = null;
+    protected string|Markup|Closure|null $content;
 
     final public function __construct(string|Markup|Closure|null $content)
     {

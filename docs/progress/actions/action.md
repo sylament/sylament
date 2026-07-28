@@ -48,7 +48,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | todo | schemas/tables/InteractsWithSelectedRecords ports | [detail](#resolvedefaultclosuredependencyforevaluationbytype-is-not-overridden) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables (`table`/`bulk` flags), modal nesting (`getParentAction()` short-circuit) | [diverges](#getcontext-emits-only-the-schemacomponent-key) |
 | Trigger rendering ([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig) + the [`link-action`](../../../packages/actions/templates/components/link-action.html.twig) / [`badge-action`](../../../packages/actions/templates/components/badge-action.html.twig) / [`icon-button-action`](../../../packages/actions/templates/components/icon-button-action.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
-| Modal rendering ([`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | CanOpenModal (footer actions, content, slideover, sticky) | [detail](#confirm-modal-template-only-renders-the-confirmation-shape-not-the-full-action-modal), [diverges](#the-confirm-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-footer-buttons-are-hardcoded-markup-not-rendered-action-instances) |
+| Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | CanOpenModal (footer actions, content, slideover, sticky) | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal), [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-footer-buttons-are-hardcoded-markup-not-rendered-action-instances) |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
 | [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | — |
 | [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) (support) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | — |
@@ -272,8 +272,8 @@ modal through the general predicate), `modalIcon` (falls back to
 `modalIconColor` (falls back to `getColor() ?? 'primary'`),
 `modalSubmitActionLabel` (`'Confirm'`/`'Submit'` by confirmation state),
 `modalCancelActionLabel` (`'Cancel'`), and `modalWidth` (`'md'`). These are the
-exact fields [`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig)
-reads to drive `<twig:SylamentSupport:Modal>`, and `ConfirmModalRenderTest`
+exact fields [`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)
+reads to drive `<twig:SylamentSupport:Modal>`, and `ActionModalRenderTest`
 exercises the full mount → render path through `RecordActionHost`. The
 **presence/visibility surface** is ported too, Filament-exact: `modal()` /
 `modalHidden()` / `hasModal()` / `hasCustomModalPresence()` /
@@ -444,7 +444,7 @@ same, plus a `getCustomRecordTitle()` port) once the `tables`/`schemas`
 integration points they read from exist; tighten `$record`'s type once a
 Doctrine entity boundary is decided.
 
-### Confirm-modal template only renders the confirmation shape, not the full action modal
+### The action-modal template only renders part of the full action modal
 
 **In:** a ~14-line `<twig:SylamentSupport:Modal>` include driven entirely by
 [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php)'s
@@ -452,11 +452,11 @@ current (minimal) surface — `heading`, `description`, `icon`, `iconColor`, and
 `width` pass straight through the evaluated getters, and the footer renders two
 fixed `<button>` elements wired to `live_action('callMountedAction')` /
 `live_action('unmountAction')`, labeled from `getModalSubmitActionLabel()` /
-`getModalCancelActionLabel()`. Included by the host's own template (see the
-`RecordActionHost` / `ActionHost` Twig fixtures) once
-`HasActions::getMountedAction()->isConfirmationRequired()` is true — matching
-Filament's confirmation-only path through `action-modal.blade.php`. Covered by
-[`ConfirmModalRenderTest`](../../../packages/actions/tests/Integration/Components/ConfirmModalRenderTest.php),
+`getModalCancelActionLabel()`. Rendered by the host's
+`<twig:SylamentActions:Modals />` tag (see the `RecordActionHost` /
+`ActionHost` Twig fixtures) once the mounted action's `shouldOpenModal()`
+holds — Filament's own gate. Covered by
+[`ActionModalRenderTest`](../../../packages/actions/tests/Integration/Components/ActionModalRenderTest.php),
 which asserts the modal class, heading, submit/cancel labels, the confirmation
 icon `<svg>`, and both `live_action` data attributes render through a full
 `mountAction` → render cycle.
@@ -621,7 +621,7 @@ no counterpart; every shape renders through Twig via `ViewComponent::render()`.
 doubles as the badge-*text* setter via `func_num_args()`; `HasBadge` is
 deferred, so the overload widens when it lands. **No `toArray()`/`fromArray()`**
 serialization, and no `renderModal()`/`toModalHtmlable()` — the confirmation
-modal ([`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig))
+modal ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig))
 is rendered host-side, driven by `CanOpenModal`'s getters, not by an `Action`
 method.
 
@@ -901,15 +901,15 @@ Reversible if a future action needs to accept a bare record key directly (not
 just via live-component mount) — at that point `InteractsWithRecord::getRecord()`
 would need its own key-detection branch back.
 
-### The confirm modal is an anonymous Twig component, not an included view
+### The action modal is an anonymous Twig component, not an included view
 
 Filament's `action-modal.blade.php` is a plain view: `Action::renderModal()` calls
 `view('filament-actions::action-modal', ['action' => $this])`, and
 `components/modals.blade.php` renders the result. The port started the same way — an
 `{% include … with { action, id } only %}` from
 [`Modals`](../../../packages/actions/templates/components/Modals.html.twig) — and is
-now [`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig),
-invoked as `<twig:SylamentActions:ConfirmModal :action="action" :id="…" />`. Every
+now [`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig),
+invoked as `<twig:SylamentActions:ActionModal :action="action" :id="…" />`. Every
 other rendered surface in the repo that a template invokes is a `<twig:>` component;
 an include was the odd one out, and `{% props action, id %}` states the contract the
 include's `with {}` could only imply — a missing prop now fails by name.
@@ -926,7 +926,7 @@ keep the props list explicit rather than leaning on inherited variables.
 Filament's `getModalSubmitAction()` / `getModalCancelAction()` build real
 `Action` objects (colored, labeled, wired to `submit`/`action`/`close`) that
 the modal view renders through the normal action-rendering pipeline. Sylament's
-[`ConfirmModal/index.html.twig`](../../../packages/actions/templates/components/ConfirmModal/index.html.twig)
+[`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)
 instead writes two literal `<button class="sy sy-btn …">` elements
 and inlines the submit color computation itself:
 `action.getColor is iterable or action.getColor is empty or action.getColor == 'gray' ? 'primary' : action.getColor`
@@ -938,7 +938,7 @@ delegating to a color-aware button component, an array-of-shades color (a
 value `getColor(): string|array|null` explicitly allows) cannot be represented
 in a class name and is silently coerced to `primary` instead of being passed
 through. This is a consequence of there being no footer-actions API yet (see
-the [modal-content detail](#confirm-modal-template-only-renders-the-confirmation-shape-not-the-full-action-modal)
+the [modal-content detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal)
 above), not an independent design choice — reversible once the footer buttons
 render through a real color-aware Action/button component instead of literal
 class interpolation.

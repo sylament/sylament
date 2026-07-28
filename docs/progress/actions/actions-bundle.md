@@ -57,14 +57,14 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 The bundle-load + view-namespace row is covered indirectly:
 [`ActionRenderTest`](../../../packages/actions/tests/Integration/ActionRenderTest.php),
 [`ButtonRenderTest`](../../../packages/actions/tests/Integration/Components/ButtonRenderTest.php),
-[`ConfirmModalRenderTest`](../../../packages/actions/tests/Integration/Components/ConfirmModalRenderTest.php),
+[`ActionModalRenderTest`](../../../packages/actions/tests/Integration/Components/ActionModalRenderTest.php),
 [`ModalRenderTest`](../../../packages/actions/tests/Integration/Components/ModalRenderTest.php),
 and the `Concerns/HasActions*` Integration tests all boot
 [`tests/Fixtures/Kernel.php`](../../../packages/actions/tests/Fixtures/Kernel.php)
 (which registers `SylamentActionsBundle`) and render `Action` through
 `ViewComponent::render()`, proving the bundle loads and its
 `@SylamentActions/components/button-action.html.twig` /
-`@SylamentActions/components/ConfirmModal/index.html.twig` templates resolve.
+`@SylamentActions/components/ActionModal/index.html.twig` templates resolve.
 [`ModalsRenderTest`](../../../packages/actions/tests/Integration/Components/ModalsRenderTest.php)
 covers the Twig-component registration row: `<twig:SylamentActions:Modals />`
 only resolves if the service was registered and tagged.

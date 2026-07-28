@@ -8,7 +8,7 @@ use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
 
-it('renders the confirm modal composing the action modal config and mount/call wiring', function (): void {
+it('renders the action modal composing the modal config and mount/call wiring', function (): void {
     $html = (string) $this->createLiveComponent('RecordActionHost')
         ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['recordKey' => 1]])
         ->render();

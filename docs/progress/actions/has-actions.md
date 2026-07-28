@@ -16,7 +16,7 @@ plus the [`Modals`](../../../packages/actions/src/Twig/Components/Modals.php)
 component class behind it — folds in here rather than earning its own file,
 because it is a pure view over three of those methods (`getMountedAction` /
 `mountedActionShouldOpenModal` / `getMountedModalId`), the same relationship
-`ConfirmModal` has to `Action`. Filament's `InteractsWithActions` is a
+`ActionModal` has to `Action`. Filament's `InteractsWithActions` is a
 ~870-line trait built around a **stack** of mounted actions (nested/parent
 actions, per-action `Schema` mounting, authorization, rate limiting, database
 transactions, redirects, URL-bound default actions, table/schema-scoped action
@@ -475,7 +475,7 @@ a modal the same response is rendering for the first time: UX LiveComponent's
 `processRerender()` morphs the DOM and dispatches queued browser events
 synchronously in one task, while Stimulus binds `data-action` listeners from a
 `MutationObserver` microtask that runs after it — so the new `<dialog>` is not yet
-listening. The authoritative signal is therefore the markup: `ConfirmModal`
+listening. The authoritative signal is therefore the markup: `ActionModal`
 passes `:open="true"` to `<twig:SylamentSupport:Modal>` (it is rendered only while
 [`mountedActionShouldOpenModal()`](#the-modal-open-gate-is-null-safe) holds),
 and the controller opens itself from that Stimulus value. The dispatch stays for

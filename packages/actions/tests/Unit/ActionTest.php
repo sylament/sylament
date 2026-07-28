@@ -268,7 +268,7 @@ it('keeps an explicit view over a pushed default template', function (): void {
         ->toBe(Action::BUTTON_TEMPLATE);
 });
 
-it('round-trips the parent action and strips child-frame context', function (): void {
+it('round-trips the parent action', function (): void {
     $parent = Action::make('edit');
     $child = Action::make('confirm')->parentAction($parent);
 

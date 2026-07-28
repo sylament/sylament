@@ -106,14 +106,16 @@ class Action extends ViewComponent
 
     protected ?Action $parentAction = null;
 
-    final public function __construct(?string $name)
+    public static function getDefaultName(): ?string
     {
-        $this->name($name);
+        return null;
     }
 
     public static function make(?string $name = null): static
     {
-        $action = new static($name);
+        $action = static::newInstance();
+
+        $action->name($name ?? static::getDefaultName());
 
         $action->configure();
 

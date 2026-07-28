@@ -82,17 +82,11 @@ class ActionGroup extends ViewComponent
     /**
      * @param array<Action|ActionGroup> $actions
      */
-    final public function __construct(array $actions)
-    {
-        $this->actions($actions);
-    }
-
-    /**
-     * @param array<Action|ActionGroup> $actions
-     */
     public static function make(array $actions = []): static
     {
-        $group = new static($actions);
+        $group = static::newInstance();
+
+        $group->actions($actions);
 
         $group->configure();
 

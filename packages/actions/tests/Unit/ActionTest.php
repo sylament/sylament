@@ -9,6 +9,7 @@ use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\Enums\ActionStatus;
 use Sylament\Actions\Tests\Fixtures\Concerns\BothContractsHostFixture;
+use Sylament\Actions\Tests\Fixtures\DefaultNamedActionFixture;
 use Sylament\Actions\Tests\Fixtures\StateFieldFixture;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
@@ -280,4 +281,16 @@ it('round-trips the parent action', function (): void {
 
     expect($child->getParentAction())->toBe($parent)
         ->and(Action::make('confirm')->getParentAction())->toBeNull();
+});
+
+it('falls back to getDefaultName() when make() is given no name', function (): void {
+    expect(DefaultNamedActionFixture::make()->getName())->toBe('publish');
+});
+
+it('prefers an explicit name over getDefaultName()', function (): void {
+    expect(DefaultNamedActionFixture::make('archive')->getName())->toBe('archive');
+});
+
+it('returns null from getDefaultName() by default', function (): void {
+    expect(Action::getDefaultName())->toBeNull();
 });

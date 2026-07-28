@@ -1,67 +1,342 @@
 .sy-modal {
-    @apply m-auto w-full rounded-xl border-0 bg-white p-0 text-gray-950 shadow-xl ring-1 ring-gray-950/5 dark:bg-gray-900 dark:text-white dark:ring-white/10;
+    /* Container = overlay: fullscreen in the top layer, paints the dim, centers the window.
+       Closed dialogs are hidden by the author rule (not just UA) so `display` can
+       transition out via allow-discrete. */
+    @apply fixed inset-0 m-0 hidden size-auto max-h-none max-w-none grid-rows-[1fr_auto_1fr] justify-items-center bg-transparent p-0 text-gray-950 outline-none transition-discrete duration-300 sm:grid-rows-[1fr_auto_3fr] dark:text-white;
+    transition-property: display, overlay, background-color;
+
+    &[open] {
+        @apply grid bg-gray-950/50 dark:bg-gray-950/75;
+
+        @starting-style {
+            @apply bg-transparent;
+        }
+    }
 
     &::backdrop {
-        @apply bg-gray-950/50 dark:bg-gray-950/75;
+        @apply hidden;
     }
 
-    &.sy-modal-xs {
-        @apply max-w-xs;
+    &.sy-clickable {
+        @apply cursor-pointer;
     }
 
-    &.sy-modal-sm {
-        @apply max-w-sm;
-    }
+    & > .sy-modal-window {
+        @apply pointer-events-auto relative row-start-2 flex w-full scale-95 cursor-default flex-col bg-white opacity-0 shadow-xl ring-1 ring-gray-950/5 outline-none transition-[transform,opacity] duration-300 dark:bg-gray-900 dark:ring-white/10;
 
-    &.sy-modal-md {
-        @apply max-w-md;
-    }
+        &.sy-modal-3xs { @apply max-w-3xs; }
+        &.sy-modal-2xs { @apply max-w-2xs; }
+        &.sy-modal-xs { @apply max-w-xs; }
+        &.sy-modal-sm { @apply max-w-sm; }
+        &.sy-modal-md { @apply max-w-md; }
+        &.sy-modal-lg { @apply max-w-lg; }
+        &.sy-modal-xl { @apply max-w-xl; }
+        &.sy-modal-2xl { @apply max-w-2xl; }
+        &.sy-modal-3xl { @apply max-w-3xl; }
+        &.sy-modal-4xl { @apply max-w-4xl; }
+        &.sy-modal-5xl { @apply max-w-5xl; }
+        &.sy-modal-6xl { @apply max-w-6xl; }
+        &.sy-modal-7xl { @apply max-w-7xl; }
+        &.sy-modal-screen { @apply fixed inset-0 max-w-none; }
 
-    &.sy-modal-lg {
-        @apply max-w-lg;
-    }
+        & .sy-modal-header {
+            @apply flex px-6 pt-6;
 
-    &.sy-modal-xl {
-        @apply max-w-xl;
-    }
+            &.sy-vertical-align-center {
+                @apply items-center;
+            }
+        }
 
-    &.sy-modal-2xl {
-        @apply max-w-2xl;
-    }
+        & .sy-modal-icon-ctn {
+            @apply shrink-0;
 
-    & .sy-modal-header {
-        @apply flex gap-x-5 px-6 pt-6;
-    }
+            & > .sy-icon {
+                @apply text-gray-500 dark:text-gray-400;
 
-    & .sy-modal-icon-ctn {
-        @apply shrink-0;
+                &.sy-color {
+                    @apply text-color-600 dark:text-color-400;
+                }
+            }
+        }
 
-        & > .sy-icon {
-            @apply text-gray-500 dark:text-gray-400;
+        & .sy-modal-header-text-ctn {
+            @apply flex-1;
+        }
 
-            &.sy-color {
-                @apply text-color-600 dark:text-color-400;
+        & .sy-modal-heading {
+            @apply text-base leading-6 font-semibold text-gray-950 dark:text-white;
+        }
+
+        & .sy-modal-description {
+            @apply mt-2 text-sm text-gray-500 dark:text-gray-400;
+        }
+
+        & .sy-modal-content {
+            @apply flex flex-col gap-y-4 py-6;
+        }
+
+        & .sy-modal-close-btn {
+            @apply absolute;
+        }
+
+        &.sy-align-start,
+        &.sy-align-left {
+            & .sy-modal-header {
+                @apply gap-x-5;
+            }
+        }
+
+        &.sy-align-center {
+            & .sy-modal-header {
+                @apply flex-col text-center;
+            }
+
+            & .sy-modal-icon-ctn {
+                @apply mb-5 flex items-center justify-center;
+            }
+        }
+
+        &.sy-modal-window-has-close-btn {
+            &.sy-align-center:not(.sy-modal-window-has-icon) {
+                & .sy-modal-heading {
+                    @apply ms-6;
+                }
+            }
+
+            &:not(.sy-modal-window-has-icon),
+            &.sy-align-start,
+            &.sy-align-left {
+                & .sy-modal-heading {
+                    @apply me-6;
+                }
+            }
+        }
+
+        & .sy-modal-footer {
+            @apply w-full pb-6;
+
+            & .sy-modal-footer-actions {
+                @apply gap-3;
+            }
+
+            &.sy-align-start,
+            &.sy-align-left {
+                & .sy-modal-footer-actions {
+                    @apply flex flex-wrap items-center;
+                }
+            }
+
+            &.sy-align-center {
+                @apply px-6;
+
+                & .sy-modal-footer-actions {
+                    @apply flex flex-col-reverse;
+                }
+            }
+
+            &.sy-align-end,
+            &.sy-align-right {
+                & .sy-modal-footer-actions {
+                    @apply flex flex-row-reverse flex-wrap items-center;
+                }
             }
         }
     }
 
-    & .sy-modal-header-text-ctn {
-        @apply flex-1;
+    @supports (container-type: inline-size) {
+        & > .sy-modal-window .sy-modal-footer.sy-align-center {
+            @apply @container;
+
+            & .sy-modal-footer-actions {
+                @apply @sm:grid @sm:grid-cols-[repeat(auto-fit,minmax(0,1fr))];
+            }
+        }
     }
 
-    & .sy-modal-heading {
-        @apply text-base leading-6 font-semibold text-gray-950 dark:text-white;
+    @supports not (container-type: inline-size) {
+        & > .sy-modal-window .sy-modal-footer.sy-align-center .sy-modal-footer-actions {
+            @apply sm:grid sm:grid-cols-[repeat(auto-fit,minmax(0,1fr))];
+        }
     }
 
-    & .sy-modal-description {
-        @apply mt-2 text-sm text-gray-500 dark:text-gray-400;
+    /* Open-state window transition targets (the closed state above is the start/end frame). */
+    &[open] > .sy-modal-window {
+        @apply scale-100 opacity-100;
+
+        @starting-style {
+            @apply scale-95 opacity-0;
+        }
     }
 
-    & .sy-modal-content {
-        @apply flex flex-col gap-y-4 px-6 py-6;
+    /* Centered (non-slide-over, non-screen) frame: container padding, rounded window,
+       container scroll unless a sticky pane moves the scroll inside the window. */
+    &:not(.sy-modal-slide-over):not(.sy-modal-screen) {
+        & > .sy-modal-window {
+            @apply mx-auto rounded-xl;
+
+            & .sy-modal-close-btn {
+                @apply end-4 top-4;
+            }
+        }
+
+        &[open] {
+            @apply p-4;
+        }
+
+        &:not(.sy-modal-has-sticky-header):not(.sy-modal-has-sticky-footer)[open] {
+            @apply overflow-y-auto;
+        }
+
+        &.sy-modal-has-sticky-header,
+        &.sy-modal-has-sticky-footer {
+            & > .sy-modal-window {
+                @apply max-h-[calc(100dvh-2rem)] overflow-y-auto;
+            }
+        }
+
+        &.sy-modal-has-sticky-header > .sy-modal-window > .sy-modal-header {
+            @apply rounded-t-xl;
+        }
+
+        &.sy-modal-has-sticky-footer > .sy-modal-window > .sy-modal-footer {
+            @apply rounded-b-xl;
+        }
     }
 
-    & .sy-modal-footer {
-        @apply flex flex-row-reverse flex-wrap items-center gap-3 px-6 pb-6;
+    &.sy-modal-has-sticky-header {
+        & > .sy-modal-window > .sy-modal-header {
+            @apply sticky top-0 z-10 border-b border-gray-200 bg-white pb-6 dark:border-white/10 dark:bg-gray-900;
+        }
+
+        & > .sy-modal-window {
+            & .sy-modal-content,
+            & .sy-modal-footer {
+                @apply px-6;
+            }
+        }
+    }
+
+    &.sy-modal-has-sticky-footer > .sy-modal-window > .sy-modal-footer {
+        @apply sticky bottom-0 border-t border-gray-200 bg-white py-5 dark:border-white/10 dark:bg-gray-900;
+    }
+
+    &:not(.sy-modal-has-sticky-footer) > .sy-modal-window:not(.sy-modal-window-has-content) {
+        & .sy-modal-footer {
+            @apply mt-6;
+        }
+
+        &:not(.sy-modal-window-has-footer) .sy-modal-header {
+            @apply pb-6;
+        }
+    }
+
+    /* Start-aligned content indent under the heading when an icon is present:
+       px-6 (1.5rem) + lg icon (1.5rem) + gap-x-5 (1.25rem) = 4.25rem. */
+    &:not(.sy-modal-has-sticky-header) {
+        & > .sy-modal-window.sy-modal-window-has-icon {
+            &.sy-align-start,
+            &.sy-align-left {
+                & .sy-modal-content {
+                    @apply ps-[4.25rem] pe-6;
+                }
+
+                & .sy-modal-footer:not(.sy-align-center) {
+                    @apply ps-[4.25rem] pe-6;
+                }
+            }
+        }
+
+        & > .sy-modal-window:not(.sy-modal-window-has-icon),
+        & > .sy-modal-window.sy-align-center {
+            & .sy-modal-content,
+            & .sy-modal-footer {
+                @apply px-6;
+            }
+        }
+    }
+
+    &.sy-modal-has-sticky-header > .sy-modal-window {
+        & .sy-modal-content,
+        & .sy-modal-footer {
+            @apply px-6;
+        }
+    }
+
+    /* Slide-over: full-height edge panel; sticky panes are the norm (PHP defaults them on). */
+    &.sy-modal-slide-over,
+    &.sy-modal-screen {
+        & > .sy-modal-window {
+            @apply h-dvh max-h-none;
+
+            & .sy-modal-content {
+                @apply flex-1;
+            }
+        }
+    }
+
+    &.sy-modal-slide-over {
+        & > .sy-modal-window {
+            @apply scale-100 overflow-y-auto opacity-100 transition-transform;
+
+            & .sy-modal-header {
+                @apply gap-x-3 pt-5;
+            }
+
+            & .sy-modal-close-btn {
+                @apply end-6 top-5;
+            }
+
+            & .sy-modal-footer {
+                @apply mt-auto;
+            }
+        }
+
+        &.sy-modal-slide-over-from-start > .sy-modal-window {
+            @apply me-auto -translate-x-full rtl:translate-x-full;
+        }
+
+        &.sy-modal-slide-over-from-end > .sy-modal-window {
+            @apply ms-auto translate-x-full rtl:-translate-x-full;
+        }
+
+        &[open] > .sy-modal-window {
+            @apply translate-x-0;
+
+            @starting-style {
+                @apply rtl:translate-x-full;
+            }
+        }
+
+        &[open].sy-modal-slide-over-from-start > .sy-modal-window {
+            @starting-style {
+                @apply -translate-x-full rtl:translate-x-full;
+            }
+        }
+
+        &[open].sy-modal-slide-over-from-end > .sy-modal-window {
+            @starting-style {
+                @apply translate-x-full rtl:-translate-x-full;
+            }
+        }
+
+        &.sy-modal-has-sticky-header > .sy-modal-window > .sy-modal-header {
+            @apply pb-5;
+        }
+    }
+
+    /* Screen-width: no movement animation (Filament suppresses the transition frames). */
+    &.sy-modal-screen > .sy-modal-window {
+        @apply scale-100 opacity-100 transition-none;
+    }
+
+    /* Click-through: a non-modal panel — dialog.show() leaves the top layer, so position
+       and stacking are explicit; the container ignores pointer events, the window takes
+       them back (Filament's own mechanism). No dim in this mode. */
+    &.sy-modal-click-through {
+        @apply pointer-events-none z-40;
+
+        &[open] {
+            @apply bg-transparent;
+        }
     }
 }

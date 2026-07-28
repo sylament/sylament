@@ -200,7 +200,7 @@ $field->configure();` — construction goes through
 same seam every other `make()` in the epic uses, so a `Field` subclass can
 already declare constructor-injected dependencies. What is still missing is the
 name handling either side of that seam: there is no `getDefaultName()` hook and
-no unique-name guard, so `name(?string $name = null)` accepts and keeps a null
+no unique-name guard, so `name(?string $name)` accepts and keeps a null
 name — anonymous fields are allowed (a null name yields a null state path and a
 null label, both covered by tests) where Filament's would throw.
 

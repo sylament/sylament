@@ -221,8 +221,8 @@ plain property default rather than Filament's `setUp()`-time
 convention of a `ViewComponent` subclass overriding the property directly (the
 same shape the old, since-removed hardcoded `$template` default used), rather
 than introducing a `setUp()` override for a single static literal. See
-[action.md](action.md#one-unified-template-replaces-the-view-switch) for the
-`Action`-side detail.
+[action.md](action.md#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths)
+for the `Action`-side detail.
 
 ### `getRecord()` is duplicated onto `Action` and `ActionGroup` to satisfy PHPStan
 

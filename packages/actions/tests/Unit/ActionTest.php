@@ -192,3 +192,50 @@ it('fatals when $get is requested without a schema component, as in Filament', f
     expect(fn (): mixed => Action::make('save')->evaluate(fn (Get $get): mixed => $get('title')))
         ->toThrow(Error::class);
 });
+
+it('defaults to the button view', function (): void {
+    $action = Action::make('delete');
+
+    expect($action->getTemplate())->toBe(Action::BUTTON_TEMPLATE)
+        ->and($action->isButton())->toBeTrue()
+        ->and($action->isBadge())->toBeFalse()
+        ->and($action->isIconButton())->toBeFalse()
+        ->and($action->isLink())->toBeFalse();
+});
+
+it('switches to the badge view', function (): void {
+    $action = Action::make('delete')->badge();
+
+    expect($action->getTemplate())->toBe(Action::BADGE_TEMPLATE)
+        ->and($action->isBadge())->toBeTrue()
+        ->and($action->isButton())->toBeFalse();
+});
+
+it('switches to the button view', function (): void {
+    expect(Action::make('delete')->link()->button()->getTemplate())->toBe(Action::BUTTON_TEMPLATE);
+});
+
+it('switches to the grouped view', function (): void {
+    expect(Action::make('delete')->grouped()->getTemplate())->toBe(Action::GROUPED_TEMPLATE);
+});
+
+it('switches to the icon button view', function (): void {
+    $action = Action::make('delete')->iconButton();
+
+    expect($action->getTemplate())->toBe(Action::ICON_BUTTON_TEMPLATE)
+        ->and($action->isIconButton())->toBeTrue()
+        ->and($action->isButton())->toBeFalse();
+});
+
+it('switches to the link view', function (): void {
+    $action = Action::make('delete')->link();
+
+    expect($action->getTemplate())->toBe(Action::LINK_TEMPLATE)
+        ->and($action->isLink())->toBeTrue()
+        ->and($action->isButton())->toBeFalse();
+});
+
+it('keeps an explicit view over a pushed default template', function (): void {
+    expect(Action::make('delete')->button()->defaultTemplate(Action::GROUPED_TEMPLATE)->getTemplate())
+        ->toBe(Action::BUTTON_TEMPLATE);
+});

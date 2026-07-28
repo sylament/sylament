@@ -68,9 +68,15 @@ class Action extends ViewComponent
 
     protected string $evaluationIdentifier = 'action';
 
+    public const string BADGE_TEMPLATE = '@SylamentActions/components/badge-action.html.twig';
+
     public const string GROUPED_TEMPLATE = '@SylamentActions/components/grouped-action.html.twig';
 
     public const string BUTTON_TEMPLATE = '@SylamentActions/components/button-action.html.twig';
+
+    public const string ICON_BUTTON_TEMPLATE = '@SylamentActions/components/icon-button-action.html.twig';
+
+    public const string LINK_TEMPLATE = '@SylamentActions/components/link-action.html.twig';
 
     protected string|Closure|null $defaultTemplate = self::BUTTON_TEMPLATE;
 
@@ -88,6 +94,51 @@ class Action extends ViewComponent
         $action->configure();
 
         return $action;
+    }
+
+    public function isBadge(): bool
+    {
+        return $this->getTemplate() === static::BADGE_TEMPLATE;
+    }
+
+    public function badge(): static
+    {
+        return $this->template(static::BADGE_TEMPLATE);
+    }
+
+    public function button(): static
+    {
+        return $this->template(static::BUTTON_TEMPLATE);
+    }
+
+    public function isButton(): bool
+    {
+        return $this->getTemplate() === static::BUTTON_TEMPLATE;
+    }
+
+    public function grouped(): static
+    {
+        return $this->template(static::GROUPED_TEMPLATE);
+    }
+
+    public function iconButton(): static
+    {
+        return $this->template(static::ICON_BUTTON_TEMPLATE);
+    }
+
+    public function isIconButton(): bool
+    {
+        return $this->getTemplate() === static::ICON_BUTTON_TEMPLATE;
+    }
+
+    public function link(): static
+    {
+        return $this->template(static::LINK_TEMPLATE);
+    }
+
+    public function isLink(): bool
+    {
+        return $this->getTemplate() === static::LINK_TEMPLATE;
     }
 
     /**

@@ -46,7 +46,7 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | `alert`, `trigger`, `teleport`, `visible`, `header` slot, `ariaLabelledby` | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) props | todo | — | [detail](#deferred-filament-modal-surface-breadth-fill) |
 | Configurable / quiet-close event names | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `openEventName`/`closeEventName`/`closeQuietlyEventName` | skipped | — | [diverges](#event-names-are-fixed-and-there-is-no-quiet-close) |
 | Form wrapper (`submitHandler` swaps the window `<div>` to `<form>` + `live_action`) | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `wireSubmitHandler` | done | — | [diverges](#the-form-wrapper-carries-live_action-not-wiresubmit) |
-| Per-region `wire:key` equivalent | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `wire:key` on header/content/footer | blocked | forms (LiveComponent form-in-modal) | [detail](#livewire-form-in-modal-wiring-is-not-ported) |
+| Per-region `wire:key` equivalent | [`index.blade.php`](../../../vendor/filament/support/resources/views/components/modal/index.blade.php) `wire:key` on header/content/footer | blocked | schemas partial rendering | [detail](#the-per-region-morph-keys-are-not-ported) |
 
 The done rows are exercised by
 [`actions/tests/Integration/Components/ModalRenderTest.php`](../../../packages/actions/tests/Integration/Components/ModalRenderTest.php)
@@ -109,15 +109,19 @@ replacement slot (see the
 heading instead). These are breadth-fill, not rejected — each returns with the
 first consumer that needs it.
 
-### Livewire form-in-modal wiring is not ported
+### The per-region morph keys are not ported
 
 Filament stamps `wire:key` on the modal's header/content/footer regions so a
 Livewire morph tracks each one across a form's own re-renders. Sylament has no
-per-region key equivalent yet — only the outer window-element swap is ported
-(see [the form wrapper carries `live_action()`, not `wire:submit`](#the-form-wrapper-carries-live_action-not-wiresubmit)).
-The remaining `wire:key` piece is **blocked** on the `schemas` / `forms`
-form-in-modal breadth, which is what first needs region-level re-render
-stability.
+per-region key equivalent. The **form-in-modal wiring itself is ported** — the
+window-element swap and its submit binding both landed with the forms-in-modals
+epic (see [the form wrapper carries `live_action()`, not `wire:submit`](#the-form-wrapper-carries-live_action-not-wiresubmit))
+— and a live browser pass confirmed idiomorph keeps a focused input's node and
+value across a foreign re-render inside an open modal form, so nothing is
+currently broken by the absence. The keys stay **blocked** on the `schemas` /
+`forms` breadth that would first exercise region-level re-render stability
+(partial rendering, a form whose header or footer changes independently of its
+body), not on the form wrapper.
 
 ## Divergences
 
@@ -136,12 +140,16 @@ The dialog is not the visible box: it is the **overlay + centering container**.
 It spans the viewport, paints the dim itself as its own `background-color`
 (`::backdrop` is neutralized to `display: none`, so there is one dimmable
 surface rather than two), grid-centers its single child, and scrolls when no
-sticky pane moves the scroll inside; the visible panel is an inner
-`div.sy-modal-window` carrying the width ladder, the radius, the shadow, and the
-slide-over transform. Filament's separate root and overlay elements therefore
+sticky pane moves the scroll inside; the visible panel is a single inner
+`.sy-modal-window` element carrying the width ladder, the radius, the shadow, and
+the slide-over transform. That element's **tag** is not fixed — it renders as a
+`<div>` normally and as a `<form>` when a `submitHandler` is passed
+([why](#the-form-wrapper-carries-live_action-not-wiresubmit)) — so read every
+`.sy-modal-window` reference here and in `modal.css` as class-keyed, never
+tag-keyed. Filament's separate root and overlay elements therefore
 **collapse into the dialog**: caller `attributes` and `extraOverlayAttributes`
 both target it (later scalars win, class/style tokens append, per `attrs()`
-semantics), while `extraWindowAttributes` target the window div. That collapse is
+semantics), while `extraWindowAttributes` target the window element. That collapse is
 what makes click-away detection exact — `event.target === dialog` means the
 backdrop area and nothing else — and it is why `clickThrough` can be a container
 variant rather than a JS mode.
@@ -171,9 +179,18 @@ tag — see `packages/support/assets/src/styles/components/modal.css:222,226,232
 needed to change — but wires the submit through
 `live_action(submitHandler ~ ':prevent', {}, {}, 'submit')` instead of
 `wire:submit.prevent`, emitting `data-action="submit->live#action:prevent"` and
-`data-live-action-param="<submitHandler>"`. The action layer passes
-`Action::getLiveComponentCallMountedActionName()` here once `HasSchema` /
-`CanSubmitForm` land.
+`data-live-action-param="<submitHandler>"`. The action layer now supplies that
+value: [`ActionModal`](../../../packages/actions/templates/components/ActionModal/index.html.twig)
+derives `submitHandler` from `action.hasFormWrapper` alone —
+`Action::getLiveComponentCallMountedActionName()` when true, `null` otherwise —
+which is the same single predicate
+[`CanOpenModal::getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php)
+branches on, so the window is a `<form>` exactly when its submit button is a bare
+`type="submit"` with no click handler of its own. Verified in a browser: Enter in
+a text field inside the form fires exactly one `callMountedAction` request and no
+page navigation, and an empty `required` field blocks the submit client-side with
+zero requests (see
+[forms/field.md](../forms/field.md#the-required-marker-defers-its-validation-fallback)).
 
 ### ESC closes through the native `cancel` event
 

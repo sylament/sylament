@@ -125,6 +125,20 @@ reconstruct the object across the wire, the snapshot lives in a public
 roughly doubling the wire state (accepted, design §2). Reverses only if UX gains
 a native per-property `updated` hook.
 
+`callAfterSchemaStateUpdated()` carries an explicit `#[PostHydrate(priority: -10)]`,
+and that number is a **cross-package contract**, not a tuning knob. It walks
+`getCachedSchemas()`, so any schema no `schemas()` name can rebuild has to be
+back in the cache before it runs. Exactly one such schema exists today: a
+mounted action's, re-registered by
+[`HasActions::afterMountedActionsHydrated()`](../actions/has-actions.md#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities),
+which pairs it with `#[PostHydrate(priority: 10)]` — higher runs earlier
+(`vendor/symfony/ux-live-component/src/Attribute/PostHydrate.php`). Reverse the
+two and every field inside an open modal is skipped: `live()` and
+`afterStateUpdated()` silently never fire there, and nothing reports an error.
+Equal priorities would leave the order to reverse declaration order across two
+traits composed onto one host, which is why both sides state a number rather than
+relying on the default `0`. Neither can be changed without the other.
+
 ### Schema discovery is explicit via `schemas()`, not reflection-based
 
 Filament's `cacheSchema()` auto-discovers schema-defining methods by reflection:

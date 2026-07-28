@@ -47,10 +47,10 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `call()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | blocked | bulk actions (`InteractsWithSelectedRecords`), visibility cache | [detail](#call-drops-the-post-call-cleanup) |
 | `cancel()` / `halt()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | Doctrine transaction integration | [detail](#cancel-and-halt-drop-the-rollback-flag) |
 | `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getstatus-drops-the-bulk-record-tally) |
-| `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/HasData/InteractsWithSelectedRecords ports, operation concept | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-9-of-16-names) |
+| `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/InteractsWithSelectedRecords ports, operation concept | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-10-of-16-names) |
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | todo | schemas/tables/InteractsWithSelectedRecords ports | [detail](#resolvedefaultclosuredependencyforevaluationbytype-is-not-overridden) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables (`table`/`bulk` flags, `recordKey`) | [diverges](#getcontext-emits-only-the-schemacomponent-key) |
-| `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](has-actions.md#resolveactions-drops-the-table-branch-and-the-ismounting-schema-cache), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-emits-only-the-schemacomponent-key) decidable |
+| `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](has-actions.md#resolveactions-drops-the-table-branch), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-emits-only-the-schemacomponent-key) decidable |
 | [`CanCallParentAction`](../../../packages/actions/src/Concerns/CanCallParentAction.php) | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | done | — | Filament-exact two-method port (`callParent()` + getter). The getter is `getParentActionCallLiveComponentClickHandler()` against Filament's `…Livewire…`, the systematic Livewire → UX LiveComponent naming translation from the [rename table](../renames.md), not a rename of its own. Read by all five trigger templates, ranked **above** `shouldClose()` in the click precedence |
 | [`HasParentActions`](../../../packages/actions/src/Concerns/HasParentActions.php) | [`Concerns/HasParentActions.php`](../../../vendor/filament/actions/src/Concerns/HasParentActions.php) | done | — | Complete, method-for-method and body-for-body. Three of its accessors (`shouldCancelParentActionsOnClose()`, `shouldCancelAllParentActionsOnClose()`, `getParentActionToCancelToOnClose()`) have no consumer here — and none in `vendor/filament` either, so they are kept as declared API rather than trimmed |
 | Trigger rendering ([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig) + the [`link-action`](../../../packages/actions/templates/components/link-action.html.twig) / [`badge-action`](../../../packages/actions/templates/components/badge-action.html.twig) / [`icon-button-action`](../../../packages/actions/templates/components/icon-button-action.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
@@ -77,7 +77,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`label()` / `getLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
 | `hiddenLabel()` / `isLabelHidden()` | [`hiddenLabel()` / `isLabelHidden()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
 | `translateLabel()` / `disableLabel()` (deprecated) | [`translateLabel()` / `disableLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported) |
-| [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | in progress | — | [detail](#the-form-fill-lifecycle-hooks-are-ported-form-validated-hooks-and-actioncallingactioncalled-events-are-not) |
+| [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | in progress | M1 · 1 (form-validation hooks); a Symfony event dispatch for `ActionCalling`/`ActionCalled` | [detail](#the-form-fill-lifecycle-hooks-are-ported-form-validated-hooks-and-actioncallingactioncalled-events-are-not) |
 | [`HasMountableArguments`](../../../packages/actions/src/Concerns/HasMountableArguments.php) | [`Concerns/HasMountableArguments.php`](../../../vendor/filament/actions/src/Concerns/HasMountableArguments.php) | done | — | [diverges](#action-invocation-is-a-php-side-seam-only) |
 | [`HasName`](../../../packages/actions/src/Concerns/HasName.php) | [`Concerns/HasName.php`](../../../vendor/filament/actions/src/Concerns/HasName.php) | done | — | [diverges](#getname-tightens-its-return-type-to-non-nullable-string) |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | [diverges](#hassize-drops-the-optimized-render-fast-path-helper) |
@@ -120,7 +120,7 @@ not exist. **Blocked** on Doctrine transaction wiring (there is no database
 transaction to roll back yet); restore the parameter and the flag on both
 exception classes in the same change that lands it.
 
-### `resolveDefaultClosureDependencyForEvaluationByName` covers 9 of 16 names
+### `resolveDefaultClosureDependencyForEvaluationByName` covers 10 of 16 names
 
 Filament's override resolves 16 dependency-name groups: `arguments`, `data`,
 `livewire`, `model`, `mountedActions`, `record`, `selectedRecords`/`records`,
@@ -128,10 +128,13 @@ Filament's override resolves 16 dependency-name groups: `arguments`, `data`,
 `schemaOperation`/`context`/`operation`, `schemaGet`/`get`, `schemaSet`/`set`,
 `schemaComponentState`/`state`, `schemaState`, `table`. The port's
 [`resolveDefaultClosureDependencyForEvaluationByName()`](../../../packages/actions/src/Action.php)
-resolves 9 of them: `record`, `arguments`, `liveComponent` (the systematic
+resolves 10 of them: `record`, `arguments`, `liveComponent` (the systematic
 `livewire` → `liveComponent` rename tracked in
-[`../renames.md`](../renames.md) — not a divergence), and — since the
-schemas-actions integration — `schema`, `schemaComponent`/`component`,
+[`../renames.md`](../renames.md) — not a divergence), `data` (added with the
+forms-in-modals epic: `'data' => ClosureParameter::make($this->getData())`,
+backed by [`HasData`](../../../packages/actions/src/Concerns/HasData.php), so a
+mounted action's callback reads its submitted form state as `$data`), and — since
+the schemas-actions integration — `schema`, `schemaComponent`/`component`,
 `schemaGet`/`get`, `schemaSet`/`set`, `schemaComponentState`/`state`, and
 `schemaState`, backed by `BelongsToSchemaComponent` plus two state helpers
 ported onto `Action` itself: `getSchemaComponentState()` (the upward walk to
@@ -144,7 +147,13 @@ Filament's leading `HasExtraItemActions` branch — that contract is unported.
 The `get`/`set` arms keep Filament's **non-null-safe**
 `getSchemaComponent()` deref (behind an inline PHPStan ignore): a
 schema-less action evaluating a `$get`/`$set` closure fatals, exactly as in
-Filament, pinned by `ActionTest`. Both arms also chain
+Filament, pinned by `ActionTest`. So does an action declared *inside* a
+mounted-action schema, for the same reason and equally in Filament — that schema
+is a **root** schema with no parent component, so all three arms of
+`getSchemaComponent()` return `null`; the browser pass that found it is written
+up in
+[has-actions.md](has-actions.md#set-and-get-are-unavailable-to-an-action-inside-a-mounted-action-schema).
+Both arms also chain
 `->skipComponentsChildContainersWhileSearching(false)` onto the returned
 [`Get`](../schemas/get.md) / [`Set`](../schemas/set.md) utility, Filament-exact:
 without it, the utility's default self-skip blocks it from descending into the
@@ -158,14 +167,15 @@ own group subset (`schema`, `schemaComponent`/`component`, `schemaGet`/`get`,
 `schemaComponentState`/`state`, `schemaState` and the two duplicated state
 helpers — vendor's `ActionGroup` carries no `set` arm, and its `get` arm does
 not chain the skip-toggle call either, unlike `Action`'s; both asymmetries are
-vendor-verified and kept). Still missing, each blocked on its backing concern: `data`/`model`
-(`HasData`/model metadata), `mountedActions` (mounted-actions introspection
+vendor-verified and kept). Still missing, each blocked on its backing concern: `model`
+(model metadata), `mountedActions` (mounted-actions introspection
 beyond today's `HasActions`), `selectedRecords`/`records` +
 `selectedRecordsQuery`/`recordsQuery` (`InteractsWithSelectedRecords` +
 `CanFetchSelectedRecords`), `schemaOperation`/`context`/`operation`
 (no operation concept — Sylament's `Schema` has no `getOperation()`), and
 `table` (`BelongsToTable`). Coverage: `record`/`arguments` via `ActionTest`'s
-"calls the action closure…", `liveComponent` via
+"calls the action closure…", `data` via `ActionTest`'s "injects $data from
+getData()", `liveComponent` via
 [`BelongsToLiveComponentTest`](../../../packages/actions/tests/Unit/Concerns/BelongsToLiveComponentTest.php),
 and the schema names via `ActionTest`'s injection cases (plus
 `ActionGroupTest` for the group subset).
@@ -298,8 +308,9 @@ alias is not carried, per the no-deprecation-shims policy), with both feeding
 `shouldOpenModal()`'s content arms and rendering in Filament's order inside
 the modal's content slot
 ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)).
-The `checkForSchemaUsing` slot exists but no caller passes it until the
-action-schema integration.
+The `checkForSchemaUsing` slot is now supplied: the host passes
+`$this->mountedActionHasSchema(...)`, Filament-exact, so an action whose only
+modal content is its `schema()` opens a modal on that alone.
 The **footer-action family** is ported: `modalFooterActions()` (full
 override, prepared and keyed by name) / `extraModalFooterActions()` (slotted
 between submit and cancel, `ActionGroup`-aware) / `registerModalActions()` /
@@ -317,8 +328,9 @@ primary-for-gray-or-unset) / `getModalCancelAction()` (`close()` + gray) /
 unported) but carries Filament's center-alignment `array_reverse` — applied only
 in the composed submit/extras/cancel branch, matching both `Alignment::Center`
 and the `'center'` string, so a confirmation modal renders cancel-first;
-`getModalSubmitAction()` has no
-`hasFormWrapper()`/`submit()` arm (`CanSubmitForm` deferred) and matches
+`getModalSubmitAction()` now carries Filament's
+`->submit($hasFormWrapper ? $name : null)->action($hasFormWrapper ? null : $name)`
+branch in full (landed with `HasSchema` / `CanSubmitForm`), and matches
 `null` alongside `'gray'` to primary (Filament's `getColor()` never returns
 null there; ours does for an unset color — observably identical);
 `makeModalSubmitAction()` (the `callParent` factory) is ported, with no
@@ -411,10 +423,9 @@ a class that is always an `Action`.
 
 **Next step**: the wizard suppression returns with `HasWizard`; the four
 `?? true` literals become reads of the `ModalComponent`-equivalent
-global-defaults seam if and when that lands. What is left beyond those is the
-scoped deltas listed above — the `hasFormWrapper()` submit arm and
-`prepareModalAction()`'s still-dropped `->table()` binding — each waiting on an
-unported concern (`CanSubmitForm`, `BelongsToTable`).
+global-defaults seam if and when that lands. What is left beyond those is one
+scoped delta from the list above — `prepareModalAction()`'s still-dropped
+`->table()` binding, waiting on `BelongsToTable`.
 
 ### getUrl() drops the default-action-url fallback
 
@@ -462,10 +473,10 @@ recorded as a
 [divergence](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side).
 
 Missing vs Filament's `HasAction`:
-- **`livewireClickHandlerEnabled()` / `isLivewireClickHandlerEnabled()`.** Entirely absent — no way to force-disable the live dispatch. Filament's default logic also stands down when `getUrl()` is filled (ported, hardcoded in the template) or when `canSubmitForm()` is true; the latter has no Sylament equivalent because no `CanSubmitForm` concern exists yet (forms/actions form-submission integration is unbuilt), so this half of the gap is blocked on that future work rather than a simple omission.
+- **`livewireClickHandlerEnabled()` / `isLivewireClickHandlerEnabled()` as a method.** Filament's gate has three arms: an explicit `livewireClickHandlerEnabled()` override, `filled($this->getUrl())`, and `canSubmitForm()`. Both **default** arms are now implemented — but in the five trigger templates rather than on the trait. The `getUrl()` arm always was (`{% if not component.getUrl %}` around the whole click cascade); the forms-in-modals epic added the second as a `hasLiveClickBinding = not component.getUrl and not component.canSubmitForm` guard in [`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig) and its `link`/`badge`/`grouped` siblings, and as an extra term in [`icon-button-action.html.twig`](../../../packages/actions/templates/components/icon-button-action.html.twig)'s `mountAttributes`. It is load-bearing, not tidiness: [`getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php) gives a form-wrapped action `->submit(name)->action(null)`, so without the guard the trigger falls through its click cascade to the `mountAction` default and every confirm click fires a **second**, unrelated live request — `mountAction('submit')`, naming an action that does not exist — alongside the form's own `callMountedAction`. What is still absent is only the **explicit override**: there is no `livewireClickHandlerEnabled()` setter, so a caller cannot force-enable or force-disable the binding against the two defaults. The close arm is unaffected in both codebases — Filament keeps it on a separate `x-on:click`, the port on a separate `data-action`.
 - **`hasAction(): bool`.** Helper predicate not ported; trivially derivable from `getAction() !== null` at call sites today, but no equivalent method or test exists.
 
-Next step: land `CanSubmitForm` (or its Sylament equivalent) before restoring the full `isLivewireClickHandlerEnabled()` gating logic.
+Next step: promote the template-side guard into a real `isLiveComponentClickHandlerEnabled()` on `HasAction` the moment a caller needs the explicit override — the two default arms already agree with Filament's, so that change is additive and moves logic rather than adding behaviour.
 
 ### The form-fill lifecycle hooks are ported; form-validated hooks and ActionCalling/ActionCalled events are not
 
@@ -572,15 +583,15 @@ frame that renders nothing.
 modal, not a confirmation-only one, and most of that generality has no
 Sylament counterpart yet:
 
-- **No schema/form rendering.** The template now fills the support Modal's
-  `content` block with `getModalContent()` then `getModalContentFooter()` —
-  Filament's order — but the mounted action's schema
-  (`$this->getMountedActionSchema()`, which Filament interpolates between
-  them) has no slot, and the four render-hook pairs bracketing the three
+- **No render-hook brackets around the content slots.** The template fills the
+  support Modal's `content` block with `getModalContent()`, then the mounted
+  action's schema, then `getModalContentFooter()` — Filament's exact order
+  (`action-modal.blade.php:63-84`), with the schema arriving as a `schema` prop
+  from [`Modals`](has-actions.md) rather than being resolved in-template. What
+  has no counterpart is the four render-hook pairs bracketing those three
   (`MODAL_CUSTOM_CONTENT_{BEFORE,AFTER}`, `MODAL_SCHEMA_{BEFORE,AFTER}`,
-  `MODAL_CUSTOM_CONTENT_FOOTER_{BEFORE,AFTER}`) have no counterpart (no
-  render-hook facility exists) — so a form-collecting action cannot render
-  its fields inside this modal today.
+  `MODAL_CUSTOM_CONTENT_FOOTER_{BEFORE,AFTER}`) — no render-hook facility
+  exists.
 - **No `alert` mode.** Filament threads `alert` through to the modal's
   `role="alertdialog"`; neither `CanOpenModal` nor
   [`Modal/index.html.twig`](../../../packages/support/templates/components/Modal/index.html.twig)
@@ -592,23 +603,24 @@ Sylament counterpart yet:
   ([why](../support/modal.md#returnsfocus-stays-true-where-filaments-action-modal-hardcodes-false)),
   and the modal `id` plus the per-frame `open` value are Sylament's
   server-state open signal rather than Filament's event-only open.
-- **No form-wrapper wiring.** Filament conditionally sets `wire:submit.prevent`
-  to `getLivewireCallMountedActionName()` when `hasFormWrapper()` is true, and
-  actually submits the form via that binding; Sylament's footer submit action
-  always calls `callMountedAction` through its string click handler, and
-  `hasFormWrapper()` doesn't exist on the port (there is no forms integration
-  in `actions` yet — the string-action path is the deliberate stand-in).
 - **No render hooks.** Filament brackets custom content and the schema in four
   `FilamentView::renderHook()` pairs; Sylament has no render-hook facility, so
   none of that extensibility point exists (a broader gap than this template
   alone, noted here because it is one of the things the Filament view relies
   on).
 
-**Next step:** what is left on this row is no longer chrome, and no longer
-stacking — it is the schema/form slot (with `HasSchema` / `CanSubmitForm` and
-the form-wrapper binding), `alert`, and render hooks. Each lands with the
-concern named beside it; the support `Modal` component takes its matching prop
-in the same change.
+The **form-wrapper wiring is ported**: the template derives
+`submitHandler = action.hasFormWrapper ? action.getLiveComponentCallMountedActionName : null`
+and passes it to support's `Modal`, which swaps the window element to `<form>`
+and binds the submit event
+([support/modal.md](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit)).
+Filament couples the two the same way (`action-modal.blade.php:27`). The one
+translation is the binding itself — `live_action('…:prevent', …, 'submit')`
+where Filament writes `wire:submit.prevent`.
+
+**Next step:** what is left on this row is `alert` and the render hooks. Each
+lands with the concern named beside it; the support `Modal` component takes its
+matching prop in the same change.
 
 ### Tooltip, icon position, and extra-attribute rendering are untested
 
@@ -718,26 +730,32 @@ method.
 ### The rest of Filament's `Action` surface is unported
 
 Filament's `Action` composes roughly 50 traits/interfaces; 14 are folded into
-this file's Surface table (ported, in some form) and 6 more are the
-support-level traits referenced above. Everything else has no Sylament
-equivalent at all today — captured here as one list rather than one row each,
-since none of it has started:
+this file's Surface table (ported, in some form), 6 more are the
+support-level traits referenced above, and a handful carry their own rows in the
+[package README](README.md#features) or their own detail file rather than
+folding here. The names below are what is left — nothing started, captured as one
+list rather than one row each, with each bullet's parenthetical naming the
+siblings that *have* landed so the list cannot silently go stale:
 
-- **Mounting & modal chrome beyond `CanOpenModal`'s data**: `CanBeMounted`,
+- **Mounting & modal chrome beyond `CanOpenModal`'s data**:
   `HasKeyBindings`, `CanBeBooted`, `renderModal()`/`toModalHtmlable()`
-  (`HasExtraModalOverlayAttributes` / `HasExtraModalWindowAttributes` are
-  ported — see the [package README](README.md#features)).
-- **Forms/schemas/infolists integration**: `HasSchema`, `HasInfolist`,
-  `HasData`, `HasWizard`, `CanSubmitForm` (`BelongsToSchemaComponent` and the
+  (`CanBeMounted`, `HasExtraModalOverlayAttributes` and
+  `HasExtraModalWindowAttributes` are ported — see the
+  [package README](README.md#features)).
+- **Forms/schemas/infolists integration**: `HasInfolist` and `HasWizard`
+  (`HasSchema`, `HasData`, `CanSubmitForm` and `BelongsToSchemaComponent` are
+  all composed now — the first through [`has-schema.md`](has-schema.md), the
+  other three through their [package README](README.md#features) rows — and the
   `schema*` closure-dependency names landed with the schemas-actions
-  integration — see the Details section above).
+  integration, see the Details section above).
 - **Tables/bulk-action integration**: `BelongsToTable`, `HasTableIcon`,
   `InteractsWithSelectedRecords`, `CanFetchSelectedRecords`,
   `CanDeselectRecordsAfterCompletion`, `bulk()`/`isBulk()`.
-- **Grouping & nesting**: `CanBeSorted`,
+- **Grouping & nesting**: `CanBeSorted` and `getClone()`
+  (`BelongsToGroup` is ported — see [action-group.md](action-group.md) — and
   `CanCallParentAction`, `HasParentActions`, `parentAction()`/
-  `getParentAction()`, `nestingIndex()`/`getNestingIndex()`, `getClone()`
-  (`BelongsToGroup` itself is ported — see [action-group.md](action-group.md)).
+  `getParentAction()` and `nestingIndex()`/`getNestingIndex()` all landed with
+  the nested-actions epic and have rows in the Surface table above).
 - **Authorization & policy**: `CanBeAuthorized`, `hasAuthorization()`.
 - **Rate limiting & transactions**: `CanBeRateLimited`,
   `CanUseDatabaseTransactions` (see the `cancel()`/`halt()` rollback-flag
@@ -813,7 +831,7 @@ runs before the schema branch, so a modal action declared by another action
 emits an empty context even when it inherited a schema binding from
 `prepareModalAction()`. Without it, a nested frame would carry a
 `schemaComponent` key up to the host and — but for the host's own
-[root-only gate](has-actions.md#resolution-stops-at-the-first-null-frame-and-only-the-root-frame-may-use-schema-context) —
+[deeper-frame gate](has-actions.md#resolution-stops-at-the-first-null-frame-and-a-deeper-frame-reaches-schema-context-only-through-the-cache) —
 try to resolve against the host's schema instead of its parent's declared modal
 actions. Filament returns `$context` (already holding `recordKey`) at the same
 point; ours returns it empty, because `recordKey` is not emitted here yet.

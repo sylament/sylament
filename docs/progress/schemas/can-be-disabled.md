@@ -26,6 +26,24 @@ Reference — the Filament source this is diffed against:
 | [`Component::disabled()` / `isDisabled()` / `isEnabled()`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`Components/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | — | — |
 | `Component::disabledOn()` | [`disabledOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | blocked | operation concept | [diverges](#disabledon-is-not-ported) |
 
+Both **done** rows are covered by
+[`Unit/Concerns/CanBeDisabledTest`](../../../packages/schemas/tests/Unit/Concerns/CanBeDisabledTest.php)
+and
+[`Unit/Components/Concerns/CanBeDisabledTest`](../../../packages/schemas/tests/Unit/Components/Concerns/CanBeDisabledTest.php)
+— defaults, literal and closure conditions, inheritance from the parent
+component / container, and the `saved()` coupling that keeps a disabled field out
+of `getState()`. The **rendering** half lives in forms, not schemas: both shipped
+field templates emit the native attribute from `component.isDisabled`
+([`TextInput.html.twig:15`](../../../packages/forms/templates/components/TextInput.html.twig),
+[`Textarea.html.twig:14`](../../../packages/forms/templates/components/Textarea.html.twig)),
+asserted present-and-absent by
+[`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php)
+and
+[`TextareaTest`](../../../packages/forms/tests/Integration/Components/TextareaTest.php).
+Filament's security note on `disabled()` carries over unchanged: disabling
+prevents saving, but a client can bypass the attribute — authorization belongs on
+the server.
+
 ## Divergences
 
 ### `disabledOn()` is not ported

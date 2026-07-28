@@ -111,6 +111,31 @@ nothing to call until `CanBeValidated` (and the `isRequired()` it provides) is
 ported — **blocked** on that concern and restored in the same change, not a
 deliberate omission.
 
+**The native `required` attribute became load-bearing with forms-in-modals.**
+`TextInput` / `Textarea` have always emitted `required` from
+`isMarkedAsRequired()`
+([`TextInput.html.twig:14`](../../../packages/forms/templates/components/TextInput.html.twig)),
+but with no `<form>` anywhere in the page the attribute did nothing. Now that a
+mounted action's modal window renders as a real `<form>`
+([support/modal.md](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit)),
+the browser blocks submission of an empty required field — the `submit` event
+only fires after native constraint validation passes, so no request reaches the
+server at all. Confirmed in a browser during the forms-in-modals epic:
+`valueMissing: true`, **zero** network requests, modal stays open.
+
+The **mechanism is parity, not a divergence**: Filament emits native `required`
+too (`vendor/filament/forms/src/Components/TextInput.php:365`) and `wire:submit`
+has the same event ordering, so a migrating user meets the same client-side
+block. What still differs is only the *source* of the flag — Filament's
+`isRequired()` against this port's display-only `isMarkedAsRequired()`, which is
+the split described above. It is worth
+naming, because it means "unvalidated" in the forms-in-modals epic is a statement
+about the **server**, and because it makes the split above user-visible sooner
+than expected: until `CanBeValidated` lands, a display-only `markAsRequired()`
+call *does* block submits client-side while still validating nothing on the
+server. M1 · 1 separates the display-only `isMarkedAsRequired()` from a real
+`isRequired()` sourced from `CanBeValidated`.
+
 ### `HasHint` omits the hint actions
 
 **In:** `hint()`, `hintColor()`, `hintIcon($icon, $tooltip = null)` — with the

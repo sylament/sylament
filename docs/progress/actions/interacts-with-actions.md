@@ -9,8 +9,9 @@ it, and `Action` holds a nullable reference to one through
 abstractly instead of against a concrete class. It is a bare interface — no
 default methods, nothing composed. This is the **SWAP**: Sylament's
 `InteractsWithActions` **interface** ports Filament's `Contracts\HasActions`
-**interface**, while Sylament's `HasActions` **trait** (a separate, not-yet-audited
-item) ports Filament's `Concerns\InteractsWithActions` **trait** — the exact
+**interface**, while Sylament's `HasActions` **trait** (audited separately, in
+[has-actions.md](has-actions.md)) ports Filament's
+`Concerns\InteractsWithActions` **trait** — the exact
 inverse naming, recorded in [renames.md](../renames.md). Deep behavioral parity
 of the mount/call pipeline itself (schema state, database transactions, rate
 limiting, redirects) belongs to that trait's own audit, not this one; this file
@@ -190,7 +191,7 @@ return-type reflection gate, and a thrown
 for a factory whose runtime value is not an `Action`; see
 [has-actions.md](has-actions.md#getaction-ports-the-generic-method-discovery-arm-in-full)),
 while the descriptor walk lives on its own
-[`resolveActions()`](has-actions.md#resolveactions-drops-the-table-branch-and-the-ismounting-schema-cache).
+[`resolveActions()`](has-actions.md#resolveactions-drops-the-table-branch).
 So the nesting Filament reaches *through* `getAction()` is fully ported; what
 this contract signature still lacks is the by-path lookup shorthand and the
 `$isMounting` flag — an unknown name always returns `null` silently, the

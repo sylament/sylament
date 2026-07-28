@@ -71,4 +71,11 @@ class RecordActionHost implements InteractsWithActions
             ->requiresConfirmation()
             ->action(fn (Action $action) => $action->cancel());
     }
+
+    public function sideSheetAction(): Action
+    {
+        return Action::make('sideSheet')
+            ->modalHeading('Sheet')
+            ->slideOver();
+    }
 }

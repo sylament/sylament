@@ -357,8 +357,13 @@ lets the host register one resolver, and
 [`getMountedActionRecord()`](../../../packages/actions/src/Concerns/HasActions.php)
 reads the **top** frame's `context['recordKey']` and runs it through that
 callback — throwing `LogicException` if a `recordKey` is present with no
-resolver registered. Reading the top frame rather than the root is what makes a
-nested action carry its own record instead of inheriting its parent's. This is a deliberate MVP bridge, not a mistake to
+resolver registered. The top-frame read serves the root frame: a nested frame's
+`Action::getContext()` emits no `recordKey`, so this seam has nothing to read for
+one. A nested action carries no record of its own from this seam — it inherits
+its parent's record by object propagation through
+[`prepareModalAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php),
+which `callMountedAction()` must leave standing when the child frame's own context
+resolves to nothing, rather than stamping a `null` over it. This is a deliberate MVP bridge, not a mistake to
 reverse: it is what lets a plain host page (no table, no schema) mount a
 record-bound confirm action today. When table/schema action resolution lands,
 each will likely supply its own record via this same seam or a dedicated one;

@@ -282,6 +282,31 @@ it('merges call arguments into the top action specifically, not the root frame',
         ->and($edit?->getArguments())->toBe(['a' => 1]);
 });
 
+/*
+ * Fix-wave regression: prepareModalAction() (CanOpenModal.php) propagates a
+ * parent's record onto a declared modal action that has none of its own —
+ * `if (! $action->hasRecord()) { $action->record($this->getRecord()); }` — the
+ * first time the parent's modal actions are resolved. callMountedAction() used
+ * to overwrite that unconditionally with getMountedActionRecord(), which is
+ * always null for a child frame (a child's Action::getContext() emits no
+ * recordKey), wiping the inherited record before the child's own closure saw it.
+ */
+it('keeps the record a child frame inherited from its parent when the child is called', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->mountAction('edit');
+    $host->getAction('edit')?->record('ENTITY');
+    $host->mountAction('confirmDelete');
+
+    $recordSeen = null;
+    $host->getMountedAction()?->action(function (mixed $record) use (&$recordSeen): void {
+        $recordSeen = $record;
+    });
+
+    $host->callMountedAction();
+
+    expect($recordSeen)->toBe('ENTITY');
+});
+
 it('does not unmount when the stack was replaced mid-call', function (): void {
     $host = $this->createLiveComponent('ActionHost')->component();
     $host->mountAction('replacer');

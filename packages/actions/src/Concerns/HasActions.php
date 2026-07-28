@@ -126,7 +126,9 @@ trait HasActions
         $originalArguments = $action->getArguments();
         $action->mergeArguments($arguments);
 
-        $action->record($this->getMountedActionRecord());
+        if (filled($record = $this->getMountedActionRecord())) {
+            $action->record($record);
+        }
 
         if ($action->isDisabled()) {
             return null;
@@ -434,6 +436,18 @@ trait HasActions
         return $this->cachedActions[$action->getName()] = $action;
     }
 
+    /**
+     * The id must be minted the first time this is reached from inside a LiveAction
+     * (as mountAction()/unmountAction() do today via getMountedModalId()), never
+     * first reached from the template. AddLiveAttributesSubscriber::onPreRender
+     * dehydrates #[LiveProp]s — including this one — before the component's
+     * template body renders, so an id first minted during rendering never makes it
+     * into that dehydration pass: the next request hydrates $actionsHostId back to
+     * null and mints a different value, changing every dialog id and breaking the
+     * DOM identity the morph relies on. A mount()-seeded stack or a future
+     * URL-driven default action would violate this if it read the id for the first
+     * time from the template rather than from a LiveAction.
+     */
     public function getActionsHostId(): string
     {
         return $this->actionsHostId ??= bin2hex(random_bytes(4));

@@ -232,7 +232,12 @@ class Action extends ViewComponent
         $context = [];
 
         // A child frame resolves through the parent-modal descent, never through
-        // schema/table context — Filament-exact early return.
+        // schema/table context, so this early return skips those for one. Not
+        // Filament-exact, though: Filament's early return sits after its recordKey
+        // block, so a Filament child frame still emits recordKey; this port's sits
+        // before any assignment, so a child frame here emits nothing — recordKey
+        // emission has not been ported to this class yet (HasActions only consumes
+        // an inbound context.recordKey today).
         if ($this->parentAction instanceof self) {
             return $context;
         }

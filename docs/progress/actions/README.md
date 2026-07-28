@@ -86,8 +86,9 @@ Cross-cutting action concerns — [`src/Concerns`](../../../vendor/filament/acti
 Most are mixed onto the `Action` base; the `InteractsWith*` traits are host-side
 (mixed onto the Livewire / LiveComponent page that mounts actions). The 18
 concerns `Action` composes are folded into [`action.md`](action.md) and no longer
-carry rows here — the remaining rows are the not-yet-started concerns plus the
-host-side `HasActions` trait. `BelongsToGroup` folds the same way into
+carry rows here — the remaining rows are the not-yet-started concerns, the
+host-side `HasActions` trait, and the two-method extra-modal-attribute traits
+whose whole surface fits in a row. `BelongsToGroup` folds the same way into
 [`action-group.md`](action-group.md) instead: `Action` and `ActionGroup` both
 compose it, but its own surface (the back-reference pair) is small enough to
 write up once, in the file for the class it primarily describes, rather than
@@ -120,8 +121,8 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 | CanUseDatabaseTransactions | [`Concerns/CanUseDatabaseTransactions.php`](../../../vendor/filament/actions/src/Concerns/CanUseDatabaseTransactions.php) | todo | - |
 | [`HasActions`](../../../packages/actions/src/Concerns/HasActions.php) | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) | in progress | [has-actions.md](has-actions.md) |
 | HasData | [`Concerns/HasData.php`](../../../vendor/filament/actions/src/Concerns/HasData.php) | todo | - |
-| HasExtraModalOverlayAttributes | [`Concerns/HasExtraModalOverlayAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | todo | - |
-| HasExtraModalWindowAttributes | [`Concerns/HasExtraModalWindowAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalWindowAttributes.php) | todo | - |
+| [`HasExtraModalOverlayAttributes`](../../../packages/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | [`Concerns/HasExtraModalOverlayAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | done | Filament-exact setter/getter pair (`$merge` appends, a non-merge call replaces the queue) folded through support's `ComponentAttributeBag`; renders onto the `<dialog>`, which is the overlay in the port ([why](../support/modal.md#the-modal-is-re-architected-onto-native-dialog)) |
+| [`HasExtraModalWindowAttributes`](../../../packages/actions/src/Concerns/HasExtraModalWindowAttributes.php) | [`Concerns/HasExtraModalWindowAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalWindowAttributes.php) | done | The window twin of the row above, rendering onto `div.sy-modal-window` |
 | [`HasId`](../../../packages/actions/src/Concerns/HasId.php) | [`Concerns/HasId.php`](../../../vendor/filament/actions/src/Concerns/HasId.php) | done | Filament-exact two-method port; not composed onto `Action` (Filament composes it only on `SelectAction`, its future consumer here) |
 | HasInfolist | [`Concerns/HasInfolist.php`](../../../vendor/filament/actions/src/Concerns/HasInfolist.php) | todo | - |
 | HasKeyBindings | [`Concerns/HasKeyBindings.php`](../../../vendor/filament/actions/src/Concerns/HasKeyBindings.php) | todo | - |

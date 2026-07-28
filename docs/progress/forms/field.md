@@ -31,7 +31,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction &amp; `make()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#make-drops-getdefaultname-the-unique-name-exception-and-di-construction) |
+| Construction &amp; `make()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#make-drops-getdefaultname-and-the-unique-name-exception) |
 | [`HasName`](../../../packages/schemas/src/Components/Concerns/HasName.php) (schemas) | [`Concerns/HasName.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasName.php) | done | — | — |
 | [`HasLabel`](../../../packages/schemas/src/Components/Concerns/HasLabel.php) (schemas) | [`Concerns/HasLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasLabel.php) | done | — | — |
 | State-path seeding ([`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php), schemas) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | done | — | — |
@@ -187,18 +187,22 @@ harmless unused setter. Reversible by dropping `use HasPlaceholder` from `Field`
 and composing it per-component if a field ever needs a conflicting `placeholder()`
 meaning.
 
-### `make()` drops getDefaultName, the unique-name exception, and DI construction
+### `make()` drops getDefaultName and the unique-name exception
 
-Filament's `make()` resolves `static::getDefaultName()`, throws
-`InvalidArgumentException` when the name is still null, and constructs through
-`app($fieldClass, ['name' => $name])`. The port's
-[`make()`](../../../packages/forms/src/Components/Field.php) is `new
-static($name); $field->configure();` with a **nullable** `?string $name = null`
-constructor — anonymous fields are allowed (a null name yields a null state path
-and a null label, both covered by tests), there is no `getDefaultName()` hook, no
-unique-name guard, and no container construction (the systematic `app()->make()`
-→ DI translation collapses to plain instantiation here because the field needs no
-services).
+Filament's `make()` resolves `static::getDefaultName()` and throws
+`InvalidArgumentException` when the name is still null, before constructing
+through `app($fieldClass, ['name' => $name])`. The port's
+[`make()`](../../../packages/forms/src/Components/Field.php) is
+`static::newInstance(); $field->name($name); $field->statePath($name);
+$field->configure();` — construction goes through
+[`Component::newInstance()`](../../../packages/support/src/Components/Component.php)
+(the container when the app registered the class, `new $class()` otherwise), the
+same seam every other `make()` in the epic uses, so a `Field` subclass can
+already declare constructor-injected dependencies. What is still missing is the
+name handling either side of that seam: there is no `getDefaultName()` hook and
+no unique-name guard, so `name(?string $name = null)` accepts and keeps a null
+name — anonymous fields are allowed (a null name yields a null state path and a
+null label, both covered by tests) where Filament's would throw.
 
 ### Slot child-schemas drop Action / ActionGroup wiring
 

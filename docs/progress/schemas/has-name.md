@@ -43,7 +43,7 @@ Filament types the property `string $name` with no default and returns
 `getName(): string` — a field always has a name, and `Field::make()` throws when
 it cannot derive one. Sylament types it `?string $name = null`, with
 `name(?string)` and `getName(): ?string`, because
-[`Field::__construct(?string $name = null)`](../../../packages/forms/src/Components/Field.php)
+[`Field::make(?string $name = null)`](../../../packages/forms/src/Components/Field.php)
 accepts a null name and the label fallbacks tolerate it rather than throwing.
 Reverse it by adopting Filament's throw-on-missing-name contract in the `Field`
 port; until then the nullability is what the consumer requires.

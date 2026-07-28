@@ -9,10 +9,6 @@ use Sylament\Support\Tests\Fixtures\DependencyInjection\ComponentDependencyFixtu
 use Sylament\Support\Tests\Fixtures\DependencyInjection\ResolvableComponentFixture;
 use Symfony\Component\DependencyInjection\ServiceLocator;
 
-afterEach(function (): void {
-    ComponentResolver::unsetInstance();
-});
-
 it('instantiates a class directly when it has no locator', function (): void {
     $component = new ComponentResolver()->instantiate(ResolvableComponentFixture::class);
 

@@ -43,7 +43,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction & `make()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#make-drops-getdefaultname-and-di-construction) |
+| Construction & `make()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | — |
 | `call()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | blocked | bulk actions (`InteractsWithSelectedRecords`), visibility cache | [detail](#call-drops-the-post-call-cleanup) |
 | `cancel()` / `halt()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | Doctrine transaction integration | [detail](#cancel-and-halt-drop-the-rollback-flag) |
 | `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getstatus-drops-the-bulk-record-tally) |
@@ -653,24 +653,6 @@ expected, this is coverage-only.
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
 These outlive the detail sections above.
-
-### `make()` drops `getDefaultName()` and DI construction
-
-Filament's `make()` resolves `$name ?? static::getDefaultName()` and
-constructs through `app(static::class, ['name' => $name])`. The port's
-[`make()`](../../../packages/actions/src/Action.php) is
-`new static($name); $action->configure();` — no `getDefaultName()` hook
-(Filament's own base `Action::getDefaultName()` always returns `null`; no
-shipped subclass overrides it either, so nothing observable is lost yet), and
-plain instantiation instead of container construction (the systematic
-`app()->make()` → Symfony DI translation collapses to plain instantiation
-here, per CLAUDE.md, because the action needs no injected services). The
-exception behavior itself is unchanged from Filament: both throw a
-`LogicException` from `getName()` — not `make()` — when the name is still
-blank, per `HasName` (audited on its own row; not re-litigated here).
-Reversible by adding a `getDefaultName()` hook and switching to
-`Invoker`/container construction the moment a subclass needs an injected
-dependency.
 
 ### `getStatus()` drops the bulk-record tally
 

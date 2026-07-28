@@ -6,6 +6,7 @@ namespace Sylament\Actions\Tests;
 
 use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Support\Components\ComponentManager;
+use Sylament\Support\DependencyInjection\ComponentResolver;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\Evaluation\Invoker;
 use Symfony\Component\DependencyInjection\Container;
@@ -25,5 +26,6 @@ pest()
         PropertyAccessor::unsetInstance();
         ComponentManager::unsetInstance();
         IconManager::unsetInstance();
+        ComponentResolver::unsetInstance();
     })
     ->in('Unit');

@@ -46,7 +46,7 @@ permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`make()` + final constructor](../../../packages/schemas/src/Components/Section.php) | [`Section::make()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
+| [`make()`](../../../packages/schemas/src/Components/Section.php) | [`Section::make()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
 | [Array-heading constructor shorthand](../../../packages/schemas/src/Components/Section.php) | [`Section::__construct()`](../../../vendor/filament/schemas/src/Components/Section.php) | skipped | — | [diverges](#the-array-heading-constructor-shorthand-is-dropped) |
 | [Slot setters + key constants](../../../packages/schemas/src/Components/Section.php) | [`Section::afterHeader()` …](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
 | [`makeChildSchema()` end-alignment](../../../packages/schemas/src/Components/Section.php) | [`Section::makeChildSchema()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |

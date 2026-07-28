@@ -40,7 +40,7 @@ permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`make()` + final constructor (required actions)](../../../packages/schemas/src/Components/Actions.php) | [`Actions::make()`](../../../vendor/filament/schemas/src/Components/Actions.php) | done | — | — |
+| [`make(actions)`](../../../packages/schemas/src/Components/Actions.php) | [`Actions::make()`](../../../vendor/filament/schemas/src/Components/Actions.php) | done | — | — |
 | [`actions()` into the default child schema](../../../packages/schemas/src/Components/Actions.php) | [`Actions::actions()`](../../../vendor/filament/schemas/src/Components/Actions.php) | done | — | — |
 | [`isHidden()` all-actions-hidden collapse](../../../packages/schemas/src/Components/Actions.php) | [`Actions::isHidden()`](../../../vendor/filament/schemas/src/Components/Actions.php) | done | — | — |
 | [`fullWidth()` / `isFullWidth()`](../../../packages/schemas/src/Components/Actions.php) | [`Actions::fullWidth()`](../../../vendor/filament/schemas/src/Components/Actions.php) | done | — | — |

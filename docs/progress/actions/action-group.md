@@ -48,7 +48,7 @@ permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction, `make()` & `actions()`/`getActions()`/`getFlatActions()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | done | — | [diverges](#make-drops-di-construction) |
+| Construction, `make()` & `actions()`/`getActions()`/`getFlatActions()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | done | — | — |
 | [`BelongsToGroup`](../../../packages/actions/src/Concerns/BelongsToGroup.php) | [`Concerns/BelongsToGroup.php`](../../../vendor/filament/actions/src/Concerns/BelongsToGroup.php) | done | — | [diverges](#getrootgroup-is-not-ported) |
 | `getLabel()` default | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getLabel()`) | done | — | [diverges](#getlabel-falls-back-to-a-plain-string-not-a-translated-label) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) (shared with `Action`; consumed by the button trigger only, Filament-same) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | - |
@@ -140,20 +140,6 @@ equivalent) and `hasNonBulkAction()` in the same change that ports whichever
 comes first.
 
 ## Divergences
-
-### `make()` drops DI construction
-
-Filament's `make(array $actions): static` resolves through
-`app(static::class, ['actions' => $actions])` — container construction, so an
-`ActionGroup` subclass can declare extra constructor-injected dependencies
-beyond `$actions`. The port's
-[`make()`](../../../packages/actions/src/ActionGroup.php) is
-`new static($actions); $group->configure(); return $group;` — plain
-instantiation, the same `app()->make()` → Symfony DI translation `Action::make()`
-already made (see
-[action.md](action.md#make-drops-getdefaultname-and-di-construction)), because
-`ActionGroup`'s constructor needs no injected services. Reversible the moment a
-subclass needs one, by switching to `Invoker`/container construction.
 
 ### `getRootGroup()` is not ported
 

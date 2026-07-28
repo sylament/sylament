@@ -48,7 +48,7 @@ row is **done**), **diverges** → the permanent note in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`make()` / `__construct(content)`](../../../packages/schemas/src/Components/Text.php) | [`Text::make()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
+| [`make(content)`](../../../packages/schemas/src/Components/Text.php) | [`Text::make()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | [`content()` / `getContent()`](../../../packages/schemas/src/Components/Text.php) | [`Text::content()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | [`size()` / `getSize()` normalization](../../../packages/schemas/src/Components/Text.php) | [`Text::size()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | [`getSizeClass()` (Sylament template helper)](../../../packages/schemas/src/Components/Text.php) | — (no Filament equivalent) | done | — | — |

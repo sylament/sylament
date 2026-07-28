@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Tests;
 
 use Sylament\Support\Components\ComponentManager;
+use Sylament\Support\DependencyInjection\ComponentResolver;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\Evaluation\Invoker;
 use Symfony\Component\DependencyInjection\Container;
@@ -21,5 +22,6 @@ pest()
         Invoker::unsetInstance();
         ComponentManager::unsetInstance();
         IconManager::unsetInstance();
+        ComponentResolver::unsetInstance();
     })
     ->in('Unit');

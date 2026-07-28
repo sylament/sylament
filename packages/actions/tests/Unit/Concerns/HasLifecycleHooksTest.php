@@ -28,3 +28,26 @@ it('is a safe no-op when hooks are unset', function (): void {
     expect($fixture->callBefore())->toBeNull()
         ->and($fixture->callAfter())->toBeNull();
 });
+
+it('runs the beforeFormFilled and afterFormFilled hooks when set', function (): void {
+    $log = [];
+    $fixture = new HasLifecycleHooksFixture()
+        ->beforeFormFilled(function () use (&$log): void {
+            $log[] = 'beforeFormFilled';
+        })
+        ->afterFormFilled(function () use (&$log): void {
+            $log[] = 'afterFormFilled';
+        });
+
+    $fixture->callBeforeFormFilled();
+    $fixture->callAfterFormFilled();
+
+    expect($log)->toBe(['beforeFormFilled', 'afterFormFilled']);
+});
+
+it('is a safe no-op when the form-filled hooks are unset', function (): void {
+    $fixture = new HasLifecycleHooksFixture();
+
+    expect($fixture->callBeforeFormFilled())->toBeNull()
+        ->and($fixture->callAfterFormFilled())->toBeNull();
+});

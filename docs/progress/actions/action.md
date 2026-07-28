@@ -77,7 +77,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`label()` / `getLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
 | `hiddenLabel()` / `isLabelHidden()` | [`hiddenLabel()` / `isLabelHidden()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
 | `translateLabel()` / `disableLabel()` (deprecated) | [`translateLabel()` / `disableLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported) |
-| [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | in progress | HasSchema / CanSubmitForm (form-mounting concerns) | [detail](#the-form-lifecycle-hooks-and-actioncallingactioncalled-events-are-not-ported) |
+| [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | in progress | — | [detail](#the-form-fill-lifecycle-hooks-are-ported-form-validated-hooks-and-actioncallingactioncalled-events-are-not) |
 | [`HasMountableArguments`](../../../packages/actions/src/Concerns/HasMountableArguments.php) | [`Concerns/HasMountableArguments.php`](../../../vendor/filament/actions/src/Concerns/HasMountableArguments.php) | done | — | [diverges](#action-invocation-is-a-php-side-seam-only) |
 | [`HasName`](../../../packages/actions/src/Concerns/HasName.php) | [`Concerns/HasName.php`](../../../vendor/filament/actions/src/Concerns/HasName.php) | done | — | [diverges](#getname-tightens-its-return-type-to-non-nullable-string) |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | [diverges](#hassize-drops-the-optimized-render-fast-path-helper) |
@@ -467,36 +467,30 @@ Missing vs Filament's `HasAction`:
 
 Next step: land `CanSubmitForm` (or its Sylament equivalent) before restoring the full `isLivewireClickHandlerEnabled()` gating logic.
 
-### The form-lifecycle hooks and ActionCalling/ActionCalled events are not ported
+### The form-fill lifecycle hooks are ported; form-validated hooks and ActionCalling/ActionCalled events are not
 
 **In:** `before(?Closure)` / `after(?Closure)` and their runners `callBefore()` /
-`callAfter()`, each evaluating the stored closure through `EvaluatesClosures`.
-Covered by
+`callAfter()`, plus `beforeFormFilled(?Closure)` / `afterFormFilled(?Closure)`
+and their runners `callBeforeFormFilled()` / `callAfterFormFilled()` — each
+evaluating the stored closure through `EvaluatesClosures`. Covered by
 [`HasLifecycleHooksTest`](../../../packages/actions/tests/Unit/Concerns/HasLifecycleHooksTest.php)
 via the
 [`HasLifecycleHooksFixture`](../../../packages/actions/tests/Fixtures/Concerns/HasLifecycleHooksFixture.php):
-both hooks fire in order when set, and both `call*` methods are a safe no-op
-(return `null`) when unset. `Action` (`../../../packages/actions/src/Action.php`)
-is the sole consumer.
+all four hooks fire in order when set, and all four `call*` methods are a safe
+no-op (return `null`) when unset. `Action`
+(`../../../packages/actions/src/Action.php`) is the sole consumer.
 
-**Missing vs Filament:** four hooks and their runners —
-`beforeFormFilled()` / `callBeforeFormFilled()`,
-`afterFormFilled()` / `callAfterFormFilled()`,
-`beforeFormValidated()` / `callBeforeFormValidated()`,
-`afterFormValidated()` / `callAfterFormValidated()` — are entirely absent, along
-with the `beforeFormFilled` / `afterFormFilled` / `beforeFormValidated` /
-`afterFormValidated` closure properties that back them. These fire around an
-action's mounted-form fill/validate cycle, which has no port yet: the actions
-package composes no `HasSchema`-equivalent or `CanSubmitForm`
-(`vendor/filament/actions/src/Concerns/HasSchema.php` and
-`CanSubmitForm.php` have no Sylament counterpart).
-Additionally, Filament's `callBefore()` / `callAfter()` dispatch
-`ActionCalling` / `ActionCalled` events (`Event::dispatch(...)`,
-the latter from a `finally` block so it always fires); the port has no
+**Missing vs Filament:** two hooks and their runners —
+`beforeFormValidated()` / `callBeforeFormValidated()` and
+`afterFormValidated()` / `callAfterFormValidated()` — are entirely absent,
+along with the `beforeFormValidated` / `afterFormValidated` closure properties
+that back them. These fire around an action's mounted-form validation, which
+has no port yet. Additionally, Filament's `callBefore()` / `callAfter()`
+dispatch `ActionCalling` / `ActionCalled` events (`Event::dispatch(...)`, the
+latter from a `finally` block so it always fires); the port has no
 `Sylament\Actions\Events` namespace and dispatches nothing. **Next step:** the
-four form hooks are **blocked** on the form-mounting concerns (`HasSchema` /
-`CanSubmitForm`) landing in `actions`; the event dispatch has no named
-prerequisite yet and should be scoped (Symfony `EventDispatcher` port of
+`*FormValidated` pair is scoped to roadmap M1 · 1; the event dispatch has no
+named prerequisite yet and should be scoped (Symfony `EventDispatcher` port of
 `ActionCalling`/`ActionCalled`) when the mount/call pipeline is designed.
 
 ### The record title and model metadata surface is not ported

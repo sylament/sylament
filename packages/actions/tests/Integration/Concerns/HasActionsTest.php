@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Integration\Concerns;
 
+use Sylament\Actions\Action;
+use Sylament\Actions\Tests\Fixtures\Twig\Components\ActionHost;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
@@ -62,6 +64,29 @@ it('renders no modal for a non-confirming action', function (): void {
 
 it('returns the auto-run result from mountAction', function (): void {
     expect($this->createLiveComponent('ActionHost')->component()->mountAction('notify'))->toBeTrue();
+});
+
+it('returns the same instance for repeated getAction() calls', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+
+    expect($host->getAction('delete'))->toBe($host->getAction('delete'));
+});
+
+it('serves the mounted action from the same cache as getAction()', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $trigger = $host->getAction('delete');
+    $host->mountAction('delete');
+
+    // requiresConfirmation() keeps it mounted; identity must hold across resolution paths.
+    expect($host->getMountedAction())->toBe($trigger);
+});
+
+it('binds the live component when caching an action directly', function (): void {
+    $host = new ActionHost();
+    $action = Action::make('external');
+
+    expect($host->cacheAction($action))->toBe($action)
+        ->and($action->getLiveComponent())->toBe($host);
 });
 
 it('unmounts a disabled action without calling it', function (): void {

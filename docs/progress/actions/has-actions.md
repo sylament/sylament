@@ -6,7 +6,8 @@ implementor); it is the **swap** counterpart of Filament's `Concerns\InteractsWi
 trait (see the [rename table](../renames.md)). It composes `ComponentToolsTrait`
 for `dispatchBrowserEvent()` and owns the single `#[LiveProp] $mountedActions`
 slot, the `mountAction` / `callMountedAction` / `unmountAction` `#[LiveAction]`
-trio, action lookup (`getAction`, `getMountedAction`, `resolveAction`), the
+trio, action lookup (`getAction`, `getMountedAction`, `resolveAction`) backed
+by a per-name instance cache (`cacheAction`, `$cachedActions`), the
 modal-open gate (`mountedActionShouldOpenModal`) and confirm-modal id helper,
 and a host-supplied `resolveRecordUsing()` callback for resolving a mounted
 action's record. Its rendered counterpart —
@@ -57,12 +58,12 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountAction()` | in progress | Action-schema integration, `CanBeAuthorized` | [detail](#mountaction-drops-authorization-schema-mounting-and-halt-handling) · [diverges](#the-mounted-action-slot-is-a-server-controlled-liveprop-not-a-client-writable-stack) |
 | [`callMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `callMountedAction()` | in progress | `CanBeRateLimited`, `CanBeAuthorized`, `CanUseDatabaseTransactions`, `CanRedirect`, action-schema integration | [detail](#callmountedaction-drops-rate-limiting-authorization-transactions-and-redirects) |
 | [`unmountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | nested action stack (multi-slot `mountedActions`) | [detail](#unmountaction-has-no-cascade-because-there-is-no-stack) |
-| [`getMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedAction()` | done | — | [diverges](#lookup-methods-drop-caching-and-nesting) |
+| [`getMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedAction()` | done | — | [diverges](#lookup-methods-drop-nesting) |
 | [`mountedActionShouldOpenModal()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountedActionShouldOpenModal()` | in progress | `CanOpenModal`'s `shouldOpenModal()`; `HasSchema` (actions) for the schema check | [detail](#the-modal-open-gate-is-confirmation-only) |
 | [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` | in progress | `BelongsToTable` (tables) | [detail](#getaction-only-resolves-plain-host-methods) |
-| [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` | in progress | nested action stack; action caching | [detail](#resolveaction-dispatches-on-schema-context-but-has-no-parent-nesting) · [diverges](#there-is-no-actionnotresolvableexception) |
+| [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` | in progress | nested action stack | [detail](#resolveaction-dispatches-on-schema-context-but-has-no-parent-nesting) · [diverges](#there-is-no-actionnotresolvableexception) |
 | [`resolveSchemaComponentAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveSchemaComponentAction()` | done | — | [diverges](#there-is-no-actionnotresolvableexception) |
-| Action caching (`cacheAction`, `mergeCachedActions`, `cacheTraitActions`) | `Concerns/InteractsWithActions.php` `cacheAction()` / `mergeCachedActions()` / `cacheTraitActions()` | todo | — | [detail](#action-caching-is-not-ported) |
+| Action caching ([`cacheAction()`](../../../packages/actions/src/Concerns/HasActions.php), `$cachedActions`) | `Concerns/InteractsWithActions.php` `cacheAction()` / `mergeCachedActions()` / `cacheTraitActions()` | done | — | [diverges](#only-the-per-name-action-cache-is-ported) |
 | [`getMountedModalId()`](../../../packages/actions/src/Concerns/HasActions.php) | `action-modal.blade.php` inline `$actionModalId` | done | — | [diverges](#the-modal-id-is-name-only-not-instance-scoped-or-nesting-scoped) |
 | Modals rendering ([`Modals.html.twig`](../../../packages/actions/templates/components/Modals.html.twig) + [`Twig\Components\Modals`](../../../packages/actions/src/Twig/Components/Modals.php)) | [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php) | done | — | [diverges](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope) · [diverges](#the-modal-is-opened-by-rendered-state-not-by-the-dispatched-event) · [diverges](#the-modals-renderer-emits-no-wrapper-element) · [diverges](#there-is-no-single-render-guard) · [diverges](#an-unresolvable-host-throws-instead-of-rendering-nothing) |
 | `replaceMountedAction()` | `Concerns/InteractsWithActions.php` `replaceMountedAction()` | todo | nested action stack | [detail](#replacemountedaction-is-not-ported) |
@@ -161,9 +162,10 @@ read, so the rule cannot drift between the two. It is on the
 [`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php)
 contract, because that renderer calls it on an abstractly-typed host.
 The renderer passes the already-resolved action in
-(`mountedActionShouldOpenModal(action)`) rather than calling it bare: with
-[action caching unported](#action-caching-is-not-ported) the no-argument form
-resolves a second, distinct `Action` on every render.
+(`mountedActionShouldOpenModal(action)`) rather than calling it bare — a
+habit from before the [per-name action cache](#only-the-per-name-action-cache-is-ported)
+landed (the no-argument form now serves the same cached instance anyway), and
+still the cheaper call since it skips a redundant lookup.
 The body diverges: Filament delegates to
 `$action->shouldOpenModal(checkForSchemaUsing: $this->mountedActionHasSchema(...))`,
 which is `hasCustomModalHeading() || hasModalDescription() || hasModalContent()
@@ -193,8 +195,8 @@ bulk/record-key handling) — before the generic `resolveAction()` (parent-modal
 lookup, `cachedActions` lookup, `{name}Action()` **or** bare `{name}` method
 with a reflection check that the return type includes `Action`). The port's
 [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php)
-only tries `"{$name}Action"` — no bare-method fallback, no return-type
-reflection, no `cachedActions` lookup, and no nesting/array-of-descriptors
+tries the `$cachedActions` lookup and then `"{$name}Action"` — no bare-method
+fallback, no return-type reflection, and no nesting/array-of-descriptors
 form, so context-scoped entries cannot reach it. The schema dispatch landed on
 [`resolveAction()`](#resolveaction-dispatches-on-schema-context-but-has-no-parent-nesting)
 instead, which agrees with Filament on what a bare string resolves to: their
@@ -217,29 +219,11 @@ therefore carries that dispatch itself: a filled
 `resolveSchemaComponentAction()` before the `getAction($descriptor['name'])`
 fallback, preserving Filament's precedence (schema context first, table
 context next once tables exist, host methods last). Still absent: the
-parent-action lookup (there is only ever one slot) and the `cachedActions`
-check. Resolution failures return `null` rather than throwing — see
+parent-action lookup (there is only ever one slot; the `cachedActions` check
+happens inside `getAction()` now). Resolution failures return `null` rather
+than throwing — see
 [There is no ActionNotResolvableException](#there-is-no-actionnotresolvableexception).
-**Next step:** parent-action lookup returns with the nested-action stack;
-the cache check returns with action caching (below).
-
-### Action caching is not ported
-
-Filament caches every resolved `Action` in `$cachedActions` (keyed by name,
-populated by `cacheAction()` and `mergeCachedActions()`) and every mounted
-action in `$cachedMountedActions` (keyed by nesting index), and
-`cacheTraitActions()` walks `class_uses_recursive()` at boot to let sibling
-`*Actions`-suffixed traits (e.g. a future table-actions trait) register their
-own actions into the cache. None of this exists in the port: `getAction()`
-calls `{name}Action()` fresh on every invocation. Concretely, the `ActionHost`
-fixture's template calls `this.deleteAction()` directly to render the trigger
-button, while `getMountedAction()` independently resolves a **second**,
-distinct `Action` instance for the confirm modal — the two never share state
-(e.g. a `->record()` set on one is invisible to the other). This is
-currently harmless because no code mutates an action after construction other
-than the mount/call cycle itself, but it is a real behavioral gap, not just a
-missing optimization. **Next step:** add `$cachedActions` + `cacheAction()`
-and have `getAction()` consult it before calling the factory method.
+**Next step:** parent-action lookup returns with the nested-action stack.
 
 ### `replaceMountedAction()` is not ported
 
@@ -375,17 +359,35 @@ Filament accepts and ignores it on the schema branch, and the single-slot port
 has no parent frames to pass. Reverses if the nested-action stack ever needs a
 typed failure signal to distinguish frames; the exception class returns then.
 
-### Lookup methods drop caching and nesting
+### Lookup methods drop nesting
 
-`getMountedAction()` in the port always reads slot `0` and calls
-`resolveAction()` fresh; Filament's version takes an optional
-`$actionNestingIndex`, defaults it to the top of the stack, and serves from
-`$cachedMountedActions` when populated. With a single slot and no action
-cache (see [Action caching is not ported](#action-caching-is-not-ported)),
-there is nothing to key by nesting index and nothing to cache against — this
+`getMountedAction()` in the port always reads slot `0`; Filament's version
+takes an optional `$actionNestingIndex`, defaults it to the top of the stack,
+and serves from a dedicated `$cachedMountedActions` array keyed by that index.
+With a single slot there is nothing to key by nesting index, so no
+`$cachedMountedActions` exists — resolution goes through `resolveAction()`,
+whose `getAction()` call now serves repeated lookups from the per-name
+[`$cachedActions`](#only-the-per-name-action-cache-is-ported) instead. This
 divergence is a direct consequence of the single-slot MVP design, not an
-independent decision, and resolves itself once the stack and the cache both
-land.
+independent decision, and resolves itself once the stack lands.
+
+### Only the per-name action cache is ported
+
+Filament populates `$cachedActions` from three sources: `cacheAction()`
+(called by `resolveAction()` on every method-resolved action, and directly by
+external registrars), `mergeCachedActions()` (bulk registration), and
+`cacheTraitActions()` (a `class_uses_recursive()` walk on Livewire boot that
+lets sibling `*Actions`-suffixed traits register their own actions). The port
+ships [`cacheAction()`](../../../packages/actions/src/Concerns/HasActions.php)
+and the `$cachedActions` property — `getAction()` consults the cache before
+calling the `{name}Action()` factory and caches what it resolves, so the
+trigger button and the confirm modal now share one `Action` instance per name
+per request. `mergeCachedActions()` and `cacheTraitActions()` are **skipped**:
+both are bulk-registration mechanisms with no Sylament consumer (no
+`*Actions` sibling traits exist), and `cacheTraitActions()` additionally rides
+Livewire's boot hook, which has
+[no equivalent here](#there-is-no-boot-hook-or-rate-limiting-trait). Both
+return with their first bulk consumer (e.g. a table-actions trait).
 
 ### The modal id is name-only, not instance-scoped or nesting-scoped
 

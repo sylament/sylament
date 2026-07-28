@@ -10,6 +10,7 @@ use Sylament\Actions\Contracts\InteractsWithActions;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Twig\Markup;
 
 #[AsLiveComponent(name: 'RecordActionHost', template: '@ActionsFixtures/components/RecordActionHost.html.twig')]
 class RecordActionHost implements InteractsWithActions
@@ -39,6 +40,21 @@ class RecordActionHost implements InteractsWithActions
             ->requiresConfirmation()
             ->modalHeading('Delete?')
             ->action(fn (mixed $record): mixed => $this->deleted[] = $record);
+    }
+
+    /**
+     * Carries custom modal content and a content footer — a literal Markup body
+     * plus an action-injected closure — for the ActionModal content-slot tests.
+     */
+    public function briefedAction(): Action
+    {
+        return Action::make('briefed')
+            ->modalContent(new Markup('<p class="test-modal-content">Body</p>', 'UTF-8'))
+            ->modalContentFooter(fn (Action $action): Markup => new Markup(
+                "<p class=\"test-modal-content-footer\">{$action->getName()}</p>",
+                'UTF-8',
+            ))
+            ->action(fn (): null => null);
     }
 
     public function haltAction(): Action

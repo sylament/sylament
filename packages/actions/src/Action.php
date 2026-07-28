@@ -13,6 +13,7 @@ use Sylament\Actions\Concerns\BelongsToSchemaComponent;
 use Sylament\Actions\Concerns\CanBeDisabled;
 use Sylament\Actions\Concerns\CanBeHidden;
 use Sylament\Actions\Concerns\CanBeOutlined;
+use Sylament\Actions\Concerns\CanCallParentAction;
 use Sylament\Actions\Concerns\CanClose;
 use Sylament\Actions\Concerns\CanNotify;
 use Sylament\Actions\Concerns\CanOpenModal;
@@ -52,6 +53,7 @@ class Action extends ViewComponent
     use CanBeDisabled;
     use CanBeHidden;
     use CanBeOutlined;
+    use CanCallParentAction;
     use CanClose;
     use CanNotify;
     use CanOpenModal;
@@ -93,6 +95,8 @@ class Action extends ViewComponent
     protected ?ActionStatus $status = null;
 
     protected ?int $nestingIndex = null;
+
+    protected ?Action $parentAction = null;
 
     final public function __construct(?string $name)
     {
@@ -203,6 +207,18 @@ class Action extends ViewComponent
         return $this->nestingIndex;
     }
 
+    public function parentAction(?self $action): static
+    {
+        $this->parentAction = $action;
+
+        return $this;
+    }
+
+    public function getParentAction(): ?self
+    {
+        return $this->parentAction;
+    }
+
     public function getRecord(): mixed
     {
         return $this->evaluate($this->record) ?? $this->getGroup()?->getRecord();
@@ -214,6 +230,12 @@ class Action extends ViewComponent
     public function getContext(): array
     {
         $context = [];
+
+        // A child frame resolves through the parent-modal descent, never through
+        // schema/table context — Filament-exact early return.
+        if ($this->parentAction instanceof self) {
+            return $context;
+        }
 
         if (filled($schemaComponentKey = ($this->getSchemaContainer() ?? $this->getSchemaComponent())?->getKey())) {
             $context['schemaComponent'] = $schemaComponentKey;

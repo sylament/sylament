@@ -301,3 +301,18 @@ it('reverses composed footer actions for center alignment', function (): void {
 
     expect(array_keys($overridden->getModalFooterActions()))->toBe(['one', 'two']);
 });
+
+it('stamps the parent action on prepared modal actions', function (): void {
+    $parent = Action::make('edit')->extraModalFooterActions([Action::make('confirm')]);
+
+    expect($parent->getModalAction('confirm')?->getParentAction())->toBe($parent);
+});
+
+it('builds a modal submit action that calls the parent', function (): void {
+    $submit = Action::make('edit')->makeModalSubmitAction('save', ['key' => 'value']);
+
+    expect($submit->getName())->toBe('save')
+        ->and($submit->getParentActionCallLiveComponentClickHandler())->toBe('callMountedAction')
+        ->and($submit->getArguments())->toBe(['key' => 'value'])
+        ->and($submit->getColor())->toBe('gray');
+});

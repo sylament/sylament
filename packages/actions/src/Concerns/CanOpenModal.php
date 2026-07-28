@@ -539,6 +539,7 @@ trait CanOpenModal
     public function prepareModalAction(Action $action): Action
     {
         $action
+            ->parentAction($this instanceof Action ? $this : null)
             ->schemaContainer($this->getSchemaContainer())
             ->schemaComponent($this->getSchemaComponent())
             ->liveComponent($this->getLiveComponentOrNull());
@@ -577,6 +578,17 @@ trait CanOpenModal
     public function makeModalAction(string $name): Action
     {
         return Action::make($name)->button();
+    }
+
+    /**
+     * @param array<string, mixed>|null $arguments
+     */
+    public function makeModalSubmitAction(string $name, ?array $arguments = null): Action
+    {
+        return $this->makeModalAction($name)
+            ->callParent($this->getLiveComponentCallMountedActionName())
+            ->arguments($arguments)
+            ->color('gray');
     }
 
     public function getModalIcon(): ?string

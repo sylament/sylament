@@ -100,6 +100,14 @@ it('emits the schema container key as the schemaComponent context', function ():
     expect($action->getContext())->toBe(['schemaComponent' => 'form']);
 });
 
+it('strips the schemaComponent context once a parent action is set, even though the binding alone would emit it', function (): void {
+    $action = Action::make('save')
+        ->schemaContainer(Schema::make()->key('form'))
+        ->parentAction(Action::make('edit'));
+
+    expect($action->getContext())->toBe([]);
+});
+
 it('emits the schema component key as the schemaComponent context when only a component is bound', function (): void {
     $component = new Component()->key('box')->container(Schema::make()->key('form'));
 
@@ -258,4 +266,12 @@ it('switches to the link view', function (): void {
 it('keeps an explicit view over a pushed default template', function (): void {
     expect(Action::make('delete')->button()->defaultTemplate(Action::GROUPED_TEMPLATE)->getTemplate())
         ->toBe(Action::BUTTON_TEMPLATE);
+});
+
+it('round-trips the parent action and strips child-frame context', function (): void {
+    $parent = Action::make('edit');
+    $child = Action::make('confirm')->parentAction($parent);
+
+    expect($child->getParentAction())->toBe($parent)
+        ->and(Action::make('confirm')->getParentAction())->toBeNull();
 });

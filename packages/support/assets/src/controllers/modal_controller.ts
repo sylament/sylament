@@ -220,9 +220,22 @@ export default class extends Controller<HTMLDialogElement> {
   /**
    * A dialog whose `open` attribute arrived with the markup — a freshly morphed-in
    * stack frame — is open but not modal: no top layer, no focus trap, no `cancel`
-   * event. Removing the attribute (rather than calling close()) runs the dialog
-   * cleanup steps without firing `close`, so re-showing it modally emits no spurious
-   * dismissal and never paints a closed frame.
+   * event (the close watcher the setup steps install is only enabled while `:modal`
+   * is true, so ESC is a no-op until this promotes it). Removing the attribute
+   * (rather than calling close()) runs the dialog cleanup steps without firing
+   * `close`, so re-showing it modally emits no spurious dismissal and never paints
+   * a closed frame.
+   *
+   * Those cleanup steps — here, and whenever a parent is hidden by a morph while a
+   * child is on top — only drop the dialog from the open-dialogs list and destroy
+   * its close watcher; they do not clear the `is modal` flag or remove it from the
+   * top layer (only close()'s algorithm does that). A hidden parent frame therefore
+   * sits at `:modal` true, still top-layered, just unrendered by the UA stylesheet's
+   * `dialog:not([open]) { display: none }`. That is what makes re-opening it cheap:
+   * this method sees `element.open` and `matches(":modal")` both true and returns
+   * early, with no removeAttribute()/showModal() round trip, because the frame was
+   * never de-modalised, only un-rendered, and the setup steps re-run when `open` is
+   * re-added restore its close watcher on their own.
    */
   #normalizeModality(): void {
     if (!this.element.open || this.clickThroughValue || this.element.matches(":modal")) {

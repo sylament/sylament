@@ -2,7 +2,6 @@
     action,
     id %}
 
-{% set submitColor = action.getColor is iterable or action.getColor is empty or action.getColor == 'gray' ? 'primary' : action.getColor %}
 {# Rendered only while the action is mounted and its modal should be open, so the open
    state is declared here rather than left to the `sylament-open-modal` event, which a
    modal first rendered by that same response is not yet listening for. #}
@@ -20,7 +19,8 @@
         {{- action.getModalContentFooter -}}
     </twig:block>
     <twig:block name="footer">
-        <button type="button" class="sy sy-btn sy-color sy-color-{{ submitColor }}" {{ live_action('callMountedAction') }}>{{ action.getModalSubmitActionLabel }}</button>
-        <button type="button" class="sy sy-btn" {{ live_action('unmountAction') }}>{{ action.getModalCancelActionLabel }}</button>
+        {% for footerAction in action.getVisibleModalFooterActions %}
+            {{- renderComponent(footerAction) -}}
+        {% endfor %}
     </twig:block>
 </twig:SylamentSupport:Modal>

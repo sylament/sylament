@@ -116,6 +116,11 @@ trait CanOpenModal
         return $this;
     }
 
+    public function getLiveComponentCallMountedActionName(): ?string
+    {
+        return null;
+    }
+
     public function hasModal(): ?bool
     {
         return $this->evaluate($this->hasModal);

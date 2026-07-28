@@ -33,6 +33,26 @@ it('round-trips the action closure', function (): void {
     expect(Action::make('delete')->action($closure)->getAction())->toBe($closure);
 });
 
+it('round-trips a string action as a live-action click handler', function (): void {
+    $action = Action::make('submit')->action('callMountedAction');
+
+    expect($action->getAction())->toBe('callMountedAction')
+        ->and($action->getClientClickHandler())->toBe('callMountedAction');
+});
+
+it('returns the string from call() on a string action', function (): void {
+    expect(Action::make('submit')->action('callMountedAction')->call())->toBe('callMountedAction');
+});
+
+it('has no client click handler for closure actions', function (): void {
+    expect(Action::make('delete')->action(fn (): null => null)->getClientClickHandler())->toBeNull()
+        ->and(Action::make('delete')->getClientClickHandler())->toBeNull();
+});
+
+it('names callMountedAction as the live-component call target', function (): void {
+    expect(Action::make('submit')->getLiveComponentCallMountedActionName())->toBe('callMountedAction');
+});
+
 it('does not require confirmation by default', function (): void {
     expect(Action::make('delete')->isConfirmationRequired())->toBeFalse();
 });

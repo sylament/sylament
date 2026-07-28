@@ -93,6 +93,41 @@ it('renders a hidden label as an aria-label only', function (): void {
         ->not->toContain('Delete<');
 });
 
+it('wires a string action straight to its live action, skipping the mount round-trip', function (): void {
+    $html = renderAction(Action::make('submit')->action('callMountedAction'));
+
+    expect($html)->toContain('data-live-action-param="callMountedAction"')
+        ->not->toContain('mountAction');
+});
+
+it('wires a closing action to unmountAction', function (): void {
+    $html = renderAction(Action::make('cancel')->close());
+
+    expect($html)->toContain('data-live-action-param="unmountAction"')
+        ->not->toContain('data-live-action-param="mountAction"');
+});
+
+it('lets a string action win over close()', function (): void {
+    $html = renderAction(Action::make('submit')->action('callMountedAction')->close());
+
+    expect($html)->toContain('data-live-action-param="callMountedAction"')
+        ->not->toContain('unmountAction');
+});
+
+it('wires a string action on the icon-button variant', function (): void {
+    $html = renderAction(Action::make('submit')->iconButton()->icon('heroicons:x-mark')->action('callMountedAction'));
+
+    expect($html)->toContain('data-live-action-param="callMountedAction"')
+        ->not->toContain('mountAction');
+});
+
+it('wires a closing icon-button to unmountAction', function (): void {
+    $html = renderAction(Action::make('cancel')->iconButton()->icon('heroicons:x-mark')->close());
+
+    expect($html)->toContain('data-live-action-param="unmountAction"')
+        ->not->toContain('data-live-action-param="mountAction"');
+});
+
 it('renders a disabled button', function (): void {
     $html = renderAction(Action::make('delete')->disabled());
 

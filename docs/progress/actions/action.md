@@ -2,11 +2,11 @@
 
 `Sylament\Actions\Action` — the base class every actions-package action
 extends. It composes `Sylament\Support\Components\ViewComponent` (Twig-backed
-rendering) and folds in 17 actions-package concerns — `BelongsToLiveComponent`,
-`CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`, `CanNotify`, `CanOpenModal`,
-`CanOpenUrl`, `CanRequireConfirmation`, `HasAction`, `HasArguments`,
-`HasGroupedIcon`, `HasLabel`, `HasLifecycleHooks`, `HasMountableArguments`,
-`HasName`, `HasSize`,
+rendering) and folds in 18 actions-package concerns — `BelongsToLiveComponent`,
+`CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`, `CanClose`, `CanNotify`,
+`CanOpenModal`, `CanOpenUrl`, `CanRequireConfirmation`, `HasAction`,
+`HasArguments`, `HasGroupedIcon`, `HasLabel`, `HasLifecycleHooks`,
+`HasMountableArguments`, `HasName`, `HasSize`,
 `InteractsWithRecord` — each a
 Surface row below with its own detail/divergence spliced in from its own
 audit. It also composes two multi-consumer actions-package concerns tracked
@@ -33,7 +33,7 @@ Reference — the Filament source this is diffed against:
 
 ## Surface
 
-Every point of this component and its 14 folded concerns. _Blocked by_ names
+Every point of this component and its folded concerns. _Blocked by_ names
 what has to land first. _Detail_ links the write-up in [Details](#details)
 (deleted once the row is **done**) and/or the permanent note in
 [Divergences](#divergences).
@@ -59,12 +59,13 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanBeDisabled`](../../../packages/actions/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/actions/src/Concerns/CanBeDisabled.php) | done | — | [diverges](#canbedisabled-drops-the-authorization-short-circuits) |
 | [`CanBeHidden`](../../../packages/actions/src/Concerns/CanBeHidden.php) | [`Concerns/CanBeHidden.php`](../../../vendor/filament/actions/src/Concerns/CanBeHidden.php) | in progress | CanBeAuthorized, ActionGroup, BelongsToTable | [detail](#canbehidden-omits-authorization-group-and-table-cache-integration) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | [diverges](#outlined-styling-is-a-state-class-not-a-color-map) |
+| [`CanClose`](../../../packages/actions/src/Concerns/CanClose.php) | [`Concerns/CanClose.php`](../../../vendor/filament/actions/src/Concerns/CanClose.php) | done | — | [diverges](#string-click-handlers-are-live-action-names-and-close-dispatches-the-server-unmount) |
 | [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | notifications package | [detail](#cannotify-only-ports-notification-titles-not-sending) |
 | [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#only-the-modal-content-config-is-ported-the-behavior-and-footer-action-surface-is-not), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
 | [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-drops-the-default-action-url-fallback) |
 | POST-to-url support | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | skipped | — | [diverges](#post-to-url-support-is-not-ported) |
 | [`CanRequireConfirmation`](../../../packages/actions/src/Concerns/CanRequireConfirmation.php) | [`Concerns/CanRequireConfirmation.php`](../../../vendor/filament/actions/src/Concerns/CanRequireConfirmation.php) | done | — | [diverges](#confirmation-is-a-flag-not-a-modal-config-layer) |
-| [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) | [`Concerns/HasAction.php`](../../../vendor/filament/actions/src/Concerns/HasAction.php) | in progress | — | [detail](#hasaction-drops-the-string-click-handler-and-livewire-click-gating) |
+| [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) | [`Concerns/HasAction.php`](../../../vendor/filament/actions/src/Concerns/HasAction.php) | in progress | — | [detail](#hasaction-drops-the-livewire-click-gating), [diverges](#string-click-handlers-are-live-action-names-and-close-dispatches-the-server-unmount) |
 | [`HasArguments`](../../../packages/actions/src/Concerns/HasArguments.php) | [`Concerns/HasArguments.php`](../../../vendor/filament/actions/src/Concerns/HasArguments.php) | done | — | — |
 | [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | [diverges](#hasgroupedicon-narrows-its-icon-type-to-string) |
 | [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`label()` / `getLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
@@ -327,10 +328,11 @@ Absent entirely, with no property, setter, or getter:
   `extraModalActions()`, `makeExtraModalAction()` are not carried over — expected;
   Sylament has no deprecation-shim policy and these all have live equivalents
   above (themselves unported).
-- `getLivewireCallMountedActionName()` (returns `null` in Filament's trait,
-  overridden elsewhere) has no Sylament counterpart — the port's template calls
-  the live-component action name directly (`callMountedAction`) rather than
-  through this indirection.
+- `getLiveComponentCallMountedActionName()` (the systematic Livewire →
+  LiveComponent translation of `getLivewireCallMountedActionName()`) is ported:
+  the trait's base returns `null` and `Action` overrides it to
+  `'callMountedAction'`, exactly as Filament does — the submit footer action's
+  string click handler reads it.
 
 **Type-shape narrowing** (not a functional gap, just less general): `modalIcon`
 is `string|Closure|null` here vs Filament's `string|BackedEnum|Htmlable|Closure|null`
@@ -374,16 +376,26 @@ Next step: restore the `getDefaultActionUrl()` fallback alongside the host-hook
 cluster; add `hasShouldOpenUrlInNewTab()` with the optimized-render pipeline
 that consumes it.
 
-### HasAction drops the string click-handler and Livewire-click gating
+### HasAction drops the Livewire-click gating
 
-Ported: the closure branch only. `action(?Closure $action): static` / `getAction(): ?Closure` round-trip a single closure and `Action::call()` evaluates it, injecting `record`/`arguments`/`liveComponent` — covered by `ActionTest` (`round-trips the action closure`, `calls the action closure, injecting the record and arguments`).
+Ported: both value shapes. `action(Closure|string|null $action): static` /
+`getAction(): Closure|string|null` round-trip a closure or a string, and
+`Action::call()` evaluates the value, injecting `record`/`arguments`/
+`liveComponent` for closures and returning a string as-is (Filament-identical
+no-op semantics) — covered by `ActionTest`. The string branch renders through
+`getClientClickHandler(): ?string` — the Sylament port of
+`getLivewireClickHandler()`'s string arm — which every trigger template reads
+first in its click precedence (string handler, then `shouldClose()` →
+`unmountAction`, then the `mountAction` round-trip); the reinterpretation of
+the string as a live-action name rather than a raw client expression is
+recorded as a
+[divergence](#string-click-handlers-are-live-action-names-and-close-dispatches-the-server-unmount).
 
 Missing vs Filament's `HasAction`:
-- **String action values.** Filament's `$action` is `Closure|string|null`; a string is used verbatim as the client-side click-handler expression (`getLivewireClickHandler()` returns it as-is, bypassing the `mountAction`/`callMountedAction` round-trip). Sylament's `action` is `?Closure` only, so there is no way to hand the button a raw click-handler string — `button-action.html.twig` always emits `live_action('mountAction', …)` when there's no URL. This isn't a pure Alpine→Stimulus idiom swap: no Stimulus-side passthrough mechanism exists yet to receive an arbitrary string handler.
 - **`livewireClickHandlerEnabled()` / `isLivewireClickHandlerEnabled()`.** Entirely absent — no way to force-disable the live dispatch. Filament's default logic also stands down when `getUrl()` is filled (ported, hardcoded in the template) or when `canSubmitForm()` is true; the latter has no Sylament equivalent because no `CanSubmitForm` concern exists yet (forms/actions form-submission integration is unbuilt), so this half of the gap is blocked on that future work rather than a simple omission.
 - **`hasAction(): bool`.** Helper predicate not ported; trivially derivable from `getAction() !== null` at call sites today, but no equivalent method or test exists.
 
-Next step: decide whether the string-click-handler passthrough is worth porting before any Stimulus-side generic handler exists; land `CanSubmitForm` (or its Sylament equivalent) before restoring the full `isLivewireClickHandlerEnabled()` gating logic.
+Next step: land `CanSubmitForm` (or its Sylament equivalent) before restoring the full `isLivewireClickHandlerEnabled()` gating logic.
 
 ### The form-lifecycle hooks and ActionCalling/ActionCalled events are not ported
 
@@ -636,7 +648,7 @@ equivalent at all today — captured here as one list rather than one row each,
 since none of it has started:
 
 - **Mounting & modal chrome beyond `CanOpenModal`'s data**: `CanBeMounted`,
-  `CanClose`, `HasKeyBindings`, `CanBeBooted`, `renderModal()`/
+  `HasKeyBindings`, `CanBeBooted`, `renderModal()`/
   `toModalHtmlable()`, `HasExtraModalOverlayAttributes`/
   `HasExtraModalWindowAttributes`.
 - **Forms/schemas/infolists integration**: `HasSchema`, `HasInfolist`,
@@ -746,6 +758,32 @@ carries one `.sy-btn.sy-outlined` variant rule driven by the same
 contract (semantic classes + runtime tokens, no per-color class maps). The
 button template is the only consumer, matching Filament (its link/badge/
 icon-button/grouped views ignore `outlined`).
+
+### String click handlers are live-action names, and close dispatches the server unmount
+
+Two connected translations of the client-side click surface, both permanent
+until an arbitrary-JS surface exists (none is planned):
+
+- **A string `action(...)` value is a live-action method name, not a raw
+  client expression.** Filament's `getLivewireClickHandler()` returns a string
+  action verbatim as the Livewire click-handler JS; Sylament emits it through
+  `live_action(component.getClientClickHandler)`, so the string names a
+  `#[LiveAction]` method on the host (`'callMountedAction'` being the canonical
+  consumer, via the submit footer action). There is no way to inject arbitrary
+  JS through this seam — deliberate.
+- **`close()` round-trips `unmountAction` instead of closing client-side.**
+  Filament's `getJsClickHandler()` nulls out the Livewire handler when
+  `shouldClose()` and closes the modal via Alpine, letting the modal-close
+  event round-trip `unmountAction` afterwards; the single-slot port has no
+  client-side close chain, so a closing trigger dispatches
+  `live_action('unmountAction')` directly and the server close event does the
+  rest. Same observable outcome (modal closes, slot empties), one round-trip
+  instead of an event chain.
+
+All five trigger templates share the same click precedence: string handler
+first, then `shouldClose()`, then the `mountAction` round-trip — the port of
+`getLivewireClickHandler()`'s arm order. Pinned by `ActionRenderTest`'s
+string/close/precedence cases (button and icon-button shapes).
 
 ### HasGroupedIcon narrows its icon type to string
 

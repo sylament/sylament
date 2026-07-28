@@ -22,11 +22,16 @@
         target: component.shouldOpenUrlInNewTab ? '_blank' : false,
         title: component.getTooltip ?: false,
     }, component.getExtraAttributes) }}
-    {%- if not component.getUrl %} {{ live_action('mountAction', {
-        name: component.getName,
-        ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
-        ...(component.getContext ? { context: component.getContext } : {}),
-    }) }}{% endif %}
+    {%- if not component.getUrl %}
+        {%- if component.getClientClickHandler %} {{ live_action(component.getClientClickHandler) }}
+        {%- elseif component.shouldClose %} {{ live_action('unmountAction') }}
+        {%- else %} {{ live_action('mountAction', {
+            name: component.getName,
+            ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
+            ...(component.getContext ? { context: component.getContext } : {}),
+        }) }}
+        {%- endif %}
+    {%- endif %}
 >
     {%- if iconHtml and component.getIconPosition.value == 'before' %}{{ iconHtml }}{% endif -%}
     {%- if not component.isLabelHidden %}{{ component.getLabel ?? component.getName }}{% endif -%}

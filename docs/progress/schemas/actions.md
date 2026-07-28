@@ -81,9 +81,8 @@ Filament's `Actions` ships the same four auxiliary slots as `Section`
 quartet, `makeChildSchema()` end-aligning the after-label slot, and
 `configureChildSchema()` making the slot schemas inline + embedded and
 downsizing slot actions to `Size::Small` + `LINK_VIEW`.
-[`Section`](section.md) already ports this exact shape (minus the `LINK_VIEW`
-default — no link trigger template yet), so the port here is mechanical
-Section parity: constants, setters, the two child-schema hooks, and the
+[`Section`](section.md) already ports this exact shape, so the port here is
+mechanical Section parity: constants, setters, the two child-schema hooks, and the
 template rendering the slots around the label and row. Deferred for now; next
 step is mirroring Section's implementation when the slots are wanted.
 

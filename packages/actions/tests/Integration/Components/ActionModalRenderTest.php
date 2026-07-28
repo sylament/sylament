@@ -74,8 +74,12 @@ it('centers and reverses the confirmation modal footer', function (): void {
         ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['recordKey' => 1]])
         ->render();
 
-    $cancelPosition = mb_strpos($html, 'data-live-action-param="unmountAction"');
-    $submitPosition = mb_strpos($html, 'data-live-action-param="callMountedAction"');
+    $footerActionsPosition = mb_strpos($html, 'sy-modal-footer-actions');
+
+    expect($footerActionsPosition)->not->toBeFalse();
+
+    $cancelPosition = mb_strpos($html, 'data-live-action-param="unmountAction"', $footerActionsPosition);
+    $submitPosition = mb_strpos($html, 'data-live-action-param="callMountedAction"', $footerActionsPosition);
 
     expect($html)->toContain('sy-align-center')
         ->and($cancelPosition)->not->toBeFalse()

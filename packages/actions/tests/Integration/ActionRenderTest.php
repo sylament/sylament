@@ -63,6 +63,14 @@ it('renders a url action as a link without mount wiring', function (): void {
         ->not->toContain('type=');
 });
 
+it('renders a hidden label as an aria-label only', function (): void {
+    $html = renderAction(Action::make('delete')->hiddenLabel()->icon('heroicons:x-mark'));
+
+    expect($html)->toContain('aria-label="Delete"')
+        ->toContain('<svg')
+        ->not->toContain('Delete<');
+});
+
 it('renders a disabled button', function (): void {
     $html = renderAction(Action::make('delete')->disabled());
 

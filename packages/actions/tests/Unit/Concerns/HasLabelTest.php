@@ -22,3 +22,26 @@ it('evaluates a label closure', function (): void {
     expect(new HasLabelFixture()->name('delete')->label(fn (): string => 'Dynamic')->getLabel())
         ->toBe('Dynamic');
 });
+
+it('does not hide the label by default', function (): void {
+    $fixture = new HasLabelFixture()->name('delete');
+
+    expect($fixture->isLabelHidden())->toBeFalse()
+        ->and($fixture->hasLabelHidden())->toBeFalse();
+});
+
+it('hides the label once hiddenLabel() is called', function (): void {
+    expect(new HasLabelFixture()->name('delete')->hiddenLabel()->isLabelHidden())->toBeTrue();
+});
+
+it('evaluates a hiddenLabel closure', function (): void {
+    expect(new HasLabelFixture()->name('delete')->hiddenLabel(fn (): bool => false)->isLabelHidden())
+        ->toBeFalse();
+});
+
+it('reports the raw hidden-label value through hasLabelHidden()', function (): void {
+    $fixture = new HasLabelFixture()->name('delete')->hiddenLabel(fn (): ?bool => null);
+
+    expect($fixture->isLabelHidden())->toBeFalse()
+        ->and($fixture->hasLabelHidden())->toBeTrue();
+});

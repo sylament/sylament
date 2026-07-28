@@ -64,7 +64,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) | [`Concerns/HasAction.php`](../../../vendor/filament/actions/src/Concerns/HasAction.php) | in progress | — | [detail](#hasaction-drops-the-string-click-handler-and-livewire-click-gating) |
 | [`HasArguments`](../../../packages/actions/src/Concerns/HasArguments.php) | [`Concerns/HasArguments.php`](../../../vendor/filament/actions/src/Concerns/HasArguments.php) | done | — | — |
 | [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`label()` / `getLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
-| `hiddenLabel()` / `isLabelHidden()` | [`hiddenLabel()` / `isLabelHidden()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | blocked | IconButtonAction | [detail](#hidden-label-toggle-deferred-to-the-icon-button-variant) |
+| `hiddenLabel()` / `isLabelHidden()` | [`hiddenLabel()` / `isLabelHidden()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
 | `translateLabel()` / `disableLabel()` (deprecated) | [`translateLabel()` / `disableLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported) |
 | [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | in progress | HasSchema / CanSubmitForm (form-mounting concerns) | [detail](#the-form-lifecycle-hooks-and-actioncallingactioncalled-events-are-not-ported) |
 | [`HasName`](../../../packages/actions/src/Concerns/HasName.php) | [`Concerns/HasName.php`](../../../vendor/filament/actions/src/Concerns/HasName.php) | done | — | [diverges](#getname-tightens-its-return-type-to-non-nullable-string) |
@@ -370,19 +370,6 @@ Missing vs Filament's `HasAction`:
 - **`hasAction(): bool`.** Helper predicate not ported; trivially derivable from `getAction() !== null` at call sites today, but no equivalent method or test exists.
 
 Next step: decide whether the string-click-handler passthrough is worth porting before any Stimulus-side generic handler exists; land `CanSubmitForm` (or its Sylament equivalent) before restoring the full `isLivewireClickHandlerEnabled()` gating logic.
-
-### Hidden-label toggle deferred to the icon-button variant
-
-Filament's `HasLabel` carries `$isLabelHidden` + `hiddenLabel()` / `isLabelHidden()`
-(rendered as `isLabelSrOnly` — the label stays for screen readers but is
-visually hidden), used mainly to strip the visible label from icon-only
-buttons. Sylament's port is button-only today (`Action` renders a full
-label+icon button; there is no icon-button variant yet — `IconButtonAction` is
-still `todo` per [`actions/README.md`](README.md)), so a hidden-label toggle has
-no rendering path to exercise: the button-only MVP always shows its label.
-Next step: port `hiddenLabel()` / `isLabelHidden()` onto `HasLabel` (or the
-icon-button-specific trait) once `IconButtonAction` lands and needs the
-screen-reader-only label behavior to test against.
 
 ### The form-lifecycle hooks and ActionCalling/ActionCalled events are not ported
 

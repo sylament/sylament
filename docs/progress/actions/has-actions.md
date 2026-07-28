@@ -71,7 +71,7 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | [detail](#url-bound-default-action-state-is-not-ported) |
 | `getDefaultAction*` host override hooks (Record/Title/Model/ModelLabel/Url/SuccessRedirectUrl/FailureRedirectUrl/Relationship/SchemaResolver/AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionRecord()` etc. | todo | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
 | `forceRender()` / `partiallyRenderActionParentSchema()` | `Concerns/InteractsWithActions.php` `forceRender()` / `partiallyRenderActionParentSchema()` | blocked | schemas partial-render infrastructure (`PartialsComponentHook`) | [detail](#partial-re-render-is-not-ported) |
-| `afterActionCalled()` hook | `Concerns/InteractsWithActions.php` `afterActionCalled()` | todo | — | [detail](#afteractioncalled-is-not-ported) |
+| [`afterActionCalled()`](../../../packages/actions/src/Concerns/HasActions.php) hook (empty protected method; runs after `callAfter()`, before the notification branch, happy path only — Filament-exact) | `Concerns/InteractsWithActions.php` `afterActionCalled()` | done | — | — |
 | `bootedInteractsWithActions()` boot wiring / `WithRateLimiting` | `Concerns/InteractsWithActions.php` `bootedInteractsWithActions()`, `DanHarrin\LivewireRateLimiting\WithRateLimiting` | skipped | — | [diverges](#there-is-no-boot-hook-or-rate-limiting-trait) |
 
 ## Details
@@ -125,13 +125,15 @@ unmount. The port's
 [`callMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php)
 merges the single slot's `arguments`, resolves the record via
 `getMountedActionRecord()`, checks `isDisabled()`, runs
-`callBefore()` / `call()` / `callAfter()`, sends a success or failure
-notification by `getStatus()`, catches `Halt` (keeps the action mounted) and
-`Cancel` (falls through to unmount), then always unmounts. Rate limiting,
-authorization, database transactions, redirects, schema/form data, and the
-`afterActionCalled()` hook are all absent — none of the underlying `Action`
-concerns they depend on (`CanBeRateLimited`, `CanBeAuthorized`,
-`CanUseDatabaseTransactions`, `CanRedirect`) are composed yet either. **Next
+`callBefore()` / `call()` / `callAfter()`, calls the `afterActionCalled()`
+hook (Filament-exact position: after `callAfter()`, before the notification
+branch, so `Halt`/`Cancel` skip it), sends a success or failure notification
+by `getStatus()`, catches `Halt` (keeps the action mounted) and `Cancel`
+(falls through to unmount), then always unmounts. Rate limiting,
+authorization, database transactions, redirects, and schema/form data are
+all absent — none of the underlying `Action` concerns they depend on
+(`CanBeRateLimited`, `CanBeAuthorized`, `CanUseDatabaseTransactions`,
+`CanRedirect`) are composed yet either. **Next
 step:** each returns with its `Action`-level concern; the schema/form-data path
 waits on the same action-schema integration as `mountAction()`.
 
@@ -297,15 +299,6 @@ no `PartialsComponentHook` equivalent anywhere in the codebase — LiveComponent
 own re-render model is used unmodified, i.e. every action call re-renders
 however LiveComponent normally would. **Blocked** on schemas ever building a
 partial-render mechanism; low priority until render cost becomes a concern.
-
-### `afterActionCalled()` is not ported
-
-Filament's `callMountedAction()` calls a protected `afterActionCalled(Action
-$action): void {}` hook (empty by default) after `callAfter()` succeeds, for
-subclasses/traits that want to react to every successful action call
-uniformly. Not declared on the port's `HasActions`; no current consumer.
-**Next step:** todo, trivial to add whenever a first caller needs it — add it
-to `callMountedAction()` in the same change.
 
 ## Divergences
 

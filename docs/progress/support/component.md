@@ -134,14 +134,17 @@ of their own to get there.
   this is the only path that can satisfy a subclass's own constructor
   dependencies, including **private** services.
 - **The `new $class()` fallback.** When the container doesn't know the class,
-  `instantiate()` falls back to direct construction. Two cases hit this path:
-  Sylament's own components (`Action`, `TextInput`, `Section`, …) — they live
-  in vendor and are never registered as services — and any kernel-free Unit
-  test, where `ComponentResolver::resolve()` lazily creates an instance with no
-  `$components` locator at all (`ComponentManager::resolve()` parity). A user subclass that declares constructor dependencies only works
-  through `make()` once it is registered as a service; an unregistered
-  subclass with a constructor throws the ordinary "too few arguments" error
-  `new $class()` produces.
+  `instantiate()` falls back to direct construction. Sylament's own components
+  no longer take this path — each bundle PSR-4-loads its `Components/`
+  directory in `loadExtension()`, so `Section`, `TextInput`, `Action` and the
+  rest are container-built and autowired like any app component. What remains
+  is a user subclass nobody registered, and any kernel-free Unit test, where
+  `ComponentResolver::resolve()` lazily creates an instance with no
+  `$components` locator at all (`ComponentManager::resolve()` parity). A
+  subclass that declares constructor dependencies only works through `make()`
+  once it is registered as a service; an unregistered subclass with a
+  constructor throws the ordinary "too few arguments" error `new $class()`
+  produces.
 
 One consequence worth flagging for future porting: **a class whose
 constructor is removed must give any previously-constructor-assigned typed

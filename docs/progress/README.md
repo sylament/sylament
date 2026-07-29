@@ -68,6 +68,24 @@ so it belongs in [`support/component.md`](support/component.md) even if a form
 field forced the decision — otherwise knowing the rule depends on having read an
 unrelated file.
 
+### Faithful-but-subtle behaviour goes under `## Semantics`
+
+`## Details` is deleted when its row flips to **done**, and `## Divergences` is
+for deviations. Behaviour that is a *faithful* port yet subtle enough that the
+next reader would misread the code has neither home — parked in Details it gets
+deleted with the row, and filed as a divergence it claims a deviation that isn't
+there. Such notes go under `## Semantics`, same shape as Divergences: one `###`
+heading per note, phrased as a statement, permanent, addressable by anchor
+(`[semantics](#…)` as a third link type in the _Detail_ column).
+
+The bar is narrow, or it becomes a dumping ground for restated code. Both must
+hold: a reader re-deriving the behaviour from the source would plausibly **get
+it wrong**, and it stays true once the row is **done**. "What the method does"
+is not a note; "why the obvious reading of it is wrong" is.
+
+A file's Surface preamble names the link types **that file** uses, so a file with
+no `## Semantics` section keeps saying two.
+
 ## Structure
 
 - `README.md` — this index: the package table and the shared status legend.
@@ -76,7 +94,8 @@ unrelated file.
   the Sylament class, the Filament source it ports, its status, and a link to
   its detail file.
 - `<package>/<component>.md` — the detail: a surface table of everything the
-  component covers, a write-up per unfinished row, and the divergences. What
+  component covers, a write-up per unfinished row, any permanent semantics
+  notes, and the divergences. What
   earns a file of its own is [the rule above](#one-row-per-file-one-file-per-thing).
 - [`support/component.md`](support/component.md) — the reference detail file, a
   filled-in example: a surface table on top, per-row detail sections beneath,

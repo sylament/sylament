@@ -9,8 +9,9 @@ Sylament's replacement for Twig's `html_attr()`. It ports Filament's
 rendering, Sylament has no Laravel bag to inherit — so it reimplements only the
 slice its templates need: normalize-on-construct, defaults-first `merge()`, and
 its own `html_attr()`-faithful renderer. Rendering-time helpers that depend on
-unported systems (`color()`, `grid()`, `gridColumn()`) are not yet here, so the
-item is partial.
+unported systems (`color()`) are not yet here, so the item is partial;
+`grid()`/`gridColumn()` are ported but as Twig functions rather than bag
+methods.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -35,9 +36,9 @@ permanent note in [Divergences](#divergences).
 | `merge()` defaults-first, class/style append | [`ComponentAttributeBag::merge`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | done | — | [diverges](#merge-drops-the-escape-and-appendable-value-machinery-and-does-not-deduplicate) |
 | `toHtml()` / `toScalarAttributes()` — the `html_attr()` renderer | Laravel base render path (`__toString`) | done | — | [diverges](#the-bag-renders-its-own-html_attr-faithful-output) |
 | `class()` / `style()` fluent mutators | [`ComponentAttributeBag::class`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php), [`::style`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | skipped | — | [diverges](#fluent-class-and-style-are-replaced-by-the-attrs-and-classes-twig-functions) |
-| `color()` | [`ComponentAttributeBag::color`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | blocked | ColorManager / FilamentColor facade | [detail](#colorgridgridcolumn-are-not-ported) |
-| `grid()` | [`ComponentAttributeBag::grid`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | todo | — | [detail](#colorgridgridcolumn-are-not-ported) |
-| `gridColumn()` | [`ComponentAttributeBag::gridColumn`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | todo | — | [detail](#colorgridgridcolumn-are-not-ported) |
+| `color()` | [`ComponentAttributeBag::color`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | blocked | ColorManager / FilamentColor facade | [detail](#color-is-not-ported) |
+| `grid()` | [`ComponentAttributeBag::grid`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | done | — | [diverges](#grid-and-gridcolumn-are-twig-functions-not-bag-methods) |
+| `gridColumn()` | [`ComponentAttributeBag::gridColumn`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | done | — | [diverges](#grid-and-gridcolumn-are-twig-functions-not-bag-methods) |
 | Laravel base API (`get`/`has`/`only`/`except`/`filter`/`ArrayAccess`/…) + macros (`__call`/`hasMacro`) | [Laravel base](../../../vendor/laravel/framework/src/Illuminate/View/ComponentAttributeBag.php) | skipped | — | [diverges](#the-laravel-base-bag-and-macros-are-not-inherited) |
 
 ## Details
@@ -45,28 +46,32 @@ permanent note in [Divergences](#divergences).
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is.
 
-### `color()`/`grid()`/`gridColumn()` are not ported
+### `color()` is not ported
 
-The three rendering helpers Filament macro-registers onto the bag are absent.
-
-- **`color()`** turns a color name into `fi-*` classes / custom-property styles
-  via the `FilamentColor` facade and `HasColor` component contract. Both the
-  color manager and the facade are still `todo` in the [package
-  README](README.md), so this is **blocked** on them — porting `color()` before
-  its color source exists would have nothing to resolve against and nothing to
-  test.
-- **`grid()`** and **`gridColumn()`** depend only on
-  [`GridDirection`](../../../packages/support/src/Enums/GridDirection.php) (ported)
-  plus `sy-grid*` CSS classes and `--cols-*` / `--col-*` custom properties. They
-  are **todo** — unblocked and not started, unbuilt because no consumer renders
-  a grid yet (the schemas `Grid`/`Section` column layout that will call them is
-  unported). Next step: port both alongside the first grid-rendering component,
-  translating `fi-grid*` → `sy-sc-grid*` and keeping the breakpoint
-  `!`→`n` / `@`→`c` custom-property naming.
+`color()` turns a color name into `fi-*` classes / custom-property styles via the
+`FilamentColor` facade and `HasColor` component contract. Both the color manager
+and the facade are still `todo` in the [package README](README.md), so this is
+**blocked** on them — porting it before its color source exists would have
+nothing to resolve against and nothing to test.
 
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
+
+### `grid()` and `gridColumn()` are Twig functions, not bag methods
+
+Filament reaches these through `ComponentAttributeBag::macro()` registered in
+`SupportServiceProvider::packageBooted()`, so a Blade view calls
+`$attributes->grid(...)`. Macros are a rejected pattern here (see
+[Macroable is not ported](component.md#macroable-is-not-ported)), and a Twig
+template has no `$attributes` receiver to call a method on — so both landed as
+`grid()` / `gridColumn()` Twig functions on
+[`GridExtension`](../../../packages/support/src/Twig/Extension/GridExtension.php),
+returning the same `['class' => …, 'style' => …]` shape for `attrs()` to spread.
+The behaviour is a faithful port including the `!`→`n` / `@`→`c` breakpoint
+sanitization; the receiver is what changed. Their one behavioural divergence —
+also filtering blank breakpoint *keys* — is recorded in
+[support-bundle.md](support-bundle.md#the-ported-grid--gridcolumn-also-drop-blank-breakpoint-keys).
 
 ### The Laravel base bag and macros are not inherited
 

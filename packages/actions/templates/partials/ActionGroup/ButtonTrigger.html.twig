@@ -7,5 +7,5 @@
     {{ ...extraAttributes }}
     {{ ...(triggerClasses ? {class: triggerClasses} : {}) }}
 >
-    <twig:block name="content">{{ group.getLabel }}</twig:block>
+    {{- group.getLabel -}}
 </twig:SylamentSupport:Button>

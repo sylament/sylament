@@ -1,19 +1,17 @@
 <twig:SylamentForms:FieldWrapper :field="component">
-    <twig:block name="content">
-        <input
-                class="sy-fo-input"
-                type="{{ component.getType }}"
-                id="{{ component.getId }}"
-                name="{{ component.getName }}"
-                data-model="{{ component.getDataModel }}"
-                value="{{ component.getState }}"
-                {%- if component.getInputMode %} inputmode="{{ component.getInputMode }}"{% endif %}
-                {%- if component.getPlaceholder %} placeholder="{{ component.getPlaceholder }}"{% endif %}
-                {%- if component.getMaxLength is not null %} maxlength="{{ component.getMaxLength }}"{% endif %}
-                {%- if component.getMinLength is not null %} minlength="{{ component.getMinLength }}"{% endif %}
-                {%- if component.isMarkedAsRequired %} required{% endif %}
-                {%- if component.isDisabled %} disabled{% endif %}
-                {%- if component.isAutofocused %} autofocus{% endif %}
-        >
-    </twig:block>
+    <input
+            class="sy-fo-input"
+            type="{{ component.getType }}"
+            id="{{ component.getId }}"
+            name="{{ component.getName }}"
+            data-model="{{ component.getDataModel }}"
+            value="{{ component.getState }}"
+            {%- if component.getInputMode %} inputmode="{{ component.getInputMode }}"{% endif %}
+            {%- if component.getPlaceholder %} placeholder="{{ component.getPlaceholder }}"{% endif %}
+            {%- if component.getMaxLength is not null %} maxlength="{{ component.getMaxLength }}"{% endif %}
+            {%- if component.getMinLength is not null %} minlength="{{ component.getMinLength }}"{% endif %}
+            {%- if component.isMarkedAsRequired %} required{% endif %}
+            {%- if component.isDisabled %} disabled{% endif %}
+            {%- if component.isAutofocused %} autofocus{% endif %}
+    >
 </twig:SylamentForms:FieldWrapper>

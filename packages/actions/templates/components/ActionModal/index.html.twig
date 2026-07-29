@@ -41,12 +41,10 @@
         {# Whitespace control is load-bearing: it keeps this block empty when every slot
            is, so Modal's `content is filled` test still suppresses .sy-modal-content
            for a bare confirmation modal. #}
-        <twig:block name="content">
-            {{- action.getModalContent -}}
-            {%- if schema is not null -%}
-                {{- renderComponent(schema) -}}
-            {%- endif -%}
-            {{- action.getModalContentFooter -}}
-        </twig:block>
+        {{- action.getModalContent -}}
+        {%- if schema is not null -%}
+            {{- renderComponent(schema) -}}
+        {%- endif -%}
+        {{- action.getModalContentFooter -}}
     </twig:SylamentSupport:Modal>
 </div>

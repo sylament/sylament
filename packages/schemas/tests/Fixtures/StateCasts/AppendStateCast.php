@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Fixtures\Components\StateCasts;
+namespace Sylament\Schemas\Tests\Fixtures\StateCasts;
 
-use Sylament\Schemas\Components\StateCasts\Contracts\StateCast;
+use Sylament\Schemas\StateCasts\Contracts\StateCast;
 
 /**
  * Observable, non-idempotent fixture cast: each direction appends its token so

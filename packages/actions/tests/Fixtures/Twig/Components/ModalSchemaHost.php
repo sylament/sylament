@@ -7,7 +7,7 @@ namespace Sylament\Actions\Tests\Fixtures\Twig\Components;
 use Sylament\Actions\Action;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
-use Sylament\Schemas\Components\Utilities\Set;
+use Sylament\Schemas\Utilities\Set;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;

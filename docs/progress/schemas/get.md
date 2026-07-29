@@ -1,6 +1,6 @@
 # Get (schemas)
 
-[`Sylament\Schemas\Components\Utilities\Get`](../../../packages/schemas/src/Components/Utilities/Get.php)
+[`Sylament\Schemas\Utilities\Get`](../../../packages/schemas/src/Utilities/Get.php)
 — the `$get` callable a component hands its evaluated closures so they can read
 sibling and cross-container state by path. `__invoke($path, $isAbsolute)`
 resolves the path against the component's own state, a sibling, or another
@@ -26,10 +26,10 @@ the row is **done**), a **diverges** link to the permanent note in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`__invoke()` — own-state / sibling / cross-container resolution + raw-bag fallback](../../../packages/schemas/src/Components/Utilities/Get.php) | [`__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | done | — | — |
+| [`__invoke()` — own-state / sibling / cross-container resolution + raw-bag fallback](../../../packages/schemas/src/Utilities/Get.php) | [`__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | done | — | — |
 | Typed accessors: [`string()` / `integer()` / `float()` / `boolean()` / `array()` / `date()` / `enum()`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | [`string()` …](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | todo | — | [detail](#typed-accessors-are-not-ported) |
 | [`filled()` / `blank()` convenience predicates](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | [`filled()` / `blank()`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | todo | — | [detail](#typed-accessors-are-not-ported) |
-| [`skipComponentsChildContainersWhileSearching(bool)` toggle](../../../packages/schemas/src/Components/Utilities/Get.php) | [`skipComponentsChildContainersWhileSearching()`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | done | — | [diverges](#the-skip-child-containers-search-state-is-per-call-with-no-static-re-entrancy-stack) |
+| [`skipComponentsChildContainersWhileSearching(bool)` toggle](../../../packages/schemas/src/Utilities/Get.php) | [`skipComponentsChildContainersWhileSearching()`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | done | — | [diverges](#the-skip-child-containers-search-state-is-per-call-with-no-static-re-entrancy-stack) |
 
 `__invoke`'s raw fallback reads through
 [`PropertyAccessor`](property-accessor.md) rather than Laravel's `data_get` —
@@ -64,7 +64,7 @@ pushing the current component onto it and popping in a `finally` around the
 `withHidden: true`, `withAbsoluteStatePath: true`, plus that stack (or `[]` when
 the `shouldSkipComponentsChildContainersWhileSearching` flag is off) as named
 arguments. Sylament's
-[`skipComponentsChildContainersWhileSearching(bool $condition = true): static`](../../../packages/schemas/src/Components/Utilities/Get.php)
+[`skipComponentsChildContainersWhileSearching(bool $condition = true): static`](../../../packages/schemas/src/Utilities/Get.php)
 faithfully ports the mutable flag and its mutator shape, parameter name
 included — it mutates
 `$this` in place and returns it, not a wither — and `__invoke` now threads

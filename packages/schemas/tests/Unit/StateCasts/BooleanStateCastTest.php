@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Tests\Unit\Components\StateCasts;
+namespace Sylament\Schemas\Tests\Unit\StateCasts;
 
-use Sylament\Schemas\Components\StateCasts\BooleanStateCast;
+use Sylament\Schemas\StateCasts\BooleanStateCast;
 
 it('casts to a nullable bool on get, passing blanks through as null', function (): void {
     $cast = new BooleanStateCast();

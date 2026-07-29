@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Fixtures\Twig\Components;
 
-use Sylament\Schemas\Components\Utilities\Set;
+use Sylament\Schemas\Utilities\Set;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;

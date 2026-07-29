@@ -80,6 +80,19 @@ No segment is renamed for style. Symfony's own habit of singular `Exception\`
 Filament costs a migrating user nothing to learn, and one carve-out is worse
 than none.
 
+Two namespaces are **shortened**, dropping a `Components\` segment Filament
+keeps, because what they hold is not part of the component tier — neither a
+component, nor a concern or contract of one:
+
+| Filament | Sylament | Holds |
+| --- | --- | --- |
+| `Filament\Schemas\Components\StateCasts\` | `Sylament\Schemas\StateCasts\` | `StateCast` and its implementations — value objects that transform state |
+| `Filament\Schemas\Components\Utilities\` | `Sylament\Schemas\Utilities\` | `Get` / `Set` — the closure-injected state accessors |
+
+A migrating user importing `Filament\Schemas\Components\Utilities\Get` will
+not find it by prefix swap alone, which is why these are recorded here rather
+than left to the verbatim rule.
+
 Support-level traits split by what they do, so `Filament\Support\Concerns\` has
 two destinations:
 

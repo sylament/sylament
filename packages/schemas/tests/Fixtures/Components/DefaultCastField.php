@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Fixtures\Components;
 
-use Sylament\Schemas\Components\StateCasts\Contracts\StateCast;
-use Sylament\Schemas\Tests\Fixtures\Components\StateCasts\AppendStateCast;
+use Sylament\Schemas\StateCasts\Contracts\StateCast;
+use Sylament\Schemas\Tests\Fixtures\StateCasts\AppendStateCast;
 
 /**
  * A state-bearing leaf that seeds a default cast via `getDefaultStateCasts()`, so the

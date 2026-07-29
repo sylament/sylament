@@ -6,7 +6,7 @@ namespace Sylament\Forms\Tests\Fixtures\Twig\Components;
 
 use Sylament\Forms\Components\Textarea;
 use Sylament\Forms\Components\TextInput;
-use Sylament\Schemas\Components\Utilities\Set;
+use Sylament\Schemas\Utilities\Set;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;

@@ -6,6 +6,9 @@ namespace Sylament\Forms\Components;
 
 use Closure;
 use Sylament\Forms\Components\Concerns\CanBeLengthConstrained;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\Type;
 
 class TextInput extends Field implements Contracts\CanBeLengthConstrained
 {
@@ -88,5 +91,24 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
     public function isPassword(): bool
     {
         return (bool) $this->evaluate($this->isPassword);
+    }
+
+    /**
+     * @return list<Constraint>
+     */
+    public function getValidationConstraints(): array
+    {
+        $constraints = parent::getValidationConstraints();
+        $messages = $this->getValidationMessages();
+
+        if ($this->isEmail()) {
+            $constraints[] = new Email(message: $messages['email'] ?? null);
+        }
+
+        if ($this->isNumeric()) {
+            $constraints[] = new Type('numeric', message: $messages['numeric'] ?? null);
+        }
+
+        return $constraints;
     }
 }

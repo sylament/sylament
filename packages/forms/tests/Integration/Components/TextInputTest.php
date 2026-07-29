@@ -6,6 +6,10 @@ namespace Sylament\Forms\Tests\Integration\Components;
 
 use Sylament\Forms\Components\TextInput;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Type;
 
 use function Sylament\Forms\Tests\renderField;
 
@@ -188,4 +192,47 @@ it('renders the disabled attribute when disabled', function (): void {
 
     $disabled = new Crawler(renderField(TextInput::make('title')->disabled()));
     expect($disabled->filter('input.sy-fo-input')->attr('disabled'))->not->toBeNull();
+});
+
+it('adds an Email constraint when email()', function (): void {
+    $constraints = TextInput::make('mail')->email()->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0])->toBeInstanceOf(Email::class);
+});
+
+it('adds a numeric Type constraint when numeric()', function (): void {
+    $constraints = TextInput::make('price')->numeric()->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0])->toBeInstanceOf(Type::class)
+        ->and($constraints[0]->type)->toBe('numeric');
+});
+
+it('bakes email and numeric messages', function (): void {
+    $email = TextInput::make('mail')
+        ->email()
+        ->validationMessages(['email' => 'Not an address.'])
+        ->getValidationConstraints();
+
+    $numeric = TextInput::make('price')
+        ->numeric()
+        ->validationMessages(['numeric' => 'Not a number.'])
+        ->getValidationConstraints();
+
+    expect($email[0]->message)->toBe('Not an address.')
+        ->and($numeric[0]->message)->toBe('Not a number.');
+});
+
+it('builds no type arms without the sugar', function (): void {
+    expect(TextInput::make('title')->getValidationConstraints())->toBe([]);
+});
+
+it('keeps required first and appends type arms after lengths', function (): void {
+    $constraints = TextInput::make('mail')->required()->maxLength(100)->email()->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(3)
+        ->and($constraints[0])->toBeInstanceOf(NotBlank::class)
+        ->and($constraints[1])->toBeInstanceOf(Length::class)
+        ->and($constraints[2])->toBeInstanceOf(Email::class);
 });

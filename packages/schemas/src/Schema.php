@@ -23,6 +23,7 @@ use Sylament\Schemas\Concerns\CanModifyActions;
 use Sylament\Schemas\Concerns\HasComponents;
 use Sylament\Schemas\Concerns\HasHeadings;
 use Sylament\Schemas\Concerns\HasKey;
+use Sylament\Schemas\Concerns\HasOperation;
 use Sylament\Schemas\Concerns\HasState;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Support\Components\Concerns\HasAlignment;
@@ -54,6 +55,7 @@ class Schema extends ViewComponent
     use HasGap;
     use HasHeadings;
     use HasKey;
+    use HasOperation;
     use HasState;
     use HasStateBindingModifiers;
 

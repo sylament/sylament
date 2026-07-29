@@ -59,6 +59,9 @@ class Component extends ViewComponent
             'rawState' => ClosureParameter::make($this->getRawState()),
             'liveComponent' => ClosureParameter::make($this->getLiveComponent()),
             'record' => ClosureParameter::make($this->getRecord()),
+            'context', 'operation' => isset($this->container)
+                ? ClosureParameter::make($this->getContainer()->getOperation())
+                : parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
             default => parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
         };
     }

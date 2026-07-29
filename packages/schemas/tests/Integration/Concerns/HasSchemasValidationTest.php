@@ -68,3 +68,33 @@ it('scoped-clears one schema and full-clears all', function (): void {
     expect($host->validatedSchemas)->toBe([])
         ->and($host->getErrorsForSchemaStatePath('data.title'))->toBe([]);
 });
+
+it('re-validates a sticky schema on the next request and clears fixed errors', function (): void {
+    $component = $this->createLiveComponent('ValidationHost', ['validatedSchemas' => ['schema']]);
+
+    expect($component->component()->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.']);
+
+    $component->set('data', ['title' => 'Hello', 'slug' => null]);
+    $component->refresh();
+
+    expect($component->component()->getErrorsForSchemaStatePath('data.title'))->toBe([])
+        ->and($component->component()->validatedSchemas)->toBe(['schema']);
+});
+
+it('keeps showing errors on subsequent requests while the field stays invalid', function (): void {
+    $component = $this->createLiveComponent('ValidationHost', ['validatedSchemas' => ['schema']]);
+
+    $component->refresh();
+    $component->refresh();
+
+    expect($component->component()->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.']);
+});
+
+it('drops a stale sticky key whose schema no longer resolves', function (): void {
+    $host = $this->createLiveComponent('ValidationHost')->component();
+    $host->validatedSchemas = ['mountedActionSchema7'];
+
+    $host->revalidateValidatedSchemas();
+
+    expect($host->validatedSchemas)->toBe([]);
+});

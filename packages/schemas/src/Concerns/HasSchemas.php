@@ -162,6 +162,20 @@ trait HasSchemas
         }
     }
 
+    #[PostHydrate(priority: -20)]
+    public function revalidateValidatedSchemas(): void
+    {
+        foreach ($this->validatedSchemas as $schemaKey) {
+            if ($this->hasCachedSchema($schemaKey) || in_array($schemaKey, $this->schemas(), true)) {
+                $this->validateSchema($this->getSchema($schemaKey), shouldThrow: false);
+
+                continue;
+            }
+
+            $this->clearSchemaValidation($schemaKey);
+        }
+    }
+
     public function validateSchema(Schema $schema, bool $shouldThrow = true): void
     {
         $schemaKey = $schema->getKey()

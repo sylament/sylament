@@ -18,7 +18,7 @@ final class ComponentResolver implements StaticInstance
     ) {
     }
 
-    public static function resolve(): static
+    public static function resolve(): self
     {
         if (!self::$instance instanceof self) {
             self::setInstance(new self());

@@ -28,11 +28,6 @@ final class StaticInstancePass implements CompilerPassInterface
         }
     }
 
-    /**
-     * Tolerates a class that cannot be autoloaded: a bundle may register a service
-     * whose class extends an optional dependency that is absent, and autoloading it
-     * throws. Such a class is never a StaticInstance, so skipping it is safe.
-     */
     private function implementsStaticInstance(string $class): bool
     {
         try {

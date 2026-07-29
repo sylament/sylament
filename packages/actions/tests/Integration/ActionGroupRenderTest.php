@@ -35,7 +35,7 @@ it('feeds dropdown configuration into the primitive', function (): void {
 
     expect($html)->toContain('data-sylament--support--dropdown-placement-value="top-end"')
         ->toContain('data-sylament--support--dropdown-offset-value="4"')
-        ->toContain('--sy-dropdown-width: 16rem;');
+        ->toContain('--sy-dropdown-width: 16rem');
 });
 
 it('skips hidden items', function (): void {

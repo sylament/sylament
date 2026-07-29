@@ -47,9 +47,9 @@ it('applies placement, width, and max-height configuration', function (): void {
 
     expect($html)->toContain('data-sylament--support--dropdown-placement-value="top-end"')
         ->toContain('data-sylament--support--dropdown-flip-value="false"')
-        ->toContain('--sy-dropdown-width: 16rem;')
-        ->toContain('--sy-dropdown-max-height: 20rem;')
-        ->toContain('--sy-dropdown-overflow: auto;');
+        ->toContain('--sy-dropdown-width: 16rem')
+        ->toContain('--sy-dropdown-max-height: 20rem')
+        ->toContain('--sy-dropdown-overflow: auto');
 });
 
 /**
@@ -66,6 +66,6 @@ it('emits the scroll-container variable only alongside a max-height', function (
         </twig:SylamentSupport:Dropdown>
         TWIG);
 
-    expect($html)->toContain('--sy-dropdown-width: 16rem;')
+    expect($html)->toContain('--sy-dropdown-width: 16rem')
         ->not->toContain('--sy-dropdown-overflow');
 });

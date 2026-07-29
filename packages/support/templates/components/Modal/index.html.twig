@@ -122,7 +122,11 @@
         }),
         autofocus: windowGetsInitialFocus,
         tabindex: windowGetsInitialFocus ? '-1' : false,
-    }, extraWindowAttributes ?: {}) }}{% if hasSubmitHandler %} {{ live_action(submitHandler ~ ':prevent', {}, {}, 'submit') }}{% endif %}>
+    }, extraWindowAttributes ?: {}) }}
+        {% if hasSubmitHandler %}
+            {{ live_action(submitHandler ~ ':prevent', {}, {}, 'submit') }}
+        {% endif %}
+    >
         {% if hasHeader %}
             <header {{ attrs({class: classes('sy-modal-header', {'sy-vertical-align-center': verticalAlignCenter})}) }}>
                 {% if hasCloseButton %}

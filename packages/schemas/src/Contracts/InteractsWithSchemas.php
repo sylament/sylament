@@ -36,4 +36,25 @@ interface InteractsWithSchemas
      * the end of the previous render, used by the `afterStateUpdated` diff.
      */
     public function getOldSchemaState(?string $path): mixed;
+
+    /**
+     * Run the validator over the schema's collected constraints against the raw
+     * live state. Failures fill the error bag; on the submit path (default) a
+     * failure also records the schema key sticky and throws, while success
+     * clears both. The silent path only rewrites the bag section.
+     */
+    public function validateSchema(Schema $schema, bool $shouldThrow = true): void;
+
+    /**
+     * All bag messages recorded for an absolute state path; null returns none.
+     *
+     * @return list<string>
+     */
+    public function getErrorsForSchemaStatePath(?string $path): array;
+
+    /**
+     * Drop one schema's stickiness and bag section, or all of both when the key
+     * is null.
+     */
+    public function clearSchemaValidation(?string $schemaKey = null): void;
 }

@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Concerns;
 
+use LogicException;
 use RuntimeException;
+use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Symfony\UX\LiveComponent\Attribute\PreDehydrate;
@@ -19,9 +23,28 @@ trait HasSchemas
     public array $oldState = [];
 
     /**
+     * @var list<string>
+     */
+    #[LiveProp]
+    public array $validatedSchemas = [];
+
+    /**
      * @var array<string, Schema>
      */
     protected array $cachedSchemas = [];
+
+    /**
+     * @var array<string, array<string, list<string>>>
+     */
+    protected array $schemaValidationErrors = [];
+
+    protected ?ValidatorInterface $schemaStateValidator = null;
+
+    #[Required]
+    public function setSchemaStateValidator(ValidatorInterface $validator): void
+    {
+        $this->schemaStateValidator = $validator;
+    }
 
     public function schemas(): array
     {
@@ -137,6 +160,78 @@ trait HasSchemas
                 $component->callAfterStateUpdatedHooks();
             }
         }
+    }
+
+    public function validateSchema(Schema $schema, bool $shouldThrow = true): void
+    {
+        $schemaKey = $schema->getKey()
+            ?? throw new LogicException('Cannot validate a schema without a key — register it through getSchema()/cacheSchema() so it is keyed.');
+
+        $validator = $this->schemaStateValidator
+            ?? throw new LogicException('No validator injected into ' . static::class . ' — the container calls setSchemaStateValidator(); a host built with `new` must inject one itself.');
+
+        $errors = [];
+
+        foreach ($schema->getValidationConstraints() as $path => $constraints) {
+            $violations = $validator->validate($schema->getPropertyAccessor()->get($this, $path), $constraints);
+
+            foreach ($violations as $violation) {
+                $errors[$path][] = (string) $violation->getMessage();
+            }
+        }
+
+        if ($errors === []) {
+            unset($this->schemaValidationErrors[$schemaKey]);
+
+            if ($shouldThrow) {
+                $this->validatedSchemas = array_values(array_diff($this->validatedSchemas, [$schemaKey]));
+            }
+
+            return;
+        }
+
+        $this->schemaValidationErrors[$schemaKey] = $errors;
+
+        if (!$shouldThrow) {
+            return;
+        }
+
+        if (!in_array($schemaKey, $this->validatedSchemas, true)) {
+            $this->validatedSchemas[] = $schemaKey;
+        }
+
+        throw new ValidationException($errors);
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getErrorsForSchemaStatePath(?string $path): array
+    {
+        if ($path === null) {
+            return [];
+        }
+
+        $messages = [];
+
+        foreach ($this->schemaValidationErrors as $schemaErrors) {
+            $messages = [...$messages, ...($schemaErrors[$path] ?? [])];
+        }
+
+        return $messages;
+    }
+
+    public function clearSchemaValidation(?string $schemaKey = null): void
+    {
+        if ($schemaKey === null) {
+            $this->validatedSchemas = [];
+            $this->schemaValidationErrors = [];
+
+            return;
+        }
+
+        $this->validatedSchemas = array_values(array_diff($this->validatedSchemas, [$schemaKey]));
+        unset($this->schemaValidationErrors[$schemaKey]);
     }
 
     public function makeSchema(): Schema

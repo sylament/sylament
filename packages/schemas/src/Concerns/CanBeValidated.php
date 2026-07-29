@@ -32,4 +32,13 @@ trait CanBeValidated
 
         return $constraints;
     }
+
+    public function validate(): void
+    {
+        if ($this->getValidationConstraints() === []) {
+            return;
+        }
+
+        $this->getLiveComponent()->validateSchema($this);
+    }
 }

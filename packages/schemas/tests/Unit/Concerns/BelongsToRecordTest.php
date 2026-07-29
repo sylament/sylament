@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\Concerns;
 
+use LogicException;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Concerns\RecordFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
+use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
 
 it('returns the bound instance and its class', function (): void {
     $record = new RecordFixture();
@@ -69,4 +72,69 @@ it('injects the record into schema closures by name and by type', function (): v
 
     expect($schema->evaluate(fn ($record): string => $record->getTitle()))->toBe('Bound')
         ->and($schema->evaluate(fn (RecordFixture $article): string => $article->getTitle()))->toBe('Bound');
+});
+
+it('maps validated state onto the bound record and returns it', function (): void {
+    $record = new RecordFixture();
+    $record->setTitle('Old');
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('title'), StateField::make('perex')])
+        ->record($record);
+
+    $schema->fill(['title' => 'New', 'perex' => 'Fresh']);
+
+    expect($schema->getData())->toBe($record)
+        ->and($record->getTitle())->toBe('New')
+        ->and($record->getPerex())->toBe('Fresh');
+});
+
+it('constructs a fresh instance from a declared class when no instance is bound', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('title')])
+        ->record(RecordFixture::class);
+
+    $schema->fill(['title' => 'Built']);
+
+    $data = $schema->getData();
+
+    expect($data)->toBeInstanceOf(RecordFixture::class)
+        ->and($data->getTitle())->toBe('Built');
+});
+
+it('excludes dehydrated(false) fields from the mapping', function (): void {
+    $record = new RecordFixture();
+    $record->setTitle('Kept');
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('title')->dehydrated(false), StateField::make('perex')])
+        ->record($record);
+
+    $schema->fill(['title' => 'Changed', 'perex' => 'Mapped']);
+    $schema->getData();
+
+    expect($record->getTitle())->toBe('Kept')
+        ->and($record->getPerex())->toBe('Mapped');
+});
+
+it('throws when a state key has no writable target', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('nonexistent')])
+        ->record(new RecordFixture());
+
+    $schema->fill(['nonexistent' => 'x']);
+
+    expect(fn (): object => $schema->getData())->toThrow(NoSuchPropertyException::class);
+});
+
+it('throws when no record is bound at all', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('title')]);
+
+    expect(fn (): object => $schema->getData())->toThrow(LogicException::class);
 });

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Concerns;
 
 use Closure;
+use LogicException;
 
 use function Sylament\Support\filled;
 
@@ -91,5 +92,28 @@ trait BelongsToRecord
         }
 
         return null;
+    }
+
+    /**
+     * Validate through {@see getState()}, then write every top-level state key
+     * onto the bound instance — or onto a fresh one built from the declared class
+     * — and return it. A failing validation throws before anything is written.
+     */
+    public function getData(): object
+    {
+        $record = $this->getRecord();
+
+        if (! is_object($record)) {
+            $record = $this->getRecordInstance()
+                ?? throw new LogicException('Schema::getData() needs record() — a bound instance to map onto, or a declared class to construct.');
+        }
+
+        $accessor = $this->getPropertyAccessor();
+
+        foreach ($this->getState() as $key => $value) {
+            $accessor->set($record, $key, $value);
+        }
+
+        return $record;
     }
 }

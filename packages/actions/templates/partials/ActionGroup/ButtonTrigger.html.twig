@@ -1,9 +1,9 @@
 {% set extraAttributes = group.getExtraAttributeBag.toScalarAttributes %}
-{% set triggerClasses = classes({ 'sy-outlined': group.isOutlined }, extraAttributes.class ?? null) %}
+{% set triggerClasses = classes({'sy-outlined': group.isOutlined}, extraAttributes.class ?? null) %}
 {% component 'SylamentSupport:Button' with {
     icon: group.getIcon,
     color: group.getColor ?? 'gray',
     size: group.getSize ?? 'md',
-}|merge(extraAttributes)|merge(triggerClasses ? { class: triggerClasses } : {}) %}
-    {% block content %}{{ group.getLabel }}{% endblock %}
+}|merge(extraAttributes)|merge(triggerClasses ? {class: triggerClasses} : {}) %}
+    {% block content %}{{ group.getLabel }}{% endblock content %}
 {% endcomponent %}

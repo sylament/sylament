@@ -124,7 +124,7 @@
         tabindex: windowGetsInitialFocus ? '-1' : false,
     }, extraWindowAttributes ?: {}) }}{% if hasSubmitHandler %} {{ live_action(submitHandler ~ ':prevent', {}, {}, 'submit') }}{% endif %}>
         {% if hasHeader %}
-            <header {{ attrs({ class: classes('sy-modal-header', { 'sy-vertical-align-center': verticalAlignCenter }) }) }}>
+            <header {{ attrs({class: classes('sy-modal-header', {'sy-vertical-align-center': verticalAlignCenter})}) }}>
                 {% if hasCloseButton %}
                     <twig:SylamentSupport:IconButton
                         class="sy-modal-close-btn"
@@ -145,11 +145,11 @@
                 {% if hasHeading or hasDescription %}
                     <div class="sy-modal-header-text-ctn">
                         {% if hasHeading %}
-                            <h2 {{ attrs({ id: headingId, class: ['sy-modal-heading'] }) }}>{{ heading }}</h2>
+                            <h2 {{ attrs({id: headingId, class: ['sy-modal-heading']}) }}>{{ heading }}</h2>
                         {% endif %}
 
                         {% if hasDescription %}
-                            <p {{ attrs({ id: descriptionId, class: ['sy-modal-description'] }) }}>{{ description }}</p>
+                            <p {{ attrs({id: descriptionId, class: ['sy-modal-description']}) }}>{{ description }}</p>
                         {% endif %}
                     </div>
                 {% endif %}
@@ -161,7 +161,7 @@
         {% endif %}
 
         {% if hasFooter %}
-            <footer {{ attrs({ class: classes('sy-modal-footer', { (footerAlignmentClass ?? ''): footerAlignmentClass is not empty }) }) }}>
+            <footer {{ attrs({class: classes('sy-modal-footer', {(footerAlignmentClass ?? ''): footerAlignmentClass is not empty})}) }}>
                 {% if hasFooterSlot %}
                     {{ footer }}
                 {% else %}

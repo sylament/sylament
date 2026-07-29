@@ -7,8 +7,8 @@
         maxHeight: component.getDropdownMaxHeight,
     }|merge(component.getExtraDropdownAttributeBag.toScalarAttributes) %}
         {% block trigger %}
-            {% include component.getTriggerTemplate with { group: component } only %}
-        {% endblock %}
+            {% include component.getTriggerTemplate with {group: component} only %}
+        {% endblock trigger %}
         {% block content %}
             {% for actionList in component.getDropdownActionLists %}
                 <div class="sy-dropdown-list">
@@ -17,7 +17,7 @@
                     {% endfor %}
                 </div>
             {% endfor %}
-        {% endblock %}
+        {% endblock content %}
     {% endcomponent %}
 {% else %}
     <div class="sy sy-ac-group">

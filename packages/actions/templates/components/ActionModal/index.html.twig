@@ -7,18 +7,14 @@
     overlaid = false
 %}
 
-{% set submitHandler = action.hasFormWrapper
-    ? action.getLiveComponentCallMountedActionName
-    : null %}
+{% set submitHandler = action.hasFormWrapper ? action.getLiveComponentCallMountedActionName : null %}
 
-<div id="{{ id }}-w-{{ action.getName }}" {{ live_action(
-    'unmountAction',
-    { cancelParentActions: action.getParentActionsToCancelOnClose },
-    {},
-    'sylament--support--modal:dismissed',
-) }}>
+<div
+        id="{{ id }}-w-{{ action.getName }}"
+        {{ live_action('unmountAction', {cancelParentActions: action.getParentActionsToCancelOnClose}, event: 'sylament--support--modal:dismissed') }}
+>
     <twig:SylamentSupport:Modal
-        id="{{ id }}"
+        :id="id"
         :open="open"
         :overlaid="overlaid and open"
         :heading="action.getModalHeading"

@@ -19,13 +19,13 @@
     {%- if not component.getUrl %}
         {%- if hasLiveClickBinding and component.getClientClickHandler %} {{ live_action(component.getClientClickHandler) }}
         {%- elseif hasLiveClickBinding and component.getParentActionCallLiveComponentClickHandler %} {{ live_action(component.getParentActionCallLiveComponentClickHandler, {
-            ...(component.getArguments ? { arguments: component.getArguments } : {}),
+            ...(component.getArguments ? {arguments: component.getArguments} : {}),
         }) }}
         {%- elseif component.shouldClose %} data-action="sylament--support--modal#dismiss"
         {%- elseif hasLiveClickBinding %} {{ live_action('mountAction', {
             name: component.getName,
-            ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
-            ...(component.getContext ? { context: component.getContext } : {}),
+            ...(component.getInvokedArguments ? {arguments: component.getInvokedArguments} : {}),
+            ...(component.getContext ? {context: component.getContext} : {}),
         }) }}
         {%- endif %}
     {%- endif %}

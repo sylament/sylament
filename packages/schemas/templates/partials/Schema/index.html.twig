@@ -20,7 +20,7 @@
         {% else %}
             <div {{ attrs(
                 isInline ? null : gridColumn(childComponent.component.getColumnSpan, childComponent.component.getColumnStart, childComponent.component.getColumnOrder),
-                isInline and childComponent.component.canGrow(false) ? { class: ['sy-growable'] } : null,
+                isInline and childComponent.component.canGrow(false) ? {class: ['sy-growable']} : null,
             ) }}>
                 <div class="sy-sc-component">
                     {{ renderComponent(childComponent.component) }}

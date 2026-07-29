@@ -3,22 +3,22 @@
     and not component.getClientClickHandler
     and not component.getParentActionCallLiveComponentClickHandler
     and not clickWiringSuppressed
-    ? { 'data-action': 'sylament--support--modal#dismiss' }
+    ? {'data-action': 'sylament--support--modal#dismiss'}
     : {} %}
 {% set clickParameters = component.getClientClickHandler
-    ? { action: component.getClientClickHandler }
+    ? {action: component.getClientClickHandler}
     : (component.getParentActionCallLiveComponentClickHandler
         ? {
             action: component.getParentActionCallLiveComponentClickHandler,
-            ...(component.getArguments ? { arguments: component.getArguments } : {}),
+            ...(component.getArguments ? {arguments: component.getArguments} : {}),
         }
         : (component.shouldClose
             ? null
             : {
                 action: 'mountAction',
                 name: component.getName,
-                ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
-                ...(component.getContext ? { context: component.getContext } : {}),
+                ...(component.getInvokedArguments ? {arguments: component.getInvokedArguments} : {}),
+                ...(component.getContext ? {context: component.getContext} : {}),
             })) %}
 {% set mountAttributes = clickWiringSuppressed or component.canSubmitForm or clickParameters is null
     ? {}
@@ -38,5 +38,5 @@
     target: component.shouldOpenUrlInNewTab ? '_blank' : null,
     type: component.canSubmitForm ? 'submit' : 'button',
     formId: component.getFormId,
-    ...(component.getTooltip ? { title: component.getTooltip } : {}),
-}|merge(extraAttributes)|merge({ class: rootClasses })|merge(mountAttributes)|merge(closeAttributes) %}{% endcomponent %}
+    ...(component.getTooltip ? {title: component.getTooltip} : {}),
+}|merge(extraAttributes)|merge({class: rootClasses})|merge(mountAttributes)|merge(closeAttributes) %}{% endcomponent %}

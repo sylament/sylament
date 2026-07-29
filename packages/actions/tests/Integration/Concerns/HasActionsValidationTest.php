@@ -16,6 +16,7 @@ it('keeps the modal open on invalid submit — stack untouched, bag filled, acti
     expect(fn () => $host->callMountedAction())->toThrow(ValidationException::class)
         ->and($host->mountedActions)->toHaveCount(1)
         ->and($host->getErrorsForSchemaStatePath('mountedActionsData.0.title'))->toBe(['This value should not be blank.'])
+        ->and($host->getMountedAction()?->getData())->toBe([])
         ->and($host->savedData)->toBe([]);
 });
 
@@ -83,10 +84,13 @@ it('leaves an outer frame errors alone when a further frame mounts', function ()
 
 it('unmounts and rethrows when the invalid action has no modal to keep open', function (): void {
     $host = $this->createLiveComponent('ActionSchemaHost')->component();
+    $action = $host->getAction('publishInline');
 
-    expect(fn () => $host->mountAction('publishInline'))->toThrow(ValidationException::class)
+    expect(fn () => $host->mountAction('publishInline', ['origin' => 'row-3']))->toThrow(ValidationException::class)
         ->and($host->mountedActions)->toBe([])
-        ->and($host->savedData)->toBe([]);
+        ->and($host->savedData)->toBe([])
+        ->and($action?->getData())->toBe([])
+        ->and($action?->getArguments())->toBe(['origin' => 'row-3']);
 });
 
 it('unmounts and rethrows when a mount-time hook raises validation', function (): void {

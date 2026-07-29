@@ -22,8 +22,14 @@ derive from the conventions below.
 | `Filament\Actions\Concerns\InteractsWithActions` | `HasActions` | trait | `Sylament\Actions\Concerns\HasActions` | [Swapped](#interface-and-trait-names-are-swapped) — `Has*` matches the house trait prefix (`HasName`, `HasAction`, …). |
 | `Filament\Actions\Contracts\HasActions` | `InteractsWithActions` | interface | `Sylament\Actions\Contracts\InteractsWithActions` | [Swapped](#interface-and-trait-names-are-swapped) — the interface names the behavior the host implements. |
 | `Filament\Forms\Components\Contracts\HasValidationRules` | `HasValidationConstraints` | interface | `Sylament\Schemas\Components\Contracts\HasValidationConstraints` | Relocated into **schemas** — the schema walk type-checks it, and schemas may not reference a forms symbol (the split-repo dependency rule); renamed per the [constraint vocabulary](#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary). |
+| `Filament\Schemas\Components\Concerns\BelongsToModel` | `BelongsToRecord` | trait | `Sylament\Schemas\Components\Concerns\BelongsToRecord` | [Record vocabulary](#the-model-vocabulary-collapses-onto-record). |
+| `Filament\Schemas\Concerns\BelongsToModel` | `BelongsToRecord` | trait | `Sylament\Schemas\Concerns\BelongsToRecord` | [Record vocabulary](#the-model-vocabulary-collapses-onto-record). |
 | `Filament\Schemas\Concerns\InteractsWithSchemas` | `HasSchemas` | trait | `Sylament\Schemas\Concerns\HasSchemas` | [Swapped](#interface-and-trait-names-are-swapped) — `Has*` matches the house trait prefix (`HasComponents`, `HasKey`, `HasGap`, …). |
 | `Filament\Schemas\Contracts\HasSchemas` | `InteractsWithSchemas` | interface | `Sylament\Schemas\Contracts\InteractsWithSchemas` | [Swapped](#interface-and-trait-names-are-swapped) — the interface names the behavior. |
+| `getModel()` (`BelongsToModel`, both tiers) | `getRecordClass()` | method | both tiers of `…\BelongsToRecord` | [Record vocabulary](#the-model-vocabulary-collapses-onto-record). |
+| `getModelInstance()` (`BelongsToModel`, both tiers) | `getRecordInstance()` | method | both tiers of `…\BelongsToRecord` | [Record vocabulary](#the-model-vocabulary-collapses-onto-record). |
+| `model()` (`BelongsToModel`, both tiers) | `record()` | method | both tiers of `…\BelongsToRecord` | [Record vocabulary](#the-model-vocabulary-collapses-onto-record) — absorbed by `record()`, which widens to accept the class-string payload (declares the class, binds no instance). |
+| `$model` (closure parameter) | — not ported | closure param | — | [Record vocabulary](#the-model-vocabulary-collapses-onto-record) — `$record` and `getRecordClass()` cover it; revisit only if a ported surface needs the class-string injected. |
 | `mountedActions.{i}.data` (state path) | `mountedActionsData.{i}` | state path | `Sylament\Actions\Concerns\HasActions` | Symfony's property accessor resolves the first path segment through the same-named getter, so the nested form is unreadable and unwritable — see [has-actions.md](actions/has-actions.md#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor). |
 | `rule()` / `rules()` (forms `CanBeValidated`) | `constraint()` / `constraints()` | method | `Sylament\Forms\Components\Concerns\CanBeValidated` | [Constraint vocabulary](#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary) — the payload is Symfony `Constraint` objects, not Laravel rules; the rename makes the migration break loud and greppable instead of grep-hit-then-type-error. |
 | `Section::formBefore()` / `isFormBefore()` | `contentBefore()` / `hasContentBefore()` | method | `Sylament\Schemas\Components\Concerns\HasContentBefore` | Adopts the `contentBefore` prop name Filament's own support-layer section component uses. |
@@ -57,6 +63,23 @@ and carry no table rows of their own: `getValidationRules()` →
 are not rule vocabulary keep Filament's spelling: `required()`, `nullable()`,
 `validationMessages()` (including its `required`/`max`/`min`/`size`/`email`/
 `numeric` keys), `validate()`.
+
+### The model vocabulary collapses onto record
+
+Decided with Martin, 2026-07-30 (M1 · 2). Filament itself is inconsistent
+here: root-tier `record()` aliases `model()` onto one last-write-wins property
+with divergent payload types, the component tier ships `model()` but no
+`record()`, and the rest of Filament — panels (`EditRecord`, `getRecord()`),
+tables, actions — speaks "record". Sylament collapses onto Filament's own more
+prevalent name, which also removes a real trap
+(`->record($x)->model(Y::class)` looks additive but silently unbinds the
+instance) and converges with actions' record-only `InteractsWithRecord`.
+"Model" is additionally an Eloquent concept-name with no Doctrine referent —
+the concept-name goes with its ecosystem, the constraint-vocabulary precedent.
+Migration cost, accepted: `->model(...)` and `fn ($model)` break loudly
+(missing method / unresolvable parameter) instead of grepping clean. Kept
+names: `record()`, `getRecord()`. Full rationale and surface:
+[belongs-to-record.md](schemas/belongs-to-record.md).
 
 ## Not renames
 

@@ -14,6 +14,8 @@ packages/*/assets/src/styles/*.generated.css
 # Other
 /.php-cs-fixer.cache
 /.php-cs-fixer.php
+/.twig-cs-fixer.cache
+/.twig-cs-fixer.php
 /phpstan.neon
 /docs/superpowers
 /.superpowers

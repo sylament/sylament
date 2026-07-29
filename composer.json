@@ -35,7 +35,8 @@
         "symfony/asset-mapper": "^8.1",
         "symfony/framework-bundle": "^8.0",
         "symfony/test-pack": "^1.2",
-        "symfony/twig-bundle": "^8.1"
+        "symfony/twig-bundle": "^8.1",
+        "vincentlanglet/twig-cs-fixer": "^4.0"
     },
     "autoload": {
         "psr-4": {
@@ -72,10 +73,12 @@
     "scripts": {
         "format": [
             "@format:rector",
-            "@format:lint"
+            "@format:lint",
+            "@format:twig"
         ],
         "format:rector": "rector",
         "format:lint": "php-cs-fixer --diff fix",
+        "format:twig": "twig-cs-fixer fix",
         "test": [
             "@test:actions",
             "@test:forms",
@@ -87,7 +90,8 @@
             "@test:tables",
             "@test:widgets",
             "@test:rector",
-            "@test:static"
+            "@test:static",
+            "@test:twig"
         ],
         "test:actions": "pest -c packages/actions/phpunit.dist.xml --test-directory=packages/actions/tests",
         "test:forms": "pest -c packages/forms/phpunit.dist.xml --test-directory=packages/forms/tests",
@@ -100,7 +104,8 @@
         "test:widgets": "pest -c packages/widgets/phpunit.dist.xml --test-directory=packages/widgets/tests",
         "test:static": "phpstan analyse",
         "test:lint": "php-cs-fixer --dry-run --diff fix",
-        "test:rector": "rector --dry-run"
+        "test:rector": "rector --dry-run",
+        "test:twig": "twig-cs-fixer lint"
     },
     "minimum-stability": "dev",
     "prefer-stable": true

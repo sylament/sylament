@@ -80,11 +80,11 @@
                 'sy-divided': divided,
                 'sy-secondary': secondary,
                 'sy-collapsible': collapsible,
-                'sy-collapsed': collapsible and collapsed
+                'sy-collapsed': collapsible and collapsed,
             }),
             'aria-labelledby': labelledById ?: false,
             'aria-describedby': descriptionId ?: false,
-            ...(sectionStimulus ?: {})
+            ...(sectionStimulus ?: {}),
         }) }}
 >
     {% if hasHeader %}
@@ -144,7 +144,6 @@
             {% endif %}
         </header>
     {% endif %}
-
 
     {% if hasBody %}
         <div

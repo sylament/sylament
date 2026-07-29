@@ -35,10 +35,10 @@ Porting state lives in `docs/progress/` — read `docs/progress/README.md` first
 ## Commands
 
 PHP (run from repo root):
-- `composer test` — full suite: every bundle's Pest suite + Rector dry-run + PHPStan (level max).
+- `composer test` — full suite: every bundle's Pest suite + Rector dry-run + PHPStan (level max) + Twig-CS-Fixer lint.
 - `composer test:<bundle>` — single bundle's Pest suite, e.g. `composer test:support`. Each invokes `pest -c packages/<bundle>/phpunit.dist.xml --test-directory=packages/<bundle>/tests`.
-- `composer test:static` — PHPStan only. `composer test:lint` — PHP-CS-Fixer dry-run. `composer test:rector` — Rector dry-run.
-- `composer format` — apply Rector then PHP-CS-Fixer.
+- `composer test:static` — PHPStan only. `composer test:lint` — PHP-CS-Fixer dry-run. `composer test:rector` — Rector dry-run. `composer test:twig` — Twig-CS-Fixer lint (templates and test fixtures; config in `.twig-cs-fixer.dist.php`).
+- `composer format` — apply Rector, then PHP-CS-Fixer, then Twig-CS-Fixer.
 - Run one Pest file: `vendor/bin/pest -c packages/support/phpunit.dist.xml --test-directory=packages/support/tests path/to/Test.php` (or use `--filter`).
 
 JS/CSS (run from repo root):
@@ -90,7 +90,7 @@ Two deliberate omissions, so their absence reads as a decision rather than an ov
 
 ## Definition of done
 
-- `composer test` green (Pest + Rector dry-run + PHPStan max).
+- `composer test` green (Pest + Rector dry-run + PHPStan max + Twig-CS-Fixer lint).
 - `pnpm test:types` and `pnpm test:lint` green.
 - `composer format` applied; no hand-formatting.
 

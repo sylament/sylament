@@ -80,6 +80,12 @@ class SylamentSupportBundle extends SylamentBundle
         $services = $configurator->services();
 
         $services
+            ->load(__NAMESPACE__ . '\\Components\\', __DIR__ . '/Components/*.php')
+            ->exclude([__DIR__ . '/Components/ComponentManager.php'])
+            ->autowire()
+            ->autoconfigure();
+
+        $services
             ->set('sylament_support.static_instance_registry', StaticInstanceRegistry::class)
             ->args([
                 '$services' => tagged_iterator(StaticInstanceInterface::class),

@@ -25,6 +25,16 @@ class SylamentSchemasBundle extends SylamentBundle
         $services = $configurator->services();
 
         $services
+            ->load(__NAMESPACE__ . '\\Components\\', __DIR__ . '/Components/*.php')
+            ->autowire()
+            ->autoconfigure();
+
+        $services
+            ->set(Schema::class)
+            ->autowire()
+            ->autoconfigure();
+
+        $services
             ->set('sylament_schemas.schema_extension', SchemaExtension::class)
             ->autowire()
             ->tag('twig.extension');

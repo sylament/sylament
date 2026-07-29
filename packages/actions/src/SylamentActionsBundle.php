@@ -16,8 +16,19 @@ class SylamentActionsBundle extends SylamentBundle
      */
     public function loadExtension(array $config, ContainerConfigurator $configurator, ContainerBuilder $container): void
     {
+        $this->configureComponents($configurator);
         $this->configureTwigComponents($configurator);
         $this->configureTwigExtensions($configurator);
+    }
+
+    private function configureComponents(ContainerConfigurator $configurator): void
+    {
+        $configurator->services()
+            ->defaults()
+                ->autowire()
+                ->autoconfigure()
+            ->set(Action::class)
+            ->set(ActionGroup::class);
     }
 
     private function configureTwigComponents(ContainerConfigurator $configurator): void

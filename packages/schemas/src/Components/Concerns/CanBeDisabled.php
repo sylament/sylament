@@ -7,13 +7,6 @@ namespace Sylament\Schemas\Components\Concerns;
 use Closure;
 use Sylament\Schemas\Components\Component;
 
-/**
- * Security: disabling a field prevents it from being saved, but a skilled user
- * can manipulate the client to bypass the disabled state (it is just an HTML
- * attribute). Always enforce authorization server-side (e.g. in a form's
- * `mutateFormDataBeforeSave()` or a policy) for sensitive fields — never rely
- * on `disabled()` alone.
- */
 trait CanBeDisabled
 {
     protected bool|Closure $isDisabled = false;

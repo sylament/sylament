@@ -8,6 +8,7 @@ use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
+use Sylament\Support\Enums\Operation;
 
 it('is visible by default', function (): void {
     $field = StateField::make('title');
@@ -54,4 +55,33 @@ it('treats a component with no child components as all-hidden', function (): voi
     Schema::make(new StateHostFixture())->components([$group])->getComponents();
 
     expect($group->isHidden())->toBeTrue();
+});
+
+it('hides on a matching operation string, enum, or array', function (): void {
+    $attach = fn (StateField $field): StateField => Schema::make(new StateHostFixture())
+        ->operation('edit')
+        ->components([$field])
+        ->getComponents()[0];
+
+    expect($attach(StateField::make('slug')->hiddenOn('edit'))->isHidden())->toBeTrue()
+        ->and($attach(StateField::make('slug')->hiddenOn(Operation::Edit))->isHidden())->toBeTrue()
+        ->and($attach(StateField::make('slug')->hiddenOn(['create', 'view']))->isHidden())->toBeFalse();
+});
+
+it('hides when the host live component matches a class-string operation', function (): void {
+    $field = Schema::make(new StateHostFixture())
+        ->operation('edit')
+        ->components([StateField::make('slug')->hiddenOn(StateHostFixture::class)])
+        ->getComponents()[0];
+
+    expect($field->isHidden())->toBeTrue();
+});
+
+it('shows only on a matching visibleOn operation', function (): void {
+    $field = Schema::make(new StateHostFixture())
+        ->operation('edit')
+        ->components([StateField::make('slug')->visibleOn('create')])
+        ->getComponents()[0];
+
+    expect($field->isVisible())->toBeFalse();
 });

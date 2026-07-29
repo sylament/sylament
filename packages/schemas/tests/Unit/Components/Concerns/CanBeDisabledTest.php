@@ -50,6 +50,16 @@ it('inherits disabled from its container schema', function (): void {
     expect($component->isDisabled())->toBeTrue();
 });
 
+it('disables on a matching operation only', function (): void {
+    $attach = fn (StateField $field): StateField => Schema::make(new StateHostFixture())
+        ->operation('edit')
+        ->components([$field])
+        ->getComponents()[0];
+
+    expect($attach(StateField::make('slug')->disabledOn('edit'))->isDisabled())->toBeTrue()
+        ->and($attach(StateField::make('slug')->disabledOn('create'))->isDisabled())->toBeFalse();
+});
+
 it('drops a disabled component from getState() via the saved() coupling', function (): void {
     $host = new StateHostFixture();
     $schema = Schema::make($host)->statePath('data')->components([

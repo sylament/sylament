@@ -120,7 +120,7 @@ services, root value classes, translations, and the bundle wiring —
 | [`GridDirection`](../../../packages/support/src/Enums/GridDirection.php) | [`Enums/GridDirection.php`](../../../vendor/filament/support/src/Enums/GridDirection.php) | done | — |
 | [`IconPosition`](../../../packages/support/src/Enums/IconPosition.php) | [`Enums/IconPosition.php`](../../../vendor/filament/support/src/Enums/IconPosition.php) | done | — |
 | [`IconSize`](../../../packages/support/src/Enums/IconSize.php) | [`Enums/IconSize.php`](../../../vendor/filament/support/src/Enums/IconSize.php) | done | [icon-size.md](icon-size.md) |
-| Operation | [`Enums/Operation.php`](../../../vendor/filament/support/src/Enums/Operation.php) | todo | — |
+| [`Operation`](../../../packages/support/src/Enums/Operation.php) | [`Enums/Operation.php`](../../../vendor/filament/support/src/Enums/Operation.php) | done | — |
 | Platform | [`Enums/Platform.php`](../../../vendor/filament/support/src/Enums/Platform.php) | todo | — |
 | [`Size`](../../../packages/support/src/Enums/Size.php) | [`Enums/Size.php`](../../../vendor/filament/support/src/Enums/Size.php) | done | — |
 | [`SlideOverPosition`](../../../packages/support/src/Enums/SlideOverPosition.php) | [`Enums/SlideOverPosition.php`](../../../vendor/filament/support/src/Enums/SlideOverPosition.php) | done | — |

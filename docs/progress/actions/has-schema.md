@@ -6,8 +6,9 @@ modal should contain with `schema()`, and `getSchema(Schema $schema)` turns that
 declaration into a real [`Schema`](../schemas/schema.md) when a host hands it one
 to populate. The other half — building that container per mounted frame, keying
 it `mountedActionSchema{$i}`, binding it to the client-writable
-`mountedActionsData.{$i}` bag, caching it, filling it at mount and lifting its
-state back onto the action at submit — is the host's, and lives in
+`mountedActionsData.{$i}` bag, caching it, filling it at mount, validating it at
+submit and lifting its state back onto the action once it passes — is the
+host's, and lives in
 [`has-actions.md`](has-actions.md). This file covers only the action-side
 surface.
 
@@ -61,7 +62,10 @@ Covered by
 for the trait in isolation, and end to end through a real mounted frame by
 [`HasActionsSchemaTest`](../../../packages/actions/tests/Integration/Concerns/HasActionsSchemaTest.php)
 (mount seeds the bag, the schema renders bound to `mountedActionsData.0.*`, a
-client write round-trips into `$action->getData()`) and
+client write round-trips into `$action->getData()`),
+[`HasActionsValidationTest`](../../../packages/actions/tests/Integration/Concerns/HasActionsValidationTest.php)
+(a declared schema carrying a constrained component decides whether the submit
+reaches the action at all) and
 [`ActionModalRenderTest`](../../../packages/actions/tests/Integration/Components/ActionModalRenderTest.php)
 (the `<form>` window and the schema slot).
 

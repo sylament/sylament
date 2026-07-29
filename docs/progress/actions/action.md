@@ -78,7 +78,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`label()` / `getLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | The name-derived default takes the segment **before the first dot** (`u($name)->before('.')`), which is Filament's own actions-side choice and differs from `Field`'s `afterLast('.')` — matched deliberately, not a slip to "fix" |
 | `hiddenLabel()` / `isLabelHidden()` | [`hiddenLabel()` / `isLabelHidden()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | A hidden label renders as an `aria-label` on the trigger root rather than as visible text — the [button](../../../packages/actions/templates/partials/Action/Button.html.twig) / [link](../../../packages/actions/templates/partials/Action/Link.html.twig) / [badge](../../../packages/actions/templates/partials/Action/Badge.html.twig) triggers read `isLabelHidden` for it, matching what Filament's `labelSrOnly` button prop does |
 | `translateLabel()` / `disableLabel()` (deprecated) | [`translateLabel()` / `disableLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported) |
-| [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | in progress | M1 · 1 (form-validation hooks); a Symfony event dispatch for `ActionCalling`/`ActionCalled` | [detail](#the-form-fill-lifecycle-hooks-are-ported-form-validated-hooks-and-actioncallingactioncalled-events-are-not) |
+| [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | in progress | a Symfony event dispatch for `ActionCalling`/`ActionCalled` | [detail](#the-lifecycle-hooks-are-ported-actioncallingactioncalled-events-are-not) |
 | [`HasMountableArguments`](../../../packages/actions/src/Concerns/HasMountableArguments.php) | [`Concerns/HasMountableArguments.php`](../../../vendor/filament/actions/src/Concerns/HasMountableArguments.php) | done | — | [diverges](#action-invocation-is-a-php-side-seam-only) |
 | [`HasName`](../../../packages/actions/src/Concerns/HasName.php) | [`Concerns/HasName.php`](../../../vendor/filament/actions/src/Concerns/HasName.php) | done | — | [diverges](#getname-tightens-its-return-type-to-non-nullable-string) |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | [diverges](#hassize-drops-the-optimized-render-fast-path-helper) |
@@ -485,31 +485,34 @@ Missing vs Filament's `HasAction`:
 
 Next step: promote the template-side guard into a real `isLiveComponentClickHandlerEnabled()` on `HasAction` the moment a caller needs the explicit override — the two default arms already agree with Filament's, so that change is additive and moves logic rather than adding behaviour.
 
-### The form-fill lifecycle hooks are ported; form-validated hooks and ActionCalling/ActionCalled events are not
+### The lifecycle hooks are ported; ActionCalling/ActionCalled events are not
 
-**In:** `before(?Closure)` / `after(?Closure)` and their runners `callBefore()` /
-`callAfter()`, plus `beforeFormFilled(?Closure)` / `afterFormFilled(?Closure)`
-and their runners `callBeforeFormFilled()` / `callAfterFormFilled()` — each
-evaluating the stored closure through `EvaluatesClosures`. Covered by
+**In:** all six hooks Filament declares — `before(?Closure)` /
+`after(?Closure)`, `beforeFormFilled(?Closure)` / `afterFormFilled(?Closure)`
+and `beforeFormValidated(?Closure)` / `afterFormValidated(?Closure)` — with
+their runners `callBefore()` / `callAfter()` / `callBeforeFormFilled()` /
+`callAfterFormFilled()` / `callBeforeFormValidated()` /
+`callAfterFormValidated()`, each evaluating the stored closure through
+`EvaluatesClosures`. Covered by
 [`HasLifecycleHooksTest`](../../../packages/actions/tests/Unit/Concerns/HasLifecycleHooksTest.php)
 via the
 [`HasLifecycleHooksFixture`](../../../packages/actions/tests/Fixtures/Concerns/HasLifecycleHooksFixture.php):
-all four hooks fire in order when set, and all four `call*` methods are a safe
+each pair fires in order when set, and every `call*` method is a safe
 no-op (return `null`) when unset. `Action`
-(`../../../packages/actions/src/Action.php`) is the sole consumer.
+(`../../../packages/actions/src/Action.php`) is the sole consumer. Where the
+`*FormValidated` pair fires is the host's business —
+[`HasActions::callMountedAction()`](has-actions.md#callmountedaction-drops-rate-limiting-authorization-transactions-and-redirects)
+runs `callBeforeFormValidated()` before the mounted schema's `getState()` and
+`callAfterFormValidated()` inside its `afterValidate` callback, so a failed
+validation never reaches the second one.
 
-**Missing vs Filament:** two hooks and their runners —
-`beforeFormValidated()` / `callBeforeFormValidated()` and
-`afterFormValidated()` / `callAfterFormValidated()` — are entirely absent,
-along with the `beforeFormValidated` / `afterFormValidated` closure properties
-that back them. These fire around an action's mounted-form validation, which
-has no port yet. Additionally, Filament's `callBefore()` / `callAfter()`
+**Missing vs Filament:** Filament's `callBefore()` / `callAfter()`
 dispatch `ActionCalling` / `ActionCalled` events (`Event::dispatch(...)`, the
 latter from a `finally` block so it always fires); the port has no
 `Sylament\Actions\Events` namespace and dispatches nothing. **Next step:** the
-`*FormValidated` pair is scoped to roadmap M1 · 1; the event dispatch has no
-named prerequisite yet and should be scoped (Symfony `EventDispatcher` port of
-`ActionCalling`/`ActionCalled`) when the mount/call pipeline is designed.
+event dispatch has no named prerequisite yet and should be scoped (Symfony
+`EventDispatcher` port of `ActionCalling`/`ActionCalled`) when the mount/call
+pipeline is designed.
 
 ### The record title and model metadata surface is not ported
 

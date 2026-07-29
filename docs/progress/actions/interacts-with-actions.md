@@ -81,8 +81,12 @@ it returns only if a second caller ever wants it. `mergeMountedActionArguments()
 is a real gap rather than a naming one: `callMountedAction()` merges the caller's
 arguments transiently and restores them afterwards, so nothing writes them back
 into the persisted descriptor, which is what a form resubmit at the same frame
-would need. **Next step:** it lands with M1 · 1's keep-modal-open validation
-loop, the first flow that resubmits a mounted frame.
+would need. M1 · 1's
+[keep-modal-open validation loop](has-actions.md#callmountedaction-drops-rate-limiting-authorization-transactions-and-redirects)
+resubmits exactly such a frame and landed without it: the client re-sends its
+`#[LiveArg]` arguments on every submit, so the persisted copy is not what the
+retry reads. **Next step:** it lands with the first caller that resubmits a
+frame *without* re-sending the arguments it was mounted with.
 
 ### The panel-level default hooks are not on the contract
 

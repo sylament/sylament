@@ -71,9 +71,9 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | --- | --- | --- | --- | --- |
 | [`resolveRecordUsing()`](../../../packages/actions/src/Concerns/HasActions.php) / `getMountedActionRecord()` | — (new; replaces Filament's per-source record resolution) | done | — | [diverges](#record-resolution-is-a-single-host-callback-not-per-source) |
 | [`$mountedActions`](../../../packages/actions/src/Concerns/HasActions.php) stack + `dehydrateMountedActions()` | `Concerns/InteractsWithActions.php` `$mountedActions` | done | — | [diverges](#the-mounted-action-stack-is-a-server-controlled-liveprop-not-a-client-writable-array) · [diverges](#the-mountedactions-liveprop-dehydrates-through-a-bridge-method) |
-| [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountAction()` | in progress | `CanBeAuthorized` | [detail](#mountaction-drops-authorization-and-the-validationexception-arm) |
+| [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountAction()` | in progress | `CanBeAuthorized` | [detail](#mountaction-drops-authorization) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) |
 | [`callMountedAction(array $arguments = [])`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `callMountedAction()` | in progress | `CanBeRateLimited`, `CanBeAuthorized`, `CanUseDatabaseTransactions`, `CanRedirect` | [detail](#callmountedaction-drops-rate-limiting-authorization-transactions-and-redirects) |
-| [`unmountAction(bool\|string\|null $cancelParentActions = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | `#[Url]` default-action state, M1 · 1 (`resetErrorBag`) | [detail](#unmountaction-drops-the-default-action-reset-and-the-error-bag-reset) · [diverges](#the-stack-is-choreographed-declaratively-not-by-client-events) |
+| [`unmountAction(bool\|string\|null $cancelParentActions = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | `#[Url]` default-action state | [detail](#unmountaction-drops-the-default-action-reset) · [diverges](#the-stack-is-choreographed-declaratively-not-by-client-events) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) |
 | [`replaceMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `replaceMountedAction()` | done | — | [diverges](#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper) |
 | [`getMountedAction(?int $actionNestingIndex = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedAction()` | done | — | [diverges](#getmountedaction-never-guards-its-own-read-with-a-catch) |
 | [`getMountedActions()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedActions()` | done | — | [diverges](#the-mountedactions-liveprop-dehydrates-through-a-bridge-method) |
@@ -104,7 +104,7 @@ Specifics for rows that are not finished — what is already in, what is left,
 and the next step. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
 
-### `mountAction()` drops authorization and the `ValidationException` arm
+### `mountAction()` drops authorization
 
 Filament's `mountAction()` pushes onto the stack, resolves the action
 (swallowing `ActionNotResolvableException`), bails via `unmountAction(cancelParentActions: false)`
@@ -127,17 +127,22 @@ leaving any parent frames intact — when it is `null` or `isDisabled()`, then r
 Filament's mount lifecycle in Filament's order: `callBeforeFormFilled()` (only
 when the action has a schema) → `$action->mount(['form' => $schema, 'schema' =>
 $schema])` (always) → `callAfterFormFilled()` (same gate), with `Halt` and
-`Cancel` unmounting the frame and returning null. It opens the modal when
+`Cancel` unmounting the frame and returning null, and
+[`ValidationException`](../schemas/interacts-with-schemas.md) — raised out of a
+mount-time hook — unmounting the same way and **rethrowing**, so the client sees
+the 422 re-render rather than a silently dropped mount. It opens the modal when
 [`mountedActionShouldOpenModal()`](#the-modal-open-gate-is-null-safe)
 says so — now with `checkForSchemaUsing:` supplied, so a schema is on its own
 enough to warrant a modal — and otherwise returns `callMountedAction()`'s
-result, matching Filament's shape and `mixed` return. Still absent: the
-authorization check (`hasAuthorizationNotification()` /
-`getAuthorizationResponseWithMessage()` and its unauthorized notification), the
-`ExposesStateToActionData` child-schema validation (no such interface here), and
-the `ValidationException` arm of the catch (nothing validates yet).
-**Next step:** land `CanBeAuthorized` for the authorization branch; the
-`ValidationException` arm lands with M1 · 1's validation work.
+result, matching Filament's shape and `mixed` return. Immediately before the
+open-modal dispatch it clears the validation state of the index it just pushed
+(`clearSchemaValidation('mountedActionSchema' . array_key_last(…))`, guarded by
+`instanceof InteractsWithSchemas`) — Filament's `resetErrorBag()` position,
+[scoped to the one frame](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset).
+Still absent: the authorization check (`hasAuthorizationNotification()` /
+`getAuthorizationResponseWithMessage()` and its unauthorized notification) and
+the `ExposesStateToActionData` child-schema validation (no such interface here).
+**Next step:** land `CanBeAuthorized` for the authorization branch.
 
 ### `callMountedAction()` drops rate limiting, authorization, transactions, and redirects
 
@@ -163,30 +168,43 @@ original arguments afterwards, resolves the record via
 `callBefore()` / `call()` / `callAfter()`, calls the `afterActionCalled()`
 hook (Filament-exact position: after `callAfter()`, before the notification
 branch, so `Halt`/`Cancel` skip it), sends a success or failure notification
-by `getStatus()`, catches `Halt` (keeps the action mounted) and `Cancel`
-(falls through to unmount), then compares the stack it started with against
+by `getStatus()`, catches `Halt` (keeps the action mounted), `Cancel`
+(falls through to unmount) and `ValidationException`, then compares the stack it started with against
 the current one — names and contexts only, arguments ignored, Filament-exact —
 and returns without unmounting if a `replaceMountedAction()` swapped it
-mid-call. It also lifts the mounted schema's state onto the action —
-`$action->data($schema->getState())`, guarded by `mountedActionHasSchema()`, at
-Filament's exact pipeline position immediately before `callBefore()`, so M1 · 1
-can swap in `getState(afterValidate: …)` without moving anything else. Rate
+mid-call. The schema arm is now Filament's own submit shape rather than a bare
+state lift: guarded by `mountedActionHasSchema()`, it calls
+`callBeforeFormValidated()`, then `$schema->getState(afterValidate: …)` — the
+callback running `callAfterFormValidated()`, `data($state)` and `callBefore()`
+in that order, so **nothing** downstream of validation runs when the state does
+not validate — and a schema-less action takes an `else` branch that calls
+`callBefore()` alone. A raised
+[`ValidationException`](../schemas/can-be-validated.md) propagates out of the
+method untouched when the action has a modal to keep open (the stack, the data
+bag and the error bag are all already correct, so the re-render *is* the
+retry), and only the modal-less case cleans up first — restoring
+`$originalArguments`, `resetData()`, `unmountAction()` — before rethrowing,
+because there is no dialog left on screen to hold the messages. Rate
 limiting, authorization, database transactions and redirects are
 all absent — none of the underlying `Action` concerns they depend on
 (`CanBeRateLimited`, `CanBeAuthorized`, `CanUseDatabaseTransactions`,
-`CanRedirect`) are composed yet either — as are the
-`callBeforeFormValidated()` / `callAfterFormValidated()` hooks and the
+`CanRedirect`) are composed yet either — as is the
 `ExposesStateToActionData` state merge (no such interface here, so the merge
 reduces to the schema's own state). Filament's sibling
 `mergeMountedActionArguments()` — which writes merged arguments back into the
 persisted top descriptor as well as the live `Action`, for a schema resubmit —
 also stays unported; it is tracked on the contract's own row in
 [interacts-with-actions.md](interacts-with-actions.md#schema-mount-plumbing-is-not-on-the-contract),
-and this method's transient merge-and-restore is deliberately *not* it. **Next
-step:** each returns with its `Action`-level concern; the `*FormValidated` hooks
-and the `afterValidate` wrapper land with M1 · 1.
+and this method's transient merge-and-restore is deliberately *not* it. The
+validation pipeline is covered end to end by
+[`HasActionsValidationTest`](../../../packages/actions/tests/Integration/Concerns/HasActionsValidationTest.php)
+(invalid submit keeps the frame and fills the bag with the action never run,
+valid submit runs both hooks in order and unmounts, the invalid path stops
+after `beforeFormValidated`, a modal-less invalid submit unmounts and rethrows).
+**Next step:** each of the four missing concerns returns with its `Action`-level
+concern.
 
-### `unmountAction()` drops the default-action reset and the error-bag reset
+### `unmountAction()` drops the default-action reset
 
 Filament's `unmountAction(bool|string|null $cancelParentActions = null)`
 decides, per call, whether to pop one entry, clear the whole stack, or pop back
@@ -204,14 +222,19 @@ itself been popped — plus the `cachedMountedActions` truncation loop that keep
 the positional cache from serving popped frames, and the matching drop of every
 popped frame's [data bag slot](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor),
 has-schema memo and cached `mountedActionSchema{$i}`. A `null` action (an
-unresolvable stack) takes the pop-one branch, Filament-same.
-What is still absent: the `defaultAction*` reset (those `#[Url]` properties are
-[not ported](#url-bound-default-action-state-is-not-ported)) and
-`resetErrorBag()` (nothing validates yet — the insertion point for M1 · 1).
+unresolvable stack) takes the pop-one branch, Filament-same. Filament's
+full-empty `resetErrorBag()` has a port, but not on this method: dropping a
+frame's validation state is
+[`forgetMountedActionSchema()`](../../../packages/actions/src/Concerns/HasActions.php)'s
+job, which pairs `clearSchemaValidation("mountedActionSchema{$i}")` with the
+`cacheSchema(…, null)` it already ran — so every path that forgets a frame's
+schema (this cascade and `replaceMountedAction()` alike) clears that frame's
+errors too, [per frame rather than globally](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset).
+What is still absent is the `defaultAction*` reset (those `#[Url]` properties
+are [not ported](#url-bound-default-action-state-is-not-ported)).
 `syncActionModals()` has no port and never will: see
 [declarative choreography](#the-stack-is-choreographed-declaratively-not-by-client-events).
-**Next step:** the `defaultAction*` reset lands with the `#[Url]` row; the
-error-bag reset lands with M1 · 1's validation work.
+**Next step:** the `defaultAction*` reset lands with the `#[Url]` row.
 
 ### `getAction()` ports the generic method-discovery arm in full
 
@@ -262,7 +285,7 @@ descriptor carrying `context['schemaComponent'] = 'mountedActionSchema0'` is
 resolved by reading exactly the entry the previous iteration wrote. A host that
 is not an `InteractsWithSchemas` skips the registration rather than throwing —
 an action that has a schema can never have been mounted on such a host,
-because [`mountAction()`](#mountaction-drops-authorization-and-the-validationexception-arm)
+because [`mountAction()`](#mountaction-drops-authorization)
 throws first. The parent chain reaches
 [`resolveAction(array $descriptor, array $parentActions)`](../../../packages/actions/src/Concerns/HasActions.php),
 which is Filament-exact — a non-empty chain looks up
@@ -652,6 +675,32 @@ key order, which a client could scramble. Reading the bag goes through
 property the way `getMountedActions()` does, and adding a plural
 `getMountedActionsData()` would reintroduce the exact trap this bag exists to
 route around.
+
+### The error-bag reset is scoped to one frame, not a global reset
+
+Filament calls Livewire's `resetErrorBag()` at two points in this trait — before
+a modal opens in `mountAction()`, and on the full-empty branch of
+`unmountAction()` — each wiping every error on the whole component. The port
+calls [`clearSchemaValidation()`](../schemas/interacts-with-schemas.md#clearschemavalidation-is-scoped-where-filament-resets-the-whole-livewire-error-bag)
+with the one key the moment concerns: `mountAction()` clears
+`mountedActionSchema{$i}` for the index it just pushed, and
+`forgetMountedActionSchema($i)` clears the frame it is forgetting, which is what
+puts the unmount-side clear on every path that drops a frame rather than only on
+the stack-empty one.
+
+The behavioural difference is a nested stack, and it is the reason to prefer the
+narrow call: the frame's key is also what keeps it
+[sticky](../schemas/can-be-validated.md#sticky-re-validation-replaces-filaments-submit-only-model) —
+`$validatedSchemas` re-validates `mountedActionSchema{$i}` on every hydrate, so
+the messages a modal shows after a failed submit are recomputed, not remembered,
+and clearing the key is what stops that. With a global reset, mounting a child action erases the parent
+modal's messages, so a user who submits an invalid parent form and then opens a
+child from it comes back to a form that has silently forgotten what was wrong
+with it. Per-frame clearing keeps each frame's errors alive for exactly as long
+as the frame is — pinned by
+[`HasActionsValidationTest`](../../../packages/actions/tests/Integration/Concerns/HasActionsValidationTest.php)'s
+outer-frame case, alongside the same-index remount that proves the stale section
+still goes.
 
 ### The has-schema check is memoised separately, because the schema cache cannot hold null
 

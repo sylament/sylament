@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Tests\Fixtures;
 
 use Sylament\Support\SylamentSupportBundle;
+use Sylament\Support\Twig\SupportIconAlias;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -40,6 +41,15 @@ class Kernel extends BaseKernel
                 'enabled' => false,
             ],
         ]);
+
+        if ($this->environment === 'icons') {
+            $container->extension('sylament', [
+                'icons' => [
+                    SupportIconAlias::MODAL_CLOSE_BUTTON => 'fixture:configured-close',
+                    SupportIconAlias::SECTION_COLLAPSE_BUTTON => 'fixture:configured-collapse',
+                ],
+            ]);
+        }
 
         $container->services()
             ->defaults()

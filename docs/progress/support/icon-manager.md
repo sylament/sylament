@@ -28,6 +28,7 @@ note in [Divergences](#divergences), or `—`.
 | [`resolve()`](../../../packages/support/src/Icons/IconManager.php) | [`IconManager::resolve()`](../../../vendor/filament/support/src/Icons/IconManager.php) | done | — | — |
 | [`renderIcon()`](../../../packages/support/src/Icons/IconManager.php) | no Filament equivalent | done | — | [diverges](#icon-rendering-is-delegated-to-symfony-ux-icons) |
 | Global reachability | [`FilamentIcon`](../../../vendor/filament/support/src/Facades/FilamentIcon.php) facade | done | — | [diverges](#the-facade-is-replaced-by-plain-injection) |
+| [`sylament.icons` config](../../../packages/support/src/SylamentSupportBundle.php) | no Filament equivalent | done | — | [diverges](#alias-overrides-are-declarable-from-bundle-configuration) |
 
 ## Details
 
@@ -72,6 +73,55 @@ its only caller, removed the reason — see
 registering alias overrides injects the manager or fetches it from the
 container; it cannot reach it statically, which is the Symfony answer to what a
 facade was doing.
+
+### Alias overrides are declarable from bundle configuration
+
+Filament has one way to override an alias: call `FilamentIcon::register([...])`
+from a service provider's `boot()`. Sylament keeps the equivalent runtime call
+but adds the Symfony-native route, since an app overriding an icon is
+configuration rather than code:
+
+```yaml
+# config/packages/sylament.yaml
+sylament:
+    icons:
+        modal.close-button: 'lucide:x'
+        section.collapse-button: 'lucide:chevron-up'
+```
+
+The node is declared in
+[`SylamentSupportBundle::configure()`](../../../packages/support/src/SylamentSupportBundle.php)
+and applied as a `->call('register', [...])` on the manager's definition, so it
+is container-time and costs nothing at runtime. A later runtime `register()`
+still wins, because `register()` merges last-wins — config sets the floor, code
+can still override it.
+
+One flat map covers **every** package's aliases, rather than a per-bundle
+`icons` key. That matches what the registry is — a single global map whose keys
+are already package-namespaced (`modal.*`, `section.*`, later `tables.*`) — and
+avoids real machinery: `IconManager` is support's service, and a higher bundle's
+`loadExtension()` cannot reliably reach its definition, because extension load
+order follows bundle registration order in `bundles.php`.
+
+The extension is `sylament`, not `sylament_support`: support sets
+`protected string $extensionAlias = 'sylament'` and owns the tree for whatever
+the whole toolkit shares. Overriding a *tables* icon under a key named for the
+*support* package would have been the tell that the alias was wrong — the
+registry was never support-specific, only its implementation is. Package-owned
+settings still live under the derived `sylament_<pkg>` alias, since a bundle
+cannot extend another bundle's config tree.
+
+A package shipping its own *default* aliases has a clean seam regardless:
+`prependExtensionConfig('sylament', ['icons' => ...])` lands below the app's
+config in the merge, so defaults and overrides compose.
+
+**`->normalizeKeys(false)` is load-bearing and its absence is silent.**
+`ArrayNode::preNormalize()` rewrites any key that holds a dash and no
+underscore, and both aliases support ships match that shape — the override would
+register as `modal.close_button`, `resolve()` would never match it, and the app
+would simply keep seeing the default icon with no error anywhere. Two tests in
+[`SylamentSupportBundleTest`](../../../packages/support/tests/Integration/SylamentSupportBundleTest.php)
+pin it; both fail if the call is removed.
 
 ### The manager is a process-lifetime singleton, not request-scoped
 

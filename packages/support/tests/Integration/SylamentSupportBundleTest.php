@@ -8,8 +8,10 @@ use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
 use Sylament\Support\Icons\IconManager;
+use Sylament\Support\SylamentSupportBundle;
 use Sylament\Support\Tests\Fixtures\DependencyInjection\StaticInstanceFixture;
 use Sylament\Support\Twig\Extension\IconExtension;
+use Sylament\Support\Twig\SupportIconAlias;
 
 it('exposes the static instance registry as a public service', function (): void {
     expect($this::getContainer()->get(StaticInstanceRegistry::class))
@@ -51,4 +53,28 @@ it('renders icons from the fixture icon directory through the ux-icons renderer'
     $manager = $this::getContainer()->get(IconManager::class);
 
     expect($manager->renderIcon('heroicons:x-mark'))->toContain('<svg');
+});
+
+it('registers icon overrides declared in bundle configuration', function (): void {
+    $this::bootKernel(['environment' => 'icons']);
+
+    $manager = $this::getContainer()->get(IconManager::class);
+
+    expect($manager)->toBeInstanceOf(IconManager::class)
+        ->and($manager->resolve(SupportIconAlias::MODAL_CLOSE_BUTTON))->toBe('fixture:configured-close')
+        ->and($manager->resolve(SupportIconAlias::SECTION_COLLAPSE_BUTTON))->toBe('fixture:configured-collapse');
+});
+
+it('keeps a dashed alias key that config normalization would otherwise rewrite', function (): void {
+    $this::bootKernel(['environment' => 'icons']);
+
+    $manager = $this::getContainer()->get(IconManager::class);
+
+    expect($manager)->toBeInstanceOf(IconManager::class)
+        ->and($manager->resolve('modal.close_button'))->toBeNull()
+        ->and($manager->resolve('section.collapse_button'))->toBeNull();
+});
+
+it('claims the sylament extension alias rather than the name-derived one', function (): void {
+    expect(new SylamentSupportBundle()->getContainerExtension()?->getAlias())->toBe('sylament');
 });

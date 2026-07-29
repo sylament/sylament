@@ -19,6 +19,7 @@ use Sylament\Support\Twig\Extension\ComponentExtension;
 use Sylament\Support\Twig\Extension\GridExtension;
 use Sylament\Support\Twig\Extension\IconExtension;
 use Sylament\Support\Twig\Extension\MarkupExtension;
+use Symfony\Component\Config\Definition\Configurator\DefinitionConfigurator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -29,6 +30,8 @@ use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_it
 
 class SylamentSupportBundle extends SylamentBundle
 {
+    protected string $extensionAlias = 'sylament';
+
     public function build(ContainerBuilder $container): void
     {
         parent::build($container);
@@ -47,12 +50,24 @@ class SylamentSupportBundle extends SylamentBundle
         $this->bootStaticInstances();
     }
 
+    public function configure(DefinitionConfigurator $definition): void
+    {
+        $definition->rootNode()
+            ->children()
+                ->arrayNode('icons')
+                    ->info('Icon overrides keyed by alias, e.g. "modal.close-button: lucide:x".')
+                    ->normalizeKeys(false)
+                    ->scalarPrototype()->end()
+                ->end()
+            ->end();
+    }
+
     /**
-     * @param array<string, mixed> $config
+     * @param array{icons?: array<string, string>} $config
      */
     public function loadExtension(array $config, ContainerConfigurator $configurator, ContainerBuilder $container): void
     {
-        $this->configureServices($configurator);
+        $this->configureServices($configurator, $config['icons'] ?? []);
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
@@ -75,7 +90,10 @@ class SylamentSupportBundle extends SylamentBundle
         $registry->bootStaticInstances();
     }
 
-    private function configureServices(ContainerConfigurator $configurator): void
+    /**
+     * @param array<string, string> $icons
+     */
+    private function configureServices(ContainerConfigurator $configurator, array $icons): void
     {
         $services = $configurator->services();
 
@@ -131,6 +149,7 @@ class SylamentSupportBundle extends SylamentBundle
             ->args([
                 '$renderer' => service(IconRendererInterface::class)->nullOnInvalid(),
             ])
+            ->call('register', [$icons])
             ->alias(IconManager::class, 'sylament_support.icon_manager');
 
         $services

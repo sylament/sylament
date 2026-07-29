@@ -145,3 +145,26 @@ it('applies casts then dehydrateStateUsing in getStateToDehydrate', function ():
 
     expect($field->getStateToDehydrate(1))->toBe(['data.flag' => 'on']);
 });
+
+it('is validated when not dehydrated by default', function (): void {
+    $component = StateField::make('title')->dehydrated(false);
+
+    expect($component->isValidatedWhenNotDehydrated())->toBeTrue()
+        ->and($component->isNeitherDehydratedNorValidated())->toBeFalse();
+});
+
+it('is neither dehydrated nor validated when both flags are off', function (): void {
+    $component = StateField::make('title')->dehydrated(false)->validatedWhenNotDehydrated(false);
+
+    expect($component->isNeitherDehydratedNorValidated())->toBeTrue();
+});
+
+it('is neither dehydrated nor validated when hidden and not dehydrated when hidden', function (): void {
+    $component = StateField::make('title')->hidden();
+
+    expect($component->isNeitherDehydratedNorValidated())->toBeTrue();
+});
+
+it('is not "neither" when dehydrated', function (): void {
+    expect(StateField::make('title')->isNeitherDehydratedNorValidated())->toBeFalse();
+});

@@ -7,8 +7,10 @@ namespace Sylament\Actions\Tests\Fixtures\Twig\Components;
 use Sylament\Actions\Action;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
+use Sylament\Actions\Tests\Fixtures\Components\RequiredField;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
+use Sylament\Schemas\Exceptions\ValidationException;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -73,6 +75,57 @@ class ActionSchemaHost implements InteractsWithActions, InteractsWithSchemas
                     ActionSchemaField::make('reason'),
                 ]),
             ]);
+    }
+
+    /**
+     * The validating twin of `edit`: its single field is unconditionally
+     * constrained, so a submit against an untouched frame fails.
+     */
+    public function publishAction(): Action
+    {
+        return Action::make('publish')
+            ->schema([
+                RequiredField::make('title'),
+            ])
+            ->beforeFormValidated(function (): void {
+                $this->hookLog[] = 'beforeFormValidated';
+            })
+            ->afterFormValidated(function (): void {
+                $this->hookLog[] = 'afterFormValidated';
+            })
+            ->action(function (array $data): void {
+                $this->savedData = $data;
+            });
+    }
+
+    /**
+     * The same constrained schema with no modal to keep open, so a failing
+     * submit takes the unmount-and-rethrow arm instead.
+     */
+    public function publishInlineAction(): Action
+    {
+        return Action::make('publishInline')
+            ->schema([
+                RequiredField::make('title'),
+            ])
+            ->modalHidden()
+            ->action(function (array $data): void {
+                $this->savedData = $data;
+            });
+    }
+
+    /**
+     * Validation raised out of a mount-time hook rather than out of a submit.
+     */
+    public function guardedAction(): Action
+    {
+        return Action::make('guarded')
+            ->schema([
+                RequiredField::make('title'),
+            ])
+            ->beforeFormFilled(function (): never {
+                throw new ValidationException(['guard' => ['Blocked at mount.']]);
+            });
     }
 
     /**

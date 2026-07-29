@@ -15,6 +15,7 @@ use Sylament\Actions\Enums\ActionStatus;
 use Sylament\Actions\Exceptions\ActionNotResolvableException;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
+use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
@@ -136,10 +137,18 @@ trait HasActions
             $this->unmountAction(cancelParentActions: false);
 
             return null;
+        } catch (ValidationException $exception) {
+            $this->unmountAction(cancelParentActions: false);
+
+            throw $exception;
         }
 
         if (! $this->mountedActionShouldOpenModal($action)) {
             return $this->callMountedAction();
+        }
+
+        if ($this instanceof InteractsWithSchemas) {
+            $this->clearSchemaValidation('mountedActionSchema' . array_key_last($this->mountedActions));
         }
 
         $this->dispatchBrowserEvent('sylament-open-modal', ['id' => $this->getMountedModalId()]);
@@ -176,10 +185,17 @@ trait HasActions
 
         try {
             if ($this->mountedActionHasSchema($action)) {
-                $action->data($this->getMountedActionSchema(mountedAction: $action)?->getState() ?? []);
+                $action->callBeforeFormValidated();
+
+                $this->getMountedActionSchema(mountedAction: $action)?->getState(afterValidate: function (array $state) use ($action): void {
+                    $action->callAfterFormValidated();
+                    $action->data($state);
+                    $action->callBefore();
+                });
+            } else {
+                $action->callBefore();
             }
 
-            $action->callBefore();
             $result = $action->call();
             $result = $action->callAfter() ?? $result;
 
@@ -194,6 +210,14 @@ trait HasActions
             return null;
         } catch (Cancel) {
             // Falls through to unmount — Cancel closes the modal.
+        } catch (ValidationException $exception) {
+            if (! $this->mountedActionShouldOpenModal($action)) {
+                $action->arguments($originalArguments);
+                $action->resetData();
+                $this->unmountAction();
+            }
+
+            throw $exception;
         }
 
         $action->arguments($originalArguments);
@@ -408,6 +432,7 @@ trait HasActions
         }
 
         $this->cacheSchema("mountedActionSchema{$actionNestingIndex}", null);
+        $this->clearSchemaValidation("mountedActionSchema{$actionNestingIndex}");
     }
 
     /**

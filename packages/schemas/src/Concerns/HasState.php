@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Concerns;
 
+use Closure;
+
 use function Sylament\Support\filled;
 
 trait HasState
@@ -150,7 +152,31 @@ trait HasState
     /**
      * @return array<string, mixed>
      */
-    public function getState(): array
+    public function getState(bool $shouldCallHooksBefore = true, ?Closure $afterValidate = null): array
+    {
+        $this->validate();
+
+        $state = $this->assembleDehydratedState($shouldCallHooksBefore);
+
+        if ($afterValidate instanceof Closure) {
+            $afterValidate($state);
+        }
+
+        return $state;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function getStateSnapshot(): array
+    {
+        return $this->assembleDehydratedState();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function assembleDehydratedState(bool $shouldCallHooksBefore = true): array
     {
         $this->dehydratedComponentsCache = null;
 
@@ -165,7 +191,10 @@ trait HasState
             $state = $this->getRawState();
         }
 
-        $this->callBeforeStateDehydrated($state);
+        if ($shouldCallHooksBefore) {
+            $this->callBeforeStateDehydrated($state);
+        }
+
         $this->dehydrateState($state);
         $this->mutateDehydratedState($state);
 

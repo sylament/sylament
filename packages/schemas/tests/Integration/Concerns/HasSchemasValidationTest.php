@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Integration\Concerns;
 
 use Sylament\Schemas\Exceptions\ValidationException;
+use Sylament\Schemas\Schema;
+use Sylament\Schemas\Tests\Fixtures\Components\StateField;
+use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
@@ -97,4 +100,36 @@ it('drops a stale sticky key whose schema no longer resolves', function (): void
     $host->revalidateValidatedSchemas();
 
     expect($host->validatedSchemas)->toBe([]);
+});
+
+it('validates through getState() and skips validation in getStateSnapshot()', function (): void {
+    $host = $this->createLiveComponent('ValidationHost')->component();
+
+    expect(fn () => $host->getSchema()->getState())->toThrow(ValidationException::class)
+        ->and($host->getSchema()->getStateSnapshot())->toBe(['title' => null, 'slug' => null]);
+});
+
+it('passes the final dehydrated state to afterValidate after hooks', function (): void {
+    $host = $this->createLiveComponent('ValidationHost')->component();
+    $host->data['title'] = 'Hello';
+
+    $seen = null;
+    $state = $host->getSchema()->getState(afterValidate: function (array $validatedState) use (&$seen): void {
+        $seen = $validatedState;
+    });
+
+    expect($seen)->toBe($state)
+        ->and($state['title'])->toBe('Hello');
+});
+
+it('skips callBeforeStateDehydrated when shouldCallHooksBefore is false', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateField::make('title')->beforeStateDehydrated(function ($component): void {
+            $component->state('rewritten');
+        }, shouldUpdateValidatedStateAfter: true),
+    ]);
+    $schema->fill(['title' => 'original']);
+
+    expect($schema->getState(shouldCallHooksBefore: false))->toBe(['title' => 'original']);
 });

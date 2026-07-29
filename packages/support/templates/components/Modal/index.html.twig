@@ -124,7 +124,7 @@
         tabindex: windowGetsInitialFocus ? '-1' : false,
     }, extraWindowAttributes ?: {}) }}
         {% if hasSubmitHandler %}
-            {{ live_action(submitHandler ~ ':prevent', {}, {}, 'submit') }}
+            {{ live_action(submitHandler ~ ':prevent', event: 'submit') }}
         {% endif %}
     >
         {% if hasHeader %}

@@ -2,7 +2,7 @@
 {% set sizeValue = component.getSize.value ?? component.getSize %}
 {% set colorName = component.getColor is iterable or component.getColor is empty ? 'gray' : component.getColor %}
 {% set tag = component.getUrl ? 'a' : 'button' %}
-{% set iconHtml = component.getIcon ? generateIconHtml(component.getIcon, null, null, component.getIconSize ?? (sizeValue in ['xs', 'sm'] ? 'sm' : null)) : null %}
+{% set iconHtml = component.getIcon ? generateIconHtml(component.getIcon, size: component.getIconSize ?? (sizeValue in ['xs', 'sm'] ? 'sm' : null)) : null %}
 
 {% set hasLiveClickBinding = not component.getUrl and not component.canSubmitForm %}
 

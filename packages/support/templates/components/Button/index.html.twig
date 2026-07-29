@@ -21,7 +21,7 @@
 {% set sizeValue = size.value ?? size %}
 {% set colorName = color is iterable or color is empty ? 'gray' : color %}
 {% set iconPositionValue = iconPosition.value ?? iconPosition %}
-{% set iconHtml = icon ? generateIconHtml(icon, iconAlias, null, iconSize) : null %}
+{% set iconHtml = icon ? generateIconHtml(icon, iconAlias, size: iconSize) : null %}
 
 <{{ tag }}
     {{ attributes.defaults({

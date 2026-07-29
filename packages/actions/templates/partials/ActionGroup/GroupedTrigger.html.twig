@@ -1,4 +1,4 @@
-{% set iconHtml = group.getIcon(group.getGroupedIcon) ? generateIconHtml(group.getIcon(group.getGroupedIcon), null, null, group.getIconSize ?? 'sm') : null %}
+{% set iconHtml = group.getIcon(group.getGroupedIcon) ? generateIconHtml(group.getIcon(group.getGroupedIcon), size: group.getIconSize ?? 'sm') : null %}
 
 <button
     {{ attrs({

@@ -7,6 +7,7 @@ namespace Sylament\Forms\Components;
 use Closure;
 use Sylament\Forms\Components\Concerns\CanBeAutofocused;
 use Sylament\Forms\Components\Concerns\CanBeMarkedAsRequired;
+use Sylament\Forms\Components\Concerns\CanBeValidated;
 use Sylament\Forms\Components\Concerns\HasHelperText;
 use Sylament\Forms\Components\Concerns\HasHint;
 use Sylament\Forms\Components\Concerns\HasPlaceholder;
@@ -23,6 +24,7 @@ abstract class Field extends Component
 {
     use CanBeAutofocused;
     use CanBeMarkedAsRequired;
+    use CanBeValidated;
     use HasHelperText;
     use HasHint;
     use HasLabel {

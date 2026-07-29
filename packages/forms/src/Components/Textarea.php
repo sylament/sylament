@@ -7,7 +7,7 @@ namespace Sylament\Forms\Components;
 use Closure;
 use Sylament\Forms\Components\Concerns\CanBeLengthConstrained;
 
-class Textarea extends Field
+class Textarea extends Field implements Contracts\CanBeLengthConstrained
 {
     use CanBeLengthConstrained;
 

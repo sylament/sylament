@@ -1,8 +1,3 @@
-{# A URL navigates and a disabled control cannot be clicked, so neither carries click
-   wiring. The URL half matches the other four trigger templates, which wrap their whole
-   click branch in `{% if not component.getUrl %}`; the disabled half is this template's
-   own long-standing extra (the others emit the binding and lean on the `disabled`
-   attribute). Hoisted so the close and mount attributes cannot drift apart again. #}
 {% set clickWiringSuppressed = component.getUrl or component.isDisabled %}
 {% set closeAttributes = component.shouldClose
     and not component.getClientClickHandler
@@ -25,12 +20,6 @@
                 ...(component.getInvokedArguments ? { arguments: component.getInvokedArguments } : {}),
                 ...(component.getContext ? { context: component.getContext } : {}),
             })) %}
-{# A submit trigger carries no live click binding either: the enclosing form's submit
-   event already calls the action, so a click binding would fire a second, unrelated
-   live request on the same click — for a modal submit action, `mountAction('submit')`.
-   Filament suppresses it in `isLivewireClickHandlerEnabled()`; its close binding is a
-   separate attribute (`x-on:click`), so this guard sits on the live binding only and
-   leaves `closeAttributes` above alone. #}
 {% set mountAttributes = clickWiringSuppressed or component.canSubmitForm or clickParameters is null
     ? {}
     : stimulus_action('live', 'action', null, clickParameters).toArray() %}

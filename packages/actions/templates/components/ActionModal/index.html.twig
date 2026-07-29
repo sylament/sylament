@@ -5,51 +5,16 @@
     overlaid = false,
     schema = null %}
 
-{# `schema` arrives as a prop rather than being resolved here: the host lives on
-   `Modals`, and reaching for it from this template would either repeat that
-   component-stack walk per modal or read an inherited-scope variable the
-   `{% props %}` contract never declares — `<twig:>` has no `only`, so that would
-   be silent coupling.
-
-   `submitHandler` is derived locally instead, because it follows from this
-   template's own props. It is gated on `hasFormWrapper()` and nothing else,
-   which is the same single predicate `CanOpenModal::getModalSubmitAction()`
-   branches on: with a wrapper that method makes the submit button a bare
-   `type="submit"` and gives it no click handler, so the window must be the
-   `<form>` that button submits — including for a schema-less confirmation
-   modal, which would otherwise have a submit button and nothing to submit to.
-   Without a wrapper the button keeps its click handler and the window stays a
-   `<div>`. Filament couples the two the same way
-   (`action-modal.blade.php:27`). #}
 {% set submitHandler = action.hasFormWrapper
     ? action.getLiveComponentCallMountedActionName
     : null %}
 
-{# The dismissal wrapper maps the controller's client-close event (ESC, click-away,
-   close button, cancel) to a server unmount — without it the next live re-render
-   would resurrect a modal the user already closed. The event bubbles from the dialog;
-   the binding cannot sit on the component tag itself because a caller data-action
-   would replace the dialog's own Stimulus wiring in attributes.defaults().
-   The dialog id is index-scoped, which is what gives a frame morph stability: an
-   unchanged frame keeps the same id across re-renders, so idiomorph matches it and
-   it keeps its native open state instead of being replaced.
-
-   The wrapper id is name-scoped, but do NOT read that as forcing a subtree swap on
-   replaceMountedAction(). Idiomorph matches by id-set INTERSECTION, not by node
-   identity, and the dialog id inside this wrapper is unchanged, so the wrapper
-   still matches and morphs in place. That is fine: a morphed node has its
-   attributes synced from the new markup, so the cancelParentActions argument below
-   (per-action, not per-index) is rewritten for the replacing action either way. #}
 <div id="{{ id }}-w-{{ action.getName }}" {{ live_action(
     'unmountAction',
     { cancelParentActions: action.getParentActionsToCancelOnClose },
     {},
     'sylament--support--modal:dismissed',
 ) }}>
-    {# The open state is declared in the markup rather than left to the
-       `sylament-open-modal` event, which a modal first rendered by that same response
-       is not yet listening for. A parent frame stays rendered but closed while a
-       non-overlaying child is on top, so it can morph back open in place. #}
     <twig:SylamentSupport:Modal
         id="{{ id }}"
         :open="open"
@@ -75,10 +40,9 @@
         :footerActionsAlignment="action.getModalFooterActionsAlignment"
         :submitHandler="submitHandler"
     >
-        {# Filament's slot order: modal content, then the schema, then the content
-           footer (`action-modal.blade.php:63-84`). The whitespace control keeps the
-           block empty when every slot is, so `Modal`'s `content is filled` test still
-           suppresses `.sy-modal-content` for a bare confirmation modal. #}
+        {# Whitespace control is load-bearing: it keeps this block empty when every slot
+           is, so Modal's `content is filled` test still suppresses .sy-modal-content
+           for a bare confirmation modal. #}
         <twig:block name="content">
             {{- action.getModalContent -}}
             {%- if schema is not null -%}

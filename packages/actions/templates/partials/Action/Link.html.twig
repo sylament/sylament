@@ -4,12 +4,6 @@
 {% set tag = component.getUrl ? 'a' : 'button' %}
 {% set iconHtml = component.getIcon ? generateIconHtml(component.getIcon, null, null, component.getIconSize ?? (sizeValue in ['xs', 'sm'] ? 'sm' : null)) : null %}
 
-{# A submit trigger carries no live click binding: the enclosing form's submit event
-   already calls the action, so a click binding would fire a second, unrelated live
-   request on the same click — for a modal submit action, `mountAction('submit')`.
-   Filament suppresses it for the same reason, in `isLivewireClickHandlerEnabled()`;
-   its close binding sits on a separate attribute (`x-on:click`) and is unaffected,
-   so the close arm below stays reachable too. #}
 {% set hasLiveClickBinding = not component.getUrl and not component.canSubmitForm %}
 
 <{{ tag }}

@@ -81,10 +81,6 @@
 
 {% set overlayExtra = extraOverlayAttributes ?: {} %}
 
-{# The `open` attribute mirrors the Stimulus value: the value is intent, the attribute
-   is native state. Rendering both from one prop keeps a live re-render from morphing
-   the attribute off an already-open dialog and closing it (Idiomorph diffs attributes,
-   and a stack keeps parent dialogs open across renders). #}
 <dialog
     {{ attributes.defaults({
         class: classes('sy sy-modal', {

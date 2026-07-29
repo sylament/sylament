@@ -62,7 +62,7 @@ class Section extends Component implements CanConcealComponents
 
     public const string BELOW_CONTENT_SCHEMA_KEY = 'below_content';
 
-    protected string|Closure|null $template = '@SylamentSchemas/components/Section.html.twig';
+    protected string|Closure|null $template = '@SylamentSchemas/partials/Section/index.html.twig';
 
     public static function make(string|Markup|Closure|null $heading = null): static
     {

@@ -18,7 +18,7 @@ helpers (`getActionsHostId` / `getMountedModalId` /
 `mountedActionHasSchema`), a `#[PostHydrate]` stale-stack self-heal, and a
 host-supplied `resolveRecordUsing()` callback for resolving a mounted
 action's record. Its rendered counterpart —
-[`<twig:SylamentActions:Modals />`](../../../packages/actions/templates/components/Modals.html.twig)
+[`<twig:SylamentActions:Modals />`](../../../packages/actions/templates/components/Modals/index.html.twig)
 plus the [`Modals`](../../../packages/actions/src/Twig/Components/Modals.php)
 component class behind it — folds in here rather than earning its own file,
 because it is a pure view over four of those methods (`getMountedActions` /
@@ -36,7 +36,7 @@ per-mount `Schema` with its mount/fill/submit lifecycle, and defers
 authorization, rate limiting, transactions, redirects, and the URL-bound
 default action.
 
-The renderer is now Filament's real loop: `Modals.html.twig` walks
+The renderer is now Filament's real loop: `Modals/index.html.twig` walks
 `getMountedActions()` and renders one `ActionModal` per frame, gating only the
 last (`{% if not loop.last or mountedActionShouldOpenModal(action) %}`), which
 is the exact port of Filament's
@@ -89,7 +89,7 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | [`getActionsHostId()`](../../../packages/actions/src/Concerns/HasActions.php) + the `$actionsHostId` `#[LiveProp]` | `action-modal.blade.php`'s `$this->getId()` (Livewire component id) | done | — | [diverges](#the-host-id-is-a-round-tripped-liveprop-not-a-framework-component-id) |
 | [`getMountedModalId(?int $actionNestingIndex = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `action-modal.blade.php` inline `$actionModalId` | done | — | [diverges](#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper) |
 | [`isMountedActionModalOpen(int $actionNestingIndex)`](../../../packages/actions/src/Concerns/HasActions.php) | — (Sylament-only; replaces Filament's client-side stack machine) | done | — | [diverges](#the-stack-is-choreographed-declaratively-not-by-client-events) · [diverges](#the-parent-overlay-flag-is-server-stamped-not-a-sibling-css-selector) |
-| Modals rendering ([`Modals.html.twig`](../../../packages/actions/templates/components/Modals.html.twig) + [`Twig\Components\Modals`](../../../packages/actions/src/Twig/Components/Modals.php)) | [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php) | done | — | [diverges](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope) · [diverges](#the-modal-is-opened-by-rendered-state-not-by-the-dispatched-event) · [diverges](#the-modals-renderer-emits-no-wrapper-element) · [diverges](#there-is-no-single-render-guard) · [diverges](#an-unresolvable-host-throws-instead-of-rendering-nothing) |
+| Modals rendering ([`Modals/index.html.twig`](../../../packages/actions/templates/components/Modals/index.html.twig) + [`Twig\Components\Modals`](../../../packages/actions/src/Twig/Components/Modals.php)) | [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php) | done | — | [diverges](#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope) · [diverges](#the-modal-is-opened-by-rendered-state-not-by-the-dispatched-event) · [diverges](#the-modals-renderer-emits-no-wrapper-element) · [diverges](#there-is-no-single-render-guard) · [diverges](#an-unresolvable-host-throws-instead-of-rendering-nothing) |
 | [Action-schema integration](../../../packages/actions/src/Concerns/HasActions.php) (`getMountedActionSchema()`, `mountedActionHasSchema()`, deprecated `mountedActionHasForm`/`getMountedActionForm`, `getMountedActionSchemaName()`, `getMountedActionSchemaModel()`) | `Concerns/InteractsWithActions.php` (same methods) | in progress | Doctrine model binding (`->model()`), an `Operation` concept (`->operation()`) | [has-schema.md](has-schema.md) · [detail](#the-per-mount-schema-carries-no-model-or-operation) · [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) · [diverges](#the-has-schema-check-is-memoised-separately-because-the-schema-cache-cannot-hold-null) · [diverges](#set-and-get-are-unavailable-to-an-action-inside-a-mounted-action-schema) |
 | [`$mountedActionsData`](../../../packages/actions/src/Concerns/HasActions.php) + `getMountedActionData()` | `Concerns/InteractsWithActions.php` `mountedActions.{i}.data` | done | — | [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) |
 | `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | [detail](#url-bound-default-action-state-is-not-ported) |
@@ -537,7 +537,7 @@ plain `<div>`s stacked in DOM order. A native `<dialog>` promoted by
 `showModal()` paints in **top-layer** order, which is `showModal()` **call**
 order and has no relationship to DOM order, so no sibling selector can express
 "is there a dialog above me". The port computes the answer server-side instead:
-`Modals.html.twig` passes `:overlaid="not loop.last"` to every non-top frame,
+`Modals/index.html.twig` passes `:overlaid="not loop.last"` to every non-top frame,
 `ActionModal` narrows it to `overlaid and open`, and support's `Modal` stamps
 `sy-modal-overlaid`, whose CSS zeroes that dialog's own background so only the
 topmost frame paints a scrim. The hand-off animates for free, since
@@ -650,7 +650,7 @@ alongside the schema cache. It looks redundant and is not.
 Memoising is **required, not an optimisation.**
 [`isMountedActionModalOpen()`](#the-stack-is-choreographed-declaratively-not-by-client-events)
 runs the modal-open gate once per frame per render
-([`Modals.html.twig:8,12`](../../../packages/actions/templates/components/Modals.html.twig)),
+([`Modals/index.html.twig:8,24`](../../../packages/actions/templates/components/Modals/index.html.twig)),
 and that gate now passes `checkForSchemaUsing: $this->mountedActionHasSchema(...)`.
 Unmemoised, a stack of _n_ frames costs O(_n_²) schema constructions per render.
 

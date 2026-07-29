@@ -27,7 +27,7 @@ it('registers the renderSchema function', function (): void {
 
 it('renders the named schema of the component in context', function (): void {
     $twig = new Environment(new ArrayLoader([
-        '@SylamentSchemas/components/Schema.html.twig' => 'schema:{{ component.getComponents()|length }}',
+        '@SylamentSchemas/partials/Schema/index.html.twig' => 'schema:{{ component.getComponents()|length }}',
     ]));
     $twig->addExtension(new ComponentExtension());
 
@@ -39,7 +39,7 @@ it('renders the named schema of the component in context', function (): void {
 
 it('defaults to the "schema" name', function (): void {
     $twig = new Environment(new ArrayLoader([
-        '@SylamentSchemas/components/Schema.html.twig' => 'schema:{{ component.getComponents()|length }}',
+        '@SylamentSchemas/partials/Schema/index.html.twig' => 'schema:{{ component.getComponents()|length }}',
     ]));
     $twig->addExtension(new ComponentExtension());
 

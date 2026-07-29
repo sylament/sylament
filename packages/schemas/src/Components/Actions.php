@@ -15,7 +15,7 @@ class Actions extends Component
     use HasAlignment;
     use HasLabel;
 
-    protected string|Closure|null $template = '@SylamentSchemas/components/Actions.html.twig';
+    protected string|Closure|null $template = '@SylamentSchemas/partials/Actions/index.html.twig';
 
     protected bool|Closure $isFullWidth = false;
 

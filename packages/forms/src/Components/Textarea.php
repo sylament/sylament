@@ -11,7 +11,7 @@ class Textarea extends Field
 {
     use CanBeLengthConstrained;
 
-    protected string|Closure|null $template = '@SylamentForms/components/Textarea.html.twig';
+    protected string|Closure|null $template = '@SylamentForms/partials/Textarea/index.html.twig';
 
     protected int|Closure|null $rows = null;
 

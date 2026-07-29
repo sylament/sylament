@@ -52,7 +52,7 @@ permanent note in [Divergences](#divergences).
 | [`BelongsToGroup`](../../../packages/actions/src/Concerns/BelongsToGroup.php) | [`Concerns/BelongsToGroup.php`](../../../vendor/filament/actions/src/Concerns/BelongsToGroup.php) | done | — | [diverges](#getrootgroup-is-not-ported) |
 | `getLabel()` default | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getLabel()`) | done | — | [diverges](#getlabel-falls-back-to-a-plain-string-not-a-translated-label) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) (shared with `Action`; consumed by the button trigger only, Filament-same) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | - |
-| [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) (shared with `Action`) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | Consumed by [`grouped-trigger.html.twig`](../../../packages/actions/templates/components/action-group/grouped-trigger.html.twig) as `group.getIcon(group.getGroupedIcon)` — the shape a group takes inside another group's dropdown, exactly where Filament's `toGroupedTriggerHtml()` reads it |
+| [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) (shared with `Action`) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | Consumed by [`GroupedTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/GroupedTrigger.html.twig) as `group.getIcon(group.getGroupedIcon)` — the shape a group takes inside another group's dropdown, exactly where Filament's `toGroupedTriggerHtml()` reads it |
 | [`HasLabel`](../../../packages/actions/src/Concerns/HasLabel.php) (shared with `Action`) | [`Concerns/HasLabel.php`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | - |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) (shared with `Action`) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | - |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | - |
@@ -67,7 +67,7 @@ permanent note in [Divergences](#divergences).
 | Dropdown-placement propagation to nested groups | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`actions()`, `defaultDropdownPlacement('right-top')`) | done | — | [diverges](#nested-groups-default-to-right-start-where-filament-writes-right-top) |
 | Trigger-template-default propagation to nested groups (`defaultTriggerTemplate()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getActions()`, `defaultTriggerView()`) | done | — | [diverges](#the-child-template-split-keys-off-hasdropdown-where-filament-keys-off-isbuttongroup) |
 | Grouped item template | [`components/dropdown/list/item.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | done | — | - |
-| Grouped **trigger** template ([`action-group/grouped-trigger.html.twig`](../../../packages/actions/templates/components/action-group/grouped-trigger.html.twig)) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toGroupedTriggerHtml()`) | in progress | badge support | [detail](#the-grouped-trigger-drops-the-badge-and-filaments-default-ellipsis-icon) |
+| Grouped **trigger** template ([`action-group/GroupedTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/GroupedTrigger.html.twig)) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toGroupedTriggerHtml()`) | in progress | badge support | [detail](#the-grouped-trigger-drops-the-badge-and-filaments-default-ellipsis-icon) |
 | Trigger machinery | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getTriggerView()`/`toTriggerHtml()`) | done | — | [diverges](#trigger-defaults-diverge-from-filament-gray-over-primary-and-the-ellipsis-icon-is-per-template) |
 | Rendering (`toEmbeddedHtml()`) incl. [`getDropdownActionLists()`](../../../packages/actions/src/ActionGroup.php) — flattened sections and embedded submenus | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | done | — | [diverges](#the-dropdown-plan-is-a-php-method-the-template-loops-not-an-inline-output-buffer), [diverges](#dropdownfalse-wraps-its-inline-row-in-a-bare-divsysy-ac-group-unlike-filaments-unwrapped-concatenation) |
 | Badge/button-group/link triggers | [`View/Concerns/CanGenerate*Html.php`](../../../vendor/filament/support/src/View/Concerns) | todo | — | [detail](#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup) |
@@ -79,14 +79,14 @@ permanent note in [Divergences](#divergences).
 
 ### The grouped trigger drops the badge and Filament's default ellipsis icon
 
-[`grouped-trigger.html.twig`](../../../packages/actions/templates/components/action-group/grouped-trigger.html.twig)
+[`GroupedTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/GroupedTrigger.html.twig)
 is the shape a nested group takes as a row inside its parent's dropdown panel —
 the port of Filament's `toGroupedTriggerHtml()`. It renders the icon
 (`group.getIcon(group.getGroupedIcon)`), the label in a
 `span.sy-dropdown-item-label`, the tooltip as `title`, and the extra-attribute
 bag, on a `<button type="button">` classed
 `sy sy-dropdown-item sy-ac` — matching what the sibling
-[`grouped-action.html.twig`](../../../packages/actions/templates/components/grouped-action.html.twig)
+[`Action/Grouped.html.twig`](../../../packages/actions/templates/partials/Action/Grouped.html.twig)
 emits for a plain action, so a submenu row and an action row line up.
 
 Two gaps. **Badge**: Filament threads `badge` / `badgeColor` / `badgeTooltip`
@@ -179,9 +179,9 @@ layer lands, same as the linked `Action` divergence.
 
 Both group bags now render, in the Filament-parallel places: the trigger bag
 (`HasExtraAttributes`, shared support trait) lands on the trigger root — both
-[`icon-button-trigger.html.twig`](../../../packages/actions/templates/components/action-group/icon-button-trigger.html.twig)
+[`IconButtonTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/IconButtonTrigger.html.twig)
 and
-[`button-trigger.html.twig`](../../../packages/actions/templates/components/action-group/button-trigger.html.twig)
+[`ButtonTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/ButtonTrigger.html.twig)
 merge it into the composed support component, mirroring how Filament's five
 `to*TriggerHtml()` methods each merge `$this->getExtraAttributes()` onto the
 trigger element
@@ -193,7 +193,7 @@ onto [`ActionGroup`](../../../packages/actions/src/ActionGroup.php) in
 support's exact `HasExtraAttributes` shape from Filament's hand-written pair,
 `ActionGroup.php:759-789`) lands on the outer dropdown wrapper (Filament: the
 `fi-dropdown` root, ours: the `sy sy-dropdown` root) via
-[`action-group.html.twig`](../../../packages/actions/templates/components/action-group.html.twig).
+[`ActionGroup/index.html.twig`](../../../packages/actions/templates/partials/ActionGroup/index.html.twig).
 
 The one mechanical divergence: all three templates were converted from the
 `<twig:>` HTML syntax to the `{% component %}` tag (the HTML syntax cannot
@@ -262,7 +262,7 @@ in the non-grouped branch instead, and relied on a bespoke
 `ViewComponent`'s normal `template()` ?? `defaultTemplate()` pair, to keep a
 button-action baseline alive underneath a cleared default. Corrected to match
 Filament's own shape: `Action::BUTTON_TEMPLATE`
-(`@SylamentActions/components/button-action.html.twig`) is pushed in the
+(`@SylamentActions/partials/Action/Button.html.twig`) is pushed in the
 non-grouped branch instead of `null`, `Action::GROUPED_TEMPLATE` in the grouped
 one — always a concrete value — and the `getTemplate()` override is gone.
 `Action`'s own baseline now lives in
@@ -305,9 +305,9 @@ Two defaults baked into the new trigger templates depart from Filament's
   [`CanGenerateIconButtonHtml`](../../../vendor/filament/support/src/View/Concerns/CanGenerateIconButtonHtml.php)
   both coerce an unset color to `'primary'` (`$color ??= 'primary';`), so an
   unconfigured Filament trigger renders primary-colored. The port's
-  [`icon-button-trigger.html.twig`](../../../packages/actions/templates/components/action-group/icon-button-trigger.html.twig)
+  [`IconButtonTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/IconButtonTrigger.html.twig)
   and
-  [`button-trigger.html.twig`](../../../packages/actions/templates/components/action-group/button-trigger.html.twig)
+  [`ButtonTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/ButtonTrigger.html.twig)
   instead force `group.getColor() ?? 'gray'` — `'gray'` being the value
   support's [`IconButton`](../../../packages/support/templates/components/IconButton/index.html.twig)
   and [`Button`](../../../packages/support/templates/components/Button/index.html.twig)
@@ -315,12 +315,12 @@ Two defaults baked into the new trigger templates depart from Filament's
   (`colorName = color is iterable or color is empty ? 'gray' : color`),
   overriding those components' own `color = 'primary'` prop default. This
   follows the same gray-when-unset convention `Action`'s own
-  [`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)
+  [`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig)
   already renders (an undocumented divergence there too; noted here since
   Task 8 is the first time the convention crosses into a template that
   delegates to a color-defaulting component instead of building its own
   markup).
-  [`grouped-action.html.twig`](../../../packages/actions/templates/components/grouped-action.html.twig)
+  [`Action/Grouped.html.twig`](../../../packages/actions/templates/partials/Action/Grouped.html.twig)
   has no color handling at all — dropdown-list rows render uniformly
   regardless of the wrapped action's color.
 - **Icon.** Filament's
@@ -331,9 +331,9 @@ Two defaults baked into the new trigger templates depart from Filament's
   methods, including the plain button trigger, always renders some icon. The
   port leaves
   [`HasIcon::getIcon(?default)`](../../../packages/support/src/Components/Concerns/HasIcon.php)
-  un-overridden; only `icon-button-trigger.html.twig` passes
+  un-overridden; only `IconButtonTrigger.html.twig` passes
   `ActionGroup::DEFAULT_ICON` as that `$default` argument —
-  `button-trigger.html.twig` calls `group.getIcon` bare, so a `button()`-mode
+  `ButtonTrigger.html.twig` calls `group.getIcon` bare, so a `button()`-mode
   group with no icon set renders no icon at all, unlike Filament's button
   trigger.
 
@@ -350,7 +350,7 @@ section, and then an `ob_start()` block prints one `fi-dropdown-list` per list.
 Sylament has no `toEmbeddedHtml()` — rendering goes through Twig — so the plan
 moves into a getter,
 [`getDropdownActionLists(): array<array<Action|ActionGroup>>`](../../../packages/actions/src/ActionGroup.php),
-and [`action-group.html.twig`](../../../packages/actions/templates/components/action-group.html.twig)
+and [`ActionGroup/index.html.twig`](../../../packages/actions/templates/partials/ActionGroup/index.html.twig)
 loops it into `div.sy-dropdown-list` sections. The branching is Filament's,
 line for line:
 
@@ -429,7 +429,7 @@ Filament's non-dropdown branch of `toEmbeddedHtml()`
 returns `collect($this->getActions())->filter(...)->map(fn ($action) =>
 $action->toHtml())->implode('')` — the visible children's markup concatenated
 directly, with no wrapper element of any kind. The port's
-[`action-group.html.twig`](../../../packages/actions/templates/components/action-group.html.twig)
+[`ActionGroup/index.html.twig`](../../../packages/actions/templates/partials/ActionGroup/index.html.twig)
 instead wraps the same loop in `<div class="sy sy-ac-group">…</div>` before
 the `{% else %}` branch's children. Unlike Filament's bare concatenation, the
 wrapper is a real layout hook: actions'

@@ -26,7 +26,7 @@ is **done**), a **diverges** link to the permanent note in
 | --- | --- | --- | --- | --- |
 | [`columns()` setter — closure append, int→`lg` wrap, spread-merge](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::columns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | — |
 | [`getAllColumns()` — null→default map, per-entry `evaluate()`, breakpoint/int-key resolution](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::getAllColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | [diverges](#the-breakpoint-loop-rebuilds-a-fresh-map-instead-of-filaments-seed-and-unset-and-gates-empty-keys-with---rather-than-blank) |
-| [`getColumns()` — no-arg full map (`Schema.html.twig` `grid()`)](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::getColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | [diverges](#the-sy-grid-cols-marker-class-is-emitted-unconditionally) |
+| [`getColumns()` — no-arg full map (`Schema/index.html.twig` `grid()`)](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::getColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | [diverges](#the-sy-grid-cols-marker-class-is-emitted-unconditionally) |
 | [`getColumns(breakpoint)` — single-breakpoint lookup](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::getColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | in progress | — | [detail](#getcolumnsbreakpoint--single-breakpoint-lookup) |
 | [`hasCustomColumns()` — has-user-set-columns predicate](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::hasCustomColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | in progress | — | [detail](#hascustomcolumns--has-user-set-columns-predicate) |
 
@@ -41,7 +41,7 @@ below.
 
 The `?string $breakpoint` argument form (`return $columns[$breakpoint] ?? null`)
 is ported verbatim, but no template or test passes a breakpoint —
-`Schema.html.twig` only ever calls the no-arg form. Next step: exercise it the
+`Schema/index.html.twig` only ever calls the no-arg form. Next step: exercise it the
 first time a component needs a per-breakpoint column count (or add a direct case
 to a future `HasColumnsTest`); nothing behavioral is missing.
 

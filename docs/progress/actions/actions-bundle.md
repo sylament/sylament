@@ -63,7 +63,7 @@ and the `Concerns/HasActions*` Integration tests all boot
 [`tests/Fixtures/Kernel.php`](../../../packages/actions/tests/Fixtures/Kernel.php)
 (which registers `SylamentActionsBundle`) and render `Action` through
 `ViewComponent::render()`, proving the bundle loads and its
-`@SylamentActions/components/button-action.html.twig` /
+`@SylamentActions/partials/Action/Button.html.twig` /
 `@SylamentActions/components/ActionModal/index.html.twig` templates resolve.
 [`ModalsRenderTest`](../../../packages/actions/tests/Integration/Components/ModalsRenderTest.php)
 covers the Twig-component registration row: `<twig:SylamentActions:Modals />`
@@ -143,7 +143,7 @@ auto-maps `packages/actions/templates` → `@SylamentActions`. The wiring is
 therefore invisible in the bundle — intentional, and the reason
 [`Action`](../../../packages/actions/src/Action.php) can default
 `$defaultTemplate` to `self::BUTTON_TEMPLATE`
-(`'@SylamentActions/components/button-action.html.twig'`) with no explicit
+(`'@SylamentActions/partials/Action/Button.html.twig'`) with no explicit
 twig path config. Same divergence as
 [forms-bundle.md](../forms/forms-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call)
 and

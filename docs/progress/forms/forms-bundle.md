@@ -84,7 +84,7 @@ nothing in the bundle file (its body is a bare `//`): `AbstractBundle::getPath()
 returns `packages/forms`, and TwigBundle auto-maps `packages/forms/templates` →
 `@SylamentForms`. The wiring is therefore invisible in the bundle — intentional,
 and the reason the field classes can set `$template =
-'@SylamentForms/components/TextInput.html.twig'` with no explicit twig path
+'@SylamentForms/partials/TextInput/index.html.twig'` with no explicit twig path
 config. Same divergence as
 [schemas-bundle.md](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call).
 

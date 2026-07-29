@@ -34,8 +34,8 @@ and
 component / container, and the `saved()` coupling that keeps a disabled field out
 of `getState()`. The **rendering** half lives in forms, not schemas: both shipped
 field templates emit the native attribute from `component.isDisabled`
-([`TextInput.html.twig:15`](../../../packages/forms/templates/components/TextInput.html.twig),
-[`Textarea.html.twig:14`](../../../packages/forms/templates/components/Textarea.html.twig)),
+([`TextInput.html.twig:15`](../../../packages/forms/templates/partials/TextInput/index.html.twig),
+[`Textarea.html.twig:14`](../../../packages/forms/templates/partials/Textarea/index.html.twig)),
 asserted present-and-absent by
 [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php)
 and

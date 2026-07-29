@@ -18,7 +18,7 @@ class Icon extends Component
     use HasColor;
     use HasTooltip;
 
-    protected string|Closure|null $template = '@SylamentSchemas/components/Icon.html.twig';
+    protected string|Closure|null $template = '@SylamentSchemas/partials/Icon/index.html.twig';
 
     protected string|BackedEnum|Markup|Closure $icon;
 

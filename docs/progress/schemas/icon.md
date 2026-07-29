@@ -60,7 +60,7 @@ as an open gap, not a settled divergence.
 Next step: decide whether the `title` attribute is accepted as the accessible-name
 mechanism (then record the dropped sr-only span as a divergence) or port the text
 alternative + `aria-label` reconciliation into
-[`Icon.html.twig`](../../../packages/schemas/templates/components/Icon.html.twig) /
+[`Icon/index.html.twig`](../../../packages/schemas/templates/partials/Icon/index.html.twig) /
 `getExtraTemplateData()`; then add a render test asserting the visually-hidden name.
 
 ### `extraAttributes` are not forwarded into the icon

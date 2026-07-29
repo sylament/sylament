@@ -11,7 +11,7 @@ class TextInput extends Field
 {
     use CanBeLengthConstrained;
 
-    protected string|Closure|null $template = '@SylamentForms/components/TextInput.html.twig';
+    protected string|Closure|null $template = '@SylamentForms/partials/TextInput/index.html.twig';
 
     protected bool|Closure $isEmail = false;
 

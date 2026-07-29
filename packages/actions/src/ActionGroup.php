@@ -50,15 +50,15 @@ class ActionGroup extends ViewComponent
 
     public const string DEFAULT_ICON = 'heroicons:ellipsis-vertical';
 
-    public const string ICON_BUTTON_TEMPLATE = '@SylamentActions/components/action-group/icon-button-trigger.html.twig';
+    public const string ICON_BUTTON_TEMPLATE = '@SylamentActions/partials/ActionGroup/IconButtonTrigger.html.twig';
 
-    public const string BUTTON_TEMPLATE = '@SylamentActions/components/action-group/button-trigger.html.twig';
+    public const string BUTTON_TEMPLATE = '@SylamentActions/partials/ActionGroup/ButtonTrigger.html.twig';
 
-    public const string GROUPED_TEMPLATE = '@SylamentActions/components/action-group/grouped-trigger.html.twig';
+    public const string GROUPED_TEMPLATE = '@SylamentActions/partials/ActionGroup/GroupedTrigger.html.twig';
 
     protected string $evaluationIdentifier = 'group';
 
-    protected string|Closure|null $template = '@SylamentActions/components/action-group.html.twig';
+    protected string|Closure|null $template = '@SylamentActions/partials/ActionGroup/index.html.twig';
 
     /**
      * @var array<Action|ActionGroup>

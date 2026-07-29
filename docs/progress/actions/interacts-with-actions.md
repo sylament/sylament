@@ -122,7 +122,7 @@ promotes all four, because both the modal templates and the trigger buttons
 call back into the host by name regardless of its concrete class —
 [`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)
 wires `live_action('unmountAction', { cancelParentActions: … })`,
-[`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)
+[`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig)
 wires `live_action('mountAction', …)` and, for a modal submit action,
 `live_action('callMountedAction', …)` — and because
 [`BelongsToLiveComponent`](../../../packages/actions/src/Concerns/BelongsToLiveComponent.php)
@@ -130,7 +130,7 @@ types `Action`'s host reference as the interface, not a concrete class. Naming
 the behavior on the contract keeps that reference meaningful.
 
 Three more follow from the same rule, driven by the host-side
-[`<twig:SylamentActions:Modals />`](../../../packages/actions/templates/components/Modals.html.twig)
+[`<twig:SylamentActions:Modals />`](../../../packages/actions/templates/components/Modals/index.html.twig)
 renderer, which reads its host through this interface:
 `mountedActionShouldOpenModal(?Action $mountedAction = null): bool`,
 `getMountedModalId(?int $actionNestingIndex = null): string`, and

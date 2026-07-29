@@ -21,7 +21,7 @@ class Text extends Component
     use HasFontFamily;
     use HasWeight;
 
-    protected string|Closure|null $template = '@SylamentSchemas/components/Text.html.twig';
+    protected string|Closure|null $template = '@SylamentSchemas/partials/Text/index.html.twig';
 
     protected string|Markup|Closure|null $content = null;
 

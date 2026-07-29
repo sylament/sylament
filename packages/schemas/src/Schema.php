@@ -53,7 +53,7 @@ class Schema extends ViewComponent
 
     protected string $evaluationIdentifier = 'schema';
 
-    protected string|Closure|null $template = '@SylamentSchemas/components/Schema.html.twig';
+    protected string|Closure|null $template = '@SylamentSchemas/partials/Schema/index.html.twig';
 
     public static function make(?InteractsWithSchemas $liveComponent = null): static
     {

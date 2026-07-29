@@ -9,7 +9,7 @@ use Twig\Markup;
 
 class Html extends Component
 {
-    protected string|Closure|null $template = '@SylamentSchemas/components/Html.html.twig';
+    protected string|Closure|null $template = '@SylamentSchemas/partials/Html/index.html.twig';
 
     protected string|Markup|Closure|null $content = null;
 

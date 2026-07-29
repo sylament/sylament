@@ -49,7 +49,7 @@ their detail sections do.
 | [`isLive`/`isLiveOnBlur`/`isLiveDebounced`/`getLiveDebounce` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | in progress | — | [detail](#the-parent-walk-inheritance-overrides-are-untested) |
 | [`hasGap`/`isDense` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
 | [`getAllColumns` parent inheritance override](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | in progress | — | [detail](#the-parent-walk-inheritance-overrides-are-untested) |
-| [Twig-template rendering (`Schema.html.twig`)](../../../packages/schemas/templates/components/Schema.html.twig) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-renders-visible-children-only-without-hidden-placeholders) |
+| [Twig-template rendering (`Schema/index.html.twig`)](../../../packages/schemas/templates/partials/Schema/index.html.twig) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-renders-visible-children-only-without-hidden-placeholders) |
 | Root Livewire/Alpine render wiring (`wire:partial`, `x-data filamentSchema`, client-side state reset) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | skipped | — | [diverges](#the-root-schema-drops-livewire-partial-render-and-alpine-wiring) |
 | [`BelongsToParentComponent`](../../../packages/schemas/src/Concerns/BelongsToParentComponent.php) | [`Concerns/BelongsToParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToParentComponent.php) | done | — | [diverges](#parentcomponent-accepts-null-to-detach) |
 | [`CanBeEmbeddedInParentComponent`](../../../packages/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | [`Concerns/CanBeEmbeddedInParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | done | — | — |
@@ -198,7 +198,7 @@ reintroduced — not planned.
 Filament's `renderEmbeddedHtml()` emits `wire:partial` (`schema.{key}`),
 `x-data="filamentSchema({ livewireId, schemaKey })"`, and
 `x-on:form-validation-error`/`reset-schema-component-state` on the root div, and
-exposes `dispatchClientSideStateReset()`. Sylament's `Schema.html.twig` emits none
+exposes `dispatchClientSideStateReset()`. Sylament's `Schema/index.html.twig` emits none
 of these. Live binding runs field-side through UX LiveComponent `data-model`
 attributes plus a full component re-render (proven by `LiveStateTest`), so
 per-schema partial rendering, the client-side Alpine state object, and client-side

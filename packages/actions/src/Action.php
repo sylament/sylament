@@ -88,15 +88,15 @@ class Action extends ViewComponent
 
     protected string $evaluationIdentifier = 'action';
 
-    public const string BADGE_TEMPLATE = '@SylamentActions/components/badge-action.html.twig';
+    public const string BADGE_TEMPLATE = '@SylamentActions/partials/Action/Badge.html.twig';
 
-    public const string GROUPED_TEMPLATE = '@SylamentActions/components/grouped-action.html.twig';
+    public const string GROUPED_TEMPLATE = '@SylamentActions/partials/Action/Grouped.html.twig';
 
-    public const string BUTTON_TEMPLATE = '@SylamentActions/components/button-action.html.twig';
+    public const string BUTTON_TEMPLATE = '@SylamentActions/partials/Action/Button.html.twig';
 
-    public const string ICON_BUTTON_TEMPLATE = '@SylamentActions/components/icon-button-action.html.twig';
+    public const string ICON_BUTTON_TEMPLATE = '@SylamentActions/partials/Action/IconButton.html.twig';
 
-    public const string LINK_TEMPLATE = '@SylamentActions/components/link-action.html.twig';
+    public const string LINK_TEMPLATE = '@SylamentActions/partials/Action/Link.html.twig';
 
     protected string|Closure|null $defaultTemplate = self::BUTTON_TEMPLATE;
 

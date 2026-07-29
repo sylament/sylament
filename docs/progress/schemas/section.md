@@ -59,7 +59,7 @@ permanent note in [Divergences](#divergences).
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](#extra-alpine-attribute-passthrough-is-not-ported) |
 | [`canConcealComponents()`](../../../packages/schemas/src/Components/Section.php) | [`Section::canConcealComponents()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
 | [`getHeadingsCount()`](../../../packages/schemas/src/Components/Section.php) | [`Section::getHeadingsCount()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
-| [Rendering](../../../packages/schemas/templates/components/Section.html.twig) | [`Section::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
+| [Rendering](../../../packages/schemas/templates/partials/Section/index.html.twig) | [`Section::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
 | [`CanBeCollapsed`](../../../packages/schemas/src/Components/Concerns/CanBeCollapsed.php) | [`Concerns/CanBeCollapsed.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeCollapsed.php) | done | — | — |
 | [`CanBeCompact`](../../../packages/schemas/src/Components/Concerns/CanBeCompact.php) | [`Concerns/CanBeCompact.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeCompact.php) | done | — | — |
 | [`CanBeDivided`](../../../packages/schemas/src/Components/Concerns/CanBeDivided.php) | [`Concerns/CanBeDivided.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDivided.php) | done | — | — |

@@ -153,10 +153,10 @@ and the bundle wiring —
 [`resources/views`](../../../vendor/filament/actions/resources/views). A row named
 for a directory collapses that whole subtree into one navigational entry.
 `Action`'s own rendering templates — the trigger family
-([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig),
-[`link-action.html.twig`](../../../packages/actions/templates/components/link-action.html.twig),
-[`badge-action.html.twig`](../../../packages/actions/templates/components/badge-action.html.twig),
-[`icon-button-action.html.twig`](../../../packages/actions/templates/components/icon-button-action.html.twig);
+([`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig),
+[`Action/Link.html.twig`](../../../packages/actions/templates/partials/Action/Link.html.twig),
+[`Action/Badge.html.twig`](../../../packages/actions/templates/partials/Action/Badge.html.twig),
+[`Action/IconButton.html.twig`](../../../packages/actions/templates/partials/Action/IconButton.html.twig);
 Sylament compositions with **no** single Filament source; Filament renders
 action triggers through the support-layer button/link/badge/icon-button
 component views) and
@@ -164,7 +164,7 @@ component views) and
 (porting [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php))
 — are folded into [`action.md`](action.md) as its trigger- and modal-rendering
 rows rather than carrying rows here. The host-side
-[`Modals`](../../../packages/actions/templates/components/Modals.html.twig)
+[`Modals`](../../../packages/actions/templates/components/Modals/index.html.twig)
 component (porting [`components/modals.blade.php`](../../../vendor/filament/actions/resources/views/components/modals.blade.php))
 folds the same way into [`has-actions.md`](has-actions.md), being a pure view over
 that trait's mounted-action state.

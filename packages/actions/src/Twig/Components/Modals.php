@@ -20,7 +20,7 @@ use Symfony\UX\TwigComponent\ComponentStack;
  */
 #[AsTwigComponent(
     name: 'SylamentActions:Modals',
-    template: '@SylamentActions/components/Modals.html.twig',
+    template: '@SylamentActions/components/Modals/index.html.twig',
 )]
 class Modals
 {

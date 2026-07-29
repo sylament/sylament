@@ -75,7 +75,7 @@ trait HasActions
     /**
      * Has-schema answers by nesting index. Not an optimisation:
      * {@see isMountedActionModalOpen()} runs the modal-open gate once per frame
-     * per render (`Modals.html.twig:8,12`), so an unmemoised build is
+     * per render (`Modals/index.html.twig:8,24`), so an unmemoised build is
      * O(frames²) schema constructions. It cannot live in `$cachedSchemas` —
      * that map is typed `array<string, Schema>` and the answer we need to cache
      * for a schema-less action is exactly the *absence* of a schema.

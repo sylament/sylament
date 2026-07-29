@@ -161,7 +161,7 @@ it('keeps the normal action template under dropdown(false)', function (): void {
     $edit = Action::make('edit');
     ActionGroup::make([$edit])->dropdown(false)->getActions();
 
-    expect($edit->getTemplate())->toBe('@SylamentActions/components/button-action.html.twig');
+    expect($edit->getTemplate())->toBe('@SylamentActions/partials/Action/Button.html.twig');
 });
 
 it('never clobbers an explicit action template', function (): void {

@@ -202,7 +202,7 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | Commands | [`Commands/`](../../../vendor/filament/schemas/src/Commands) | todo | — |
 | Commands / FileGenerators | [`Commands/FileGenerators/`](../../../vendor/filament/schemas/src/Commands/FileGenerators) | todo | — |
 | Command stubs | [`stubs/`](../../../vendor/filament/schemas/stubs) | todo | — |
-| [Component views](../../../packages/schemas/templates/components) | [`resources/views/components/`](../../../vendor/filament/schemas/resources/views/components) | in progress | [component-views.md](component-views.md) |
+| [Component views](../../../packages/schemas/templates/partials) | [`resources/views/components/`](../../../vendor/filament/schemas/resources/views/components) | in progress | [component-views.md](component-views.md) |
 | [Styles](../../../packages/schemas/assets/src/styles) | [`resources/css/`](../../../vendor/filament/schemas/resources/css) | in progress | [styles.md](styles.md) |
 | Scripts | [`resources/js/`](../../../vendor/filament/schemas/resources/js) | todo | — |
 | Translations | [`resources/lang/`](../../../vendor/filament/schemas/resources/lang) | todo | — |

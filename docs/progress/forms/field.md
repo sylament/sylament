@@ -114,7 +114,7 @@ deliberate omission.
 **The native `required` attribute became load-bearing with forms-in-modals.**
 `TextInput` / `Textarea` have always emitted `required` from
 `isMarkedAsRequired()`
-([`TextInput.html.twig:14`](../../../packages/forms/templates/components/TextInput.html.twig)),
+([`TextInput.html.twig:14`](../../../packages/forms/templates/partials/TextInput/index.html.twig)),
 but with no `<form>` anywhere in the page the attribute did nothing. Now that a
 mounted action's modal window renders as a real `<form>`
 ([support/modal.md](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit)),

@@ -53,7 +53,7 @@ are set, appends a `resetState` Stimulus action bound to
 
 **In:** the branch and the two props exist and evaluate. **Missing:** nothing
 supplies them — the schemas `Section` template passes neither
-([`Section.html.twig`](../../../packages/schemas/templates/components/Section.html.twig)
+([`Section/index.html.twig`](../../../packages/schemas/templates/partials/Section/index.html.twig)
 threads `collapseId`, ids and flags but no `liveComponentId`/`schemaKey`), so the
 branch is never taken. `SectionRenderTest` only asserts the wiring is **absent**
 (`->not->toContain('reset-schema-component-state')`, line 469); the positive path

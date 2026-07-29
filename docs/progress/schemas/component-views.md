@@ -1,7 +1,7 @@
 # Component views (schemas)
 
 The Twig templates in
-[`packages/schemas/templates/components/`](../../../packages/schemas/templates/components)
+[`packages/schemas/templates/partials/`](../../../packages/schemas/templates/partials)
 — `Actions`, `Html`, `Icon`, `Schema`, `Section`, `Text` — that render the
 schemas components through Support's
 [`ViewComponent`](../support/component.md). Each ports the HTML that a Filament
@@ -36,12 +36,12 @@ in-progress features, a **diverges** note here for a structural one, or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`Actions.html.twig`](../../../packages/schemas/templates/components/Actions.html.twig) | [`Actions::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Actions.php) | in progress | — | [actions.md](actions.md) |
-| [`Html.html.twig`](../../../packages/schemas/templates/components/Html.html.twig) | [`Html::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Html.php) | done | — | — |
-| [`Icon.html.twig`](../../../packages/schemas/templates/components/Icon.html.twig) | [`Icon::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Icon.php) | in progress | — | [icon.md](icon.md) |
-| [`Schema.html.twig`](../../../packages/schemas/templates/components/Schema.html.twig) | [`Schema::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-template-omits-the-livecomponent-wiring-hidden-placeholders-and-grid-liberation) |
-| [`Section.html.twig`](../../../packages/schemas/templates/components/Section.html.twig) | [`Section::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [section.md](section.md) |
-| [`Text.html.twig`](../../../packages/schemas/templates/components/Text.html.twig) | [`Text::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Text.php) | in progress | — | [text.md](text.md) |
+| [`Actions/index.html.twig`](../../../packages/schemas/templates/partials/Actions/index.html.twig) | [`Actions::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Actions.php) | in progress | — | [actions.md](actions.md) |
+| [`Html/index.html.twig`](../../../packages/schemas/templates/partials/Html/index.html.twig) | [`Html::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Html.php) | done | — | — |
+| [`Icon/index.html.twig`](../../../packages/schemas/templates/partials/Icon/index.html.twig) | [`Icon::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Icon.php) | in progress | — | [icon.md](icon.md) |
+| [`Schema/index.html.twig`](../../../packages/schemas/templates/partials/Schema/index.html.twig) | [`Schema::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-template-omits-the-livecomponent-wiring-hidden-placeholders-and-grid-liberation) |
+| [`Section/index.html.twig`](../../../packages/schemas/templates/partials/Section/index.html.twig) | [`Section::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [section.md](section.md) |
+| [`Text/index.html.twig`](../../../packages/schemas/templates/partials/Text/index.html.twig) | [`Text::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Text.php) | in progress | — | [text.md](text.md) |
 | Fieldset template | [`fieldset.blade.php`](../../../vendor/filament/schemas/resources/views/components/fieldset.blade.php) | todo | Fieldset component | — |
 | Grid template | [`grid.blade.php`](../../../vendor/filament/schemas/resources/views/components/grid.blade.php) | todo | Grid component | — |
 
@@ -50,9 +50,9 @@ schemas Kernel registers TwigComponentBundle/StimulusBundle, so these templates
 are exercised from here, not from support). Since the schemas↔actions
 integration, [the schemas test Kernel](../../../packages/schemas/tests/Fixtures/Kernel.php)
 also registers `SylamentActionsBundle`: rendering an `Action`/`ActionGroup`
-child — from `Schema.html.twig`'s action branch, `Section.html.twig`'s
-header/footer slots, or `Actions.html.twig` — resolves actions' own
-`@SylamentActions`-namespaced templates (`button-action.html.twig` and
+child — from `Schema/index.html.twig`'s action branch, `Section/index.html.twig`'s
+header/footer slots, or `Actions/index.html.twig` — resolves actions' own
+`@SylamentActions`-namespaced templates (`Action/Button.html.twig` and
 friends), which only that bundle's registration makes loadable:
 [`ActionsRenderTest`](../../../packages/schemas/tests/Integration),
 `HtmlRenderTest`, `IconComponentRenderTest`, `SchemaRenderTest`,
@@ -66,7 +66,7 @@ step. Feature-level state stays in the per-component file each row links.
 
 ### Actions template — label and row rendered
 
-`Actions.html.twig` renders the outer column, the label heading, and the
+`Actions/index.html.twig` renders the outer column, the label heading, and the
 visible-actions row with alignment/full-width classes. The sticky Alpine wiring,
 the `fi-vertical-align-*` class, and the four label/content slot schemas are
 unported; each is tracked against the component in [`actions.md`](actions.md).
@@ -74,7 +74,7 @@ Next step: close those component gaps — their render halves land here with the
 
 ### Icon template — subset rendered
 
-`Icon.html.twig` renders the icon svg with color, size, and a plain `title`
+`Icon/index.html.twig` renders the icon svg with color, size, and a plain `title`
 tooltip. What is left (the sr-only accessible-text fallback and `aria-label`
 relocation) is tracked against the component in [`icon.md`](icon.md); the
 `title`-vs-Stimulus-tooltip choice is the systematic idiom translation, not a
@@ -82,7 +82,7 @@ gap. Next step: close the accessibility gap noted in `icon.md`.
 
 ### Text template — plain-text subset rendered
 
-`Text.html.twig` renders a `<span>` with size / weight / font-family / color
+`Text/index.html.twig` renders a `<span>` with size / weight / font-family / color
 classes over escaped-or-`Markup` content. Badge, leading/trailing icon,
 copyable, and tooltip modes are unported; they are tracked in [`text.md`](text.md)
 because they need the corresponding methods on the Text component first. Next
@@ -115,7 +115,7 @@ components.
 Filament's `Schema::toEmbeddedHtml` emits root state wiring (the client
 data-object, partial markers, window listeners), keeps hidden children in the
 DOM as placeholder wrappers, and honors `isLiberatedFromContainerGrid()`.
-`Schema.html.twig` renders none of these: it loops the `visibleChildren` pairs
+`Schema/index.html.twig` renders none of these: it loops the `visibleChildren` pairs
 `Schema::getExtraTemplateData()` precomputes (visible children only — see the
 [hidden-placeholder divergence](schema.md#the-schema-renders-visible-children-only-without-hidden-placeholders))
 and has no liberated-from-grid branch. What it does render now matches

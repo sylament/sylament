@@ -53,7 +53,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](has-actions.md#resolveactions-drops-the-table-branch), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-emits-only-the-schemacomponent-key) decidable |
 | [`CanCallParentAction`](../../../packages/actions/src/Concerns/CanCallParentAction.php) | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | done | — | Filament-exact two-method port (`callParent()` + getter). The getter is `getParentActionCallLiveComponentClickHandler()` against Filament's `…Livewire…`, the systematic Livewire → UX LiveComponent naming translation from the [rename table](../renames.md), not a rename of its own. Read by all five trigger templates, ranked **above** `shouldClose()` in the click precedence |
 | [`HasParentActions`](../../../packages/actions/src/Concerns/HasParentActions.php) | [`Concerns/HasParentActions.php`](../../../vendor/filament/actions/src/Concerns/HasParentActions.php) | done | — | Complete, method-for-method and body-for-body. Three of its accessors (`shouldCancelParentActionsOnClose()`, `shouldCancelAllParentActionsOnClose()`, `getParentActionToCancelToOnClose()`) have no consumer here — and none in `vendor/filament` either, so they are kept as declared API rather than trimmed |
-| Trigger rendering ([`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig) + the [`link-action`](../../../packages/actions/templates/components/link-action.html.twig) / [`badge-action`](../../../packages/actions/templates/components/badge-action.html.twig) / [`icon-button-action`](../../../packages/actions/templates/components/icon-button-action.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
+| Trigger rendering ([`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig) + the [`link-action`](../../../packages/actions/templates/partials/Action/Link.html.twig) / [`badge-action`](../../../packages/actions/templates/partials/Action/Badge.html.twig) / [`icon-button-action`](../../../packages/actions/templates/partials/Action/IconButton.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
 | Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | — | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal), [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-modal-footer-renders-real-action-instances) |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
 | [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | — |
@@ -473,7 +473,7 @@ recorded as a
 [divergence](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side).
 
 Missing vs Filament's `HasAction`:
-- **`livewireClickHandlerEnabled()` / `isLivewireClickHandlerEnabled()` as a method.** Filament's gate has three arms: an explicit `livewireClickHandlerEnabled()` override, `filled($this->getUrl())`, and `canSubmitForm()`. Both **default** arms are now implemented — but in the five trigger templates rather than on the trait. The `getUrl()` arm always was (`{% if not component.getUrl %}` around the whole click cascade); the forms-in-modals epic added the second as a `hasLiveClickBinding = not component.getUrl and not component.canSubmitForm` guard in [`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig) and its `link`/`badge`/`grouped` siblings, and as an extra term in [`icon-button-action.html.twig`](../../../packages/actions/templates/components/icon-button-action.html.twig)'s `mountAttributes`. It is load-bearing, not tidiness: [`getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php) gives a form-wrapped action `->submit(name)->action(null)`, so without the guard the trigger falls through its click cascade to the `mountAction` default and every confirm click fires a **second**, unrelated live request — `mountAction('submit')`, naming an action that does not exist — alongside the form's own `callMountedAction`. What is still absent is only the **explicit override**: there is no `livewireClickHandlerEnabled()` setter, so a caller cannot force-enable or force-disable the binding against the two defaults. The close arm is unaffected in both codebases — Filament keeps it on a separate `x-on:click`, the port on a separate `data-action`.
+- **`livewireClickHandlerEnabled()` / `isLivewireClickHandlerEnabled()` as a method.** Filament's gate has three arms: an explicit `livewireClickHandlerEnabled()` override, `filled($this->getUrl())`, and `canSubmitForm()`. Both **default** arms are now implemented — but in the five trigger templates rather than on the trait. The `getUrl()` arm always was (`{% if not component.getUrl %}` around the whole click cascade); the forms-in-modals epic added the second as a `hasLiveClickBinding = not component.getUrl and not component.canSubmitForm` guard in [`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig) and its `link`/`badge`/`grouped` siblings, and as an extra term in [`Action/IconButton.html.twig`](../../../packages/actions/templates/partials/Action/IconButton.html.twig)'s `mountAttributes`. It is load-bearing, not tidiness: [`getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php) gives a form-wrapped action `->submit(name)->action(null)`, so without the guard the trigger falls through its click cascade to the `mountAction` default and every confirm click fires a **second**, unrelated live request — `mountAction('submit')`, naming an action that does not exist — alongside the form's own `callMountedAction`. What is still absent is only the **explicit override**: there is no `livewireClickHandlerEnabled()` setter, so a caller cannot force-enable or force-disable the binding against the two defaults. The close arm is unaffected in both codebases — Filament keeps it on a separate `x-on:click`, the port on a separate `data-action`.
 - **`hasAction(): bool`.** Helper predicate not ported; trivially derivable from `getAction() !== null` at call sites today, but no equivalent method or test exists.
 
 Next step: promote the template-side guard into a real `isLiveComponentClickHandlerEnabled()` on `HasAction` the moment a caller needs the explicit override — the two default arms already agree with Filament's, so that change is additive and moves logic rather than adding behaviour.
@@ -680,13 +680,13 @@ Filament has none either). The default stays `BUTTON_TEMPLATE` via
 `$defaultTemplate`, so `ActionGroup` can push `GROUPED_TEMPLATE` as a default
 while an explicit switcher call survives the push — Filament-identical
 precedence, pinned by `ActionTest`. Each shape has its own template beside
-[`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig):
-[`link-action.html.twig`](../../../packages/actions/templates/components/link-action.html.twig)
-and [`badge-action.html.twig`](../../../packages/actions/templates/components/badge-action.html.twig)
+[`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig):
+[`Action/Link.html.twig`](../../../packages/actions/templates/partials/Action/Link.html.twig)
+and [`Action/Badge.html.twig`](../../../packages/actions/templates/partials/Action/Badge.html.twig)
 mirror the button skeleton on `sy-ac-link`/`sy-ac-badge` classes (CSS in
 `packages/actions/assets/src/styles/components/`, riding support's single
 Tailwind compile), and
-[`icon-button-action.html.twig`](../../../packages/actions/templates/components/icon-button-action.html.twig)
+[`Action/IconButton.html.twig`](../../../packages/actions/templates/partials/Action/IconButton.html.twig)
 composes the support
 [`IconButton`](../../../packages/support/templates/components/IconButton/index.html.twig)
 primitive through the `{% component %}` tag (the only syntax that can spread a
@@ -840,7 +840,7 @@ Filament's outlined button resolves through `ButtonSize`/color-map machinery in
 `button.blade.php` (per-color class maps composed in PHP). Sylament's
 `CanBeOutlined` port is API-identical (`outlined()` / `isOutlined()` /
 `hasOutlined()`), but the rendering side is a single code-less state class:
-[`button-action.html.twig`](../../../packages/actions/templates/components/button-action.html.twig)
+[`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig)
 adds `sy-outlined` to the root class list and
 [`button.css`](../../../packages/support/assets/src/styles/components/button.css)
 carries one `.sy-btn.sy-outlined` variant rule driven by the same
@@ -880,7 +880,7 @@ Pinned by `ActionRenderTest`'s string/close/parent-call/precedence cases across
 the button and icon-button shapes.
 
 One shape delta among the five templates, deliberate and now commented in
-place: `icon-button-action.html.twig` suppresses click wiring for a **disabled**
+place: `Action/IconButton.html.twig` suppresses click wiring for a **disabled**
 action as well as a URL-bearing one, where its four siblings emit the binding
 and lean on the rendered `disabled` attribute. Both bindings on that template
 read one hoisted `clickWiringSuppressed` flag so they cannot drift apart again.
@@ -893,7 +893,7 @@ values exist in the actions package yet, the same narrowing `CanOpenModal`'s
 `modalIcon` already applies (support's `HasIcon` keeps the wide type, so
 `getIcon(default:)` accepts the narrowed value unchanged). Consumed exactly
 where Filament consumes it:
-[`grouped-action.html.twig`](../../../packages/actions/templates/components/grouped-action.html.twig)
+[`Action/Grouped.html.twig`](../../../packages/actions/templates/partials/Action/Grouped.html.twig)
 resolves its icon as `component.getIcon(component.getGroupedIcon)` — Filament's
 `icon: $this->getIcon(default: $this->getGroupedIcon())` — so the grouped icon
 only surfaces inside a dropdown item, never on the button shape. Widen the
@@ -923,7 +923,7 @@ the plain-link path). None of this exists in
 [`Sylament\Actions\Concerns\CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php)
 — its own docblock records the omission as deliberate: "no POST actions in the
 MVP." `Action`'s current template
-(`../../../packages/actions/templates/components/button-action.html.twig`)
+(`../../../packages/actions/templates/partials/Action/Button.html.twig`)
 only ever emits `<a>` or `<button>`, never a `<form>`. This is a scope decision
 for the current action surface, not a missing dependency, so it is **skipped**
 rather than **blocked** — reversible the moment an action needs a
@@ -1047,7 +1047,7 @@ Filament's `action-modal.blade.php` is a plain view: `Action::renderModal()` cal
 `view('filament-actions::action-modal', ['action' => $this])`, and
 `components/modals.blade.php` renders the result. The port started the same way — an
 `{% include … with { action, id } only %}` from
-[`Modals`](../../../packages/actions/templates/components/Modals.html.twig) — and is
+[`Modals`](../../../packages/actions/templates/components/Modals/index.html.twig) — and is
 now [`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig),
 invoked as `<twig:SylamentActions:ActionModal :action="action" :id="…" />`. Every
 other rendered surface in the repo that a template invokes is a `<twig:>` component;
@@ -1070,7 +1070,7 @@ does Sylament:
 [`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)
 loops `getVisibleModalFooterActions()` through `renderComponent()`, so every
 footer button is a `makeModalAction()`-built `Action` rendering via
-`button-action.html.twig` (submit reaches `live_action('callMountedAction')`
+`Action/Button.html.twig` (submit reaches `live_action('callMountedAction')`
 through its string click handler; cancel closes the dialog client-side via
 `data-action="sylament--support--modal#dismiss"` from `close()`, and the
 dismissal wrapper turns that into the `unmountAction` round-trip — see the
@@ -1083,7 +1083,7 @@ pattern, which arrives here with the prebuilt actions
 ([detail](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported)). One limitation moved rather than vanished: an
 array-of-shades color (a value `getColor(): string|array<string>|null`
 explicitly allows) still cannot be represented in the rendered classes — that
-is now the general button-template limitation (`button-action.html.twig`
+is now the general button-template limitation (`Action/Button.html.twig`
 coerces iterable/empty colors to gray, and `getModalSubmitAction()` maps
 gray/unset to primary), not a hardcoded-footer artifact.
 

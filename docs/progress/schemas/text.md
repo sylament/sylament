@@ -10,7 +10,7 @@ with its `getSizeClass()` template helper, and the shared
 [`HasWeight`](../../../packages/support/src/Components/Concerns/HasWeight.php) /
 [`HasFontFamily`](../../../packages/support/src/Components/Concerns/HasFontFamily.php)
 styling concerns — all rendered through the
-[`Text.html.twig`](../../../packages/schemas/templates/components/Text.html.twig)
+[`Text/index.html.twig`](../../../packages/schemas/templates/partials/Text/index.html.twig)
 template on the `ViewComponent` path (the house replacement for Filament's
 `HasEmbeddedView::toEmbeddedHtml()`, so that contract is not ported — a
 systematic idiom translation recorded in the [rename table](../renames.md)).
@@ -55,7 +55,7 @@ row is **done**), **diverges** → the permanent note in
 | [`HasColor` color/getColor/hasColor + default gray](../../../packages/support/src/Components/Concerns/HasColor.php) | [`HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | [diverges](#the-default-gray-color-lives-in-the-template-not-setup) |
 | [`HasWeight` weight/getWeight/getWeightClass](../../../packages/support/src/Components/Concerns/HasWeight.php) | [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | — | — |
 | [`HasFontFamily` fontFamily/getFontFamily/getFontFamilyClass](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | — |
-| [Twig span render: `sy`/`sy-sc-text` classes, escaping, raw `Markup`, extra attrs](../../../packages/schemas/templates/components/Text.html.twig) | [`Text::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
+| [Twig span render: `sy`/`sy-sc-text` classes, escaping, raw `Markup`, extra attrs](../../../packages/schemas/templates/partials/Text/index.html.twig) | [`Text::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | `badge()` / `isBadge()` badge mode | [`Text::badge()`](../../../vendor/filament/schemas/src/Components/Text.php) | todo | — | [detail](#badge-mode) |
 | `CanBeCopied` (copyable + copy JS) | [`CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | todo | — | [detail](#copyable) |
 | `HasIcon` (`icon()`/`getIcon()`) | [`HasIcon`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | todo | — | [detail](#icon-support) |
@@ -67,7 +67,7 @@ row is **done**), **diverges** → the permanent note in
 | `publishedViewOverrideCheckPath` (Blade view-override detection) | [`Text`](../../../vendor/filament/schemas/src/Components/Text.php) | skipped | — | — |
 
 The two **skipped** rows fall out of the Twig-rendering translation: markup is
-built in `Text.html.twig` on the `ViewComponent` render path, not in a PHP
+built in `Text/index.html.twig` on the `ViewComponent` render path, not in a PHP
 `toEmbeddedHtml()`, so neither the `HasEmbeddedView` contract nor Filament's
 Blade view-override probe has a role here. That translation is the house idiom
 documented in the [rename table](../renames.md), not a per-component divergence.
@@ -91,7 +91,7 @@ are untested only because they are unported.
 `<span>` to a badge (a button when copyable), colored via `BadgeComponent` and
 wrapping the label in badge containers, and coerces the default `Size` to
 `Medium` in badge mode. None of it is ported. Next: add an `isBadge` flag (a
-small concern or inline) and a badge branch to `Text.html.twig`
+small concern or inline) and a badge branch to `Text/index.html.twig`
 (`fi-badge` → `sy-badge` markup), including the badge-only `Size` default.
 
 ### Copyable
@@ -113,7 +113,7 @@ The three icon concerns —
 and the icon markup around the label are not ported. The `IconPosition` /
 `IconSize` enums already exist under `Sylament\Support\Enums`, and the [`Icon`
 component](icon.md) already renders icons. Next: port the three concerns and emit
-the icon before/after the label via `renderComponent` in `Text.html.twig`.
+the icon before/after the label via `renderComponent` in `Text/index.html.twig`.
 
 ### Tooltip
 
@@ -139,7 +139,7 @@ an evaluated JS expression rather than literal text. Neither `Text::js()` nor
 Filament's `Text::setUp()` calls `defaultColor('gray')`, so `getColor()` returns
 `'gray'` when no color is set. Sylament's `Text` has no `setUp()` override:
 `getColor()` returns `null` by default, and
-[`Text.html.twig`](../../../packages/schemas/templates/components/Text.html.twig)
+[`Text/index.html.twig`](../../../packages/schemas/templates/partials/Text/index.html.twig)
 computes `'gray'` as the fallback and suppresses `sy-color-*` classes for gray
 (pinned by the `TextRenderTest` case "omits color classes for the default gray").
 Rendered output matches Filament — gray is the visual default — but the

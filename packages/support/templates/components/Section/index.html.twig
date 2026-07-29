@@ -137,8 +137,8 @@
                         iconAlias="section.collapse-button"
                         class="sy-section-collapse-btn"
                         {{ ...(stimulus_action(sectionController, 'toggleFromButton', 'click')|stimulus_target(sectionController, 'button')) }}
-                        aria-label="{{ collapsed ? expandLabel : collapseLabel }}"
-                        aria-expanded="{{ collapsed ? 'false' : 'true' }}"
+                        :aria-label="collapsed ? expandLabel : collapseLabel"
+                        :aria-expanded="collapsed ? 'false' : 'true'"
                         :aria-controls="hasBody and contentId ? contentId : false"
                 />
             {% endif %}

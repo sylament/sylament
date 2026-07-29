@@ -40,7 +40,7 @@
     :formId="component.getFormId"
     {{ ...(component.getTooltip ? {title: component.getTooltip} : {}) }}
     {{ ...extraAttributes }}
-    class="{{ rootClasses }}"
+    :class="rootClasses"
     {{ ...mountAttributes }}
     {{ ...closeAttributes }}
 />

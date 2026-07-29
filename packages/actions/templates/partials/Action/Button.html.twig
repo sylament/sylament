@@ -42,7 +42,7 @@
     {{ ...(component.getTooltip ? {title: component.getTooltip} : {}) }}
     {{ ...(component.isLabelHidden ? {'aria-label': (component.getLabel ?? component.getName)|striptags|trim} : {}) }}
     {{ ...extraAttributes }}
-    class="{{ rootClasses }}"
+    :class="rootClasses"
     {{ ...mountAttributes }}
     {{ ...closeAttributes }}
 >

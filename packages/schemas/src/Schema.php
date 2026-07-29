@@ -17,6 +17,7 @@ use Sylament\Schemas\Concerns\BelongsToParentComponent;
 use Sylament\Schemas\Concerns\CanBeDisabled;
 use Sylament\Schemas\Concerns\CanBeEmbeddedInParentComponent;
 use Sylament\Schemas\Concerns\CanBeInline;
+use Sylament\Schemas\Concerns\CanBeValidated;
 use Sylament\Schemas\Concerns\CanModifyActions;
 use Sylament\Schemas\Concerns\HasComponents;
 use Sylament\Schemas\Concerns\HasHeadings;
@@ -40,6 +41,7 @@ class Schema extends ViewComponent
     use CanBeDisabled;
     use CanBeEmbeddedInParentComponent;
     use CanBeInline;
+    use CanBeValidated;
     use CanModifyActions;
     use HasAlignment;
     use HasColumns {

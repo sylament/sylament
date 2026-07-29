@@ -47,6 +47,15 @@ A pure value transformation with no framework coupling, whoever wrote it first.
 over `mixed` — no container, no global state, nothing a Symfony developer has to
 learn. Copying a *function* is not importing an *idiom*.
 
+**Naming is out of scope.** This principle governs mechanisms, not vocabulary.
+A method name Laravel also uses — `*OrFail`, `make()`, `configure()` — costs a
+Symfony developer nothing to read and takes nothing away from the framework. The
+question is never whether a word appears in Laravel; it is whether the thing
+behind it makes Symfony behave less like Symfony. `getSchemaComponentOrFail()`
+was briefly renamed to dodge an Eloquent association, which was this principle
+misapplied by the person who had just finished writing it — evidence enough that
+the limit was worth stating.
+
 Deferral is also not rejection. `Conditionable` and `Tappable`
 [are skipped](progress/support/component.md#conditionable-and-tappable-are-not-ported)
 because nothing wants them yet, and that note says so in as many words — a later

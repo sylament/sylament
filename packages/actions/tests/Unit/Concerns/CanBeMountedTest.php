@@ -12,9 +12,9 @@ it('default getMountUsing() fills a schema when one is mounted', function (): vo
     $schema = new class extends Schema {
         public bool $wasFilled = false;
 
-        public ?array $filledWith = null;
+        public object|array|null $filledWith = null;
 
-        public function fill(?array $state = null): static
+        public function fill(object|array|null $state = null): static
         {
             $this->wasFilled = true;
             $this->filledWith = $state;
@@ -47,9 +47,9 @@ it('fillForm() fills the mounted schema with a literal array', function (): void
     $fixture->fillForm(['title' => 'Hi']);
 
     $schema = new class extends Schema {
-        public ?array $filledWith = null;
+        public object|array|null $filledWith = null;
 
-        public function fill(?array $state = null): static
+        public function fill(object|array|null $state = null): static
         {
             $this->filledWith = $state;
 
@@ -67,9 +67,9 @@ it('fillForm() fills the mounted schema with data resolved from a closure', func
     $fixture->fillForm(static fn (): array => ['title' => 'From closure']);
 
     $schema = new class extends Schema {
-        public ?array $filledWith = null;
+        public object|array|null $filledWith = null;
 
-        public function fill(?array $state = null): static
+        public function fill(object|array|null $state = null): static
         {
             $this->filledWith = $state;
 

@@ -94,9 +94,9 @@ trait HasSchemas
      * Fill the default schema. Multi-schema hosts fill each explicitly via
      * `getSchema($name)->fill(...)`.
      *
-     * @param array<string, mixed>|null $state
+     * @param object|array<string, mixed>|null $state
      */
-    public function fill(?array $state = null): static
+    public function fill(object|array|null $state = null): static
     {
         $this->getSchema()->fill($state);
 

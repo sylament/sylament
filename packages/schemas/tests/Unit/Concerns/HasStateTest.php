@@ -9,6 +9,7 @@ use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Concerns\MultiSchemaHostFixture;
+use Sylament\Schemas\Tests\Fixtures\Concerns\RecordFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 
 it('fills the bag and null-fills unset leaves', function (): void {
@@ -134,4 +135,80 @@ it('fires beforeStateDehydrated and re-syncs mutated state when asked', function
 
     expect($fired)->toBeTrue()
         ->and($state)->toBe(['title' => 'rewritten']);
+});
+
+it('fills state from a record object, scoped to the schema paths', function (): void {
+    $record = new RecordFixture();
+    $record->setTitle('Hello');
+    $record->setPerex('A summary');
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('title'), StateField::make('perex')]);
+
+    $schema->fill($record);
+
+    expect($schema->getRawState())->toBe(['title' => 'Hello', 'perex' => 'A summary']);
+});
+
+it('nulls fields the record cannot supply', function (): void {
+    $record = new RecordFixture();
+    $record->setTitle('Hello');
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('title'), StateField::make('subtitle')]);
+
+    $schema->fill($record);
+
+    expect($schema->getRawState())->toBe(['title' => 'Hello', 'subtitle' => null]);
+});
+
+it('skips an uninitialized typed property', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('title')]);
+
+    $schema->fill(new RecordFixture());
+
+    expect($schema->getRawState())->toBe(['title' => null]);
+});
+
+it('skips object-valued reads', function (): void {
+    $record = new RecordFixture();
+    $record->setTitle('Hello');
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('author'), StateField::make('title')]);
+
+    $schema->fill($record);
+
+    expect($schema->getRawState())->toBe(['title' => 'Hello', 'author' => null]);
+});
+
+it('reads array values from the record', function (): void {
+    $record = new RecordFixture();
+    $record->setTags(['a', 'b']);
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('tags')]);
+
+    $schema->fill($record);
+
+    expect($schema->getRawState())->toBe(['tags' => ['a', 'b']]);
+});
+
+it('still fills defaults when called with null and arrays verbatim', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('title')->default('Untitled')]);
+
+    $schema->fill();
+
+    expect($schema->getRawState())->toBe(['title' => 'Untitled']);
+
+    $schema->fill(['title' => 'Explicit']);
+    expect($schema->getRawState())->toBe(['title' => 'Explicit']);
 });

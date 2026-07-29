@@ -157,6 +157,6 @@ it('round-trips the autofocus flag', function (): void {
         ->and(FixtureField::make('title')->autofocus(fn (): bool => true)->isAutofocused())->toBeTrue();
 });
 
-it('has no error messages this epic', function (): void {
+it('has no error messages without a live component to read the bag from', function (): void {
     expect(FixtureField::make('title')->getErrorMessages())->toBe([]);
 });

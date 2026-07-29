@@ -2,6 +2,10 @@
     @apply block w-full rounded-lg bg-white px-3 py-1.5 text-sm text-gray-950 shadow-xs ring-1 ring-gray-950/10 transition duration-75 outline-none placeholder:text-gray-400 hover:ring-gray-950/20 focus:ring-2 focus:ring-primary-600 disabled:bg-gray-50 disabled:text-gray-500 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:placeholder:text-gray-500 dark:hover:ring-white/20 dark:focus:ring-primary-500;
 }
 
+.sy-fo-input[aria-invalid='true'] {
+    @apply ring-danger-600 hover:ring-danger-600 focus:ring-danger-600 dark:ring-danger-500 dark:hover:ring-danger-500 dark:focus:ring-danger-500;
+}
+
 textarea.sy-fo-input {
     @apply min-h-20 resize-y;
 }

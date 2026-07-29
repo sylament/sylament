@@ -94,11 +94,11 @@ abstract class Field extends Component implements HasValidationConstraints
     }
 
     /**
-     * @return array<string>
+     * @return list<string>
      */
     public function getErrorMessages(): array
     {
-        return [];
+        return $this->getLiveComponentOrNull()?->getErrorsForSchemaStatePath($this->getStatePath()) ?? [];
     }
 
     /**

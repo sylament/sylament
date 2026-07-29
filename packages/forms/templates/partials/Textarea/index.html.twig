@@ -10,6 +10,7 @@
         maxlength: component.getMaxLength,
         minlength: component.getMinLength,
         required: component.isMarkedAsRequired,
+        'aria-invalid': component.getErrorMessages is not empty,
         disabled: component.isDisabled,
         autofocus: component.isAutofocused,
     }) }}>{{- component.getState -}}</textarea>

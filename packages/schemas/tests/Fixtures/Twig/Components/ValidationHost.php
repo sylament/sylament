@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Tests\Fixtures\Twig\Components;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Set;
 use Sylament\Schemas\Tests\Fixtures\Components\ConstrainedField;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -33,7 +34,8 @@ class ValidationHost implements InteractsWithSchemas
             ->statePath('data')
             ->components([
                 ConstrainedField::make('title')->required(),
-                ConstrainedField::make('slug'),
+                ConstrainedField::make('slug')
+                    ->afterStateUpdated(fn (?string $state, Set $set): mixed => $set('title', (string) $state)),
             ]);
     }
 

@@ -93,6 +93,17 @@ it('keeps showing errors on subsequent requests while the field stays invalid', 
     expect($component->component()->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.']);
 });
 
+it('re-validates only after afterStateUpdated mutations settle', function (): void {
+    $component = $this->createLiveComponent('ValidationHost', ['validatedSchemas' => ['schema']]);
+
+    expect($component->component()->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.']);
+
+    $component->set('data', ['title' => null, 'slug' => 'hello']);
+    $component->refresh();
+
+    expect($component->component()->getErrorsForSchemaStatePath('data.title'))->toBe([]);
+});
+
 it('drops a stale sticky key whose schema no longer resolves', function (): void {
     $host = $this->createLiveComponent('ValidationHost')->component();
     $host->validatedSchemas = ['mountedActionSchema7'];

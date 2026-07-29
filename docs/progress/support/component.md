@@ -89,8 +89,8 @@ deferral, not a principled rejection.
 ### Macroable is not ported
 
 No runtime method injection. The extension points are subclassing and
-`configureUsing()`. Reversing this means accepting `__call()`-based APIs that
-neither PHPStan nor an IDE can see.
+`configureUsing()`. Reversing it would mean `__call()`-based APIs, which
+[principle §1](../../principles.md#the-test) rejects.
 
 ### `newInstance()` routes every `make()` through a locator
 

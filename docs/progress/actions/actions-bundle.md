@@ -203,7 +203,7 @@ bind → hidden-check, so a visibility closure can read the bound arguments.
 `symfony/ux-twig-component` is required by **both** `support` and `actions`, for
 two independent reasons, and neither is redundant:
 
-- `support` ships the five anonymous Twig components, and every one of their
+- `support` ships the six anonymous Twig components, and every one of their
   templates opens with `{% props %}` — a token parser that **only** ux-twig-component
   provides. Without it those templates do not merely fail to render, they fail to
   parse. It was a `suggest` until this change; that was wrong, since a package

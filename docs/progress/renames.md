@@ -21,9 +21,11 @@ derive from the conventions below.
 | --- | --- | --- | --- | --- |
 | `Filament\Actions\Concerns\InteractsWithActions` | `HasActions` | trait | `Sylament\Actions\Concerns\HasActions` | [Swapped](#interface-and-trait-names-are-swapped) — `Has*` matches the house trait prefix (`HasName`, `HasAction`, …). |
 | `Filament\Actions\Contracts\HasActions` | `InteractsWithActions` | interface | `Sylament\Actions\Contracts\InteractsWithActions` | [Swapped](#interface-and-trait-names-are-swapped) — the interface names the behavior the host implements. |
+| `Filament\Forms\Components\Contracts\HasValidationRules` | `HasValidationConstraints` | interface | `Sylament\Schemas\Components\Contracts\HasValidationConstraints` | Relocated into **schemas** — the schema walk type-checks it, and schemas may not reference a forms symbol (the split-repo dependency rule); renamed per the [constraint vocabulary](#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary). |
 | `Filament\Schemas\Concerns\InteractsWithSchemas` | `HasSchemas` | trait | `Sylament\Schemas\Concerns\HasSchemas` | [Swapped](#interface-and-trait-names-are-swapped) — `Has*` matches the house trait prefix (`HasComponents`, `HasKey`, `HasGap`, …). |
 | `Filament\Schemas\Contracts\HasSchemas` | `InteractsWithSchemas` | interface | `Sylament\Schemas\Contracts\InteractsWithSchemas` | [Swapped](#interface-and-trait-names-are-swapped) — the interface names the behavior. |
 | `mountedActions.{i}.data` (state path) | `mountedActionsData.{i}` | state path | `Sylament\Actions\Concerns\HasActions` | Symfony's property accessor resolves the first path segment through the same-named getter, so the nested form is unreadable and unwritable — see [has-actions.md](actions/has-actions.md#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor). |
+| `rule()` / `rules()` (forms `CanBeValidated`) | `constraint()` / `constraints()` | method | `Sylament\Forms\Components\Concerns\CanBeValidated` | [Constraint vocabulary](#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary) — the payload is Symfony `Constraint` objects, not Laravel rules; the rename makes the migration break loud and greppable instead of grep-hit-then-type-error. |
 | `Section::formBefore()` / `isFormBefore()` | `contentBefore()` / `hasContentBefore()` | method | `Sylament\Schemas\Components\Concerns\HasContentBefore` | Adopts the `contentBefore` prop name Filament's own support-layer section component uses. |
 
 ### Interface and trait names are swapped
@@ -39,6 +41,22 @@ exist on **both** sides with **opposite** meanings:
 Here `Has*` is reserved for traits, matching every other trait in the codebase,
 and the interface names the behavior the host implements. Porting code that
 mentions either name means checking which one it is first.
+
+### Laravel rule vocabulary becomes Symfony constraint vocabulary
+
+The validation payload changed ecosystems — Laravel rule strings and rule
+objects became Symfony `Constraint` instances (decided 2026-07-29, M1 · 1) —
+and the API vocabulary follows it: a migrating user's
+`->rules('required|max:255')` cannot work under any name, and a missing method
+is a louder, more searchable break than a kept name that greps clean and then
+type-errors. Names derived from the same vocabulary translate systematically
+and carry no table rows of their own: `getValidationRules()` →
+`getValidationConstraints()` (field tier and `Schema` alike),
+`dehydrateValidationRules()` → `dehydrateValidationConstraints()`,
+`getLengthValidationRules()` → `getLengthValidationConstraints()`. Names that
+are not rule vocabulary keep Filament's spelling: `required()`, `nullable()`,
+`validationMessages()` (including its `required`/`max`/`min`/`size`/`email`/
+`numeric` keys), `validate()`.
 
 ## Not renames
 

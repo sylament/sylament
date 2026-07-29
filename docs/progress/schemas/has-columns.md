@@ -1,6 +1,6 @@
 # HasColumns (schemas)
 
-[`Sylament\Schemas\Concerns\HasColumns`](../../../packages/schemas/src/Concerns/HasColumns.php)
+[`Sylament\Schemas\Components\Concerns\HasColumns`](../../../packages/schemas/src/Concerns/HasColumns.php)
 — the shared grid concern used by **both** [`Schema`](schema.md) and the schemas
 [`Component`](component.md). It gives a component a `columns` property that
 accepts a literal int, a responsive `breakpoint => int` map, or a `Closure`, and

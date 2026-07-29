@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Concerns;
+namespace Sylament\Schemas\Components\Concerns;
 
 use Sylament\Schemas\State\PropertyAccessor;
 use Symfony\Component\PropertyAccess\PropertyAccess;

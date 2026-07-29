@@ -1,6 +1,6 @@
 # HasGap (schemas)
 
-`Sylament\Schemas\Concerns\HasGap` — the shared concern used by both `Schema`
+`Sylament\Schemas\Components\Concerns\HasGap` — the shared concern used by both `Schema`
 and `Component` to declare whether a schema renders inter-item gap
 (`hasGap`) and whether it packs densely (`isDense`). Each value is a
 `bool|Closure|null` property with a fluent setter (`gap()` / `dense()`) and a

@@ -1,17 +1,17 @@
 <twig:SylamentForms:FieldWrapper :field="component">
-    <input
-            class="sy-fo-input"
-            type="{{ component.getType }}"
-            id="{{ component.getId }}"
-            name="{{ component.getName }}"
-            data-model="{{ component.getDataModel }}"
-            value="{{ component.getState }}"
-            {%- if component.getInputMode %} inputmode="{{ component.getInputMode }}"{% endif %}
-            {%- if component.getPlaceholder %} placeholder="{{ component.getPlaceholder }}"{% endif %}
-            {%- if component.getMaxLength is not null %} maxlength="{{ component.getMaxLength }}"{% endif %}
-            {%- if component.getMinLength is not null %} minlength="{{ component.getMinLength }}"{% endif %}
-            {%- if component.isMarkedAsRequired %} required{% endif %}
-            {%- if component.isDisabled %} disabled{% endif %}
-            {%- if component.isAutofocused %} autofocus{% endif %}
-    >
+    <input {{ attrs({
+        class: 'sy-fo-input',
+        type: component.getType,
+        id: component.getId,
+        name: component.getName,
+        'data-model': component.getDataModel,
+        value: component.getState ?? '',
+        inputmode: component.getInputMode ?: false,
+        placeholder: component.getPlaceholder ?: false,
+        maxlength: component.getMaxLength,
+        minlength: component.getMinLength,
+        required: component.isMarkedAsRequired,
+        disabled: component.isDisabled,
+        autofocus: component.isAutofocused,
+    }) }}>
 </twig:SylamentForms:FieldWrapper>

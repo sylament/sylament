@@ -69,6 +69,28 @@ defines it._
 | 7 | Minimal notifications vertical | [notifications](notifications/README.md) | `Notification::make()->title()->success()->send()` over session flash, rendered as a stack in the layout. | todo |
 | 8 | Demo slice assembly | **demo** | `/articles` list, new, and edit pages; seed data; a presentable page shell. | todo |
 
+**Carried discussion — plan properly in epic 2's brainstorm.** Two threads
+from the M1 · 1 design conversation (2026-07-29), decided nowhere yet:
+(1) **Model-sourced constraints** — read validation off the bound object
+instead of per-field declarations: either pull
+`ValidatorInterface::getMetadataFor()` property constraints into the
+`getValidationConstraints()` seam (guesser-style; typed constraints misfire
+against raw pre-cast state), or validate the mapped object after state
+mapping and fold violations back into the error bag by path (the fuller
+Symfony story — class-level constraints like `UniqueEntity` come free).
+(2) **A typed boundary product** — the `$data` LiveProp bag deliberately
+stays an array (the wire format live components handle well); an opt-in
+declared data class maps at the edges only: submit returns the mapped object
+(Symfony Form's `getData()` precedent), schema-tier `$state` / type-hinted
+closure params inject a lazily built one-way snapshot (`$set()` stays the
+only write path), mapper TBD (Serializer denormalizer is a new dependency;
+an accessor walk is dependency-free but type-dumb), declaration name TBD
+(`dataClass()` à la Symfony Form's `data_class`; deliberately distinct from
+Filament's record-semantics `model()` — the entity round-trip is then just
+the case where the data object is the managed entity). M1 · 1 shipped the
+seams both threads build on (`getValidationConstraints()`, the host error
+bag + `ValidationException`) and neither needs changes to them.
+
 **Out of scope:** panels; forms-in-modals (pulled forward as
 [epic 6](#pulled-forward); the M1 demo script still navigates to a page for
 Edit); table pagination, sorting, and search;

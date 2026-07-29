@@ -1,12 +1,12 @@
-{% set iconHtml = group.getIcon(group.getGroupedIcon) ? generateIconHtml(group.getIcon(group.getGroupedIcon), size: group.getIconSize ?? 'sm') : null %}
+{% set extraAttributes = group.getExtraAttributeBag.toScalarAttributes %}
+{% set rootClasses = classes('sy-ac', extraAttributes.class ?? null) %}
+{% set extraAttributes = extraAttributes|filter((value, name) => name != 'class') %}
 
-<button
-    {{ attrs({
-        class: classes('sy sy-dropdown-item sy-ac'),
-        type: 'button',
-        title: group.getTooltip ?: false,
-    }, group.getExtraAttributes) }}
->
-    {{- iconHtml -}}
-    <span class="sy-dropdown-item-label">{{ group.getLabel }}</span>
-</button>
+<twig:SylamentSupport:DropdownItem
+    :class="rootClasses"
+    :icon="group.getIcon(group.getGroupedIcon)"
+    :iconSize="group.getIconSize ?? 'sm'"
+    :color="group.getColor"
+    {{ ...(group.getTooltip ? {title: group.getTooltip} : {}) }}
+    {{ ...extraAttributes }}
+>{{- group.getLabel -}}</twig:SylamentSupport:DropdownItem>

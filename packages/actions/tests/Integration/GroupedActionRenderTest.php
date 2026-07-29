@@ -69,3 +69,17 @@ it('renders type="submit" and the wired form id for a submit-capable grouped act
     expect($html)->toContain('type="submit"')
         ->toContain('form="my-form"');
 });
+
+it('applies a semantic color to a grouped action', function (): void {
+    $delete = Action::make('delete')->color('danger');
+    ActionGroup::make([$delete])->getActions();
+
+    expect(renderGroupedAction($delete))->toContain('sy-color sy-color-danger');
+});
+
+it('emits no color classes for an uncolored grouped action', function (): void {
+    $delete = Action::make('delete');
+    ActionGroup::make([$delete])->getActions();
+
+    expect(renderGroupedAction($delete))->not->toContain('sy-color');
+});

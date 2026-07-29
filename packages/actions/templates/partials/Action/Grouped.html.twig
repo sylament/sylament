@@ -1,35 +1,47 @@
-{% set tag = component.getUrl ? 'a' : 'button' %}
-{% set iconHtml = component.getIcon(component.getGroupedIcon) ? generateIconHtml(component.getIcon(component.getGroupedIcon), size: component.getIconSize ?? 'sm') : null %}
-
 {% set hasLiveClickBinding = not component.getUrl and not component.canSubmitForm %}
-
-<{{ tag }}
-    {{ attrs({
-        class: classes('sy sy-dropdown-item sy-ac', {
-            'sy-disabled': component.isDisabled,
-        }),
-        type: component.getUrl ? false : (component.canSubmitForm ? 'submit' : 'button'),
-        form: component.getFormId ?: false,
-        disabled: component.isDisabled and not component.getUrl,
-        'aria-disabled': component.isDisabled ? 'true' : false,
-        href: component.getUrl ?: false,
-        target: component.shouldOpenUrlInNewTab ? '_blank' : false,
-        title: component.getTooltip ?: false,
-    }, component.getExtraAttributes) }}
-    {%- if not component.getUrl %}
-        {%- if hasLiveClickBinding and component.getClientClickHandler %} {{ live_action(component.getClientClickHandler) }}
-        {%- elseif hasLiveClickBinding and component.getParentActionCallLiveComponentClickHandler %} {{ live_action(component.getParentActionCallLiveComponentClickHandler, {
+{% set clickParameters = null %}
+{% set closeAttributes = {} %}
+{%- if not component.getUrl -%}
+    {%- if hasLiveClickBinding and component.getClientClickHandler -%}
+        {%- set clickParameters = {action: component.getClientClickHandler} -%}
+    {%- elseif hasLiveClickBinding and component.getParentActionCallLiveComponentClickHandler -%}
+        {%- set clickParameters = {
+            action: component.getParentActionCallLiveComponentClickHandler,
             ...(component.getArguments ? {arguments: component.getArguments} : {}),
-        }) }}
-        {%- elseif component.shouldClose %} data-action="sylament--support--modal#dismiss"
-        {%- elseif hasLiveClickBinding %} {{ live_action('mountAction', {
+        } -%}
+    {%- elseif component.shouldClose -%}
+        {%- set closeAttributes = {'data-action': 'sylament--support--modal#dismiss'} -%}
+    {%- elseif hasLiveClickBinding -%}
+        {%- set clickParameters = {
+            action: 'mountAction',
             name: component.getName,
             ...(component.getInvokedArguments ? {arguments: component.getInvokedArguments} : {}),
             ...(component.getContext ? {context: component.getContext} : {}),
-        }) }}
-        {%- endif %}
-    {%- endif %}
->
-    {{- iconHtml -}}
-    <span class="sy-dropdown-item-label">{{ component.getLabel ?? component.getName }}</span>
-</{{ tag }}>
+        } -%}
+    {%- endif -%}
+{%- endif -%}
+
+{% set mountAttributes = clickParameters is null
+    ? {}
+    : stimulus_action('live', 'action', parameters: clickParameters) %}
+
+{% set extraAttributes = component.getExtraAttributeBag.toScalarAttributes %}
+{% set rootClasses = classes('sy-ac', extraAttributes.class ?? null) %}
+{% set extraAttributes = extraAttributes|filter((value, name) => name != 'class') %}
+
+<twig:SylamentSupport:DropdownItem
+    :class="rootClasses"
+    :icon="component.getIcon(component.getGroupedIcon)"
+    :iconSize="component.getIconSize ?? 'sm'"
+    :color="component.getColor"
+    :disabled="component.isDisabled"
+    :tag="component.getUrl ? 'a' : 'button'"
+    :href="component.getUrl"
+    :target="component.shouldOpenUrlInNewTab ? '_blank' : null"
+    :type="component.canSubmitForm ? 'submit' : 'button'"
+    :formId="component.getFormId"
+    {{ ...(component.getTooltip ? {title: component.getTooltip} : {}) }}
+    {{ ...extraAttributes }}
+    {{ ...mountAttributes }}
+    {{ ...closeAttributes }}
+>{{- component.getLabel ?? component.getName -}}</twig:SylamentSupport:DropdownItem>

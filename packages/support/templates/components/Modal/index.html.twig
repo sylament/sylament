@@ -33,7 +33,8 @@
     submitHandler = null,
 
     extraWindowAttributes = {},
-    extraOverlayAttributes = {} %}
+    extraOverlayAttributes = {}
+%}
 
 {% set iconColorName = iconColor is iterable or iconColor is empty ? 'gray' : iconColor %}
 {% set iconHtml = generateIconHtml(icon, iconAlias, {

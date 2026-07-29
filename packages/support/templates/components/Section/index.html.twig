@@ -32,7 +32,8 @@
     descriptionId = null,
     contentId = null,
     collapseId = null,
-    labelledById = null %}
+    labelledById = null
+%}
 
 {% set iconColorName = iconColor is iterable or iconColor is empty ? 'gray' : iconColor %}
 {% set iconHtml = generateIconHtml(icon, attributes: {

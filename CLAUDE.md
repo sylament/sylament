@@ -8,6 +8,8 @@ Sylament is a Filament-inspired UI toolkit for Symfony, delivered as a monorepo 
 
 ## Reference Filament's implementation
 
+Two stances outrank everything in this section — read [`docs/principles.md`](docs/principles.md) first. In short: Filament's public API is preserved, but its *internals* have no claim on us when Symfony does it differently (§1), and anything Symfony's ecosystem already ships is adopted rather than rebuilt (§2).
+
 This project is a deliberate Symfony port of Filament. Before designing or extending any component, trait, or API surface, **read how Filament does it first** — their decisions encode years of API ergonomics work and we want to inherit them unless we have a concrete reason to diverge (Symfony idiom, missing dependency, etc.).
 
 Filament's source is installed at `vendor/filament/` (dev dep, never shipped). Useful entry points:

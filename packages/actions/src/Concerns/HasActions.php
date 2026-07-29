@@ -193,6 +193,7 @@ trait HasActions
         } catch (Halt) {
             return null;
         } catch (Cancel) {
+            // Falls through to unmount — Cancel closes the modal.
         }
 
         $action->arguments($originalArguments);

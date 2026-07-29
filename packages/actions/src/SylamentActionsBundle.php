@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Actions;
 
-use Sylament\Actions\Twig\Components\Modals;
 use Sylament\Actions\Twig\Extension\ActionExtension;
 use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -24,7 +23,7 @@ class SylamentActionsBundle extends SylamentBundle
     private function configureTwigComponents(ContainerConfigurator $configurator): void
     {
         $configurator->services()
-            ->set('sylament_actions.twig_component.modals', Modals::class)
+            ->load(__NAMESPACE__ . '\\Twig\\Components\\', __DIR__ . '/Twig/Components/')
             ->autowire()
             ->autoconfigure();
     }

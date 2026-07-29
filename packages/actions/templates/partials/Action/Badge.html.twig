@@ -38,7 +38,13 @@
         {%- endif %}
     {%- endif %}
 >
-    {%- if iconHtml and component.getIconPosition.value == 'before' %}{{ iconHtml }}{% endif -%}
-    {%- if not component.isLabelHidden %}<span class="sy-ac-badge-label">{{ component.getLabel ?? component.getName }}</span>{% endif -%}
-    {%- if iconHtml and component.getIconPosition.value == 'after' %}{{ iconHtml }}{% endif -%}
+    {%- if iconHtml and component.getIconPosition.value == 'before' -%}
+        {{ iconHtml }}
+    {%- endif -%}
+    {%- if not component.isLabelHidden -%}
+        <span class="sy-ac-badge-label">{{ component.getLabel ?? component.getName }}</span>
+    {%- endif -%}
+    {%- if iconHtml and component.getIconPosition.value == 'after' -%}
+        {{ iconHtml }}
+    {%- endif -%}
 </{{ tag }}>

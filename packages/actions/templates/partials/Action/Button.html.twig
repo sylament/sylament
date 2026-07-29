@@ -46,5 +46,7 @@
     {{ ...mountAttributes }}
     {{ ...closeAttributes }}
 >
-    {%- if not component.isLabelHidden %}{{ component.getLabel ?? component.getName }}{% endif -%}
+    {%- if not component.isLabelHidden -%}
+        {{ component.getLabel ?? component.getName }}
+    {%- endif -%}
 </twig:SylamentSupport:Button>

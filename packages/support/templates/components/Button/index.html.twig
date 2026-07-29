@@ -40,7 +40,11 @@
         type: tag == 'button' ? type : false,
     }) }}
 >
-    {%- if iconHtml and iconPositionValue == 'before' %}{{ iconHtml }}{% endif -%}
+    {%- if iconHtml and iconPositionValue == 'before' -%}
+        {{ iconHtml }}
+    {%- endif -%}
     {{- content -}}
-    {%- if iconHtml and iconPositionValue == 'after' %}{{ iconHtml }}{% endif -%}
+    {%- if iconHtml and iconPositionValue == 'after' -%}
+        {{ iconHtml }}
+    {%- endif -%}
 </{{ tag }}>

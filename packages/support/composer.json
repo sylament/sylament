@@ -15,6 +15,7 @@
     "require": {
         "php": "^8.5",
         "ext-mbstring": "*",
+        "symfony/service-contracts": "^3.6",
         "symfony/stimulus-bundle": "^3.1",
         "symfony/ux-icons": "^3.3",
         "symfony/ux-twig-component": "^3.1",

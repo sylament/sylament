@@ -11,14 +11,10 @@ use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionParameter;
 use RuntimeException;
-use Sylament\Support\DependencyInjection\HasStaticInstance;
-use Sylament\Support\DependencyInjection\StaticInstanceInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
-class Invoker implements StaticInstanceInterface
+class Invoker
 {
-    use HasStaticInstance;
-
     public function __construct(
         private readonly ContainerInterface $container,
     ) {

@@ -65,9 +65,9 @@ pointing here. Say what would reverse the decision when it is provisional.
 ### Closure resolution lives in a service
 
 Filament inlines the reflection loop in `EvaluatesClosures`; we delegate to
-[`Invoker`](../../../packages/support/src/Evaluation/Invoker.php), reached through
-the static-instance pattern so components need no constructor injection. Two
-consequences worth their own note:
+[`Invoker`](../../../packages/support/src/Evaluation/Invoker.php), injected by a
+`#[Required]` setter on the trait so components need no constructor injection.
+Three consequences worth their own note:
 
 - **`ClosureParameter` replaces the array-wrapping hack.** Filament wraps
   resolver results in an array to tell "resolved null" from "not resolved"; we
@@ -76,6 +76,15 @@ consequences worth their own note:
 - **No container auto-wiring.** Filament falls back to `app()->make()` for any
   unbound class; Symfony's container cannot, so only types the container `has()`
   resolve. Anything else throws instead of being silently constructed.
+- **A `new`-built component resolves no services into closures.** `getInvoker()`
+  falls back to an `Invoker` holding an empty container when the setter never
+  ran, so `fn (MailerInterface $mailer) => …` resolves through `make()` on a
+  registered component and not on one constructed with `new`. Accepted rather
+  than overlooked: it extends the rule that a subclass needing DI must be a
+  registered service, and it is what lets the Unit bucket — which already ran
+  every test against an empty-container `Invoker` — evaluate closures with no
+  kernel. The gap is closable by handing the resolver an `Invoker` for its
+  `new $class()` branch, if a real case ever appears.
 
 ### Conditionable and Tappable are not ported
 
@@ -129,8 +138,7 @@ of their own to get there.
   Sylament's own components (`Action`, `TextInput`, `Section`, …) — they live
   in vendor and are never registered as services — and any kernel-free Unit
   test, where `ComponentResolver::resolve()` lazily creates an instance with no
-  `$components` locator at all (`Invoker::getInstance()` / `ComponentManager::resolve()`
-  parity). A user subclass that declares constructor dependencies only works
+  `$components` locator at all (`ComponentManager::resolve()` parity). A user subclass that declares constructor dependencies only works
   through `make()` once it is registered as a service; an unregistered
   subclass with a constructor throws the ordinary "too few arguments" error
   `new $class()` produces.

@@ -62,8 +62,8 @@ Filament reaches the singleton through the `FilamentIcon` facade over a
 container binding. Sylament wires the manager as a DI service
 (`sylament_support.icon_manager`) and makes it reachable from non-DI contexts
 via `StaticInstanceInterface` + `HasStaticInstance`, tagged and booted through
-`StaticInstanceRegistry` — the same mechanism `Invoker` and `ComponentManager`
-use. There is no facade class and no `FilamentIcon::register()` deferred-resolve
+`StaticInstanceRegistry` — the same mechanism `ComponentManager` and
+`ComponentResolver` use. There is no facade class and no `FilamentIcon::register()` deferred-resolve
 wrapper; callers hold the service or the static instance directly.
 
 ### The manager is a process-lifetime singleton, not request-scoped

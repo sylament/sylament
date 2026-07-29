@@ -261,8 +261,8 @@ class Action extends ViewComponent
             'liveComponent' => ClosureParameter::make($this->getLiveComponent()),
             'schema' => ClosureParameter::make($this->getSchemaContainer()),
             'schemaComponent', 'component' => ClosureParameter::make($this->getSchemaComponent()),
-            'schemaGet', 'get' => ClosureParameter::make($this->getSchemaComponent()->makeGetUtility()->skipComponentsChildContainersWhileSearching(false)), // @phpstan-ignore method.nonObject (Filament-faithful: fatals without a schema component)
-            'schemaSet', 'set' => ClosureParameter::make($this->getSchemaComponent()->makeSetUtility()->skipComponentsChildContainersWhileSearching(false)), // @phpstan-ignore method.nonObject (Filament-faithful: fatals without a schema component)
+            'schemaGet', 'get' => ClosureParameter::make($this->requireSchemaComponent()->makeGetUtility()->skipComponentsChildContainersWhileSearching(false)),
+            'schemaSet', 'set' => ClosureParameter::make($this->requireSchemaComponent()->makeSetUtility()->skipComponentsChildContainersWhileSearching(false)),
             'schemaComponentState', 'state' => ClosureParameter::make($this->getSchemaComponentState()),
             'schemaState' => ClosureParameter::make($this->getSchemaState()),
             default => parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),

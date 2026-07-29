@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Unit;
 
-use Error;
 use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\Enums\ActionStatus;
@@ -223,9 +222,9 @@ it('injects $data from getData()', function (): void {
     expect($action->evaluate(fn ($data): array => $data))->toBe(['title' => 'Ada']);
 });
 
-it('fatals when $get is requested without a schema component, as in Filament', function (): void {
+it('throws a named exception when $get is requested without a schema component', function (): void {
     expect(fn (): mixed => Action::make('save')->evaluate(fn (Get $get): mixed => $get('title')))
-        ->toThrow(Error::class);
+        ->toThrow(LogicException::class, 'has no schema component');
 });
 
 it('defaults to the button view', function (): void {

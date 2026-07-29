@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Concerns;
 
+use LogicException;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
 
@@ -30,6 +31,11 @@ trait BelongsToSchemaComponent
     public function getSchemaComponent(): ?Component
     {
         return $this->schemaComponent ?? $this->getSchemaContainer()?->getParentComponent() ?? $this->getGroup()?->getSchemaComponent();
+    }
+
+    public function requireSchemaComponent(): Component
+    {
+        return $this->getSchemaComponent() ?? throw new LogicException(static::class . ' has no schema component: none was resolved from the action itself, its schema container, or its group. The [$get] and [$set] closure utilities are only available to an action rendered inside a schema.');
     }
 
     public function getSchemaContainer(): ?Schema

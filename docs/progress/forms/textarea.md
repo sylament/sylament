@@ -24,7 +24,8 @@ _Detail_ links the write-up in [Details](#details), deleted once the row is
 | --- | --- | --- | --- | --- |
 | `rows()` / `getRows()` | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | — |
 | `cols()` / `getCols()` | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | — |
-| Length constraints (`maxLength` / `minLength`) | [`Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) | done | — | [detail](can-be-length-constrained.md) |
+| Length constraints (`length` / `maxLength` / `minLength` + `Contracts\CanBeLengthConstrained`) | [`Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) | done | — | [detail](can-be-length-constrained.md) |
+| Error display (`aria-invalid` on the `<textarea>`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](field.md#error-display-shows-every-message-for-the-path) |
 | Embedded view → Twig template | [`Textarea::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | — |
 | `autosize()` / `shouldAutosize()` | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | todo | — | [detail](#autosize-is-not-ported) |
 | Autocomplete (`CanBeAutocompleted`) | [`Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | todo | — | [detail](#the-input-attribute-concerns-are-not-ported) |
@@ -70,12 +71,14 @@ Filament's `Textarea` overrides `getDefaultStateCasts()` (appending a
 `StripCharactersStateCast`), `mutateDehydratedState()` /
 `mutateStateForValidation()` (via `CanTrimState` + `CanStripCharactersFromState`),
 and the matching `mutatesDehydratedState()` / `mutatesStateForValidation()`
-guards. None is ported. These depend on the schemas state-cast +
-dehydration/validation infrastructure (`StateCast`, `CanTrimState`,
-`CanStripCharactersFromState`, `CanBeValidated`), which is itself unported —
-`Field::getErrorMessages()` still returns `[]` and notes the validation surface is
-not built. **Blocked** until that schemas infrastructure lands; it returns in the
-same change.
+guards. None is ported. These depend on the schemas state-cast and
+state-mutation infrastructure (`StateCast`, `CanTrimState`,
+`CanStripCharactersFromState`, and the
+[`mutateStateForValidation` layer](../schemas/schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer)),
+which is itself unported — the validation vertical that landed validates the raw
+client state. **Blocked** until that schemas infrastructure lands; it returns in
+the same change, together with the field-side
+[`mutateStateForValidation()` hooks](can-be-validated.md#the-validation-state-mutation-hooks-wait-on-schemas).
 
 ## Divergences
 
@@ -83,7 +86,7 @@ None. The ported subset (`rows`, `cols`, length constraints, the field-wrapper
 chrome, and the Twig template) is a faithful port; the `wire:model` →
 `data-model` binding, the `Htmlable` / `toEmbeddedHtml` → Twig template
 translation, and placeholder escaping via Twig are systematic idiom translations
-recorded in the [rename table](../renames.md), not divergences. The
-`isMarkedAsRequired`-vs-`isRequired` required-attribute difference is a
-`Field`-level concern (`CanBeMarkedAsRequired`), tracked in
+recorded in the [rename table](../renames.md), not divergences. The `required`
+and `aria-invalid` attributes the template emits are `Field`-level concerns
+(`CanBeMarkedAsRequired` and the error display), tracked in
 [`field.md`](field.md), not here.

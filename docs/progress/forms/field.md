@@ -2,11 +2,14 @@
 
 `Sylament\Forms\Components\Field` — the abstract base every user-instantiable
 form field extends. It adds field identity (name + state-path seeding), the
-humanized-label fallback, the ten field-wrapper slots, and the field-wrapper
-rendering on top of the schemas `Component`, and composes five field concerns.
-Those five concerns are **folded here**: each is a row in the Surface table below
-(its detail and any divergence spliced in from its own audit) and no longer
-carries a row in the [package README](README.md) Features table. The
+humanized-label fallback, the ten field-wrapper slots, the field-wrapper
+rendering and the error-message read on top of the schemas `Component`, and
+composes six field concerns. Five of them are **folded here**: each is a row in
+the Surface table below (its detail and any divergence spliced in from its own
+audit) and no longer carries a row in the [package README](README.md) Features
+table. The sixth, [`CanBeValidated`](can-be-validated.md), keeps its own file —
+its Filament surface is some eighty methods against this file's five-method
+concerns, and it is the field half of a vertical spanning three packages. The
 schemas-level `HasName` / `HasLabel` / `HasState` it inherits stay tracked in
 schemas.
 
@@ -26,8 +29,8 @@ Reference — the Filament source this is diffed against:
 
 Every point of this component and its five folded concerns. _Blocked by_ names
 what has to land first. _Detail_ links the write-up in [Details](#details)
-(deleted once the row is **done**) and/or the permanent note in
-[Divergences](#divergences).
+(deleted once the row is **done**), a permanent note in [Semantics](#semantics),
+and/or the permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -38,13 +41,14 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `getLabel()` / `getDefaultLabel()` humanization | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#getdefaultlabel-drops-label-translation) |
 | Field-wrapper slots (10 constants + setters, `makeChildSchema` / `configureChildSchema`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#slot-child-schemas-drop-action--actiongroup-wiring) |
 | Field-wrapper rendering (`FieldWrapper` template ⟵ `wrapEmbeddedHtml`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | — |
-| Validation hooks (`getErrorMessages` stub; `hasErrorForPath`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | in progress | CanBeValidated | [detail](#validation-hooks-are-a-stub) |
+| [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | — | [detail](can-be-validated.md) |
+| Error display (`getErrorMessages()` ⟵ `hasErrorForPath` / `ViewErrorBag`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#error-display-shows-every-message-for-the-path) |
 | Input affix wrapper (`wrapInputHtml`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | blocked | HasAffixes | [detail](#the-input-affix-wrapper-is-not-ported) |
 | State casts &amp; enum defaults (`getDefaultStateCasts` / `getEnumDefaultStateCast`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | blocked | HasEnum | [detail](#state-casts-and-enum-defaults-are-not-ported) |
 | `hasNullableBooleanState()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | — | [detail](#hasnullablebooleanstate-is-not-ported) |
 | `HasExtraFieldWrapperAttributes` (composed by Filament's Field) | [`Components/Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | todo | — | [detail](#hasextrafieldwrapperattributes-is-not-composed) |
 | [`CanBeAutofocused`](../../../packages/forms/src/Components/Concerns/CanBeAutofocused.php) | [`Components/Concerns/CanBeAutofocused.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutofocused.php) | done | — | — |
-| [`CanBeMarkedAsRequired`](../../../packages/forms/src/Components/Concerns/CanBeMarkedAsRequired.php) | [`Components/Concerns/CanBeMarkedAsRequired.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeMarkedAsRequired.php) | in progress | CanBeValidated | [detail](#the-required-marker-defers-its-validation-fallback) |
+| [`CanBeMarkedAsRequired`](../../../packages/forms/src/Components/Concerns/CanBeMarkedAsRequired.php) | [`Components/Concerns/CanBeMarkedAsRequired.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeMarkedAsRequired.php) | done | — | [semantics](#the-native-required-attribute-is-load-bearing-inside-a-modal-form) |
 | [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Components/Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | — |
 | [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Components/Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | in progress | Actions bundle (`hintActions`) | [detail](#hashint-omits-the-hint-actions) |
 | [`HasPlaceholder`](../../../packages/forms/src/Components/Concerns/HasPlaceholder.php) | [`Components/Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](#hasplaceholder-is-composed-on-the-base-field) |
@@ -54,20 +58,6 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 Specifics for rows that are not finished — what is already in, what is left, and
 the next step. Delete a subsection when its row flips to **done**; the table row
 and any divergence it earned stay behind.
-
-### Validation hooks are a stub
-
-Filament's Field implements `Contracts\HasValidationRules`, composes
-`CanBeValidated`, and computes the wrapper's error region in `wrapEmbeddedHtml`
-from Laravel's `ViewErrorBag` (`hasErrorForPath`,
-`shouldShowAllValidationMessages`, `areHtmlValidationMessagesAllowed`). The port
-ships only a
-[`getErrorMessages(): array`](../../../packages/forms/src/Components/Field.php)
-that returns `[]`; the `FieldWrapper` template renders its `data-validation-error`
-list solely from that array, so no field renders an error yet. `hasErrorForPath`,
-the message-count / all-messages branching, and HTML-message escaping are absent.
-**Next step:** land `CanBeValidated` + the `HasValidationRules` contract, then
-have `getErrorMessages()` read real messages off the bound live component.
 
 ### The input affix wrapper is not ported
 
@@ -99,43 +89,6 @@ the trait; the `FieldWrapper` template merges only `field.getExtraAttributes`
 (the schemas-level `HasExtraAttributes`). **Next step:** port the concern and
 merge it in the wrapper template.
 
-### The required marker defers its validation fallback
-
-Filament's `isMarkedAsRequired()` returns
-`$this->evaluate($this->isMarkedAsRequired) ?? $this->isRequired()` — with no
-explicit marker set it falls through to the validation-driven required state that
-`CanBeValidated` supplies. The port casts the evaluated marker to `(bool)`, so an
-unset marker reads `false`; the explicit `markAsRequired()` surface is otherwise
-method-for-method identical and tested. The `?? $this->isRequired()` tail has
-nothing to call until `CanBeValidated` (and the `isRequired()` it provides) is
-ported — **blocked** on that concern and restored in the same change, not a
-deliberate omission.
-
-**The native `required` attribute became load-bearing with forms-in-modals.**
-`TextInput` / `Textarea` have always emitted `required` from
-`isMarkedAsRequired()`
-([`TextInput.html.twig:14`](../../../packages/forms/templates/partials/TextInput/index.html.twig)),
-but with no `<form>` anywhere in the page the attribute did nothing. Now that a
-mounted action's modal window renders as a real `<form>`
-([support/modal.md](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit)),
-the browser blocks submission of an empty required field — the `submit` event
-only fires after native constraint validation passes, so no request reaches the
-server at all. Confirmed in a browser during the forms-in-modals epic:
-`valueMissing: true`, **zero** network requests, modal stays open.
-
-The **mechanism is parity, not a divergence**: Filament emits native `required`
-too (`vendor/filament/forms/src/Components/TextInput.php:365`) and `wire:submit`
-has the same event ordering, so a migrating user meets the same client-side
-block. What still differs is only the *source* of the flag — Filament's
-`isRequired()` against this port's display-only `isMarkedAsRequired()`, which is
-the split described above. It is worth
-naming, because it means "unvalidated" in the forms-in-modals epic is a statement
-about the **server**, and because it makes the split above user-visible sooner
-than expected: until `CanBeValidated` lands, a display-only `markAsRequired()`
-call *does* block submits client-side while still validating nothing on the
-server. M1 · 1 separates the display-only `isMarkedAsRequired()` from a real
-`isRequired()` sourced from `CanBeValidated`.
-
 ### `HasHint` omits the hint actions
 
 **In:** `hint()`, `hintColor()`, `hintIcon($icon, $tooltip = null)` — with the
@@ -158,10 +111,76 @@ components. `setUpHint()`'s closure also narrows its parameter from Filament's
 **Blocked** on the Actions bundle (and, for the parameter, the `Placeholder`
 component); add the trio and re-add the spread when they land.
 
+## Semantics
+
+Faithful-in-spirit behaviour a reader would plausibly misread from the source.
+Permanent — these outlive the detail sections above.
+
+### The native `required` attribute is load-bearing inside a modal form
+
+[`isMarkedAsRequired()`](../../../packages/forms/src/Components/Concerns/CanBeMarkedAsRequired.php)
+is Filament's exactly — `$this->evaluate($this->isMarkedAsRequired) ??
+$this->isRequired()` — so with no explicit `markAsRequired()` call it reads the
+real validation state [`CanBeValidated`](can-be-validated.md) supplies, and
+`markAsRequired(false)` still suppresses the marker on a genuinely required
+field. What is easy to misread is that this getter drives **two** things, only
+one of them cosmetic: the wrapper's asterisk, and the native `required`
+attribute `TextInput` / `Textarea` emit
+([`TextInput/index.html.twig`](../../../packages/forms/templates/partials/TextInput/index.html.twig)).
+
+That attribute does real work now. A mounted action's modal window renders as a
+real `<form>`
+([support/modal.md](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit)),
+and the browser's `submit` event only fires after native constraint validation
+passes — so an empty required field blocks the request client-side and the
+server-side pass never runs. Confirmed in a browser during the forms-in-modals
+epic: `valueMissing: true`, **zero** network requests, modal stays open. This is
+parity, not a divergence — Filament emits native `required` too
+(`vendor/filament/forms/src/Components/TextInput.php:365`) and `wire:submit` has
+the same event ordering. The consequence to keep in mind: `markAsRequired()` on
+a field that declares no constraint still blocks submission in the browser while
+validating nothing on the server, and conversely a server-side violation on a
+required field is only reachable through a path the native check does not cover
+(a whitespace-only value, a programmatic `set()`, a non-input field).
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold. These
 outlive the detail sections above.
+
+### Error display shows every message for the path
+
+Filament's `wrapEmbeddedHtml()` reads Laravel's `ViewErrorBag` through
+`hasErrorForPath()` and renders **one** message per field unless
+`showAllValidationMessages()` opts in, with `areHtmlValidationMessagesAllowed()`
+choosing escaped or raw output. The port's
+[`getErrorMessages()`](../../../packages/forms/src/Components/Field.php) returns
+`list<string>` — every message the host bag holds for this field's absolute state
+path, read through
+[`getErrorsForSchemaStatePath()`](../schemas/can-be-validated.md) on the bound
+live component (`[]` when the field has no host — `getLiveComponentOrNull()` is
+typed `?InteractsWithSchemas`, so no `instanceof` guard is needed) — and the
+`FieldWrapper` template loops the whole list.
+That is the Symfony violation-list idiom: a `ConstraintViolationList` is
+naturally plural, and the count is small in practice because every constraint
+except `NotBlank` skips blank input, so a single field rarely produces two.
+`showAllValidationMessages()` / `allowHtmlValidationMessages()` are
+[skipped](can-be-validated.md) accordingly — the flags exist to opt *into* what
+this port always does, and into raw HTML the port has no shape for. Reverses only
+if a first-message-only default is wanted, which would make the flag meaningful
+again.
+
+The same list also drives the control's invalid state: `TextInput` /
+`Textarea` render `aria-invalid` from `component.getErrorMessages is not empty`
+and `.sy-fo-input[aria-invalid='true']` swaps the focus ring to the danger
+token. Filament emits no `aria-invalid` anywhere — it toggles an `fi-invalid`
+class, statically or through an Alpine binding
+(`vendor/filament/forms/src/Components/Field.php:573`) — so the attribute is an
+accessibility addition of this port, not a translation, and it renders with a
+*value* rather than as a bare attribute because
+[`ComponentAttributeBag`](../support/component-attribute-bag.md) maps a boolean
+on an `aria-*` name to the strings `"true"` / `"false"` instead of dropping a
+false one.
 
 ### HasPlaceholder is composed on the base Field
 

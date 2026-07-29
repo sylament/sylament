@@ -15,11 +15,12 @@ function renderVariant(Action $action): string
 it('renders a link action wired to mountAction', function (): void {
     $html = renderVariant(Action::make('delete')->link()->color('danger')->size('sm'));
 
-    expect($html)->toContain('sy sy-ac-link sy-ac')
+    expect($html)->toContain('sy sy-link')
+        ->toContain('sy-ac')
         ->toContain('sy-size-sm')
         ->toContain('sy-color-danger')
         ->toContain('type="button"')
-        ->toContain('Delete')
+        ->toContain('<span class="sy-link-label">Delete</span>')
         ->toContain('data-action="live#action"')
         ->toContain('data-live-action-param="mountAction"')
         ->toContain('data-live-name-param="delete"');
@@ -40,7 +41,7 @@ it('renders a hidden-label link action as an aria-label only', function (): void
 
     expect($html)->toContain('aria-label="Delete"')
         ->toContain('<svg')
-        ->not->toContain('Delete<');
+        ->not->toContain('sy-link-label');
 });
 
 it('renders a badge action', function (): void {

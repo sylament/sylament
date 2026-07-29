@@ -620,7 +620,7 @@ it('defaults label slot actions to the small link template', function (): void {
         Section::make('Profile')->label('My label')->afterLabel([Action::make('edit')]),
     );
 
-    expect($html)->toMatch('/<button[^>]*class="sy sy-ac-link sy-ac sy-size-sm"/')
+    expect($html)->toMatch('/<button[^>]*class="sy sy-link sy-size-sm sy-color sy-color-primary sy-ac"/')
         ->toContain('Edit');
 });
 

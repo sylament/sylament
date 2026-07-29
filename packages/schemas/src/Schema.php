@@ -9,6 +9,7 @@ use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Concerns\HasStateBindingModifiers;
+use Sylament\Schemas\Concerns\CanAccessProperties;
 use Sylament\Schemas\Concerns\CanBeDisabled;
 use Sylament\Schemas\Concerns\HasColumns;
 use Sylament\Schemas\Concerns\HasGap;
@@ -35,6 +36,7 @@ class Schema extends ViewComponent
 {
     use BelongsToLiveComponent;
     use BelongsToParentComponent;
+    use CanAccessProperties;
     use CanBeDisabled;
     use CanBeEmbeddedInParentComponent;
     use CanBeInline;

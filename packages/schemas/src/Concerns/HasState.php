@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Concerns;
 
-use Sylament\Schemas\State\PropertyAccessor;
-
 use function Sylament\Support\filled;
 
 trait HasState
@@ -78,7 +76,7 @@ trait HasState
             return [];
         }
 
-        $state = PropertyAccessor::getInstance()->get($this->getLiveComponent(), $statePath);
+        $state = $this->getPropertyAccessor()->get($this->getLiveComponent(), $statePath);
 
         if (! is_array($state)) {
             return [];
@@ -96,13 +94,13 @@ trait HasState
         $statePath = $this->getStatePath();
 
         if (filled($statePath)) {
-            PropertyAccessor::getInstance()->set($this->getLiveComponent(), $statePath, $state);
+            $this->getPropertyAccessor()->set($this->getLiveComponent(), $statePath, $state);
 
             return $this;
         }
 
         foreach ($state as $key => $value) {
-            PropertyAccessor::getInstance()->set($this->getLiveComponent(), (string) $key, $value);
+            $this->getPropertyAccessor()->set($this->getLiveComponent(), (string) $key, $value);
         }
 
         return $this;
@@ -156,7 +154,7 @@ trait HasState
     {
         $this->dehydratedComponentsCache = null;
 
-        $accessor = PropertyAccessor::getInstance();
+        $accessor = $this->getPropertyAccessor();
         $statePath = $this->getStatePath();
 
         if ($statePath !== null && $statePath !== '') {
@@ -199,7 +197,7 @@ trait HasState
      */
     public function mutateDehydratedState(array &$state = []): array
     {
-        $accessor = PropertyAccessor::getInstance();
+        $accessor = $this->getPropertyAccessor();
 
         foreach ($this->getComponents(withActions: false) as $component) {
             if (! $component->isDehydrated()) {

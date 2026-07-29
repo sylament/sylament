@@ -11,6 +11,7 @@ use Sylament\Schemas\Components\Concerns\HasActions;
 use Sylament\Schemas\Components\Concerns\HasChildComponents;
 use Sylament\Schemas\Components\Concerns\HasState;
 use Sylament\Schemas\Components\Concerns\HasStateBindingModifiers;
+use Sylament\Schemas\Concerns\CanAccessProperties;
 use Sylament\Schemas\Concerns\HasColumns;
 use Sylament\Schemas\Concerns\HasGap;
 use Sylament\Schemas\Components\Concerns\HasHeadings;
@@ -26,6 +27,7 @@ use Sylament\Support\Evaluation\ClosureParameter;
 class Component extends ViewComponent
 {
     use BelongsToContainer;
+    use CanAccessProperties;
     use CanBeDisabled;
     use CanBeHidden;
     use CanGrow;

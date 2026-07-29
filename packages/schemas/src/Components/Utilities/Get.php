@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components\Utilities;
 
 use Sylament\Schemas\Components\Component;
-use Sylament\Schemas\State\PropertyAccessor;
 
 final class Get
 {
@@ -30,7 +29,7 @@ final class Get
             );
 
         if (!$component instanceof Component) {
-            return PropertyAccessor::getInstance()->get($liveComponent, $path);
+            return $this->component->getPropertyAccessor()->get($liveComponent, $path);
         }
 
         return $component->getState();

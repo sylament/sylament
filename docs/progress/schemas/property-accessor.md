@@ -10,10 +10,10 @@ to read and write a host UX LiveComponent's `data` bag by absolute dotted path,
 and carries a detached-array trio (`getFromArray()` / `setInArray()` /
 `forgetFromArray()`) that ports Laravel's `Arr::get` / `Arr::set` / `Arr::forget`
 for the dehydration walk, which assembles state in a plain array before any host
-exists. It is reached through the static-instance pattern
-(`StaticInstanceInterface` + `HasStaticInstance`), so state concerns call
-`PropertyAccessor::getInstance()` with no constructor injection — exactly as
-`EvaluatesClosures` reaches the `Invoker`.
+exists. State concerns reach it through
+[`CanAccessProperties`](../../../packages/schemas/src/Concerns/CanAccessProperties.php),
+composed onto `Schema` and the schemas `Component` base — see
+[the divergence below](#the-accessor-is-injected-with-a-static-instance-fallback).
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -57,6 +57,30 @@ drives it end-to-end through a real UX LiveComponent hydrate/dehydrate round-tri
 via `HasState`. No row has a write-up here.
 
 ## Divergences
+
+### The accessor is injected, with a static-instance fallback
+
+`CanAccessProperties` takes the accessor through a `#[Required]` setter and
+exposes it only as `getPropertyAccessor()`; the property itself is `private`, so
+neither a sibling concern nor a subclass can reach around the getter. Since
+components are registered services, `make()` builds them through the container
+and the setter runs — verified: a `Section::make()` has the property initialised
+before anything reads it.
+
+What it does **not** do is require the container. `getPropertyAccessor()` falls
+back to `PropertyAccessor::getInstance()` when the setter never ran, because a
+component built with `new` is a supported shape, not a mistake: the Unit bucket
+boots no kernel at all, `ComponentResolver` keeps a null-locator path for exactly
+this, and the suites construct components directly in ~300 places. Making the
+dependency mandatory turned 42 tests into *"typed property must not be accessed
+before initialization"*.
+
+So the ambient global is no longer how the dependency is *obtained* — it is the
+degraded path when there is no container to obtain it from, which is the same
+shape `ComponentManager::resolve()` and `ComponentResolver::resolve()` already
+use. A container-built component satisfies
+[principle §1](../../principles.md#the-test) outright.
+
 
 ### State binds through Symfony PropertyAccess, not Livewire entanglement
 

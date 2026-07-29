@@ -1,0 +1,24 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sylament\Schemas\Concerns;
+
+use Sylament\Schemas\State\PropertyAccessor;
+use Symfony\Contracts\Service\Attribute\Required;
+
+trait CanAccessProperties
+{
+    private PropertyAccessor $propertyAccessor;
+
+    #[Required]
+    public function setPropertyAccessor(PropertyAccessor $propertyAccessor): void
+    {
+        $this->propertyAccessor = $propertyAccessor;
+    }
+
+    public function getPropertyAccessor(): PropertyAccessor
+    {
+        return $this->propertyAccessor ??= PropertyAccessor::getInstance();
+    }
+}

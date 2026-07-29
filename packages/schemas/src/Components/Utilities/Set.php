@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components\Utilities;
 
 use Sylament\Schemas\Components\Component;
-use Sylament\Schemas\State\PropertyAccessor;
 
 final class Set
 {
@@ -38,7 +37,7 @@ final class Set
                 $component->callAfterStateUpdatedHooks();
             }
         } else {
-            PropertyAccessor::getInstance()->set($liveComponent, $path, $state);
+            $this->component->getPropertyAccessor()->set($liveComponent, $path, $state);
         }
 
         return $state;

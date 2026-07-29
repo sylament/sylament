@@ -9,7 +9,6 @@ use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\StateCasts\Contracts\StateCast;
 use Sylament\Schemas\Components\Utilities\Get;
 use Sylament\Schemas\Components\Utilities\Set;
-use Sylament\Schemas\State\PropertyAccessor;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
@@ -102,7 +101,7 @@ trait HasState
             return null;
         }
 
-        return PropertyAccessor::getInstance()->get($this->getLiveComponent(), $statePath);
+        return $this->getPropertyAccessor()->get($this->getLiveComponent(), $statePath);
     }
 
     public function rawState(mixed $state): static
@@ -113,7 +112,7 @@ trait HasState
             return $this;
         }
 
-        PropertyAccessor::getInstance()->set($this->getLiveComponent(), $statePath, $this->evaluate($state));
+        $this->getPropertyAccessor()->set($this->getLiveComponent(), $statePath, $this->evaluate($state));
 
         return $this;
     }
@@ -431,7 +430,7 @@ trait HasState
             $statePath = $this->getStatePath();
 
             if ($statePath !== null) {
-                PropertyAccessor::getInstance()->setInArray($state, $statePath, $this->getState());
+                $this->getPropertyAccessor()->setInArray($state, $statePath, $this->getState());
             }
         }
 
@@ -487,16 +486,16 @@ trait HasState
                 }
 
                 if ($this->hasComponentWithStatePath($statePath)) {
-                    PropertyAccessor::getInstance()->forgetFromArray($state, $this->getDescendantStatePathsToForget($statePath));
+                    $this->getPropertyAccessor()->forgetFromArray($state, $this->getDescendantStatePathsToForget($statePath));
 
-                    if (blank(PropertyAccessor::getInstance()->getFromArray($state, $statePath))) {
-                        PropertyAccessor::getInstance()->forgetFromArray($state, $statePath);
+                    if (blank($this->getPropertyAccessor()->getFromArray($state, $statePath))) {
+                        $this->getPropertyAccessor()->forgetFromArray($state, $statePath);
                     }
 
                     return;
                 }
 
-                PropertyAccessor::getInstance()->forgetFromArray($state, $statePath);
+                $this->getPropertyAccessor()->forgetFromArray($state, $statePath);
 
                 return;
             }
@@ -519,8 +518,8 @@ trait HasState
                 return;
             }
 
-            foreach ($this->getStateToDehydrate(PropertyAccessor::getInstance()->getFromArray($state, $statePath)) as $key => $value) {
-                PropertyAccessor::getInstance()->setInArray($state, $key, $value);
+            foreach ($this->getStateToDehydrate($this->getPropertyAccessor()->getFromArray($state, $statePath)) as $key => $value) {
+                $this->getPropertyAccessor()->setInArray($state, $key, $value);
             }
         }
     }

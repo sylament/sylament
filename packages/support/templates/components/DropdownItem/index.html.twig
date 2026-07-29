@@ -1,0 +1,38 @@
+{% props
+    tag = 'button',
+    type = 'button',
+    href = null,
+    target = null,
+    formId = null,
+    disabled = false,
+
+    color = 'gray',
+
+    icon = null,
+    iconAlias = null,
+    iconSize = null,
+
+    content = markup(block('content') ?? null)
+%}
+
+{% set colorName = color is iterable or color is empty ? 'gray' : color %}
+{% set iconHtml = icon ? generateIconHtml(icon, iconAlias, size: iconSize) : null %}
+
+<{{ tag }}
+    {{ attributes.defaults({
+        class: classes('sy sy-dropdown-item', {
+            'sy-disabled': disabled,
+            'sy-color': colorName != 'gray',
+            ('sy-color-' ~ colorName): colorName != 'gray',
+        }),
+        'aria-disabled': disabled ? 'true' : false,
+        disabled: disabled and tag == 'button',
+        form: formId ?: false,
+        href: tag == 'a' and href ? href : false,
+        target: tag == 'a' and target == '_blank' ? '_blank' : false,
+        type: tag == 'button' ? type : false,
+    }) }}
+>
+    {{- iconHtml -}}
+    <span class="sy-dropdown-item-label">{{- content -}}</span>
+</{{ tag }}>

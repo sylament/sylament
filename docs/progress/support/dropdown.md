@@ -10,7 +10,10 @@ structure, the `placement`/`offset`/`flip`/`width`/`maxHeight` props — and the
 `sylament--support--dropdown` Stimulus controller/target/action wiring are both
 in place, `actions`' `ActionGroup` composes the shell, and the panel now carries
 divider-separated `.sy-dropdown-list` sections and nests one level down as a
-submenu.
+submenu. The rows inside those sections are a component of their own,
+`<twig:SylamentSupport:DropdownItem>` — tracked in
+[dropdown-item.md](dropdown-item.md), which also took the `.sy-dropdown-item`
+rules out of this shell's stylesheet.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).

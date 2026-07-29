@@ -23,7 +23,7 @@
 
 {% set mountAttributes = clickParameters is null
     ? {}
-    : stimulus_action('live', 'action', null, clickParameters).toArray() %}
+    : stimulus_action('live', 'action', null, clickParameters) %}
 
 {% set extraAttributes = component.getExtraAttributeBag.toScalarAttributes %}
 {% set rootClasses = classes('sy-ac', {'sy-outlined': component.isOutlined}, extraAttributes.class ?? null) %}

@@ -22,7 +22,7 @@
             })) %}
 {% set mountAttributes = clickWiringSuppressed or component.canSubmitForm or clickParameters is null
     ? {}
-    : stimulus_action('live', 'action', null, clickParameters).toArray() %}
+    : stimulus_action('live', 'action', null, clickParameters) %}
 
 {% set extraAttributes = component.getExtraAttributeBag.toScalarAttributes %}
 {% set rootClasses = classes('sy-ac', extraAttributes.class ?? null) %}

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Components\Concerns;
 
-use Sylament\Schemas\Schema;
 use Closure;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Schema;
 
 trait CanBeHidden
 {

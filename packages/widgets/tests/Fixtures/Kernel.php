@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Widgets\Tests\Fixtures;
 
-use Sylament\Widgets\SylamentWidgetsBundle;
 use Sylament\Support\SylamentSupportBundle;
+use Sylament\Widgets\SylamentWidgetsBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;

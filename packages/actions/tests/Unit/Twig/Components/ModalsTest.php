@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Sylament\Actions\Tests\Unit\Twig\Components;
 
 use LogicException;
+use stdClass;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\ModalsHostFixture;
 use Sylament\Actions\Twig\Components\Modals;
-use stdClass;
 use Symfony\UX\TwigComponent\ComponentAttributes;
 use Symfony\UX\TwigComponent\ComponentStack;
 use Symfony\UX\TwigComponent\MountedComponent;

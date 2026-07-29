@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\DependencyInjection\Compiler;
 
-use Sylament\Support\DependencyInjection\ComponentResolver;
 use Sylament\Support\DependencyInjection\Compiler\ComponentResolverPass;
+use Sylament\Support\DependencyInjection\ComponentResolver;
 use Sylament\Support\Tests\Fixtures\DependencyInjection\ResolvableComponentFixture;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;

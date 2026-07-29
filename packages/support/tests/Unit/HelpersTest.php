@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit;
 
-use stdClass;
 use ArrayObject;
 use Countable;
+use stdClass;
 use Stringable;
 use Twig\Markup;
 

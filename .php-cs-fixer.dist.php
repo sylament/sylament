@@ -36,6 +36,10 @@ return new Config()
         'no_useless_else' => true,
         'no_unused_imports' => true,
         'no_multiple_statements_per_line' => true,
+        'ordered_imports' => [
+            'imports_order' => ['class', 'function', 'const'],
+            'sort_algorithm' => 'alpha',
+        ],
         'ordered_interfaces' => true,
         'ordered_traits' => true,
         'self_accessor' => true,

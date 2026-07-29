@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Actions;
 
-use Sylament\Schemas\Schema;
-use Sylament\Schemas\Components\Component;
 use Closure;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
@@ -36,6 +34,8 @@ use Sylament\Actions\Concerns\HasSchema;
 use Sylament\Actions\Concerns\HasSize;
 use Sylament\Actions\Concerns\InteractsWithRecord;
 use Sylament\Actions\Enums\ActionStatus;
+use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Schema;
 use Sylament\Support\Components\Concerns\HasColor;
 use Sylament\Support\Components\Concerns\HasExtraAttributes;
 use Sylament\Support\Components\Concerns\HasIcon;

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Support\DependencyInjection\Compiler;
 
-use Throwable;
 use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Throwable;
 
 final class StaticInstancePass implements CompilerPassInterface
 {

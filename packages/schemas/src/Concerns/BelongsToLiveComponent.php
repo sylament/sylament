@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Concerns;
 
-use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use RuntimeException;
+use Sylament\Schemas\Contracts\InteractsWithSchemas;
 
 trait BelongsToLiveComponent
 {

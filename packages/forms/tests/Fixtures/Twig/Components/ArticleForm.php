@@ -6,10 +6,10 @@ namespace Sylament\Forms\Tests\Fixtures\Twig\Components;
 
 use Sylament\Forms\Components\Textarea;
 use Sylament\Forms\Components\TextInput;
-use Sylament\Schemas\Utilities\Set;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Set;
 use Symfony\Component\String\Slugger\AsciiSlugger;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;

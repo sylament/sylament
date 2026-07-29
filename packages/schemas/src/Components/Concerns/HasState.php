@@ -7,8 +7,8 @@ namespace Sylament\Schemas\Components\Concerns;
 use Closure;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
-use Sylament\Schemas\Utilities\Get;
-use Sylament\Schemas\Utilities\Set;
+use Sylament\Schemas\State\Get;
+use Sylament\Schemas\State\Set;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;

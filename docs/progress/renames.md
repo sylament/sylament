@@ -81,14 +81,16 @@ Filament costs a migrating user nothing to learn, and one carve-out is worse
 than none.
 
 Three namespaces **leave `Components\`**, because what they hold is not part of
-the component tier — neither a component, nor a concern or contract of one. The
-casts also gain a `State\` parent rather than sitting at the root, so they file
-beside the `PropertyAccessor` they cast for:
+the component tier — neither a component, nor a concern or contract of one. Two
+of them land under `State\` rather than at the root, filing beside the
+[`PropertyAccessor`](schemas/property-accessor.md) they read and write through;
+each drops the segment that `State\` now says for it (`StateCasts` → `Casts`,
+`Utilities` → nothing, since the word named no category):
 
 | Filament | Sylament | Holds |
 | --- | --- | --- |
 | `Filament\Schemas\Components\StateCasts\` | `Sylament\Schemas\State\Casts\` | `StateCast` and its implementations — value objects that transform state |
-| `Filament\Schemas\Components\Utilities\` | `Sylament\Schemas\Utilities\` | `Get` / `Set` — the closure-injected state accessors |
+| `Filament\Schemas\Components\Utilities\` | `Sylament\Schemas\State\` | `Get` / `Set` — the closure-injected state accessors |
 | `Filament\Support\Components\ComponentManager` | `Sylament\Support\Configuration\ComponentManager` | The `configureUsing()` registry — an engine, filed by capability like `Evaluation\Invoker`, not beside what it configures |
 
 A migrating user importing `Filament\Schemas\Components\Utilities\Get` will

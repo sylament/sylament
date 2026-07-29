@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\Utilities;
 
-use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;

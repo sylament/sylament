@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\Utilities;
+namespace Sylament\Schemas\State;
 
 use Sylament\Schemas\Components\Component;
 

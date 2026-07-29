@@ -1,6 +1,6 @@
 # Set (schemas)
 
-[`Sylament\Schemas\Utilities\Set`](../../../packages/schemas/src/Utilities/Set.php)
+[`Sylament\Schemas\State\Set`](../../../packages/schemas/src/State/Set.php)
 is the `$set` writer handed to closures during evaluation — the write-side twin of
 [`Get`](get.md). An invokable bound to one [`Component`](component.md) (only
 that binding is `readonly`), its `__invoke($path, $state, $isAbsolute, $shouldCallUpdatedHooks)`
@@ -21,11 +21,11 @@ Reference — the Filament source this is diffed against:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`__invoke` component-branch write: resolve path → `state()` with target cast](../../../packages/schemas/src/Utilities/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
-| [Closure-valued state evaluated before writing; evaluated value returned](../../../packages/schemas/src/Utilities/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
-| [`shouldCallUpdatedHooks` gating of after-update hooks](../../../packages/schemas/src/Utilities/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | in progress | — | [diverges](#shouldcallupdatedhooks-fires-the-non-bubbling-hook-set-dropping-filaments-parent-bubbling) |
-| [Raw-bag else-branch: `PropertyAccessor::set` + `clearCachedChildSchemas`](../../../packages/schemas/src/Utilities/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | in progress | — | [detail](#raw-bag-else-branch) |
-| [`skipComponentsChildContainersWhileSearching(bool)` toggle](../../../packages/schemas/src/Utilities/Set.php) | [`Set::skipComponentsChildContainersWhileSearching()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
+| [`__invoke` component-branch write: resolve path → `state()` with target cast](../../../packages/schemas/src/State/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
+| [Closure-valued state evaluated before writing; evaluated value returned](../../../packages/schemas/src/State/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
+| [`shouldCallUpdatedHooks` gating of after-update hooks](../../../packages/schemas/src/State/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | in progress | — | [diverges](#shouldcallupdatedhooks-fires-the-non-bubbling-hook-set-dropping-filaments-parent-bubbling) |
+| [Raw-bag else-branch: `PropertyAccessor::set` + `clearCachedChildSchemas`](../../../packages/schemas/src/State/Set.php) | [`Set::__invoke()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | in progress | — | [detail](#raw-bag-else-branch) |
+| [`skipComponentsChildContainersWhileSearching(bool)` toggle](../../../packages/schemas/src/State/Set.php) | [`Set::skipComponentsChildContainersWhileSearching()`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | done | — | — |
 
 ## Details
 
@@ -33,7 +33,7 @@ Reference — the Filament source this is diffed against:
 
 The component branch (path resolves to a real component → `state()` with the
 target component's cast, optional after-update hooks) is ported and covered by
-[`SetTest`](../../../packages/schemas/tests/Unit/Utilities/SetTest.php)
+[`SetTest`](../../../packages/schemas/tests/Unit/State/SetTest.php)
 across relative, cast-on-write, and parent-sibling writes. The else-branch —
 `PropertyAccessor::getInstance()->set($liveComponent, $path, $state)` for a path
 no component owns — is written but has **two** gaps: it is untested (every
@@ -50,7 +50,7 @@ child-schema cache lands (see the [divergence](#the-raw-write-branch-skips-clear
 
 Filament's `Set` invokes `$component->callAfterStateUpdated()`, whose default
 bubbles the after-update notification to parent components; Sylament invokes
-[`callAfterStateUpdatedHooks()`](../../../packages/schemas/src/Utilities/Set.php),
+[`callAfterStateUpdatedHooks()`](../../../packages/schemas/src/State/Set.php),
 which runs only this component's own hooks. `SetTest` asserts the hook fires once
 when `shouldCallUpdatedHooks: true` and stays silent by default, but never
 asserts bubbling, so the delta is currently untested. Reverses if/when parent

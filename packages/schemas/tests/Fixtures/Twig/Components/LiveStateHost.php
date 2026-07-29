@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Fixtures\Twig\Components;
 
-use Sylament\Schemas\Utilities\Set;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Set;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;

@@ -26,7 +26,10 @@
 
 {% set extraAttributes = component.getExtraAttributeBag.toScalarAttributes %}
 {% set rootClasses = classes('sy-ac', extraAttributes.class ?? null) %}
+{% set extraAttributes = extraAttributes|filter((value, name) => name != 'class') %}
+
 <twig:SylamentSupport:IconButton
+    :class="rootClasses"
     :icon="component.getIcon"
     :iconSize="component.getIconSize"
     :label="component.getLabel ?? component.getName"
@@ -40,7 +43,6 @@
     :formId="component.getFormId"
     {{ ...(component.getTooltip ? {title: component.getTooltip} : {}) }}
     {{ ...extraAttributes }}
-    :class="rootClasses"
     {{ ...mountAttributes }}
     {{ ...closeAttributes }}
 />

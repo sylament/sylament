@@ -27,7 +27,10 @@
 
 {% set extraAttributes = component.getExtraAttributeBag.toScalarAttributes %}
 {% set rootClasses = classes('sy-ac', {'sy-outlined': component.isOutlined}, extraAttributes.class ?? null) %}
+{% set extraAttributes = extraAttributes|filter((value, name) => name != 'class') %}
+
 <twig:SylamentSupport:Button
+    :class="rootClasses"
     :icon="component.getIcon"
     :iconSize="component.getIconSize"
     :iconPosition="component.getIconPosition"
@@ -42,7 +45,6 @@
     {{ ...(component.getTooltip ? {title: component.getTooltip} : {}) }}
     {{ ...(component.isLabelHidden ? {'aria-label': (component.getLabel ?? component.getName)|striptags|trim} : {}) }}
     {{ ...extraAttributes }}
-    :class="rootClasses"
     {{ ...mountAttributes }}
     {{ ...closeAttributes }}
 >

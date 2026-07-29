@@ -1,5 +1,6 @@
 {% set extraAttributes = group.getExtraAttributeBag.toScalarAttributes %}
 {% set triggerClasses = classes({'sy-outlined': group.isOutlined}, extraAttributes.class ?? null) %}
+
 <twig:SylamentSupport:Button
     :icon="group.getIcon"
     :color="group.getColor ?? 'gray'"

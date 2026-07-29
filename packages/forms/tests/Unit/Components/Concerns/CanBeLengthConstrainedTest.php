@@ -39,3 +39,8 @@ it('builds nothing without bounds', function (): void {
 it('evaluates a closure length', function (): void {
     expect(FixtureLengthField::make('code')->length(fn (): int => 4)->getLength())->toBe(4);
 });
+
+it('builds no constraint from a zero bound', function (): void {
+    expect(FixtureLengthField::make('code')->length(0)->getLengthValidationConstraints())->toBe([])
+        ->and(FixtureLengthField::make('title')->maxLength(0)->minLength(0)->getLengthValidationConstraints())->toBe([]);
+});

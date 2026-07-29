@@ -54,6 +54,17 @@ it('evaluates closure constraints and flattens arrays', function (): void {
     expect($field->getValidationConstraints())->toHaveCount(2);
 });
 
+it('skips a closure constraint that returns null', function (): void {
+    $field = FixtureField::make('slug')
+        ->constraint(fn (): ?Regex => null)
+        ->constraint(new NotBlank());
+
+    $constraints = $field->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0])->toBeInstanceOf(NotBlank::class);
+});
+
 it('evaluates a closure constraint returning a single constraint', function (): void {
     $field = FixtureField::make('slug')->constraint(fn (): NotBlank => new NotBlank());
 

@@ -17,7 +17,7 @@ trait CanBeValidated
     protected bool|Closure $isRequired = false;
 
     /**
-     * @var array<array{Constraint|array<Constraint>|Closure, bool|Closure}>
+     * @var array<array{Constraint|array<Constraint>|Closure|null, bool|Closure}>
      */
     protected array $constraints = [];
 
@@ -115,6 +115,10 @@ trait CanBeValidated
             }
 
             $evaluated = $this->evaluate($constraint);
+
+            if ($evaluated === null) {
+                continue;
+            }
 
             foreach ($evaluated instanceof Constraint ? [$evaluated] : $evaluated as $single) {
                 $constraints[] = $single;

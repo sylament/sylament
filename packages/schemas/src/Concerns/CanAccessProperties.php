@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Concerns;
 
 use Sylament\Schemas\State\PropertyAccessor;
+use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Contracts\Service\Attribute\Required;
 
 trait CanAccessProperties
@@ -19,6 +20,6 @@ trait CanAccessProperties
 
     public function getPropertyAccessor(): PropertyAccessor
     {
-        return $this->propertyAccessor ??= PropertyAccessor::getInstance();
+        return $this->propertyAccessor ??= new PropertyAccessor(PropertyAccess::createPropertyAccessor());
     }
 }

@@ -13,7 +13,7 @@ for the dehydration walk, which assembles state in a plain array before any host
 exists. State concerns reach it through
 [`CanAccessProperties`](../../../packages/schemas/src/Concerns/CanAccessProperties.php),
 composed onto `Schema` and the schemas `Component` base — see
-[the divergence below](#the-accessor-is-injected-with-a-static-instance-fallback).
+[the divergence below](#the-accessor-is-injected-not-reached-for).
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -41,45 +41,51 @@ exists. _Blocked by_ names what has to land first. _Detail_ carries a
 | [`getFromArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — read a detached nested array by dotted path (null past a missing/scalar segment) | [`Arr::get()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
 | [`setInArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write into a detached nested array, auto-vivifying/clobbering intermediates | [`Arr::set()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
 | [`forgetFromArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — unset leaf path(s) from a detached array, leaving emptied parents | [`Arr::forget()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
-| [Static-instance wiring](../../../packages/schemas/src/State/PropertyAccessor.php) — service registration, class alias, boot as the reachable singleton | — (Sylament-invented) | done | — | — |
+| [Service wiring](../../../packages/schemas/src/State/PropertyAccessor.php) — registration and class alias, injected through `CanAccessProperties` | — (Sylament-invented) | done | — | [diverges](#the-accessor-is-injected-not-reached-for) |
 
 Every row is **done** — the unit suite
 ([`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php))
 exercises all five public methods across their branches (dot-to-bracket nested
 read and null-on-missing; single-segment and nested auto-vivify writes; the
 detached trio's present/missing/past-scalar reads, deep auto-vivify and non-array
-clobber, and leaf-only unset over a path list with a missing-path no-op), a boot
+clobber, and leaf-only unset over a path list with a missing-path no-op), a wiring
 test
 ([`PropertyAccessorBootTest`](../../../packages/schemas/tests/Integration/State/PropertyAccessorBootTest.php))
-proves the booted DI service is the same object `getInstance()` returns, and
+pins both paths — a component from `make()` holds the container's accessor, one
+from `new` holds a locally built one — and
 [`LiveStateTest`](../../../packages/schemas/tests/Integration/LiveStateTest.php)
 drives it end-to-end through a real UX LiveComponent hydrate/dehydrate round-trip
 via `HasState`. No row has a write-up here.
 
 ## Divergences
 
-### The accessor is injected, with a static-instance fallback
+### The accessor is injected, not reached for
 
-`CanAccessProperties` takes the accessor through a `#[Required]` setter and
-exposes it only as `getPropertyAccessor()`; the property itself is `private`, so
-neither a sibling concern nor a subclass can reach around the getter. Since
+`PropertyAccessor` is a plain service — no `StaticInstanceInterface`, no
+`HasStaticInstance`, nothing to boot or unset between tests.
+`CanAccessProperties` takes it through a `#[Required]` setter and exposes it only
+as `getPropertyAccessor()`; the property itself is `private`, so neither a
+sibling concern nor a subclass can reach around the getter. Since
 components are registered services, `make()` builds them through the container
 and the setter runs — verified: a `Section::make()` has the property initialised
 before anything reads it.
 
-What it does **not** do is require the container. `getPropertyAccessor()` falls
-back to `PropertyAccessor::getInstance()` when the setter never ran, because a
-component built with `new` is a supported shape, not a mistake: the Unit bucket
+What it does **not** do is require the container. `getPropertyAccessor()` builds one
+locally — `new PropertyAccessor(PropertyAccess::createPropertyAccessor())`, the
+construction the test bootstraps already used — when the setter never ran,
+because a component built with `new` is a supported shape, not a mistake: the Unit bucket
 boots no kernel at all, `ComponentResolver` keeps a null-locator path for exactly
 this, and the suites construct components directly in ~300 places. Making the
 dependency mandatory turned 42 tests into *"typed property must not be accessed
 before initialization"*.
 
-So the ambient global is no longer how the dependency is *obtained* — it is the
-degraded path when there is no container to obtain it from, which is the same
-shape `ComponentManager::resolve()` and `ComponentResolver::resolve()` already
-use. A container-built component satisfies
-[principle §1](../../principles.md#the-test) outright.
+There is no ambient global left in this path at all: the dependency is either
+injected or constructed on the spot, and nothing consults a mutable static.
+That satisfies [principle §1](../../principles.md#the-test) on both branches,
+and is why `PropertyAccessor` no longer appears in the static-instance roster.
+The cost is that a `new`-built component makes its own Symfony accessor rather
+than sharing one — bounded to code paths with no container, which is where
+sharing had nothing to share through anyway.
 
 
 ### State binds through Symfony PropertyAccess, not Livewire entanglement

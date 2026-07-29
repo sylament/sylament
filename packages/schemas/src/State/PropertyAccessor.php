@@ -4,16 +4,12 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\State;
 
-use Sylament\Support\DependencyInjection\HasStaticInstance;
-use Sylament\Support\DependencyInjection\StaticInstanceInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
-final class PropertyAccessor implements StaticInstanceInterface
+final readonly class PropertyAccessor
 {
-    use HasStaticInstance;
-
     public function __construct(
-        private readonly PropertyAccessorInterface $accessor,
+        private PropertyAccessorInterface $accessor,
     ) {
     }
 

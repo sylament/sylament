@@ -93,7 +93,8 @@ class SylamentSupportBundle extends SylamentBundle
 
         $services
             ->set('sylament_support.component_extension', ComponentExtension::class)
-            ->tag('twig.extension');
+            ->tag('twig.extension')
+            ->alias(ComponentExtension::class, 'sylament_support.component_extension');
 
         $services
             ->set('sylament_support.grid_extension', GridExtension::class)

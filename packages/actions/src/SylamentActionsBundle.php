@@ -10,8 +10,6 @@ use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 
-use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
-
 class SylamentActionsBundle extends SylamentBundle
 {
     /**
@@ -27,9 +25,7 @@ class SylamentActionsBundle extends SylamentBundle
     {
         $configurator->services()
             ->set('sylament_actions.twig_component.modals', Modals::class)
-            ->args([
-                '$componentStack' => service('ux.twig_component.component_stack'),
-            ])
+            ->autowire()
             ->autoconfigure();
     }
 
@@ -37,9 +33,7 @@ class SylamentActionsBundle extends SylamentBundle
     {
         $configurator->services()
             ->set('sylament_actions.action_extension', ActionExtension::class)
-            ->args([
-                '$componentExtension' => service('sylament_support.component_extension'),
-            ])
+            ->autowire()
             ->tag('twig.extension');
     }
 }

@@ -9,9 +9,6 @@ use Sylament\Schemas\Twig\Extension\SchemaExtension;
 use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
-
-use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 class SylamentSchemasBundle extends SylamentBundle
 {
@@ -29,16 +26,12 @@ class SylamentSchemasBundle extends SylamentBundle
 
         $services
             ->set('sylament_schemas.schema_extension', SchemaExtension::class)
-            ->args([
-                '$componentExtension' => service('sylament_support.component_extension')
-            ])
+            ->autowire()
             ->tag('twig.extension');
 
         $services
             ->set('sylament_schemas.property_accessor', PropertyAccessor::class)
-            ->args([
-                '$accessor' => service(PropertyAccessorInterface::class),
-            ])
+            ->autowire()
             ->alias(PropertyAccessor::class, 'sylament_schemas.property_accessor');
     }
 }

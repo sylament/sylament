@@ -6,6 +6,7 @@ namespace Sylament\Actions\Twig\Components;
 
 use LogicException;
 use Sylament\Actions\Contracts\InteractsWithActions;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 use Symfony\UX\TwigComponent\ComponentStack;
 
@@ -20,8 +21,10 @@ class Modals
 {
     private ?InteractsWithActions $liveComponent = null;
 
-    public function __construct(private readonly ComponentStack $componentStack)
-    {
+    public function __construct(
+        #[Autowire(service: 'ux.twig_component.component_stack')]
+        private readonly ComponentStack $componentStack,
+    ) {
     }
 
     public function mount(?InteractsWithActions $liveComponent = null): void

@@ -1,50 +1,50 @@
-{% set knownSizes = ['xs', 'sm', 'md', 'lg', 'xl'] %}
-{% set sizeValue = component.getSize.value ?? component.getSize %}
-{% set colorName = component.getColor is iterable or component.getColor is empty ? 'gray' : component.getColor %}
-{% set tag = component.getUrl ? 'a' : 'button' %}
-{% set iconHtml = component.getIcon ? generateIconHtml(component.getIcon, size: component.getIconSize ?? 'sm') : null %}
-
 {% set hasLiveClickBinding = not component.getUrl and not component.canSubmitForm %}
-
-<{{ tag }}
-    {{ attrs({
-        class: classes('sy sy-ac-badge sy-ac', {
-            'sy-disabled': component.isDisabled,
-            ('sy-size-' ~ sizeValue): sizeValue in knownSizes,
-            (sizeValue ?? ''): sizeValue is not empty and sizeValue not in knownSizes,
-            'sy-color': colorName != 'gray',
-            ('sy-color-' ~ colorName): colorName != 'gray',
-        }),
-        type: component.getUrl ? false : (component.canSubmitForm ? 'submit' : 'button'),
-        form: component.getFormId ?: false,
-        disabled: component.isDisabled and not component.getUrl,
-        'aria-disabled': component.isDisabled ? 'true' : false,
-        'aria-label': component.isLabelHidden ? (component.getLabel ?? component.getName)|striptags|trim : false,
-        href: component.getUrl ?: false,
-        target: component.shouldOpenUrlInNewTab ? '_blank' : false,
-        title: component.getTooltip ?: false,
-    }, component.getExtraAttributes) }}
-    {%- if not component.getUrl %}
-        {%- if hasLiveClickBinding and component.getClientClickHandler %} {{ live_action(component.getClientClickHandler) }}
-        {%- elseif hasLiveClickBinding and component.getParentActionCallLiveComponentClickHandler %} {{ live_action(component.getParentActionCallLiveComponentClickHandler, {
+{% set clickParameters = null %}
+{% set closeAttributes = {} %}
+{%- if not component.getUrl -%}
+    {%- if hasLiveClickBinding and component.getClientClickHandler -%}
+        {%- set clickParameters = {action: component.getClientClickHandler} -%}
+    {%- elseif hasLiveClickBinding and component.getParentActionCallLiveComponentClickHandler -%}
+        {%- set clickParameters = {
+            action: component.getParentActionCallLiveComponentClickHandler,
             ...(component.getArguments ? {arguments: component.getArguments} : {}),
-        }) }}
-        {%- elseif component.shouldClose %} data-action="sylament--support--modal#dismiss"
-        {%- elseif hasLiveClickBinding %} {{ live_action('mountAction', {
+        } -%}
+    {%- elseif component.shouldClose -%}
+        {%- set closeAttributes = {'data-action': 'sylament--support--modal#dismiss'} -%}
+    {%- elseif hasLiveClickBinding -%}
+        {%- set clickParameters = {
+            action: 'mountAction',
             name: component.getName,
             ...(component.getInvokedArguments ? {arguments: component.getInvokedArguments} : {}),
             ...(component.getContext ? {context: component.getContext} : {}),
-        }) }}
-        {%- endif %}
-    {%- endif %}
->
-    {%- if iconHtml and component.getIconPosition.value == 'before' -%}
-        {{ iconHtml }}
+        } -%}
     {%- endif -%}
-    {%- if not component.isLabelHidden -%}
-        <span class="sy-ac-badge-label">{{ component.getLabel ?? component.getName }}</span>
-    {%- endif -%}
-    {%- if iconHtml and component.getIconPosition.value == 'after' -%}
-        {{ iconHtml }}
-    {%- endif -%}
-</{{ tag }}>
+{%- endif -%}
+
+{% set mountAttributes = clickParameters is null
+    ? {}
+    : stimulus_action('live', 'action', parameters: clickParameters) %}
+
+{% set extraAttributes = component.getExtraAttributeBag.toScalarAttributes %}
+{% set rootClasses = classes('sy-ac', extraAttributes.class ?? null) %}
+{% set extraAttributes = extraAttributes|filter((value, name) => name != 'class') %}
+
+<twig:SylamentSupport:Badge
+    :class="rootClasses"
+    :icon="component.getIcon"
+    :iconSize="component.getIconSize"
+    :iconPosition="component.getIconPosition"
+    :color="component.getColor"
+    :size="component.getSize ?? 'md'"
+    :disabled="component.isDisabled"
+    :tag="component.getUrl ? 'a' : 'button'"
+    :href="component.getUrl"
+    :target="component.shouldOpenUrlInNewTab ? '_blank' : null"
+    :type="component.canSubmitForm ? 'submit' : 'button'"
+    :formId="component.getFormId"
+    :labelSrOnly="component.isLabelHidden"
+    {{ ...(component.getTooltip ? {title: component.getTooltip} : {}) }}
+    {{ ...extraAttributes }}
+    {{ ...mountAttributes }}
+    {{ ...closeAttributes }}
+>{{- component.getLabel ?? component.getName -}}</twig:SylamentSupport:Badge>

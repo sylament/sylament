@@ -14,13 +14,14 @@ use Sylament\Forms\Components\Concerns\HasPlaceholder;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Concerns\HasLabel;
 use Sylament\Schemas\Components\Concerns\HasName;
+use Sylament\Schemas\Components\Contracts\HasValidationConstraints;
 use Sylament\Schemas\Schema;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
 use function Symfony\Component\String\u;
 
-abstract class Field extends Component
+abstract class Field extends Component implements HasValidationConstraints
 {
     use CanBeAutofocused;
     use CanBeMarkedAsRequired;

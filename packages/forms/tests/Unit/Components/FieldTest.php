@@ -52,6 +52,12 @@ it('marks the field as required', function (): void {
         ->and(FixtureField::make('title')->markAsRequired(fn (): bool => true)->isMarkedAsRequired())->toBeTrue();
 });
 
+it('marks as required from the validation state when no explicit marker is set', function (): void {
+    expect(FixtureField::make('title')->required()->isMarkedAsRequired())->toBeTrue()
+        ->and(FixtureField::make('title')->isMarkedAsRequired())->toBeFalse()
+        ->and(FixtureField::make('title')->required()->markAsRequired(false)->isMarkedAsRequired())->toBeFalse();
+});
+
 it('seeds the helper text into the below-content slot', function (): void {
     $slot = wireField(FixtureField::make('title')->helperText('Some help'))
         ->getChildSchema(Field::BELOW_CONTENT_SCHEMA_KEY);

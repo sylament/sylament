@@ -48,7 +48,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `call()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | blocked | bulk actions (`InteractsWithSelectedRecords`), visibility cache | [detail](#call-drops-the-post-call-cleanup) |
 | `cancel()` / `halt()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | Doctrine transaction integration | [detail](#cancel-and-halt-drop-the-rollback-flag) |
 | `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getstatus-drops-the-bulk-record-tally) |
-| `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/InteractsWithSelectedRecords ports, operation concept | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-10-of-16-names) |
+| `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/InteractsWithSelectedRecords ports, the Action→schema record/operation hop (M1 · 6) | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-10-of-16-names) |
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | todo | schemas/tables/InteractsWithSelectedRecords ports | [detail](#resolvedefaultclosuredependencyforevaluationbytype-is-not-overridden) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables (`table`/`bulk` flags, `recordKey`) | [diverges](#getcontext-emits-only-the-schemacomponent-key) |
 | `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](has-actions.md#resolveactions-drops-the-table-branch), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-emits-only-the-schemacomponent-key) decidable |
@@ -174,8 +174,10 @@ vendor-verified and kept). Still missing, each blocked on its backing concern: `
 beyond today's `HasActions`), `selectedRecords`/`records` +
 `selectedRecordsQuery`/`recordsQuery` (`InteractsWithSelectedRecords` +
 `CanFetchSelectedRecords`), `schemaOperation`/`context`/`operation`
-(no operation concept — Sylament's `Schema` has no `getOperation()`), and
-`table` (`BelongsToTable`). Coverage: `record`/`arguments` via `ActionTest`'s
+(the value exists now — schemas' `Schema` has
+[`getOperation()`](../schemas/has-operation.md) — but no arm here reads it off
+the action's schema container; deferred to M1 · 6 with the record hop below),
+and `table` (`BelongsToTable`). Coverage: `record`/`arguments` via `ActionTest`'s
 "calls the action closure…", `data` via `ActionTest`'s "injects $data from
 getData()", `liveComponent` via
 [`BelongsToLiveComponentTest`](../../../packages/actions/tests/Unit/Concerns/BelongsToLiveComponentTest.php),
@@ -530,9 +532,16 @@ closure is covered by
 walks when no record is set directly — `getGroup()?->getRecord()`,
 `getSchemaContainer()?->getRecord()`, `getSchemaComponent()?->getRecord()`,
 and the `getHasActionsLivewire()?->getDefaultActionRecord()` tail — only the
-group hop is ported: the schema accessors exist on `Action` now
-(`BelongsToSchemaComponent`), but schemas' `Schema`/`Component` have no
-`getRecord()` to hop to, and there is no default-action-record host hook. The
+group hop is ported. Both remaining ends now exist on the schemas side —
+`Schema` and `Component` carry `getRecord()`/`getRecordClass()` under the
+record-only vocabulary this trait already used
+([`belongs-to-record.md`](../schemas/belongs-to-record.md); the two surfaces have
+converged, so the hop is a plain delegation with no name translation) — but the
+hop itself is unwired: an `Action` inside a record-bound schema still resolves
+`$record` from its own binding plus the group fallback only. **Deferred to
+M1 · 6** (record actions), which owns both hops and the
+`schemaOperation`/`operation` arm; there is still no default-action-record host
+hook. The
 `$record` property is typed `mixed`
 instead of Filament's `Model | string | array | Closure | null`, since there is
 no Doctrine-entity-aware resolution to type it against.

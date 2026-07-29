@@ -24,8 +24,9 @@ follows.
 A first-column link whose target file is named differently from the row is a
 rename or relocation the port already made — the idiom translations (Livewire →
 UX LiveComponent, Blade view → Twig template, `Htmlable` → `Markup`), the
-`BelongsToLivewire` → `BelongsToLiveComponent` and `SchemasServiceProvider` →
-`SylamentSchemasBundle` renames, and the schema-host `HasSchemas` (interface) ⇄
+`BelongsToLivewire` → `BelongsToLiveComponent`, `BelongsToModel` →
+`BelongsToRecord` (both tiers, with `model()` absorbed into `record()`), and
+`SchemasServiceProvider` → `SylamentSchemasBundle` renames, and the schema-host `HasSchemas` (interface) ⇄
 `InteractsWithSchemas` (trait) name swap. These are recorded in
 [`renames.md`](../renames.md).
 
@@ -99,9 +100,9 @@ own single-use concerns folded into [`component.md`](component.md).
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| `BelongsToModel` | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | todo | — |
+| [`BelongsToModel`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | in progress | [belongs-to-record.md](belongs-to-record.md) |
 | `CanBeConcealed` | [`Components/Concerns/CanBeConcealed.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeConcealed.php) | todo | — |
-| [`CanBeDisabled`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`Components/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | in progress | [can-be-disabled.md](can-be-disabled.md) |
+| [`CanBeDisabled`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`Components/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | [can-be-disabled.md](can-be-disabled.md) |
 | `CanBeGridContainer` | [`Components/Concerns/CanBeGridContainer.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeGridContainer.php) | todo | — |
 | [`CanBeHidden`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`Components/Concerns/CanBeHidden.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | in progress | [can-be-hidden.md](can-be-hidden.md) |
 | `CanBeLiberatedFromContainerGrid` | [`Components/Concerns/CanBeLiberatedFromContainerGrid.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeLiberatedFromContainerGrid.php) | todo | — |
@@ -135,7 +136,7 @@ shared with the base `Component` or not yet started.
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`BelongsToLivewire`](../../../packages/schemas/src/Concerns/BelongsToLiveComponent.php) | [`Concerns/BelongsToLivewire.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToLivewire.php) | done | [belongs-to-live-component.md](belongs-to-live-component.md) |
-| `BelongsToModel` | [`Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | todo | — |
+| [`BelongsToModel`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | in progress | [belongs-to-record.md](belongs-to-record.md) |
 | [`CanBeDisabled`](../../../packages/schemas/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Concerns/CanBeDisabled.php) | done | [can-be-disabled.md](can-be-disabled.md) |
 | `CanBeHidden` | [`Concerns/CanBeHidden.php`](../../../vendor/filament/schemas/src/Concerns/CanBeHidden.php) | todo | — |
 | [`CanBeValidated`](../../../packages/schemas/src/Concerns/CanBeValidated.php) | [`Concerns/CanBeValidated.php`](../../../vendor/filament/schemas/src/Concerns/CanBeValidated.php) | in progress | [can-be-validated.md](can-be-validated.md) |
@@ -145,7 +146,7 @@ shared with the base `Component` or not yet started.
 | `HasEntryWrapper` | [`Concerns/HasEntryWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasEntryWrapper.php) | todo | — |
 | `HasFieldWrapper` | [`Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasFieldWrapper.php) | todo | — |
 | `HasInlineLabels` | [`Concerns/HasInlineLabels.php`](../../../vendor/filament/schemas/src/Concerns/HasInlineLabels.php) | todo | — |
-| `HasOperation` | [`Concerns/HasOperation.php`](../../../vendor/filament/schemas/src/Concerns/HasOperation.php) | todo | — |
+| [`HasOperation`](../../../packages/schemas/src/Concerns/HasOperation.php) | [`Concerns/HasOperation.php`](../../../vendor/filament/schemas/src/Concerns/HasOperation.php) | done | [has-operation.md](has-operation.md) |
 | [`HasStateBindingModifiers`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`Concerns/HasStateBindingModifiers.php`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | in progress | [has-state-binding-modifiers.md](has-state-binding-modifiers.md) |
 | [`InteractsWithSchemas`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`Concerns/InteractsWithSchemas.php`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | in progress | [has-schemas.md](has-schemas.md) |
 | `ResolvesDynamicLivewireProperties` | [`Concerns/ResolvesDynamicLivewireProperties.php`](../../../vendor/filament/schemas/src/Concerns/ResolvesDynamicLivewireProperties.php) | todo | — |

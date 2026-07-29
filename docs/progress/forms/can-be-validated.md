@@ -71,8 +71,8 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | `filled()` / `multipleOf()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | — | [detail](#the-unsugared-rule-families-are-reachable-through-constraint) |
 | Comparison family (`after` / `afterOrEqual` / `before` / `beforeOrEqual`, `gt` / `gte` / `lt` / `lte`, `same` / `different`, `confirmed`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | cross-path validation context | [detail](#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build) |
 | Conditional-required family (`requiredIf*` / `requiredUnless` / `requiredWith*` / `requiredWithout*`, `prohibited` / `prohibitedIf` / `prohibitedUnless` / `prohibits`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | cross-path validation context | [detail](#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build) |
-| Data-layer family (`unique` / `exists` / `scopedUnique` / `scopedExists` / `uniqueValidationIgnoresRecordByDefault`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | blocked | Doctrine data layer | [detail](#the-data-layer-rules-wait-on-a-doctrine-record-binding) |
-| `distinct()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | blocked | `Repeater` | [detail](#the-data-layer-rules-wait-on-a-doctrine-record-binding) |
+| Data-layer family (`unique` / `exists` / `scopedUnique` / `scopedExists` / `uniqueValidationIgnoresRecordByDefault`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | blocked | Doctrine query layer | [detail](#the-data-layer-rules-wait-on-a-doctrine-query-layer) |
+| `distinct()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | blocked | `Repeater` | [detail](#the-data-layer-rules-wait-on-a-doctrine-query-layer) |
 | `mutateStateForValidation()` / `mutatesStateForValidation()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | blocked | schemas state-mutation layer | [detail](#the-validation-state-mutation-hooks-wait-on-schemas) |
 
 Coverage: the trait end to end (required default, `NotBlank` build, the
@@ -122,15 +122,23 @@ seeded with the root), then the comparison constraints and a
 covers the case with a closure constraint reading sibling state through
 `$component->getContainer()`.
 
-### The data-layer rules wait on a Doctrine record binding
+### The data-layer rules wait on a Doctrine query layer
 
 Filament's `unique()` / `exists()` (and their `scoped*` query-builder variants)
 take an Eloquent table/model, and `uniqueValidationIgnoresRecordByDefault()` /
 `distinct()` lean on the panel's record binding and `Repeater` item context.
-Sylament binds no record to a schema yet and ships no `Repeater`. Symfony's
-`UniqueEntity` is the analogue, but it is an **entity-level** constraint that
-needs the managed object rather than a scalar path value. **Blocked** on the
-Doctrine data layer (and, for `distinct()`, on `Repeater`).
+The record binding half of that now exists — a schema binds an entity and a field
+can reach it (`$record`, `getRecordClass()`, see
+[belongs-to-record.md](../schemas/belongs-to-record.md)), so
+`uniqueValidationIgnoresRecordByDefault()` has an id to ignore. What is still
+missing is the **query** layer: a repository/`QueryBuilder` seam a field-level
+constraint can run a lookup through, plus the entity-level route for Symfony's
+`UniqueEntity`, which needs the managed object rather than a scalar path value
+(decided direction:
+[validate the mapped object](../schemas/can-be-validated.md#record-sourced-constraints-validate-the-mapped-object-direction-decided)).
+**Blocked** on that Doctrine query layer (and, for `distinct()`, on `Repeater`).
+Until then the escape hatch covers the case: a closure constraint that queries
+the repository itself.
 
 ### The validation-state mutation hooks wait on schemas
 

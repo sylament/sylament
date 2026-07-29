@@ -16,7 +16,10 @@ in prose here without a status row:
 [`HasStateBindingModifiers`](has-state-binding-modifiers.md) (Schema overrides
 `isLive*()`/`getLiveDebounce()`), the host contract
 [`InteractsWithSchemas`](interacts-with-schemas.md), the bound-host trait
-[`BelongsToLiveComponent`](belongs-to-live-component.md), and the PropertyAccess
+[`BelongsToLiveComponent`](belongs-to-live-component.md), the record binding
+[`BelongsToRecord`](belongs-to-record.md) (both tiers in one file, and the home
+of the `fill()`/`getData()` mapping edges), the operation context
+[`HasOperation`](has-operation.md), and the PropertyAccess
 state backend [`property-accessor.md`](property-accessor.md) — the one place the
 `data_get`/`data_set` → Symfony `PropertyAccess` translation is derived, referenced
 by every state read/write here. From `support` it composes
@@ -47,7 +50,8 @@ their detail sections do.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [Construction + `make()`](../../../packages/schemas/src/Schema.php) | [`Schema::make()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
-| [`resolveDefaultClosureDependencyForEvaluationByName` (`$container`/`$liveComponent`)](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#model-and-record-closure-injection-are-unported) |
+| [`resolveDefaultClosureDependencyForEvaluationByName` (`$container`/`$liveComponent`/`$record`)](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-model-closure-parameter-and-the-model-type-gate-are-dropped) |
+| [`resolveDefaultClosureDependencyForEvaluationByType` (record probe)](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-model-closure-parameter-and-the-model-type-gate-are-dropped) |
 | [alignment factories `start`/`end`/`center`/`between`](../../../packages/schemas/src/Schema.php) | [`Schema::start()` …](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
 | [`isLive`/`isLiveOnBlur`/`isLiveDebounced`/`getLiveDebounce` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | in progress | — | [detail](#the-parent-walk-inheritance-overrides-are-untested) |
 | [`hasGap`/`isDense` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
@@ -59,16 +63,22 @@ their detail sections do.
 | [`CanBeInline`](../../../packages/schemas/src/Concerns/CanBeInline.php) | [`Concerns/CanBeInline.php`](../../../vendor/filament/schemas/src/Concerns/CanBeInline.php) | done | — | — |
 | [`HasComponents`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | in progress | — | [detail](#hascomponents-still-lacks-the-lookup-and-clone-layer) · [diverges](#getcomponents-preserves-the-callers-array-keys-instead-of-reindexing) |
 | [`HasState`](../../../packages/schemas/src/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Concerns/HasState.php) | in progress | — | [detail](#hasstate-still-lacks-constant-state-relationships-and-partial-rendering) · [diverges](#getstate-validates-without-a-prepareforvalidation-mutation-layer) |
+| [`fill(object\|array\|null $state = null)` — the object arm](../../../packages/schemas/src/Concerns/HasState.php) | — | done | — | [belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares) |
+| [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/HasState.php) | — | done | — | [belongs-to-record.md](belongs-to-record.md#reads-are-lenient-writes-are-strict) |
 | [`HasKey`](../../../packages/schemas/src/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Concerns/HasKey.php) | in progress | live-component id | [detail](#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) |
 | [`HasHeadings`](../../../packages/schemas/src/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Concerns/HasHeadings.php) | done | — | — |
 | [`CanModifyActions`](../../../packages/schemas/src/Concerns/CanModifyActions.php) | [`Concerns/CanModifyActions.php`](../../../vendor/filament/schemas/src/Concerns/CanModifyActions.php) | done | — | [diverges](#modifyaction-and-modifyactiongroup-guard-a-callbacks-return-type-at-runtime) |
 
-Beyond the folded concerns, eight of Filament's composed traits are not yet
-ported at all — `BelongsToModel`, `CanBeHidden`, `Cloneable`,
-`HasEntryWrapper`, `HasFieldWrapper`, `HasInlineLabels`, `HasOperation`, and
-support's `HasDefaultDataFormattingSettings` — and earn their own README rows
-as they land. (`CanBeDisabled`, like `CanBeValidated`, is composed and tracked
-in its own file: [can-be-disabled.md](can-be-disabled.md).)
+Beyond the folded concerns, six of Filament's composed traits are not yet
+ported at all — `CanBeHidden`, `Cloneable`, `HasEntryWrapper`,
+`HasFieldWrapper`, `HasInlineLabels`, and support's
+`HasDefaultDataFormattingSettings` — and earn their own README rows as they
+land. (`CanBeDisabled`, `CanBeValidated`, `BelongsToRecord`, and `HasOperation`
+are composed and tracked in their own files:
+[can-be-disabled.md](can-be-disabled.md),
+[can-be-validated.md](can-be-validated.md),
+[belongs-to-record.md](belongs-to-record.md),
+[has-operation.md](has-operation.md).)
 
 ## Details
 
@@ -128,7 +138,10 @@ Schema is the state root; this trait assembles the dehydrated bag. **In** and
 tested (11 unit + 4 integration cases through a real UX LiveComponent, plus the
 validation-path cases in
 [`HasSchemasValidationTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasValidationTest.php)):
-`fill()` → `hydrateState()` → `fillStateWithNull()` → `callAfterStateHydrated()`;
+`fill()` → `hydrateState()` → `fillStateWithNull()` → `callAfterStateHydrated()`,
+including the Sylament-only object arm (`fill($record)` →
+`readStateFromRecord()` → the unchanged array arm — see
+[belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares));
 `getRawState()`/`rawState()` and `statePath()`/`getStatePath()`/`hasStatePath()`
 with the absolute-path cache; and both dehydrated reads — the validating
 `getState(bool $shouldCallHooksBefore = true, ?Closure $afterValidate = null)`
@@ -140,8 +153,10 @@ assembly (`callBeforeStateDehydrated` — guarded by `$shouldCallHooksBefore` �
 and the shared-state-path sibling handling. **Left**, all unported:
 
 - **Constant state** (`state()`/`constantState()`/`getConstantState()`) — the
-  infolist static-state path; **blocked** on the infolists + `BelongsToModel`
-  record epic (the record fallback chain).
+  infolist static-state path; the record fallback chain it reads now exists
+  ([`BelongsToRecord`](belongs-to-record.md)), so it is **blocked** on the
+  infolists epic alone — plus the relationship state paths for its
+  `getStatePathForRelationship()` arm.
 - **The relationship layer** (`saveRelationships()`/
   `loadStateFromRelationships()`) — **blocked** on the Doctrine
   relationship-state epic.
@@ -214,17 +229,21 @@ per-schema partial rendering, the client-side Alpine state object, and client-si
 state reset have no port. Reverses if per-schema partial rendering or client-side
 state reset become goals.
 
-### Model and record closure injection are unported
+### The `$model` closure parameter and the `Model` type gate are dropped
 
-Filament's `resolveDefaultClosureDependencyForEvaluationByName` also resolves the
-`$model`/`$record` closure parameters, and it overrides
-`resolveDefaultClosureDependencyForEvaluationByType` for `Model`/`self` hints.
-Sylament resolves only `$container` (the schema itself) and `$liveComponent` (the
-bound host, read from the raw nullable property so a standalone schema injects
-`null`); the model/record cases and the whole `…ByType` override are dropped
-because `BelongsToModel`/Doctrine record binding is unported. The self/static-type
-identity is instead handled by the base `EvaluatesClosures` own-class mechanism.
-Reverses when `BelongsToModel` lands and the record injection cases are restored.
+By-name resolution now covers `$container` (the schema itself), `$liveComponent`
+(the bound host, read from the raw nullable property so a standalone schema
+injects `null`), and `$record` (`getRecord()`), and the `…ByType` override is
+wired: a parameter whose type the bound record satisfies receives the record.
+Two pieces of Filament's version stay dropped. `$model` — the class-string
+parameter — is not injected, part of the
+[record-only rename](belongs-to-record.md#the-model-closure-parameter-is-not-ported).
+And where Filament gates its by-type probe on `is_a($type, Model::class)`, this
+override probes `$record instanceof $parameterType` because there is no `Model`
+base class to gate on
+([why that is safe](belongs-to-record.md#the-record-type-probe-is-instanceof-not-a-model-gate)).
+The self/static-type identity is still handled by the base `EvaluatesClosures`
+own-class mechanism rather than a `self` arm here.
 
 ### `parentComponent()` accepts null to detach
 

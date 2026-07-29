@@ -63,6 +63,7 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | Host `validateOnly()` per-path validation | [`InteractsWithSchemas::validateOnly()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#sticky-re-validation-replaces-filaments-submit-only-model) |
 | Host `onValidationError()` hook | [`InteractsWithSchemas::onValidationError()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-onvalidationerror-hook-is-not-ported) |
 | Host `getRules()` / `getValidationAttributes()` merges + `prepareForValidation()` | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#the-livewire-whole-component-validate-plumbing-is-not-ported) |
+| Record-sourced constraints (an entity's own `#[Assert]` metadata) | — | todo | — | [detail](#record-sourced-constraints-validate-the-mapped-object-direction-decided) |
 
 Coverage: the walk (path keying, `isNeitherDehydratedNorValidated()` skip
 variants, child-schema recursion) by
@@ -79,6 +80,42 @@ the component-tier flag trio the walk guards on by the component
 (see [`component.md`](component.md)).
 
 ## Details
+
+### Record-sourced constraints validate the mapped object (direction decided)
+
+Now that a schema can bind a record and map state onto it
+([`belongs-to-record.md`](belongs-to-record.md)), the question of what to do
+with constraints an entity already declares — `#[Assert\Length]` on a property,
+`#[UniqueEntity]` on the class — has a decided answer, though no implementation
+yet. **Direction: validate the mapped object, after mapping.** A later epic
+extends `getData()`'s tail to run `ValidatorInterface::validate($record)` and
+fold the violations back into the host error bag by translating each violation's
+property path to the owning component's state path — the Symfony Form idiom
+(map, validate the object, flush only when valid). Class-level constraints come
+free that way, which is the only route by which `UniqueEntity` can ever work: it
+needs the managed object, not a scalar path value.
+
+The alternative — pulling `getMetadataFor($class)` property constraints into the
+per-field [`getValidationConstraints()`](../forms/can-be-validated.md) seam
+before validation — is **rejected**: typed constraints (a `#[Assert\Positive]`
+on an `int` property) misfire against the raw, pre-cast string state a form bag
+holds, and every message would then travel two different pipelines depending on
+where the constraint was declared.
+
+Caveat to carry into that epic, stated now because it is the non-obvious cost of
+this direction: mapping happens *before* the object-level validation, so a
+failing submit leaves the managed entity mutated in Doctrine's identity map even
+though nothing is flushed. Symfony Form has exactly the same property, and the
+escape is the same — `EntityManager::refresh()` on the failure path (or simply
+never flushing and discarding the request's entity manager). Nothing in the M1
+demo needs the feature: the Article entity carries no `#[Assert]` constraints,
+and its unique-slug rule is served today by M1 · 1's escape hatch — a `Callback`
+constraint querying the repository — which doubles as the motivating showcase for
+the object-validation epic.
+
+**Next step:** land it as a `getData()` tail plus a violation-path → state-path
+translator, in the epic that also wants `unique`/`exists` as first-class
+constraints.
 
 ### The onValidationError hook is not ported
 

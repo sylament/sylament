@@ -37,7 +37,7 @@ carries a **diverges** link to [Divergences](#divergences), or `—`.
 | [`prepareAction()` / `prepareActionGroup()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`prepareAction()` / `prepareActionGroup()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | done | — | — |
 | [`hasAction()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`hasAction()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | done | — | — |
 | Affix/extra-item action merging in `cacheActions()` | `cacheActions()` `HasAffixActions`/`HasExtraItemActions` branches | blocked | `HasAffixActions`/`HasExtraItemActions` contracts (forms affix/extra-item actions) | [diverges](#affix-and-extra-item-action-merging-is-not-ported) |
-| `actionSchemaModel()` / `getActionSchemaModel()` | [`actionSchemaModel()` / `getActionSchemaModel()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | blocked | `BelongsToModel` (schemas component-level concern) | [diverges](#actionschemamodel-is-not-ported) |
+| `actionSchemaModel()` / `getActionSchemaModel()` | [`actionSchemaModel()` / `getActionSchemaModel()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | blocked | the action→schema record hop (M1 · 6) | [diverges](#actionschemamodel-is-not-ported) |
 
 ## Divergences
 
@@ -61,9 +61,13 @@ concerns.
 ### `actionSchemaModel()` is not ported
 
 Filament's `actionSchemaModel(Model | string | Closure | null $model)` /
-`getActionSchemaModel()` fall back to `$this->getRecord() ?? $this->getModel()`
-— both supplied by the schemas component-level `BelongsToModel` concern, still
-`todo` in the
-[package README](README.md#component-level-concerns). Neither the property,
-the setter, nor the getter exist on the port. Reverses once `BelongsToModel`
-lands on the schemas `Component`.
+`getActionSchemaModel()` fall back to `$this->getRecord() ?? $this->getModel()`,
+and both of those now exist on the schemas `Component` —
+[`BelongsToRecord`](belongs-to-record.md) supplies `getRecord()` and
+`getRecordClass()`. Neither the property, the setter, nor the getter exist on the
+port, and the consumer does not either: what would read them is the action-side
+hop that seeds a mounted action's schema with a record, deferred to M1 · 6
+([has-actions.md](../actions/has-actions.md#the-per-mount-schema-is-not-seeded-with-a-record-or-an-operation)).
+It lands there, and its naming follows the record-only vocabulary the concern
+already speaks — recorded in [`renames.md`](../renames.md) with the rest of the
+set if the port drops `model` from these two names too.

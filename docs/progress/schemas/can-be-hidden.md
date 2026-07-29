@@ -28,7 +28,7 @@ row is **done**), a **diverges** link to [Divergences](#divergences), or `—`.
 | [`isHidden()` / `isVisible()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`isHidden()` / `isVisible()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | — |
 | [`hiddenWhenAllChildComponentsHidden()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`hiddenWhenAllChildComponentsHidden()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | — |
 | `whenTruthy()` / `whenFalsy()` | [`whenTruthy()` / `whenFalsy()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | todo | — | [detail](#only-the-visibility-core-is-ported) |
-| `hiddenOn()` / `visibleOn()` | [`hiddenOn()` / `visibleOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | blocked | operation concept | [diverges](#operation-scoped-and-state-path-visibility-are-not-ported) |
+| [`hiddenOn()` / `visibleOn()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`hiddenOn()` / `visibleOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | [diverges](#arrwrap-becomes-an-is_array-ternary-never-an-array-cast) |
 | `visibleJs()` / `hiddenJs()` (+ getters) | [`visibleJs()` …](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | blocked | live-component-state | [diverges](#js-visibility-variants-and-the-visibility-cache-are-not-ported) |
 | static visibility cache | [`$visibilityCache` …](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | skipped | — | [diverges](#js-visibility-variants-and-the-visibility-cache-are-not-ported) |
 
@@ -40,10 +40,14 @@ row is **done**), a **diverges** link to [Divergences](#divergences), or `—`.
 `hiddenWhenAllChildComponentsHidden()` are ported and covered by
 [`CanBeHiddenTest`](../../../packages/schemas/tests/Unit/Components/Concerns/CanBeHiddenTest.php)
 (literal and closure `hidden`/`visible`, and the all-hidden / any-visible /
-no-children branches of `hiddenWhenAllChildComponentsHidden`). **Left:**
+no-children branches of `hiddenWhenAllChildComponentsHidden`), and so are
+`hiddenOn()`/`visibleOn()` now that [`HasOperation`](has-operation.md) exists —
+the same suite covers a matching operation string, an
+[`Operation`](../support/README.md) case, a non-matching list, the
+host-class `instanceof` arm, and `visibleOn()`'s inversion. **Left:**
 `whenTruthy()` / `whenFalsy()` — a [`Get`](get.md) state read, unblocked and
-merely not reached yet; `hiddenOn()` / `visibleOn()`, the JS variants, and the
-visibility cache each carry a divergence below. **Next step:** port
+merely not reached yet; the JS variants and the visibility cache carry a
+divergence below. **Next step:** port
 `whenTruthy`/`whenFalsy` now; defer the rest to their prerequisites. Note
 `hiddenWhenAllChildComponentsHidden()` walks `getChildSchemas()` without the
 `withHidden` flag Filament passes — a knock-on of
@@ -64,9 +68,17 @@ wrapper. The cache is a render-time optimization the toolkit works without;
 **skipped**, provisional — revisit if profiling shows repeated `evaluate()` cost
 during a render pass.
 
-### Operation-scoped and state-path visibility are not ported
+### `Arr::wrap` becomes an `is_array()` ternary, never an `(array)` cast
 
-`hiddenOn()` / `visibleOn()` gate on an operation string / instanceof — they need
-the operation concept, not yet ported, so they are **blocked**. `whenTruthy()` /
-`whenFalsy()` gate on a [`Get`](get.md) state read, which exists, so they are
-merely **todo** (unblocked, not reached). All four are wanted for parity.
+`hiddenOn()` / `visibleOn()` accept one operation or a list, and Filament
+normalizes with `Arr::wrap()`. The Symfony translation is
+`is_array($operations) ? $operations : [$operations]` rather than the shorter
+`(array) $operations`, because the parameter also accepts an
+[`Operation`](../support/README.md) enum case and casting an object to an array
+dumps its properties (`['name' => 'Edit', 'value' => 'edit']`) instead of
+wrapping it — a silent mismatch, not an error. The enum case is unwrapped to its
+`->value` inside the loop; everything else, including the `$liveComponent
+instanceof $candidate` host-class arm, is Filament's logic verbatim (`instanceof`
+against a non-class string like `'create'` is `false`, not an error).
+`disabledOn()` in [can-be-disabled.md](can-be-disabled.md) carries the same body
+and the same note.

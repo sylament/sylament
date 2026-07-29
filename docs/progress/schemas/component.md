@@ -42,13 +42,13 @@ only their detail sections do.
 | --- | --- | --- | --- | --- |
 | [Trait composition](../../../packages/schemas/src/Components/Component.php) | [`Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) | in progress | — | [detail](#trait-composition-ports-a-subset-of-filaments) |
 | [`evaluationIdentifier = 'component'`](../../../packages/schemas/src/Components/Component.php) | [`Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) | done | — | — |
-| [`resolveDefaultClosureDependencyForEvaluationByName`](../../../packages/schemas/src/Components/Component.php) (get/set/state/rawState/liveComponent) | [`Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) | in progress | — | [detail](#the-by-name-closure-dependency-map-is-a-subset) |
-| [`resolveDefaultClosureDependencyForEvaluationByType`](../../../packages/schemas/src/Components/Component.php) (Get/Set/Model) | [`Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) | todo | — | [diverges](#type-based-closure-resolution-for-getsetmodel-is-not-wired-at-the-schemas-component) |
+| [`resolveDefaultClosureDependencyForEvaluationByName`](../../../packages/schemas/src/Components/Component.php) (get/set/state/rawState/liveComponent/record/operation/context) | [`Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) | in progress | repeaters | [detail](#the-by-name-closure-dependency-map-is-missing-one-key) |
+| [`resolveDefaultClosureDependencyForEvaluationByType`](../../../packages/schemas/src/Components/Component.php) (Get/Set/record) | [`Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) | done | — | [diverges](#type-based-closure-resolution-probes-the-record-instead-of-gating-on-model) |
 | [`getExtraTemplateData()` override](../../../packages/schemas/src/Components/Component.php) | [`getExtraViewData()`](../../../vendor/filament/schemas/src/Components/Component.php) | todo | — | [detail](#getextratemplatedata-is-not-overridden) |
 | [`toSchemaHtml()` render wrapper](../../../packages/schemas/src/Components/Component.php) | [`toSchemaHtml()`](../../../vendor/filament/schemas/src/Components/Component.php) | blocked | live-component-state | [diverges](#the-livewirealpine-render-wrapper-toschemahtml-is-not-ported) |
 | [`renderWrapperBladeComponent()`](../../../packages/schemas/src/Components/Component.php) | [`renderWrapperBladeComponent()`](../../../vendor/filament/schemas/src/Components/Component.php) | skipped | — | [diverges](#the-livewirealpine-render-wrapper-toschemahtml-is-not-ported) |
 | [`viewIdentifier = 'schemaComponent'`](../../../packages/schemas/src/Components/Component.php) | [`Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) | todo | — | [detail](#viewidentifier-is-not-set) |
-| [`BelongsToContainer`](../../../packages/schemas/src/Components/Concerns/BelongsToContainer.php) | [`Concerns/BelongsToContainer.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToContainer.php) | in progress | — | [detail](#belongstocontainer-getmodelrootcontainer-awaits-belongstomodel), [diverges](#belongstocontainer-gains-a-sylament-only-getlivecomponentornull-peek) |
+| [`BelongsToContainer`](../../../packages/schemas/src/Components/Concerns/BelongsToContainer.php) | [`Concerns/BelongsToContainer.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToContainer.php) | in progress | Doctrine relationship-state epic | [detail](#belongstocontainer-getmodelrootcontainer-awaits-its-consumer), [diverges](#belongstocontainer-gains-a-sylament-only-getlivecomponentornull-peek) |
 | [`HasChildComponents`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | [`Concerns/HasChildComponents.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php) | in progress | — | [detail](#haschildcomponents-only-the-materialization-core-is-ported) |
 | [`HasId`](../../../packages/schemas/src/Components/Concerns/HasId.php) | [`Concerns/HasId.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasId.php) | done | — | — |
 | [`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | in progress | — | [detail](#hasstate-the-getset-core-and-validation-flags-are-in-relationship-and-partial-render-state-are-out) · [semantics](#dehydration-prunes-around-shared-state-paths-and-pathless-components) |
@@ -64,35 +64,43 @@ divergence it earned stay behind.
 ### Trait composition ports a subset of Filament's
 
 `evaluationIdentifier = 'component'` is set, and the composed set covers
-container/child/identity/visibility/heading/state plus the shared column and gap
-concerns — enough to drive Section and the forms `Field` slots. Left: the 15+
-Filament traits not yet on the base — `BelongsToModel`, `CanBeConcealed`,
-`CanBeDisabled`, `CanBeGridContainer`, `CanBeLiberatedFromContainerGrid`,
-`CanBeRepeated`, `CanPartiallyRender`, `CanPoll`, `Cloneable`, `HasActions`,
+container/child/identity/visibility/heading/state plus the
+[record binding](belongs-to-record.md), actions, and the shared column and gap
+concerns — enough to drive Section and the forms `Field` slots. Left: the
+Filament traits not yet on the base — `CanBeConcealed`,
+`CanBeGridContainer`, `CanBeLiberatedFromContainerGrid`,
+`CanBeRepeated`, `CanPartiallyRender`, `CanPoll`, `Cloneable`,
 `HasEntryWrapper`, `HasFieldWrapper`, `HasInlineLabel`, `HasMaxWidth`,
 `HasMeta` — each of which has its own row in the
 [schemas README](README.md) and lands with its own epic. Next step: compose them
 as their concerns are audited; nothing here blocks the already-composed set.
 
-### The by-name closure-dependency map is a subset
+### The by-name closure-dependency map is missing one key
 
 `resolveDefaultClosureDependencyForEvaluationByName` resolves `$get`, `$set`,
-`$state`, `$rawState`, and `$liveComponent` (Filament's `livewire` key), all
+`$state`, `$rawState`, `$liveComponent` (Filament's `livewire` key), `$record`
+([`BelongsToRecord`](belongs-to-record.md)), and `$operation`/`$context`
+([`HasOperation`](has-operation.md), resolved through the container and
+[guarded](has-operation.md#the-injection-arm-is-guarded-so-a-detached-component-still-evaluates)),
 tested end to end by
-[`ComponentTest`](../../../packages/schemas/tests/Unit/Components/ComponentTest.php).
-Left: Filament also keys `context`/`operation`, `model`, `record`, and
-`parentRepeaterItemIndex` — each gated on an unported concern (`BelongsToModel`,
-the operation concept, repeaters). Next step: add each key in the change that
-lands its backing concern.
+[`ComponentTest`](../../../packages/schemas/tests/Unit/Components/ComponentTest.php)
+and the two concerns' own suites. Left: `parentRepeaterItemIndex` only, gated on
+repeaters. Filament's `model` key is deliberately absent, not pending — see
+[the dropped parameter](belongs-to-record.md#the-model-closure-parameter-is-not-ported).
+Next step: add the repeater key with `CanBeRepeated`.
 
 ### `getExtraTemplateData()` is not overridden
 
 Filament's `getExtraViewData()` seeds the template with `get`, `operation`, and
-`record`. Sylament's `ViewComponent` carries the `getExtraTemplateData()` hook,
-but this class does not override it yet, so those three are not exposed to the
-template. Next step: override once `operation` (an operation concept) and
-`record` (`BelongsToModel`) exist; `get` can be exposed immediately if a template
-needs it.
+`record`. All three values are now reachable (`makeGetUtility()`,
+`getContainer()->getOperation()`, `getRecord()`), so this is no longer a
+prerequisite question but a policy one: the hook
+[stays minimal](../support/view-component.md) — only values a template cannot
+get from a single getter call belong in it, and `component.getRecord` /
+`component.getContainer.getOperation` are single getter calls. Next step:
+override only when a shipped template actually needs one of them and reading it
+inline would be worse; `get`, which is not a getter on the component, is the
+likeliest first entry.
 
 ### `viewIdentifier` is not set
 
@@ -101,16 +109,20 @@ does not declare it, because the property only matters to the unported
 `toSchemaHtml` wrapper and the wrapper-view identity it drives. Next step: set it
 in the same change that lands the render wrapper.
 
-### BelongsToContainer: getModelRootContainer() awaits BelongsToModel
+### BelongsToContainer: getModelRootContainer() awaits its consumer
 
 `container()` / `getContainer()` / `getRootContainer()` (byte-identical to
 Filament) and `getLiveComponent()` (Filament's `getLivewire()`) are ported and
 tested by
 [`BelongsToContainerTest`](../../../packages/schemas/tests/Unit/Components/Concerns/BelongsToContainerTest.php)
 and `ComponentTest`'s `$liveComponent` case. Left: `getModelRootContainer()`,
-which walks the parent chain comparing `getModel()`/`getRecord()` — it is
-`@internal` in Filament but wanted for parity. Next step: port it with
-`BelongsToModel`, which supplies `getModel()`/`getRecord()`.
+which walks the parent chain looking for the outermost container bound to the
+same record — `@internal` in Filament but wanted for parity. The getters it
+compares now exist ([`BelongsToRecord`](belongs-to-record.md) supplies
+`getRecordClass()`/`getRecord()`), so what it waits on is its consumer:
+Filament's only callers are the relationship-entangling components, so it lands
+with the Doctrine relationship-state epic and would otherwise be untested dead
+code. Next step: port it there, renamed off the `model` vocabulary with the rest.
 
 ### HasChildComponents: only the materialization core is ported
 
@@ -217,15 +229,20 @@ polling, JS visibility). It returns in the epic that lands
 `renderWrapperBladeComponent()` (a Blade back-compat shim for
 `x-dynamic-component` wrappers) is **skipped** — a non-goal even then.
 
-### Type-based closure resolution for Get/Set/Model is not wired at the schemas Component
+### Type-based closure resolution probes the record instead of gating on `Model`
 
-Filament also overrides `resolveDefaultClosureDependencyForEvaluationByType` to
-inject `Get`/`Set` by type-hint and `Model`/`$record::class` for the record.
-Sylament overrides only the by-name variant, so `fn (Get $get) => …` /
-`fn (Set $set) => …` type-hints are not resolved (only the `$get`/`$set` *names*
-are). The [`Get`](get.md)/[`Set`](set.md) utilities exist, so wiring the by-type
-override for them is a straightforward follow-up; `Model`/`$record` injection
-additionally waits on `BelongsToModel`.
+`resolveDefaultClosureDependencyForEvaluationByType` is wired — the codebase's
+first `…ByType()` override, alongside [`Schema`](schema.md)'s — so
+`fn (Get $reader) => …`, `fn (Set $writer) => …` and `fn (Article $record) => …`
+all resolve by type-hint, not only by the `$get`/`$set`/`$record` *names*. It
+diverges in the record arm: Filament resolves `Model::class` and `$record::class`
+behind an `is_a($type, Model::class)` gate, and there is no `Model` base class
+here, so the exact `Get::class`/`Set::class` arms are matched first and the
+record is then probed with
+[`$record instanceof $parameterType`](belongs-to-record.md#the-record-type-probe-is-instanceof-not-a-model-gate)
+— which additionally covers parent classes, interfaces, and Doctrine proxies.
+Filament's `self`/`static` arm has no counterpart: the base `EvaluatesClosures`
+own-class mechanism already injects the evaluating instance.
 
 ### The child-schema caching and clone layer is not ported
 

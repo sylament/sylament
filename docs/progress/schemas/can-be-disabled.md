@@ -8,7 +8,7 @@ on `Schema` and
 on the base `Component`. The component-level trait also couples `disabled()`
 to `saved()` ({@see HasState}) so a disabled field drops out of `getState()`.
 
-**Status:** in progress — see the
+**Status:** done — see the
 [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -24,15 +24,16 @@ Reference — the Filament source this is diffed against:
 | --- | --- | --- | --- | --- |
 | [`Schema::disabled()` / `isDisabled()` / `isEnabled()`](../../../packages/schemas/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Concerns/CanBeDisabled.php) | done | — | — |
 | [`Component::disabled()` / `isDisabled()` / `isEnabled()`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`Components/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | — | — |
-| `Component::disabledOn()` | [`disabledOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | blocked | operation concept | [diverges](#disabledon-is-not-ported) |
+| [`Component::disabledOn()`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`disabledOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | — | [diverges](can-be-hidden.md#arrwrap-becomes-an-is_array-ternary-never-an-array-cast) |
 
-Both **done** rows are covered by
+All three rows are covered by
 [`Unit/Concerns/CanBeDisabledTest`](../../../packages/schemas/tests/Unit/Concerns/CanBeDisabledTest.php)
 and
 [`Unit/Components/Concerns/CanBeDisabledTest`](../../../packages/schemas/tests/Unit/Components/Concerns/CanBeDisabledTest.php)
 — defaults, literal and closure conditions, inheritance from the parent
-component / container, and the `saved()` coupling that keeps a disabled field out
-of `getState()`. The **rendering** half lives in forms, not schemas: both shipped
+component / container, the `saved()` coupling that keeps a disabled field out
+of `getState()`, and `disabledOn('edit')` against the container's
+[operation](has-operation.md). The **rendering** half lives in forms, not schemas: both shipped
 field templates emit the native attribute from `component.isDisabled`
 ([`TextInput.html.twig:15`](../../../packages/forms/templates/partials/TextInput/index.html.twig),
 [`Textarea.html.twig:14`](../../../packages/forms/templates/partials/Textarea/index.html.twig)),
@@ -44,13 +45,8 @@ Filament's security note on `disabled()` carries over unchanged: disabling
 prevents saving, but a client can bypass the attribute — authorization belongs on
 the server.
 
-## Divergences
-
-### `disabledOn()` is not ported
-
-Filament's component-level `disabledOn()` gates `disabled()` on an operation
-string/instanceof, mirroring `CanBeHidden`'s `hiddenOn()` /
-[`visibleOn()`](can-be-hidden.md#operation-scoped-and-state-path-visibility-are-not-ported).
-Schemas has no `Operation` concept yet, so it is **blocked** on the same
-prerequisite, for the same reason — wanted for parity, revisit once an
-operation concept lands.
+`disabledOn()` is `CanBeHidden`'s `hiddenOn()`/`visibleOn()` body over
+`disabled()`, so its one translation — the `Arr::wrap` normalization that must
+not be an `(array)` cast — is written up once, in
+[can-be-hidden.md](can-be-hidden.md#arrwrap-becomes-an-is_array-ternary-never-an-array-cast),
+and linked from the row here.

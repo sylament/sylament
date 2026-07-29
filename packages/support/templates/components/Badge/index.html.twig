@@ -1,0 +1,55 @@
+{% props
+    tag = 'span',
+    type = 'button',
+    href = null,
+    target = null,
+    formId = null,
+    disabled = false,
+
+    size = 'md',
+    color = 'primary',
+
+    icon = null,
+    iconAlias = null,
+    iconSize = null,
+    iconPosition = 'before',
+
+    labelSrOnly = false,
+    content = markup(block('content') ?? null)
+%}
+
+{% set knownSizes = ['xs', 'sm', 'md', 'lg', 'xl'] %}
+{% set sizeValue = size.value ?? size %}
+{% set colorName = color is iterable or color is empty ? 'gray' : color %}
+{% set iconPositionValue = iconPosition.value ?? iconPosition %}
+{% set iconHtml = icon ? generateIconHtml(icon, iconAlias, size: iconSize ?? 'sm') : null %}
+{% set ariaLabel = labelSrOnly ? (content ?? '')|striptags|trim : null %}
+
+<{{ tag }}
+    {{ attributes.defaults({
+        class: classes('sy sy-badge', {
+            'sy-disabled': disabled,
+            ('sy-size-' ~ sizeValue): sizeValue in knownSizes,
+            (sizeValue ?? ''): sizeValue is not empty and sizeValue not in knownSizes,
+            'sy-color': colorName != 'gray',
+            ('sy-color-' ~ colorName): colorName != 'gray',
+        }),
+        'aria-disabled': disabled ? 'true' : false,
+        'aria-label': ariaLabel ?: false,
+        disabled: disabled and tag == 'button',
+        form: tag == 'button' and formId ? formId : false,
+        href: tag == 'a' and href ? href : false,
+        target: tag == 'a' and target == '_blank' ? '_blank' : false,
+        type: tag == 'button' ? type : false,
+    }) }}
+>
+    {%- if iconHtml and iconPositionValue == 'before' -%}
+        {{ iconHtml }}
+    {%- endif -%}
+    {%- if not labelSrOnly -%}
+        <span class="sy-badge-label-ctn"><span class="sy-badge-label">{{- content -}}</span></span>
+    {%- endif -%}
+    {%- if iconHtml and iconPositionValue == 'after' -%}
+        {{ iconHtml }}
+    {%- endif -%}
+</{{ tag }}>

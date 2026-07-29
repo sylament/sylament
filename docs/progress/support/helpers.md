@@ -4,9 +4,10 @@
 functions (composer `files` autoload, imported with `use function`). It ports
 Filament's own `helpers.php` **and** the Laravel global helpers Filament's file
 leans on but never defines (`blank()`, `filled()`, `Arr::wrap()`) — Sylament has
-no Laravel runtime, so they are reimplemented here. Today one Filament helper is
-ported (`generate_icon_html`) plus those three Laravel foundations; the rest of
-Filament's `helpers.php` surface is not built yet.
+no Laravel runtime, so they are reimplemented here. Today the file holds only
+those three Laravel foundations; every function in it is pure, and that is now
+an invariant — see [the divergence below](#generate_icon_html-moved-to-the-twig-extension).
+The rest of Filament's `helpers.php` surface is not built yet.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -14,8 +15,7 @@ Filament's `helpers.php` surface is not built yet.
 Reference — the Filament source this is diffed against:
 
 - [`support/src/helpers.php`](../../../vendor/filament/support/src/helpers.php)
-  — the Filament helper set (`generate_icon_html` and the fifteen not-yet-ported
-  functions below)
+  — the Filament helper set (the sixteen functions tracked below)
 - [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php)
   — Laravel's `blank()` / `filled()`, which Filament's file consumes
 - [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php)
@@ -33,7 +33,7 @@ write-up in [Details](#details), and/or **diverges** → the permanent note in
 | [`blank()`](../../../packages/support/src/helpers.php) | [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php) | done | — | [diverges](#blank-gives-markup-text-semantics-despite-its-countable-count) |
 | [`filled()`](../../../packages/support/src/helpers.php) | [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php) | done | — | — |
 | [`wrap()`](../../../packages/support/src/helpers.php) | [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
-| [`generate_icon_html()`](../../../packages/support/src/helpers.php) | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | done | — | [diverges](#decorative-icon-defaults-rely-on-ux-icons-not-on-bundled-icon-sets) |
+| `generate_icon_html()` — lives on [`IconExtension`](../../../packages/support/src/Twig/Extension/IconExtension.php) | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | done | — | [diverges](#generate_icon_html-moved-to-the-twig-extension) · [diverges](#decorative-icon-defaults-rely-on-ux-icons-not-on-bundled-icon-sets) |
 | `format_money()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `format_number()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `get_model_label()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
@@ -55,10 +55,10 @@ write-up in [Details](#details), and/or **diverges** → the permanent note in
 Specifics for the rows that are not finished. The four `done` rows are covered
 by [`tests/Unit/HelpersTest.php`](../../../packages/support/tests/Unit/HelpersTest.php)
 (`blank`/`filled` valueless-vs-meaningful data sets, the Markup text-semantics
-case, the `wrap` cases, and the full `generate_icon_html` matrix) and
-[`tests/Integration/HelpersTest.php`](../../../packages/support/tests/Integration/HelpersTest.php)
-(`generate_icon_html` through the real ux-icons renderer); they carry no
-write-up here.
+case, and the `wrap` cases) and, for the icon row,
+[`tests/Unit/Twig/Extension/IconExtensionTest.php`](../../../packages/support/tests/Unit/Twig/Extension/IconExtensionTest.php)
+plus [its Integration counterpart](../../../packages/support/tests/Integration/Twig/Extension/IconExtensionTest.php)
+against the real ux-icons renderer; they carry no write-up here.
 
 ### The rest of Filament's `helpers.php`
 
@@ -88,10 +88,34 @@ row-flip here when it lands.
 
 ## Divergences
 
+### `generate_icon_html()` moved to the Twig extension
+
+Filament defines it as a global function that reaches the icon registry through
+the `FilamentIcon` facade. Ported literally, that made
+[`IconManager`](icon-manager.md) a static instance for one reason: a free
+function has no `$this`, so the registry could only arrive globally. The single
+caller in `src/` was always
+[`IconExtension`](../../../packages/support/src/Twig/Extension/IconExtension.php),
+a service — so the body now lives there with the manager constructor-injected,
+and the free function is gone. `IconManager` is a plain service again.
+
+Nothing consumer-facing moves: templates call the Twig function
+`generateIconHtml`, whose name and arguments are unchanged. Only a PHP caller of
+`Sylament\Support\generate_icon_html()` would notice, and there was never one
+outside this repo's own tests. The knock-on is that registering icon aliases is
+now service-only — `$container->get(IconManager::class)->register([...])`
+instead of `IconManager::getInstance()`, which is what a Symfony app would reach
+for anyway.
+
+This leaves every function in `helpers.php` pure. Keep it that way: a helper
+that needs a service is a sign it belongs on the service, and the next Filament
+helper that reaches for a facade (`get_component_color_classes()` will) gets the
+same treatment rather than a second static instance.
+
 ### Decorative-icon defaults rely on ux-icons, not on bundled icon sets
 
 An unnamed icon must end up decorative on **both** render branches, and only one
-of those branches lives in this file. The image branch is ours: `generate_icon_html()`
+of those branches is ours: the image branch, where `generateIconHtml()`
 merges `alt=""` unless the caller set `alt`, `aria-label`, or `aria-labelledby`.
 The SVG branch is not — Filament gets its `aria-hidden` from the icon sets it
 ships, while Sylament renders through [`IconManager`](icon-manager.md) onto

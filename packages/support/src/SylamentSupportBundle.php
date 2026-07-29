@@ -107,6 +107,7 @@ class SylamentSupportBundle extends SylamentBundle
 
         $services
             ->set('sylament_support.icon_extension', IconExtension::class)
+            ->autowire()
             ->tag('twig.extension');
 
         $services

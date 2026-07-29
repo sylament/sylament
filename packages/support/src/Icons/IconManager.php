@@ -6,16 +6,12 @@ namespace Sylament\Support\Icons;
 
 use BackedEnum;
 use LogicException;
-use Sylament\Support\DependencyInjection\Concerns\HasStaticInstance;
-use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Symfony\UX\Icons\IconRendererInterface;
 use Symfony\UX\Icons\UXIconsBundle;
 use Twig\Markup;
 
-class IconManager implements StaticInstance
+class IconManager
 {
-    use HasStaticInstance;
-
     /**
      * @var array<string, string|BackedEnum|Markup>
      */

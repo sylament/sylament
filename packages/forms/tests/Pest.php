@@ -10,7 +10,6 @@ use Sylament\Schemas\Schema;
 use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\DependencyInjection\ComponentResolver;
-use Sylament\Support\Icons\IconManager;
 
 pest()
     ->extend(TestCase::class)
@@ -19,7 +18,6 @@ pest()
 pest()
     ->afterEach(function (): void {
         ComponentManager::unsetInstance();
-        IconManager::unsetInstance();
         ComponentResolver::unsetInstance();
     })
     ->in('Unit');

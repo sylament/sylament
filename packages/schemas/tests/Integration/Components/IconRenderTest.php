@@ -44,8 +44,10 @@ it('forwards extra attributes into the icon markup', function (): void {
 });
 
 it('resolves a registered alias', function (): void {
-    $this::getContainer();
-    IconManager::getInstance()->register(['test.alias' => 'heroicons:x-mark']);
+    $icons = $this::getContainer()->get(IconManager::class);
+
+    expect($icons)->toBeInstanceOf(IconManager::class);
+    $icons->register(['test.alias' => 'heroicons:x-mark']);
 
     expect(renderIcon(['alias' => 'test.alias']))->toContain('<svg');
 });

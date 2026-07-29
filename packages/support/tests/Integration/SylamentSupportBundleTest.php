@@ -9,6 +9,7 @@ use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\Tests\Fixtures\DependencyInjection\StaticInstanceFixture;
+use Sylament\Support\Twig\Extension\IconExtension;
 
 it('exposes the static instance registry as a public service', function (): void {
     expect($this::getContainer()->get(StaticInstanceRegistry::class))
@@ -35,11 +36,15 @@ it('provides the component manager as the resolved singleton', function (): void
         ->and(ComponentManager::getInstance())->toBe($manager);
 });
 
-it('provides the icon manager as a booted static instance', function (): void {
-    $manager = $this::getContainer()->get(IconManager::class);
+it('provides the icon manager as a service', function (): void {
+    expect($this::getContainer()->get(IconManager::class))->toBeInstanceOf(IconManager::class);
+});
 
-    expect($manager)->toBeInstanceOf(IconManager::class)
-        ->and(IconManager::getInstance())->toBe($manager);
+it('injects the icon manager into the icon extension', function (): void {
+    $extension = $this::getContainer()->get('sylament_support.icon_extension');
+
+    expect($extension)->toBeInstanceOf(IconExtension::class)
+        ->and($extension->generateIconHtml('heroicons:x-mark'))->not->toBeNull();
 });
 
 it('renders icons from the fixture icon directory through the ux-icons renderer', function (): void {

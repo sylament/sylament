@@ -26,17 +26,21 @@
 
 {% set extraAttributes = component.getExtraAttributeBag.toScalarAttributes %}
 {% set rootClasses = classes('sy-ac', extraAttributes.class ?? null) %}
-{% component 'SylamentSupport:IconButton' with {
-    icon: component.getIcon,
-    label: component.getLabel ?? component.getName,
-    color: component.getColor,
-    size: component.getSize ?? 'md',
-    iconSize: component.getIconSize,
-    disabled: component.isDisabled,
-    tag: component.getUrl ? 'a' : 'button',
-    href: component.getUrl,
-    target: component.shouldOpenUrlInNewTab ? '_blank' : null,
-    type: component.canSubmitForm ? 'submit' : 'button',
-    formId: component.getFormId,
-    ...(component.getTooltip ? {title: component.getTooltip} : {}),
-}|merge(extraAttributes)|merge({class: rootClasses})|merge(mountAttributes)|merge(closeAttributes) %}{% endcomponent %}
+<twig:SylamentSupport:IconButton
+    :icon="component.getIcon"
+    :iconSize="component.getIconSize"
+    :label="component.getLabel ?? component.getName"
+    :color="component.getColor"
+    :size="component.getSize ?? 'md'"
+    :disabled="component.isDisabled"
+    :tag="component.getUrl ? 'a' : 'button'"
+    :href="component.getUrl"
+    :target="component.shouldOpenUrlInNewTab ? '_blank' : null"
+    :type="component.canSubmitForm ? 'submit' : 'button'"
+    :formId="component.getFormId"
+    {{ ...(component.getTooltip ? {title: component.getTooltip} : {}) }}
+    {{ ...extraAttributes }}
+    class="{{ rootClasses }}"
+    {{ ...mountAttributes }}
+    {{ ...closeAttributes }}
+/>

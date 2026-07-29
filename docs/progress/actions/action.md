@@ -698,10 +698,10 @@ plus
 compose the support
 [`IconButton`](../../../packages/support/templates/components/IconButton/index.html.twig)
 and [`Button`](../../../packages/support/templates/components/Button/index.html.twig)
-primitives through the `{% component %}` tag (the only syntax that can spread a
-computed attribute map), building their mount wiring with
-`stimulus_action('live', 'action', …).toArray()` — byte-equivalent to what
-`live_action()` emits. All five are exercised by
+primitives as `<twig:>` tags, building their mount wiring with
+`stimulus_action('live', 'action', …).toArray()` and spreading it into the tag
+with `{{ ...map }}` — byte-equivalent to what `live_action()` emits inline. All
+five are exercised by
 [`ActionViewVariantsRenderTest`](../../../packages/actions/tests/Integration/ActionViewVariantsRenderTest.php)
 / [`ActionRenderTest`](../../../packages/actions/tests/Integration/ActionRenderTest.php)
 / [`ActionGroupRenderTest`](../../../packages/actions/tests/Integration/ActionGroupRenderTest.php).

@@ -27,20 +27,24 @@
 
 {% set extraAttributes = component.getExtraAttributeBag.toScalarAttributes %}
 {% set rootClasses = classes('sy-ac', {'sy-outlined': component.isOutlined}, extraAttributes.class ?? null) %}
-{% component 'SylamentSupport:Button' with {
-    icon: component.getIcon,
-    iconSize: component.getIconSize,
-    iconPosition: component.getIconPosition,
-    color: component.getColor,
-    size: component.getSize ?? 'md',
-    disabled: component.isDisabled,
-    tag: component.getUrl ? 'a' : 'button',
-    href: component.getUrl,
-    target: component.shouldOpenUrlInNewTab ? '_blank' : null,
-    type: component.canSubmitForm ? 'submit' : 'button',
-    formId: component.getFormId,
-    ...(component.getTooltip ? {title: component.getTooltip} : {}),
-    ...(component.isLabelHidden ? {'aria-label': (component.getLabel ?? component.getName)|striptags|trim} : {}),
-}|merge(extraAttributes)|merge({class: rootClasses})|merge(mountAttributes)|merge(closeAttributes) %}
-    {%- block content %}{% if not component.isLabelHidden %}{{ component.getLabel ?? component.getName }}{% endif %}{% endblock content -%}
-{% endcomponent %}
+<twig:SylamentSupport:Button
+    :icon="component.getIcon"
+    :iconSize="component.getIconSize"
+    :iconPosition="component.getIconPosition"
+    :color="component.getColor"
+    :size="component.getSize ?? 'md'"
+    :disabled="component.isDisabled"
+    :tag="component.getUrl ? 'a' : 'button'"
+    :href="component.getUrl"
+    :target="component.shouldOpenUrlInNewTab ? '_blank' : null"
+    :type="component.canSubmitForm ? 'submit' : 'button'"
+    :formId="component.getFormId"
+    {{ ...(component.getTooltip ? {title: component.getTooltip} : {}) }}
+    {{ ...(component.isLabelHidden ? {'aria-label': (component.getLabel ?? component.getName)|striptags|trim} : {}) }}
+    {{ ...extraAttributes }}
+    class="{{ rootClasses }}"
+    {{ ...mountAttributes }}
+    {{ ...closeAttributes }}
+>
+    <twig:block name="content">{%- if not component.isLabelHidden %}{{ component.getLabel ?? component.getName }}{% endif -%}</twig:block>
+</twig:SylamentSupport:Button>

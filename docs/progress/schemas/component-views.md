@@ -56,8 +56,9 @@ header/footer slots, or `Actions/index.html.twig` — resolves actions' own
 friends), which only that bundle's registration makes loadable:
 [`ActionsRenderTest`](../../../packages/schemas/tests/Integration),
 `HtmlRenderTest`, `IconComponentRenderTest`, `SchemaRenderTest`,
-`SectionRenderTest`, `TextRenderTest`. Architecture/`TemplateConventionsTest`
-guards all bundle templates against `html_attr()` / `html_classes()`.
+`SectionRenderTest`, `TextRenderTest`. The `html_attr()` / `html_classes()` ban
+is guarded across every bundle by Twig-CS-Fixer's `ForbiddenFunctionRule`, wired
+in [`.twig-cs-fixer.dist.php`](../../../.twig-cs-fixer.dist.php).
 
 ## Details
 

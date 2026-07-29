@@ -32,6 +32,42 @@ Porting state lives in `docs/progress/` — read `docs/progress/README.md` first
 - **Working in a git worktree** (the default for agent-run implementation work): a worktree has no `vendor/` and no `node_modules`, and the root `composer.lock` is deliberately uncommitted — so each worktree needs its own `composer install` (a fresh floating resolution, which can pull newer dev tools than the main checkout has) and, if it touches assets, its own `pnpm install`. Both work; budget the setup time rather than avoiding worktrees. Pin the base at creation (`git worktree add <path> -b <lane-branch> <sha>`) — worktrees otherwise spawn from `main`, which may be behind an in-flight epic. Two env traps, both PHPStan: a stale `vendor/phpstan` can bake in a deleted worktree's absolute path (reinstall fixes it), and the `$TMPDIR` PHPStan cache is *shared* across worktrees, so clear `$TMPDIR/phpstan` and `$TMPDIR/cache/PHPStan` on internal errors. Keep lanes file-disjoint (progress-doc tables are the usual conflict magnet) and let one lane own the `assets/dist` rebuild at close-out.
 - Each push to `main` (and each tag) is split out to per-package read-only repos under the `sylament` org by the `split-monorepo` job in `.github/workflows/ci.yml`; the split runs only after the `php` and `assets` gate jobs pass (the definition-of-done gates, plus a check that the committed `assets/dist` matches a fresh build). Keep each package self-contained so the split stays valid. Split-repo tests can't run standalone (the Pest bootstrap needs the root vendor) — accepted, since each package's `.gitattributes` export-ignores `/tests` from dist archives anyway.
 
+## The peer demo app (showcase + browser verification)
+
+A separate Symfony app in a sibling checkout at `../demo` — its own git repo
+(`main`, conventional commits like `feat(showcase): …`), **not** part of this
+monorepo. It consumes the bundles through Composer path repositories
+(`../sylament`, `../sylament/packages/*`) requiring `sylament/sylament: @dev` —
+**symlinked**, so monorepo code changes are live there instantly; only a
+sub-package `composer.json` change needs a `composer update "sylament/*"` over
+there. Milestones prove out here (see `docs/progress/roadmap.md`).
+
+- **Layout.** One showcase page per package at `/showcase/{package}`
+  (`App\Showcase\ShowcasePackage` enum drives the nav; `isBuilt()` routes
+  unbuilt packages to `stub.html.twig`). Each page
+  (`templates/pages/showcase/<package>.html.twig`) lists **cards** — one live
+  component per feature cluster under
+  `src/Twig/Components/Showcase/<Package>/`, declared
+  `#[AsLiveComponent(template: 'components/Showcase/LiveCard.html.twig')] final
+  class X extends App\Showcase\ShowcaseCard` (abstract `title()`/`schema()`,
+  optional `description()`, a writable `$data` bag, `mount()` fills). `/` is
+  the Playground — a hand-poking scratchpad whose actions `dd()` on purpose,
+  outside the card discipline.
+- **Keep the showcase current — treat it like the docs trail.** The showcase
+  demonstrates every user-facing feature sylament ships: a feature lands with
+  a card (new or extended) on its package's page in the same epic, each page's
+  closing "Not built yet" footnote names the remaining gaps with their roadmap
+  epic, and card `description()`s that reference unbuilt features must be
+  updated when those features land. Stale cards, descriptions, or footnotes
+  are bugs, same as stale progress tables.
+- **Browser verification.** The demo is the rig for verifying features in a
+  real browser (the forms-in-modals and M1 · 1 epics set the precedent). Run it
+  with `task up` (Taskfile: docker-compose Postgres + `symfony server:start -d`
+  + proxy → `https://localhost:8000`); `task css:watch` rebuilds Tailwind
+  (`symfony console tailwind:build`). It carries its own functional suite under
+  `tests/Functional/Showcase/` (routes + per-page smoke) — keep it green when
+  touching showcase pages.
+
 ## Commands
 
 PHP (run from repo root):
@@ -95,5 +131,6 @@ Two deliberate omissions, so their absence reads as a decision rather than an ov
 - `composer test` green (Pest + Rector dry-run + PHPStan max + Twig-CS-Fixer lint).
 - `pnpm test:types` and `pnpm test:lint` green.
 - `composer format` applied; no hand-formatting.
+- An epic shipping user-facing surface updates the [peer demo's showcase](#the-peer-demo-app-showcase--browser-verification) — cards, descriptions, and "Not built yet" footnotes — before its roadmap row flips.
 
 _Keep this file current. When commands, conventions, architecture, or gates change, update the relevant section in the same change._

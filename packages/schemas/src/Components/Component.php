@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components;
 
 use Sylament\Schemas\Components\Concerns\BelongsToContainer;
+use Sylament\Schemas\Components\Concerns\BelongsToRecord;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Schemas\Components\Concerns\CanBeDisabled;
 use Sylament\Schemas\Components\Concerns\CanBeHidden;
@@ -17,6 +18,8 @@ use Sylament\Schemas\Components\Concerns\HasId;
 use Sylament\Schemas\Components\Concerns\HasKey;
 use Sylament\Schemas\Components\Concerns\HasState;
 use Sylament\Schemas\Components\Concerns\HasStateBindingModifiers;
+use Sylament\Schemas\State\Get;
+use Sylament\Schemas\State\Set;
 use Sylament\Support\Components\Concerns\CanGrow;
 use Sylament\Support\Components\Concerns\CanOrderColumns;
 use Sylament\Support\Components\Concerns\CanSpanColumns;
@@ -27,6 +30,7 @@ use Sylament\Support\Evaluation\ClosureParameter;
 class Component extends ViewComponent
 {
     use BelongsToContainer;
+    use BelongsToRecord;
     use CanAccessProperties;
     use CanBeDisabled;
     use CanBeHidden;
@@ -54,7 +58,29 @@ class Component extends ViewComponent
             'state' => ClosureParameter::make($this->getState()),
             'rawState' => ClosureParameter::make($this->getRawState()),
             'liveComponent' => ClosureParameter::make($this->getLiveComponent()),
+            'record' => ClosureParameter::make($this->getRecord()),
             default => parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
         };
+    }
+
+    protected function resolveDefaultClosureDependencyForEvaluationByType(string $parameterType): ?ClosureParameter
+    {
+        $resolved = match ($parameterType) {
+            Get::class => ClosureParameter::make($this->makeGetUtility()),
+            Set::class => ClosureParameter::make($this->makeSetUtility()),
+            default => null,
+        };
+
+        if ($resolved instanceof ClosureParameter) {
+            return $resolved;
+        }
+
+        $record = $this->getRecord();
+
+        if ($record instanceof $parameterType) {
+            return ClosureParameter::make($record);
+        }
+
+        return parent::resolveDefaultClosureDependencyForEvaluationByType($parameterType);
     }
 }

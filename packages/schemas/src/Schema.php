@@ -14,6 +14,7 @@ use Sylament\Schemas\Components\Concerns\HasGap;
 use Sylament\Schemas\Components\Concerns\HasStateBindingModifiers;
 use Sylament\Schemas\Concerns\BelongsToLiveComponent;
 use Sylament\Schemas\Concerns\BelongsToParentComponent;
+use Sylament\Schemas\Concerns\BelongsToRecord;
 use Sylament\Schemas\Concerns\CanBeDisabled;
 use Sylament\Schemas\Concerns\CanBeEmbeddedInParentComponent;
 use Sylament\Schemas\Concerns\CanBeInline;
@@ -37,6 +38,7 @@ class Schema extends ViewComponent
 {
     use BelongsToLiveComponent;
     use BelongsToParentComponent;
+    use BelongsToRecord;
     use CanAccessProperties;
     use CanBeDisabled;
     use CanBeEmbeddedInParentComponent;
@@ -75,8 +77,20 @@ class Schema extends ViewComponent
         return match ($parameterName) {
             'container' => ClosureParameter::make($this),
             'liveComponent' => ClosureParameter::make($this->liveComponent),
+            'record' => ClosureParameter::make($this->getRecord()),
             default => parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
         };
+    }
+
+    protected function resolveDefaultClosureDependencyForEvaluationByType(string $parameterType): ?ClosureParameter
+    {
+        $record = $this->getRecord();
+
+        if ($record instanceof $parameterType) {
+            return ClosureParameter::make($record);
+        }
+
+        return parent::resolveDefaultClosureDependencyForEvaluationByType($parameterType);
     }
 
     public function isLive(): bool

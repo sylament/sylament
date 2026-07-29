@@ -7,7 +7,7 @@ namespace Sylament\Forms\Tests;
 use Sylament\Forms\Components\Field;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Schemas\Schema;
-use Sylament\Support\Components\ComponentManager;
+use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\DependencyInjection\ComponentResolver;
 use Sylament\Support\Icons\IconManager;

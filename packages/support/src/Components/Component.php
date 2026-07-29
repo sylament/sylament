@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Components;
 
-use Sylament\Support\Concerns\Configurable;
+use Sylament\Support\Components\Concerns\Configurable;
 use Sylament\Support\Concerns\EvaluatesClosures;
 use Sylament\Support\DependencyInjection\ComponentResolver;
 

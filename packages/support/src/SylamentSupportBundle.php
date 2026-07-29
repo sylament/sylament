@@ -6,7 +6,7 @@ namespace Sylament\Support;
 
 use RuntimeException;
 use Sylament\Support\Components\Component;
-use Sylament\Support\Components\ComponentManager;
+use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\DependencyInjection\Compiler\ComponentResolverPass;
 use Sylament\Support\DependencyInjection\Compiler\StaticInstancePass;
 use Sylament\Support\DependencyInjection\ComponentResolver;
@@ -81,7 +81,6 @@ class SylamentSupportBundle extends SylamentBundle
 
         $services
             ->load(__NAMESPACE__ . '\\Components\\', __DIR__ . '/Components/*.php')
-            ->exclude([__DIR__ . '/Components/ComponentManager.php'])
             ->autowire()
             ->autoconfigure();
 

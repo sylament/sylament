@@ -80,7 +80,7 @@ No segment is renamed for style. Symfony's own habit of singular `Exception\`
 Filament costs a migrating user nothing to learn, and one carve-out is worse
 than none.
 
-Two namespaces **leave `Components\`**, because what they hold is not part of
+Three namespaces **leave `Components\`**, because what they hold is not part of
 the component tier — neither a component, nor a concern or contract of one. The
 casts also gain a `State\` parent rather than sitting at the root, so they file
 beside the `PropertyAccessor` they cast for:
@@ -89,18 +89,27 @@ beside the `PropertyAccessor` they cast for:
 | --- | --- | --- |
 | `Filament\Schemas\Components\StateCasts\` | `Sylament\Schemas\State\Casts\` | `StateCast` and its implementations — value objects that transform state |
 | `Filament\Schemas\Components\Utilities\` | `Sylament\Schemas\Utilities\` | `Get` / `Set` — the closure-injected state accessors |
+| `Filament\Support\Components\ComponentManager` | `Sylament\Support\Configuration\ComponentManager` | The `configureUsing()` registry — an engine, filed by capability like `Evaluation\Invoker`, not beside what it configures |
 
 A migrating user importing `Filament\Schemas\Components\Utilities\Get` will
 not find it by prefix swap alone, which is why these are recorded here rather
 than left to the verbatim rule.
 
-Support-level traits split by what they do, so `Filament\Support\Concerns\` has
-two destinations:
+Support-level traits split by **who composes them**, so
+`Filament\Support\Concerns\` has two destinations:
 
 | Filament | Sylament | Which traits |
 | --- | --- | --- |
-| `Filament\Support\Concerns\` | `Sylament\Support\Components\Concerns\` | Component traits — `HasIcon`, `HasColor`, `HasExtraAttributes`, … |
-| `Filament\Support\Concerns\` | `Sylament\Support\Concerns\` | Evaluation / configuration plumbing — `EvaluatesClosures`, `Configurable`. |
+| `Filament\Support\Concerns\` | `Sylament\Support\Components\Concerns\` | Everything only a component composes — `HasIcon`, `HasColor`, `HasExtraAttributes`, … and `Configurable`, whose sole consumer is `Component` |
+| `Filament\Support\Concerns\` | `Sylament\Support\Concerns\` | `EvaluatesClosures` alone |
+
+`EvaluatesClosures` stays at root against that rule for a reason that is
+checkable in Filament rather than a matter of taste: of its three direct
+importers there, two — `Colors\ColorManager` and `TimezoneManager` — are plain
+manager classes, not components. Sylament will have the same non-component
+consumers once colors are ported, and `Sylament\Support\Colors\ColorManager`
+importing `Support\Components\Concerns\EvaluatesClosures` would be wrong. The
+move is cheap to make later and breaking to reverse, so it waits.
 
 ### Namespaces with no Filament source
 

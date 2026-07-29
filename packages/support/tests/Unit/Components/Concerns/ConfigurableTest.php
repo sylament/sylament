@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Concerns;
 
-use Sylament\Support\Tests\Fixtures\Concerns\ConfigurableWithSetUpFixture;
+use Sylament\Support\Tests\Fixtures\Components\Concerns\ConfigurableWithSetUpFixture;
 
 it('runs setUp() when configured', function (): void {
     $fixture = new ConfigurableWithSetUpFixture();

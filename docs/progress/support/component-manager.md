@@ -1,7 +1,7 @@
 # ComponentManager (support)
 
-`Sylament\Support\Components\ComponentManager` — the registry behind
-`configureUsing()`. The [`Configurable`](../../../packages/support/src/Concerns/Configurable.php)
+`Sylament\Support\Configuration\ComponentManager` — the registry behind
+`configureUsing()`. The [`Configurable`](../../../packages/support/src/Components/Concerns/Configurable.php)
 trait calls into it: `X::configureUsing($closure)` registers a class-keyed
 closure, and every `make()` runs `configure()`, which walks the component's class
 hierarchy root-first — calling `setUp()` at its declaring class's position, each
@@ -29,9 +29,9 @@ detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`configureUsing()`](../../../packages/support/src/Components/ComponentManager.php) | [`ComponentManager::configureUsing()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | — |
-| [`configure()`](../../../packages/support/src/Components/ComponentManager.php) | [`ComponentManager::configure()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | — |
-| [`resolve()`](../../../packages/support/src/Components/ComponentManager.php) | [`ComponentManager::resolve()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | [diverges](#resolve-uses-the-static-instance-pattern-not-a-scoped-container) |
+| [`configureUsing()`](../../../packages/support/src/Configuration/ComponentManager.php) | [`ComponentManager::configureUsing()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | — |
+| [`configure()`](../../../packages/support/src/Configuration/ComponentManager.php) | [`ComponentManager::configure()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | — |
+| [`resolve()`](../../../packages/support/src/Configuration/ComponentManager.php) | [`ComponentManager::resolve()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | done | — | [diverges](#resolve-uses-the-static-instance-pattern-not-a-scoped-container) |
 | `extractPublicMethods()` | [`ComponentManager::extractPublicMethods()`](../../../vendor/filament/support/src/Components/ComponentManager.php) | skipped | — | [diverges](#extractpublicmethods-is-not-ported) |
 | Scoped manager (`resolveScoped()` / `clone()`) | [`Contracts/ScopedComponentManager.php`](../../../vendor/filament/support/src/Components/Contracts/ScopedComponentManager.php) | blocked | live-component-state work | [detail](#the-scoped-component-manager-is-not-ported) |
 
@@ -71,6 +71,29 @@ creates one via the
 (`StaticInstanceInterface` + `HasStaticInstance`) — the same object the bundle
 defines with `factory(ComponentManager::resolve(...))`. The behavioral delta is
 the missing scope layer, covered by its own **blocked** row in [Details](#the-scoped-component-manager-is-not-ported).
+
+### The manager lives in `Configuration/`, not `Components/`
+
+Filament files it under `Components/` beside `Component` and `ViewComponent`,
+which is where the class it configures lives rather than where the class itself
+belongs — it is not a component. Sylament names engine directories after the
+capability, so
+[`EvaluatesClosures`](../../../packages/support/src/Concerns/EvaluatesClosures.php)
+pairs with [`Evaluation/Invoker`](../../../packages/support/src/Evaluation/Invoker.php)
+and [`Configurable`](../../../packages/support/src/Components/Concerns/Configurable.php)
+pairs with `Configuration/ComponentManager`. Filament itself puts a manager at
+`src/` root when no directory fits (`CliManager`, `TimezoneManager`), so
+`Components/` is not a considered placement there either.
+
+The move is also what makes the `Components/*.php` service glob honest: it exists
+to register component classes, and a non-component sitting at the top of that
+directory forced an `exclude()`. That exclude was load-bearing, not cosmetic —
+without it the glob registered a second definition of the same class,
+[`StaticInstancePass`](../../../packages/support/src/DependencyInjection/Compiler/StaticInstancePass.php)
+tagged both, and `StaticInstanceRegistry` called `setInstance()` twice with
+different objects. `Configuration/` removes the need for the exclude rather than
+the need to think about it. `ScopedComponentManager` lands here too if the
+[blocked row](#the-scoped-component-manager-is-not-ported) ever ships.
 
 ### `extractPublicMethods()` is not ported
 

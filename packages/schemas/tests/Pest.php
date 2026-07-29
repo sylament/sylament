@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests;
 
-use Sylament\Support\Components\ComponentManager;
+use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\DependencyInjection\ComponentResolver;
 use Sylament\Support\Icons\IconManager;

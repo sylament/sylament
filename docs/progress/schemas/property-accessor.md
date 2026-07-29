@@ -11,7 +11,7 @@ and carries a detached-array trio (`getFromArray()` / `setInArray()` /
 `forgetFromArray()`) that ports Laravel's `Arr::get` / `Arr::set` / `Arr::forget`
 for the dehydration walk, which assembles state in a plain array before any host
 exists. State concerns reach it through
-[`CanAccessProperties`](../../../packages/schemas/src/Concerns/CanAccessProperties.php),
+[`CanAccessProperties`](../../../packages/schemas/src/Components/Concerns/CanAccessProperties.php),
 composed onto `Schema` and the schemas `Component` base — see
 [the divergence below](#the-accessor-is-injected-not-reached-for).
 

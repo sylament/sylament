@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Support\Concerns;
+namespace Sylament\Support\Components\Concerns;
 
 use Closure;
-use Sylament\Support\Components\ComponentManager;
+use Sylament\Support\Configuration\ComponentManager;
 
 trait Configurable
 {

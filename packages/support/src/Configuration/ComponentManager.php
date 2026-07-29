@@ -2,10 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Support\Components;
+namespace Sylament\Support\Configuration;
 
 use Closure;
 use ReflectionMethod;
+use Sylament\Support\Components\Component;
 use Sylament\Support\DependencyInjection\HasStaticInstance;
 use Sylament\Support\DependencyInjection\StaticInstanceInterface;
 

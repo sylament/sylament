@@ -1,6 +1,6 @@
 # HasColumns (schemas)
 
-[`Sylament\Schemas\Components\Concerns\HasColumns`](../../../packages/schemas/src/Concerns/HasColumns.php)
+[`Sylament\Schemas\Components\Concerns\HasColumns`](../../../packages/schemas/src/Components/Concerns/HasColumns.php)
 — the shared grid concern used by **both** [`Schema`](schema.md) and the schemas
 [`Component`](component.md). It gives a component a `columns` property that
 accepts a literal int, a responsive `breakpoint => int` map, or a `Closure`, and
@@ -24,11 +24,11 @@ is **done**), a **diverges** link to the permanent note in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`columns()` setter — closure append, int→`lg` wrap, spread-merge](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::columns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | — |
-| [`getAllColumns()` — null→default map, per-entry `evaluate()`, breakpoint/int-key resolution](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::getAllColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | [diverges](#the-breakpoint-loop-rebuilds-a-fresh-map-instead-of-filaments-seed-and-unset-and-gates-empty-keys-with---rather-than-blank) |
-| [`getColumns()` — no-arg full map (`Schema/index.html.twig` `grid()`)](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::getColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | [diverges](#the-sy-grid-cols-marker-class-is-emitted-unconditionally) |
-| [`getColumns(breakpoint)` — single-breakpoint lookup](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::getColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | in progress | — | [detail](#getcolumnsbreakpoint--single-breakpoint-lookup) |
-| [`hasCustomColumns()` — has-user-set-columns predicate](../../../packages/schemas/src/Concerns/HasColumns.php) | [`HasColumns::hasCustomColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | in progress | — | [detail](#hascustomcolumns--has-user-set-columns-predicate) |
+| [`columns()` setter — closure append, int→`lg` wrap, spread-merge](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`HasColumns::columns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | — |
+| [`getAllColumns()` — null→default map, per-entry `evaluate()`, breakpoint/int-key resolution](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`HasColumns::getAllColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | [diverges](#the-breakpoint-loop-rebuilds-a-fresh-map-instead-of-filaments-seed-and-unset-and-gates-empty-keys-with---rather-than-blank) |
+| [`getColumns()` — no-arg full map (`Schema/index.html.twig` `grid()`)](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`HasColumns::getColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | — | [diverges](#the-sy-grid-cols-marker-class-is-emitted-unconditionally) |
+| [`getColumns(breakpoint)` — single-breakpoint lookup](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`HasColumns::getColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | in progress | — | [detail](#getcolumnsbreakpoint--single-breakpoint-lookup) |
+| [`hasCustomColumns()` — has-user-set-columns predicate](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`HasColumns::hasCustomColumns()`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | in progress | — | [detail](#hascustomcolumns--has-user-set-columns-predicate) |
 
 The Schema-parent column fallback is not a row of this trait — it lives in a
 [`Schema::getAllColumns()`](schema.md) override, documented as a

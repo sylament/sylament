@@ -27,7 +27,7 @@ detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`Configurable`](../../../packages/support/src/Concerns/Configurable.php) | [`Concerns/Configurable.php`](../../../vendor/filament/support/src/Concerns/Configurable.php) | done | — | — |
+| [`Configurable`](../../../packages/support/src/Components/Concerns/Configurable.php) | [`Concerns/Configurable.php`](../../../vendor/filament/support/src/Concerns/Configurable.php) | done | — | — |
 | [`EvaluatesClosures`](../../../packages/support/src/Concerns/EvaluatesClosures.php) | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | done | — | [diverges](#closure-resolution-lives-in-a-service) · [diverges](#evaluated-flag-getters-are-not-re-cast-to-bool) |
 | [`newInstance()`](../../../packages/support/src/Components/Component.php) | `make()`'s `app(static::class, …)` call, inlined | done | — | [diverges](#newinstance-routes-every-make-through-a-locator) |
 | Arity probe | [`Concerns/EvaluatesClosures.php`](../../../vendor/filament/support/src/Concerns/EvaluatesClosures.php) | blocked | state-based-URL consumer | [detail](#the-arity-probe-is-deferred) |
@@ -148,7 +148,7 @@ Filament wraps every evaluated flag in a `(bool)` cast — `hasGap()`, `isDense(
 `isCollapsed()`, `isCollapsible()` each `return (bool) $this->evaluate(...)`.
 Sylament returns the evaluated value directly against the getter's native `bool`
 return type, dropping the cast wherever a flag concern is ported (schemas'
-[`HasGap`](../../../packages/schemas/src/Concerns/HasGap.php) and
+[`HasGap`](../../../packages/schemas/src/Components/Concerns/HasGap.php) and
 [`CanBeCollapsed`](../../../packages/schemas/src/Components/Concerns/CanBeCollapsed.php)
 today). Under `strict_types=1` a closure returning `1` or `'yes'` therefore
 `TypeError`s here where Filament silently coerces it — one policy applied to every

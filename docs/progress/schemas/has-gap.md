@@ -23,10 +23,10 @@ or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`gap()` setter + `$hasGap`](../../../packages/schemas/src/Concerns/HasGap.php) | [`HasGap::gap()`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) | done | — | — |
-| [`hasGap()`](../../../packages/schemas/src/Concerns/HasGap.php) | [`HasGap::hasGap()`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) | done | — | [diverges](#the-trait-carries-only-the-component-flavor-schema-overrides-the-getters-instead-of-branching-on-instanceof-schema) |
-| [`dense()` setter + `$isDense`](../../../packages/schemas/src/Concerns/HasGap.php) | [`HasGap::dense()`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) | done | — | — |
-| [`isDense()`](../../../packages/schemas/src/Concerns/HasGap.php) | [`HasGap::isDense()`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) | done | — | [diverges](#the-trait-carries-only-the-component-flavor-schema-overrides-the-getters-instead-of-branching-on-instanceof-schema) |
+| [`gap()` setter + `$hasGap`](../../../packages/schemas/src/Components/Concerns/HasGap.php) | [`HasGap::gap()`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) | done | — | — |
+| [`hasGap()`](../../../packages/schemas/src/Components/Concerns/HasGap.php) | [`HasGap::hasGap()`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) | done | — | [diverges](#the-trait-carries-only-the-component-flavor-schema-overrides-the-getters-instead-of-branching-on-instanceof-schema) |
+| [`dense()` setter + `$isDense`](../../../packages/schemas/src/Components/Concerns/HasGap.php) | [`HasGap::dense()`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) | done | — | — |
+| [`isDense()`](../../../packages/schemas/src/Components/Concerns/HasGap.php) | [`HasGap::isDense()`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) | done | — | [diverges](#the-trait-carries-only-the-component-flavor-schema-overrides-the-getters-instead-of-branching-on-instanceof-schema) |
 
 ## Details
 

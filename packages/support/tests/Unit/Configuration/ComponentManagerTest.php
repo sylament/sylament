@@ -7,9 +7,9 @@ namespace Sylament\Support\Tests\Unit\Components;
 use Closure;
 use RuntimeException;
 use Sylament\Support\Components\Component;
-use Sylament\Support\Components\ComponentManager;
-use Sylament\Support\Tests\Fixtures\Components\ConfigurableChildFixture;
-use Sylament\Support\Tests\Fixtures\Components\ConfigurableParentFixture;
+use Sylament\Support\Configuration\ComponentManager;
+use Sylament\Support\Tests\Fixtures\Configuration\ConfigurableChildFixture;
+use Sylament\Support\Tests\Fixtures\Configuration\ConfigurableParentFixture;
 
 it('resolves the same lazily created instance on every call', function (): void {
     $manager = ComponentManager::resolve();

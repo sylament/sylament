@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Support\Tests\Fixtures\Concerns;
+namespace Sylament\Support\Tests\Fixtures\Components\Concerns;
 
 use Sylament\Support\Components\Component;
 

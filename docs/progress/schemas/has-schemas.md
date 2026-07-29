@@ -36,7 +36,8 @@ Reference — the Filament source this is diffed against:
 Every point of this trait. _Blocked by_ names what has to land first. _Detail_
 carries either **detail** → the write-up in [Details](#details), deleted once the
 row is **done**, or **diverges** → the permanent note in
-[Divergences](#divergences).
+[Divergences](#divergences) — or, for the validation surface tracked in its own
+file, a link to that file.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -54,11 +55,11 @@ row is **done**, or **diverges** → the permanent note in
 | Reflection schema auto-discovery (`default<Name>` hooks, `discoveredSchemaNames`, return-type detection) | [`InteractsWithSchemas::cacheSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [diverges](#schema-discovery-is-explicit-via-schemas-not-reflection-based) |
 | `getSchemaComponent()` absolute-key addressing | [`InteractsWithSchemas::getSchemaComponent()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#component-addressing-and-the-exposedlivewiremethod-dispatch-are-not-ported) |
 | `callSchemaComponentMethod()` / `partiallyRenderSchemaComponent()` | [`InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#component-addressing-and-the-exposedlivewiremethod-dispatch-are-not-ported) |
-| Validation integration (`validate`/`validateOnly`/`getRules`/`currentlyValidatingSchema`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `CanBeValidated` | [detail](#the-validation-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
-| File-upload integration (`componentFileAttachments`, `isFileUploadForSchemaComponent`, …) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `RestrictsFileUploadsToSchemaComponents` + forms `BaseFileUpload` | [detail](#the-validation-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
-| `ResolvesDynamicLivewireProperties` (used trait) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `ResolvesDynamicLivewireProperties` port | [detail](#the-validation-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
+| [Validation integration (`validateSchema`, error bag, sticky re-validation)](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | in progress | — | [can-be-validated.md](can-be-validated.md) |
+| File-upload integration (`componentFileAttachments`, `isFileUploadForSchemaComponent`, …) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `RestrictsFileUploadsToSchemaComponents` + forms `BaseFileUpload` | [detail](#the-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
+| `ResolvesDynamicLivewireProperties` (used trait) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `ResolvesDynamicLivewireProperties` port | [detail](#the-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
 | Translatable content driver (`getFilamentTranslatableContentDriver`, `getActiveSchemaLocale`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-translatable-content-driver-is-not-ported) |
-| Testing helpers (`fillFormDataForTesting`, `disable/enableSchemaStateUpdateHooksForTesting`, `getDefaultTestingSchemaName`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `TestsSchemas` | [detail](#the-validation-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
+| Testing helpers (`fillFormDataForTesting`, `disable/enableSchemaStateUpdateHooksForTesting`, `getDefaultTestingSchemaName`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `TestsSchemas` | [detail](#the-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
 
 The eleven **done** rows are the schema-hosting core (`schemas()`, `getSchema()`
 with its `<name>Schema` method-name fallback, `getCachedSchemas()`,
@@ -97,15 +98,20 @@ individual component by key. This is the foundational next step: port
 `getSchemaComponent()` first, since both the method dispatch and the partial
 render build on component addressing.
 
-### The validation, file-upload, dynamic-property, and testing integrations arrive with their own concerns
+### The file-upload, dynamic-property, and testing integrations arrive with their own concerns
 
 Filament folds these into `InteractsWithSchemas` via `use`d traits and inline
-methods; here each is **blocked** on the concern that owns it — validation on
-`CanBeValidated`, file uploads on `RestrictsFileUploadsToSchemaComponents` (plus
+methods; here each is **blocked** on the concern that owns it — file uploads on
+`RestrictsFileUploadsToSchemaComponents` (plus
 forms' `BaseFileUpload`), dynamic properties on a `ResolvesDynamicLivewireProperties`
 port, and the testing helpers on `TestsSchemas`. The port wires them in through
 those concerns rather than re-inlining them here, so the trait stays a thin
-schema host. Nothing consumes them until a panel/live host lands.
+schema host. Nothing consumes them until a panel/live host lands. The
+validation integration landed the same way: its members
+(`validateSchema()`, the error bag, `clearSchemaValidation()`, the
+`$validatedSchemas` sticky loop at `#[PostHydrate(priority: -20)]`) live on
+this trait but are tracked in [`can-be-validated.md`](can-be-validated.md) with
+the rest of the validation subsystem.
 
 ### The translatable content driver is not ported
 

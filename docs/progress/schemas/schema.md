@@ -21,7 +21,10 @@ state backend [`property-accessor.md`](property-accessor.md) — the one place t
 `data_get`/`data_set` → Symfony `PropertyAccess` translation is derived, referenced
 by every state read/write here. From `support` it composes
 [`HasAlignment`](../support/has-alignment.md) (the four alignment factories build
-on it) and `HasExtraAttributes`.
+on it) and `HasExtraAttributes`. The single-use validation concern
+[`CanBeValidated`](can-be-validated.md) also keeps its own file rather than
+folding in here — it spans the root trait and the host-side machinery in
+[`HasSchemas`](has-schemas.md).
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -55,16 +58,17 @@ their detail sections do.
 | [`CanBeEmbeddedInParentComponent`](../../../packages/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | [`Concerns/CanBeEmbeddedInParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | done | — | — |
 | [`CanBeInline`](../../../packages/schemas/src/Concerns/CanBeInline.php) | [`Concerns/CanBeInline.php`](../../../vendor/filament/schemas/src/Concerns/CanBeInline.php) | done | — | — |
 | [`HasComponents`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | in progress | — | [detail](#hascomponents-still-lacks-the-lookup-and-clone-layer) · [diverges](#getcomponents-preserves-the-callers-array-keys-instead-of-reindexing) |
-| [`HasState`](../../../packages/schemas/src/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Concerns/HasState.php) | in progress | — | [detail](#hasstate-ships-the-snapshot-path-only) |
+| [`HasState`](../../../packages/schemas/src/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Concerns/HasState.php) | in progress | — | [detail](#hasstate-still-lacks-constant-state-relationships-and-partial-rendering) · [diverges](#getstate-validates-without-a-prepareforvalidation-mutation-layer) |
 | [`HasKey`](../../../packages/schemas/src/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Concerns/HasKey.php) | in progress | live-component id | [detail](#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) |
 | [`HasHeadings`](../../../packages/schemas/src/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Concerns/HasHeadings.php) | done | — | — |
 | [`CanModifyActions`](../../../packages/schemas/src/Concerns/CanModifyActions.php) | [`Concerns/CanModifyActions.php`](../../../vendor/filament/schemas/src/Concerns/CanModifyActions.php) | done | — | [diverges](#modifyaction-and-modifyactiongroup-guard-a-callbacks-return-type-at-runtime) |
 
-Beyond the folded concerns, ten of Filament's composed traits are not yet
-ported at all — `BelongsToModel`, `CanBeDisabled`, `CanBeHidden`,
-`CanBeValidated`, `Cloneable`, `HasEntryWrapper`, `HasFieldWrapper`,
-`HasInlineLabels`, `HasOperation`, and support's
-`HasDefaultDataFormattingSettings` — and earn their own README rows as they land.
+Beyond the folded concerns, eight of Filament's composed traits are not yet
+ported at all — `BelongsToModel`, `CanBeHidden`, `Cloneable`,
+`HasEntryWrapper`, `HasFieldWrapper`, `HasInlineLabels`, `HasOperation`, and
+support's `HasDefaultDataFormattingSettings` — and earn their own README rows
+as they land. (`CanBeDisabled`, like `CanBeValidated`, is composed and tracked
+in its own file: [can-be-disabled.md](can-be-disabled.md).)
 
 ## Details
 
@@ -118,28 +122,33 @@ difference it keeps — a single `$cachedComponents` slot instead of Filament's
 flag-keyed memoization — is permanent and written up in
 [Divergences](#the-component-collection-keeps-a-single-cache-and-drops-the-flag-keyed-memoization).
 
-### `HasState` ships the snapshot path only
+### `HasState` still lacks constant state, relationships, and partial rendering
 
 Schema is the state root; this trait assembles the dehydrated bag. **In** and
-tested (11 unit + 4 integration cases through a real UX LiveComponent):
+tested (11 unit + 4 integration cases through a real UX LiveComponent, plus the
+validation-path cases in
+[`HasSchemasValidationTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasValidationTest.php)):
 `fill()` → `hydrateState()` → `fillStateWithNull()` → `callAfterStateHydrated()`;
 `getRawState()`/`rawState()` and `statePath()`/`getStatePath()`/`hasStatePath()`
-with the absolute-path cache; and the `getState()` snapshot assembly
-(`callBeforeStateDehydrated` → `dehydrateState` → `mutateDehydratedState` →
-unwrap) including `hasDehydratedComponent()`/`buildDehydratedComponentsCache()`
+with the absolute-path cache; and both dehydrated reads — the validating
+`getState(bool $shouldCallHooksBefore = true, ?Closure $afterValidate = null)`
+(`validate()` on entry, before any dehydration; `$afterValidate` invoked with
+the final state) and the non-validating `getStateSnapshot()`, sharing one
+assembly (`callBeforeStateDehydrated` — guarded by `$shouldCallHooksBefore` —
+→ `dehydrateState` → `mutateDehydratedState` → unwrap) including
+`hasDehydratedComponent()`/`buildDehydratedComponentsCache()`
 and the shared-state-path sibling handling. **Left**, all unported:
 
 - **Constant state** (`state()`/`constantState()`/`getConstantState()`) — the
   infolist static-state path; **blocked** on the infolists + `BelongsToModel`
   record epic (the record fallback chain).
+- **The relationship layer** (`saveRelationships()`/
+  `loadStateFromRelationships()`) — **blocked** on the Doctrine
+  relationship-state epic.
 - **Partial rendering** (`partiallyRender()`/`shouldPartiallyRender()`/
   `fillPartially()`/`hydrateStatePartially()`) — **blocked** on a UX
   LiveComponent partial-render equivalent; decide whether targeted re-render is
   a goal before porting.
-- **The validating `getState()`** (`validate` + `pruneStateToMatchKeys` +
-  `mutateStateForValidation`) — **blocked** on the validation epic; lands as a
-  second method alongside the snapshot one (see the
-  [divergence](#getstate-ports-filaments-getstatesnapshot-not-its-validating-getstate)).
 - `getStateOnly()`/`getStateExcept()` — a trivial `array_intersect_key`/
   `array_diff_key` over `getState()`; add when a consumer needs them.
 - The recursive public `flushCachedAbsoluteStatePaths()` — only the single
@@ -148,8 +157,8 @@ and the shared-state-path sibling handling. **Left**, all unported:
 
 **Next:** port each with the epic named in its bullet. Two small additions over
 Filament's container trait already ship: `hasStatePath()` is defined here (Filament
-inlines `filled($this->statePath)`), and `getState()` resets the dehydrated cache
-on entry so each assembly rebuilds it.
+inlines `filled($this->statePath)`), and the shared assembly resets the dehydrated
+cache on entry so each run rebuilds it.
 
 ### `HasKey` ports the schema key chain, minus the state-path fallback
 
@@ -242,19 +251,25 @@ its key-indexed carry are dropped: the flat list stays hidden-inclusive, ordered
 and unkeyed. Correct but not memoized; revisit if flat/state-path lookups become
 hot.
 
-### `getState()` ports Filament's `getStateSnapshot()`, not its validating `getState()`
+### `getState()` validates without a prepareForValidation mutation layer
 
-Filament has two container reads: `getState()` runs `validate()`, prunes with
-`pruneStateToMatchKeys()`, and re-syncs clean Livewire values; `getStateSnapshot()`
-is the validation-, prune-, and relationship-free variant. Sylament ships ONE
-method named `getState()` whose body is Filament's `getStateSnapshot()`. The
-validation layer (`validate`/`prepareForValidation`/`mutateStateForValidation`/
-`pruneStateToMatchKeys`) and relationship layer (`saveRelationships`/
-`loadStateFromRelationships`) are unported. It also omits Filament's
-`Component::withVisibilityCache(...)` wrapper and the child-schema
-`isHiddenAndNotDehydratedWhenHidden()` guards, consistent with actions and full
-visibility handling not yet wired. Reverses when the validation epic lands and a
-validating `getState()` is added alongside the snapshot.
+Filament's two container reads are now both ported —
+`getState(bool $shouldCallHooksBefore = true, ?Closure $afterValidate = null)`
+runs `validate()` on entry (throwing
+[`ValidationException`](can-be-validated.md) before any dehydration) and
+`getStateSnapshot()` is the validation-free variant — but the machinery
+Filament wraps around its validate call stays permanently unported:
+`prepareForValidation()` / per-component `mutateStateForValidation()` (which
+rewrite a copy of the live state before Laravel's validator sees it — Symfony
+violations never mutate state and there is no rule-object enum→scalar
+conversion to prepare), `pruneStateToMatchKeys()` (which re-syncs clean
+Livewire values), and the `Component::withVisibilityCache(...)` wrapper (no
+visibility cache exists). The validator therefore sees the raw live state
+exactly as the host reads it. `$afterValidate` is invoked plainly with the
+final dehydrated state (Filament's `value($afterValidate, $state)` position).
+The child-schema `isHiddenAndNotDehydratedWhenHidden()` guards remain
+un-mirrored, consistent with hidden-guarding living at component level
+([can-be-validated.md](can-be-validated.md#the-collection-walk-cannot-skip-directly-hidden-child-schemas)).
 
 ### `getRawState()` seeds an empty array on a blank or top-level path
 

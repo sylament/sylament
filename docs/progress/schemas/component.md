@@ -51,7 +51,7 @@ only their detail sections do.
 | [`BelongsToContainer`](../../../packages/schemas/src/Components/Concerns/BelongsToContainer.php) | [`Concerns/BelongsToContainer.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToContainer.php) | in progress | — | [detail](#belongstocontainer-getmodelrootcontainer-awaits-belongstomodel), [diverges](#belongstocontainer-gains-a-sylament-only-getlivecomponentornull-peek) |
 | [`HasChildComponents`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | [`Concerns/HasChildComponents.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php) | in progress | — | [detail](#haschildcomponents-only-the-materialization-core-is-ported) |
 | [`HasId`](../../../packages/schemas/src/Components/Concerns/HasId.php) | [`Concerns/HasId.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasId.php) | done | — | — |
-| [`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | in progress | — | [detail](#hasstate-the-getset-core-is-in-relationship-validation-and-partial-render-state-are-out) · [semantics](#dehydration-prunes-around-shared-state-paths-and-pathless-components) |
+| [`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | in progress | — | [detail](#hasstate-the-getset-core-and-validation-flags-are-in-relationship-and-partial-render-state-are-out) · [semantics](#dehydration-prunes-around-shared-state-paths-and-pathless-components) |
 | [`HasKey`](../../../packages/schemas/src/Components/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasKey.php) | in progress | — | [detail](#getlivewirekey-is-deferred-to-the-live-component-layer) |
 | [`HasHeadings`](../../../packages/schemas/src/Components/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeadings.php) | done | — | — |
 
@@ -128,7 +128,7 @@ layer, and the `withHidden` parameter — the last three carry divergences below
 Next step: add the cheap helpers and `schema()` alias now; defer caching to the
 render pipeline and `cloneChildComponents()` to `Cloneable`.
 
-### HasState: the get/set core is in; relationship, validation, and partial-render state are out
+### HasState: the get/set core and validation flags are in; relationship and partial-render state are out
 
 The state engine is fully ported and covered across three test files
 ([Unit/Components/Concerns/HasStateTest](../../../packages/schemas/tests/Unit/Components/Concerns/HasStateTest.php),
@@ -136,14 +136,20 @@ The state engine is fully ported and covered across three test files
 [Integration/LiveStateTest](../../../packages/schemas/tests/Integration/LiveStateTest.php)):
 state-path composition, raw/cast read-write via the
 [PropertyAccessor seam](property-accessor.md), defaults, hydrate, the
-dehydration prune/mutate walk, and the `afterStateUpdated` round-trip.
+dehydration prune/mutate walk, and the `afterStateUpdated` round-trip. The
+validation flag trio is in too, Filament-exact —
+`validatedWhenNotDehydrated(bool|Closure $condition = true)`,
+`isValidatedWhenNotDehydrated()` (default `true`), and
+`isNeitherDehydratedNorValidated()`, the guard
+[`Schema::getValidationConstraints()`](can-be-validated.md) skips on — covered
+by the component-tier `HasStateTest`.
 
 It stays in progress because whole method families are deliberately absent —
-relationship-derived and constant state, validation-coupled state, and
-partial-render/JS hooks (each a divergence below) — and because one ported
-method, `formatStateUsing()`, has no direct test. Next step: add a
+relationship-derived and constant state, the `mutateStateForValidation`
+members, and partial-render/JS hooks (each a divergence below) — and because
+one ported method, `formatStateUsing()`, has no direct test. Next step: add a
 `formatStateUsing` test; port the absent families under their respective epics
-(Doctrine relationship-state, validation, `CanPartiallyRender`).
+(Doctrine relationship-state, `CanPartiallyRender`).
 
 ### getLivewireKey() is deferred to the live-component layer
 
@@ -260,13 +266,18 @@ Filament's `HasState` composes `CanGetStateFromRelationships` and carries
 they all assume Eloquent models/relationships. Reversed by the Doctrine
 relationship-state epic (Filament's T6).
 
-### Validation-coupled state members are not ported
+### The mutateStateForValidation members are not ported
 
-`mutateStateForValidation` / `mutateStateForValidationUsing` /
-`mutatesStateForValidation`, `validatedWhenNotDehydrated` /
-`isValidatedWhenNotDehydrated`, and `isNeitherDehydratedNorValidated` are omitted.
-They only matter once schema validation exists; they land with the validation
-epic (the schema-level `CanBeValidated` concern, still todo).
+Filament's `mutateStateForValidation()` / `mutateStateForValidationUsing()` /
+`mutatesStateForValidation()` rewrite a copy of a component's state for the
+host's `prepareForValidation()` pass before Laravel's validator sees it. The
+Symfony port validates the raw live state — violations never mutate state and
+no rule-object enum→scalar conversion exists
+([schema.md](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer))
+— so the members have no job. Permanent. The sibling flag trio
+(`validatedWhenNotDehydrated` / `isValidatedWhenNotDehydrated` /
+`isNeitherDehydratedNorValidated`) is ported Filament-exact — it is the guard
+the [validation collection walk](can-be-validated.md) skips on.
 
 ### Child-schema recursion moves from the component trait up to the schema trait
 

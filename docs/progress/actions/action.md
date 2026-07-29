@@ -693,15 +693,34 @@ mirror the button skeleton on `sy-ac-link`/`sy-ac-badge` classes (CSS in
 `packages/actions/assets/src/styles/components/`, riding support's single
 Tailwind compile), and
 [`Action/IconButton.html.twig`](../../../packages/actions/templates/partials/Action/IconButton.html.twig)
-composes the support
+plus
+[`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig)
+compose the support
 [`IconButton`](../../../packages/support/templates/components/IconButton/index.html.twig)
-primitive through the `{% component %}` tag (the only syntax that can spread a
-computed attribute map), building its mount wiring with
+and [`Button`](../../../packages/support/templates/components/Button/index.html.twig)
+primitives through the `{% component %}` tag (the only syntax that can spread a
+computed attribute map), building their mount wiring with
 `stimulus_action('live', 'action', …).toArray()` — byte-equivalent to what
 `live_action()` emits. All five are exercised by
 [`ActionViewVariantsRenderTest`](../../../packages/actions/tests/Integration/ActionViewVariantsRenderTest.php)
 / [`ActionRenderTest`](../../../packages/actions/tests/Integration/ActionRenderTest.php)
 / [`ActionGroupRenderTest`](../../../packages/actions/tests/Integration/ActionGroupRenderTest.php).
+
+**Badge, Grouped and Link still duplicate the button skeleton, and should not.**
+Filament points all five view constants at *support*-package components —
+`BADGE_VIEW = 'filament::components.badge'`, `BUTTON_VIEW =
+'filament::components.button.index'`, `GROUPED_VIEW =
+'filament::components.dropdown.list.item'`, `LINK_VIEW =
+'filament::components.link'` — and `Action::fromArray()` keeps a back-compat map
+from the old `filament-actions::button-action` / `grouped-action` /
+`icon-button-action` / `link-action` names to them. Those deprecated names are
+exactly what this port's templates were called, so what is here is Filament's
+*pre-consolidation* shape. `Button` and `IconButton` now compose because support
+has those primitives; the other three cannot until support ports
+[`Badge`](../support/README.md) and `Link` (both **todo** there) and a dropdown
+list item. When they land, all three collapse the same way — the click cascade
+is already expressible as an attribute map, which was the only structural
+blocker.
 
 What stays divergent: **no string fast paths** — Filament's `toHtml()`
 dispatch, the `toBadgeHtml()`/`toButtonHtml()`/… renderers and their

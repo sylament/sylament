@@ -40,7 +40,7 @@ it('registers the renderAction twig function', function (): void {
 it('renders the named action resolved through the surrounding host', function (): void {
     $html = (string) $this->createLiveComponent('RenderActionHost')->render();
 
-    expect($html)->toContain('sy sy-btn sy-ac')
+    expect($html)->toContain('sy sy-btn sy-size-md sy-color sy-color-primary sy-ac')
         ->toContain('data-live-action-param="mountAction"')
         ->toContain('data-live-name-param="delete"')
         ->toContain('Delete');

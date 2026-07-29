@@ -579,7 +579,7 @@ it('leaves the aside decision to the caller in the standalone support component'
 it('renders a header action button inside the after-header container at its default size', function (): void {
     $html = renderSection(Section::make('Profile')->headerActions([Action::make('publish')]));
 
-    expect($html)->toMatch('/sy-section-header-after-ctn">\s*<div\s+class="sy sy-sc sy-inline[^"]*sy-align-end[^"]*".*?<button[^>]*class="sy sy-btn sy-ac"/s')
+    expect($html)->toMatch('/sy-section-header-after-ctn">\s*<div\s+class="sy sy-sc sy-inline[^"]*sy-align-end[^"]*".*?<button[^>]*class="sy sy-btn sy-size-md sy-color sy-color-primary sy-ac"/s')
         ->toContain('Publish')
         ->not->toContain('sy-size-sm');
 });
@@ -594,7 +594,7 @@ it('keeps header actions inside the container the collapse toggle ignores', func
 it('renders a footer action button inside a start-aligned footer schema', function (): void {
     $html = renderSection(Section::make('Profile')->footerActions([Action::make('save')]));
 
-    expect($html)->toMatch('/<footer class="sy-section-footer">\s*<div\s+class="sy sy-sc sy-inline sy-align-start.*?<button[^>]*class="sy sy-btn sy-ac"/s')
+    expect($html)->toMatch('/<footer class="sy-section-footer">\s*<div\s+class="sy sy-sc sy-inline sy-align-start.*?<button[^>]*class="sy sy-btn sy-size-md sy-color sy-color-primary sy-ac"/s')
         ->toContain('Save');
 });
 
@@ -629,7 +629,7 @@ it('lets an explicit button() beat the label slot link default', function (): vo
         Section::make('Profile')->label('My label')->afterLabel([Action::make('edit')->button()]),
     );
 
-    expect($html)->toMatch('/<button[^>]*class="sy sy-btn sy-ac sy-size-sm"/')
+    expect($html)->toMatch('/<button[^>]*class="sy sy-btn sy-size-sm sy-color sy-color-primary sy-ac"/')
         ->toContain('Edit');
 });
 

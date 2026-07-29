@@ -15,7 +15,7 @@ function renderAction(Action $action): string
 it('renders a styled trigger button', function (): void {
     $html = renderAction(Action::make('delete')->color('danger')->icon('heroicons:x-mark')->size('sm'));
 
-    expect($html)->toContain('sy sy-btn sy-ac sy-size-sm sy-color sy-color-danger')
+    expect($html)->toContain('sy sy-btn sy-size-sm sy-color sy-color-danger sy-ac')
         ->toContain('<svg')
         ->toContain('type="button"')
         ->toContain('Delete');

@@ -2,16 +2,12 @@
 
 {% for action in liveComponent.getMountedActions %}
     {% if not loop.last or liveComponent.mountedActionShouldOpenModal(action) %}
-        {% set actionSchema = liveComponent.mountedActionHasSchema(action)
-            ? liveComponent.getMountedActionSchema(action.getNestingIndex, action)
-            : null %}
-
         <twig:SylamentActions:ActionModal
             :action="action"
             :id="liveComponent.getMountedModalId(action.getNestingIndex)"
             :open="liveComponent.isMountedActionModalOpen(action.getNestingIndex)"
             :overlaid="not loop.last"
-            :schema="actionSchema"
+            :schema="liveComponent.mountedActionHasSchema(action) ? liveComponent.getMountedActionSchema(action.getNestingIndex, action) : null"
         />
     {% endif %}
 {% endfor %}

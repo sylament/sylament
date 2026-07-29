@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Tests\Unit\DependencyInjection\Compiler;
 
 use Sylament\Support\DependencyInjection\Compiler\StaticInstancePass;
-use Sylament\Support\DependencyInjection\StaticInstanceInterface;
+use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Sylament\Support\Tests\Fixtures\DependencyInjection\AnotherStaticInstanceFixture;
 use Sylament\Support\Tests\Fixtures\DependencyInjection\PlainFixture;
 use Sylament\Support\Tests\Fixtures\DependencyInjection\StaticInstanceFixture;
@@ -13,24 +13,24 @@ use Sylament\Support\Tests\Fixtures\DependencyInjection\UnloadableServiceFixture
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 
-it('tags services that implement StaticInstanceInterface', function (): void {
+it('tags services that implement StaticInstance', function (): void {
     $container = new ContainerBuilder();
     $container->setDefinition(StaticInstanceFixture::class, new Definition(StaticInstanceFixture::class));
     $container->setDefinition(AnotherStaticInstanceFixture::class, new Definition(AnotherStaticInstanceFixture::class));
 
     new StaticInstancePass()->process($container);
 
-    expect($container->getDefinition(StaticInstanceFixture::class)->hasTag(StaticInstanceInterface::class))->toBeTrue();
-    expect($container->getDefinition(AnotherStaticInstanceFixture::class)->hasTag(StaticInstanceInterface::class))->toBeTrue();
+    expect($container->getDefinition(StaticInstanceFixture::class)->hasTag(StaticInstance::class))->toBeTrue();
+    expect($container->getDefinition(AnotherStaticInstanceFixture::class)->hasTag(StaticInstance::class))->toBeTrue();
 });
 
-it('does not tag services that do not implement StaticInstanceInterface', function (): void {
+it('does not tag services that do not implement StaticInstance', function (): void {
     $container = new ContainerBuilder();
     $container->setDefinition(PlainFixture::class, new Definition(PlainFixture::class));
 
     new StaticInstancePass()->process($container);
 
-    expect($container->getDefinition(PlainFixture::class)->hasTag(StaticInstanceInterface::class))->toBeFalse();
+    expect($container->getDefinition(PlainFixture::class)->hasTag(StaticInstance::class))->toBeFalse();
 });
 
 it('skips definitions without a class', function (): void {
@@ -48,5 +48,5 @@ it('skips service classes that cannot be autoloaded', function (): void {
 
     new StaticInstancePass()->process($container);
 
-    expect($container->getDefinition('unloadable')->hasTag(StaticInstanceInterface::class))->toBeFalse();
+    expect($container->getDefinition('unloadable')->hasTag(StaticInstance::class))->toBeFalse();
 });

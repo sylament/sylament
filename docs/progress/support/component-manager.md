@@ -67,8 +67,8 @@ manager when one is bound (`app()->resolved(ScopedComponentManager::class)`),
 otherwise `singletonIf`s a shared `ComponentManager`. Sylament has no such
 container idiom, so `resolve()` returns the booted static instance or lazily
 creates one via the
-[static-instance pattern](../../../packages/support/src/DependencyInjection/HasStaticInstance.php)
-(`StaticInstanceInterface` + `HasStaticInstance`) — the same object the bundle
+[static-instance pattern](../../../packages/support/src/DependencyInjection/Concerns/HasStaticInstance.php)
+(`StaticInstance` + `HasStaticInstance`) — the same object the bundle
 defines with `factory(ComponentManager::resolve(...))`. The behavioral delta is
 the missing scope layer, covered by its own **blocked** row in [Details](#the-scoped-component-manager-is-not-ported).
 

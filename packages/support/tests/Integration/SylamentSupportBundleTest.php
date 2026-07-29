@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Tests\Integration;
 
 use Sylament\Support\Configuration\ComponentManager;
-use Sylament\Support\DependencyInjection\StaticInstanceInterface;
+use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\Tests\Fixtures\DependencyInjection\StaticInstanceFixture;
@@ -15,10 +15,10 @@ it('exposes the static instance registry as a public service', function (): void
         ->toBeInstanceOf(StaticInstanceRegistry::class);
 });
 
-it('resolves tagged services as StaticInstanceInterface implementations', function (): void {
+it('resolves tagged services as StaticInstance implementations', function (): void {
     $fixture = $this::getContainer()->get(StaticInstanceFixture::class);
 
-    expect($fixture)->toBeInstanceOf(StaticInstanceInterface::class);
+    expect($fixture)->toBeInstanceOf(StaticInstance::class);
 });
 
 it('wires the static instance after the kernel boots', function (): void {

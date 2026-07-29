@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Fixtures\DependencyInjection;
 
-use Sylament\Support\DependencyInjection\HasStaticInstance;
-use Sylament\Support\DependencyInjection\StaticInstanceInterface;
+use Sylament\Support\DependencyInjection\Concerns\HasStaticInstance;
+use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 
-class AnotherStaticInstanceFixture implements StaticInstanceInterface
+class AnotherStaticInstanceFixture implements StaticInstance
 {
     use HasStaticInstance;
 }

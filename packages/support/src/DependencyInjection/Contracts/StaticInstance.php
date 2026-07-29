@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Support\DependencyInjection;
+namespace Sylament\Support\DependencyInjection\Contracts;
 
 /**
  * @internal
  */
-interface StaticInstanceInterface
+interface StaticInstance
 {
     public static function setInstance(self $instance): void;
 

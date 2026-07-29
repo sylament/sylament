@@ -6,8 +6,10 @@ namespace Sylament\Support\DependencyInjection;
 
 use Psr\Container\ContainerInterface;
 use Sylament\Support\Components\Component;
+use Sylament\Support\DependencyInjection\Concerns\HasStaticInstance;
+use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 
-final class ComponentResolver implements StaticInstanceInterface
+final class ComponentResolver implements StaticInstance
 {
     use HasStaticInstance;
 

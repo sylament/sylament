@@ -61,7 +61,7 @@ via `HasState`. No row has a write-up here.
 
 ### The accessor is injected, not reached for
 
-`PropertyAccessor` is a plain service — no `StaticInstanceInterface`, no
+`PropertyAccessor` is a plain service — no `StaticInstance`, no
 `HasStaticInstance`, nothing to boot or unset between tests.
 `CanAccessProperties` takes it through a `#[Required]` setter and exposes it only
 as `getPropertyAccessor()`; the property itself is `private`, so neither a

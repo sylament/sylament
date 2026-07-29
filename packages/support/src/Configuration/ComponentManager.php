@@ -7,10 +7,10 @@ namespace Sylament\Support\Configuration;
 use Closure;
 use ReflectionMethod;
 use Sylament\Support\Components\Component;
-use Sylament\Support\DependencyInjection\HasStaticInstance;
-use Sylament\Support\DependencyInjection\StaticInstanceInterface;
+use Sylament\Support\DependencyInjection\Concerns\HasStaticInstance;
+use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 
-class ComponentManager implements StaticInstanceInterface
+class ComponentManager implements StaticInstance
 {
     use HasStaticInstance;
 

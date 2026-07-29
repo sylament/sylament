@@ -78,11 +78,11 @@ re-resolves the scoped `ComponentManager` on `app->booted` (and on Octane's
 `RequestReceived`). Sylament has no request-scoped container, so the managers are
 plain services made statically reachable through the
 [static-instance pattern](../../../packages/support/src/DependencyInjection/StaticInstanceRegistry.php):
-`build()` adds `StaticInstancePass` (auto-tags every `StaticInstanceInterface`
+`build()` adds `StaticInstancePass` (auto-tags every `StaticInstance`
 definition) and `boot()` calls `StaticInstanceRegistry::bootStaticInstances()`,
 which sets each tagged service as its class's static instance.
 
-`StaticInstancePass` decides by `is_a($class, StaticInstanceInterface::class, true)`,
+`StaticInstancePass` decides by `is_a($class, StaticInstance::class, true)`,
 which autoloads the class — and it swallows the `Throwable` that raises. A bundle
 may register a service whose class extends an optional dependency that is not
 installed (LiveComponent's `form.live_collection` extends Symfony Form's

@@ -10,7 +10,7 @@ use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\DependencyInjection\Compiler\ComponentResolverPass;
 use Sylament\Support\DependencyInjection\Compiler\StaticInstancePass;
 use Sylament\Support\DependencyInjection\ComponentResolver;
-use Sylament\Support\DependencyInjection\StaticInstanceInterface;
+use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\Evaluation\Invoker;
@@ -87,7 +87,7 @@ class SylamentSupportBundle extends SylamentBundle
         $services
             ->set('sylament_support.static_instance_registry', StaticInstanceRegistry::class)
             ->args([
-                '$services' => tagged_iterator(StaticInstanceInterface::class),
+                '$services' => tagged_iterator(StaticInstance::class),
             ])
             ->alias(StaticInstanceRegistry::class, 'sylament_support.static_instance_registry')
             ->public();

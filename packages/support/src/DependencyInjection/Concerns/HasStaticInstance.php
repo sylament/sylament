@@ -2,15 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Support\DependencyInjection;
+namespace Sylament\Support\DependencyInjection\Concerns;
 
 use RuntimeException;
+use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 
 trait HasStaticInstance
 {
-    private static ?StaticInstanceInterface $instance = null;
+    private static ?StaticInstance $instance = null;
 
-    public static function setInstance(StaticInstanceInterface $instance): void
+    public static function setInstance(StaticInstance $instance): void
     {
         self::$instance = $instance;
     }

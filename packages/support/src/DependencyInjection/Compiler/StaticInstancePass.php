@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\DependencyInjection\Compiler;
 
 use Throwable;
-use Sylament\Support\DependencyInjection\StaticInstanceInterface;
+use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 
@@ -24,7 +24,7 @@ final class StaticInstancePass implements CompilerPassInterface
                 continue;
             }
 
-            $definition->addTag(StaticInstanceInterface::class);
+            $definition->addTag(StaticInstance::class);
         }
     }
 
@@ -36,7 +36,7 @@ final class StaticInstancePass implements CompilerPassInterface
     private function implementsStaticInstance(string $class): bool
     {
         try {
-            return is_a($class, StaticInstanceInterface::class, true);
+            return is_a($class, StaticInstance::class, true);
         } catch (Throwable) {
             return false;
         }

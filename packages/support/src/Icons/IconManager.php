@@ -6,13 +6,13 @@ namespace Sylament\Support\Icons;
 
 use BackedEnum;
 use LogicException;
-use Sylament\Support\DependencyInjection\HasStaticInstance;
-use Sylament\Support\DependencyInjection\StaticInstanceInterface;
+use Sylament\Support\DependencyInjection\Concerns\HasStaticInstance;
+use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Symfony\UX\Icons\IconRendererInterface;
 use Symfony\UX\Icons\UXIconsBundle;
 use Twig\Markup;
 
-class IconManager implements StaticInstanceInterface
+class IconManager implements StaticInstance
 {
     use HasStaticInstance;
 

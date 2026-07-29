@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Sylament\Support\DependencyInjection;
 
+use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
+
 final readonly class StaticInstanceRegistry
 {
     /**
-     * @param iterable<StaticInstanceInterface> $services
+     * @param iterable<StaticInstance> $services
      */
     public function __construct(
         private iterable $services,

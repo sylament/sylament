@@ -22,10 +22,6 @@ trait EvaluatesClosures
         $this->invoker = $invoker;
     }
 
-    /**
-     * The fallback resolves no container services: a component built with `new`
-     * rather than through the container cannot inject one into a closure.
-     */
     public function getInvoker(): Invoker
     {
         return $this->invoker ??= new Invoker(new Container());

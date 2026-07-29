@@ -51,3 +51,26 @@ it('is a safe no-op when the form-filled hooks are unset', function (): void {
     expect($fixture->callBeforeFormFilled())->toBeNull()
         ->and($fixture->callAfterFormFilled())->toBeNull();
 });
+
+it('runs the beforeFormValidated and afterFormValidated hooks when set', function (): void {
+    $log = [];
+    $fixture = new HasLifecycleHooksFixture()
+        ->beforeFormValidated(function () use (&$log): void {
+            $log[] = 'beforeFormValidated';
+        })
+        ->afterFormValidated(function () use (&$log): void {
+            $log[] = 'afterFormValidated';
+        });
+
+    $fixture->callBeforeFormValidated();
+    $fixture->callAfterFormValidated();
+
+    expect($log)->toBe(['beforeFormValidated', 'afterFormValidated']);
+});
+
+it('is a safe no-op when the form-validated hooks are unset', function (): void {
+    $fixture = new HasLifecycleHooksFixture();
+
+    expect($fixture->callBeforeFormValidated())->toBeNull()
+        ->and($fixture->callAfterFormValidated())->toBeNull();
+});

@@ -16,6 +16,10 @@ trait HasLifecycleHooks
 
     protected ?Closure $afterFormFilled = null;
 
+    protected ?Closure $beforeFormValidated = null;
+
+    protected ?Closure $afterFormValidated = null;
+
     public function before(?Closure $callback): static
     {
         $this->before = $callback;
@@ -44,6 +48,20 @@ trait HasLifecycleHooks
         return $this;
     }
 
+    public function beforeFormValidated(?Closure $callback): static
+    {
+        $this->beforeFormValidated = $callback;
+
+        return $this;
+    }
+
+    public function afterFormValidated(?Closure $callback): static
+    {
+        $this->afterFormValidated = $callback;
+
+        return $this;
+    }
+
     public function callBefore(): mixed
     {
         return $this->evaluate($this->before);
@@ -62,5 +80,15 @@ trait HasLifecycleHooks
     public function callAfterFormFilled(): mixed
     {
         return $this->evaluate($this->afterFormFilled);
+    }
+
+    public function callBeforeFormValidated(): mixed
+    {
+        return $this->evaluate($this->beforeFormValidated);
+    }
+
+    public function callAfterFormValidated(): mixed
+    {
+        return $this->evaluate($this->afterFormValidated);
     }
 }

@@ -39,7 +39,7 @@ once the row is **done**; **diverges** → the permanent note in
 | [`type` / `form` association](../../../packages/support/templates/components/IconButton/index.html.twig) | [`type`/`form` merge](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | — |
 | [Color (gray-default + semantic)](../../../packages/support/templates/components/IconButton/index.html.twig) | [`->color(IconButtonComponent::class, $color)`](../../../vendor/filament/support/src/View/Components/IconButtonComponent.php) | in progress | color system (`Colors/`, `HasColor`) | [detail](#details) · [diverges](#color-is-rendered-as-sy-color--classes-not-the-colormap-css-variable-injection) |
 | Loading indicator | [`generate_loading_indicator_html(…)` + `wire:*`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | blocked | UX LiveComponent state layer | [detail](#details) |
-| Badge | [badge block + `BadgeComponent`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | blocked | `BadgeComponent` port | [detail](#details) |
+| Badge | [badge block + `BadgeComponent`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | todo | — | [detail](#details) |
 | Key bindings | [`x-mousetrap` block](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | blocked | Stimulus mousetrap controller | [detail](#details) |
 | Tooltip | [`x-tooltip` block + disabled-tooltip filter](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | blocked | Stimulus tooltip controller | [detail](#details) |
 | SPA-mode href | [`generate_href_html($href, …, $spaMode)`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | blocked | panels SPA navigation | [detail](#details) |
@@ -84,7 +84,9 @@ built at all. Each is blocked on infrastructure that has not been ported:
   `disabled` via `wire:loading.attr`, and the `form` prop (submit-target for the
   indicator) collapses to `formId` alone.
 - **Badge** — the `badge`/`badgeColor`/`badgeSize` props and the
-  `fi-icon-btn-badge-ctn` block depend on a `BadgeComponent` port (still `todo`).
+  `fi-icon-btn-badge-ctn` block. No longer blocked: the
+  [Badge primitive](badge.md) exists, so this is a composition waiting to be
+  written rather than a missing dependency.
 - **Key bindings** — Filament's `x-mousetrap` global binding is an Alpine plugin;
   the Sylament equivalent is a Stimulus controller that does not yet exist.
 - **Tooltip** — the `x-tooltip` block and the coupled disabled-with-tooltip

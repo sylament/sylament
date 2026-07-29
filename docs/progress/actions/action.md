@@ -38,7 +38,8 @@ Reference — the Filament source this is diffed against:
 
 Every point of this component and its folded concerns. _Blocked by_ names
 what has to land first. _Detail_ links the write-up in [Details](#details)
-(deleted once the row is **done**) and/or the permanent note in
+(deleted once the row is **done**), the permanent faithful-but-subtle note in
+[Semantics](#semantics), and/or the permanent note in
 [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
@@ -53,7 +54,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](has-actions.md#resolveactions-drops-the-table-branch), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-emits-only-the-schemacomponent-key) decidable |
 | [`CanCallParentAction`](../../../packages/actions/src/Concerns/CanCallParentAction.php) | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | done | — | Filament-exact two-method port (`callParent()` + getter). The getter is `getParentActionCallLiveComponentClickHandler()` against Filament's `…Livewire…`, the systematic Livewire → UX LiveComponent naming translation from the [rename table](../renames.md), not a rename of its own. Read by all five trigger templates, ranked **above** `shouldClose()` in the click precedence |
 | [`HasParentActions`](../../../packages/actions/src/Concerns/HasParentActions.php) | [`Concerns/HasParentActions.php`](../../../vendor/filament/actions/src/Concerns/HasParentActions.php) | done | — | Complete, method-for-method and body-for-body. Three of its accessors (`shouldCancelParentActionsOnClose()`, `shouldCancelAllParentActionsOnClose()`, `getParentActionToCancelToOnClose()`) have no consumer here — and none in `vendor/filament` either, so they are kept as declared API rather than trimmed |
-| Trigger rendering ([`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig) + the [`link-action`](../../../packages/actions/templates/partials/Action/Link.html.twig) / [`badge-action`](../../../packages/actions/templates/partials/Action/Badge.html.twig) / [`icon-button-action`](../../../packages/actions/templates/partials/Action/IconButton.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
+| Trigger rendering ([`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig) + the [`Link`](../../../packages/actions/templates/partials/Action/Link.html.twig) / [`Badge`](../../../packages/actions/templates/partials/Action/Badge.html.twig) / [`Grouped`](../../../packages/actions/templates/partials/Action/Grouped.html.twig) / [`IconButton`](../../../packages/actions/templates/partials/Action/IconButton.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toGroupedHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [semantics](#an-uncolored-badge-or-link-action-renders-primary-not-gray), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
 | Modal rendering ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)) | [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php) | in progress | — | [detail](#the-action-modal-template-only-renders-part-of-the-full-action-modal), [diverges](#the-action-modal-is-an-anonymous-twig-component-not-an-included-view), [diverges](#the-modal-footer-renders-real-action-instances) |
 | [`HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php) (support) | [`Concerns/HasColor.php`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
 | [`HasExtraAttributes`](../../../packages/support/src/Components/Concerns/HasExtraAttributes.php) (support) | [`Concerns/HasExtraAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAttributes.php) | done | — | — |
@@ -655,6 +656,31 @@ assertion anywhere in the `actions` suite:
 **Next step:** add the three cases to `ActionRenderTest`; no code change is
 expected, this is coverage-only.
 
+## Semantics
+
+Faithful ports whose behaviour a reader would plausibly misread from the source.
+Permanent — these outlive the detail sections above.
+
+### An uncolored badge or link action renders primary, not gray
+
+Every trigger template passes `:color="component.getColor"`, which is `null` for
+an action nobody called `->color()` on. Reading that, the obvious conclusion is
+that `null` reaches the primitive and lands in its gray branch. It does not.
+`{% props %}` compiles to `isset($context['__props']['color'])`
+([`PropsNode.php`](../../../vendor/symfony/ux-twig-component/src/Twig/PropsNode.php)),
+and `isset()` is **false for null** — so an explicitly passed `null` is
+indistinguishable from an omitted prop and the prop default wins. An uncolored
+badge or link action therefore emits `sy-color sy-color-primary` and renders
+through the primitive's `.sy-color` branch; `:not(.sy-color)` is unreachable
+from these two triggers.
+
+That is Filament's behaviour, not a divergence — `badge.blade.php` and
+`link.blade.php` both default `'color' => 'primary'` — and `Button` and
+`IconButton` have rendered this way since they were composed. The one trigger
+where the gray branch *is* reachable is `Grouped`, because
+[`DropdownItem`](../support/dropdown-item.md) defaults to `'gray'` instead,
+matching `dropdown/list/item.blade.php`.
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
@@ -685,28 +711,24 @@ predicates comparing `getTemplate()` against them (no `isGrouped()` —
 Filament has none either). The default stays `BUTTON_TEMPLATE` via
 `$defaultTemplate`, so `ActionGroup` can push `GROUPED_TEMPLATE` as a default
 while an explicit switcher call survives the push — Filament-identical
-precedence, pinned by `ActionTest`. Each shape has its own template beside
-[`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig):
-[`Action/Link.html.twig`](../../../packages/actions/templates/partials/Action/Link.html.twig)
-and [`Action/Badge.html.twig`](../../../packages/actions/templates/partials/Action/Badge.html.twig)
-mirror the button skeleton on `sy-ac-link`/`sy-ac-badge` classes (CSS in
-`packages/actions/assets/src/styles/components/`, riding support's single
-Tailwind compile), and
-[`Action/IconButton.html.twig`](../../../packages/actions/templates/partials/Action/IconButton.html.twig)
-plus
-[`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig)
-compose the support
-[`IconButton`](../../../packages/support/templates/components/IconButton/index.html.twig)
-and [`Button`](../../../packages/support/templates/components/Button/index.html.twig)
-primitives as `<twig:>` tags, building their mount wiring with
-`stimulus_action('live', 'action', …).toArray()` and spreading it into the tag
-with `{{ ...map }}` — byte-equivalent to what `live_action()` emits inline. All
+precedence, pinned by `ActionTest`. Each shape has its own template under
+[`partials/Action/`](../../../packages/actions/templates/partials/Action), and
+every one of the five is a thin composition over the support primitive
+Filament's corresponding `*_VIEW` constant points at —
+[`Badge`](../support/badge.md), [`Button`](../support/button.md),
+[`DropdownItem`](../support/dropdown-item.md),
+[`IconButton`](../support/icon-button.md) and [`Link`](../support/link.md),
+invoked as `<twig:>` tags. Each builds its mount wiring with
+`stimulus_action('live', 'action', …)` and spreads it into the tag with
+`{{ ...map }}` — byte-equivalent to what `live_action()` emits inline. `actions`
+owns no trigger CSS at all: the class list on every trigger root is the
+primitive's, plus the bare `sy-ac` marker the template contributes. All
 five are exercised by
 [`ActionViewVariantsRenderTest`](../../../packages/actions/tests/Integration/ActionViewVariantsRenderTest.php)
 / [`ActionRenderTest`](../../../packages/actions/tests/Integration/ActionRenderTest.php)
 / [`ActionGroupRenderTest`](../../../packages/actions/tests/Integration/ActionGroupRenderTest.php).
 
-**Badge, Grouped and Link still duplicate the button skeleton, and should not.**
+**The five triggers reached Filament's post-consolidation shape in two steps.**
 Filament points all five view constants at *support*-package components —
 `BADGE_VIEW = 'filament::components.badge'`, `BUTTON_VIEW =
 'filament::components.button.index'`, `GROUPED_VIEW =
@@ -714,13 +736,25 @@ Filament points all five view constants at *support*-package components —
 'filament::components.link'` — and `Action::fromArray()` keeps a back-compat map
 from the old `filament-actions::button-action` / `grouped-action` /
 `icon-button-action` / `link-action` names to them. Those deprecated names are
-exactly what this port's templates were called, so what is here is Filament's
-*pre-consolidation* shape. `Button` and `IconButton` now compose because support
-has those primitives; the other three cannot until support ports
-[`Badge`](../support/README.md) and `Link` (both **todo** there) and a dropdown
-list item. When they land, all three collapse the same way — the click cascade
-is already expressible as an attribute map, which was the only structural
-blocker.
+exactly what this port's templates were called, so what shipped first was
+Filament's *pre-consolidation* shape: five hand-rolled skeletons, three of them
+carrying their own `sy-ac-badge` / `sy-ac-link` CSS in `actions`. `Button` and
+`IconButton` collapsed first, because support already had those primitives;
+`Badge`, `Grouped` and `Link` followed once support gained
+[`Badge`](../support/badge.md), [`Link`](../support/link.md) and
+[`DropdownItem`](../support/dropdown-item.md). The click cascade — the only
+structural blocker — turned out to be expressible as an attribute map, so all
+three collapsed the same way `Button` had.
+
+`ActionGroup`'s own
+[`GroupedTrigger`](../../../packages/actions/templates/partials/ActionGroup/GroupedTrigger.html.twig)
+came along in the same change: it duplicated the identical dropdown-item
+skeleton, and is the second consumer that justified making the item a support
+primitive rather than leaving it `actions`-owned. Two gaps closed with the
+move — `->color()` now reaches a grouped action and a grouped group, which
+[`toGroupedHtml()`](../../../vendor/filament/actions/src/Action.php) and
+[`toGroupedTriggerHtml()`](../../../vendor/filament/actions/src/ActionGroup.php)
+both pass and the hand-rolled templates dropped.
 
 What stays divergent: **no string fast paths** — Filament's `toHtml()`
 dispatch, the `toBadgeHtml()`/`toButtonHtml()`/… renderers and their

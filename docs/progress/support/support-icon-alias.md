@@ -24,7 +24,7 @@ the permanent note in [Divergences](#divergences).
 | --- | --- | --- | --- | --- |
 | [`SECTION_COLLAPSE_BUTTON`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias::SECTION_COLLAPSE_BUTTON`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | [diverges](#the-section-alias-is-a-pinned-literal-not-referenced-from-the-template) |
 | [`MODAL_CLOSE_BUTTON`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias::MODAL_CLOSE_BUTTON`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | exercised by the close-button case in [`ModalRenderTest`](../../../packages/actions/tests/Integration/Components/ModalRenderTest.php), which renders the constant through the template; it needs no pinned-literal test because the [Modal template](../../../packages/support/templates/components/Modal/index.html.twig) references the constant itself rather than a copy of its value |
-| Badge / breadcrumbs / pagination aliases (the other 11) | [`SupportIconAlias.php`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | blocked | Badge, Breadcrumbs, Pagination components | [detail](#details) |
+| Badge / breadcrumbs / pagination aliases (the other 11) | [`SupportIconAlias.php`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | blocked | the [Badge](badge.md) delete button, Breadcrumbs, Pagination | [detail](#details) |
 
 ## Details
 
@@ -39,7 +39,9 @@ the whole support kit. Sylament ships **two**: `SECTION_COLLAPSE_BUTTON` and
 ported. The remaining eleven all belong to components that have not been built
 yet:
 
-- `BADGE_DELETE_BUTTON` — Badge (todo)
+- `BADGE_DELETE_BUTTON` — the [Badge](badge.md) delete button (todo). The Badge
+  component itself is now ported; its delete button is the unbuilt part, and it
+  is the only thing this alias names.
 - `BREADCRUMBS_SEPARATOR`, `BREADCRUMBS_SEPARATOR_RTL` — Breadcrumbs (todo)
 - `PAGINATION_FIRST_BUTTON`(`_RTL`), `PAGINATION_LAST_BUTTON`(`_RTL`),
   `PAGINATION_NEXT_BUTTON`(`_RTL`), `PAGINATION_PREVIOUS_BUTTON`(`_RTL`) —

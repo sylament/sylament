@@ -156,10 +156,12 @@ for a directory collapses that whole subtree into one navigational entry.
 ([`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig),
 [`Action/Link.html.twig`](../../../packages/actions/templates/partials/Action/Link.html.twig),
 [`Action/Badge.html.twig`](../../../packages/actions/templates/partials/Action/Badge.html.twig),
-[`Action/IconButton.html.twig`](../../../packages/actions/templates/partials/Action/IconButton.html.twig);
-Sylament compositions with **no** single Filament source; Filament renders
-action triggers through the support-layer button/link/badge/icon-button
-component views) and
+[`Action/Grouped.html.twig`](../../../packages/actions/templates/partials/Action/Grouped.html.twig),
+[`Action/IconButton.html.twig`](../../../packages/actions/templates/partials/Action/IconButton.html.twig),
+and `ActionGroup`'s own
+[`GroupedTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/GroupedTrigger.html.twig);
+each a thin composition over the support-layer primitive Filament's matching
+`*_VIEW` constant points at, so none carries markup of its own to track) and
 [`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)
 (porting [`action-modal.blade.php`](../../../vendor/filament/actions/resources/views/action-modal.blade.php))
 — are folded into [`action.md`](action.md) as its trigger- and modal-rendering

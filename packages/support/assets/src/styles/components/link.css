@@ -1,0 +1,84 @@
+.sy-link {
+    @apply relative inline-flex items-center justify-center gap-1.5 font-medium transition duration-75 outline-none;
+
+    & > .sy-link-label {
+        @apply self-baseline;
+    }
+
+    &.sy-force-enabled,
+    &:not(.sy-disabled):not([disabled]) {
+        @apply hover:underline focus-visible:rounded-sm focus-visible:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current;
+    }
+
+    &.sy-disabled:not(.sy-force-enabled),
+    &[disabled]:not(.sy-force-enabled) {
+        @apply pointer-events-none cursor-default opacity-70;
+    }
+
+    &.sy-size-xs {
+        @apply gap-1 text-xs;
+    }
+
+    &.sy-size-sm {
+        @apply gap-1 text-sm;
+    }
+
+    &.sy-size-md,
+    &.sy-size-lg,
+    &.sy-size-xl {
+        @apply gap-1.5 text-sm;
+    }
+
+    &.sy-font-thin {
+        @apply font-thin;
+    }
+
+    &.sy-font-extralight {
+        @apply font-extralight;
+    }
+
+    &.sy-font-light {
+        @apply font-light;
+    }
+
+    &.sy-font-normal {
+        @apply font-normal;
+    }
+
+    &.sy-font-semibold {
+        @apply font-semibold;
+    }
+
+    &.sy-font-bold {
+        @apply font-bold;
+    }
+
+    &.sy-font-extrabold {
+        @apply font-extrabold;
+    }
+
+    &.sy-font-black {
+        @apply font-black;
+    }
+
+    &:not(.sy-color) {
+        @apply text-gray-700 dark:text-gray-200;
+
+        & > .sy-icon {
+            @apply text-gray-400 dark:text-gray-500;
+        }
+    }
+
+    &.sy-color {
+        @apply text-color-600 dark:text-color-400;
+    }
+}
+
+/*
+ * Align links embedded within text.
+ */
+p > .sy-link,
+span > .sy-link {
+    @apply pb-[2px] align-middle;
+    text-align: inherit;
+}

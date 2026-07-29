@@ -1,16 +1,19 @@
 {% props
-    color = 'primary',
-    disabled = false,
-    formId = null,
+    tag = 'button',
+    type = 'button',
     href = null,
+    target = null,
+    formId = null,
+    disabled = false,
+
+    size = 'md',
+    color = 'primary',
+
     icon = null,
     iconAlias = null,
     iconSize = null,
-    label = null,
-    size = 'md',
-    tag = 'button',
-    target = null,
-    type = 'button' %}
+
+    label = null %}
 
 {% set knownSizes = ['xs', 'sm', 'md', 'lg', 'xl'] %}
 {% set sizeValue = size.value ?? size %}

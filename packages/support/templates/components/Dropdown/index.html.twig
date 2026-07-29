@@ -1,11 +1,13 @@
 {% props
-    content = markup(block('content') ?? null),
-    flip = true,
-    maxHeight = null,
-    offset = 8,
-    placement = 'bottom-start',
     trigger = markup(block('trigger') ?? null),
-    width = null %}
+    content = markup(block('content') ?? null),
+
+    placement = 'bottom-start',
+    offset = 8,
+    flip = true,
+
+    width = null,
+    maxHeight = null %}
 
 {% set dropdownController = 'sylament--support--dropdown' %}
 

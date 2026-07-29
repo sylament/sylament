@@ -1,31 +1,39 @@
 {% props
-    alignment = 'start',
-    autofocus = true,
+    id = null,
+
+    open = false,
+    overlaid = false,
     clickThrough = false,
-    closeButton = true,
-    closeByClickingAway = true,
-    closeByEscaping = true,
-    content = markup(block('content') ?? null),
-    description = null,
-    extraOverlayAttributes = {},
-    extraWindowAttributes = {},
-    footer = markup(block('footer') ?? null),
-    footerActions = [],
-    footerActionsAlignment = null,
+
     heading = null,
+    description = null,
     icon = null,
     iconAlias = null,
     iconColor = 'primary',
-    id = null,
-    open = false,
-    overlaid = false,
-    returnsFocus = true,
+
+    content = markup(block('content') ?? null),
+
+    footer = markup(block('footer') ?? null),
+    footerActions = [],
+    footerActionsAlignment = null,
+
+    width = 'md',
+    alignment = 'start',
     slideOver = false,
     slideOverPosition = 'end',
     stickyHeader = false,
     stickyFooter = false,
+
+    closeButton = true,
+    closeByClickingAway = true,
+    closeByEscaping = true,
+    autofocus = true,
+    returnsFocus = true,
+
     submitHandler = null,
-    width = 'md' %}
+
+    extraWindowAttributes = {},
+    extraOverlayAttributes = {} %}
 
 {% set iconColorName = iconColor is iterable or iconColor is empty ? 'gray' : iconColor %}
 {% set iconHtml = generateIconHtml(icon, iconAlias, {

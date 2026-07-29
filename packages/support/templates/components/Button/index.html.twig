@@ -1,15 +1,18 @@
 {% props
-    color = 'primary',
-    content = markup(block('content') ?? null),
-    disabled = false,
+    tag = 'button',
+    type = 'button',
     href = null,
+    target = null,
+    disabled = false,
+
+    size = 'md',
+    color = 'primary',
+
     icon = null,
     iconAlias = null,
     iconSize = null,
-    size = 'md',
-    tag = 'button',
-    target = null,
-    type = 'button' %}
+
+    content = markup(block('content') ?? null) %}
 
 {% set knownSizes = ['xs', 'sm', 'md', 'lg', 'xl'] %}
 {% set sizeValue = size.value ?? size %}

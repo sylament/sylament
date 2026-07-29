@@ -1,9 +1,10 @@
 {% props
     action,
     id,
+    schema = null,
+
     open = true,
-    overlaid = false,
-    schema = null %}
+    overlaid = false %}
 
 {% set submitHandler = action.hasFormWrapper
     ? action.getLiveComponentCallMountedActionName

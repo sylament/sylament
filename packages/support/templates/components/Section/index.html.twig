@@ -1,32 +1,38 @@
 {% props
-    afterHeader = markup(block('afterHeader') ?? null),
-    aside = false,
-    collapseId = null,
-    collapseLabel = 'Collapse section',
-    collapsed = false,
-    collapsible = false,
-    compact = false,
-    contained = true,
-    content = markup(block('content') ?? null),
-    contentBefore = false,
-    contentId = null,
-    description = markup(block('description') ?? null),
-    descriptionId = null,
-    divided = false,
-    expandLabel = 'Expand section',
-    footer = markup(block('footer') ?? null),
-    hasContentEl = true,
+    schemaKey = null,
+    liveComponentId = null,
+
     heading = markup(block('heading') ?? null),
-    headingId = null,
     headingTag = 'h2',
+    description = markup(block('description') ?? null),
     icon = null,
     iconColor = 'gray',
     iconSize = null,
-    labelledById = null,
-    liveComponentId = null,
+    afterHeader = markup(block('afterHeader') ?? null),
+
+    content = markup(block('content') ?? null),
+    contentBefore = false,
+    hasContentEl = true,
+
+    footer = markup(block('footer') ?? null),
+
+    collapsible = false,
+    collapsed = false,
     persistCollapsed = false,
-    schemaKey = null,
-    secondary = false %}
+    collapseLabel = 'Collapse section',
+    expandLabel = 'Expand section',
+
+    aside = false,
+    compact = false,
+    contained = true,
+    divided = false,
+    secondary = false,
+
+    headingId = null,
+    descriptionId = null,
+    contentId = null,
+    collapseId = null,
+    labelledById = null %}
 
 {% set iconColorName = iconColor is iterable or iconColor is empty ? 'gray' : iconColor %}
 {% set iconHtml = generateIconHtml(icon, attributes: {

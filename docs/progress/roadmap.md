@@ -26,7 +26,9 @@ stops mid-M2, M1 still demos on its own.
 
 ## Now
 
-**M1 · 1 — Form validation vertical.** The next epic to pick up.
+**M1 · 2 — Entity round-trip.** The next epic to pick up — read the
+[carried discussion](#m1--entity-crud-slice) below the epic table before
+brainstorming it.
 
 ## Pulled forward
 
@@ -60,7 +62,7 @@ defines it._
 
 | # | Epic | Packages | Delivers | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Form validation vertical | [forms](forms/README.md), [schemas](schemas/README.md) | `CanBeValidated` subset mapped to Symfony Validator — `required`, `maxLength`, and what `TextInput`/`Textarea` carry — host-side `validate()` on submit, error display in `FieldWrapper`; retrofits validation into the pulled-forward mounted-action form pipeline (`getState(afterValidate: …)`, the `ValidationException` keep-modal-open loop). | todo |
+| 1 | Form validation vertical | [forms](forms/README.md), [schemas](schemas/README.md), [actions](actions/README.md) | `CanBeValidated` subset on Symfony Validator, shipped in the **constraint vocabulary** (`constraint()`/`constraints()`/`getValidationConstraints()` — [renames](renames.md#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary)): `required()`/`nullable()`, `length()` + bounds, `email()`/`numeric()` arms, `validationMessages()` baked into constraint options at build time (no separate messages/attributes pipeline; `validationAttribute()` dropped — Symfony messages are value-centric). Schema-tier walk + `validate(): void`; host side on `HasSchemas`: `validateSchema()`, a path-keyed error bag, `ValidationException extends UnprocessableEntityHttpException` riding ux-live-component's 422 re-render, and scoped `clearSchemaValidation()` replacing Livewire's global `resetErrorBag()` (a nested mount keeps the parent's messages). **Sticky re-validation** — deliberate UX divergence from Filament's submit-only model: a failed schema re-validates every request at `PostHydrate(priority: -20)` (below the afterStateUpdated diff), so errors clear field-by-field as the user fixes them. `getState(shouldCallHooksBefore, afterValidate)` now validates with `getStateSnapshot()` split out; the mounted-action retrofit landed the `*FormValidated` hook pair, both keep-modal-open catch arms, and remount/unmount bag cleanup. The `HasValidationConstraints` contract lives in **schemas** (split-repo rule). `FieldWrapper` renders every message for the path plus `aria-invalid` on the inputs. **Verified at merge**: full gates plus five live browser checks against the peer demo — page-form 422 with value/focus preserved, sticky clear via an unrelated debounce request, modal keep-open on invalid submit, fresh frame on remount, and a console clean of everything but the two designed 422 logs. Deferred: the spec's out-of-scope list (comparison/date/unique/exists rules, `regex()`/`in()`, display flags, digit-count lengths, per-field live-validation opt-ins). | done |
 | 2 | Entity round-trip | **demo**, plus package gaps it surfaces | `fill()` from an Article entity, `getState()` back onto it and flush; create and edit pages sharing one form component. | todo |
 | 3 | Slice field catalog | [forms](forms/README.md) | `Select` (native, static options) and `Checkbox`; `Toggle` as stretch. | todo |
 | 4 | Slice layout catalog | [schemas](schemas/README.md) | `Grid`, `Group`, and `Fieldset` — the remaining basic layout components. `Section` is already demo-ready; its open rows are all blocked (see out of scope). | todo |

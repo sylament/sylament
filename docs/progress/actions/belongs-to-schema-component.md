@@ -23,7 +23,7 @@ Reference — the Filament source this is diffed against:
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
 
-### `requireSchemaComponent()` throws where Filament fatals
+### `getSchemaComponentOrFail()` throws where Filament fatals
 
 `getSchemaComponent()` is nullable on both sides. Filament dereferences it
 unguarded in the `$get` / `$set` resolver arms of `Action` and `ActionGroup` —
@@ -35,7 +35,7 @@ unguarded in the `$get` / `$set` resolver arms of `Action` and `ActionGroup` —
 — so an action evaluated outside a schema dies with *Call to a member function
 makeGetUtility() on null*, naming neither the action nor the binding it wanted.
 
-Sylament routes those arms through `requireSchemaComponent()`, which throws a
+Sylament routes those arms through `getSchemaComponentOrFail()`, which throws a
 `LogicException` naming the class and what the utilities need. The failure mode
 is unchanged — both stop the request on the same input — and an exception
 message is not API, so nothing a migrating user depends on moves.

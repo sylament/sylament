@@ -33,7 +33,7 @@ trait BelongsToSchemaComponent
         return $this->schemaComponent ?? $this->getSchemaContainer()?->getParentComponent() ?? $this->getGroup()?->getSchemaComponent();
     }
 
-    public function requireSchemaComponent(): Component
+    public function getSchemaComponentOrFail(): Component
     {
         return $this->getSchemaComponent() ?? throw new LogicException(static::class . ' has no schema component: none was resolved from the action itself, its schema container, or its group. The [$get] and [$set] closure utilities are only available to an action rendered inside a schema.');
     }

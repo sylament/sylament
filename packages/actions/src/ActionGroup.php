@@ -312,7 +312,7 @@ class ActionGroup extends ViewComponent
             'liveComponent' => ClosureParameter::make($this->getLiveComponent()),
             'schema' => ClosureParameter::make($this->getSchemaContainer()),
             'schemaComponent', 'component' => ClosureParameter::make($this->getSchemaComponent()),
-            'schemaGet', 'get' => ClosureParameter::make($this->requireSchemaComponent()->makeGetUtility()),
+            'schemaGet', 'get' => ClosureParameter::make($this->getSchemaComponentOrFail()->makeGetUtility()),
             'schemaComponentState', 'state' => ClosureParameter::make($this->getSchemaComponentState()),
             'schemaState' => ClosureParameter::make($this->getSchemaState()),
             default => parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),

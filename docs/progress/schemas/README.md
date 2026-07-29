@@ -173,8 +173,8 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | [`Get`](../../../packages/schemas/src/Utilities/Get.php) | [`Components/Utilities/Get.php`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | in progress | [get.md](get.md) |
 | [`Set`](../../../packages/schemas/src/Utilities/Set.php) | [`Components/Utilities/Set.php`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | in progress | [set.md](set.md) |
 | [`PropertyAccessor`](../../../packages/schemas/src/State/PropertyAccessor.php) | — | done | [property-accessor.md](property-accessor.md) |
-| [`StateCast`](../../../packages/schemas/src/StateCasts/Contracts/StateCast.php) | [`Components/StateCasts/Contracts/StateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/Contracts/StateCast.php) | done | — |
-| [`BooleanStateCast`](../../../packages/schemas/src/StateCasts/BooleanStateCast.php) | [`Components/StateCasts/BooleanStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/BooleanStateCast.php) | done | — |
+| [`StateCast`](../../../packages/schemas/src/State/Casts/Contracts/StateCast.php) | [`Components/StateCasts/Contracts/StateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/Contracts/StateCast.php) | done | — |
+| [`BooleanStateCast`](../../../packages/schemas/src/State/Casts/BooleanStateCast.php) | [`Components/StateCasts/BooleanStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/BooleanStateCast.php) | done | — |
 | `DateTimeStateCast` | [`Components/StateCasts/DateTimeStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/DateTimeStateCast.php) | todo | — |
 | `EnumArrayStateCast` | [`Components/StateCasts/EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | todo | — |
 | `EnumStateCast` | [`Components/StateCasts/EnumStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumStateCast.php) | todo | — |

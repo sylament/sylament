@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
 
-use Sylament\Schemas\StateCasts\BooleanStateCast;
+use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\DefaultCastField;
-use Sylament\Schemas\Tests\Fixtures\StateCasts\AppendStateCast;
+use Sylament\Schemas\Tests\Fixtures\State\Casts\AppendStateCast;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 

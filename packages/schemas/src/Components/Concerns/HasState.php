@@ -6,7 +6,7 @@ namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
 use Sylament\Schemas\Components\Component;
-use Sylament\Schemas\StateCasts\Contracts\StateCast;
+use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Schemas\Utilities\Get;
 use Sylament\Schemas\Utilities\Set;
 

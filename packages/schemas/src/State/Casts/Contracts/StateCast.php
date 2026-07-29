@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\StateCasts\Contracts;
+namespace Sylament\Schemas\State\Casts\Contracts;
 
 interface StateCast
 {

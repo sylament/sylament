@@ -12,7 +12,7 @@ use Sylament\Actions\Tests\Fixtures\DefaultNamedActionFixture;
 use Sylament\Actions\Tests\Fixtures\StateFieldFixture;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
-use Sylament\Schemas\StateCasts\BooleanStateCast;
+use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\Utilities\Get;
 use Sylament\Schemas\Utilities\Set;
 use Sylament\Schemas\Schema;

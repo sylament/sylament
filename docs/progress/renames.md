@@ -80,13 +80,14 @@ No segment is renamed for style. Symfony's own habit of singular `Exception\`
 Filament costs a migrating user nothing to learn, and one carve-out is worse
 than none.
 
-Two namespaces are **shortened**, dropping a `Components\` segment Filament
-keeps, because what they hold is not part of the component tier — neither a
-component, nor a concern or contract of one:
+Two namespaces **leave `Components\`**, because what they hold is not part of
+the component tier — neither a component, nor a concern or contract of one. The
+casts also gain a `State\` parent rather than sitting at the root, so they file
+beside the `PropertyAccessor` they cast for:
 
 | Filament | Sylament | Holds |
 | --- | --- | --- |
-| `Filament\Schemas\Components\StateCasts\` | `Sylament\Schemas\StateCasts\` | `StateCast` and its implementations — value objects that transform state |
+| `Filament\Schemas\Components\StateCasts\` | `Sylament\Schemas\State\Casts\` | `StateCast` and its implementations — value objects that transform state |
 | `Filament\Schemas\Components\Utilities\` | `Sylament\Schemas\Utilities\` | `Get` / `Set` — the closure-injected state accessors |
 
 A migrating user importing `Filament\Schemas\Components\Utilities\Get` will

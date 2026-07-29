@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Schemas\StateCasts;
+namespace Sylament\Schemas\State\Casts;
 
-use Sylament\Schemas\StateCasts\Contracts\StateCast;
+use Sylament\Schemas\State\Casts\Contracts\StateCast;
 
 use function Sylament\Support\blank;
 

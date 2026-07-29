@@ -6,11 +6,6 @@ namespace Sylament\Actions\Concerns;
 
 use Closure;
 
-/**
- * Ports Filament's actions `HasGroupedIcon`, narrowed to `string` icons —
- * no `BackedEnum`/`Markup` icon values yet, the same narrowing `CanOpenModal`'s
- * `modalIcon` applies.
- */
 trait HasGroupedIcon
 {
     protected string|Closure|null $groupedIcon = null;

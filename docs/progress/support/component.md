@@ -111,6 +111,12 @@ of their own to get there.
   locator `get()` returns a fresh, fully autowired instance — components carry
   per-instance configuration and must never be shared, the same reasoning
   Symfony UX's `TwigComponentPass` applies to live components.
+- **Pass registration order.** `build()` adds the pass with a plain
+  `addCompilerPass()`, which lands it at `TYPE_BEFORE_OPTIMIZATION` priority 0 —
+  *after* the priority-100 group holding `ResolveInstanceofConditionalsPass`,
+  which is what actually applies the autoconfiguration tag the pass reads.
+  Registering it at a higher priority would run it before any definition
+  carries `sylament.component`, and the locator would come out empty.
 - **The class-keyed locator.** The pass builds a `ServiceLocator` keyed by each
   tagged definition's class and injects it into
   `sylament_support.component_resolver`'s `$components` argument, mirroring

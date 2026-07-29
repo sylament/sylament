@@ -23,12 +23,6 @@ class SylamentActionsBundle extends SylamentBundle
         $this->configureTwigExtensions($configurator);
     }
 
-    /**
-     * Registers the shipped Twig components. `autoconfigure()` lets `#[AsTwigComponent]`
-     * supply the `twig.component` tag, so the attribute stays the single source of truth
-     * for the component's name and template. The component stack has no class alias, so it
-     * is referenced by service id.
-     */
     private function configureTwigComponents(ContainerConfigurator $configurator): void
     {
         $configurator->services()

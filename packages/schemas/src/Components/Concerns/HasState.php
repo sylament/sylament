@@ -483,16 +483,12 @@ trait HasState
                 }
 
                 if ($this->getRootContainer()->hasDehydratedComponent($statePath)) {
-                    // Another dehydrated component owns this exact path — leave the key intact.
                     return;
                 }
 
                 if ($this->hasComponentWithStatePath($statePath)) {
-                    // A sibling shares this path: removing the whole key would
-                    // destroy its data, so forget only this component's descendants…
                     PropertyAccessor::getInstance()->forgetFromArray($state, $this->getDescendantStatePathsToForget($statePath));
 
-                    // …then clean up the shared parent when nothing meaningful remains.
                     if (blank(PropertyAccessor::getInstance()->getFromArray($state, $statePath))) {
                         PropertyAccessor::getInstance()->forgetFromArray($state, $statePath);
                     }
@@ -505,8 +501,6 @@ trait HasState
                 return;
             }
 
-            // A pathless (layout) component: recurse into children telling them
-            // they are not dehydrated, so their descendants get pruned too.
             foreach ($this->getChildSchemas() as $childSchema) {
                 $childSchema->dehydrateState($state, isDehydrated: false);
             }

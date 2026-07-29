@@ -8,12 +8,6 @@ use Closure;
 
 use function Sylament\Support\filled;
 
-/**
- * Filament folds the Schema-side fallbacks into these getters behind
- * `$this instanceof Component` checks; here the trait carries the component
- * flavor (container delegation) and Schema overrides the getters, so each
- * context stays statically typed — mirroring `HasGap` / `HasColumns`.
- */
 trait HasStateBindingModifiers
 {
     protected bool|Closure|null $isLive = null;
@@ -52,15 +46,6 @@ trait HasStateBindingModifiers
         return $this;
     }
 
-    /**
-     * Emit this component's Symfony UX `data-model` binding against its absolute
-     * state path. The modifier grammar (`modifier|…|path`, path last) is parsed by
-     * ux-live-component's `live_controller.js` (`get_model_binding_default`):
-     * `norender` suppresses the re-render (state still syncs for the next submit),
-     * `on(change)` switches the trigger event to blur/change, `debounce(<ms>)`
-     * overrides the debounce; a bare path binds live on `input` with the default
-     * debounce.
-     */
     public function getDataModel(): ?string
     {
         $statePath = $this->getStatePath();

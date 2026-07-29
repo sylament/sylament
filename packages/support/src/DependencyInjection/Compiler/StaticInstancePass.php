@@ -28,14 +28,6 @@ final class StaticInstancePass implements CompilerPassInterface
         }
     }
 
-    /**
-     * Whether the service class implements {@see StaticInstanceInterface},
-     * tolerating classes that cannot be autoloaded. A bundle may register a
-     * service whose class extends an optional dependency that is not installed
-     * (e.g. LiveComponent's `form.live_collection` extending Symfony Form's
-     * `AbstractType` when `symfony/form` is absent); autoloading it throws.
-     * Such a class is never a StaticInstance, so skipping it is safe.
-     */
     private function implementsStaticInstance(string $class): bool
     {
         try {

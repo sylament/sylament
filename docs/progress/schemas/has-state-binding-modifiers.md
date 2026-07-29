@@ -89,7 +89,11 @@ Sylament drops that surface entirely (and with it the `$stateBindingModifiers`
 array prop) and adds `getDataModel()`, which returns the ux-live-component modifier
 grammar (`modifier|…|path`, path last): `norender|<path>` when not live,
 `on(change)|<path>` for blur, `debounce(<ms>)|<path>` when debounced, else the bare
-path — parsed by `live_controller.js`. This is the Livewire → UX LiveComponent
+path — parsed by `live_controller.js` (`get_model_binding_default`). Note what
+each modifier does client-side: `norender` suppresses the re-render but still
+syncs state for the next submit, `on(change)` switches the trigger event to
+blur/change, `debounce(<ms>)` overrides the default debounce, and a bare path
+binds live on `input` with that default. This is the Livewire → UX LiveComponent
 idiom translation, and it is stable: the two client runtimes have incompatible
 binding grammars, so it will not reverse. `stateBindingModifiers()`,
 `applyStateBindingModifiers()`, and `getStateBindingModifiers()` are therefore
@@ -102,9 +106,10 @@ return $this->getContainer()->…; elseif ($this->getParentComponent()) …`. Sy
 splits it two-level instead: the trait's `isLive` / `isLiveOnBlur` /
 `isLiveDebounced` / `getLiveDebounce` delegate to `getContainer()` (the component
 flavor), and [`Schema`](../../../packages/schemas/src/Schema.php) overrides each to
-delegate to `getParentComponent()`. Per the trait's own docblock this mirrors
-`HasGap` / `HasColumns` and keeps each context statically typed with no `instanceof`
-sniff. It reverses only if the two-level pattern is abandoned toolkit-wide.
+delegate to `getParentComponent()`. This is the same two-level split
+[`has-gap.md`](has-gap.md) and [`has-columns.md`](has-columns.md) record, and it
+keeps each context statically typed with no `instanceof` sniff. It reverses only
+if the two-level pattern is abandoned toolkit-wide.
 
 _See also: the global [rename table](../renames.md) — relocating the trait from
 Filament's `Concerns\` to `Components\Concerns\` is a systematic namespace

@@ -14,7 +14,6 @@ final class Set
     public function __construct(
         private readonly Component $component,
     ) {
-        //
     }
 
     public function __invoke(string|Component $path, mixed $state, bool $isAbsolute = false, bool $shouldCallUpdatedHooks = false): mixed

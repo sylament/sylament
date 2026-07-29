@@ -8,22 +8,6 @@ use Sylament\Support\DependencyInjection\HasStaticInstance;
 use Sylament\Support\DependencyInjection\StaticInstanceInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
-/**
- * Reads and writes a host component's state bag by absolute dotted state path.
- *
- * The dotted path is converted to a Symfony property path whose first segment is
- * the bag property (`data`) and whose remaining segments are array indices —
- * `data.address.city` becomes `data[address][city]` — mirroring UX Live
- * Components' own `adjustPropertyPathForData`. The configured framework accessor
- * is null-tolerant on missing indices (read) and auto-vivifies nested arrays
- * (write), so callers never guard for absent keys.
- *
- * The {@see getFromArray()} / {@see setInArray()} / {@see forgetFromArray()}
- * twins address a *detached* nested array by dotted path — the dehydration walk
- * assembles state in a plain array before it reaches any host — and are faithful
- * ports of Laravel's `Arr::get` / `Arr::set` / `Arr::forget` (Symfony
- * PropertyAccess offers no key removal, hence the explicit `forget`).
- */
 final class PropertyAccessor implements StaticInstanceInterface
 {
     use HasStaticInstance;
@@ -31,7 +15,6 @@ final class PropertyAccessor implements StaticInstanceInterface
     public function __construct(
         private readonly PropertyAccessorInterface $accessor,
     ) {
-        //
     }
 
     public function get(object $host, string $path): mixed

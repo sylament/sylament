@@ -47,9 +47,8 @@ class ComponentManager implements StaticInstanceInterface
     }
 
     /**
-     * Registers a closure applied to every subsequently configured instance of the class.
-     * Returns a closure that removes the registration, or, when `$during` is given, keeps
-     * the registration only while `$during()` runs and returns its result.
+     * Returns a closure that removes the registration, or, when `$during` is given,
+     * `$during()`'s own result.
      *
      * @param class-string $component
      */
@@ -90,11 +89,6 @@ class ComponentManager implements StaticInstanceInterface
         }
     }
 
-    /**
-     * Walks the component's class hierarchy root-first, calling `$setUp` when the class
-     * declaring `setUp()` is reached and each class's registered configuration closures
-     * after it; important configuration closures run last, again in hierarchy order.
-     */
     public function configure(Component $component, Closure $setUp): void
     {
         $componentClass = $component::class;

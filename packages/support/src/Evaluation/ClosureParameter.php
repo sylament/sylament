@@ -9,7 +9,6 @@ final readonly class ClosureParameter
     public function __construct(
         private mixed $value,
     ) {
-        //
     }
 
     public static function make(mixed $value): self

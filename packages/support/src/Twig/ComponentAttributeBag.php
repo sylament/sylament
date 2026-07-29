@@ -53,17 +53,6 @@ class ComponentAttributeBag
     }
 
     /**
-     * Flattens the attributes for rendering, matching html_attr() semantics:
-     * BackedEnum values collapse to their backing value, `aria-*` booleans
-     * become literal "true"/"false" strings, a `data-*` `true` becomes "true"
-     * and other non-scalar `data-*` values are JSON-encoded, class joins its
-     * token list with spaces, style joins its declarations with "; " (each
-     * dropped when empty), any other iterable joins its entries with spaces
-     * (`null`/`false` entries dropped, a lone `true` keeps the attribute with
-     * an empty value, an entry-less result omits it), `null` and `false` are
-     * omitted, `true` is kept for bare attributes, and remaining
-     * non-stringable values are skipped.
-     *
      * @return array<string, string|true>
      */
     public function toScalarAttributes(): array
@@ -150,16 +139,6 @@ class ComponentAttributeBag
         return $scalars;
     }
 
-    /**
-     * Renders the attributes as escaped `name="value"` HTML pairs: class joins its
-     * token list with spaces, style joins its declarations with "; ", `true` renders
-     * as a bare `name=""` (except for `aria-*`/`data-*`, which convert per
-     * toScalarAttributes()), `null` and `false` are omitted, and non-stringable
-     * values are skipped. Names are entity-escaped with Twig's `html_attr` strategy
-     * so an attacker-controlled key cannot break out of the name to inject a second
-     * attribute or event handler; values go through `htmlspecialchars()` with
-     * invalid UTF-8 substituted rather than silently dropped.
-     */
     public function toHtml(): string
     {
         $pairs = [];
@@ -175,13 +154,6 @@ class ComponentAttributeBag
         return implode(' ', $pairs);
     }
 
-    /**
-     * Entity-escape an attribute name with Twig's `html_attr_relaxed` strategy:
-     * every character outside the attribute-name-safe set becomes an inert HTML
-     * entity, so a hostile key like `x onmouseover=alert(1)` cannot introduce a new
-     * attribute. Legitimate names (only safe-set characters) pass through unchanged;
-     * a name that is not valid UTF-8 is escaped byte by byte.
-     */
     private function escapeAttributeName(string $name): string
     {
         $escaped = preg_replace_callback(
@@ -194,8 +166,6 @@ class ComponentAttributeBag
                     return '&#xFFFD;';
                 }
 
-                // A UTF-8 single-byte (ASCII) character; a length check here must stay
-                // byte-based, so test the lead byte rather than any str/mb length helper.
                 if ($ord < 0x80) {
                     return match ($ord) {
                         34 => '&quot;',
@@ -231,13 +201,6 @@ class ComponentAttributeBag
     }
 
     /**
-     * Normalize a class value into a flat token list: strings split on whitespace,
-     * html_classes-style conditional maps resolve to their truthy string keys, and
-     * nested lists flatten. Boolean and null entries are dropped, matching what
-     * html_attr()'s token list would omit at render. Public because the classes()
-     * Twig function delegates here, keeping template and PHP class handling on one
-     * implementation.
-     *
      * @return list<string>
      */
     public static function toTokenList(mixed $value): array
@@ -267,10 +230,6 @@ class ComponentAttributeBag
     }
 
     /**
-     * Normalize a style value into a list of declarations: strings split on
-     * top-level ";", maps resolve to "property: value" pairs, and nested lists
-     * flatten.
-     *
      * @return list<string>
      */
     private static function toDeclarationList(mixed $value): array
@@ -303,11 +262,6 @@ class ComponentAttributeBag
     }
 
     /**
-     * Split a style string into declarations on top-level ";" only. A semicolon
-     * inside parentheses or quotes — a `url(data:image/svg+xml;base64,…)` value or
-     * `content: "a;b"` — is part of the value, not a separator, so a naive
-     * explode(";") would corrupt it.
-     *
      * @return list<string>
      */
     private static function splitStyleDeclarations(string $style): array

@@ -135,8 +135,21 @@ The state engine is fully ported and covered across three test files
 [Integration/LiveStateTest](../../../packages/schemas/tests/Integration/LiveStateTest.php)):
 state-path composition, raw/cast read-write via the
 [PropertyAccessor seam](property-accessor.md), defaults, hydrate, the
-dehydration prune/mutate walk, and the `afterStateUpdated` round-trip. It stays
-in progress because whole method families are deliberately absent —
+dehydration prune/mutate walk, and the `afterStateUpdated` round-trip.
+
+Two behavioural notes in that prune walk, to preserve past this section: two
+components can be bound to the **same** state path, so a non-dehydrated one never
+removes the whole key. It leaves the key untouched when
+`getRootContainer()->hasDehydratedComponent()` reports a dehydrated owner for the
+path; otherwise, when a sibling shares the path, it forgets only the paths its
+own descendants own (`getDescendantStatePathsToForget()`) — removing the key
+outright would destroy that sibling's data — and then drops the shared parent
+only once nothing meaningful is left under it. Second, a **pathless** (layout)
+component has no key of its own to forget, so it prunes by recursing into its
+child schemas with `isDehydrated: false`, which is what carries the prune down to
+its descendants.
+
+It stays in progress because whole method families are deliberately absent —
 relationship-derived and constant state, validation-coupled state, and
 partial-render/JS hooks (each a divergence below) — and because one ported
 method, `formatStateUsing()`, has no direct test. Next step: add a

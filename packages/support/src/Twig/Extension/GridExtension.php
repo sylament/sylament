@@ -33,7 +33,6 @@ class GridExtension extends AbstractExtension
             $columns = ['lg' => $columns];
         }
 
-        // Drop blank breakpoint keys, which would emit a garbage `<ws>:sy-grid-*` class.
         $columns = array_filter(array_filter($columns), filled(...), ARRAY_FILTER_USE_KEY);
 
         $columns['default'] ??= 1;
@@ -123,7 +122,6 @@ class GridExtension extends AbstractExtension
             ];
         }
 
-        // Drop blank breakpoint keys, which would emit a garbage `<ws>:sy-grid-*` class.
         return array_filter(array_filter($value), filled(...), ARRAY_FILTER_USE_KEY);
     }
 

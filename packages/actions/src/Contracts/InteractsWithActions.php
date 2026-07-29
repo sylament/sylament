@@ -30,9 +30,7 @@ interface InteractsWithActions
     public function getMountedActions(): array;
 
     /**
-     * One frame of the per-mount form-state bag. Singular by design — a plural
-     * `getMountedActionsData()` would shadow the `$mountedActionsData` property
-     * for Symfony's property accessor.
+     * One frame of the per-mount form-state bag.
      *
      * @return array<string, mixed>
      */

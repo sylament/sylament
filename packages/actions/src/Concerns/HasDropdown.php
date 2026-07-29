@@ -6,12 +6,6 @@ namespace Sylament\Actions\Concerns;
 
 use Closure;
 
-/**
- * Ports Filament's actions `HasDropdown`. `dropdownTeleport()` and
- * `dropdownAutoPlacement()` are deferred with the dropdown features they
- * configure; `dropdownWidth()` takes a CSS length string — support has no
- * `Width` enum, and the value flows into a `--sy-dropdown-width` variable.
- */
 trait HasDropdown
 {
     protected bool|Closure $hasDropdown = true;

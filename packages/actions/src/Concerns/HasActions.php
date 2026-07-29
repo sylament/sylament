@@ -38,22 +38,6 @@ trait HasActions
     public array $mountedActions = [];
 
     /**
-     * Per-mount form state, one frame per `$mountedActions` index, bound at
-     * `->statePath("mountedActionsData.{$actionNestingIndex}")`. A sibling bag
-     * rather than Filament's `mountedActions.{i}.data`, because
-     * `Sylament\Schemas\State\PropertyAccessor` turns that path into the Symfony
-     * property path `mountedActions[0][data][title]`, whose first segment
-     * resolves through `getMountedActions()` — Symfony's `ReflectionExtractor`
-     * prefers a same-named getter over the property — and hands back resolved
-     * `Action` objects, so every read *and* write raises `NoSuchIndexException`.
-     * Same precedence trap that already forces `dehydrateWith:`.
-     *
-     * Writable, so the client can invent an index: presence in this bag is
-     * never evidence of a mount — `$mountedActions` alone is, and it stays
-     * server-controlled. Never add a `getMountedActionsData()` method; the
-     * contract reader below is deliberately named in the singular so it cannot
-     * collide.
-     *
      * @var array<int, array<string, mixed>>
      */
     #[LiveProp(writable: true)]
@@ -73,13 +57,6 @@ trait HasActions
     protected ?array $cachedMountedActions = null;
 
     /**
-     * Has-schema answers by nesting index. Not an optimisation:
-     * {@see isMountedActionModalOpen()} runs the modal-open gate once per frame
-     * per render (`Modals/index.html.twig:8,24`), so an unmemoised build is
-     * O(frames²) schema constructions. It cannot live in `$cachedSchemas` —
-     * that map is typed `array<string, Schema>` and the answer we need to cache
-     * for a schema-less action is exactly the *absence* of a schema.
-     *
      * @var array<int, bool>
      */
     protected array $cachedMountedActionHasSchema = [];
@@ -128,11 +105,6 @@ trait HasActions
             'context' => $context,
         ];
 
-        // Before anything can render: `live_controller`'s `getDeepData()`
-        // dereferences every `[data-model]` path segment unguarded after every
-        // render, so a field at `mountedActionsData.0.title` with no index 0 in
-        // the dehydrated props is an uncaught TypeError that kills live updates
-        // for the whole component.
         $this->mountedActionsData[array_key_last($this->mountedActions)] = [];
 
         $action = $this->getMountedAction();
@@ -203,9 +175,6 @@ trait HasActions
         $result = null;
 
         try {
-            // Filament's exact pipeline position (`InteractsWithActions.php:251-262`)
-            // minus the `afterValidate` wrapper, so M1 · 1 can swap in
-            // `getState(afterValidate: …)` here without moving anything else.
             if ($this->mountedActionHasSchema($action)) {
                 $action->data($this->getMountedActionSchema(mountedAction: $action)?->getState() ?? []);
             }
@@ -224,7 +193,6 @@ trait HasActions
         } catch (Halt) {
             return null;
         } catch (Cancel) {
-            // Falls through to unmount — Cancel closes the modal.
         }
 
         $action->arguments($originalArguments);
@@ -237,8 +205,6 @@ trait HasActions
             $mountedActions,
         );
 
-        // If the action replaced the stack while it was being called, don't unmount
-        // the replacement (Filament-exact: names + contexts compared, arguments ignored).
         if ($onlyNamesAndContexts($originallyMountedActions) !== $onlyNamesAndContexts($this->mountedActions)) {
             return null;
         }
@@ -258,11 +224,6 @@ trait HasActions
      */
     public function replaceMountedAction(string $name, array $arguments = [], array $context = []): void
     {
-        // The stack's own indices as well as the bag's: a surviving
-        // `mountedActionSchema{$i}` would belong to the action being replaced,
-        // keyed to the frame its replacement now occupies. The stack is the
-        // authoritative half of that union — the bag is client-writable and
-        // could arrive missing a slot.
         $staleSchemaIndexes = array_unique([
             ...array_keys($this->mountedActions),
             ...array_keys($this->mountedActionsData),
@@ -280,26 +241,6 @@ trait HasActions
         $this->mountAction($name, $arguments, $context);
     }
 
-    /**
-     * Filament's bootedInteractsWithActions() stale-stack drop: a hydrated stack
-     * that no longer resolves (renamed action, changed schema) self-heals to closed
-     * instead of rendering a broken modal chain.
-     *
-     * That resolution is also what puts every frame's schema back into
-     * `mountedActionSchema{$i}` — {@see resolveActions()} registers one per frame as
-     * it walks. A mounted-action schema is cache-only — `HasSchemas::$cachedSchemas`
-     * is a plain property, not a `#[LiveProp]` — so on a request that is not a
-     * `mountAction()` call nothing else puts it back before
-     * `callAfterSchemaStateUpdated()` walks `getCachedSchemas()`, and every field
-     * inside an open modal would be skipped: `live()` and `afterStateUpdated()` would
-     * silently never fire there. The explicit `#[PostHydrate]` priorities on this hook
-     * (10) and on that one (-10) are what order the two; equal priorities would sort
-     * by reverse declaration order, which is not a contract worth depending on.
-     *
-     * Not extra work: the same schemas are built during the render that follows. It
-     * also makes the `#[PreDehydrate]` old-state snapshot independent of whether the
-     * modal body actually rendered this pass.
-     */
     #[PostHydrate(priority: 10)]
     public function afterMountedActionsHydrated(): void
     {
@@ -317,9 +258,6 @@ trait HasActions
     {
         $id = $this->getMountedModalId();
 
-        // No try/catch around this read: getMountedAction() never throws (the
-        // resolution loop swallows into an empty cache) — Filament's catch here
-        // would be dead code under PHPStan level max.
         $action = $this->getMountedAction();
 
         if (($cancelParentActions === false) || ($action === null)) {
@@ -351,12 +289,6 @@ trait HasActions
             array_pop($this->cachedMountedActions);
         }
 
-        // Every frame index the stack no longer has, dropped in lockstep with it.
-        // Selected by index *value*, not by position in the bag: $mountedActions
-        // is a server-controlled list, so its valid indices are always
-        // 0..count-1, whereas $mountedActionsData is client-writable and can
-        // arrive re-ordered or with holes. A frame that still exists must never
-        // lose its slot — see the property docblock for why.
         foreach (array_keys($this->mountedActionsData) as $actionNestingIndex) {
             if ($actionNestingIndex < count($this->mountedActions)) {
                 continue;
@@ -406,12 +338,6 @@ trait HasActions
     }
 
     /**
-     * Read one frame of {@see $mountedActionsData}. Deliberately singular:
-     * a `getMountedActionsData()` would be picked up by Symfony's
-     * `ReflectionExtractor` as the bag property's read accessor, putting a
-     * method between the schema state layer and the array it must address by
-     * index — the trap documented on the property.
-     *
      * @return array<string, mixed>
      */
     public function getMountedActionData(?int $actionNestingIndex = null): array
@@ -425,11 +351,6 @@ trait HasActions
         return $this->mountedActionsData[$actionNestingIndex] ?? [];
     }
 
-    /**
-     * Filament's `->model()` and `->operation()` arms are not ported: schemas
-     * has no model binding and no `Operation` concept, so the per-mount schema
-     * carries only its key, its state path and the modal heading level.
-     */
     public function getMountedActionSchema(?int $actionNestingIndex = null, ?Action $mountedAction = null): ?Schema
     {
         if ($this->mountedActions === []) {
@@ -445,10 +366,6 @@ trait HasActions
         }
 
         if (! $this instanceof InteractsWithSchemas) {
-            // Probed against a schema detached from this host — it can never
-            // carry state — purely to tell "this host cannot build schemas" (a
-            // wiring bug) from "this action declares none" (normal, and the
-            // overwhelmingly common case).
             if ($mountedAction->getSchema(Schema::make()) instanceof Schema) {
                 throw new LogicException("Action [{$mountedAction->getName()}] declares a schema but " . static::class . ' is not a schema host — implement ' . InteractsWithSchemas::class . ' and use the ' . HasSchemas::class . ' trait.');
             }
@@ -493,14 +410,6 @@ trait HasActions
     }
 
     /**
-     * Symfony's PropertyAccessor resolves a property read by trying a same-named
-     * getter before the property itself (ReflectionExtractor::getReadInfo() checks
-     * get/is/has/can-prefixed methods first). LiveComponentHydrator::dehydrate()
-     * reads every #[LiveProp] through that accessor, so without this bypass it would
-     * call getMountedActions() — resolved Action objects — instead of this raw,
-     * wire-safe descriptor array. Livewire has no such precedence rule, which is why
-     * Filament's identically-named property and getter never collide.
-     *
      * @return array<int, array{name: string, arguments: array<mixed>, context: array<mixed>}>
      */
     public function dehydrateMountedActions(): array
@@ -509,9 +418,6 @@ trait HasActions
     }
 
     /**
-     * The single place ActionNotResolvableException is swallowed: an unresolvable
-     * stack caches as empty, so reads degrade to null instead of crashing the render.
-     *
      * @param array<int, array{name: string, arguments: array<mixed>, context: array<mixed>}> $mountedActions
      * @return array<Action>
      */
@@ -525,48 +431,6 @@ trait HasActions
     }
 
     /**
-     * Resolves stack descriptors root-to-leaf, passing the growing resolved list as
-     * the parent chain: index 0 resolves against the host, every deeper frame against
-     * the previous action's declared modal actions. Because the walk stops at the
-     * first null (see below) and only the root frame can resolve to null — deeper
-     * frames throw — the result is either empty or as long as the input, never a
-     * list with a hole in it. nestingIndex is stamped from the source array key,
-     * which for the array_slice() prefixes this is called with is also the output
-     * position; the cache stays positional (Filament-exact quirk).
-     *
-     * The schemaComponent branch is now taken for any frame carrying the key, and
-     * `resolveSchemaComponentAction()` owns the root-frame policy itself: it refuses
-     * a deeper frame unless the container named is already in the schema cache. The
-     * one case that admits is an action declared inside a mounted-action schema,
-     * whose `mountedActionSchema{$i}` container is server-minted and has no declaring
-     * method — everything method-discovered stays root-only, so a deeper frame can
-     * still never re-root itself against a host schema. Filament branches on the
-     * context alone (their `Action::getContext()` never emits schemaComponent for a
-     * child frame), but a hand-built stack entry could carry both keys, so the check
-     * stays explicit here — it just lives one call down, next to the cache lookup it
-     * depends on.
-     *
-     * Each resolved frame's schema is registered under `mountedActionSchema{$i}` before
-     * the walk moves on, which is where Filament registers it too
-     * (`InteractsWithActions::resolveActions()`). Per frame rather than after the walk,
-     * because the next frame may *be* one of that schema's actions: a descriptor
-     * carrying `context['schemaComponent'] = 'mountedActionSchema0'` is resolved by
-     * reading exactly the entry the previous iteration just wrote. Registering the
-     * whole set afterwards would leave every such frame unresolvable on any request
-     * that did not mount it — and, worse, leave *its* schema uncached for
-     * `callAfterSchemaStateUpdated()`, silently killing `live()` one modal deeper.
-     * Filament gates this on an `$isMounting` flag for its dynamic-property lookups;
-     * `resolveActions()` has one caller here and it only ever passes a prefix of
-     * `$mountedActions`, so there is no non-mounting path to gate.
-     *
-     * Two deliberate deltas from Filament. A frame that resolves to null stops the walk
-     * (they `continue`): their resolvers throw where ours return null, so continuing
-     * would hand the next frame an empty parent chain and re-root it against the host —
-     * a client-named child could then resolve as a root action. A stack with a hole is
-     * never valid, so stopping is both safer and equivalent for their throwing cases.
-     * Filament also boot()s each resolved action here; our components have no boot
-     * lifecycle, so that call has no equivalent. Both are docs-noted in Task 9.
-     *
      * @param array<int, array{name: string, arguments: array<mixed>, context: array<mixed>}> $actions
      * @return array<Action>
      */
@@ -597,10 +461,6 @@ trait HasActions
 
             $resolvedActions[] = $resolvedAction;
 
-            // A host that cannot carry schemas is skipped rather than thrown at: an
-            // action that has a schema can never have been mounted on one —
-            // mountAction() throws first — so every stack reaching here is
-            // schema-less anyway.
             if ($this instanceof InteractsWithSchemas) {
                 $this->cacheSchema(
                     "mountedActionSchema{$actionNestingIndex}",
@@ -669,18 +529,6 @@ trait HasActions
         return $this->cachedActions[$action->getName()] = $action;
     }
 
-    /**
-     * The id must be minted the first time this is reached from inside a LiveAction
-     * (as mountAction()/unmountAction() do today via getMountedModalId()), never
-     * first reached from the template. AddLiveAttributesSubscriber::onPreRender
-     * dehydrates #[LiveProp]s — including this one — before the component's
-     * template body renders, so an id first minted during rendering never makes it
-     * into that dehydration pass: the next request hydrates $actionsHostId back to
-     * null and mints a different value, changing every dialog id and breaking the
-     * DOM identity the morph relies on. A mount()-seeded stack or a future
-     * URL-driven default action would violate this if it read the id for the first
-     * time from the template rather than from a LiveAction.
-     */
     public function getActionsHostId(): string
     {
         return $this->actionsHostId ??= bin2hex(random_bytes(4));
@@ -693,14 +541,6 @@ trait HasActions
         return "sy-{$this->getActionsHostId()}-action-{$actionNestingIndex}";
     }
 
-    /**
-     * Sylament-only declarative-choreography helper (no Filament equivalent — their
-     * client JS decides visibility): the top frame is open when its modal should
-     * open; a parent frame stays open only while every deeper resolved frame *that
-     * opens a modal of its own* declares overlayParentActions(). The qualifier is
-     * load-bearing, not hedging — a modal-less deeper frame (Action::halt() mid-flow)
-     * must not close the parent modal that halt() exists to keep open.
-     */
     public function isMountedActionModalOpen(int $actionNestingIndex): bool
     {
         if ($this->mountedActions === []) {
@@ -745,34 +585,6 @@ trait HasActions
     }
 
     /**
-     * Resolve the descriptor against the host schema its `context['schemaComponent']`
-     * key names: the segment before the first dot is the schema name, the rest is
-     * the nested container key handed to `Schema::getAction()`. Unresolvable
-     * client references — unknown schema name, unknown action — return null so the
-     * mount no-ops; a host that cannot carry schemas at all is a wiring bug and
-     * throws.
-     *
-     * The schema cache is consulted first, and a registered name takes the branch
-     * whole: it skips the discovery guard, and it is the one thing a non-root frame
-     * may resolve through. Both concessions are the same argument — only
-     * `getMountedActionSchema()` registers a cache-only schema, under a
-     * server-minted `mountedActionSchema{$i}`, so the client can name one but never
-     * mint one. That is what makes an action declared *inside* a mounted-action
-     * schema resolvable at all: its container has no declaring method, and it sits
-     * at frame 1 or deeper. Filament reaches the same case through a bare
-     * `getSchema($name)` (`vendor/filament/actions/src/Concerns/InteractsWithActions.php:643`).
-     *
-     * Everything else keeps the old contract. A non-root frame naming a
-     * method-discovered schema still returns null — a nested frame must descend
-     * through its parent's declared modal actions, never re-root itself against a
-     * host-declared schema. And the discovery path keeps the full shape guard,
-     * which ports Filament's `cacheSchema()` check: the candidate `{$name}()` /
-     * `{$name}Schema()` method must be schema-shaped — first parameter typed
-     * `Schema`, or parameterless with a `Schema` return type. It runs here because
-     * `HasSchemas::getSchema()` throws on unknown names and invokes whatever method
-     * discovery finds; with a client-writable context key, the shape guard is what
-     * keeps every other host method from being remotely invocable.
-     *
      * @param array{name: string, arguments: array<mixed>, context: array<mixed>} $descriptor
      * @param array<Action> $parentActions
      */

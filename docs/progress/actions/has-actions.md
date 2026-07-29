@@ -419,8 +419,7 @@ on every miss. The port swallows that exception in exactly one place —
 which caches an unresolvable stack as `[]` — so `getMountedAction()` itself
 returns `null` rather than throwing, and the `catch` Filament writes around it
 in `unmountAction()` would be provably dead code under PHPStan level max. The
-guard is therefore absent, not forgotten; the note lives in the method body so
-a future reader does not re-add it. Everything else about the method is
+guard is therefore absent, not forgotten — do not re-add it. Everything else about the method is
 Filament's: the optional `$actionNestingIndex` defaults to the top of the
 stack, a warm positional `$cachedMountedActions` entry short-circuits, and a
 cold read resolves the prefix `array_slice($mountedActions, 0, $index + 1)`
@@ -486,6 +485,20 @@ benign here and deliberately left alone: the getter returns the same `string`
 the property holds (filling it as a side effect), so dehydrating through the
 getter round-trips the identical value, verified by a hydrate/dehydrate test
 rather than by inspection.
+
+One constraint the lazy fill carries, and it is not visible from the getter:
+**the id must first be minted from inside a `#[LiveAction]`**, which is what
+`mountAction()` / `unmountAction()` do today by way of `getMountedModalId()`.
+`AddLiveAttributesSubscriber::onPreRender`
+(`vendor/symfony/ux-live-component/src/EventListener/AddLiveAttributesSubscriber.php`)
+dehydrates every `#[LiveProp]` — this one included — *before* the component's
+template body renders, so an id first minted while rendering never reaches that
+dehydration pass: the next request hydrates `$actionsHostId` back to `null`,
+mints a different value, and every dialog id changes, breaking the DOM identity
+[the morph relies on](#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper).
+Nothing enforces this. A `mount()`-seeded stack, or a future URL-driven default
+action, would violate it by reading the id first from the template instead of
+from a live action.
 
 ### A frame carries two identities: an index-scoped dialog and a name-scoped wrapper
 

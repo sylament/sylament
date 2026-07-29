@@ -91,10 +91,6 @@ abstract class Field extends Component
     }
 
     /**
-     * The validation error messages the field wrapper renders. Empty until the
-     * validation surface (`CanBeValidated`) is ported; the wrapper renders its
-     * error region only when this is non-empty.
-     *
      * @return array<string>
      */
     public function getErrorMessages(): array

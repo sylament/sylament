@@ -29,11 +29,6 @@ trait HasFontFamily
         return $family;
     }
 
-    /**
-     * The class fragment templates emit for the font family: `sy-font-<value>` for
-     * the enum cases, a custom string as-is, null when unset — so templates never
-     * type-sniff the enum-vs-string union.
-     */
     public function getFontFamilyClass(): ?string
     {
         $fontFamily = $this->getFontFamily();

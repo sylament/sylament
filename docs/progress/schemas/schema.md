@@ -250,8 +250,8 @@ is the validation-, prune-, and relationship-free variant. Sylament ships ONE
 method named `getState()` whose body is Filament's `getStateSnapshot()`. The
 validation layer (`validate`/`prepareForValidation`/`mutateStateForValidation`/
 `pruneStateToMatchKeys`) and relationship layer (`saveRelationships`/
-`loadStateFromRelationships`) are unported; the docblock says so. It also omits
-Filament's `Component::withVisibilityCache(...)` wrapper and the child-schema
+`loadStateFromRelationships`) are unported. It also omits Filament's
+`Component::withVisibilityCache(...)` wrapper and the child-schema
 `isHiddenAndNotDehydratedWhenHidden()` guards, consistent with actions and full
 visibility handling not yet wired. Reverses when the validation epic lands and a
 validating `getState()` is added alongside the snapshot.

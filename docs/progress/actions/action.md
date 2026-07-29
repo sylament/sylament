@@ -74,8 +74,8 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) | [`Concerns/HasAction.php`](../../../vendor/filament/actions/src/Concerns/HasAction.php) | in progress | — | [detail](#hasaction-drops-the-livewire-click-gating), [diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
 | [`HasArguments`](../../../packages/actions/src/Concerns/HasArguments.php) | [`Concerns/HasArguments.php`](../../../vendor/filament/actions/src/Concerns/HasArguments.php) | done | — | — |
 | [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | [diverges](#hasgroupedicon-narrows-its-icon-type-to-string) |
-| [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`label()` / `getLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
-| `hiddenLabel()` / `isLabelHidden()` | [`hiddenLabel()` / `isLabelHidden()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | — |
+| [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`label()` / `getLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | The name-derived default takes the segment **before the first dot** (`u($name)->before('.')`), which is Filament's own actions-side choice and differs from `Field`'s `afterLast('.')` — matched deliberately, not a slip to "fix" |
+| `hiddenLabel()` / `isLabelHidden()` | [`hiddenLabel()` / `isLabelHidden()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | A hidden label renders as an `aria-label` on the trigger root rather than as visible text — the [button](../../../packages/actions/templates/partials/Action/Button.html.twig) / [link](../../../packages/actions/templates/partials/Action/Link.html.twig) / [badge](../../../packages/actions/templates/partials/Action/Badge.html.twig) triggers read `isLabelHidden` for it, matching what Filament's `labelSrOnly` button prop does |
 | `translateLabel()` / `disableLabel()` (deprecated) | [`translateLabel()` / `disableLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported) |
 | [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | in progress | M1 · 1 (form-validation hooks); a Symfony event dispatch for `ActionCalling`/`ActionCalled` | [detail](#the-form-fill-lifecycle-hooks-are-ported-form-validated-hooks-and-actioncallingactioncalled-events-are-not) |
 | [`HasMountableArguments`](../../../packages/actions/src/Concerns/HasMountableArguments.php) | [`Concerns/HasMountableArguments.php`](../../../vendor/filament/actions/src/Concerns/HasMountableArguments.php) | done | — | [diverges](#action-invocation-is-a-php-side-seam-only) |
@@ -100,7 +100,8 @@ and clears the visibility cache (`clearVisibilityCache()`). The port's
 block at all. Both branches are unreachable today: bulk-record selection
 (`InteractsWithSelectedRecords`, `bulk()`) is not ported, and the port's
 [`CanBeHidden`](../../../packages/actions/src/Concerns/CanBeHidden.php) has no
-cache to clear (its own docblock records the cache as dropped). **Blocked** on
+cache to clear ([the cache is dropped](#canbehidden-omits-authorization-group-and-table-cache-integration)).
+**Blocked** on
 those two concerns landing; add the `finally` block back in the same change.
 
 ### `cancel()` and `halt()` drop the rollback flag
@@ -218,14 +219,19 @@ unauthorized. None of the caching, the `ActionGroup` child-iteration branch, or
 the authorization fallback is ported; the port's `isHidden()` is exactly
 Filament's `resolveIsHiddenInGroup()` with the `instanceof ActionGroup` branch
 and the trailing `isAuthorizedOrNotHiddenWhenUnauthorized()` call removed
-entirely (per the trait's own docblock, a deliberate confirm-only MVP cut).
+entirely — a deliberate confirm-only MVP cut. The child-iteration branch does
+exist now, but as an override on
+[`ActionGroup::isHidden()`](../../../packages/actions/src/ActionGroup.php) rather
+than in this shared trait, since only `ActionGroup` needs it —
+[see there](action-group.md#no-ishiddeningroup-or-visibility-caching).
 Concretely: a Sylament action with no `hidden()`/`visible()` call is always
 visible today, even where Filament would hide it because the user fails
 `CanBeAuthorized`'s policy check, or because its `ActionGroup` is empty/hidden.
 
 **Next step:** restore the authorization fallback once `CanBeAuthorized` lands
 (it supplies `isAuthorizedOrNotHiddenWhenUnauthorized()`), restore the
-group-iteration branch once `ActionGroup` exists, and restore the
+`getGroup()?->baseIsHidden()` short-circuit once `BelongsToGroup` carries more
+than a setter/getter pair, and restore the
 record-keyed visibility cache once `BelongsToTable`/`BelongsToGroup` give
 `hasTable()`/`getGroup()` a real implementation — `getRecord()` (via
 `InteractsWithRecord`) already exists and can back
@@ -921,8 +927,7 @@ Filament's `CanOpenUrl` also carries `postToUrl()` / `shouldPostToUrl()` /
 token, `action`/`method` attributes, disabled-state handling all differ from
 the plain-link path). None of this exists in
 [`Sylament\Actions\Concerns\CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php)
-— its own docblock records the omission as deliberate: "no POST actions in the
-MVP." `Action`'s current template
+— the omission is deliberate: no POST actions in the MVP. `Action`'s current template
 (`../../../packages/actions/templates/partials/Action/Button.html.twig`)
 only ever emits `<a>` or `<button>`, never a `<form>`. This is a scope decision
 for the current action surface, not a missing dependency, so it is **skipped**

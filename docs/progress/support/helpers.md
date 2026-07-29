@@ -33,7 +33,7 @@ write-up in [Details](#details), and/or **diverges** → the permanent note in
 | [`blank()`](../../../packages/support/src/helpers.php) | [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php) | done | — | [diverges](#blank-gives-markup-text-semantics-despite-its-countable-count) |
 | [`filled()`](../../../packages/support/src/helpers.php) | [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php) | done | — | — |
 | [`wrap()`](../../../packages/support/src/helpers.php) | [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
-| [`generate_icon_html()`](../../../packages/support/src/helpers.php) | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | done | — | — |
+| [`generate_icon_html()`](../../../packages/support/src/helpers.php) | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | done | — | [diverges](#decorative-icon-defaults-rely-on-ux-icons-not-on-bundled-icon-sets) |
 | `format_money()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `format_number()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `get_model_label()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
@@ -88,6 +88,19 @@ row-flip here when it lands.
 
 ## Divergences
 
+### Decorative-icon defaults rely on ux-icons, not on bundled icon sets
+
+An unnamed icon must end up decorative on **both** render branches, and only one
+of those branches lives in this file. The image branch is ours: `generate_icon_html()`
+merges `alt=""` unless the caller set `alt`, `aria-label`, or `aria-labelledby`.
+The SVG branch is not — Filament gets its `aria-hidden` from the icon sets it
+ships, while Sylament renders through [`IconManager`](icon-manager.md) onto
+ux-icons, which adds `aria-hidden` itself at render time when no textual
+alternative is present
+([`IconRenderer`](../../../vendor/symfony/ux-icons/src/IconRenderer.php)). Same
+outcome, different owner: swapping the icon renderer would silently take half of
+this guarantee with it, so a replacement has to be checked for that behavior.
+
 ### `blank()` gives `Markup` text semantics despite its `Countable` count
 
 Laravel checks `Countable` before stringifying, so a whitespace-only value that
@@ -126,4 +139,7 @@ runtime, they are reimplemented here in the `Sylament\Support` namespace so the
 ported Filament helpers (and every downstream component) have them. `wrap()` is a
 free-function port of the static `Arr::wrap()` method, kept minimal (the
 `null → []`, array-passthrough, scalar-to-single-element contract) — no
-`Collection` or `Arrayable` handling, since nothing in the port needs it.
+`Collection` or `Arrayable` handling, since nothing in the port needs it. Its one
+job here is guarding the `foreach (wrap($this->evaluate(…)))` shape the schemas
+and actions concerns use: a closure that returns `null` or a single item would
+otherwise silently empty the loop or fatal it.

@@ -7,6 +7,14 @@ builds-and-caches each from a same-named method, fills their state, and fires
 their `afterStateUpdated` hooks across a request round-trip. It ports Filament's
 [`Concerns\InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php).
 
+The host owns the state shape, not the trait. It declares its own state as
+`#[LiveProp(writable: true)]` properties — a `data` array bag, individual typed
+props, or one bag per form — and each schema-defining method binds to them with
+`->statePath(...)`, mirroring Filament's `->statePath($this->getFormStatePath())`
+(which likewise defaults to no path, i.e. top-level binding). Because the trait
+presumes no state shape, one host can carry several independently-bound schemas
+without them colliding.
+
 The label is swapped as part of the documented interface⇄trait switch: Filament's
 *trait* `InteractsWithSchemas` becomes Sylament's *trait* `HasSchemas`, while
 Filament's *interface* `HasSchemas` becomes Sylament's *interface*
@@ -180,8 +188,12 @@ entry — the last two are told apart only by argument count. Sylament's
 logic already lives in `getSchema()`, so duplicating it here would be a second
 copy to keep in sync — and makes `$schema` required, so there is no
 argument-count ambiguity: a non-null `Schema` registers, `null` always unsets.
-Reverses only if a caller needs single-argument discovery through this method
-specifically rather than through `getSchema()`.
+A schema registered this way — the mounted-action modal caches the action's
+schema under a synthetic name — is returned by `getCachedSchemas()` like any
+other, so it joins the `persistOldState()` / `callAfterSchemaStateUpdated()` loop
+for free; that is what makes reactive fields work inside an open modal. Reverses
+only if a caller needs single-argument discovery through this method specifically
+rather than through `getSchema()`.
 
 ### hasCachedSchema() checks the raw cache, not getCachedSchemas()
 
@@ -202,7 +214,7 @@ Livewire `updated<Trait>` convention). Sylament names it
 `callAfterSchemaStateUpdated` to keep it distinct from the component-level
 `afterStateUpdated()` setter that lives on the state concern (see
 [`component.md`](component.md)) — the state-layer prototype collided the two
-names. The rename is deliberate and permanent (docblock-noted in the trait).
+names. The rename is deliberate and permanent.
 
 _See also: the global [rename table](../renames.md) — the interface⇄trait label
 swap (`InteractsWithSchemas` trait → `HasSchemas` trait) and the Livewire → UX

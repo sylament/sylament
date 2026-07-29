@@ -144,11 +144,6 @@ class Schema extends ViewComponent
         return $this->getParentComponent()?->getAllColumns() ?? $this->getOwnAllColumns();
     }
 
-    /**
-     * Renders nothing when no child is visible — Filament's `renderEmbeddedHtml()`
-     * returns `''` in that case, which is what lets `Section` suppress an empty
-     * slot's chrome.
-     */
     public function render(Environment $twig): ?string
     {
         if ($this->getComponents(withHidden: false) === []) {

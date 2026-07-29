@@ -54,11 +54,6 @@ function filled(mixed $value): bool
 }
 
 /**
- * Port of Laravel's Arr::wrap(): null becomes an empty array, an array passes
- * through unchanged, and any other value becomes a single-element array. Used
- * where a closure-evaluated value must be iterated as a collection without a
- * `null`/single-item return silently emptying it or fataling the loop.
- *
  * @template TValue
  *
  * @param array<TValue>|TValue|null $value
@@ -75,13 +70,6 @@ function wrap(mixed $value): array
 }
 
 /**
- * Generates an icon's HTML: a resolvable alias overrides the given icon, a
- * `Markup` value renders raw inside a span wrapper, a string containing "/"
- * renders as an image, and anything else renders as an ux-icons icon name
- * through the IconManager, with `sy`, `sy-icon`, and `sy-size-*` classes
- * applied (the bare `sy` marker scopes the preflight on standalone icon roots,
- * per styling.md rule 2).
- *
  * @param string|array<string>|null $alias
  */
 function generate_icon_html(
@@ -111,9 +99,8 @@ function generate_icon_html(
     if (is_string($icon) && str_contains($icon, '/')) {
         $attributeValues = $attributes->getAttributes();
 
-        // A custom image-path icon carries no intrinsic accessible name, so it would be
-        // announced by its filename. Default it to decorative (`alt=""`) unless the caller
-        // named it, matching the `aria-hidden` that ux-icons adds to rendered SVG icons.
+        // An image path carries no accessible name of its own, so a screen reader
+        // announces the filename. Default it to decorative unless the caller named it.
         if (
             blank($attributeValues['alt'] ?? null)
             && blank($attributeValues['aria-label'] ?? null)

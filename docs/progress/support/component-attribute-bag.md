@@ -120,6 +120,21 @@ iterables joined on spaces (dropping `null`/`false`, keeping a lone `true` as an
 empty value), and hostile attribute names entity-escaped with the
 `html_attr_relaxed` strategy so a key cannot break out to inject a handler.
 
+Two escaping details the renderer owns, both with no Filament counterpart:
+
+- **Names.** `escapeAttributeName()` reimplements Twig's `html_attr_relaxed`
+  escaper — every character outside the attribute-name-safe set becomes an inert
+  entity, legitimate names pass through byte-identical, and a name that is not
+  valid UTF-8 (where `preg_replace_callback`'s `/u` pattern returns `null`) falls
+  back to escaping byte by byte rather than emitting the name raw. Inside that
+  callback the ASCII test is `ord($char[0]) < 0x80` — deliberately a **byte**
+  check on the lead byte, never a string-length helper, because PHP-CS-Fixer's
+  `mb_str_functions` rule would rewrite `strlen()` into `mb_strlen()` and silently
+  reclassify multi-byte characters.
+- **Values.** `htmlspecialchars()` runs with `ENT_QUOTES | ENT_SUBSTITUTE`, so
+  invalid UTF-8 in a value is substituted rather than collapsing the whole value
+  to an empty string the way the default flags would.
+
 _See also: the [rename table](../renames.md) — Blade→Twig (`view()` →
 `template()`) and `Htmlable`→`Markup` are the systematic escaping-contract
 translation this renderer implements._
@@ -136,3 +151,17 @@ for the one sink (ux-twig-component's `attributes.defaults()`) that string-casts
 its value. Both delegate to the same `ComponentAttributeBag` normalization, so
 there is one class-token implementation rather than a fluent PHP path and a
 separate Twig path.
+
+Two contracts of those functions that the PHP signatures cannot state:
+
+- **`attrs()` skips falsy sources and throws on any other string.** `null`,
+  `false`, and `''` are silently skipped so a template can pass the implicit else
+  of a ternary (`cond ? {…}`); every other string source raises, because a bare
+  string is never a valid attribute map and swallowing it would drop attributes
+  without a trace. Class values are accepted directly as strings, conditional
+  maps, or nested lists — no `classes()` wrapper is needed inside `attrs()`.
+- **`classes()` returns a string, not a token-list object.** Its one sink
+  string-casts whatever it gets, and PHP 8.5 deprecates wrapping an object in an
+  `ArrayIterator` as an attribute value, so returning a joined string keeps that
+  path clean. `attrs()` re-splits such a string on `class`, so the same value is
+  still usable there.

@@ -11,12 +11,6 @@ use Symfony\UX\TwigComponent\ComponentStack;
 
 /**
  * Renders the modal of whatever action is currently mounted on the host.
- *
- * Filament's Blade counterpart reads `$this` because Blade components inherit the
- * Livewire component's scope; a Twig component gets a fresh context where `this`
- * is the component itself. The host is therefore resolved by walking the render
- * stack to the nearest `InteractsWithActions`, keeping the call site zero-argument
- * — `<twig:SylamentActions:Modals />` — wherever the tag is nested.
  */
 #[AsTwigComponent(
     name: 'SylamentActions:Modals',

@@ -14,7 +14,6 @@ final class Get
     public function __construct(
         private readonly Component $component,
     ) {
-        //
     }
 
     public function __invoke(string|Component $path = '', bool $isAbsolute = false): mixed

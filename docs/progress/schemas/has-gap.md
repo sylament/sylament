@@ -55,11 +55,10 @@ trait keeps only the container-delegation branch
 [`Schema`](../../../packages/schemas/src/Schema.php) reimplements both getters
 with the parent-component and inline-coupling fallbacks. Deliberate and permanent
 — each context stays statically typed with no runtime `instanceof` test, the same
-split applied by [`has-columns.md`](has-columns.md). The trait's own docblock
-records the choice. (Schema's `isDense` override also normalizes Filament's
-nullable `isInline() || parent?->isDense()` to a strict `bool` — that
-normalization belongs to the Schema detail file, but it is the behavior
-`HasGapTest` asserts.)
+split applied by [`has-columns.md`](has-columns.md). (Schema's `isDense` override
+also normalizes Filament's nullable `isInline() || parent?->isDense()` to a
+strict `bool` — that normalization belongs to the Schema detail file, but it is
+the behavior `HasGapTest` asserts.)
 
 _See also: the global [rename table](../renames.md) — the `Filament\Schemas\` →
 `Sylament\Schemas\` namespace swap is a systematic translation recorded there,

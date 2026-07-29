@@ -150,13 +150,6 @@ trait HasState
     }
 
     /**
-     * Assemble the dehydrated state bag: seed from the raw bag, fire
-     * `beforeStateDehydrated`, prune/transform via {@see dehydrateState()}, apply
-     * `mutateDehydratedState`, then unwrap this schema's own subtree. Modeled on
-     * Filament's `getStateSnapshot()` — the validation-, prune- and
-     * relationship-free variant of its `getState()`; those layers land with their
-     * own epics (validation) / T6 (relationships).
-     *
      * @return array<string, mixed>
      */
     public function getState(): array

@@ -31,6 +31,5 @@ trait Configurable
 
     protected function setUp(): void
     {
-        //
     }
 }

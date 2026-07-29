@@ -8,18 +8,6 @@ use Sylament\Schemas\Schema;
 use Closure;
 use Sylament\Schemas\Components\Component;
 
-/**
- * The visibility core of Filament's `CanBeHidden`. `hidden()` / `visible()` and
- * the boolean resolvers gate both dehydration ({@see HasState::isDehydrated()}
- * drops a hidden component unless {@see HasState::dehydratedWhenHidden()} is set)
- * and render-loop skipping — a container's {@see HasComponents::getComponents()}
- * excludes invisible children when called with `withHidden: false`, as the schema
- * template does. `hiddenWhenAllChildComponentsHidden()` ships here too. Still
- * unported: `whenTruthy()` / `whenFalsy()` and the JS visibility variants (blocked
- * on live-component-state), `hiddenOn()` / `visibleOn()` (need an operation
- * concept), and the static visibility cache — see
- * docs/progress/schemas/can-be-hidden.md.
- */
 trait CanBeHidden
 {
     protected bool|Closure $isHidden = false;

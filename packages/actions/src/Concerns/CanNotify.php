@@ -38,13 +38,11 @@ trait CanNotify
 
     public function sendSuccessNotification(): static
     {
-        // No-op seam: the notifications bundle renders the toast (actions.md Decision 4).
         return $this;
     }
 
     public function sendFailureNotification(): static
     {
-        // No-op seam: the notifications bundle renders the toast (actions.md Decision 4).
         return $this;
     }
 }

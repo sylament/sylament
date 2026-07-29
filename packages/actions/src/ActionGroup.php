@@ -159,12 +159,6 @@ class ActionGroup extends ViewComponent
     }
 
     /**
-     * Dropdown rendering plan, Filament's toEmbeddedHtml() loop: runs of visible
-     * plain actions (and dropdown-enabled subgroups, which embed as submenus)
-     * share a section; a non-dropdown subgroup never renders its own trigger —
-     * its visible children splice in as a fresh section, flushing any
-     * accumulated run into its own section first.
-     *
      * @return array<array<Action|ActionGroup>>
      */
     public function getDropdownActionLists(): array
@@ -183,19 +177,9 @@ class ActionGroup extends ViewComponent
                     $singleActions = [];
                 }
 
-                // Re-stamp as grouped: the child's own getActions() stamped from its
-                // hasDropdown() (false — that is why it flattens), which would render
-                // standalone buttons inside this dropdown panel. These children are
-                // being spliced into THIS group's panel, so they are dropdown items.
-                // Last write wins on the *default*, so an explicit template() or
-                // triggerTemplate() on a child still overrides both.
-                $actionLists[] = $this->stampTriggerTemplates(
-                    array_values(array_filter(
-                        $action->getActions(),
-                        fn (Action|ActionGroup $childAction): bool => $childAction->isVisible(),
-                    )),
-                    true,
-                );
+                $actionLists[] = array_filter($action->getActions(), static fn (Action|ActionGroup $childAction): bool => $childAction->isVisible())
+                        |> array_values(...)
+                        |> (fn (array $x): array => $this->stampTriggerTemplates($x, true, ));
             } else {
                 $singleActions[] = $action;
             }
@@ -356,7 +340,10 @@ class ActionGroup extends ViewComponent
         return $this->getSchemaComponent()?->getState();
     }
 
-    public function getSchemaState(): mixed
+    /**
+     * @return array<string, mixed>|null
+     */
+    public function getSchemaState(): ?array
     {
         $schemaContainer = $this->getSchemaContainer();
 

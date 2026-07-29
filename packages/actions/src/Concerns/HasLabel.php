@@ -9,14 +9,6 @@ use Twig\Markup;
 
 use function Symfony\Component\String\u;
 
-/**
- * Ports Filament's actions `HasLabel`. The name-derived default uses
- * `before('.')` (the segment before the first dot), matching Filament's own
- * actions `HasLabel` — which itself differs from `Field`'s `afterLast('.')`. Filament's
- * `translateLabel()`/`$shouldTranslateLabel` is dropped (no translator in the
- * repo, mirroring schemas' port). A hidden label renders as an `aria-label`
- * on the trigger root instead of visible text (Filament's `labelSrOnly`).
- */
 trait HasLabel
 {
     protected string|Markup|Closure|null $label = null;

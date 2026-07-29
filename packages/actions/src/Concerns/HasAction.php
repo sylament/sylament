@@ -6,13 +6,6 @@ namespace Sylament\Actions\Concerns;
 
 use Closure;
 
-/**
- * Ports Filament's actions `HasAction`. A string value is a click handler:
- * Filament emits it verbatim as a client-side Livewire expression, while
- * Sylament emits it as a live-action method name through `live_action()` —
- * `getClientClickHandler()` is the Sylament port of
- * `getLivewireClickHandler()`'s string arm (there is no arbitrary-JS surface).
- */
 trait HasAction
 {
     protected Closure|string|null $action = null;

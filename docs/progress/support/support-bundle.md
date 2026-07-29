@@ -80,8 +80,17 @@ plain services made statically reachable through the
 [static-instance pattern](../../../packages/support/src/DependencyInjection/StaticInstanceRegistry.php):
 `build()` adds `StaticInstancePass` (auto-tags every `StaticInstanceInterface`
 definition) and `boot()` calls `StaticInstanceRegistry::bootStaticInstances()`,
-which sets each tagged service as its class's static instance. The
-`ScopedComponentManager` clone and the `RequestReceived` re-resolution have no
+which sets each tagged service as its class's static instance.
+
+`StaticInstancePass` decides by `is_a($class, StaticInstanceInterface::class, true)`,
+which autoloads the class — and it swallows the `Throwable` that raises. A bundle
+may register a service whose class extends an optional dependency that is not
+installed (LiveComponent's `form.live_collection` extends Symfony Form's
+`AbstractType`, so autoloading it fatals when `symfony/form` is absent), and a
+class that cannot even load is never a `StaticInstance`, so skipping it is safe
+and keeps the pass from breaking unrelated bundles.
+
+The `ScopedComponentManager` clone and the `RequestReceived` re-resolution have no
 analog and are dropped; `ScopedComponentManager` is tracked as its own **todo**
 row in the [package README](README.md).
 
@@ -102,6 +111,17 @@ part of this divergence: `macro('grid')` and `macro('gridColumn')` land as the
 The third, `macro('color')`, is **not** ported — it depends on `ColorManager` /
 `FilamentColor`, which are tracked as their own **todo** rows in the
 [package README](README.md) — so it awaits those, not this divergence.
+
+### The ported `grid()` / `gridColumn()` also drop blank breakpoint *keys*
+
+Filament's two macros filter their breakpoint maps by value only
+(`array_filter($columns)`). The
+[`GridExtension`](../../../packages/support/src/Twig/Extension/GridExtension.php)
+port adds a second pass over the **keys**
+(`array_filter(…, filled(...), ARRAY_FILTER_USE_KEY)`), because every non-`default`
+key is interpolated straight into a class name, so a blank key would emit a
+garbage `<whitespace>:sy-grid-*` class. Filament interpolates the same way and has
+no guard — the port hardens the input rather than reproducing that.
 
 ### PackageServiceProvider bootstrapping is replaced by AbstractBundle mechanics
 

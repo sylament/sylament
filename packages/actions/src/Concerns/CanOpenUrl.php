@@ -6,16 +6,6 @@ namespace Sylament\Actions\Concerns;
 
 use Closure;
 
-/**
- * Ports Filament's actions `CanOpenUrl`, minimal per docs/progress/actions/action.md.
- * `getUrl()` keeps Filament's `hasModal()` precedence guard (an explicit
- * `->modal()` suppresses the URL; implied modal content does not) but drops the
- * Livewire `getDefaultActionUrl()` fallback (the `getDefaultAction*` host-hook
- * cluster is deferred); `postToUrl()`/`shouldPostToUrl()` are deferred (no POST
- * actions in the MVP). A component with a URL renders as an `<a>` link and
- * skips the mount wiring. The composing class must supply `hasModal()`
- * (`CanOpenModal` does).
- */
 trait CanOpenUrl
 {
     protected bool|Closure $shouldOpenUrlInNewTab = false;

@@ -29,11 +29,6 @@ trait HasWeight
         return FontWeight::tryFrom($weight) ?? $weight;
     }
 
-    /**
-     * The class fragment templates emit for the weight: `sy-font-<value>` for the
-     * enum cases, a custom string as-is, null when unset — so templates never
-     * type-sniff the enum-vs-string union.
-     */
     public function getWeightClass(): ?string
     {
         $weight = $this->getWeight();

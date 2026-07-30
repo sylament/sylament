@@ -1,0 +1,33 @@
+{% set control %}
+    <span class="sy-fo-toggle">
+        <input {{ attrs({
+            type: 'checkbox',
+            role: 'switch',
+            class: 'sy-fo-toggle-input',
+            id: component.getId,
+            name: component.getName,
+            'data-model': component.getDataModel,
+            checked: component.getState,
+            'aria-invalid': component.getErrorMessages is not empty,
+            disabled: component.isDisabled,
+            autofocus: component.isAutofocused,
+        }) }}>
+
+        <span class="sy-fo-toggle-track">
+            <span class="sy-fo-toggle-thumb">
+                {% if component.hasOffIcon %}
+                    <span class="sy-fo-toggle-icon-off"><twig:SylamentSupport:Icon :icon="component.getOffIcon" size="xs" /></span>
+                {% endif %}
+
+                {% if component.hasOnIcon %}
+                    <span class="sy-fo-toggle-icon-on"><twig:SylamentSupport:Icon :icon="component.getOnIcon" size="xs" /></span>
+                {% endif %}
+            </span>
+        </span>
+    </span>
+{% endset %}
+
+<twig:SylamentForms:FieldWrapper :field="component">
+    <twig:block name="labelPrefix">{% if component.isInline %}{{ control }}{% endif %}</twig:block>
+    <twig:block name="content">{% if not component.isInline %}{{ control }}{% endif %}</twig:block>
+</twig:SylamentForms:FieldWrapper>

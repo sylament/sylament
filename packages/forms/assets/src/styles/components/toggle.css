@@ -1,1 +1,47 @@
+.sy-fo-toggle {
+    @apply relative inline-flex shrink-0;
+}
 
+.sy-fo-toggle-input {
+    @apply sr-only;
+}
+
+.sy-fo-toggle-track {
+    @apply flex h-6 w-11 cursor-pointer items-center rounded-full bg-gray-200 p-0.5 transition duration-75 dark:bg-white/10;
+}
+
+.sy-fo-toggle-input:checked ~ .sy-fo-toggle-track {
+    @apply bg-primary-600 dark:bg-primary-500;
+}
+
+.sy-fo-toggle-input:focus-visible ~ .sy-fo-toggle-track {
+    @apply ring-2 ring-primary-600 ring-offset-2 dark:ring-primary-500 dark:ring-offset-gray-900;
+}
+
+.sy-fo-toggle-input:disabled ~ .sy-fo-toggle-track {
+    @apply cursor-not-allowed opacity-50;
+}
+
+.sy-fo-toggle-input[aria-invalid='true'] ~ .sy-fo-toggle-track {
+    @apply ring-1 ring-danger-600 dark:ring-danger-500;
+}
+
+.sy-fo-toggle-thumb {
+    @apply flex size-5 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm transition duration-75;
+}
+
+.sy-fo-toggle-input:checked ~ .sy-fo-toggle-track .sy-fo-toggle-thumb {
+    @apply translate-x-5 text-primary-600;
+}
+
+.sy-fo-toggle-icon-on {
+    @apply hidden;
+}
+
+.sy-fo-toggle-input:checked ~ .sy-fo-toggle-track .sy-fo-toggle-icon-on {
+    @apply block;
+}
+
+.sy-fo-toggle-input:checked ~ .sy-fo-toggle-track .sy-fo-toggle-icon-off {
+    @apply hidden;
+}

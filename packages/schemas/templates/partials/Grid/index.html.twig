@@ -1,0 +1,6 @@
+<div {{ attrs({
+    class: ['sy', 'sy-sc-grid'],
+    id: component.getId ?: null,
+}, component.getExtraAttributes) }}>
+    {{ renderComponent(component.getChildSchema) }}
+</div>

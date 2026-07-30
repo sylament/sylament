@@ -2,13 +2,14 @@
 
 The Twig templates in
 [`packages/schemas/templates/partials/`](../../../packages/schemas/templates/partials)
-— `Actions`, `Html`, `Icon`, `Schema`, `Section`, `Text` — that render the
+— `Actions`, `Grid`, `Html`, `Icon`, `Schema`, `Section`, `Text` — that render the
 schemas components through Support's
 [`ViewComponent`](../support/component.md). Each ports the HTML that a Filament
 schemas component emits from its PHP `toEmbeddedHtml()` (Filament v5 no longer
 ships Blade files for these — see the divergence below). This file is a thin
-cross-index over the six templates; per-feature specifics live in the
-per-component files ([`actions.md`](actions.md), [`icon.md`](icon.md),
+cross-index over the seven templates; per-feature specifics live in the
+per-component files ([`actions.md`](actions.md), [`grid.md`](grid.md),
+[`icon.md`](icon.md),
 [`text.md`](text.md), [`section.md`](section.md), [`schema.md`](schema.md)),
 not here.
 
@@ -18,6 +19,7 @@ not here.
 Reference — the Filament source this is diffed against:
 
 - [`schemas/src/Components/Actions.php`](../../../vendor/filament/schemas/src/Components/Actions.php),
+  [`Grid.php`](../../../vendor/filament/schemas/src/Components/Grid.php),
   [`Html.php`](../../../vendor/filament/schemas/src/Components/Html.php),
   [`Icon.php`](../../../vendor/filament/schemas/src/Components/Icon.php),
   [`Section.php`](../../../vendor/filament/schemas/src/Components/Section.php),
@@ -25,8 +27,9 @@ Reference — the Filament source this is diffed against:
   [`Schema.php`](../../../vendor/filament/schemas/src/Schema.php)
   — the `toEmbeddedHtml()` methods each template translates to Twig
 - [`schemas/resources/views/components/`](../../../vendor/filament/schemas/resources/views/components)
-  — the only Blade views Filament still ships (`fieldset`, `grid`), for the
-  still-unported Fieldset and Grid components
+  — the only Blade views Filament still ships (`fieldset`, `grid`); the
+  `grid` half is ported ([`grid.md`](grid.md)), the `fieldset` half waits on the
+  still-unported Fieldset component
 
 ## Surface
 
@@ -37,13 +40,13 @@ in-progress features, a **diverges** note here for a structural one, or `—`.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`Actions/index.html.twig`](../../../packages/schemas/templates/partials/Actions/index.html.twig) | [`Actions::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Actions.php) | in progress | — | [actions.md](actions.md) |
+| [`Grid/index.html.twig`](../../../packages/schemas/templates/partials/Grid/index.html.twig) | [`Grid::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Grid.php) | done | — | [grid.md](grid.md) |
 | [`Html/index.html.twig`](../../../packages/schemas/templates/partials/Html/index.html.twig) | [`Html::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Html.php) | done | — | — |
 | [`Icon/index.html.twig`](../../../packages/schemas/templates/partials/Icon/index.html.twig) | [`Icon::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Icon.php) | in progress | — | [icon.md](icon.md) |
 | [`Schema/index.html.twig`](../../../packages/schemas/templates/partials/Schema/index.html.twig) | [`Schema::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-template-omits-the-livecomponent-wiring-hidden-placeholders-and-grid-liberation) |
 | [`Section/index.html.twig`](../../../packages/schemas/templates/partials/Section/index.html.twig) | [`Section::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [section.md](section.md) |
 | [`Text/index.html.twig`](../../../packages/schemas/templates/partials/Text/index.html.twig) | [`Text::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Text.php) | in progress | — | [text.md](text.md) |
 | Fieldset template | [`fieldset.blade.php`](../../../vendor/filament/schemas/resources/views/components/fieldset.blade.php) | todo | Fieldset component | — |
-| Grid template | [`grid.blade.php`](../../../vendor/filament/schemas/resources/views/components/grid.blade.php) | todo | Grid component | — |
 
 Every template carries a render test in schemas' Integration suite (only the
 schemas Kernel registers TwigComponentBundle/StimulusBundle, so these templates

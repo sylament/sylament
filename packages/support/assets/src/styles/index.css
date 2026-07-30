@@ -113,19 +113,6 @@
 /* Default token values (Tailwind's blue / zinc / red / sky / green / amber). */
 @layer theme {
     :root {
-        /* The dynamic palette defaults to `primary`. */
-        --sy-color-50: var(--sy-primary-50);
-        --sy-color-100: var(--sy-primary-100);
-        --sy-color-200: var(--sy-primary-200);
-        --sy-color-300: var(--sy-primary-300);
-        --sy-color-400: var(--sy-primary-400);
-        --sy-color-500: var(--sy-primary-500);
-        --sy-color-600: var(--sy-primary-600);
-        --sy-color-700: var(--sy-primary-700);
-        --sy-color-800: var(--sy-primary-800);
-        --sy-color-900: var(--sy-primary-900);
-        --sy-color-950: var(--sy-primary-950);
-
         --sy-primary-50: oklch(97% 0.014 254.604);
         --sy-primary-100: oklch(93.2% 0.032 255.585);
         --sy-primary-200: oklch(88.2% 0.059 254.128);

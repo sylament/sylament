@@ -85,3 +85,374 @@
     --sy-color-900: var(--sy-warning-900);
     --sy-color-950: var(--sy-warning-950);
 }
+
+/* Shade carriers for the resolved colour map: `ColorManager::getComponentClasses()`
+   turns a shade number into one of these, and component CSS reads the variable. */
+
+.sy-bg-color-50 {
+    --sy-bg: var(--sy-color-50);
+}
+
+.sy-bg-color-100 {
+    --sy-bg: var(--sy-color-100);
+}
+
+.sy-bg-color-200 {
+    --sy-bg: var(--sy-color-200);
+}
+
+.sy-bg-color-300 {
+    --sy-bg: var(--sy-color-300);
+}
+
+.sy-bg-color-400 {
+    --sy-bg: var(--sy-color-400);
+}
+
+.sy-bg-color-500 {
+    --sy-bg: var(--sy-color-500);
+}
+
+.sy-bg-color-600 {
+    --sy-bg: var(--sy-color-600);
+}
+
+.sy-bg-color-700 {
+    --sy-bg: var(--sy-color-700);
+}
+
+.sy-bg-color-800 {
+    --sy-bg: var(--sy-color-800);
+}
+
+.sy-bg-color-900 {
+    --sy-bg: var(--sy-color-900);
+}
+
+.sy-bg-color-950 {
+    --sy-bg: var(--sy-color-950);
+}
+
+.hover\:sy-bg-color-50 {
+    --sy-hover-bg: var(--sy-color-50);
+}
+
+.hover\:sy-bg-color-100 {
+    --sy-hover-bg: var(--sy-color-100);
+}
+
+.hover\:sy-bg-color-200 {
+    --sy-hover-bg: var(--sy-color-200);
+}
+
+.hover\:sy-bg-color-300 {
+    --sy-hover-bg: var(--sy-color-300);
+}
+
+.hover\:sy-bg-color-400 {
+    --sy-hover-bg: var(--sy-color-400);
+}
+
+.hover\:sy-bg-color-500 {
+    --sy-hover-bg: var(--sy-color-500);
+}
+
+.hover\:sy-bg-color-600 {
+    --sy-hover-bg: var(--sy-color-600);
+}
+
+.hover\:sy-bg-color-700 {
+    --sy-hover-bg: var(--sy-color-700);
+}
+
+.hover\:sy-bg-color-800 {
+    --sy-hover-bg: var(--sy-color-800);
+}
+
+.hover\:sy-bg-color-900 {
+    --sy-hover-bg: var(--sy-color-900);
+}
+
+.hover\:sy-bg-color-950 {
+    --sy-hover-bg: var(--sy-color-950);
+}
+
+.dark\:sy-bg-color-50 {
+    --sy-dark-bg: var(--sy-color-50);
+}
+
+.dark\:sy-bg-color-100 {
+    --sy-dark-bg: var(--sy-color-100);
+}
+
+.dark\:sy-bg-color-200 {
+    --sy-dark-bg: var(--sy-color-200);
+}
+
+.dark\:sy-bg-color-300 {
+    --sy-dark-bg: var(--sy-color-300);
+}
+
+.dark\:sy-bg-color-400 {
+    --sy-dark-bg: var(--sy-color-400);
+}
+
+.dark\:sy-bg-color-500 {
+    --sy-dark-bg: var(--sy-color-500);
+}
+
+.dark\:sy-bg-color-600 {
+    --sy-dark-bg: var(--sy-color-600);
+}
+
+.dark\:sy-bg-color-700 {
+    --sy-dark-bg: var(--sy-color-700);
+}
+
+.dark\:sy-bg-color-800 {
+    --sy-dark-bg: var(--sy-color-800);
+}
+
+.dark\:sy-bg-color-900 {
+    --sy-dark-bg: var(--sy-color-900);
+}
+
+.dark\:sy-bg-color-950 {
+    --sy-dark-bg: var(--sy-color-950);
+}
+
+.dark\:hover\:sy-bg-color-50 {
+    --sy-dark-hover-bg: var(--sy-color-50);
+}
+
+.dark\:hover\:sy-bg-color-100 {
+    --sy-dark-hover-bg: var(--sy-color-100);
+}
+
+.dark\:hover\:sy-bg-color-200 {
+    --sy-dark-hover-bg: var(--sy-color-200);
+}
+
+.dark\:hover\:sy-bg-color-300 {
+    --sy-dark-hover-bg: var(--sy-color-300);
+}
+
+.dark\:hover\:sy-bg-color-400 {
+    --sy-dark-hover-bg: var(--sy-color-400);
+}
+
+.dark\:hover\:sy-bg-color-500 {
+    --sy-dark-hover-bg: var(--sy-color-500);
+}
+
+.dark\:hover\:sy-bg-color-600 {
+    --sy-dark-hover-bg: var(--sy-color-600);
+}
+
+.dark\:hover\:sy-bg-color-700 {
+    --sy-dark-hover-bg: var(--sy-color-700);
+}
+
+.dark\:hover\:sy-bg-color-800 {
+    --sy-dark-hover-bg: var(--sy-color-800);
+}
+
+.dark\:hover\:sy-bg-color-900 {
+    --sy-dark-hover-bg: var(--sy-color-900);
+}
+
+.dark\:hover\:sy-bg-color-950 {
+    --sy-dark-hover-bg: var(--sy-color-950);
+}
+
+.sy-text-color-0 {
+    --sy-text: oklch(1 0 0);
+}
+
+.sy-text-color-50 {
+    --sy-text: var(--sy-color-50);
+}
+
+.sy-text-color-100 {
+    --sy-text: var(--sy-color-100);
+}
+
+.sy-text-color-200 {
+    --sy-text: var(--sy-color-200);
+}
+
+.sy-text-color-300 {
+    --sy-text: var(--sy-color-300);
+}
+
+.sy-text-color-400 {
+    --sy-text: var(--sy-color-400);
+}
+
+.sy-text-color-500 {
+    --sy-text: var(--sy-color-500);
+}
+
+.sy-text-color-600 {
+    --sy-text: var(--sy-color-600);
+}
+
+.sy-text-color-700 {
+    --sy-text: var(--sy-color-700);
+}
+
+.sy-text-color-800 {
+    --sy-text: var(--sy-color-800);
+}
+
+.sy-text-color-900 {
+    --sy-text: var(--sy-color-900);
+}
+
+.sy-text-color-950 {
+    --sy-text: var(--sy-color-950);
+}
+
+.hover\:sy-text-color-0 {
+    --sy-hover-text: oklch(1 0 0);
+}
+
+.hover\:sy-text-color-50 {
+    --sy-hover-text: var(--sy-color-50);
+}
+
+.hover\:sy-text-color-100 {
+    --sy-hover-text: var(--sy-color-100);
+}
+
+.hover\:sy-text-color-200 {
+    --sy-hover-text: var(--sy-color-200);
+}
+
+.hover\:sy-text-color-300 {
+    --sy-hover-text: var(--sy-color-300);
+}
+
+.hover\:sy-text-color-400 {
+    --sy-hover-text: var(--sy-color-400);
+}
+
+.hover\:sy-text-color-500 {
+    --sy-hover-text: var(--sy-color-500);
+}
+
+.hover\:sy-text-color-600 {
+    --sy-hover-text: var(--sy-color-600);
+}
+
+.hover\:sy-text-color-700 {
+    --sy-hover-text: var(--sy-color-700);
+}
+
+.hover\:sy-text-color-800 {
+    --sy-hover-text: var(--sy-color-800);
+}
+
+.hover\:sy-text-color-900 {
+    --sy-hover-text: var(--sy-color-900);
+}
+
+.hover\:sy-text-color-950 {
+    --sy-hover-text: var(--sy-color-950);
+}
+
+.dark\:sy-text-color-0 {
+    --sy-dark-text: oklch(1 0 0);
+}
+
+.dark\:sy-text-color-50 {
+    --sy-dark-text: var(--sy-color-50);
+}
+
+.dark\:sy-text-color-100 {
+    --sy-dark-text: var(--sy-color-100);
+}
+
+.dark\:sy-text-color-200 {
+    --sy-dark-text: var(--sy-color-200);
+}
+
+.dark\:sy-text-color-300 {
+    --sy-dark-text: var(--sy-color-300);
+}
+
+.dark\:sy-text-color-400 {
+    --sy-dark-text: var(--sy-color-400);
+}
+
+.dark\:sy-text-color-500 {
+    --sy-dark-text: var(--sy-color-500);
+}
+
+.dark\:sy-text-color-600 {
+    --sy-dark-text: var(--sy-color-600);
+}
+
+.dark\:sy-text-color-700 {
+    --sy-dark-text: var(--sy-color-700);
+}
+
+.dark\:sy-text-color-800 {
+    --sy-dark-text: var(--sy-color-800);
+}
+
+.dark\:sy-text-color-900 {
+    --sy-dark-text: var(--sy-color-900);
+}
+
+.dark\:sy-text-color-950 {
+    --sy-dark-text: var(--sy-color-950);
+}
+
+.dark\:hover\:sy-text-color-0 {
+    --sy-dark-hover-text: oklch(1 0 0);
+}
+
+.dark\:hover\:sy-text-color-50 {
+    --sy-dark-hover-text: var(--sy-color-50);
+}
+
+.dark\:hover\:sy-text-color-100 {
+    --sy-dark-hover-text: var(--sy-color-100);
+}
+
+.dark\:hover\:sy-text-color-200 {
+    --sy-dark-hover-text: var(--sy-color-200);
+}
+
+.dark\:hover\:sy-text-color-300 {
+    --sy-dark-hover-text: var(--sy-color-300);
+}
+
+.dark\:hover\:sy-text-color-400 {
+    --sy-dark-hover-text: var(--sy-color-400);
+}
+
+.dark\:hover\:sy-text-color-500 {
+    --sy-dark-hover-text: var(--sy-color-500);
+}
+
+.dark\:hover\:sy-text-color-600 {
+    --sy-dark-hover-text: var(--sy-color-600);
+}
+
+.dark\:hover\:sy-text-color-700 {
+    --sy-dark-hover-text: var(--sy-color-700);
+}
+
+.dark\:hover\:sy-text-color-800 {
+    --sy-dark-hover-text: var(--sy-color-800);
+}
+
+.dark\:hover\:sy-text-color-900 {
+    --sy-dark-hover-text: var(--sy-color-900);
+}
+
+.dark\:hover\:sy-text-color-950 {
+    --sy-dark-hover-text: var(--sy-color-950);
+}

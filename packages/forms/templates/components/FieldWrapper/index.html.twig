@@ -1,5 +1,7 @@
 {% props
     field,
+    labelPrefix = markup(block('labelPrefix') ?? ''),
+    labelSuffix = markup(block('labelSuffix') ?? ''),
     content = markup(block('content') ?? '')
 %}
 
@@ -15,6 +17,7 @@
 {% set belowErrorMessageSchema = field.getChildSchema('below_error_message') %}
 
 {% set showVisibleLabel = field.getLabel is not null and not field.isLabelHidden %}
+{% set hasLabelAffix = labelPrefix is not empty or labelSuffix is not empty %}
 {% set hasErrors = field.getErrorMessages is not empty %}
 
 <div
@@ -26,16 +29,25 @@
         <label for="{{ field.getId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</label>
     {% endif %}
 
-    {% if showVisibleLabel or aboveLabelSchema or belowLabelSchema or beforeLabelSchema or afterLabelSchema %}
+    {% if showVisibleLabel or hasLabelAffix or aboveLabelSchema or belowLabelSchema or beforeLabelSchema or afterLabelSchema %}
         <div class="sy-fo-field-label-col">
             {{ renderComponent(aboveLabelSchema) }}
 
             <div class="sy-fo-field-label-ctn">
                 {{ renderComponent(beforeLabelSchema) }}
 
-                {% if showVisibleLabel %}
-                    <label for="{{ field.getId }}" class="sy-fo-field-label">
-                        <span class="sy-fo-field-label-content">{{ field.getLabel }}{% if field.isMarkedAsRequired %}<sup class="sy-fo-field-label-required-mark">*</sup>{% endif %}</span>
+                {% if showVisibleLabel or hasLabelAffix %}
+                    <label {{ attrs({
+                        for: field.getId,
+                        class: ['sy-fo-field-label', {'sy-fo-field-label-inline-control': hasLabelAffix}],
+                    }) }}>
+                        {{ labelPrefix }}
+
+                        {% if showVisibleLabel %}
+                            <span class="sy-fo-field-label-content">{{ field.getLabel }}{% if field.isMarkedAsRequired %}<sup class="sy-fo-field-label-required-mark">*</sup>{% endif %}</span>
+                        {% endif %}
+
+                        {{ labelSuffix }}
                     </label>
                 {% endif %}
 

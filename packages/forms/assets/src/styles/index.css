@@ -1,2 +1,5 @@
+@import './components/checkbox.css' layer(components);
 @import './components/field.css' layer(components);
 @import './components/input.css' layer(components);
+@import './components/select.css' layer(components);
+@import './components/toggle.css' layer(components);

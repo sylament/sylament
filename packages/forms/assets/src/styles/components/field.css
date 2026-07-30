@@ -7,6 +7,10 @@
     @apply flex items-start gap-x-3;
 }
 
+.sy-fo-field-label-inline-control {
+    @apply items-center gap-x-2;
+}
+
 .sy-fo-field-label-content {
     @apply text-sm font-medium text-gray-950 dark:text-white;
 }

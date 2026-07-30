@@ -47,8 +47,8 @@ Sylament-only.
 | [`getRecordClass()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getModel()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-record-vocabulary-collapses-onto-record) |
 | [`getRecord(bool $withParentComponentRecord = true)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getRecord()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | — |
 | [`getRecordInstance()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
-| [`getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#reads-are-lenient-writes-are-strict) · [diverges](#only-top-level-state-paths-map) |
-| [`fill(object …)` object arm + `readStateFromRecord()`](../../../packages/schemas/src/Concerns/HasState.php) | — | done | — | [diverges](#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#fillobject-does-not-bind-the-record) |
+| [`getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#reads-are-lenient-writes-are-strict) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) |
+| [`fill(object …)` object arm + `readStateFromRecord()`](../../../packages/schemas/src/Concerns/HasState.php) | — | done | — | [diverges](#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#fillobject-does-not-bind-the-record) |
 | [`$record` property](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`public $model`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-root-record-property-is-protected) |
 | `saveRelationships()` | [`saveRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | blocked | Doctrine relationship-state epic | [detail](#the-relationship-layer-is-not-ported) |
 | `loadStateFromRelationships()` | [`loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | blocked | Doctrine relationship-state epic | [detail](#the-relationship-layer-is-not-ported) |
@@ -77,10 +77,14 @@ Coverage: the root tier by
 [`Unit/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordTest.php)
 (instance / array / class-string / closure payloads, class-string-declares-
 without-binding, rebind-replaces, the all-null unbound case, closure
-memoization, by-name and by-type injection, and the four `getData()` paths —
-onto a bound instance, onto a fresh one built from the declared class,
-`dehydrated(false)` exclusion, the strict-write `NoSuchPropertyException`, and
-the unbound `LogicException`); the component tier by
+memoization, by-name and by-type injection, and the `getData()` paths — onto a
+bound instance, onto a fresh one built from the declared class,
+`dehydrated(false)` exclusion, the strict-write `NoSuchPropertyException`, the
+unbound `LogicException`, and the nested set: a nested graph mapped in place, a
+fresh instance with an initialized intermediate, a non-dehydrated nested leaf
+excluded, a present-but-null nested leaf written, an array-backed branch keeping
+its unmanaged keys, and the missing-intermediate `LogicException` naming the
+path); the component tier by
 [`Unit/Components/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Unit/Components/Concerns/BelongsToRecordTest.php)
 (container fallback, own-record precedence, `withContainerRecord: false`,
 per-call re-evaluation, the detached-component all-null case and its still-working
@@ -89,11 +93,16 @@ non-mapped parameter names, which is what proves the by-type arm rather than the
 pre-existing by-name one); the fill walk by
 [`Unit/Concerns/HasStateTest`](../../../packages/schemas/tests/Unit/Concerns/HasStateTest.php)
 (scoped read, null-fill of what the record cannot supply, uninitialized-property
-and object-value skips, array reads, and the unchanged null/array arms); and the
+and object-value skips, array reads, the unchanged null/array arms, and the
+nested reads: a nested object path filled through the graph, null filled past a
+null intermediate, a leaf decorated with a path-less child schema staying a
+leaf, and an array-backed branch read by declared leaves only); and the
 round trip through a real live host by
 [`Integration/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordTest.php)
 (`fill($object)` → edited bag → `getData()` returns the same mutated instance;
-a failing validation leaves the record untouched).
+a failing validation leaves the record untouched; and the same pair over a
+nested `Post`/`Author` graph — the round trip mutating the associated object in
+place, a failing nested submit leaving it untouched).
 
 ## Details
 
@@ -217,28 +226,78 @@ skips the path. Symfony's `AccessException` is the common parent of
 additionally skips object-valued reads — only scalars, arrays, and null enter the
 bag until a state-cast epic widens it. So a read has exactly two skip reasons:
 the object cannot supply the value, or the value is not bag-representable, and
-the null-fill pass then supplies the key.
+the null-fill pass then supplies the key. A null or scalar *intermediate*
+supplies null for the leaf rather than skipping it — the same bag either way,
+since the null-fill pass would supply the key.
 
-`getData()` is the opposite. It writes **every** top-level key of the validated
+`getData()` is the opposite. It writes **every** leaf path of the validated
 state and lets `NoSuchPropertyException` surface when the target cannot take one:
 by calling it you have declared that this state is the object's data, and
-silently dropping a key would silently drop a user's edit. The escape hatch for
-a page-only field is Filament's own idiom — `dehydrated(false)` removes it from
-`getState()` and therefore from the mapping. Ordering matters and is deliberate:
+silently dropping a key would silently drop a user's edit. A missing
+intermediate *object* is the one softened error: `setOnRecord()` wraps it in a
+`LogicException` naming the path, because Symfony's own message explains
+nothing at this boundary. The escape hatch for a page-only field is Filament's
+own idiom — `dehydrated(false)` removes it from `getState()` and therefore from
+the mapping. Ordering matters and is deliberate:
 `getData()` runs the validating `getState()` first, so a failing submit throws
 [`ValidationException`](can-be-validated.md) before the record is touched at all.
 
-### Only top-level state paths map
+### Mapping walks the record graph by declared leaf paths
 
-The state backend reads the first path segment as a property and indexes the rest
-into the array it holds, so nested segments *index* rather than traverse
-properties ([property-accessor.md](property-accessor.md)). Both mapping
-directions therefore work on single-segment paths only: a nested record path
-(`author.name`) reads null from the read-walk — an association object is not an
-array, so the traversal stops at it — and `getData()` writes a nested-array state
-value wholesale onto one top-level property. Lifting this belongs to the relationship/embedded epic, which has to
-decide what a nested path *means* against a Doctrine association before the
-accessor mode can change.
+Both mapping edges iterate one walk, `getRecordPathMap()`: every path-bearing
+leaf component's record-relative path (the schema's root `statePath` prefix
+stripped), with containers — components nesting a path-bearing component, at
+any depth and through any child-schema key — contributing their leaves and
+never themselves, so a leaf decorated with a path-less child schema
+(`helperText()`, `belowContent()`) stays a leaf. `fill($record)` reads each leaf
+through `PropertyAccessor::getFromRecord()` and `getData()` writes each through
+`setOnRecord()`
+([property-accessor.md](property-accessor.md#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs)):
+object segments hop by property, array segments by key, so
+`Section::make('author')->statePath('author')` over a nested plain object and
+a section over an array-valued property (the JSON-column shape) both
+round-trip. Three consequences are deliberate:
+
+- **Leaf granularity is the contract in both directions.** An array-backed
+  branch is read leaf-by-leaf — an unmanaged sibling key never enters the bag
+  or reaches the client (previously the container row's whole-array read
+  leaked it, contradicting the read-scoping stance above) — and written
+  read-modify-write, so unmanaged keys survive `getData()` where the old
+  wholesale top-level write destroyed them. Filament wholesale-replaces here;
+  we diverge toward our own scoping rule: the schema maps what it declares,
+  nothing else.
+- **Intermediate objects are never constructed.** A null or uninitialized
+  intermediate under a nested object path throws `LogicException` from
+  `getData()`, naming the path and the fix (initialize the object —
+  constructor or lazy getter). Vivification was rejected: type-directed
+  construction is right for a value object and silently wrong for an
+  association that should be looked up, and that asymmetry is the relationship
+  epic's problem, not the accessor's.
+- **Scope: plain nested objects and embeddable-shaped value objects.** The
+  walk will mechanically traverse a loaded Doctrine association and mutate the
+  associated entity in place — almost never what a form edit means, and
+  undetectable here (`schemas` has no EntityManager). Associations remain the
+  relationship epic's surface; this note is the warning, not a guard.
+
+One known edge: the container test is `hasPathBearingDescendants()`, correct
+for every current component and wrong the day a component is both leaf and
+container (repeaters) — revisit the predicate with that epic.
+
+### A Serializer-based mapper stays rejected, on amended grounds
+
+The originally recorded reason — a denormalizer constructs where edit must
+mutate the managed entity — is answered by Serializer's own
+`AbstractNormalizer::OBJECT_TO_POPULATE`, so it no longer carries the
+rejection. What does: `deep_object_to_populate` updates singular children but
+**not arrays of objects**, exactly the collection shape the relationship epic
+needs — fresh instances handed to Doctrine surface as duplicate INSERTs at
+flush, not as mapping errors; the type graph rather than the schema would
+decide what maps, inverting authority at precisely the unbuilt surface
+(`dehydrated(false)`, multi-value fields, associations) where we want "not
+supported" to fail loudly; and `normalize($record)` is over-broad against the
+read-scoping stance and initializes Doctrine proxies wholesale. Serializer
+remains a candidate for leaf-level *casts* (dates, enums, UUIDs), where its
+normalizer half fits the existing `StateCast` seam.
 
 ### `getRecordInstance()` constructs with `new`, not the container
 

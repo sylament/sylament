@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Unit\Concerns;
 
 use LogicException;
+use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Concerns\RecordFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
+use Sylament\Schemas\Tests\Fixtures\State\Author;
+use Sylament\Schemas\Tests\Fixtures\State\InitializedPost;
+use Sylament\Schemas\Tests\Fixtures\State\Post;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
 
 it('returns the bound instance and its class', function (): void {
@@ -137,4 +141,110 @@ it('throws when no record is bound at all', function (): void {
         ->components([StateField::make('title')]);
 
     expect(fn (): object => $schema->getData())->toThrow(LogicException::class);
+});
+
+it('maps nested state through the record graph in place', function (): void {
+    $author = new Author(name: 'Ada', handle: '@ada');
+    $post = new Post();
+    $post->setAuthor($author);
+
+    $host = new StateHostFixture();
+    $host->data = ['title' => 'Hello', 'author' => ['name' => 'Grace', 'handle' => '@grace']];
+
+    $schema = Schema::make($host)->statePath('data')->record($post)->components([
+        StateField::make('title'),
+        Section::make('Author')->statePath('author')->components([
+            StateField::make('name'),
+            StateField::make('handle'),
+        ]),
+    ]);
+
+    $data = $schema->getData();
+
+    expect($data)->toBe($post)
+        ->and($post->getAuthor())->toBe($author)
+        ->and($author->getName())->toBe('Grace')
+        ->and($author->getHandle())->toBe('@grace')
+        ->and($post->getTitle())->toBe('Hello');
+});
+
+it('maps nested state onto a fresh instance with an initialized intermediate', function (): void {
+    $host = new StateHostFixture();
+    $host->data = ['author' => ['name' => 'Grace']];
+
+    $schema = Schema::make($host)->statePath('data')->record(InitializedPost::class)->components([
+        Section::make('Author')->statePath('author')->components([
+            StateField::make('name'),
+        ]),
+    ]);
+
+    $data = $schema->getData();
+
+    expect($data)->toBeInstanceOf(InitializedPost::class)
+        ->and($data->getAuthor()->getName())->toBe('Grace');
+});
+
+it('excludes a non-dehydrated nested leaf from the mapping', function (): void {
+    $author = new Author(name: 'Ada', handle: '@ada');
+    $post = new Post();
+    $post->setAuthor($author);
+
+    $host = new StateHostFixture();
+    $host->data = ['author' => ['name' => 'Grace', 'handle' => '@grace']];
+
+    Schema::make($host)->statePath('data')->record($post)->components([
+        Section::make('Author')->statePath('author')->components([
+            StateField::make('name'),
+            StateField::make('handle')->dehydrated(false),
+        ]),
+    ])->getData();
+
+    expect($author->getName())->toBe('Grace')
+        ->and($author->getHandle())->toBe('@ada');
+});
+
+it('writes a present-but-null nested leaf', function (): void {
+    $author = new Author(name: 'Ada');
+    $post = new Post();
+    $post->setAuthor($author);
+
+    $host = new StateHostFixture();
+    $host->data = ['author' => ['name' => null]];
+
+    Schema::make($host)->statePath('data')->record($post)->components([
+        Section::make('Author')->statePath('author')->components([
+            StateField::make('name'),
+        ]),
+    ])->getData();
+
+    expect($author->getName())->toBeNull();
+});
+
+it('preserves unmanaged keys in an array-backed branch on mapping', function (): void {
+    $post = new Post();
+    $post->setMeta(['keep' => 1]);
+
+    $host = new StateHostFixture();
+    $host->data = ['meta' => ['seo' => 'Hi']];
+
+    Schema::make($host)->statePath('data')->record($post)->components([
+        Section::make('Meta')->statePath('meta')->components([
+            StateField::make('seo'),
+        ]),
+    ])->getData();
+
+    expect($post->getMeta())->toBe(['keep' => 1, 'seo' => 'Hi']);
+});
+
+it('throws LogicException through getData when the nested object is missing', function (): void {
+    $host = new StateHostFixture();
+    $host->data = ['author' => ['name' => 'Grace']];
+
+    $schema = Schema::make($host)->statePath('data')->record(new Post())->components([
+        Section::make('Author')->statePath('author')->components([
+            StateField::make('name'),
+        ]),
+    ]);
+
+    expect(fn (): object => $schema->getData())->toThrow(LogicException::class, 'author.name');
 });

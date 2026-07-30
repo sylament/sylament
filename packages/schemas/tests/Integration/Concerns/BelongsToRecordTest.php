@@ -26,3 +26,31 @@ it('round-trips fill(object) → edit bag → getData()', function (): void {
 
     expect($schema->getData()->getTitle())->toBe('Edited');
 });
+
+it('round-trips a nested record path in place', function (): void {
+    $host = $this->createLiveComponent('NestedRecordHost')->component();
+    $schema = $host->getSchema();
+    $post = $schema->getRecord();
+    $author = $post->getAuthor();
+
+    $schema->fill($post);
+    $host->data['author']['name'] = 'Grace';
+
+    $data = $schema->getData();
+
+    expect($data)->toBe($post)
+        ->and($data->getAuthor())->toBe($author)
+        ->and($author->getName())->toBe('Grace');
+});
+
+it('does not touch the nested object when validation fails', function (): void {
+    $host = $this->createLiveComponent('NestedRecordHost')->component();
+    $schema = $host->getSchema();
+    $author = $schema->getRecord()->getAuthor();
+
+    $schema->fill($schema->getRecord());
+    $host->data['author']['name'] = '';
+
+    expect(fn (): object => $schema->getData())->toThrow(ValidationException::class)
+        ->and($author->getName())->toBe('Ada');
+});

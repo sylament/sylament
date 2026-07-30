@@ -185,9 +185,11 @@ trait BelongsToRecord
     }
 
     /**
-     * Validate through {@see getState()}, then write every top-level state key
-     * onto the bound instance — or onto a fresh one built from the declared class
-     * — and return it. A failing validation throws before anything is written.
+     * Validate through {@see getState()}, then write every leaf state path the
+     * schema declares onto the bound instance — or onto a fresh one built from
+     * the declared class — and return it. A failing validation throws before
+     * anything is written; a `dehydrated(false)` leaf is pruned from the state
+     * and therefore never mapped.
      */
     public function getData(): object
     {
@@ -199,9 +201,14 @@ trait BelongsToRecord
         }
 
         $accessor = $this->getPropertyAccessor();
+        $state = $this->getState();
 
-        foreach ($this->getState() as $key => $value) {
-            $accessor->set($record, $key, $value);
+        foreach (array_keys($this->getRecordPathMap()) as $recordPath) {
+            if (! $accessor->hasInArray($state, $recordPath)) {
+                continue;
+            }
+
+            $accessor->setOnRecord($record, $recordPath, $accessor->getFromArray($state, $recordPath));
         }
 
         return $record;

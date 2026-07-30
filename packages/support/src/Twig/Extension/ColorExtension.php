@@ -55,6 +55,9 @@ class ColorExtension extends AbstractExtension
      * so only what a consumer registered on top of them needs emitting: `:root` values for a
      * palette the defaults define differently or not at all, and a swap class for a name the
      * stylesheet has none for. Both empty means an empty string rather than a bare element.
+     *
+     * A palette name is free-form, so it is stripped here; a shade key is not, because
+     * `ColorManager::getColors()` rejects anything off the shade grid before it reaches this.
      */
     public function sylamentStyles(): Markup
     {
@@ -69,7 +72,7 @@ class ColorExtension extends AbstractExtension
             $safeName = preg_replace('/[^a-zA-Z0-9_-]/', '', $name);
 
             foreach ($palette as $shade => $color) {
-                $rootVariables[] = "    --sy-{$safeName}-{$shade}: " . $this->sanitizeCssColor($color) . ';';
+                $rootVariables[] = "    --sy-{$safeName}-{$shade}: " . $this->colors->sanitizeCssColor($color) . ';';
             }
 
             if (array_key_exists($name, ColorManager::DEFAULT_COLORS)) {
@@ -95,14 +98,5 @@ class ColorExtension extends AbstractExtension
         }
 
         return new Markup("<style>\n" . implode("\n\n", $blocks) . "\n</style>", 'UTF-8');
-    }
-
-    /**
-     * Security: the value is interpolated into a style element, so anything that could close the
-     * declaration, the rule or the element must never reach it.
-     */
-    private function sanitizeCssColor(string $color): string
-    {
-        return preg_match('/^[a-zA-Z0-9\s.,%()#\/-]+$/', $color) === 1 ? $color : '';
     }
 }

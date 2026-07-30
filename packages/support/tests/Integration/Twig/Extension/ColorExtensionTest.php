@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Integration\Twig\Extension;
 
+use InvalidArgumentException;
 use Sylament\Support\Colors\Color;
 use Sylament\Support\Colors\ColorManager;
 use Sylament\Support\Colors\Components\BadgeComponent;
 use Sylament\Support\Twig\Extension\ColorExtension;
+use Twig\Markup;
 
 it('returns the resolved class list for a named colour', function (): void {
     $extension = $this::getContainer()->get(ColorExtension::class);
@@ -58,6 +60,16 @@ it('emits a root override but no swap class for a redefined default palette', fu
 
     expect($rendered)->toContain('--sy-primary-500: ' . Color::Rose[500])
         ->and($rendered)->not->toContain('.sy-color-primary');
+});
+
+it('refuses to emit a shade key that could escape the style element', function (): void {
+    $this::getContainer()->get(ColorManager::class)->register(
+        fn (): array => ['evil' => ['500;}</style><script>alert(1)</script>' => Color::Rose[500]]],
+    );
+
+    $extension = $this::getContainer()->get(ColorExtension::class);
+
+    expect(fn (): Markup => $extension->sylamentStyles())->toThrow(InvalidArgumentException::class);
 });
 
 it('strips characters that could escape the style element', function (): void {

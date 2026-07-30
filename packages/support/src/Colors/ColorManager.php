@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support\Colors;
 
 use Closure;
+use InvalidArgumentException;
 use LogicException;
 use Psr\Container\ContainerInterface;
 use Sylament\Support\Colors\Contracts\HasColor;
@@ -16,6 +17,14 @@ use function Sylament\Support\blank;
 class ColorManager
 {
     use EvaluatesClosures;
+
+    /**
+     * The shade grid every palette is addressed by, mirroring `Color::generatePalette()`'s steps
+     * and the per-step rules `utilities.css` hand-writes.
+     *
+     * @var list<int>
+     */
+    public const array SHADES = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950];
 
     /**
      * @var array<string, array<int, string>>
@@ -81,7 +90,7 @@ class ColorManager
             foreach ($this->evaluate($colors) as $name => $color) {
                 $cachedColors[$name] = is_string($color)
                     ? Color::generatePalette($color)
-                    : array_map(Color::convertToOklch(...), $color);
+                    : $this->normalizePalette($name, $color);
             }
         }
 
@@ -179,6 +188,31 @@ class ColorManager
     }
 
     /**
+     * A subset of the grid is allowed — a palette carrying only the shades a policy reaches for is
+     * a supported registration — but a shade off the grid resolves to nothing at all, since the
+     * `sy-*-color-{shade}` utilities and the `--color-color-{shade}` theme entries that read it
+     * are hand-written one per step.
+     *
+     * @param array<int, string> $palette
+     * @return array<int, string>
+     */
+    protected function normalizePalette(string $name, array $palette): array
+    {
+        foreach (array_keys($palette) as $shade) {
+            if (!in_array($shade, static::SHADES, true)) {
+                throw new InvalidArgumentException(sprintf(
+                    'The color palette [%s] carries the shade [%s], which is outside the shade grid [%s].',
+                    $name,
+                    $shade,
+                    implode(', ', static::SHADES),
+                ));
+            }
+        }
+
+        return array_map(Color::convertToOklch(...), $palette);
+    }
+
+    /**
      * A policy carries no per-instance state — the outlined button is a subclass rather than
      * Filament's constructor flag — so its class is its whole cache identity. Filament keys on
      * `serialize()`, which here would walk the `ColorManager` a policy holds into the container.
@@ -209,10 +243,11 @@ class ColorManager
     }
 
     /**
-     * Security: the value is interpolated into a style attribute, so anything that could
-     * close the declaration or open a url() must never reach it.
+     * Security: the value is interpolated into a style attribute here and into a style element in
+     * `ColorExtension::sylamentStyles()`, so a value carrying any character outside CSS colour
+     * syntax — a quote, a semicolon, a brace, an angle bracket — is dropped whole.
      */
-    protected function sanitizeCssColor(string $color): string
+    public function sanitizeCssColor(string $color): string
     {
         return preg_match('/^[a-zA-Z0-9\s.,%()#\/-]+$/', $color) === 1 ? $color : '';
     }

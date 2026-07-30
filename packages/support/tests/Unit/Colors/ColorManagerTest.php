@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Unit\Colors;
 
+use InvalidArgumentException;
 use Sylament\Support\Colors\Color;
 use Sylament\Support\Colors\ColorManager;
 use Sylament\Support\Colors\Components\BadgeComponent;
@@ -56,6 +57,30 @@ it('generates a palette from a single colour string', function (): void {
     $manager->register(['brand' => '#7c3aed']);
 
     expect($manager->getColor('brand'))->toHaveCount(11);
+});
+
+it('accepts a palette carrying only some of the grid shades', function (): void {
+    $manager = colorManager();
+    $manager->register(['brand' => [50 => Color::Rose[50], 900 => Color::Rose[900]]]);
+
+    expect(array_keys($manager->getColor('brand') ?? []))->toBe([50, 900]);
+});
+
+it('rejects a shade outside the grid the stylesheet defines rules for', function (): void {
+    $manager = colorManager();
+    $manager->register(['brand' => [50 => Color::Rose[50], 555 => Color::Rose[500]]]);
+
+    expect(fn (): array => $manager->getColors())
+        ->toThrow(InvalidArgumentException::class, 'The color palette [brand] carries the shade [555]');
+});
+
+it('rejects a shade key that would otherwise escape the style element', function (): void {
+    // `sylamentStyles()` interpolates the shade key into a `<style>` element without escaping it,
+    // which is safe only because no such key survives registration.
+    $manager = colorManager();
+    $manager->register(fn (): array => ['brand' => ['500;}</style><script>alert(1)</script>' => Color::Rose[500]]]);
+
+    expect(fn (): array => $manager->getColors())->toThrow(InvalidArgumentException::class);
 });
 
 it('returns null for an unregistered palette', function (): void {

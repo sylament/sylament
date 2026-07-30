@@ -35,7 +35,7 @@ class Toggle extends Field
 
     protected function getRequiredConstraint(): Constraint
     {
-        return new NotNull(message: $this->getValidationMessages()['required'] ?? null);
+        return new NotNull();
     }
 
     protected function setUp(): void
@@ -44,6 +44,6 @@ class Toggle extends Field
 
         $this->default(false);
 
-        $this->constraint(fn (): Type => new Type('bool', message: $this->getValidationMessages()['boolean'] ?? null));
+        $this->constraint(new Type('bool'));
     }
 }

@@ -12,20 +12,14 @@ trait CanBeAccepted
 {
     public function accepted(bool|Closure $condition = true): static
     {
-        $this->constraint(
-            fn (): IsTrue => new IsTrue(message: $this->getValidationMessages()['accepted'] ?? null),
-            $condition,
-        );
+        $this->constraint(new IsTrue(), $condition);
 
         return $this;
     }
 
     public function declined(bool|Closure $condition = true): static
     {
-        $this->constraint(
-            fn (): IsFalse => new IsFalse(message: $this->getValidationMessages()['declined'] ?? null),
-            $condition,
-        );
+        $this->constraint(new IsFalse(), $condition);
 
         return $this;
     }

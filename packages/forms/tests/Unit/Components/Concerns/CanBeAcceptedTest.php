@@ -28,9 +28,9 @@ it('skips the constraint when the condition is false', function (): void {
     expect(FixtureBooleanField::make('agree')->accepted(false)->getValidationConstraints())->toBe([]);
 });
 
-it('bakes the validation message into the constraint', function (): void {
+it('applies the validation message to the constraint', function (): void {
     $constraints = FixtureBooleanField::make('agree')
-        ->validationMessages(['accepted' => 'You must agree.'])
+        ->validationMessages([IsTrue::class => 'You must agree.'])
         ->accepted()
         ->getValidationConstraints();
 
@@ -40,7 +40,7 @@ it('bakes the validation message into the constraint', function (): void {
 it('reads the validation message set after the accepted() call', function (): void {
     $constraints = FixtureBooleanField::make('agree')
         ->accepted()
-        ->validationMessages(['accepted' => 'You must agree.'])
+        ->validationMessages([IsTrue::class => 'You must agree.'])
         ->getValidationConstraints();
 
     expect($constraints[0]->message)->toBe('You must agree.');
@@ -49,7 +49,7 @@ it('reads the validation message set after the accepted() call', function (): vo
 it('reads the validation message set after the declined() call', function (): void {
     $constraints = FixtureBooleanField::make('agree')
         ->declined()
-        ->validationMessages(['declined' => 'You must not agree.'])
+        ->validationMessages([IsFalse::class => 'You must not agree.'])
         ->getValidationConstraints();
 
     expect($constraints[0]->message)->toBe('You must not agree.');

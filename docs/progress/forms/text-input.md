@@ -85,15 +85,24 @@ rule list from inside the setter (`->rule('email', fn () => $condition)`), so th
 rule is registered eagerly and the condition closure is what stays lazy. The
 port's setters only flip `isEmail` / `isNumeric`, and
 [`buildValidationConstraints()`](../../../packages/forms/src/Components/TextInput.php)
-overrides the parent to append `Email(message: …)` / `Type('numeric', message:
-…)` behind those flags. Same observable API and same laziness, two reasons for
-the shape: a `Constraint` object baked at setter time would freeze the
-`validationMessages()` key before the user has set it (Filament's messages are a
-separate array resolved later, so it does not have this problem), and the
-override keeps every message-baking arm in one readable list. The cost is that a
-subclass overriding `buildValidationConstraints()` must call `parent::` — the
-constraint order is `NotBlank` → length → escape hatch → type arms, pinned by
-`TextInputTest`.
+overrides the parent to append `Email()` / `Type('numeric')` behind those flags.
+Same observable API and same laziness.
+
+The reason is **composition order**. These arms must land last — the order is
+`NotBlank` → length → escape hatch → type arms, pinned by `TextInputTest` — and a
+`constraint()` call from `setUp()` would file them among the escape-hatch pairs
+instead, ahead of anything the user registers later. The override is what keeps
+them at the tail. Messages are keyed `Email::class` / `Type::class` and applied by
+the [post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built),
+so no arm passes a `message:` argument.
+
+A second reason retired when that post-pass landed: a `Constraint` baked at setter
+time used to freeze the `validationMessages()` key before the user had set it,
+which is why these arms — and `Checkbox`'s, `Toggle`'s and `CanBeAccepted`'s —
+once deferred through closures. Applying messages after the list is built removed
+that constraint everywhere; here the ordering reason still holds, so the shape
+stays. The cost is unchanged: a subclass overriding
+`buildValidationConstraints()` must call `parent::`.
 
 ### Input mode is a bespoke getter, not the `HasInputMode` concern
 

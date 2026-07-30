@@ -161,8 +161,12 @@ boolean, and the mount-time `hydrateState()` pass seeds the same shape from the
 `false` default. A payload that says otherwise is a tampered one, and the `Type`
 constraint failing closed on it is the behaviour we want.
 
-The constraint is registered as a **closure** so a
-`validationMessages(['boolean' => …])` call made after construction still lands.
+The constraint is a plain instance, and a message keys it as
+`validationMessages([Type::class => …])`. Call order does not matter — the
+[post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built)
+applies messages over the finished list, so a call made after construction still
+lands. It was registered as a closure until that post-pass existed, purely to
+defer the message read.
 
 ### required() means presence, not truth
 
@@ -180,7 +184,10 @@ switch off. Two consequences, both divergences from the port's own defaults:
   toggle overrides `getRequiredConstraint()`, the
   [subclass seam](can-be-validated.md#the-required-constraint-is-swappable-per-field)
   that ports Filament's `getRequiredValidationRule()` hook, and returns
-  `NotNull` with the same `required` message key.
+  `NotNull`. A message for it therefore keys `NotNull::class`, not
+  `NotBlank::class` — the constraint the field actually emits, which is the whole
+  rule under
+  [class keying](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built).
 - **No `required` attribute on the input.** `TextInput` and `Textarea` emit it
   from `isMarkedAsRequired()`; the toggle does not, because a native `required`
   on a checkbox means "must be checked" — the browser would block the submit the

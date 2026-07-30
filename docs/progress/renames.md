@@ -32,6 +32,7 @@ derive from the conventions below.
 | `$model` (closure parameter) | — not ported | closure param | — | [Record vocabulary](#the-model-vocabulary-collapses-onto-record) — `$record` and `getRecordClass()` cover it; revisit only if a ported surface needs the class-string injected. |
 | `mountedActions.{i}.data` (state path) | `mountedActionsData.{i}` | state path | `Sylament\Actions\Concerns\HasActions` | Symfony's property accessor resolves the first path segment through the same-named getter, so the nested form is unreadable and unwritable — see [has-actions.md](actions/has-actions.md#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor). |
 | `rule()` / `rules()` (forms `CanBeValidated`) | `constraint()` / `constraints()` | method | `Sylament\Forms\Components\Concerns\CanBeValidated` | [Constraint vocabulary](#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary) — the payload is Symfony `Constraint` objects, not Laravel rules; the rename makes the migration break loud and greppable instead of grep-hit-then-type-error. |
+| `validationMessages()` keys (`required`, `max`, `email`, …) | `class-string<Constraint>` keys (`NotBlank::class`, `Length::class`, …) | array keys | `Sylament\Forms\Components\Concerns\CanBeValidated` | [Constraint vocabulary](#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary) — the rule names have nothing behind them in Symfony, where the message is a property on the constraint; class keys are IDE-completable and let one post-pass message any constraint, including escape-hatch ones ([forms/can-be-validated.md](forms/can-be-validated.md#validation-messages-apply-after-the-constraints-are-built)). |
 | `Section::formBefore()` / `isFormBefore()` | `contentBefore()` / `hasContentBefore()` | method | `Sylament\Schemas\Components\Concerns\HasContentBefore` | Adopts the `contentBefore` prop name Filament's own support-layer section component uses. |
 
 ### Interface and trait names are swapped
@@ -61,8 +62,16 @@ and carry no table rows of their own: `getValidationRules()` →
 `dehydrateValidationRules()` → `dehydrateValidationConstraints()`,
 `getLengthValidationRules()` → `getLengthValidationConstraints()`. Names that
 are not rule vocabulary keep Filament's spelling: `required()`, `nullable()`,
-`validationMessages()` (including its `required`/`max`/`min`/`size`/`email`/
-`numeric` keys), `validate()`.
+`validationMessages()` (the method name — its *keys* are re-vocabularied, row
+above), `validate()`.
+
+The message keys move with the payload. A rule name was the only handle Laravel
+gave a message, so Filament keys `validationMessages()` by it; Symfony puts the
+message on the constraint object, so the constraint class is the handle and the
+option names are its own properties. `Length`'s three keys (`size`, `max`, `min`)
+collapse onto one class with an option map, and `Toggle`'s `required` becomes
+`NotNull::class` rather than `NotBlank::class` because that is the constraint it
+emits.
 
 ### The model vocabulary collapses onto record
 

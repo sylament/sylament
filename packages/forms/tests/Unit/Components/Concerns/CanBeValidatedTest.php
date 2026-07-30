@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Unit\Components\Concerns;
 
+use LogicException;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureField;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureLengthField;
+use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\GreaterThan;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Positive;
 use Symfony\Component\Validator\Constraints\Regex;
 
 use function Sylament\Forms\Tests\wireField;
@@ -78,13 +82,143 @@ it('accepts a constraint list in constraints()', function (): void {
     expect($field->getValidationConstraints())->toBe([]);
 });
 
-it('bakes the required message from validationMessages()', function (): void {
+it('applies a string message to the constraint message option', function (): void {
     $constraints = FixtureField::make('title')
         ->required()
-        ->validationMessages(['required' => 'Give it a title.'])
+        ->validationMessages([NotBlank::class => 'Give it a title.'])
         ->getValidationConstraints();
 
     expect($constraints[0]->message)->toBe('Give it a title.');
+});
+
+it('applies each named option of a multi-message constraint', function (): void {
+    $constraints = FixtureLengthField::make('title')
+        ->length(10)
+        ->validationMessages([Length::class => ['exactMessage' => 'Exactly ten.']])
+        ->getValidationConstraints();
+
+    expect($constraints[0]->exactMessage)->toBe('Exactly ten.');
+});
+
+it('applies one option map to every instance of that constraint class', function (): void {
+    $constraints = FixtureLengthField::make('title')
+        ->maxLength(255)
+        ->minLength(3)
+        ->validationMessages([Length::class => ['maxMessage' => 'Too long.', 'minMessage' => 'Too short.']])
+        ->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(2)
+        ->and($constraints[0]->maxMessage)->toBe('Too long.')
+        ->and($constraints[1]->minMessage)->toBe('Too short.');
+});
+
+it('evaluates a closure message and a closure leaf of an option map', function (): void {
+    $constraints = FixtureLengthField::make('title')
+        ->required()
+        ->maxLength(255)
+        ->validationMessages([
+            NotBlank::class => fn (): string => 'Give it a title.',
+            Length::class => ['maxMessage' => fn (): string => 'Too long.'],
+        ])
+        ->getValidationConstraints();
+
+    expect($constraints[0]->message)->toBe('Give it a title.')
+        ->and($constraints[1]->maxMessage)->toBe('Too long.');
+});
+
+it('leaves the constraint default in place for a blank message', function (): void {
+    $constraints = FixtureField::make('title')
+        ->required()
+        ->validationMessages([NotBlank::class => ''])
+        ->getValidationConstraints();
+
+    expect($constraints[0]->message)->toBe('This value should not be blank.');
+});
+
+it('drops only the blank leaf of an option map', function (): void {
+    $constraints = FixtureLengthField::make('title')
+        ->maxLength(255)
+        ->minLength(3)
+        ->validationMessages([Length::class => ['maxMessage' => 'Too long.', 'minMessage' => '']])
+        ->getValidationConstraints();
+
+    expect($constraints[0]->maxMessage)->toBe('Too long.')
+        ->and($constraints[1]->minMessage)->toBe(new Length(min: 3)->minMessage);
+});
+
+it('messages an escape-hatch constraint', function (): void {
+    $constraints = FixtureField::make('slug')
+        ->constraint(new Regex('/^[a-z-]+$/'))
+        ->validationMessages([Regex::class => 'Lowercase and dashes only.'])
+        ->getValidationConstraints();
+
+    expect($constraints[0]->message)->toBe('Lowercase and dashes only.');
+});
+
+it('does not mutate a user-supplied constraint instance', function (): void {
+    $regex = new Regex('/^[a-z-]+$/');
+
+    $constraints = FixtureField::make('slug')
+        ->constraint($regex)
+        ->validationMessages([Regex::class => 'Lowercase and dashes only.'])
+        ->getValidationConstraints();
+
+    expect($constraints[0])->not->toBe($regex)
+        ->and($regex->message)->toBe('This value is not valid.');
+});
+
+it('returns the same constraint instance when no message applies to it', function (): void {
+    $regex = new Regex('/^[a-z-]+$/');
+
+    $constraints = FixtureField::make('slug')
+        ->constraint($regex)
+        ->validationMessages([NotBlank::class => 'Give it a title.'])
+        ->getValidationConstraints();
+
+    expect($constraints[0])->toBe($regex);
+});
+
+it('does not apply a parent-class key to a subclass constraint', function (): void {
+    $constraints = FixtureField::make('quantity')
+        ->constraint(new Positive())
+        ->validationMessages([GreaterThan::class => 'Must be positive.'])
+        ->getValidationConstraints();
+
+    expect($constraints[0])->toBeInstanceOf(Positive::class)
+        ->and($constraints[0]->message)->not->toBe('Must be positive.');
+});
+
+it('ignores a message keyed to a constraint the field does not build', function (): void {
+    $constraints = FixtureField::make('title')
+        ->required(false)
+        ->validationMessages([NotBlank::class => 'Give it a title.', Email::class => 'Not an address.'])
+        ->getValidationConstraints();
+
+    expect($constraints)->toBe([]);
+});
+
+it('throws for a string message on a constraint with no message option', function (): void {
+    expect(fn (): array => wireField(FixtureLengthField::make('title')
+        ->maxLength(255)
+        ->validationMessages([Length::class => 'Too long.']))
+        ->getValidationConstraints())
+        ->toThrow(LogicException::class, 'has no [message] message option');
+});
+
+it('throws for an unknown option name and lists the real ones', function (): void {
+    expect(fn (): array => wireField(FixtureLengthField::make('title')
+        ->maxLength(255)
+        ->validationMessages([Length::class => ['maxMesage' => 'Too long.']]))
+        ->getValidationConstraints())
+        ->toThrow(LogicException::class, '[maxMessage]');
+});
+
+it('throws rather than writing a real but non-message property', function (): void {
+    expect(fn (): array => wireField(FixtureLengthField::make('title')
+        ->maxLength(255)
+        ->validationMessages([Length::class => ['max' => '5']]))
+        ->getValidationConstraints())
+        ->toThrow(LogicException::class, 'has no [max] message option');
 });
 
 it('appends the length constraints of a length-constrained field', function (): void {

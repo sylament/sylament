@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Sylament\Forms\Components\Concerns;
 
 use Closure;
+use LogicException;
+use ReflectionObject;
+use ReflectionProperty;
 use Sylament\Forms\Components\Contracts\CanBeLengthConstrained;
 use Sylament\Forms\Components\Field;
 use Symfony\Component\Validator\Constraint;
@@ -22,7 +25,7 @@ trait CanBeValidated
     protected array $constraints = [];
 
     /**
-     * @var array<string, string|Closure>
+     * @var array<class-string<Constraint>, string|Closure|array<string, string|Closure>>
      */
     protected array $validationMessages = [];
 
@@ -66,7 +69,7 @@ trait CanBeValidated
     }
 
     /**
-     * @param array<string, string|Closure> $messages
+     * @param array<class-string<Constraint>, string|Closure|array<string, string|Closure>> $messages
      */
     public function validationMessages(array $messages): static
     {
@@ -81,17 +84,28 @@ trait CanBeValidated
     }
 
     /**
-     * @return array<string, string>
+     * Message options per constraint class, normalised: a string value becomes the
+     * constraint's `message` option. A value resolving to '' is dropped so the
+     * constraint keeps its own default.
+     *
+     * @return array<class-string<Constraint>, array<string, string>>
      */
     public function getValidationMessages(): array
     {
         $messages = [];
 
-        foreach ($this->validationMessages as $key => $message) {
-            $messages[$key] = $this->evaluate($message);
+        foreach ($this->validationMessages as $constraintClass => $options) {
+            $evaluated = array_filter(array_map(
+                fn (string|Closure $message): string => $this->evaluate($message),
+                is_array($options) ? $options : ['message' => $options],
+            ));
+
+            if ($evaluated !== []) {
+                $messages[$constraintClass] = $evaluated;
+            }
         }
 
-        return array_filter($messages);
+        return $messages;
     }
 
     /**
@@ -99,7 +113,7 @@ trait CanBeValidated
      */
     public function getValidationConstraints(): array
     {
-        return $this->buildValidationConstraints();
+        return $this->applyValidationMessages($this->buildValidationConstraints());
     }
 
     /**
@@ -136,9 +150,68 @@ trait CanBeValidated
         return $constraints;
     }
 
+    /**
+     * @param  list<Constraint> $constraints
+     * @return list<Constraint>
+     */
+    protected function applyValidationMessages(array $constraints): array
+    {
+        $messages = $this->getValidationMessages();
+
+        if ($messages === []) {
+            return $constraints;
+        }
+
+        foreach ($constraints as $index => $constraint) {
+            $options = $messages[$constraint::class] ?? [];
+
+            if ($options === []) {
+                continue;
+            }
+
+            $available = $this->getValidationMessageOptions($constraint);
+            $constraint = clone $constraint;
+            $constraints[$index] = $constraint;
+
+            foreach ($options as $option => $message) {
+                if (! in_array($option, $available, strict: true)) {
+                    throw new LogicException(sprintf(
+                        'Sylament cannot apply a validation message to [%s] because %s has no [%s] message option. Use one of: [%s].',
+                        $this->getStatePath(),
+                        $constraint::class,
+                        $option,
+                        implode('], [', $available),
+                    ));
+                }
+
+                $constraint->{$option} = $message;
+            }
+        }
+
+        return $constraints;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function getValidationMessageOptions(Constraint $constraint): array
+    {
+        $options = [];
+
+        foreach (new ReflectionObject($constraint)->getProperties(ReflectionProperty::IS_PUBLIC) as $property) {
+            $name = $property->getName();
+
+            if ($name === 'message' || str_ends_with($name, 'Message')) {
+                $options[] = $name;
+            }
+        }
+
+        return $options;
+    }
+
     protected function getRequiredConstraint(): Constraint
     {
-        return new NotBlank(message: $this->getValidationMessages()['required'] ?? null);
+        return new NotBlank();
     }
 
     /**

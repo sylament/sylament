@@ -92,6 +92,13 @@ value and a value whose option is disabled. Symfony's `Choice` is always strict
 (`ChoiceValidator` throws on any other setting), so the comparison is identity,
 which is why the choices are built in the field's *stored* form (see below).
 
+The constraint carries no message argument: one is written afterwards by the
+[post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built),
+keyed `validationMessages([Choice::class => …])` where Filament keyed the `in`
+rule. `Choice` declares four message options (`message`, `multipleMessage`,
+`minMessage`, `maxMessage`), so the string shorthand sets `message` — the one a
+single-value select violates — and an option map reaches the others.
+
 The `LogicException` raised when a filled select has no `options()` exists so
 that "validates nothing" can never be the silent default: a select whose options
 come from somewhere the port cannot see must say so loudly rather than wave every

@@ -67,8 +67,10 @@ Behaviour that is faithful to Filament but easy to misread here.
 
 ### Validation reads the raw state, so the boolean Type constraint is live
 
-`setUp()` registers `Type('bool')`, the port of Filament's `rule('boolean')`, and
-`getDefaultStateCasts()` appends `BooleanStateCast(isNullable: false)`. The cast
+`setUp()` registers `Type('bool')`, the port of Filament's `rule('boolean')` — a
+message for it keys `validationMessages([Type::class => …])`, applied by the
+[post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built) —
+and `getDefaultStateCasts()` appends `BooleanStateCast(isNullable: false)`. The cast
 does **not** stand between the host property and the validator: it normalizes
 only what [`state()`](../../../packages/schemas/src/Components/Concerns/HasState.php)
 writes and what `getState()` reads back, while

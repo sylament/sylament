@@ -209,15 +209,15 @@ it('adds a numeric Type constraint when numeric()', function (): void {
         ->and($constraints[0]->type)->toBe('numeric');
 });
 
-it('bakes email and numeric messages', function (): void {
+it('applies email and numeric messages to the type arms', function (): void {
     $email = TextInput::make('mail')
         ->email()
-        ->validationMessages(['email' => 'Not an address.'])
+        ->validationMessages([Email::class => 'Not an address.'])
         ->getValidationConstraints();
 
     $numeric = TextInput::make('price')
         ->numeric()
-        ->validationMessages(['numeric' => 'Not a number.'])
+        ->validationMessages([Type::class => 'Not a number.'])
         ->getValidationConstraints();
 
     expect($email[0]->message)->toBe('Not an address.')

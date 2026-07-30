@@ -23,7 +23,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | `declined()` | [`Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | — | [diverges](#the-accepted-and-declined-rules-become-istrue-and-isfalse) |
 
 Coverage: the empty default, both constraint builds, the false-condition skip,
-the message hand-off, and — pinning the closure registration below — a message
+the message hand-off, and — pinning the order-independence below — a message
 set *after* the `accepted()` / `declined()` call, by
 [`CanBeAcceptedTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeAcceptedTest.php)
 against the
@@ -77,8 +77,10 @@ The two halves then land differently, and the asymmetry is the part to remember:
   short-circuits on `null`). So `accepted()` alone does **not** make a field
   required — `required()` must say so.
 
-The constraint is registered as a **closure** rather than an instance, so
-`getValidationMessages()` is read when the constraint list is built rather than
-when `accepted()` is called: a `validationMessages(['accepted' => …])` call made
-*after* the `accepted()` call still lands. The message keys are `accepted` and
-`declined`.
+The constraint is registered as a plain instance, and a message keys the class it
+is: `validationMessages([IsTrue::class => …])` / `[IsFalse::class => …]`. Call
+order does not matter — the
+[post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built)
+applies messages over the finished constraint list, so a `validationMessages()`
+call made *after* `accepted()` / `declined()` still lands. These arms registered a
+closure until that post-pass existed, purely to defer the message read.

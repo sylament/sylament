@@ -59,20 +59,18 @@ trait CanBeLengthConstrained
      */
     public function getLengthValidationConstraints(): array
     {
-        $messages = $this->getValidationMessages();
-
         if (($length = $this->getLength()) > 0) {
-            return [new Length(exactly: $length, exactMessage: $messages['size'] ?? null)];
+            return [new Length(exactly: $length)];
         }
 
         $constraints = [];
 
         if (($maxLength = $this->getMaxLength()) > 0) {
-            $constraints[] = new Length(max: $maxLength, maxMessage: $messages['max'] ?? null);
+            $constraints[] = new Length(max: $maxLength);
         }
 
         if (($minLength = $this->getMinLength()) > 0) {
-            $constraints[] = new Length(min: $minLength, minMessage: $messages['min'] ?? null);
+            $constraints[] = new Length(min: $minLength);
         }
 
         return $constraints;

@@ -161,7 +161,7 @@ it('builds a boolean Type constraint', function (): void {
 
 it('reads the boolean validation message set after construction', function (): void {
     $types = array_values(array_filter(
-        Toggle::make('isFeatured')->validationMessages(['boolean' => 'Must be a boolean.'])->getValidationConstraints(),
+        Toggle::make('isFeatured')->validationMessages([Type::class => 'Must be a boolean.'])->getValidationConstraints(),
         fn (object $constraint): bool => $constraint instanceof Type,
     ));
 

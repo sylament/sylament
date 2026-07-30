@@ -96,7 +96,7 @@ free that way, which is the only route by which `UniqueEntity` can ever work: it
 needs the managed object, not a scalar path value.
 
 The alternative — pulling `getMetadataFor($class)` property constraints into the
-per-field [`getValidationConstraints()`](../forms/can-be-validated.md) seam
+per-field [`buildValidationConstraints()`](../forms/can-be-validated.md#the-subclass-seam-is-a-protected-builder-not-the-public-getter) seam
 before validation — is **rejected**: typed constraints (a `#[Assert\Positive]`
 on an `int` property) misfire against the raw, pre-cast string state a form bag
 holds, and every message would then travel two different pipelines depending on
@@ -187,12 +187,12 @@ differ, i.e. as long as Symfony Validator is the engine.
 Filament threads `getValidationMessages()`/`getValidationAttributes()` walks
 (and the contract's `dehydrateValidationMessages()`/
 `dehydrateValidationAttributes()`) into Livewire's `validate()` as separate
-arrays. In the Symfony model messages bake into the constraint objects at
-construction — forms' `validationMessages()` maps Filament's simple keys onto
-constraint message options (`required` → `NotBlank::$message`, `max` →
-`Length::$maxMessage`, …) — so there is no separate messages/attributes
-pipeline to collect. Permanent; escape-hatch constraints carry their own
-`message:` options.
+arrays. In the Symfony model the message lives *on the constraint object* —
+forms' `validationMessages()` keys by constraint class and a
+[post-pass](../forms/can-be-validated.md#validation-messages-apply-after-the-constraints-are-built)
+writes the named options onto the built constraints — so there is no separate
+messages/attributes pipeline to collect. Permanent; that post-pass reaches
+escape-hatch constraints too, so nothing is left needing a schema-tier walk.
 
 ### The component contract is relocated from forms into schemas
 

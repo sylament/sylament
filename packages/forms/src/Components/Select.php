@@ -101,7 +101,6 @@ class Select extends Field implements Contracts\CanDisableOptions
         $constraints[] = new Choice(
             choices: $this->getEnabledOptionValues(),
             strict: true,
-            message: $this->getValidationMessages()['in'] ?? null,
         );
 
         return $constraints;

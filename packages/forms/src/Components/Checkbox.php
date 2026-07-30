@@ -24,7 +24,7 @@ class Checkbox extends Field
 
         $this->default(false);
 
-        $this->constraint(fn (): Type => new Type('bool', message: $this->getValidationMessages()['boolean'] ?? null));
+        $this->constraint(new Type('bool'));
     }
 
     /**

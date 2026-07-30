@@ -56,10 +56,10 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | [`constraint()` / `constraints()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`rule()` / `rules()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#rule-and-rules-become-constraint-and-constraints-over-symfony-constraint-objects) |
 | [`getValidationConstraints()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`getValidationRules()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#the-condition-pair-walk-drops-filaments-numeric-key-rule-shorthand) |
 | [`dehydrateValidationConstraints()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`dehydrateValidationRules()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | — |
-| [`validationMessages()` / `getValidationMessages()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#validation-messages-bake-into-the-constraints-at-construction) |
+| [`validationMessages()` / `getValidationMessages()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#validation-messages-apply-after-the-constraints-are-built) |
 | Length constraints ([`CanBeLengthConstrained`](can-be-length-constrained.md)) | [`getLengthValidationRules()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) | done | — | [detail](can-be-length-constrained.md) |
 | `email()` / `numeric()` arms ([`TextInput`](text-input.md)) | [`TextInput::email()` / `numeric()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [detail](text-input.md) |
-| `dehydrateValidationMessages()` / `dehydrateValidationAttributes()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#validation-messages-bake-into-the-constraints-at-construction) |
+| `dehydrateValidationMessages()` / `dehydrateValidationAttributes()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#validation-messages-apply-after-the-constraints-are-built) |
 | `validationAttribute()` / `getValidationAttribute()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#validationattribute-is-not-ported) |
 | `showAllValidationMessages()` / `shouldShowAllValidationMessages()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](field.md#error-display-shows-every-message-for-the-path) |
 | `allowHtmlValidationMessages()` / `areHtmlValidationMessagesAllowed()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#html-validation-messages-are-not-ported) |
@@ -78,7 +78,9 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 Coverage: the trait end to end (required default, `NotBlank` build, the
 `nullable()` inversion, closure conditions, the escape hatch behind true and
 false conditions, closure constraints returning a single constraint or an array,
-message baking, the length hand-off, and every `dehydrateValidationConstraints()`
+the message post-pass — string and option-map forms, closure leaves, blank
+fallback, exact-class matching, clone-on-write, the ignored-key arm and all three
+throw arms — the length hand-off, and every `dehydrateValidationConstraints()`
 branch) by
 [`CanBeValidatedTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeValidatedTest.php);
 the `getRequiredConstraint()` override by
@@ -104,9 +106,11 @@ constraint (`Regex`, `Choice`, `Ip`, `Uuid`, `Ulid`, `Json`, `Type`,
 `DivisibleBy`, …) that a user reaches today with
 `->constraint(new Regex('/…/'))`. None needs machinery that is missing, so none
 is **blocked** — they are simply not sugared yet. **Next step (per family):** add
-the setter and a flag, append the constraint in `buildValidationConstraints()`
-behind that flag, and bake the matching `validationMessages()` key, exactly as
-`TextInput`'s `email()` / `numeric()` arms do. `in()` / `notIn()` additionally
+the setter and a flag, then append the constraint in `buildValidationConstraints()`
+behind that flag, exactly as `TextInput`'s `email()` / `numeric()` arms do —
+messages need no per-arm work, since the
+[post-pass](#validation-messages-apply-after-the-constraints-are-built) reaches
+any constraint by class. `in()` / `notIn()` additionally
 want the `HasOptions` / `HasEnum` concerns Filament reads the value list from,
 which is why they name a blocker while staying **todo**.
 
@@ -189,26 +193,78 @@ semantics are otherwise Filament-exact — each entry is `[$constraint,
 $condition]`, the condition is evaluated first, and a closure payload may return
 either a single constraint or an array that flattens in.
 
-### Validation messages bake into the constraints at construction
+### Validation messages apply after the constraints are built
 
 Filament threads three parallel arrays into Livewire's `validate()` — rules,
 messages, attributes — with `dehydrateValidationMessages()` /
 `dehydrateValidationAttributes()` collecting the latter two by state path.
-Symfony carries the message *on the constraint*, so `validationMessages()` maps
-Filament's simple keys onto constraint message options at construction time
-(`required` → `NotBlank::$message`, `max` → `Length::$maxMessage`, `min` →
-`Length::$minMessage`, `size` → `Length::$exactMessage`, `email` →
-`Email::$message`, `numeric` → `Type::$message`) and the two dehydrators have
+Symfony carries the message *on the constraint*, so the two dehydrators have
 nothing left to collect — **skipped**, with the schemas-side half of the same
 removal recorded
 [there](../schemas/can-be-validated.md#schema-level-validation-messages-and-attributes-are-not-ported).
-`getValidationMessages()` itself is Filament-exact: values evaluate through
-`evaluate()` and the result is `array_filter`ed, so a message resolving to `null`
-or `''` falls back to the constraint's own default. The visible cost: a key set
-through `validationMessages()` reaches only the *sugared* arms that look it up —
-an escape-hatch constraint carries its own `message:` option instead, where
-Filament's keyed messages apply to any rule. Permanent while Symfony owns the
-message.
+
+Two shape changes ride along, and together they make the port's messages reach
+*more* than Filament's keyed messages do.
+
+**Keys are constraint class-strings, not Laravel rule names.** Filament keys by
+rule name (`required`, `max`, `email`); a port of that vocabulary would be a set
+of strings with nothing behind them in Symfony, discoverable only by grepping our
+source. `validationMessages()` instead takes
+`array<class-string<Constraint>, string|Closure|array<string, string|Closure>>` —
+a string value sets the constraint's `message` option, an option map sets named
+ones for the constraints carrying several (`Length` has `maxMessage` /
+`minMessage` / `exactMessage` / `charsetMessage` and no plain `message`; `Choice`
+has four). The key is IDE-completable and the option names are the constraint's
+own properties, so nothing has to be memorised. Recorded in the
+[rename table](../renames.md#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary).
+
+**Messages apply in one post-pass, not at construction.** `getValidationConstraints()`
+builds the list through [`buildValidationConstraints()`](#the-subclass-seam-is-a-protected-builder-not-the-public-getter)
+and then hands it to `applyValidationMessages()`, which matches each constraint on
+its **exact** class (never `instanceof` — a key for a parent should not blanket its
+subclasses), clones it if a message applies, and writes the named options. This is
+why the old cost of this divergence is gone: an escape-hatch
+`->constraint(new Regex('/…/'))` is now messageable, where threading messages
+through constructors reached only the sugared arms that looked a key up. Cloning
+happens only on write, so a user-supplied constraint instance — which
+`->constraint()` stores and reuses across every call — is never mutated, while an
+untouched one keeps its identity.
+
+Two behaviours worth stating because they are asymmetric on purpose. A key
+matching no constraint the field built is **silently ignored**: `required(false)`
+and a false `constraint()` condition both legitimately un-emit, so this cannot
+throw. An unknown option name **throws** `LogicException` naming the constraint
+and listing its real options — always a mistake, and worth catching loudly since
+these are public properties and an unchecked name would rewrite `Length::$max`
+rather than a message. That message names the field's state path, so the
+`LogicException` is what a **wired** field raises; on a field never attached to a
+schema the state-path read fails first — a direct-call and test scenario only,
+since every validation path reaches the field through
+`dehydrateValidationConstraints()`, whose own unguarded state-path read already
+makes wiring the precondition. A key that is not a constraint class needs no
+runtime arm: PHPStan at level max rejects it at the call site.
+
+`getValidationMessages()` keeps Filament's evaluation semantics — values run
+through `evaluate()`, the result is `array_filter`ed, and the string shorthand
+normalises onto the `message` key. Permanent while Symfony owns the message.
+
+One arm of that is narrower than Filament's, and it is worth stating because the
+type reads like an oversight. A leaf resolving to `''` is filtered out and the
+constraint keeps its own default — but a leaf closure **must return a string**.
+The evaluating closure is typed `fn (string|Closure $message): string`, so under
+`strict_types=1` a closure returning `null` is a `TypeError`, not a fallback to
+the default.
+
+That declaration is forced twice over, so do not "fix" it to `?string`. PHPStan
+binds `evaluate()`'s `@return T` to `string` here, by subtracting `Closure` from
+the property's union ([the closure-typing convention](../../../CLAUDE.md)), which
+makes `?string` a level-max `return.unusedType` error; and Rector's
+`typeDeclarations` set re-adds the declaration if it is dropped instead. It is
+also the contract the property already states — `$validationMessages` types its
+leaves `string|Closure`, so a closure handing back `null` violates its own
+declaration, and the fail-fast rule prefers the `TypeError` to a silent fallback
+that hides it. A conditional message meant to fall through to the constraint's
+default is spelled `fn () => $condition ? 'Give it a title.' : ''`.
 
 ### The condition-pair walk drops Filament's numeric-key rule shorthand
 
@@ -250,8 +306,10 @@ a subclass to swap — `RichEditor` overrides it to reject a document that is
 structurally empty. The port keeps the seam and translates the name with the rest
 of the [rule → constraint vocabulary](../renames.md#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary):
 `getRequiredConstraint(): Constraint` returns the `NotBlank` that
-`getValidationConstraints()` prepends when `isRequired()`, carrying the
-`required` message key.
+`buildValidationConstraints()` prepends when `isRequired()`. It carries no
+message of its own — one is written afterwards by the
+[post-pass](#validation-messages-apply-after-the-constraints-are-built) if the
+caller keyed the constraint it returns.
 
 Two shape changes ride along. It is **protected**, not public: it is a subclass
 seam, and nothing outside the field calls it — `getValidationConstraints()` is
@@ -262,7 +320,11 @@ in Symfony is the *absence* of the constraint
 
 [`Toggle`](toggle.md#required-means-presence-not-truth) is the first overrider:
 `NotBlank` violates on `false`, which would turn `required()` into `accepted()`
-on a boolean field, so it returns `NotNull` instead.
+on a boolean field, so it returns `NotNull` instead. That is also the one place
+class-keyed messages are less forgiving than Filament's `required` key was — a
+`Toggle` message keys `NotNull::class`, not `NotBlank::class`. Under class keying
+that is the rule with no exception rather than a special case: key the constraint
+your field emits.
 
 ### The comparison rule-string builders have no port
 
@@ -281,8 +343,9 @@ subclass overrides to append its own arms. Here those split:
 contract declares, and `buildValidationConstraints()` is the protected seam
 [`TextInput`](text-input.md) and [`Select`](select.md) override.
 
-The split exists so the getter can own work that must happen once, after every
-arm has been appended. A subclass that overrode the public getter would call
+The split exists because messages apply in a
+[post-pass](#validation-messages-apply-after-the-constraints-are-built) over the
+finished list. A subclass that overrode the public getter would call
 `parent::`, append its own constraints, and miss that work. Routing every
 subclass through the builder makes that unrepresentable. The getter is
 deliberately not `final` — a `final` method in a trait is an odd thing to hand a

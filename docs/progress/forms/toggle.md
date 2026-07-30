@@ -191,6 +191,15 @@ Consumers wanting "must be on" call `accepted()`, which builds the constraint
 that actually says so. The label asterisk is unaffected: it follows
 `isMarkedAsRequired()`, which is still true.
 
+**[`Checkbox`](checkbox.md#required-on-a-checkbox-means-must-be-checked) keeps
+the shared `NotBlank` on purpose**, so `required()` there does mean "must be
+checked". That is not an inconsistency waiting to be tidied away: the checkbox
+emits the native `required` attribute and the toggle does not, so each field's
+server constraint says exactly what its own markup already enforces in the
+browser. A review of this epic read the checkbox as carrying the same defect the
+toggle had — it does not, and this paragraph exists because that reading is the
+natural one.
+
 ### HasToggleIcons tests for null, not truthiness
 
 Filament's `hasOnIcon()` / `hasOffIcon()` return `(bool) $this->getOnIcon()`. The

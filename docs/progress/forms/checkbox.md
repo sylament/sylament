@@ -97,6 +97,15 @@ browsers read as "this box must be ticked", so the client and the server say the
 same thing. [`accepted()`](can-be-accepted.md) is the explicit spelling of the
 same rule and is what to reach for when the intent matters to a reader.
 
+**[`Toggle`](toggle.md#required-means-presence-not-truth) deliberately does the
+opposite** — it overrides `getRequiredConstraint()` to `NotNull`, so a required
+toggle validates while off. The asymmetry is not an oversight to reconcile: each
+field's constraint matches the attribute its own template emits. The checkbox
+emits native `required`, which the browser enforces as "must be ticked", so a
+server rule that accepted `false` would contradict the client and let a submit
+through that the browser had already blocked. The toggle emits no such attribute,
+so it is free to mean presence. Change one and you must change its template too.
+
 ## Divergences
 
 Deliberate deviations from Filament, and the reason each holds.

@@ -39,7 +39,7 @@ dataset('adversarial palettes', function (): iterable {
     }
 });
 
-it('emits only shade classes that utilities.css defines', function (array $palette): void {
+it('emits only classes that utilities.css defines', function (array $palette): void {
     $css = file_get_contents(__DIR__ . '/../../../../assets/src/styles/utilities.css');
 
     expect($css)->toBeString();
@@ -54,12 +54,14 @@ it('emits only shade classes that utilities.css defines', function (array $palet
         ItemComponent::class,
     ];
 
-    foreach ($policies as $class) {
-        $colors = colorManagerWith('brand', $palette);
+    $color = 'brand';
 
-        $shadeClasses = array_filter(
-            $colors->getComponentClasses(new $class($colors), 'brand'),
-            fn (string $class): bool => (bool) preg_match('/sy-(?:bg|text)-color-/', $class),
+    foreach ($policies as $class) {
+        $colors = colorManagerWith($color, $palette);
+
+        $shadeClasses = array_diff(
+            $colors->getComponentClasses(new $class($colors), $color),
+            ['sy-color', "sy-color-{$color}"],
         );
 
         expect($shadeClasses)->not->toBeEmpty();

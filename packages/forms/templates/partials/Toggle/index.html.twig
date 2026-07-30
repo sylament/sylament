@@ -1,5 +1,10 @@
+{% set controlTag = component.isInline ? 'span' : 'label' %}
+
 {% set control %}
-    <span class="sy-fo-toggle">
+    <{{ controlTag }} {{ attrs({
+        class: 'sy-fo-toggle',
+        for: component.isInline ? false : component.getId,
+    }) }}>
         <input {{ attrs({
             type: 'checkbox',
             role: 'switch',
@@ -24,7 +29,7 @@
                 {% endif %}
             </span>
         </span>
-    </span>
+    </{{ controlTag }}>
 {% endset %}
 
 <twig:SylamentForms:FieldWrapper :field="component">

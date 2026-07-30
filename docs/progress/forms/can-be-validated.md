@@ -51,6 +51,7 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`required()` / `isRequired()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated::required()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | — |
+| [`getRequiredConstraint()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`getRequiredValidationRule()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#the-required-constraint-is-swappable-per-field) |
 | [`nullable()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated::nullable()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#nullable-removes-the-notblank-and-nothing-else) |
 | [`constraint()` / `constraints()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`rule()` / `rules()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#rule-and-rules-become-constraint-and-constraints-over-symfony-constraint-objects) |
 | [`getValidationConstraints()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`getValidationRules()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#the-condition-pair-walk-drops-filaments-numeric-key-rule-shorthand) |
@@ -62,8 +63,7 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | `validationAttribute()` / `getValidationAttribute()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#validationattribute-is-not-ported) |
 | `showAllValidationMessages()` / `shouldShowAllValidationMessages()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](field.md#error-display-shows-every-message-for-the-path) |
 | `allowHtmlValidationMessages()` / `areHtmlValidationMessagesAllowed()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#html-validation-messages-are-not-ported) |
-| `getRequiredValidationRule()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#the-rule-string-builder-helpers-have-no-port) |
-| `dateComparisonRule()` / `fieldComparisonRule()` / `multiFieldComparisonRule()` / `multiFieldValueComparisonRule()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#the-rule-string-builder-helpers-have-no-port) |
+| `dateComparisonRule()` / `fieldComparisonRule()` / `multiFieldComparisonRule()` / `multiFieldValueComparisonRule()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#the-comparison-rule-string-builders-have-no-port) |
 | Format sugar (`alpha`, `alphaDash`, `alphaNum`, `ascii`, `string`, `hexColor`, `json`, `macAddress`, `ip` / `ipv4` / `ipv6`, `uuid`, `ulid`, `activeUrl`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | — | [detail](#the-unsugared-rule-families-are-reachable-through-constraint) |
 | `regex()` / `notRegex()` / `getRegexPattern()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | — | [detail](#the-unsugared-rule-families-are-reachable-through-constraint) |
 | `in()` / `notIn()` / `getInValidationRule()` / `getInValidationRuleValues()` / `hasInValidationOnMultipleValues()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | `HasOptions` / `HasEnum` | [detail](#the-unsugared-rule-families-are-reachable-through-constraint) |
@@ -81,6 +81,8 @@ false conditions, closure constraints returning a single constraint or an array,
 message baking, the length hand-off, and every `dehydrateValidationConstraints()`
 branch) by
 [`CanBeValidatedTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeValidatedTest.php);
+the `getRequiredConstraint()` override by
+[`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php);
 the `isMarkedAsRequired()` fallback by
 [`FieldTest`](../../../packages/forms/tests/Unit/Components/FieldTest.php); the
 `TextInput` arms and their ordering by
@@ -241,11 +243,31 @@ typing the list `list<string|Markup>` and threading a per-field flag into the
 wrapper template for no consumer. **Skipped** — a `Markup` message would be the
 port's shape if it is ever wanted, not a boolean flag.
 
-### The rule-string builder helpers have no port
+### The required constraint is swappable per field
 
-`getRequiredValidationRule()` (returns the literal `'required'` for subclasses to
-swap) and the four `*ComparisonRule()` builders exist to *assemble Laravel rule
-strings* — `"gt:{$statePath}"`, `"after:{$date}"`. They are string plumbing for
-an engine this port does not use; the behaviour they enable is tracked on the
-comparison and conditional-required rows above, which will build `Constraint`
-objects directly. **Skipped** as API surface, permanently.
+Filament's `getRequiredValidationRule()` returns `'required'` or `'nullable'` for
+a subclass to swap — `RichEditor` overrides it to reject a document that is
+structurally empty. The port keeps the seam and translates the name with the rest
+of the [rule → constraint vocabulary](../renames.md#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary):
+`getRequiredConstraint(): Constraint` returns the `NotBlank` that
+`getValidationConstraints()` prepends when `isRequired()`, carrying the
+`required` message key.
+
+Two shape changes ride along. It is **protected**, not public: it is a subclass
+seam, and nothing outside the field calls it — `getValidationConstraints()` is
+the public read. And there is no `'nullable'` arm to return, because optionality
+in Symfony is the *absence* of the constraint
+([above](#nullable-removes-the-notblank-and-nothing-else)) — the caller asks
+`isRequired()` first, so the method is only reached when a constraint is wanted.
+
+[`Toggle`](toggle.md#required-means-presence-not-truth) is the first overrider:
+`NotBlank` violates on `false`, which would turn `required()` into `accepted()`
+on a boolean field, so it returns `NotNull` instead.
+
+### The comparison rule-string builders have no port
+
+The four `*ComparisonRule()` builders exist to *assemble Laravel rule strings* —
+`"gt:{$statePath}"`, `"after:{$date}"`. They are string plumbing for an engine
+this port does not use; the behaviour they enable is tracked on the comparison
+and conditional-required rows above, which will build `Constraint` objects
+directly. **Skipped** as API surface, permanently.

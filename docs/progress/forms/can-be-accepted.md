@@ -55,17 +55,27 @@ runs both ways: the port loses Laravel's word aliases (`"yes"` / `"on"` /
 `"true"` and their negatives) and *gains* a `null` pass Laravel rejects. The
 numeric and numeric-string forms are common to both.
 
-Both halves reach the consumers here, because validation reads the **raw,
-uncast** state rather than the cast one
-([checkbox.md](checkbox.md#validation-reads-the-raw-state-so-the-boolean-type-constraint-is-live)):
+Whether either half reaches a consumer turns on a mechanism neither name
+suggests: the host validates the **raw** state property, so a state cast never
+runs in front of validation
+([the mechanism, in full](checkbox.md#validation-reads-the-raw-state-so-the-boolean-type-constraint-is-live)).
 `BooleanStateCast(isNullable: false)` normalizes what `state()` writes and what
-`getState()` reads back, not what the validator sees. The normal path never
-exercises the delta — a live checkbox binds `element.checked`, a real boolean,
-and `fill()` seeds a real `false` — but a state bag written any other way does. A
-raw `"yes"` fails `IsTrue` here where Laravel's `accepted` passes it (on
-`Checkbox` and `Toggle` the `Type('bool')` constraint rejects it as well), and a
-**missing key** reads back as `null` and passes both, so `accepted()` alone does
-not make a field required — `required()` must say so.
+`getState()` reads back — not what the validator sees. What keeps the validated
+value a real `bool` in practice is the client (`live_controller` sends
+`element.checked` for a valueless checkbox) plus the mount-time `hydrateState()`
+pass seeding the `false` default.
+
+The two halves then land differently, and the asymmetry is the part to remember:
+
+- **The narrowing is masked** on `Checkbox` and `Toggle`. A raw `"yes"` fails
+  `IsTrue` where Laravel's `accepted` would pass it — but those fields' own
+  `Type('bool')` constraint rejects the same value anyway, so the observable
+  result is an extra message, not a changed verdict. It is a real narrowing only
+  for a future consumer that is not a boolean field.
+- **The `null` widening is live everywhere.** A missing key reads back as `null`,
+  which `IsTrue` passes and `Type('bool')` also passes (Symfony's `TypeValidator`
+  short-circuits on `null`). So `accepted()` alone does **not** make a field
+  required — `required()` must say so.
 
 The constraint is registered as a **closure** rather than an instance, so
 `getValidationMessages()` is read when the constraint list is built rather than

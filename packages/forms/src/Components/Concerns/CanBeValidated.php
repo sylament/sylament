@@ -102,7 +102,7 @@ trait CanBeValidated
         $constraints = [];
 
         if ($this->isRequired()) {
-            $constraints[] = new NotBlank(message: $this->getValidationMessages()['required'] ?? null);
+            $constraints[] = $this->getRequiredConstraint();
         }
 
         if ($this instanceof CanBeLengthConstrained) {
@@ -126,6 +126,11 @@ trait CanBeValidated
         }
 
         return $constraints;
+    }
+
+    protected function getRequiredConstraint(): Constraint
+    {
+        return new NotBlank(message: $this->getValidationMessages()['required'] ?? null);
     }
 
     /**

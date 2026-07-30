@@ -10,6 +10,8 @@ use Sylament\Forms\Components\Concerns\CanBeInline;
 use Sylament\Forms\Components\Concerns\HasToggleIcons;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Type;
 
 class Toggle extends Field
@@ -29,6 +31,11 @@ class Toggle extends Field
             ...parent::getDefaultStateCasts(),
             new BooleanStateCast(isNullable: false),
         ];
+    }
+
+    protected function getRequiredConstraint(): Constraint
+    {
+        return new NotNull(message: $this->getValidationMessages()['required'] ?? null);
     }
 
     protected function setUp(): void

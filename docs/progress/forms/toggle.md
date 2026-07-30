@@ -33,7 +33,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | Acceptance (`CanBeAccepted`) | [`Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | — | [detail](can-be-accepted.md) |
 | [`HasToggleIcons`](../../../packages/forms/src/Components/Concerns/HasToggleIcons.php) | [`Concerns/HasToggleIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleIcons.php) | done | — | [diverges](#hastoggleicons-tests-for-null-not-truthiness) |
 | Error display (`aria-invalid` on the input) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](field.md#error-display-shows-every-message-for-the-path) |
-| Required attribute | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | done | — | [diverges](#the-toggle-emits-no-required-attribute) |
+| `required()` — no attribute, and a `NotNull` constraint | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | done | — | [diverges](#required-means-presence-not-truth) |
 | `HasToggleColors` (`onColor()` / `offColor()`) | [`Concerns/HasToggleColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleColors.php) | blocked | the colour registry | [detail](#hastogglecolors-awaits-the-colour-registry) |
 | `CanFixIndistinctState` (`fixIndistinctState()`) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` + the distinct/live surface | [detail](#fixindistinctstate-awaits-the-repeater) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — | [detail](#the-alpine-attribute-concern-is-not-ported) |
@@ -42,12 +42,16 @@ Coverage:
 [`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php)
 renders the field through a real `Schema` and asserts the switch markup, the
 input's identity and binding attributes, the absence of a `value` attribute, the
-inline/not-inline placement (in both directions, and that the control renders
-exactly *once* — the guard against the hoisted-`{% block %}` trap described
-below), the hydrated `false` default and its `bool` round trip, the `checked`
-attribute in both states, the icon spans present and absent, the `bool` `Type`
-constraint, `disabled` / `autofocus` / `aria-invalid`, and the deliberately
-missing `required` attribute.
+inline/not-inline placement (in both directions, that the control renders exactly
+*once* — the guard against the hoisted-`{% block %}` trap described below — and
+that its root element is the `<span>` or the `<label for>` the layout calls for),
+the hydrated `false` default and its `bool` round trip, the `checked` attribute in
+both states, the icon spans present and absent and each one alone (so the on and
+off branches cannot pass for each other), the `bool` `Type` constraint and its
+post-hoc message, `required()` building `NotNull` and validating an off switch,
+`disabled` / `autofocus`, `aria-invalid` in both directions (the `true` case
+against a real validator run, which the `.sy-fo-toggle-input[aria-invalid='true']`
+ring depends on), and the deliberately missing `required` attribute.
 
 ## Details
 
@@ -121,6 +125,15 @@ The public API — `inline()`, `accepted()`, `declined()`, `onIcon()`,
 `offIcon()`, the `false` default, the boolean cast — is unchanged, so this is a
 rendering divergence only.
 
+Because the visible switch is CSS on a `sr-only` input, the track has to sit
+inside a `<label>` or it is unclickable — Filament's `<button>` needs no such
+help. The control's root element therefore changes with the layout: a `<span>`
+in the inline path, where it renders into `FieldWrapper`'s `labelPrefix` slot and
+a nested `<label>` would be invalid HTML, and a `<label for="…">` in the
+non-inline path, where it stands alone in the content column. Without that swap a
+non-inline toggle is keyboard-only, and a non-inline toggle with no visible label
+has nothing associated with it at all.
+
 One implementation constraint the template must respect: Twig hoists
 `{% block %}` definitions at parse time, so a `<twig:block>` nested inside an
 `{% if %}` is still registered and the wrapper's `block('labelPrefix')` returns
@@ -134,21 +147,49 @@ Filament writes `rule('boolean')` in `setUp()`. The port registers
 `new Type('bool')` — the
 [rule → constraint vocabulary](../renames.md#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary),
 not a new mechanism. Laravel's `boolean` rule also accepts `0`, `1`, `"0"` and
-`"1"`; Symfony's `Type('bool')` accepts only a real `bool`. The narrowing cannot
-bite, because `getDefaultStateCasts()` puts a
-`BooleanStateCast(isNullable: false)` in front of validation, so the validated
-value is always a real `bool`. The constraint is registered as a **closure** so a
+`"1"`; Symfony's `Type('bool')` accepts only a real `bool`.
+
+The narrowing is tolerable because of what reaches validation, and it is worth
+being precise about the mechanism: the host validates the **raw** state property
+([`HasSchemas::validateSchema()`](../../../packages/schemas/src/Concerns/HasSchemas.php)
+reads `getPropertyAccessor()->get($this, $path)`), so the state casts are *not*
+in front of validation — `get()` runs on read and `set()` only in
+`hydrateState()`, which a live round trip never reaches. What guarantees a real
+`bool` is the client: `live_controller` sends `element.checked` for a checkbox
+carrying no `value` attribute, so the value written into the state bag is a JSON
+boolean, and the mount-time `hydrateState()` pass seeds the same shape from the
+`false` default. A payload that says otherwise is a tampered one, and the `Type`
+constraint failing closed on it is the behaviour we want.
+
+The constraint is registered as a **closure** so a
 `validationMessages(['boolean' => …])` call made after construction still lands.
 
-### The toggle emits no required attribute
+### required() means presence, not truth
 
-`TextInput` and `Textarea` emit `required` from `isMarkedAsRequired()`. The
-toggle does not. A native `required` on a checkbox means "must be checked" —
-which is `accepted()`'s meaning, not `required()`'s: a boolean field that is
-required is satisfied by an explicit `false` just as much as by `true`. Filament
-faces the same question and answers it the same way, emitting neither attribute
-on its button. Consumers wanting "must be on" call `accepted()`, which builds the
-constraint that actually says so.
+On a boolean field `required()` asks for a state, not for a *true* state: an
+explicit `false` satisfies it just as much as `true`. Laravel agrees — its
+`required` rule fails only on `null`, `''`, an empty array or an empty
+`Countable`, so `Toggle::make('x')->required()` in Filament passes with the
+switch off. Two consequences, both divergences from the port's own defaults:
+
+- **The constraint is `NotNull`, not `NotBlank`.** Symfony's `NotBlank` violates
+  on `false === $value`
+  ([`NotBlankValidator`](../../../vendor/symfony/validator/Constraints/NotBlankValidator.php)),
+  so the shared `CanBeValidated` constraint would make a required toggle
+  unsubmittable while off — `required()` would silently mean `accepted()`. The
+  toggle overrides `getRequiredConstraint()`, the
+  [subclass seam](can-be-validated.md#the-required-constraint-is-swappable-per-field)
+  that ports Filament's `getRequiredValidationRule()` hook, and returns
+  `NotNull` with the same `required` message key.
+- **No `required` attribute on the input.** `TextInput` and `Textarea` emit it
+  from `isMarkedAsRequired()`; the toggle does not, because a native `required`
+  on a checkbox means "must be checked" — the browser would block the submit the
+  server constraint accepts. Filament faces the same question and answers it the
+  same way, emitting neither attribute on its button.
+
+Consumers wanting "must be on" call `accepted()`, which builds the constraint
+that actually says so. The label asterisk is unaffected: it follows
+`isMarkedAsRequired()`, which is still true.
 
 ### HasToggleIcons tests for null, not truthiness
 

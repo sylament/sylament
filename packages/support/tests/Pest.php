@@ -33,3 +33,17 @@ function policy(string $policy): HasColor
 {
     return new $policy(new ColorManager(new ContainerBuilder()));
 }
+
+/**
+ * A `ColorManager` carrying one extra palette, for driving a policy through the manager against
+ * a colour the shipped defaults do not cover.
+ *
+ * @param array<int, string> $palette
+ */
+function colorManagerWith(string $color, array $palette): ColorManager
+{
+    $colors = new ColorManager(new ContainerBuilder());
+    $colors->register([$color => $palette]);
+
+    return $colors;
+}

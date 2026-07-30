@@ -106,7 +106,7 @@ class ColorManager
             return [];
         }
 
-        $componentKey = is_string($component) ? $component : serialize($component);
+        $componentKey = $this->getComponentCacheKey($component);
 
         if (isset($this->componentClasses[$componentKey][$color])) {
             return $this->componentClasses[$componentKey][$color];
@@ -155,7 +155,7 @@ class ColorManager
      */
     public function getComponentCustomStyles(string|HasColor $component, array $color): array
     {
-        $componentKey = is_string($component) ? $component : serialize($component);
+        $componentKey = $this->getComponentCacheKey($component);
         $colorKey = serialize($color);
 
         if (isset($this->componentCustomStyles[$componentKey][$colorKey])) {
@@ -176,6 +176,18 @@ class ColorManager
                 array_keys($map),
             ),
         ];
+    }
+
+    /**
+     * A policy carries no per-instance state — the outlined button is a subclass rather than
+     * Filament's constructor flag — so its class is its whole cache identity. Filament keys on
+     * `serialize()`, which here would walk the `ColorManager` a policy holds into the container.
+     *
+     * @param class-string<HasColor>|HasColor $component
+     */
+    protected function getComponentCacheKey(string|HasColor $component): string
+    {
+        return is_string($component) ? $component : $component::class;
     }
 
     /**

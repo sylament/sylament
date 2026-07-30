@@ -6,6 +6,9 @@ namespace Sylament\Support\Tests\Unit\Colors;
 
 use Sylament\Support\Colors\Color;
 use Sylament\Support\Colors\ColorManager;
+use Sylament\Support\Colors\Components\BadgeComponent;
+use Sylament\Support\Colors\Components\ButtonComponent;
+use Sylament\Support\Colors\Components\OutlinedButtonComponent;
 use Sylament\Support\Tests\Fixtures\Colors\EmptyMapPolicy;
 use Sylament\Support\Tests\Fixtures\Colors\GrayDefaultPolicy;
 use Sylament\Support\Tests\Fixtures\Colors\TextPolicy;
@@ -84,6 +87,22 @@ it('emits the base classes plus the resolved shade class', function (): void {
     // Amber-600 on amber-50 is ~3.08:1, so the policy must resolve past it to 700.
     expect(colorManager()->getComponentClasses(TextPolicy::class, 'warning'))
         ->toBe(['sy-color', 'sy-color-warning', 'sy-text-color-700']);
+});
+
+it('accepts a policy handed over as an instance rather than a class-string', function (): void {
+    // Every real policy holds the manager, which holds the container, so a cache key built by
+    // serializing the policy walks straight into it.
+    $manager = colorManager();
+
+    expect($manager->getComponentClasses(new BadgeComponent($manager), 'warning'))
+        ->toBe(['sy-color', 'sy-color-warning', 'sy-text-color-700', 'dark:sy-text-color-400']);
+});
+
+it('caches a policy instance apart from a sibling policy sharing its dependencies', function (): void {
+    $manager = colorManager();
+
+    expect($manager->getComponentClasses(new ButtonComponent($manager), 'warning'))
+        ->not->toBe($manager->getComponentClasses(new OutlinedButtonComponent($manager), 'warning'));
 });
 
 it('emits only the base classes when the map is empty', function (): void {

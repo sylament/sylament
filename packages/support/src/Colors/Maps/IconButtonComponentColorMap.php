@@ -90,9 +90,9 @@ class IconButtonComponentColorMap
             // Shades above 500 are likely to be quite dark, so instead of lightening the icon
             // when it is hovered, we darken it.
             $text = $lightShade;
-            $hoverText = $lightShade + 100;
+            $hoverText = $this->darkerShade($lightShade);
         } else {
-            $text = $lightShade + 100;
+            $text = $this->darkerShade($lightShade);
             $hoverText = $lightShade;
         }
 
@@ -109,7 +109,7 @@ class IconButtonComponentColorMap
             $darkHoverText = 100;
         } else {
             $darkText = $darkShade;
-            $darkHoverText = $darkShade - 100;
+            $darkHoverText = $this->lighterShade($darkShade);
         }
 
         return [
@@ -118,5 +118,41 @@ class IconButtonComponentColorMap
             'dark:text' => $darkText,
             'dark:hover:text' => $darkHoverText,
         ];
+    }
+
+    /**
+     * The neighbouring shade one step darker, or `$shade` itself when it is already the darkest.
+     * Filament steps by a literal 100, which walks off a palette whose neighbours are 50 apart
+     * or whose search landed on an end shade — emitting a class no stylesheet defines.
+     */
+    protected function darkerShade(int $shade): int
+    {
+        $shades = array_keys($this->palette);
+        sort($shades);
+
+        foreach ($shades as $candidate) {
+            if ($candidate > $shade) {
+                return $candidate;
+            }
+        }
+
+        return $shade;
+    }
+
+    /**
+     * The neighbouring shade one step lighter, or `$shade` itself when it is already the lightest.
+     */
+    protected function lighterShade(int $shade): int
+    {
+        $shades = array_keys($this->palette);
+        rsort($shades);
+
+        foreach ($shades as $candidate) {
+            if ($candidate < $shade) {
+                return $candidate;
+            }
+        }
+
+        return $shade;
     }
 }

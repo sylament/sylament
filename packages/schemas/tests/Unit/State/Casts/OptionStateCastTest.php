@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-use Sylament\Schemas\State\Casts\OptionStateCast;
+namespace Sylament\Schemas\Tests\Unit\State\Casts;
 
-enum OptionStateCastFixtureEnum: string
-{
-    case Draft = 'draft';
-}
+use stdClass;
+use Sylament\Schemas\State\Casts\OptionStateCast;
+use Sylament\Schemas\Tests\Fixtures\State\Casts\OptionStateCastFixtureEnum;
 
 it('returns null for blank state when nullable', function (): void {
     $cast = new OptionStateCast();
@@ -60,6 +59,13 @@ it('fails closed on a non-scalar payload', function (): void {
     expect($cast->get(['tampered']))->toBeNull()
         ->and($cast->set(['tampered']))->toBeNull()
         ->and($cast->get(new stdClass()))->toBeNull();
+});
+
+it('returns an int state unchanged, including one wider than PHP_INT_MAX renders', function (): void {
+    $cast = new OptionStateCast();
+
+    expect($cast->get(PHP_INT_MAX))->toBe(PHP_INT_MAX)
+        ->and($cast->get(PHP_INT_MIN))->toBe(PHP_INT_MIN);
 });
 
 it('stringifies on set', function (): void {

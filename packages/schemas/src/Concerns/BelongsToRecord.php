@@ -98,8 +98,9 @@ trait BelongsToRecord
 
     /**
      * The record-relative dotted paths this schema maps, keyed to their leaf
-     * components. Containers (components with child schemas) contribute their
-     * leaves, never themselves; the schema's own root state path is stripped.
+     * components. Containers (components nesting path-bearing components)
+     * contribute their leaves, never themselves; the schema's own root state
+     * path is stripped.
      *
      * @return array<string, Component>
      */
@@ -114,7 +115,7 @@ trait BelongsToRecord
                 continue;
             }
 
-            if ($component->getChildSchemas() !== []) {
+            if ($this->hasPathBearingDescendants($component)) {
                 continue;
             }
 
@@ -132,6 +133,25 @@ trait BelongsToRecord
         }
 
         return $map;
+    }
+
+    /**
+     * Whether any component nested under this one carries a state path — at any
+     * depth, through any child-schema key. A leaf decorated with a path-less
+     * child schema (`helperText()`, `belowContent()`, …) owns none, so it stays
+     * a leaf.
+     */
+    private function hasPathBearingDescendants(Component $component): bool
+    {
+        foreach ($component->getChildSchemas() as $childSchema) {
+            foreach ($childSchema->getFlatComponents(withActions: false) as $descendant) {
+                if ($descendant->hasStatePath()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Unit\Concerns;
 
 use Sylament\Schemas\Components\Section;
+use Sylament\Schemas\Components\Text;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
@@ -336,6 +337,22 @@ it('fills null past a null nested object without throwing', function (): void {
     ])->fill(new Post());
 
     expect($host->data['author'])->toBe(['name' => null]);
+});
+
+it('fills a leaf decorated with a path-less child schema', function (): void {
+    $post = new Post();
+    $post->setTitle('Hello');
+    $post->setAuthor(new Author(name: 'Ada', handle: '@ada'));
+
+    $host = new StateHostFixture();
+    Schema::make($host)->statePath('data')->components([
+        StateField::make('title')->childComponents([Text::make('Some help')], 'belowContent'),
+        Section::make('Author')->statePath('author')->components([
+            StateField::make('name'),
+        ]),
+    ])->fill($post);
+
+    expect($host->data)->toBe(['title' => 'Hello', 'author' => ['name' => 'Ada']]);
 });
 
 it('fills an array-backed branch by declared leaves only', function (): void {

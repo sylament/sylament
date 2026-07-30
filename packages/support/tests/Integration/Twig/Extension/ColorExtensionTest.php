@@ -74,7 +74,7 @@ it('refuses to emit a shade key that could escape the style element', function (
 
 it('strips characters that could escape the style element', function (): void {
     $this::getContainer()->get(ColorManager::class)->register([
-        'evil' => [500 => 'oklch(0 0 0);}</style><script>alert(1)</script>'],
+        'evil' => array_replace(Color::Rose, [500 => 'oklch(0 0 0);}</style><script>alert(1)</script>']),
     ]);
 
     $rendered = (string) $this::getContainer()->get(ColorExtension::class)->sylamentStyles();

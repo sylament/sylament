@@ -64,6 +64,9 @@ class ColorManager
     }
 
     /**
+     * Palettes are checked lazily, by `getColors()`: a colour string becomes a palette only there,
+     * and a closure cannot be resolved before then.
+     *
      * @param array<string, array<int, string>|string>|Closure $colors
      */
     public function register(array|Closure $colors): static
@@ -131,7 +134,7 @@ class ColorManager
 
         $resolvedColor = $this->getColor($color);
 
-        if ($resolvedColor === null || $resolvedColor === []) {
+        if ($resolvedColor === null) {
             return $this->componentClasses[$componentKey][$color] = $classes;
         }
 
@@ -188,10 +191,14 @@ class ColorManager
     }
 
     /**
-     * A subset of the grid is allowed — a palette carrying only the shades a policy reaches for is
-     * a supported registration — but a shade off the grid resolves to nothing at all, since the
-     * `sy-*-color-{shade}` utilities and the `--color-color-{shade}` theme entries that read it
-     * are hand-written one per step.
+     * Both arms throw rather than degrade, because neither shape fails where anyone would look for
+     * it. A palette missing grid shades still renders: `Color::findShade()` walks whatever it is
+     * handed and settles on another shade or on the declared fallback. A shade off the grid
+     * renders nothing at all, since the `sy-*-color-{shade}` utilities and the
+     * `--color-color-{shade}` theme entries that read it are hand-written one per step.
+     *
+     * A palette generated from a colour string carries the whole grid, so only an explicitly
+     * listed one can fail either check.
      *
      * @param array<int, string> $palette
      * @return array<int, string>
@@ -207,6 +214,16 @@ class ColorManager
                     implode(', ', static::SHADES),
                 ));
             }
+        }
+
+        $missingShades = array_diff(static::SHADES, array_keys($palette));
+
+        if ($missingShades !== []) {
+            throw new InvalidArgumentException(sprintf(
+                'The color palette [%s] is missing the shades [%s].',
+                $name,
+                implode(', ', $missingShades),
+            ));
         }
 
         return array_map(Color::convertToOklch(...), $palette);

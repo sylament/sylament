@@ -56,14 +56,24 @@ it('generates a palette from a single colour string', function (): void {
     $manager = colorManager();
     $manager->register(['brand' => '#7c3aed']);
 
-    expect($manager->getColor('brand'))->toHaveCount(11);
+    expect(array_keys($manager->getColor('brand') ?? []))->toBe(ColorManager::SHADES);
 });
 
-it('accepts a palette carrying only some of the grid shades', function (): void {
+it('accepts an explicit palette listing every grid shade', function (): void {
+    $manager = colorManager();
+    $manager->register(['brand' => Color::Rose]);
+
+    expect(array_keys($manager->getColor('brand') ?? []))->toBe(ColorManager::SHADES);
+});
+
+it('rejects a palette missing grid shades', function (): void {
     $manager = colorManager();
     $manager->register(['brand' => [50 => Color::Rose[50], 900 => Color::Rose[900]]]);
 
-    expect(array_keys($manager->getColor('brand') ?? []))->toBe([50, 900]);
+    expect(fn (): array => $manager->getColors())->toThrow(
+        InvalidArgumentException::class,
+        'The color palette [brand] is missing the shades [100, 200, 300, 400, 500, 600, 700, 800, 950].',
+    );
 });
 
 it('rejects a shade outside the grid the stylesheet defines rules for', function (): void {
@@ -100,12 +110,14 @@ it('emits only the base classes for an unregistered colour', function (): void {
         ->toBe(['sy-color', 'sy-color-nope']);
 });
 
-it('emits only the base classes for a registered but empty palette', function (): void {
+it('rejects an empty palette', function (): void {
     $manager = colorManager();
     $manager->register(['void' => []]);
 
-    expect($manager->getComponentClasses(TextPolicy::class, 'void'))
-        ->toBe(['sy-color', 'sy-color-void']);
+    expect(fn (): array => $manager->getColors())->toThrow(
+        InvalidArgumentException::class,
+        'The color palette [void] is missing the shades [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].',
+    );
 });
 
 it('emits the base classes plus the resolved shade class', function (): void {

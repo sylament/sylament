@@ -1,7 +1,9 @@
-{% set rootAttributes = component.getExtraAttributeBag.merge({
-    class: ['sy-sc-fieldset'],
-    id: component.getId ?: null,
-}).toScalarAttributes %}
+{% set rootAttributes = {
+    ...component.getExtraAttributeBag.merge({
+        class: ['sy-sc-fieldset'],
+    }).toScalarAttributes,
+    ...(component.getId ? {id: component.getId} : {}),
+} %}
 
 <twig:SylamentSupport:Fieldset
         :label="component.getLabel"

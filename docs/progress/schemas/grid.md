@@ -34,7 +34,14 @@ column unions, the closure resolution, `$component` injection and
 `configureUsing()`) and
 [`GridRenderTest`](../../../packages/schemas/tests/Integration/Components/GridRenderTest.php),
 which asserts on the emitted `--cols-lg` custom property rather than a class —
-that variable is the proof that the column map reached the child schema.
+that variable is the proof that the column map reached the child schema. Its last
+case pins the attribute precedence: `attrs()` lets the later source win, so the
+template lists the id **after** the extra attributes and `getId()` beats a
+caller's `extraAttributes(['id' => …])`, matching Filament's
+`->merge(['id' => $this->getId()])->merge($this->getExtraAttributes())` and
+[`Section`](section.md)'s placement. [`fieldset.md`](fieldset.md#the-chrome-lives-in-a-support-twig-component)
+carries the mechanism in full, since its two-bag bridge is where getting it
+backwards is easiest.
 
 ## Divergences
 

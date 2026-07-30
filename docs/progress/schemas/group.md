@@ -34,7 +34,10 @@ and
 [`GroupRenderTest`](../../../packages/schemas/tests/Integration/Components/GroupRenderTest.php),
 whose third case is the load-bearing one: it asserts the child schema emits
 `--cols-default: repeat(1, …)` and **no** `--cols-lg`, which is what proves a
-Group's children do not join the outer grid.
+Group's children do not join the outer grid. The last case pins the same
+attribute precedence [`grid.md`](grid.md) records — the id source sits after the
+extra attributes, so `getId()` wins over a caller's
+`extraAttributes(['id' => …])`.
 
 ## Divergences
 

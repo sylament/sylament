@@ -43,9 +43,9 @@ Covered by
 the constant `isRequired()`, the four `markAsRequired()` arms and
 `configureUsing()`) and
 [`FieldsetComponentRenderTest`](../../../packages/schemas/tests/Integration/Components/FieldsetComponentRenderTest.php),
-whose last case is the attribute-precedence gate: a caller's own `class` must not
-displace the `sy-sc-fieldset` hook. The support component on its own is covered
-by
+whose last two cases are the attribute-precedence gates: a caller's own `class`
+must not displace the `sy-sc-fieldset` hook, and a caller's own `id` must not
+displace `getId()`. The support component on its own is covered by
 [`FieldsetRenderTest`](../../../packages/schemas/tests/Integration/Components/FieldsetRenderTest.php).
 
 ## Semantics
@@ -88,8 +88,18 @@ call in the partial appends a caller's `extraAttributes(['class' => …])` after
 the `<twig:>` spread is legal, and ux-twig-component's own
 `ComponentAttributes::defaults()` concatenates support's defaults in front. A
 fieldset with `extraAttributes(['class' => 'custom'])` therefore renders
-`class="sy sy-fieldset sy-sc-fieldset custom"`, and `id` follows Filament's
-precedence — a user-supplied `id` in extra attributes wins over `getId()`.
+`class="sy sy-fieldset sy-sc-fieldset custom"`.
+
+`id` cannot ride that same merge. `merge()` lets the **receiving** bag win for a
+non-appendable attribute, and the receiver here is the caller's extra attributes
+— so passing `id` as a merge default would hand `extraAttributes(['id' => …])`
+the win, where Filament's
+`->merge(['id' => $id])->merge($this->getExtraAttributes())` lets `getId()` win
+(Laravel's `merge()` ends `array_merge($attributeDefaults, $attributes)`, so the
+receiver holding the id overrides the extras it is passed). The partial therefore
+spreads `{id: component.getId}` over the flattened map **last**, which is the
+same last-source-wins placement [`Section`](section.md)'s `attrs()` call uses and
+which [`Grid`](grid.md) and [`Group`](group.md) repeat.
 
 ### Relationship entanglement is not ported
 

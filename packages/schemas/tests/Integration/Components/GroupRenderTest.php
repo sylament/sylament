@@ -47,3 +47,10 @@ it('renders a custom id and extra attributes on the host div', function (): void
     expect($html)->toContain('id="stack"')
         ->toContain('data-role="group"');
 });
+
+it('prefers the component id over an extra attributes id', function (): void {
+    $html = renderGroup(Group::make()->id('real')->extraAttributes(['id' => 'fake']));
+
+    expect($html)->toContain('id="real"')
+        ->not->toContain('fake');
+});

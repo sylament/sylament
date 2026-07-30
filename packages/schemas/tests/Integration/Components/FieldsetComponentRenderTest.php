@@ -75,3 +75,10 @@ it('keeps the hook class alongside a custom class and extra attributes', functio
         ->toContain('id="address"')
         ->toContain('data-role="fieldset"');
 });
+
+it('prefers the component id over an extra attributes id', function (): void {
+    $html = renderFieldset(Fieldset::make('Address')->id('real')->extraAttributes(['id' => 'fake']));
+
+    expect($html)->toContain('id="real"')
+        ->not->toContain('fake');
+});

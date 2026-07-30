@@ -6,6 +6,8 @@ namespace Sylament\Schemas\Concerns;
 
 use Closure;
 use LogicException;
+use Sylament\Schemas\Components\Component;
+use Symfony\Component\PropertyAccess\Exception\AccessException;
 
 use function Sylament\Support\filled;
 
@@ -92,6 +94,74 @@ trait BelongsToRecord
         }
 
         return null;
+    }
+
+    /**
+     * The record-relative dotted paths this schema maps, keyed to their leaf
+     * components. Containers (components with child schemas) contribute their
+     * leaves, never themselves; the schema's own root state path is stripped.
+     *
+     * @return array<string, Component>
+     */
+    protected function getRecordPathMap(): array
+    {
+        $rootPath = $this->getStatePath();
+        $prefix = ($rootPath !== null && $rootPath !== '') ? ($rootPath . '.') : '';
+        $map = [];
+
+        foreach ($this->getFlatComponents(withActions: false) as $component) {
+            if (! $component->hasStatePath()) {
+                continue;
+            }
+
+            if ($component->getChildSchemas() !== []) {
+                continue;
+            }
+
+            $componentPath = $component->getStatePath();
+
+            if (! filled($componentPath)) {
+                continue;
+            }
+
+            $recordPath = ($prefix !== '' && str_starts_with($componentPath, $prefix))
+                ? mb_substr($componentPath, mb_strlen($prefix))
+                : $componentPath;
+
+            $map[$recordPath] = $component;
+        }
+
+        return $map;
+    }
+
+    /**
+     * Read this schema's declared leaf paths off a record, traversing its
+     * object graph. Unreadable and uninitialized properties are skipped, as
+     * are object-valued leaves — the null-fill pass supplies those keys; a
+     * null or scalar intermediate supplies null.
+     *
+     * @return array<string, mixed>
+     */
+    protected function readStateFromRecord(object $record): array
+    {
+        $accessor = $this->getPropertyAccessor();
+        $state = [];
+
+        foreach (array_keys($this->getRecordPathMap()) as $recordPath) {
+            try {
+                $value = $accessor->getFromRecord($record, $recordPath);
+            } catch (AccessException) {
+                continue;
+            }
+
+            if (is_object($value)) {
+                continue;
+            }
+
+            $accessor->setInArray($state, $recordPath, $value);
+        }
+
+        return $state;
     }
 
     /**

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Concerns;
 
 use Closure;
-use Symfony\Component\PropertyAccess\Exception\AccessException;
 
 use function Sylament\Support\filled;
 
@@ -129,51 +128,6 @@ trait HasState
         $this->callAfterStateHydrated();
 
         return $this;
-    }
-
-    /**
-     * Read this schema's own state paths off a record object, scoped to the
-     * components it declares. Unreadable and uninitialized properties are
-     * skipped, as are object values — the null-fill pass supplies those keys.
-     *
-     * @return array<string, mixed>
-     */
-    protected function readStateFromRecord(object $record): array
-    {
-        $accessor = $this->getPropertyAccessor();
-        $rootPath = $this->getStatePath();
-        $prefix = ($rootPath !== null && $rootPath !== '') ? ($rootPath . '.') : '';
-        $state = [];
-
-        foreach ($this->getFlatComponents(withActions: false) as $component) {
-            if (!$component->hasStatePath()) {
-                continue;
-            }
-
-            $componentPath = $component->getStatePath();
-
-            if (!filled($componentPath)) {
-                continue;
-            }
-
-            $recordPath = ($prefix !== '' && str_starts_with($componentPath, $prefix))
-                ? mb_substr($componentPath, mb_strlen($prefix))
-                : $componentPath;
-
-            try {
-                $value = $accessor->get($record, $recordPath);
-            } catch (AccessException) {
-                continue;
-            }
-
-            if (is_object($value)) {
-                continue;
-            }
-
-            $accessor->setInArray($state, $recordPath, $value);
-        }
-
-        return $state;
     }
 
     public function hydrateState(bool $applyDefaults = true): void

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\Concerns;
 
+use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
@@ -11,6 +12,8 @@ use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Concerns\MultiSchemaHostFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\RecordFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
+use Sylament\Schemas\Tests\Fixtures\State\Author;
+use Sylament\Schemas\Tests\Fixtures\State\Post;
 
 it('fills the bag and null-fills unset leaves', function (): void {
     $host = new StateHostFixture();
@@ -306,4 +309,45 @@ it('still fills defaults when called with null and arrays verbatim', function ()
 
     $schema->fill(['title' => 'Explicit']);
     expect($schema->getRawState())->toBe(['title' => 'Explicit']);
+});
+
+it('fills a nested object path through the record graph', function (): void {
+    $post = new Post();
+    $post->setAuthor(new Author(name: 'Ada', handle: '@ada'));
+
+    $host = new StateHostFixture();
+    Schema::make($host)->statePath('data')->components([
+        StateField::make('title'),
+        Section::make('Author')->statePath('author')->components([
+            StateField::make('name'),
+            StateField::make('handle'),
+        ]),
+    ])->fill($post);
+
+    expect($host->data['author'])->toBe(['name' => 'Ada', 'handle' => '@ada']);
+});
+
+it('fills null past a null nested object without throwing', function (): void {
+    $host = new StateHostFixture();
+    Schema::make($host)->statePath('data')->components([
+        Section::make('Author')->statePath('author')->components([
+            StateField::make('name'),
+        ]),
+    ])->fill(new Post());
+
+    expect($host->data['author'])->toBe(['name' => null]);
+});
+
+it('fills an array-backed branch by declared leaves only', function (): void {
+    $post = new Post();
+    $post->setMeta(['seo' => 'Hi', 'unmanaged' => 'secret']);
+
+    $host = new StateHostFixture();
+    Schema::make($host)->statePath('data')->components([
+        Section::make('Meta')->statePath('meta')->components([
+            StateField::make('seo'),
+        ]),
+    ])->fill($post);
+
+    expect($host->data['meta'])->toBe(['seo' => 'Hi']);
 });

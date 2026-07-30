@@ -110,20 +110,20 @@
     --color-warning-950: var(--sy-warning-950);
 }
 
-/* Default token values (Tailwind's blue / zinc / red / sky / green / amber). */
+/* Default token values (Tailwind's amber / zinc / red / indigo / green / amber). */
 @layer theme {
     :root {
-        --sy-primary-50: oklch(97% 0.014 254.604);
-        --sy-primary-100: oklch(93.2% 0.032 255.585);
-        --sy-primary-200: oklch(88.2% 0.059 254.128);
-        --sy-primary-300: oklch(80.9% 0.105 251.813);
-        --sy-primary-400: oklch(70.7% 0.165 254.624);
-        --sy-primary-500: oklch(62.3% 0.214 259.815);
-        --sy-primary-600: oklch(54.6% 0.245 262.881);
-        --sy-primary-700: oklch(48.8% 0.243 264.376);
-        --sy-primary-800: oklch(42.4% 0.199 265.638);
-        --sy-primary-900: oklch(37.9% 0.146 265.522);
-        --sy-primary-950: oklch(28.2% 0.091 267.935);
+        --sy-primary-50: oklch(98.7% 0.022 95.277);
+        --sy-primary-100: oklch(96.2% 0.059 95.617);
+        --sy-primary-200: oklch(92.4% 0.12 95.746);
+        --sy-primary-300: oklch(87.9% 0.169 91.605);
+        --sy-primary-400: oklch(82.8% 0.189 84.429);
+        --sy-primary-500: oklch(76.9% 0.188 70.08);
+        --sy-primary-600: oklch(66.6% 0.179 58.318);
+        --sy-primary-700: oklch(55.5% 0.163 48.998);
+        --sy-primary-800: oklch(47.3% 0.137 46.201);
+        --sy-primary-900: oklch(41.4% 0.112 45.904);
+        --sy-primary-950: oklch(27.9% 0.077 45.635);
 
         --sy-gray-50: oklch(98.5% 0 0);
         --sy-gray-100: oklch(96.7% 0.001 286.375);
@@ -149,17 +149,17 @@
         --sy-danger-900: oklch(39.6% 0.141 25.723);
         --sy-danger-950: oklch(25.8% 0.092 26.042);
 
-        --sy-info-50: oklch(97.7% 0.013 236.62);
-        --sy-info-100: oklch(95.1% 0.026 236.824);
-        --sy-info-200: oklch(90.1% 0.058 230.902);
-        --sy-info-300: oklch(82.8% 0.111 230.318);
-        --sy-info-400: oklch(74.6% 0.16 232.661);
-        --sy-info-500: oklch(68.5% 0.169 237.323);
-        --sy-info-600: oklch(58.8% 0.158 241.966);
-        --sy-info-700: oklch(50% 0.134 242.749);
-        --sy-info-800: oklch(44.3% 0.11 240.79);
-        --sy-info-900: oklch(39.1% 0.09 240.876);
-        --sy-info-950: oklch(29.3% 0.066 243.157);
+        --sy-info-50: oklch(96.2% 0.018 272.314);
+        --sy-info-100: oklch(93% 0.034 272.788);
+        --sy-info-200: oklch(87% 0.065 274.039);
+        --sy-info-300: oklch(78.5% 0.115 274.713);
+        --sy-info-400: oklch(67.3% 0.182 276.935);
+        --sy-info-500: oklch(58.5% 0.233 277.117);
+        --sy-info-600: oklch(51.1% 0.262 276.966);
+        --sy-info-700: oklch(45.7% 0.24 277.023);
+        --sy-info-800: oklch(39.8% 0.195 277.366);
+        --sy-info-900: oklch(35.9% 0.144 278.697);
+        --sy-info-950: oklch(25.7% 0.09 281.288);
 
         --sy-success-50: oklch(98.2% 0.018 155.826);
         --sy-success-100: oklch(96.2% 0.044 156.743);

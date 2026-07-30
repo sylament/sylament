@@ -32,8 +32,8 @@ class ColorManager
     public const array DEFAULT_COLORS = [
         'danger' => Color::Red,
         'gray' => Color::Zinc,
-        'info' => Color::Sky,
-        'primary' => Color::Blue,
+        'info' => Color::Indigo,
+        'primary' => Color::Amber,
         'success' => Color::Green,
         'warning' => Color::Amber,
     ];

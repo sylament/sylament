@@ -31,11 +31,11 @@ it('ships the six default palettes', function (): void {
         ->toBe(['danger', 'gray', 'info', 'primary', 'success', 'warning']);
 });
 
-it('defaults primary to blue and info to sky', function (): void {
+it('defaults primary to amber and info to indigo', function (): void {
     $colors = colorManager()->getColors();
 
-    expect($colors['primary'])->toBe(Color::Blue)
-        ->and($colors['info'])->toBe(Color::Sky);
+    expect($colors['primary'])->toBe(Color::Amber)
+        ->and($colors['info'])->toBe(Color::Indigo);
 });
 
 it('registers an additional palette', function (): void {

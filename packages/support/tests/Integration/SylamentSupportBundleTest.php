@@ -46,7 +46,7 @@ it('provides the colour manager carrying the default palettes', function (): voi
     $manager = $this::getContainer()->get(ColorManager::class);
 
     expect($manager)->toBeInstanceOf(ColorManager::class)
-        ->and($manager->getColor('primary'))->toBe(Color::Blue);
+        ->and($manager->getColor('primary'))->toBe(Color::Amber);
 });
 
 it('exposes a colour policy on the public container', function (): void {

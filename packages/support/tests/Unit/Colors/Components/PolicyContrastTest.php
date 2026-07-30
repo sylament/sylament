@@ -19,7 +19,8 @@ use function Sylament\Support\Tests\policy;
 /**
  * Every slot every policy resolves, paired with the surface it is painted on and the ratio the
  * policy declares for it. `badge.css` hardcoded `text-color-600`, which measures 3.06:1 for
- * warning and 3.03:1 for success — these are the cases that fail if that shade comes back.
+ * primary and warning, 3.03:1 for success and 4.35:1 for danger — these are the cases that fail
+ * if that shade comes back.
  *
  * `ButtonComponent` is absent because its map picks a background before it picks text, so its
  * slots are not independent; it has its own two tests below.
@@ -84,11 +85,11 @@ it(
 )->with('policy slots');
 
 /**
- * The filled button in all four of its states, not just the resting one. Three of the shades
- * Filament's candidate list offers admit no readable text at all — the test below proves it —
- * so the five failing pairings are pinned rather than asserted. Closing them means changing
- * which shades a filled button paints, a visual change to every danger, primary and info
- * button rather than a port fix; the list is exact, so it goes red in either direction.
+ * The filled button in all four of its states, not just the resting one. One shade Filament's
+ * candidate list offers admits no readable text at all — the test below proves it — so the two
+ * failing pairings are pinned rather than asserted. Closing them means changing which shades a
+ * filled button paints, a visual change to every danger button rather than a port fix; the list
+ * is exact, so it goes red in either direction.
  */
 it('clears WCAG AA in every filled-button state bar the shades that admit no readable text', function (): void {
     $states = [
@@ -117,14 +118,11 @@ it('clears WCAG AA in every filled-button state bar the shades that admit no rea
     expect($failures)->toBe([
         'danger hover',
         'danger dark hover',
-        'info dark',
-        'primary hover',
-        'primary dark hover',
     ]);
 });
 
 it('has no readable text at all on the background shades the filled button cannot make accessible', function (): void {
-    $unreachable = ['danger' => 500, 'info' => 600, 'primary' => 500];
+    $unreachable = ['danger' => 500];
 
     foreach ($unreachable as $palette => $shade) {
         $shades = ColorManager::DEFAULT_COLORS[$palette];

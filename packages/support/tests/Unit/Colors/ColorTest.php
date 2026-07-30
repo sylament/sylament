@@ -13,9 +13,8 @@ it('passes an oklch value through untouched', function (): void {
 });
 
 it('converts a hex value to oklch', function (): void {
-    // #2563eb is the sRGB-clipped form of blue-600, whose oklch token is
-    // `oklch(0.546 0.245 262.881)` — out of the sRGB gamut, so the chroma the
-    // clipped hex converts back to is lower than the token's.
+    // #2563eb shares the blue-600 token's lightness and hue but not its chroma — the
+    // token `oklch(0.546 0.245 262.881)` converts to #155dfc, not to this hex.
     expect(Color::convertToOklch('#2563eb'))->toBe('oklch(0.546 0.215 262.881)');
 });
 

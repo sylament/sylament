@@ -28,7 +28,9 @@ it('picks white text on a vibrant background', function (): void {
         ->darkBackground(bg: 600, hover: 500)
         ->get();
 
-    // Shade 0 is white — no blue shade is readable on blue-600.
+    // Shade 0 is white. blue-50 would in fact clear AA on blue-600 (4.86:1), but the
+    // light-text fallback latches off at background 500 — where it measures 3.45:1 —
+    // and never re-enables for darker backgrounds, so 600 falls through to white.
     expect($map['text'])->toBe(0);
 });
 

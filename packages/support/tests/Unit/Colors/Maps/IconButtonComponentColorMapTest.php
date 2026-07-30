@@ -21,15 +21,28 @@ it('resolves the four icon-button text slots', function (): void {
     expect($map)->toHaveKeys(['text', 'hover:text', 'dark:text', 'dark:hover:text']);
 });
 
-it('darkens rather than lightens on hover for shades above 500', function (): void {
+it('darkens on hover when the readable light shade is above 500', function (): void {
     $gray = Color::Zinc;
 
+    // Yellow is pale enough that the lightest shade readable on a light surface is 700.
     $map = IconButtonComponentColorMap::make(Color::Yellow)
         ->lightSurface($gray[50])
         ->darkSurface($gray[700])
         ->get();
 
-    expect($map['hover:text'])->toBeGreaterThan($map['text'] - 200);
+    expect($map['hover:text'])->toBeGreaterThan($map['text']);
+});
+
+it('lightens on hover when the readable light shade is at or below 500', function (): void {
+    $gray = Color::Zinc;
+
+    // Blue is vibrant enough to stay readable on a light surface down to shade 500.
+    $map = IconButtonComponentColorMap::make(Color::Blue)
+        ->lightSurface($gray[50])
+        ->darkSurface($gray[700])
+        ->get();
+
+    expect($map['hover:text'])->toBeLessThan($map['text']);
 });
 
 it('requires a light surface', function (): void {

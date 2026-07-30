@@ -109,6 +109,8 @@ it('applies one option map to every instance of that constraint class', function
 
     expect($constraints)->toHaveCount(2)
         ->and($constraints[0]->maxMessage)->toBe('Too long.')
+        ->and($constraints[0]->minMessage)->toBe('Too short.')
+        ->and($constraints[1]->maxMessage)->toBe('Too long.')
         ->and($constraints[1]->minMessage)->toBe('Too short.');
 });
 
@@ -190,8 +192,19 @@ it('does not apply a parent-class key to a subclass constraint', function (): vo
 
 it('ignores a message keyed to a constraint the field does not build', function (): void {
     $constraints = FixtureField::make('title')
-        ->required(false)
-        ->validationMessages([NotBlank::class => 'Give it a title.', Email::class => 'Not an address.'])
+        ->required()
+        ->validationMessages([Email::class => 'Not an address.'])
+        ->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0])->toBeInstanceOf(NotBlank::class)
+        ->and($constraints[0]->message)->toBe('This value should not be blank.');
+});
+
+it('ignores a message keyed to a constraint excluded by a false condition', function (): void {
+    $constraints = FixtureField::make('slug')
+        ->constraint(new Regex('/^[a-z-]+$/'), condition: false)
+        ->validationMessages([Regex::class => 'Lowercase and dashes only.'])
         ->getValidationConstraints();
 
     expect($constraints)->toBe([]);

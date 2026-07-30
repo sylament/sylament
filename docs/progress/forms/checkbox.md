@@ -34,7 +34,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`CanBeInline`](../../../packages/forms/src/Components/Concerns/CanBeInline.php) | [`Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) | done | — | [detail](can-be-inline.md) |
 | [`CanBeAccepted`](../../../packages/forms/src/Components/Concerns/CanBeAccepted.php) | [`Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | — | [detail](can-be-accepted.md) |
 | Checked state rendered server-side | [`Checkbox::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) |
-| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | `Repeater` | — |
+| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` | — |
 | `HasExtraInputAttributes` | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | todo | — | — |
 
 Coverage: the inline / not-inline placement in both directions, the absent
@@ -53,11 +53,13 @@ whose fixture form carries an `accepted()` checkbox beside its text fields.
 Specifics for rows that are not finished. Delete a subsection when its row flips
 to **done**.
 
-The two **todo** rows are unstarted rather than partly ported.
-`CanFixIndistinctState` exists to disambiguate identically-pathed checkboxes
-inside a `Repeater`, which is itself unported, so it has nothing to fix yet.
+Neither unfinished row is partly ported. `CanFixIndistinctState` exists to
+disambiguate identically-pathed checkboxes inside a `Repeater`, which is itself
+unported, so it has nothing to fix yet — **blocked** on that, the same reading
+[`Toggle`](toggle.md#fixindistinctstate-awaits-the-repeater) gives it.
 `HasExtraInputAttributes` is a shared field concern (its own README row) that no
-field reaches yet — a setter/getter plus one `attrs()` source on the template.
+field reaches yet, and waits on nothing — a setter/getter plus one `attrs()`
+source on the template.
 
 ## Semantics
 

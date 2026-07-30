@@ -12,22 +12,32 @@ These tables map the full `forms/src` surface end to end, so no table carries an
 against Filament has now resolved every **started** row (a linked first-column
 source) to a real [status](../README.md#statuses) — **done** or **in progress** —
 with a detail file wherever a divergence, an open gap, or real sub-structure earns
-one. A plain-text name is not built yet and stays **todo**. The five single-use
-concerns Filament composes onto the base `Field` — `CanBeAutofocused`,
-`CanBeMarkedAsRequired`, `HasHelperText`, `HasHint`, and `HasPlaceholder` — have
+one. A plain-text name is not built yet and stays **todo** here even where a
+component's detail file marks that concern **blocked** for itself — these tables
+carry no _Blocked by_ column, and a prerequisite only means anything against the
+component waiting on it, so `CanBeNative` is **todo** below and **blocked** in
+[`select.md`](select.md).
+
+The five single-use concerns Filament composes onto the base `Field` —
+`CanBeAutofocused`, `CanBeMarkedAsRequired`, `HasHelperText`, `HasHint`, and
+`HasPlaceholder` — have
 folded into [`field.md`](field.md) and left the Features table, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing);
 `CanBeLengthConstrained` is shared by `TextInput` and `Textarea`, so it keeps its
 own row, and `CanBeValidated` keeps one despite sitting on `Field` alone, because
 its Filament surface is some eighty methods and it is the field half of a
 validation vertical spanning three packages — folding it would swamp
-[`field.md`](field.md). The same fold applies to every other single-component
-concern: `HasOptions`, `CanSelectPlaceholder` and `CanDisableOptions` are
-`Select`'s alone and live in [`select.md`](select.md), `HasToggleIcons` is
-`Toggle`'s alone and lives in [`toggle.md`](toggle.md), while `CanBeInline` and
-`CanBeAccepted` are shared by `Checkbox` and `Toggle` and so keep rows of their
-own. [`support/component.md`](../support/component.md) is the shape each detail
-file follows.
+[`field.md`](field.md). The same fold applies to every other concern only one
+built component uses: `HasOptions`, `CanSelectPlaceholder` and
+`CanDisableOptions` are `Select`'s alone in the port and live in
+[`select.md`](select.md), `HasToggleIcons` is `Toggle`'s alone and lives in
+[`toggle.md`](toggle.md), while `CanBeInline` and `CanBeAccepted` are shared by
+`Checkbox` and `Toggle` and so keep rows of their own. The fold reads the port,
+not Filament — Filament composes `HasOptions` and `CanDisableOptions` onto
+`Radio`, `CheckboxList` and `ToggleButtons` as well, so each is promoted back to
+a row of its own the moment the second field lands.
+[`support/component.md`](../support/component.md) is the shape each detail file
+follows.
 
 ## Components
 
@@ -102,7 +112,7 @@ ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
 | CanBeCloned | [`Components/Concerns/CanBeCloned.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeCloned.php) | todo | — |
 | [`CanBeInline`](../../../packages/forms/src/Components/Concerns/CanBeInline.php) | [`Components/Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) | done | [can-be-inline.md](can-be-inline.md) |
 | [`CanBeLengthConstrained`](../../../packages/forms/src/Components/Concerns/CanBeLengthConstrained.php) | [`Components/Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) | done | [can-be-length-constrained.md](can-be-length-constrained.md) |
-| CanBeNative | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | blocked | [select.md](select.md) |
+| CanBeNative | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | todo | — |
 | CanBePreloaded | [`Components/Concerns/CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php) | todo | — |
 | CanBeReadOnly | [`Components/Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | todo | — |
 | CanBeSearchable | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | todo | — |

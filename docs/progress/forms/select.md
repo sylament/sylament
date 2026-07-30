@@ -37,6 +37,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | in progress | HasEnum | [diverges](#hasoptions-drops-the-enum-class-string-arm) |
 | [`CanSelectPlaceholder`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php) | [`Concerns/CanSelectPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/CanSelectPlaceholder.php) | done | — | [diverges](#disableplaceholderselection-is-not-ported) |
 | [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) | [`Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [diverges](#a-null-callback-merges-to-nothing) |
+| [`Contracts\CanDisableOptions`](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Components/Contracts/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Contracts/CanDisableOptions.php) | done | — | [diverges](#the-contract-declares-the-read-surface-not-the-setter) |
 | `boolean()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | — |
 | `getOptionLabel()` | [`resolveOptionLabel()`](../../../vendor/filament/forms/src/Components/Select.php) | in progress | relationship layer | [detail](#getoptionlabel-omits-the-getoptionlabelusing-arm) |
 | Option validation (`Choice`) | [`getInValidationRuleValues()`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-choice-constraint-is-the-fields-only-server-side-guard) |
@@ -45,7 +46,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | `searchable()` / `preload()` / `HasLoadingMessage` | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | todo | the JS select control | — |
 | `relationship()` / create + edit option actions | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | the Doctrine relation layer | — |
 | `allowHtml()` | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | todo | — | — |
-| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | `Repeater` | — |
+| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` | — |
 | Affixes (`HasAffixes`, `wrapInputHtml`) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | blocked | HasAffixes | — |
 
 Coverage: the concern surface — flattening, per-option disabling, merge/replace,
@@ -165,6 +166,31 @@ Filament's *merge* arm appends the argument unconditionally, so
 `evaluate(null)` disables no option — the field claims to have disabled options
 and filters none. The port skips a null on merge instead, which is also what
 keeps the `array<bool|Closure>` property type honest at level max.
+
+### The contract declares the read surface, not the setter
+
+Filament's `Contracts\CanDisableOptions` declares exactly one member,
+`disableOptionWhen(bool | Closure): static` — the *write* side. Its only consumer
+is
+[`CanDisableOptionsWhenSelectedInSiblingRepeaterItems`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php),
+which intersects `Component & CanDisableOptions` so a closure can call the setter
+on whatever field it is handed. That concern is unported — it needs the
+`Repeater` — so the setter has nothing here to type-check it.
+
+The port's
+[interface](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php)
+declares the *read* side instead: `isOptionDisabled()`, which
+[the template](../../../packages/forms/templates/partials/Select/index.html.twig)
+calls per option to render `disabled`, and `getEnabledOptions()`, which
+[`getEnabledOptionValues()`](../../../packages/forms/src/Components/Select.php)
+walks to build the `Choice` choices. Neither is reached through an `instanceof`
+yet — `Select` is the only implementor — so the interface names what a second
+implementor would have to honour rather than what Filament's absent consumer
+needed. `disableOptionWhen()` still ships on the
+[trait](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php),
+so the public API is unchanged, and widening the interface once the repeater arm
+lands is additive. Same narrowing and same reasoning as
+[`CanBeLengthConstrained`](can-be-length-constrained.md#the-contract-declares-only-the-constraint-builder).
 
 ### `disablePlaceholderSelection()` is not ported
 

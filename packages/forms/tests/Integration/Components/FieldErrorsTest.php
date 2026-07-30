@@ -45,21 +45,25 @@ it('renders field errors and aria-invalid for a sticky invalid schema', function
     expect((string) $rendered)->toContain('sy-fo-field-error-message')
         ->toContain('This value should not be blank.')
         ->and($crawler->filter('input[name="title"]')->attr('aria-invalid'))->toBe('true')
+        ->and($crawler->filter('input[name="isFeatured"]')->attr('aria-invalid'))->toBe('true')
         ->and($crawler->filter('textarea[name="excerpt"]')->attr('aria-invalid'))->toBe('false');
 });
 
 it('renders the length violation message once the field is over the cap', function (): void {
     $component = $this->createLiveComponent('ValidatedArticleForm', ['validatedSchemas' => ['schema']]);
-    $component->set('data', ['title' => str_repeat('a', 20), 'excerpt' => null]);
+    $component->set('data', ['title' => str_repeat('a', 20), 'excerpt' => null, 'isFeatured' => true]);
 
     expect((string) $component->render())->toContain('This value is too long.');
 });
 
 it('renders no error markup while valid', function (): void {
     $component = $this->createLiveComponent('ValidatedArticleForm', ['validatedSchemas' => ['schema']]);
-    $component->set('data', ['title' => 'Hi', 'excerpt' => null]);
+    $component->set('data', ['title' => 'Hi', 'excerpt' => null, 'isFeatured' => true]);
 
-    expect((string) $component->render())
+    $rendered = $component->render();
+
+    expect((string) $rendered)
         ->not->toContain('data-validation-error')
-        ->not->toContain('aria-invalid="true"');
+        ->not->toContain('aria-invalid="true"')
+        ->and($rendered->crawler()->filter('input[name="isFeatured"]')->attr('aria-invalid'))->toBe('false');
 });

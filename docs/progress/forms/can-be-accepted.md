@@ -28,7 +28,8 @@ set *after* the `accepted()` / `declined()` call, by
 [`CanBeAcceptedTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeAcceptedTest.php)
 against the
 [`FixtureBooleanField`](../../../packages/forms/tests/Fixtures/Components/FixtureBooleanField.php)
-fixture.
+fixture. That the trait actually reaches its consumers is pinned separately, by
+[`CheckboxTest`](../../../packages/forms/tests/Integration/Components/CheckboxTest.php).
 
 ## Divergences
 
@@ -54,12 +55,17 @@ runs both ways: the port loses Laravel's word aliases (`"yes"` / `"on"` /
 `"true"` and their negatives) and *gains* a `null` pass Laravel rejects. The
 numeric and numeric-string forms are common to both.
 
-Neither half reaches the consumers here: `Checkbox` and `Toggle` cast their
-state through `BooleanStateCast(isNullable: false)` before validation runs, so
-the validated value is always a real `bool` and never a word alias or `null`. The
-`null` pass is the one to keep in mind for a future consumer that does not
-cast — there, `accepted()` alone does not make a field required, and `required()`
-must say so.
+Both halves reach the consumers here, because validation reads the **raw,
+uncast** state rather than the cast one
+([checkbox.md](checkbox.md#validation-reads-the-raw-state-so-the-boolean-type-constraint-is-live)):
+`BooleanStateCast(isNullable: false)` normalizes what `state()` writes and what
+`getState()` reads back, not what the validator sees. The normal path never
+exercises the delta — a live checkbox binds `element.checked`, a real boolean,
+and `fill()` seeds a real `false` — but a state bag written any other way does. A
+raw `"yes"` fails `IsTrue` here where Laravel's `accepted` passes it (on
+`Checkbox` and `Toggle` the `Type('bool')` constraint rejects it as well), and a
+**missing key** reads back as `null` and passes both, so `accepted()` alone does
+not make a field required — `required()` must say so.
 
 The constraint is registered as a **closure** rather than an instance, so
 `getValidationMessages()` is read when the constraint list is built rather than

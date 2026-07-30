@@ -1,1 +1,13 @@
+.sy-fo-checkbox {
+    @apply size-4 shrink-0 appearance-none rounded bg-white bg-center bg-no-repeat ring-1 ring-gray-950/20 transition duration-75 outline-none checked:bg-primary-600 checked:ring-0 focus-visible:ring-2 focus-visible:ring-primary-600 disabled:bg-gray-50 disabled:checked:bg-gray-400 dark:bg-white/5 dark:ring-white/20 dark:checked:bg-primary-500 dark:disabled:bg-white/10;
 
+    background-size: 1rem 1rem;
+}
+
+.sy-fo-checkbox:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='white'%3E%3Cpath d='M12.207 4.793a1 1 0 0 1 0 1.414l-5 5a1 1 0 0 1-1.414 0l-2-2a1 1 0 0 1 1.414-1.414L6.5 9.086l4.293-4.293a1 1 0 0 1 1.414 0Z'/%3E%3C/svg%3E");
+}
+
+.sy-fo-checkbox[aria-invalid='true'] {
+    @apply ring-danger-600 dark:ring-danger-500;
+}

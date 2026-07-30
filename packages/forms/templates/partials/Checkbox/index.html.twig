@@ -1,0 +1,19 @@
+{% set input %}
+    <input {{ attrs({
+        type: 'checkbox',
+        class: 'sy-fo-checkbox',
+        id: component.getId,
+        name: component.getName,
+        'data-model': component.getDataModel,
+        checked: component.getState,
+        required: component.isMarkedAsRequired,
+        'aria-invalid': component.getErrorMessages is not empty,
+        disabled: component.isDisabled,
+        autofocus: component.isAutofocused,
+    }) }}>
+{% endset %}
+
+<twig:SylamentForms:FieldWrapper :field="component">
+    <twig:block name="labelPrefix">{% if component.isInline %}{{ input }}{% endif %}</twig:block>
+    <twig:block name="content">{% if not component.isInline %}{{ input }}{% endif %}</twig:block>
+</twig:SylamentForms:FieldWrapper>

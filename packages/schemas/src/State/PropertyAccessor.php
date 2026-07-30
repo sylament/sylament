@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\State;
 
+use LogicException;
+use Symfony\Component\PropertyAccess\Exception\InvalidArgumentException;
+use Symfony\Component\PropertyAccess\Exception\UninitializedPropertyException;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 final readonly class PropertyAccessor
@@ -63,6 +66,108 @@ final readonly class PropertyAccessor
         $this->setInArray($bag, implode('.', $segments), $value);
 
         $this->accessor->setValue($host, $rootProperty, $bag);
+    }
+
+    /**
+     * Read a record's object graph by dotted path — the `data_get` counterpart
+     * for records: an object segment hops by property through the Symfony
+     * accessor, an array segment by key, and a null or scalar met mid-path
+     * yields null. Accessor failures on an object hop (no accessor,
+     * uninitialized property) propagate as AccessException for the caller to
+     * judge.
+     */
+    public function getFromRecord(object $record, string $path): mixed
+    {
+        $value = $record;
+
+        foreach (explode('.', $path) as $segment) {
+            if (is_object($value)) {
+                $value = $this->accessor->getValue($value, $segment);
+
+                continue;
+            }
+
+            if (! is_array($value) || ! array_key_exists($segment, $value)) {
+                return null;
+            }
+
+            $value = $value[$segment];
+        }
+
+        return $value;
+    }
+
+    /**
+     * Write into a record's object graph by dotted path. Object segments are
+     * never vivified — they must already hold an object. From the first
+     * non-object segment the remainder is written as a nested array with
+     * {@see setInArray()}'s contract (vivifying, clobbering scalars) and
+     * assigned back through the boundary property; a boundary property whose
+     * type rejects that array throws LogicException naming the path, so a
+     * schema declaring a nested object path over a null intermediate fails
+     * with the fix spelled out rather than a type error.
+     */
+    public function setOnRecord(object $record, string $path, mixed $value): void
+    {
+        $segments = explode('.', $path);
+        $holder = $record;
+
+        while (count($segments) > 1) {
+            $segment = array_shift($segments);
+
+            try {
+                $current = $this->accessor->getValue($holder, $segment);
+            } catch (UninitializedPropertyException) {
+                $current = null;
+            }
+
+            if (is_object($current)) {
+                $holder = $current;
+
+                continue;
+            }
+
+            /** @var array<string, mixed> $bag */
+            $bag = is_array($current) ? $current : [];
+            $this->setInArray($bag, implode('.', $segments), $value);
+
+            try {
+                $this->accessor->setValue($holder, $segment, $bag);
+            } catch (InvalidArgumentException $exception) {
+                throw new LogicException(sprintf(
+                    'Cannot map state path "%s" onto %s: "%s" is not an object and its property does not accept an array. Initialize the nested object (constructor or lazy getter) before mapping.',
+                    $path,
+                    $record::class,
+                    $segment,
+                ), $exception->getCode(), previous: $exception);
+            }
+
+            return;
+        }
+
+        $this->accessor->setValue($holder, $segments[0], $value);
+    }
+
+    /**
+     * Whether a dotted path exists in a detached nested array — unlike
+     * {@see getFromArray()}, distinguishes an absent key from a present null
+     * (matching `Arr::has`).
+     *
+     * @param array<string, mixed> $state
+     */
+    public function hasInArray(array $state, string $path): bool
+    {
+        $value = $state;
+
+        foreach (explode('.', $path) as $segment) {
+            if (! is_array($value) || ! array_key_exists($segment, $value)) {
+                return false;
+            }
+
+            $value = $value[$segment];
+        }
+
+        return true;
     }
 
     /**

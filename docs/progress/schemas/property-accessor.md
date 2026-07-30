@@ -41,16 +41,23 @@ exists. _Blocked by_ names what has to land first. _Detail_ carries a
 | [`getFromArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — read a detached nested array by dotted path (null past a missing/scalar segment) | [`Arr::get()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
 | [`setInArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write into a detached nested array, auto-vivifying/clobbering intermediates | [`Arr::set()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
 | [`forgetFromArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — unset leaf path(s) from a detached array, leaving emptied parents | [`Arr::forget()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
+| [`getFromRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — read a record's object graph by dotted path (objects hop by property, arrays by key, null past a null/scalar intermediate) | [`data_get()`](../../../vendor/laravel/framework/src/Illuminate/Collections/helpers.php) | done | — | [diverges](#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) |
+| [`setOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write into a record's object graph; object segments never vivify, the remainder past the first non-object segment writes as a nested array | [`data_set()`](../../../vendor/laravel/framework/src/Illuminate/Collections/helpers.php) | done | — | [diverges](#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) |
+| [`hasInArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether a dotted path exists in a detached array (absent vs present-null) | [`Arr::has()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | — |
 | [Service wiring](../../../packages/schemas/src/State/PropertyAccessor.php) — registration and class alias, injected through `CanAccessProperties` | — (Sylament-invented) | done | — | [diverges](#the-accessor-is-injected-not-reached-for) |
 
 Every row is **done** — the unit suite
 ([`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php))
-exercises all five public methods across their branches (nested reads returning
+exercises all eight public methods across their branches (nested reads returning
 null past an absent, null or non-array segment, on a bag and on a record;
 single-segment, auto-vivifying and clobbering writes; the detached trio's
 present/missing/past-scalar reads, deep auto-vivify and non-array
-clobber, and leaf-only unset over a path list with a missing-path no-op), a wiring
-test
+clobber, and leaf-only unset over a path list with a missing-path no-op; the
+record pair's object hops, object-to-array boundary crossing, leaf object read,
+propagated `AccessException`s, in-place nested mutation, boundary vivify
+preserving unmanaged siblings, and both missing-intermediate `LogicException`
+arms; `hasInArray()`'s present, present-null, absent and past-scalar answers), a
+wiring test
 ([`PropertyAccessorBootTest`](../../../packages/schemas/tests/Integration/State/PropertyAccessorBootTest.php))
 pins both paths — a component from `make()` holds the container's accessor, one
 from `new` holds a locally built one — and
@@ -119,8 +126,40 @@ first child write. Routing the traversal through the detached trio gives the
 host-bound pair the same contract the detached pair already documented, and the
 resulting bag is byte-identical to Filament's. The cost is that a bag property
 holding an `ArrayAccess` rather than a real array no longer traverses past the
-root segment; no host uses one, and nested plain objects were never reachable
-either way.
+root segment; no host uses one, and nested plain objects are not the host pair's
+job — the record pair below owns object-graph traversal.
+
+### The record pair completes the data_get/data_set port for object graphs
+
+`getFromRecord()`/`setOnRecord()` are the object-graph half of Laravel's
+`data_get`/`data_set`, which is what Filament's record mapping actually leans
+on. They are segment-wise on purpose: Symfony's dotted syntax always means
+*property* — `getValue($post, 'meta.foo')` with `$meta` holding an array throws
+`NoSuchPropertyException` ("Cannot read property from an array") — so
+whole-path delegation would trade broken object intermediates for broken array
+intermediates. The walk hops objects one property at a time through the
+injected accessor and switches permanently to array traversal at the first
+non-object segment, giving mixed graphs (an entity holding a JSON-shaped array
+column) one contract. Reads are lenient like `getFromArray()` (null past a
+null/scalar intermediate, accessor failures propagate for the caller to
+judge); writes never vivify an object — the array-remainder write-back onto a
+typed property that rejects it throws `LogicException` naming the path and the
+fix, because "PropertyAccessor requires a graph of objects or arrays" explains
+nothing to someone who just nested a Section. Objects *inside* the array
+remainder are out of scope until repeaters need them — `setInArray()`'s
+documented clobber contract applies past the boundary.
+
+That `LogicException` rides on Symfony's own classification of the rejected
+write: `PropertyAccessor::setValue()` converts the setter's `TypeError` into an
+`InvalidTypeException` (an `InvalidArgumentException`) only when it can
+`preg_match` the message, and PHP renders an anonymous class's method as
+`class@anonymous()` with no `::method` segment, so that one record shape
+rethrows the raw `TypeError` instead. Catching `TypeError` alongside is not an
+option — `PropertyAccessorInterface::setValue()` does not declare it, so PHPStan
+calls the catch dead — which scopes the friendly message to named records, every
+shape a schema actually binds to. Hence
+[`UninitializedPost`](../../../packages/schemas/tests/Fixtures/State/UninitializedPost.php):
+a named fixture so the uninitialized-intermediate arm is covered by one.
 
 ### The detached-array trio ports Laravel's Arr helpers because PropertyAccess is host-only and has no key removal
 

@@ -1,1 +1,11 @@
+.sy-fo-select {
+    @apply block w-full appearance-none rounded-lg bg-white bg-no-repeat py-1.5 pe-8 ps-3 text-sm text-gray-950 shadow-xs ring-1 ring-gray-950/10 transition duration-75 outline-none hover:ring-gray-950/20 focus:ring-2 focus:ring-primary-600 disabled:bg-gray-50 disabled:text-gray-500 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:hover:ring-white/20 dark:focus:ring-primary-500;
 
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.5rem center;
+    background-size: 1.25rem 1.25rem;
+}
+
+.sy-fo-select[aria-invalid='true'] {
+    @apply ring-danger-600 hover:ring-danger-600 focus:ring-danger-600 dark:ring-danger-500 dark:hover:ring-danger-500 dark:focus:ring-danger-500;
+}

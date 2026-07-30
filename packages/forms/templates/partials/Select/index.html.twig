@@ -1,0 +1,34 @@
+<twig:SylamentForms:FieldWrapper :field="component">
+    <select {{ attrs({
+        class: 'sy-fo-select',
+        id: component.getId,
+        name: component.getName,
+        'data-model': component.getDataModel,
+        required: component.isMarkedAsRequired,
+        'aria-invalid': component.getErrorMessages is not empty,
+        disabled: component.isDisabled,
+        autofocus: component.isAutofocused,
+    }) }}>
+        {% if component.canSelectPlaceholder %}
+            <option value="">{{ component.isDisabled ? '' : component.getPlaceholder }}</option>
+        {% endif %}
+
+        {% for value, label in component.getOptions %}
+            {% if label is iterable %}
+                <optgroup label="{{ value }}">
+                    {% for groupedValue, groupedLabel in label %}
+                        <option {{ attrs({
+                            value: groupedValue,
+                            disabled: component.isOptionDisabled(groupedValue, groupedLabel),
+                        }) }}>{{ groupedLabel }}</option>
+                    {% endfor %}
+                </optgroup>
+            {% else %}
+                <option {{ attrs({
+                    value: value,
+                    disabled: component.isOptionDisabled(value, label),
+                }) }}>{{ label }}</option>
+            {% endif %}
+        {% endfor %}
+    </select>
+</twig:SylamentForms:FieldWrapper>

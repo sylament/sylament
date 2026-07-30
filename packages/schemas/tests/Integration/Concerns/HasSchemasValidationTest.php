@@ -6,7 +6,9 @@ namespace Sylament\Schemas\Tests\Integration\Concerns;
 
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\Tests\Fixtures\Components\ConstrainedField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
+use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
@@ -131,6 +133,22 @@ it('passes the final dehydrated state to afterValidate after hooks', function ()
 
     expect($seen)->toBe($state)
         ->and($state['title'])->toBe('Hello');
+});
+
+it('validates a constrained leaf under a group path the host holds as null', function (): void {
+    $host = $this->createLiveComponent('ValidationHost')->component();
+    $host->data = ['author' => null];
+
+    $schema = Schema::make($host)->key('nested')->statePath('data')->components([
+        StateGroup::make()->statePath('author')->components([
+            ConstrainedField::make('name')->required(),
+        ]),
+    ]);
+
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.author.name'))
+        ->toBe(['This value should not be blank.']);
 });
 
 it('skips callBeforeStateDehydrated when shouldCallHooksBefore is false', function (): void {

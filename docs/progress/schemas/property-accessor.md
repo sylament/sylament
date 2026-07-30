@@ -21,8 +21,9 @@ Reference — this is Sylament-invented, so it is diffed against the sources it
 deliberately mirrors rather than a Filament port target:
 
 - [`ux-live-component/src/LiveComponentHydrator.php`](../../../vendor/symfony/ux-live-component/src/LiveComponentHydrator.php)
-  — `adjustPropertyPathForData`, which `toPropertyPath()` mirrors so the bag path
-  shape matches what the hydrator round-trips
+  — `adjustPropertyPathForData`, whose root-property-then-array-indices bag model
+  `get()`/`set()` follow so the paths they touch match what the hydrator
+  round-trips
 - [`laravel/framework/src/Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php)
   — `Arr::get` / `Arr::set` / `Arr::forget`, ported as the detached-array trio
 
@@ -35,9 +36,8 @@ exists. _Blocked by_ names what has to land first. _Detail_ carries a
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`get()`](../../../packages/schemas/src/State/PropertyAccessor.php) — read a host's state bag by absolute dotted path (null-tolerant on missing index) | — (Sylament-invented) | done | — | [diverges](#state-binds-through-symfony-propertyaccess-not-livewire-entanglement) |
-| [`set()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write a host's state bag by absolute dotted path (auto-vivifies nested arrays) | — (Sylament-invented) | done | — | [diverges](#state-binds-through-symfony-propertyaccess-not-livewire-entanglement) |
-| [`toPropertyPath()`](../../../packages/schemas/src/State/PropertyAccessor.php) — dotted path → `data[a][b]` bracket conversion | [`LiveComponentHydrator::adjustPropertyPathForData()`](../../../vendor/symfony/ux-live-component/src/LiveComponentHydrator.php) | done | — | [diverges](#state-binds-through-symfony-propertyaccess-not-livewire-entanglement) |
+| [`get()`](../../../packages/schemas/src/State/PropertyAccessor.php) — read a host's state bag by absolute dotted path (null past an absent, null or non-array segment) | — (Sylament-invented) | done | — | [diverges](#state-binds-through-symfony-propertyaccess-not-livewire-entanglement) |
+| [`set()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write a host's state bag by absolute dotted path (auto-vivifies/clobbers intermediates) | — (Sylament-invented) | done | — | [diverges](#state-binds-through-symfony-propertyaccess-not-livewire-entanglement) |
 | [`getFromArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — read a detached nested array by dotted path (null past a missing/scalar segment) | [`Arr::get()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
 | [`setInArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write into a detached nested array, auto-vivifying/clobbering intermediates | [`Arr::set()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
 | [`forgetFromArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — unset leaf path(s) from a detached array, leaving emptied parents | [`Arr::forget()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
@@ -45,9 +45,10 @@ exists. _Blocked by_ names what has to land first. _Detail_ carries a
 
 Every row is **done** — the unit suite
 ([`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php))
-exercises all five public methods across their branches (dot-to-bracket nested
-read and null-on-missing; single-segment and nested auto-vivify writes; the
-detached trio's present/missing/past-scalar reads, deep auto-vivify and non-array
+exercises all five public methods across their branches (nested reads returning
+null past an absent, null or non-array segment, on a bag and on a record;
+single-segment, auto-vivifying and clobbering writes; the detached trio's
+present/missing/past-scalar reads, deep auto-vivify and non-array
 clobber, and leaf-only unset over a path list with a missing-path no-op), a wiring
 test
 ([`PropertyAccessorBootTest`](../../../packages/schemas/tests/Integration/State/PropertyAccessorBootTest.php))
@@ -95,16 +96,31 @@ routes component state through Livewire's property system: `wire:model` entangle
 a field to a nested Livewire property, and Livewire's own binding reads and writes
 it. Sylament has no Livewire, so `PropertyAccessor` is the whole replacement
 mechanism — it takes the UX LiveComponent host and an absolute dotted state path
-(e.g. `data.address.city`), converts it via `toPropertyPath()` into a Symfony
-property path whose first segment is the `data` bag property and whose remaining
-segments are array indices (`data[address][city]`), and delegates to Symfony's
-configured `PropertyAccessorInterface`. That conversion deliberately mirrors UX
-`LiveComponentHydrator::adjustPropertyPathForData`, so the bag path shape matches
-what the hydrator round-trips. The framework accessor is null-tolerant on missing
-indices (read) and auto-vivifies nested arrays (write), so state concerns never
-guard for absent keys — the ergonomics Livewire gave Filament for free. This is
-structural and permanent: it reverses only if the port ever adopts a
+(e.g. `data.address.city`), reads the first segment as a property on the host
+through Symfony's configured `PropertyAccessorInterface`, and walks the remaining
+segments as array indices into the bag it holds. That split deliberately follows
+UX `LiveComponentHydrator::adjustPropertyPathForData`, so the paths these methods
+touch match what the hydrator round-trips. State concerns never guard for absent
+keys — a read returns null past any absent, null or non-array segment and a write
+vivifies the branch it needs — the ergonomics Livewire gave Filament for free.
+This is structural and permanent: it reverses only if the port ever adopts a
 Livewire-equivalent entanglement layer, which is not on the roadmap.
+
+Walking those segments here rather than handing Symfony a whole `data[address][city]`
+bracket path is what makes that contract true. Symfony's `PropertyAccessor`
+vivifies a *missing* index on both read and write, but throws
+`UnexpectedTypeException` the moment an intermediate segment exists holding null
+or a scalar — and `fillStateWithNull()` writes exactly that null onto a
+path-bearing layout component's own slot before its children are visited, so a
+`Section::make('author')->statePath('author')` wrapping two fields crashed on
+mount. Filament survives the identical write because `data_get`/`data_set` are
+lax in both directions: the parent's null is clobbered back into an array by the
+first child write. Routing the traversal through the detached trio gives the
+host-bound pair the same contract the detached pair already documented, and the
+resulting bag is byte-identical to Filament's. The cost is that a bag property
+holding an `ArrayAccess` rather than a real array no longer traverses past the
+root segment; no host uses one, and nested plain objects were never reachable
+either way.
 
 ### The detached-array trio ports Laravel's Arr helpers because PropertyAccess is host-only and has no key removal
 

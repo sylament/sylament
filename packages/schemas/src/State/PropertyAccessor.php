@@ -13,14 +13,56 @@ final readonly class PropertyAccessor
     ) {
     }
 
+    /**
+     * Read a host's state bag by absolute dotted path. The first segment is a
+     * property on the host; the rest index into the array it holds, so the
+     * traversal past it carries {@see getFromArray()}'s contract — null when any
+     * segment is absent or a non-array is met mid-path.
+     */
     public function get(object $host, string $path): mixed
     {
-        return $this->accessor->getValue($host, $this->toPropertyPath($path));
+        $segments = explode('.', $path);
+        $rootProperty = array_shift($segments);
+
+        $value = $this->accessor->getValue($host, $rootProperty);
+
+        if ($segments === []) {
+            return $value;
+        }
+
+        if (! is_array($value)) {
+            return null;
+        }
+
+        /** @var array<string, mixed> $value */
+        return $this->getFromArray($value, implode('.', $segments));
     }
 
+    /**
+     * Write into a host's state bag by absolute dotted path. The first segment is
+     * a property on the host; the rest index into the array it holds, so the
+     * traversal past it carries {@see setInArray()}'s contract — auto-vivifying
+     * (and clobbering any non-array) intermediate segments.
+     */
     public function set(object $host, string $path, mixed $value): void
     {
-        $this->accessor->setValue($host, $this->toPropertyPath($path), $value);
+        $segments = explode('.', $path);
+        $rootProperty = array_shift($segments);
+
+        if ($segments === []) {
+            $this->accessor->setValue($host, $rootProperty, $value);
+
+            return;
+        }
+
+        $bag = $this->accessor->getValue($host, $rootProperty);
+
+        /** @var array<string, mixed> $bag */
+        $bag = is_array($bag) ? $bag : [];
+
+        $this->setInArray($bag, implode('.', $segments), $value);
+
+        $this->accessor->setValue($host, $rootProperty, $bag);
     }
 
     /**
@@ -126,17 +168,5 @@ final readonly class PropertyAccessor
         }
 
         return $array;
-    }
-
-    private function toPropertyPath(string $dottedPath): string
-    {
-        $segments = explode('.', $dottedPath);
-        $first = array_shift($segments);
-
-        if ($segments === []) {
-            return $first;
-        }
-
-        return $first . '[' . implode('][', $segments) . ']';
     }
 }

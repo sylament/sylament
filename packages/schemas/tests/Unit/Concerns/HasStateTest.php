@@ -108,6 +108,101 @@ it('assembles a nested (layout-wrapped) schema, dropping a non-dehydrated leaf',
     expect($schema->getState())->toBe(['a' => 'AA']);
 });
 
+it('fills a path-bearing group from an empty bag', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('author')->components([
+            StateField::make('name'),
+            StateField::make('surname'),
+        ]),
+    ]);
+
+    $schema->fill();
+
+    expect($host->data)->toBe(['author' => ['name' => null, 'surname' => null]])
+        ->and($schema->getState())->toBe(['author' => ['name' => null, 'surname' => null]]);
+});
+
+it('fills a path-bearing group nested two deep from an empty bag', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('a')->components([
+            StateGroup::make()->statePath('b')->components([
+                StateField::make('c'),
+            ]),
+        ]),
+    ]);
+
+    $schema->fill();
+
+    expect($host->data)->toBe(['a' => ['b' => ['c' => null]]]);
+});
+
+it('fills a path-bearing group with supplied nested state', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('author')->components([
+            StateField::make('name'),
+            StateField::make('surname'),
+        ]),
+    ]);
+
+    $schema->fill(['author' => ['name' => 'Ada']]);
+
+    expect($schema->getState())->toBe(['author' => ['name' => 'Ada', 'surname' => null]]);
+});
+
+it('refills a path-bearing group over an already-populated bag', function (): void {
+    $host = new StateHostFixture();
+    $host->data = ['author' => ['name' => 'Ada', 'surname' => 'Lovelace']];
+
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('author')->components([
+            StateField::make('name'),
+            StateField::make('surname'),
+        ]),
+    ]);
+
+    $schema->fill([]);
+
+    expect($host->data)->toBe(['author' => ['name' => null, 'surname' => null]]);
+});
+
+it('reads a leaf under a group path the host holds as null', function (): void {
+    $host = new StateHostFixture();
+    $host->data = ['author' => null];
+
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('author')->components([
+            StateField::make('name'),
+        ]),
+    ]);
+
+    $field = $schema->getFlatComponents(withActions: false)[1];
+
+    expect($field->getState())->toBeNull();
+});
+
+it('fills a path-bearing group when the record supplies null for it', function (): void {
+    $record = new class {
+        public ?object $author = null;
+
+        public string $title = 'Hello';
+    };
+
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateField::make('title'),
+        StateGroup::make()->statePath('author')->components([
+            StateField::make('name'),
+        ]),
+    ]);
+
+    $schema->fill($record);
+
+    expect($host->data)->toBe(['title' => 'Hello', 'author' => ['name' => null]]);
+});
+
 it('mutates dehydrated state through nested schemas', function (): void {
     $host = new StateHostFixture();
     $schema = Schema::make($host)->statePath('data')->components([

@@ -28,6 +28,30 @@ it('returns null for a missing index without throwing', function (): void {
     expect(accessor()->get($host, 'data.missing'))->toBeNull();
 });
 
+it('returns null past a null intermediate', function (): void {
+    $host = new class {
+        public array $data = ['address' => null];
+    };
+
+    expect(accessor()->get($host, 'data.address.city'))->toBeNull();
+});
+
+it('returns null past a scalar intermediate', function (): void {
+    $host = new class {
+        public array $data = ['address' => 'Prague'];
+    };
+
+    expect(accessor()->get($host, 'data.address.city'))->toBeNull();
+});
+
+it('returns null past a null property on a record', function (): void {
+    $record = new class {
+        public ?object $author = null;
+    };
+
+    expect(accessor()->get($record, 'author.name'))->toBeNull();
+});
+
 it('writes the whole bag on a single-segment path', function (): void {
     $host = new class {
         public array $data = [];
@@ -41,6 +65,26 @@ it('writes the whole bag on a single-segment path', function (): void {
 it('auto-vivifies nested arrays on write', function (): void {
     $host = new class {
         public array $data = [];
+    };
+
+    accessor()->set($host, 'data.address.city', 'Brno');
+
+    expect($host->data)->toBe(['address' => ['city' => 'Brno']]);
+});
+
+it('vivifies a null intermediate on write', function (): void {
+    $host = new class {
+        public array $data = ['address' => null];
+    };
+
+    accessor()->set($host, 'data.address.city', 'Brno');
+
+    expect($host->data)->toBe(['address' => ['city' => 'Brno']]);
+});
+
+it('clobbers a scalar intermediate on write', function (): void {
+    $host = new class {
+        public array $data = ['address' => 'Prague'];
     };
 
     accessor()->set($host, 'data.address.city', 'Brno');

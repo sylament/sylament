@@ -230,13 +230,13 @@ a page-only field is Filament's own idiom — `dehydrated(false)` removes it fro
 
 ### Only top-level state paths map
 
-The state backend translates a dotted path to bracket access
-(`a.b` → `a[b]`) so nested segments *index* an array rather than traverse
+The state backend reads the first path segment as a property and indexes the rest
+into the array it holds, so nested segments *index* rather than traverse
 properties ([property-accessor.md](property-accessor.md)). Both mapping
 directions therefore work on single-segment paths only: a nested record path
-(`author.name`) comes back unreadable from the read-walk and is skipped, and
-`getData()` writes a nested-array state value wholesale onto one top-level
-property. Lifting this belongs to the relationship/embedded epic, which has to
+(`author.name`) reads null from the read-walk — an association object is not an
+array, so the traversal stops at it — and `getData()` writes a nested-array state
+value wholesale onto one top-level property. Lifting this belongs to the relationship/embedded epic, which has to
 decide what a nested path *means* against a Doctrine association before the
 accessor mode can change.
 

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Integration;
 
+use Sylament\Support\Colors\Color;
+use Sylament\Support\Colors\ColorManager;
+use Sylament\Support\Colors\Components\BadgeComponent;
 use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
@@ -12,6 +15,7 @@ use Sylament\Support\SylamentSupportBundle;
 use Sylament\Support\Tests\Fixtures\DependencyInjection\StaticInstanceFixture;
 use Sylament\Support\Twig\Extension\IconExtension;
 use Sylament\Support\Twig\SupportIconAlias;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 it('exposes the static instance registry as a public service', function (): void {
     expect($this::getContainer()->get(StaticInstanceRegistry::class))
@@ -36,6 +40,32 @@ it('provides the component manager as the resolved singleton', function (): void
     expect($manager)->toBeInstanceOf(ComponentManager::class)
         ->and(ComponentManager::resolve())->toBe($manager)
         ->and(ComponentManager::getInstance())->toBe($manager);
+});
+
+it('provides the colour manager carrying the default palettes', function (): void {
+    $manager = $this::getContainer()->get(ColorManager::class);
+
+    expect($manager)->toBeInstanceOf(ColorManager::class)
+        ->and($manager->getColor('primary'))->toBe(Color::Blue);
+});
+
+it('exposes a colour policy on the public container', function (): void {
+    // `ColorManager` asks the service container for a policy by class-string, so a private
+    // definition would be removed before the first lookup even though tests can still see it.
+    $container = $this::bootKernel()->getContainer();
+
+    expect($container->get(BadgeComponent::class))->toBeInstanceOf(BadgeComponent::class);
+});
+
+it('keeps a dashed colour key that config normalization would otherwise rewrite', function (): void {
+    $container = new ContainerBuilder();
+
+    new SylamentSupportBundle()->getContainerExtension()?->load([['colors' => ['off-brand' => Color::Rose]]], $container);
+
+    $registered = $container->getDefinition('sylament_support.color_manager')->getMethodCalls()[0][1][0];
+
+    expect($registered)->toHaveKey('off-brand')
+        ->and($registered)->not->toHaveKey('off_brand');
 });
 
 it('provides the icon manager as a service', function (): void {

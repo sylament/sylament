@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Support;
 
 use RuntimeException;
+use Sylament\Support\Colors\ColorManager;
 use Sylament\Support\Components\Component;
 use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\DependencyInjection\Compiler\ComponentResolverPass;
@@ -15,6 +16,7 @@ use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
 use Sylament\Support\Evaluation\Invoker;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\Twig\Extension\AttributeExtension;
+use Sylament\Support\Twig\Extension\ColorExtension;
 use Sylament\Support\Twig\Extension\ComponentExtension;
 use Sylament\Support\Twig\Extension\GridExtension;
 use Sylament\Support\Twig\Extension\IconExtension;
@@ -54,6 +56,11 @@ class SylamentSupportBundle extends SylamentBundle
     {
         $definition->rootNode()
             ->children()
+                ->arrayNode('colors')
+                    ->info('Color palettes keyed by name, e.g. "primary: \'#7c3aed\'" or an explicit shade map.')
+                    ->normalizeKeys(false)
+                    ->variablePrototype()->end()
+                ->end()
                 ->arrayNode('icons')
                     ->info('Icon overrides keyed by alias, e.g. "modal.close-button: lucide:x".')
                     ->normalizeKeys(false)
@@ -63,11 +70,11 @@ class SylamentSupportBundle extends SylamentBundle
     }
 
     /**
-     * @param array{icons?: array<string, string>} $config
+     * @param array{colors?: array<string, array<int, string>|string>, icons?: array<string, string>} $config
      */
     public function loadExtension(array $config, ContainerConfigurator $configurator, ContainerBuilder $container): void
     {
-        $this->configureServices($configurator, $config['icons'] ?? []);
+        $this->configureServices($configurator, $config['colors'] ?? [], $config['icons'] ?? []);
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
@@ -91,9 +98,10 @@ class SylamentSupportBundle extends SylamentBundle
     }
 
     /**
+     * @param array<string, array<int, string>|string> $colors
      * @param array<string, string> $icons
      */
-    private function configureServices(ContainerConfigurator $configurator, array $icons): void
+    private function configureServices(ContainerConfigurator $configurator, array $colors, array $icons): void
     {
         $services = $configurator->services();
 
@@ -101,6 +109,18 @@ class SylamentSupportBundle extends SylamentBundle
             ->load(__NAMESPACE__ . '\\Components\\', __DIR__ . '/Components/*.php')
             ->autowire()
             ->autoconfigure();
+
+        // `ColorManager` resolves a policy from the service container by class-string, and a
+        // private service is not reachable through `Container::get()`, so both globs stay public.
+        $services
+            ->load(__NAMESPACE__ . '\\Colors\\Components\\', __DIR__ . '/Colors/Components/*.php')
+            ->autowire()
+            ->public();
+
+        $services
+            ->load(__NAMESPACE__ . '\\Colors\\Components\\', __DIR__ . '/Colors/Components/*/*.php')
+            ->autowire()
+            ->public();
 
         $services
             ->set('sylament_support.static_instance_registry', StaticInstanceRegistry::class)
@@ -113,6 +133,12 @@ class SylamentSupportBundle extends SylamentBundle
         $services
             ->set('sylament_support.attribute_extension', AttributeExtension::class)
             ->tag('twig.extension');
+
+        $services
+            ->set('sylament_support.color_extension', ColorExtension::class)
+            ->autowire()
+            ->tag('twig.extension')
+            ->alias(ColorExtension::class, 'sylament_support.color_extension');
 
         $services
             ->set('sylament_support.component_extension', ComponentExtension::class)
@@ -138,6 +164,14 @@ class SylamentSupportBundle extends SylamentBundle
                 '$container' => service('service_container'),
             ])
             ->alias(Invoker::class, 'sylament_support.invoker');
+
+        $services
+            ->set('sylament_support.color_manager', ColorManager::class)
+            ->args([
+                '$container' => service('service_container'),
+            ])
+            ->call('register', [$colors])
+            ->alias(ColorManager::class, 'sylament_support.color_manager');
 
         $services
             ->set('sylament_support.component_manager', ComponentManager::class)

@@ -163,6 +163,24 @@ consumers once colors are ported, and `Sylament\Support\Colors\ColorManager`
 importing `Support\Components\Concerns\EvaluatesClosures` would be wrong. The
 move is cheap to make later and breaking to reverse, so it waits.
 
+One trait moves **down a package** for the same who-composes-it reason, except
+that here the layering forces it rather than merely suggesting it:
+
+| Filament | Sylament | Which trait |
+| --- | --- | --- |
+| `Filament\Forms\Components\Concerns\` | `Sylament\Schemas\Components\Concerns\` | `CanBeMarkedAsRequired` alone |
+
+Filament hosts the trait in forms yet imports it from schemas'
+`Fieldset` (`vendor/filament/schemas/src/Components/Fieldset.php`) — an upward
+import from schemas into forms. Here `forms` depends on `schemas`, so that
+direction cannot be reproduced, and the trait has to sit at or below the lower
+package for both consumers to reach it. Nor is that a style question: the CI
+split publishes each package standalone, so a package leaning on a symbol only a
+sibling declares breaks the moment it is installed on its own. See
+[schemas/can-be-marked-as-required.md](schemas/can-be-marked-as-required.md).
+The class name, methods and body are unchanged, which is why this is a
+relocation rather than a rename.
+
 ### Namespaces with no Filament source
 
 Segments that exist only here, because a port needed classes Filament does not

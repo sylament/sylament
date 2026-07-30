@@ -21,8 +21,13 @@ folded into [`field.md`](field.md) and left the Features table, per
 own row, and `CanBeValidated` keeps one despite sitting on `Field` alone, because
 its Filament surface is some eighty methods and it is the field half of a
 validation vertical spanning three packages — folding it would swamp
-[`field.md`](field.md). [`support/component.md`](../support/component.md) is the
-shape each detail file follows.
+[`field.md`](field.md). The same fold applies to every other single-component
+concern: `HasOptions`, `CanSelectPlaceholder` and `CanDisableOptions` are
+`Select`'s alone and live in [`select.md`](select.md), `HasToggleIcons` is
+`Toggle`'s alone and lives in [`toggle.md`](toggle.md), while `CanBeInline` and
+`CanBeAccepted` are shared by `Checkbox` and `Toggle` and so keep rows of their
+own. [`support/component.md`](../support/component.md) is the shape each detail
+file follows.
 
 ## Components
 
@@ -38,7 +43,7 @@ table, the rest follow alphabetically.
 | BaseFileUpload | [`Components/BaseFileUpload.php`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | todo | — |
 | Builder | [`Components/Builder.php`](../../../vendor/filament/forms/src/Components/Builder.php) | todo | — |
 | Builder / Block | [`Components/Builder/Block.php`](../../../vendor/filament/forms/src/Components/Builder/Block.php) | todo | — |
-| Checkbox | [`Components/Checkbox.php`](../../../vendor/filament/forms/src/Components/Checkbox.php) | todo | — |
+| [`Checkbox`](../../../packages/forms/src/Components/Checkbox.php) | [`Components/Checkbox.php`](../../../vendor/filament/forms/src/Components/Checkbox.php) | in progress | [checkbox.md](checkbox.md) |
 | CheckboxList | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | todo | — |
 | CodeEditor | [`Components/CodeEditor.php`](../../../vendor/filament/forms/src/Components/CodeEditor.php) | todo | — |
 | ColorPicker | [`Components/ColorPicker.php`](../../../vendor/filament/forms/src/Components/ColorPicker.php) | todo | — |
@@ -60,14 +65,14 @@ table, the rest follow alphabetically.
 | Repeater | [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — |
 | Repeater / TableColumn | [`Components/Repeater/TableColumn.php`](../../../vendor/filament/forms/src/Components/Repeater/TableColumn.php) | todo | — |
 | RichEditor | [`Components/RichEditor.php`](../../../vendor/filament/forms/src/Components/RichEditor.php) | todo | — |
-| Select | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | — |
+| [`Select`](../../../packages/forms/src/Components/Select.php) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | in progress | [select.md](select.md) |
 | Slider | [`Components/Slider.php`](../../../vendor/filament/forms/src/Components/Slider.php) | todo | — |
 | TableSelect | [`Components/TableSelect.php`](../../../vendor/filament/forms/src/Components/TableSelect.php) | todo | — |
 | TagsInput | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | todo | — |
 | [`TextInput`](../../../packages/forms/src/Components/TextInput.php) | [`Components/TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | in progress | [text-input.md](text-input.md) |
 | [`Textarea`](../../../packages/forms/src/Components/Textarea.php) | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | in progress | [textarea.md](textarea.md) |
 | TimePicker | [`Components/TimePicker.php`](../../../vendor/filament/forms/src/Components/TimePicker.php) | todo | — |
-| Toggle | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | todo | — |
+| [`Toggle`](../../../packages/forms/src/Components/Toggle.php) | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | in progress | [toggle.md](toggle.md) |
 | ToggleButtons | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | todo | — |
 | ViewField | [`Components/ViewField.php`](../../../vendor/filament/forms/src/Components/ViewField.php) | todo | — |
 
@@ -81,31 +86,32 @@ Livewire/LiveComponent host uses to resolve form schemas. A concern used by a
 single component is tracked in that component's detail file, not here: the base
 `Field`'s five started concerns (`CanBeAutofocused`, `CanBeMarkedAsRequired`,
 `HasHelperText`, `HasHint`, `HasPlaceholder`) have folded into
-[`field.md`](field.md), per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing).
-`CanBeLengthConstrained` stays below — it is shared by `TextInput` and `Textarea`.
+[`field.md`](field.md), `Select`'s three (`HasOptions`, `CanSelectPlaceholder`,
+`CanDisableOptions`) into [`select.md`](select.md), and `Toggle`'s
+`HasToggleIcons` into [`toggle.md`](toggle.md), per
+[one row per file](../README.md#one-row-per-file-one-file-per-thing). The shared
+ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
+`Textarea`, `CanBeInline` and `CanBeAccepted` by `Checkbox` and `Toggle`.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | CanAllowHtml | [`Components/Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | todo | — |
-| CanBeAccepted | [`Components/Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | todo | — |
+| [`CanBeAccepted`](../../../packages/forms/src/Components/Concerns/CanBeAccepted.php) | [`Components/Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | [can-be-accepted.md](can-be-accepted.md) |
 | CanBeAutocapitalized | [`Components/Concerns/CanBeAutocapitalized.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocapitalized.php) | todo | — |
 | CanBeAutocompleted | [`Components/Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | todo | — |
 | CanBeCloned | [`Components/Concerns/CanBeCloned.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeCloned.php) | todo | — |
-| CanBeInline | [`Components/Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) | todo | — |
+| [`CanBeInline`](../../../packages/forms/src/Components/Concerns/CanBeInline.php) | [`Components/Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) | done | [can-be-inline.md](can-be-inline.md) |
 | [`CanBeLengthConstrained`](../../../packages/forms/src/Components/Concerns/CanBeLengthConstrained.php) | [`Components/Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) | done | [can-be-length-constrained.md](can-be-length-constrained.md) |
-| CanBeNative | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | todo | — |
+| CanBeNative | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | blocked | [select.md](select.md) |
 | CanBePreloaded | [`Components/Concerns/CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php) | todo | — |
 | CanBeReadOnly | [`Components/Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | todo | — |
 | CanBeSearchable | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | todo | — |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | [can-be-validated.md](can-be-validated.md) |
 | CanDisableGrammarly | [`Components/Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | todo | — |
-| CanDisableOptions | [`Components/Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | todo | — |
 | CanDisableOptionsWhenSelectedInSiblingRepeaterItems | [`Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | todo | — |
 | CanFixIndistinctState | [`Components/Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — |
 | CanGenerateUuids | [`Components/Concerns/CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | todo | — |
 | CanLimitItemsLength | [`Components/Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | todo | — |
-| CanSelectPlaceholder | [`Components/Concerns/CanSelectPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/CanSelectPlaceholder.php) | todo | — |
 | HasAffixes | [`Components/Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | todo | — |
 | HasColors | [`Components/Concerns/HasColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasColors.php) | todo | — |
 | HasDatalistOptions | [`Components/Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | todo | — |
@@ -122,12 +128,10 @@ single component is tracked in that component's detail file, not here: the base
 | HasMaxHeight | [`Components/Concerns/HasMaxHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMaxHeight.php) | todo | — |
 | HasMinHeight | [`Components/Concerns/HasMinHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMinHeight.php) | todo | — |
 | HasNestedRecursiveValidationRules | [`Components/Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | todo | — |
-| HasOptions | [`Components/Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | todo | — |
 | HasPivotData | [`Components/Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | todo | — |
 | HasPreview | [`Components/Concerns/HasPreview.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPreview.php) | todo | — |
 | HasStep | [`Components/Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | todo | — |
 | HasToggleColors | [`Components/Concerns/HasToggleColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleColors.php) | todo | — |
-| HasToggleIcons | [`Components/Concerns/HasToggleIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleIcons.php) | todo | — |
 | HasTooltips | [`Components/Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | todo | — |
 | HasUploadingMessage | [`Components/Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | todo | — |
 | InteractsWithForms | [`Concerns/InteractsWithForms.php`](../../../vendor/filament/forms/src/Concerns/InteractsWithForms.php) | todo | — |
@@ -150,7 +154,7 @@ directory collapses that whole subtree into one navigational entry.
 | --- | --- | --- | --- |
 | HasForms | [`Contracts/HasForms.php`](../../../vendor/filament/forms/src/Contracts/HasForms.php) | todo | — |
 | [`CanBeLengthConstrained` (contract)](../../../packages/forms/src/Components/Contracts/CanBeLengthConstrained.php) | [`Components/Contracts/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Contracts/CanBeLengthConstrained.php) | done | [can-be-length-constrained.md](can-be-length-constrained.md) |
-| CanDisableOptions (contract) | [`Components/Contracts/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Contracts/CanDisableOptions.php) | todo | — |
+| [`CanDisableOptions` (contract)](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Components/Contracts/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Contracts/CanDisableOptions.php) | done | [select.md](select.md) |
 | CanHaveNumericState (contract) | [`Components/Contracts/CanHaveNumericState.php`](../../../vendor/filament/forms/src/Components/Contracts/CanHaveNumericState.php) | todo | — |
 | HasAffixes (contract) | [`Components/Contracts/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Contracts/HasAffixes.php) | todo | — |
 | HasNestedRecursiveValidationRules (contract) | [`Components/Contracts/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Contracts/HasNestedRecursiveValidationRules.php) | todo | — |

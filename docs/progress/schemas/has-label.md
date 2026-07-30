@@ -4,7 +4,7 @@
 — the human-facing label surface: `label()` / `getLabel()`, the
 `hiddenLabel()` / `isLabelHidden()` screen-reader toggle, and `hasCustomLabel()`.
 It ports Filament's identically-named base concern and is shared — the
-[`Section`](section.md) box, the forms
+[`Section`](section.md) box, the [`Fieldset`](fieldset.md) legend, the forms
 [`Field`](../../../packages/forms/src/Components/Field.php), and the actions
 [`Action`](../../../packages/actions/src/Action.php) all `use` it — so it keeps
 its own row rather than folding into any one of them.

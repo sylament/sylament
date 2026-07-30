@@ -1,0 +1,14 @@
+{% set rootAttributes = component.getExtraAttributeBag.merge({
+    class: ['sy-sc-fieldset'],
+    id: component.getId ?: null,
+}).toScalarAttributes %}
+
+<twig:SylamentSupport:Fieldset
+        :label="component.getLabel"
+        :labelHidden="component.isLabelHidden"
+        :required="component.isMarkedAsRequired"
+        :contained="component.isContained"
+        {{ ...rootAttributes }}
+>
+    {{ renderComponent(component.getChildSchema) }}
+</twig:SylamentSupport:Fieldset>

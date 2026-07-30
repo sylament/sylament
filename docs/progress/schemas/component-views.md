@@ -2,15 +2,15 @@
 
 The Twig templates in
 [`packages/schemas/templates/partials/`](../../../packages/schemas/templates/partials)
-— `Actions`, `Grid`, `Group`, `Html`, `Icon`, `Schema`, `Section`, `Text` — that
-render the
+— `Actions`, `Fieldset`, `Grid`, `Group`, `Html`, `Icon`, `Schema`, `Section`,
+`Text` — that render the
 schemas components through Support's
 [`ViewComponent`](../support/component.md). Each ports the HTML that a Filament
 schemas component emits from its PHP `toEmbeddedHtml()` (Filament v5 no longer
 ships Blade files for these — see the divergence below). This file is a thin
-cross-index over the eight templates; per-feature specifics live in the
-per-component files ([`actions.md`](actions.md), [`grid.md`](grid.md),
-[`group.md`](group.md), [`icon.md`](icon.md),
+cross-index over the nine templates; per-feature specifics live in the
+per-component files ([`actions.md`](actions.md), [`fieldset.md`](fieldset.md),
+[`grid.md`](grid.md), [`group.md`](group.md), [`icon.md`](icon.md),
 [`text.md`](text.md), [`section.md`](section.md), [`schema.md`](schema.md)),
 not here.
 
@@ -20,6 +20,7 @@ not here.
 Reference — the Filament source this is diffed against:
 
 - [`schemas/src/Components/Actions.php`](../../../vendor/filament/schemas/src/Components/Actions.php),
+  [`Fieldset.php`](../../../vendor/filament/schemas/src/Components/Fieldset.php),
   [`Grid.php`](../../../vendor/filament/schemas/src/Components/Grid.php),
   [`Group.php`](../../../vendor/filament/schemas/src/Components/Group.php),
   [`Html.php`](../../../vendor/filament/schemas/src/Components/Html.php),
@@ -29,9 +30,8 @@ Reference — the Filament source this is diffed against:
   [`Schema.php`](../../../vendor/filament/schemas/src/Schema.php)
   — the `toEmbeddedHtml()` methods each template translates to Twig
 - [`schemas/resources/views/components/`](../../../vendor/filament/schemas/resources/views/components)
-  — the only Blade views Filament still ships (`fieldset`, `grid`); the
-  `grid` half is ported ([`grid.md`](grid.md)), the `fieldset` half waits on the
-  still-unported Fieldset component
+  — the only Blade views Filament still ships (`fieldset`, `grid`); both are
+  ported now ([`fieldset.md`](fieldset.md), [`grid.md`](grid.md))
 
 ## Surface
 
@@ -42,6 +42,7 @@ in-progress features, a **diverges** note here for a structural one, or `—`.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`Actions/index.html.twig`](../../../packages/schemas/templates/partials/Actions/index.html.twig) | [`Actions::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Actions.php) | in progress | — | [actions.md](actions.md) |
+| [`Fieldset/index.html.twig`](../../../packages/schemas/templates/partials/Fieldset/index.html.twig) | [`Fieldset::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Fieldset.php) | done | — | [fieldset.md](fieldset.md) |
 | [`Grid/index.html.twig`](../../../packages/schemas/templates/partials/Grid/index.html.twig) | [`Grid::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Grid.php) | done | — | [grid.md](grid.md) |
 | [`Group/index.html.twig`](../../../packages/schemas/templates/partials/Group/index.html.twig) | [`Group::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Group.php) | done | — | [group.md](group.md) |
 | [`Html/index.html.twig`](../../../packages/schemas/templates/partials/Html/index.html.twig) | [`Html::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Html.php) | done | — | — |
@@ -49,7 +50,6 @@ in-progress features, a **diverges** note here for a structural one, or `—`.
 | [`Schema/index.html.twig`](../../../packages/schemas/templates/partials/Schema/index.html.twig) | [`Schema::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-template-omits-the-livecomponent-wiring-hidden-placeholders-and-grid-liberation) |
 | [`Section/index.html.twig`](../../../packages/schemas/templates/partials/Section/index.html.twig) | [`Section::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [section.md](section.md) |
 | [`Text/index.html.twig`](../../../packages/schemas/templates/partials/Text/index.html.twig) | [`Text::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Text.php) | in progress | — | [text.md](text.md) |
-| Fieldset template | [`fieldset.blade.php`](../../../vendor/filament/schemas/resources/views/components/fieldset.blade.php) | todo | Fieldset component | — |
 
 Every template carries a render test in schemas' Integration suite (only the
 schemas Kernel registers TwigComponentBundle/StimulusBundle, so these templates
@@ -96,26 +96,21 @@ because they need the corresponding methods on the Text component first. Next
 step: port those onto the component and template when the badge / copy-to-clipboard
 behaviors are wanted.
 
-### Fieldset and Grid templates — todo
-
-The two real Filament Blade views (`fieldset`, `grid`) have no Twig counterpart
-because the Fieldset and Grid components are not ported yet. Each unblocks when
-its component lands.
-
 ## Divergences
 
 ### Filament v5 renders these components from PHP `toEmbeddedHtml()`, not the Blade files the README names
 
 The README's _Ports_ column maps the templates to
 `resources/views/components/`, but that directory holds only `fieldset.blade.php`
-and `grid.blade.php` — both for still-unported components. `Html`, `Icon`,
-`Schema`, `Section`, and `Text` carry no Blade in Filament v5: they emit HTML
-from a PHP `toEmbeddedHtml()` method (`ob_start` / string concatenation). The
-real source for each of the five Twig templates is therefore that PHP method,
-translated to a template rendered through Support's `ViewComponent`. The named
-Blade paths are historical references, not live sources; nothing reverses this.
-The two actual Blades (`fieldset`, `grid`) stay unported alongside their
-components.
+and `grid.blade.php`. `Html`, `Icon`, `Schema`, `Section`, and `Text` carry no
+Blade in Filament v5: they emit HTML from a PHP `toEmbeddedHtml()` method
+(`ob_start` / string concatenation). The real source for each of the five Twig
+templates is therefore that PHP method, translated to a template rendered
+through Support's `ViewComponent`. The named Blade paths are historical
+references, not live sources; nothing reverses this. The two surviving Blades are
+no exception — `Fieldset` and `Grid` both render from `toEmbeddedHtml()` too, and
+their Twig counterparts port that, not the Blade beside it
+([`fieldset.md`](fieldset.md), [`grid.md`](grid.md)).
 
 ### The Schema template omits the LiveComponent wiring, hidden placeholders, and grid liberation
 

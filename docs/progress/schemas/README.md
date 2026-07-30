@@ -44,7 +44,7 @@ the layout/content components in
 | [`Schema`](../../../packages/schemas/src/Schema.php) | [`Schema.php`](../../../vendor/filament/schemas/src/Schema.php) | in progress | [schema.md](schema.md) |
 | [`Component`](../../../packages/schemas/src/Components/Component.php) | [`Components/Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) | in progress | [component.md](component.md) |
 | [`Grid`](../../../packages/schemas/src/Components/Grid.php) | [`Components/Grid.php`](../../../vendor/filament/schemas/src/Components/Grid.php) | done | [grid.md](grid.md) |
-| `Group` | [`Components/Group.php`](../../../vendor/filament/schemas/src/Components/Group.php) | todo | — |
+| [`Group`](../../../packages/schemas/src/Components/Group.php) | [`Components/Group.php`](../../../vendor/filament/schemas/src/Components/Group.php) | done | [group.md](group.md) |
 | [`Section`](../../../packages/schemas/src/Components/Section.php) | [`Components/Section.php`](../../../vendor/filament/schemas/src/Components/Section.php) | in progress | [section.md](section.md) |
 | `Fieldset` | [`Components/Fieldset.php`](../../../vendor/filament/schemas/src/Components/Fieldset.php) | todo | — |
 | `Flex` | [`Components/Flex.php`](../../../vendor/filament/schemas/src/Components/Flex.php) | todo | — |

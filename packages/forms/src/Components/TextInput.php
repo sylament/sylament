@@ -96,9 +96,9 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
     /**
      * @return list<Constraint>
      */
-    public function getValidationConstraints(): array
+    protected function buildValidationConstraints(): array
     {
-        $constraints = parent::getValidationConstraints();
+        $constraints = parent::buildValidationConstraints();
         $messages = $this->getValidationMessages();
 
         if ($this->isEmail()) {

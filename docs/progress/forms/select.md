@@ -84,7 +84,7 @@ which is the honest answer for a value that is not an option.
 A native `<select>` gives no server-side guarantee at all: the submitted value is
 an ordinary string a client can set to anything, and `disabled` on an `<option>`
 is a browser-side courtesy.
-[`getValidationConstraints()`](../../../packages/forms/src/Components/Select.php)
+[`buildValidationConstraints()`](../../../packages/forms/src/Components/Select.php)
 therefore appends a `Choice` over
 [`getEnabledOptions()`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php)
 whenever state is filled — that one constraint is what rejects both a tampered

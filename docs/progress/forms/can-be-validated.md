@@ -104,7 +104,7 @@ constraint (`Regex`, `Choice`, `Ip`, `Uuid`, `Ulid`, `Json`, `Type`,
 `DivisibleBy`, …) that a user reaches today with
 `->constraint(new Regex('/…/'))`. None needs machinery that is missing, so none
 is **blocked** — they are simply not sugared yet. **Next step (per family):** add
-the setter and a flag, append the constraint in `getValidationConstraints()`
+the setter and a flag, append the constraint in `buildValidationConstraints()`
 behind that flag, and bake the matching `validationMessages()` key, exactly as
 `TextInput`'s `email()` / `numeric()` arms do. `in()` / `notIn()` additionally
 want the `HasOptions` / `HasEnum` concerns Filament reads the value list from,
@@ -220,7 +220,7 @@ condition-then-evaluate-then-append, and the composition order is otherwise
 Filament's — `NotBlank` first, then the
 [length constraints](can-be-length-constrained.md) when the field implements
 `Contracts\CanBeLengthConstrained`, then the escape-hatch pairs in declaration
-order, then any subclass arms appended by a `getValidationConstraints()` override
+order, then any subclass arms appended by a `buildValidationConstraints()` override
 ([`TextInput`](text-input.md)). Permanent.
 
 ### validationAttribute() is not ported
@@ -271,3 +271,20 @@ The four `*ComparisonRule()` builders exist to *assemble Laravel rule strings* �
 this port does not use; the behaviour they enable is tracked on the comparison
 and conditional-required rows above, which will build `Constraint` objects
 directly. **Skipped** as API surface, permanently.
+
+### The subclass seam is a protected builder, not the public getter
+
+Filament's `getValidationRules()` is both the public read and the point a
+subclass overrides to append its own arms. Here those split:
+`getValidationConstraints()` is the public read the
+[`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php)
+contract declares, and `buildValidationConstraints()` is the protected seam
+[`TextInput`](text-input.md) and [`Select`](select.md) override.
+
+The split exists so the getter can own work that must happen once, after every
+arm has been appended. A subclass that overrode the public getter would call
+`parent::`, append its own constraints, and miss that work. Routing every
+subclass through the builder makes that unrepresentable. The getter is
+deliberately not `final` — a `final` method in a trait is an odd thing to hand a
+consumer, and `Field` subclasses are a public extension point — so the seam is a
+documented convention plus a better alternative, not enforcement.

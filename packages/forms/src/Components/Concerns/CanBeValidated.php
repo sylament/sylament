@@ -99,6 +99,14 @@ trait CanBeValidated
      */
     public function getValidationConstraints(): array
     {
+        return $this->buildValidationConstraints();
+    }
+
+    /**
+     * @return list<Constraint>
+     */
+    protected function buildValidationConstraints(): array
+    {
         $constraints = [];
 
         if ($this->isRequired()) {

@@ -29,7 +29,7 @@ helper text, placeholder, required, slots, rendering chrome) is tracked in
 | [`type()` / `getType()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | in progress | tel/url sugar | [detail](#gettype-drops-the-tel-and-url-branches) |
 | [`email()` / `isEmail()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-email-and-numeric-constraint-arms-live-in-an-override-not-in-the-setters) |
 | [`numeric()` / `isNumeric()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | in progress | `HasStep` | [detail](#numeric-does-not-set-the-step) · [diverges](#the-email-and-numeric-constraint-arms-live-in-an-override-not-in-the-setters) |
-| [`getValidationConstraints()` arms](../../../packages/forms/src/Components/TextInput.php) | [`TextInput::email()` / `numeric()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-email-and-numeric-constraint-arms-live-in-an-override-not-in-the-setters) |
+| [`buildValidationConstraints()` arms](../../../packages/forms/src/Components/TextInput.php) | [`TextInput::email()` / `numeric()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-email-and-numeric-constraint-arms-live-in-an-override-not-in-the-setters) |
 | [`password()` / `isPassword()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | — |
 | [`getInputMode()`](../../../packages/forms/src/Components/TextInput.php) | [`Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | done | — | [diverges](#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
 | `HasInputMode` (concern) | [`Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | skipped | — | [diverges](#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
@@ -84,14 +84,14 @@ Filament's `email()` / `numeric()` push their validation rule into the shared
 rule list from inside the setter (`->rule('email', fn () => $condition)`), so the
 rule is registered eagerly and the condition closure is what stays lazy. The
 port's setters only flip `isEmail` / `isNumeric`, and
-[`getValidationConstraints()`](../../../packages/forms/src/Components/TextInput.php)
+[`buildValidationConstraints()`](../../../packages/forms/src/Components/TextInput.php)
 overrides the parent to append `Email(message: …)` / `Type('numeric', message:
 …)` behind those flags. Same observable API and same laziness, two reasons for
 the shape: a `Constraint` object baked at setter time would freeze the
 `validationMessages()` key before the user has set it (Filament's messages are a
 separate array resolved later, so it does not have this problem), and the
 override keeps every message-baking arm in one readable list. The cost is that a
-subclass overriding `getValidationConstraints()` must call `parent::` — the
+subclass overriding `buildValidationConstraints()` must call `parent::` — the
 constraint order is `NotBlank` → length → escape hatch → type arms, pinned by
 `TextInputTest`.
 

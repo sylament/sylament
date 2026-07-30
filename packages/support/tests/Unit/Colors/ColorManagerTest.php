@@ -72,6 +72,14 @@ it('emits only the base classes for an unregistered colour', function (): void {
         ->toBe(['sy-color', 'sy-color-nope']);
 });
 
+it('emits only the base classes for a registered but empty palette', function (): void {
+    $manager = colorManager();
+    $manager->register(['void' => []]);
+
+    expect($manager->getComponentClasses(TextPolicy::class, 'void'))
+        ->toBe(['sy-color', 'sy-color-void']);
+});
+
 it('emits the base classes plus the resolved shade class', function (): void {
     // Amber-600 on amber-50 is ~3.08:1, so the policy must resolve past it to 700.
     expect(colorManager()->getComponentClasses(TextPolicy::class, 'warning'))

@@ -122,7 +122,7 @@ class ColorManager
 
         $resolvedColor = $this->getColor($color);
 
-        if ($resolvedColor === null) {
+        if ($resolvedColor === null || $resolvedColor === []) {
             return $this->componentClasses[$componentKey][$color] = $classes;
         }
 

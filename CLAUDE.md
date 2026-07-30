@@ -52,7 +52,11 @@ there. Milestones prove out here (see `docs/progress/roadmap.md`).
   class X extends App\Showcase\ShowcaseCard` (abstract `title()`/`schema()`,
   optional `description()`, a writable `$data` bag, `mount()` fills). `/` is
   the Playground — a hand-poking scratchpad whose actions `dd()` on purpose,
-  outside the card discipline.
+  outside the card discipline. Beside the showcase, `/articles/new` and
+  `/articles/{id}/edit` (M1 · 2) are real CRUD pages sharing the
+  `Articles:ArticleForm` live component — the entity round-trip rig, backed by
+  the `Article` entity and Doctrine persistence rather than a card's `$data`
+  scratch state.
 - **Keep the showcase current — treat it like the docs trail.** The showcase
   demonstrates every user-facing feature sylament ships: a feature lands with
   a card (new or extended) on its package's page in the same epic, each page's
@@ -64,9 +68,16 @@ there. Milestones prove out here (see `docs/progress/roadmap.md`).
   real browser (the forms-in-modals and M1 · 1 epics set the precedent). Run it
   with `task up` (Taskfile: docker-compose Postgres + `symfony server:start -d`
   + proxy → `https://localhost:8000`); `task css:watch` rebuilds Tailwind
-  (`symfony console tailwind:build`). It carries its own functional suite under
-  `tests/Functional/Showcase/` (routes + per-page smoke) — keep it green when
-  touching showcase pages.
+  (`symfony console tailwind:build`); `task test` is the demo gate — it
+  creates/migrates the test database, runs the demo's own PHPStan (level max
+  over `src/`, with a frozen baseline holding six pre-M1 · 2 errors), and
+  PHPUnit. DB-touching tools must run through the Symfony CLI (`symfony php
+  vendor/bin/phpunit`) — the docker Postgres publishes a random host port and
+  only the CLI injects the matching `DATABASE_URL`. The functional suite lives
+  under `tests/Functional/` — `Showcase/` (routes + per-page smoke) and
+  `Articles/` (the DB-writing entity round-trip, isolated per test by
+  `dama/doctrine-test-bundle`, a dev dep registered for the test env only) —
+  keep it green when touching showcase or article pages.
 
 ## Commands
 

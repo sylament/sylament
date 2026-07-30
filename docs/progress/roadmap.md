@@ -26,9 +26,8 @@ stops mid-M2, M1 still demos on its own.
 
 ## Now
 
-**M1 · 2 — Entity round-trip.** The next epic to pick up — read the
-[carried discussion](#m1--entity-crud-slice) below the epic table before
-brainstorming it.
+**M1 · 3 — Slice field catalog.** The next epic to pick up: `Select` (native,
+static options) and `Checkbox`, with `Toggle` as stretch.
 
 ## Pulled forward
 
@@ -63,7 +62,7 @@ defines it._
 | # | Epic | Packages | Delivers | Status |
 | --- | --- | --- | --- | --- |
 | 1 | Form validation vertical | [forms](forms/README.md), [schemas](schemas/README.md), [actions](actions/README.md) | `CanBeValidated` subset on Symfony Validator, shipped in the **constraint vocabulary** (`constraint()`/`constraints()`/`getValidationConstraints()` — [renames](renames.md#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary)): `required()`/`nullable()`, `length()` + bounds, `email()`/`numeric()` arms, `validationMessages()` baked into constraint options at build time (no separate messages/attributes pipeline; `validationAttribute()` dropped — Symfony messages are value-centric). Schema-tier walk + `validate(): void`; host side on `HasSchemas`: `validateSchema()`, a path-keyed error bag, `ValidationException extends UnprocessableEntityHttpException` riding ux-live-component's 422 re-render, and scoped `clearSchemaValidation()` replacing Livewire's global `resetErrorBag()` (a nested mount keeps the parent's messages). **Sticky re-validation** — deliberate UX divergence from Filament's submit-only model: a failed schema re-validates every request at `PostHydrate(priority: -20)` (below the afterStateUpdated diff), so errors clear field-by-field as the user fixes them. `getState(shouldCallHooksBefore, afterValidate)` now validates with `getStateSnapshot()` split out; the mounted-action retrofit landed the `*FormValidated` hook pair, both keep-modal-open catch arms, and remount/unmount bag cleanup. The `HasValidationConstraints` contract lives in **schemas** (split-repo rule). `FieldWrapper` renders every message for the path plus `aria-invalid` on the inputs. **Verified at merge**: full gates plus five live browser checks against the peer demo — page-form 422 with value/focus preserved, sticky clear via an unrelated debounce request, modal keep-open on invalid submit, fresh frame on remount, and a console clean of everything but the two designed 422 logs. Deferred: the spec's out-of-scope list (comparison/date/unique/exists rules, `regex()`/`in()`, display flags, digit-count lengths, per-field live-validation opt-ins). | done |
-| 2 | Entity round-trip | **demo**, plus package gaps it surfaces | `fill()` from an Article entity, `getState()` back onto it and flush; create and edit pages sharing one form component. | todo |
+| 2 | Entity round-trip | **demo**, [schemas](schemas/README.md), [support](support/README.md) | The `BelongsToRecord` port (Filament: `BelongsToModel`, both tiers) under the **record-only vocabulary** — `record()` binds an instance, raw array, or class-string (declares the class, binds no instance), `getRecordClass()`/`getRecordInstance()`, guarded container fallbacks, root-memoized vs component-re-evaluated closure bindings ([renames](renames.md#the-model-vocabulary-collapses-onto-record)) — plus `HasOperation` (`operation()`/`getOperation()`, the support `Operation` enum, `hiddenOn()`/`visibleOn()`/`disabledOn()`) and the restored closure injection: `$record` by name and by type (`instanceof` replacing Filament's `Model` gate), `$operation`/`$context`. Two Sylament-only mapping edges replace Eloquent's half: `fill($object)` reads the schema's own paths off the object (read-lenient — one `AccessException` catch, object-valued reads skipped), and `getData(): object` validates through `getState()` then maps top-level state onto the bound record or a fresh `getRecordInstance()` (write-strict; `dehydrated(false)` is the page-only-field escape). Demo: `/articles/new` + `/articles/{id}/edit` sharing one `ArticleForm` live component — entity LiveProp hydration, live slug generation on create only (the `$operation` proof in the wild), unique slug via an M1 · 1 `Callback` escape-hatch constraint, `getData()` → `persist`/`flush`, redirect-on-create — with a DAMA-isolated `Articles/` functional suite, the demo's own PHPStan added to the gate (six pre-existing errors frozen in a baseline), and the schemas `RecordRoundTrip` DTO card. **Verified at merge**: full gates in both repos plus six live browser checks — create round-trip with live slug and redirect, in-place edit leaving a single DB row, native client-side block for blank required input, server 422 on a duplicate slug with sticky field-by-field clearing, no slug regeneration on edit, and a console clean but for the designed 422. Deferred: the relationship layer (`saveRelationships()`/`loadStateFromRelationships()`), the Action-side record hop to the schema container (M1 · 6), model-sourced constraints implementation (direction decided — see below), nested record paths and Doctrine-type state casts. | done |
 | 3 | Slice field catalog | [forms](forms/README.md) | `Select` (native, static options) and `Checkbox`; `Toggle` as stretch. | todo |
 | 4 | Slice layout catalog | [schemas](schemas/README.md) | `Grid`, `Group`, and `Fieldset` — the remaining basic layout components. `Section` is already demo-ready; its open rows are all blocked (see out of scope). | todo |
 | 5 | Minimal tables vertical | [tables](tables/README.md) | `Table` and `TextColumn`, Doctrine-backed records, empty state — no pagination, sorting, or filters. | todo |
@@ -71,27 +70,25 @@ defines it._
 | 7 | Minimal notifications vertical | [notifications](notifications/README.md) | `Notification::make()->title()->success()->send()` over session flash, rendered as a stack in the layout. | todo |
 | 8 | Demo slice assembly | **demo** | `/articles` list, new, and edit pages; seed data; a presentable page shell. | todo |
 
-**Carried discussion — plan properly in epic 2's brainstorm.** Two threads
-from the M1 · 1 design conversation (2026-07-29), decided nowhere yet:
-(1) **Model-sourced constraints** — read validation off the bound object
-instead of per-field declarations: either pull
-`ValidatorInterface::getMetadataFor()` property constraints into the
-`getValidationConstraints()` seam (guesser-style; typed constraints misfire
-against raw pre-cast state), or validate the mapped object after state
-mapping and fold violations back into the error bag by path (the fuller
-Symfony story — class-level constraints like `UniqueEntity` come free).
-(2) **A typed boundary product** — the `$data` LiveProp bag deliberately
-stays an array (the wire format live components handle well); an opt-in
-declared data class maps at the edges only: submit returns the mapped object
-(Symfony Form's `getData()` precedent), schema-tier `$state` / type-hinted
-closure params inject a lazily built one-way snapshot (`$set()` stays the
-only write path), mapper TBD (Serializer denormalizer is a new dependency;
-an accessor walk is dependency-free but type-dumb), declaration name TBD
-(`dataClass()` à la Symfony Form's `data_class`; deliberately distinct from
-Filament's record-semantics `model()` — the entity round-trip is then just
-the case where the data object is the managed entity). M1 · 1 shipped the
-seams both threads build on (`getValidationConstraints()`, the host error
-bag + `ValidationException`) and neither needs changes to them.
+**Carried threads — both decided with M1 · 2 (2026-07-30).**
+(1) **Model-sourced constraints**: direction fixed as the fuller Symfony
+story — validate the mapped object after `getData()` maps and fold
+violations back into the error bag by path (class-level constraints like
+`UniqueEntity` come free); the metadata-pull alternative is rejected (typed
+constraints misfire against raw pre-cast state). Implementation deferred to
+the epic that needs it; verdict and the identity-map caveat live in
+[schemas/can-be-validated.md](schemas/can-be-validated.md).
+(2) **The typed boundary product** resolved as the `BelongsToRecord` port
+rather than a new `dataClass()` concept: with POPO payloads,
+`record($dto)` / `record(SomeDto::class)` subsumes the declared-data-class
+idea — the entity round-trip is just the case where the bound object is the
+managed entity — and the vocabulary collapsed onto record-only
+([renames](renames.md#the-model-vocabulary-collapses-onto-record)). The
+mapper is the existing PropertyAccessor (accessor walk; Serializer
+rejected — a denormalizer constructs where edit must mutate the managed
+entity), and the state-snapshot closure injection is rejected in favor of
+Filament's persisted-record semantics. Full rationale:
+[schemas/belongs-to-record.md](schemas/belongs-to-record.md).
 
 **Out of scope:** panels; forms-in-modals (pulled forward as
 [epic 6](#pulled-forward); the M1 demo script still navigates to a page for

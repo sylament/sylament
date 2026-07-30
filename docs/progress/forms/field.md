@@ -4,14 +4,16 @@
 form field extends. It adds field identity (name + state-path seeding), the
 humanized-label fallback, the ten field-wrapper slots, the field-wrapper
 rendering and the error-message read on top of the schemas `Component`, and
-composes six field concerns. Five of them are **folded here**: each is a row in
+composes five field concerns. Four of them are **folded here**: each is a row in
 the Surface table below (its detail and any divergence spliced in from its own
 audit) and no longer carries a row in the [package README](README.md) Features
-table. The sixth, [`CanBeValidated`](can-be-validated.md), keeps its own file —
+table. The fifth, [`CanBeValidated`](can-be-validated.md), keeps its own file —
 its Filament surface is some eighty methods against this file's five-method
 concerns, and it is the field half of a vertical spanning three packages. The
 schemas-level `HasName` / `HasLabel` / `HasState` it inherits stay tracked in
-schemas.
+schemas, and so does
+[`CanBeMarkedAsRequired`](../schemas/can-be-marked-as-required.md), which moved
+down to schemas so its `Fieldset` could reach it.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -21,16 +23,16 @@ Reference — the Filament source this is diffed against:
   — the base class, the traits it composes, and its `wrapEmbeddedHtml` /
   `wrapInputHtml` rendering
 - [`forms/src/Components/Concerns/`](../../../vendor/filament/forms/src/Components/Concerns)
-  — the five folded field concerns audited below
+  — the four folded field concerns audited below
 - [`schemas/src/Components/Concerns/`](../../../vendor/filament/schemas/src/Components/Concerns)
   — the inherited `HasName` / `HasLabel` / `HasState` behind the identity rows
 
 ## Surface
 
-Every point of this component and its five folded concerns. _Blocked by_ names
+Every point of this component and its four folded concerns. _Blocked by_ names
 what has to land first. _Detail_ links the write-up in [Details](#details)
-(deleted once the row is **done**), a permanent note in [Semantics](#semantics),
-and/or the permanent note in [Divergences](#divergences).
+(deleted once the row is **done**), the permanent note in
+[Divergences](#divergences), and/or a note carried by a concern's own file.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -40,7 +42,7 @@ and/or the permanent note in [Divergences](#divergences).
 | State-path seeding ([`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php), schemas) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | done | — | — |
 | `getLabel()` / `getDefaultLabel()` humanization | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#getdefaultlabel-drops-label-translation) |
 | Field-wrapper slots (10 constants + setters, `makeChildSchema` / `configureChildSchema`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#slot-child-schemas-drop-action--actiongroup-wiring) |
-| Field-wrapper rendering (`FieldWrapper` template ⟵ `wrapEmbeddedHtml`), including the `labelPrefix` / `labelSuffix` label slots a boolean field fills with its control. `inlineLabelVerticalAlignment` is omitted pending schemas' `HasInlineLabel`, the only thing that varies it; `labelTag` is omitted for an unrelated reason — see the row below. | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#the-label-carries-an-inline-control-modifier-class) |
+| Field-wrapper rendering (`FieldWrapper` template ⟵ `wrapEmbeddedHtml`), including the `labelPrefix` / `labelSuffix` label slots a boolean field fills with its control. `inlineLabelVerticalAlignment` is omitted pending schemas' `HasInlineLabel`, the only thing that varies it; `labelTag` is omitted for an unrelated reason — see the row below. | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#the-label-carries-an-inline-control-modifier-class), [semantics](../schemas/can-be-marked-as-required.md#the-native-required-attribute-is-load-bearing-inside-a-modal-form) |
 | `labelTag` (`label` vs `div`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | the first multi-control field (`Radio` / `CheckboxList`) | [detail](#labeltag-waits-for-the-first-multi-control-field) |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | — | [detail](can-be-validated.md) |
 | Error display (`getErrorMessages()` ⟵ `hasErrorForPath` / `ViewErrorBag`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#error-display-shows-every-message-for-the-path) |
@@ -49,7 +51,6 @@ and/or the permanent note in [Divergences](#divergences).
 | `hasNullableBooleanState()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | — | [detail](#hasnullablebooleanstate-is-not-ported) |
 | `HasExtraFieldWrapperAttributes` (composed by Filament's Field) | [`Components/Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | todo | — | [detail](#hasextrafieldwrapperattributes-is-not-composed) |
 | [`CanBeAutofocused`](../../../packages/forms/src/Components/Concerns/CanBeAutofocused.php) | [`Components/Concerns/CanBeAutofocused.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutofocused.php) | done | — | — |
-| [`CanBeMarkedAsRequired`](../../../packages/forms/src/Components/Concerns/CanBeMarkedAsRequired.php) | [`Components/Concerns/CanBeMarkedAsRequired.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeMarkedAsRequired.php) | done | — | [semantics](#the-native-required-attribute-is-load-bearing-inside-a-modal-form) |
 | [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Components/Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | — |
 | [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Components/Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | in progress | Actions bundle (`hintActions`) | [detail](#hashint-omits-the-hint-actions) |
 | [`HasPlaceholder`](../../../packages/forms/src/Components/Concerns/HasPlaceholder.php) | [`Components/Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](#hasplaceholder-is-composed-on-the-base-field) |
@@ -129,38 +130,6 @@ components. `setUpHint()`'s closure also narrows its parameter from Filament's
 `Field | Placeholder` to `Field`, because `Placeholder` is not ported.
 **Blocked** on the Actions bundle (and, for the parameter, the `Placeholder`
 component); add the trio and re-add the spread when they land.
-
-## Semantics
-
-Faithful-in-spirit behaviour a reader would plausibly misread from the source.
-Permanent — these outlive the detail sections above.
-
-### The native `required` attribute is load-bearing inside a modal form
-
-[`isMarkedAsRequired()`](../../../packages/forms/src/Components/Concerns/CanBeMarkedAsRequired.php)
-is Filament's exactly — `$this->evaluate($this->isMarkedAsRequired) ??
-$this->isRequired()` — so with no explicit `markAsRequired()` call it reads the
-real validation state [`CanBeValidated`](can-be-validated.md) supplies, and
-`markAsRequired(false)` still suppresses the marker on a genuinely required
-field. What is easy to misread is that this getter drives **two** things, only
-one of them cosmetic: the wrapper's asterisk, and the native `required`
-attribute `TextInput` / `Textarea` emit
-([`TextInput/index.html.twig`](../../../packages/forms/templates/partials/TextInput/index.html.twig)).
-
-That attribute does real work now. A mounted action's modal window renders as a
-real `<form>`
-([support/modal.md](../support/modal.md#the-form-wrapper-carries-live_action-not-wiresubmit)),
-and the browser's `submit` event only fires after native constraint validation
-passes — so an empty required field blocks the request client-side and the
-server-side pass never runs. Confirmed in a browser during the forms-in-modals
-epic: `valueMissing: true`, **zero** network requests, modal stays open. This is
-parity, not a divergence — Filament emits native `required` too
-(`vendor/filament/forms/src/Components/TextInput.php:365`) and `wire:submit` has
-the same event ordering. The consequence to keep in mind: `markAsRequired()` on
-a field that declares no constraint still blocks submission in the browser while
-validating nothing on the server, and conversely a server-side violation on a
-required field is only reachable through a path the native check does not cover
-(a whitespace-only value, a programmatic `set()`, a non-input field).
 
 ## Divergences
 

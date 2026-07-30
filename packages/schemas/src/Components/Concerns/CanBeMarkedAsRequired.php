@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Forms\Components\Concerns;
+namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
 

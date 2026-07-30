@@ -106,6 +106,7 @@ own single-use concerns folded into [`component.md`](component.md).
 | `CanBeGridContainer` | [`Components/Concerns/CanBeGridContainer.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeGridContainer.php) | todo | — |
 | [`CanBeHidden`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`Components/Concerns/CanBeHidden.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | in progress | [can-be-hidden.md](can-be-hidden.md) |
 | `CanBeLiberatedFromContainerGrid` | [`Components/Concerns/CanBeLiberatedFromContainerGrid.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeLiberatedFromContainerGrid.php) | todo | — |
+| [`CanBeMarkedAsRequired`](../../../packages/schemas/src/Components/Concerns/CanBeMarkedAsRequired.php) | [`forms/Components/Concerns/CanBeMarkedAsRequired.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeMarkedAsRequired.php) | done | [can-be-marked-as-required.md](can-be-marked-as-required.md) |
 | `CanBeRepeated` | [`Components/Concerns/CanBeRepeated.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeRepeated.php) | todo | — |
 | `CanGetStateFromRelationships` | [`Components/Concerns/CanGetStateFromRelationships.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanGetStateFromRelationships.php) | todo | — |
 | `CanOpenUrl` | [`Components/Concerns/CanOpenUrl.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanOpenUrl.php) | todo | — |

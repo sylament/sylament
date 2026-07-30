@@ -6,12 +6,12 @@ namespace Sylament\Forms\Components;
 
 use Closure;
 use Sylament\Forms\Components\Concerns\CanBeAutofocused;
-use Sylament\Forms\Components\Concerns\CanBeMarkedAsRequired;
 use Sylament\Forms\Components\Concerns\CanBeValidated;
 use Sylament\Forms\Components\Concerns\HasHelperText;
 use Sylament\Forms\Components\Concerns\HasHint;
 use Sylament\Forms\Components\Concerns\HasPlaceholder;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Concerns\CanBeMarkedAsRequired;
 use Sylament\Schemas\Components\Concerns\HasLabel;
 use Sylament\Schemas\Components\Concerns\HasName;
 use Sylament\Schemas\Components\Contracts\HasValidationConstraints;

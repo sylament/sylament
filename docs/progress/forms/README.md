@@ -18,11 +18,14 @@ carry no _Blocked by_ column, and a prerequisite only means anything against the
 component waiting on it, so `CanBeNative` is **todo** below and **blocked** in
 [`select.md`](select.md).
 
-The five single-use concerns Filament composes onto the base `Field` —
-`CanBeAutofocused`, `CanBeMarkedAsRequired`, `HasHelperText`, `HasHint`, and
+The four single-use concerns Filament composes onto the base `Field` —
+`CanBeAutofocused`, `HasHelperText`, `HasHint`, and
 `HasPlaceholder` — have
 folded into [`field.md`](field.md) and left the Features table, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing);
+[one row per file](../README.md#one-row-per-file-one-file-per-thing).
+The fifth, `CanBeMarkedAsRequired`, is no longer tracked here at all: it
+relocated to schemas so its `Fieldset` could reach it, and is tracked in
+[`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md).
 `CanBeLengthConstrained` is shared by `TextInput` and `Textarea`, so it keeps its
 own row, and `CanBeValidated` keeps one despite sitting on `Field` alone, because
 its Filament surface is some eighty methods and it is the field half of a
@@ -94,9 +97,12 @@ Cross-cutting field concerns —
 [`src/Concerns`](../../../vendor/filament/forms/src/Concerns) trait a
 Livewire/LiveComponent host uses to resolve form schemas. A concern used by a
 single component is tracked in that component's detail file, not here: the base
-`Field`'s five started concerns (`CanBeAutofocused`, `CanBeMarkedAsRequired`,
-`HasHelperText`, `HasHint`, `HasPlaceholder`) have folded into
-[`field.md`](field.md), `Select`'s three (`HasOptions`, `CanSelectPlaceholder`,
+`Field`'s four started concerns (`CanBeAutofocused`, `HasHelperText`, `HasHint`,
+`HasPlaceholder`) have folded into
+[`field.md`](field.md) — a fifth, `CanBeMarkedAsRequired`, relocated to schemas
+and is tracked in
+[`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md)
+— `Select`'s three (`HasOptions`, `CanSelectPlaceholder`,
 `CanDisableOptions`) into [`select.md`](select.md), and `Toggle`'s
 `HasToggleIcons` into [`toggle.md`](toggle.md), per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). The shared

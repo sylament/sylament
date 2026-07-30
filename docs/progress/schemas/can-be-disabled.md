@@ -24,7 +24,7 @@ Reference — the Filament source this is diffed against:
 | --- | --- | --- | --- | --- |
 | [`Schema::disabled()` / `isDisabled()` / `isEnabled()`](../../../packages/schemas/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Concerns/CanBeDisabled.php) | done | — | — |
 | [`Component::disabled()` / `isDisabled()` / `isEnabled()`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`Components/Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | — | — |
-| [`Component::disabledOn()`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`disabledOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | — | [diverges](can-be-hidden.md#arrwrap-becomes-an-is_array-ternary-never-an-array-cast) |
+| [`Component::disabledOn()`](../../../packages/schemas/src/Components/Concerns/CanBeDisabled.php) | [`disabledOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeDisabled.php) | done | — | [diverges](can-be-hidden.md#arrwrap-maps-to-the-wrap-helper-never-an-array-cast) |
 
 All three rows are covered by
 [`Unit/Concerns/CanBeDisabledTest`](../../../packages/schemas/tests/Unit/Concerns/CanBeDisabledTest.php)
@@ -48,5 +48,5 @@ the server.
 `disabledOn()` is `CanBeHidden`'s `hiddenOn()`/`visibleOn()` body over
 `disabled()`, so its one translation — the `Arr::wrap` normalization that must
 not be an `(array)` cast — is written up once, in
-[can-be-hidden.md](can-be-hidden.md#arrwrap-becomes-an-is_array-ternary-never-an-array-cast),
+[can-be-hidden.md](can-be-hidden.md#arrwrap-maps-to-the-wrap-helper-never-an-array-cast),
 and linked from the row here.

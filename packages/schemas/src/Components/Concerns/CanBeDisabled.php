@@ -9,6 +9,8 @@ use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Support\Enums\Operation;
 
+use function Sylament\Support\wrap;
+
 trait CanBeDisabled
 {
     protected bool|Closure $isDisabled = false;
@@ -27,7 +29,7 @@ trait CanBeDisabled
     public function disabledOn(string|Operation|array $operations): static
     {
         $this->disabled(static function (InteractsWithSchemas $liveComponent, string $operation) use ($operations): bool {
-            foreach (is_array($operations) ? $operations : [$operations] as $disabledOperation) {
+            foreach (wrap($operations) as $disabledOperation) {
                 if ($disabledOperation instanceof Operation) {
                     $disabledOperation = $disabledOperation->value;
                 }

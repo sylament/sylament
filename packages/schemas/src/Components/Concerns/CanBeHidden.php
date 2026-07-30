@@ -10,6 +10,8 @@ use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Enums\Operation;
 
+use function Sylament\Support\wrap;
+
 trait CanBeHidden
 {
     protected bool|Closure $isHidden = false;
@@ -29,7 +31,7 @@ trait CanBeHidden
     public function hiddenOn(string|Operation|array $operations): static
     {
         $this->hidden(static function (InteractsWithSchemas $liveComponent, string $operation) use ($operations): bool {
-            foreach (is_array($operations) ? $operations : [$operations] as $hiddenOperation) {
+            foreach (wrap($operations) as $hiddenOperation) {
                 if ($hiddenOperation instanceof Operation) {
                     $hiddenOperation = $hiddenOperation->value;
                 }
@@ -65,7 +67,7 @@ trait CanBeHidden
     public function visibleOn(string|Operation|array $operations): static
     {
         $this->visible(static function (InteractsWithSchemas $liveComponent, string $operation) use ($operations): bool {
-            foreach (is_array($operations) ? $operations : [$operations] as $visibleOperation) {
+            foreach (wrap($operations) as $visibleOperation) {
                 if ($visibleOperation instanceof Operation) {
                     $visibleOperation = $visibleOperation->value;
                 }

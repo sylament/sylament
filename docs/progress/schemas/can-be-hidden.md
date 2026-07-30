@@ -28,7 +28,7 @@ row is **done**), a **diverges** link to [Divergences](#divergences), or `—`.
 | [`isHidden()` / `isVisible()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`isHidden()` / `isVisible()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | — |
 | [`hiddenWhenAllChildComponentsHidden()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`hiddenWhenAllChildComponentsHidden()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | — |
 | `whenTruthy()` / `whenFalsy()` | [`whenTruthy()` / `whenFalsy()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | todo | — | [detail](#only-the-visibility-core-is-ported) |
-| [`hiddenOn()` / `visibleOn()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`hiddenOn()` / `visibleOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | [diverges](#arrwrap-becomes-an-is_array-ternary-never-an-array-cast) |
+| [`hiddenOn()` / `visibleOn()`](../../../packages/schemas/src/Components/Concerns/CanBeHidden.php) | [`hiddenOn()` / `visibleOn()`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | done | — | [diverges](#arrwrap-maps-to-the-wrap-helper-never-an-array-cast) |
 | `visibleJs()` / `hiddenJs()` (+ getters) | [`visibleJs()` …](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | blocked | live-component-state | [diverges](#js-visibility-variants-and-the-visibility-cache-are-not-ported) |
 | static visibility cache | [`$visibilityCache` …](../../../vendor/filament/schemas/src/Components/Concerns/CanBeHidden.php) | skipped | — | [diverges](#js-visibility-variants-and-the-visibility-cache-are-not-ported) |
 
@@ -68,17 +68,18 @@ wrapper. The cache is a render-time optimization the toolkit works without;
 **skipped**, provisional — revisit if profiling shows repeated `evaluate()` cost
 during a render pass.
 
-### `Arr::wrap` becomes an `is_array()` ternary, never an `(array)` cast
+### `Arr::wrap` maps to the `wrap()` helper, never an `(array)` cast
 
 `hiddenOn()` / `visibleOn()` accept one operation or a list, and Filament
-normalizes with `Arr::wrap()`. The Symfony translation is
-`is_array($operations) ? $operations : [$operations]` rather than the shorter
-`(array) $operations`, because the parameter also accepts an
-[`Operation`](../support/README.md) enum case and casting an object to an array
-dumps its properties (`['name' => 'Edit', 'value' => 'edit']`) instead of
-wrapping it — a silent mismatch, not an error. The enum case is unwrapped to its
-`->value` inside the loop; everything else, including the `$liveComponent
-instanceof $candidate` host-class arm, is Filament's logic verbatim (`instanceof`
-against a non-class string like `'create'` is `false`, not an error).
-`disabledOn()` in [can-be-disabled.md](can-be-disabled.md) carries the same body
-and the same note.
+normalizes with `Arr::wrap()` — whose established port is support's free
+function [`wrap()`](../support/helpers.md), used here as everywhere else. What
+the normalization must never be is the shorter `(array) $operations`: the
+parameter also accepts an [`Operation`](../support/README.md) enum case, and
+casting an object to an array dumps its properties
+(`['name' => 'Edit', 'value' => 'edit']`) instead of wrapping it — a silent
+mismatch, not an error. The enum case is unwrapped to its `->value` inside the
+loop; everything else, including the `$liveComponent instanceof $candidate`
+host-class arm, is Filament's logic verbatim (`instanceof` against a non-class
+string like `'create'` is `false`, not an error). `disabledOn()` in
+[can-be-disabled.md](can-be-disabled.md) carries the same body and the same
+note.

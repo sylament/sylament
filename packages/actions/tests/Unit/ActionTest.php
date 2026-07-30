@@ -158,6 +158,35 @@ it('injects $get and $set utilities scoped to the schema component', function ()
     expect($host->data['title'])->toBe('Grace');
 });
 
+it('injects the $get utility by type under any parameter name', function (): void {
+    $host = new BothContractsHostFixture();
+    $host->data = ['title' => 'Ada', 'subtitle' => 'Bo'];
+
+    $title = StateFieldFixture::make('title');
+    $subtitle = StateFieldFixture::make('subtitle');
+    Schema::make($host)->statePath('data')->components([$title, $subtitle])->getComponents();
+
+    $action = Action::make('save')->schemaComponent($subtitle);
+
+    expect($action->evaluate(fn (Get $reader): mixed => $reader('title')))->toBe('Ada');
+});
+
+it('injects the $set utility by type under any parameter name', function (): void {
+    $host = new BothContractsHostFixture();
+    $host->data = ['title' => 'Ada'];
+
+    $title = StateFieldFixture::make('title');
+    Schema::make($host)->statePath('data')->components([$title])->getComponents();
+
+    $action = Action::make('save')->schemaComponent($title);
+
+    $action->evaluate(function (Set $writer): void {
+        $writer('title', 'Grace');
+    });
+
+    expect($host->data['title'])->toBe('Grace');
+});
+
 it('lets $get and $set reach into the bound schema component\'s own child schema, disabling the self-skip', function (): void {
     $host = new BothContractsHostFixture();
     $host->data = ['address' => ['city' => 1]];

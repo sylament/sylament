@@ -36,6 +36,8 @@ use Sylament\Actions\Concerns\InteractsWithRecord;
 use Sylament\Actions\Enums\ActionStatus;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Get;
+use Sylament\Schemas\State\Set;
 use Sylament\Support\Components\Concerns\HasColor;
 use Sylament\Support\Components\Concerns\HasExtraAttributes;
 use Sylament\Support\Components\Concerns\HasIcon;
@@ -266,6 +268,15 @@ class Action extends ViewComponent
             'schemaComponentState', 'state' => ClosureParameter::make($this->getSchemaComponentState()),
             'schemaState' => ClosureParameter::make($this->getSchemaState()),
             default => parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
+        };
+    }
+
+    protected function resolveDefaultClosureDependencyForEvaluationByType(string $parameterType): ?ClosureParameter
+    {
+        return match ($parameterType) {
+            Get::class => ClosureParameter::make($this->getSchemaComponentOrFail()->makeGetUtility()->skipComponentsChildContainersWhileSearching(false)),
+            Set::class => ClosureParameter::make($this->getSchemaComponentOrFail()->makeSetUtility()->skipComponentsChildContainersWhileSearching(false)),
+            default => parent::resolveDefaultClosureDependencyForEvaluationByType($parameterType),
         };
     }
 

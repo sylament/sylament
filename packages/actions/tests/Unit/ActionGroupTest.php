@@ -13,6 +13,7 @@ use Sylament\Actions\Tests\Fixtures\StateFieldFixture;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\ActionHost;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Get;
 use Sylament\Support\Twig\ComponentAttributeBag;
 
 it('keeps its actions and back-references each one', function (): void {
@@ -148,6 +149,19 @@ it('injects $get scoped to the schema component', function (): void {
     $group = ActionGroup::make([])->schemaComponent($subtitle);
 
     expect($group->evaluate(fn ($get): mixed => $get('title')))->toBe('Ada');
+});
+
+it('injects $get by type under any parameter name', function (): void {
+    $host = new BothContractsHostFixture();
+    $host->data = ['title' => 'Ada', 'subtitle' => 'Bo'];
+
+    $title = StateFieldFixture::make('title');
+    $subtitle = StateFieldFixture::make('subtitle');
+    Schema::make($host)->statePath('data')->components([$title, $subtitle])->getComponents();
+
+    $group = ActionGroup::make([])->schemaComponent($subtitle);
+
+    expect($group->evaluate(fn (Get $reader): mixed => $reader('title')))->toBe('Ada');
 });
 
 it('pushes the grouped item template onto action children as a default', function (): void {

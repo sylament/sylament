@@ -49,7 +49,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `cancel()` / `halt()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | Doctrine transaction integration | [detail](#cancel-and-halt-drop-the-rollback-flag) |
 | `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getstatus-drops-the-bulk-record-tally) |
 | `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/InteractsWithSelectedRecords ports, the Action→schema record/operation hop (M1 · 6) | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-10-of-16-names) |
-| `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | todo | schemas/tables/InteractsWithSelectedRecords ports | [detail](#resolvedefaultclosuredependencyforevaluationbytype-is-not-overridden) |
+| `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/InteractsWithSelectedRecords ports, the Action→schema record hop (M1 · 6) | [detail](#resolvedefaultclosuredependencyforevaluationbytype-carries-only-the-added-getset-arms) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables (`table`/`bulk` flags, `recordKey`) | [diverges](#getcontext-emits-only-the-schemacomponent-key) |
 | `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](has-actions.md#resolveactions-drops-the-table-branch), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-emits-only-the-schemacomponent-key) decidable |
 | [`CanCallParentAction`](../../../packages/actions/src/Concerns/CanCallParentAction.php) | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | done | — | Filament-exact two-method port (`callParent()` + getter). The getter is `getParentActionCallLiveComponentClickHandler()` against Filament's `…Livewire…`, the systematic Livewire → UX LiveComponent naming translation from the [rename table](../renames.md), not a rename of its own. Read by all five trigger templates, ranked **above** `shouldClose()` in the click precedence |
@@ -184,19 +184,26 @@ getData()", `liveComponent` via
 and the schema names via `ActionTest`'s injection cases (plus
 `ActionGroupTest` for the group subset).
 
-### `resolveDefaultClosureDependencyForEvaluationByType` is not overridden
+### `resolveDefaultClosureDependencyForEvaluationByType` carries only the added Get/Set arms
 
-Filament's `Action` also overrides `resolveDefaultClosureDependencyForEvaluationByType()`,
-resolving `Builder::class` to the selected-records query, `EloquentCollection::class`/
-`Collection::class` to the individually-authorized selected records, and
-`Model::class` (or the record's own class) to the current record — so a
-closure parameter typed `fn (Model $record)` or `fn (Builder $query)` resolves
-without naming the parameter. The port has no equivalent override at all: a
-type-hinted `Model`/`Doctrine` parameter falls through to
-`Component::resolveDefaultClosureDependencyForEvaluationByType()` (support)
-and is not resolved. **Blocked** on the same
-schemas/tables/`InteractsWithSelectedRecords` prerequisites as the by-name
-resolver above; no test exists because no code exists.
+Filament's `Action` overrides `resolveDefaultClosureDependencyForEvaluationByType()`
+to resolve `Builder::class` to the selected-records query,
+`EloquentCollection::class`/`Collection::class` to the individually-authorized
+selected records, and `Model::class` (or the record's own class) to the current
+record — so `fn (Model $record)` or `fn (Builder $query)` resolves without naming
+the parameter. **None of those three arms are ported**, and each is blocked on a
+different prerequisite: the query and collection arms on
+tables/`InteractsWithSelectedRecords`, the record arm on the Action→schema record
+hop (M1 · 6) — until [`getRecord()`](#the-record-title-and-model-metadata-surface-is-not-ported)
+walks to the schema container, a record arm would resolve `null` for every action
+bound to a record-carrying schema, so landing it first would be worse than not
+having it. A type-hinted record parameter therefore still falls through to
+`Component::resolveDefaultClosureDependencyForEvaluationByType()` (support) and is
+not resolved.
+
+What the override does carry is the `Get`/`Set` pair, which
+[diverges](#getset-resolve-by-type-as-well-as-by-name) from Filament — see the
+note for why.
 
 ### CanBeHidden omits authorization, group, and table-cache integration
 
@@ -697,6 +704,38 @@ matching `dropdown/list/item.blade.php`.
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
 These outlive the detail sections above.
+
+### `$get`/`$set` resolve by type as well as by name
+
+Filament binds the state utilities to closure **parameter names** only:
+`'schemaGet', 'get' => [...makeGetUtility()...]` and
+`'schemaSet', 'set' => [...makeSetUtility()...]` in
+[`Action`](../../../vendor/filament/actions/src/Action.php)'s by-name resolver,
+with nothing for `Get::class`/`Set::class` in its by-type one. Its
+[schema `Component`](../../../vendor/filament/schemas/src/Components/Component.php),
+by contrast, resolves both by type. So upstream `fn (Get $anything)` works inside
+a field closure and fails inside an action closure, purely because of the
+parameter's name.
+
+The port keeps both by-name arms verbatim and **adds** `Get::class`/`Set::class`
+to the by-type resolver on `Action` (and `Get::class` on
+[`ActionGroup`](action-group.md), matching that class's narrower by-name surface —
+upstream gives the group `get` and no `set`, and the port does not invent one).
+A closure parameter typed `Get`/`Set` now resolves under any name, on an action
+exactly as on a component.
+
+The reason is internal consistency: the port's own component tier already accepts
+a typed `Get`, and having the same type-hint silently fail one tier up is a
+difference users hit as a bug rather than a design. Nothing upstream depends on
+the omission — this only widens what resolves, so every Filament-shaped closure
+keeps working unchanged.
+
+The cost is that `getSchemaComponentOrFail()` now fires for a `Get`/`Set`-typed
+parameter on an action rendered outside a schema, where before that closure died
+on an unresolved-parameter `RuntimeException` instead. Both are exceptions at the
+same call; the `LogicException` names the actual problem, so the trade is an
+improvement. Reversible by deleting the two arms if upstream ever gives its
+own reason for the split.
 
 ### `getStatus()` drops the bulk-record tally
 

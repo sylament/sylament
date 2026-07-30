@@ -18,6 +18,7 @@ use Sylament\Actions\Concerns\InteractsWithRecord;
 use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Get;
 use Sylament\Support\Components\Concerns\HasColor;
 use Sylament\Support\Components\Concerns\HasExtraAttributes;
 use Sylament\Support\Components\Concerns\HasIcon;
@@ -316,6 +317,14 @@ class ActionGroup extends ViewComponent
             'schemaComponentState', 'state' => ClosureParameter::make($this->getSchemaComponentState()),
             'schemaState' => ClosureParameter::make($this->getSchemaState()),
             default => parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
+        };
+    }
+
+    protected function resolveDefaultClosureDependencyForEvaluationByType(string $parameterType): ?ClosureParameter
+    {
+        return match ($parameterType) {
+            Get::class => ClosureParameter::make($this->getSchemaComponentOrFail()->makeGetUtility()),
+            default => parent::resolveDefaultClosureDependencyForEvaluationByType($parameterType),
         };
     }
 

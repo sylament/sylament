@@ -42,6 +42,16 @@ it('renders a label suffix after the label content', function (): void {
         ->and($label->filter('.fixture-suffix')->count())->toBe(1);
 });
 
+it('renders the prefix, the label content and the suffix in that order', function (): void {
+    $crawler = new Crawler(renderField(
+        FixturePrefixedField::make('agree')->label('Agree')->rendersPrefix(true)->rendersSuffix(true),
+    ));
+
+    $classes = $crawler->filter('label.sy-fo-field-label')->children()->extract(['class']);
+
+    expect($classes)->toBe(['fixture-prefix', 'sy-fo-field-label-content', 'fixture-suffix']);
+});
+
 it('marks the label as carrying an inline control', function (): void {
     $withPrefix = new Crawler(renderField(FixturePrefixedField::make('agree')->label('Agree')));
     expect($withPrefix->filter('label.sy-fo-field-label-inline-control')->count())->toBe(1);

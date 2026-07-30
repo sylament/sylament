@@ -40,7 +40,8 @@ and/or the permanent note in [Divergences](#divergences).
 | State-path seeding ([`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php), schemas) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | done | — | — |
 | `getLabel()` / `getDefaultLabel()` humanization | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#getdefaultlabel-drops-label-translation) |
 | Field-wrapper slots (10 constants + setters, `makeChildSchema` / `configureChildSchema`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#slot-child-schemas-drop-action--actiongroup-wiring) |
-| Field-wrapper rendering (`FieldWrapper` template ⟵ `wrapEmbeddedHtml`), including the `labelPrefix` / `labelSuffix` label slots a boolean field fills with its control. `inlineLabelVerticalAlignment` and `labelTag` are omitted pending schemas' `HasInlineLabel`, the only thing that varies either. | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | — |
+| Field-wrapper rendering (`FieldWrapper` template ⟵ `wrapEmbeddedHtml`), including the `labelPrefix` / `labelSuffix` label slots a boolean field fills with its control. `inlineLabelVerticalAlignment` is omitted pending schemas' `HasInlineLabel`, the only thing that varies it; `labelTag` is omitted for an unrelated reason — see the row below. | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#the-label-carries-an-inline-control-modifier-class) |
+| `labelTag` (`label` vs `div`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | the first multi-control field (`Radio` / `CheckboxList`) | [detail](#labeltag-waits-for-the-first-multi-control-field) |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | — | [detail](can-be-validated.md) |
 | Error display (`getErrorMessages()` ⟵ `hasErrorForPath` / `ViewErrorBag`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#error-display-shows-every-message-for-the-path) |
 | Input affix wrapper (`wrapInputHtml`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | blocked | HasAffixes | [detail](#the-input-affix-wrapper-is-not-ported) |
@@ -58,6 +59,24 @@ and/or the permanent note in [Divergences](#divergences).
 Specifics for rows that are not finished — what is already in, what is left, and
 the next step. Delete a subsection when its row flips to **done**; the table row
 and any divergence it earned stay behind.
+
+### `labelTag` waits for the first multi-control field
+
+Filament's `wrapEmbeddedHtml()` takes a `$labelTag` that swaps the wrapper's
+`<label for="…">` for a `<div id="…-label">`. It has nothing to do with inline
+labels: it is chosen **per field type**, by every field that renders more than
+one control and therefore cannot point a single `for` at one of them —
+[`Radio`](../../../vendor/filament/forms/src/Components/Radio.php),
+[`CheckboxList`](../../../vendor/filament/forms/src/Components/CheckboxList.php),
+[`Repeater`](../../../vendor/filament/forms/src/Components/Repeater.php),
+`Builder`, `FileUpload`, `KeyValue`, `MarkdownEditor`, `CodeEditor` and
+`ModalTableSelect` all pass `labelTag: 'div'`, and `LivewireField` picks it from
+`filled($id)`.
+
+Every field ported so far renders exactly one control, so all of them want the
+`<label for>` the template hardcodes. **Next step:** add the parameter with the
+first multi-control field. Note this is *not* blocked on schemas'
+`HasInlineLabel` — only `inlineLabelVerticalAlignment` is.
 
 ### The input affix wrapper is not ported
 
@@ -147,6 +166,28 @@ required field is only reachable through a path the native check does not cover
 
 Deliberate deviations from Filament — permanent, and the reason they hold. These
 outlive the detail sections above.
+
+### The label carries an inline-control modifier class
+
+Filament's field-wrapper label element is hardcoded `class="fi-fo-field-label"`
+([`Field.php`](../../../vendor/filament/forms/src/Components/Field.php)) — there
+is no modifier for a label containing a control, and Filament reaches the
+centring it needs through per-field CSS instead.
+
+The port's
+[`FieldWrapper`](../../../packages/forms/templates/components/FieldWrapper/index.html.twig)
+adds `sy-fo-field-label-inline-control` to the label whenever `labelPrefix` or
+`labelSuffix` is filled. The base `.sy-fo-field-label` rule is
+`items-start gap-x-3`, which suits a label stacked over multi-line hint text; a
+checkbox sitting beside its label text wants `items-center` and a tighter gap,
+and one modifier on the wrapper covers every boolean field rather than each
+repeating the same override.
+
+This is a Sylament-only class, and [`docs/styling.md`](../../styling.md) makes
+every emitted `sy-` class part of the public hook surface consumers may target —
+so it is recorded here rather than left to be discovered in a diff. Same category
+as the `aria-invalid` addition below: a rendering choice the port makes and
+Filament does not.
 
 ### Error display shows every message for the path
 

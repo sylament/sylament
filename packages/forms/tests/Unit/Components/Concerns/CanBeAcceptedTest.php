@@ -36,3 +36,21 @@ it('bakes the validation message into the constraint', function (): void {
 
     expect($constraints[0]->message)->toBe('You must agree.');
 });
+
+it('reads the validation message set after the accepted() call', function (): void {
+    $constraints = FixtureBooleanField::make('agree')
+        ->accepted()
+        ->validationMessages(['accepted' => 'You must agree.'])
+        ->getValidationConstraints();
+
+    expect($constraints[0]->message)->toBe('You must agree.');
+});
+
+it('reads the validation message set after the declined() call', function (): void {
+    $constraints = FixtureBooleanField::make('agree')
+        ->declined()
+        ->validationMessages(['declined' => 'You must not agree.'])
+        ->getValidationConstraints();
+
+    expect($constraints[0]->message)->toBe('You must not agree.');
+});

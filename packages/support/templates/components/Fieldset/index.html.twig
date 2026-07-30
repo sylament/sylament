@@ -1,0 +1,26 @@
+{% props
+    label = markup(block('label') ?? null),
+    labelHidden = false,
+    required = false,
+
+    contained = true,
+
+    content = markup(block('content') ?? null)
+%}
+
+{% set hasLabel = label is filled %}
+
+<fieldset
+        {{ attributes.defaults({
+            class: classes('sy sy-fieldset', {
+                'sy-fieldset-label-hidden': labelHidden,
+                'sy-fieldset-not-contained': not contained,
+            }),
+        }) }}
+>
+    {% if hasLabel %}
+        <legend>{{ label }}{% if required %}<sup class="sy-fieldset-label-required-mark">*</sup>{% endif %}</legend>
+    {% endif %}
+
+    {{ content }}
+</fieldset>

@@ -9,3 +9,4 @@
 @import './components/dropdown-item.css' layer(components);
 @import './components/badge.css' layer(components);
 @import './components/link.css' layer(components);
+@import './components/fieldset.css' layer(components);

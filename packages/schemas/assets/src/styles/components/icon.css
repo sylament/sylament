@@ -1,4 +1,6 @@
 .sy-sc-icon {
+    @apply text-gray-400 dark:text-gray-500;
+
     &.sy-color {
         @apply text-color-500 dark:text-color-400;
     }

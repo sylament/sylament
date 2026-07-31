@@ -41,6 +41,14 @@ it('omits color classes for the default gray', function (): void {
     expect(renderToHtml(Icon::make('heroicons:x-mark')))->not->toContain('sy-color');
 });
 
+/**
+ * `IconComponent` implements `HasDefaultGrayColor`, so gray asked for by name renders exactly as
+ * no color at all — the base shade `icon.css` gives `.sy-sc-icon`, not a swap class.
+ */
+it('omits color classes for gray asked for by name', function (): void {
+    expect(renderToHtml(Icon::make('heroicons:x-mark')->color('gray')))->not->toContain('sy-color');
+});
+
 it('renders the tooltip as the svg title attribute', function (): void {
     expect(renderToHtml(Icon::make('heroicons:x-mark')->tooltip('More info')))
         ->toContain('title="More info"');

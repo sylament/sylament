@@ -52,7 +52,7 @@ row is **done**), **diverges** → the permanent note in
 | [`content()` / `getContent()`](../../../packages/schemas/src/Components/Text.php) | [`Text::content()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | [`size()` / `getSize()` normalization](../../../packages/schemas/src/Components/Text.php) | [`Text::size()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
 | [`getSizeClass()` (Sylament template helper)](../../../packages/schemas/src/Components/Text.php) | — (no Filament equivalent) | done | — | — |
-| [`HasColor` color/getColor/hasColor + default gray](../../../packages/support/src/Components/Concerns/HasColor.php) | [`HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | [diverges](#the-default-gray-color-lives-in-the-template-not-setup) |
+| [`HasColor` color/getColor/hasColor + default gray](../../../packages/support/src/Components/Concerns/HasColor.php) | [`HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | [diverges](#the-default-gray-color-lives-in-the-color-policy-not-setup) |
 | [`HasWeight` weight/getWeight/getWeightClass](../../../packages/support/src/Components/Concerns/HasWeight.php) | [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | — | — |
 | [`HasFontFamily` fontFamily/getFontFamily/getFontFamilyClass](../../../packages/support/src/Components/Concerns/HasFontFamily.php) | [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php) | done | — | — |
 | [Twig span render: `sy`/`sy-sc-text` classes, escaping, raw `Markup`, extra attrs](../../../packages/schemas/templates/partials/Text/index.html.twig) | [`Text::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Text.php) | done | — | — |
@@ -134,14 +134,21 @@ an evaluated JS expression rather than literal text. Neither `Text::js()` nor
 
 ## Divergences
 
-### The default gray color lives in the template, not `setUp()`
+### The default gray color lives in the color policy, not `setUp()`
 
 Filament's `Text::setUp()` calls `defaultColor('gray')`, so `getColor()` returns
 `'gray'` when no color is set. Sylament's `Text` has no `setUp()` override:
 `getColor()` returns `null` by default, and
 [`Text/index.html.twig`](../../../packages/schemas/templates/partials/Text/index.html.twig)
-computes `'gray'` as the fallback and suppresses `sy-color-*` classes for gray
-(pinned by the `TextRenderTest` case "omits color classes for the default gray").
-Rendered output matches Filament — gray is the visual default — but the
-`getColor()` return value diverges (`null` vs `'gray'`). Reverses if a consumer
-needs `getColor()` to report the effective default programmatically.
+computes nothing — it hands `getColor()` straight to `colorAttributes()`, which
+returns no classes for a blank color. Gray asked for **by name** is suppressed a
+step further in, by
+[`TextComponent`](../../../packages/schemas/src/Colors/Components/TextComponent.php)
+implementing `HasDefaultGrayColor`: `ColorManager::getComponentClasses()` returns
+an empty list for that pair, so both spellings fall through to the base
+`text-gray-600 dark:text-gray-400` on `.sy-sc-text` (the two `TextRenderTest`
+cases "omits color classes for the default gray" and "omits color classes for
+gray asked for by name" pin them). Rendered output matches Filament — gray is the
+visual default — but the `getColor()` return value diverges (`null` vs `'gray'`).
+Reverses if a consumer needs `getColor()` to report the effective default
+programmatically.

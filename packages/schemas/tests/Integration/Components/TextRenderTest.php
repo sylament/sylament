@@ -69,3 +69,11 @@ it('carries an arbitrary palette as inline variables instead of a swap class', f
 it('omits color classes for the default gray', function (): void {
     expect(renderToHtml(Text::make('x')))->not->toContain('sy-color');
 });
+
+/**
+ * `TextComponent` implements `HasDefaultGrayColor`, so gray asked for by name renders exactly as
+ * no color at all — the base shades `text.css` gives `.sy-sc-text`, not a swap class.
+ */
+it('omits color classes for gray asked for by name', function (): void {
+    expect(renderToHtml(Text::make('x')->color('gray')))->not->toContain('sy-color');
+});

@@ -79,11 +79,20 @@ and cover the passthrough with a render test.
 
 Filament's `toEmbeddedHtml()` passes `color(IconComponent::class, $this->getColor()
 ?? 'primary')`, so an uncolored icon defaults to the primary palette. Sylament's
-template treats an empty/iterable color as `gray` and emits no `sy-color-*` class
-at all —
-[`IconComponentRenderTest`](../../../packages/schemas/tests/Integration/Components/IconComponentRenderTest.php)
-pins that the default omits `sy-color-`. Reverses if the toolkit adopts Filament's
-primary-default convention for bare icons.
+`Icon` leaves `getColor()` at `null` and its policy
+[`IconComponent`](../../../packages/schemas/src/Colors/Components/IconComponent.php)
+implements `HasDefaultGrayColor`, so both an unset color and an explicit `'gray'`
+emit no color class and the icon takes the base `text-gray-400 dark:text-gray-500`
+that [`icon.css`](../../../packages/schemas/assets/src/styles/components/icon.css)
+gives `.sy-sc-icon` — Filament carries the same base rule, but reaches it only when
+a consumer asks for gray. Every other color goes through the policy like any
+other component's: a palette name emits `sy-color sy-color-<name>`, an array
+palette emits `sy-color` plus the inline `--sy-color-*` variables, and neither
+carries a shade class, because the policy declares no slots and the stylesheet
+fixes the icon at 500/400. All four cases are pinned by
+[`IconComponentRenderTest`](../../../packages/schemas/tests/Integration/Components/IconComponentRenderTest.php).
+Reverses if the toolkit adopts Filament's primary-default convention for bare
+icons.
 
 ### `getSize()` drops Filament's `'base'` → `null` shortcut
 

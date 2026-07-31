@@ -367,9 +367,11 @@ Filament wraps the header icon in a `fi-modal-icon-ctn > div.fi-modal-icon-bg`
 whose background color comes from `ComponentAttributeBag->color(IconComponent::class, $iconColor)`.
 Sylament renders `sy-modal-icon-ctn` directly around the icon SVG and applies the
 color as `sy-color sy-color-<name>` classes on the icon itself (via
-`generateIconHtml`), with no colored background element. A non-`gray` / non-empty
-`iconColor` yields the color classes; gray or an iterable/empty value suppresses
-them.
+`generateIconHtml`), with no colored background element. The color still resolves
+through the `ModalComponent\IconComponent` policy Filament names, so a palette
+handed over inline as an array yields `sy-color` plus the `--sy-color-*` style
+variables; only an empty `iconColor`, or gray by name — the policy implements
+`HasDefaultGrayColor` — suppresses both.
 
 ### The `header` replacement slot is not ported
 

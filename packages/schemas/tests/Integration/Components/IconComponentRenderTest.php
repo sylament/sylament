@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Integration\Components;
 
 use Sylament\Schemas\Components\Icon;
+use Sylament\Support\Colors\Color;
 use Sylament\Support\Enums\IconSize;
 
 use function Sylament\Schemas\Tests\renderToHtml;
@@ -26,12 +27,18 @@ it('renders an icon as an svg carrying the schema-component class', function ():
 it('applies the color palette classes', function (): void {
     $html = renderToHtml(Icon::make('heroicons:x-mark')->color('danger'));
 
-    expect($html)->toContain('sy-color')
-        ->toContain('sy-color-danger');
+    expect($html)->toContain('class="sy sy-icon sy-size-md sy-sc-icon sy-color sy-color-danger"');
+});
+
+it('carries an arbitrary palette as inline variables instead of a swap class', function (): void {
+    $html = renderToHtml(Icon::make('heroicons:x-mark')->color(Color::Amber));
+
+    expect($html)->toContain('class="sy sy-icon sy-size-md sy-sc-icon sy-color"')
+        ->toContain('--sy-color-500: ' . Color::Amber[500]);
 });
 
 it('omits color classes for the default gray', function (): void {
-    expect(renderToHtml(Icon::make('heroicons:x-mark')))->not->toContain('sy-color-');
+    expect(renderToHtml(Icon::make('heroicons:x-mark')))->not->toContain('sy-color');
 });
 
 it('renders the tooltip as the svg title attribute', function (): void {

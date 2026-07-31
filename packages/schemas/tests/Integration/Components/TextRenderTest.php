@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Integration\Components;
 
 use Sylament\Schemas\Components\Text;
+use Sylament\Support\Colors\Color;
 use Sylament\Support\Enums\FontFamily;
 use Sylament\Support\Enums\FontWeight;
 use Sylament\Support\Enums\TextSize;
@@ -52,12 +53,19 @@ it('renders extra attributes on the span', function (): void {
     expect($html)->toContain('data-role="label"');
 });
 
-it('renders the color palette classes', function (): void {
+it('renders the color palette classes with the contrast-resolved text shades', function (): void {
     expect(renderToHtml(Text::make('x')->color('primary')))
-        ->toContain('sy-color')
-        ->toContain('sy-color-primary');
+        ->toContain('class="sy sy-sc-text sy-color sy-color-primary sy-text-color-700 dark:sy-text-color-400"');
+});
+
+it('carries an arbitrary palette as inline variables instead of a swap class', function (): void {
+    $html = renderToHtml(Text::make('x')->color(Color::Amber));
+
+    expect($html)->toContain('class="sy sy-sc-text sy-color"')
+        ->toContain('--sy-color-700: ' . Color::Amber[700])
+        ->toContain('--sy-text: var(--sy-color-700); --sy-dark-text: var(--sy-color-400)');
 });
 
 it('omits color classes for the default gray', function (): void {
-    expect(renderToHtml(Text::make('x')))->not->toContain('sy-color-');
+    expect(renderToHtml(Text::make('x')))->not->toContain('sy-color');
 });

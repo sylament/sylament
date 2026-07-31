@@ -1,15 +1,12 @@
 {% set sizeClass = component.getSizeClass %}
 {% set weightClass = component.getWeightClass %}
 {% set fontFamilyClass = component.getFontFamilyClass %}
-{% set color = component.getColor %}
-{% set colorName = color is iterable or color is empty ? 'gray' : color %}
+{% set colorAttrs = colorAttributes('Sylament\\Schemas\\Colors\\Components\\TextComponent', component.getColor) %}
 
 <span
         {{ attrs({
-            class: ['sy', 'sy-sc-text', sizeClass, weightClass, fontFamilyClass, {
-                'sy-color': colorName != 'gray',
-                ('sy-color-' ~ colorName): colorName != 'gray',
-            }],
+            class: ['sy', 'sy-sc-text', sizeClass, weightClass, fontFamilyClass, colorAttrs.class],
+            style: colorAttrs.style,
         }, component.getExtraAttributes) }}
 >
     {{- component.getContent -}}

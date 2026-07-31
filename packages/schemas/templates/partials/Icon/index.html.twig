@@ -1,8 +1,8 @@
-{% set color = component.getColor %}
-{% set colorName = color is iterable or color is empty ? 'gray' : color %}
+{% set colorAttrs = colorAttributes('Sylament\\Schemas\\Colors\\Components\\IconComponent', component.getColor) %}
 {% set tooltip = component.getTooltip %}
 
 {{ generateIconHtml(component.getIcon, attributes: {
-    class: colorName != 'gray' ? ['sy-sc-icon', 'sy-color', 'sy-color-' ~ colorName] : ['sy-sc-icon'],
+    class: ['sy-sc-icon', colorAttrs.class],
+    style: colorAttrs.style,
     ...(tooltip ? {title: tooltip} : {}),
 }, size: component.getSize) }}

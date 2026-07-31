@@ -29,6 +29,13 @@ class SylamentSchemasBundle extends SylamentBundle
             ->autowire()
             ->autoconfigure();
 
+        // `ColorManager` resolves a policy from the service container by class-string, and a
+        // private service is not reachable through `Container::get()`, so the glob stays public.
+        $services
+            ->load(__NAMESPACE__ . '\\Colors\\Components\\', __DIR__ . '/Colors/Components/*.php')
+            ->autowire()
+            ->public();
+
         $services
             ->set(Schema::class)
             ->autowire()

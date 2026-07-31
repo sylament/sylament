@@ -262,7 +262,7 @@ it('renders an action child inside an action wrapper without a grid cell', funct
     $html = renderToHtml(schema()->components([Action::make('publish')]));
 
     expect($html)->toContain('<div class="sy-sc-action">')
-        ->toContain('sy sy-btn sy-size-md sy-color sy-color-primary sy-ac')
+        ->toContain('sy sy-btn sy-size-md sy-color sy-color-primary sy-bg-color-400 hover:sy-bg-color-300 dark:sy-bg-color-600 dark:hover:sy-bg-color-500 sy-text-color-900 hover:sy-text-color-800 dark:sy-text-color-950 dark:hover:sy-text-color-950 sy-ac')
         ->toContain('Publish')
         ->not->toContain('sy-sc-component')
         ->not->toContain('--col-span');

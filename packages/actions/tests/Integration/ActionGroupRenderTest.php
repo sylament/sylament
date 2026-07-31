@@ -49,7 +49,7 @@ it('renders an inline row under dropdown(false)', function (): void {
     $html = renderGroup(ActionGroup::make([Action::make('edit')])->dropdown(false));
 
     expect($html)->toContain('sy-ac-group')
-        ->toContain('sy sy-btn sy-size-md sy-color sy-color-primary sy-ac')
+        ->toContain('sy sy-btn sy-size-md sy-color sy-color-primary sy-bg-color-400 hover:sy-bg-color-300 dark:sy-bg-color-600 dark:hover:sy-bg-color-500 sy-text-color-900 hover:sy-text-color-800 dark:sy-text-color-950 dark:hover:sy-text-color-950 sy-ac')
         ->not->toContain('sy-dropdown-panel');
 });
 

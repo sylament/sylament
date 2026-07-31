@@ -20,7 +20,7 @@
 
 {% set knownSizes = ['xs', 'sm', 'md', 'lg', 'xl'] %}
 {% set sizeValue = size.value ?? size %}
-{% set colorName = color is iterable or color is empty ? 'gray' : color %}
+{% set colorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\BadgeComponent', color) %}
 {% set iconPositionValue = iconPosition.value ?? iconPosition %}
 {% set iconHtml = icon ? generateIconHtml(icon, iconAlias, size: iconSize ?? 'sm') : null %}
 {% set ariaLabel = labelSrOnly ? (content ?? '')|striptags|trim : null %}
@@ -31,9 +31,8 @@
             'sy-disabled': disabled,
             ('sy-size-' ~ sizeValue): sizeValue in knownSizes,
             (sizeValue ?? ''): sizeValue is not empty and sizeValue not in knownSizes,
-            'sy-color': colorName != 'gray',
-            ('sy-color-' ~ colorName): colorName != 'gray',
-        }),
+        }, colorAttrs.class),
+        style: colorAttrs.style|join('; ') ?: false,
         'aria-disabled': disabled ? 'true' : false,
         'aria-label': ariaLabel ?: false,
         disabled: disabled and tag == 'button',

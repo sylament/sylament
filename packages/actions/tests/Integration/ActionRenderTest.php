@@ -15,7 +15,7 @@ function renderAction(Action $action): string
 it('renders a styled trigger button', function (): void {
     $html = renderAction(Action::make('delete')->color('danger')->icon('heroicons:x-mark')->size('sm'));
 
-    expect($html)->toContain('sy sy-btn sy-size-sm sy-color sy-color-danger sy-ac')
+    expect($html)->toContain('sy sy-btn sy-size-sm sy-color sy-color-danger sy-bg-color-600 hover:sy-bg-color-500 dark:sy-bg-color-600 dark:hover:sy-bg-color-500 sy-text-color-0 hover:sy-text-color-0 dark:sy-text-color-0 dark:hover:sy-text-color-0 sy-ac')
         ->toContain('<svg')
         ->toContain('type="button"')
         ->toContain('Delete');
@@ -76,7 +76,8 @@ it('renders a url action as a link without mount wiring', function (): void {
 it('renders an outlined button', function (): void {
     $html = renderAction(Action::make('delete')->outlined());
 
-    expect($html)->toContain('sy-outlined');
+    expect($html)->toContain('class="sy sy-btn sy-size-md sy-color sy-color-primary sy-text-color-700 dark:sy-text-color-500 sy-ac sy-outlined"')
+        ->not->toContain('sy-bg-color-');
 });
 
 it('does not render the grouped icon on a button', function (): void {

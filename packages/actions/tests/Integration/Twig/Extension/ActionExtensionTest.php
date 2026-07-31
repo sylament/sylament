@@ -40,7 +40,7 @@ it('registers the renderAction twig function', function (): void {
 it('renders the named action resolved through the surrounding host', function (): void {
     $html = (string) $this->createLiveComponent('RenderActionHost')->render();
 
-    expect($html)->toContain('sy sy-btn sy-size-md sy-color sy-color-primary sy-ac')
+    expect($html)->toContain('sy sy-btn sy-size-md sy-color sy-color-primary sy-bg-color-400 hover:sy-bg-color-300 dark:sy-bg-color-600 dark:hover:sy-bg-color-500 sy-text-color-900 hover:sy-text-color-800 dark:sy-text-color-950 dark:hover:sy-text-color-950 sy-ac')
         ->toContain('data-live-action-param="mountAction"')
         ->toContain('data-live-name-param="delete"')
         ->toContain('Delete');

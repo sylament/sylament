@@ -40,16 +40,16 @@
         }
     }
 
-    &.sy-color {
-        @apply bg-color-600 text-white shadow-sm dark:bg-color-500;
+    &:not(.sy-outlined).sy-color {
+        @apply bg-(--sy-bg) text-(--sy-text) shadow-sm dark:bg-(--sy-dark-bg) dark:text-(--sy-dark-text);
 
         &.sy-force-enabled,
         &:not(.sy-disabled):not([disabled]) {
-            @apply focus-visible:ring-color-500/50 dark:focus-visible:ring-color-400/50 hover:bg-color-500 dark:hover:bg-color-400;
+            @apply focus-visible:ring-color-500/50 dark:focus-visible:ring-color-400/50 hover:bg-(--sy-hover-bg) hover:text-(--sy-hover-text) dark:hover:bg-(--sy-dark-hover-bg) dark:hover:text-(--sy-dark-hover-text);
         }
 
         & > .sy-icon {
-            @apply text-white;
+            @apply text-(--sy-text) dark:text-(--sy-dark-text);
         }
     }
 
@@ -61,7 +61,7 @@
         }
 
         &.sy-color {
-            @apply text-color-600 ring-color-600/50 dark:bg-transparent dark:text-color-400 dark:ring-color-400/50;
+            @apply text-(--sy-text) ring-color-600/50 dark:bg-transparent dark:text-(--sy-dark-text) dark:ring-color-400/50;
 
             &.sy-force-enabled,
             &:not(.sy-disabled):not([disabled]) {

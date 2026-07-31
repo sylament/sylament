@@ -50,7 +50,7 @@ it('disables an item', function (): void {
 
 it('applies a semantic color', function (): void {
     expect(renderDropdownItem('<twig:SylamentSupport:DropdownItem color="danger">Delete</twig:SylamentSupport:DropdownItem>'))
-        ->toContain('sy-color sy-color-danger');
+        ->toContain('sy-color sy-color-danger sy-text-color-600 hover:sy-text-color-700 dark:sy-text-color-400 dark:hover:sy-text-color-400');
 });
 
 it('renders an icon before the label', function (): void {

@@ -21,7 +21,7 @@ it('renders a primary medium button by default', function (): void {
     $html = renderIconButton(['icon' => 'heroicons:x-mark']);
 
     expect($html)->toContain('<button')
-        ->toContain('class="sy sy-icon-btn sy-size-md sy-color sy-color-primary"')
+        ->toContain('class="sy sy-icon-btn sy-size-md sy-color sy-color-primary sy-text-color-600 hover:sy-text-color-700 dark:sy-text-color-500 dark:hover:sy-text-color-400"')
         ->toContain('type="button"')
         ->toContain('<svg')
         ->toContain('class="sy sy-icon sy-size-md"');
@@ -51,7 +51,7 @@ it('prefers an explicit icon size over the derived one', function (): void {
 
 it('emits an unknown size string as a literal class', function (): void {
     expect(renderIconButton(['icon' => 'heroicons:x-mark', 'size' => 'huge']))
-        ->toContain('class="sy sy-icon-btn huge sy-color sy-color-primary"')
+        ->toContain('class="sy sy-icon-btn huge sy-color sy-color-primary sy-text-color-600 hover:sy-text-color-700 dark:sy-text-color-500 dark:hover:sy-text-color-400"')
         ->not->toContain('sy-size-huge')
         ->toContain('class="sy sy-icon sy-size-md"');
 });
@@ -112,7 +112,7 @@ it('renders the gray color without color classes', function (): void {
 
 it('applies a semantic color', function (): void {
     expect(renderIconButton(['color' => 'danger']))
-        ->toContain('sy-color sy-color-danger');
+        ->toContain('sy-color sy-color-danger sy-text-color-600 hover:sy-text-color-500 dark:sy-text-color-400 dark:hover:sy-text-color-300');
 });
 
 it('associates with an external form and submits it', function (): void {
@@ -125,6 +125,6 @@ it('associates with an external form and submits it', function (): void {
 it('forwards extra attributes onto the root element', function (): void {
     $html = renderIconButton(['class' => 'custom', 'data-owner' => 'billing']);
 
-    expect($html)->toContain('class="sy sy-icon-btn sy-size-md sy-color sy-color-primary custom"')
+    expect($html)->toContain('class="sy sy-icon-btn sy-size-md sy-color sy-color-primary sy-text-color-600 hover:sy-text-color-700 dark:sy-text-color-500 dark:hover:sy-text-color-400 custom"')
         ->toContain('data-owner="billing"');
 });

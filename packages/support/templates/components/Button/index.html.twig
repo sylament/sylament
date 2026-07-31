@@ -8,6 +8,7 @@
 
     size = 'md',
     color = 'primary',
+    outlined = false,
 
     icon = null,
     iconAlias = null,
@@ -19,7 +20,12 @@
 
 {% set knownSizes = ['xs', 'sm', 'md', 'lg', 'xl'] %}
 {% set sizeValue = size.value ?? size %}
-{% set colorName = color is iterable or color is empty ? 'gray' : color %}
+{% set colorAttrs = colorAttributes(
+    outlined
+        ? 'Sylament\\Support\\Colors\\Components\\OutlinedButtonComponent'
+        : 'Sylament\\Support\\Colors\\Components\\ButtonComponent',
+    color,
+) %}
 {% set iconPositionValue = iconPosition.value ?? iconPosition %}
 {% set iconHtml = icon ? generateIconHtml(icon, iconAlias, size: iconSize) : null %}
 
@@ -29,9 +35,8 @@
             'sy-disabled': disabled,
             ('sy-size-' ~ sizeValue): sizeValue in knownSizes,
             (sizeValue ?? ''): sizeValue is not empty and sizeValue not in knownSizes,
-            'sy-color': colorName != 'gray',
-            ('sy-color-' ~ colorName): colorName != 'gray',
-        }),
+        }, colorAttrs.class),
+        style: colorAttrs.style|join('; ') ?: false,
         'aria-disabled': disabled ? 'true' : false,
         disabled: disabled and tag == 'button',
         form: formId ?: false,

@@ -18,7 +18,7 @@ it('renders a primary medium anchor by default', function (): void {
     $html = renderLink('<twig:SylamentSupport:Link href="/settings">Settings</twig:SylamentSupport:Link>');
 
     expect($html)->toContain('<a')
-        ->toContain('class="sy sy-link sy-size-md sy-color sy-color-primary"')
+        ->toContain('class="sy sy-link sy-size-md sy-color sy-color-primary sy-text-color-700 dark:sy-text-color-400"')
         ->toContain('href="/settings"')
         ->toContain('<span class="sy-link-label">Settings</span>')
         ->not->toContain('type=');
@@ -52,12 +52,12 @@ it('renders the gray color without color classes', function (): void {
 
 it('applies a semantic color', function (): void {
     expect(renderLink('<twig:SylamentSupport:Link color="danger">Delete</twig:SylamentSupport:Link>'))
-        ->toContain('sy-color sy-color-danger');
+        ->toContain('sy-color sy-color-danger sy-text-color-600 dark:sy-text-color-300');
 });
 
 it('emits an unknown size as a literal class', function (): void {
     expect(renderLink('<twig:SylamentSupport:Link size="custom-size">Settings</twig:SylamentSupport:Link>'))
-        ->toContain('class="sy sy-link custom-size sy-color sy-color-primary"');
+        ->toContain('class="sy sy-link custom-size sy-color sy-color-primary sy-text-color-700 dark:sy-text-color-400"');
 });
 
 it('applies a font weight class', function (): void {
@@ -96,6 +96,6 @@ it('renders a sr-only label as an aria-label with no label span', function (): v
 it('forwards extra attributes onto the root element', function (): void {
     $html = renderLink('<twig:SylamentSupport:Link class="custom" data-owner="billing">Settings</twig:SylamentSupport:Link>');
 
-    expect($html)->toContain('class="sy sy-link sy-size-md sy-color sy-color-primary custom"')
+    expect($html)->toContain('class="sy sy-link sy-size-md sy-color sy-color-primary sy-text-color-700 dark:sy-text-color-400 custom"')
         ->toContain('data-owner="billing"');
 });

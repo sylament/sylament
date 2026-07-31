@@ -19,7 +19,7 @@
 {% set knownSizes = ['xs', 'sm', 'md', 'lg', 'xl'] %}
 {% set sizeValue = size.value ?? size %}
 {% set iconSize = iconSize ?? (sizeValue == 'xs' ? 'sm' : (sizeValue in ['lg', 'xl'] ? 'lg' : null)) %}
-{% set colorName = color is iterable or color is empty ? 'gray' : color %}
+{% set colorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\IconButtonComponent', color) %}
 {% set ariaLabel = (label ?? '')|striptags|trim %}
 
 <{{ tag }}
@@ -28,9 +28,8 @@
             'sy-disabled': disabled,
             ('sy-size-' ~ sizeValue): sizeValue in knownSizes,
             (sizeValue ?? ''): sizeValue is not empty and sizeValue not in knownSizes,
-            'sy-color': colorName != 'gray',
-            ('sy-color-' ~ colorName): colorName != 'gray',
-        }),
+        }, colorAttrs.class),
+        style: colorAttrs.style|join('; ') ?: false,
         'aria-disabled': disabled ? 'true' : false,
         'aria-label': ariaLabel != '' ? ariaLabel : false,
         disabled: disabled and tag == 'button',

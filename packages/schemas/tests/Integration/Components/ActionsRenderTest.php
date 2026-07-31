@@ -25,7 +25,7 @@ it('renders the action buttons inside the actions row container', function (): v
     $html = renderActions(Actions::make([Action::make('publish'), Action::make('archive')]));
 
     expect($html)->toContain('sy sy-sc-actions')
-        ->toMatch('/sy-sc-actions-ctn"[^>]*>.*?<button[^>]*class="sy sy-btn sy-size-md sy-color sy-color-primary sy-ac".*?Publish.*?<button[^>]*class="sy sy-btn sy-size-md sy-color sy-color-primary sy-ac".*?Archive/s');
+        ->toMatch('/sy-sc-actions-ctn"[^>]*>.*?<button[^>]*class="sy sy-btn sy-size-md sy-color sy-color-primary sy-bg-color-400 hover:sy-bg-color-300 dark:sy-bg-color-600 dark:hover:sy-bg-color-500 sy-text-color-900 hover:sy-text-color-800 dark:sy-text-color-950 dark:hover:sy-text-color-950 sy-ac".*?Publish.*?<button[^>]*class="sy sy-btn sy-size-md sy-color sy-color-primary sy-bg-color-400 hover:sy-bg-color-300 dark:sy-bg-color-600 dark:hover:sy-bg-color-500 sy-text-color-900 hover:sy-text-color-800 dark:sy-text-color-950 dark:hover:sy-text-color-950 sy-ac".*?Archive/s');
 });
 
 it('marks the row with the end alignment class that flips the flex order', function (): void {

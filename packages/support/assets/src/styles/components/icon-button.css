@@ -86,11 +86,11 @@
     }
 
     &.sy-color {
-        @apply text-color-600 dark:text-color-400;
+        @apply text-(--sy-text) dark:text-(--sy-dark-text);
 
         &.sy-force-enabled,
         &:not(.sy-disabled):not([disabled]) {
-            @apply focus-visible:ring-color-600 dark:focus-visible:ring-color-500 hover:text-color-500 dark:hover:text-color-300;
+            @apply focus-visible:ring-color-600 dark:focus-visible:ring-color-500 hover:text-(--sy-hover-text) dark:hover:text-(--sy-dark-hover-text);
         }
     }
 }

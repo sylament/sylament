@@ -70,7 +70,7 @@
     }
 
     &.sy-color {
-        @apply text-color-600 dark:text-color-400;
+        @apply text-(--sy-text) dark:text-(--sy-dark-text);
     }
 }
 

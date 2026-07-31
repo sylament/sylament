@@ -11,7 +11,7 @@
         }
 
         & .sy-dropdown-item-label {
-            @apply text-color-600 dark:text-color-400;
+            @apply text-(--sy-text) hover:text-(--sy-hover-text) dark:text-(--sy-dark-text) dark:hover:text-(--sy-dark-hover-text);
         }
     }
 }

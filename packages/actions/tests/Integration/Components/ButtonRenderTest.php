@@ -19,7 +19,7 @@ it('renders a primary medium button by default', function (): void {
     $html = renderButton('<twig:SylamentSupport:Button>Save</twig:SylamentSupport:Button>');
 
     expect($html)->toContain('<button')
-        ->toContain('class="sy sy-btn sy-size-md sy-color sy-color-primary"')
+        ->toContain('class="sy sy-btn sy-size-md sy-color sy-color-primary sy-bg-color-400 hover:sy-bg-color-300 dark:sy-bg-color-600 dark:hover:sy-bg-color-500 sy-text-color-900 hover:sy-text-color-800 dark:sy-text-color-950 dark:hover:sy-text-color-950"')
         ->toContain('type="button"')
         ->toContain('Save');
 });
@@ -48,7 +48,12 @@ it('renders the gray color without color classes', function (): void {
 
 it('applies a semantic color', function (): void {
     expect(renderButton('<twig:SylamentSupport:Button color="danger">Delete</twig:SylamentSupport:Button>'))
-        ->toContain('sy-color sy-color-danger');
+        ->toContain('sy-color sy-color-danger sy-bg-color-600 hover:sy-bg-color-500 dark:sy-bg-color-600 dark:hover:sy-bg-color-500 sy-text-color-0 hover:sy-text-color-0 dark:sy-text-color-0 dark:hover:sy-text-color-0');
+});
+
+it('resolves an outlined button against the page surface instead of its own background', function (): void {
+    expect(renderButton('<twig:SylamentSupport:Button color="danger" :outlined="true">Delete</twig:SylamentSupport:Button>'))
+        ->toContain('class="sy sy-btn sy-size-md sy-color sy-color-danger sy-text-color-600 dark:sy-text-color-300"');
 });
 
 it('renders a leading icon', function (): void {
@@ -59,6 +64,6 @@ it('renders a leading icon', function (): void {
 it('forwards extra attributes onto the root element', function (): void {
     $html = renderButton('<twig:SylamentSupport:Button class="custom" data-owner="billing">Save</twig:SylamentSupport:Button>');
 
-    expect($html)->toContain('class="sy sy-btn sy-size-md sy-color sy-color-primary custom"')
+    expect($html)->toContain('class="sy sy-btn sy-size-md sy-color sy-color-primary sy-bg-color-400 hover:sy-bg-color-300 dark:sy-bg-color-600 dark:hover:sy-bg-color-500 sy-text-color-900 hover:sy-text-color-800 dark:sy-text-color-950 dark:hover:sy-text-color-950 custom"')
         ->toContain('data-owner="billing"');
 });

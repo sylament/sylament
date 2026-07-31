@@ -109,9 +109,14 @@ land as helpers or Twig filters rather than string macros. Two
 part of this divergence: `macro('grid')` and `macro('gridColumn')` land as the
 `grid()`/`gridColumn()` Twig functions in
 [`GridExtension`](../../../packages/support/src/Twig/Extension/GridExtension.php).
-The third, `macro('color')`, is **not** ported — it depends on `ColorManager` /
-`FilamentColor`, which are tracked as their own **todo** rows in the
-[package README](README.md) — so it awaits those, not this divergence.
+The third, `macro('color')`, is ported the same way — as `colorAttributes()` on
+[`ColorExtension`](../../../packages/support/src/Twig/Extension/ColorExtension.php),
+backed by [`ColorManager`](color-manager.md) — so it is not part of this
+divergence either. Of the four `Str` macros, `sanitizeCssColor` came with it, as a
+public method on the manager rather than a function in `helpers.php`, both of its
+callers being the manager's own emitters
+([why](color-manager.md#the-css-colour-sanitizer-is-a-method-on-the-manager-and-drops-rather-than-nulls));
+`sanitizeHtml`, `sanitizeUrl` and `ucwords` remain unported.
 
 ### The ported `grid()` / `gridColumn()` also drop blank breakpoint *keys*
 

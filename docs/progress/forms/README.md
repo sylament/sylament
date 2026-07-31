@@ -33,7 +33,8 @@ validation vertical spanning three packages — folding it would swamp
 [`field.md`](field.md). The same fold applies to every other concern only one
 built component uses: `HasOptions`, `CanSelectPlaceholder` and
 `CanDisableOptions` are `Select`'s alone in the port and live in
-[`select.md`](select.md), `HasToggleIcons` is `Toggle`'s alone and lives in
+[`select.md`](select.md), `HasToggleIcons` and `HasToggleColors` are `Toggle`'s
+alone and live in
 [`toggle.md`](toggle.md), while `CanBeInline` and `CanBeAccepted` are shared by
 `Checkbox` and `Toggle` and so keep rows of their own. The fold reads the port,
 not Filament — Filament composes `HasOptions` and `CanDisableOptions` onto
@@ -104,7 +105,7 @@ and is tracked in
 [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md)
 — `Select`'s three (`HasOptions`, `CanSelectPlaceholder`,
 `CanDisableOptions`) into [`select.md`](select.md), and `Toggle`'s
-`HasToggleIcons` into [`toggle.md`](toggle.md), per
+`HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md), per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). The shared
 ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
 `Textarea`, `CanBeInline` and `CanBeAccepted` by `Checkbox` and `Toggle`.
@@ -147,7 +148,6 @@ ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
 | HasPivotData | [`Components/Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | todo | — |
 | HasPreview | [`Components/Concerns/HasPreview.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPreview.php) | todo | — |
 | HasStep | [`Components/Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | todo | — |
-| HasToggleColors | [`Components/Concerns/HasToggleColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleColors.php) | todo | — |
 | HasTooltips | [`Components/Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | todo | — |
 | HasUploadingMessage | [`Components/Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | todo | — |
 | InteractsWithForms | [`Concerns/InteractsWithForms.php`](../../../vendor/filament/forms/src/Concerns/InteractsWithForms.php) | todo | — |

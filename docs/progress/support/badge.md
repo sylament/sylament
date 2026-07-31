@@ -38,7 +38,7 @@ once the row is **done**; **diverges** → the permanent note in
 | [`type` / `form` association](../../../packages/support/templates/components/Badge/index.html.twig) | [`'type'`/`'form'` merge](../../../vendor/filament/support/resources/views/components/badge.blade.php) | done | — | — |
 | [`disabled` + `aria-disabled`](../../../packages/support/templates/components/Badge/index.html.twig) | [`'disabled'`/`'aria-disabled'` merge](../../../vendor/filament/support/resources/views/components/badge.blade.php) | done | — | [diverges](#the-disabled-attribute-is-emitted-only-on-button) |
 | [`size` → `sy-size-*` classes](../../../packages/support/templates/components/Badge/index.html.twig) | [`->class(['fi-size-…'])`](../../../vendor/filament/support/resources/views/components/badge.blade.php) | done | — | — |
-| [`color` → `sy-color*` classes](../../../packages/support/templates/components/Badge/index.html.twig) | [`->color(BadgeComponent::class, $color)`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | done | — | [diverges](#the-color-map-is-not-ported--colors-resolve-through-css-classes) |
+| [`color` → `sy-color*` classes](../../../packages/support/templates/components/Badge/index.html.twig) | [`->color(BadgeComponent::class, $color)`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | done | — | [diverges](#the-color-map-resolves-the-text-shade-not-the-ring-or-the-background) |
 | [Icon + derived `sm` size + `iconPosition`](../../../packages/support/templates/components/Badge/index.html.twig) | [`generate_icon_html(…, size: $iconSize ?? IconSize::Small)`](../../../vendor/filament/support/resources/views/components/badge.blade.php) | done | — | — |
 | [`labelSrOnly` → `aria-label`](../../../packages/support/templates/components/Badge/index.html.twig) | — (no Filament badge equivalent) | done | — | [diverges](#labelsronly-is-a-sylament-addition) |
 | `deleteButton` | [`fi-badge-delete-btn` block](../../../vendor/filament/support/resources/views/components/badge.blade.php) | blocked | [`BADGE_DELETE_BUTTON` icon alias](support-icon-alias.md) + a label translation | [detail](#details) |
@@ -136,20 +136,35 @@ Same shape as the
 [icon-button divergence](icon-button.md#the-disabled-attribute-is-emitted-only-on-button),
 and it bites more often here because a badge is a `<span>` by default.
 
-### The color map is not ported — colors resolve through CSS classes
+### The color map resolves the text shade, not the ring or the background
 
-`BadgeComponent.php` exists only to supply a `getColorMap()` that the Blade view
-applies with `->color(BadgeComponent::class, $color)` to inject per-shade inline
-custom properties. Sylament ports neither the PHP class nor the color manager:
-the template emits static `sy-color` / `sy-color-<name>` marker classes and
-defers every shade and contrast decision to the `--sy-*` runtime tokens and
-[`badge.css`](../../../packages/support/assets/src/styles/components/badge.css),
-whose `.sy-color` / `:not(.sy-color)` branches carry what Filament splits between
-the map and the stylesheet. The `HasDefaultGrayColor` behaviour — gray, empty or
-iterable ⇒ no color classes — survives as the `colorName != 'gray'` guard. This
-is the project-wide styling contract rather than a badge-local choice; the
-fullest statement of it is on
-[button.md](button.md#the-color-map-is-not-ported--colors-resolve-through-css-classes).
+The badge is the component the colour registry was built for, and it is now a
+faithful port: the template calls
+`colorAttributes(BadgeComponent::class, color)`, which runs
+[`BadgeComponent`](../../../packages/support/src/Colors/Components/BadgeComponent.php)
+— Filament's map verbatim — and emits `sy-color`, `sy-color-<name>` and the two
+resolved shade classes, or the inline `--sy-color-*` palette when the colour is
+handed over as an array. Gray and empty still emit nothing, now because the
+policy implements `HasDefaultGrayColor` rather than because of a template guard,
+so the `:not(.sy-color)` branch of
+[`badge.css`](../../../packages/support/assets/src/styles/components/badge.css)
+paints them.
+
+What remains a divergence is narrower and worth stating, because it is easy to
+read the map as covering the whole badge. The policy resolves **two** slots —
+`text` and `dark:text` — and nothing else; the badge's background
+(`bg-color-50`, `dark:bg-color-400/10`) and ring (`ring-color-600/10`,
+`dark:ring-color-400/30`) stay hardcoded shades in the stylesheet, on both sides.
+Filament does the same, and it is defensible for exactly the reason the text
+slot is not: a 10 %-alpha ring and a shade-50 fill are decorative at any
+lightness, while the text has to be read.
+
+The defect this closed is measurable. `badge.css` applied `text-color-600`, which
+against the palettes shipping at the time cleared AA only for gray (7.51:1) and
+primary (4.86:1) — danger measured 4.35:1, info 3.73:1, warning 3.06:1 and
+success 3.03:1. Under the policy, warning resolves to shade 700 at 4.86:1, and
+every palette × slot pairing is held above its declared ratio by
+[`PolicyContrastTest`](../../../packages/support/tests/Unit/Colors/Components/PolicyContrastTest.php).
 
 _See also: the global [rename table](../renames.md) — `fi-*` → `sy-*` classes,
 Blade → Twig (`view()` → `template()`), Alpine → Stimulus and `Htmlable` →

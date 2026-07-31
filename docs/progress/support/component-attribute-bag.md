@@ -8,12 +8,12 @@ Sylament's replacement for Twig's `html_attr()`. It ports Filament's
 `Illuminate\View\ComponentAttributeBag` to reuse Blade's echo-and-escape
 rendering, Sylament has no Laravel bag to inherit — so it reimplements only the
 slice its templates need: normalize-on-construct, defaults-first `merge()`, and
-its own `html_attr()`-faithful renderer. Rendering-time helpers that depend on
-unported systems (`color()`) are not yet here, so the item is partial;
-`grid()`/`gridColumn()` are ported but as Twig functions rather than bag
-methods.
+its own `html_attr()`-faithful renderer. Filament's three rendering-time
+helpers are all here, as Twig functions rather than bag methods:
+`grid()`/`gridColumn()` in `GridExtension`, and `color()` — the last row to
+settle, with the colour registry — as `colorAttributes()` in `ColorExtension`.
 
-**Status:** in progress — see the
+**Status:** done — see the
 [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -26,37 +26,47 @@ Reference — the Filament source this is diffed against:
 ## Surface
 
 Every point of this component. _Blocked by_ names what has to land first.
-_Detail_ carries only two links, either or both: **detail** → the write-up in
-[Details](#details), deleted once the row is **done**; **diverges** → the
-permanent note in [Divergences](#divergences).
+_Detail_ carries one link today — **diverges** → the permanent note in
+[Divergences](#divergences). Every row is settled, so there is no Details
+section; one comes back with the first unfinished row.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Construct + normalize (class → token list, style → declaration list) | [`ComponentAttributeBag::__construct`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | done | — | [diverges](#the-bag-is-immutable-and-normalizes-on-construction) |
 | `merge()` defaults-first, class/style append | [`ComponentAttributeBag::merge`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | done | — | [diverges](#merge-drops-the-escape-and-appendable-value-machinery-and-does-not-deduplicate) |
 | `toHtml()` / `toScalarAttributes()` — the `html_attr()` renderer | Laravel base render path (`__toString`) | done | — | [diverges](#the-bag-renders-its-own-html_attr-faithful-output) |
-| `class()` / `style()` fluent mutators | [`ComponentAttributeBag::class`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php), [`::style`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | skipped | — | [diverges](#fluent-class-and-style-are-replaced-by-the-attrs-and-classes-twig-functions) |
-| `color()` | [`ComponentAttributeBag::color`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | blocked | ColorManager / FilamentColor facade | [detail](#color-is-not-ported) |
+| `class()` / `style()` fluent mutators | [`ComponentAttributeBag::class`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php), [`::style`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | skipped | — | [diverges](#fluent-class-and-style-are-replaced-by-the-attrs-classes-and-styles-twig-functions) |
+| `color()` | [`ComponentAttributeBag::color`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | done | — | [diverges](#color-is-the-colorattributes-twig-function-not-a-bag-method) |
 | `grid()` | [`ComponentAttributeBag::grid`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | done | — | [diverges](#grid-and-gridcolumn-are-twig-functions-not-bag-methods) |
 | `gridColumn()` | [`ComponentAttributeBag::gridColumn`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | done | — | [diverges](#grid-and-gridcolumn-are-twig-functions-not-bag-methods) |
 | Laravel base API (`get`/`has`/`only`/`except`/`filter`/`ArrayAccess`/…) + macros (`__call`/`hasMacro`) | [Laravel base](../../../vendor/laravel/framework/src/Illuminate/View/ComponentAttributeBag.php) | skipped | — | [diverges](#the-laravel-base-bag-and-macros-are-not-inherited) |
 
-## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and
-what the next step is.
-
-### `color()` is not ported
-
-`color()` turns a color name into `fi-*` classes / custom-property styles via the
-`FilamentColor` facade and `HasColor` component contract. Both the color manager
-and the facade are still `todo` in the [package README](README.md), so this is
-**blocked** on them — porting it before its color source exists would have
-nothing to resolve against and nothing to test.
-
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
+
+### `color()` is the `colorAttributes()` Twig function, not a bag method
+
+Filament's `color()` mutates the bag — appending `fi-*` classes for a named
+palette, or per-shade `style` declarations for an array one — and reaches the
+registry through the `FilamentColor` facade. Sylament has no fluent mutators on
+the bag and no facades, so the same behaviour is
+[`ColorExtension::colorAttributes(policy, color)`](../../../packages/support/src/Twig/Extension/ColorExtension.php),
+which **returns** `{class: [...], style: [...]}` for a template to spread rather
+than mutating anything. Same two arms, same `ColorManager` calls
+(`getComponentClasses()` for a name, `getComponentCustomStyles()` for an array),
+same empty result for a blank colour.
+
+Two knock-on differences the signature does not show. The policy arrives as a
+**class-string** rather than an instance, because a Twig template cannot call a
+static factory — which is why the outlined button is
+[a subclass](color-policies.md#the-outlined-button-is-a-subclass-not-a-constructor-flag)
+rather than constructor state. And because the styles come back as a value, the
+template has to merge them into `attributes` itself, which is where the
+[`defaults()` replaces `style`](#fluent-class-and-style-are-replaced-by-the-attrs-classes-and-styles-twig-functions)
+trap below bites: `attributes.without('style').defaults({style: styles(ours,
+attributes.all.style ?? null)})` is the shape every palette-emitting template
+uses.
 
 ### `grid()` and `gridColumn()` are Twig functions, not bag methods
 

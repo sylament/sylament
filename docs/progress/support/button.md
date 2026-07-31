@@ -35,10 +35,10 @@ permanent note in [Divergences](#divergences).
 | [`type` attribute](../../../packages/support/templates/components/Button/index.html.twig) | [`'type' => …`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | done | — | — |
 | [`disabled` + `aria-disabled`](../../../packages/support/templates/components/Button/index.html.twig) | [`'disabled' => …`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | done | — | — |
 | [`size` → `sy-size-*` classes](../../../packages/support/templates/components/Button/index.html.twig) | [`->class(['fi-size-…'])`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | done | — | — |
-| [`color` → `sy-color*` classes](../../../packages/support/templates/components/Button/index.html.twig) | [`->color(ButtonComponent::make($outlined), $color)`](../../../vendor/filament/support/src/View/Components/ButtonComponent.php) | done | — | [diverges](#the-color-map-is-not-ported--colors-resolve-through-css-classes) |
+| [`color` → `sy-color*` classes + resolved shade classes](../../../packages/support/templates/components/Button/index.html.twig) | [`->color(ButtonComponent::make($outlined), $color)`](../../../vendor/filament/support/src/View/Components/ButtonComponent.php) | done | — | [diverges](#the-outlined-variant-is-selected-by-a-prop-and-by-a-second-policy-class) |
 | [Leading icon](../../../packages/support/templates/components/Button/index.html.twig) | [`generate_icon_html(...)`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | in progress | — | [detail](#details) |
 | `iconPosition` (before/after) | [`IconPosition::Before` / `::After`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#details) |
-| `outlined` | [`ButtonComponent::make($outlined)` + `fi-outlined`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#details) |
+| [`outlined`](../../../packages/support/templates/components/Button/index.html.twig) | [`ButtonComponent::make($outlined)` + `fi-outlined`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | done | — | [diverges](#the-outlined-variant-is-selected-by-a-prop-and-by-a-second-policy-class) |
 | `badge` / `badgeColor` / `badgeSize` | [`fi-btn-badge-ctn`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#details) |
 | `tooltip` | [`x-tooltip="…"`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#details) |
 | Loading indicator / `wire:target` / form processing | [`generate_loading_indicator_html(...)` + `filamentFormButton`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#details) |
@@ -77,8 +77,7 @@ Everything below `Leading icon` in the table is absent from the Twig prop list
 and body. They split into two groups:
 
 - **Static, portable now.** `iconPosition` (the Twig only ever renders the icon
-  before the label; Filament also renders `IconPosition::After`), `outlined`
-  (no `outlined` prop and no `sy-outlined` class — and see the color divergence),
+  before the label; Filament also renders `IconPosition::After`),
   `badge`/`badgeColor`/`badgeSize`, `labelSrOnly`/`aria-label`, and the
   `labeledFrom` delegation to `IconButton`. These need no interactivity layer and
   are the natural next increments.
@@ -92,18 +91,31 @@ and body. They split into two groups:
 
 ## Divergences
 
-### The color map is not ported — colors resolve through CSS classes
+### The outlined variant is selected by a prop, and by a second policy class
 
-Filament's `ButtonComponent.php` exists only to compute a per-shade,
-WCAG-contrast-checked color map at runtime (`getColorMap()`), which the Blade view
-applies with `->color(ButtonComponent::make($outlined), $color)` to emit inline
-color styles. Sylament ports none of that: the Twig emits static
-`sy-color` / `sy-color-<name>` marker classes (and treats an iterable or empty
-color as `gray`, which drops the classes), deferring all contrast and shade
-resolution to the `--sy-*` runtime color tokens and the scoped component CSS. This
-is the project-wide styling contract, not a button-local choice — which is also
-why `outlined` has no behavioral effect to port here yet: the light/dark
-outline contrast it selects in Filament lives entirely inside the color map.
+The colour map is ported, and the button is the component where it does the most
+work: `ButtonComponentColorMap` picks a background *and* a text shade together,
+so for a pale palette it paints `bg-400` with dark text rather than white on
+`bg-600` — see the
+[semantics note](color-policies.md#the-filled-button-picks-a-background-first-and-a-text-shade-after).
+
+What diverges is how the **variant** reaches it. Filament makes the map's owner
+carry the flag (`ButtonComponent::make($outlined)`, a per-flag static instance
+cache) and passes the *instance* to its Blade `->color()` macro. Twig cannot call
+a static factory and `colorAttributes()` takes a class-string, so support's
+`Button` gains an `outlined` prop and picks between
+[`ButtonComponent`](../../../packages/support/src/Colors/Components/ButtonComponent.php)
+and
+[`OutlinedButtonComponent`](../../../packages/support/src/Colors/Components/OutlinedButtonComponent.php),
+which is the same branch Filament puts behind the flag, expressed as a subclass
+([renames](../renames.md), [why it is a subclass](color-policies.md#the-outlined-button-is-a-subclass-not-a-constructor-flag)).
+
+One consequence for callers, and it is the reason actions had to change: the
+`sy-outlined` class is now emitted **by this template** from the same prop, where
+actions previously composed it into `class` itself. A caller that hand-writes
+`sy-outlined` without passing `:outlined` gets the outlined *styling* with the
+filled *colour map* — visually wrong in a way no test catches, since neither half
+errors.
 
 _See also: the global [rename table](../renames.md) — the `fi-*` → `sy-*` class
 prefix and the Livewire → UX LiveComponent / Alpine → Stimulus translations the

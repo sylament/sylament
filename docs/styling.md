@@ -42,18 +42,72 @@ Consumers never need Tailwind installed.
    the classes (`sy-grid`, `lg:sy-grid-cols`, …) only gate *which* breakpoint variable
    applies. Variables invented on our side (not part of a Filament-verbatim set) use
    the `--sy-*` prefix.
-5. **Colors go through `--sy-*` runtime tokens.** `@theme inline` in support's
-   `styles/index.css` bridges Tailwind color tokens to runtime variables, so
-   `@apply bg-primary-600` compiles to `background-color: var(--sy-primary-600)`.
-   Semantic palettes: `primary`, `gray`, `danger`, `info`, `success`, `warning`.
-   Important: `@theme inline` variables are **not emitted at runtime** — plain CSS must
-   reference the `--sy-*` token (`var(--sy-gray-950)`), not `var(--color-gray-950)`.
-6. **Per-instance color uses the `color` palette** (Filament's trick): component CSS
-   writes `@apply bg-color-500`; a `.sy-color-<palette>` class (see
-   `support/assets/src/styles/utilities.css`) or inline `--sy-color-*` variables decide
-   what that resolves to. Defaults to `primary` — including for *unknown* color names,
-   which produce a `.sy-color-<unknown>` class no rule matches, so the `--sy-color-*`
-   root defaults (primary) win; Filament falls through to `inherit` instead.
+5. **Colors go through `--sy-*` runtime tokens, and a registry decides what they
+   hold.** `@theme inline` in support's `styles/index.css` bridges Tailwind color
+   tokens to runtime variables, so `@apply bg-primary-600` compiles to
+   `background-color: var(--sy-primary-600)`. Semantic palettes: `primary`,
+   `gray`, `danger`, `info`, `success`, `warning`. Important: `@theme inline`
+   variables are **not emitted at runtime** — plain CSS must reference the
+   `--sy-*` token (`var(--sy-gray-950)`), not `var(--color-gray-950)`.
+   Those six are defined twice on purpose: as `oklch()` values in the `@layer
+   theme { :root }` **floor** of `index.css`, and as
+   [`ColorManager::DEFAULT_COLORS`](../packages/support/src/Colors/ColorManager.php)
+   in PHP, which is what the contrast policies measure against. The floor is why
+   a consumer who calls nothing still gets coloured components — Filament's
+   compiled theme defines no palette values and requires its `@filamentStyles`
+   directive — and the two copies are pinned to each other shade by shade by
+   `CssPaletteFloorTest`. Registering or overriding a palette:
+   [How consumers customize](#how-consumers-customize).
+6. **Per-instance color uses the `color` palette** (Filament's trick): component
+   CSS writes `@apply bg-color-500`; a `.sy-color-<palette>` class (see
+   `support/assets/src/styles/utilities.css`) or inline `--sy-color-*` variables
+   decide what that resolves to. An **unknown** color name produces a
+   `.sy-color-<unknown>` class no rule matches, so nothing sets the palette and
+   the declarations reading it are dropped at computed-value time — the element
+   inherits rather than falling back. (It used to fall back to `primary`, from a
+   `--sy-color-*` root default block; those eleven declarations were deleted with
+   the colour registry, so a typo now renders visibly wrong instead of silently
+   deliberate. Filament behaves the same way.)
+
+   **Which shade of that palette an element paints with is not written in CSS.**
+   A [contrast policy](progress/support/color-policies.md) resolves it per
+   palette at render time — `Badge` asks for *text readable against this
+   palette's shade 50*, not for shade 600 — because palettes do not share a
+   lightness curve and one fixed shade cannot serve them all. The policy's answer
+   arrives as **slot variables**, and component CSS reads those instead of a
+   shade:
+
+   ```css
+   .sy-badge.sy-color { @apply bg-color-50 text-(--sy-text) dark:text-(--sy-dark-text); }
+   ```
+
+   Eight slots exist, `bg` and `text` each in plain, `hover:`, `dark:` and
+   `dark:hover:` form: `--sy-bg`, `--sy-hover-bg`, `--sy-dark-bg`,
+   `--sy-dark-hover-bg`, `--sy-text`, `--sy-hover-text`, `--sy-dark-text`,
+   `--sy-dark-hover-text`. Each is set by a **shade utility class** the template
+   emits alongside the swap class — 92 hand-written rules in `utilities.css`, 44
+   background (four prefixes × the eleven grid shades) and 48 text (four
+   prefixes × the eleven shades **plus 0**, which means white):
+
+   ```css
+   .sy-text-color-700        { --sy-text: var(--sy-color-700); }
+   .hover\:sy-text-color-500 { --sy-hover-text: var(--sy-color-500); }
+   .dark\:sy-bg-color-400    { --sy-dark-bg: var(--sy-color-400); }
+   ```
+
+   The escaped colon is part of the **class name only** — these carry no `:hover`
+   selector and no dark variant of their own. Gating is the component CSS's job
+   (`hover:text-(--sy-hover-text)`), which is what lets one utility serve every
+   component. A policy declaring no slots (`return []`) is a real answer meaning
+   *swap the palette, I pick shades in CSS*; it still gets the two base classes.
+
+   Two rules follow for anyone writing component CSS. **Never hardcode a shade
+   for a colour a user can set** — `@apply text-color-600` is the defect this
+   layer exists to remove; take a slot variable and let the policy choose. And a
+   slot you read must be one the policy actually sets, which
+   `PolicyShadeGridTest` (support, schemas) and `ToggleColorSlotsTest` (forms)
+   check by scanning the stylesheets: both halves of a mismatch fail in silence,
+   with the element painting its unset default and nothing in the console.
 7. **Preflight is scoped, never page-wide.** `support`'s build generates
    `src/styles/preflight.generated.css` (gitignored) from the *installed* Tailwind's
    `preflight.css` via `assets/scripts/scope-preflight.mjs`, rewriting every rule to
@@ -73,8 +127,34 @@ Consumers never need Tailwind installed.
 
 ## How consumers customize
 
+- **Palettes**: register them under `sylament.colors`, keyed by name. A value is
+  either a colour to generate an eleven-shade palette from, or an explicit shade
+  map that must list every shade of the grid (50 … 950) — a missing or off-grid
+  shade throws, naming the palette, because a shade with no utility rule paints
+  nothing and reports nothing.
+
+  ```yaml
+  sylament:
+      colors:
+          primary: '#7c3aed'            # redefines a default
+          brand:                        # a new name, usable as ->color('brand')
+              50: 'oklch(0.97 0.014 254.604)'
+              # … through 950
+  ```
+
+  Render `{{ sylamentStyles() }}` once in the page `<head>` to emit them: a
+  `:root` override for a redefined palette, a `.sy-color-<name>` swap class for a
+  new one, and an empty string when nothing is registered. It is only needed for
+  what you added — the six defaults ship in the stylesheet (rule 5). The
+  `Color::` constants are unreachable from YAML, so PHP-side registration stays
+  available by injecting `ColorManager` and calling
+  `register(['primary' => Color::Rose])`.
 - **Theme tweaks**: override `--sy-*` custom properties (e.g. set `--sy-primary-600`)
-  in their own CSS — no build step, no Tailwind.
+  in their own CSS — no build step, no Tailwind. This changes what the token
+  holds but not which shade a component chooses: the contrast policies measure
+  against `DEFAULT_COLORS` in PHP, so a palette overridden only in CSS can be
+  painted at a shade that no longer suits it. Register it instead when the change
+  is more than a nudge.
 - **Component tweaks**: target the `sy-` classes; consumer CSS is unlayered and wins.
 - **Different markup**: override the bundle Twig template
   (`templates/bundles/Sylament<Pkg>Bundle/components/...`).

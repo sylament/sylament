@@ -311,9 +311,11 @@ Two defaults baked into the new trigger templates depart from Filament's
   instead force `group.getColor() ?? 'gray'` — `'gray'` being the value
   support's [`IconButton`](../../../packages/support/templates/components/IconButton/index.html.twig)
   and [`Button`](../../../packages/support/templates/components/Button/index.html.twig)
-  templates treat as "no color class"
-  (`colorName = color is iterable or color is empty ? 'gray' : color`),
-  overriding those components' own `color = 'primary'` prop default. This
+  templates treat as "no color class" — since the colour registry that is no
+  longer a template ternary but `HasDefaultGrayColor` on the policy, which makes
+  [`ColorManager::getComponentClasses()`](../../../packages/support/src/Colors/ColorManager.php)
+  return an empty list for the gray pair — overriding those components' own
+  `color = 'primary'` prop default. This
   follows the same gray-when-unset convention `Action`'s own
   [`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig)
   already renders (an undocumented divergence there too; noted here since

@@ -13,7 +13,7 @@ against Filament has now resolved every one to a real
 [status](../README.md#statuses) — **done** or **in progress** — linking a detail
 file wherever a divergence, an open gap, or real sub-structure earns one. A
 plain-text name is not built yet and carries **Status** `todo`. A row named for
-a directory (`Commands`, `Facades`, `Translations`, `ColorMaps`, …) collapses a
+a directory (`Commands`, `Facades`, `Translations`, `Color policies`, …) collapses a
 whole subtree into one navigational entry — a cluster we expect to port, if at
 all, as a unit rather than file by file.
 
@@ -23,6 +23,11 @@ The shared UI kit — the component model in
 [`src/Components`](../../../vendor/filament/support/src/Components) and the rendered
 widgets in [`src/View/Components`](../../../vendor/filament/support/src/View/Components)
 + [`resources/views/components`](../../../vendor/filament/support/resources/views/components).
+Several `View/Components/*Component.php` files are **colour policies** rather than
+renderable widgets; where one backs a widget the row below owns both, and the
+policy tier itself — including `ToggleComponent`, which backs no support-level
+widget at all — is the `Color policies` row in the
+[Supporting surface](#supporting-surface).
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -54,7 +59,6 @@ widgets in [`src/View/Components`](../../../vendor/filament/support/src/View/Com
 | [`Section`](../../../packages/support/templates/components/Section/index.html.twig) | [`views/components/section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | in progress | [section.md](section.md) |
 | Select | [`views/components/input/select.blade.php`](../../../vendor/filament/support/resources/views/components/input/select.blade.php) | todo | — |
 | Tabs | [`views/components/tabs/index.blade.php`](../../../vendor/filament/support/resources/views/components/tabs/index.blade.php) | todo | — |
-| Toggle | [`View/Components/ToggleComponent.php`](../../../vendor/filament/support/src/View/Components/ToggleComponent.php) | todo | — |
 
 ## Features
 
@@ -111,6 +115,15 @@ services, root value classes, translations, and the bundle wiring —
 [`src/View`](../../../vendor/filament/support/src/View),
 [`src/Commands`](../../../vendor/filament/support/src/Commands).
 
+Two unrelated interfaces are both called `HasColor`, and only one of them is
+ported. **`Contracts/HasColor.php`** is the *enum* contract — one method,
+`getColor(): string|array|null`, implemented by a user's status enum so a table
+column can colour itself — and it stays **todo**, with no consumer until tables.
+**`View/Components/Contracts/HasColor.php`** is the contract every contrast
+policy implements (`getColorMap()`); it shipped with the colour registry and is
+tracked in [color-policies.md](color-policies.md). The row below is the first
+one.
+
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`Alignment`](../../../packages/support/src/Enums/Alignment.php) | [`Enums/Alignment.php`](../../../vendor/filament/support/src/Enums/Alignment.php) | done | — |
@@ -128,7 +141,7 @@ services, root value classes, translations, and the bundle wiring —
 | VerticalAlignment | [`Enums/VerticalAlignment.php`](../../../vendor/filament/support/src/Enums/VerticalAlignment.php) | todo | — |
 | Width | [`Enums/Width.php`](../../../vendor/filament/support/src/Enums/Width.php) | todo | — |
 | Collapsible | [`Contracts/Collapsible.php`](../../../vendor/filament/support/src/Contracts/Collapsible.php) | todo | — |
-| HasColor (contract) | [`Contracts/HasColor.php`](../../../vendor/filament/support/src/Contracts/HasColor.php) | todo | — |
+| HasColor (enum contract) | [`Contracts/HasColor.php`](../../../vendor/filament/support/src/Contracts/HasColor.php) | todo | — |
 | HasDescription | [`Contracts/HasDescription.php`](../../../vendor/filament/support/src/Contracts/HasDescription.php) | todo | — |
 | HasIcon (contract) | [`Contracts/HasIcon.php`](../../../vendor/filament/support/src/Contracts/HasIcon.php) | todo | — |
 | HasLabel | [`Contracts/HasLabel.php`](../../../vendor/filament/support/src/Contracts/HasLabel.php) | todo | — |
@@ -138,8 +151,8 @@ services, root value classes, translations, and the bundle wiring —
 | HasEmbeddedView | [`Components/Contracts/HasEmbeddedView.php`](../../../vendor/filament/support/src/Components/Contracts/HasEmbeddedView.php) | todo | — |
 | ScopedComponentManager | [`Components/Contracts/ScopedComponentManager.php`](../../../vendor/filament/support/src/Components/Contracts/ScopedComponentManager.php) | todo | — |
 | ExposedLivewireMethod | [`Components/Attributes/ExposedLivewireMethod.php`](../../../vendor/filament/support/src/Components/Attributes/ExposedLivewireMethod.php) | todo | — |
-| Color | [`Colors/Color.php`](../../../vendor/filament/support/src/Colors/Color.php) | todo | — |
-| ColorManager | [`Colors/ColorManager.php`](../../../vendor/filament/support/src/Colors/ColorManager.php) | todo | — |
+| [`Color`](../../../packages/support/src/Colors/Color.php) | [`Colors/Color.php`](../../../vendor/filament/support/src/Colors/Color.php) | in progress | [color.md](color.md) |
+| [`ColorManager`](../../../packages/support/src/Colors/ColorManager.php) | [`Colors/ColorManager.php`](../../../vendor/filament/support/src/Colors/ColorManager.php) | in progress | [color-manager.md](color-manager.md) |
 | Heroicon | [`Icons/Heroicon.php`](../../../vendor/filament/support/src/Icons/Heroicon.php) | todo | — |
 | [`IconManager`](../../../packages/support/src/Icons/IconManager.php) | [`Icons/IconManager.php`](../../../vendor/filament/support/src/Icons/IconManager.php) | done | [icon-manager.md](icon-manager.md) |
 | Asset | [`Assets/Asset.php`](../../../vendor/filament/support/src/Assets/Asset.php) | todo | — |
@@ -149,12 +162,11 @@ services, root value classes, translations, and the bundle wiring —
 | Js | [`Assets/Js.php`](../../../vendor/filament/support/src/Assets/Js.php) | todo | — |
 | Theme | [`Assets/Theme.php`](../../../vendor/filament/support/src/Assets/Theme.php) | todo | — |
 | AssetManager | [`Assets/AssetManager.php`](../../../vendor/filament/support/src/Assets/AssetManager.php) | todo | — |
-| [`ComponentAttributeBag`](../../../packages/support/src/Twig/ComponentAttributeBag.php) | [`View/ComponentAttributeBag.php`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | in progress | [component-attribute-bag.md](component-attribute-bag.md) |
+| [`ComponentAttributeBag`](../../../packages/support/src/Twig/ComponentAttributeBag.php) | [`View/ComponentAttributeBag.php`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | done | [component-attribute-bag.md](component-attribute-bag.md) |
 | ViewManager | [`View/ViewManager.php`](../../../vendor/filament/support/src/View/ViewManager.php) | todo | — |
 | [`SupportIconAlias`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`View/SupportIconAlias.php`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | in progress | [support-icon-alias.md](support-icon-alias.md) |
 | DefaultLoadingIndicator | [`View/DefaultLoadingIndicator.php`](../../../vendor/filament/support/src/View/DefaultLoadingIndicator.php) | todo | — |
-| ColorMaps | [`View/Components/ColorMaps/`](../../../vendor/filament/support/src/View/Components/ColorMaps) | todo | — |
-| Color contracts | [`View/Components/Contracts/`](../../../vendor/filament/support/src/View/Components/Contracts) | todo | — |
+| [Color policies](../../../packages/support/src/Colors/Components) | [`View/Components/`](../../../vendor/filament/support/src/View/Components) — the policy objects, `ColorMaps/` and `Contracts/` | in progress | [color-policies.md](color-policies.md) |
 | HTML generators | [`View/Concerns/`](../../../vendor/filament/support/src/View/Concerns) | todo | — |
 | [`Cancel`](../../../packages/support/src/Exceptions/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | in progress | [cancel.md](cancel.md) |
 | [`Halt`](../../../packages/support/src/Exceptions/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | in progress | [halt.md](halt.md) |

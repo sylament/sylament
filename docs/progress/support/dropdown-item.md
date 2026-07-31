@@ -54,7 +54,7 @@ once the row is **done**; **semantics** → the permanent note in
 | [Tag + `href`/`target`](../../../packages/support/templates/components/DropdownItem/index.html.twig) | [`<{{ $tag }}>` + `generate_href_html($href, …)`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | done | — | — |
 | [`type` / `form` association](../../../packages/support/templates/components/DropdownItem/index.html.twig) | [`'type' => match ($tag) …`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | done | — | [semantics](#type-is-passed-in-not-derived-from-the-tag) · [diverges](#the-item-takes-a-formid-filaments-does-not) |
 | [`disabled` + `aria-disabled`](../../../packages/support/templates/components/DropdownItem/index.html.twig) | [`'aria-disabled'`/`'disabled'` merge](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | done | — | — |
-| [`color` → `sy-color*` classes](../../../packages/support/templates/components/DropdownItem/index.html.twig) | [`->color(ItemComponent::class, $color)`](../../../vendor/filament/support/src/View/Components/DropdownComponent/ItemComponent.php) | done | — | [diverges](#the-color-map-is-not-ported--colors-resolve-through-css-classes) |
+| [`color` → `sy-color*` classes](../../../packages/support/templates/components/DropdownItem/index.html.twig) | [`->color(ItemComponent::class, $color)`](../../../vendor/filament/support/src/View/Components/DropdownComponent/ItemComponent.php) | done | — | [diverges](#the-colour-slots-ride-on-the-row-the-label-reads-them) |
 | [Leading icon](../../../packages/support/templates/components/DropdownItem/index.html.twig) | [`generate_icon_html($icon, $iconAlias, …)`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | done | — | — |
 | [Label span](../../../packages/support/templates/components/DropdownItem/index.html.twig) | [`fi-dropdown-list-item-label`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | done | — | — |
 | `iconColor` | [`->color(IconComponent::class, $iconColor)`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | todo | — | [detail](#iconcolor) |
@@ -190,22 +190,28 @@ Filament's own route to a submitting item, the
 [`tag: 'form'` wrapper](#tag-form-post-to-url) — costs a `shouldPostToUrl()` port
 and solves a different problem (POSTing to a URL, not submitting a named form).
 
-### The color map is not ported — colors resolve through CSS classes
+### The colour slots ride on the row, the label reads them
 
-`ItemComponent` exists only to compute a contrast-checked per-shade color map
-that `->color(ItemComponent::class, $color)` turns into inline `--text` /
-`--hover-text` custom properties on the row, which `item.css` then reads. Sylament
-ports neither the class nor the color manager: the template emits static
-`sy-color` / `sy-color-<name>` marker classes (treating an iterable or empty
-color as `gray`, which drops them), and
-[`dropdown-item.css`](../../../packages/support/assets/src/styles/components/dropdown-item.css)
-resolves the label color and the hover background from the `--sy-*` runtime
-tokens instead. This is the project-wide styling contract rather than an
-item-local choice — the same divergence
-[`Button` records at length](button.md#the-color-map-is-not-ported--colors-resolve-through-css-classes).
-The `HasDefaultGrayColor` half survives intact as the `colorName != 'gray'`
-guard, which is what keeps an uncolored item byte-identical to what shipped
-before this component existed.
+[`ItemComponent`](../../../packages/support/src/Colors/Components/DropdownComponent/ItemComponent.php)
+is Filament's map verbatim — four text slots, resting and hover, light and dark,
+each measured against a different surface (white, the palette's own shade 50, and
+gray-900 / the palette's 950 in dark mode). It is the only shipped policy that
+resolves a `hover:` slot as well as its resting one, which is what the dropdown
+row needs: the row's hover background is the palette's shade 50, so the label has
+to be readable against two surfaces rather than one.
+
+The structural note is where the emitted classes land.
+`colorAttributes(ItemComponent::class, color)` is spread onto the **row**
+(`.sy-dropdown-item`), because that is what carries the `.sy-color` marker the
+hover-background rules are gated on — but the slot variables it sets are read one
+level in, by `.sy-dropdown-item-label`. That works because custom properties
+inherit, and it is deliberate: putting the colour on the label instead would
+leave the row's `hover:bg-color-50` with no palette. A future variant that colours
+the row and the label differently would have to split them.
+
+`HasDefaultGrayColor` keeps an uncoloured item byte-identical to what shipped
+before this component existed — gray and empty emit nothing, so the base rule's
+`text-gray-700 dark:text-gray-200` applies untouched.
 
 _See also: the global [rename table](../renames.md) — `fi-*` → `sy-*` classes,
 Blade → Twig and Alpine → Stimulus are systematic translations recorded there,

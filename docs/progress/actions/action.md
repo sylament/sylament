@@ -951,10 +951,16 @@ Filament's outlined button resolves through `ButtonSize`/color-map machinery in
 `CanBeOutlined` port is API-identical (`outlined()` / `isOutlined()` /
 `hasOutlined()`), but the rendering side is a single code-less state class:
 [`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig)
-adds `sy-outlined` to the root class list and
+passes `:outlined="component.isOutlined"` to support's `Button`, which emits the
+`sy-outlined` class itself and — since the colour registry — also uses the flag
+to pick
+[`OutlinedButtonComponent`](../../../packages/support/src/Colors/Components/OutlinedButtonComponent.php)
+over `ButtonComponent`, so an outlined action gets a genuinely different colour
+map rather than only a different rule
+([why](../support/button.md#the-outlined-variant-is-selected-by-a-prop-and-by-a-second-policy-class)).
 [`button.css`](../../../packages/support/assets/src/styles/components/button.css)
-carries one `.sy-btn.sy-outlined` variant rule driven by the same
-`--sy-color-*` runtime tokens the filled button uses — per the repo styling
+carries one `.sy-btn.sy-outlined` variant rule driven by the same `--sy-color-*`
+runtime tokens and slot variables the filled button uses — per the repo styling
 contract (semantic classes + runtime tokens, no per-color class maps). The
 button template is the only consumer, matching Filament (its link/badge/
 icon-button/grouped views ignore `outlined`).

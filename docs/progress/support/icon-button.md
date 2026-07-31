@@ -37,7 +37,7 @@ once the row is **done**; **diverges** → the permanent note in
 | [`disabled` / `aria-disabled`](../../../packages/support/templates/components/IconButton/index.html.twig) | [`disabled`/`aria-disabled` merge](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | [diverges](#the-disabled-attribute-is-emitted-only-on-button) |
 | [Link `href` / `target`](../../../packages/support/templates/components/IconButton/index.html.twig) | [`generate_href_html(…)`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | [detail](#details) |
 | [`type` / `form` association](../../../packages/support/templates/components/IconButton/index.html.twig) | [`type`/`form` merge](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | done | — | — |
-| [Color (gray-default + semantic)](../../../packages/support/templates/components/IconButton/index.html.twig) | [`->color(IconButtonComponent::class, $color)`](../../../vendor/filament/support/src/View/Components/IconButtonComponent.php) | in progress | color system (`Colors/`, `HasColor`) | [detail](#details) · [diverges](#color-is-rendered-as-sy-color--classes-not-the-colormap-css-variable-injection) |
+| [Color (gray-default + semantic + resolved shades)](../../../packages/support/templates/components/IconButton/index.html.twig) | [`->color(IconButtonComponent::class, $color)`](../../../vendor/filament/support/src/View/Components/IconButtonComponent.php) | done | — | [diverges](#the-hover-shade-is-the-neighbouring-one-not-100-away) |
 | Loading indicator | [`generate_loading_indicator_html(…)` + `wire:*`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | blocked | UX LiveComponent state layer | [detail](#details) |
 | Badge | [badge block + `BadgeComponent`](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | todo | — | [detail](#details) |
 | Key bindings | [`x-mousetrap` block](../../../vendor/filament/support/resources/views/components/icon-button.blade.php) | blocked | Stimulus mousetrap controller | [detail](#details) |
@@ -63,16 +63,6 @@ The **link `href`** row is done but noted because Sylament emits `href`/`target`
 inline from the template, where Filament delegates to `generate_href_html()`
 (which also encodes SPA navigation) — the SPA half is the separate blocked row
 below; plain `href`/`target="_blank"` are fully ported and tested.
-
-**Color** is partly ported: the `HasDefaultGrayColor` semantics are honoured — a
-gray (or empty/iterable) color emits no color classes, any other color emits
-`sy-color sy-color-<name>` — and both branches are tested. What is missing is the
-actual color resolution: Filament's `->color(IconButtonComponent::class, $color)`
-runs the `IconButtonComponentColorMap` to inject per-shade CSS custom properties
-at a WCAG-AA non-text contrast ratio; Sylament emits a bare class name and leaves
-the shade/contrast computation to the (unported) color system. See the
-divergence. The row flips to **done** when the color system lands and the
-class-only shim is either justified permanently or replaced.
 
 **Loading indicator, badge, key bindings, tooltip, and SPA-mode href** are not
 built at all. Each is blocked on infrastructure that has not been ported:
@@ -111,17 +101,24 @@ withheld from non-buttons. Verified against both sources and pinned by the
 "disables a link without the invalid disabled attribute" case in
 [`IconButtonRenderTest`](../../../packages/schemas/tests/Integration/Components/IconButtonRenderTest.php).
 
-### Color is rendered as `sy-color-*` classes, not the ColorMap CSS-variable injection
+### The hover shade is the neighbouring one, not 100 away
 
-The Filament file being ported, `IconButtonComponent.php`, exists only to supply
-a `getColorMap()` that computes contrast-safe shades (WCAG-AA non-text, gray
-surfaces, a `500` dark cap) which `->color(IconButtonComponent::class, $color)`
-turns into inline `--c-*` custom properties. Sylament ports neither the PHP class
-nor the color manager; the template emits a semantic `sy-color-<name>` class and
-defers all shade/contrast resolution to the CSS layer. The `HasDefaultGrayColor`
-behaviour (gray ⇒ no color styling) survives as the `colorName != 'gray'` guard.
-This holds only while the color system (`Colors/`, `HasColor`) is unported — it
-is the blocker on the Color row above, not a permanent decision.
+[`IconButtonComponent`](../../../packages/support/src/Colors/Components/IconButtonComponent.php)
+is Filament's verbatim — WCAG-AA **non-text** (3:1, because the icon carries the
+button's whole meaning), measured against gray-50 in light mode and gray-700 in
+dark, with a 500 cap on the dark search. The four slots it resolves
+(`text`, `hover:text`, `dark:text`, `dark:hover:text`) are emitted as shade
+classes by `colorAttributes()` and read by `icon-button.css` as
+`--sy-text` / `--sy-hover-text` / `--sy-dark-text` / `--sy-dark-hover-text`.
+
+The one deliberate difference is inside the map, and it is a bug fix rather than
+a taste call: Filament derives its hover shades arithmetically
+(`$lightShade + 100`, `$darkShade - 100`), which walks off the end of the palette
+when the search lands on 50 or 950 and mis-steps across the 50 → 100 gap at the
+light end. Either produces a shade number no utility rule defines, which sets no
+variable and paints nothing, silently. Sylament walks the palette's own sorted
+keys instead. Full reasoning and the test that holds it:
+[color-policies.md](color-policies.md#the-icon-button-map-steps-to-the-neighbouring-shade-not-by-100).
 
 ### The `aria-label` is double-encoded, where Filament suppresses it
 

@@ -37,7 +37,7 @@ once the row is **done**; **semantics** → the permanent note in
 | [`disabled` + `aria-disabled`](../../../packages/support/templates/components/Link/index.html.twig) | [`'disabled'`/`'aria-disabled'` merge](../../../vendor/filament/support/resources/views/components/link.blade.php) | done | — | — |
 | [`size` → `sy-size-*` classes](../../../packages/support/templates/components/Link/index.html.twig) | [`->class(['fi-size-…'])`](../../../vendor/filament/support/resources/views/components/link.blade.php) | done | — | — |
 | [`weight` → `sy-font-*` classes](../../../packages/support/templates/components/Link/index.html.twig) | [`->class(['fi-font-…'])`](../../../vendor/filament/support/resources/views/components/link.blade.php) | done | — | — |
-| [`color` → `sy-color*` classes](../../../packages/support/templates/components/Link/index.html.twig) | [`->color(LinkComponent::class, $color)`](../../../vendor/filament/support/src/View/Components/LinkComponent.php) | done | — | [diverges](#the-linkcomponent-color-map-is-not-ported--colors-resolve-through-css-classes) |
+| [`color` → `sy-color*` classes](../../../packages/support/templates/components/Link/index.html.twig) | [`->color(LinkComponent::class, $color)`](../../../vendor/filament/support/src/View/Components/LinkComponent.php) | done | — | [diverges](#the-gray-shades-sit-in-a-notsy-color-branch-not-on-the-base-rule) |
 | [Icon + size derived from `size` + `iconPosition`](../../../packages/support/templates/components/Link/index.html.twig) | [`generate_icon_html(…)` + `$iconSize ??= match ($size)`](../../../vendor/filament/support/resources/views/components/link.blade.php) | done | — | — |
 | [`labelSrOnly` → `aria-label`](../../../packages/support/templates/components/Link/index.html.twig) | [`'aria-label' => $labelSrOnly ? … : null`](../../../vendor/filament/support/resources/views/components/link.blade.php) | done | — | — |
 | `badge` / `badgeColor` / `badgeSize` | [`fi-link-badge-ctn` block](../../../vendor/filament/support/resources/views/components/link.blade.php) | todo | — | [detail](#the-badge-slot-is-unbuilt-not-blocked) |
@@ -132,22 +132,27 @@ Normalising the two to agree would be the divergence, so the difference stays.
 
 ## Divergences
 
-### The `LinkComponent` color map is not ported — colors resolve through CSS classes
+### The gray shades sit in a `:not(.sy-color)` branch, not on the base rule
 
-`LinkComponent.php` exists only to compute a per-shade,
-WCAG-contrast-checked color map at runtime (`getColorMap()`), which the Blade
-view applies with `->color(LinkComponent::class, $color)` to emit inline `--text`
-/ `--dark-text` custom properties. Sylament ports none of that: the Twig emits
-static `sy-color` / `sy-color-<name>` marker classes (and treats an iterable or
-empty color as `gray`, which drops them), and `link.css` resolves the two shades
-through the `--sy-*` runtime color tokens instead. The `HasDefaultGrayColor`
-behaviour — gray means no color styling — survives as the `colorName != 'gray'`
-guard, which is why the gray shades live in a `:not(.sy-color)` branch where
-Filament puts them on the base rule. This is the project-wide styling contract
-rather than a link-local choice; the same decision is written up against the
-[`Button`](button.md#the-color-map-is-not-ported--colors-resolve-through-css-classes)
-and [`IconButton`](icon-button.md#color-is-rendered-as-sy-color--classes-not-the-colormap-css-variable-injection)
-primitives.
+The colour map is ported —
+[`LinkComponent`](../../../packages/support/src/Colors/Components/LinkComponent.php)
+is Filament's verbatim, resolving `text` against gray-50 and `dark:text` against
+gray-700 — and the template hands `color` to `colorAttributes()`, which emits the
+marker, the swap class and the two shade classes, or the inline palette for an
+array colour.
+
+The structural difference is where the *uncoloured* link's grays live. Filament
+puts `text-gray-700 dark:text-gray-200` on the base `.fi-link` rule and lets the
+colour variables override them; `link.css` puts them in an explicit
+`&:not(.sy-color)` branch and the resolved slots in `&.sy-color`. Both render
+the same thing, because `HasDefaultGrayColor` means a gray or empty colour emits
+no `sy-color` marker at all — so the two branches are exclusive by construction
+rather than by cascade order.
+
+It is worth keeping rather than normalising: the branch states the rule the
+marker class already encodes, so a reader cannot mistake the grays for a default
+that a slot variable is expected to beat. The same shape is used by
+[`Badge`](badge.md) and [`IconButton`](icon-button.md).
 
 _See also: the global [rename table](../renames.md) — `fi-*` → `sy-*` classes,
 Blade → Twig (`view()` → `template()`), Alpine → Stimulus and `Htmlable` →

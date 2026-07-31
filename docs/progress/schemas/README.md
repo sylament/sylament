@@ -197,8 +197,8 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | `HasRenderHookScopes` | [`Contracts/HasRenderHookScopes.php`](../../../vendor/filament/schemas/src/Contracts/HasRenderHookScopes.php) | todo | — |
 | [`HasSchemas`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Contracts/HasSchemas.php`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | in progress | [interacts-with-schemas.md](interacts-with-schemas.md) |
 | [`SchemaExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php) | — | done | [schema-extension.md](schema-extension.md) |
-| `IconComponent` | [`View/Components/IconComponent.php`](../../../vendor/filament/schemas/src/View/Components/IconComponent.php) | todo | — |
-| `TextComponent` | [`View/Components/TextComponent.php`](../../../vendor/filament/schemas/src/View/Components/TextComponent.php) | todo | — |
+| [`Colors\Components\IconComponent`](../../../packages/schemas/src/Colors/Components/IconComponent.php) | [`View/Components/IconComponent.php`](../../../vendor/filament/schemas/src/View/Components/IconComponent.php) | done | [icon.md](icon.md#the-default-icon-color-is-gray-with-no-color-class-not-filaments-primary) |
+| [`Colors\Components\TextComponent`](../../../packages/schemas/src/Colors/Components/TextComponent.php) | [`View/Components/TextComponent.php`](../../../vendor/filament/schemas/src/View/Components/TextComponent.php) | done | [text.md](text.md#the-default-gray-color-lives-in-the-color-policy-not-setup) |
 | `SchemaIconAlias` | [`View/SchemaIconAlias.php`](../../../vendor/filament/schemas/src/View/SchemaIconAlias.php) | todo | — |
 | `TestsSchemas` | [`Testing/TestsSchemas.php`](../../../vendor/filament/schemas/src/Testing/TestsSchemas.php) | todo | — |
 | `JsContent` | [`JsContent.php`](../../../vendor/filament/schemas/src/JsContent.php) | todo | — |

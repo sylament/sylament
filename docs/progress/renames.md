@@ -34,6 +34,7 @@ derive from the conventions below.
 | `rule()` / `rules()` (forms `CanBeValidated`) | `constraint()` / `constraints()` | method | `Sylament\Forms\Components\Concerns\CanBeValidated` | [Constraint vocabulary](#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary) — the payload is Symfony `Constraint` objects, not Laravel rules; the rename makes the migration break loud and greppable instead of grep-hit-then-type-error. |
 | `validationMessages()` keys (`required`, `max`, `email`, …) | `class-string<Constraint>` keys (`NotBlank::class`, `Length::class`, …) | array keys | `Sylament\Forms\Components\Concerns\CanBeValidated` | [Constraint vocabulary](#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary) — the rule names have nothing behind them in Symfony, where the message is a property on the constraint; class keys are IDE-completable and let one post-pass message any constraint, including escape-hatch ones ([forms/can-be-validated.md](forms/can-be-validated.md#validation-messages-apply-after-the-constraints-are-built)). |
 | `Section::formBefore()` / `isFormBefore()` | `contentBefore()` / `hasContentBefore()` | method | `Sylament\Schemas\Components\Concerns\HasContentBefore` | Adopts the `contentBefore` prop name Filament's own support-layer section component uses. |
+| `ButtonComponent::make(isOutlined: true)` | `OutlinedButtonComponent` | class | `Sylament\Support\Colors\Components\OutlinedButtonComponent` | The outlined variant is a subclass, not constructor state — Twig cannot call a static factory and `colorAttributes()` takes a class-string. [Why, and what it buys](support/color-policies.md#the-outlined-button-is-a-subclass-not-a-constructor-flag). |
 
 ### Interface and trait names are swapped
 
@@ -113,6 +114,20 @@ package code (`sy-fo-input`, `sy-sc-grid`), support-level classes carry none
 (`sy-icon-btn`), and every template root also gets the bare `sy` marker class.
 Full contract: [`docs/styling.md`](../styling.md).
 
+The same `fi-` → `sy-` translation covers **CSS custom properties**, and there it
+is load-bearing rather than cosmetic. Filament's colour variables are unprefixed
+— `--primary-600`, `--color-600`, `--text`, `--dark-hover-bg` — and Sylament's
+are `--sy-primary-600`, `--sy-color-600`, `--sy-text`, `--sy-dark-hover-bg`,
+whether they are written in a stylesheet, emitted inline by
+`ColorManager::getComponentCustomStyles()`, or emitted into a `<style>` element
+by `sylamentStyles()`. Custom properties inherit and Sylament embeds into a page
+it does not own, so one `:root { --text: … }` in the host app would otherwise
+repaint every Sylament component. The exception is the Filament-*verbatim* grid
+variables (`--cols-lg`, `--col-span-default`), which stay unprefixed on purpose —
+[styling.md rule 4](../styling.md) draws that line. Measured porting cost of the
+prefix, and the reasoning:
+[color-manager.md](support/color-manager.md#every-emitted-custom-property-carries-the---sy--prefix).
+
 ### Namespace segments
 
 Segments carry over from Filament **verbatim** — `Components\`, `Enums\`,
@@ -147,6 +162,25 @@ A migrating user importing `Filament\Schemas\Components\Utilities\Get` will
 not find it by prefix swap alone, which is why these are recorded here rather
 than left to the verbatim rule.
 
+The colour tier leaves `View\` for the same reason, and is the one place the
+`View\` → `Twig\` translation above is deliberately **not** applied:
+
+| Filament | Sylament | Holds |
+| --- | --- | --- |
+| `Filament\Support\View\Components\` (the policy objects) | `Sylament\Support\Colors\Components\` | `BadgeComponent`, `ButtonComponent`, … — the per-element contrast policies |
+| `Filament\Support\View\Components\ColorMaps\` | `Sylament\Support\Colors\Maps\` | `ComponentColorMap` and the two specialised resolvers |
+| `Filament\Support\View\Components\Contracts\` | `Sylament\Support\Colors\Contracts\` | `HasColor` (the `getColorMap()` one) and `HasDefaultGrayColor` |
+| `Filament\Schemas\View\Components\` | `Sylament\Schemas\Colors\Components\` | schemas' `TextComponent` and `IconComponent` |
+
+`Sylament\Support\Twig\Components\` — where the translation would have put
+them — already means a class-backed **renderable** Twig component, the shape
+actions' `Modals` has. A colour policy is never rendered and has no template, so
+it is filed by capability at `src/` level like `Evaluation\Invoker` and
+`Configuration\ComponentManager`. Class names, including the nesting
+(`DropdownComponent\ItemComponent`), are Filament-verbatim; only the leading
+segments move. Detail:
+[color-policies.md](support/color-policies.md#the-tier-is-filed-under-colors-not-under-twigcomponents).
+
 Support-level traits split by **who composes them**, so
 `Filament\Support\Concerns\` has two destinations:
 
@@ -158,10 +192,12 @@ Support-level traits split by **who composes them**, so
 `EvaluatesClosures` stays at root against that rule for a reason that is
 checkable in Filament rather than a matter of taste: of its three direct
 importers there, two — `Colors\ColorManager` and `TimezoneManager` — are plain
-manager classes, not components. Sylament will have the same non-component
-consumers once colors are ported, and `Sylament\Support\Colors\ColorManager`
-importing `Support\Components\Concerns\EvaluatesClosures` would be wrong. The
-move is cheap to make later and breaking to reverse, so it waits.
+manager classes, not components. That is no longer a prediction:
+[`Sylament\Support\Colors\ColorManager`](../../packages/support/src/Colors/ColorManager.php)
+composes the trait today, to evaluate a `Closure` palette registration, and it is
+not a component — so a trait under `Support\Components\Concerns\` would be the
+wrong import. The hold stands on a real consumer now rather than on Filament's,
+and moves only if that consumer goes away.
 
 One trait moves **down a package** for the same who-composes-it reason, except
 that here the layering forces it rather than merely suggesting it:
@@ -192,8 +228,13 @@ have. Nothing to rename from, so they are listed rather than mapped.
 
 ## Divergences
 
-Deliberate deviations from Filament's `make()` mechanics, applying to every
-ported component — permanent, and the reason they hold.
+Deliberate deviations that are **global** rather than component-local —
+permanent, and the reason they hold. A divergence constraining one component
+lives in that component's file, per
+[the placement rule](README.md#divergences-are-addressable); what earns a heading
+here is a decision every ported component inherits. The first two are the
+`make()` mechanics; the rest came with the colour registry, and each states the
+decision and links the write-up rather than repeating it.
 
 ### `make()` arguments move from constructors to setters
 
@@ -213,3 +254,45 @@ removes the constructor entirely so a user subclass can declare its own
 constructor dependencies, autowired through
 [`ComponentResolver`](support/component.md#newinstance-routes-every-make-through-a-locator).
 This is the entire point of the mechanism.
+
+### The shipped stylesheet keeps a palette floor, so nothing has to be called
+
+Filament's compiled `theme.css` defines **no** palette values — every colour on
+a Filament page comes from the `@filamentStyles` directive at runtime. Sylament
+keeps the six default palettes in `index.css`, and
+`ColorExtension::sylamentStyles()` emits only what a consumer registered on top,
+returning an empty string when that is nothing.
+
+Filament can require the directive because its panel owns the page layout and its
+scaffolding generates one containing it. Sylament has neither and embeds into an
+app it does not control, where a forgotten call would render every component
+colourless with no error. The cost is that the six palettes exist in both PHP and
+CSS, which
+[`CssPaletteFloorTest`](../../packages/support/tests/Architecture/CssPaletteFloorTest.php)
+exists to make safe. Detail:
+[color-manager.md](support/color-manager.md#sylamentstyles-emits-only-the-delta-over-the-shipped-css-floor).
+
+### `info` defaults to Indigo, and the default palettes were chosen by measurement
+
+`ColorManager::DEFAULT_COLORS` is Filament's, with one entry changed: `info` is
+Indigo where Filament uses Blue. Blue fails the filled button's hover state in
+both light and dark mode at 3.74:1; Indigo clears all four states. `primary`
+stays Filament's Amber — which also clears all four — and, as in Filament,
+`warning` is Amber too, so the two render identically.
+
+This is a global divergence rather than a button-local one because every
+component measures against these palettes. Full measurements, including the two
+danger states that still fail and why they are pinned rather than fixed:
+[color-manager.md](support/color-manager.md#info-defaults-to-indigo-where-filament-uses-blue).
+
+### A palette registered shade by shade must fill the shade grid exactly
+
+Filament accepts any palette shape and fails later — silently for an empty one,
+with a crash inside a policy for a sparse one, and invisibly for a shade off the
+grid, which emits a class no stylesheet defines. Sylament checks every explicit
+palette against `ColorManager::SHADES` on the way in and throws an
+`InvalidArgumentException` naming the palette and what is wrong, whether the
+palette came from `sylament.colors`, from `register()`, or inline from
+`->color([...])`. The corollary is that Filament's int-valued **shade aliases**
+(`950 => 900`) are not accepted. Detail:
+[color-manager.md](support/color-manager.md#a-registered-palette-must-fill-the-shade-grid-exactly).

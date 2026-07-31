@@ -76,7 +76,7 @@ it('renders a url action as a link without mount wiring', function (): void {
 it('renders an outlined button', function (): void {
     $html = renderAction(Action::make('delete')->outlined());
 
-    expect($html)->toContain('class="sy sy-btn sy-size-md sy-color sy-color-primary sy-text-color-700 dark:sy-text-color-500 sy-ac sy-outlined"')
+    expect($html)->toContain('class="sy sy-btn sy-outlined sy-size-md sy-color sy-color-primary sy-text-color-700 dark:sy-text-color-500 sy-ac"')
         ->not->toContain('sy-bg-color-');
 });
 

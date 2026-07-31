@@ -21,6 +21,7 @@ class AttributeExtension extends AbstractExtension
                 'is_safe' => ['html'],
             ]),
             new TwigFunction('classes', $this->getClassTokens(...)),
+            new TwigFunction('styles', $this->getStyleDeclarations(...)),
         ];
     }
 
@@ -57,5 +58,10 @@ class AttributeExtension extends AbstractExtension
     public function getClassTokens(mixed ...$classes): string
     {
         return implode(' ', ComponentAttributeBag::toTokenList($classes));
+    }
+
+    public function getStyleDeclarations(mixed ...$styles): string
+    {
+        return implode('; ', ComponentAttributeBag::toDeclarationList($styles));
     }
 }

@@ -19,11 +19,11 @@
 {% set iconHtml = icon ? generateIconHtml(icon, iconAlias, size: iconSize) : null %}
 
 <{{ tag }}
-    {{ attributes.defaults({
+    {{ attributes.without('style').defaults({
         class: classes('sy sy-dropdown-item', {
             'sy-disabled': disabled,
         }, colorAttrs.class),
-        style: colorAttrs.style|join('; ') ?: false,
+        style: styles(colorAttrs.style, attributes.all.style ?? null) ?: false,
         'aria-disabled': disabled ? 'true' : false,
         disabled: disabled and tag == 'button',
         form: formId ?: false,

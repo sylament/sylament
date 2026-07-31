@@ -10,6 +10,8 @@ use Twig\Extension\AbstractExtension;
 use Twig\Markup;
 use Twig\TwigFunction;
 
+use function Sylament\Support\blank;
+
 class ColorExtension extends AbstractExtension
 {
     public function __construct(
@@ -37,6 +39,10 @@ class ColorExtension extends AbstractExtension
      */
     public function colorAttributes(string $policy, string|array|null $color): array
     {
+        if (blank($color)) {
+            return ['class' => [], 'style' => []];
+        }
+
         if (is_array($color)) {
             return [
                 'class' => ['sy-color'],

@@ -7,12 +7,13 @@ namespace Sylament\Support\Tests\Unit\Twig\Extension;
 use RuntimeException;
 use Sylament\Support\Twig\Extension\AttributeExtension;
 
-it('registers the attrs and classes functions', function (): void {
+it('registers the attrs, classes and styles functions', function (): void {
     $functions = new AttributeExtension()->getFunctions();
 
-    expect($functions)->toHaveCount(2)
+    expect($functions)->toHaveCount(3)
         ->and($functions[0]->getName())->toBe('attrs')
-        ->and($functions[1]->getName())->toBe('classes');
+        ->and($functions[1]->getName())->toBe('classes')
+        ->and($functions[2]->getName())->toBe('styles');
 });
 
 it('attrs renders a single source through the attribute bag', function (): void {
@@ -54,4 +55,21 @@ it('classes resolves strings and conditional maps into a joined class string', f
     $classes = new AttributeExtension()->getClassTokens('sy sy-sc', ['on' => true, 'off' => false], null);
 
     expect($classes)->toBe('sy sy-sc on');
+});
+
+it('styles joins declaration lists, property maps and raw strings in source order', function (): void {
+    $styles = new AttributeExtension()->getStyleDeclarations(
+        ['--sy-color-50: oklch(0.9 0.1 90)', '--sy-text: var(--sy-color-700)'],
+        ['margin' => '0'],
+        'padding: 1rem; gap: 2px',
+        null,
+    );
+
+    expect($styles)->toBe('--sy-color-50: oklch(0.9 0.1 90); --sy-text: var(--sy-color-700); margin: 0; padding: 1rem; gap: 2px');
+});
+
+it('styles keeps a semicolon inside a function call out of the split', function (): void {
+    $styles = new AttributeExtension()->getStyleDeclarations('background: url("a;b.png")');
+
+    expect($styles)->toBe('background: url("a;b.png")');
 });

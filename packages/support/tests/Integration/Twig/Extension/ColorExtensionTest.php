@@ -37,6 +37,20 @@ it('returns nothing for a null colour', function (): void {
         ->toBe(['class' => [], 'style' => []]);
 });
 
+it('returns nothing for an empty palette rather than indexing a shade that is not there', function (): void {
+    $extension = $this::getContainer()->get(ColorExtension::class);
+
+    expect($extension->colorAttributes(BadgeComponent::class, []))
+        ->toBe(['class' => [], 'style' => []]);
+});
+
+it('rejects a partial inline palette', function (): void {
+    $extension = $this::getContainer()->get(ColorExtension::class);
+
+    expect(fn (): array => $extension->colorAttributes(BadgeComponent::class, [50 => Color::Amber[50]]))
+        ->toThrow(InvalidArgumentException::class, 'is missing the shades [100, 200, 300, 400, 500, 600, 700, 800, 900, 950].');
+});
+
 it('emits an empty style block when nothing is registered', function (): void {
     $extension = $this::getContainer()->get(ColorExtension::class);
 

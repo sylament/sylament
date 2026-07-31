@@ -10,8 +10,7 @@ use Sylament\Support\Colors\Color;
  * Covers the support-level `<twig:SylamentSupport:Badge>` primitive. It lives in
  * the actions suite because only a kernel that registers TwigComponentBundle
  * exercises the support Twig components, and actions is where its consumers are.
- */
-/**
+ *
  * @param array<string, mixed> $context
  */
 function renderBadge(string $template, array $context = []): string
@@ -105,4 +104,19 @@ it('carries an arbitrary palette as inline variables instead of a swap class', f
         ->toContain('--sy-color-50: ' . Color::Amber[50])
         ->toContain('--sy-color-950: ' . Color::Amber[950])
         ->toContain('--sy-text: var(--sy-color-700); --sy-dark-text: var(--sy-color-400)');
+});
+
+it('appends a caller style to the palette instead of letting it replace the whole attribute', function (): void {
+    $html = renderBadge(
+        '<twig:SylamentSupport:Badge :color="palette" style="margin: 0">Overdue</twig:SylamentSupport:Badge>',
+        ['palette' => Color::Amber],
+    );
+
+    expect($html)->toContain('--sy-color-50: ' . Color::Amber[50])
+        ->toContain('--sy-dark-text: var(--sy-color-400); margin: 0"');
+});
+
+it('keeps a caller style on a named colour that emits no palette of its own', function (): void {
+    expect(renderBadge('<twig:SylamentSupport:Badge color="danger" style="margin: 0">Overdue</twig:SylamentSupport:Badge>'))
+        ->toContain('style="margin: 0"');
 });

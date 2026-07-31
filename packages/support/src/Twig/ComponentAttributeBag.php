@@ -232,7 +232,7 @@ class ComponentAttributeBag
     /**
      * @return list<string>
      */
-    private static function toDeclarationList(mixed $value): array
+    public static function toDeclarationList(mixed $value): array
     {
         if (is_string($value)) {
             return self::splitStyleDeclarations($value)

@@ -36,9 +36,10 @@
     extraOverlayAttributes = {}
 %}
 
-{% set iconColorName = iconColor is iterable or iconColor is empty ? 'gray' : iconColor %}
+{% set iconColorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\ModalComponent\\IconComponent', iconColor) %}
 {% set iconHtml = generateIconHtml(icon, iconAlias, {
-    class: iconColorName != 'gray' ? ['sy-color', 'sy-color-' ~ iconColorName] : [],
+    class: iconColorAttrs.class,
+    style: iconColorAttrs.style,
 }, 'lg') %}
 
 {% set hasIcon = iconHtml is not empty %}

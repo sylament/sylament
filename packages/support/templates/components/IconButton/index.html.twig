@@ -23,13 +23,13 @@
 {% set ariaLabel = (label ?? '')|striptags|trim %}
 
 <{{ tag }}
-    {{ attributes.defaults({
+    {{ attributes.without('style').defaults({
         class: classes('sy sy-icon-btn', {
             'sy-disabled': disabled,
             ('sy-size-' ~ sizeValue): sizeValue in knownSizes,
             (sizeValue ?? ''): sizeValue is not empty and sizeValue not in knownSizes,
         }, colorAttrs.class),
-        style: colorAttrs.style|join('; ') ?: false,
+        style: styles(colorAttrs.style, attributes.all.style ?? null) ?: false,
         'aria-disabled': disabled ? 'true' : false,
         'aria-label': ariaLabel != '' ? ariaLabel : false,
         disabled: disabled and tag == 'button',

@@ -30,7 +30,7 @@
 {% set ariaLabel = labelSrOnly ? (content ?? '')|striptags|trim : null %}
 
 <{{ tag }}
-    {{ attributes.defaults({
+    {{ attributes.without('style').defaults({
         class: classes('sy sy-link', {
             'sy-disabled': disabled,
             ('sy-size-' ~ sizeValue): sizeValue in knownSizes,
@@ -38,7 +38,7 @@
             ('sy-font-' ~ weightValue): weightValue in knownWeights,
             (weightValue ?? ''): weightValue is not empty and weightValue not in knownWeights,
         }, colorAttrs.class),
-        style: colorAttrs.style|join('; ') ?: false,
+        style: styles(colorAttrs.style, attributes.all.style ?? null) ?: false,
         'aria-disabled': disabled ? 'true' : false,
         'aria-label': ariaLabel ?: false,
         disabled: disabled and tag == 'button',

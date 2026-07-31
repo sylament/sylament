@@ -53,7 +53,7 @@ it('applies a semantic color', function (): void {
 
 it('resolves an outlined button against the page surface instead of its own background', function (): void {
     expect(renderButton('<twig:SylamentSupport:Button color="danger" :outlined="true">Delete</twig:SylamentSupport:Button>'))
-        ->toContain('class="sy sy-btn sy-size-md sy-color sy-color-danger sy-text-color-600 dark:sy-text-color-300"');
+        ->toContain('class="sy sy-btn sy-outlined sy-size-md sy-color sy-color-danger sy-text-color-600 dark:sy-text-color-300"');
 });
 
 it('renders a leading icon', function (): void {

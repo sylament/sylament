@@ -26,7 +26,7 @@
     : stimulus_action('live', 'action', parameters: clickParameters) %}
 
 {% set extraAttributes = component.getExtraAttributeBag.toScalarAttributes %}
-{% set rootClasses = classes('sy-ac', {'sy-outlined': component.isOutlined}, extraAttributes.class ?? null) %}
+{% set rootClasses = classes('sy-ac', extraAttributes.class ?? null) %}
 {% set extraAttributes = extraAttributes|filter((value, name) => name != 'class') %}
 
 <twig:SylamentSupport:Button

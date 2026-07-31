@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions\Tests\Integration\Components;
 
 use Sylament\Actions\Action;
+use Sylament\Support\Colors\Color;
 
 /**
  * Covers the support-level native-`<dialog>` `<twig:SylamentSupport:Modal>`
@@ -80,6 +81,16 @@ it('renders no icon color classes for a gray icon', function (): void {
     expect(renderModal('<twig:SylamentSupport:Modal id="m" heading="H" icon="heroicons:x-mark" iconColor="gray" />'))
         ->toContain('<svg')
         ->not->toContain('sy-color');
+});
+
+it('carries an arbitrary icon palette as inline variables instead of a swap class', function (): void {
+    $html = renderModal(
+        '<twig:SylamentSupport:Modal id="m" heading="H" icon="heroicons:x-mark" :iconColor="palette" />',
+        ['palette' => Color::Amber],
+    );
+
+    expect($html)->toContain('class="sy sy-icon sy-size-lg sy-color"')
+        ->toContain('--sy-color-500: ' . Color::Amber[500]);
 });
 
 it('renders the close button by default inside the header', function (): void {

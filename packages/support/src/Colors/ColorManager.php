@@ -174,6 +174,8 @@ class ColorManager
             return $this->componentCustomStyles[$componentKey][$colorKey];
         }
 
+        $this->assertCompletePalette($color, sprintf('The color palette passed to [%s]', $componentKey));
+
         $map = $this->resolveComponent($component)->getColorMap($color);
 
         return $this->componentCustomStyles[$componentKey][$colorKey] = [
@@ -191,25 +193,36 @@ class ColorManager
     }
 
     /**
-     * Both arms throw rather than degrade, because neither shape fails where anyone would look for
-     * it. A palette missing grid shades still renders: `Color::findShade()` walks whatever it is
-     * handed and settles on another shade or on the declared fallback. A shade off the grid
-     * renders nothing at all, since the `sy-*-color-{shade}` utilities and the
-     * `--color-color-{shade}` theme entries that read it are hand-written one per step.
-     *
-     * A palette generated from a colour string carries the whole grid, so only an explicitly
-     * listed one can fail either check.
-     *
      * @param array<int, string> $palette
      * @return array<int, string>
      */
     protected function normalizePalette(string $name, array $palette): array
     {
+        $this->assertCompletePalette($palette, sprintf('The color palette [%s]', $name));
+
+        return array_map(Color::convertToOklch(...), $palette);
+    }
+
+    /**
+     * Both shapes throw rather than degrade, because neither fails where anyone would look for it.
+     * A palette missing grid shades either renders — `Color::findShade()` walks whatever it is
+     * handed and settles on another shade or on the declared fallback — or dies inside a policy
+     * reading a shade that is not there. A shade off the grid renders nothing at all, since the
+     * `sy-*-color-{shade}` utilities and the `--color-color-{shade}` theme entries that read it
+     * are hand-written one per step.
+     *
+     * A palette generated from a colour string carries the whole grid, so only a palette written
+     * out shade by shade — registered or passed inline to `color()` — can fail either check.
+     *
+     * @param array<int, string> $palette
+     */
+    protected function assertCompletePalette(array $palette, string $subject): void
+    {
         foreach (array_keys($palette) as $shade) {
             if (!in_array($shade, static::SHADES, true)) {
                 throw new InvalidArgumentException(sprintf(
-                    'The color palette [%s] carries the shade [%s], which is outside the shade grid [%s].',
-                    $name,
+                    '%s carries the shade [%s], which is outside the shade grid [%s].',
+                    $subject,
                     $shade,
                     implode(', ', static::SHADES),
                 ));
@@ -220,13 +233,11 @@ class ColorManager
 
         if ($missingShades !== []) {
             throw new InvalidArgumentException(sprintf(
-                'The color palette [%s] is missing the shades [%s].',
-                $name,
+                '%s is missing the shades [%s].',
+                $subject,
                 implode(', ', $missingShades),
             ));
         }
-
-        return array_map(Color::convertToOklch(...), $palette);
     }
 
     /**

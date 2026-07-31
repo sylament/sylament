@@ -148,12 +148,30 @@ it('emits only the base classes when the map is empty', function (): void {
 });
 
 it('strips characters that could escape a style attribute', function (): void {
-    $styles = colorManager()->getComponentCustomStyles(EmptyMapPolicy::class, [
-        50 => 'oklch(0.9 0.1 90)',
-        900 => '"; background: url(evil)',
-    ]);
+    $styles = colorManager()->getComponentCustomStyles(
+        EmptyMapPolicy::class,
+        array_replace(Color::Amber, [900 => '"; background: url(evil)']),
+    );
 
     expect(implode('; ', $styles))->not->toContain('url(evil)');
+});
+
+it('rejects an inline palette missing standard shades', function (): void {
+    expect(fn (): array => colorManager()->getComponentCustomStyles(EmptyMapPolicy::class, [50 => Color::Amber[50]]))
+        ->toThrow(
+            InvalidArgumentException::class,
+            'The color palette passed to [' . EmptyMapPolicy::class . '] is missing the shades [100, 200, 300, 400, 500, 600, 700, 800, 900, 950].',
+        );
+});
+
+it('rejects an inline palette shade outside the grid', function (): void {
+    expect(fn (): array => colorManager()->getComponentCustomStyles(
+        EmptyMapPolicy::class,
+        array_replace(Color::Amber, [555 => Color::Amber[500]]),
+    ))->toThrow(
+        InvalidArgumentException::class,
+        'The color palette passed to [' . EmptyMapPolicy::class . '] carries the shade [555], which is outside the shade grid [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].',
+    );
 });
 
 it('emits inline variables for a custom palette', function (): void {

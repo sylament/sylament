@@ -1,7 +1,7 @@
 # ComponentAttributeBag (support)
 
 `Sylament\Support\Twig\ComponentAttributeBag` — the HTML attribute container
-behind the `attrs()` / `classes()` Twig functions
+behind the `attrs()` / `classes()` / `styles()` Twig functions
 ([`AttributeExtension`](../../../packages/support/src/Twig/Extension/AttributeExtension.php)),
 Sylament's replacement for Twig's `html_attr()`. It ports Filament's
 `ComponentAttributeBag`, but where Filament subclasses Laravel's
@@ -95,7 +95,7 @@ systematic translation recorded there, not a per-item divergence._
 Filament's bag stores raw attribute values and normalizes class/style lazily
 inside `class()`/`style()`/`merge()`. Sylament normalizes once in the constructor:
 `class` becomes a flat token list and `style` a declaration list (via the public
-`toTokenList()` and private `toDeclarationList()`/`splitStyleDeclarations()`), and
+`toTokenList()`/`toDeclarationList()` and private `splitStyleDeclarations()`), and
 the instance is never mutated in place — `merge()` returns a new bag. This keeps
 one canonical shape (`getAttributes()` always returns lists for class/style) that
 both the renderer and the `classes()` Twig function read, and lets the
@@ -144,20 +144,21 @@ _See also: the [rename table](../renames.md) — Blade→Twig (`view()` →
 `template()`) and `Htmlable`→`Markup` are the systematic escaping-contract
 translation this renderer implements._
 
-### Fluent `class()` and `style()` are replaced by the `attrs()` and `classes()` Twig functions
+### Fluent `class()` and `style()` are replaced by the `attrs()`, `classes()` and `styles()` Twig functions
 
 Filament templates call `$attributes->class([...])` / `->style([...])` to append
 tokens fluently. Sylament exposes no such mutators on the bag; templates compose
 attributes through
 [`AttributeExtension`](../../../packages/support/src/Twig/Extension/AttributeExtension.php)
 instead — `attrs(...sources)` merges source maps left-to-right (class/style
-appending, later scalars winning) and `classes(...)` builds a joined token string
-for the one sink (ux-twig-component's `attributes.defaults()`) that string-casts
-its value. Both delegate to the same `ComponentAttributeBag` normalization, so
-there is one class-token implementation rather than a fluent PHP path and a
-separate Twig path.
+appending, later scalars winning), and `classes(...)`/`styles(...)` build a joined
+token and declaration string for the one sink (ux-twig-component's
+`attributes.defaults()`) that string-casts its value. All three delegate to the
+same `ComponentAttributeBag` normalization, so there is one class-token and one
+declaration-list implementation rather than a fluent PHP path and a separate Twig
+path.
 
-Two contracts of those functions that the PHP signatures cannot state:
+Three contracts of those functions that the PHP signatures cannot state:
 
 - **`attrs()` skips falsy sources and throws on any other string.** `null`,
   `false`, and `''` are silently skipped so a template can pass the implicit else
@@ -170,3 +171,13 @@ Two contracts of those functions that the PHP signatures cannot state:
   `ArrayIterator` as an attribute value, so returning a joined string keeps that
   path clean. `attrs()` re-splits such a string on `class`, so the same value is
   still usable there.
+- **`styles()` exists because `attributes.defaults()` appends `class` but
+  replaces `style`.** ux-twig-component's bag concatenates only `class`,
+  `data-controller` and `data-action`
+  ([`ComponentAttributes::defaults()`](../../../vendor/symfony/ux-twig-component/src/ComponentAttributes.php)),
+  so a caller-supplied `style` would overwrite a component's own — silently
+  wiping the inline colour palette while leaving `sy-color` on the element. The
+  templates that emit a palette therefore call
+  `attributes.without('style').defaults({style: styles(ours, attributes.all.style ?? null)})`:
+  ours first, the caller's second, so the caller still wins per property the way
+  CSS ordering says it should.

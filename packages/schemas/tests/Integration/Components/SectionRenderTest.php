@@ -9,6 +9,7 @@ use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
+use Sylament\Support\Colors\Color;
 use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Enums\IconSize;
 use Twig\Markup;
@@ -411,6 +412,13 @@ it('marks the icon with the dynamic color classes for a palette', function (): v
     $html = renderSection(Section::make('Heading')->icon('heroicons:x-mark')->iconColor('danger'));
 
     expect($html)->toContain('class="sy sy-icon sy-size-lg sy-color sy-color-danger"');
+});
+
+it('carries an arbitrary icon palette as inline variables instead of a swap class', function (): void {
+    $html = renderSection(Section::make('Heading')->icon('heroicons:x-mark')->iconColor(Color::Amber));
+
+    expect($html)->toContain('class="sy sy-icon sy-size-lg sy-color"')
+        ->toContain('--sy-color-500: ' . Color::Amber[500]);
 });
 
 it('applies no color classes for the default or explicit gray icon color', function (): void {

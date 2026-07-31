@@ -26,13 +26,13 @@
 {% set ariaLabel = labelSrOnly ? (content ?? '')|striptags|trim : null %}
 
 <{{ tag }}
-    {{ attributes.defaults({
+    {{ attributes.without('style').defaults({
         class: classes('sy sy-badge', {
             'sy-disabled': disabled,
             ('sy-size-' ~ sizeValue): sizeValue in knownSizes,
             (sizeValue ?? ''): sizeValue is not empty and sizeValue not in knownSizes,
         }, colorAttrs.class),
-        style: colorAttrs.style|join('; ') ?: false,
+        style: styles(colorAttrs.style, attributes.all.style ?? null) ?: false,
         'aria-disabled': disabled ? 'true' : false,
         'aria-label': ariaLabel ?: false,
         disabled: disabled and tag == 'button',

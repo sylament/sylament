@@ -8,16 +8,20 @@
 
 .sy-fo-toggle-track {
     @apply flex h-6 w-11 cursor-pointer items-center rounded-full bg-gray-200 p-0.5 transition duration-75 dark:bg-white/10;
+
+    /* Clearing the three slots the checked rules below read stops an off colour set on
+       `.sy-fo-toggle` reaching them by inheritance: a colour name the registry does not know still
+       emits the `.sy-color` marker that gates them, with no slot classes of its own to shadow the
+       wrapper's. A registered on colour is unaffected — these declarations are in the `components`
+       layer, which `index.css` orders below the `utilities` one `sy-bg-color-*` lives in. */
+    --sy-bg: initial;
+    --sy-dark-bg: initial;
+    --sy-text: initial;
 }
 
-.sy-fo-toggle-input:checked ~ .sy-fo-toggle-track {
-    @apply bg-primary-600 dark:bg-primary-500;
-}
-
-/* The off colour sits on `.sy-fo-toggle` and the on colour on the track inside it, so the two
-   sets of slot variables never collide. The track's own `--sy-bg` shadows the wrapper's for
-   everything below it, which is why the off slots are read here under an alias the track leaves
-   alone. */
+/* The off colour sits on `.sy-fo-toggle` and the on colour on the track inside it, because both
+   name the same slots. The wrapper's are aliased here into names the track never redeclares, since
+   the unchecked rules read them from the track. */
 .sy-fo-toggle.sy-color {
     --sy-off-bg: var(--sy-bg);
     --sy-off-dark-bg: var(--sy-dark-bg);
@@ -49,7 +53,7 @@
 }
 
 .sy-fo-toggle-input:checked ~ .sy-fo-toggle-track .sy-fo-toggle-thumb {
-    @apply translate-x-5 text-primary-600;
+    @apply translate-x-5;
 }
 
 .sy-fo-toggle.sy-color .sy-fo-toggle-input:not(:checked) ~ .sy-fo-toggle-track .sy-fo-toggle-thumb {

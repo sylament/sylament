@@ -53,8 +53,9 @@ post-hoc message, `required()` building `NotNull` and validating an off switch,
 against a real validator run, which the `.sy-fo-toggle-input[aria-invalid='true']`
 ring depends on), the deliberately missing `required` attribute, and the two
 colours landing on the elements that carry them — the resolved class list for a
-named palette, the inline `--sy-color-*` declarations for an array one, and
-nothing at all for an unset colour or gray.
+named palette, the inline `--sy-color-*` declarations for an array one, primary
+on the track and nothing on the root when neither is set, and nothing at all for
+gray.
 
 ## Details
 
@@ -145,18 +146,41 @@ colour it resolved, so the second set would overwrite the first.
 The off colour therefore lands on the control root (`.sy-fo-toggle`) and the on
 colour on the track inside it. Every rule in
 [`toggle.css`](../../../packages/forms/assets/src/styles/components/toggle.css)
-is gated on the `.sy-color` marker of the element carrying *its* colour, so
-neither branch can fire on the colour the other one set. Because the track
-re-declares `--sy-bg` for everything below it, the root's slots are aliased once
-into `--sy-off-*`, which the track leaves alone; the unchecked rules read those.
+that paints a *configured* colour is gated on the `.sy-color` marker of the
+element carrying its own — what the ungated rules paint (the base track, the
+thumb, the focus and invalid rings, the disabled state, the icon swap) neither
+setter can reach.
 
-Neither getter defaults. Filament falls back to `'gray'` off and `'primary'` on
-before resolving, which for gray resolves to nothing anyway
+Gating on the marker is necessary but not sufficient, because slot *variables*
+inherit where classes do not, and a colour name the registry does not know still
+gets the marker:
+[`ColorManager::getComponentClasses()`](../../../packages/support/src/Colors/ColorManager.php)
+returns `.sy-color` plus the swap class and stops there, so the element degrades
+to inheriting rather than silently rendering primary. Two declarations close that
+gap. The root's slots are aliased once into `--sy-off-*`, which nothing below
+redeclares, so the unchecked rules can read them off the track. And the track
+clears the three slots it reads, so one marked `.sy-color` by an unknown name
+resolves them to the guaranteed-invalid value rather than to whatever the off
+colour set on the root — without the clear,
+`->offColor('danger')->onColor('nonsense')` paints the *off* colour on the
+checked track. The clear cannot swallow a real on colour, because
+[`forms/index.css`](../../../packages/forms/assets/src/styles/index.css) imports
+this stylesheet into the `components` layer and support's
+[`index.css`](../../../packages/support/assets/src/styles/index.css) orders that
+below the `utilities` layer holding `sy-bg-color-*`; an array palette arrives as
+an inline style and outranks both.
+
+Both getters return `null` when unset, as Filament's do; the template supplies
+Filament's `'gray'` off and `'primary'` on fallbacks at the point Filament's
+`toEmbeddedHtml()` does. Gray resolves to no classes at all
 ([`ToggleComponent`](../../../packages/support/src/Colors/Components/ToggleComponent.php)
-implements `HasDefaultGrayColor`). Here an unset colour emits no classes at all
-and the stylesheet's own uncoloured branch — the `bg-gray-200` track and the
-`bg-primary-600` checked track it already shipped — is what renders, so the
-default appearance is unchanged.
+implements `HasDefaultGrayColor`), so the unchecked track keeps the stylesheet's
+`bg-gray-200`, and the checked track is painted by primary's resolved slots
+instead of a hardcoded `bg-primary-600`. That hardcoding is what the fallback
+replaces: it fired on *any* uncoloured track, so an explicit `onColor('gray')`
+rendered an amber switch where Filament renders a gray one. Its dark half was
+hardcoded too, so a default checked toggle is now `primary-600` in dark mode —
+the shade the contrast map picks against `gray-700` — rather than `primary-500`.
 
 ### The boolean rule becomes a Type constraint
 

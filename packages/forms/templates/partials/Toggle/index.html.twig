@@ -1,6 +1,6 @@
 {% set controlTag = component.isInline ? 'span' : 'label' %}
-{% set offColorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\ToggleComponent', component.getOffColor) %}
-{% set onColorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\ToggleComponent', component.getOnColor) %}
+{% set offColorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\ToggleComponent', component.getOffColor ?? 'gray') %}
+{% set onColorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\ToggleComponent', component.getOnColor ?? 'primary') %}
 
 {% set control %}
     <{{ controlTag }} {{ attrs({

@@ -172,9 +172,16 @@ it('renders an array palette as inline custom properties beside the bare marker 
         ->toContain('--sy-bg: var(--sy-color-500); --sy-text: var(--sy-color-500); --sy-dark-bg: var(--sy-color-400)');
 });
 
-it('emits no colour classes without a colour, or for gray', function (): void {
-    expect(renderField(Toggle::make('isFeatured')))->not->toContain('sy-color')
-        ->and(renderField(Toggle::make('isFeatured')->onColor('gray')->offColor('gray')))->not->toContain('sy-color');
+it('falls back to gray off and primary on', function (): void {
+    $crawler = new Crawler(renderField(Toggle::make('isFeatured')));
+
+    expect($crawler->filter('span.sy-fo-toggle')->attr('class'))->toBe('sy-fo-toggle')
+        ->and($crawler->filter('span.sy-fo-toggle-track')->attr('class'))
+        ->toBe('sy-fo-toggle-track sy-color sy-color-primary sy-bg-color-600 sy-text-color-600 dark:sy-bg-color-600');
+});
+
+it('emits no colour classes for gray', function (): void {
+    expect(renderField(Toggle::make('isFeatured')->onColor('gray')->offColor('gray')))->not->toContain('sy-color');
 });
 
 it('builds a boolean Type constraint', function (): void {

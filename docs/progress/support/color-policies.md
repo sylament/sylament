@@ -231,6 +231,18 @@ through `Container::get()` at all, and the call site has only a class-string —
 there is no tag or locator to route it through, because the class-string comes
 from a Twig template, not from a compiled dependency.
 
+Resolving by service id makes **replacing a policy** an application-level
+extension point, and that is now a supported one rather than an accident of the
+wiring: an application redefining the service id gets its own `getColorMap()`
+everywhere the component renders, because Symfony re-applies application
+definitions after the extension merge
+(`MergeExtensionConfigurationPass::process()` captures them up front and calls
+`addDefinitions()` last). `Integration/Colors/PolicyOverrideTest` pins both
+halves — shipped behaviour in the default environment, substituted behaviour in
+`color_policy` — and fails if the globs stop being `->public()`. The
+consumer-facing write-up is
+[configuration.md](../../configuration.md#changing-how-a-component-picks-its-shades).
+
 Policies are autowired but **not** autoconfigured and carry no
 `sylament.component` tag: they are not `Component` subclasses and never go
 through `make()`.

@@ -158,6 +158,13 @@ Consumers never need Tailwind installed.
   painted at a shade that no longer suits it. Register it instead when the change
   is more than a nudge.
 - **Component tweaks**: target the `sy-` classes; consumer CSS is unlayered and wins.
+- **Shade choice**: replace a contrast policy by redefining its service id —
+  `ColorManager` resolves policies from the container by class-string, so an
+  application definition wins and applies everywhere that component renders. The
+  substitute must be `public` (the lookup is `Container::get()`), must return only
+  on-grid shades, and keeps `HasDefaultGrayColor` only if it declares it. Pinned by
+  `Integration/Colors/PolicyOverrideTest`; consumer-facing write-up in
+  [configuration.md](configuration.md#changing-how-a-component-picks-its-shades).
 - **Different markup**: override the bundle Twig template
   (`templates/bundles/Sylament<Pkg>Bundle/components/...`).
 - **Full custom design**: disable the stylesheet autoimport and style the `sy-` classes

@@ -152,6 +152,71 @@ Badge::make()->color([
 This needs no `sylamentStyles()` and no configuration, at the cost of repeating
 the map at every call site.
 
+### Changing how a component picks its shades
+
+Which shade a component paints with is decided by a **colour policy** — a small
+class that states what each part of the component needs, and lets a contrast
+search find a shade that satisfies it. A badge's policy says "the label must be
+readable against this palette's shade 50"; a button's says something more
+involved, because it has a filled background and hover states.
+
+If you disagree with a choice, replace the policy. `ColorManager` resolves
+policies from the container by class-string, so redefining that service id in
+your application swaps it everywhere the component is used:
+
+```yaml
+# config/services.yaml
+services:
+    Sylament\Support\Colors\Components\BadgeComponent:
+        class: App\Colors\MyBadgePolicy
+        autowire: true
+        public: true
+```
+
+```php
+namespace App\Colors;
+
+use Sylament\Support\Colors\Contracts\HasColor;
+use Sylament\Support\Colors\Contracts\HasDefaultGrayColor;
+use Sylament\Support\Colors\Maps\ComponentColorMap;
+
+final class MyBadgePolicy implements HasColor, HasDefaultGrayColor
+{
+    /**
+     * @param array<int, string> $color
+     * @return array<string, int>
+     */
+    public function getColorMap(array $color): array
+    {
+        return ComponentColorMap::make($color)
+            ->slot('text', surface: $color[50], minRatio: 7.0, fallback: 950)
+            ->get();
+    }
+}
+```
+
+Four things to know:
+
+- **`public: true` is required.** The lookup is `$container->get(SomeClass::class)`,
+  and a private service is not reachable that way. Sylament's own policies are
+  public for the same reason.
+- **The slot keys are a closed set**: `bg` and `text`, each also available as
+  `hover:`, `dark:` and `dark:hover:`. Any other key throws at render time.
+- **Return only on-grid shades** — 50 through 950, plus `0` for a text slot
+  meaning white. A shade like `150` produces a class with no CSS rule, so it
+  paints nothing and reports nothing.
+- **Drop `HasDefaultGrayColor` and gray becomes a real colour.** That marker is
+  what makes `->color('gray')` emit no colour classes at all, leaving the
+  component's own neutral styling to paint it.
+
+Buttons have two policies — `ButtonComponent` for filled and
+`OutlinedButtonComponent` for outlined — because text on a filled background and
+text on the page are different problems. Override both, or extend
+`ButtonComponent`, which the outlined one already does.
+
+This is global for that component type; the template names the policy, so it is
+not variable per instance. For a one-off, pass a shade array as above.
+
 ## Icons
 
 Sylament renders icons through [`symfony/ux-icons`](https://symfony.com/bundles/ux-icons/current/index.html),

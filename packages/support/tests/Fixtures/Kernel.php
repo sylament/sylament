@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Fixtures;
 
+use Sylament\Support\Colors\Components\BadgeComponent;
 use Sylament\Support\SylamentSupportBundle;
+use Sylament\Support\Tests\Fixtures\Colors\SubstituteBadgePolicy;
 use Sylament\Support\Twig\SupportIconAlias;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
@@ -57,5 +59,11 @@ class Kernel extends BaseKernel
                 ->autoconfigure()
             ->load('Sylament\\Support\\Tests\\Fixtures\\', __DIR__ . '/*')
                 ->exclude([__DIR__ . '/Kernel.php']);
+
+        if ($this->environment === 'color_policy') {
+            $container->services()
+                ->set(BadgeComponent::class, SubstituteBadgePolicy::class)
+                ->public();
+        }
     }
 }

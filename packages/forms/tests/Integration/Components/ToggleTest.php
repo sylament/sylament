@@ -7,6 +7,7 @@ namespace Sylament\Forms\Tests\Integration\Components;
 use Sylament\Forms\Components\Toggle;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Schemas\Schema;
+use Sylament\Support\Colors\Color;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotNull;
@@ -147,6 +148,33 @@ it('renders each icon span only for the setter that filled it', function (): voi
     expect($offOnly->filter('.sy-fo-toggle-icon-off')->count())->toBe(1)
         ->and($offOnly->filter('.sy-fo-toggle-icon-off svg')->count())->toBe(1)
         ->and($offOnly->filter('.sy-fo-toggle-icon-on')->count())->toBe(0);
+});
+
+it('resolves the on colour onto the track and the off colour onto the control', function (): void {
+    $crawler = new Crawler(renderField(
+        Toggle::make('isFeatured')->onColor('success')->offColor('danger'),
+    ));
+
+    expect($crawler->filter('span.sy-fo-toggle')->attr('class'))
+        ->toBe('sy-fo-toggle sy-color sy-color-danger sy-bg-color-500 sy-text-color-500 dark:sy-bg-color-400')
+        ->and($crawler->filter('span.sy-fo-toggle-track')->attr('class'))
+        ->toBe('sy-fo-toggle-track sy-color sy-color-success sy-bg-color-600 sy-text-color-600 dark:sy-bg-color-600');
+});
+
+it('renders an array palette as inline custom properties beside the bare marker class', function (): void {
+    $track = new Crawler(renderField(
+        Toggle::make('isFeatured')->onColor(Color::Rose),
+    ))->filter('span.sy-fo-toggle-track');
+
+    expect($track->attr('class'))->toBe('sy-fo-toggle-track sy-color')
+        ->and($track->attr('style'))
+        ->toContain('--sy-color-500: ' . Color::Rose[500])
+        ->toContain('--sy-bg: var(--sy-color-500); --sy-text: var(--sy-color-500); --sy-dark-bg: var(--sy-color-400)');
+});
+
+it('emits no colour classes without a colour, or for gray', function (): void {
+    expect(renderField(Toggle::make('isFeatured')))->not->toContain('sy-color')
+        ->and(renderField(Toggle::make('isFeatured')->onColor('gray')->offColor('gray')))->not->toContain('sy-color');
 });
 
 it('builds a boolean Type constraint', function (): void {

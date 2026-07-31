@@ -1,8 +1,11 @@
 {% set controlTag = component.isInline ? 'span' : 'label' %}
+{% set offColorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\ToggleComponent', component.getOffColor) %}
+{% set onColorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\ToggleComponent', component.getOnColor) %}
 
 {% set control %}
     <{{ controlTag }} {{ attrs({
-        class: 'sy-fo-toggle',
+        class: ['sy-fo-toggle', offColorAttrs.class],
+        style: offColorAttrs.style,
         for: component.isInline ? false : component.getId,
     }) }}>
         <input {{ attrs({
@@ -18,7 +21,10 @@
             autofocus: component.isAutofocused,
         }) }}>
 
-        <span class="sy-fo-toggle-track">
+        <span {{ attrs({
+            class: ['sy-fo-toggle-track', onColorAttrs.class],
+            style: onColorAttrs.style,
+        }) }}>
             <span class="sy-fo-toggle-thumb">
                 {% if component.hasOffIcon %}
                     <span class="sy-fo-toggle-icon-off"><twig:SylamentSupport:Icon :icon="component.getOffIcon" size="xs" /></span>

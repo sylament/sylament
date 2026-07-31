@@ -14,6 +14,24 @@
     @apply bg-primary-600 dark:bg-primary-500;
 }
 
+/* The off colour sits on `.sy-fo-toggle` and the on colour on the track inside it, so the two
+   sets of slot variables never collide. The track's own `--sy-bg` shadows the wrapper's for
+   everything below it, which is why the off slots are read here under an alias the track leaves
+   alone. */
+.sy-fo-toggle.sy-color {
+    --sy-off-bg: var(--sy-bg);
+    --sy-off-dark-bg: var(--sy-dark-bg);
+    --sy-off-text: var(--sy-text);
+}
+
+.sy-fo-toggle.sy-color .sy-fo-toggle-input:not(:checked) ~ .sy-fo-toggle-track {
+    @apply bg-(--sy-off-bg) dark:bg-(--sy-off-dark-bg);
+}
+
+.sy-fo-toggle-input:checked ~ .sy-fo-toggle-track.sy-color {
+    @apply bg-(--sy-bg) dark:bg-(--sy-dark-bg);
+}
+
 .sy-fo-toggle-input:focus-visible ~ .sy-fo-toggle-track {
     @apply ring-2 ring-primary-600 ring-offset-2 dark:ring-primary-500 dark:ring-offset-gray-900;
 }
@@ -32,6 +50,14 @@
 
 .sy-fo-toggle-input:checked ~ .sy-fo-toggle-track .sy-fo-toggle-thumb {
     @apply translate-x-5 text-primary-600;
+}
+
+.sy-fo-toggle.sy-color .sy-fo-toggle-input:not(:checked) ~ .sy-fo-toggle-track .sy-fo-toggle-thumb {
+    @apply text-(--sy-off-text);
+}
+
+.sy-fo-toggle-input:checked ~ .sy-fo-toggle-track.sy-color .sy-fo-toggle-thumb {
+    @apply text-(--sy-text);
 }
 
 .sy-fo-toggle-icon-on {

@@ -34,7 +34,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`HasToggleIcons`](../../../packages/forms/src/Components/Concerns/HasToggleIcons.php) | [`Concerns/HasToggleIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleIcons.php) | done | — | [diverges](#hastoggleicons-tests-for-null-not-truthiness) |
 | Error display (`aria-invalid` on the input) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](field.md#error-display-shows-every-message-for-the-path) |
 | `required()` — no attribute, and a `NotNull` constraint | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | done | — | [diverges](#required-means-presence-not-truth) |
-| `HasToggleColors` (`onColor()` / `offColor()`) | [`Concerns/HasToggleColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleColors.php) | blocked | the colour registry | [detail](#hastogglecolors-awaits-the-colour-registry) |
+| [`HasToggleColors`](../../../packages/forms/src/Components/Concerns/HasToggleColors.php) (`onColor()` / `offColor()`) | [`Concerns/HasToggleColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleColors.php) | done | — | [diverges](#the-two-colours-ride-on-two-elements) |
 | `CanFixIndistinctState` (`fixIndistinctState()`) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` + the distinct/live surface | [detail](#fixindistinctstate-awaits-the-repeater) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — | [detail](#the-alpine-attribute-concern-is-not-ported) |
 
@@ -51,24 +51,15 @@ off branches cannot pass for each other), the `bool` `Type` constraint and its
 post-hoc message, `required()` building `NotNull` and validating an off switch,
 `disabled` / `autofocus`, `aria-invalid` in both directions (the `true` case
 against a real validator run, which the `.sy-fo-toggle-input[aria-invalid='true']`
-ring depends on), and the deliberately missing `required` attribute.
+ring depends on), the deliberately missing `required` attribute, and the two
+colours landing on the elements that carry them — the resolved class list for a
+named palette, the inline `--sy-color-*` declarations for an array one, and
+nothing at all for an unset colour or gray.
 
 ## Details
 
 Specifics for rows that are not finished — what is in, what is left, the next
 step. Delete a subsection when its row flips to **done**.
-
-### HasToggleColors awaits the colour registry
-
-Filament's `onColor()` / `offColor()` resolve through
-`get_component_color_classes(ToggleComponent::class, …)`, a facade-backed
-registry mapping a colour name onto a class list. There is no colour registry in
-the port yet, so the toggle hardcodes primary-on / gray-off in
-[`toggle.css`](../../../packages/forms/assets/src/styles/components/toggle.css),
-exactly as `.sy-fo-input` hardcodes `ring-primary-600`. **Blocked**, not skipped:
-the trait is two setters and two getters and lands with the colour work, at which
-point the track and thumb rules take their colour from the resolved tokens
-instead of the literals.
 
 ### fixIndistinctState awaits the repeater
 
@@ -140,6 +131,32 @@ One implementation constraint the template must respect: Twig hoists
 its content regardless of the condition. The template therefore declares **both**
 the `labelPrefix` and `content` blocks unconditionally and puts the
 `component.isInline` test *inside* each; the "renders exactly once" tests pin it.
+
+### The two colours ride on two elements
+
+Filament resolves both colours in PHP and hands Alpine the two class lists,
+which `x-bind:class="state ? onClasses : offClasses"` swaps on the single
+`<button>`. This field ships no JavaScript, so both lists have to be in the
+markup at once — and they cannot share an element, because
+[`ColorManager::getComponentClasses()`](../../../packages/support/src/Colors/ColorManager.php)
+names the same slot variables (`--sy-bg`, `--sy-dark-bg`, `--sy-text`) whichever
+colour it resolved, so the second set would overwrite the first.
+
+The off colour therefore lands on the control root (`.sy-fo-toggle`) and the on
+colour on the track inside it. Every rule in
+[`toggle.css`](../../../packages/forms/assets/src/styles/components/toggle.css)
+is gated on the `.sy-color` marker of the element carrying *its* colour, so
+neither branch can fire on the colour the other one set. Because the track
+re-declares `--sy-bg` for everything below it, the root's slots are aliased once
+into `--sy-off-*`, which the track leaves alone; the unchecked rules read those.
+
+Neither getter defaults. Filament falls back to `'gray'` off and `'primary'` on
+before resolving, which for gray resolves to nothing anyway
+([`ToggleComponent`](../../../packages/support/src/Colors/Components/ToggleComponent.php)
+implements `HasDefaultGrayColor`). Here an unset colour emits no classes at all
+and the stylesheet's own uncoloured branch — the `bg-gray-200` track and the
+`bg-primary-600` checked track it already shipped — is what renders, so the
+default appearance is unchanged.
 
 ### The boolean rule becomes a Type constraint
 

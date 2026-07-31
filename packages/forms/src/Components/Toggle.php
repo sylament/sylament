@@ -7,6 +7,7 @@ namespace Sylament\Forms\Components;
 use Closure;
 use Sylament\Forms\Components\Concerns\CanBeAccepted;
 use Sylament\Forms\Components\Concerns\CanBeInline;
+use Sylament\Forms\Components\Concerns\HasToggleColors;
 use Sylament\Forms\Components\Concerns\HasToggleIcons;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
@@ -18,6 +19,7 @@ class Toggle extends Field
 {
     use CanBeAccepted;
     use CanBeInline;
+    use HasToggleColors;
     use HasToggleIcons;
 
     protected string|Closure|null $template = '@SylamentForms/partials/Toggle/index.html.twig';

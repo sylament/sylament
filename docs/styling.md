@@ -146,8 +146,10 @@ Consumers never need Tailwind installed.
   `:root` override for a redefined palette, a `.sy-color-<name>` swap class for a
   new one, and an empty string when nothing is registered. It is only needed for
   what you added — the six defaults ship in the stylesheet (rule 5). The
-  `Color::` constants are unreachable from YAML, so PHP-side registration stays
-  available by injecting `ColorManager` and calling
+  `Color::` catalog constants are reachable from YAML through Symfony's
+  `!php/const` tag (`rose: !php/const Sylament\Support\Colors\Color::Rose`), since
+  the DI YAML loader parses with `Yaml::PARSE_CONSTANT`; PHP-side registration
+  stays available too, by injecting `ColorManager` and calling
   `register(['primary' => Color::Rose])`.
 - **Theme tweaks**: override `--sy-*` custom properties (e.g. set `--sy-primary-600`)
   in their own CSS — no build step, no Tailwind. This changes what the token

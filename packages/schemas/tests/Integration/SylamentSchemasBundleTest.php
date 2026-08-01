@@ -6,6 +6,7 @@ namespace Sylament\Schemas\Tests\Integration;
 
 use Sylament\Schemas\Colors\Components\IconComponent;
 use Sylament\Schemas\Colors\Components\TextComponent;
+use Sylament\Schemas\State\RecordTypeReader;
 use Twig\Environment;
 
 it('exposes both colour policies on the public container', function (): void {
@@ -22,4 +23,9 @@ it('registers the renderSchema twig function', function (): void {
 
     expect($twig)->toBeInstanceOf(Environment::class)
         ->and($twig->getFunction('renderSchema'))->not->toBeFalse();
+});
+
+it('registers the record type reader', function (): void {
+    expect($this::getContainer()->get(RecordTypeReader::class))
+        ->toBeInstanceOf(RecordTypeReader::class);
 });

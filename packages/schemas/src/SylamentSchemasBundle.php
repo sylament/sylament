@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas;
 
 use Sylament\Schemas\State\PropertyAccessor;
+use Sylament\Schemas\State\RecordTypeReader;
 use Sylament\Schemas\Twig\Extension\SchemaExtension;
 use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -50,5 +51,15 @@ class SylamentSchemasBundle extends SylamentBundle
             ->set('sylament_schemas.property_accessor', PropertyAccessor::class)
             ->autowire()
             ->alias(PropertyAccessor::class, 'sylament_schemas.property_accessor');
+
+        // Not autowired: `PropertyTypeExtractorInterface` is only a service once the application
+        // enables `framework.property_info`, and the chained extractor it aliases reads PHPDoc
+        // ahead of the mutator. Leaving the argument unset pins the reflection-only extractor.
+        // The alias is public because no service references the reader, and an unreferenced
+        // private definition is removed when the container compiles.
+        $services
+            ->set('sylament_schemas.record_type_reader', RecordTypeReader::class)
+            ->alias(RecordTypeReader::class, 'sylament_schemas.record_type_reader')
+            ->public();
     }
 }

@@ -72,6 +72,27 @@ trait BelongsToRecord
         return isset($this->container) ? $this->getContainer()->getRecord() : null;
     }
 
+    /**
+     * This component's state path relative to the record — the root schema's own
+     * `statePath` prefix stripped, so it indexes the record graph rather than
+     * the host's state bag. Null when the component carries no path.
+     */
+    public function getRecordStatePath(): ?string
+    {
+        $path = $this->getStatePath();
+
+        if (! filled($path)) {
+            return null;
+        }
+
+        $rootPath = $this->getRootContainer()->getStatePath();
+        $prefix = filled($rootPath) ? $rootPath . '.' : '';
+
+        return ($prefix !== '' && str_starts_with($path, $prefix))
+            ? mb_substr($path, mb_strlen($prefix))
+            : $path;
+    }
+
     public function getRecordInstance(): ?object
     {
         $record = $this->evaluate($this->record);

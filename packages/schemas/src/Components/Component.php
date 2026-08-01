@@ -16,6 +16,7 @@ use Sylament\Schemas\Components\Concerns\HasGap;
 use Sylament\Schemas\Components\Concerns\HasHeadings;
 use Sylament\Schemas\Components\Concerns\HasId;
 use Sylament\Schemas\Components\Concerns\HasKey;
+use Sylament\Schemas\Components\Concerns\HasNullableBranch;
 use Sylament\Schemas\Components\Concerns\HasState;
 use Sylament\Schemas\Components\Concerns\HasStateBindingModifiers;
 use Sylament\Schemas\State\Get;
@@ -45,6 +46,7 @@ class Component extends ViewComponent
     use HasHeadings;
     use HasId;
     use HasKey;
+    use HasNullableBranch;
     use HasState;
     use HasStateBindingModifiers;
 

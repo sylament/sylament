@@ -99,15 +99,13 @@ trait BelongsToRecord
     /**
      * The record-relative dotted paths this schema maps, keyed to their leaf
      * components. Containers (components nesting path-bearing components)
-     * contribute their leaves, never themselves; the schema's own root state
-     * path is stripped.
+     * contribute their leaves, never themselves; the root state path prefix is
+     * stripped by {@see Component::getRecordStatePath()}.
      *
      * @return array<string, Component>
      */
     protected function getRecordPathMap(): array
     {
-        $rootPath = $this->getStatePath();
-        $prefix = ($rootPath !== null && $rootPath !== '') ? ($rootPath . '.') : '';
         $map = [];
 
         foreach ($this->getFlatComponents(withActions: false) as $component) {
@@ -119,20 +117,46 @@ trait BelongsToRecord
                 continue;
             }
 
-            $componentPath = $component->getStatePath();
+            $recordPath = $component->getRecordStatePath();
 
-            if (! filled($componentPath)) {
+            if ($recordPath === null) {
                 continue;
             }
-
-            $recordPath = ($prefix !== '' && str_starts_with($componentPath, $prefix))
-                ? mb_substr($componentPath, mb_strlen($prefix))
-                : $componentPath;
 
             $map[$recordPath] = $component;
         }
 
         return $map;
+    }
+
+    /**
+     * Every component declaring itself a nullable branch, keyed by its
+     * record-relative path and ordered outermost first, so an outer branch that
+     * nulls short-circuits the inner ones beneath it.
+     *
+     * @return array<string, Component>
+     */
+    protected function getNullableBranches(): array
+    {
+        $branches = [];
+
+        foreach ($this->getFlatComponents(withActions: false) as $component) {
+            if (! $component->isNullableBranch()) {
+                continue;
+            }
+
+            $recordPath = $component->getRecordStatePath();
+
+            if ($recordPath === null) {
+                continue;
+            }
+
+            $branches[$recordPath] = $component;
+        }
+
+        uksort($branches, static fn (string $a, string $b): int => mb_substr_count($a, '.') <=> mb_substr_count($b, '.'));
+
+        return $branches;
     }
 
     /**
@@ -189,7 +213,10 @@ trait BelongsToRecord
      * schema declares onto the bound instance — or onto a fresh one built from
      * the declared class — and return it. A failing validation throws before
      * anything is written; a `dehydrated(false)` leaf is pruned from the state
-     * and therefore never mapped.
+     * and therefore never mapped. A {@see Component::nullWhenBlank()} branch
+     * whose state should not exist is nulled whole before the leaf walk, which
+     * then skips every path beneath it — so a discarded branch is never built
+     * back up by one of its own leaves.
      */
     public function getData(): object
     {
@@ -203,7 +230,35 @@ trait BelongsToRecord
         $accessor = $this->getPropertyAccessor();
         $state = $this->getState();
 
+        $nulledPrefixes = [];
+
+        foreach ($this->getNullableBranches() as $branchPath => $component) {
+            foreach ($nulledPrefixes as $prefix) {
+                if (str_starts_with((string) $branchPath, $prefix)) {
+                    continue 2;
+                }
+            }
+
+            $branchState = $accessor->getFromArray($state, $branchPath);
+
+            /** @var array<string, mixed> $branchState */
+            $branchState = is_array($branchState) ? $branchState : [];
+
+            if (! $component->shouldNullBranch($branchState)) {
+                continue;
+            }
+
+            $accessor->setOnRecord($record, $branchPath, null);
+            $nulledPrefixes[] = $branchPath . '.';
+        }
+
         foreach (array_keys($this->getRecordPathMap()) as $recordPath) {
+            foreach ($nulledPrefixes as $prefix) {
+                if (str_starts_with((string) $recordPath, $prefix)) {
+                    continue 2;
+                }
+            }
+
             if (! $accessor->hasInArray($state, $recordPath)) {
                 continue;
             }

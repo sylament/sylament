@@ -67,6 +67,7 @@ final readonly class RecordTypeReader
             objectClass: $this->resolveObjectClass($unwrapped),
             isNullable: $type->isNullable(),
             isCollection: $this->isCollection($unwrapped),
+            isObjectCollection: $this->isObjectCollection($unwrapped),
         );
     }
 
@@ -90,10 +91,11 @@ final readonly class RecordTypeReader
 
     private function isCollection(Type $type): bool
     {
-        if ($type instanceof CollectionType) {
-            return true;
-        }
+        return $type instanceof CollectionType || $this->isObjectCollection($type);
+    }
 
+    private function isObjectCollection(Type $type): bool
+    {
         return $type instanceof ObjectType
             && is_a($type->getClassName(), Traversable::class, allow_string: true);
     }

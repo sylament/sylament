@@ -52,6 +52,20 @@ it('flags a Traversable object property as a collection', function (): void {
         ->and($target->objectClass)->toBeNull();
 });
 
+it('does not treat a plain array as an object collection', function (): void {
+    $target = new RecordTypeReader()->describeProperty(Post::class, 'meta');
+
+    expect($target->isCollection)->toBeTrue()
+        ->and($target->isObjectCollection)->toBeFalse();
+});
+
+it('treats a Traversable object property as an object collection', function (): void {
+    $target = new RecordTypeReader()->describeProperty(TypedRecord::class, 'tags');
+
+    expect($target->isCollection)->toBeTrue()
+        ->and($target->isObjectCollection)->toBeTrue();
+});
+
 it('offers no class to construct for an enum property', function (): void {
     $target = new RecordTypeReader()->describeProperty(TypedRecord::class, 'status');
 

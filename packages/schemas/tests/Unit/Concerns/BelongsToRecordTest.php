@@ -236,15 +236,18 @@ it('preserves unmanaged keys in an array-backed branch on mapping', function ():
     expect($post->getMeta())->toBe(['keep' => 1, 'seo' => 'Hi']);
 });
 
-it('throws LogicException through getData when the nested object is missing', function (): void {
+it('constructs the missing nested object through getData', function (): void {
+    $post = new Post();
+
     $host = new StateHostFixture();
     $host->data = ['author' => ['name' => 'Grace']];
 
-    $schema = Schema::make($host)->statePath('data')->record(new Post())->components([
+    Schema::make($host)->statePath('data')->record($post)->components([
         Section::make('Author')->statePath('author')->components([
             StateField::make('name'),
         ]),
-    ]);
+    ])->getData();
 
-    expect(fn (): object => $schema->getData())->toThrow(LogicException::class, 'author.name');
+    expect($post->getAuthor())->toBeInstanceOf(Author::class)
+        ->and($post->getAuthor()?->getName())->toBe('Grace');
 });

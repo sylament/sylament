@@ -6,6 +6,7 @@ namespace Sylament\Schemas\Tests\Integration;
 
 use Sylament\Schemas\Colors\Components\IconComponent;
 use Sylament\Schemas\Colors\Components\TextComponent;
+use Sylament\Schemas\State\PropertyAccessor;
 use Twig\Environment;
 
 it('exposes both colour policies on the public container', function (): void {
@@ -15,6 +16,11 @@ it('exposes both colour policies on the public container', function (): void {
 
     expect($container->get(TextComponent::class))->toBeInstanceOf(TextComponent::class)
         ->and($container->get(IconComponent::class))->toBeInstanceOf(IconComponent::class);
+});
+
+it('injects the record type reader into the property accessor', function (): void {
+    expect($this::getContainer()->get(PropertyAccessor::class))
+        ->toBeInstanceOf(PropertyAccessor::class);
 });
 
 it('registers the renderSchema twig function', function (): void {

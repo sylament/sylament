@@ -153,9 +153,9 @@ final readonly class PropertyAccessor
                 $this->accessor->setValue($holder, $segment, $bag);
             } catch (InvalidArgumentException $exception) {
                 throw new LogicException(sprintf(
-                    'Cannot map state path "%s" onto %s: "%s" is not an object and its property does not accept an array. Initialize the nested object (constructor or lazy getter) before mapping.',
+                    'Cannot map state path "%s" onto %s: "%s" declares no object the mapper can construct, and its property rejects the array written in its place. Assign the nested object yourself if the property can hold one, or map this path onto a property that accepts the branch.',
                     $path,
-                    $record::class,
+                    $holder::class,
                     $segment,
                 ), $exception->getCode(), previous: $exception);
             }

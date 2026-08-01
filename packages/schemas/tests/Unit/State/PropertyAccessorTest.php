@@ -292,9 +292,19 @@ it('throws LogicException when a scalar intermediate cannot take the vivified ar
         ->toThrow(LogicException::class, 'title.nope');
 });
 
+it('names the object that rejected the array, not the root record', function (): void {
+    expect(fn () => accessor()->setOnRecord(new Post(), 'author.name.deep', 'Ada'))
+        ->toThrow(LogicException::class, Author::class);
+});
+
 it('refuses an object-collection segment and names the repeater epic', function (): void {
     expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags.0.name', 'Ada'))
         ->toThrow(LogicException::class, 'collection');
+});
+
+it('refuses an object-collection leaf', function (): void {
+    expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags', ['a']))
+        ->toThrow(LogicException::class, 'Repeater epic');
 });
 
 it('refuses to construct an intermediate whose constructor requires arguments', function (): void {

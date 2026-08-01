@@ -3,12 +3,12 @@
 declare(strict_types=1);
 
 use Sylament\Schemas\State\RecordTypeReader;
-use Sylament\Schemas\Tests\Fixtures\Records\Article;
-use Sylament\Schemas\Tests\Fixtures\Records\Profile;
-use Sylament\Schemas\Tests\Fixtures\Records\WithCollections;
+use Sylament\Schemas\Tests\Fixtures\State\Author;
+use Sylament\Schemas\Tests\Fixtures\State\Post;
+use Sylament\Schemas\Tests\Fixtures\State\TypedRecord;
 
 it('reports a non-nullable scalar as non-nullable', function (): void {
-    $target = new RecordTypeReader()->describeProperty(Profile::class, 'name');
+    $target = new RecordTypeReader()->describeProperty(TypedRecord::class, 'slug');
 
     expect($target)->not->toBeNull()
         ->and($target->isNullable)->toBeFalse()
@@ -17,51 +17,61 @@ it('reports a non-nullable scalar as non-nullable', function (): void {
 });
 
 it('reports a nullable scalar as nullable', function (): void {
-    $target = new RecordTypeReader()->describeProperty(Profile::class, 'bio');
+    $target = new RecordTypeReader()->describeProperty(Post::class, 'title');
 
-    expect($target->isNullable)->toBeTrue();
+    expect($target->isNullable)->toBeTrue()
+        ->and($target->objectClass)->toBeNull();
 });
 
 it('reports the class to construct for a nullable object property', function (): void {
-    $target = new RecordTypeReader()->describeProperty(Article::class, 'author');
+    $target = new RecordTypeReader()->describeProperty(Post::class, 'author');
 
-    expect($target->objectClass)->toBe(Profile::class)
-        ->and($target->isNullable)->toBeTrue();
+    expect($target->objectClass)->toBe(Author::class)
+        ->and($target->isNullable)->toBeTrue()
+        ->and($target->isCollection)->toBeFalse();
 });
 
 it('follows the mutator when the getter disagrees about nullability', function (): void {
-    $target = new RecordTypeReader()->describeProperty(WithCollections::class, 'vivifying');
+    $target = new RecordTypeReader()->describeProperty(TypedRecord::class, 'vivifying');
 
     expect($target->isNullable)->toBeTrue()
-        ->and($target->objectClass)->toBe(Profile::class);
+        ->and($target->objectClass)->toBe(Author::class);
 });
 
 it('flags an array property as a collection and offers no class to construct', function (): void {
-    $target = new RecordTypeReader()->describeProperty(WithCollections::class, 'profiles');
+    $target = new RecordTypeReader()->describeProperty(Post::class, 'meta');
 
     expect($target->isCollection)->toBeTrue()
         ->and($target->objectClass)->toBeNull();
 });
 
 it('flags a Traversable object property as a collection', function (): void {
-    $target = new RecordTypeReader()->describeProperty(WithCollections::class, 'tags');
+    $target = new RecordTypeReader()->describeProperty(TypedRecord::class, 'tags');
 
     expect($target->isCollection)->toBeTrue()
         ->and($target->objectClass)->toBeNull();
 });
 
-it('walks a dotted path through object segments', function (): void {
-    $target = new RecordTypeReader()->describe(Article::class, 'author.name');
+it('offers no class to construct for an enum property', function (): void {
+    $target = new RecordTypeReader()->describeProperty(TypedRecord::class, 'status');
 
-    expect($target->class)->toBe(Profile::class)
+    expect($target->objectClass)->toBeNull()
+        ->and($target->isCollection)->toBeFalse()
+        ->and($target->isNullable)->toBeTrue();
+});
+
+it('walks a dotted path through object segments', function (): void {
+    $target = new RecordTypeReader()->describe(Post::class, 'author.name');
+
+    expect($target->class)->toBe(Author::class)
         ->and($target->property)->toBe('name')
-        ->and($target->isNullable)->toBeFalse();
+        ->and($target->objectClass)->toBeNull();
 });
 
 it('returns null for an unreadable property', function (): void {
-    expect(new RecordTypeReader()->describeProperty(Profile::class, 'nope'))->toBeNull();
+    expect(new RecordTypeReader()->describeProperty(Post::class, 'nope'))->toBeNull();
 });
 
 it('returns null when a path traverses a non-object segment', function (): void {
-    expect(new RecordTypeReader()->describe(Article::class, 'title.nope'))->toBeNull();
+    expect(new RecordTypeReader()->describe(Post::class, 'title.nope'))->toBeNull();
 });

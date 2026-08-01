@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\State;
 
+use ReflectionClass;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
 use Symfony\Component\TypeInfo\Type;
@@ -80,7 +81,11 @@ final readonly class RecordTypeReader
 
         $className = $type->getClassName();
 
-        return class_exists($className) ? $className : null;
+        if (! class_exists($className)) {
+            return null;
+        }
+
+        return new ReflectionClass($className)->isInstantiable() ? $className : null;
     }
 
     private function isCollection(Type $type): bool

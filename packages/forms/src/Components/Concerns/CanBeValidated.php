@@ -10,14 +10,23 @@ use ReflectionObject;
 use ReflectionProperty;
 use Sylament\Forms\Components\Contracts\CanBeLengthConstrained;
 use Sylament\Forms\Components\Field;
+use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Contracts\InteractsWithSchemas;
+use Sylament\Schemas\State\RecordTarget;
+use Sylament\Schemas\State\RecordTypeReader;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Contracts\Service\Attribute\Required;
 
 use function Sylament\Support\blank;
 
 trait CanBeValidated
 {
-    protected bool|Closure $isRequired = false;
+    /**
+     * Null is "never declared", which is what lets the bound record's write-side
+     * types decide; `required(false)` is a declaration and beats them.
+     */
+    protected bool|Closure|null $isRequired = null;
 
     /**
      * @var array<array{Constraint|array<Constraint>|Closure|null, bool|Closure}>
@@ -29,7 +38,9 @@ trait CanBeValidated
      */
     protected array $validationMessages = [];
 
-    public function required(bool|Closure $condition = true): static
+    private RecordTypeReader $recordTypeReader;
+
+    public function required(bool|Closure|null $condition = true): static
     {
         $this->isRequired = $condition;
 
@@ -80,7 +91,87 @@ trait CanBeValidated
 
     public function isRequired(): bool
     {
-        return (bool) $this->evaluate($this->isRequired);
+        $declared = $this->evaluate($this->isRequired);
+
+        if ($declared !== null) {
+            return (bool) $declared;
+        }
+
+        return $this->isRequiredByRecord();
+    }
+
+    /**
+     * Whether the record's own write-side type makes this field required: a
+     * non-nullable target cannot accept the null a blank field dehydrates to.
+     * Suppressed under a nullable branch that is currently blank, so an optional
+     * nested object stays submittable while empty, and for a field no schema
+     * contains, which cannot name its position in the record graph.
+     */
+    protected function isRequiredByRecord(): bool
+    {
+        if (! isset($this->container)) {
+            return false;
+        }
+
+        $recordClass = $this->getRecordClass();
+
+        if ($recordClass === null) {
+            return false;
+        }
+
+        $recordPath = $this->getRecordStatePath();
+
+        if ($recordPath === null || $this->hasBlankNullableBranchAncestor()) {
+            return false;
+        }
+
+        $target = $this->getRecordTypeReader()->describe($recordClass, $recordPath);
+
+        return $target instanceof RecordTarget && ! $target->isNullable && ! $target->isCollection;
+    }
+
+    private function hasBlankNullableBranchAncestor(): bool
+    {
+        $ancestor = $this->getContainer()->getParentComponent();
+
+        while ($ancestor instanceof Component) {
+            if ($this->isBlankNullableBranch($ancestor)) {
+                return true;
+            }
+
+            $ancestor = $ancestor->getContainer()->getParentComponent();
+        }
+
+        return false;
+    }
+
+    private function isBlankNullableBranch(Component $ancestor): bool
+    {
+        return $ancestor->isNullableBranch() && $ancestor->shouldNullBranch($this->getBranchState($ancestor));
+    }
+
+    /**
+     * A branch's state read from the live bag, rather than from the dehydrated
+     * bag the mapper later passes {@see Component::shouldNullBranch()}:
+     * requirement is decided while the form is validated, before any bag is
+     * assembled. A branch bound to no live component holds no state at all.
+     *
+     * @return array<string, mixed>
+     */
+    private function getBranchState(Component $ancestor): array
+    {
+        if (! $ancestor->getLiveComponentOrNull() instanceof InteractsWithSchemas) {
+            return [];
+        }
+
+        $state = $ancestor->getRawState();
+
+        if (! is_array($state)) {
+            return [];
+        }
+
+        /** @var array<string, mixed> $state */
+        return $state;
     }
 
     /**
@@ -232,5 +323,16 @@ trait CanBeValidated
         }
 
         $constraints[$statePath] = $componentConstraints;
+    }
+
+    #[Required]
+    public function setRecordTypeReader(RecordTypeReader $recordTypeReader): void
+    {
+        $this->recordTypeReader = $recordTypeReader;
+    }
+
+    public function getRecordTypeReader(): RecordTypeReader
+    {
+        return $this->recordTypeReader ??= new RecordTypeReader();
     }
 }

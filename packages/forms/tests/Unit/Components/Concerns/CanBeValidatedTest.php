@@ -7,6 +7,7 @@ namespace Sylament\Forms\Tests\Unit\Components\Concerns;
 use LogicException;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureField;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureLengthField;
+use Sylament\Forms\Tests\Fixtures\Records\Article;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\GreaterThan;
 use Symfony\Component\Validator\Constraints\Length;
@@ -270,4 +271,48 @@ it('dehydrates nothing without a state path', function (): void {
     $field->dehydrateValidationConstraints($constraints);
 
     expect($constraints)->toBe([]);
+});
+
+it('derives required from a non-nullable record property', function (): void {
+    expect(wireField(FixtureField::make('title')->record(Article::class))->isRequired())->toBeTrue();
+});
+
+it('derives required through a nested record path', function (): void {
+    expect(wireField(FixtureField::make('author.name')->record(Article::class))->isRequired())->toBeTrue();
+});
+
+it('builds NotBlank from a derived requirement', function (): void {
+    $constraints = wireField(FixtureField::make('title')->record(Article::class))->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0])->toBeInstanceOf(NotBlank::class);
+});
+
+it('derives not-required from a nullable record property', function (): void {
+    expect(wireField(FixtureField::make('subtitle')->record(Article::class))->isRequired())->toBeFalse();
+});
+
+it('derives not-required from a non-nullable collection property', function (): void {
+    expect(wireField(FixtureField::make('tags')->record(Article::class))->isRequired())->toBeFalse();
+});
+
+it('derives not-required from a path the record does not declare', function (): void {
+    expect(wireField(FixtureField::make('unknown')->record(Article::class))->isRequired())->toBeFalse();
+});
+
+it('lets an explicit required(false) beat the derived value', function (): void {
+    expect(wireField(FixtureField::make('title')->record(Article::class)->required(false))->isRequired())->toBeFalse();
+});
+
+it('lets an explicit nullable() beat the derived value', function (): void {
+    expect(wireField(FixtureField::make('title')->record(Article::class)->nullable())->isRequired())->toBeFalse();
+});
+
+it('is not required when no record is bound', function (): void {
+    expect(FixtureField::make('title')->isRequired())->toBeFalse()
+        ->and(wireField(FixtureField::make('title'))->isRequired())->toBeFalse();
+});
+
+it('derives nothing for a field no schema contains', function (): void {
+    expect(FixtureField::make('title')->record(Article::class)->isRequired())->toBeFalse();
 });

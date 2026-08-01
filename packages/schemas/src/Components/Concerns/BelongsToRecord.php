@@ -79,6 +79,10 @@ trait BelongsToRecord
      */
     public function getRecordStatePath(): ?string
     {
+        if (! $this->hasStatePath()) {
+            return null;
+        }
+
         $path = $this->getStatePath();
 
         if (! filled($path)) {

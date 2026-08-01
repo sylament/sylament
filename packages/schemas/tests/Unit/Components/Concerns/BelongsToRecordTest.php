@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
 
+use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Get;
 use Sylament\Schemas\State\Set;
@@ -93,4 +94,54 @@ it('injects Get and Set by type under non-mapped parameter names', function (): 
 
     expect($field->evaluate(fn (Get $reader): bool => $reader instanceof Get))->toBeTrue()
         ->and($field->evaluate(fn (Set $writer): bool => $writer instanceof Set))->toBeTrue();
+});
+
+it('has no record state path when the component carries no state path', function (): void {
+    $section = Schema::make(new StateHostFixture())
+        ->components([Section::make('Profile')])
+        ->getComponents()[0];
+
+    expect($section->getRecordStatePath())->toBeNull();
+});
+
+it('has no record state path when a path-less component sits under a root state path', function (): void {
+    $section = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([Section::make('Profile')])
+        ->getComponents()[0];
+
+    expect($section->getStatePath())->toBe('data')
+        ->and($section->getRecordStatePath())->toBeNull();
+});
+
+it('strips the root schema state path prefix', function (): void {
+    $field = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('author.name')])
+        ->getComponents()[0];
+
+    expect($field->getStatePath())->toBe('data.author.name')
+        ->and($field->getRecordStatePath())->toBe('author.name');
+});
+
+it('returns the whole path when the root schema has no state path', function (): void {
+    $field = Schema::make(new StateHostFixture())
+        ->components([StateField::make('author.name')])
+        ->getComponents()[0];
+
+    expect($field->getRecordStatePath())->toBe('author.name');
+});
+
+it('returns the whole path when it does not sit under the root prefix', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->components([StateField::make('title')]);
+    $field = $schema->getComponents()[0];
+
+    $field->getStatePath();
+
+    $schema->statePath('data');
+
+    expect($field->getStatePath())->toBe('title')
+        ->and($schema->getStatePath())->toBe('data')
+        ->and($field->getRecordStatePath())->toBe('title');
 });

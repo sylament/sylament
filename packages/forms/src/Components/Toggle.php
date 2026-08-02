@@ -40,6 +40,17 @@ class Toggle extends Field
         return new NotNull();
     }
 
+    /**
+     * A toggle never dehydrates null — its state cast is non-nullable and its
+     * default is false — so a non-nullable `bool` target always accepts what it
+     * produces. Deriving requirement from that target would mark a field that
+     * always has a value with the label's required asterisk.
+     */
+    protected function isRequiredByRecord(): bool
+    {
+        return false;
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

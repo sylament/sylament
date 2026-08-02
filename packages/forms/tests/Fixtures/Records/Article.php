@@ -8,7 +8,9 @@ namespace Sylament\Forms\Tests\Fixtures\Records;
  * The record whose declared write-side types decide requirement: `title` is
  * non-nullable, so a blank submission cannot be written; `subtitle` accepts
  * null; `tags` is a non-nullable plain array, blank when empty and therefore
- * not a required field; and `author` is an optional nested object whose own
+ * not a required field; `featured` is the canonical Doctrine boolean column,
+ * non-nullable with a false default, which a checkbox or toggle must not turn
+ * into "must be ticked"; and `author` is an optional nested object whose own
  * properties are non-nullable — the shape a blank nullable branch exists for.
  */
 final class Article
@@ -16,6 +18,8 @@ final class Article
     private string $title = '';
 
     private ?string $subtitle = null;
+
+    private bool $featured = false;
 
     /**
      * @var array<string>
@@ -42,6 +46,16 @@ final class Article
     public function setSubtitle(?string $subtitle): void
     {
         $this->subtitle = $subtitle;
+    }
+
+    public function isFeatured(): bool
+    {
+        return $this->featured;
+    }
+
+    public function setFeatured(bool $featured): void
+    {
+        $this->featured = $featured;
     }
 
     /**

@@ -6,6 +6,7 @@ namespace Sylament\Forms\Tests\Integration\Components;
 
 use Sylament\Forms\Components\Checkbox;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Forms\Tests\Fixtures\Records\Article;
 use Sylament\Schemas\Schema;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\IsFalse;
@@ -156,4 +157,17 @@ it('renders required, disabled and autofocus', function (): void {
     expect($input->attr('required'))->not->toBeNull()
         ->and($input->attr('disabled'))->not->toBeNull()
         ->and($input->attr('autofocus'))->not->toBeNull();
+});
+
+it('derives no requirement from a non-nullable bool column', function (): void {
+    // A checkbox always dehydrates a bool, so the column accepts whatever it produces;
+    // a derived requirement would mean "must be ticked" — NotBlank rejects false and
+    // the browser blocks the submit on the native attribute.
+    $field = Checkbox::make('featured')->record(Article::class);
+    $crawler = new Crawler(renderField($field));
+
+    expect($field->isRequired())->toBeFalse()
+        ->and($field->getValidationConstraints())->toHaveCount(1)
+        ->and($crawler->filter('input.sy-fo-checkbox')->attr('required'))->toBeNull()
+        ->and($crawler->filter('.sy-fo-field-label-required-mark')->count())->toBe(0);
 });

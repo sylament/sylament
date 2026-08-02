@@ -7,6 +7,7 @@ namespace Sylament\Forms\Tests\Integration\Components;
 use LogicException;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Forms\Tests\Fixtures\Records\Article;
 use Sylament\Schemas\Schema;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Choice;
@@ -261,4 +262,15 @@ it('resolves a grouped option label', function (): void {
     $field->state('published');
 
     expect($field->getOptionLabel())->toBe('Published');
+});
+
+it('still derives required for a boolean() select on a non-nullable bool column', function (): void {
+    // The regression pin for the case the Checkbox/Toggle override must not swallow:
+    // boolean()'s cast is nullable, so the placeholder dehydrates null — and null is
+    // exactly what a non-nullable column cannot take.
+    $field = Select::make('featured')->boolean()->record(Article::class);
+    $crawler = new Crawler(renderField($field));
+
+    expect($field->isRequired())->toBeTrue()
+        ->and($crawler->filter('select.sy-fo-select')->attr('required'))->not->toBeNull();
 });

@@ -37,4 +37,16 @@ class Checkbox extends Field
             new BooleanStateCast(isNullable: false),
         ];
     }
+
+    /**
+     * A checkbox never dehydrates null — its state cast is non-nullable and its
+     * default is false — so a non-nullable `bool` target always accepts what it
+     * produces. Deriving requirement from that target would silently mean "must
+     * be ticked": `NotBlank` rejects false, and the template emits native
+     * `required`. Only an explicit {@see required()} may say so.
+     */
+    protected function isRequiredByRecord(): bool
+    {
+        return false;
+    }
 }

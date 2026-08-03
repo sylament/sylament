@@ -454,6 +454,47 @@ it('refuses to null a branch the record declares non-nullable', function (): voi
         ->toThrow(LogicException::class, 'nullWhenBlank()');
 });
 
+it('skips a non-nullable branch the bag no longer carries rather than refusing it', function (): void {
+    $record = new UninitializedPost();
+    $record->setAuthor(new Author(name: 'Ada'));
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->hidden()
+                ->components([StateField::make('name')]),
+        ])
+        ->record($record);
+
+    $schema->fill(['author' => ['name' => 'Ada']]);
+    $schema->getData();
+
+    expect($record->getAuthor()->getName())->toBe('Ada');
+});
+
+it('refuses a non-nullable branch even when its state is filled', function (): void {
+    $record = new UninitializedPost();
+    $record->setAuthor(new Author(name: 'Ada'));
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('name')]),
+        ])
+        ->record($record);
+
+    $schema->fill(['author' => ['name' => 'Grace']]);
+
+    expect(fn (): object => $schema->getData())
+        ->toThrow(LogicException::class, 'nullWhenBlank()');
+});
+
 it('refuses nullWhenBlank() on a component carrying no state path', function (): void {
     $schema = Schema::make(new StateHostFixture())
         ->statePath('data')

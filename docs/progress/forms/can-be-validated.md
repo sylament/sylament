@@ -241,7 +241,9 @@ where Filament's is `bool|Closure`. **`required(null)` is a new public arm** and
 it is not the same as `required(false)` — it *undeclares*, handing the decision
 back to the record, which is the only way to get derivation back after a
 conditional call has set the flag. `required(false)` remains a declaration and
-still suppresses.
+still suppresses. Its coverage is the property's own `null` default rather than
+an explicit `required(null)` call — the same single assignment and the same
+`$declared !== null` branch, exercised by every derivation test above.
 
 Two behaviours make this safe to have on by default, and both are load-bearing:
 

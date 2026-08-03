@@ -299,7 +299,7 @@ it('names the object that rejected the array, not the root record', function ():
 
 it('refuses an object-collection segment and names the repeater epic', function (): void {
     expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags.0.name', 'Ada'))
-        ->toThrow(LogicException::class, 'collection');
+        ->toThrow(LogicException::class, 'Repeater epic');
 });
 
 it('refuses an object-collection leaf', function (): void {

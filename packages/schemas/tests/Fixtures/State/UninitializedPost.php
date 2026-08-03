@@ -5,10 +5,11 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Fixtures\State;
 
 /**
- * The unhappy-path counterpart of {@see InitializedPost}: the nested object is
+ * The never-assigned counterpart of {@see InitializedPost}: the nested object is
  * declared non-nullable and never assigned, so reading it raises
  * `UninitializedPropertyException` rather than yielding the null {@see Post}
- * gives.
+ * gives — the arm proving construction covers an uninitialized typed property,
+ * not only an explicit null.
  */
 final class UninitializedPost
 {

@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Fixtures\State;
 
 /**
- * The happy-path counterpart of {@see Post}: the nested object is constructed
- * up front, the pattern `setOnRecord()`'s missing-intermediate LogicException
- * tells users to adopt.
+ * The already-populated counterpart of {@see Post}: the nested object is
+ * constructed up front, so a write mutates it in place rather than taking
+ * `setOnRecord()`'s construction branch.
  */
 final class InitializedPost
 {

@@ -17,7 +17,7 @@ forms [derive a field's requirement](../forms/can-be-validated.md#requirement-is
 from the record instead of a declaration, and lets an object collection be
 refused loudly instead of mapped wrongly.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — this is Sylament-invented, so it is diffed against the sources it
 wraps rather than a Filament port target:
@@ -32,52 +32,38 @@ wraps rather than a Filament port target:
 ## Surface
 
 Every point of the reader and its value object. _Blocked by_ names what has to
-land first. _Detail_ carries a **detail** link (the write-up in
-[Details](#details), deleted once the row is **done**), a **semantics** link (a
-permanent note in [Semantics](#semantics)), and/or a **diverges** link (the
-permanent note in [Divergences](#divergences)), or `—`. Every row is
-Sylament-only, so no row has a _Ports_ link.
+land first. _Detail_ carries a **semantics** link (a permanent note in
+[Semantics](#semantics)) and/or a **diverges** link (the permanent note in
+[Divergences](#divergences)), or `—`. Every row is Sylament-only, so no row has
+a _Ports_ link.
 
 | Feature | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
 | [`describe(string $recordClass, string $path)`](../../../packages/schemas/src/State/RecordTypeReader.php) — describe a dotted path, hopping object segments by their declared class | done | — | [semantics](#a-null-recordtarget-means-no-type-answer-not-no-such-property) |
 | [`describeProperty(string $class, string $property)`](../../../packages/schemas/src/State/RecordTypeReader.php) — describe one property of one class | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
-| [`RecordTarget::$class` / `$property`](../../../packages/schemas/src/State/RecordTarget.php) — provenance: which class's which property was described | in progress | — | [detail](#the-provenance-fields-have-no-consumer-and-no-test) |
+| `RecordTarget::$class` / `$property` — provenance fields | skipped | — | [diverges](#the-value-object-carries-no-provenance) |
 | [`RecordTarget::$objectClass`](../../../packages/schemas/src/State/RecordTarget.php) — the class to construct for an object segment, else null | done | — | [diverges](#objectclass-is-gated-on-instantiability-so-it-is-a-promise-not-a-hint) |
 | [`RecordTarget::$isNullable`](../../../packages/schemas/src/State/RecordTarget.php) — whether null may be **written** | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
 | [`RecordTarget::$isCollection` / `$isObjectCollection`](../../../packages/schemas/src/State/RecordTarget.php) — any collection, and the `Traversable` arm only | done | — | [diverges](#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable) |
 | [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.record_type_reader` plus a class alias, registered with **no** extractor argument | done | — | [diverges](#the-extractor-is-pinned-to-reflection-and-must-not-be-autowired) |
 | Generic collection element types (`array<int, Tag>`) | skipped | — | [diverges](#docblock-generics-are-invisible-and-that-is-the-point) |
 
-Every row but one is **done** or **skipped** — the unit suite
+Every row is **done** or **skipped** — the unit suite
 ([`RecordTypeReaderTest`](../../../packages/schemas/tests/Unit/State/RecordTypeReaderTest.php))
 covers both nullability arms, the getter/setter asymmetry, the array and
 `Traversable` collection arms and the two flags separating them, the enum arm
 that `class_exists()` alone would have waved through, the dotted-path walk, and
 both null answers (an unreadable property, a path traversing a non-object
-segment). The consumers pin the rest from their own suites: construction and
-refusal in [`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php),
+segment). The walk is pinned through the **leaf's own** answers rather than
+through provenance: `Post::$author` reports an `objectClass` and
+`TypedRecord::$money` is nullable, so `describe(…, 'author.name')` reporting no
+`objectClass` and `describe(…, 'money.amount')` reporting non-nullable are each
+reachable only by descending a segment — verified by disabling the walk, which
+fails that test and no other. The consumers pin the rest from their own suites:
+construction and refusal in [`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php),
 branch nulling in [`Unit/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordTest.php),
 derivation in forms' [`CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php).
-
-## Details
-
-### The provenance fields have no consumer and no test
-
-`RecordTarget::$class` and `$property` record which class's which property was
-described. Nothing in `src/` reads either, and no test asserts them — they are
-carried because a value object describing a lookup should say what it looked up,
-not because a call site asked for them.
-
-The likely consumer is error messaging.
-[`setOnRecord()`](property-accessor.md)'s three `LogicException`s each want to
-name the object that rejected a write rather than the root record, and today each
-interpolates `$holder::class` from its own walk — correct, but it is the walk's
-answer rather than the description's, so the two could disagree if the walk ever
-resolved a holder the reader did not describe. **Next step:** either route those
-messages through `$target->class` and assert it, or drop both fields. Deciding
-that is cheap and wants a call site, so it waits for the next one — the
-`Repeater` epic's own refusal messages are the first candidate.
+No row has a write-up here.
 
 ## Semantics
 
@@ -125,6 +111,35 @@ decision from one place into three.
 Design decisions with no Filament source to deviate from — permanent, and the
 reason each holds.
 
+### The value object carries no provenance
+
+`RecordTarget` was designed with `$class` and `$property` fields naming what had
+been described. They are **dropped**, because provenance is something every call
+site already has and none of them can be told anything new by:
+
+- Both places that hold a target — `assertNotCollection()` and the
+  required-constructor throw in [`setOnRecord()`](property-accessor.md) — receive
+  one built by `describeProperty($holder::class, $segment)` a few lines above, in
+  the same method. `$target->class === $holder::class` and
+  `$target->property === $segment` hold **by construction**, so interpolating the
+  target instead of the walk's own variables is a substitution, not an accuracy
+  gain.
+- The third message — the array remainder a typed property rejects — fires
+  precisely when there is *no* usable target (`describeProperty()` returned null,
+  or the type named no constructible class), so it has nothing to route through.
+
+That leaves the only argument for keeping them a hypothetical: that the walk
+might one day resolve a holder the reader did not describe. Nothing in the code
+can reach that state, and two unused public properties on a `final readonly`
+value object with two consumers, both in this repo, is not the place to park a
+hypothetical. They return the day a consumer holds a target it did not itself
+build — the `Repeater` epic's refusal messages being the first candidate — and
+adding a promoted property back is a one-line change.
+
+The one thing they did buy was test expressiveness: the dotted-path walk was
+pinned by asserting the leaf's declaring class. That coverage is re-expressed
+rather than dropped, through leaf answers only reachable after a hop (above).
+
 ### The extractor is pinned to reflection and must not be autowired
 
 The service is registered with its `$extractor` argument **unset**, so the
@@ -139,11 +154,14 @@ PHPDoc **ahead** of the mutator, and the write-side contract above would quietly
 stop being true — for records that carry docblocks or a promoted constructor, and
 only for those.
 
-Two further costs ride on that: `PropertyTypeExtractorInterface` is only a
-service at all once the application enables `framework.property_info`, so
-autowiring would make the reader fail to compile in an app that has not; and a
-PHPDoc-reading chain surfaces `GenericType`, which is neither `ObjectType` nor
-`CollectionType`, so `Collection<int, Tag>` would slip past the collection check
+Two further costs ride on that. `PropertyTypeExtractorInterface` is a service only
+while `framework.property_info` is enabled — normally it is, since
+`enableIfStandalone('symfony/property-info', …)` turns the node on whenever the
+package is installed and `schemas` requires it, so this bites only under
+`symfony/symfony` or an explicit `enabled: false`, where autowiring would fail the
+container build outright. And a PHPDoc-reading chain surfaces `GenericType`, which
+is neither `ObjectType` nor `CollectionType`, so `Collection<int, Tag>` would slip
+past the collection check
 that [`setOnRecord()`](property-accessor.md) refuses on. The constructor keeps the
 `?PropertyTypeExtractorInterface` seam so a consumer *can* hand in a different
 extractor deliberately; nothing in the codebase does.
@@ -156,7 +174,9 @@ Without the second half the property would be a hint a caller had to re-check:
 `class_exists()` is `true` for an enum (Symfony resolves a backed-enum property to
 `BackedEnumType extends EnumType extends ObjectType`, so it reaches the gate), for
 an abstract class, and for a class with a non-public constructor — and `new` on any
-of them is a fatal error, not a catchable one. Gating here means no consumer needs
+of them raises an `Error`, not one of the `PropertyAccess` exceptions the mapper
+already catches, so it would surface as an uncaught engine error rather than as a
+mapping failure. Gating here means no consumer needs
 its own "can I construct this?" guard, and the docblock's promise is enforced at
 the one place that can enforce it. Interfaces never reach the gate; `class_exists()`
 already excludes them.

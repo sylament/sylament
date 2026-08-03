@@ -16,12 +16,9 @@ namespace Sylament\Schemas\State;
 final readonly class RecordTarget
 {
     /**
-     * @param class-string $class
      * @param class-string|null $objectClass
      */
     public function __construct(
-        public string $class,
-        public string $property,
         public ?string $objectClass,
         public bool $isNullable,
         public bool $isCollection,

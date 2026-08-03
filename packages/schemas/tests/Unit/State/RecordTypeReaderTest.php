@@ -75,11 +75,19 @@ it('offers no class to construct for an enum property', function (): void {
 });
 
 it('walks a dotted path through object segments', function (): void {
-    $target = new RecordTypeReader()->describe(Post::class, 'author.name');
+    $reader = new RecordTypeReader();
 
-    expect($target->class)->toBe(Author::class)
-        ->and($target->property)->toBe('name')
-        ->and($target->objectClass)->toBeNull();
+    $scalarLeaf = $reader->describe(Post::class, 'author.name');
+    $nonNullableLeaf = $reader->describe(TypedRecord::class, 'money.amount');
+
+    // Each answer is reachable only by descending a segment: the first segment
+    // of either path reports an objectClass and a nullable type, so a walk that
+    // stopped there would answer the opposite in both cases.
+    expect($scalarLeaf)->not->toBeNull()
+        ->and($scalarLeaf->objectClass)->toBeNull()
+        ->and($nonNullableLeaf)->not->toBeNull()
+        ->and($nonNullableLeaf->isNullable)->toBeFalse()
+        ->and($nonNullableLeaf->objectClass)->toBeNull();
 });
 
 it('returns null for an unreadable property', function (): void {

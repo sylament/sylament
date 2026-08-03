@@ -56,7 +56,7 @@ Sylament-only.
 | [`getRecord(bool $withParentComponentRecord = true)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getRecord()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | — |
 | [`getRecordInstance()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
 | [`getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#reads-are-lenient-writes-are-strict) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#a-missing-singular-intermediate-is-constructed-from-its-declared-type) |
-| [`getNullableBranches()` + the branch pass in `getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order) |
+| [`getNullableBranches()` + the branch pass in `getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | in progress | — | [detail](#the-branch-pass-treats-a-leaf-as-a-blank-branch) · [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order) |
 | [`fill(object …)` object arm](../../../packages/schemas/src/Concerns/HasState.php) + [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#fillobject-does-not-bind-the-record) |
 | [`$record` property](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`public $model`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-root-record-property-is-protected) |
 | `saveRelationships()` | [`saveRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | blocked | Doctrine relationship-state epic | [detail](#the-relationship-layer-is-not-ported) |
@@ -72,7 +72,7 @@ Sylament-only.
 | [`getRecord(bool $withContainerRecord = true)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`getRecord()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-record-type-probe-is-instanceof-not-a-model-gate) |
 | [`getRecordInstance()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
 | [`getRecordStatePath()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it) |
-| [`nullWhenBlank()` / `isNullableBranch()` / `shouldNullBranch()`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) | — | in progress | — | [detail](#nullwhenblank-fires-on-a-component-with-no-path-bearing-descendants) · [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [diverges](#a-nullwhenblank-closure-sees-two-different-bags) · [diverges](#a-doctrine-embeddable-cannot-be-nulled) |
+| [`nullWhenBlank()` / `isNullableBranch()` / `shouldNullBranch()`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) | — | in progress | — | [detail](#the-branch-pass-treats-a-leaf-as-a-blank-branch) · [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [diverges](#a-nullwhenblank-closure-sees-two-different-bags) · [diverges](#a-doctrine-embeddable-cannot-be-nulled) |
 | Per-component relationship members (`saveRelationships*`, `loadStateFromRelationships`, `castStateAfterLoadingFromRelationships`, the `*Using` setters, `saveRelationshipsWhenDisabled`/`WhenHidden`) | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | blocked | Doctrine relationship-state epic | [detail](#the-relationship-layer-is-not-ported) |
 
 ### Closure injection
@@ -152,14 +152,19 @@ object arm is a one-line addition to whichever epic lands them.
 relationship-state epic (Filament's T6), and the partial-fill arm with the
 partial-render decision.
 
-### `nullWhenBlank()` fires on a component with no path-bearing descendants
+### The branch pass treats a leaf as a blank branch
 
-The declaration is meant for a **container** — a `Section` or `Group` wrapping
-the fields of one nested object. Put it on a component that has no path-bearing
-descendants and it always nulls, whatever the user typed: `getData()` reads the
-branch slice with `getFromArray()`, a leaf's own slice is a scalar rather than an
-array, the `is_array()` fallback turns that into `[]`, and an empty array is
-blank by definition, so `shouldNullBranch()` returns true every time.
+`nullWhenBlank()` is meant for a **container** — a `Section` or `Group` wrapping
+the fields of one nested object. Put it on a component with no path-bearing
+descendants and the branch pass nulls it every time, whatever the user typed.
+
+The defect is in the **caller**, not the trait. `getData()` reads the branch
+slice with `getFromArray()`; a leaf's own slice is a scalar rather than an array;
+the `is_array($branchState) ? … : []` fallback turns that into `[]`; and
+`shouldNullBranch([])` then answers `true` — correctly, since an empty bag holds
+nothing filled. The trait was asked the wrong question. Both surfaces carry this
+row because the observable feature is `nullWhenBlank()` while the edit lands in
+the branch pass.
 
 For a plain leaf the damage is invisible — the branch pass writes null at the
 path and the leaf walk immediately overwrites it with the field's real value, so

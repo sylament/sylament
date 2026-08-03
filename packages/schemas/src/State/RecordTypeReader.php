@@ -62,8 +62,6 @@ final readonly class RecordTypeReader
         $unwrapped = $type instanceof NullableType ? $type->getWrappedType() : $type;
 
         return new RecordTarget(
-            class: $class,
-            property: $property,
             objectClass: $this->resolveObjectClass($unwrapped),
             isNullable: $type->isNullable(),
             isCollection: $this->isCollection($unwrapped),

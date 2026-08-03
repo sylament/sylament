@@ -99,6 +99,25 @@ it('requires a blank leaf when the branch is not declared nullable', function ()
     expect($schema->getComponentByStatePath('data.author.name')->isRequired())->toBeTrue();
 });
 
+it('ignores a path-less nullWhenBlank() container when suppressing requirement', function (): void {
+    // The mapper refuses this declaration outright (it names no property to null),
+    // so the only question here is that requirement stops reading the whole bag
+    // through it: `title` sits outside the container and must not move `name`.
+    $schema = fn (?string $title): Schema => Schema::make(new FieldRenderHost())
+        ->statePath('data')
+        ->record(Article::class)
+        ->components([
+            TextInput::make('title'),
+            Section::make('author')
+                ->nullWhenBlank()
+                ->components([TextInput::make('author.name')]),
+        ])
+        ->rawState(['title' => $title, 'author' => ['name' => null]]);
+
+    expect($schema(null)->getComponentByStatePath('data.author.name')->isRequired())->toBeTrue()
+        ->and($schema('Hello')->getComponentByStatePath('data.author.name')->isRequired())->toBeTrue();
+});
+
 it('keeps an explicit required() strict inside a blank nullable branch', function (): void {
     $schema = Schema::make(new FieldRenderHost())
         ->statePath('data')

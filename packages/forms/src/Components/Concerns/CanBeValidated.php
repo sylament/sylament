@@ -145,9 +145,21 @@ trait CanBeValidated
         return false;
     }
 
+    /**
+     * A component carrying no record state path is never a branch, however it is
+     * declared — it names no property to null, which is why the mapper refuses
+     * the declaration outright. Both walks have to agree on that: without the
+     * gate, {@see getBranchState()} would fall through to the container's own
+     * path and judge blankness against the whole bag, making one field's
+     * requirement depend on unrelated fields elsewhere in the form.
+     */
     private function isBlankNullableBranch(Component $ancestor): bool
     {
-        return $ancestor->isNullableBranch() && $ancestor->shouldNullBranch($this->getBranchState($ancestor));
+        if (! $ancestor->isNullableBranch() || $ancestor->getRecordStatePath() === null) {
+            return false;
+        }
+
+        return $ancestor->shouldNullBranch($this->getBranchState($ancestor));
     }
 
     /**

@@ -154,7 +154,7 @@ trait BelongsToRecord
             $branches[$recordPath] = $component;
         }
 
-        uksort($branches, static fn (string $a, string $b): int => mb_substr_count($a, '.') <=> mb_substr_count($b, '.'));
+        uksort($branches, static fn (int|string $a, int|string $b): int => mb_substr_count((string) $a, '.') <=> mb_substr_count((string) $b, '.'));
 
         return $branches;
     }
@@ -209,6 +209,39 @@ trait BelongsToRecord
     }
 
     /**
+     * Whether the dehydrated bag still carries the branch at `$branchPath` — at
+     * least one of the leaf paths the schema declares beneath it is present.
+     *
+     * A component with no declared leaf beneath it is a leaf rather than a
+     * branch, and a branch whose every leaf the dehydration walk pruned (a
+     * hidden subtree, `dehydrated(false)`) is absent rather than blank. Neither
+     * may be nulled: the bag holds no evidence about what the submission meant
+     * there, so writing null would discard a record value the form never showed.
+     * Testing presence at the branch path itself is not enough — pruning unsets
+     * only the leaf key and leaves the emptied parent behind.
+     *
+     * @param array<string, mixed> $state
+     * @param list<string>         $recordPaths
+     */
+    private function hasDehydratedBranchLeaf(array $state, string $branchPath, array $recordPaths): bool
+    {
+        $accessor = $this->getPropertyAccessor();
+        $prefix = $branchPath . '.';
+
+        foreach ($recordPaths as $recordPath) {
+            if (! str_starts_with($recordPath, $prefix)) {
+                continue;
+            }
+
+            if ($accessor->hasInArray($state, $recordPath)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Validate through {@see getState()}, then write every leaf state path the
      * schema declares onto the bound instance — or onto a fresh one built from
      * the declared class — and return it. A failing validation throws before
@@ -229,14 +262,21 @@ trait BelongsToRecord
 
         $accessor = $this->getPropertyAccessor();
         $state = $this->getState();
+        $recordPaths = array_map(strval(...), array_keys($this->getRecordPathMap()));
 
         $nulledPrefixes = [];
 
         foreach ($this->getNullableBranches() as $branchPath => $component) {
+            $branchPath = (string) $branchPath;
+
             foreach ($nulledPrefixes as $prefix) {
-                if (str_starts_with((string) $branchPath, $prefix)) {
+                if (str_starts_with($branchPath, $prefix)) {
                     continue 2;
                 }
+            }
+
+            if (! $this->hasDehydratedBranchLeaf($state, $branchPath, $recordPaths)) {
+                continue;
             }
 
             $branchState = $accessor->getFromArray($state, $branchPath);
@@ -252,9 +292,9 @@ trait BelongsToRecord
             $nulledPrefixes[] = $branchPath . '.';
         }
 
-        foreach (array_keys($this->getRecordPathMap()) as $recordPath) {
+        foreach ($recordPaths as $recordPath) {
             foreach ($nulledPrefixes as $prefix) {
-                if (str_starts_with((string) $recordPath, $prefix)) {
+                if (str_starts_with($recordPath, $prefix)) {
                     continue 2;
                 }
             }

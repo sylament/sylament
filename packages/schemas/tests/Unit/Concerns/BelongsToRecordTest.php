@@ -379,3 +379,59 @@ it('short-circuits a nested branch beneath a nulled outer branch', function (): 
 
     expect($record->getMeta())->toBeNull();
 });
+
+it('leaves a hidden branch alone rather than nulling what it never showed', function (): void {
+    $record = new Post();
+    $record->setAuthor(new Author(name: 'Ada'));
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->hidden()
+                ->components([StateField::make('name')]),
+        ])
+        ->record($record);
+
+    $schema->fill(['author' => ['name' => 'Ada']]);
+    $schema->getData();
+
+    expect($record->getAuthor()?->getName())->toBe('Ada');
+});
+
+it('leaves a branch alone when the dehydration walk pruned its only leaf', function (): void {
+    $record = new Post();
+    $record->setAuthor(new Author(name: 'Ada'));
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('name')->hidden()]),
+        ])
+        ->record($record);
+
+    $schema->fill(['author' => ['name' => 'Ada']]);
+    $schema->getData();
+
+    expect($record->getAuthor()?->getName())->toBe('Ada');
+});
+
+it('leaves a nullWhenBlank() leaf alone, since a leaf declares no branch', function (): void {
+    $record = new Post();
+    $record->setTitle('Kept');
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('title')->nullWhenBlank()->dehydrated(false)])
+        ->record($record);
+
+    $schema->fill(['title' => null]);
+    $schema->getData();
+
+    expect($record->getTitle())->toBe('Kept');
+});

@@ -561,10 +561,10 @@ and a closure written for one can be wrong about the other.
 
 So `nullWhenBlank(fn (array $state) => ...)` is invoked twice per submit with two
 shapes, and the observable consequence is sharper than the shape difference: a
-branch holding a filled `dehydrated(false)` leaf reads **non-blank** at validation
-— so the branch's other leaves are required and the user is made to fill them —
-and then reads **blank** at mapping, so the whole branch, including the value the
-user was forced to supply, is discarded.
+branch holding a filled leaf the dehydration walk prunes reads **non-blank** at
+validation — so the branch's other leaves are required and the user is made to
+fill them — and then reads **blank** at mapping, so the whole branch, including
+the value the user was forced to supply, is discarded.
 
 The [presence guard](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled)
 narrowed that to a **mixed** branch. A branch whose leaves are *all* pruned is now
@@ -574,11 +574,14 @@ the fix — the two walks still read two bags.
 
 Not fixed, and the reason is cost rather than doubt: making validation read
 dehydrated state would mean dehydrating a branch per field per request, on the
-hot path, to serve a combination (`dehydrated(false)` inside a `nullWhenBlank()`
-branch) that no shipped schema uses. The practical rule until then — **do not put
-a `dehydrated(false)` leaf inside a nullable branch**, and write closure
-conditions against key *presence* and blankness rather than against an exact bag
-shape. Reverses if the cost model changes or a real schema needs the combination.
+hot path, to serve a combination (a pruned leaf inside a `nullWhenBlank()` branch)
+that no shipped schema uses. The practical rule until then — **do not put a
+pruned leaf inside a nullable branch**, where pruned covers a hidden leaf
+(`hidden()`, `hiddenOn(...)`, `visible(false)`) as much as a `dehydrated(false)`
+one, and the hidden shape is the likelier of the two to be written by accident —
+and write closure conditions against key *presence* and blankness rather than
+against an exact bag shape. Reverses if the cost model changes or a real schema
+needs the combination.
 
 ### A Doctrine embeddable cannot be nulled
 

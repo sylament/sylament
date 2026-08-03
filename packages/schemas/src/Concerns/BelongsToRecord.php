@@ -252,10 +252,12 @@ trait BelongsToRecord
      * schema declares onto the bound instance — or onto a fresh one built from
      * the declared class — and return it. A failing validation throws before
      * anything is written; a `dehydrated(false)` leaf is pruned from the state
-     * and therefore never mapped. A {@see Component::nullWhenBlank()} branch
-     * whose state should not exist is nulled whole before the leaf walk, which
-     * then skips every path beneath it — so a discarded branch is never built
-     * back up by one of its own leaves.
+     * and therefore never mapped. A {@see Component::nullWhenBlank()} branch the
+     * state still carries and whose state should not exist is nulled whole
+     * before the leaf walk, which then skips every path beneath it — so a
+     * discarded branch is never built back up by one of its own leaves; a branch
+     * the state does not carry is left alone entirely
+     * ({@see hasDehydratedBranchLeaf()}).
      *
      * @throws LogicException when a declared branch names no property, or names
      *                        one the record declares non-nullable

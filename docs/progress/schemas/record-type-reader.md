@@ -17,7 +17,7 @@ forms [derive a field's requirement](../forms/can-be-validated.md#requirement-is
 from the record instead of a declaration, and lets an object collection be
 refused loudly instead of mapped wrongly.
 
-**Status:** done — see the [status vocabulary](../README.md#statuses).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
 Reference — this is Sylament-invented, so it is diffed against the sources it
 wraps rather than a Filament port target:
@@ -32,23 +32,24 @@ wraps rather than a Filament port target:
 ## Surface
 
 Every point of the reader and its value object. _Blocked by_ names what has to
-land first. _Detail_ carries a **semantics** link (a permanent note in
-[Semantics](#semantics)) and/or a **diverges** link (the permanent note in
-[Divergences](#divergences)), or `—`. Every row is Sylament-only, so no row has
-a _Ports_ link.
+land first. _Detail_ carries a **detail** link (the write-up in
+[Details](#details), deleted once the row is **done**), a **semantics** link (a
+permanent note in [Semantics](#semantics)), and/or a **diverges** link (the
+permanent note in [Divergences](#divergences)), or `—`. Every row is
+Sylament-only, so no row has a _Ports_ link.
 
 | Feature | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
 | [`describe(string $recordClass, string $path)`](../../../packages/schemas/src/State/RecordTypeReader.php) — describe a dotted path, hopping object segments by their declared class | done | — | [semantics](#a-null-recordtarget-means-no-type-answer-not-no-such-property) |
 | [`describeProperty(string $class, string $property)`](../../../packages/schemas/src/State/RecordTypeReader.php) — describe one property of one class | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
-| [`RecordTarget::$class` / `$property`](../../../packages/schemas/src/State/RecordTarget.php) — where the description came from, so an error message can name the object that rejected a write rather than the root record | done | — | — |
+| [`RecordTarget::$class` / `$property`](../../../packages/schemas/src/State/RecordTarget.php) — provenance: which class's which property was described | in progress | — | [detail](#the-provenance-fields-have-no-consumer-and-no-test) |
 | [`RecordTarget::$objectClass`](../../../packages/schemas/src/State/RecordTarget.php) — the class to construct for an object segment, else null | done | — | [diverges](#objectclass-is-gated-on-instantiability-so-it-is-a-promise-not-a-hint) |
 | [`RecordTarget::$isNullable`](../../../packages/schemas/src/State/RecordTarget.php) — whether null may be **written** | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
 | [`RecordTarget::$isCollection` / `$isObjectCollection`](../../../packages/schemas/src/State/RecordTarget.php) — any collection, and the `Traversable` arm only | done | — | [diverges](#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable) |
 | [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.record_type_reader` plus a class alias, registered with **no** extractor argument | done | — | [diverges](#the-extractor-is-pinned-to-reflection-and-must-not-be-autowired) |
 | Generic collection element types (`array<int, Tag>`) | skipped | — | [diverges](#docblock-generics-are-invisible-and-that-is-the-point) |
 
-Every row is **done** or **skipped** — the unit suite
+Every row but one is **done** or **skipped** — the unit suite
 ([`RecordTypeReaderTest`](../../../packages/schemas/tests/Unit/State/RecordTypeReaderTest.php))
 covers both nullability arms, the getter/setter asymmetry, the array and
 `Traversable` collection arms and the two flags separating them, the enum arm
@@ -58,7 +59,25 @@ segment). The consumers pin the rest from their own suites: construction and
 refusal in [`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php),
 branch nulling in [`Unit/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordTest.php),
 derivation in forms' [`CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php).
-No row has a write-up here.
+
+## Details
+
+### The provenance fields have no consumer and no test
+
+`RecordTarget::$class` and `$property` record which class's which property was
+described. Nothing in `src/` reads either, and no test asserts them — they are
+carried because a value object describing a lookup should say what it looked up,
+not because a call site asked for them.
+
+The likely consumer is error messaging.
+[`setOnRecord()`](property-accessor.md)'s three `LogicException`s each want to
+name the object that rejected a write rather than the root record, and today each
+interpolates `$holder::class` from its own walk — correct, but it is the walk's
+answer rather than the description's, so the two could disagree if the walk ever
+resolved a holder the reader did not describe. **Next step:** either route those
+messages through `$target->class` and assert it, or drop both fields. Deciding
+that is cheap and wants a call site, so it waits for the next one — the
+`Repeater` epic's own refusal messages are the first candidate.
 
 ## Semantics
 
@@ -113,11 +132,12 @@ constructor's `?? new ReflectionExtractor()` decides. This looks like a missing
 `->autowire()` and is not: autowiring would inject
 `PropertyTypeExtractorInterface`, which `framework.property_info` aliases to the
 chained `property_info` service — and in that chain `ReflectionExtractor` sits
-at priority **−1002**, behind `PhpStanExtractor` (−1000), `PhpDocExtractor`
-(−1001) and `ConstructorExtractor`. The chain returns the first non-null answer,
-so an autowired reader would read PHPDoc and the constructor **ahead** of the
-mutator, and the write-side contract above would quietly stop being true — for
-records that carry docblocks, and only for those.
+**last**, at priority −1002, under `ConstructorExtractor` (−999),
+`PhpStanExtractor` (−1000) and `PhpDocExtractor` (−1001). The chain returns the
+first non-null answer, so an autowired reader would read the constructor and
+PHPDoc **ahead** of the mutator, and the write-side contract above would quietly
+stop being true — for records that carry docblocks or a promoted constructor, and
+only for those.
 
 Two further costs ride on that: `PropertyTypeExtractorInterface` is only a
 service at all once the application enables `framework.property_info`, so

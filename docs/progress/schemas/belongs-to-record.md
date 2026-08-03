@@ -168,9 +168,10 @@ a leaf that is also `dehydrated(false)`. The leaf walk skips those, so nothing
 overwrites the null and it reaches the record — contradicting `getData()`'s own
 docblock, which promises a `dehydrated(false)` leaf is never mapped.
 
-The fix is one line: gate the branch pass on
-`hasInArray($state, $branchPath)` being an array, i.e. only treat a path as a
-branch when the state actually holds a sub-tree there. It is deliberately not
+The fix is one line: only treat a path as a branch when the state actually holds
+a sub-tree there — drop the `is_array($branchState) ? … : []` fallback, or guard
+the pass with `hasInArray()` so an absent path (the `dehydrated(false)` case, the
+only harmful one) never reaches the condition at all. It is deliberately not
 taken yet because the reachable population is nonsense configuration — nobody
 declares a text field an optional nested branch — and the guard wants a test
 naming that shape, which is better written with the `Repeater` epic's own

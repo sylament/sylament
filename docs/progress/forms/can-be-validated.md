@@ -246,8 +246,8 @@ still suppresses.
 Two behaviours make this safe to have on by default, and both are load-bearing:
 
 - **It suppresses itself under a blank nullable branch.**
-  `hasBlankNullableBranchAncestor()` walks the container chain and returns false
-  as soon as an ancestor declaring
+  `hasBlankNullableBranchAncestor()` walks the container chain, and derivation
+  gives up as soon as an ancestor declaring
   [`nullWhenBlank()`](../schemas/belongs-to-record.md#a-declared-branch-is-nulled-whole-before-its-leaves-are-written)
   is currently blank. Without it the feature deletes the feature that motivated
   it: `Article::$author` nullable with `Author::$name` non-nullable would make the

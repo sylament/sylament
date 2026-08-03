@@ -14,6 +14,7 @@ use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 use Sylament\Schemas\Tests\Fixtures\State\Author;
 use Sylament\Schemas\Tests\Fixtures\State\InitializedPost;
 use Sylament\Schemas\Tests\Fixtures\State\Post;
+use Sylament\Schemas\Tests\Fixtures\State\UninitializedPost;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
 
 it('returns the bound instance and its class', function (): void {
@@ -434,4 +435,37 @@ it('leaves a nullWhenBlank() leaf alone, since a leaf declares no branch', funct
     $schema->getData();
 
     expect($record->getTitle())->toBe('Kept');
+});
+
+it('refuses to null a branch the record declares non-nullable', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('name')]),
+        ])
+        ->record(new UninitializedPost());
+
+    $schema->fill(['author' => ['name' => null]]);
+
+    expect(fn (): object => $schema->getData())
+        ->toThrow(LogicException::class, 'nullWhenBlank()');
+});
+
+it('refuses nullWhenBlank() on a component carrying no state path', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->nullWhenBlank()
+                ->components([StateField::make('author.name')]),
+        ])
+        ->record(new Post());
+
+    $schema->fill(['author' => ['name' => null]]);
+
+    expect(fn (): object => $schema->getData())
+        ->toThrow(LogicException::class, 'no state path');
 });

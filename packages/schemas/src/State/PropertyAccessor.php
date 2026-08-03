@@ -173,6 +173,22 @@ final readonly class PropertyAccessor
     }
 
     /**
+     * Whether the record's declared write-side type at a dotted path accepts
+     * null, so a caller about to write one there can refuse first with a message
+     * of its own rather than letting Symfony raise a bare type error. True when
+     * the type cannot be read, keeping the behaviour a caller had before types
+     * were consulted.
+     *
+     * @param class-string $recordClass
+     */
+    public function acceptsNullOnRecord(string $recordClass, string $path): bool
+    {
+        $target = $this->typeReader->describe($recordClass, $path);
+
+        return ! $target instanceof RecordTarget || $target->isNullable;
+    }
+
+    /**
      * Whether a dotted path exists in a detached nested array — unlike
      * {@see getFromArray()}, distinguishes an absent key from a present null
      * (matching `Arr::has`).

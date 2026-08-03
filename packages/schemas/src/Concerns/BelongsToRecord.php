@@ -135,6 +135,9 @@ trait BelongsToRecord
      * nulls short-circuits the inner ones beneath it.
      *
      * @return array<string, Component>
+     *
+     * @throws LogicException when a component declares itself a nullable branch
+     *                        without a state path naming the property to null
      */
     protected function getNullableBranches(): array
     {
@@ -148,7 +151,10 @@ trait BelongsToRecord
             $recordPath = $component->getRecordStatePath();
 
             if ($recordPath === null) {
-                continue;
+                throw new LogicException(sprintf(
+                    '%s declares nullWhenBlank() but carries no state path, so it names no property to null. Give it the statePath() of the branch it wraps, or drop nullWhenBlank().',
+                    $component::class,
+                ));
             }
 
             $branches[$recordPath] = $component;
@@ -250,6 +256,9 @@ trait BelongsToRecord
      * whose state should not exist is nulled whole before the leaf walk, which
      * then skips every path beneath it — so a discarded branch is never built
      * back up by one of its own leaves.
+     *
+     * @throws LogicException when a declared branch names no property, or names
+     *                        one the record declares non-nullable
      */
     public function getData(): object
     {
@@ -277,6 +286,14 @@ trait BelongsToRecord
 
             if (! $this->hasDehydratedBranchLeaf($state, $branchPath, $recordPaths)) {
                 continue;
+            }
+
+            if (! $accessor->acceptsNullOnRecord($record::class, $branchPath)) {
+                throw new LogicException(sprintf(
+                    'Cannot map state path "%s" onto %s: the record declares that property non-nullable, so the nullWhenBlank() on the component that owns it can never apply. Make the property nullable, or drop nullWhenBlank().',
+                    $branchPath,
+                    $record::class,
+                ));
             }
 
             $branchState = $accessor->getFromArray($state, $branchPath);

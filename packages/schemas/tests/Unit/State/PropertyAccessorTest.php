@@ -317,6 +317,23 @@ it('surfaces NoSuchPropertyException for a missing leaf setter on a record write
         ->toThrow(NoSuchPropertyException::class);
 });
 
+it('reports a nullable record property as accepting null', function (): void {
+    expect(accessor()->acceptsNullOnRecord(Post::class, 'author'))->toBeTrue();
+});
+
+it('reports a non-nullable record property as rejecting null', function (): void {
+    expect(accessor()->acceptsNullOnRecord(UninitializedPost::class, 'author'))->toBeFalse();
+});
+
+it('reports a record path it cannot read as accepting null', function (): void {
+    expect(accessor()->acceptsNullOnRecord(Post::class, 'meta.seo'))->toBeTrue();
+});
+
+it('reads nullability through an object hop rather than off the root', function (): void {
+    expect(accessor()->acceptsNullOnRecord(UninitializedPost::class, 'author.name'))->toBeTrue()
+        ->and(accessor()->acceptsNullOnRecord(TypedRecord::class, 'money.amount'))->toBeFalse();
+});
+
 it('reports a present leaf in a detached array', function (): void {
     expect(accessor()->hasInArray(['author' => ['name' => 'Ada']], 'author.name'))->toBeTrue();
 });

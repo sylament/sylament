@@ -47,6 +47,7 @@ exists. _Blocked by_ names what has to land first. _Detail_ carries a
 | [`getFromRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — read a record's object graph by dotted path (objects hop by property, arrays by key, null past a null/scalar intermediate) | [`data_get()`](../../../vendor/laravel/framework/src/Illuminate/Collections/helpers.php) | done | — | [diverges](#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) |
 | [`setOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write into a record's object graph; a null singular segment is constructed from its declared type, the remainder past the first segment that is neither an object nor constructible writes as a nested array | [`data_set()`](../../../vendor/laravel/framework/src/Illuminate/Collections/helpers.php) | done | — | [diverges](#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) · [diverges](#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused) · [semantics](#a-throwing-setonrecord-can-leave-a-constructed-intermediate-behind) |
 | [`hasInArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether a dotted path exists in a detached array (absent vs present-null) | [`Arr::has()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | — |
+| [`acceptsNullOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether the record's declared write-side type at a dotted path takes null (true when the type cannot be read) | — (Sylament-invented) | done | — | [semantics](#the-nullability-probe-lives-here-because-the-type-reader-does) |
 | [Service wiring](../../../packages/schemas/src/State/PropertyAccessor.php) — registration and class alias, injected through `CanAccessProperties` | — (Sylament-invented) | done | — | [diverges](#the-accessor-is-injected-not-reached-for) |
 
 Every row is **done** — the unit suite
@@ -65,7 +66,10 @@ it, the plain-array branch still taking the array-remainder path, the
 required-constructor-arguments refusal, the object-collection refusal at both a
 segment and a leaf, the scalar-intermediate `LogicException`, and the pin that it
 names the object that rejected the array rather than the root record;
-`hasInArray()`'s present, present-null, absent and past-scalar answers), a
+`hasInArray()`'s present, present-null, absent and past-scalar answers; and
+`acceptsNullOnRecord()`'s four — a nullable property, a non-nullable one, a path
+whose type cannot be read, and one read through an object hop rather than off the
+root), a
 wiring test
 ([`PropertyAccessorBootTest`](../../../packages/schemas/tests/Integration/State/PropertyAccessorBootTest.php))
 pins both paths — a component from `make()` holds the container's accessor, one
@@ -97,6 +101,26 @@ the method atomic would cost a second traversal to serve only the case where
 someone catches a `LogicException` and keeps using the record, which nothing does.
 Worth knowing before writing a test that asserts an untouched record after a
 caught throw.
+
+### The nullability probe lives here because the type reader does
+
+`acceptsNullOnRecord()` writes nothing. It exists so a caller about to write null
+into the record graph can refuse *first*, with a message of its own, instead of
+letting Symfony raise `InvalidTypeException` — the bare type error this class
+exists to translate everywhere else. Its one consumer today is
+[`getData()`'s branch pass](belongs-to-record.md#a-branch-the-record-cannot-null-is-refused-loudly),
+which needs to name `nullWhenBlank()` in the failure, and `setOnRecord()` cannot
+know that is why null arrived.
+
+It sits on this class rather than on the caller because this class already holds
+the [`RecordTypeReader`](record-type-reader.md) — the alternative was a second
+`#[Required]` setter on `Schema`, duplicating the one
+[`CanBeValidated`](../forms/can-be-validated.md) already carries, so that the
+schema could reach a reader its own accessor was constructed with.
+
+Note what it does **not** do: it never asserts. A path whose type cannot be read
+answers `true`, so an unreadable target keeps the behaviour it had before types
+were consulted, and every "should this throw" decision stays with the caller.
 
 ## Divergences
 

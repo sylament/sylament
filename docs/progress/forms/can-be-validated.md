@@ -98,7 +98,9 @@ pinning that `boolean()` still derives; the wiring and branch propagation — th
 container reader reaching a field built by `make()`, requirement derived from the
 record bound on the root schema, suppressed under a blank nullable branch,
 resumed once the branch is filled, applied when the branch is not declared
-nullable, and an explicit `required()` staying strict inside a blank branch — by
+nullable, unmoved by a path-less `nullWhenBlank()` container (asserted against two
+values of an unrelated sibling field, so a walk reading the whole bag fails it),
+and an explicit `required()` staying strict inside a blank branch — by
 [`Integration/CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php);
 the `isMarkedAsRequired()` fallback by
 [`FieldTest`](../../../packages/forms/tests/Unit/Components/FieldTest.php); the
@@ -257,6 +259,15 @@ Two behaviours make this safe to have on by default, and both are load-bearing:
   the branch could never be nulled. With it, the pair states exactly *"name is
   required if there is an author"* — Filament's `condition:` + `requiredWith()`
   shape, derived instead of hand-written.
+
+  An ancestor is only a branch if it carries a **record state path**, and that
+  gate is not cosmetic symmetry with the mapper's own walk. `getRawState()` on a
+  path-less component falls through to its container's path, so before the gate a
+  path-less `nullWhenBlank()` container handed `shouldNullBranch()` the whole
+  form's raw bag — and one field's requirement moved with unrelated fields
+  elsewhere on the page.
+  [The mapper now refuses that declaration outright](../schemas/belongs-to-record.md#a-nullable-branch-with-no-state-path-is-refused-not-ignored);
+  the two walks agree on what a branch is.
 - **It answers `false` wherever it cannot be sure.** No container, no bound record
   class, no record-relative path, a path the record does not declare, or a
   collection-typed target — each returns false rather than guessing. The

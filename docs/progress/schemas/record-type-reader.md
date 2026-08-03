@@ -60,7 +60,7 @@ through provenance: `Post::$author` reports an `objectClass` and
 `objectClass` and `describe(…, 'money.amount')` reporting non-nullable are each
 reachable only by descending a segment — verified by disabling the walk, which
 fails that test and no other. The consumers pin the rest from their own suites:
-construction and refusal in [`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php),
+construction, refusal and the nullability probe in [`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php),
 branch nulling in [`Unit/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordTest.php),
 derivation in forms' [`CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php).
 No row has a write-up here.
@@ -95,9 +95,11 @@ demo's `Article` carried while it hid a missing intermediate behind a vivifying
 
 Both methods return `null` rather than throwing, and every consumer reads that
 one way: *keep whatever behaviour you had before types were consulted.*
-`setOnRecord()` falls through to the array-remainder write, `getData()` skips the
-branch, forms' `isRequiredByRecord()` returns `false`. So a null is never an
-error and never means "not nullable" — it means the reader declined to answer.
+`setOnRecord()` falls through to the array-remainder write,
+[`acceptsNullOnRecord()`](property-accessor.md#the-nullability-probe-lives-here-because-the-type-reader-does)
+answers `true` so `getData()`'s branch pass raises no objection, and forms'
+`isRequiredByRecord()` returns `false`. So a null is never an error and never
+means "not nullable" — it means the reader declined to answer.
 
 Three different situations produce it, and they are deliberately not
 distinguished: the extractor read no type at all (`describeProperty()` on a

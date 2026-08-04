@@ -34,6 +34,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`HasToggleIcons`](../../../packages/forms/src/Components/Concerns/HasToggleIcons.php) | [`Concerns/HasToggleIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleIcons.php) | done | — | [diverges](#hastoggleicons-tests-for-null-not-truthiness) |
 | Error display (`aria-invalid` on the input) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](field.md#error-display-shows-every-message-for-the-path) |
 | `required()` — no attribute, and a `NotNull` constraint | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | done | — | [diverges](#required-means-presence-not-truth) |
+| [`isBlankStateValue()`](../../../packages/forms/src/Components/Toggle.php) — an untouched switch reads blank | — | done | — | [semantics](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves) |
 | [`HasToggleColors`](../../../packages/forms/src/Components/Concerns/HasToggleColors.php) (`onColor()` / `offColor()`) | [`Concerns/HasToggleColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleColors.php) | done | — | [diverges](#the-two-colours-ride-on-two-elements) |
 | `CanFixIndistinctState` (`fixIndistinctState()`) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` + the distinct/live surface | [detail](#fixindistinctstate-awaits-the-repeater) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — | [detail](#the-alpine-attribute-concern-is-not-ported) |
@@ -51,11 +52,14 @@ off branches cannot pass for each other), the `bool` `Type` constraint and its
 post-hoc message, `required()` building `NotNull` and validating an off switch,
 `disabled` / `autofocus`, `aria-invalid` in both directions (the `true` case
 against a real validator run, which the `.sy-fo-toggle-input[aria-invalid='true']`
-ring depends on), the deliberately missing `required` attribute, and the two
+ring depends on), the deliberately missing `required` attribute, the two
 colours landing on the elements that carry them — the resolved class list for a
 named palette, the inline `--sy-color-*` declarations for an array one, primary
 on the track and nothing on the root when neither is set, and nothing at all for
-gray.
+gray — and `isBlankStateValue()` answering `true` for `false` and `null` but not
+`true`, the override that keeps a resting switch from holding a
+[`nullWhenBlank()` branch](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves)
+alive.
 
 ## Details
 

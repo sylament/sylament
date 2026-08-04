@@ -113,7 +113,7 @@ trait BelongsToRecord
                 continue;
             }
 
-            if ($this->hasPathBearingDescendants($component)) {
+            if ($component->hasPathBearingDescendants()) {
                 continue;
             }
 
@@ -163,25 +163,6 @@ trait BelongsToRecord
         uksort($branches, static fn (int|string $a, int|string $b): int => mb_substr_count((string) $a, '.') <=> mb_substr_count((string) $b, '.'));
 
         return $branches;
-    }
-
-    /**
-     * Whether any component nested under this one carries a state path — at any
-     * depth, through any child-schema key. A leaf decorated with a path-less
-     * child schema (`helperText()`, `belowContent()`, …) owns none, so it stays
-     * a leaf.
-     */
-    private function hasPathBearingDescendants(Component $component): bool
-    {
-        foreach ($component->getChildSchemas() as $childSchema) {
-            foreach ($childSchema->getFlatComponents(withActions: false) as $descendant) {
-                if ($descendant->hasStatePath()) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
     }
 
     /**

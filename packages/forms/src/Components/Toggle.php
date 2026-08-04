@@ -51,6 +51,16 @@ class Toggle extends Field
         return false;
     }
 
+    /**
+     * False is this field's resting value — its non-nullable cast dehydrates an
+     * untouched toggle to false — so the branch blank test must read it as blank,
+     * or an optional branch containing a toggle could never be discarded.
+     */
+    public function isBlankStateValue(mixed $value): bool
+    {
+        return $value === false || parent::isBlankStateValue($value);
+    }
+
     protected function setUp(): void
     {
         parent::setUp();

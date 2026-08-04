@@ -171,3 +171,9 @@ it('derives no requirement from a non-nullable bool column', function (): void {
         ->and($crawler->filter('input.sy-fo-checkbox')->attr('required'))->toBeNull()
         ->and($crawler->filter('.sy-fo-field-label-required-mark')->count())->toBe(0);
 });
+
+it('treats false as a blank state value', function (): void {
+    expect(Checkbox::make('flag')->isBlankStateValue(false))->toBeTrue()
+        ->and(Checkbox::make('flag')->isBlankStateValue(true))->toBeFalse()
+        ->and(Checkbox::make('flag')->isBlankStateValue(null))->toBeTrue();
+});

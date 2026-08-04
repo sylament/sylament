@@ -49,4 +49,14 @@ class Checkbox extends Field
     {
         return false;
     }
+
+    /**
+     * False is this field's resting value — its non-nullable cast dehydrates an
+     * untouched box to false — so the branch blank test must read it as blank,
+     * or an optional branch containing a checkbox could never be discarded.
+     */
+    public function isBlankStateValue(mixed $value): bool
+    {
+        return $value === false || parent::isBlankStateValue($value);
+    }
 }

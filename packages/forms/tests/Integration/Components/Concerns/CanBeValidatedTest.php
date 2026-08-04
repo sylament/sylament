@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Integration\Components\Concerns;
 
+use Sylament\Forms\Components\Checkbox;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Records\Article;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\RecordTypeReader;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /*
  * Derived requirement as a whole schema resolves it: real components built by the
@@ -133,4 +135,63 @@ it('keeps an explicit required() strict inside a blank nullable branch', functio
 
     expect($schema->getComponentByStatePath('data.author.name')->isRequired())->toBeTrue()
         ->and($schema->getComponentByStatePath('data.author.handle')->isRequired())->toBeFalse();
+});
+
+it('suppresses derived requirement when the only non-blank branch value is an untouched checkbox', function (): void {
+    $schema = Schema::make(new FieldRenderHost())
+        ->statePath('data')
+        ->record(Article::class)
+        ->components([
+            Section::make('author')
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([TextInput::make('name'), TextInput::make('handle'), Checkbox::make('verified')]),
+        ]);
+
+    $schema->rawState(['author' => ['name' => null, 'handle' => null, 'verified' => false]]);
+
+    expect($schema->getComponentByStatePath('data.author.name')->isRequired())->toBeFalse();
+});
+
+it('resumes derived requirement once the checkbox is ticked', function (): void {
+    $schema = Schema::make(new FieldRenderHost())
+        ->statePath('data')
+        ->record(Article::class)
+        ->components([
+            Section::make('author')
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([TextInput::make('name'), Checkbox::make('verified')]),
+        ]);
+
+    $schema->rawState(['author' => ['name' => null, 'verified' => true]]);
+
+    expect($schema->getComponentByStatePath('data.author.name')->isRequired())->toBeTrue();
+});
+
+it('nulls the branch on getData() when only the checkbox holds its resting value', function (): void {
+    $article = new Article();
+
+    // getData() validates before it maps, and the checkbox's Type('bool') keeps the
+    // constraint map non-empty, so this host needs the validator and the key
+    // `validateSchema()` demands — the other tests here stop before that point.
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $schema = Schema::make($host)
+        ->statePath('data')
+        ->record($article)
+        ->components([
+            Section::make('author')
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([TextInput::make('name'), Checkbox::make('verified')]),
+        ]);
+
+    $host->cacheSchema('schema', $schema);
+
+    $schema->rawState(['author' => ['name' => null, 'verified' => false]]);
+
+    expect($schema->getData())->toBe($article)
+        ->and($article->getAuthor())->toBeNull();
 });

@@ -72,7 +72,7 @@ Sylament-only.
 | [`getRecord(bool $withContainerRecord = true)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`getRecord()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-record-type-probe-is-instanceof-not-a-model-gate) |
 | [`getRecordInstance()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
 | [`getRecordStatePath()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it) |
-| [`nullWhenBlank()` / `isNullableBranch()` / `shouldNullBranch()`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [diverges](#a-nullwhenblank-closure-sees-two-different-bags) · [diverges](#a-doctrine-embeddable-cannot-be-nulled) |
+| [`nullWhenBlank()` / `isNullableBranch()` / `shouldNullBranch()` / `isBlankStateValue()`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#the-built-in-blank-test-asks-the-branchs-own-leaves) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [diverges](#a-nullwhenblank-closure-sees-two-different-bags) · [diverges](#a-doctrine-embeddable-cannot-be-nulled) |
 | Per-component relationship members (`saveRelationships*`, `loadStateFromRelationships`, `castStateAfterLoadingFromRelationships`, the `*Using` setters, `saveRelationshipsWhenDisabled`/`WhenHidden`) | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | blocked | Doctrine relationship-state epic | [detail](#the-relationship-layer-is-not-ported) |
 
 ### Closure injection
@@ -106,7 +106,17 @@ throwing, and a path-less declaration throwing); the branch declaration itself b
 [`Unit/Components/Concerns/HasNullableBranchTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasNullableBranchTest.php)
 (the default, the declaration, blank and filled leaves, a nested sub-branch on
 both sides of blank, the closure arm receiving the branch state, and the explicit
-`false`); `getRecordStatePath()` by the component-tier suite (no path, a path-less
+`false` — all of those on a detached component, so they also pin the fallback
+arm; plus two wired trees for the declared-leaves rule: a branch judged blank
+while an unmanaged key beside it is filled, and a branch kept alive through a
+leaf two containers down); the field-side half of the same rule by forms'
+[`CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php)
+(requirement suppressed while a branch's only non-blank value is an untouched
+checkbox, resumed once it is ticked, and `getData()` nulling that branch) and by
+[`CheckboxTest`](../../../packages/forms/tests/Integration/Components/CheckboxTest.php)
+/ [`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php)
+(`isBlankStateValue()` over `false` / `true` / `null`);
+`getRecordStatePath()` by the component-tier suite (no path, a path-less
 component under a root state path, the prefix stripped, no root prefix to strip,
 and a memoized absolute path that no longer sits under the prefix); the component
 tier by
@@ -156,6 +166,52 @@ relationship-state epic (Filament's T6), and the partial-fill arm with the
 partial-render decision.
 
 ## Semantics
+
+### The built-in blank test asks the branch's own leaves
+
+`shouldNullBranch()` without a closure does **not** scan the values in the
+branch's slice. It walks the branch's child schemas, and for every declared leaf
+beneath it — path-bearing, and not itself a container — reads that leaf's value
+out of the slice and asks the leaf whether it is blank, through
+`Component::isBlankStateValue()`. Three consequences, all deliberate:
+
+1. **Unmanaged keys in the slice no longer influence the verdict.** An
+   array-backed branch keeping a sibling key the schema never declared
+   ([leaf granularity](#mapping-walks-the-record-graph-by-declared-leaf-paths))
+   is judged on the declared leaves alone — the same "the schema maps what it
+   declares" rule the rest of both walks follows.
+2. **A leaf absent from the slice is blank, and depth still counts.** The walk is
+   flat over `getFlatComponents()`, so it reaches leaves through any number of
+   intermediate containers and a filled leaf three levels down still keeps the
+   branch alive; a leaf whose key the slice does not carry simply contributes
+   nothing.
+3. **A detached or path-less component falls back to the old value-recursive
+   test**, so `shouldNullBranch()` stays total. Neither real walk can reach that
+   arm — the mapper
+   [refuses a path-less branch outright](#a-nullable-branch-with-no-state-path-is-refused-not-ignored)
+   and forms' requirement walk is gated the same way — it exists so a component
+   built with `new` in a unit test, with no container to enumerate leaves
+   through, still answers.
+
+The trap that forced the change is a boolean. `filled(false)` is `true`, and
+`Checkbox`/`Toggle` cast with `BooleanStateCast(isNullable: false)`, so an
+untouched box dehydrates `false` rather than null. Under the old value scan that
+made **any** boolean field inside a `nullWhenBlank()` branch permanently
+non-blank: derived requirement never suppressed, so the branch's non-nullable
+leaves stayed required and a blank branch could not be submitted, and had it been
+submitted the branch could never have nulled. Asking the leaf instead puts the
+answer where the state casts are —
+[`Checkbox`](../forms/checkbox.md) and [`Toggle`](../forms/toggle.md) override
+`isBlankStateValue()` to read their resting `false` as blank, the same field-side
+placement that already carries
+[their derivation opt-out](../forms/can-be-validated.md#a-boolean-field-opts-out-of-derivation-but-selectboolean-does-not).
+
+The leaf-enumerating predicate the walk needs,
+`hasPathBearingDescendants()`, moved from a private helper on the root tier onto
+`Component` (via `HasChildComponents`) so both walks share one definition, the
+same convergence
+[`getRecordStatePath()`](#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it)
+argues for.
 
 ### A branch the bag no longer carries is skipped, not nulled
 
@@ -526,9 +582,11 @@ for a later, stranger one).
 against its own slice of the dehydrated state, and for one that should not exist
 writes `null` at the **branch** path and then skips every leaf beneath it — so a
 discarded branch is never rebuilt by one of its own leaves. `true` uses the
-built-in test (every mapped value beneath it is blank, recursing to arbitrary
-depth, so a filled leaf three levels down keeps the whole branch alive); a closure
-receives that slice as `$state` and decides for itself.
+built-in test — every leaf the schema declares beneath the branch reports its own
+value blank, at any depth, so a filled leaf three levels down keeps the whole
+branch alive
+([the leaves answer, not the values](#the-built-in-blank-test-asks-the-branchs-own-leaves));
+a closure receives that slice as `$state` and decides for itself.
 
 There is no Filament counterpart and the near neighbour has opposite polarity —
 `relationship(condition:)` says *save when true* and ships no blank test, so a

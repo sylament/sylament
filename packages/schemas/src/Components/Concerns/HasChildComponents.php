@@ -61,6 +61,25 @@ trait HasChildComponents
         return $schemas;
     }
 
+    /**
+     * Whether any component nested under this one carries a state path — at any
+     * depth, through any child-schema key. A leaf decorated with a path-less
+     * child schema (`helperText()`, `belowContent()`, …) owns none, so it stays
+     * a leaf.
+     */
+    public function hasPathBearingDescendants(): bool
+    {
+        foreach ($this->getChildSchemas() as $childSchema) {
+            foreach ($childSchema->getFlatComponents(withActions: false) as $descendant) {
+                if ($descendant->hasStatePath()) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     public function getChildSchema(?string $key = null): ?Schema
     {
         $key ??= 'default';

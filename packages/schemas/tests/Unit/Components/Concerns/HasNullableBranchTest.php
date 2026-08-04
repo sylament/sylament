@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
 
 use Sylament\Schemas\Components\Section;
+use Sylament\Schemas\Schema;
+use Sylament\Schemas\Tests\Fixtures\Components\StateField;
+use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 
 it('is not a nullable branch by default', function (): void {
     expect(Section::make('author')->isNullableBranch())->toBeFalse();
@@ -51,4 +54,44 @@ it('never nulls when declared false', function (): void {
 
     expect($section->isNullableBranch())->toBeFalse()
         ->and($section->shouldNullBranch(['name' => null]))->toBeFalse();
+});
+
+it('judges a wired branch by its declared leaves only', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            Section::make('author')
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('name')]),
+        ]);
+
+    $schema->rawState(['author' => ['name' => null, 'unmanaged' => 'kept elsewhere']]);
+
+    $section = $schema->getComponentByStatePath('data.author.name')->getContainer()->getParentComponent();
+
+    expect($section->shouldNullBranch(['name' => null, 'unmanaged' => 'kept elsewhere']))->toBeTrue()
+        ->and($section->shouldNullBranch(['name' => 'Ada', 'unmanaged' => null]))->toBeFalse();
+});
+
+it('keeps a wired branch alive through a deep filled leaf', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            Section::make('author')
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([
+                    Section::make('address')
+                        ->statePath('address')
+                        ->components([StateField::make('city')]),
+                ]),
+        ]);
+
+    $section = $schema->getComponentByStatePath('data.author.address.city')
+        ->getContainer()->getParentComponent()
+        ->getContainer()->getParentComponent();
+
+    expect($section->shouldNullBranch(['address' => ['city' => 'Paris']]))->toBeFalse()
+        ->and($section->shouldNullBranch(['address' => ['city' => null]]))->toBeTrue();
 });

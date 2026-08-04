@@ -34,6 +34,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`CanBeInline`](../../../packages/forms/src/Components/Concerns/CanBeInline.php) | [`Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) | done | — | [detail](can-be-inline.md) |
 | [`CanBeAccepted`](../../../packages/forms/src/Components/Concerns/CanBeAccepted.php) | [`Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | — | [detail](can-be-accepted.md) |
 | Checked state rendered server-side | [`Checkbox::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) |
+| [`isBlankStateValue()`](../../../packages/forms/src/Components/Checkbox.php) — an untouched box reads blank | — | done | — | [semantics](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves) |
 | `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` | — |
 | `HasExtraInputAttributes` | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | todo | — | — |
 
@@ -41,7 +42,11 @@ Coverage: the inline / not-inline placement in both directions, the absent
 `value` attribute, the hydrated `false` default, the non-nullable cast, the
 `checked` attribute, the hidden-label path, the boolean constraint against a raw
 non-`bool` state, the `accepted()` / `declined()` constraints reaching the field,
-and the `required` / `disabled` / `autofocus` attributes, by
+the `required` / `disabled` / `autofocus` attributes, and `isBlankStateValue()`
+answering `true` for `false` and `null` but not `true` — the override that keeps a
+resting box from holding a
+[`nullWhenBlank()` branch](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves)
+alive — by
 [`CheckboxTest`](../../../packages/forms/tests/Integration/Components/CheckboxTest.php).
 The `aria-invalid` attribute needs a live host to read an error bag from, so it is
 pinned in both directions from

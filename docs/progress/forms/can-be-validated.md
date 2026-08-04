@@ -207,6 +207,17 @@ proposed first and is actively wrong: it cannot see which of three fields bound
 to the same column is asking. `Select`'s behaviour is pinned by a regression test
 so a future overgeneralisation of the boolean suppression fails loudly.
 
+The same predicate has a branch-side counterpart, added for the same reason and
+placed the same way.
+[The built-in blank test asks each declared leaf](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves)
+whether its value is blank, and `Checkbox`/`Toggle` override
+`isBlankStateValue()` so their resting `false` answers yes. Without it
+`filled(false)` held every branch containing a boolean field permanently
+non-blank, so the suppression above never engaged there and the branch could
+never null. `Select::boolean()` needs no override on this side either, and for
+the same reason as the last: its placeholder already dehydrates null, which the
+default test reads as blank.
+
 ### nullable() removes the NotBlank and nothing else
 
 `nullable()` is Filament's inversion verbatim — it calls

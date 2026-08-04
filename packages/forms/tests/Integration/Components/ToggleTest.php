@@ -264,3 +264,9 @@ it('derives no requirement from a non-nullable bool column', function (): void {
         ->and($field->getValidationConstraints())->toHaveCount(1)
         ->and($crawler->filter('.sy-fo-field-label-required-mark')->count())->toBe(0);
 });
+
+it('treats false as a blank state value', function (): void {
+    expect(Toggle::make('flag')->isBlankStateValue(false))->toBeTrue()
+        ->and(Toggle::make('flag')->isBlankStateValue(true))->toBeFalse()
+        ->and(Toggle::make('flag')->isBlankStateValue(null))->toBeTrue();
+});

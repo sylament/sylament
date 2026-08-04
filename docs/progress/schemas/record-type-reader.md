@@ -137,7 +137,10 @@ can reach that state, and two unused public properties on a `final readonly`
 value object with two consumers, both in this repo, is not the place to park a
 hypothetical. They return the day a consumer holds a target it did not itself
 build — the `Repeater` epic's refusal messages being the first candidate — and
-adding a promoted property back is a one-line change.
+adding a promoted property back is a one-line change. That candidate came and
+went without materialising them: the repeater's own early refusal builds the
+target it consumes in the same method, so it too holds the class and property it
+would have read back, and the fields stay dropped.
 
 The one thing they did buy was test expressiveness: the dotted-path walk was
 pinned by asserting the leaf's declaring class. That coverage is re-expressed

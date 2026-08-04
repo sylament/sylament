@@ -247,7 +247,13 @@ acts, and the two answers split the behaviour:
   record declares as anything but a constructible object still falls through to
   the array remainder, which is what keeps the JSON-column shape working.
 - **A segment or leaf that is an object collection throws**, naming the path and
-  the `Repeater` epic. Two triggers raise the one message `refuseCollection()`
+  the Doctrine relationship layer that will own item identity. The message named
+  the `Repeater` epic until the [`Repeater`](../forms/repeater.md#object-collections-stay-refused--item-identity-belongs-to-the-relationship-epic)
+  shipped, at which point pointing at it would have read as a bug report: the
+  repeater maps plain-array items, and an object collection needs to know which
+  state item is which entity, which is the relationship epic's problem. The
+  interim escape the message offers is unchanged — map the property by hand
+  after `getData()`. Two triggers raise the one message `refuseCollection()`
   holds. The **declared type** is the designed one: `assertNotCollection()` asks
   the [`RecordTypeReader`](record-type-reader.md) at both the intermediate and the
   leaf site. The **runtime instance** is the one that has to exist anyway — a

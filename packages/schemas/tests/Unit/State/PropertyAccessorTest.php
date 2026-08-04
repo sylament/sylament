@@ -298,24 +298,31 @@ it('names the object that rejected the array, not the root record', function ():
         ->toThrow(LogicException::class, Author::class);
 });
 
-it('refuses an object-collection segment and names the repeater epic', function (): void {
+it('refuses an object-collection segment and names the relationship layer', function (): void {
     expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags.0.name', 'Ada'))
-        ->toThrow(LogicException::class, 'Repeater epic');
+        ->toThrow(LogicException::class, 'Doctrine relationship layer');
 });
 
 it('refuses an object-collection leaf', function (): void {
     expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags', ['a']))
-        ->toThrow(LogicException::class, 'Repeater epic');
+        ->toThrow(LogicException::class, 'Doctrine relationship layer');
+});
+
+it('points an object-collection refusal at plain-array repeater items and getData()', function (): void {
+    expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags', ['a']))
+        ->toThrow(LogicException::class, 'the Repeater maps plain-array items only')
+        ->and(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags', ['a']))
+        ->toThrow(LogicException::class, 'map this property by hand after getData()');
 });
 
 it('refuses a leaf write onto an adder-shaped collection property', function (): void {
     expect(fn () => accessor()->setOnRecord(new TaggedPost(), 'tags', ['php']))
-        ->toThrow(LogicException::class, '"tags" is a collection');
+        ->toThrow(LogicException::class, '"tags" is an object collection');
 });
 
 it('refuses to traverse an initialized collection intermediate', function (): void {
     expect(fn () => accessor()->setOnRecord(new TaggedPost(), 'tags.0.name', 'php'))
-        ->toThrow(LogicException::class, '"tags" is a collection');
+        ->toThrow(LogicException::class, '"tags" is an object collection');
 });
 
 it('refuses to construct an intermediate whose constructor requires arguments', function (): void {

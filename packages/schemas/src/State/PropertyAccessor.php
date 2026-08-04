@@ -374,7 +374,7 @@ final readonly class PropertyAccessor
     private function refuseCollection(object $holder, string $segment, string $path): never
     {
         throw new LogicException(sprintf(
-            'Cannot map state path "%s" onto %s: "%s" is a collection. Mapping collection items needs identity-keyed item state (the Repeater epic); map the collection yourself after getData().',
+            'Cannot map state path "%s" onto %s: "%s" is an object collection. Collection items need identity mapping (which state item is which entity), which arrives with the Doctrine relationship layer — the Repeater maps plain-array items only. Until then, map this property by hand after getData().',
             $path,
             $holder::class,
             $segment,

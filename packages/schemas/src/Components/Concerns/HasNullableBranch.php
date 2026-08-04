@@ -68,6 +68,10 @@ trait HasNullableBranch
             return $this->isValueSetBlank($state);
         }
 
+        if (! filled($this->getStatePath(isAbsolute: false))) {
+            return $this->isValueSetBlank($state);
+        }
+
         $prefix = $this->getStatePath();
 
         if (! filled($prefix)) {
@@ -77,35 +81,33 @@ trait HasNullableBranch
         $accessor = $this->getPropertyAccessor();
         $leafPrefix = $prefix . '.';
 
-        foreach ($this->getChildSchemas() as $childSchema) {
-            foreach ($childSchema->getFlatComponents(withActions: false) as $leaf) {
-                if (! $leaf->hasStatePath()) {
-                    continue;
-                }
+        foreach ($this->getRootContainer()->getFlatComponents(withActions: false) as $leaf) {
+            if (! $leaf->hasStatePath()) {
+                continue;
+            }
 
-                if ($leaf->hasPathBearingDescendants()) {
-                    continue;
-                }
+            if ($leaf->hasPathBearingDescendants()) {
+                continue;
+            }
 
-                $leafPath = $leaf->getStatePath();
+            $leafPath = $leaf->getStatePath();
 
-                if ($leafPath === null) {
-                    continue;
-                }
+            if ($leafPath === null) {
+                continue;
+            }
 
-                if (! str_starts_with($leafPath, $leafPrefix)) {
-                    continue;
-                }
+            if (! str_starts_with($leafPath, $leafPrefix)) {
+                continue;
+            }
 
-                $relativePath = mb_substr($leafPath, mb_strlen($leafPrefix));
+            $relativePath = mb_substr($leafPath, mb_strlen($leafPrefix));
 
-                if (! $accessor->hasInArray($state, $relativePath)) {
-                    continue;
-                }
+            if (! $accessor->hasInArray($state, $relativePath)) {
+                continue;
+            }
 
-                if (! $leaf->isBlankStateValue($accessor->getFromArray($state, $relativePath))) {
-                    return false;
-                }
+            if (! $leaf->isBlankStateValue($accessor->getFromArray($state, $relativePath))) {
+                return false;
             }
         }
 

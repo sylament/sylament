@@ -105,15 +105,20 @@ only leaf is hidden both left alone rather than nulled, a `nullWhenBlank()` leaf
 writing nothing because a leaf declares no branch, a non-nullable branch target
 throwing, and a path-less declaration throwing; plus the ordering pin — two
 sibling branches nesting by path, where the outer null must short-circuit the
-inner branch's non-nullable refusal, which is red the moment the `uksort()` goes);
+inner branch's non-nullable refusal, which is red the moment the `uksort()` goes,
+and a branch kept alive — the sibling's record leaf written — through a filled
+path-descendant leaf declared by a sibling section and again by a dotted sibling
+field);
 the branch declaration itself by
 [`Unit/Components/Concerns/HasNullableBranchTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasNullableBranchTest.php)
 (the default, the declaration, blank and filled leaves, a nested sub-branch on
 both sides of blank, the closure arm receiving the branch state, and the explicit
 `false` — all of those on a detached component, so they also pin the fallback
-arm; plus two wired trees for the declared-leaves rule: a branch judged blank
-while an unmanaged key beside it is filled, and a branch kept alive through a
-leaf two containers down); the field-side half of the same rule by forms'
+arm; plus four wired trees for the declared-leaves rule: a branch judged blank
+while an unmanaged key beside it is filled, a branch kept alive through a leaf
+two containers down, a sibling component's path-descendant leaf counting toward
+the verdict, and a wired component without its own path falling back to the
+value test); the field-side half of the same rule by forms'
 [`CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php)
 (requirement suppressed while a branch's only non-blank value is an untouched
 checkbox, resumed once it is ticked, and `getData()` nulling that branch) and by
@@ -175,28 +180,35 @@ partial-render decision.
 ### The built-in blank test asks the branch's own leaves
 
 `shouldNullBranch()` without a closure does **not** scan the values in the
-branch's slice. It walks the branch's child schemas, and for every declared leaf
-beneath it — path-bearing, and not itself a container — reads that leaf's value
-out of the slice and asks the leaf whether it is blank, through
-`Component::isBlankStateValue()`. Three consequences, all deliberate:
+branch's slice. It walks the root schema's flat components and keeps every
+declared leaf whose absolute path sits under the branch's own — path-bearing,
+and not itself a container — then reads each leaf's value out of the slice and
+asks the leaf whether it is blank, through `Component::isBlankStateValue()`.
+Three consequences, all deliberate:
 
 1. **Unmanaged keys in the slice no longer influence the verdict.** An
    array-backed branch keeping a sibling key the schema never declared
    ([leaf granularity](#mapping-walks-the-record-graph-by-declared-leaf-paths))
    is judged on the declared leaves alone — the same "the schema maps what it
    declares" rule the rest of both walks follows.
-2. **A leaf absent from the slice is blank, and depth still counts.** The walk is
-   flat over `getFlatComponents()`, so it reaches leaves through any number of
-   intermediate containers and a filled leaf three levels down still keeps the
-   branch alive; a leaf whose key the slice does not carry simply contributes
-   nothing.
+2. **A leaf absent from the slice is blank, and membership is the path, not the
+   tree.** Beneath-ness is the same absolute-path prefix the branch pass skips
+   by, so a filled leaf three levels down keeps the branch alive — and so does
+   one declared by a *sibling* component whose path nests under the branch,
+   [the independence the ordering sort exists for](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order).
+   Judging tree children instead let a branch null while a filled sibling leaf
+   beneath its path was then skipped as nulled — silent data loss, caught in
+   review before merge. A leaf whose key the slice does not carry simply
+   contributes nothing.
 3. **A detached or path-less component falls back to the old value-recursive
    test**, so `shouldNullBranch()` stays total. Neither real walk can reach that
    arm — the mapper
    [refuses a path-less branch outright](#a-nullable-branch-with-no-state-path-is-refused-not-ignored)
    and forms' requirement walk is gated the same way — it exists so a component
    built with `new` in a unit test, with no container to enumerate leaves
-   through, still answers.
+   through, still answers. A wired component without a path of its own takes the
+   same arm: its absolute path would be its container's, and enumerating leaves
+   under that would judge the wrong branch.
 
 The trap that forced the change is a boolean. `filled(false)` is `true`, and
 `Checkbox`/`Toggle` cast with `BooleanStateCast(isNullable: false)`, so an

@@ -541,3 +541,47 @@ it('orders sibling branches by path depth so an outer null short-circuits an inn
     expect($schema->getData())->toBe($record)
         ->and($record->meta)->toBeNull();
 });
+
+it('keeps a branch alive through a filled sibling-by-path section leaf', function (): void {
+    $record = new PageRecord();
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record($record)
+        ->components([
+            Section::make('seo')
+                ->statePath('meta.seo')
+                ->components([StateField::make('title')]),
+            Section::make('meta')
+                ->statePath('meta')
+                ->nullWhenBlank()
+                ->components([StateField::make('note')]),
+        ]);
+
+    $schema->rawState(['meta' => ['note' => null, 'seo' => ['title' => 'Hello']]]);
+
+    expect($schema->getData())->toBe($record)
+        ->and($record->meta?->seo->title)->toBe('Hello')
+        ->and($record->meta?->note)->toBeNull();
+});
+
+it('keeps a branch alive through a filled dotted sibling leaf', function (): void {
+    $record = new Post();
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record($record)
+        ->components([
+            Section::make('author')
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('name')]),
+            StateField::make('author.handle'),
+        ]);
+
+    $schema->rawState(['author' => ['name' => null, 'handle' => '@ada']]);
+
+    expect($schema->getData())->toBe($record)
+        ->and($record->getAuthor()?->getHandle())->toBe('@ada')
+        ->and($record->getAuthor()?->getName())->toBeNull();
+});

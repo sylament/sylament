@@ -95,3 +95,35 @@ it('keeps a wired branch alive through a deep filled leaf', function (): void {
     expect($section->shouldNullBranch(['address' => ['city' => 'Paris']]))->toBeFalse()
         ->and($section->shouldNullBranch(['address' => ['city' => null]]))->toBeTrue();
 });
+
+it('counts a path-descendant leaf declared by a sibling component', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            Section::make('author')
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('name')]),
+            StateField::make('author.handle'),
+        ]);
+
+    $section = $schema->getComponentByStatePath('data.author.name')->getContainer()->getParentComponent();
+
+    expect($section->shouldNullBranch(['name' => null, 'handle' => '@ada']))->toBeFalse()
+        ->and($section->shouldNullBranch(['name' => null, 'handle' => null]))->toBeTrue();
+});
+
+it('falls back to the value test for a wired component without its own path', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            Section::make('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('author.name')]),
+        ]);
+
+    $section = $schema->getComponentByStatePath('data.author.name')->getContainer()->getParentComponent();
+
+    expect($section->shouldNullBranch(['unmanaged' => 'filled']))->toBeFalse()
+        ->and($section->shouldNullBranch(['unmanaged' => null]))->toBeTrue();
+});

@@ -9,6 +9,7 @@ use Sylament\Schemas\Components\Concerns\BelongsToRecord;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Schemas\Components\Concerns\CanBeDisabled;
 use Sylament\Schemas\Components\Concerns\CanBeHidden;
+use Sylament\Schemas\Components\Concerns\Cloneable;
 use Sylament\Schemas\Components\Concerns\HasActions;
 use Sylament\Schemas\Components\Concerns\HasChildComponents;
 use Sylament\Schemas\Components\Concerns\HasColumns;
@@ -38,6 +39,7 @@ class Component extends ViewComponent
     use CanGrow;
     use CanOrderColumns;
     use CanSpanColumns;
+    use Cloneable;
     use HasActions;
     use HasChildComponents;
     use HasColumns;

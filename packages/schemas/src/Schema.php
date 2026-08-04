@@ -20,6 +20,7 @@ use Sylament\Schemas\Concerns\CanBeEmbeddedInParentComponent;
 use Sylament\Schemas\Concerns\CanBeInline;
 use Sylament\Schemas\Concerns\CanBeValidated;
 use Sylament\Schemas\Concerns\CanModifyActions;
+use Sylament\Schemas\Concerns\Cloneable;
 use Sylament\Schemas\Concerns\HasComponents;
 use Sylament\Schemas\Concerns\HasHeadings;
 use Sylament\Schemas\Concerns\HasKey;
@@ -46,6 +47,7 @@ class Schema extends ViewComponent
     use CanBeInline;
     use CanBeValidated;
     use CanModifyActions;
+    use Cloneable;
     use HasAlignment;
     use HasColumns {
         getAllColumns as private getOwnAllColumns;

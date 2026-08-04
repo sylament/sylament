@@ -110,6 +110,30 @@ trait HasChildComponents
         );
     }
 
+    protected function cloneChildComponents(): static
+    {
+        foreach ($this->childComponents as $key => $childComponents) {
+            if (is_array($childComponents)) {
+                $this->childComponents[$key] = array_map(
+                    static fn (Component|Action|ActionGroup|string|Markup $component): Component|Action|ActionGroup|string|Markup => match (true) {
+                        $component instanceof Component => $component->getClone(),
+                        $component instanceof Action, $component instanceof ActionGroup => clone $component,
+                        default => $component,
+                    },
+                    $childComponents,
+                );
+            } elseif ($childComponents instanceof Component) {
+                $this->childComponents[$key] = $childComponents->getClone();
+            } elseif (($childComponents instanceof Action) || ($childComponents instanceof ActionGroup)) {
+                $this->childComponents[$key] = clone $childComponents;
+            } elseif ($childComponents instanceof Schema) {
+                $this->childComponents[$key] = $childComponents->getClone();
+            }
+        }
+
+        return $this;
+    }
+
     protected function makeChildSchema(string $key): Schema
     {
         return Schema::make($this->getLiveComponentOrNull())

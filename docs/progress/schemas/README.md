@@ -115,7 +115,7 @@ own single-use concerns folded into [`component.md`](component.md).
 | `CanPoll` | [`Components/Concerns/CanPoll.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanPoll.php) | todo | — |
 | `CanStripCharactersFromState` | [`Components/Concerns/CanStripCharactersFromState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | todo | — |
 | `CanTrimState` | [`Components/Concerns/CanTrimState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanTrimState.php) | todo | — |
-| `Cloneable` | [`Components/Concerns/Cloneable.php`](../../../vendor/filament/schemas/src/Components/Concerns/Cloneable.php) | todo | — |
+| [`Cloneable`](../../../packages/schemas/src/Components/Concerns/Cloneable.php) | [`Components/Concerns/Cloneable.php`](../../../vendor/filament/schemas/src/Components/Concerns/Cloneable.php) | done | [component.md](component.md#haschildcomponents-only-the-materialization-core-is-ported) |
 | `EntanglesStateWithSingularRelationship` | [`Components/Concerns/EntanglesStateWithSingularRelationship.php`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | todo | — |
 | [`HasActions`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`Components/Concerns/HasActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | in progress | [has-actions.md](has-actions.md) |
 | `HasContainerGridLayout` | [`Components/Concerns/HasContainerGridLayout.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php) | todo | — |
@@ -141,7 +141,7 @@ shared with the base `Component` or not yet started.
 | [`CanBeDisabled`](../../../packages/schemas/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/schemas/src/Concerns/CanBeDisabled.php) | done | [can-be-disabled.md](can-be-disabled.md) |
 | `CanBeHidden` | [`Concerns/CanBeHidden.php`](../../../vendor/filament/schemas/src/Concerns/CanBeHidden.php) | todo | — |
 | [`CanBeValidated`](../../../packages/schemas/src/Concerns/CanBeValidated.php) | [`Concerns/CanBeValidated.php`](../../../vendor/filament/schemas/src/Concerns/CanBeValidated.php) | in progress | [can-be-validated.md](can-be-validated.md) |
-| `Cloneable` | [`Concerns/Cloneable.php`](../../../vendor/filament/schemas/src/Concerns/Cloneable.php) | todo | — |
+| [`Cloneable`](../../../packages/schemas/src/Concerns/Cloneable.php) | [`Concerns/Cloneable.php`](../../../vendor/filament/schemas/src/Concerns/Cloneable.php) | done | [schema.md](schema.md#clonecomponents-never-stamps-the-original-and-always-resets-the-cache) |
 | [`HasColumns`](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`Concerns/HasColumns.php`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | [has-columns.md](has-columns.md) |
 | [`HasGap`](../../../packages/schemas/src/Components/Concerns/HasGap.php) | [`Concerns/HasGap.php`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) | done | [has-gap.md](has-gap.md) |
 | `HasEntryWrapper` | [`Concerns/HasEntryWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasEntryWrapper.php) | todo | — |

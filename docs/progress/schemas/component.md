@@ -69,7 +69,7 @@ container/child/identity/visibility/heading/state plus the
 concerns — enough to drive Section and the forms `Field` slots. Left: the
 Filament traits not yet on the base — `CanBeConcealed`,
 `CanBeGridContainer`, `CanBeLiberatedFromContainerGrid`,
-`CanBeRepeated`, `CanPartiallyRender`, `CanPoll`, `Cloneable`,
+`CanBeRepeated`, `CanPartiallyRender`, `CanPoll`,
 `HasEntryWrapper`, `HasFieldWrapper`, `HasInlineLabel`, `HasMaxWidth`,
 `HasMeta` — each of which has its own row in the
 [schemas README](README.md) and lands with its own epic. Next step: compose them
@@ -133,13 +133,15 @@ documented to *not* materialize the implicit `default` schema during a state
 walk, a deliberate behavioural note to preserve. Direct coverage is thin
 ([`HasChildComponentsTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasChildComponentsTest.php)
 pins the null-slot clear and the empty-default survival), the rest exercised
-transitively via `SectionTest`/`HasIdTest`/forms `Field`. Left: the
-`getChildComponents()` / `getDefaultChildComponents()` /
-`getDefaultChildSchemas()` helpers, the deprecated aliases, the caching/clone
-layer, and the `withHidden` parameter — the last three carry divergences below;
+transitively via `SectionTest`/`HasIdTest`/forms `Field`. `cloneChildComponents()`
+is ported and pinned by
+[`CloneableTest`](../../../packages/schemas/tests/Unit/Components/Concerns/CloneableTest.php).
+Left: the `getChildComponents()` / `getDefaultChildComponents()` /
+`getDefaultChildSchemas()` helpers, the deprecated aliases, the caching layer,
+and the `withHidden` parameter — the last two carry divergences below;
 the `schema()` alias is deliberately not ported
 ([diverges](#the-schema-alias-is-not-ported)).
-Next step: add the cheap helpers; the caching and `cloneChildComponents()` land
+Next step: add the cheap helpers; the caching layer lands
 with the Repeater epic's schemas lane ([repeater.md](../forms/repeater.md)).
 
 ### HasState: the get/set core and validation flags are in; relationship and partial-render state are out
@@ -260,15 +262,17 @@ record is then probed with
 Filament's `self`/`static` arm has no counterpart: the base `EvaluatesClosures`
 own-class mechanism already injects the evaluating instance.
 
-### The child-schema caching and clone layer is not ported
+### The child-schema caching layer is not ported
 
 Filament caches materialized schemas (`cachedDefaultChildSchemas`,
 `cachedChildSchemas`, cleared on `childComponents()` mutation and via
-`clearCachedChildSchemas`) and deep-clones child components in
-`cloneChildComponents()`. Sylament re-materializes on every `getChildSchema` call
-and ships no clone support (`Cloneable` is not on the base). Provisional: the
-cache returns with the render pipeline where repeated materialization would show;
-`cloneChildComponents()` returns with the `Cloneable` concern.
+`clearCachedChildSchemas`). Sylament re-materializes on every `getChildSchema`
+call. Provisional: the cache returns with the Repeater epic's schemas lane, where
+one child schema per item makes repeated materialization show
+([repeater.md](../forms/repeater.md)). `cloneChildComponents()` is ported and
+drops Filament's `$cachedChildSchemas = []` reset with it, having no cache to
+clear yet; its action arm is a shallow `clone`
+([schema.md](schema.md#clonecomponents-never-stamps-the-original-and-always-resets-the-cache)).
 
 ### components()/childComponents() accept a single component, not just an array
 

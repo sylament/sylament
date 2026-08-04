@@ -61,7 +61,7 @@ their detail sections do.
 | [`BelongsToParentComponent`](../../../packages/schemas/src/Concerns/BelongsToParentComponent.php) | [`Concerns/BelongsToParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToParentComponent.php) | done | — | [diverges](#parentcomponent-accepts-null-to-detach) |
 | [`CanBeEmbeddedInParentComponent`](../../../packages/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | [`Concerns/CanBeEmbeddedInParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | done | — | — |
 | [`CanBeInline`](../../../packages/schemas/src/Concerns/CanBeInline.php) | [`Concerns/CanBeInline.php`](../../../vendor/filament/schemas/src/Concerns/CanBeInline.php) | done | — | — |
-| [`HasComponents`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | in progress | — | [detail](#hascomponents-still-lacks-the-lookup-and-clone-layer) · [diverges](#getcomponents-preserves-the-callers-array-keys-instead-of-reindexing) |
+| [`HasComponents`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | in progress | — | [detail](#hascomponents-still-lacks-the-lookup-layer) · [diverges](#getcomponents-preserves-the-callers-array-keys-instead-of-reindexing) |
 | [`HasState`](../../../packages/schemas/src/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Concerns/HasState.php) | in progress | — | [detail](#hasstate-still-lacks-constant-state-relationships-and-partial-rendering) · [diverges](#getstate-validates-without-a-prepareforvalidation-mutation-layer) |
 | [`fill(object\|array\|null $state = null)` — the object arm](../../../packages/schemas/src/Concerns/HasState.php) | — | done | — | [belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares) |
 | [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [belongs-to-record.md](belongs-to-record.md#reads-are-lenient-writes-are-strict) |
@@ -69,8 +69,8 @@ their detail sections do.
 | [`HasHeadings`](../../../packages/schemas/src/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Concerns/HasHeadings.php) | done | — | — |
 | [`CanModifyActions`](../../../packages/schemas/src/Concerns/CanModifyActions.php) | [`Concerns/CanModifyActions.php`](../../../vendor/filament/schemas/src/Concerns/CanModifyActions.php) | done | — | [diverges](#modifyaction-and-modifyactiongroup-guard-a-callbacks-return-type-at-runtime) |
 
-Beyond the folded concerns, six of Filament's composed traits are not yet
-ported at all — `CanBeHidden`, `Cloneable`, `HasEntryWrapper`,
+Beyond the folded concerns, five of Filament's composed traits are not yet
+ported at all — `CanBeHidden`, `HasEntryWrapper`,
 `HasFieldWrapper`, `HasInlineLabels`, and support's
 `HasDefaultDataFormattingSettings` — and earn their own README rows as they
 land. (`CanBeDisabled`, `CanBeValidated`, `BelongsToRecord`, and `HasOperation`
@@ -98,7 +98,7 @@ bodies, ported faithfully. **Left:** direct coverage of the fall-through.
 **Next:** add a unit case that parents one schema under another and asserts the
 inherited `isLive`/`getAllColumns` result.
 
-### `HasComponents` still lacks the lookup and clone layer
+### `HasComponents` still lacks the lookup layer
 
 `components()`/`getComponents()`/`getFlatComponents()`/`getComponentByStatePath()`/
 `getAction()` are ported and covered (35 unit cases plus the `SchemaRenderTest`
@@ -123,13 +123,16 @@ and every component's child schemas recursively — keyed child schemas are
 entered only when the remaining key matches or prefixes them, unkeyed ones pass
 it through, and a keyed component's inheritance-key prefix is stripped before
 descending (`str_starts_with`/`mb_substr`, no Laravel `str()`). Depth-first,
-first match wins; hidden components are skipped. **Left:** `getComponent()`,
-`getFlatFields()` (depend on Fields),
-`cloneComponents()`/`clearCachedChildSchemas()` (depend on `Cloneable`
-and child-schema caching, both landing with the Repeater epic's schemas lane —
-[repeater.md](../forms/repeater.md)); the `schema()` alias is deliberately not
-ported ([diverges](#the-schema-alias-is-not-ported)). **Next:** port
-the rest as Fields/`Cloneable` land. The structural
+first match wins; hidden components are skipped. `cloneComponents()` is ported
+and pinned by
+[`CloneableTest`](../../../packages/schemas/tests/Unit/Concerns/CloneableTest.php)
+([diverges](#clonecomponents-never-stamps-the-original-and-always-resets-the-cache)).
+**Left:** `getComponent()`, `getFlatFields()` (depend on Fields),
+`clearCachedChildSchemas()` (depends on child-schema caching, landing with the
+Repeater epic's schemas lane — [repeater.md](../forms/repeater.md)); the
+`schema()` alias is deliberately not ported
+([diverges](#the-schema-alias-is-not-ported)). **Next:** port
+the rest as Fields land. The structural
 difference it keeps — a single `$cachedComponents` slot instead of Filament's
 flag-keyed memoization — is permanent and written up in
 [Divergences](#the-component-collection-keeps-a-single-cache-and-drops-the-flag-keyed-memoization).
@@ -280,6 +283,22 @@ flag — Filament's `withHidden`/`withAbsoluteKeys`/`containerKey` parameters an
 its key-indexed carry are dropped: the flat list stays hidden-inclusive, ordered,
 and unkeyed. Correct but not memoized; revisit if flat/state-path lookups become
 hot.
+
+### `cloneComponents()` never stamps the original and always resets the cache
+
+Two corrections while porting
+[`HasComponents::cloneComponents()`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php).
+Filament stamps `container($this)` onto each **original** component child before
+copying it, mutating an instance the source schema still holds; ours only copies,
+because `getComponents()` re-stamps `container`/`schemaContainer` when it rebuilds
+its cache, so the stamp is redundant on the clone and damaging on the original. And Filament resets its component caches only inside the
+non-`Closure` arm, so cloning a schema whose `components()` is a closure hands
+the clone the original's already-built component list — with the *original* as
+their container; ours resets `$cachedComponents` unconditionally. Both are pinned
+by [`CloneableTest`](../../../packages/schemas/tests/Unit/Concerns/CloneableTest.php).
+Actions and action groups are shallow `clone`s here and in
+`cloneChildComponents()`, matching the component tier: `Action` has no
+`getClone()` yet ([action.md](../actions/action.md)).
 
 ### `getState()` validates without a prepareForValidation mutation layer
 

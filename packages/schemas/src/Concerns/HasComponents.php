@@ -40,6 +40,28 @@ trait HasComponents
     }
 
     /**
+     * Deep-clone this schema's own component definitions — components through
+     * {@see Component::getClone()}, actions and action groups as shallow copies.
+     */
+    protected function cloneComponents(): static
+    {
+        if (!$this->components instanceof Closure) {
+            $this->components = array_map(
+                static fn (Component|Action|ActionGroup|string|Markup $component): Component|Action|ActionGroup|string|Markup => match (true) {
+                    $component instanceof Component => $component->getClone(),
+                    $component instanceof Action, $component instanceof ActionGroup => clone $component,
+                    default => $component,
+                },
+                wrap($this->components),
+            );
+        }
+
+        $this->cachedComponents = null;
+
+        return $this;
+    }
+
+    /**
      * Resolve an action anywhere in this container by name: a direct `Action`
      * child, an action inside a direct `ActionGroup` child, a
      * component-registered action (reached only when `$nestedContainerKey`

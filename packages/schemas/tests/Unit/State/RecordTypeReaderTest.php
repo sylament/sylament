@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Schemas\State\RecordTypeReader;
 use Sylament\Schemas\Tests\Fixtures\State\Author;
 use Sylament\Schemas\Tests\Fixtures\State\Post;
+use Sylament\Schemas\Tests\Fixtures\State\TaggedPost;
 use Sylament\Schemas\Tests\Fixtures\State\TypedRecord;
 
 it('reports a non-nullable scalar as non-nullable', function (): void {
@@ -64,6 +65,15 @@ it('treats a Traversable object property as an object collection', function (): 
 
     expect($target->isCollection)->toBeTrue()
         ->and($target->isObjectCollection)->toBeTrue();
+});
+
+it('reports an adder-shaped collection as an object collection', function (): void {
+    $target = new RecordTypeReader()->describeProperty(TaggedPost::class, 'tags');
+
+    expect($target)->not->toBeNull()
+        ->and($target->isCollection)->toBeTrue()
+        ->and($target->isObjectCollection)->toBeTrue()
+        ->and($target->objectClass)->toBeNull();
 });
 
 it('offers no class to construct for an enum property', function (): void {

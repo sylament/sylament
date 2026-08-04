@@ -94,7 +94,20 @@ final readonly class RecordTypeReader
 
     private function isObjectCollection(Type $type): bool
     {
-        return $type instanceof ObjectType
-            && is_a($type->getClassName(), Traversable::class, allow_string: true);
+        if ($type instanceof ObjectType) {
+            return is_a($type->getClassName(), Traversable::class, allow_string: true);
+        }
+
+        if (! $type instanceof CollectionType) {
+            return false;
+        }
+
+        $valueType = $type->getCollectionValueType();
+
+        if ($valueType instanceof NullableType) {
+            $valueType = $valueType->getWrappedType();
+        }
+
+        return $valueType instanceof ObjectType;
     }
 }

@@ -9,6 +9,7 @@ use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Schemas\State\RecordTypeReader;
 use Sylament\Schemas\Tests\Fixtures\State\Author;
 use Sylament\Schemas\Tests\Fixtures\State\Post;
+use Sylament\Schemas\Tests\Fixtures\State\TaggedPost;
 use Sylament\Schemas\Tests\Fixtures\State\TypedRecord;
 use Sylament\Schemas\Tests\Fixtures\State\UninitializedPost;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
@@ -305,6 +306,11 @@ it('refuses an object-collection segment and names the repeater epic', function 
 it('refuses an object-collection leaf', function (): void {
     expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags', ['a']))
         ->toThrow(LogicException::class, 'Repeater epic');
+});
+
+it('refuses a leaf write onto an adder-shaped collection property', function (): void {
+    expect(fn () => accessor()->setOnRecord(new TaggedPost(), 'tags', ['php']))
+        ->toThrow(LogicException::class, '"tags" is a collection');
 });
 
 it('refuses to construct an intermediate whose constructor requires arguments', function (): void {

@@ -44,22 +44,23 @@ a _Ports_ link.
 | `RecordTarget::$class` / `$property` — provenance fields | skipped | — | [diverges](#the-value-object-carries-no-provenance) |
 | [`RecordTarget::$objectClass`](../../../packages/schemas/src/State/RecordTarget.php) — the class to construct for an object segment, else null | done | — | [diverges](#objectclass-is-gated-on-instantiability-so-it-is-a-promise-not-a-hint) |
 | [`RecordTarget::$isNullable`](../../../packages/schemas/src/State/RecordTarget.php) — whether null may be **written** | done | — | [semantics](#nullability-is-the-mutators-even-when-the-getter-disagrees) |
-| [`RecordTarget::$isCollection` / `$isObjectCollection`](../../../packages/schemas/src/State/RecordTarget.php) — any collection, and the `Traversable` arm only | done | — | [diverges](#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable) |
+| [`RecordTarget::$isCollection` / `$isObjectCollection`](../../../packages/schemas/src/State/RecordTarget.php) — any collection, and the object-item arms only | done | — | [diverges](#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable) |
 | [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.record_type_reader` plus a class alias, registered with **no** extractor argument | done | — | [diverges](#the-extractor-is-pinned-to-reflection-and-must-not-be-autowired) |
 | Generic collection element types (`array<int, Tag>`) | skipped | — | [diverges](#docblock-generics-are-invisible-and-that-is-the-point) |
 
 Every row is **done** or **skipped** — the unit suite
 ([`RecordTypeReaderTest`](../../../packages/schemas/tests/Unit/State/RecordTypeReaderTest.php))
-covers both nullability arms, the getter/setter asymmetry, the array and
-`Traversable` collection arms and the two flags separating them, the enum arm
-that `class_exists()` alone would have waved through, the dotted-path walk, and
-both null answers (an unreadable property, a path traversing a non-object
-segment). The walk is pinned through the **leaf's own** answers rather than
-through provenance: `Post::$author` reports an `objectClass` and
-`TypedRecord::$money` is nullable, so `describe(…, 'author.name')` reporting no
-`objectClass` and `describe(…, 'money.amount')` reporting non-nullable are each
-reachable only by descending a segment — verified by disabling the walk, which
-fails that test and no other. The consumers pin the rest from their own suites:
+covers both nullability arms, the getter/setter asymmetry, the array,
+`Traversable` and adder-derived `list<Tag>` collection arms and the two flags
+separating them, the enum arm that `class_exists()` alone would have waved
+through, the dotted-path walk, and both null answers (an unreadable property, a
+path traversing a non-object segment). The walk is pinned through the **leaf's
+own** answers rather than through provenance: `Post::$author` reports an
+`objectClass` and `TypedRecord::$money` is nullable, so
+`describe(…, 'author.name')` reporting no `objectClass` and
+`describe(…, 'money.amount')` reporting non-nullable are each reachable only by
+descending a segment — verified by disabling the walk, which fails that test and
+no other. The consumers pin the rest from their own suites:
 construction, refusal and the nullability probe in [`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php),
 branch nulling in [`Unit/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Unit/Concerns/BelongsToRecordTest.php),
 derivation in forms' [`CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php).
@@ -194,9 +195,16 @@ one.
 ### Two collection flags, because a plain array is a collection and is still mappable
 
 `isCollection` covers any collection (a plain `array` resolves to `CollectionType`);
-`isObjectCollection` covers only a `Traversable`-typed object, the arm whose items
-have no identity to map onto. They are not interchangeable and the split is
-load-bearing in both directions:
+`isObjectCollection` covers the two arms whose items have no identity to map onto
+— a `Traversable`-typed object, and a `CollectionType` whose value type (unwrapped
+if nullable) is an object. The second arm is not a refinement but the mainstream
+Doctrine declaration: `getTags(): Collection` behind `addTag(Tag)`/`removeTag(Tag)`
+resolves mutator-first to `list<Tag>`, a `CollectionType` and never an
+`ObjectType`, so a predicate testing only the `Traversable` arm let the commonest
+association shape slip through as a plain list and be mapped wrongly. A native
+`array` resolves a **mixed** value type, which is what keeps it out of the object
+arm and mappable. They are not interchangeable and the split is load-bearing in
+both directions:
 
 - **Refusing every collection breaks the JSON-column shape.** A `?array $meta`
   property under a `Section` is a supported, tested branch — the state is written
@@ -211,8 +219,11 @@ load-bearing in both directions:
 
 `ReflectionExtractor` builds a `TypeResolver` with no string resolver, so it never
 reads a docblock: `array<int, Tag>` and `array<string, mixed>` are the same native
-`array` to this reader. A DTO list of objects therefore takes the array-remainder
-path rather than being refused. **Skipped** rather than a defect, on two grounds:
+`array` to this reader. A DTO list of objects whose item class is stated only in a
+docblock therefore takes the array-remainder path rather than being refused —
+where an adder/remover pair states it in native types, reflection alone reaches it
+and [the object arm](#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable)
+does refuse. **Skipped** rather than a defect, on two grounds:
 it is unchanged from before this reader existed, and it is unreachable until a
 `Repeater` can emit list-shaped state — which is the same epic that will decide how
 list items are identified. Reversing it means reading docblocks, which is exactly

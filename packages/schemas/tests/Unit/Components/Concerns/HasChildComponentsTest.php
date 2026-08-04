@@ -83,12 +83,12 @@ it('materializes no child schemas for a component with none', function (): void 
 });
 
 it('never hands a clone the child schemas cached by the original', function (): void {
-    $section = Section::make('Profile')->components([new Component()->statePath('name')]);
-    Schema::make(new HasSchemasFixture())->components([$section])->getComponents();
+    $host = new Component()->components([new Component()->statePath('name')]);
 
-    $original = $section->getChildSchemas()[0];
+    $original = $host->getChildSchemas()[0];
 
-    expect($section->getClone()->getChildSchemas()[0])->not->toBe($original);
+    expect($host->getClone()->getChildSchemas()[0])->not->toBe($original)
+        ->and($host->getChildSchemas()[0])->toBe($original);
 });
 
 it('invalidates the cached default child schemas when child components are set', function (): void {

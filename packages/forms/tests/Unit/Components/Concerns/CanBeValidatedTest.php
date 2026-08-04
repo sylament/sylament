@@ -323,6 +323,10 @@ it('lets an explicit nullable() beat the derived value', function (): void {
     expect(wireFieldToRecord(FixtureField::make('title')->nullable())->isRequired())->toBeFalse();
 });
 
+it('does not derive from a field-tier record() binding alone', function (): void {
+    expect(wireField(FixtureField::make('title')->record(Article::class))->isRequired())->toBeFalse();
+});
+
 it('is not required when no record is bound', function (): void {
     expect(FixtureField::make('title')->isRequired())->toBeFalse()
         ->and(wireField(FixtureField::make('title'))->isRequired())->toBeFalse();

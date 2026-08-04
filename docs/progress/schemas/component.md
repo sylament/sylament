@@ -130,19 +130,26 @@ code. Next step: port it there, renamed off the `model` vocabulary with the rest
 `makeChildSchema()` / `configureChildSchema()` are ported and drive real
 consumers (Section, the forms `Field` schema slots); `getChildSchema` is
 documented to *not* materialize the implicit `default` schema during a state
-walk, a deliberate behavioural note to preserve. Direct coverage is thin
-([`HasChildComponentsTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasChildComponentsTest.php)
-pins the null-slot clear and the empty-default survival), the rest exercised
-transitively via `SectionTest`/`HasIdTest`/forms `Field`. `cloneChildComponents()`
-is ported and pinned by
+walk, a deliberate behavioural note to preserve. The default-child-schema cache
+is ported too — `getDefaultChildSchemas()` / `getCachedDefaultChildSchemas()` /
+`areCachedDefaultChildSchemasFresh()` / `clearCachedChildSchemas()`, the
+unknown-key fallback in `getChildSchema()`, the cached-map spread in
+`getChildSchemas()`, and invalidation from `childComponents()` and
+`cloneChildComponents()` — the seam the Repeater's per-item schemas ride
+([repeater.md](../forms/repeater.md)); Filament's second, per-key
+`cachedChildSchemas` is not
+([diverges](#only-the-default-child-schema-cache-is-ported)).
+[`HasChildComponentsTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasChildComponentsTest.php)
+pins the null-slot clear, the empty-default survival, the keyed fallback, the
+memoisation and its three invalidations; the rest is exercised transitively via
+`SectionTest`/`HasIdTest`/forms `Field`. `cloneChildComponents()` is ported and
+pinned by
 [`CloneableTest`](../../../packages/schemas/tests/Unit/Components/Concerns/CloneableTest.php).
-Left: the `getChildComponents()` / `getDefaultChildComponents()` /
-`getDefaultChildSchemas()` helpers, the deprecated aliases, the caching layer,
-and the `withHidden` parameter — the last two carry divergences below;
-the `schema()` alias is deliberately not ported
+Left: the `getChildComponents()` / `getDefaultChildComponents()` helpers, the
+deprecated aliases, and the `withHidden` parameter — the last carries a
+divergence below; the `schema()` alias is deliberately not ported
 ([diverges](#the-schema-alias-is-not-ported)).
-Next step: add the cheap helpers; the caching layer lands
-with the Repeater epic's schemas lane ([repeater.md](../forms/repeater.md)).
+Next step: add the cheap helpers.
 
 ### HasState: the get/set core and validation flags are in; relationship and partial-render state are out
 
@@ -262,17 +269,22 @@ record is then probed with
 Filament's `self`/`static` arm has no counterpart: the base `EvaluatesClosures`
 own-class mechanism already injects the evaluating instance.
 
-### The child-schema caching layer is not ported
+### Only the default child-schema cache is ported
 
-Filament caches materialized schemas (`cachedDefaultChildSchemas`,
-`cachedChildSchemas`, cleared on `childComponents()` mutation and via
-`clearCachedChildSchemas`). Sylament re-materializes on every `getChildSchema`
-call. Provisional: the cache returns with the Repeater epic's schemas lane, where
-one child schema per item makes repeated materialization show
-([repeater.md](../forms/repeater.md)). `cloneChildComponents()` is ported and
-drops Filament's `$cachedChildSchemas = []` reset with it, having no cache to
-clear yet; its action arm is a shallow `clone`
+Filament caches materialized schemas twice: `cachedDefaultChildSchemas` (the
+default map, behind the `areCachedDefaultChildSchemasFresh()` seam) and
+`cachedChildSchemas` (one entry per non-default key, filled by `getChildSchema()`
+when the slot holds a non-empty, non-`Closure` value). Sylament ports the first
+and not the second, so a named slot re-materializes on every `getChildSchema()`
+call as it always did — the Repeater needs only the default map, and the per-key
+cache would freeze slots whose components a consumer mutates between reads.
+Filament's matching second arm in `getChildSchema()` (a *known* key that also
+appears in the cached default map wins from the cache) goes with it: our fallback
+arm answers unknown keys only, so `childComponents` always wins for a key it
+holds. `cloneChildComponents()` resets the ported cache where Filament resets its
+per-key one; its action arm is a shallow `clone`
 ([schema.md](schema.md#clonecomponents-never-stamps-the-original-and-always-resets-the-cache)).
+Restore the per-key cache if slot materialization ever shows in a profile.
 
 ### components()/childComponents() accept a single component, not just an array
 

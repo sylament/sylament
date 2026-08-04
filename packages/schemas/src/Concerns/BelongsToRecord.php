@@ -267,6 +267,10 @@ trait BelongsToRecord
      * Testing presence at the branch path itself is not enough — pruning unsets
      * only the leaf key and leaves the emptied parent behind.
      *
+     * A branch that {@see Component::ownsRecordSubtree()} declares no mapped
+     * leaf beneath it at all, so it is asked at its own path instead and never
+     * reaches this predicate.
+     *
      * @param array<string, mixed> $state
      * @param list<string>         $recordPaths
      */
@@ -295,9 +299,11 @@ trait BelongsToRecord
      * anything is written; a `dehydrated(false)` leaf is pruned from the state
      * and therefore never mapped. A {@see Component::nullWhenBlank()} branch the
      * state still carries and whose state should not exist is nulled whole
-     * before the leaf walk, which then skips every path beneath it — so a
-     * discarded branch is never built back up by one of its own leaves; a branch
-     * the state does not carry is left alone entirely
+     * before the leaf walk, which then skips its own path and every path beneath
+     * it — so a discarded branch is never built back up by one of its own leaves,
+     * nor by the wholesale value a {@see Component::ownsRecordSubtree()} branch
+     * maps at that very path; a branch the state does not carry is left alone
+     * entirely
      * ({@see hasDehydratedBranchLeaf()}).
      *
      * @throws LogicException when a declared branch names no property, or names
@@ -317,6 +323,7 @@ trait BelongsToRecord
         $recordPaths = array_map(strval(...), array_keys($this->getRecordPathMap()));
 
         $nulledPrefixes = [];
+        $nulledPaths = [];
 
         foreach ($this->getNullableBranches() as $branchPath => $component) {
             $branchPath = (string) $branchPath;
@@ -327,7 +334,9 @@ trait BelongsToRecord
                 }
             }
 
-            if (! $this->hasDehydratedBranchLeaf($state, $branchPath, $recordPaths)) {
+            $ownsSubtree = $component->ownsRecordSubtree();
+
+            if ($ownsSubtree ? ! $accessor->hasInArray($state, $branchPath) : ! $this->hasDehydratedBranchLeaf($state, $branchPath, $recordPaths)) {
                 continue;
             }
 
@@ -350,9 +359,14 @@ trait BelongsToRecord
 
             $accessor->setOnRecord($record, $branchPath, null);
             $nulledPrefixes[] = $branchPath . '.';
+            $nulledPaths[$branchPath] = true;
         }
 
         foreach ($recordPaths as $recordPath) {
+            if (isset($nulledPaths[$recordPath])) {
+                continue;
+            }
+
             foreach ($nulledPrefixes as $prefix) {
                 if (str_starts_with($recordPath, $prefix)) {
                     continue 2;

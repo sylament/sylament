@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
+use Sylament\Schemas\Tests\Fixtures\Components\SubtreeOwner;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 
 it('is not a nullable branch by default', function (): void {
@@ -111,6 +112,46 @@ it('counts a path-descendant leaf declared by a sibling component', function ():
 
     expect($section->shouldNullBranch(['name' => null, 'handle' => '@ada']))->toBeFalse()
         ->and($section->shouldNullBranch(['name' => null, 'handle' => null]))->toBeTrue();
+});
+
+it('judges a record-subtree owner by its own value, so one all-blank item is still an item', function (): void {
+    $owner = SubtreeOwner::make('tags')->nullWhenBlank();
+
+    expect($owner->shouldNullBranch([]))->toBeTrue()
+        ->and($owner->shouldNullBranch([0 => ['name' => null]]))->toBeFalse();
+});
+
+it('answers by value for a wired owner whose declared leaves are keyed differently', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            SubtreeOwner::make('tags')
+                ->nullWhenBlank()
+                ->components([StateField::make('abc.name')]),
+        ]);
+
+    $owner = $schema->getComponentByStatePath('data.tags');
+
+    expect($owner->shouldNullBranch([0 => ['name' => 'Ada']]))->toBeFalse()
+        ->and($owner->shouldNullBranch([]))->toBeTrue();
+});
+
+it('lets an owner nested in a branch answer for its own subtree', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            Section::make('meta')
+                ->statePath('meta')
+                ->nullWhenBlank()
+                ->components([
+                    SubtreeOwner::make('tags')->components([StateField::make('abc.name')]),
+                ]),
+        ]);
+
+    $section = $schema->getComponentByStatePath('data.meta');
+
+    expect($section->shouldNullBranch(['tags' => [0 => ['name' => null]]]))->toBeFalse()
+        ->and($section->shouldNullBranch(['tags' => []]))->toBeTrue();
 });
 
 it('falls back to the value test for a wired component without its own path', function (): void {

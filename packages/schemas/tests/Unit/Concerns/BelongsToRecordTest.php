@@ -15,6 +15,7 @@ use Sylament\Schemas\Tests\Fixtures\Concerns\RecordPathMapSchemaFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 use Sylament\Schemas\Tests\Fixtures\State\Author;
 use Sylament\Schemas\Tests\Fixtures\State\InitializedPost;
+use Sylament\Schemas\Tests\Fixtures\State\ListRecord;
 use Sylament\Schemas\Tests\Fixtures\State\MetaBlock;
 use Sylament\Schemas\Tests\Fixtures\State\PageRecord;
 use Sylament\Schemas\Tests\Fixtures\State\Post;
@@ -672,4 +673,64 @@ it('refuses a foreign component whose state path nests under a record-subtree ow
     expect($map)->toThrow(LogicException::class, StateField::class)
         ->and($map)->toThrow(LogicException::class, SubtreeOwner::class)
         ->and($map)->toThrow(LogicException::class, 'nests under "meta"');
+});
+
+it('judges a record-subtree owner branch by its own path in the bag', function (): void {
+    $record = new Post();
+    $record->setMeta(['legacy' => 1]);
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record($record)
+        ->components([SubtreeOwner::make('meta')->nullWhenBlank()]);
+
+    $schema->rawState(['meta' => []]);
+    $schema->getData();
+
+    expect($record->getMeta())->toBeNull();
+});
+
+it('keeps a record-subtree owner branch alive when its value holds an all-blank item', function (): void {
+    $record = new Post();
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record($record)
+        ->components([
+            SubtreeOwner::make('meta')
+                ->nullWhenBlank()
+                ->components([StateField::make('0.name')]),
+        ]);
+
+    $schema->rawState(['meta' => [0 => ['name' => null]]]);
+    $schema->getData();
+
+    expect($record->getMeta())->toBe([0 => ['name' => null]]);
+});
+
+it('leaves a hidden record-subtree owner branch alone rather than nulling it', function (): void {
+    $record = new Post();
+    $record->setMeta(['legacy' => 1]);
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record($record)
+        ->components([SubtreeOwner::make('meta')->nullWhenBlank()->hidden()]);
+
+    $schema->rawState(['meta' => []]);
+    $schema->getData();
+
+    expect($record->getMeta())->toBe(['legacy' => 1]);
+});
+
+it('refuses to null a record-subtree owner the record declares non-nullable', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new ListRecord())
+        ->components([SubtreeOwner::make('steps')->nullWhenBlank()]);
+
+    $schema->rawState(['steps' => []]);
+
+    expect(fn (): object => $schema->getData())
+        ->toThrow(LogicException::class, 'nullWhenBlank()');
 });

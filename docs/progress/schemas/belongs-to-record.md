@@ -56,7 +56,7 @@ Sylament-only.
 | [`getRecord(bool $withParentComponentRecord = true)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getRecord()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | — |
 | [`getRecordInstance()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
 | [`getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#reads-are-lenient-writes-are-strict) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#a-missing-singular-intermediate-is-constructed-from-its-declared-type) |
-| [`getNullableBranches()` + the branch pass in `getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [semantics](#a-nullable-branch-with-no-state-path-is-refused-not-ignored) · [semantics](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order) |
+| [`getNullableBranches()` + the branch pass in `getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [diverges](#a-component-can-own-its-whole-record-subtree) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [semantics](#a-nullable-branch-with-no-state-path-is-refused-not-ignored) · [semantics](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order) |
 | [`fill(object …)` object arm](../../../packages/schemas/src/Concerns/HasState.php) + [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#fillobject-does-not-bind-the-record) |
 | [`$record` property](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`public $model`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-root-record-property-is-protected) |
 | `saveRelationships()` | [`saveRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | blocked | Doctrine relationship-state epic | [detail](#the-relationship-layer-is-not-ported) |
@@ -115,7 +115,11 @@ dropped, a plain container still contributing its descendants and not itself, a
 descendant two containers down still represented by the owner, the whole-property
 read on `fill()`, the wholesale write on `getData()` destroying an unmanaged key
 the state no longer carries, and the foreign path-descendant refusal pinned on
-both class names and the offending path);
+both class names and the offending path; plus the owner arms of the branch pass —
+an owner nulled from the presence of its own path in a bag carrying no leaf path
+at all, with the leaf walk then not writing its value back over the null, an
+owner holding one all-blank item kept alive, a hidden owner left alone, and an
+owner over a non-nullable `array` property meeting the same loud refusal);
 the branch declaration itself by
 [`Unit/Components/Concerns/HasNullableBranchTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasNullableBranchTest.php)
 (the default, the declaration, blank and filled leaves, a nested sub-branch on
@@ -125,7 +129,11 @@ arm; plus four wired trees for the declared-leaves rule: a branch judged blank
 while an unmanaged key beside it is filled, a branch kept alive through a leaf
 two containers down, a sibling component's path-descendant leaf counting toward
 the verdict, and a wired component without its own path falling back to the
-value test); the field-side half of the same rule by forms'
+value test; plus the record-subtree owner arm on three shapes — detached, wired
+with a declared leaf whose key the slice does not carry, and nested inside a
+section branch that must read the owner's whole value rather than the owner's
+leaves — each pinned on the one item leaf enumeration would have called blank);
+the field-side half of the same rule by forms'
 [`CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php)
 (requirement suppressed while a branch's only non-blank value is an untouched
 checkbox, resumed once it is ticked, and `getData()` nulling that branch) and by
@@ -230,6 +238,19 @@ answer where the state casts are —
 placement that already carries
 [their derivation opt-out](../forms/can-be-validated.md#a-boolean-field-opts-out-of-derivation-but-selectboolean-does-not).
 
+A branch that [owns its record subtree](#a-component-can-own-its-whole-record-subtree)
+asks none of that: it judges its own whole slice through `isBlankStateValue()`
+and never enumerates a leaf, and the enumeration skips every leaf sitting under
+an owner for the same reason. That is a correctness requirement, not a
+shortcut. At mapping time an owner's slice has already been rewritten by its own
+dehydration — [the `Repeater` positionalises](../forms/repeater.md#items-are-uuid-keyed-in-the-live-bag-and-positional-on-the-record)
+its uuid-keyed items — while the leaves it declares still carry the uuid paths,
+so enumeration would find every one of them absent, judge a branch that holds
+items vacuously blank, and null it. One all-blank item is the exact case: by
+value it is an item, by leaves it is nothing, and the two answers differ by a
+whole list. An owner nested inside an ordinary branch is answered the same way —
+the outer branch reads the owner's value, not the owner's leaves.
+
 The leaf-enumerating predicate the walk needs,
 `hasPathBearingDescendants()`, moved from a private helper on the root tier onto
 `Component` (via `HasChildComponents`) so both walks share one definition, the
@@ -279,6 +300,15 @@ plain field now writes nothing, where before the pass nulled it every time and
 was saved only by the leaf walk overwriting the null a moment later. That rescue
 did not apply to a `dehydrated(false)` leaf, where the null reached the record and
 contradicted `getData()`'s own docblock. Both are gone.
+
+An [owner branch](#a-component-can-own-its-whole-record-subtree) is asked at its
+**own** path instead, and that is not the one-liner rejected above. It has no
+mapped leaf beneath it at all — the owner speaks for them — so the leaf-path
+predicate would answer "absent" for every owner and no owner could ever null.
+Reading its own path is safe for the reason the leaf predicate is not: an owner's
+key is not an emptied parent left behind by pruning, it is the one key the
+dehydration walk writes for it, so a hidden owner's key is gone outright and a
+present one is evidence of a real submission.
 
 The residual, stated so it is not mistaken for an oversight: a branch with *some*
 leaves pruned and some present is still judged on the leaves that remain. That is
@@ -603,6 +633,12 @@ the shape this mapper [refuses loudly](#reads-are-lenient-writes-are-strict).
 Tree membership is the container chain walked to the root, never the path —
 a shared path prefix is precisely what cannot tell the two cases apart.
 
+The branch pass answers the predicate too, in
+[the three arms recorded with it](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written)
+— presence at the owner's own path, the value blank test, and the exact-path skip
+after nulling — and forms' derived requirement inherits all three, since it asks
+the same `shouldNullBranch()`.
+
 Dehydration needs no owner arm of its own: it prunes by own path, which is
 already subtree-safe.
 
@@ -658,6 +694,15 @@ branch alive
 ([the leaves answer, not the values](#the-built-in-blank-test-asks-the-branchs-own-leaves));
 a closure receives that slice as `$state` and decides for itself.
 
+A branch that [owns its record subtree](#a-component-can-own-its-whole-record-subtree)
+takes three narrower arms of the same pass, all following from its having no
+mapped leaf beneath it. Presence is read at the branch's **own** path rather than
+through a leaf it does not have; the blank test short-circuits to the value arm;
+and nulling records the branch path exactly as well as by prefix, because an
+owner *is* a mapped path where an ordinary branch never is — without the exact
+skip the leaf walk would immediately write the owner's wholesale value back over
+the `null` the pass just wrote, and the declaration would silently do nothing.
+
 There is no Filament counterpart and the near neighbour has opposite polarity —
 `relationship(condition:)` says *save when true* and ships no blank test, so a
 Filament user writes the emptiness check by hand every time. The name is recorded
@@ -693,6 +738,12 @@ branch holding a filled leaf the dehydration walk prunes reads **non-blank** at
 validation — so the branch's other leaves are required and the user is made to
 fill them — and then reads **blank** at mapping, so the whole branch, including
 the value the user was forced to supply, is discarded.
+
+It does not widen for an
+[owner branch](#a-component-can-own-its-whole-record-subtree), which is the one
+shape where the two bags could differ most: the value arm reads the branch's own
+slice, so the raw uuid-keyed bag at validation and the positional one at mapping
+answer the same question with the same verdict.
 
 The [presence guard](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled)
 narrowed that to a **mixed** branch. A branch whose leaves are *all* pruned is now

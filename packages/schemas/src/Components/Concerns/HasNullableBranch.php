@@ -17,8 +17,10 @@ trait HasNullableBranch
      * Write null at this component's whole record path instead of its leaves,
      * when the branch should not exist. `true` uses the built-in test — every
      * mapped leaf beneath it dehydrates blank, each leaf judging its own value
-     * through {@see isBlankStateValue()}; a closure receives the branch's
-     * dehydrated `$state` and returns whether to null it.
+     * through {@see isBlankStateValue()}, except on a component that
+     * {@see HasChildComponents::ownsRecordSubtree()}, which judges its own whole
+     * slice instead; a closure receives the branch's dehydrated `$state` and
+     * returns whether to null it.
      */
     public function nullWhenBlank(bool|Closure $condition = true): static
     {
@@ -64,6 +66,10 @@ trait HasNullableBranch
      */
     private function isBranchStateBlank(array $state): bool
     {
+        if ($this->ownsRecordSubtree()) {
+            return $this->isBlankStateValue($state);
+        }
+
         if (! isset($this->container)) {
             return $this->isValueSetBlank($state);
         }
@@ -81,12 +87,29 @@ trait HasNullableBranch
         $accessor = $this->getPropertyAccessor();
         $leafPrefix = $prefix . '.';
 
-        foreach ($this->getRootContainer()->getFlatComponents(withActions: false) as $leaf) {
+        $flatComponents = $this->getRootContainer()->getFlatComponents(withActions: false);
+        $ownerPrefixes = [];
+
+        foreach ($flatComponents as $leaf) {
+            if (! $leaf->ownsRecordSubtree()) {
+                continue;
+            }
+
+            $ownerPath = $leaf->hasStatePath() ? $leaf->getStatePath() : null;
+
+            if (! filled($ownerPath)) {
+                continue;
+            }
+
+            $ownerPrefixes[] = $ownerPath . '.';
+        }
+
+        foreach ($flatComponents as $leaf) {
             if (! $leaf->hasStatePath()) {
                 continue;
             }
 
-            if ($leaf->hasPathBearingDescendants()) {
+            if ($leaf->hasPathBearingDescendants() && ! $leaf->ownsRecordSubtree()) {
                 continue;
             }
 
@@ -98,6 +121,12 @@ trait HasNullableBranch
 
             if (! str_starts_with($leafPath, $leafPrefix)) {
                 continue;
+            }
+
+            foreach ($ownerPrefixes as $ownerPrefix) {
+                if (str_starts_with($leafPath, $ownerPrefix)) {
+                    continue 2;
+                }
             }
 
             $relativePath = mb_substr($leafPath, mb_strlen($leafPrefix));

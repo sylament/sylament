@@ -142,7 +142,8 @@ it('throws when no record is bound at all', function (): void {
         ->statePath('data')
         ->components([StateField::make('title')]);
 
-    expect(fn (): object => $schema->getData())->toThrow(LogicException::class);
+    expect(fn (): object => $schema->getData())
+        ->toThrow(LogicException::class, 'needs a record it can map onto');
 });
 
 it('maps nested state through the record graph in place', function (): void {
@@ -510,3 +511,7 @@ it('refuses nullWhenBlank() on a component carrying no state path', function ():
     expect(fn (): object => $schema->getData())
         ->toThrow(LogicException::class, 'no state path');
 });
+
+it('refuses getData() for an array-bound record with a message naming the arm', function (): void {
+    Schema::make(new StateHostFixture())->record(['title' => 'Hello'])->getData();
+})->throws(LogicException::class, 'array record only supplies state');

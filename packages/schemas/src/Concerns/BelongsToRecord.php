@@ -178,7 +178,7 @@ trait BelongsToRecord
         $accessor = $this->getPropertyAccessor();
         $state = [];
 
-        foreach (array_keys($this->getRecordPathMap()) as $recordPath) {
+        foreach (array_map(strval(...), array_keys($this->getRecordPathMap())) as $recordPath) {
             try {
                 $value = $accessor->getFromRecord($record, $recordPath);
             } catch (AccessException) {
@@ -249,7 +249,7 @@ trait BelongsToRecord
 
         if (! is_object($record)) {
             $record = $this->getRecordInstance()
-                ?? throw new LogicException('Schema::getData() needs record() — a bound instance to map onto, or a declared class to construct.');
+                ?? throw new LogicException('Schema::getData() needs a record it can map onto — record() with a bound instance or a class-string to construct; an array record only supplies state and cannot be mapped onto.');
         }
 
         $accessor = $this->getPropertyAccessor();

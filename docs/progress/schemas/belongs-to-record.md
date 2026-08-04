@@ -91,7 +91,8 @@ without-binding, rebind-replaces, the all-null unbound case, closure
 memoization, by-name and by-type injection, and the `getData()` paths — onto a
 bound instance, onto a fresh one built from the declared class,
 `dehydrated(false)` exclusion, the strict-write `NoSuchPropertyException`, the
-unbound `LogicException`, the nested set: a nested graph mapped in place, a
+unbound `LogicException` and the array-bound one, both pinned on the message text
+that names which arm was taken, the nested set: a nested graph mapped in place, a
 fresh instance with an initialized intermediate, a non-dehydrated nested leaf
 excluded, a present-but-null nested leaf written, an array-backed branch keeping
 its unmanaged keys, a missing nested object constructed, and a missing branch
@@ -131,7 +132,8 @@ pre-existing by-name one); the fill walk by
 and object-value skips, array reads, the unchanged null/array arms, and the
 nested reads: a nested object path filled through the graph, null filled past a
 null intermediate, a leaf decorated with a path-less child schema staying a
-leaf, and an array-backed branch read by declared leaves only); and the
+leaf, an array-backed branch read by declared leaves only, and a numeric-string
+leaf path surviving the walk's `string` hint); and the
 round trip through a real live host by
 [`Integration/Concerns/BelongsToRecordTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordTest.php)
 (`fill($object)` → edited bag → `getData()` returns the same mutated instance;
@@ -361,7 +363,11 @@ numeric-string array key to `int`, so a schema using `statePath('0')` would have
 `TypeError`d under `strict_types=1` — in the sort, whose callback hinted
 `(string $a, string $b)`, and equally at `setOnRecord()`, which takes a `string`
 path. The hints are `int|string`, and `getData()` normalises both walks' keys
-with `strval()` once rather than casting at each of the six use sites.
+with `strval()` once rather than casting at each of the six use sites. The claim
+that this covered "both walks" was true only of the two inside `getData()`: the
+**fill** walk, `readStateFromRecord()`, iterated the same map's keys raw and
+`TypeError`d on `getFromRecord()`'s `string $path`. It normalises the same way
+now, so all three walks agree.
 
 ### `getRecordStatePath()` is the one definition of record-relative, and both walks must share it
 

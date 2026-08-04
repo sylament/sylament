@@ -74,7 +74,7 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | Comparison family (`after` / `afterOrEqual` / `before` / `beforeOrEqual`, `gt` / `gte` / `lt` / `lte`, `same` / `different`, `confirmed`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | cross-path validation context | [detail](#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build) |
 | Conditional-required family (`requiredIf*` / `requiredUnless` / `requiredWith*` / `requiredWithout*`, `prohibited` / `prohibitedIf` / `prohibitedUnless` / `prohibits`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | cross-path validation context | [detail](#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build) |
 | Data-layer family (`unique` / `exists` / `scopedUnique` / `scopedExists` / `uniqueValidationIgnoresRecordByDefault`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | blocked | Doctrine query layer | [detail](#the-data-layer-rules-wait-on-a-doctrine-query-layer) |
-| `distinct()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | blocked | `Repeater` | [detail](#the-data-layer-rules-wait-on-a-doctrine-query-layer) |
+| `distinct()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | blocked | cross-path validation context | [detail](#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build) |
 | `mutateStateForValidation()` / `mutatesStateForValidation()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | blocked | schemas state-mutation layer | [detail](#the-validation-state-mutation-hooks-wait-on-schemas) |
 
 Coverage: the trait end to end (required default, `NotBlank` build, the
@@ -141,15 +141,19 @@ per path over a bare value, so Symfony's `AbstractComparison`-family constraints
 nothing to resolve against. **Next step:** validate the schema's state array as
 one object (a `Collection` constraint keyed by path, or a per-path context
 seeded with the root), then the comparison constraints and a
-`When`-based conditional-required arm both drop in. Until then the escape hatch
+`When`-based conditional-required arm both drop in. `distinct()` waits on the
+same context rather than on the [`Repeater`](repeater.md) it names: the repeater
+ships, and its items already validate per path — what `distinct()` needs is to
+compare one item's value against its siblings', which no per-path run can see
+(`Assert\Unique(fields:)` over the repeater's own path is the likely landing,
+at the cost of item-level error placement). Until then the escape hatch
 covers the case with a closure constraint reading sibling state through
 `$component->getContainer()`.
 
 ### The data-layer rules wait on a Doctrine query layer
 
 Filament's `unique()` / `exists()` (and their `scoped*` query-builder variants)
-take an Eloquent table/model, and `uniqueValidationIgnoresRecordByDefault()` /
-`distinct()` lean on the panel's record binding and `Repeater` item context.
+take an Eloquent table/model, and `uniqueValidationIgnoresRecordByDefault()` leans on the panel's record binding.
 The record binding half of that now exists — a schema binds an entity and a field
 can reach it (`$record`, `getRecordClass()`, see
 [belongs-to-record.md](../schemas/belongs-to-record.md)), so
@@ -159,8 +163,7 @@ constraint can run a lookup through, plus the entity-level route for Symfony's
 `UniqueEntity`, which needs the managed object rather than a scalar path value
 (decided direction:
 [validate the mapped object](../schemas/can-be-validated.md#record-sourced-constraints-validate-the-mapped-object-direction-decided)).
-**Blocked** on that Doctrine query layer (and, for `distinct()`, on `Repeater`).
-Until then the escape hatch covers the case: a closure constraint that queries
+**Blocked** on that Doctrine query layer. Until then the escape hatch covers the case: a closure constraint that queries
 the repository itself.
 
 ### The validation-state mutation hooks wait on schemas

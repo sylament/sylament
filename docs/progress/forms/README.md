@@ -35,8 +35,12 @@ built component uses: `HasOptions`, `CanSelectPlaceholder` and
 `CanDisableOptions` are `Select`'s alone in the port and live in
 [`select.md`](select.md), `HasToggleIcons` and `HasToggleColors` are `Toggle`'s
 alone and live in
-[`toggle.md`](toggle.md), while `CanBeInline` and `CanBeAccepted` are shared by
-`Checkbox` and `Toggle` and so keep rows of their own. The fold reads the port,
+[`toggle.md`](toggle.md), and `CanBeCloned`, `CanGenerateUuids` and
+`CanLimitItemsLength` are `Repeater`'s alone and live in
+[`repeater.md`](repeater.md) — which also carries `helpers.php`, whose two
+reorder functions no other component calls — while `CanBeInline` and
+`CanBeAccepted` are shared by `Checkbox` and `Toggle` and so keep rows of their
+own. The fold reads the port,
 not Filament — Filament composes `HasOptions` and `CanDisableOptions` onto
 `Radio`, `CheckboxList` and `ToggleButtons` as well, so each is promoted back to
 a row of its own the moment the second field lands.
@@ -76,7 +80,7 @@ table, the rest follow alphabetically.
 | Placeholder | [`Components/Placeholder.php`](../../../vendor/filament/forms/src/Components/Placeholder.php) | todo | — |
 | Radio | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | todo | — |
 | RelationshipRepeater | [`Components/RelationshipRepeater.php`](../../../vendor/filament/forms/src/Components/RelationshipRepeater.php) | todo | — |
-| Repeater | [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | [repeater.md](repeater.md) |
+| [`Repeater`](../../../packages/forms/src/Components/Repeater.php) | [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | in progress | [repeater.md](repeater.md) |
 | Repeater / TableColumn | [`Components/Repeater/TableColumn.php`](../../../vendor/filament/forms/src/Components/Repeater/TableColumn.php) | todo | — |
 | RichEditor | [`Components/RichEditor.php`](../../../vendor/filament/forms/src/Components/RichEditor.php) | todo | — |
 | [`Select`](../../../packages/forms/src/Components/Select.php) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | in progress | [select.md](select.md) |
@@ -104,8 +108,10 @@ single component is tracked in that component's detail file, not here: the base
 and is tracked in
 [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md)
 — `Select`'s three (`HasOptions`, `CanSelectPlaceholder`,
-`CanDisableOptions`) into [`select.md`](select.md), and `Toggle`'s
-`HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md), per
+`CanDisableOptions`) into [`select.md`](select.md), `Toggle`'s
+`HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md), and
+`Repeater`'s three (`CanBeCloned`, `CanGenerateUuids`, `CanLimitItemsLength`)
+into [`repeater.md`](repeater.md), per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). The shared
 ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
 `Textarea`, `CanBeInline` and `CanBeAccepted` by `Checkbox` and `Toggle`.
@@ -116,7 +122,6 @@ ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
 | [`CanBeAccepted`](../../../packages/forms/src/Components/Concerns/CanBeAccepted.php) | [`Components/Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | [can-be-accepted.md](can-be-accepted.md) |
 | CanBeAutocapitalized | [`Components/Concerns/CanBeAutocapitalized.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocapitalized.php) | todo | — |
 | CanBeAutocompleted | [`Components/Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | todo | — |
-| CanBeCloned | [`Components/Concerns/CanBeCloned.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeCloned.php) | todo | — |
 | [`CanBeInline`](../../../packages/forms/src/Components/Concerns/CanBeInline.php) | [`Components/Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) | done | [can-be-inline.md](can-be-inline.md) |
 | [`CanBeLengthConstrained`](../../../packages/forms/src/Components/Concerns/CanBeLengthConstrained.php) | [`Components/Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) | done | [can-be-length-constrained.md](can-be-length-constrained.md) |
 | CanBeNative | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | todo | — |
@@ -127,8 +132,6 @@ ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
 | CanDisableGrammarly | [`Components/Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | todo | — |
 | CanDisableOptionsWhenSelectedInSiblingRepeaterItems | [`Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | todo | — |
 | CanFixIndistinctState | [`Components/Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — |
-| CanGenerateUuids | [`Components/Concerns/CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | todo | — |
-| CanLimitItemsLength | [`Components/Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | todo | — |
 | HasAffixes | [`Components/Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | todo | — |
 | HasColors | [`Components/Concerns/HasColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasColors.php) | todo | — |
 | HasDatalistOptions | [`Components/Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | todo | — |
@@ -192,4 +195,4 @@ directory collapses that whole subtree into one navigational entry.
 | Commands / FileGenerators | [`Commands/FileGenerators/`](../../../vendor/filament/forms/src/Commands/FileGenerators) | todo | — |
 | FormsComponent | [`FormsComponent.php`](../../../vendor/filament/forms/src/FormsComponent.php) | todo | — |
 | [`SylamentFormsBundle`](../../../packages/forms/src/SylamentFormsBundle.php) | [`FormsServiceProvider.php`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | in progress | [forms-bundle.md](forms-bundle.md) |
-| helpers.php | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | todo | — |
+| [`helpers.php`](../../../packages/forms/src/helpers.php) | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | [repeater.md](repeater.md) |

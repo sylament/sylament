@@ -7,9 +7,8 @@ property (the JSON-column shape [`setOnRecord()`](../schemas/property-accessor.m
 already round-trips). It extends [`Field`](field.md) and is the first component
 that is **both a leaf and a container**: it carries a state path of its own *and*
 path-bearing children, which is the case the record walks were
-[explicitly flagged as unready for](../schemas/belongs-to-record.md#mapping-walks-the-record-graph-by-declared-leaf-paths).
-This file records the design decisions before code, per the epic brief; the rows
-flip as the code lands.
+[explicitly flagged as unready for](../schemas/belongs-to-record.md#mapping-walks-the-record-graph-by-declared-leaf-paths)
+and now [answer with an owner predicate](#a-repeater-owns-its-record-subtree).
 
 **Scope boundary, stated up front:** this epic maps **value-shaped array items
 only**. Object collections — a `Traversable`-typed property, a Doctrine
@@ -23,7 +22,12 @@ identity-less collection population produced duplicate INSERTs and orphan
 deletions on a real two-tag `Post`. Filament's `relationship()` and `table()`
 modes are out with it.
 
-**Status:** todo — see the [status vocabulary](../README.md#statuses).
+**Status:** in progress — see the [status vocabulary](../README.md#statuses). The
+array-backed field ships end to end: item pipeline, per-item child schemas, the
+five structural actions, item chrome, the two partials and the record
+round-trip. What is left is chrome (collapse, `addBetween`, extra item actions,
+the items grid), the `table()` mode, and the relationship family behind its own
+epic.
 
 Reference — the Filament source this is diffed against, walked end to end for
 this table, so it carries no [unaudited row](../README.md#an-unaudited-table-says-so):
@@ -51,20 +55,20 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| `Repeater::make()` + `components()` item schema definition (the `schema()` alias is [not ported](../renames.md)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#item-schemas-ride-a-ported-child-schema-cache-and-clone-layer) · [semantics](#an-item-field-derives-no-requirement-from-the-record) |
-| `hydrateItems()` / `dehydrateItems()` + `CanGenerateUuids` (`generateUuidUsing()` / `generateUuid()` / `fake()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | todo | — | [semantics](#items-are-uuid-keyed-in-the-live-bag-and-positional-on-the-record) · [semantics](#unmanaged-item-keys-round-trip-through-the-client) · [diverges](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid) |
-| `getItems()` / `getDefaultChildSchemas()` / `areCachedDefaultChildSchemasFresh()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#item-schemas-ride-a-ported-child-schema-cache-and-clone-layer) |
-| `defaultItems()` / `default()` + the hydrated-default merge | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#the-item-pipeline-lands-filament-exact) |
-| `simple()` / `isSimple()` / `getSimpleField()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#the-item-pipeline-lands-filament-exact) |
-| Add action (`getAddAction()` / `addAction()` / `addActionLabel()` / `addActionAlignment()` / `addable()` / `isAddable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#the-structural-actions-reuse-the-mounted-action-pipeline-end-to-end) |
-| Delete action (`getDeleteAction()` / `deleteAction()` / `deletable()` / `isDeletable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#the-structural-actions-reuse-the-mounted-action-pipeline-end-to-end) |
-| Clone action (`getCloneAction()` / `cloneAction()`) + `CanBeCloned` (`cloneable()` / `isCloneable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanBeCloned.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeCloned.php) | todo | — | [detail](#the-structural-actions-reuse-the-mounted-action-pipeline-end-to-end) |
-| Move actions + button reorder (`getMoveUpAction()` / `getMoveDownAction()` / `moveUpAction()` / `moveDownAction()` / `reorderable()` / `reorderableWithButtons()` / `isReorderable()` / `isReorderableWithButtons()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#the-structural-actions-reuse-the-mounted-action-pipeline-end-to-end) |
+| `Repeater::make()` + `components()` item schema definition (the `schema()` alias is [not ported](../renames.md)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#an-item-field-derives-no-requirement-from-the-record) · [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) |
+| `hydrateItems()` / `dehydrateItems()` + `CanGenerateUuids` (`generateUuidUsing()` / `generateUuid()` / `fake()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | done | — | [semantics](#items-are-uuid-keyed-in-the-live-bag-and-positional-on-the-record) · [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) · [semantics](#unmanaged-item-keys-round-trip-through-the-client) · [diverges](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid) |
+| `getItems()` / `getDefaultChildSchemas()` / `areCachedDefaultChildSchemasFresh()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) · [diverges](#an-item-schema-carries-no-constant-state-or-inline-label-stamp) |
+| `defaultItems()` / `default()` + the hydrated-default merge | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
+| `simple()` / `isSimple()` / `getSimpleField()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) |
+| Add action (`getAddAction()` / `addAction()` / `addActionLabel()` / `addActionAlignment()` / `addable()` / `isAddable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
+| Delete action (`getDeleteAction()` / `deleteAction()` / `deletable()` / `isDeletable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
+| Clone action (`getCloneAction()` / `cloneAction()`) + `CanBeCloned` (`cloneable()` / `isCloneable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanBeCloned.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeCloned.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
+| Move actions + button reorder (`getMoveUpAction()` / `getMoveDownAction()` / `moveUpAction()` / `moveDownAction()` / `reorderable()` / `reorderableWithButtons()` / `isReorderable()` / `isReorderableWithButtons()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
 | Drag-and-drop reorder (`getReorderAction()` / `reorderAction()` / `reorderableWithDragAndDrop()` / `isReorderableWithDragAndDrop()`) + `HasReorderAnimationDuration` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | drag-and-drop JS vertical | [diverges](#drag-and-drop-reorder-is-deferred-and-filaments-defaults-are-kept) |
-| `CanLimitItemsLength` (`minItems()` / `maxItems()` / `getItemsCount()`) | [`CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | todo | — | [detail](#items-validate-through-the-existing-path-keyed-collector) |
-| Item chrome (`itemLabel()` / `getItemLabel()` / `hasItemLabels()` / `itemNumbers()` / `itemHeaders()` / `truncateItemLabel()` / `getHeadingsCount()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#the-template-is-two-php-rendered-partials) |
-| `getItemState()` / `getRawItemState()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | — |
-| Template + stylesheet (`toEmbeddedHtml()` / `toSimpleEmbeddedHtml()` → `partials/Repeater/`, `repeater.css`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#the-template-is-two-php-rendered-partials) |
+| `CanLimitItemsLength` (`minItems()` / `maxItems()` / `getItemsCount()`) | [`CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [semantics](#an-item-field-derives-no-requirement-from-the-record) |
+| Item chrome (`itemLabel()` / `getItemLabel()` / `hasItemLabels()` / `itemNumbers()` / `itemHeaders()` / `truncateItemLabel()` / `getHeadingsCount()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
+| `getItemState()` / `getRawItemState()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
+| Template + stylesheet (`toEmbeddedHtml()` / `toSimpleEmbeddedHtml()` → `partials/Repeater/`, `repeater.css`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](field.md#labeltag-is-a-boolean-labelasheading) |
 | Collapse chrome (`getCollapseAction()` / `getExpandAction()` / `getCollapseAllAction()` / `getExpandAllAction()` + their modifiers, `CanBeCollapsed` / `CanBeCompact` composition, `canConcealComponents()`, `shouldPersistCollapsed()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
 | `addBetween` pair (`getAddBetweenAction()` / `addBetweenAction()` / `addBetweenActionLabel()`) + `labelBetweenItems()` / `getLabelBetweenItems()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
 | `extraItemActions()` (`HasExtraItemActions`) | [`HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
@@ -72,150 +76,22 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 | `table()` mode (`table()` / `getTableColumns()` / `isTable()` / `toTableEmbeddedHtml()`; the `TableColumn` class keeps [its own README row](README.md#components)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
 | Relationship family (`relationship()`, `orderColumn()` / `getOrderColumn()`, `saveToRelationship()`, `fillFromRelationship()`, `getStateFromRelatedRecords()`, `getCachedExistingRecords()` / `clearCachedExistingRecords()`, `getRelationship()` / `getRelationshipName()` / `getRelatedModel()` / `hasRelationship()`, `mutateRelationshipDataBeforeCreate/Fill/Save()` + `*Using()`, `afterCreate()` / `afterUpdate()` / `afterDelete()`, the `getLabel()` override, item `constantState()` / record stamping) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | Doctrine relationship-state epic | [diverges](#object-collections-stay-refused--item-identity-belongs-to-the-relationship-epic) |
 | `partiallyRenderAfterActionsCalled()` / `shouldPartiallyRenderAfterActionsCalled()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | UX LiveComponent partial-render equivalent | — |
+| `array_move_before()` / `array_move_after()` (`packages/forms/src/helpers.php`, the reorder bodies) | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | — | — |
 | Deprecated members (`createItemButtonLabel()`, `disableItemCreation()` / `disableItemDeletion()` / `disableItemMovement()`, `orderable()`, `inset()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
-| `nullWhenBlank()` composition — an empty repeater as `null` instead of `[]` | — | todo | — | [semantics](#the-blank-test-judges-a-repeater-by-its-own-value) · [diverges](#a-repeater-owns-its-record-subtree) |
-| Early object-collection refusal at hydration | — | todo | — | [diverges](#object-collections-stay-refused--item-identity-belongs-to-the-relationship-epic) |
+| `nullWhenBlank()` composition — an empty repeater as `null` instead of `[]` | — | done | — | [semantics](#the-blank-test-judges-a-repeater-by-its-own-value) · [diverges](#a-repeater-owns-its-record-subtree) |
+| Early object-collection refusal at hydration | — | done | — | [diverges](#object-collections-stay-refused--item-identity-belongs-to-the-relationship-epic) |
 
 ## Details
 
-Specifics for rows that are not finished — the design decisions this epic starts
-from. Delete a subsection when its rows flip to **done**; the permanent halves
-live under [Semantics](#semantics) and [Divergences](#divergences), and the
-notes that constrain *other* components move to their own files with the code
-(the record-walk changes to
-[belongs-to-record.md](../schemas/belongs-to-record.md), the refusal-message
-rewording to [property-accessor.md](../schemas/property-accessor.md), the
-`distinct()` re-point to [can-be-validated.md](can-be-validated.md)).
-
-### Item schemas ride a ported child-schema cache and clone layer
-
-Filament resolves `getChildSchema($itemKey)` for an unknown key by falling back
-into `getCachedDefaultChildSchemas()` — a cached map the Repeater overrides to
-hold **one child `Schema` per item**, each a `getClone()` of the `components()`
-template schema with `->statePath($itemKey)` (ours adds `->key($itemKey)`, one
-paragraph down), invalidated by a structural
-fingerprint (`array_map(is_array(...), $rawState)`: the keys, their order, and
-whether each holds an array — value edits never rebuild, add/remove/reorder
-always do). Sylament's `HasChildComponents` has none of that today — no caching,
-no keyed fallback, no clone layer — so the epic lands the Filament-shaped slice
-in **schemas** first: `getDefaultChildSchemas()` (default
-`['default' => $this->getChildSchema()]`), `getCachedDefaultChildSchemas()` +
-`areCachedDefaultChildSchemasFresh()` + `clearCachedChildSchemas()`, the
-unknown-key fallback in `getChildSchema()`, the cached-default-map spread in
-`getChildSchemas()` — gated on `array_key_exists('default', $childComponents)`,
-preserving the documented no-phantom-schemas invariant — plus cache
-invalidation in `childComponents()`, and the clone layer: both `Cloneable`
-traits (`getClone()` flushing the absolute-path and key caches),
-`HasChildComponents::cloneChildComponents()` and
-`HasComponents::cloneComponents()`. One deliberate correction while porting:
-Filament's `cloneComponents()` stamps `container($this)` onto the *original*
-component before cloning it, mutating the shared instance the source schema
-still holds; ours stamps the clone only, pinned by a test that the original's
-container survives. `getFlatComponents()` already descends through
-`getChildSchemas()`, so the moment item schemas appear there, validation,
-dehydration, hydration and the record walks all reach item fields with no
-further wiring. Item schemas are defined through `components()` alone — the
-`schema()` alias every Filament repeater example uses is
-[deliberately not ported](../schemas/component.md#the-schema-alias-is-not-ported),
-so `simple()`'s internal wiring goes through `components()` too.
-
-Each item schema also takes `->key((string) $itemKey)`, which Filament does not
-stamp — and it is load-bearing, not a redundant echo of the state path. Filament's
-`Schema::getKey()` ends in `?? getStatePath(isAbsolute: false)`, so an unkeyed item
-schema keys itself by the item's state path for free. The port's root-tier
-[`HasKey`](../schemas/schema.md#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback)
-drops that fallback, so an unkeyed item schema returns `null` and its
-`getInheritanceKey()` walks up to the repeater's own key: every item's fields
-would then resolve the same absolute key — and the same DOM id, since
-`getId()` is `getCustomId() ?? getKey()` — collapsing onto
-`<repeaterKey>.<fieldName>` across all items, with the `<li>` ids and each field
-wrapper's `for` / `aria-labelledby` targets duplicated with them. It is pinned by
-the render test asserting each item's input id (`<repeaterKey>.0.name` against
-`<repeaterKey>.1.name`), which collapses to one value the moment the stamp goes.
-The stamp is the first call site compensating for that gap (the schemas trail's
-open **Next** item on it now points here); it comes back out if the schema-tier
-fallback is restored.
-
-Item schemas are built without Filament's `->constantState(null)` and
-`->inlineLabel(false)` stamps: constant state is
-[blocked on the relationship epic](../schemas/schema.md) and schemas'
-`HasInlineLabel` is unported (deferred in M1 · 3), so both arrive with their
-owners.
-
-### The item pipeline lands Filament-exact
-
-`setUp()` registers `defaultItems(1)`, an `afterStateHydrated` hook running
-`hydrateItems()` — re-keying whatever positional list `fill()` read off the
-record into fresh uuid keys — and a `mutateDehydratedStateUsing` running
-`dehydrateItems()`, which is `array_values()` back to a positional list (the
-`simple()` arm wraps a lone scalar per item as `[$fieldName => $value]` on the
-way in and plucks it back out on the way out). The root walk applies a
-component's dehydrated-state mutation *after* descending its children, so a
-nested repeater positionalises inner-first and the shapes compose. `default()`
-keeps Filament's hydrated-default merge dance (`$hydratedDefaultState` + the
-merge flag) so a default declared on the repeater survives the per-field
-hydration pass; `defaultItems(N)` builds N empty uuid-keyed items.
-`simple()` needs the wrapper to suppress the inner field's label — verify
-`Field` has a `hiddenLabel()` arm before building on it; if it is missing it
-lands as a minimal flag in the same change.
-
-### The structural actions reuse the mounted-action pipeline end to end
-
-Nothing new is invented host-side: the repeater registers its actions through
-the component-tier `HasActions` (`registerActions()` in `setUp()`, so
-`prepareAction()` stamps `schemaComponent($this)`), the trigger templates emit
-the existing `stimulus_action('live', 'action', …)` parameters with
-`context: {schemaComponent: key}`, and per-item triggers bind their item with
-the already-ported `HasMountableArguments` — `$deleteAction(['item' => $key])`
-— surfaced to Twig through `getExtraTemplateData()`, the documented home for
-exactly this per-item preamble. Action bodies are Filament's: add appends an
-empty uuid-keyed item and runs `getChildSchema($newUuid)->fill()`; delete
-unsets; clone copies the item payload under a fresh key; moveUp/moveDown swap
-whole items (ports of `array_move_before`/`array_move_after`). Each structural
-action ends in an explicit `callAfterStateUpdatedHooks()` on the repeater —
-the host's `#[PostHydrate]` diff pass runs *before* the action executes, so a
-mutation the action makes is invisible to it until the next round-trip, and
-Filament's explicit call is load-bearing here, not Livewire residue. Morph
-stability comes from a per-item DOM id derived from the repeater's key plus the
-item key; inputs inside items already survive morphing per the `value ?? ''`
-contract on `TextInput`.
-
-### Items validate through the existing path-keyed collector
-
-No validation machinery changes. Item fields are real `Field` clones with
-absolute state paths (`data.tags.{uuid}.name`), so the schema-tier collection
-walk picks their constraints up by recursion, the host validates raw live state
-per path — uuid-keyed, since validation runs before dehydration re-keys — and
-the wholesale bag-section replace clears a removed item's stale errors on the
-next run, with sticky re-validation composing unchanged. The repeater's own
-constraints ride its `Field` surface: `minItems()` / `maxItems()` emit
-`Type('array')` + `Count(min:)` / `Count(max:)` at the repeater's path (the
-[constraint vocabulary](../renames.md#laravel-rule-vocabulary-becomes-symfony-constraint-vocabulary);
-the method names keep Filament's spelling), `maxItems()` also gates
-`isAddable()`, and an explicit `required()` fails on an empty item map exactly
-as Filament's `required` does. `distinct()` stays out: it compares one item's
-value against its siblings', which is the
-[cross-path validation context](can-be-validated.md#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build)
-the per-path runner cannot express — its _Blocked by_ re-points from `Repeater`
-to that context in this epic (`Assert\Unique(fields:)` over the repeater's own
-path is the likely constraint when it lands, at the cost of item-level error
-placement).
-
-### The template is two PHP-rendered partials
-
-`toEmbeddedHtml()` / `toSimpleEmbeddedHtml()` translate to
-`partials/Repeater/index.html.twig` and `partials/Repeater/Simple.html.twig`
-(the `<Name>/<Variant>` layout), rendered through `ViewComponent::$template`
-like `TextInput`; the stylesheet ports `fi-fo-repeater` →
-`sy-fo-repeater` classes into
-`packages/forms/assets/src/styles/components/repeater.css`, imported by forms'
-`index.css` and compiled by support's Tailwind build (one lane owns the
-`assets/dist` rebuild). Item headers render the reorder/clone/delete triggers
-and the `itemLabel()` heading; the repeater has no single labellable input, so
-the wrapper renders its heading as Filament does — a non-`<label>` tag wired by
-`aria-labelledby` — which may need a small `FieldWrapper` extension in the same
-lane. Shipped chrome: `itemLabel()` (+ numbers, headers, truncation),
-`addActionLabel()` / `addActionAlignment()`, and the empty state.
+Specifics for rows that are not finished. Delete a subsection when its rows flip
+to **done**; the permanent halves live under [Semantics](#semantics) and
+[Divergences](#divergences), and the notes that constrain *other* components
+live in their own files — the record-walk changes in
+[belongs-to-record.md](../schemas/belongs-to-record.md), the hydration order in
+[schema.md](../schemas/schema.md#hasstate-still-lacks-constant-state-relationships-and-partial-rendering),
+the wrapper heading arm in [field.md](field.md#labeltag-is-a-boolean-labelasheading),
+and `distinct()`'s blocker in
+[can-be-validated.md](can-be-validated.md#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build).
 
 ### Four chrome clusters are deferred, not dropped
 
@@ -257,6 +133,38 @@ literal uuid), and under `Repeater::fake()` (uuid generation disabled, the test
 idiom) items are positionally keyed end to end, which the record walks already
 survive — their `strval()` normalisations were landed for exactly this key
 shape.
+
+### The item pipeline runs children-first, and before the null-fill pass
+
+`hydrateItems()` is an `afterStateHydrated` hook, so *when* the schema fires
+those hooks decides whether it sees the record's shape or a wreck of it. Two
+orderings are load-bearing, and both were corrected in schemas' root
+[`HasState`](../schemas/schema.md#hasstate-still-lacks-constant-state-relationships-and-partial-rendering)
+with this epic. **Hooks run before `fillStateWithNull()`**: an item's raw value
+is a scalar in simple mode (`['x', 'y']`), and the null-fill pass writes null at
+every unset leaf path — `tags.0.value` — which clobbers the scalar the wrap
+step was about to read, so a record fill would land two empty items. **Hooks run
+children-first**, each descent re-reading `getChildSchemas()`: a nested
+repeater's hook has to re-key its own items *before* the outer one re-keys the
+map they sit in, or the inner component writes at a path its parent has just
+renamed and vivifies phantom items beside the real ones. Filament reaches both
+orderings for free — it hydrates recursively and fires each component's hooks at
+the end of its own descent — where the port walks flat lists, so it states the
+order explicitly. Dehydration already ran inner-first (a component's
+`mutateDehydratedState` applies after its children's), which is why a nested
+repeater positionalises inner-first and the shapes compose.
+
+### A structural action fires the repeater's afterStateUpdated hooks itself
+
+Every add/delete/clone/move body ends in
+`$component->callAfterStateUpdatedHooks()`, which reads like Livewire residue
+and is not. The host's `#[PostHydrate]` diff pass — the thing that normally
+notices a changed state path and fires the hooks for it — runs *before* the
+mounted action executes, so a mutation the action makes is invisible to it until
+the next round-trip. Without the explicit call an `afterStateUpdated()` on the
+repeater would fire one request late, against the previous item map. It fires
+exactly once per action, including at a reorder edge where the item map comes
+back unchanged.
 
 ### The blank test judges a repeater by its own value
 
@@ -311,6 +219,36 @@ defers. Filament behaves identically.
 
 Deliberate deviations from Filament, and the reason each holds. Provisional
 ones say what would reverse them.
+
+### Every item schema is keyed as well as re-pathed
+
+Each item schema is a `getClone()` of the `components()` template re-pathed onto
+the item's key, and takes `->key((string) $itemKey)` on top — a stamp Filament
+does not make, and not a redundant echo of the state path. Filament's
+`Schema::getKey()` ends in `?? getStatePath(isAbsolute: false)`, so an unkeyed
+item schema keys itself by the item's state path for free. The port's root-tier
+[`HasKey`](../schemas/schema.md#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback)
+drops that fallback, so an unkeyed item schema returns `null` and its
+`getInheritanceKey()` walks up to the repeater's own key: every item's fields
+would then resolve the same absolute key — and the same DOM id, since `getId()`
+is `getCustomId() ?? getKey()` — collapsing onto `<repeaterKey>.<fieldName>`
+across all items, with the `<li>` ids and each field wrapper's `for` /
+`aria-labelledby` targets duplicated with them. It is pinned by the render test
+asserting each item's input id (`<repeaterKey>.0.name` against
+`<repeaterKey>.1.name`), which collapses to one value the moment the stamp goes.
+The stamp is the first call site compensating for that gap (the schemas trail's
+open **Next** item on it points here); it comes back out if the schema-tier
+fallback is restored.
+
+### An item schema carries no constant-state or inline-label stamp
+
+Filament builds each item schema with `->constantState(null)` and
+`->inlineLabel(false)`; ours builds neither, and both are waiting rather than
+rejected. Constant state is
+[blocked on the relationship epic](../schemas/schema.md) — the only thing that
+sets it on an item is the record stamping this epic does not do — and schemas'
+`HasInlineLabel` is unported (deferred in M1 · 3), so an item schema has no
+inherited inline-label state to switch off. Each stamp lands with its owner.
 
 ### Object collections stay refused — item identity belongs to the relationship epic
 

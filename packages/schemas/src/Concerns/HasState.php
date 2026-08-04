@@ -124,8 +124,8 @@ trait HasState
             $this->hydrateState(applyDefaults: false);
         }
 
-        $this->fillStateWithNull();
         $this->callAfterStateHydrated();
+        $this->fillStateWithNull();
 
         return $this;
     }
@@ -148,7 +148,11 @@ trait HasState
 
     public function callAfterStateHydrated(): void
     {
-        foreach ($this->getFlatComponents(withActions: false) as $component) {
+        foreach ($this->getComponents(withActions: false) as $component) {
+            foreach ($component->getChildSchemas() as $childSchema) {
+                $childSchema->callAfterStateHydrated();
+            }
+
             $component->callAfterStateHydrated();
         }
     }

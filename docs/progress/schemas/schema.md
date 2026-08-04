@@ -143,7 +143,7 @@ Schema is the state root; this trait assembles the dehydrated bag. **In** and
 tested (11 unit + 4 integration cases through a real UX LiveComponent, plus the
 validation-path cases in
 [`HasSchemasValidationTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasValidationTest.php)):
-`fill()` → `hydrateState()` → `fillStateWithNull()` → `callAfterStateHydrated()`,
+`fill()` → `hydrateState()` → `callAfterStateHydrated()` → `fillStateWithNull()`,
 including the Sylament-only object arm (`fill($record)` →
 `readStateFromRecord()` → the unchanged array arm — see
 [belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares));
@@ -180,6 +180,21 @@ Filament's container trait already ship: `hasStatePath()` is defined here (Filam
 inlines `filled($this->statePath)`), and the shared assembly resets the dehydrated
 cache on entry so each run rebuilds it.
 
+Two orderings inside that pipeline are load-bearing, and neither is visible in
+Filament's source, because Filament reaches both for free: it hydrates
+recursively, firing each component's `afterStateHydrated` hooks at the end of
+its own descent, where this port runs three separate passes over the schema.
+`fill()` therefore fires the hooks **before** `fillStateWithNull()` — the
+null-fill pass writes null at every unset leaf path, which would clobber a value
+a hook is about to read (a simple `Repeater`'s scalar item, `tags.0`, against
+the leaf `tags.0.value`) — and `callAfterStateHydrated()` descends
+**children-first**, re-reading `getChildSchemas()` at each step, so a component
+that re-keys its own child state (a nested `Repeater`) never writes at a path
+its parent has just renamed. Both were corrected with the
+[Repeater](../forms/repeater.md#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass)
+epic, which is the first component to make either observable; the forms
+repeater record round-trip pins them.
+
 ### `HasKey` ports the schema key chain, minus the state-path fallback
 
 The schema-scope key model — `key()` setter, absolute prefix from the parent
@@ -200,7 +215,7 @@ first consumer compensating for it: forms' `Repeater` stamps `->key($itemKey)`
 alongside `->statePath($itemKey)` on every item schema it clones, because an
 unkeyed one inherits the repeater's key and collapses every item's field keys —
 and DOM ids — onto one value
-([repeater.md](../forms/repeater.md#item-schemas-ride-a-ported-child-schema-cache-and-clone-layer)).
+([repeater.md](../forms/repeater.md#every-item-schema-is-keyed-as-well-as-re-pathed)).
 Restoring the fallback removes that stamp. The deprecated
 `name()`/`getName()` aliases are a separate, deliberate
 [skip](#the-deprecated-name-and-getname-aliases-are-not-ported).

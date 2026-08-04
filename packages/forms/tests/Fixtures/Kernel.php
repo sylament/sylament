@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Fixtures;
 
+use Sylament\Actions\SylamentActionsBundle;
 use Sylament\Forms\SylamentFormsBundle;
 use Sylament\Schemas\SylamentSchemasBundle;
 use Sylament\Support\SylamentSupportBundle;
@@ -32,6 +33,7 @@ class Kernel extends BaseKernel
             new StimulusBundle(),
             new LiveComponentBundle(),
 
+            new SylamentActionsBundle(),
             new SylamentFormsBundle(),
             new SylamentSchemasBundle(),
             new SylamentSupportBundle(),

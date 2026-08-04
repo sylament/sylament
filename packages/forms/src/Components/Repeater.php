@@ -6,15 +6,22 @@ namespace Sylament\Forms\Components;
 
 use Closure;
 use LogicException;
+use Sylament\Actions\Action;
 use Sylament\Forms\Components\Concerns\CanBeCloned;
 use Sylament\Forms\Components\Concerns\CanGenerateUuids;
 use Sylament\Forms\Components\Concerns\CanLimitItemsLength;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\RecordTarget;
+use Sylament\Support\Enums\Alignment;
+use Sylament\Support\Enums\Size;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Type;
 use Twig\Markup;
+
+use function Sylament\Forms\array_move_after;
+use function Sylament\Forms\array_move_before;
+use function Symfony\Component\String\u;
 
 class Repeater extends Field
 {
@@ -61,6 +68,20 @@ class Repeater extends Field
 
     protected bool|Closure $isReorderableWithButtons = false;
 
+    protected string|Closure|null $addActionLabel = null;
+
+    protected Alignment|string|Closure|null $addActionAlignment = null;
+
+    protected Action|Closure|null $modifyAddActionUsing = null;
+
+    protected Action|Closure|null $modifyCloneActionUsing = null;
+
+    protected Action|Closure|null $modifyDeleteActionUsing = null;
+
+    protected Action|Closure|null $modifyMoveDownActionUsing = null;
+
+    protected Action|Closure|null $modifyMoveUpActionUsing = null;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -70,6 +91,14 @@ class Repeater extends Field
         $this->afterStateHydrated(static function (Repeater $component): void {
             $component->hydrateItems();
         });
+
+        $this->registerActions([
+            fn (Repeater $component): Action => $component->getAddAction(),
+            fn (Repeater $component): Action => $component->getCloneAction(),
+            fn (Repeater $component): Action => $component->getDeleteAction(),
+            fn (Repeater $component): Action => $component->getMoveDownAction(),
+            fn (Repeater $component): Action => $component->getMoveUpAction(),
+        ]);
 
         $this->mutateDehydratedStateUsing(static fn (Repeater $component, mixed $state): array => $component->dehydrateItems(is_array($state) ? $state : []));
     }
@@ -396,6 +425,232 @@ class Repeater extends Field
         return $this->evaluate($this->isReorderableWithButtons) && $this->isReorderable();
     }
 
+    public function getAddAction(): Action
+    {
+        $action = Action::make($this->getAddActionName())
+            ->label(fn (Repeater $component): string => $component->getAddActionLabel())
+            ->color('gray')
+            ->action(function (Repeater $component): void {
+                $newUuid = $component->generateUuid();
+
+                $items = $component->getRawState();
+                $items = is_array($items) ? $items : [];
+
+                if ($newUuid !== null) {
+                    $items[$newUuid] = [];
+                } else {
+                    $items[] = [];
+                }
+
+                $component->rawState($items);
+
+                $component->getChildSchema((string) ($newUuid ?? array_key_last($items)))?->fill();
+
+                $component->callAfterStateUpdatedHooks();
+            })
+            ->button()
+            ->size(Size::Small)
+            ->visible(fn (Repeater $component): bool => $component->isAddable());
+
+        return $this->applyActionModifier($this->modifyAddActionUsing, $action);
+    }
+
+    public function addAction(?Closure $callback): static
+    {
+        $this->modifyAddActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function getAddActionName(): string
+    {
+        return 'add';
+    }
+
+    public function addActionLabel(string|Closure|null $label): static
+    {
+        $this->addActionLabel = $label;
+
+        return $this;
+    }
+
+    public function getAddActionLabel(): string
+    {
+        $label = $this->evaluate($this->addActionLabel);
+
+        if ($label !== null) {
+            return $label;
+        }
+
+        $componentLabel = u((string) $this->getLabel());
+
+        return 'Add to ' . $componentLabel->slice(0, 1)->lower()->toString() . $componentLabel->slice(1)->toString();
+    }
+
+    public function addActionAlignment(Alignment|string|Closure|null $alignment): static
+    {
+        $this->addActionAlignment = $alignment;
+
+        return $this;
+    }
+
+    public function getAddActionAlignment(): Alignment|string|null
+    {
+        $alignment = $this->evaluate($this->addActionAlignment);
+
+        if (is_string($alignment)) {
+            return Alignment::tryFrom($alignment) ?? $alignment;
+        }
+
+        return $alignment;
+    }
+
+    public function getDeleteAction(): Action
+    {
+        $action = Action::make($this->getDeleteActionName())
+            ->label('Delete')
+            ->icon('heroicons:trash')
+            ->color('danger')
+            ->action(function (array $arguments, Repeater $component): void {
+                $items = $component->getRawState();
+                $items = is_array($items) ? $items : [];
+
+                unset($items[$component->getItemArgument($arguments)]);
+
+                $component->rawState($items);
+
+                $component->callAfterStateUpdatedHooks();
+            })
+            ->iconButton()
+            ->size(Size::Small)
+            ->visible(fn (Repeater $component): bool => $component->isDeletable());
+
+        return $this->applyActionModifier($this->modifyDeleteActionUsing, $action);
+    }
+
+    public function deleteAction(?Closure $callback): static
+    {
+        $this->modifyDeleteActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function getDeleteActionName(): string
+    {
+        return 'delete';
+    }
+
+    public function getCloneAction(): Action
+    {
+        $action = Action::make($this->getCloneActionName())
+            ->label('Clone')
+            ->icon('heroicons:square-2-stack')
+            ->color('gray')
+            ->action(function (array $arguments, Repeater $component): void {
+                $items = $component->getRawState();
+                $items = is_array($items) ? $items : [];
+
+                $itemKey = $component->getItemArgument($arguments);
+
+                if (! array_key_exists($itemKey, $items)) {
+                    return;
+                }
+
+                $newUuid = $component->generateUuid();
+
+                if ($newUuid !== null) {
+                    $items[$newUuid] = $items[$itemKey];
+                } else {
+                    $items[] = $items[$itemKey];
+                }
+
+                $component->rawState($items);
+
+                $component->callAfterStateUpdatedHooks();
+            })
+            ->iconButton()
+            ->size(Size::Small)
+            ->visible(fn (Repeater $component): bool => $component->isCloneable());
+
+        return $this->applyActionModifier($this->modifyCloneActionUsing, $action);
+    }
+
+    public function cloneAction(?Closure $callback): static
+    {
+        $this->modifyCloneActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function getCloneActionName(): string
+    {
+        return 'clone';
+    }
+
+    public function getMoveUpAction(): Action
+    {
+        $action = Action::make($this->getMoveUpActionName())
+            ->label('Move up')
+            ->icon('heroicons:arrow-up')
+            ->color('gray')
+            ->action(function (array $arguments, Repeater $component): void {
+                $items = $component->getRawState();
+
+                $component->rawState(array_move_before(is_array($items) ? $items : [], $component->getItemArgument($arguments)));
+
+                $component->callAfterStateUpdatedHooks();
+            })
+            ->iconButton()
+            ->size(Size::Small)
+            ->visible(fn (Repeater $component): bool => $component->isReorderable());
+
+        return $this->applyActionModifier($this->modifyMoveUpActionUsing, $action);
+    }
+
+    public function moveUpAction(?Closure $callback): static
+    {
+        $this->modifyMoveUpActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function getMoveUpActionName(): string
+    {
+        return 'moveUp';
+    }
+
+    public function getMoveDownAction(): Action
+    {
+        $action = Action::make($this->getMoveDownActionName())
+            ->label('Move down')
+            ->icon('heroicons:arrow-down')
+            ->color('gray')
+            ->action(function (array $arguments, Repeater $component): void {
+                $items = $component->getRawState();
+
+                $component->rawState(array_move_after(is_array($items) ? $items : [], $component->getItemArgument($arguments)));
+
+                $component->callAfterStateUpdatedHooks();
+            })
+            ->iconButton()
+            ->size(Size::Small)
+            ->visible(fn (Repeater $component): bool => $component->isReorderable());
+
+        return $this->applyActionModifier($this->modifyMoveDownActionUsing, $action);
+    }
+
+    public function moveDownAction(?Closure $callback): static
+    {
+        $this->modifyMoveDownActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function getMoveDownActionName(): string
+    {
+        return 'moveDown';
+    }
+
     /**
      * Item schemas only depend on the raw state's structure — the item keys, their
      * order, and whether each holds an array — since fields inside the items read
@@ -463,6 +718,35 @@ class Repeater extends Field
         }
 
         return [(string) $simpleField->getName() => $itemData];
+    }
+
+    /**
+     * The item a per-item trigger bound through `HasMountableArguments`, as an
+     * array key. A numeric string finds the integer key a positionally keyed map
+     * carries, since PHP normalises it on lookup.
+     *
+     * @param array<mixed> $arguments
+     *
+     * @throws LogicException when the trigger mounted the action without naming an item
+     */
+    private function getItemArgument(array $arguments): string
+    {
+        $item = $arguments['item'] ?? null;
+
+        if (! is_string($item) && ! is_int($item)) {
+            throw new LogicException('A repeater item action was mounted without an "item" argument naming the item it acts on.');
+        }
+
+        return (string) $item;
+    }
+
+    /**
+     * Run a declared `…Action()` modifier over a freshly built action, keeping the
+     * built one when the modifier declares no replacement.
+     */
+    private function applyActionModifier(Action|Closure|null $callback, Action $action): Action
+    {
+        return $this->evaluate($callback, ['action' => $action]) ?? $action;
     }
 
     /**

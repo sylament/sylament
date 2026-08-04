@@ -9,6 +9,7 @@ use ReflectionClass;
 use Symfony\Component\PropertyAccess\Exception\InvalidArgumentException;
 use Symfony\Component\PropertyAccess\Exception\UninitializedPropertyException;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
+use Traversable;
 
 final readonly class PropertyAccessor
 {
@@ -110,7 +111,7 @@ final readonly class PropertyAccessor
      * throws LogicException naming the path, so the failure spells out the fix
      * rather than surfacing a type error.
      *
-     * @throws LogicException when a mapped segment declares an object
+     * @throws LogicException when a mapped segment declares or holds an object
      *                        collection, names a class the mapper cannot
      *                        build, or rejects the array remainder
      */
@@ -126,6 +127,10 @@ final readonly class PropertyAccessor
                 $current = $this->accessor->getValue($holder, $segment);
             } catch (UninitializedPropertyException) {
                 $current = null;
+            }
+
+            if ($current instanceof Traversable) {
+                $this->refuseCollection($holder, $segment, $path);
             }
 
             if (is_object($current)) {
@@ -363,6 +368,11 @@ final readonly class PropertyAccessor
             return;
         }
 
+        $this->refuseCollection($holder, $segment, $path);
+    }
+
+    private function refuseCollection(object $holder, string $segment, string $path): never
+    {
         throw new LogicException(sprintf(
             'Cannot map state path "%s" onto %s: "%s" is a collection. Mapping collection items needs identity-keyed item state (the Repeater epic); map the collection yourself after getData().',
             $path,

@@ -63,10 +63,12 @@ preserving unmanaged siblings, and the write side's construction set —
 constructing a null intermediate, constructing one declared non-nullable and
 never assigned, mutating an existing intermediate in place rather than replacing
 it, the plain-array branch still taking the array-remainder path, the
-required-constructor-arguments refusal, the object-collection refusal at both a
-segment and a leaf, the scalar-intermediate `LogicException`, and the pin that it
-names the object that rejected the array rather than the root record;
-`hasInArray()`'s present, present-null, absent and past-scalar answers; and
+required-constructor-arguments refusal, the object-collection refusal at all four
+of its sites — a declared segment, a declared leaf, an adder-shaped leaf, and an
+initialized collection met on the walk — the scalar-intermediate
+`LogicException`, and the pin that it names the object that rejected the array
+rather than the root record; `hasInArray()`'s present, present-null, absent and
+past-scalar answers; and
 `acceptsNullOnRecord()`'s four — a nullable property, a non-nullable one, a path
 whose type cannot be read, and one read through an object hop rather than off the
 root), a
@@ -244,12 +246,22 @@ acts, and the two answers split the behaviour:
   place rather than replaced (pinned by an identity assertion), and a segment the
   record declares as anything but a constructible object still falls through to
   the array remainder, which is what keeps the JSON-column shape working.
-- **A segment or leaf whose declared type is an object collection throws**, naming
-  the path and the `Repeater` epic. One `assertNotCollection()` guard serves both
-  sites. It is deliberately narrower than "any collection": a plain `array`
-  property reports `isCollection` and must keep taking the array-remainder path
+- **A segment or leaf that is an object collection throws**, naming the path and
+  the `Repeater` epic. Two triggers raise the one message `refuseCollection()`
+  holds. The **declared type** is the designed one: `assertNotCollection()` asks
+  the [`RecordTypeReader`](record-type-reader.md) at both the intermediate and the
+  leaf site. The **runtime instance** is the one that has to exist anyway — a
+  `Traversable` met mid-walk, checked immediately before the `is_object($current)`
+  hop, because that hop wins before any type is consulted and so walked an
+  *initialized* collection (which is every constructor-initialized Doctrine
+  entity) straight past the designed refusal into a bare `NoSuchPropertyException`
+  about reading property `"0"`. It covers the same shape from the other side too:
+  a collection the reader cannot see through, behind an untyped or getter-only
+  surface. Both triggers are deliberately narrower than "any collection": a
+  plain `array` property reports `isCollection` and must keep taking the
+  array-remainder path
   ([the two flags](record-type-reader.md#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable)),
-  so only the `Traversable` arm is refused — the one whose items have no identity
+  so only the object-item arms are refused — the ones whose items have no identity
   to map onto.
 
 A third arm reports the case the reader can describe but the mapper still cannot

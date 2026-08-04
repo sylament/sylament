@@ -313,6 +313,11 @@ it('refuses a leaf write onto an adder-shaped collection property', function ():
         ->toThrow(LogicException::class, '"tags" is a collection');
 });
 
+it('refuses to traverse an initialized collection intermediate', function (): void {
+    expect(fn () => accessor()->setOnRecord(new TaggedPost(), 'tags.0.name', 'php'))
+        ->toThrow(LogicException::class, '"tags" is a collection');
+});
+
 it('refuses to construct an intermediate whose constructor requires arguments', function (): void {
     expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'money.amount', 5))
         ->toThrow(LogicException::class, 'requires constructor arguments');

@@ -51,8 +51,8 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| `Repeater::make()` + `components()` / `schema()` item schema definition | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#item-schemas-ride-a-ported-child-schema-cache-and-clone-layer) · [semantics](#an-item-field-derives-no-requirement-from-the-record) |
-| `hydrateItems()` / `dehydrateItems()` + `CanGenerateUuids` (`generateUuidUsing()` / `generateUuid()` / `fake()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | todo | — | [semantics](#items-are-uuid-keyed-in-the-live-bag-and-positional-on-the-record) · [semantics](#unmanaged-item-keys-round-trip-through-the-client) · [diverges](#the-item-key-is-opaque-not-an-rfc-uuid) |
+| `Repeater::make()` + `components()` item schema definition (the `schema()` alias is [not ported](../renames.md)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#item-schemas-ride-a-ported-child-schema-cache-and-clone-layer) · [semantics](#an-item-field-derives-no-requirement-from-the-record) |
+| `hydrateItems()` / `dehydrateItems()` + `CanGenerateUuids` (`generateUuidUsing()` / `generateUuid()` / `fake()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | todo | — | [semantics](#items-are-uuid-keyed-in-the-live-bag-and-positional-on-the-record) · [semantics](#unmanaged-item-keys-round-trip-through-the-client) |
 | `getItems()` / `getDefaultChildSchemas()` / `areCachedDefaultChildSchemasFresh()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#item-schemas-ride-a-ported-child-schema-cache-and-clone-layer) |
 | `defaultItems()` / `default()` + the hydrated-default merge | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#the-item-pipeline-lands-filament-exact) |
 | `simple()` / `isSimple()` / `getSimpleField()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#the-item-pipeline-lands-filament-exact) |
@@ -113,10 +113,10 @@ still holds; ours stamps the clone only, pinned by a test that the original's
 container survives. `getFlatComponents()` already descends through
 `getChildSchemas()`, so the moment item schemas appear there, validation,
 dehydration, hydration and the record walks all reach item fields with no
-further wiring. The `schema()` alias lands on both tiers in the same change —
-Filament ships it undeprecated beside `components()`, and
-[component.md](../schemas/component.md) already records "add the cheap helpers
-and `schema()` alias now" as the next step — flipping the M1 · 4 deferral.
+further wiring. Item schemas are defined through `components()` alone — the
+`schema()` alias every Filament repeater example uses is
+[deliberately not ported](../schemas/component.md#the-schema-alias-is-not-ported),
+so `simple()`'s internal wiring goes through `components()` too.
 
 Item schemas are built without Filament's `->constantState(null)` and
 `->inlineLabel(false)` stamps: constant state is
@@ -223,7 +223,9 @@ Permanent — these outlive the detail sections above.
 ### Items are uuid-keyed in the live bag and positional on the record
 
 One list, two shapes, and the boundary between them is dehydration.
-In the live bag items are keyed by opaque uuids — minted at hydration
+In the live bag items are keyed by per-request v4 uuids (`symfony/uid`'s
+`Uuid::v4()`, the `Str::uuid()` idiom translation; the dependency is declared
+by `forms`, approved 2026-08-04) — minted at hydration
 (`hydrateItems()` re-keys whatever `fill()` read) and by every add/clone — so a
 structural mutation never renumbers a sibling's state path mid-edit, which is
 what keeps validation errors, morph anchors and in-flight input attached to the
@@ -342,16 +344,6 @@ wholesale value — so the map build throws, naming both components and the two
 ways out (move the field inside the repeater's schema, or move its path out
 from under the repeater).
 
-### The item key is opaque, not an RFC UUID
-
-`generateUuid()` returns an opaque unique string (`random_bytes` hex), not an
-RFC 4122 UUID: the key's only job is to be unique within one bag for one edit
-session, nothing parses it, and it never persists — so `symfony/uid` would be
-a new dependency purchasing a format guarantee nobody consumes. The method
-names keep Filament's spelling (`generateUuid()` / `generateUuidUsing()` /
-`fake()`) because that is the API surface migrating users grep for. Reverses
-if `symfony/uid` enters the graph for some other reason.
-
 ### Drag-and-drop reorder is deferred and Filament's defaults are kept
 
 Filament reorders by drag (SortableJS via its `x-sortable` Alpine plugin, on by
@@ -377,5 +369,6 @@ call breaks loudly — missing method, current name one grep away in Filament's
 own deprecation notice.
 
 _See also: the global [rename table](../renames.md) — `ownsRecordSubtree()`
-joins the Sylament-only names recorded there once it lands; everything else in
-this file keeps Filament's spelling._
+joins the Sylament-only names recorded there once it lands, and the unported
+`schema()` alias has its row there; everything else in this file keeps
+Filament's spelling._

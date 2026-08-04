@@ -133,12 +133,14 @@ documented to *not* materialize the implicit `default` schema during a state
 walk, a deliberate behavioural note to preserve. Direct coverage is thin
 ([`HasChildComponentsTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasChildComponentsTest.php)
 pins the null-slot clear and the empty-default survival), the rest exercised
-transitively via `SectionTest`/`HasIdTest`/forms `Field`. Left: the `schema()`
-alias, the `getChildComponents()` / `getDefaultChildComponents()` /
+transitively via `SectionTest`/`HasIdTest`/forms `Field`. Left: the
+`getChildComponents()` / `getDefaultChildComponents()` /
 `getDefaultChildSchemas()` helpers, the deprecated aliases, the caching/clone
-layer, and the `withHidden` parameter — the last three carry divergences below.
-Next step: add the cheap helpers and `schema()` alias now; defer caching to the
-render pipeline and `cloneChildComponents()` to `Cloneable`.
+layer, and the `withHidden` parameter — the last three carry divergences below;
+the `schema()` alias is deliberately not ported
+([diverges](#the-schema-alias-is-not-ported)).
+Next step: add the cheap helpers; the caching and `cloneChildComponents()` land
+with the Repeater epic's schemas lane ([repeater.md](../forms/repeater.md)).
 
 ### HasState: the get/set core and validation flags are in; relationship and partial-render state are out
 
@@ -202,6 +204,20 @@ component reads as a no-op here while doing all the work.
 
 Deliberate deviations from Filament, and the reason each holds. These outlive the
 detail sections above. Provisional ones say what would reverse them.
+
+### The schema() alias is not ported
+
+Filament ships `schema()` beside `components()` on this trait, undeprecated —
+pure back-compat surface for its own pre-v4 call sites. Sylament ships
+`components()` alone (decided 2026-08-04, with the Repeater epic's planning):
+a second name for the same call adds grep surface and a second spelling every
+example must choose between, for call sites this port has none of. A migrating
+user's `->schema([...])` breaks loudly — missing method, and the fix is
+mechanical — which the [rename criterion](../renames.md) prefers to a silently
+kept synonym. The same decision covers the root tier
+([schema.md](schema.md#the-schema-alias-is-not-ported)); recorded in the
+[rename table](../renames.md). Reverses only if migration friction proves it
+wrong in practice.
 
 ### BelongsToContainer gains a Sylament-only getLiveComponentOrNull() peek
 

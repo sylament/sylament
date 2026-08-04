@@ -126,7 +126,9 @@ descending (`str_starts_with`/`mb_substr`, no Laravel `str()`). Depth-first,
 first match wins; hidden components are skipped. **Left:** `getComponent()`,
 `getFlatFields()` (depend on Fields),
 `cloneComponents()`/`clearCachedChildSchemas()` (depend on `Cloneable`
-and child-schema caching), and the deprecated `schema()` alias. **Next:** port
+and child-schema caching, both landing with the Repeater epic's schemas lane —
+[repeater.md](../forms/repeater.md)); the `schema()` alias is deliberately not
+ported ([diverges](#the-schema-alias-is-not-ported)). **Next:** port
 the rest as Fields/`Cloneable` land. The structural
 difference it keeps — a single `$cachedComponents` slot instead of Filament's
 flag-keyed memoization — is permanent and written up in
@@ -198,6 +200,15 @@ never falls back to its state path while a component key does. The deprecated
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Each
 says what would reverse it when the decision is provisional.
+
+### The schema() alias is not ported
+
+The root tier follows the component tier: `components()` is the sole spelling,
+`schema()` is not ported. One decision, recorded once —
+[component.md](component.md#the-schema-alias-is-not-ported) carries the
+reasoning, the [rename table](../renames.md) the row. (Filament ships the root
+alias undeprecated too; the earlier "deprecated" label in this file read
+Filament's docs-level direction into the code and was wrong.)
 
 ### Schema is the state root; Filament splits state across the Livewire base and the schema
 

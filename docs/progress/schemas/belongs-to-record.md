@@ -542,8 +542,10 @@ round-trip. Three consequences are deliberate:
   hand-written vivifying getter. This
   [overturns a recorded decision](#a-missing-singular-intermediate-is-constructed-from-its-declared-type),
   which is where the grounds are. What still throws: a declared class needing
-  constructor arguments, an object collection at any segment, and an array
-  remainder a typed property rejects.
+  constructor arguments, an object collection at any segment — recognised from
+  the declared type (an adder resolves the property to a `list<Tag>`, not to a
+  `Traversable`) and again from the collection instance met on the walk — and
+  an array remainder a typed property rejects.
 - **Scope: plain nested objects and embeddable-shaped value objects.** The
   walk will mechanically traverse a loaded Doctrine association and mutate the
   associated entity in place — almost never what a form edit means, and
@@ -565,7 +567,9 @@ branches, on three grounds — the third is the one that changed:
 - **The dangerous case is excluded elsewhere now.** The shape where a wrong
   construction becomes duplicate INSERTs is a *collection*, and a collection is
   [refused outright](property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused)
-  before it can reach the mapper. The original argument rejected construction to
+  before it can reach the mapper — the mainstream Doctrine declaration included,
+  since the refusal reads both the adder-derived type and the initialized
+  instance already on the entity. The original argument rejected construction to
   avoid a case the collection refusal already removes.
 - **Doctrine itself vivifies here.** An `#[ORM\Embedded]` write goes through
   `ReflectionEmbeddedProperty::setValue()`, which instantiates the embeddable

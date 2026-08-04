@@ -10,8 +10,9 @@ namespace Sylament\Schemas\State;
  * null when the property is not a constructible object), whether null may be
  * written, and whether the property holds a collection. The two collection
  * flags are not interchangeable — {@see $isCollection} covers any collection
- * including a plain array, while {@see $isObjectCollection} covers only a
- * `Traversable` object, the arm whose items have no identity to map onto.
+ * including a plain array, while {@see $isObjectCollection} covers only the
+ * object-item arms (a `Traversable` object, or a collection whose value type is
+ * an object — how an adder resolves), whose items have no identity to map onto.
  */
 final readonly class RecordTarget
 {

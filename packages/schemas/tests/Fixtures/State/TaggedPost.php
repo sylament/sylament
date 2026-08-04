@@ -11,8 +11,6 @@ use ArrayObject;
  * an adder, initialized in the constructor. The adder is what makes
  * ReflectionExtractor resolve `tags` mutator-first to `list<PostTag>` — a
  * CollectionType, never the getter's ObjectType.
- *
- * @phpstan-type Tags ArrayObject<int, PostTag>
  */
 final readonly class TaggedPost
 {

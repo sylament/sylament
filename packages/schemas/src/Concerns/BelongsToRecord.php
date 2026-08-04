@@ -100,20 +100,29 @@ trait BelongsToRecord
      * The record-relative dotted paths this schema maps, keyed to their leaf
      * components. Containers (components nesting path-bearing components)
      * contribute their leaves, never themselves; the root state path prefix is
-     * stripped by {@see Component::getRecordStatePath()}.
+     * stripped by {@see Component::getRecordStatePath()}. A component owning its
+     * record subtree ({@see Component::ownsRecordSubtree()}) is the exception —
+     * it maps as a leaf despite its path-bearing descendants, and every path
+     * collected beneath it drops out in favour of its own.
      *
      * @return array<string, Component>
+     *
+     * @throws LogicException when a component declared outside an owner's tree
+     *                        carries a state path nesting under the owner's
      */
     protected function getRecordPathMap(): array
     {
         $map = [];
+        $owners = [];
 
         foreach ($this->getFlatComponents(withActions: false) as $component) {
             if (! $component->hasStatePath()) {
                 continue;
             }
 
-            if ($component->hasPathBearingDescendants()) {
+            $ownsSubtree = $component->ownsRecordSubtree();
+
+            if (! $ownsSubtree && $component->hasPathBearingDescendants()) {
                 continue;
             }
 
@@ -124,9 +133,60 @@ trait BelongsToRecord
             }
 
             $map[$recordPath] = $component;
+
+            if ($ownsSubtree) {
+                $owners[$recordPath] = $component;
+            }
+        }
+
+        foreach ($owners as $ownerPath => $owner) {
+            $prefix = $ownerPath . '.';
+
+            foreach ($map as $path => $component) {
+                if ($component === $owner) {
+                    continue;
+                }
+
+                if (! str_starts_with((string) $path, $prefix)) {
+                    continue;
+                }
+
+                if (! $this->isInsideOwnerTree($component, $owner)) {
+                    throw new LogicException(sprintf(
+                        '%s declares state path "%s", which nests under "%s" — a path %s maps wholesale, so this component would neither fill nor save. Move it inside that component\'s schema, or move its state path out from under "%s".',
+                        $component::class,
+                        $path,
+                        $ownerPath,
+                        $owner::class,
+                        $ownerPath,
+                    ));
+                }
+
+                unset($map[$path]);
+            }
         }
 
         return $map;
+    }
+
+    /**
+     * Whether `$component` sits in `$owner`'s own component tree — the walk up
+     * the container chain that separates a descendant the owner speaks for from
+     * a foreign component that merely shares its path prefix.
+     */
+    private function isInsideOwnerTree(Component $component, Component $owner): bool
+    {
+        $ancestor = $component->getContainer()->getParentComponent();
+
+        while ($ancestor instanceof Component) {
+            if ($ancestor === $owner) {
+                return true;
+            }
+
+            $ancestor = $ancestor->getContainer()->getParentComponent();
+        }
+
+        return false;
     }
 
     /**

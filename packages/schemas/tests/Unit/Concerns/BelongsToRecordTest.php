@@ -9,7 +9,9 @@ use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
+use Sylament\Schemas\Tests\Fixtures\Components\SubtreeOwner;
 use Sylament\Schemas\Tests\Fixtures\Concerns\RecordFixture;
+use Sylament\Schemas\Tests\Fixtures\Concerns\RecordPathMapSchemaFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 use Sylament\Schemas\Tests\Fixtures\State\Author;
 use Sylament\Schemas\Tests\Fixtures\State\InitializedPost;
@@ -584,4 +586,90 @@ it('keeps a branch alive through a filled dotted sibling leaf', function (): voi
     expect($schema->getData())->toBe($record)
         ->and($record->getAuthor()?->getHandle())->toBe('@ada')
         ->and($record->getAuthor()?->getName())->toBeNull();
+});
+
+it('maps a record-subtree owner as a leaf and drops the paths beneath it', function (): void {
+    $schema = RecordPathMapSchemaFixture::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new Post())
+        ->components([
+            StateField::make('title'),
+            SubtreeOwner::make('meta')->components([StateField::make('seo')]),
+        ]);
+
+    expect(array_keys($schema->recordPathMap()))->toBe(['title', 'meta']);
+});
+
+it('keeps a plain container out of the map and its descendants in it', function (): void {
+    $schema = RecordPathMapSchemaFixture::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new Post())
+        ->components([
+            StateGroup::make()->statePath('meta')->components([StateField::make('seo')]),
+        ]);
+
+    expect(array_keys($schema->recordPathMap()))->toBe(['meta.seo']);
+});
+
+it('represents a deep tree descendant of a record-subtree owner by the owner itself', function (): void {
+    $schema = RecordPathMapSchemaFixture::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new Post())
+        ->components([
+            SubtreeOwner::make('meta')->components([
+                StateGroup::make()
+                    ->statePath('seo')
+                    ->components([StateField::make('title')]),
+            ]),
+        ]);
+
+    expect(array_keys($schema->recordPathMap()))->toBe(['meta']);
+});
+
+it('reads a record-subtree owner property whole on fill', function (): void {
+    $record = new Post();
+    $record->setMeta(['seo' => 'Hi', 'unmanaged' => true]);
+
+    $host = new StateHostFixture();
+
+    Schema::make($host)
+        ->statePath('data')
+        ->record($record)
+        ->components([SubtreeOwner::make('meta')->components([StateField::make('seo')])])
+        ->fill($record);
+
+    expect($host->data)->toBe(['meta' => ['seo' => 'Hi', 'unmanaged' => true]]);
+});
+
+it('writes a record-subtree owner value wholesale onto the record', function (): void {
+    $record = new Post();
+    $record->setMeta(['legacy' => 1]);
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record($record)
+        ->components([SubtreeOwner::make('meta')->components([StateField::make('seo')])]);
+
+    $schema->rawState(['meta' => ['seo' => 'Hi']]);
+    $schema->getData();
+
+    expect($record->getMeta())->toBe(['seo' => 'Hi']);
+});
+
+it('refuses a foreign component whose state path nests under a record-subtree owner', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record(new Post())
+        ->components([
+            SubtreeOwner::make('meta')->components([StateField::make('seo')]),
+            StateField::make('meta.extra'),
+        ]);
+
+    $schema->rawState(['meta' => ['seo' => 'Hi', 'extra' => 'x']]);
+
+    $map = fn (): object => $schema->getData();
+
+    expect($map)->toThrow(LogicException::class, StateField::class)
+        ->and($map)->toThrow(LogicException::class, SubtreeOwner::class)
+        ->and($map)->toThrow(LogicException::class, 'nests under "meta"');
 });

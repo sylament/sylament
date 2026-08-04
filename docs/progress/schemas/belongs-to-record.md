@@ -72,6 +72,7 @@ Sylament-only.
 | [`getRecord(bool $withContainerRecord = true)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`getRecord()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-record-type-probe-is-instanceof-not-a-model-gate) |
 | [`getRecordInstance()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
 | [`getRecordStatePath()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it) |
+| [`ownsRecordSubtree()`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | — | done | — | [diverges](#a-component-can-own-its-whole-record-subtree) |
 | [`nullWhenBlank()` / `isNullableBranch()` / `shouldNullBranch()` / `isBlankStateValue()`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#the-built-in-blank-test-asks-the-branchs-own-leaves) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [diverges](#a-nullwhenblank-closure-sees-two-different-bags) · [diverges](#a-doctrine-embeddable-cannot-be-nulled) |
 | Per-component relationship members (`saveRelationships*`, `loadStateFromRelationships`, `castStateAfterLoadingFromRelationships`, the `*Using` setters, `saveRelationshipsWhenDisabled`/`WhenHidden`) | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | blocked | Doctrine relationship-state epic | [detail](#the-relationship-layer-is-not-ported) |
 
@@ -108,7 +109,13 @@ sibling branches nesting by path, where the outer null must short-circuit the
 inner branch's non-nullable refusal, which is red the moment the `uksort()` goes,
 and a branch kept alive — the sibling's record leaf written — through a filled
 path-descendant leaf declared by a sibling section and again by a dotted sibling
-field);
+field; plus the record-subtree owner set, read off the map directly through a
+`Schema` subclass fixture — an owner mapped as a leaf with its descendants
+dropped, a plain container still contributing its descendants and not itself, a
+descendant two containers down still represented by the owner, the whole-property
+read on `fill()`, the wholesale write on `getData()` destroying an unmanaged key
+the state no longer carries, and the foreign path-descendant refusal pinned on
+both class names and the offending path);
 the branch declaration itself by
 [`Unit/Components/Concerns/HasNullableBranchTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasNullableBranchTest.php)
 (the default, the declaration, blank and filled leaves, a nested sub-branch on
@@ -564,9 +571,40 @@ round-trip. Three consequences are deliberate:
   undetectable here (`schemas` has no EntityManager). Associations remain the
   relationship epic's surface; this note is the warning, not a guard.
 
-One known edge: the container test is `hasPathBearingDescendants()`, correct
-for every current component and wrong the day a component is both leaf and
-container (repeaters) — revisit the predicate with that epic.
+The container test is `hasPathBearingDescendants()`, and it carries a second arm
+for the component that is both leaf and container:
+[a component may own its whole record subtree](#a-component-can-own-its-whole-record-subtree),
+in which case it maps as a leaf and speaks for every path beneath its own.
+
+### A component can own its whole record subtree
+
+Sylament-only, because the record path map is Sylament-only.
+`ownsRecordSubtree()` — on `HasChildComponents`, default `false` — marks a
+component whose own dehydrated value **is** the record value for everything
+beneath its path — the shape no component had until
+[the forms `Repeater`](../forms/repeater.md), which is what the predicate exists
+for. The map build answers it in two places. The container skip
+is owner-aware, so an owner is collected as a leaf despite its path-bearing
+descendants: `fill()` then reads its property whole and `getData()` writes the
+dehydrated value back wholesale, which is what carries item keys the schema never
+declared and what makes the leaf-granularity rule above stop at the owner. And a
+second pass drops every path collected beneath an owner, so nothing re-reads or
+re-writes a slice of a value the owner already speaks for.
+
+That pass is not a plain filter, because two different components can produce a
+path under an owner's. A **tree** descendant — a field inside the owner's own
+child schema — is dropped silently; the owner represents it. A **foreign** one —
+a component declared beside the owner whose path merely nests under it,
+`StateField::make('meta.extra')` next to an owner at `meta` — throws a
+`LogicException` naming both components and the two ways out. Left alone it would
+neither fill nor save: the owner's wholesale read never reaches it, and the
+owner's wholesale write overwrites whatever it wrote. Silence there is exactly
+the shape this mapper [refuses loudly](#reads-are-lenient-writes-are-strict).
+Tree membership is the container chain walked to the root, never the path —
+a shared path prefix is precisely what cannot tell the two cases apart.
+
+Dehydration needs no owner arm of its own: it prunes by own path, which is
+already subtree-safe.
 
 ### A missing singular intermediate is constructed from its declared type
 

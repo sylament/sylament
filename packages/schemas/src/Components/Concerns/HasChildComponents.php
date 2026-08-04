@@ -95,6 +95,17 @@ trait HasChildComponents
         return false;
     }
 
+    /**
+     * Whether this component's own dehydrated value is the record value for every
+     * path beneath its own — the record walks treat it as a leaf even though it
+     * has path-bearing descendants, and refuse a foreign component whose path
+     * nests under it. Repeater-shaped components override this to true.
+     */
+    public function ownsRecordSubtree(): bool
+    {
+        return false;
+    }
+
     public function getChildSchema(?string $key = null): ?Schema
     {
         if (($key !== null) && ($key !== 'default') && !array_key_exists($key, $this->childComponents)) {

@@ -103,7 +103,10 @@ not a sibling sharing its character prefix, a nested branch short-circuited
 beneath a nulled outer one, and the refusals — a hidden branch and a branch whose
 only leaf is hidden both left alone rather than nulled, a `nullWhenBlank()` leaf
 writing nothing because a leaf declares no branch, a non-nullable branch target
-throwing, and a path-less declaration throwing); the branch declaration itself by
+throwing, and a path-less declaration throwing; plus the ordering pin — two
+sibling branches nesting by path, where the outer null must short-circuit the
+inner branch's non-nullable refusal, which is red the moment the `uksort()` goes);
+the branch declaration itself by
 [`Unit/Components/Concerns/HasNullableBranchTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasNullableBranchTest.php)
 (the default, the declaration, blank and filled leaves, a nested sub-branch on
 both sides of blank, the closure arm receiving the branch state, and the explicit
@@ -357,6 +360,13 @@ the descendant before the ancestor, so nulling `meta` afterwards writes over a
 decision already taken about a path underneath it, and the `$nulledPrefixes`
 short-circuit — which only skips branches it has *already* seen a prefix for —
 cannot save it. Sorting by depth restores the invariant the short-circuit assumes.
+
+That exact sibling-by-path shape is now pinned through the refusal, so deleting
+the sort fails a test rather than a code review: the inner branch sits over a
+**non-nullable** property, which only survives the pass by being short-circuited
+under the nulled outer one, so an unsorted pass reaches it first and throws
+[the non-nullable refusal](#a-branch-the-record-cannot-null-is-refused-loudly)
+naming `meta.seo`.
 
 One latent type detail rode along with it, now closed: PHP coerces a
 numeric-string array key to `int`, so a schema using `statePath('0')` would have

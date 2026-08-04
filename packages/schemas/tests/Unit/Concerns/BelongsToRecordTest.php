@@ -13,6 +13,8 @@ use Sylament\Schemas\Tests\Fixtures\Concerns\RecordFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 use Sylament\Schemas\Tests\Fixtures\State\Author;
 use Sylament\Schemas\Tests\Fixtures\State\InitializedPost;
+use Sylament\Schemas\Tests\Fixtures\State\MetaBlock;
+use Sylament\Schemas\Tests\Fixtures\State\PageRecord;
 use Sylament\Schemas\Tests\Fixtures\State\Post;
 use Sylament\Schemas\Tests\Fixtures\State\UninitializedPost;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
@@ -515,3 +517,27 @@ it('refuses nullWhenBlank() on a component carrying no state path', function ():
 it('refuses getData() for an array-bound record with a message naming the arm', function (): void {
     Schema::make(new StateHostFixture())->record(['title' => 'Hello'])->getData();
 })->throws(LogicException::class, 'array record only supplies state');
+
+it('orders sibling branches by path depth so an outer null short-circuits an inner refusal', function (): void {
+    $record = new PageRecord();
+    $record->meta = new MetaBlock();
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record($record)
+        ->components([
+            Section::make('seo')
+                ->statePath('meta.seo')
+                ->nullWhenBlank()
+                ->components([StateField::make('title')]),
+            Section::make('meta')
+                ->statePath('meta')
+                ->nullWhenBlank()
+                ->components([StateField::make('note')]),
+        ]);
+
+    $schema->rawState(['meta' => ['note' => null, 'seo' => ['title' => null]]]);
+
+    expect($schema->getData())->toBe($record)
+        ->and($record->meta)->toBeNull();
+});

@@ -5,15 +5,24 @@ declare(strict_types=1);
 namespace Sylament\Forms\Components\Concerns;
 
 use Closure;
-use LogicException;
 use Symfony\Component\Uid\Uuid;
 
 trait CanGenerateUuids
 {
-    protected Closure|bool|null $generateUuidUsing = null;
+    protected string|Closure|null $generateUuidUsing = null;
+
+    protected bool $generatesUuids = true;
 
     public function generateUuidUsing(Closure|bool|null $callback): static
     {
+        if (is_bool($callback)) {
+            $this->generatesUuids = $callback;
+            $this->generateUuidUsing = null;
+
+            return $this;
+        }
+
+        $this->generatesUuids = true;
         $this->generateUuidUsing = $callback;
 
         return $this;
@@ -21,25 +30,15 @@ trait CanGenerateUuids
 
     public function generateUuid(): ?string
     {
-        if ($this->generateUuidUsing instanceof Closure) {
-            $uuid = $this->evaluate($this->generateUuidUsing);
-
-            if ($uuid === null || is_string($uuid)) {
-                return $uuid;
-            }
-
-            throw new LogicException(sprintf(
-                '%s: the generateUuidUsing() closure must return a string or null, %s given.',
-                static::class,
-                get_debug_type($uuid),
-            ));
-        }
-
-        if ($this->generateUuidUsing === false) {
+        if (!$this->generatesUuids) {
             return null;
         }
 
-        return Uuid::v4()->toRfc4122();
+        if ($this->generateUuidUsing === null) {
+            return Uuid::v4()->toRfc4122();
+        }
+
+        return $this->evaluate($this->generateUuidUsing);
     }
 
     /**

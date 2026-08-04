@@ -52,7 +52,7 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | `Repeater::make()` + `components()` item schema definition (the `schema()` alias is [not ported](../renames.md)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#item-schemas-ride-a-ported-child-schema-cache-and-clone-layer) · [semantics](#an-item-field-derives-no-requirement-from-the-record) |
-| `hydrateItems()` / `dehydrateItems()` + `CanGenerateUuids` (`generateUuidUsing()` / `generateUuid()` / `fake()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | todo | — | [semantics](#items-are-uuid-keyed-in-the-live-bag-and-positional-on-the-record) · [semantics](#unmanaged-item-keys-round-trip-through-the-client) |
+| `hydrateItems()` / `dehydrateItems()` + `CanGenerateUuids` (`generateUuidUsing()` / `generateUuid()` / `fake()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | todo | — | [semantics](#items-are-uuid-keyed-in-the-live-bag-and-positional-on-the-record) · [semantics](#unmanaged-item-keys-round-trip-through-the-client) · [diverges](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid) |
 | `getItems()` / `getDefaultChildSchemas()` / `areCachedDefaultChildSchemasFresh()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#item-schemas-ride-a-ported-child-schema-cache-and-clone-layer) |
 | `defaultItems()` / `default()` + the hydrated-default merge | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#the-item-pipeline-lands-filament-exact) |
 | `simple()` / `isSimple()` / `getSimpleField()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#the-item-pipeline-lands-filament-exact) |
@@ -356,6 +356,28 @@ migrating user simply finds drag reorder missing (a blocked row, loud in this
 table) and buttons one call away. Flipping the buttons default on was
 considered and rejected: a surprise control Filament users never asked for is
 worse than a documented gap. Reverses when the drag-and-drop JS vertical lands.
+
+### Uuid generation is a mode flag, and `generateUuidUsing(true)` mints a real uuid
+
+`generateUuidUsing()` keeps Filament's `Closure|bool|null` signature, but the
+value behind it is stored as two properties — a `bool $generatesUuids` mode flag
+and a `string|Closure|null $generateUuidUsing` generator — and `true` mints an
+ordinary v4 uuid instead of Filament's `"1"`. Both halves fall out of typing.
+Filament's truthy arm evaluates whatever the property holds and returns it from
+a `?string` method, so `generateUuidUsing(true)` returns the literal `true`
+coerced to the string `"1"` — every item keyed identically, and a coercion
+`declare(strict_types=1)` forbids outright. Here `true` means what it reads as:
+generation is on, with no generator override, so the default arm runs. The
+two-property split is the same fact seen from the type side: `evaluate()`'s
+generic reads a closure's return type off the property union by subtracting
+`Closure` from it, which the [closure-typing convention](../../../CLAUDE.md)
+makes the *only* place a closure's return type may be stated. Filament's single
+property spends those arms on modes, so the generic infers `Closure`, and every
+check on the result is dead code at level max. Splitting the mode out lets the
+union say what it is for — a uuid, or a closure producing one. A generator
+returning something else therefore raises PHP's own return `TypeError` naming
+the component's `generateUuid()`; no hand-thrown guard rides along, because a
+`?string` inference makes one unreachable.
 
 ### Deprecated Filament members are not ported
 

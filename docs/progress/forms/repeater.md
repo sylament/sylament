@@ -92,7 +92,8 @@ rewording to [property-accessor.md](../schemas/property-accessor.md), the
 Filament resolves `getChildSchema($itemKey)` for an unknown key by falling back
 into `getCachedDefaultChildSchemas()` — a cached map the Repeater overrides to
 hold **one child `Schema` per item**, each a `getClone()` of the `components()`
-template schema with `->statePath($itemKey)`, invalidated by a structural
+template schema with `->statePath($itemKey)` (ours adds `->key($itemKey)`, one
+paragraph down), invalidated by a structural
 fingerprint (`array_map(is_array(...), $rawState)`: the keys, their order, and
 whether each holds an array — value edits never rebuild, add/remove/reorder
 always do). Sylament's `HasChildComponents` has none of that today — no caching,
@@ -117,6 +118,23 @@ further wiring. Item schemas are defined through `components()` alone — the
 `schema()` alias every Filament repeater example uses is
 [deliberately not ported](../schemas/component.md#the-schema-alias-is-not-ported),
 so `simple()`'s internal wiring goes through `components()` too.
+
+Each item schema also takes `->key((string) $itemKey)`, which Filament does not
+stamp — and it is load-bearing, not a redundant echo of the state path. Filament's
+`Schema::getKey()` ends in `?? getStatePath(isAbsolute: false)`, so an unkeyed item
+schema keys itself by the item's state path for free. The port's root-tier
+[`HasKey`](../schemas/schema.md#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback)
+drops that fallback, so an unkeyed item schema returns `null` and its
+`getInheritanceKey()` walks up to the repeater's own key: every item's fields
+would then resolve the same absolute key — and the same DOM id, since
+`getId()` is `getCustomId() ?? getKey()` — collapsing onto
+`<repeaterKey>.<fieldName>` across all items, with the `<li>` ids and each field
+wrapper's `for` / `aria-labelledby` targets duplicated with them. It is pinned by
+the render test asserting each item's input id (`<repeaterKey>.0.name` against
+`<repeaterKey>.1.name`), which collapses to one value the moment the stamp goes.
+The stamp is the first call site compensating for that gap (the schemas trail's
+open **Next** item on it now points here); it comes back out if the schema-tier
+fallback is restored.
 
 Item schemas are built without Filament's `->constantState(null)` and
 `->inlineLabel(false)` stamps: constant state is

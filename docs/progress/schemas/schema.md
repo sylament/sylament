@@ -195,7 +195,13 @@ recorded decision (commit `7aad138` gives no rationale). **Next:** reconcile it 
 either restore `$key = $this->evaluate($this->key) ?? $this->getStatePath(isAbsolute: false)`
 with a covering test (a keyless schema carrying a state path), or, if the drop is
 intentional, promote it to a deliberate divergence explaining why a schema key
-never falls back to its state path while a component key does. The deprecated
+never falls back to its state path while a component key does. The gap now has a
+first consumer compensating for it: forms' `Repeater` stamps `->key($itemKey)`
+alongside `->statePath($itemKey)` on every item schema it clones, because an
+unkeyed one inherits the repeater's key and collapses every item's field keys —
+and DOM ids — onto one value
+([repeater.md](../forms/repeater.md#item-schemas-ride-a-ported-child-schema-cache-and-clone-layer)).
+Restoring the fallback removes that stamp. The deprecated
 `name()`/`getName()` aliases are a separate, deliberate
 [skip](#the-deprecated-name-and-getname-aliases-are-not-ported).
 

@@ -42,8 +42,8 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | State-path seeding ([`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php), schemas) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | done | — | — |
 | `getLabel()` / `getDefaultLabel()` humanization | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#getdefaultlabel-drops-label-translation) |
 | Field-wrapper slots (10 constants + setters, `makeChildSchema` / `configureChildSchema`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#slot-child-schemas-drop-action--actiongroup-wiring) |
-| Field-wrapper rendering (`FieldWrapper` template ⟵ `wrapEmbeddedHtml`), including the `labelPrefix` / `labelSuffix` label slots a boolean field fills with its control. `inlineLabelVerticalAlignment` is omitted pending schemas' `HasInlineLabel`, the only thing that varies it; `labelTag` is omitted for an unrelated reason — see the row below. | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#the-label-carries-an-inline-control-modifier-class), [semantics](../schemas/can-be-marked-as-required.md#the-native-required-attribute-is-load-bearing-inside-a-modal-form) |
-| `labelTag` (`label` vs `div`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | the first multi-control field (`Radio` / `CheckboxList`) | [detail](#labeltag-waits-for-the-first-multi-control-field) |
+| Field-wrapper rendering (`FieldWrapper` template ⟵ `wrapEmbeddedHtml`), including the `labelPrefix` / `labelSuffix` label slots a boolean field fills with its control. `inlineLabelVerticalAlignment` is omitted pending schemas' `HasInlineLabel`, the only thing that varies it; `labelTag` ships under a different shape — see the row below. | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#the-label-carries-an-inline-control-modifier-class), [semantics](../schemas/can-be-marked-as-required.md#the-native-required-attribute-is-load-bearing-inside-a-modal-form) |
+| `labelTag` (`label` vs `div`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#labeltag-is-a-boolean-labelasheading) |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | — | [detail](can-be-validated.md) |
 | Error display (`getErrorMessages()` ⟵ `hasErrorForPath` / `ViewErrorBag`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#error-display-shows-every-message-for-the-path) |
 | Input affix wrapper (`wrapInputHtml`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | blocked | HasAffixes | [detail](#the-input-affix-wrapper-is-not-ported) |
@@ -60,24 +60,6 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 Specifics for rows that are not finished — what is already in, what is left, and
 the next step. Delete a subsection when its row flips to **done**; the table row
 and any divergence it earned stay behind.
-
-### `labelTag` waits for the first multi-control field
-
-Filament's `wrapEmbeddedHtml()` takes a `$labelTag` that swaps the wrapper's
-`<label for="…">` for a `<div id="…-label">`. It has nothing to do with inline
-labels: it is chosen **per field type**, by every field that renders more than
-one control and therefore cannot point a single `for` at one of them —
-[`Radio`](../../../vendor/filament/forms/src/Components/Radio.php),
-[`CheckboxList`](../../../vendor/filament/forms/src/Components/CheckboxList.php),
-[`Repeater`](../../../vendor/filament/forms/src/Components/Repeater.php),
-`Builder`, `FileUpload`, `KeyValue`, `MarkdownEditor`, `CodeEditor` and
-`ModalTableSelect` all pass `labelTag: 'div'`, and `LivewireField` picks it from
-`filled($id)`.
-
-Every field ported so far renders exactly one control, so all of them want the
-`<label for>` the template hardcodes. **Next step:** add the parameter with the
-first multi-control field. Note this is *not* blocked on schemas'
-`HasInlineLabel` — only `inlineLabelVerticalAlignment` is.
 
 ### The input affix wrapper is not ported
 
@@ -157,6 +139,35 @@ every emitted `sy-` class part of the public hook surface consumers may target �
 so it is recorded here rather than left to be discovered in a diff. Same category
 as the `aria-invalid` addition below: a rendering choice the port makes and
 Filament does not.
+
+### `labelTag` is a boolean `labelAsHeading`
+
+Filament's `wrapEmbeddedHtml()` takes `string $labelTag = 'label'` and
+interpolates it as the wrapper's label element, swapping `<label for="…">` for
+`<div id="…-label">`. It has nothing to do with inline labels: it is chosen
+**per field type**, by every field that renders more than one control and
+therefore cannot point a single `for` at one of them —
+[`Radio`](../../../vendor/filament/forms/src/Components/Radio.php),
+[`CheckboxList`](../../../vendor/filament/forms/src/Components/CheckboxList.php),
+[`Repeater`](../../../vendor/filament/forms/src/Components/Repeater.php),
+`Builder`, `FileUpload`, `KeyValue`, `MarkdownEditor`, `CodeEditor`, `Slider`,
+`ToggleButtons`, `TableSelect` and `ModalTableSelect` all pass `labelTag: 'div'`,
+and `LivewireField` picks between the two from `filled($id)`. Those two values
+are the whole surface, and Filament's own template branches on
+`$labelTag === 'label'` to decide `for="…"` against `id="…-label"` — the string
+carries one bit.
+
+The port's
+[`FieldWrapper`](../../../packages/forms/templates/components/FieldWrapper/index.html.twig)
+takes that bit directly: a `labelAsHeading` boolean prop (default `false`)
+picking between two written-out arms, in both the sr-only and the visible label
+branch. A tag name would otherwise be interpolated into markup — a sink the
+template would have to sanitize for no gain, since no field wants a third tag.
+[`Repeater`](repeater.md)'s two partials are the first callers
+(`:labelAsHeading="true"`, with `aria-labelledby` pointed at the `-label` id);
+`Radio` / `CheckboxList` and the rest opt in the same way when they land.
+Recorded in the [rename table](../renames.md). Reversible into a tag-name prop if
+a field ever needs an element these two arms cannot spell.
 
 ### Error display shows every message for the path
 

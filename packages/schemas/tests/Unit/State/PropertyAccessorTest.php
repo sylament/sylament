@@ -6,8 +6,11 @@ namespace Sylament\Schemas\Tests\Unit\State;
 
 use LogicException;
 use Sylament\Schemas\State\PropertyAccessor;
+use Sylament\Schemas\State\RecordTypeReader;
 use Sylament\Schemas\Tests\Fixtures\State\Author;
 use Sylament\Schemas\Tests\Fixtures\State\Post;
+use Sylament\Schemas\Tests\Fixtures\State\TaggedPost;
+use Sylament\Schemas\Tests\Fixtures\State\TypedRecord;
 use Sylament\Schemas\Tests\Fixtures\State\UninitializedPost;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
@@ -15,7 +18,7 @@ use Symfony\Component\PropertyAccess\PropertyAccess;
 
 function accessor(): PropertyAccessor
 {
-    return new PropertyAccessor(PropertyAccess::createPropertyAccessor());
+    return new PropertyAccessor(PropertyAccess::createPropertyAccessor(), new RecordTypeReader());
 }
 
 it('reads a nested value by dotted path (dot to bracket)', function (): void {
@@ -250,19 +253,96 @@ it('clobbers a scalar under the array boundary like setInArray', function (): vo
     expect($post->getMeta())->toBe(['seo' => ['title' => 'Hi']]);
 });
 
-it('throws LogicException when a null object intermediate cannot take the vivified array', function (): void {
-    expect(fn () => accessor()->setOnRecord(new Post(), 'author.name', 'Ada'))
-        ->toThrow(LogicException::class, 'author.name');
+it('constructs a missing singular intermediate before writing a leaf', function (): void {
+    $record = new Post();
+
+    accessor()->setOnRecord($record, 'author.name', 'Ada');
+
+    expect($record->getAuthor())->toBeInstanceOf(Author::class)
+        ->and($record->getAuthor()?->getName())->toBe('Ada');
 });
 
-it('throws LogicException when an uninitialized object intermediate cannot take the vivified array', function (): void {
-    expect(fn () => accessor()->setOnRecord(new UninitializedPost(), 'author.name', 'Ada'))
-        ->toThrow(LogicException::class, 'author.name');
+it('constructs an intermediate declared non-nullable and never assigned', function (): void {
+    $record = new UninitializedPost();
+
+    accessor()->setOnRecord($record, 'author.name', 'Ada');
+
+    expect($record->getAuthor()->getName())->toBe('Ada');
+});
+
+it('mutates an existing intermediate in place rather than replacing it', function (): void {
+    $record = new Post();
+    $existing = new Author();
+    $record->setAuthor($existing);
+
+    accessor()->setOnRecord($record, 'author.name', 'Ada');
+
+    expect($record->getAuthor())->toBe($existing);
+});
+
+it('still writes a plain array branch as nested array data', function (): void {
+    $record = new Post();
+
+    accessor()->setOnRecord($record, 'meta.seo.title', 'Hi');
+
+    expect($record->getMeta())->toBe(['seo' => ['title' => 'Hi']]);
+});
+
+it('throws LogicException when a scalar intermediate cannot take the vivified array', function (): void {
+    expect(fn () => accessor()->setOnRecord(new Post(), 'title.nope', 'Ada'))
+        ->toThrow(LogicException::class, 'title.nope');
+});
+
+it('names the object that rejected the array, not the root record', function (): void {
+    expect(fn () => accessor()->setOnRecord(new Post(), 'author.name.deep', 'Ada'))
+        ->toThrow(LogicException::class, Author::class);
+});
+
+it('refuses an object-collection segment and names the repeater epic', function (): void {
+    expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags.0.name', 'Ada'))
+        ->toThrow(LogicException::class, 'Repeater epic');
+});
+
+it('refuses an object-collection leaf', function (): void {
+    expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags', ['a']))
+        ->toThrow(LogicException::class, 'Repeater epic');
+});
+
+it('refuses a leaf write onto an adder-shaped collection property', function (): void {
+    expect(fn () => accessor()->setOnRecord(new TaggedPost(), 'tags', ['php']))
+        ->toThrow(LogicException::class, '"tags" is a collection');
+});
+
+it('refuses to traverse an initialized collection intermediate', function (): void {
+    expect(fn () => accessor()->setOnRecord(new TaggedPost(), 'tags.0.name', 'php'))
+        ->toThrow(LogicException::class, '"tags" is a collection');
+});
+
+it('refuses to construct an intermediate whose constructor requires arguments', function (): void {
+    expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'money.amount', 5))
+        ->toThrow(LogicException::class, 'requires constructor arguments');
 });
 
 it('surfaces NoSuchPropertyException for a missing leaf setter on a record write', function (): void {
     expect(fn () => accessor()->setOnRecord(new Post(), 'nope', 'x'))
         ->toThrow(NoSuchPropertyException::class);
+});
+
+it('reports a nullable record property as accepting null', function (): void {
+    expect(accessor()->acceptsNullOnRecord(Post::class, 'author'))->toBeTrue();
+});
+
+it('reports a non-nullable record property as rejecting null', function (): void {
+    expect(accessor()->acceptsNullOnRecord(UninitializedPost::class, 'author'))->toBeFalse();
+});
+
+it('reports a record path it cannot read as accepting null', function (): void {
+    expect(accessor()->acceptsNullOnRecord(Post::class, 'meta.seo'))->toBeTrue();
+});
+
+it('reads nullability through an object hop rather than off the root', function (): void {
+    expect(accessor()->acceptsNullOnRecord(UninitializedPost::class, 'author.name'))->toBeTrue()
+        ->and(accessor()->acceptsNullOnRecord(TypedRecord::class, 'money.amount'))->toBeFalse();
 });
 
 it('reports a present leaf in a detached array', function (): void {

@@ -10,7 +10,9 @@ to read and write a host UX LiveComponent's `data` bag by absolute dotted path,
 and carries a detached-array trio (`getFromArray()` / `setInArray()` /
 `forgetFromArray()`) that ports Laravel's `Arr::get` / `Arr::set` / `Arr::forget`
 for the dehydration walk, which assembles state in a plain array before any host
-exists. State concerns reach it through
+exists. The record pair additionally takes a
+[`RecordTypeReader`](record-type-reader.md), which is what lets a write know what
+the record declares where it is writing. State concerns reach it through
 [`CanAccessProperties`](../../../packages/schemas/src/Components/Concerns/CanAccessProperties.php),
 composed onto `Schema` and the schemas `Component` base — see
 [the divergence below](#the-accessor-is-injected-not-reached-for).
@@ -32,7 +34,8 @@ deliberately mirrors rather than a Filament port target:
 Every point of this class. `Ports` is `—` where the method has no upstream at all
 (Sylament-invented mechanics); it links the mirrored vendor source where one
 exists. _Blocked by_ names what has to land first. _Detail_ carries a
-**diverges** link to the permanent note in [Divergences](#divergences), or `—`.
+**diverges** link (the permanent note in [Divergences](#divergences)) and/or a
+**semantics** link (a permanent note in [Semantics](#semantics)), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -42,8 +45,9 @@ exists. _Blocked by_ names what has to land first. _Detail_ carries a
 | [`setInArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write into a detached nested array, auto-vivifying/clobbering intermediates | [`Arr::set()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
 | [`forgetFromArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — unset leaf path(s) from a detached array, leaving emptied parents | [`Arr::forget()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
 | [`getFromRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — read a record's object graph by dotted path (objects hop by property, arrays by key, null past a null/scalar intermediate) | [`data_get()`](../../../vendor/laravel/framework/src/Illuminate/Collections/helpers.php) | done | — | [diverges](#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) |
-| [`setOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write into a record's object graph; object segments never vivify, the remainder past the first non-object segment writes as a nested array | [`data_set()`](../../../vendor/laravel/framework/src/Illuminate/Collections/helpers.php) | done | — | [diverges](#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) |
+| [`setOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write into a record's object graph; a null singular segment is constructed from its declared type, the remainder past the first segment that is neither an object nor constructible writes as a nested array | [`data_set()`](../../../vendor/laravel/framework/src/Illuminate/Collections/helpers.php) | done | — | [diverges](#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) · [diverges](#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused) · [semantics](#a-throwing-setonrecord-can-leave-a-constructed-intermediate-behind) |
 | [`hasInArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether a dotted path exists in a detached array (absent vs present-null) | [`Arr::has()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | — |
+| [`acceptsNullOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether the record's declared write-side type at a dotted path takes null (true when the type cannot be read) | — (Sylament-invented) | done | — | [semantics](#the-nullability-probe-lives-here-because-the-type-reader-does) |
 | [Service wiring](../../../packages/schemas/src/State/PropertyAccessor.php) — registration and class alias, injected through `CanAccessProperties` | — (Sylament-invented) | done | — | [diverges](#the-accessor-is-injected-not-reached-for) |
 
 Every row is **done** — the unit suite
@@ -55,8 +59,19 @@ present/missing/past-scalar reads, deep auto-vivify and non-array
 clobber, and leaf-only unset over a path list with a missing-path no-op; the
 record pair's object hops, object-to-array boundary crossing, leaf object read,
 propagated `AccessException`s, in-place nested mutation, boundary vivify
-preserving unmanaged siblings, and both missing-intermediate `LogicException`
-arms; `hasInArray()`'s present, present-null, absent and past-scalar answers), a
+preserving unmanaged siblings, and the write side's construction set —
+constructing a null intermediate, constructing one declared non-nullable and
+never assigned, mutating an existing intermediate in place rather than replacing
+it, the plain-array branch still taking the array-remainder path, the
+required-constructor-arguments refusal, the object-collection refusal at all four
+of its sites — a declared segment, a declared leaf, an adder-shaped leaf, and an
+initialized collection met on the walk — the scalar-intermediate
+`LogicException`, and the pin that it names the object that rejected the array
+rather than the root record; `hasInArray()`'s present, present-null, absent and
+past-scalar answers; and
+`acceptsNullOnRecord()`'s four — a nullable property, a non-nullable one, a path
+whose type cannot be read, and one read through an object hop rather than off the
+root), a
 wiring test
 ([`PropertyAccessorBootTest`](../../../packages/schemas/tests/Integration/State/PropertyAccessorBootTest.php))
 pins both paths — a component from `make()` holds the container's accessor, one
@@ -64,6 +79,50 @@ from `new` holds a locally built one — and
 [`LiveStateTest`](../../../packages/schemas/tests/Integration/LiveStateTest.php)
 drives it end-to-end through a real UX LiveComponent hydrate/dehydrate round-trip
 via `HasState`. No row has a write-up here.
+
+## Semantics
+
+Behaviour a reader would plausibly misread from the source. Permanent — these
+outlive the detail sections above.
+
+### A throwing `setOnRecord()` can leave a constructed intermediate behind
+
+Before construction landed, a throw from this method never mutated the record:
+every failure was detected before anything was written. That is no longer true.
+The walk assigns each constructed intermediate as it descends, so a path that
+throws three segments deep leaves the objects it built on the way there attached
+to the record — an empty `Author` on a `Post` whose `author.name.deep` write was
+rejected.
+
+It is left as-is rather than made transactional, on two grounds. Every throw on
+this path is a `LogicException` — a programmer error in the schema or the record,
+never user input — so the record is being discarded with the request anyway; and
+[`getData()`](belongs-to-record.md) validates the whole state before it maps, so
+a failing *submit* never reaches the mapper at all. Buffering the writes to make
+the method atomic would cost a second traversal to serve only the case where
+someone catches a `LogicException` and keeps using the record, which nothing does.
+Worth knowing before writing a test that asserts an untouched record after a
+caught throw.
+
+### The nullability probe lives here because the type reader does
+
+`acceptsNullOnRecord()` writes nothing. It exists so a caller about to write null
+into the record graph can refuse *first*, with a message of its own, instead of
+letting Symfony raise `InvalidTypeException` — the bare type error this class
+exists to translate everywhere else. Its one consumer today is
+[`getData()`'s branch pass](belongs-to-record.md#a-branch-the-record-cannot-null-is-refused-loudly),
+which needs to name `nullWhenBlank()` in the failure, and `setOnRecord()` cannot
+know that is why null arrived.
+
+It sits on this class rather than on the caller because this class already holds
+the [`RecordTypeReader`](record-type-reader.md) — the alternative was a second
+`#[Required]` setter on `Schema`, duplicating the one
+[`CanBeValidated`](../forms/can-be-validated.md) already carries, so that the
+schema could reach a reader its own accessor was constructed with.
+
+Note what it does **not** do: it never asserts. A path whose type cannot be read
+answers `true`, so an unreadable target keeps the behaviour it had before types
+were consulted, and every "should this throw" decision stays with the caller.
 
 ## Divergences
 
@@ -78,9 +137,14 @@ components are registered services, `make()` builds them through the container
 and the setter runs — verified: a `Section::make()` has the property initialised
 before anything reads it.
 
+The same `->autowire()` is what keeps `RecordTypeReader`'s definition alive: it is
+registered with a class alias and nothing else references it, so before the record
+pair took it as a constructor argument Symfony's `RemoveUnusedDefinitionsPass`
+deleted it at compile time.
+
 What it does **not** do is require the container. `getPropertyAccessor()` builds one
-locally — `new PropertyAccessor(PropertyAccess::createPropertyAccessor())`, the
-construction the test bootstraps already used — when the setter never ran,
+locally — `new PropertyAccessor(PropertyAccess::createPropertyAccessor(), new RecordTypeReader())`,
+the construction the test bootstraps already used — when the setter never ran,
 because a component built with `new` is a supported shape, not a mistake: the Unit bucket
 boots no kernel at all, `ComponentResolver` keeps a null-locator path for exactly
 this, and the suites construct components directly in ~300 places. Making the
@@ -139,10 +203,13 @@ on. They are segment-wise on purpose: Symfony's dotted syntax always means
 whole-path delegation would trade broken object intermediates for broken array
 intermediates. The walk hops objects one property at a time through the
 injected accessor and switches permanently to array traversal at the first
-non-object segment, giving mixed graphs (an entity holding a JSON-shaped array
-column) one contract. Reads are lenient like `getFromArray()` (null past a
-null/scalar intermediate, accessor failures propagate for the caller to
-judge); writes never vivify an object — the array-remainder write-back onto a
+segment that is neither an object nor a constructible one, giving mixed graphs
+(an entity holding a JSON-shaped array column) one contract. Reads are lenient
+like `getFromArray()` (null past a null/scalar intermediate, accessor failures
+propagate for the caller to judge); a write vivifies an *object* segment where
+the record declares a constructible class there
+([below](#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused))
+and otherwise falls through to that array remainder, whose write-back onto a
 typed property that rejects it throws `LogicException` naming the path and the
 fix, because "PropertyAccessor requires a graph of objects or arrays" explains
 nothing to someone who just nested a Section. Objects *inside* the array
@@ -157,9 +224,52 @@ write: `PropertyAccessor::setValue()` converts the setter's `TypeError` into an
 rethrows the raw `TypeError` instead. Catching `TypeError` alongside is not an
 option — `PropertyAccessorInterface::setValue()` does not declare it, so PHPStan
 calls the catch dead — which scopes the friendly message to named records, every
-shape a schema actually binds to. Hence
-[`UninitializedPost`](../../../packages/schemas/tests/Fixtures/State/UninitializedPost.php):
-a named fixture so the uninitialized-intermediate arm is covered by one.
+shape a schema actually binds to, and is why the fixtures under
+[`tests/Fixtures/State/`](../../../packages/schemas/tests/Fixtures/State) are named
+classes rather than the anonymous ones the rest of the suite reaches for.
+
+### A missing singular intermediate is constructed; an object collection is refused
+
+`setOnRecord()` used to write blind, which made both halves of a nested write
+wrong in opposite directions: a null intermediate could only be reported as an
+error, and a leaf whose target rejected the value produced whatever Symfony's
+accessor happened to throw. It now asks the
+[`RecordTypeReader`](record-type-reader.md) what the record declares before it
+acts, and the two answers split the behaviour:
+
+- **A null (or uninitialized) singular object segment whose declared type names a
+  constructible class is built with `new` and assigned**, then the walk continues
+  into it. The reasoning that overturns the previous "never constructed" stance is
+  recorded once, in
+  [belongs-to-record.md](belongs-to-record.md#a-missing-singular-intermediate-is-constructed-from-its-declared-type).
+  Nothing about the *other* arms changed: an existing object is still mutated in
+  place rather than replaced (pinned by an identity assertion), and a segment the
+  record declares as anything but a constructible object still falls through to
+  the array remainder, which is what keeps the JSON-column shape working.
+- **A segment or leaf that is an object collection throws**, naming the path and
+  the `Repeater` epic. Two triggers raise the one message `refuseCollection()`
+  holds. The **declared type** is the designed one: `assertNotCollection()` asks
+  the [`RecordTypeReader`](record-type-reader.md) at both the intermediate and the
+  leaf site. The **runtime instance** is the one that has to exist anyway — a
+  `Traversable` met mid-walk, checked immediately before the `is_object($current)`
+  hop, because that hop wins before any type is consulted and so walked an
+  *initialized* collection (which is every constructor-initialized Doctrine
+  entity) straight past the designed refusal into a bare `NoSuchPropertyException`
+  about reading property `"0"`. It covers the same shape from the other side too:
+  a collection the reader cannot see through, behind an untyped or getter-only
+  surface. Both triggers are deliberately narrower than "any collection": a
+  plain `array` property reports `isCollection` and must keep taking the
+  array-remainder path
+  ([the two flags](record-type-reader.md#two-collection-flags-because-a-plain-array-is-a-collection-and-is-still-mappable)),
+  so only the object-item arms are refused — the ones whose items have no identity
+  to map onto.
+
+A third arm reports the case the reader can describe but the mapper still cannot
+build: a declared class whose constructor takes required arguments throws a
+`LogicException` naming the class and telling the user to give the constructor
+defaults or initialize the property. All three are `LogicException` because each
+is a programmer error in the schema or the record, not user input — and
+`getData()` validates before it maps, so user input cannot reach them.
 
 ### The detached-array trio ports Laravel's Arr helpers because PropertyAccess is host-only and has no key removal
 

@@ -37,4 +37,26 @@ class Checkbox extends Field
             new BooleanStateCast(isNullable: false),
         ];
     }
+
+    /**
+     * A checkbox never dehydrates null — its state cast is non-nullable and its
+     * default is false — so a non-nullable `bool` target always accepts what it
+     * produces. Deriving requirement from that target would silently mean "must
+     * be ticked": `NotBlank` rejects false, and the template emits native
+     * `required`. Only an explicit {@see required()} may say so.
+     */
+    protected function isRequiredByRecord(): bool
+    {
+        return false;
+    }
+
+    /**
+     * False is this field's resting value — its non-nullable cast dehydrates an
+     * untouched box to false — so the branch blank test must read it as blank,
+     * or an optional branch containing a checkbox could never be discarded.
+     */
+    public function isBlankStateValue(mixed $value): bool
+    {
+        return $value === false || parent::isBlankStateValue($value);
+    }
 }

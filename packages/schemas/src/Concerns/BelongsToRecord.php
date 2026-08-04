@@ -99,15 +99,13 @@ trait BelongsToRecord
     /**
      * The record-relative dotted paths this schema maps, keyed to their leaf
      * components. Containers (components nesting path-bearing components)
-     * contribute their leaves, never themselves; the schema's own root state
-     * path is stripped.
+     * contribute their leaves, never themselves; the root state path prefix is
+     * stripped by {@see Component::getRecordStatePath()}.
      *
      * @return array<string, Component>
      */
     protected function getRecordPathMap(): array
     {
-        $rootPath = $this->getStatePath();
-        $prefix = ($rootPath !== null && $rootPath !== '') ? ($rootPath . '.') : '';
         $map = [];
 
         foreach ($this->getFlatComponents(withActions: false) as $component) {
@@ -115,19 +113,15 @@ trait BelongsToRecord
                 continue;
             }
 
-            if ($this->hasPathBearingDescendants($component)) {
+            if ($component->hasPathBearingDescendants()) {
                 continue;
             }
 
-            $componentPath = $component->getStatePath();
+            $recordPath = $component->getRecordStatePath();
 
-            if (! filled($componentPath)) {
+            if ($recordPath === null) {
                 continue;
             }
-
-            $recordPath = ($prefix !== '' && str_starts_with($componentPath, $prefix))
-                ? mb_substr($componentPath, mb_strlen($prefix))
-                : $componentPath;
 
             $map[$recordPath] = $component;
         }
@@ -136,22 +130,39 @@ trait BelongsToRecord
     }
 
     /**
-     * Whether any component nested under this one carries a state path — at any
-     * depth, through any child-schema key. A leaf decorated with a path-less
-     * child schema (`helperText()`, `belowContent()`, …) owns none, so it stays
-     * a leaf.
+     * Every component declaring itself a nullable branch, keyed by its
+     * record-relative path and ordered outermost first, so an outer branch that
+     * nulls short-circuits the inner ones beneath it.
+     *
+     * @return array<string, Component>
+     *
+     * @throws LogicException when a component declares itself a nullable branch
+     *                        without a state path naming the property to null
      */
-    private function hasPathBearingDescendants(Component $component): bool
+    protected function getNullableBranches(): array
     {
-        foreach ($component->getChildSchemas() as $childSchema) {
-            foreach ($childSchema->getFlatComponents(withActions: false) as $descendant) {
-                if ($descendant->hasStatePath()) {
-                    return true;
-                }
+        $branches = [];
+
+        foreach ($this->getFlatComponents(withActions: false) as $component) {
+            if (! $component->isNullableBranch()) {
+                continue;
             }
+
+            $recordPath = $component->getRecordStatePath();
+
+            if ($recordPath === null) {
+                throw new LogicException(sprintf(
+                    '%s declares nullWhenBlank() but carries no state path, so it names no property to null. Give it the statePath() of the branch it wraps, or drop nullWhenBlank().',
+                    $component::class,
+                ));
+            }
+
+            $branches[$recordPath] = $component;
         }
 
-        return false;
+        uksort($branches, static fn (int|string $a, int|string $b): int => mb_substr_count((string) $a, '.') <=> mb_substr_count((string) $b, '.'));
+
+        return $branches;
     }
 
     /**
@@ -167,7 +178,7 @@ trait BelongsToRecord
         $accessor = $this->getPropertyAccessor();
         $state = [];
 
-        foreach (array_keys($this->getRecordPathMap()) as $recordPath) {
+        foreach (array_map(strval(...), array_keys($this->getRecordPathMap())) as $recordPath) {
             try {
                 $value = $accessor->getFromRecord($record, $recordPath);
             } catch (AccessException) {
@@ -185,11 +196,52 @@ trait BelongsToRecord
     }
 
     /**
+     * Whether the dehydrated bag still carries the branch at `$branchPath` — at
+     * least one of the leaf paths the schema declares beneath it is present.
+     *
+     * A component with no declared leaf beneath it is a leaf rather than a
+     * branch, and a branch whose every leaf the dehydration walk pruned (a
+     * hidden subtree, `dehydrated(false)`) is absent rather than blank. Neither
+     * may be nulled: the bag holds no evidence about what the submission meant
+     * there, so writing null would discard a record value the form never showed.
+     * Testing presence at the branch path itself is not enough — pruning unsets
+     * only the leaf key and leaves the emptied parent behind.
+     *
+     * @param array<string, mixed> $state
+     * @param list<string>         $recordPaths
+     */
+    private function hasDehydratedBranchLeaf(array $state, string $branchPath, array $recordPaths): bool
+    {
+        $accessor = $this->getPropertyAccessor();
+        $prefix = $branchPath . '.';
+
+        foreach ($recordPaths as $recordPath) {
+            if (! str_starts_with($recordPath, $prefix)) {
+                continue;
+            }
+
+            if ($accessor->hasInArray($state, $recordPath)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Validate through {@see getState()}, then write every leaf state path the
      * schema declares onto the bound instance — or onto a fresh one built from
      * the declared class — and return it. A failing validation throws before
      * anything is written; a `dehydrated(false)` leaf is pruned from the state
-     * and therefore never mapped.
+     * and therefore never mapped. A {@see Component::nullWhenBlank()} branch the
+     * state still carries and whose state should not exist is nulled whole
+     * before the leaf walk, which then skips every path beneath it — so a
+     * discarded branch is never built back up by one of its own leaves; a branch
+     * the state does not carry is left alone entirely
+     * ({@see hasDehydratedBranchLeaf()}).
+     *
+     * @throws LogicException when a declared branch names no property, or names
+     *                        one the record declares non-nullable
      */
     public function getData(): object
     {
@@ -197,13 +249,56 @@ trait BelongsToRecord
 
         if (! is_object($record)) {
             $record = $this->getRecordInstance()
-                ?? throw new LogicException('Schema::getData() needs record() — a bound instance to map onto, or a declared class to construct.');
+                ?? throw new LogicException('Schema::getData() needs a record it can map onto — record() with a bound instance or a class-string to construct; an array record only supplies state and cannot be mapped onto.');
         }
 
         $accessor = $this->getPropertyAccessor();
         $state = $this->getState();
+        $recordPaths = array_map(strval(...), array_keys($this->getRecordPathMap()));
 
-        foreach (array_keys($this->getRecordPathMap()) as $recordPath) {
+        $nulledPrefixes = [];
+
+        foreach ($this->getNullableBranches() as $branchPath => $component) {
+            $branchPath = (string) $branchPath;
+
+            foreach ($nulledPrefixes as $prefix) {
+                if (str_starts_with($branchPath, $prefix)) {
+                    continue 2;
+                }
+            }
+
+            if (! $this->hasDehydratedBranchLeaf($state, $branchPath, $recordPaths)) {
+                continue;
+            }
+
+            if (! $accessor->acceptsNullOnRecord($record::class, $branchPath)) {
+                throw new LogicException(sprintf(
+                    'Cannot map state path "%s" onto %s: the record declares that property non-nullable, so the nullWhenBlank() on the component that owns it can never apply. Make the property nullable, or drop nullWhenBlank().',
+                    $branchPath,
+                    $record::class,
+                ));
+            }
+
+            $branchState = $accessor->getFromArray($state, $branchPath);
+
+            /** @var array<string, mixed> $branchState */
+            $branchState = is_array($branchState) ? $branchState : [];
+
+            if (! $component->shouldNullBranch($branchState)) {
+                continue;
+            }
+
+            $accessor->setOnRecord($record, $branchPath, null);
+            $nulledPrefixes[] = $branchPath . '.';
+        }
+
+        foreach ($recordPaths as $recordPath) {
+            foreach ($nulledPrefixes as $prefix) {
+                if (str_starts_with($recordPath, $prefix)) {
+                    continue 2;
+                }
+            }
+
             if (! $accessor->hasInArray($state, $recordPath)) {
                 continue;
             }

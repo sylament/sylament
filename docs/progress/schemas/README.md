@@ -156,7 +156,8 @@ shared with the base `Component` or not yet started.
 ## Supporting surface
 
 Everything with no user-instantiated component of its own: the state loop
-(`$get`/`$set`, the `PropertyAccessor` backend, and the state casts), contracts,
+(`$get`/`$set`, the `PropertyAccessor` backend, the `RecordTypeReader` behind
+record mapping, and the state casts), contracts,
 the view layer, the test helper, value objects, CLI commands, templates, assets,
 and translations —
 [`src/Components/Utilities`](../../../vendor/filament/schemas/src/Components/Utilities),
@@ -175,6 +176,7 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | [`Get`](../../../packages/schemas/src/State/Get.php) | [`Components/Utilities/Get.php`](../../../vendor/filament/schemas/src/Components/Utilities/Get.php) | in progress | [get.md](get.md) |
 | [`Set`](../../../packages/schemas/src/State/Set.php) | [`Components/Utilities/Set.php`](../../../vendor/filament/schemas/src/Components/Utilities/Set.php) | in progress | [set.md](set.md) |
 | [`PropertyAccessor`](../../../packages/schemas/src/State/PropertyAccessor.php) | — | done | [property-accessor.md](property-accessor.md) |
+| [`RecordTypeReader`](../../../packages/schemas/src/State/RecordTypeReader.php) | — | done | [record-type-reader.md](record-type-reader.md) |
 | [`StateCast`](../../../packages/schemas/src/State/Casts/Contracts/StateCast.php) | [`Components/StateCasts/Contracts/StateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/Contracts/StateCast.php) | done | — |
 | [`BooleanStateCast`](../../../packages/schemas/src/State/Casts/BooleanStateCast.php) | [`Components/StateCasts/BooleanStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/BooleanStateCast.php) | done | — |
 | `DateTimeStateCast` | [`Components/StateCasts/DateTimeStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/DateTimeStateCast.php) | todo | — |

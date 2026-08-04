@@ -102,6 +102,31 @@ on an `int` property) misfire against the raw, pre-cast string state a form bag
 holds, and every message would then travel two different pipelines depending on
 where the constraint was declared.
 
+**One class of failure this direction structurally cannot report, and how it is
+covered instead.** Validating the mapped object happens *after* mapping, so it
+only ever sees objects that mapping successfully produced — and a blank value for
+a non-nullable target is exactly the case where mapping does not get that far. A
+blank `data.author.name` against `Author::setName(string)` throws
+`InvalidTypeException` from the accessor, so `getData()` dies before any object
+exists to validate and the user gets a 500 rather than a field message. No
+ordering of this epic's tail fixes that: moving the object validation earlier
+would mean validating an object that has not been populated yet.
+
+The hole is closed from the other side, by
+[deriving requirement from the record's write-side types](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types):
+a field bound to a non-nullable target emits `NotBlank` on its own, so the blank
+submit fails *field* validation — asterisk, native `required` attribute, message
+under the input, sticky field-by-field clearing — and the mapper crash becomes
+unreachable rather than merely loud.
+
+That does **not** disturb the rejection above, and the distinction is the whole
+reason it does not: derivation reads a **type**, not a constraint. Nullability
+comes from `ReflectionExtractor` reading the property's mutator, so there is no
+`#[Assert]` metadata being pulled forward, no typed constraint evaluated against
+raw pre-cast state, and no second message pipeline — the field emits the same
+`NotBlank` it would have emitted from an explicit `required()`. Entity-declared
+constraints still all travel the one post-mapping route this section decides on.
+
 Caveat to carry into that epic, stated now because it is the non-obvious cost of
 this direction: mapping happens *before* the object-level validation, so a
 failing submit leaves the managed entity mutated in Doctrine's identity map even

@@ -368,3 +368,13 @@ it('fills an array-backed branch by declared leaves only', function (): void {
 
     expect($host->data['meta'])->toBe(['seo' => 'Hi']);
 });
+
+it('fills a numeric-string path from a record without a type error', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('0')]);
+
+    $schema->fill(new Post());
+
+    expect($schema->getRawState())->toBe(['0' => null]);
+});

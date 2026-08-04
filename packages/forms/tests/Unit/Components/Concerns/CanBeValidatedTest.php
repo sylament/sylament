@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests\Unit\Components\Concerns;
 
 use LogicException;
+use Sylament\Forms\Components\Field;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureField;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureLengthField;
+use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Forms\Tests\Fixtures\Records\Article;
+use Sylament\Schemas\Schema;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\GreaterThan;
 use Symfony\Component\Validator\Constraints\Length;
@@ -15,6 +19,18 @@ use Symfony\Component\Validator\Constraints\Positive;
 use Symfony\Component\Validator\Constraints\Regex;
 
 use function Sylament\Forms\Tests\wireField;
+
+/**
+ * Wire a field under a schema that carries the record, which is the frame
+ * derivation reads: the class comes from the root container, so `wireField()`'s
+ * record-less schema plus a field-tier `record()` derives nothing.
+ */
+function wireFieldToRecord(Field $field): Field
+{
+    Schema::make(new FieldRenderHost())->record(Article::class)->components([$field])->getComponents();
+
+    return $field;
+}
 
 it('is not required by default and builds no constraints', function (): void {
     $field = FixtureField::make('title');
@@ -270,4 +286,52 @@ it('dehydrates nothing without a state path', function (): void {
     $field->dehydrateValidationConstraints($constraints);
 
     expect($constraints)->toBe([]);
+});
+
+it('derives required from a non-nullable record property', function (): void {
+    expect(wireFieldToRecord(FixtureField::make('title'))->isRequired())->toBeTrue();
+});
+
+it('derives required through a nested record path', function (): void {
+    expect(wireFieldToRecord(FixtureField::make('author.name'))->isRequired())->toBeTrue();
+});
+
+it('builds NotBlank from a derived requirement', function (): void {
+    $constraints = wireFieldToRecord(FixtureField::make('title'))->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0])->toBeInstanceOf(NotBlank::class);
+});
+
+it('derives not-required from a nullable record property', function (): void {
+    expect(wireFieldToRecord(FixtureField::make('subtitle'))->isRequired())->toBeFalse();
+});
+
+it('derives not-required from a non-nullable collection property', function (): void {
+    expect(wireFieldToRecord(FixtureField::make('tags'))->isRequired())->toBeFalse();
+});
+
+it('derives not-required from a path the record does not declare', function (): void {
+    expect(wireFieldToRecord(FixtureField::make('unknown'))->isRequired())->toBeFalse();
+});
+
+it('lets an explicit required(false) beat the derived value', function (): void {
+    expect(wireFieldToRecord(FixtureField::make('title')->required(false))->isRequired())->toBeFalse();
+});
+
+it('lets an explicit nullable() beat the derived value', function (): void {
+    expect(wireFieldToRecord(FixtureField::make('title')->nullable())->isRequired())->toBeFalse();
+});
+
+it('does not derive from a field-tier record() binding alone', function (): void {
+    expect(wireField(FixtureField::make('title')->record(Article::class))->isRequired())->toBeFalse();
+});
+
+it('is not required when no record is bound', function (): void {
+    expect(FixtureField::make('title')->isRequired())->toBeFalse()
+        ->and(wireField(FixtureField::make('title'))->isRequired())->toBeFalse();
+});
+
+it('derives nothing for a field no schema contains', function (): void {
+    expect(FixtureField::make('title')->record(Article::class)->isRequired())->toBeFalse();
 });

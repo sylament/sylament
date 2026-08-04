@@ -50,7 +50,9 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`required()` / `isRequired()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated::required()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | — |
+| [`required()` / `isRequired()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated::required()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#requirement-is-derived-from-the-records-write-side-types) |
+| [`required(null)`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) — undeclare, falling back to derivation | — | done | — | [diverges](#requirement-is-derived-from-the-records-write-side-types) |
+| [`isRequiredByRecord()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) — the derivation seam, overridden to `false` on [`Checkbox`](checkbox.md) and [`Toggle`](toggle.md) | — | done | — | [diverges](#requirement-is-derived-from-the-records-write-side-types) · [semantics](#a-boolean-field-opts-out-of-derivation-but-selectboolean-does-not) |
 | [`getRequiredConstraint()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`getRequiredValidationRule()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#the-required-constraint-is-swappable-per-field) |
 | [`nullable()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated::nullable()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#nullable-removes-the-notblank-and-nothing-else) |
 | [`constraint()` / `constraints()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`rule()` / `rules()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#rule-and-rules-become-constraint-and-constraints-over-symfony-constraint-objects) |
@@ -76,15 +78,30 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | `mutateStateForValidation()` / `mutatesStateForValidation()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | blocked | schemas state-mutation layer | [detail](#the-validation-state-mutation-hooks-wait-on-schemas) |
 
 Coverage: the trait end to end (required default, `NotBlank` build, the
-`nullable()` inversion, closure conditions, the escape hatch behind true and
+`nullable()` inversion, closure conditions, the derivation set — required from a
+non-nullable property, through a nested path, `NotBlank` built from a derived
+requirement, not-required from a nullable one, from a collection one, from a path
+the record does not declare, from no bound record and from a field no schema
+contains, plus explicit `required(false)` and `nullable()` each beating the
+derived value — the escape hatch behind true and
 false conditions, closure constraints returning a single constraint or an array,
 the message post-pass — string and option-map forms, closure leaves, blank
 fallback, exact-class matching, clone-on-write, the ignored-key arm and all three
 throw arms — the length hand-off, and every `dehydrateValidationConstraints()`
 branch) by
 [`CanBeValidatedTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeValidatedTest.php);
-the `getRequiredConstraint()` override by
-[`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php);
+the `getRequiredConstraint()` override and the boolean derivation opt-out by
+[`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php)
+and [`CheckboxTest`](../../../packages/forms/tests/Integration/Components/CheckboxTest.php),
+with [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php)
+pinning that `boolean()` still derives; the wiring and branch propagation — the
+container reader reaching a field built by `make()`, requirement derived from the
+record bound on the root schema, suppressed under a blank nullable branch,
+resumed once the branch is filled, applied when the branch is not declared
+nullable, unmoved by a path-less `nullWhenBlank()` container (asserted against two
+values of an unrelated sibling field, so a walk reading the whole bag fails it),
+and an explicit `required()` staying strict inside a blank branch — by
+[`Integration/CanBeValidatedTest`](../../../packages/forms/tests/Integration/Components/Concerns/CanBeValidatedTest.php);
 the `isMarkedAsRequired()` fallback by
 [`FieldTest`](../../../packages/forms/tests/Unit/Components/FieldTest.php); the
 `TextInput` arms and their ordering by
@@ -160,6 +177,47 @@ is [not ported](../schemas/schema.md#getstate-validates-without-a-prepareforvali
 Faithful-in-spirit behaviour a reader would plausibly misread from the source.
 Permanent — these outlive the detail sections above.
 
+### A boolean field opts out of derivation, but `Select::boolean()` does not
+
+`Checkbox` and `Toggle` override `isRequiredByRecord()` to a constant `false`,
+and `Select::boolean()` — which also binds to a `bool` column — deliberately does
+not. The asymmetry looks like an oversight and is the whole point: the question
+the override answers is a **field** question, not a record one.
+
+The predicate that matters is *does this field's blank state dehydrate to
+something the target rejects*. Read off the state casts:
+
+| field | cast | blank state dehydrates to |
+| --- | --- | --- |
+| `Checkbox` / `Toggle` | `BooleanStateCast(isNullable: false)` | `false` — never null |
+| `Select::boolean()` | `BooleanStateCast(isStoredAsInt: true)`, `isNullable` defaulting **true** | the placeholder dehydrates to **null** |
+
+So a non-nullable `bool` target always accepts what a checkbox or a toggle
+produces, and deriving requirement there would silently mean *"must be ticked"*:
+`NotBlank` violates on `false`, and the checkbox template emits a native
+`required` attribute, so an unticked box becomes unsubmittable. Only an explicit
+[`required()`](toggle.md#required-means-presence-not-truth) may say that. A
+`Select::boolean()` placeholder, by contrast, really does dehydrate null onto
+`setFeatured(bool)` — the exact crash this derivation exists to prevent — so
+suppressing it there would remove the guard rather than a false positive.
+
+This is why the suppression lives on the two field classes rather than on the
+target type. A "skip every `bool` target" rule inside `isRequiredByRecord()` was
+proposed first and is actively wrong: it cannot see which of three fields bound
+to the same column is asking. `Select`'s behaviour is pinned by a regression test
+so a future overgeneralisation of the boolean suppression fails loudly.
+
+The same predicate has a branch-side counterpart, added for the same reason and
+placed the same way.
+[The built-in blank test asks each declared leaf](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves)
+whether its value is blank, and `Checkbox`/`Toggle` override
+`isBlankStateValue()` so their resting `false` answers yes. Without it
+`filled(false)` held every branch containing a boolean field permanently
+non-blank, so the suppression above never engaged there and the branch could
+never null. `Select::boolean()` needs no override on this side either, and for
+the same reason as the last: its placeholder already dehydrates null, which the
+default test reads as blank.
+
 ### nullable() removes the NotBlank and nothing else
 
 `nullable()` is Filament's inversion verbatim — it calls
@@ -175,6 +233,89 @@ and `''` by Symfony's own validator semantics, so "optional" is the absence of
 
 Deliberate deviations from Filament, and the reason each holds. Provisional ones
 say what would reverse them.
+
+### Requirement is derived from the record's write-side types
+
+Filament's `$isRequired` starts at `false`; here it starts at **`null`**, meaning
+*never declared*, and `isRequired()` falls through to `isRequiredByRecord()` when
+nothing was declared. A field bound to a record path whose write-side type is
+non-nullable is required; one bound to a nullable target is not. Explicit
+declarations win in both directions and are unchanged — `required()`,
+`required(false)` and `nullable()` all beat the record.
+
+**No Filament precedent exists, and the reason is structural rather than a gap in
+their API**: Eloquent attributes are untyped, so "may this column accept null?"
+is not a question a Filament schema can ask. Their equivalent is three manual
+declarations that must be kept in sync with the schema by hand — fields left
+un-`required()`, `requiredWith()` on the siblings, `condition:` on the container.
+
+**The class is read in the root frame**, `getRootContainer()->getRecordClass()`,
+not from the nearest binding up the chain. Class and path have to name the same
+frame: `getRecordStatePath()` is root-relative by
+[definition](../schemas/belongs-to-record.md#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it),
+and it is the frame `getData()` maps in. Reading the class nearest-first mixed
+the two — `Section::make('author')->statePath('author')->record(Author::class)`
+asked `describe(Author::class, 'author.name')`, which no type answers, and the
+walk then derived **not required** rather than failing. So a component-tier
+`record()` binding feeds
+[closure injection and mapping-independent reads](../schemas/belongs-to-record.md#the-component-tier-gains-record)
+and never derivation; a field that wants a derived requirement is bound through
+the schema its path is relative to.
+
+The signature widens to carry it: `required(bool|Closure|null $condition = true)`,
+where Filament's is `bool|Closure`. **`required(null)` is a new public arm** and
+it is not the same as `required(false)` — it *undeclares*, handing the decision
+back to the record, which is the only way to get derivation back after a
+conditional call has set the flag. `required(false)` remains a declaration and
+still suppresses. Its coverage is the property's own `null` default rather than
+an explicit `required(null)` call — the same single assignment and the same
+`$declared !== null` branch, exercised by every derivation test above.
+
+Two behaviours make this safe to have on by default, and both are load-bearing:
+
+- **It suppresses itself under a blank nullable branch.**
+  `hasBlankNullableBranchAncestor()` walks the container chain, and derivation
+  gives up as soon as an ancestor declaring
+  [`nullWhenBlank()`](../schemas/belongs-to-record.md#a-declared-branch-is-nulled-whole-before-its-leaves-are-written)
+  is currently blank. Without it the feature deletes the feature that motivated
+  it: `Article::$author` nullable with `Author::$name` non-nullable would make the
+  name unconditionally required, so a blank author could never be submitted, so
+  the branch could never be nulled. With it, the pair states exactly *"name is
+  required if there is an author"* — Filament's `condition:` + `requiredWith()`
+  shape, derived instead of hand-written.
+
+  An ancestor is only a branch if it carries a **record state path**, and that
+  gate is not cosmetic symmetry with the mapper's own walk. `getRawState()` on a
+  path-less component falls through to its container's path, so before the gate a
+  path-less `nullWhenBlank()` container handed `shouldNullBranch()` the whole
+  form's raw bag — and one field's requirement moved with unrelated fields
+  elsewhere on the page.
+  [The mapper now refuses that declaration outright](../schemas/belongs-to-record.md#a-nullable-branch-with-no-state-path-is-refused-not-ignored);
+  the two walks agree on what a branch is.
+- **It answers `false` wherever it cannot be sure.** No container, no bound record
+  class, no record-relative path, a path the record does not declare, or a
+  collection-typed target — each returns false rather than guessing. The
+  collection skip uses the wide `isCollection` flag, since a blank value says
+  nothing about whether an `array` target accepts it.
+
+**Accepted cost, stated because it is visible on every existing form:** asterisks
+and native `required` attributes now appear wherever a bound target is
+non-nullable, without anyone writing `required()`. That is the intended layering
+fix — [a blank non-nullable leaf becomes a field error instead of a mapper
+crash](../schemas/can-be-validated.md#record-sourced-constraints-validate-the-mapped-object-direction-decided)
+— but it does change existing forms, and a field that should stay optional against
+a non-nullable target now has to say `nullable()` out loud.
+
+One rough edge rides along, pre-existing but with a larger population now: a
+`dehydrated(false)` leaf still validates, so it can derive a constraint for a
+write that never happens. Harmless where the field is genuinely page-only and
+filled; combined with a nullable branch it is the sharp end of
+[the two-bag hazard](../schemas/belongs-to-record.md#a-nullwhenblank-closure-sees-two-different-bags).
+
+The reader itself arrives by `#[Required]` setter with a `new RecordTypeReader()`
+fallback, the `EvaluatesClosures`/`CanAccessProperties` idiom, so a field built
+with `new` outside DI still derives. `getRecordTypeReader()` is public rather than
+private, matching both sibling precedents.
 
 ### rule() and rules() become constraint() and constraints() over Symfony Constraint objects
 

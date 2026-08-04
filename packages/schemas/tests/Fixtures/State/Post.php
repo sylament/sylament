@@ -6,8 +6,9 @@ namespace Sylament\Schemas\Tests\Fixtures\State;
 
 /**
  * A record whose nested object is nullable and defaults to null, so the
- * missing-intermediate arms (lenient read, strict write) can be exercised;
- * `$meta` is the array-backed branch (the JSON-column shape).
+ * missing-intermediate arms can be exercised — a lenient read past it, and a
+ * write that constructs it from its declared type; `$meta` is the array-backed
+ * branch (the JSON-column shape).
  */
 final class Post
 {

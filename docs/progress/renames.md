@@ -217,6 +217,25 @@ sibling declares breaks the moment it is installed on its own. See
 The class name, methods and body are unchanged, which is why this is a
 relocation rather than a rename.
 
+### Names with no Filament source
+
+Methods that exist only here, because a port needed behaviour Filament has no
+member for. Nothing to rename from, so they are listed rather than mapped — and
+listed at all so a migrating user who greps Filament for the name and finds
+nothing knows the absence is real.
+
+| Sylament | On | Why it is not a rename |
+| --- | --- | --- |
+| [`nullWhenBlank()`](schemas/belongs-to-record.md#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) | `Sylament\Schemas\Components\Concerns\HasNullableBranch` | Declares a container an optional branch of the record graph, so a blank one is written as `null` instead of being built empty. The nearest Filament member is `relationship(condition:)`, and it is not the same call under another name: its **polarity is inverted** (`condition:` true means *save*, this means *discard*), it carries no built-in blank test — a Filament user hand-writes the emptiness check at every call site — and it is scoped to an Eloquent relationship where this is scoped to a declared state path. Renaming `condition:` onto it would map a Filament call to a Sylament call that does the opposite. |
+| [`isBlankStateValue()`](schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves) | `Sylament\Schemas\Components\Concerns\HasNullableBranch`, overridden on `Checkbox` / `Toggle` | The blank test each declared leaf answers for the branch pass, so a field whose cast never dehydrates null (an untouched checkbox rests at `false`) can still read as blank. Filament has no branch pass at all — `nullWhenBlank()` above is Sylament-only — so there is nothing for the predicate it consults to be renamed from. |
+
+`RecordTypeReader`, `RecordTarget` and `HasNullableBranch` are likewise
+Sylament-only classes rather than renamed Filament ones; the reason none of them
+has a Filament counterpart is structural and is recorded in
+[record-type-reader.md](schemas/record-type-reader.md) — Eloquent attributes are
+untyped, so the write-side type question Filament's mapper would have to answer
+cannot be asked there.
+
 ### Namespaces with no Filament source
 
 Segments that exist only here, because a port needed classes Filament does not

@@ -6,6 +6,7 @@ namespace Sylament\Forms\Tests\Integration\Components;
 
 use Sylament\Forms\Components\Toggle;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Forms\Tests\Fixtures\Records\Article;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Colors\Color;
 use Symfony\Component\DomCrawler\Crawler;
@@ -251,4 +252,23 @@ it('emits no required attribute even when marked as required', function (): void
 
     expect($input->count())->toBe(1)
         ->and($input->attr('required'))->toBeNull();
+});
+
+it('derives no requirement from a non-nullable bool column', function (): void {
+    // A toggle always dehydrates a bool, so a derived requirement would only put the
+    // label's asterisk on a field that can never be blank.
+    $field = Toggle::make('featured');
+    $crawler = new Crawler(renderToHtml(
+        Schema::make(new FieldRenderHost())->statePath('data')->record(Article::class)->components([$field]),
+    ));
+
+    expect($field->isRequired())->toBeFalse()
+        ->and($field->getValidationConstraints())->toHaveCount(1)
+        ->and($crawler->filter('.sy-fo-field-label-required-mark')->count())->toBe(0);
+});
+
+it('treats false as a blank state value', function (): void {
+    expect(Toggle::make('flag')->isBlankStateValue(false))->toBeTrue()
+        ->and(Toggle::make('flag')->isBlankStateValue(true))->toBeFalse()
+        ->and(Toggle::make('flag')->isBlankStateValue(null))->toBeTrue();
 });

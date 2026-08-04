@@ -5,14 +5,17 @@ declare(strict_types=1);
 namespace Sylament\Schemas\State;
 
 use LogicException;
+use ReflectionClass;
 use Symfony\Component\PropertyAccess\Exception\InvalidArgumentException;
 use Symfony\Component\PropertyAccess\Exception\UninitializedPropertyException;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
+use Traversable;
 
 final readonly class PropertyAccessor
 {
     public function __construct(
         private PropertyAccessorInterface $accessor,
+        private RecordTypeReader $typeReader,
     ) {
     }
 
@@ -98,14 +101,19 @@ final readonly class PropertyAccessor
     }
 
     /**
-     * Write into a record's object graph by dotted path. Object segments are
-     * never vivified — they must already hold an object. From the first
-     * non-object segment the remainder is written as a nested array with
-     * {@see setInArray()}'s contract (vivifying, clobbering scalars) and
-     * assigned back through the boundary property; a boundary property whose
-     * type rejects that array throws LogicException naming the path, so a
-     * schema declaring a nested object path over a null intermediate fails
-     * with the fix spelled out rather than a type error.
+     * Write into a record's object graph by dotted path. A null intermediate
+     * whose declared type names a constructible class is built and assigned
+     * before the walk continues; an existing object is mutated in place. From
+     * the first segment that is neither an object nor constructible, the
+     * remainder is written as a nested array with {@see setInArray()}'s
+     * contract (vivifying, clobbering scalars) and assigned back through the
+     * boundary property; a boundary property whose type rejects that array
+     * throws LogicException naming the path, so the failure spells out the fix
+     * rather than surfacing a type error.
+     *
+     * @throws LogicException when a mapped segment declares or holds an object
+     *                        collection, names a class the mapper cannot
+     *                        build, or rejects the array remainder
      */
     public function setOnRecord(object $record, string $path, mixed $value): void
     {
@@ -121,10 +129,25 @@ final readonly class PropertyAccessor
                 $current = null;
             }
 
+            if ($current instanceof Traversable) {
+                $this->refuseCollection($holder, $segment, $path);
+            }
+
             if (is_object($current)) {
                 $holder = $current;
 
                 continue;
+            }
+
+            if ($current === null) {
+                $constructed = $this->constructIntermediate($holder, $segment, $path);
+
+                if ($constructed !== null) {
+                    $this->accessor->setValue($holder, $segment, $constructed);
+                    $holder = $constructed;
+
+                    continue;
+                }
             }
 
             /** @var array<string, mixed> $bag */
@@ -135,9 +158,9 @@ final readonly class PropertyAccessor
                 $this->accessor->setValue($holder, $segment, $bag);
             } catch (InvalidArgumentException $exception) {
                 throw new LogicException(sprintf(
-                    'Cannot map state path "%s" onto %s: "%s" is not an object and its property does not accept an array. Initialize the nested object (constructor or lazy getter) before mapping.',
+                    'Cannot map state path "%s" onto %s: "%s" declares no object the mapper can construct, and its property rejects the array written in its place. Assign the nested object yourself if the property can hold one, or map this path onto a property that accepts the branch.',
                     $path,
-                    $record::class,
+                    $holder::class,
                     $segment,
                 ), $exception->getCode(), previous: $exception);
             }
@@ -145,7 +168,29 @@ final readonly class PropertyAccessor
             return;
         }
 
+        $leaf = $this->typeReader->describeProperty($holder::class, $segments[0]);
+
+        if ($leaf instanceof RecordTarget) {
+            $this->assertNotCollection($leaf, $holder, $segments[0], $path);
+        }
+
         $this->accessor->setValue($holder, $segments[0], $value);
+    }
+
+    /**
+     * Whether the record's declared write-side type at a dotted path accepts
+     * null, so a caller about to write one there can refuse first with a message
+     * of its own rather than letting Symfony raise a bare type error. True when
+     * the type cannot be read, keeping the behaviour a caller had before types
+     * were consulted.
+     *
+     * @param class-string $recordClass
+     */
+    public function acceptsNullOnRecord(string $recordClass, string $path): bool
+    {
+        $target = $this->typeReader->describe($recordClass, $path);
+
+        return ! $target instanceof RecordTarget || $target->isNullable;
     }
 
     /**
@@ -273,5 +318,66 @@ final readonly class PropertyAccessor
         }
 
         return $array;
+    }
+
+    /**
+     * The object a null intermediate should become, or null when the record
+     * declares no constructible class there — in which case the caller falls
+     * through to the array-remainder write, preserving the JSON-column shape.
+     *
+     * @throws LogicException when the declared type is an object collection, or
+     *                        names a class whose constructor requires arguments
+     */
+    private function constructIntermediate(object $holder, string $segment, string $path): ?object
+    {
+        $target = $this->typeReader->describeProperty($holder::class, $segment);
+
+        if (!$target instanceof RecordTarget) {
+            return null;
+        }
+
+        $this->assertNotCollection($target, $holder, $segment, $path);
+
+        if ($target->objectClass === null) {
+            return null;
+        }
+
+        $reflection = new ReflectionClass($target->objectClass);
+        $constructor = $reflection->getConstructor();
+
+        if ($constructor !== null && $constructor->getNumberOfRequiredParameters() > 0) {
+            throw new LogicException(sprintf(
+                'Cannot map state path "%s" onto %s: %s requires constructor arguments, so the mapper cannot build it. Give the constructor defaults, or initialize "%s" before mapping.',
+                $path,
+                $holder::class,
+                $target->objectClass,
+                $segment,
+            ));
+        }
+
+        return $reflection->newInstance();
+    }
+
+    /**
+     * @throws LogicException when the record declares a collection at a mapped
+     *                        path, which has no supported item identity yet
+     */
+    private function assertNotCollection(RecordTarget $target, object $holder, string $segment, string $path): void
+    {
+        if (! $target->isObjectCollection) {
+            return;
+        }
+
+        $this->refuseCollection($holder, $segment, $path);
+    }
+
+    private function refuseCollection(object $holder, string $segment, string $path): never
+    {
+        throw new LogicException(sprintf(
+            'Cannot map state path "%s" onto %s: "%s" is a collection. Mapping collection items needs identity-keyed item state (the Repeater epic); map the collection yourself after getData().',
+            $path,
+            $holder::class,
+            $segment,
+        ));
     }
 }

@@ -8,11 +8,15 @@ use LogicException;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
+use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Concerns\RecordFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 use Sylament\Schemas\Tests\Fixtures\State\Author;
 use Sylament\Schemas\Tests\Fixtures\State\InitializedPost;
+use Sylament\Schemas\Tests\Fixtures\State\MetaBlock;
+use Sylament\Schemas\Tests\Fixtures\State\PageRecord;
 use Sylament\Schemas\Tests\Fixtures\State\Post;
+use Sylament\Schemas\Tests\Fixtures\State\UninitializedPost;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
 
 it('returns the bound instance and its class', function (): void {
@@ -140,7 +144,8 @@ it('throws when no record is bound at all', function (): void {
         ->statePath('data')
         ->components([StateField::make('title')]);
 
-    expect(fn (): object => $schema->getData())->toThrow(LogicException::class);
+    expect(fn (): object => $schema->getData())
+        ->toThrow(LogicException::class, 'needs a record it can map onto');
 });
 
 it('maps nested state through the record graph in place', function (): void {
@@ -236,15 +241,347 @@ it('preserves unmanaged keys in an array-backed branch on mapping', function ():
     expect($post->getMeta())->toBe(['keep' => 1, 'seo' => 'Hi']);
 });
 
-it('throws LogicException through getData when the nested object is missing', function (): void {
+it('constructs the missing nested object through getData', function (): void {
+    $post = new Post();
+
     $host = new StateHostFixture();
     $host->data = ['author' => ['name' => 'Grace']];
 
-    $schema = Schema::make($host)->statePath('data')->record(new Post())->components([
+    Schema::make($host)->statePath('data')->record($post)->components([
         Section::make('Author')->statePath('author')->components([
             StateField::make('name'),
         ]),
-    ]);
+    ])->getData();
 
-    expect(fn (): object => $schema->getData())->toThrow(LogicException::class, 'author.name');
+    expect($post->getAuthor())->toBeInstanceOf(Author::class)
+        ->and($post->getAuthor()?->getName())->toBe('Grace');
+});
+
+it('constructs a missing branch and writes its leaves', function (): void {
+    $record = new Post();
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateField::make('title'),
+            StateGroup::make()
+                ->statePath('author')
+                ->components([StateField::make('name')]),
+        ])
+        ->record($record);
+
+    $schema->fill(['title' => 'Ports', 'author' => ['name' => 'Ada']]);
+
+    expect($schema->getData())->toBe($record)
+        ->and($record->getAuthor())->toBeInstanceOf(Author::class)
+        ->and($record->getAuthor()?->getName())->toBe('Ada');
+});
+
+it('nulls a declared branch when every leaf is blank', function (): void {
+    $record = new Post();
+    $record->setAuthor(new Author());
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateField::make('title'),
+            StateGroup::make()
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('name')]),
+        ])
+        ->record($record);
+
+    $schema->fill(['title' => 'Ports', 'author' => ['name' => null]]);
+    $schema->getData();
+
+    expect($record->getAuthor())->toBeNull();
+});
+
+it('keeps a declared branch when one leaf is filled', function (): void {
+    $record = new Post();
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('name')]),
+        ])
+        ->record($record);
+
+    $schema->fill(['author' => ['name' => 'Ada']]);
+    $schema->getData();
+
+    expect($record->getAuthor()?->getName())->toBe('Ada');
+});
+
+it('leaves an undeclared branch constructed even when blank', function (): void {
+    $record = new Post();
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->components([StateField::make('name')]),
+        ])
+        ->record($record);
+
+    $schema->fill(['author' => ['name' => null]]);
+    $schema->getData();
+
+    expect($record->getAuthor())->toBeInstanceOf(Author::class);
+});
+
+it('skips only the paths beneath a nulled branch, not a sibling sharing its prefix', function (): void {
+    $record = new Post();
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('meta')
+                ->components([
+                    StateGroup::make()
+                        ->statePath('seo')
+                        ->nullWhenBlank()
+                        ->components([StateField::make('title')]),
+                    StateField::make('seoScore'),
+                ]),
+        ])
+        ->record($record);
+
+    $schema->fill(['meta' => ['seo' => ['title' => null], 'seoScore' => 42]]);
+    $schema->getData();
+
+    expect($record->getMeta())->toBe(['seo' => null, 'seoScore' => 42]);
+});
+
+it('short-circuits a nested branch beneath a nulled outer branch', function (): void {
+    $record = new Post();
+    $record->setMeta(['seo' => ['title' => 'Old']]);
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('meta')
+                ->nullWhenBlank()
+                ->components([
+                    StateGroup::make()
+                        ->statePath('seo')
+                        ->nullWhenBlank()
+                        ->components([StateField::make('title')]),
+                ]),
+        ])
+        ->record($record);
+
+    $schema->fill(['meta' => ['seo' => ['title' => null]]]);
+    $schema->getData();
+
+    expect($record->getMeta())->toBeNull();
+});
+
+it('leaves a hidden branch alone rather than nulling what it never showed', function (): void {
+    $record = new Post();
+    $record->setAuthor(new Author(name: 'Ada'));
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->hidden()
+                ->components([StateField::make('name')]),
+        ])
+        ->record($record);
+
+    $schema->fill(['author' => ['name' => 'Ada']]);
+    $schema->getData();
+
+    expect($record->getAuthor()?->getName())->toBe('Ada');
+});
+
+it('leaves a branch alone when the dehydration walk pruned its only leaf', function (): void {
+    $record = new Post();
+    $record->setAuthor(new Author(name: 'Ada'));
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('name')->hidden()]),
+        ])
+        ->record($record);
+
+    $schema->fill(['author' => ['name' => 'Ada']]);
+    $schema->getData();
+
+    expect($record->getAuthor()?->getName())->toBe('Ada');
+});
+
+it('leaves a nullWhenBlank() leaf alone, since a leaf declares no branch', function (): void {
+    $record = new Post();
+    $record->setTitle('Kept');
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('title')->nullWhenBlank()->dehydrated(false)])
+        ->record($record);
+
+    $schema->fill(['title' => null]);
+    $schema->getData();
+
+    expect($record->getTitle())->toBe('Kept');
+});
+
+it('refuses to null a branch the record declares non-nullable', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('name')]),
+        ])
+        ->record(new UninitializedPost());
+
+    $schema->fill(['author' => ['name' => null]]);
+
+    expect(fn (): object => $schema->getData())
+        ->toThrow(LogicException::class, 'nullWhenBlank()');
+});
+
+it('skips a non-nullable branch the bag no longer carries rather than refusing it', function (): void {
+    $record = new UninitializedPost();
+    $record->setAuthor(new Author(name: 'Ada'));
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->hidden()
+                ->components([StateField::make('name')]),
+        ])
+        ->record($record);
+
+    $schema->fill(['author' => ['name' => 'Ada']]);
+    $schema->getData();
+
+    expect($record->getAuthor()->getName())->toBe('Ada');
+});
+
+it('refuses a non-nullable branch even when its state is filled', function (): void {
+    $record = new UninitializedPost();
+    $record->setAuthor(new Author(name: 'Ada'));
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('name')]),
+        ])
+        ->record($record);
+
+    $schema->fill(['author' => ['name' => 'Grace']]);
+
+    expect(fn (): object => $schema->getData())
+        ->toThrow(LogicException::class, 'nullWhenBlank()');
+});
+
+it('refuses nullWhenBlank() on a component carrying no state path', function (): void {
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([
+            StateGroup::make()
+                ->nullWhenBlank()
+                ->components([StateField::make('author.name')]),
+        ])
+        ->record(new Post());
+
+    $schema->fill(['author' => ['name' => null]]);
+
+    expect(fn (): object => $schema->getData())
+        ->toThrow(LogicException::class, 'no state path');
+});
+
+it('refuses getData() for an array-bound record with a message naming the arm', function (): void {
+    Schema::make(new StateHostFixture())->record(['title' => 'Hello'])->getData();
+})->throws(LogicException::class, 'array record only supplies state');
+
+it('orders sibling branches by path depth so an outer null short-circuits an inner refusal', function (): void {
+    $record = new PageRecord();
+    $record->meta = new MetaBlock();
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record($record)
+        ->components([
+            Section::make('seo')
+                ->statePath('meta.seo')
+                ->nullWhenBlank()
+                ->components([StateField::make('title')]),
+            Section::make('meta')
+                ->statePath('meta')
+                ->nullWhenBlank()
+                ->components([StateField::make('note')]),
+        ]);
+
+    $schema->rawState(['meta' => ['note' => null, 'seo' => ['title' => null]]]);
+
+    expect($schema->getData())->toBe($record)
+        ->and($record->meta)->toBeNull();
+});
+
+it('keeps a branch alive through a filled sibling-by-path section leaf', function (): void {
+    $record = new PageRecord();
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record($record)
+        ->components([
+            Section::make('seo')
+                ->statePath('meta.seo')
+                ->components([StateField::make('title')]),
+            Section::make('meta')
+                ->statePath('meta')
+                ->nullWhenBlank()
+                ->components([StateField::make('note')]),
+        ]);
+
+    $schema->rawState(['meta' => ['note' => null, 'seo' => ['title' => 'Hello']]]);
+
+    expect($schema->getData())->toBe($record)
+        ->and($record->meta?->seo->title)->toBe('Hello')
+        ->and($record->meta?->note)->toBeNull();
+});
+
+it('keeps a branch alive through a filled dotted sibling leaf', function (): void {
+    $record = new Post();
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->record($record)
+        ->components([
+            Section::make('author')
+                ->statePath('author')
+                ->nullWhenBlank()
+                ->components([StateField::make('name')]),
+            StateField::make('author.handle'),
+        ]);
+
+    $schema->rawState(['author' => ['name' => null, 'handle' => '@ada']]);
+
+    expect($schema->getData())->toBe($record)
+        ->and($record->getAuthor()?->getHandle())->toBe('@ada')
+        ->and($record->getAuthor()?->getName())->toBeNull();
 });

@@ -105,7 +105,10 @@ trait CanBeValidated
      * non-nullable target cannot accept the null a blank field dehydrates to.
      * Suppressed under a nullable branch that is currently blank, so an optional
      * nested object stays submittable while empty, and for a field no schema
-     * contains, which cannot name its position in the record graph.
+     * contains, which cannot name its position in the record graph. The class is
+     * read from the root container — the frame the record-relative path indexes
+     * and the frame `getData()` maps in — so a component-tier `record()` binding
+     * feeds closure injection, never derivation.
      */
     protected function isRequiredByRecord(): bool
     {
@@ -113,7 +116,7 @@ trait CanBeValidated
             return false;
         }
 
-        $recordClass = $this->getRecordClass();
+        $recordClass = $this->getRootContainer()->getRecordClass();
 
         if ($recordClass === null) {
             return false;

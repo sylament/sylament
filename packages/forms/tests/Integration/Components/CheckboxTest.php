@@ -163,8 +163,10 @@ it('derives no requirement from a non-nullable bool column', function (): void {
     // A checkbox always dehydrates a bool, so the column accepts whatever it produces;
     // a derived requirement would mean "must be ticked" — NotBlank rejects false and
     // the browser blocks the submit on the native attribute.
-    $field = Checkbox::make('featured')->record(Article::class);
-    $crawler = new Crawler(renderField($field));
+    $field = Checkbox::make('featured');
+    $crawler = new Crawler(renderToHtml(
+        Schema::make(new FieldRenderHost())->statePath('data')->record(Article::class)->components([$field]),
+    ));
 
     expect($field->isRequired())->toBeFalse()
         ->and($field->getValidationConstraints())->toHaveCount(1)

@@ -14,6 +14,7 @@ use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 use function Sylament\Forms\Tests\renderField;
+use function Sylament\Forms\Tests\renderToHtml;
 
 /**
  * Wire a select into a `data`-bag-bound parent schema, mirroring `renderField()`'s
@@ -268,8 +269,10 @@ it('still derives required for a boolean() select on a non-nullable bool column'
     // The regression pin for the case the Checkbox/Toggle override must not swallow:
     // boolean()'s cast is nullable, so the placeholder dehydrates null — and null is
     // exactly what a non-nullable column cannot take.
-    $field = Select::make('featured')->boolean()->record(Article::class);
-    $crawler = new Crawler(renderField($field));
+    $field = Select::make('featured')->boolean();
+    $crawler = new Crawler(renderToHtml(
+        Schema::make(new FieldRenderHost())->statePath('data')->record(Article::class)->components([$field]),
+    ));
 
     expect($field->isRequired())->toBeTrue()
         ->and($crawler->filter('select.sy-fo-select')->attr('required'))->not->toBeNull();

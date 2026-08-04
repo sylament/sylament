@@ -249,6 +249,19 @@ is not a question a Filament schema can ask. Their equivalent is three manual
 declarations that must be kept in sync with the schema by hand — fields left
 un-`required()`, `requiredWith()` on the siblings, `condition:` on the container.
 
+**The class is read in the root frame**, `getRootContainer()->getRecordClass()`,
+not from the nearest binding up the chain. Class and path have to name the same
+frame: `getRecordStatePath()` is root-relative by
+[definition](../schemas/belongs-to-record.md#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it),
+and it is the frame `getData()` maps in. Reading the class nearest-first mixed
+the two — `Section::make('author')->statePath('author')->record(Author::class)`
+asked `describe(Author::class, 'author.name')`, which no type answers, and the
+walk then derived **not required** rather than failing. So a component-tier
+`record()` binding feeds
+[closure injection and mapping-independent reads](../schemas/belongs-to-record.md#the-component-tier-gains-record)
+and never derivation; a field that wants a derived requirement is bound through
+the schema its path is relative to.
+
 The signature widens to carry it: `required(bool|Closure|null $condition = true)`,
 where Filament's is `bool|Closure`. **`required(null)` is a new public arm** and
 it is not the same as `required(false)` — it *undeclares*, handing the decision

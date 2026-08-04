@@ -257,8 +257,10 @@ it('emits no required attribute even when marked as required', function (): void
 it('derives no requirement from a non-nullable bool column', function (): void {
     // A toggle always dehydrates a bool, so a derived requirement would only put the
     // label's asterisk on a field that can never be blank.
-    $field = Toggle::make('featured')->record(Article::class);
-    $crawler = new Crawler(renderField($field));
+    $field = Toggle::make('featured');
+    $crawler = new Crawler(renderToHtml(
+        Schema::make(new FieldRenderHost())->statePath('data')->record(Article::class)->components([$field]),
+    ));
 
     expect($field->isRequired())->toBeFalse()
         ->and($field->getValidationConstraints())->toHaveCount(1)

@@ -744,6 +744,13 @@ carry the same setter name and the same payload set, which is what makes
 thing to read. `record()` on a component is otherwise Filament's behaviour
 exactly, container fallback included.
 
+One consumer deliberately does not read it: forms' derived requirement resolves
+the record class in the **root** frame, because the path it looks the class up by
+is root-relative
+([the frame rule](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types)).
+A component-tier binding therefore serves closure injection and
+mapping-independent reads, not derivation.
+
 ### The `$model` closure parameter is not ported
 
 Filament injects `$model` (the class-string) alongside `$record` by name.

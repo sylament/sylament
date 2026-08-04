@@ -8,6 +8,7 @@ use Sylament\Forms\Components\Checkbox;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Records\Article;
+use Sylament\Forms\Tests\Fixtures\Records\Author;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\RecordTypeReader;
@@ -194,4 +195,35 @@ it('nulls the branch on getData() when only the checkbox holds its resting value
 
     expect($schema->getData())->toBe($article)
         ->and($article->getAuthor())->toBeNull();
+});
+
+it('derives from the root record class when a mid-tree record() binding intervenes', function (): void {
+    $schema = Schema::make(new FieldRenderHost())
+        ->statePath('data')
+        ->record(Article::class)
+        ->components([
+            Section::make('author')
+                ->statePath('author')
+                ->record(Author::class)
+                ->components([TextInput::make('name')]),
+        ]);
+
+    $schema->rawState(['author' => ['name' => null]]);
+
+    expect($schema->getComponentByStatePath('data.author.name')->isRequired())->toBeTrue();
+});
+
+it('does not derive from a mid-tree binding alone', function (): void {
+    $schema = Schema::make(new FieldRenderHost())
+        ->statePath('data')
+        ->components([
+            Section::make('author')
+                ->statePath('author')
+                ->record(Author::class)
+                ->components([TextInput::make('name')]),
+        ]);
+
+    $schema->rawState(['author' => ['name' => null]]);
+
+    expect($schema->getComponentByStatePath('data.author.name')->isRequired())->toBeFalse();
 });

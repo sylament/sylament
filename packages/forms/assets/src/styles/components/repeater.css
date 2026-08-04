@@ -1,0 +1,87 @@
+.sy-fo-repeater {
+    @apply grid gap-y-4;
+
+    & .sy-fo-repeater-items {
+        @apply grid items-start gap-4;
+    }
+
+    & .sy-fo-repeater-item {
+        @apply rounded-xl bg-white shadow-xs ring-1 ring-gray-950/5 dark:bg-white/5 dark:ring-white/10;
+    }
+
+    & .sy-fo-repeater-item-header {
+        @apply flex items-center gap-x-3 overflow-hidden px-4 py-3;
+    }
+
+    & .sy-fo-repeater-item-header-start-actions {
+        @apply flex items-center gap-x-3;
+    }
+
+    & .sy-fo-repeater-item-header-label {
+        @apply text-sm font-medium text-gray-950 dark:text-white;
+
+        &.sy-truncated {
+            @apply truncate;
+        }
+    }
+
+    & .sy-fo-repeater-item-header-end-actions {
+        @apply ms-auto flex items-center gap-x-3;
+    }
+
+    & .sy-fo-repeater-item-has-header > .sy-fo-repeater-item-content {
+        @apply border-t border-gray-100 dark:border-white/10;
+    }
+
+    & .sy-fo-repeater-item-content {
+        @apply p-4;
+    }
+
+    & .sy-fo-repeater-add {
+        @apply flex w-full justify-center;
+
+        &.sy-align-start,
+        &.sy-align-left {
+            @apply justify-start;
+        }
+
+        &.sy-align-end,
+        &.sy-align-right {
+            @apply justify-end;
+        }
+    }
+}
+
+.sy-fo-simple-repeater {
+    @apply grid gap-y-4;
+
+    & .sy-fo-simple-repeater-items {
+        @apply grid gap-4;
+    }
+
+    & .sy-fo-simple-repeater-item {
+        @apply flex justify-start gap-x-3;
+    }
+
+    & .sy-fo-simple-repeater-item-content {
+        @apply flex-1;
+    }
+
+    & .sy-fo-simple-repeater-item-actions {
+        @apply flex items-center gap-x-1;
+    }
+
+    & .sy-fo-simple-repeater-add {
+        @apply flex w-full justify-center;
+
+        &.sy-align-start,
+        &.sy-align-left {
+            @apply justify-start;
+        }
+
+        &.sy-align-end,
+        &.sy-align-right {
+            @apply justify-end;
+        }
+    }
+}

@@ -1,0 +1,53 @@
+<twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
+    <div
+            {{ attrs({
+                class: ['sy', 'sy-fo-simple-repeater'],
+                id: component.getId,
+                role: 'group',
+                'aria-labelledby': component.getId ~ '-label',
+            }) }}
+    >
+        {% if itemRows is not empty %}
+            <ul class="sy-fo-simple-repeater-items">
+                {% for row in itemRows %}
+                    <li
+                            {{ attrs({
+                                class: 'sy-fo-simple-repeater-item',
+                                id: component.getKey ~ '.' ~ row.key,
+                            }) }}
+                    >
+                        <div class="sy-fo-simple-repeater-item-content">
+                            {{ renderComponent(row.schema) }}
+                        </div>
+
+                        {% if row.moveUpAction or row.moveDownAction or row.cloneAction or row.deleteAction %}
+                            <ul class="sy-fo-simple-repeater-item-actions">
+                                {% if row.moveUpAction %}
+                                    <li>{{ renderComponent(row.moveUpAction) }}</li>
+                                {% endif %}
+
+                                {% if row.moveDownAction %}
+                                    <li>{{ renderComponent(row.moveDownAction) }}</li>
+                                {% endif %}
+
+                                {% if row.cloneAction %}
+                                    <li>{{ renderComponent(row.cloneAction) }}</li>
+                                {% endif %}
+
+                                {% if row.deleteAction %}
+                                    <li>{{ renderComponent(row.deleteAction) }}</li>
+                                {% endif %}
+                            </ul>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if addAction %}
+            <div {{ attrs({class: ['sy-fo-simple-repeater-add', component.getAddActionAlignmentClass]}) }}>
+                {{ renderComponent(addAction) }}
+            </div>
+        {% endif %}
+    </div>
+</twig:SylamentForms:FieldWrapper>

@@ -1,0 +1,73 @@
+<twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
+    <div
+            {{ attrs({
+                class: ['sy', 'sy-fo-repeater'],
+                id: component.getId,
+                role: 'group',
+                'aria-labelledby': component.getId ~ '-label',
+            }) }}
+    >
+        {% if itemRows is not empty %}
+            <ul class="sy-fo-repeater-items">
+                {% for row in itemRows %}
+                    {% set hasStartActions = row.moveUpAction or row.moveDownAction %}
+                    {% set hasEndActions = row.cloneAction or row.deleteAction %}
+                    {% set hasHeader = component.hasItemHeaders and (hasStartActions or row.label is not empty or hasEndActions) %}
+
+                    <li
+                            {{ attrs({
+                                class: ['sy-fo-repeater-item', {'sy-fo-repeater-item-has-header': hasHeader}],
+                                id: component.getKey ~ '.' ~ row.key,
+                            }) }}
+                    >
+                        {% if hasHeader %}
+                            <div class="sy-fo-repeater-item-header">
+                                {% if hasStartActions %}
+                                    <ul class="sy-fo-repeater-item-header-start-actions">
+                                        {% if row.moveUpAction %}
+                                            <li>{{ renderComponent(row.moveUpAction) }}</li>
+                                        {% endif %}
+
+                                        {% if row.moveDownAction %}
+                                            <li>{{ renderComponent(row.moveDownAction) }}</li>
+                                        {% endif %}
+                                    </ul>
+                                {% endif %}
+
+                                {% if row.label is not empty %}
+                                    <{{ component.getHeadingTag }}
+                                            {{ attrs({
+                                                class: ['sy-fo-repeater-item-header-label', {'sy-truncated': component.isItemLabelTruncated}],
+                                            }) }}
+                                    >{{ row.label }}{% if component.hasItemNumbers %} {{ loop.index }}{% endif %}</{{ component.getHeadingTag }}>
+                                {% endif %}
+
+                                {% if hasEndActions %}
+                                    <ul class="sy-fo-repeater-item-header-end-actions">
+                                        {% if row.cloneAction %}
+                                            <li>{{ renderComponent(row.cloneAction) }}</li>
+                                        {% endif %}
+
+                                        {% if row.deleteAction %}
+                                            <li>{{ renderComponent(row.deleteAction) }}</li>
+                                        {% endif %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <div class="sy-fo-repeater-item-content">
+                            {{ renderComponent(row.schema) }}
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if addAction %}
+            <div {{ attrs({class: ['sy-fo-repeater-add', component.getAddActionAlignmentClass]}) }}>
+                {{ renderComponent(addAction) }}
+            </div>
+        {% endif %}
+    </div>
+</twig:SylamentForms:FieldWrapper>

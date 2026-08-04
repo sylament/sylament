@@ -1,7 +1,10 @@
 {% props
     field,
+
+    labelAsHeading = false,
     labelPrefix = markup(block('labelPrefix') ?? ''),
     labelSuffix = markup(block('labelSuffix') ?? ''),
+
     content = markup(block('content') ?? '')
 %}
 
@@ -20,13 +23,19 @@
 {% set hasLabelAffix = labelPrefix is not empty or labelSuffix is not empty %}
 {% set hasErrors = field.getErrorMessages is not empty %}
 
+{% set labelId = labelAsHeading ? field.getId ~ '-label' : null %}
+
 <div
         {{ attrs({
             class: ['sy', 'sy-fo-field'],
         }, field.getExtraAttributes) }}
 >
     {% if field.getLabel is not null and field.isLabelHidden %}
-        <label for="{{ field.getId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</label>
+        {% if labelAsHeading %}
+            <div id="{{ labelId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</div>
+        {% else %}
+            <label for="{{ field.getId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</label>
+        {% endif %}
     {% endif %}
 
     {% if showVisibleLabel or hasLabelAffix or aboveLabelSchema or belowLabelSchema or beforeLabelSchema or afterLabelSchema %}
@@ -37,10 +46,7 @@
                 {{ renderComponent(beforeLabelSchema) }}
 
                 {% if showVisibleLabel or hasLabelAffix %}
-                    <label {{ attrs({
-                        for: field.getId,
-                        class: ['sy-fo-field-label', {'sy-fo-field-label-inline-control': hasLabelAffix}],
-                    }) }}>
+                    {% set labelBody %}
                         {{ labelPrefix }}
 
                         {% if showVisibleLabel %}
@@ -48,7 +54,19 @@
                         {% endif %}
 
                         {{ labelSuffix }}
-                    </label>
+                    {% endset %}
+
+                    {% if labelAsHeading %}
+                        <div {{ attrs({
+                            id: showVisibleLabel ? labelId : null,
+                            class: ['sy-fo-field-label', {'sy-fo-field-label-inline-control': hasLabelAffix}],
+                        }) }}>{{ labelBody }}</div>
+                    {% else %}
+                        <label {{ attrs({
+                            for: field.getId,
+                            class: ['sy-fo-field-label', {'sy-fo-field-label-inline-control': hasLabelAffix}],
+                        }) }}>{{ labelBody }}</label>
+                    {% endif %}
                 {% endif %}
 
                 {{ renderComponent(afterLabelSchema) }}

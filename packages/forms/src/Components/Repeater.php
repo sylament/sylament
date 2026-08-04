@@ -29,6 +29,12 @@ class Repeater extends Field
     use CanGenerateUuids;
     use CanLimitItemsLength;
 
+    public const string TEMPLATE = '@SylamentForms/partials/Repeater/index.html.twig';
+
+    public const string SIMPLE_TEMPLATE = '@SylamentForms/partials/Repeater/Simple.html.twig';
+
+    protected string|Closure|null $defaultTemplate = self::TEMPLATE;
+
     /**
      * The keys, their order, and whether each item holds an array — everything an
      * item schema is built from — snapshotted when the item schemas were cached.
@@ -186,7 +192,7 @@ class Repeater extends Field
         $items = [];
 
         foreach (array_keys($rawState) as $itemKey) {
-            $itemSchema = $this->getChildSchema()?->statePath((string) $itemKey)->getClone();
+            $itemSchema = $this->getChildSchema()?->statePath((string) $itemKey)->key((string) $itemKey)->getClone();
 
             if ($itemSchema instanceof Schema) {
                 $items[$itemKey] = $itemSchema;
@@ -255,6 +261,8 @@ class Repeater extends Field
     public function simple(Field|Closure|null $field): static
     {
         $this->simpleField = $field;
+
+        $this->defaultTemplate(($field === null) ? self::TEMPLATE : self::SIMPLE_TEMPLATE);
 
         $this->components(static function (Repeater $component): array {
             $simpleField = $component->getSimpleField();
@@ -505,6 +513,17 @@ class Repeater extends Field
         return $alignment;
     }
 
+    public function getAddActionAlignmentClass(): ?string
+    {
+        $alignment = $this->getAddActionAlignment();
+
+        if ($alignment instanceof Alignment) {
+            return 'sy-align-' . $alignment->value;
+        }
+
+        return $alignment;
+    }
+
     public function getDeleteAction(): Action
     {
         $action = Action::make($this->getDeleteActionName())
@@ -649,6 +668,59 @@ class Repeater extends Field
     public function getMoveDownActionName(): string
     {
         return 'moveDown';
+    }
+
+    /**
+     * The per-item preamble a template cannot express in a single getter call:
+     * each item's triggers are the shared structural action bound to that item's
+     * key, and a surface that is off drops out of the row rather than rendering
+     * an invisible trigger.
+     *
+     * @return array<array-key, mixed>
+     */
+    public function getExtraTemplateData(): array
+    {
+        $items = $this->getItems();
+        $itemCount = count($items);
+
+        $addAction = $this->getAction($this->getAddActionName());
+        $cloneAction = $this->getAction($this->getCloneActionName());
+        $deleteAction = $this->getAction($this->getDeleteActionName());
+        $moveDownAction = $this->getAction($this->getMoveDownActionName());
+        $moveUpAction = $this->getAction($this->getMoveUpActionName());
+
+        $isCloneable = $this->isCloneable();
+        $isDeletable = $this->isDeletable();
+        $isReorderableWithButtons = $this->isReorderableWithButtons();
+
+        $itemRows = [];
+        $index = 0;
+
+        foreach ($items as $itemKey => $itemSchema) {
+            $index++;
+
+            $itemCloneAction = $cloneAction?->__invoke(['item' => $itemKey]);
+            $itemDeleteAction = $deleteAction?->__invoke(['item' => $itemKey]);
+            $itemMoveUpAction = $moveUpAction?->__invoke(['item' => $itemKey])->disabled($index === 1);
+            $itemMoveDownAction = $moveDownAction?->__invoke(['item' => $itemKey])->disabled($index === $itemCount);
+
+            $itemRows[] = [
+                'key' => $itemKey,
+                'schema' => $itemSchema,
+                'label' => $this->getItemLabel((string) $itemKey, $index - 1),
+                'isFirst' => $index === 1,
+                'isLast' => $index === $itemCount,
+                'moveUpAction' => ($isReorderableWithButtons && $itemMoveUpAction?->isVisible()) ? $itemMoveUpAction : null,
+                'moveDownAction' => ($isReorderableWithButtons && $itemMoveDownAction?->isVisible()) ? $itemMoveDownAction : null,
+                'cloneAction' => ($isCloneable && $itemCloneAction?->isVisible()) ? $itemCloneAction : null,
+                'deleteAction' => ($isDeletable && $itemDeleteAction?->isVisible()) ? $itemDeleteAction : null,
+            ];
+        }
+
+        return [
+            'itemRows' => $itemRows,
+            'addAction' => ($this->isAddable() && $addAction?->isVisible()) ? $addAction : null,
+        ];
     }
 
     /**

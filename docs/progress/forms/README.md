@@ -76,7 +76,7 @@ table, the rest follow alphabetically.
 | Placeholder | [`Components/Placeholder.php`](../../../vendor/filament/forms/src/Components/Placeholder.php) | todo | — |
 | Radio | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | todo | — |
 | RelationshipRepeater | [`Components/RelationshipRepeater.php`](../../../vendor/filament/forms/src/Components/RelationshipRepeater.php) | todo | — |
-| Repeater | [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — |
+| Repeater | [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | [repeater.md](repeater.md) |
 | Repeater / TableColumn | [`Components/Repeater/TableColumn.php`](../../../vendor/filament/forms/src/Components/Repeater/TableColumn.php) | todo | — |
 | RichEditor | [`Components/RichEditor.php`](../../../vendor/filament/forms/src/Components/RichEditor.php) | todo | — |
 | [`Select`](../../../packages/forms/src/Components/Select.php) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | in progress | [select.md](select.md) |

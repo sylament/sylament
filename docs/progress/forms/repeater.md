@@ -63,7 +63,7 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 | Add action (`getAddAction()` / `addAction()` / `addActionLabel()` / `addActionAlignment()` / `addable()` / `isAddable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
 | Delete action (`getDeleteAction()` / `deleteAction()` / `deletable()` / `isDeletable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
 | Clone action (`getCloneAction()` / `cloneAction()`) + `CanBeCloned` (`cloneable()` / `isCloneable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanBeCloned.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeCloned.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
-| Move actions + button reorder (`getMoveUpAction()` / `getMoveDownAction()` / `moveUpAction()` / `moveDownAction()` / `reorderable()` / `reorderableWithButtons()` / `isReorderable()` / `isReorderableWithButtons()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
+| Move actions + button reorder (`getMoveUpAction()` / `getMoveDownAction()` / `moveUpAction()` / `moveDownAction()` / `reorderable()` / `reorderableWithButtons()` / `isReorderable()` / `isReorderableWithButtons()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) · [diverges](#the-move-helpers-correct-two-vendor-edge-defects) |
 | Drag-and-drop reorder (`getReorderAction()` / `reorderAction()` / `reorderableWithDragAndDrop()` / `isReorderableWithDragAndDrop()`) + `HasReorderAnimationDuration` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | drag-and-drop JS vertical | [diverges](#drag-and-drop-reorder-is-deferred-and-filaments-defaults-are-kept) |
 | `CanLimitItemsLength` (`minItems()` / `maxItems()` / `getItemsCount()`) | [`CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [semantics](#an-item-field-derives-no-requirement-from-the-record) |
 | Item chrome (`itemLabel()` / `getItemLabel()` / `hasItemLabels()` / `itemNumbers()` / `itemHeaders()` / `truncateItemLabel()` / `getHeadingsCount()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
@@ -334,6 +334,21 @@ union say what it is for — a uuid, or a closure producing one. A generator
 returning something else therefore raises PHP's own return `TypeError` naming
 the component's `generateUuid()`; no hand-thrown guard rides along, because a
 `?string` inference makes one unreachable.
+
+### The move helpers correct two vendor edge defects
+
+`Sylament\Forms\array_move_before()` / `array_move_after()` port Filament's
+forms helpers with two edges fixed rather than copied, both proven by probe
+against the vendor bodies. An **unknown key** returns the array unchanged —
+Filament's after-arm runs `array_search()`'s `false` through `+ 1`, indexing a
+neighbour that may not exist and corrupting the array with a `key => null`
+entry under an "Undefined array key" warning. And the **neighbour guard** is
+`=== null` rather than `blank()`, so an empty-string key is a movable neighbour
+here where Filament aborts the swap — `''` is a legal array key, and refusing
+to move past it was the helper leaking value semantics into key mechanics. Key
+matching is strict over `strval()`-normalised keys, the same normalisation the
+record walks use, so a client-sent `'2'` matches a fake-mode integer key
+without the loose comparison Rector rejects.
 
 ### Deprecated Filament members are not ported
 

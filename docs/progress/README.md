@@ -153,5 +153,5 @@ The nine bundles under `packages/`, each linked to the Filament package it ports
 | [`panels`](../../packages/panels) | [`vendor/filament/filament`](../../vendor/filament/filament) | todo | [panels](panels/README.md) |
 | [`schemas`](../../packages/schemas) | [`vendor/filament/schemas`](../../vendor/filament/schemas) | in progress | [schemas](schemas/README.md) |
 | [`support`](../../packages/support) | [`vendor/filament/support`](../../vendor/filament/support) | in progress | [support](support/README.md) |
-| [`tables`](../../packages/tables) | [`vendor/filament/tables`](../../vendor/filament/tables) | todo | [tables](tables/README.md) |
+| [`tables`](../../packages/tables) | [`vendor/filament/tables`](../../vendor/filament/tables) | in progress | [tables](tables/README.md) |
 | [`widgets`](../../packages/widgets) | [`vendor/filament/widgets`](../../vendor/filament/widgets) | todo | [widgets](widgets/README.md) |

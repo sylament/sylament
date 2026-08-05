@@ -9,9 +9,11 @@ rendering) and folds in 18 actions-package concerns — `BelongsToLiveComponent`
 `HasMountableArguments`, `HasName`, `HasSize`,
 `InteractsWithRecord` — each a
 Surface row below with its own detail/divergence spliced in from its own
-audit. It also composes two multi-consumer actions-package concerns tracked
+audit. It also composes three multi-consumer actions-package concerns tracked
 outside this file — `BelongsToGroup` (shared with `ActionGroup`, written up in
-[`action-group.md`](action-group.md)) and `BelongsToSchemaComponent` (shared
+[`action-group.md`](action-group.md)), `BelongsToTable` (shared with
+`ActionGroup`, written up in [`belongs-to-table.md`](belongs-to-table.md)) and
+`BelongsToSchemaComponent` (shared
 with `ActionGroup`, a `done` row with no detail file in the
 [package README](README.md#features), since its whole surface is a two-method
 back-reference pair) and the two modal attribute-bag concerns
@@ -50,8 +52,9 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getstatus-drops-the-bulk-record-tally) |
 | `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/InteractsWithSelectedRecords ports, the Action→schema record/operation hop (M1 · 6) | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-10-of-16-names) |
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/InteractsWithSelectedRecords ports, the Action→schema record hop (M1 · 6) | [detail](#resolvedefaultclosuredependencyforevaluationbytype-carries-only-the-added-getset-arms) |
-| `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables (`table`/`bulk` flags, `recordKey`) | [diverges](#getcontext-emits-only-the-schemacomponent-key) |
-| `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](has-actions.md#resolveactions-drops-the-table-branch), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-emits-only-the-schemacomponent-key) decidable |
+| `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | bulk actions (`bulk` flag) | [diverges](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) |
+| `getClone()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`getClone()`) | done | — | Filament-exact one-liner (`clone $this`). A shallow clone is the whole contract on this side: what a caller needs is an action whose `record()` / `table()` / `group()` bindings can be re-stamped per row without touching the declared original. `ActionGroup`'s override adds the member deep-clone ([there](action-group.md#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately)) |
+| `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](has-actions.md#resolveactions-drops-the-table-branch), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) decidable |
 | [`CanCallParentAction`](../../../packages/actions/src/Concerns/CanCallParentAction.php) | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | done | — | Filament-exact two-method port (`callParent()` + getter). The getter is `getParentActionCallLiveComponentClickHandler()` against Filament's `…Livewire…`, the systematic Livewire → UX LiveComponent naming translation from the [rename table](../renames.md), not a rename of its own. Read by all five trigger templates, ranked **above** `shouldClose()` in the click precedence |
 | [`HasParentActions`](../../../packages/actions/src/Concerns/HasParentActions.php) | [`Concerns/HasParentActions.php`](../../../vendor/filament/actions/src/Concerns/HasParentActions.php) | done | — | Complete, method-for-method and body-for-body. Three of its accessors (`shouldCancelParentActionsOnClose()`, `shouldCancelAllParentActionsOnClose()`, `getParentActionToCancelToOnClose()`) have no consumer here — and none in `vendor/filament` either, so they are kept as declared API rather than trimmed |
 | Trigger rendering ([`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig) + the [`Link`](../../../packages/actions/templates/partials/Action/Link.html.twig) / [`Badge`](../../../packages/actions/templates/partials/Action/Badge.html.twig) / [`Grouped`](../../../packages/actions/templates/partials/Action/Grouped.html.twig) / [`IconButton`](../../../packages/actions/templates/partials/Action/IconButton.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toGroupedHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [semantics](#an-uncolored-badge-or-link-action-renders-primary-not-gray), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
@@ -62,7 +65,8 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`HasIconPosition`](../../../packages/support/src/Components/Concerns/HasIconPosition.php) (support) | [`Concerns/HasIconPosition.php`](../../../vendor/filament/support/src/Concerns/HasIconPosition.php) | done | — | — |
 | [`HasIconSize`](../../../packages/support/src/Components/Concerns/HasIconSize.php) (support) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — | — |
 | [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) (support) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | — |
-| [`BelongsToLiveComponent`](../../../packages/actions/src/Concerns/BelongsToLiveComponent.php) | [`Concerns/BelongsToLivewire.php`](../../../vendor/filament/actions/src/Concerns/BelongsToLivewire.php) | done | — | [diverges](#the-live-component-chain-narrows-inline-and-drops-the-table-and-group-hops) |
+| [`BelongsToLiveComponent`](../../../packages/actions/src/Concerns/BelongsToLiveComponent.php) | [`Concerns/BelongsToLivewire.php`](../../../vendor/filament/actions/src/Concerns/BelongsToLivewire.php) | done | — | [diverges](#the-live-component-chain-narrows-inline-instead-of-through-a-second-getter) |
+| [`BelongsToTable`](../../../packages/actions/src/Concerns/BelongsToTable.php) (shared with `ActionGroup`) | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php) | done | — | [belongs-to-table](belongs-to-table.md) |
 | [`CanBeDisabled`](../../../packages/actions/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/actions/src/Concerns/CanBeDisabled.php) | done | — | [diverges](#canbedisabled-drops-the-authorization-short-circuits) |
 | [`CanBeHidden`](../../../packages/actions/src/Concerns/CanBeHidden.php) | [`Concerns/CanBeHidden.php`](../../../vendor/filament/actions/src/Concerns/CanBeHidden.php) | in progress | CanBeAuthorized, ActionGroup, BelongsToTable | [detail](#canbehidden-omits-authorization-group-and-table-cache-integration) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | [diverges](#outlined-styling-is-a-state-class-not-a-color-map) |
@@ -82,7 +86,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`HasMountableArguments`](../../../packages/actions/src/Concerns/HasMountableArguments.php) | [`Concerns/HasMountableArguments.php`](../../../vendor/filament/actions/src/Concerns/HasMountableArguments.php) | done | — | [diverges](#action-invocation-is-a-php-side-seam-only) |
 | [`HasName`](../../../packages/actions/src/Concerns/HasName.php) | [`Concerns/HasName.php`](../../../vendor/filament/actions/src/Concerns/HasName.php) | done | — | [diverges](#getname-tightens-its-return-type-to-non-nullable-string) |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | [diverges](#hassize-drops-the-optimized-render-fast-path-helper) |
-| [`InteractsWithRecord`](../../../packages/actions/src/Concerns/InteractsWithRecord.php) | [`Concerns/InteractsWithRecord.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithRecord.php) | in progress | — | [detail](#the-record-title-and-model-metadata-surface-is-not-ported), [diverges](#record-key-resolution-is-hoisted-to-hasactions) |
+| [`InteractsWithRecord`](../../../packages/actions/src/Concerns/InteractsWithRecord.php) incl. `resolveRecordKey()` | [`Concerns/InteractsWithRecord.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithRecord.php) | in progress | — | [detail](#the-record-title-and-model-metadata-surface-is-not-ported), [diverges](#record-key-resolution-is-hoisted-to-hasactions) |
 
 ## Details
 
@@ -432,7 +436,7 @@ alongside the schema-container/schema-component/live-component bindings, so
 every action an action declares — footer actions, `getModalAction()` targets —
 knows its parent. That single line is what makes the host's parent-modal
 descent addressable from the action side and what lets
-[`getContext()`](#getcontext-emits-only-the-schemacomponent-key) recognize a
+[`getContext()`](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) recognize a
 child frame. The `instanceof` narrowing exists because the trait is also
 composed by non-`Action` classes; Filament passes `$this` unconditionally from
 a class that is always an `Action`.
@@ -440,8 +444,12 @@ a class that is always an `Action`.
 **Next step**: the wizard suppression returns with `HasWizard`; the four
 `?? true` literals become reads of the `ModalComponent`-equivalent
 global-defaults seam if and when that lands. What is left beyond those is one
-scoped delta from the list above — `prepareModalAction()`'s still-dropped
-`->table()` binding, waiting on `BelongsToTable`.
+scoped delta from the list above — `prepareModalAction()`/
+`prepareModalActionGroup()` still drop Filament's `->table($this->getTable())`
+binding. No longer blocked, now that
+[`BelongsToTable`](belongs-to-table.md) ships: it lands with the table's own
+action rendering, which is the first thing that binds a table to an action at
+all.
 
 ### getUrl() drops the default-action-url fallback
 
@@ -840,14 +848,15 @@ siblings that *have* landed so the list cannot silently go stale:
   other three through their [package README](README.md#features) rows — and the
   `schema*` closure-dependency names landed with the schemas-actions
   integration, see the Details section above).
-- **Tables/bulk-action integration**: `BelongsToTable`, `HasTableIcon`,
+- **Tables/bulk-action integration**: `HasTableIcon`,
   `InteractsWithSelectedRecords`, `CanFetchSelectedRecords`,
-  `CanDeselectRecordsAfterCompletion`, `bulk()`/`isBulk()`.
-- **Grouping & nesting**: `CanBeSorted` and `getClone()`
+  `CanDeselectRecordsAfterCompletion`, `bulk()`/`isBulk()`
+  (`BelongsToTable` is ported — see [belongs-to-table.md](belongs-to-table.md)).
+- **Grouping & nesting**: `CanBeSorted`
   (`BelongsToGroup` is ported — see [action-group.md](action-group.md) — and
   `CanCallParentAction`, `HasParentActions`, `parentAction()`/
-  `getParentAction()` and `nestingIndex()`/`getNestingIndex()` all landed with
-  the nested-actions epic and have rows in the Surface table above).
+  `getParentAction()`, `nestingIndex()`/`getNestingIndex()` and `getClone()`
+  all have rows in the Surface table above).
 - **Authorization & policy**: `CanBeAuthorized`, `hasAuthorization()`.
 - **Rate limiting & transactions**: `CanBeRateLimited`,
   `CanUseDatabaseTransactions` (see the `cancel()`/`halt()` rollback-flag
@@ -866,7 +875,7 @@ likely their own detail files, per the
 [one-row-per-file rule](../README.md#one-row-per-file-one-file-per-thing))
 the moment work starts on each.
 
-### The live-component chain narrows inline and drops the table and group hops
+### The live-component chain narrows inline instead of through a second getter
 
 Filament's `getLivewire()` is a multi-step resolver — explicit `$livewire`,
 then `getSchemaContainer()?->getLivewire()`,
@@ -875,61 +884,75 @@ then `getSchemaContainer()?->getLivewire()`,
 `getHasActionsLivewire()`, narrowing the generic result to
 `Contracts\HasActions`. Sylament's
 [`getLiveComponent()`](../../../packages/actions/src/Concerns/BelongsToLiveComponent.php)
-now walks the two schema hops lazily: explicit `$liveComponent`, then the
-bound schema container's host, then the bound schema component's host — each
-read through the schemas side's Sylament-only `getLiveComponentOrNull()`
+walks all four hops in Filament's order, each narrowed inline by a private
+`asActionsHost()` guard rather than by a second method, so a host implementing
+only schemas' `InteractsWithSchemas` never satisfies the chain. The two schema
+hops read through the schemas side's Sylament-only `getLiveComponentOrNull()`
 peeks (schemas' primary getters throw, see
-[`schemas/belongs-to-live-component.md`](../schemas/belongs-to-live-component.md))
-and narrowed inline by a private `asActionsHost()` guard, so a host
-implementing only schemas' `InteractsWithSchemas` never satisfies the chain.
-Three deltas stay deliberate: (1) the getter keeps its non-nullable
+[`schemas/belongs-to-live-component.md`](../schemas/belongs-to-live-component.md));
+the table hop reads [`Table::getLiveComponent()`](../../../packages/tables/src/Table/Concerns/BelongsToLiveComponent.php),
+which is non-nullable there because `Table::make()` always binds one, and gets
+narrowed by the same guard — a table host that interacts with tables but not
+with actions resolves nothing.
+
+One delta stays deliberate: the getter keeps its non-nullable
 `InteractsWithActions` return and throws when nothing resolves — the
 fail-fast stand-in for Filament's nullable return + separate
 `getHasActionsLivewire()` narrowing step — while the chain itself lives in
 the Sylament-only `getLiveComponentOrNull()` peek (mirroring the schemas-side
 precedent by name), which `prepareModalAction()`/`prepareModalActionGroup()`
-use to bind footer actions without forcing an unbound owner to throw; (2) no
-table hop —
-`BelongsToTable` is unported, restore it with the `tables` package; (3) no
-group hop — Sylament's
-[`ActionGroup::liveComponent()`](../../../packages/actions/src/ActionGroup.php)
-eagerly propagates the host to child actions at set time, so the lazy group
-hop has nothing left to resolve (reverses if group binding ever becomes
-lazy). Covered by
-[`BelongsToLiveComponentTest`](../../../packages/actions/tests/Unit/Concerns/BelongsToLiveComponentTest.php):
-explicit-set precedence, both schema hops, the schemas-only-host refusal, and
-the unbound throw.
+use to bind footer actions without forcing an unbound owner to throw.
 
-### `getContext()` emits only the schemaComponent key
+The group hop is kept even though
+[`ActionGroup::liveComponent()`](../../../packages/actions/src/ActionGroup.php)
+eagerly propagates the host to child actions at set time: the eager push only
+fires at `liveComponent()`-call time, so an action added to an
+already-bound group afterwards resolves through this lazy hop and nothing
+else. Covered by
+[`BelongsToLiveComponentTest`](../../../packages/actions/tests/Unit/Concerns/BelongsToLiveComponentTest.php):
+explicit-set precedence, both schema hops, the late-joining group hop, the
+schemas-only-host refusal, and the unbound throw; the table hop by
+[`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php),
+which lives in the tables suite because only there can a real `Table` be built.
+
+### `getContext()` drops the record model gate and the bulk flag
 
 Filament's `getContext()` assembles up to four entries: `recordKey` (via
 `resolveRecordKey()`, guarded by table-model type checks), an early return
 carrying only `recordKey` for child modal actions (`getParentAction()`),
 `table`/`bulk` flags, and `schemaComponent`. The port's
-[`getContext()`](../../../packages/actions/src/Action.php) emits only
-`['schemaComponent' => $key]` — the key of the bound schema container,
-falling back to the bound schema component, exactly Filament's precedence —
-and `[]` otherwise. The `recordKey` half is a consequence of the
-[record-key-resolution hoist to HasActions](#record-key-resolution-is-hoisted-to-hasactions):
-the action side has no `resolveRecordKey()` to emit it, while the host still
-consumes an inbound `context.recordKey` at mount time
-(`getMountedActionRecord()`), so the consuming half of the contract is
-intact; the emitting half returns when record-key resolution lands on the
-action side with the `tables` integration. The `table`/`bulk` flags wait on
-`BelongsToTable`/bulk actions.
+[`getContext()`](../../../packages/actions/src/Action.php) emits three of
+them in the same order — `recordKey`, then (past the child-frame return)
+`table`, then `schemaComponent`, the key of the bound schema container falling
+back to the bound schema component.
 
-The **child-frame short-circuit is ported**: `if ($this->parentAction instanceof self) { return $context; }`
-runs before the schema branch, so a modal action declared by another action
-emits an empty context even when it inherited a schema binding from
-`prepareModalAction()`. Without it, a nested frame would carry a
+Two entries diverge. The **model gate** around `recordKey` is dropped:
+Filament only emits a key when the record has no table, is not an Eloquent
+`Model`, the table declares no model, or the record's class matches it — a
+guard against a table whose rows are a different model than the action's own
+record. Sylament's tables carry no model class at all (records are plain
+objects or arrays), so there is nothing to compare and the key is emitted
+whenever [`resolveRecordKey()`](#record-key-resolution-is-hoisted-to-hasactions)
+yields one. Restore the gate if `Table` ever grows a declared record class.
+The **`bulk` flag** waits on bulk actions: no `BulkAction` class and no
+`isBulk()` predicate exist in the port, so the entry has nothing to key off.
+
+The **child-frame short-circuit is ported** verbatim:
+`if ($this->parentAction instanceof self) { return $context; }` runs after the
+`recordKey` branch and before the table and schema branches, so a modal action
+declared by another action carries its record identity up and nothing else —
+not the schema binding it inherited from `prepareModalAction()`, not the table
+binding it inherited from its parent. Without it, a nested frame would carry a
 `schemaComponent` key up to the host and — but for the host's own
 [deeper-frame gate](has-actions.md#resolution-stops-at-the-first-null-frame-and-a-deeper-frame-reaches-schema-context-only-through-the-cache) —
 try to resolve against the host's schema instead of its parent's declared modal
-actions. Filament returns `$context` (already holding `recordKey`) at the same
-point; ours returns it empty, because `recordKey` is not emitted here yet.
-Covered by `ActionTest`'s context cases (empty without a binding, container key,
-component-key fallback, keyless container, and a bound-schema action whose
-`parentAction` suppresses the key the binding alone would emit).
+actions. Covered by `ActionTest`'s context cases (empty without a binding,
+container key, component-key fallback, keyless container, an unresolvable
+record key, the emitted `recordKey`, and a bound-schema action whose
+`parentAction` suppresses the key the binding alone would emit) and by
+[`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php)
+for the two arms that need a real `Table` — the `table` flag and its
+suppression on a nested frame.
 
 ### CanBeDisabled drops the authorization short-circuits
 
@@ -1155,6 +1178,28 @@ per-host callback used once, at mount time, by the live-component runtime.
 Reversible if a future action needs to accept a bare record key directly (not
 just via live-component mount) — at that point `InteractsWithRecord::getRecord()`
 would need its own key-detection branch back.
+
+The opposite direction — record → key — is *not* hoisted:
+[`resolveRecordKey()`](../../../packages/actions/src/Concerns/InteractsWithRecord.php)
+lives on the trait exactly as Filament has it, and is what
+[`getContext()`](#getcontext-drops-the-record-model-gate-and-the-bulk-flag)
+emits. Its object arm is the one that had to be translated, since there is no
+`Model::getKey()` to call: it reads `id` through schemas'
+[`PropertyAccessor::getFromRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php)
+— hence `Action` and `ActionGroup` now compose `CanAccessProperties` — and
+treats an `AccessException` (no readable `id`) as "no identity", returning
+null. That makes it **lenient where the host's twin is strict**: the same
+unreadable record throws from
+[`HasTable::getTableRecordKey()`](../tables/has-table.md), because a table
+building its row index cannot proceed without a key, while an action emitting
+a mount context can simply omit one. The array arm keeps Filament's
+`LogicException` for a *missing*
+[`ArrayRecord`](../../../packages/support/src/ArrayRecord.php) key entry — an
+array is unambiguously a record, so the absent entry is a caller mistake rather
+than an absent identity — but an entry that is present and blank (or not
+stringable) returns null where Filament's `strval()` would have emitted `''` or
+fatalled. Covered by
+[`InteractsWithRecordTest`](../../../packages/actions/tests/Unit/Concerns/InteractsWithRecordTest.php).
 
 ### The action modal is an anonymous Twig component, not an included view
 

@@ -28,7 +28,9 @@ trait BelongsToLiveComponent
     {
         return $this->liveComponent
             ?? self::asActionsHost($this->getSchemaContainer()?->getLiveComponentOrNull())
-            ?? self::asActionsHost($this->getSchemaComponent()?->getLiveComponentOrNull());
+            ?? self::asActionsHost($this->getSchemaComponent()?->getLiveComponentOrNull())
+            ?? self::asActionsHost($this->getTable()?->getLiveComponent())
+            ?? self::asActionsHost($this->getGroup()?->getLiveComponentOrNull());
     }
 
     private static function asActionsHost(?object $host): ?InteractsWithActions

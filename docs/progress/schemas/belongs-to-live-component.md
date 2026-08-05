@@ -56,7 +56,7 @@ The throw creates one need Filament doesn't have: a caller probing for an
 *optional* binding. `getLiveComponentOrNull()` is that Sylament-only public
 peek — it returns the raw nullable property, and has two consumers. The first
 is the actions package's live-component fallback chain
-([`actions/action.md`](../actions/action.md#the-live-component-chain-narrows-inline-and-drops-the-table-and-group-hops)),
+([`actions/action.md`](../actions/action.md#the-live-component-chain-narrows-inline-instead-of-through-a-second-getter)),
 which walks `getSchemaContainer()`/`getSchemaComponent()` looking for a host
 and must get `null`, not an exception, from an unbound schema. The second is
 [`HasChildComponents::makeChildSchema()`](component.md#haschildcomponents-only-the-materialization-core-is-ported),

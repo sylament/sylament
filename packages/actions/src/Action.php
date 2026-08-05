@@ -8,6 +8,7 @@ use Closure;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
 use Sylament\Actions\Concerns\BelongsToSchemaComponent;
+use Sylament\Actions\Concerns\BelongsToTable;
 use Sylament\Actions\Concerns\CanBeDisabled;
 use Sylament\Actions\Concerns\CanBeHidden;
 use Sylament\Actions\Concerns\CanBeMounted;
@@ -35,6 +36,7 @@ use Sylament\Actions\Concerns\HasSize;
 use Sylament\Actions\Concerns\InteractsWithRecord;
 use Sylament\Actions\Enums\ActionStatus;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Get;
 use Sylament\Schemas\State\Set;
@@ -56,6 +58,8 @@ class Action extends ViewComponent
     use BelongsToGroup;
     use BelongsToLiveComponent;
     use BelongsToSchemaComponent;
+    use BelongsToTable;
+    use CanAccessProperties;
     use CanBeDisabled;
     use CanBeHidden;
     use CanBeMounted;
@@ -243,8 +247,16 @@ class Action extends ViewComponent
     {
         $context = [];
 
+        if (filled($recordKey = $this->resolveRecordKey($this->getRecord()))) {
+            $context['recordKey'] = $recordKey;
+        }
+
         if ($this->parentAction instanceof self) {
             return $context;
+        }
+
+        if ($this->hasTable()) {
+            $context['table'] = true;
         }
 
         if (filled($schemaComponentKey = ($this->getSchemaContainer() ?? $this->getSchemaComponent())?->getKey())) {
@@ -252,6 +264,11 @@ class Action extends ViewComponent
         }
 
         return $context;
+    }
+
+    public function getClone(): static
+    {
+        return clone $this;
     }
 
     protected function resolveDefaultClosureDependencyForEvaluationByName(string $parameterName): ?ClosureParameter

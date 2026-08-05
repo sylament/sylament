@@ -122,6 +122,40 @@ it('returns an empty context when the bound schema container has no key', functi
     expect($action->getContext())->toBe([]);
 });
 
+it('emits the resolved record key as the recordKey context', function (): void {
+    $action = Action::make('edit')->record(new class {
+        public int $id = 7;
+    });
+
+    expect($action->getContext())->toBe(['recordKey' => '7']);
+});
+
+it('emits no recordKey for a record whose key cannot be resolved', function (): void {
+    $action = Action::make('edit')->record(new class {});
+
+    expect($action->getContext())->toBe([]);
+});
+
+it('keeps only recordKey on a nested frame', function (): void {
+    $action = Action::make('child')
+        ->record(new class {
+            public int $id = 7;
+        })
+        ->schemaContainer(Schema::make()->key('form'))
+        ->parentAction(Action::make('parent'));
+
+    expect($action->getContext())->toBe(['recordKey' => '7']);
+});
+
+it('clones an action independently of the original', function (): void {
+    $action = Action::make('edit');
+    $clone = $action->getClone()->record(['__key' => '1']);
+
+    expect($clone)->not->toBe($action)
+        ->and($clone->getRecord())->toBe(['__key' => '1'])
+        ->and($action->getRecord())->toBeNull();
+});
+
 it('injects the schema container as $schema', function (): void {
     $schema = Schema::make();
 

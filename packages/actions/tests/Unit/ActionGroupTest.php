@@ -44,6 +44,32 @@ it('recurses nested groups into the flat map', function (): void {
         ->toBe(['edit' => $edit, 'archive' => $archive, 'delete' => $delete]);
 });
 
+it('deep-clones a group, re-parents members and rebuilds the flat map', function (): void {
+    $group = ActionGroup::make([Action::make('edit')]);
+    $clone = $group->getClone();
+
+    $cloneMember = $clone->getFlatActions()['edit'];
+
+    expect($clone)->not->toBe($group)
+        ->and($cloneMember)->not->toBe($group->getFlatActions()['edit'])
+        ->and($cloneMember->getGroup())->toBe($clone)
+        ->and($clone->getActions())->toBe([$cloneMember])
+        ->and($group->getFlatActions()['edit']->getGroup())->toBe($group);
+});
+
+it('deep-clones nested groups into the rebuilt flat map', function (): void {
+    $group = ActionGroup::make([Action::make('edit'), ActionGroup::make([Action::make('delete')])]);
+    $clone = $group->getClone();
+
+    $nestedClone = $clone->getActions()[1];
+
+    expect($nestedClone)->toBeInstanceOf(ActionGroup::class)
+        ->and($nestedClone)->not->toBe($group->getActions()[1])
+        ->and($nestedClone->getGroup())->toBe($clone)
+        ->and($clone->getFlatActions()['delete'])->toBe($nestedClone->getFlatActions()['delete'])
+        ->and($clone->getFlatActions())->toHaveKeys(['edit', 'delete']);
+});
+
 it('rejects an unnamed action', function (): void {
     ActionGroup::make([new class (null) extends Action {}]);
 })->throws(LogicException::class);

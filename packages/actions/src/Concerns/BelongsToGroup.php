@@ -21,4 +21,21 @@ trait BelongsToGroup
     {
         return $this->group;
     }
+
+    public function getRootGroup(): ?ActionGroup
+    {
+        $group = $this->getGroup();
+
+        while ($group !== null) {
+            $parentGroup = $group->getGroup();
+
+            if (!$parentGroup instanceof ActionGroup) {
+                break;
+            }
+
+            $group = $parentGroup;
+        }
+
+        return $group;
+    }
 }

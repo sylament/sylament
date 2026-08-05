@@ -104,7 +104,7 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`BelongsToSchemaComponent`](../../../packages/actions/src/Concerns/BelongsToSchemaComponent.php) | [`Concerns/BelongsToSchemaComponent.php`](../../../vendor/filament/actions/src/Concerns/BelongsToSchemaComponent.php) | done | [belongs-to-schema-component](belongs-to-schema-component.md) |
-| BelongsToTable | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php) | todo | - |
+| [`BelongsToTable`](../../../packages/actions/src/Concerns/BelongsToTable.php) | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php) | done | [belongs-to-table](belongs-to-table.md) |
 | CanBeAuthorized | [`Concerns/CanBeAuthorized.php`](../../../vendor/filament/actions/src/Concerns/CanBeAuthorized.php) | todo | - |
 | CanBeBooted | [`Concerns/CanBeBooted.php`](../../../vendor/filament/actions/src/Concerns/CanBeBooted.php) | todo | - |
 | CanBeLabeledFrom | [`Concerns/CanBeLabeledFrom.php`](../../../vendor/filament/actions/src/Concerns/CanBeLabeledFrom.php) | todo | - |

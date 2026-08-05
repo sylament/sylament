@@ -8,6 +8,7 @@ use Closure;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
 use Sylament\Actions\Concerns\BelongsToSchemaComponent;
+use Sylament\Actions\Concerns\BelongsToTable;
 use Sylament\Actions\Concerns\CanBeHidden;
 use Sylament\Actions\Concerns\CanBeOutlined;
 use Sylament\Actions\Concerns\HasDropdown;
@@ -17,6 +18,7 @@ use Sylament\Actions\Concerns\HasSize;
 use Sylament\Actions\Concerns\InteractsWithRecord;
 use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Get;
 use Sylament\Support\Components\Concerns\HasColor;
@@ -36,6 +38,8 @@ class ActionGroup extends ViewComponent
     use BelongsToGroup;
     use BelongsToLiveComponent;
     use BelongsToSchemaComponent;
+    use BelongsToTable;
+    use CanAccessProperties;
     use CanBeHidden;
     use CanBeOutlined;
     use HasColor;
@@ -149,6 +153,23 @@ class ActionGroup extends ViewComponent
     public function getActions(): array
     {
         return $this->stampTriggerTemplates($this->actions, $this->hasDropdown());
+    }
+
+    public function getClone(): static
+    {
+        $clone = clone $this;
+
+        $clone->cloneActions();
+
+        return $clone;
+    }
+
+    protected function cloneActions(): void
+    {
+        $this->actions(array_map(
+            static fn (Action|ActionGroup $action): Action|ActionGroup => $action->getClone(),
+            $this->actions,
+        ));
     }
 
     /**

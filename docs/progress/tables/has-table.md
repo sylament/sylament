@@ -269,6 +269,19 @@ arrives, if at all, with the [`query()` lane](../roadmap.md#pulled-forward) that
 can read the metadata rather than guess. Until then a record whose identity is
 not `id` uses the array form and its `__key` entry.
 
+The action side has the same-shaped twin,
+[`InteractsWithRecord::resolveRecordKey()`](../actions/action.md#record-key-resolution-is-hoisted-to-hasactions)
+— same `id`-through-the-accessor read, same `Stringable` unwrap, same
+`LogicException` for an array record missing its key entry — differing in what
+an *unkeyable* record means: it returns `null` where this throws, and it
+returns `null` for a blank key in the array arm where this returns the blank
+string. The asymmetry is deliberate and matches Filament's own pair. A table
+building its row index cannot proceed without a key, so an unkeyable record is
+a configuration error worth stopping on; an action assembling a mount context
+can simply omit `recordKey` and stay mountable. Keep them in step if the read
+ever changes: they are two implementations of one convention, not one method
+and its wrapper.
+
 ### `getTableRecord()` reads fresh when the render cache is cold
 
 Filament resolves a record down two lanes that disagree with each other. The

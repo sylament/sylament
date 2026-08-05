@@ -6,7 +6,9 @@ into one control. It composes `Sylament\Support\Components\ViewComponent`
 (Twig-backed rendering, the same base `Action` extends) and folds in its own
 actions-package concern, `BelongsToGroup` — shared with `Action` (both now
 compose it), written up here rather than split into a third detail file, since
-its whole surface is a two-method back-reference pair. It also reuses four
+its whole surface is the back-reference pair plus the root walk. `BelongsToTable`
+is shared the same way but earns
+[its own file](belongs-to-table.md). It also reuses four
 already-folded `Action` concerns unchanged — `CanBeOutlined`, `HasGroupedIcon`,
 `HasLabel`, and `HasSize`, tracked
 in [`action.md`](action.md) — and five support-level traits (`HasColor`,
@@ -25,9 +27,10 @@ defaults propagated to it.
 
 **Status:** in progress — the dropdown-rendering base (model, visibility,
 triggers, submenus, and `render()` producing the complete dropdown or inline
-row) is complete; the remaining rows are deferred (additional trigger kinds,
-teleport/auto-placement, `Arrayable`, table/bulk integration) — see the
-[status vocabulary](../README.md#statuses).
+row) is complete, as is the per-row layer a table needs (the table binding, the
+root-group walk, and the deep clone); the remaining rows are deferred
+(additional trigger kinds, teleport/auto-placement, `Arrayable`, bulk actions)
+— see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
@@ -49,7 +52,9 @@ permanent note in [Divergences](#divergences).
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Construction, `make()` & `actions()`/`getActions()`/`getFlatActions()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | done | — | — |
-| [`BelongsToGroup`](../../../packages/actions/src/Concerns/BelongsToGroup.php) | [`Concerns/BelongsToGroup.php`](../../../vendor/filament/actions/src/Concerns/BelongsToGroup.php) | done | — | [diverges](#getrootgroup-is-not-ported) |
+| [`BelongsToGroup`](../../../packages/actions/src/Concerns/BelongsToGroup.php) incl. `getRootGroup()` | [`Concerns/BelongsToGroup.php`](../../../vendor/filament/actions/src/Concerns/BelongsToGroup.php) | done | — | `getRootGroup()` is a verbatim port of the walk up `getGroup()` to the outermost group (`null` for an ungrouped action). It ships ahead of its consumer: Filament resolves a mounted **table** action and stamps the row's record on `getRootGroup()` rather than on the member it matched, so one record covers the whole group and [`InteractsWithRecord::getRecord()`](#getrecord-is-duplicated-onto-action-and-actiongroup-to-satisfy-phpstan)'s group fallback carries it back down to every member. Covered by [`BelongsToGroupTest`](../../../packages/actions/tests/Unit/Concerns/BelongsToGroupTest.php). Also [diverges](#groups-parameter-defaults-to-null) |
+| [`BelongsToTable`](../../../packages/actions/src/Concerns/BelongsToTable.php) (shared with `Action`) | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php) | done | — | [belongs-to-table](belongs-to-table.md) |
+| `getClone()` / `cloneActions()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getClone()`/`cloneActions()`) | done | — | [diverges](#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately) |
 | `getLabel()` default | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getLabel()`) | done | — | [diverges](#getlabel-falls-back-to-a-plain-string-not-a-translated-label) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) (shared with `Action`; consumed by the button trigger only, Filament-same) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | - |
 | [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) (shared with `Action`) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | Consumed by [`GroupedTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/GroupedTrigger.html.twig) as `group.getIcon(group.getGroupedIcon)` — the shape a group takes inside another group's dropdown, exactly where Filament's `toGroupedTriggerHtml()` reads it |
@@ -73,7 +78,7 @@ permanent note in [Divergences](#divergences).
 | Badge/button-group/link triggers | [`View/Concerns/CanGenerate*Html.php`](../../../vendor/filament/support/src/View/Concerns) | todo | — | [detail](#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup) |
 | Dropdown teleport & auto-placement | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) (`dropdownTeleport()`/`dropdownAutoPlacement()`) | todo | — | - |
 | `toArray()`/`fromArray()` (`Arrayable`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toArray()`/`fromArray()`) | todo | — | - |
-| Table and bulk concerns | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php), `hasNonBulkAction()` | blocked | tables package, BulkAction | [detail](#table-and-bulk-concerns-are-blocked-on-the-tables-and-bulkaction-ports) |
+| `hasNonBulkAction()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`hasNonBulkAction()`) | blocked | BulkAction | [detail](#hasnonbulkaction-is-blocked-on-the-bulkaction-port) |
 
 ## Details
 
@@ -127,37 +132,25 @@ port the remaining `CanGenerate*Html` trigger shapes; adding
 `BUTTON_GROUP_TEMPLATE` is the point at which the `isButtonGroup()` predicate
 becomes portable and the stand-in can be retired.
 
-### Table and bulk concerns are blocked on the tables and BulkAction ports
+### `hasNonBulkAction()` is blocked on the BulkAction port
 
-Filament's `ActionGroup` composes `BelongsToTable`, and exposes
-`hasNonBulkAction()` (iterates `getFlatActions()` calling `$action->isBulk()`).
-`BelongsToSchemaComponent` — Filament's other composed `ActionGroup` concern —
-already landed (see the [package README](README.md#features)); `BelongsToTable`
-has no Sylament target yet: there is no `tables`-package integration point
-(`BelongsToTable`'s host) and no `BulkAction` class (`isBulk()`'s only caller)
-in the port. **Blocked** on both landing; add `BelongsToTable` (or its Sylament
-equivalent) and `hasNonBulkAction()` in the same change that ports whichever
-comes first.
+Filament's `ActionGroup::hasNonBulkAction()` iterates `getFlatActions()`
+calling `$action->isBulk()`. The port has no `BulkAction` class and no
+`isBulk()` predicate on `Action`, so the method has nothing to ask — this is
+the group-side half of the same gap
+[`getContext()`'s missing `bulk` flag](action.md#getcontext-drops-the-record-model-gate-and-the-bulk-flag)
+tracks. **Blocked** on `BulkAction`; port both together. The other half of
+this row's former blocker is gone: `BelongsToTable` now ships
+([belongs-to-table.md](belongs-to-table.md)).
 
 ## Divergences
 
-### `getRootGroup()` is not ported
+### `group()`'s parameter defaults to `null`
 
-Filament's `Concerns\BelongsToGroup` carries a third method,
-`getRootGroup(): ?ActionGroup`, that walks `getGroup()` up through nested
-parents and returns the outermost one. The port's
-[`BelongsToGroup`](../../../packages/actions/src/Concerns/BelongsToGroup.php)
-has only `group()`/`getGroup()` — no root-walking helper, and no test exercises
-one because none exists. The port's `group(?ActionGroup $group = null): static`
-also gives its parameter a default of `null` (Filament's is required); harmless
-since `null` is the effective value every caller passes today, and it lets
-`->group()` clear the association without spelling out the `null` argument.
-Reversible: port `getRootGroup()` the moment a consumer needs to walk to the
-top of a nested-group chain in one jump. Task 6's `liveComponent()`/`getRecord()`
-propagation turned out not to need it — each level's own `getGroup()` call is
-enough for the fallback to cascade one hop at a time through nested groups; a
-submenu or trigger feature that needs the outermost group directly is the more
-likely trigger now.
+The port's `group(?ActionGroup $group = null): static` gives its parameter a
+default of `null` where Filament's is required; harmless since `null` is the
+effective value every caller passes today, and it lets `->group()` clear the
+association without spelling out the `null` argument.
 
 ### `getLabel()` falls back to a plain string, not a translated label
 
@@ -293,6 +286,30 @@ that mixes in `InteractsWithRecord` without `BelongsToGroup`. Reversible only
 by relaxing the guard's shape (e.g. an interface `BelongsToGroup` doesn't
 currently pair with) enough that PHPStan can no longer prove it either way —
 not attempted here since it would add a type purely to dodge the checker.
+
+### `getClone()` rebuilds the flat map from the cloned members rather than cloning it separately
+
+Filament's `cloneActions()` runs `array_map(fn ($action) => $action->getClone()->group($this), …)`
+**twice** — once over `$this->actions` and once over `$this->flatActions`. Two
+independent passes over overlapping objects means the clone's flat map holds a
+*different* set of clones than its children list: `$clone->getFlatActions()['edit']`
+and the `edit` inside `$clone->getActions()` are two objects, and a record or
+table stamped on one is invisible to the other. That matters directly here,
+because the flat map is what a host resolves a mounted action by name from
+while the children list is what renders — so a cloned group would render one
+object and mount another.
+
+The port clones the children once and re-runs the existing
+[`actions()`](../../../packages/actions/src/ActionGroup.php) setter over the
+result: `actions()` already re-parents each member (`$action->group($this)`)
+and already rebuilds the flat map with the recursion into nested groups that
+`make()` performs, so the clone's map is built *from* its own children and the
+two agree by construction. A nested group deep-clones through the same
+`getClone()`, so its own map is rebuilt from its own clones one level down.
+Nothing about Filament's public shape moves — `getClone()` and the protected
+`cloneActions()` keep their names and signatures — and the two-pass version is
+not reproduced because it has no behaviour worth preserving. Covered by
+`ActionGroupTest`'s two clone cases (flat, and nested).
 
 ### Trigger defaults diverge from Filament: gray over primary, and the ellipsis icon is per-template
 

@@ -17,3 +17,16 @@ it('holds a group back-reference', function (): void {
 
     expect($action->getGroup())->toBe($group);
 });
+
+it('resolves the outermost group as the root group', function (): void {
+    $inner = ActionGroup::make([$action = Action::make('edit')]);
+    $outer = ActionGroup::make([$inner]);
+
+    expect($action->getRootGroup())->toBe($outer)
+        ->and($inner->getRootGroup())->toBe($outer)
+        ->and($outer->getRootGroup())->toBeNull();
+});
+
+it('has no root group without a group', function (): void {
+    expect(Action::make('lone')->getRootGroup())->toBeNull();
+});

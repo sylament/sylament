@@ -6,6 +6,7 @@ namespace Sylament\Actions\Tests\Unit\Concerns;
 
 use RuntimeException;
 use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
 use Sylament\Actions\Tests\Fixtures\Concerns\BothContractsHostFixture;
 use Sylament\Actions\Tests\Fixtures\Concerns\SchemasOnlyHostFixture;
 use Sylament\Schemas\Components\Section;
@@ -39,6 +40,15 @@ it('resolves the live component through the schema component', function (): void
     $section = Section::make('Box')->container(Schema::make($host));
 
     $action = Action::make('save')->schemaComponent($section);
+
+    expect($action->getLiveComponent())->toBe($host);
+});
+
+it('resolves the live component through the group it joined after the eager push', function (): void {
+    $host = new BothContractsHostFixture();
+    $group = ActionGroup::make([])->liveComponent($host);
+
+    $action = Action::make('save')->group($group);
 
     expect($action->getLiveComponent())->toBe($host);
 });

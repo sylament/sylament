@@ -121,9 +121,10 @@ grows a method at a time as the
 features that need it land — a host must be able to satisfy it, so declaring the
 pagination, filter and bulk-selection halves before those exist would force every
 consumer to stub methods nothing calls. Growth is free for implementors while
-`HasTable` supplies every member: all three hosts implementing the contract today
-— the two fixtures and the demo's `TableShowcaseCard` — mix the trait in, so an
-addition reaches them without an edit. This is a **growth order**, not a
+`HasTable` supplies every member: every host implementing the contract today —
+the four tables fixtures (`TableHost`, `TableActionsHost`, `SongsTable`,
+`RecordActionsTable`) and the demo's `TableShowcaseCard` — mixes the trait in, so
+an addition reaches them without an edit. This is a **growth order**, not a
 divergence: the end state is the same set of members, minus whatever the
 Eloquent-only rows above turn out not to need.
 

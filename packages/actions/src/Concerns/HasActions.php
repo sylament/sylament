@@ -19,6 +19,7 @@ use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
+use Sylament\Tables\Contracts\InteractsWithTable;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -80,6 +81,10 @@ trait HasActions
         $recordKey = $descriptor['context']['recordKey'] ?? null;
 
         if ($recordKey === null) {
+            return null;
+        }
+
+        if ($this instanceof InteractsWithTable && filled($descriptor['context']['table'] ?? null)) {
             return null;
         }
 
@@ -471,6 +476,8 @@ trait HasActions
 
             if (filled($descriptor['context']['schemaComponent'] ?? null)) {
                 $resolvedAction = $this->resolveSchemaComponentAction($descriptor, $resolvedActions);
+            } elseif ($this instanceof InteractsWithTable && filled($descriptor['context']['table'] ?? null)) {
+                $resolvedAction = $this->resolveTableAction($descriptor, $resolvedActions);
             } else {
                 $resolvedAction = $this->resolveAction($descriptor, $resolvedActions);
             }
@@ -608,6 +615,41 @@ trait HasActions
         }
 
         return $this->getAction($descriptor['name']);
+    }
+
+    /**
+     * @param array{name: string, arguments: array<mixed>, context: array<mixed>} $descriptor
+     * @param array<Action> $parentActions
+     */
+    protected function resolveTableAction(array $descriptor, array $parentActions): ?Action
+    {
+        if (! $this instanceof InteractsWithTable) {
+            throw new LogicException('An action context supplied a table flag but ' . static::class . ' is not a table host — implement ' . InteractsWithTable::class . '.');
+        }
+
+        if ($parentActions !== []) {
+            $parentAction = array_last($parentActions);
+
+            return $parentAction->getModalAction($descriptor['name'])
+                ?? throw new ActionNotResolvableException("Action [{$descriptor['name']}] was not found for action [{$parentAction->getName()}].");
+        }
+
+        $resolvedAction = $this->getTable()->getAction($descriptor['name'])
+            ?? throw new ActionNotResolvableException("Action [{$descriptor['name']}] not found on table.");
+
+        $recordKey = $descriptor['context']['recordKey'] ?? null;
+
+        if (filled($recordKey) && is_scalar($recordKey)) {
+            $record = $this->getTableRecord((string) $recordKey);
+
+            if ($record === null) {
+                throw new ActionNotResolvableException(sprintf('Record [%s] no longer exists.', (string) $recordKey));
+            }
+
+            $resolvedAction->getRootGroup()?->record($record) ?? $resolvedAction->record($record);
+        }
+
+        return $resolvedAction;
     }
 
     /**

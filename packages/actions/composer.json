@@ -21,6 +21,9 @@
         "symfony/ux-live-component": "^3.1",
         "symfony/ux-twig-component": "^3.1"
     },
+    "suggest": {
+        "sylament/tables": "Resolves mounted actions from a table context and binds their records."
+    },
     "autoload": {
         "psr-4": {
             "Sylament\\Actions\\": "src/"

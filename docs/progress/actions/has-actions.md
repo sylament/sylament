@@ -30,8 +30,9 @@ mounting, authorization, rate limiting, database transactions, redirects,
 URL-bound default actions, table/schema-scoped action resolution); Sylament
 now ships the stack itself — append-on-mount, parent-modal descent,
 the cancel cascade, per-frame modal ids and open state, and the stacked
-render loop — plus the schema-scoped resolution branch
-(`resolveSchemaComponentAction()`, from the schemas↔actions integration) and the
+render loop — plus both scoped resolution branches
+(`resolveSchemaComponentAction()`, from the schemas↔actions integration, and
+`resolveTableAction()`, from the tables↔actions one) and the
 per-mount `Schema` with its mount/fill/submit lifecycle, and defers
 authorization, rate limiting, transactions, redirects, and the URL-bound
 default action.
@@ -81,9 +82,10 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | The `#[PostHydrate]` stale-stack self-heal ([`afterMountedActionsHydrated()`](../../../packages/actions/src/Concerns/HasActions.php)) | `Concerns/InteractsWithActions.php` `bootedInteractsWithActions()`'s stale-stack drop | done | — | [diverges](#the-stale-stack-self-heal-is-a-posthydrate-hook-not-a-boot-hook) |
 | Per-frame schema re-cache at hydrate + the `#[PostHydrate(priority: 10)]` / `#[PostHydrate(priority: -10)]` ordering against [`HasSchemas::callAfterSchemaStateUpdated()`](../schemas/has-schemas.md) | `Concerns/InteractsWithActions.php` `resolveActions()`'s `$isMounting` schema caching (Livewire re-runs it per request; UX LiveComponent needs the explicit hook) | done | — | [diverges](#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities) |
 | [`mountedActionShouldOpenModal()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountedActionShouldOpenModal()` | done | — | [diverges](#the-modal-open-gate-is-null-safe) |
-| [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` + `resolveAction()`'s method-discovery arm | in progress | `BelongsToTable` (table-scoped branch); the descriptor-array form and `$isMounting` have no blocker, only no consumer | [detail](#getaction-ports-the-generic-method-discovery-arm-in-full) |
-| [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveActions()` | in progress | `BelongsToTable` (table-context branch) | [detail](#resolveactions-drops-the-table-branch) · [diverges](#resolution-stops-at-the-first-null-frame-and-a-deeper-frame-reaches-schema-context-only-through-the-cache) · [diverges](#no-resolved-action-is-booted) · [diverges](#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities) |
+| [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` + `resolveAction()`'s method-discovery arm | in progress | — (the descriptor-array form and `$isMounting` have no blocker, only no consumer) | [detail](#getaction-ports-the-generic-method-discovery-arm-in-full) |
+| [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveActions()` | done | — | [diverges](#resolution-stops-at-the-first-null-frame-and-a-deeper-frame-reaches-schema-context-only-through-the-cache) · [diverges](#no-resolved-action-is-booted) · [diverges](#resolveactions-takes-no-ismounting-flag) · [diverges](#the-table-branch-reaches-tables-through-a-guarded-soft-reference) · [diverges](#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities) |
 | [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` | done | — | — |
+| [`resolveTableAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveTableAction()` | in progress | table bulk actions (bulk arm) | [detail](#resolvetableaction-drops-the-bulk-arm) · [diverges](#the-table-branch-reaches-tables-through-a-guarded-soft-reference) · [diverges](#a-table-context-on-a-non-table-host-is-a-wiring-bug-not-a-miss) |
 | [`resolveSchemaComponentAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveSchemaComponentAction()` | done | — | [diverges](#schema-context-resolution-returns-null-instead-of-throwing) |
 | Action caching ([`cacheAction()`](../../../packages/actions/src/Concerns/HasActions.php), `$cachedActions`) | `Concerns/InteractsWithActions.php` `cacheAction()` / `mergeCachedActions()` / `cacheTraitActions()` | done | — | [diverges](#only-the-per-name-action-cache-is-ported) |
 | [`getActionsHostId()`](../../../packages/actions/src/Concerns/HasActions.php) + the `$actionsHostId` `#[LiveProp]` | `action-modal.blade.php`'s `$this->getId()` (Livewire component id) | done | — | [diverges](#the-host-id-is-a-round-tripped-liveprop-not-a-framework-component-id) |
@@ -259,51 +261,36 @@ return-type gate is what keeps `getAction($clientName)` from invoking
 arbitrary host methods. `resolveAction()` adds Filament's blank-name guard
 (throwing the same exception), and `mountAction()` swallows the exception
 into its unmount branch, Filament-same. Still absent: the
-array-of-descriptors form and the `$isMounting` flag — the nesting itself now
-lives on [`resolveActions()`](#resolveactions-drops-the-table-branch),
-whose loop calls this method once per frame, and the table-scoped branch waits
-on tables. **Next step:** the table branch returns
-once `BelongsToTable` and the `tables` package land.
+array-of-descriptors form and the `$isMounting` flag — the nesting itself lives
+on [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php),
+whose loop calls this method once per frame, and the table-scoped and
+schema-scoped branches sit there too, one call above this one. **Next step:**
+the descriptor-array form, once a caller wants it.
 
-### `resolveActions()` drops the table branch
+### `resolveTableAction()` drops the bulk arm
 
-Filament's `resolveActions(array $actions, bool $isMounting = true)` walks the
-stack descriptors root-to-leaf, passing the growing resolved list to each frame
-as its parent chain, and per frame: throws on a blank name, dispatches on
-`context['schemaComponent']` → `resolveSchemaComponentAction()`,
-`context['table']` (when the host `instanceof HasTable`) →
-`resolveTableAction()`, else `resolveAction()`; merges the descriptor's
-arguments; stamps `nestingIndex()`; calls `boot()`; and, while `$isMounting`,
-caches a per-frame `Schema` under the key `mountedActionSchema{$i}`.
-The port's [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php)
-carries the walk, the blank-name throw, the schema-component dispatch, the
-argument merge, the `nestingIndex()` stamp, **and** the per-frame
-`cacheSchema("mountedActionSchema{$i}", $this->getMountedActionSchema(…))`
-registration — at Filament's own loop position, and per frame rather than after
-the walk, because the next frame may *be* one of that schema's actions: a
-descriptor carrying `context['schemaComponent'] = 'mountedActionSchema0'` is
-resolved by reading exactly the entry the previous iteration wrote. A host that
-is not an `InteractsWithSchemas` skips the registration rather than throwing —
-an action that has a schema can never have been mounted on such a host,
-because [`mountAction()`](#mountaction-drops-authorization)
-throws first. The parent chain reaches
-[`resolveAction(array $descriptor, array $parentActions)`](../../../packages/actions/src/Concerns/HasActions.php),
-which is Filament-exact — a non-empty chain looks up
-`array_last($parentActions)->getModalAction($name)` and throws
-`ActionNotResolvableException` naming both actions when the parent declares no
-such modal action, and an empty chain delegates to `getAction()`. Three
-behavioral deltas are permanent and written up below
-([null-frame stop and the deeper-frame schema-context gate](#resolution-stops-at-the-first-null-frame-and-a-deeper-frame-reaches-schema-context-only-through-the-cache),
-[no `boot()`](#no-resolved-action-is-booted), and
-[the `#[PostHydrate]` ordering](#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities)
-this registration depends on).
-What is genuinely absent is one branch: `context['table']` (no `tables` package,
-no `BelongsToTable`). Filament's `$isMounting` **parameter** is also absent, and
-that one is deliberate rather than pending — it gates exactly this schema
-caching, and `resolveActions()` has a single caller here which only ever passes a
-prefix of `$mountedActions`, so there is no non-mounting path to gate. It returns
-only if a second, non-mounting caller ever appears. **Next step:** the table
-branch with `tables`.
+Filament's `resolveTableAction()` resolves a nested frame the same way every
+other branch does — `array_last($parentActions)->getModalAction($name)`, throwing
+`ActionNotResolvableException` naming both actions on a miss — and, for a root
+frame, reads the action off the table: `getBulkAction($name)` when the descriptor
+carries `context['bulk']`, else `getAction($name)`, throwing when neither knows
+the name. Then, when `context['recordKey']` is filled, it looks the record up
+through `getTableRecord($recordKey)`, throws when it no longer exists, and binds
+it with `$resolvedAction->getRootGroup()?->record($record) ?? $resolvedAction->record($record)`
+— the group when the action is grouped, so every member of a dropdown shares one
+record, the action itself otherwise.
+The port's [`resolveTableAction()`](../../../packages/actions/src/Concerns/HasActions.php)
+carries all of that except the bulk arm: tables has no
+[bulk actions](../tables/README.md) yet, so there is no `getBulkAction()` to
+call and a `context['bulk']` descriptor resolves as a plain record action. Two
+deltas are permanent and written up below
+([the guarded soft reference to tables](#the-table-branch-reaches-tables-through-a-guarded-soft-reference)
+and [the non-table host throws a LogicException](#a-table-context-on-a-non-table-host-is-a-wiring-bug-not-a-miss)).
+The client-supplied `recordKey` also gets an `is_scalar()` gate Filament has no
+need for: `context` is a client-writable `#[LiveArg]`, so the value reaching
+`getTableRecord(string $key)` could be an array or object, and the gate makes a
+crafted descriptor miss instead of erroring. **Next step:** the bulk arm with
+table bulk actions.
 
 ### The per-mount schema is not seeded with a record or an operation
 
@@ -377,8 +364,7 @@ branch of `resolveActions()` looks it up via `getTableRecord($recordKey)`
 (`resolveTableAction()`), the schema-component branch delegates to the schema,
 and the plain generic branch (`resolveAction()`) sets no record at all —
 callers of `Action::make()` outside a table/schema context set one manually.
-Sylament, having neither tables nor schemas wired into `HasActions` yet, adds
-a single generic seam instead:
+Sylament adds a single generic seam instead:
 [`resolveRecordUsing(?Closure $callback)`](../../../packages/actions/src/Concerns/HasActions.php)
 lets the host register one resolver, and
 [`getMountedActionRecord()`](../../../packages/actions/src/Concerns/HasActions.php)
@@ -390,11 +376,20 @@ one. A nested action carries no record of its own from this seam — it inherits
 its parent's record by object propagation through
 [`prepareModalAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php),
 which `callMountedAction()` must leave standing when the child frame's own context
-resolves to nothing, rather than stamping a `null` over it. This is a deliberate MVP bridge, not a mistake to
-reverse: it is what lets a plain host page (no table, no schema) mount a
-record-bound confirm action today. When table/schema action resolution lands,
-each will likely supply its own record via this same seam or a dedicated one;
-either way this stays as the generic fallback for hosts with neither.
+resolves to nothing, rather than stamping a `null` over it. This is what lets a
+plain host page (no table, no schema) mount a record-bound confirm action.
+
+The table branch, now that it exists, supplies its own record exactly as
+Filament does — [`resolveTableAction()`](#resolvetableaction-drops-the-bulk-arm)
+binds it at **resolve** time, before the action is ever called — so the seam
+stays out of that path: `getMountedActionRecord()` returns `null` for a frame a
+table host resolved, the same `null` that already means "leave the action's
+record standing" for a nested frame. That gate carries the same
+`instanceof InteractsWithTable` guard the dispatch does, so a plain host handed a
+stray `table` context still goes through `resolveRecordUsing()`, and a table host
+that registers a callback anyway keeps it for the frames the table branch does
+not claim. The seam remains the fallback for hosts with no table — the
+schema-component branch is next, and will bind its own the same way.
 
 ### Schema-context resolution returns null instead of throwing
 
@@ -616,8 +611,10 @@ attribute: `afterMountedActionsHydrated()` returns immediately on an empty
 stack and otherwise resolves it once, clearing `$mountedActions` when nothing
 resolves. Same guarantee, framework-idiomatic placement, and the resolution it
 performs warms `$cachedMountedActions` for the rest of the request rather than
-being thrown away. Filament's `! $this instanceof HasTable` guard has no port —
-there is no tables package to exempt.
+being thrown away. Filament's `! $this instanceof HasTable` guard has no port:
+the self-heal runs for a table host too, where the
+[table branch](#the-table-branch-reaches-tables-through-a-guarded-soft-reference)
+re-resolves the stack against the table on the same hook.
 
 ### `$originallyMountedActionIndex` and `getOriginallyMountedActionIndex()` are not ported
 
@@ -755,7 +752,7 @@ declaration order:
 
 | Hook | Attribute | Job |
 | --- | --- | --- |
-| [`HasActions::afterMountedActionsHydrated()`](../../../packages/actions/src/Concerns/HasActions.php) | `#[PostHydrate(priority: 10)]` | Resolves the hydrated stack, which is what puts every frame's schema back under `mountedActionSchema{$i}` (via [`resolveActions()`](#resolveactions-drops-the-table-branch)) |
+| [`HasActions::afterMountedActionsHydrated()`](../../../packages/actions/src/Concerns/HasActions.php) | `#[PostHydrate(priority: 10)]` | Resolves the hydrated stack, which is what puts every frame's schema back under `mountedActionSchema{$i}` (via [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php)) |
 | [`HasSchemas::callAfterSchemaStateUpdated()`](../schemas/has-schemas.md) | `#[PostHydrate(priority: -10)]` | Walks `getCachedSchemas()` and fires `afterStateUpdated` on every component whose state changed |
 
 Higher priority runs earlier —
@@ -925,6 +922,15 @@ But `context` is a client-supplied `#[LiveArg]`, so a hand-built descriptor
 could carry both a `schemaComponent` key and a nesting position — which is what
 the gate exists to answer.
 
+What puts that entry in the cache in time is the loop position: the port
+registers each frame's schema **inside** the walk, at Filament's own position,
+rather than after it — the next frame may *be* one of that schema's actions, and
+a descriptor carrying `context['schemaComponent'] = 'mountedActionSchema0'` is
+resolved by reading exactly the entry the previous iteration wrote. A host that
+is not an `InteractsWithSchemas` skips the registration rather than throwing: an
+action that has a schema can never have been mounted on such a host, because
+[`mountAction()`](#mountaction-drops-authorization) throws first.
+
 The cache concession does not weaken it, because the two halves of "who can mint
 a name" are not the same as "who can say a name". Only
 [`getMountedActionSchema()`](../../../packages/actions/src/Concerns/HasActions.php)
@@ -948,6 +954,55 @@ boot callbacks). Neither the concern nor any component boot lifecycle exists in
 Sylament — `CanBeBooted` is `todo` in the
 [package README](README.md#features) — so the call has no target to make. It
 returns with `CanBeBooted`, in the same loop position.
+
+### `resolveActions()` takes no `$isMounting` flag
+
+Filament's `resolveActions(array $actions, bool $isMounting = true)` gates
+exactly one thing on that parameter: the per-frame
+`cacheSchema("mountedActionSchema{$i}", …)` registration. The port drops the
+parameter, and this one is deliberate rather than pending — `resolveActions()`
+has a single caller here, `cacheMountedActions()`, which only ever passes a
+prefix of `$mountedActions`, so there is no non-mounting path to gate. It
+returns only if a second, non-mounting caller ever appears.
+
+### The table branch reaches tables through a guarded soft reference
+
+[`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php)
+imports tables' [`InteractsWithTable`](../../../packages/tables/src/Contracts/InteractsWithTable.php)
+and dispatches on `$this instanceof InteractsWithTable && filled($descriptor['context']['table'] ?? null)`,
+yet `sylament/actions` does **not** require `sylament/tables` — it only suggests
+it. The guard is Filament's own (`$this instanceof HasTable`, with
+`filament/actions` requiring `filament/tables` nowhere either); the `suggest`
+entry is ours, since Filament declares the optional link nowhere at all. Two
+things make the soft reference safe: the interface is only ever named in an
+`instanceof` and a `::class` constant, neither of which loads the class — an
+`instanceof` against a missing interface is `false`, not an error — and the host
+check comes **first** in the `elseif`, so a host without the contract falls
+through to generic resolution even when a client hands it a `table` context.
+
+It is the second instance of a pattern
+[CLAUDE.md](../../../CLAUDE.md) now names explicitly — the first is support's
+`isAssetMapperAvailable()` guard around each bundle's `prependExtension()` —
+and its cost is that composer checks nothing: rename or move the contract and
+the branch dead-ends in silence. That is what
+[`packages/tables/tests/Integration/RecordActionsResolutionTest.php`](../../../packages/tables/tests/Integration/RecordActionsResolutionTest.php)
+is for; it fails loudly the moment the guard stops matching. The same file's
+`src`-mirror position is deliberately relaxed for the same reason: the branch
+lives in actions, but only a tables host can exercise it.
+
+### A table context on a non-table host is a wiring bug, not a miss
+
+Filament's `resolveTableAction()` opens by throwing
+`ActionNotResolvableException` when the host is not a `HasTable` — the same
+swallowable exception its mount pipeline catches, so the frame silently
+unmounts. The port throws a `LogicException` naming the contract to implement
+instead, matching what
+[`resolveSchemaComponentAction()`](#schema-context-resolution-returns-null-instead-of-throwing)
+already does for a host missing `InteractsWithSchemas`. The case is unreachable
+through the dispatch — `resolveActions()` only takes the branch for a host that
+*is* an `InteractsWithTable` — so the throw guards a direct call, and the
+re-check doubles as the narrowing PHPStan needs for the `getTable()` /
+`getTableRecord()` calls that follow.
 
 ### The modals renderer resolves its host from the render stack, not from template scope
 

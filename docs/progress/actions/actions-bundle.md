@@ -257,6 +257,17 @@ states the edge the two packages already share in Filament's graph directly,
 rather than through three packages — `forms`, `infolists`, `notifications` — that
 don't provide it here yet.
 
+The tables↔actions seam is the counter-case, and it is where the rule's *own*
+boundary sits: `HasActions` names tables'
+[`InteractsWithTable`](../../../packages/tables/src/Contracts/InteractsWithTable.php)
+in `src/`, yet `actions` requires `sylament/tables` nowhere. The reference is
+never unconditional — an `instanceof` guard stands in front of every use, and the
+branch behind it is simply dead in an install without the package — so it earns a
+composer `suggest` and the guard rather than a `require`, the same shape support's
+`isAssetMapperAvailable()` has carried since the beginning. Reasoning and the
+test that keeps the soft reference honest:
+[has-actions.md](has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference).
+
 ### Livewire-specific provider responsibilities are dropped, not ported
 
 `packageBooted()` registers `Testable::mixin(new TestsActions)` — a Livewire

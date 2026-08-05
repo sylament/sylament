@@ -24,6 +24,19 @@ it('resolves the record, runs the closure with it, and unmounts', function (): v
         ->and($component->component()->mountedActions)->toBe([]);
 });
 
+/*
+ * The table branch of resolveActions() is guarded on the host wearing tables'
+ * InteractsWithTable, not on the context key alone: a plain host handed a stray
+ * `table` context still resolves generically instead of dead-ending.
+ */
+it('falls through to generic resolution for a stray table context on a non-table host', function (): void {
+    $component = $this->createLiveComponent('RecordActionHost')
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => 1]])
+        ->call('callMountedAction');
+
+    expect($component->component()->deleted)->toBe(['Ada']);
+});
+
 it('keeps the action mounted when the closure halts', function (): void {
     $component = $this->createLiveComponent('RecordActionHost')
         ->call('mountAction', ['name' => 'halt', 'arguments' => [], 'context' => []])

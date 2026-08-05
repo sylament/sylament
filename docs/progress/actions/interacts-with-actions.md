@@ -195,7 +195,7 @@ return-type reflection gate, and a thrown
 for a factory whose runtime value is not an `Action`; see
 [has-actions.md](has-actions.md#getaction-ports-the-generic-method-discovery-arm-in-full)),
 while the descriptor walk lives on its own
-[`resolveActions()`](has-actions.md#resolveactions-drops-the-table-branch).
+[`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php).
 So the nesting Filament reaches *through* `getAction()` is fully ported; what
 this contract signature still lacks is the by-path lookup shorthand and the
 `$isMounting` flag — an unknown name always returns `null` silently, the

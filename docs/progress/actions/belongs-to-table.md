@@ -58,8 +58,11 @@ the monorepo autoloads every package at once — so PHPStan validates the
 reference here but cannot prove the tables-less install works; that guarantee
 rests on the property staying nullable and unassigned, which is why no
 `getTableOrFail()`-style throw belongs on this trait. And a consumer who *does*
-install both gets no Composer signal until `sylament/actions` grows a `suggest`
-entry for `sylament/tables`, which lands with the table's action rendering.
+install both gets no Composer signal beyond the `suggest` entry for
+`sylament/tables` that `sylament/actions` now carries — added with the
+[guarded table branch](has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference)
+in `resolveActions()`, a `suggest` being the strongest declaration an optional
+integration gets.
 
 The one thing that is genuinely ours: the trait leans on `getGroup()` from
 [`BelongsToGroup`](action-group.md) without composing it, the same way

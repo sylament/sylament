@@ -19,9 +19,12 @@ makes `make()` return an autowired, non-shared instance, which is in turn what
 lets [`CanAccessProperties`](../../../packages/schemas/src/Components/Concerns/CanAccessProperties.php)'
 `#[Required]` setter reach the real
 [`PropertyAccessor`](../schemas/property-accessor.md) and a `records()` closure
-reach the container. Asset registration, the three `make:` commands and their stubs,
-translations, and the six Livewire testing mixins are unported; so, for now, is
-the `@SylamentTables` template namespace, which has no directory to map yet.
+reach the container. The `@SylamentTables` template namespace is live too, as of
+the [`Table`](table.md) and [`TextColumn`](text-column.md) partials — though it
+costs the bundle no code, since TwigBundle maps `packages/tables/templates` by
+convention the moment the directory exists. Asset registration, the three
+`make:` commands and their stubs, translations, and the six Livewire testing
+mixins are unported.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -44,25 +47,34 @@ a [Details](#details) write-up, a **diverges** link to
 | [`Columns\` glob + `Table` component services](../../../packages/tables/src/SylamentTablesBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
 | [TableExtension → `twig.extension`](../../../packages/tables/src/SylamentTablesBundle.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
 | [`TablesIconAlias::EMPTY_STATE`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias::EMPTY_STATE`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-one-constant-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
-| `@SylamentTables` view namespace | [`->hasViews()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | blocked | the table templates (M1 · 5) | [detail](#the-sylamenttables-namespace-has-no-directory-to-map-yet) |
+| [`@SylamentTables` view namespace](../../../packages/tables/templates) | [`->hasViews()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | Asset registration (`Js::make('tables')` + four column `AlpineComponent`s) | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#asset-registration) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php), [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#translations) |
 | `Testable::mixin(...)` — the six tables mixins | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 
-The three **done** rows are covered by
+The four **done** rows are covered by
 [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php),
-which asserts all three in the shape that fails without the registration rather
+which asserts each in the shape that fails without the registration rather
 than the shape that passes either way: the container's twig service exposes
 `TableExtension` (extension registration + tag); a `TextColumn` built through
 `make()` returns the **container's** `PropertyAccessor` service, not the
 `new`-built fallback the trait would otherwise construct (the `Columns\` glob);
 and a table built through `Table::make()` carries the container's `Invoker` and
 hands a `records()` closure the container's shared fixture repository
-(`Table::class`). `renderTable()` itself is covered by
+(`Table::class`); and the booted kernel's Twig loader lists a `SylamentTables`
+namespace under which `@SylamentTables/partials/Table/index.html.twig` resolves
+(the view namespace — the assertion that failed with
+_"There are no registered paths for namespace `SylamentTables`"_ until
+`packages/tables/templates/` existed). `renderTable()` itself is covered twice:
+by the Unit
 [`TableExtensionTest`](../../../packages/tables/tests/Unit/Twig/Extension/TableExtensionTest.php)
-— the function name, the render, and both `RuntimeException` guards. The unported
-responsibilities have no coverage because they have no code.
+against an `ArrayLoader` stub — the function name, the render, and both
+`RuntimeException` guards — and by its Integration
+[twin](../../../packages/tables/tests/Integration/Twig/Extension/TableExtensionTest.php),
+which renders a `<twig:SongsTable />` host through the real Twig so the shipped
+partial is in the loop. The unported responsibilities have no coverage because
+they have no code.
 
 ## Details
 
@@ -87,30 +99,9 @@ sorting (the three `HEADER_CELL_SORT_*`) and search (`SEARCH_FIELD`).
 it, so each constant lands in the same change as the component or feature that
 renders its icon — the same growth order
 [`SupportIconAlias`](../support/support-icon-alias.md#badge--breadcrumbs--pagination-aliases)
-follows. `EMPTY_STATE` itself is declared ahead of its only reader, the table
-template, which arrives with the templates row below.
-
-### The `@SylamentTables` namespace has no directory to map yet
-
-The other bundles inherit their template namespace by convention:
-`AbstractBundle::getPath()` returns the package directory and TwigBundle
-auto-maps `<package>/templates` → `@Sylament<Pkg>`, with nothing in the bundle
-file to show for it (the divergence is written up once, in
-[schemas-bundle.md](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call)).
-`packages/tables/templates` does not exist yet, so **the namespace is not
-registered at all** — booting the tables fixture kernel and reading the Twig
-loader's namespaces lists `SylamentActions`, `SylamentSchemas` and
-`SylamentSupport`, and no `SylamentTables`.
-
-Nothing is broken by that today, because nothing renders a table yet — the
-component side of the same fact is
-[`table.md`](table.md#the-template-path-is-declared-ahead-of-the-file)'s
-declared-ahead-of-the-file divergence, and the only tests that render through
-those paths supply the template themselves via a Twig `ArrayLoader`.
-**Next step:** the namespace appears for free the moment
-`packages/tables/templates/partials/Table/index.html.twig` and its `TextColumn`
-sibling land — the last task of this epic. The row flips to **done** with them,
-and this subsection goes.
+follows. `EMPTY_STATE` is now read by
+[the table partial](../../../packages/tables/templates/partials/Table/index.html.twig),
+so the one constant that ships is overridable end to end.
 
 ### Asset registration
 

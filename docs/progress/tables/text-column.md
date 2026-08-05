@@ -40,7 +40,7 @@ do.
 | [`formatStateUsing()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState::formatStateUsing()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#formatstateusing-accepts-a-literal-where-filament-accepts-only-a-closure) |
 | [`formatState(mixed $state)` — the `state` injection](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState::formatState()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | in progress | — | [detail](#formatstate-is-the-hook-without-the-pipeline-around-it) |
 | [`getFormattedState()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | — (Sylament-only) | done | — | [diverges](#getformattedstate-replaces-the-embedded-views-local-preamble) |
-| [`$template`](../../../packages/tables/src/Columns/TextColumn.php) | [`TextColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | in progress | the `TextColumn` template | [detail](#the-template-path-is-declared-ahead-of-the-file) · [diverges](#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) |
+| [`$template`](../../../packages/tables/src/Columns/TextColumn.php) + [the partial it names](../../../packages/tables/templates/partials/TextColumn/index.html.twig) | [`TextColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [diverges](#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) |
 | `hasStateFormatting()` — the raw-state fast path | [`CanFormatState::hasStateFormatting()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | skipped | — | [diverges](#hasstateformatting-has-nothing-to-guard) |
 | `limit()` / `words()` — character and word truncation | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
 | `prefix()` / `suffix()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
@@ -52,14 +52,18 @@ do.
 | `description()` — the secondary line above or below | [`Columns\Concerns\HasDescription`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php) | todo | — | — |
 | `size()` / `weight()` / `fontFamily()` / `lineClamp()` | [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php), [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php), [`HasLineClamp`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | todo | — | — |
 | `wrap()` / `copyable()` | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php), [`CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | todo | — | — |
-| Lists — `bulleted()`, `listWithLineBreaks()`, `limitList()`, `expandableLimitedList()` | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | todo | [`separator()`](column.md) | — |
+| Lists — `bulleted()`, `listWithLineBreaks()`, `limitList()`, `expandableLimitedList()` | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | todo | [`separator()`](column.md) | [diverges](#an-iterable-state-renders-as-one-comma-joined-line-and-nothing-else) |
 | _rest not audited yet_ | | | | |
 
 The three state-pipeline rows are covered by
 [`TextColumnTest`](../../../packages/tables/tests/Unit/Columns/TextColumnTest.php)
 — unformatted state passing through, a format closure receiving both `$state` and
-`$record`, and a literal `formatStateUsing('fixed')` displacing the state — and
-the `$template` row by nothing yet, since the file it names is not written.
+`$record`, and a literal `formatStateUsing('fixed')` displacing the state. The
+`$template` row is covered by the Integration
+[`TextColumnTest`](../../../packages/tables/tests/Integration/Columns/TextColumnTest.php),
+which renders columns inside a real table: a dotted path and a `formatStateUsing()`
+closure landing in `div.sy-ta-text`, an iterable state arriving comma-joined, and a
+null state rendering the element empty rather than dropping it.
 
 ## Details
 
@@ -83,14 +87,6 @@ way when they land: `html()`/`markdown()` need a sanitizer decision
 `HtmlString` wrap is [`Twig\Markup`](../renames.md#idiom) here, which the
 templates already pass through unescaped. Until then a format callback returning
 `Markup` is the escape hatch, and it works today.
-
-### The template path is declared ahead of the file
-
-`$template` names `@SylamentTables/partials/TextColumn/index.html.twig` before
-that file exists — the same shape [`Table`](table.md#the-template-path-is-declared-ahead-of-the-file)
-carries, and it lands in the same step of M1 · 5. `getTemplate()` returns the
-path today, so `render()` throws a Twig loader error rather than returning
-`null`; nothing calls it yet. The row flips when the template ships.
 
 ## Divergences
 
@@ -160,3 +156,26 @@ formatting setters either: the branch it optimises is a Twig template reading on
 getter, not a PHP method with a dozen inline steps. If the pipeline ever grows
 expensive enough to matter, the memo belongs on `getFormattedState()` — one
 place, no property list to keep in sync.
+
+### An iterable state renders as one comma-joined line, and nothing else
+
+Filament's cell has four list shapes: a multi-value state collapses to a single
+comma-joined item by default (`TextColumn.php:366-380`), `listWithLineBreaks()`
+keeps the items as separate lines, `bulleted()` renders them as a `<ul>`, and
+`limitList()` / `expandableLimitedList()` truncate the set with an expand
+trigger. Sylament's partial ships the default arm only —
+`state is iterable ? state|join(', ') : state` — and the other three have no
+setter to reach them.
+
+The collapse is the faithful half, and it is worth naming that it is Filament's
+*default*, not a simplification: a `TextColumn` over `['symfony', 'forms']`
+renders `symfony, forms` in both codebases. What the Twig one-liner cannot do is
+branch on the three flags, and it does not pretend to — a `join` is the whole
+behaviour, not a placeholder shaped like one.
+
+Provisional. The three list setters are a **todo** row above, blocked on
+[`separator()`](column.md), and when they land the join moves out of the template
+into the formatting pipeline where the branch belongs — a template cannot express
+per-item formatting, which `listWithLineBreaks()` and `bulleted()` both need
+(Filament re-enters `$formatState` per item). Until then, a consumer wanting a
+different join writes `formatStateUsing()`, which receives the raw iterable.

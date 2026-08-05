@@ -47,15 +47,15 @@ sections do.
 | [`liveComponent()` / `getLiveComponent()`](../../../packages/tables/src/Table/Concerns/BelongsToLiveComponent.php) | [`BelongsToLivewire`](../../../vendor/filament/tables/src/Table/Concerns/BelongsToLivewire.php) | done | — | [semantics](#the-host-binding-is-required-where-the-schemas-one-is-optional) |
 | [`records()` / `getDataSource()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::records()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [has-table.md](has-table.md#the-records-closure-receives-no-named-injections-yet) |
 | [`getRecords()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getRecords()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#getrecords-delegates-to-the-host-and-fetches-nothing) |
-| [`emptyStateHeading()` / `getEmptyStateHeading()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | in progress | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
+| [`emptyStateHeading()` / `getEmptyStateHeading()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | done | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
 | [`emptyStateDescription()` / `getEmptyStateDescription()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | in progress | — | [detail](#the-create-action-default-description-waits-on-table-actions) |
-| [`emptyStateIcon()` / `getEmptyStateIcon()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | in progress | — | [diverges](#the-empty-state-icon-getter-returns-null-and-the-fallback-lives-in-the-template) |
+| [`emptyStateIcon()` / `getEmptyStateIcon()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | done | — | [diverges](#the-empty-state-icon-getter-returns-null-and-the-fallback-lives-in-the-template) |
 | [`$evaluationIdentifier = 'table'` + the `$liveComponent` name injection](../../../packages/tables/src/Table.php) | [`Table::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Table.php) | done | — | — |
-| [`$template`](../../../packages/tables/src/Table.php) | [`$view = 'filament-tables::index'`](../../../vendor/filament/tables/src/Table.php) | in progress | the `Table` template | [detail](#the-template-path-is-declared-ahead-of-the-file) |
+| [`$template`](../../../packages/tables/src/Table.php) + [the partial it names](../../../packages/tables/templates/partials/Table/index.html.twig) | [`$view = 'filament-tables::index'`](../../../vendor/filament/tables/src/Table.php), [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) |
 | `emptyState()` (a whole replacement view) | [`HasEmptyState::emptyState()`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | todo | — | — |
 | `emptyStateActions()` / `pushEmptyStateActions()` | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | blocked | table actions (M1 · 6) | — |
 | Record labels — `modelLabel()`, `pluralModelLabel()`, `recordTitle()`, `recordTitleAttribute()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | todo | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
-| Record identity — `getRecordKey()`, `hasPivotRecordKeys()`, `allowDuplicates()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | blocked | row identity (M1 · 6) | — |
+| Record identity — `getRecordKey()`, `hasPivotRecordKeys()`, `allowDuplicates()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | blocked | row identity (M1 · 6) | [diverges](#rows-and-cells-carry-no-morph-stable-key) |
 | [`columns()` / `getColumns()` / `getColumn()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) |
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
 | The column manager — user-toggleable column visibility | [`HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — | — |
@@ -69,9 +69,12 @@ sections do.
 | Presentation — `striped()`, `stackedOnMobile()`, `content()`, `header()`, the headings, `recordClasses()` | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) and five siblings | todo | — | — |
 | `HasArguments`, `HasExtraAttributes`, `HasDefaultDataFormattingSettings` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
-The four **done** rows are the host binding, the data-source declaration, the
-host-delegating `getRecords()`, and the closure-injection wiring; the column set
-is partly in, one step behind them. They are covered by
+The eight **done** rows are `make()`, the host binding, the data-source
+declaration, the host-delegating `getRecords()`, the empty-state heading and
+icon, the closure-injection wiring, and the partial that renders all of it; the
+column set and the empty-state description are partly in, one step behind them.
+
+The PHP surface is covered by
 [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php) — `make()`
 binding the host, `records()` storing and returning the closure identity, the
 empty-state defaults, `columns()` keying by name and binding the table on each
@@ -82,6 +85,17 @@ member while a second call resets the set, and both injection paths at once
 `is_a($this, $parameterType)` arm) — and, for `getRecords()`, by the host-side
 [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)
 it delegates into.
+
+The partial is covered by the Integration
+[`TableTest`](../../../packages/tables/tests/Integration/TableTest.php), which
+renders a real table through the booted kernel's Twig: the header labels and
+cell values for object records, one `sy-ta-row` per record (the per-cell
+`{% do column.record(record) %}` rebinding), the default empty state displacing
+the `<table>` entirely with its `heroicons:x-mark` fallback rendered as an
+`<svg>` and no description paragraph, a fully configured empty state, a `Markup`
+icon reaching the raw-passthrough arm of
+[`generateIconHtml()`](../../../packages/support/src/Twig/Extension/IconExtension.php),
+and a `<script>` in a record value coming back escaped.
 
 ## Details
 
@@ -100,14 +114,6 @@ missing here: table actions arrive with **M1 · 6**, and the model label with th
 `getEmptyStateDescription()` returns `null` until a user sets one. The default
 returns in the same change as `Table\Concerns\HasActions`, where
 `hasAction('create')` finally has an answer.
-
-### The template path is declared ahead of the file
-
-`$template` names `@SylamentTables/partials/Table/index.html.twig` before that
-file exists — the table template lands later in this same epic (M1 · 5), with
-the columns and the empty-state markup it renders. `getTemplate()` returns the
-path today, so `render()` throws a Twig loader error rather than returning
-`null`; nothing calls it yet. The row flips when the template ships.
 
 ### `columns()` takes columns only, and does not push
 
@@ -216,6 +222,53 @@ anything. A caller asking *"did the user set an icon?"* gets a straight answer
 here; a caller wanting the rendered icon reads the template's resolution. This is
 permanent, and it is the general policy for icon getters in this port rather than
 a table-specific choice.
+
+### The partial emits no header scaffolding and no content wrapper
+
+Filament's `index.blade.php` nests the table five deep — `fi-ta` > `fi-ta-ctn` >
+`fi-ta-main` > `fi-ta-content-ctn` > `table.fi-ta-table` — and the two header
+containers inside `fi-ta-main` (`fi-ta-header-ctn`, `fi-ta-header-toolbar`) are
+emitted **unconditionally**, hidden with `x-cloak` + `x-show` when the table has
+no heading, description or toolbar action. Sylament's partial is three deep —
+`sy sy-ta` > `sy-ta-ctn` > `table.sy-ta-table` or `div.sy-ta-empty-state` — with
+no `sy-ta-main`, no `sy-ta-content-ctn`, neither header container, and no
+`aria-label` on the `<table>`.
+
+The wrappers are not markup for their own sake in Filament: they exist so Livewire's
+DOM morph finds the same nodes before and after a toolbar's visibility flips,
+which is why they render empty rather than being wrapped in an `@if`. Nothing
+here can flip yet — the heading, description, toolbar actions, filters and
+pagination they host all sit in **todo** or **blocked** rows above, and the
+`<table>`'s `aria-label` needs the [record labels](#the-empty-state-heading-hardcodes-no-records)
+that the same rows wait on. A wrapper emitted now would be a permanently empty
+node with a class no stylesheet targets.
+
+Provisional, and the reversal is mechanical: each container comes back in the
+change that lands the first feature it holds, at which point its emptiness is
+transient rather than permanent. The **class names** are already reserved by the
+Filament originals, so nothing about the eventual DOM depends on inventing them
+later.
+
+### Rows and cells carry no morph-stable key
+
+Filament stamps `wire:key="{{ $this->getId() }}.table.records.{{ $recordKey }}"`
+on every `<tr>` and `wire:key="....table.record.{{ $recordKey }}.column.{{ $column->getName() }}"`
+on every `<td>`, so Livewire's morph pairs a row with the same record across a
+re-render instead of matching by position. Sylament's rows and cells carry no key
+at all.
+
+There is nothing to key by yet: `$recordKey` comes from `getRecordKey()`, the
+**blocked** record-identity row above, and
+[`HasTable::getTableRecords()`](has-table.md) deliberately returns a plain
+re-indexed `list` where Filament re-keys the collection by record key. Emitting a
+positional index as the key would be worse than emitting nothing — it morphs
+row 2 onto row 2 after a delete, silently carrying the wrong record's DOM state
+across.
+
+Provisional, and it reverses in one step: row identity lands in **M1 · 6**, and
+the keys go on in the same change, because that is the change that first makes
+them mean something. Until then every table render replaces its rows wholesale,
+which is correct — just not incremental.
 
 _See also: the global [rename table](../renames.md) — `BelongsToLivewire` →
 `BelongsToLiveComponent`, `livewire()` → `liveComponent()` and `getLivewire()` →

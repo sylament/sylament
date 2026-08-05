@@ -11,6 +11,7 @@ use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Records\SongRepository;
 use Sylament\Tables\Twig\Extension\TableExtension;
+use Twig\Loader\FilesystemLoader;
 
 it('renders a support component tag against the fixture icon set', function (): void {
     $html = $this::getContainer()->get('twig')
@@ -20,6 +21,14 @@ it('renders a support component tag against the fixture icon set', function (): 
     expect($html)
         ->toContain('<svg')
         ->toContain('M6 18 18 6M6 6l12 12');
+});
+
+it('maps the @SylamentTables template namespace onto the bundle templates directory', function (): void {
+    $loader = $this::getContainer()->get('twig')->getLoader();
+
+    expect($loader)->toBeInstanceOf(FilesystemLoader::class)
+        ->and($loader->getNamespaces())->toContain('SylamentTables')
+        ->and($loader->exists('@SylamentTables/partials/Table/index.html.twig'))->toBeTrue();
 });
 
 it('registers the table twig extension', function (): void {

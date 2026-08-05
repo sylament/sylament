@@ -24,9 +24,10 @@ false as **todo**. These tables carry the same four columns as every package
 README, so a **blocked** row names its prerequisite at the head of _Detail_,
 ahead of the detail-file link that carries the full write-up: _table upgrades
 ([pulled forward · 11](../roadmap.md#pulled-forward))_, _table actions (M1 · 6)_,
-_row identity (M1 · 6)_ and the _Doctrine `query()` lane
-([pulled forward · 12](../roadmap.md#pulled-forward))_ are the four this package
-waits on today. (The [`forms`](../forms/README.md) README records the opposite
+the _Doctrine `query()` lane
+([pulled forward · 12](../roadmap.md#pulled-forward))_ and _the `Table` template_
+are the four this package waits on today. (The
+[`forms`](../forms/README.md) README records the opposite
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 

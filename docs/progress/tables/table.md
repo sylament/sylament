@@ -68,7 +68,7 @@ sections do.
 | Pagination and polling — `paginated()`, `deferLoading()`, `poll()` | [`CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
 | Sorting and searching — `defaultSort()`, `searchable()`, the session persistence | [`CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php), [`CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
 | Filters — `filters()`, the indicators, the query-string identifier | [`HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php), [`HasQueryStringIdentifier`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — | — |
-| Actions — record, header, toolbar and bulk actions, `recordUrl()` | [`Table\Concerns\HasActions`](../../../vendor/filament/tables/src/Table/Concerns/HasActions.php) and its five siblings | blocked | table actions (M1 · 6) | — |
+| Actions — record, header, toolbar and bulk actions, `recordUrl()` | [`Table\Concerns\HasActions`](../../../vendor/filament/tables/src/Table/Concerns/HasActions.php) and its six siblings | blocked | table actions (M1 · 6) | — |
 | Grouping and summaries — `groups()`, `defaultGroup()`, the summarizers | [`CanGroupRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php), [`CanSummarizeRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | todo | — | — |
 | Reordering — `reorderable()` | [`CanReorderRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanReorderRecords.php) | todo | — | — |
 | Presentation — `striped()`, `stackedOnMobile()`, `content()`, `header()`, the headings, `recordClasses()` | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) and five siblings | todo | — | — |
@@ -84,10 +84,13 @@ The PHP surface is covered by
 binding the host, `records()` storing and returning the closure identity, the
 empty-state defaults, `columns()` keying by name and binding the table on each
 member while a second call resets the set, and both injection paths at once
-(`fn ($liveComponent)` resolved by name through
+(`fn ($liveComponent)` resolved by the class's own
 [`resolveDefaultClosureDependencyForEvaluationByName()`](../../../packages/tables/src/Table.php),
-`fn (Table $table)` resolved by type through `EvaluatesClosures`' own
-`is_a($this, $parameterType)` arm) — and, for `getRecords()`, by the host-side
+`fn (Table $table)` by the `EvaluatesClosures` fallback beneath it — by *name*,
+not by type: the parameter matches `$evaluationIdentifier`, the disjunct that
+short-circuits ahead of the `is_a($this, $parameterType)` arm beside it, which a
+differently named parameter would be needed to reach) — and, for `getRecords()`,
+by the host-side
 [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)
 it delegates into.
 

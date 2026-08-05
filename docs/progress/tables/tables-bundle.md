@@ -53,17 +53,18 @@ a [Details](#details) write-up, a **diverges** link to
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#translations) |
 | `Testable::mixin(...)` — the six tables mixins | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 
-The four **done** rows are covered by
+The three **done** rows are covered by
 [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php),
 which asserts each in the shape that fails without the registration rather
 than the shape that passes either way: the container's twig service exposes
 `TableExtension` (extension registration + tag); a `TextColumn` built through
 `make()` returns the **container's** `PropertyAccessor` service, not the
-`new`-built fallback the trait would otherwise construct (the `Columns\` glob);
-and a table built through `Table::make()` carries the container's `Invoker` and
-hands a `records()` closure the container's shared fixture repository
-(`Table::class`); and the booted kernel's Twig loader lists a `SylamentTables`
-namespace under which `@SylamentTables/partials/Table/index.html.twig` resolves
+`new`-built fallback the trait would otherwise construct, and a table built
+through `Table::make()` carries the container's `Invoker` and hands a
+`records()` closure the container's shared fixture repository (two assertions
+for one row — the `Columns\` glob and `->set(Table::class)`); and the booted
+kernel's Twig loader lists a `SylamentTables` namespace under which
+`@SylamentTables/partials/Table/index.html.twig` resolves
 (the view namespace — the assertion that failed with
 _"There are no registered paths for namespace `SylamentTables`"_ until
 `packages/tables/templates/` existed). `renderTable()` itself is covered twice:
@@ -242,10 +243,11 @@ state instead. A deliberate non-goal — **skipped** — for the same reason act
 [`TestsActions`](../actions/actions-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported)
 and schemas' `TestsSchemas` are. What is skipped is the **mixin registration**,
 not the idea of test helpers: Filament's
-[`src/Testing`](../../../vendor/filament/tables/src/Testing) subtree is not
-listed in the [package README](README.md) yet — its supporting-surface table
-still carries the unaudited row — and the helpers may still be worth porting in
-a Pest shape when it is audited.
+[`src/Testing`](../../../vendor/filament/tables/src/Testing) subtree carries six
+**todo** rows in the package README's
+[supporting surface](README.md#supporting-surface) — one per `Tests*.php` file,
+`TestsActions` through `TestsSummaries` — because the helpers may still be worth
+porting in a Pest shape.
 
 _See also: the global [rename table](../renames.md) — the
 `TablesServiceProvider` → `SylamentTablesBundle` swap and the Spatie

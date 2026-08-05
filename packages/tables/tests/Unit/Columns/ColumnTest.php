@@ -67,3 +67,21 @@ it('binds its table and reaches the live component through it', function (): voi
     expect($column->getTable())->toBe($table)
         ->and($column->getLiveComponent())->toBe($host);
 });
+
+it('injects the cell state, the live component and the bound table by name', function (): void {
+    $host = new TableHost();
+    $boundTable = Table::make($host);
+    $record = new Song('Airbag', 'OK Computer');
+
+    $makeColumn = fn (): TextColumn => TextColumn::make('title')->table($boundTable)->record($record);
+
+    expect($makeColumn()->label(fn (string $state): string => $state)->getLabel())->toBe('Airbag')
+        ->and($makeColumn()->state(fn ($liveComponent) => $liveComponent)->getState())->toBe($host)
+        ->and($makeColumn()->state(fn (Table $table): Table => $table)->getState())->toBe($boundTable);
+});
+
+it('injects itself into a differently named parameter type-hinted as the column', function (): void {
+    $column = TextColumn::make('title')->table(Table::make(new TableHost()));
+
+    expect($column->state(fn (Column $boundColumn): Column => $boundColumn)->getState())->toBe($column);
+});

@@ -306,6 +306,12 @@ need and is tested; a typed one arrives, if at all, with the schemas-side
 `instanceof` treatment already reasoned out in
 [belongs-to-record.md](../schemas/belongs-to-record.md).
 
-Note that `fn (Column $column) => …` and `fn (Table $table) => …` still resolve —
-the first through `EvaluatesClosures`' own `is_a($this, $parameterType)` arm, the
-second is not by type at all but the `$table` name injection.
+Note that `fn (Column $column) => …` and `fn (Table $table) => …` still resolve,
+but neither of them by type: the first matches `$evaluationIdentifier`, the
+disjunct `EvaluatesClosures` short-circuits on ahead of its
+`is_a($this, $parameterType)` arm, and the second is the `$table` name injection
+above. Reaching the `is_a()` arm takes a *differently* named parameter —
+`fn (Column $boundColumn) => …`, covered in
+[`ColumnTest`](../../../packages/tables/tests/Unit/Columns/ColumnTest.php)
+alongside the three name arms. A `Table`-hinted parameter under any other name
+resolves nowhere and throws, since a column is not a table.

@@ -4,10 +4,13 @@ Ports [`filament/tables`](../../../vendor/filament/tables) into
 [`packages/tables`](../../../packages/tables). The table builder: query, columns,
 filters, actions, grouping, summaries.
 
-**Status:** todo — see the [status vocabulary](../README.md#statuses) and
+**Status:** in progress — see the [status vocabulary](../README.md#statuses) and
 [what goes where](../README.md#one-row-per-file-one-file-per-thing).
 
-The tables below are structure only; nothing has been audited yet.
+The tables below list what the minimal tables vertical (M1 · 5) has landed so
+far; the audit against [`vendor/filament/tables`](../../../vendor/filament/tables)
+is still pending, which is what each section's remaining
+[unaudited marker](../README.md#an-unaudited-table-says-so) says.
 [`support/component.md`](../support/component.md) is the shape each detail file
 follows.
 
@@ -22,7 +25,8 @@ follows.
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| _not audited yet_ | | | |
+| [`Table`](../../../packages/tables/src/Table.php) | [`src/Table.php`](../../../vendor/filament/tables/src/Table.php) | in progress | [table.md](table.md) |
+| _rest not audited yet_ | | | |
 
 ## Features
 
@@ -32,7 +36,8 @@ Cross-cutting concerns and traits —
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| _not audited yet_ | | | |
+| [`HasTable`](../../../packages/tables/src/Concerns/HasTable.php) / [`InteractsWithTable`](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`src/Concerns/InteractsWithTable.php`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php), [`src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | [has-table.md](has-table.md) |
+| _rest not audited yet_ | | | |
 
 ## Supporting surface
 

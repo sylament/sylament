@@ -26,6 +26,8 @@ derive from the conventions below.
 | `Filament\Schemas\Concerns\BelongsToModel` | `BelongsToRecord` | trait | `Sylament\Schemas\Concerns\BelongsToRecord` | [Record vocabulary](#the-model-vocabulary-collapses-onto-record). |
 | `Filament\Schemas\Concerns\InteractsWithSchemas` | `HasSchemas` | trait | `Sylament\Schemas\Concerns\HasSchemas` | [Swapped](#interface-and-trait-names-are-swapped) — `Has*` matches the house trait prefix (`HasComponents`, `HasKey`, `HasGap`, …). |
 | `Filament\Schemas\Contracts\HasSchemas` | `InteractsWithSchemas` | interface | `Sylament\Schemas\Contracts\InteractsWithSchemas` | [Swapped](#interface-and-trait-names-are-swapped) — the interface names the behavior. |
+| `Filament\Tables\Concerns\InteractsWithTable` | `HasTable` | trait | `Sylament\Tables\Concerns\HasTable` | [Swapped](#interface-and-trait-names-are-swapped) — `Has*` matches the house trait prefix (`HasRecords`, `HasEmptyState`, …). |
+| `Filament\Tables\Contracts\HasTable` | `InteractsWithTable` | interface | `Sylament\Tables\Contracts\InteractsWithTable` | [Swapped](#interface-and-trait-names-are-swapped) — the interface names the behavior the host implements. |
 | `getModel()` (`BelongsToModel`, both tiers) | `getRecordClass()` | method | both tiers of `…\BelongsToRecord` | [Record vocabulary](#the-model-vocabulary-collapses-onto-record). |
 | `getModelInstance()` (`BelongsToModel`, both tiers) | `getRecordInstance()` | method | both tiers of `…\BelongsToRecord` | [Record vocabulary](#the-model-vocabulary-collapses-onto-record). |
 | `labelTag` (`Field::wrapEmbeddedHtml()` parameter) | `labelAsHeading` | template prop | the `FieldWrapper` template (`Sylament\Forms`) | Narrowed to a boolean: Filament's tag-name string is only ever `'label'` or `'div'`, and its own template branches on `$labelTag === 'label'` to pick `for="…"` against `id="…-label"` — the prop carries that bit instead of a tag name interpolated into markup ([field.md](forms/field.md#labeltag-is-a-boolean-labelasheading)). |
@@ -40,13 +42,13 @@ derive from the conventions below.
 
 ### Interface and trait names are swapped
 
-⚠️ **Grep trap.** For both schemas and actions, `Has*` and `InteractsWith*`
-exist on **both** sides with **opposite** meanings:
+⚠️ **Grep trap.** For schemas, actions and tables alike, `Has*` and
+`InteractsWith*` exist on **both** sides with **opposite** meanings:
 
 | | Filament | Sylament |
 | --- | --- | --- |
-| **interface** | `HasSchemas` / `HasActions` | `InteractsWithSchemas` / `InteractsWithActions` |
-| **trait** | `InteractsWithSchemas` / `InteractsWithActions` | `HasSchemas` / `HasActions` |
+| **interface** | `HasSchemas` / `HasActions` / `HasTable` | `InteractsWithSchemas` / `InteractsWithActions` / `InteractsWithTable` |
+| **trait** | `InteractsWithSchemas` / `InteractsWithActions` / `InteractsWithTable` | `HasSchemas` / `HasActions` / `HasTable` |
 
 Here `Has*` is reserved for traits, matching every other trait in the codebase,
 and the interface names the behavior the host implements. Porting code that

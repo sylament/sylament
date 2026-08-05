@@ -1,0 +1,42 @@
+<?php
+
+declare(strict_types=1);
+
+use Sylament\Tables\Contracts\InteractsWithTable;
+use Sylament\Tables\Table;
+use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
+
+it('binds the live component on make', function (): void {
+    $host = new TableHost();
+
+    $table = Table::make($host);
+
+    expect($table->getLiveComponent())->toBe($host);
+});
+
+it('stores and returns the records data source', function (): void {
+    $dataSource = fn (): array => [];
+
+    $table = Table::make(new TableHost())->records($dataSource);
+
+    expect($table->getDataSource())->toBe($dataSource);
+});
+
+it('defaults the empty state heading and leaves description and icon unset', function (): void {
+    $table = Table::make(new TableHost());
+
+    expect($table->getEmptyStateHeading())->toBe('No records')
+        ->and($table->getEmptyStateDescription())->toBeNull()
+        ->and($table->getEmptyStateIcon())->toBeNull();
+});
+
+it('evaluates empty state values with table and live component injections', function (): void {
+    $host = new TableHost();
+
+    $table = Table::make($host)
+        ->emptyStateHeading(fn ($liveComponent): string => $liveComponent instanceof InteractsWithTable ? 'from host' : 'wrong')
+        ->emptyStateDescription(fn (Table $table): string => $table->getEmptyStateHeading());
+
+    expect($table->getEmptyStateHeading())->toBe('from host')
+        ->and($table->getEmptyStateDescription())->toBe('from host');
+});

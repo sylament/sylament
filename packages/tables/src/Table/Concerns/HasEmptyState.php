@@ -14,7 +14,7 @@ trait HasEmptyState
 
     protected string|Markup|Closure|null $emptyStateDescription = null;
 
-    protected string|BackedEnum|Closure|null $emptyStateIcon = null;
+    protected string|BackedEnum|Markup|Closure|null $emptyStateIcon = null;
 
     public function emptyStateHeading(string|Markup|Closure|null $heading): static
     {
@@ -30,7 +30,7 @@ trait HasEmptyState
         return $this;
     }
 
-    public function emptyStateIcon(string|BackedEnum|Closure|null $icon): static
+    public function emptyStateIcon(string|BackedEnum|Markup|Closure|null $icon): static
     {
         $this->emptyStateIcon = $icon;
 
@@ -47,7 +47,7 @@ trait HasEmptyState
         return $this->evaluate($this->emptyStateDescription);
     }
 
-    public function getEmptyStateIcon(): string|BackedEnum|null
+    public function getEmptyStateIcon(): string|BackedEnum|Markup|null
     {
         return $this->evaluate($this->emptyStateIcon);
     }

@@ -157,14 +157,28 @@ names yet. Pagination and sorting are
 [pulled forward · 11](../roadmap.md#pulled-forward), which that epic's text names
 explicitly — the closure lane gains `page`, `recordsPerPage`, `sort`,
 `sortColumn` and `sortDirection` there — and the search and filter names follow
-their own features. A closure written today still receives everything
-`EvaluatesClosures` resolves generically: `$table` by name or by `Table` type
-hint, `$liveComponent` by name through
-[`Table`'s resolver override](table.md), and any container service by type. So
-the injection *mechanism* is live and proven by
+their own features. A closure written today still receives everything the
+evaluation path resolves without those names: `$table` — by the parameter name,
+which is `Table`'s `$evaluationIdentifier`, or by a `Table` type hint —
+`$liveComponent` by name through
+[`Table`'s resolver override](table.md), and any explicit named or typed
+injection a future caller passes to `evaluate()`. So the injection *mechanism* is
+live and proven by
 [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)'s
 `$table` case; only the table-state names are missing. Provisional by
 construction — each name arrives with the state it reads.
+
+One resolution arm is **not** live yet, and it is not this divergence's doing:
+type-hinting a **container service** in a `records()` closure does not work at
+this commit. `SylamentTablesBundle` registers no services — it has no
+`loadExtension()` — so `Table::newInstance()` misses the resolver's locator and
+falls to its `new $class()` arm, the `#[Required] setInvoker()` setter never
+fires, and `EvaluatesClosures::getInvoker()` builds its fallback `Invoker` around
+an **empty** container. That is the documented cost of a `new`-built component
+([component.md](../support/component.md#closure-resolution-lives-in-a-service)),
+not a tables decision. Service-by-type resolution starts working the moment the
+bundle registers `Table` as an autowired service, which is the bundle-wiring step
+of this same epic — nothing about the closure lane changes when it does.
 
 ### The missing-data-source error names only `records()`
 

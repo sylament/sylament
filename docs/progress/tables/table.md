@@ -178,7 +178,17 @@ fully ported.
 Filament types `getEmptyStateIcon(): string | BackedEnum` — never null — because
 the getter itself chains two fallbacks: `FilamentIcon::resolve(TablesIconAlias::EMPTY_STATE)`
 for the registered alias override, then `Heroicon::OutlinedXMark`. Sylament types
-it `string|BackedEnum|null` and returns only what the user set.
+it `string|BackedEnum|Markup|null` and returns only what the user set.
+
+Only the **nullability** differs. The settable union is Filament's
+`string | BackedEnum | Htmlable | Closure | null` under the standard
+`Htmlable` → [`Twig\Markup`](../renames.md#idiom) translation, matching support's
+own [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php)
+— so a raw `<svg>` handed to `emptyStateIcon()` survives the getter untouched
+rather than being escaped or rejected. Filament's own getter return type
+(`string | BackedEnum`) is narrower than its property union and could not
+actually carry the `Htmlable` arm it accepts; the getter here admits `Markup`
+so the two agree.
 
 The chain is not dropped, it moves: the alias hook and the `heroicons:x-mark`
 default sit next to each other in the table template, which is where the rest of

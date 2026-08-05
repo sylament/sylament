@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
+use Twig\Markup;
 
 it('binds the live component on make', function (): void {
     $host = new TableHost();
@@ -28,6 +29,14 @@ it('defaults the empty state heading and leaves description and icon unset', fun
     expect($table->getEmptyStateHeading())->toBe('No records')
         ->and($table->getEmptyStateDescription())->toBeNull()
         ->and($table->getEmptyStateIcon())->toBeNull();
+});
+
+it('passes a markup empty state icon through untouched', function (): void {
+    $icon = new Markup('<svg data-icon="empty"></svg>', 'UTF-8');
+
+    $table = Table::make(new TableHost())->emptyStateIcon($icon);
+
+    expect($table->getEmptyStateIcon())->toBe($icon);
 });
 
 it('evaluates empty state values with table and live component injections', function (): void {

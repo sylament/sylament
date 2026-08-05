@@ -14,4 +14,9 @@ interface InteractsWithTable
      * @return array<array-key, object|array<string, mixed>> keyed by record key
      */
     public function getTableRecords(): array;
+
+    /**
+     * @return object|array<string, mixed>|null
+     */
+    public function getTableRecord(?string $key): object|array|null;
 }

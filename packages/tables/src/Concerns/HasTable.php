@@ -48,6 +48,23 @@ trait HasTable
     }
 
     /**
+     * @return object|array<string, mixed>|null
+     */
+    public function getTableRecord(?string $key): object|array|null
+    {
+        if ($key === null) {
+            return null;
+        }
+
+        return ($this->cachedTableRecords ?? $this->resolveTableRecords())[$key] ?? null;
+    }
+
+    public function flushCachedTableRecords(): void
+    {
+        $this->cachedTableRecords = null;
+    }
+
+    /**
      * @param object|array<string, mixed> $record
      */
     public function getTableRecordKey(object|array $record): string

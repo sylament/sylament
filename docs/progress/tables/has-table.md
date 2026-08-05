@@ -13,13 +13,15 @@ schemas and actions already carry, recorded in the
 [rename table](../renames.md#interface-and-trait-names-are-swapped). ⚠️ Reading
 either name across the two codebases means checking which side it is on first.
 
-The trait is six methods wide today: `table()`, `getTable()`, `makeTable()`,
-`getTableRecords()`, the `resolveTableRecords()` half it caches, and
-`getTableRecordKey()`. It builds the table once per request, resolves the
-`records()` closure once per request, and hands back an array **keyed by record
-key**. Everything else Filament's nineteen-trait host does — pagination,
-sorting, searching, filters, bulk actions, selection, reordering, the column
-manager — is unported and listed below.
+The trait is eight methods wide today: `table()`, `getTable()`, `makeTable()`,
+`getTableRecords()`, the `resolveTableRecords()` half it caches,
+`getTableRecordKey()`, `getTableRecord()` and `flushCachedTableRecords()`. It
+builds the table once per request, resolves the `records()` closure once per
+request, and hands back an array **keyed by record key** — plus a by-key lookup
+that reads fresh whenever the render cache is cold, and the flush that empties
+it. Everything else Filament's nineteen-trait host does — pagination, sorting,
+searching, filters, bulk actions, selection, reordering, the column manager — is
+unported and listed below.
 
 The trait presumes no state shape. It declares no `#[LiveProp]` and reads no host
 property, so a host can mix it in beside
@@ -36,7 +38,7 @@ Reference — the Filament source this is diffed against:
 - [`tables/src/Concerns/HasRecords.php`](../../../vendor/filament/tables/src/Concerns/HasRecords.php)
   — the host-side record resolution `getTableRecords()` ports
 - [`tables/src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php)
-  — the 46-method interface this reduces to two
+  — the 46-method interface this reduces to three
 
 ## Surface
 
@@ -51,10 +53,10 @@ permanent note in [Divergences](#divergences).
 | [`getTable(): Table` — build once, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::getTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-table-is-built-lazily-on-first-gettable-not-in-a-booted-hook) |
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
 | [`getTableRecords()` — evaluate the data source once, re-key, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [diverges](#the-records-closure-receives-no-named-injections-yet) · [diverges](#the-missing-data-source-error-names-only-records) · [diverges](#gettablerecords-returns-a-keyed-array-not-a-collection-or-paginator) |
-| [`InteractsWithTable` — `getTable()` + `getTableRecords()`](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-two-methods-of-filaments-forty-six) |
-| `flushCachedTableRecords()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | todo | — | [detail](#nothing-invalidates-the-record-cache-yet) |
+| [`InteractsWithTable` — `getTable()`, `getTableRecords()`, `getTableRecord()`](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-three-methods-of-filaments-forty-six) |
+| [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | — |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
-| `getTableRecord(?string $key)` | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | table actions (M1 · 6) | — |
+| [`getTableRecord(?string $key)`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) |
 | `getAllTableRecordsCount()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
 | The query lane — `getFilteredTableQuery()`, `getFilteredSortedTableQuery()`, `getTableQueryForExport()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | — |
 | Pagination — `WithPagination`, `getTablePage()`, `getTableRecordsPerPage()` | [`CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php), [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
@@ -65,8 +67,8 @@ permanent note in [Divergences](#divergences).
 | Reordering, striping, the column manager, `HasContent`, `HasHeader` | [`CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) and four siblings | todo | — | — |
 | Translatable content driver — `getActiveTableLocale()`, `makeFilamentTranslatableContentDriver()` | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | todo | — | [has-schemas.md](../schemas/has-schemas.md#the-translatable-content-driver-is-not-ported) |
 
-The four **done** rows are the build-once core plus the record key. They are
-covered by
+The six **done** rows are the build-once core, the record key, and the by-key
+lookup with its flush. They are covered by
 [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)
 via the
 [`TableHost`](../../../packages/tables/tests/Fixtures/Concerns/TableHost.php)
@@ -85,34 +87,41 @@ pinned by calling it directly rather than reading a map key, which PHP would
 coerce back to an `int`: an integer `id` and a `Stringable` one both come back as
 the `string` the contract promises.
 
+`getTableRecord()` is pinned on both cache arms by an evaluation counter, because
+the difference between them is invisible in the returned record: the **cold**
+case asserts one evaluation for the lookup and then a *second* on the following
+`getTableRecords()`, which is what proves the lookup left the cache empty rather
+than filling it; the **warm** case reads after a render and asserts the counter
+never moves. Its two null arms — a `null` key and an unknown one — are asserted
+in one case. `flushCachedTableRecords()` is covered by the same counter across a
+read-flush-read cycle, which reaches `2` only if the flush actually emptied the
+cache.
+
 ## Details
 
 Specifics for rows that are not finished — what is left and what the next step
 is. Delete a subsection when its row flips to **done**; the row and any
 divergence stay behind.
 
-### The contract is two methods of Filament's forty-six
+### The contract is three methods of Filament's forty-six
 
 `Contracts\HasTable` declares 46 methods — the full host API a Filament table,
 column, filter, action, or test helper may call back into. Sylament's
-`InteractsWithTable` declares the two the shipped surface actually calls:
-`getTable()` (the template and the column layer need the table from the host) and
+`InteractsWithTable` declares the three the shipped surface actually calls:
+`getTable()` (the template and the column layer need the table from the host),
 `getTableRecords()` (which [`Table::getRecords()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
-delegates to). The contract grows a method at a time as the features that need it
-land — a host must be able to satisfy it, so declaring the pagination, filter and
-bulk-selection halves before those exist would force every consumer to stub
-methods nothing calls. This is a **growth order**, not a divergence: the end
-state is the same set of members, minus whatever the Eloquent-only rows above
-turn out not to need.
-
-### Nothing invalidates the record cache yet
-
-`$cachedTableRecords` is filled on first read and never cleared — there is no
-`flushCachedTableRecords()`, because within one request nothing yet changes the
-record set after it has been read. That stops being true with table actions
-(M1 · 6): a Delete action mutates the data *during* the request that then
-re-renders the table, so the flush lands in the same change as the action that
-needs it, and is deliberately not added speculatively.
+delegates to), and `getTableRecord()`, which arrived with the record-action lane
+(M1 · 6) — a row-scoped action carries a record *key* across the request boundary
+and nothing else, so the actions layer resolves the record through the contract
+rather than reaching into the trait. The contract grows a method at a time as the
+features that need it land — a host must be able to satisfy it, so declaring the
+pagination, filter and bulk-selection halves before those exist would force every
+consumer to stub methods nothing calls. Growth is free for implementors while
+`HasTable` supplies every member: all three hosts implementing the contract today
+— the two fixtures and the demo's `TableShowcaseCard` — mix the trait in, so an
+addition reaches them without an edit. This is a **growth order**, not a
+divergence: the end state is the same set of members, minus whatever the
+Eloquent-only rows above turn out not to need.
 
 ## Divergences
 
@@ -259,6 +268,35 @@ name: Filament's `$primaryKey` counterpart is a Doctrine mapping concern, so it
 arrives, if at all, with the [`query()` lane](../roadmap.md#pulled-forward) that
 can read the metadata rather than guess. Until then a record whose identity is
 not `id` uses the array form and its `__key` entry.
+
+### `getTableRecord()` reads fresh when the render cache is cold
+
+Filament resolves a record down two lanes that disagree with each other. The
+**query** lane runs `$query->find($key)` — a fresh read that never touches
+`$cachedTableRecords`. The **records** lane, the one this ports, is
+`$this->getTable()->getRecords()[$key] ?? null`, which goes through the host's
+`getTableRecords()` and so both fills and reads the render cache.
+
+Sylament gives the records lane the query lane's semantics:
+`($this->cachedTableRecords ?? $this->resolveTableRecords())[$key] ?? null` reads
+a **warm** cache when one exists, and otherwise resolves fresh **without**
+storing the result. The records-lane behaviour is wrong for the case the lookup
+exists to serve. A record action resolves its record *before* it mutates
+anything, so a cache filled by that resolution is a pre-mutation snapshot; the
+re-render that follows the mutation reads that snapshot back and paints a deleted
+row as though it were still there. Leaving the cache cold means the render
+evaluates the data source itself, after the mutation, and sees it.
+
+The price is one extra data-source evaluation per action round trip — the lookup
+evaluates, the render evaluates again — which is exactly what Filament's query
+lane pays for the same guarantee. It is also why
+[`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php)
+is a separate member rather than the whole answer: the cold read covers an action
+that resolves before anything has rendered, the flush covers one that mutates
+*after* something already has. Permanent — this diverges from a Filament lane we
+read as defective rather than from one we have yet to catch up with, and the
+Doctrine [`query()` lane](../roadmap.md#pulled-forward) will resolve exactly this
+way when it lands.
 
 _See also: the global [rename table](../renames.md) — the interface⇄trait label
 swap (`InteractsWithTable` trait → `HasTable` trait, `HasTable` interface →

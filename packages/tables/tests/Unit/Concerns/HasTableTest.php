@@ -138,3 +138,61 @@ it('injects the table into the records closure', function (): void {
 
     expect($host->getTableRecords())->toBe([['heading' => 'Nothing here', '__key' => '0']]);
 });
+
+it('resolves a record by key without populating the render cache when cold', function (): void {
+    $evaluations = 0;
+    $host = new TableHost(function (Table $table) use (&$evaluations): Table {
+        return $table->records(function () use (&$evaluations): array {
+            $evaluations++;
+
+            return [new Song('Airbag', 'OK Computer', id: 7)];
+        });
+    });
+
+    expect($host->getTableRecord('7'))->toBeInstanceOf(Song::class)
+        ->and($evaluations)->toBe(1);
+
+    $host->getTableRecords();
+
+    expect($evaluations)->toBe(2);
+});
+
+it('reads a warm cache without re-evaluating', function (): void {
+    $evaluations = 0;
+    $host = new TableHost(function (Table $table) use (&$evaluations): Table {
+        return $table->records(function () use (&$evaluations): array {
+            $evaluations++;
+
+            return [new Song('Airbag', 'OK Computer', id: 7)];
+        });
+    });
+
+    $host->getTableRecords();
+
+    expect($host->getTableRecord('7'))->toBeInstanceOf(Song::class)
+        ->and($evaluations)->toBe(1);
+});
+
+it('returns null for a null or unknown key', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table->records(fn (): array => [new Song('Airbag', 'OK Computer', id: 7)]));
+
+    expect($host->getTableRecord(null))->toBeNull()
+        ->and($host->getTableRecord('99'))->toBeNull();
+});
+
+it('flushes the cached records so the next read re-evaluates', function (): void {
+    $evaluations = 0;
+    $host = new TableHost(function (Table $table) use (&$evaluations): Table {
+        return $table->records(function () use (&$evaluations): array {
+            $evaluations++;
+
+            return [new Song('Airbag', 'OK Computer', id: 7)];
+        });
+    });
+
+    $host->getTableRecords();
+    $host->flushCachedTableRecords();
+    $host->getTableRecords();
+
+    expect($evaluations)->toBe(2);
+});

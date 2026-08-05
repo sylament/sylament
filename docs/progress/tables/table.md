@@ -12,9 +12,14 @@ with the `Table\Concerns\` traits it composes — four today
 [`HasRecords`](../../../packages/tables/src/Table/Concerns/HasRecords.php),
 [`HasEmptyState`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php),
 [`HasColumns`](../../../packages/tables/src/Table/Concerns/HasColumns.php)),
-thirty-one in Filament. Those concerns are folded into the surface table below
+thirty-one in Filament. The four ported are folded into the surface table below
 rather than earning rows upstairs, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing).
+[one row per file](../README.md#one-row-per-file-one-file-per-thing); the
+twenty-seven still unported keep a per-file row in the package
+[README](README.md#features), the way
+[`actions`](../actions/README.md#features) tracks the concerns `Action` has not
+reached yet. The rows below group those files by feature, which is what the
+per-file rows upstairs point at.
 
 The `Table` fetches nothing itself. It declares *how* records are reached — a
 `records()` closure — and the host resolves and caches them; see

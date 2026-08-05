@@ -14,9 +14,14 @@ together with the concern traits it composes — five today
 [`HasCellState`](../../../packages/tables/src/Columns/Concerns/HasCellState.php)),
 thirty in Filament — twenty from its `Columns\Concerns\` and ten from
 `Support\Concerns\`, `HasCellState` among the latter
-([diverges](#hascellstate-is-relocated-into-the-column-tier)). Those concerns are
-folded into the surface table below rather than earning rows upstairs, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing).
+([diverges](#hascellstate-is-relocated-into-the-column-tier)). The five ported
+are folded into the surface table below rather than earning rows upstairs, per
+[one row per file](../README.md#one-row-per-file-one-file-per-thing); the
+`Columns\Concerns\` traits still unported keep a per-file row in the package
+[README](README.md#features), bar `CanFormatState`, which folds into
+[`text-column.md`](text-column.md) because [`TextColumn`](text-column.md) is
+what composes it. The rows below group those files by feature, which is what the
+per-file rows upstairs point at.
 
 The column is the read side of the record. It resolves nothing itself: the host
 fetches records ([`has-table.md`](has-table.md)), the table keys the columns

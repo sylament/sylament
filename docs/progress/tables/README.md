@@ -55,20 +55,14 @@ diff against. The host contract [`InteractsWithTable`](../../../packages/tables/
 is not listed here: it is inseparable from the trait it pairs with, so it shares
 that row in [Features](#features).
 
-Two rows are **in progress**, and neither has a detail file of its own — the gap
-is one sentence each. `TablesIconAlias` declares the one alias the shipped
-surface reads, `EMPTY_STATE`; Filament's class carries twenty-two more, each
-belonging to a feature (reordering, filtering, grouping, bulk actions, the column
-manager, the query builder) that is itself unported, so an alias lands with the
-feature that reads it. `SylamentTablesBundle` registers what the minimal vertical
-ships — the `Columns\` tier, `Table`, and the Twig extension — where Filament's
-provider also registers the package's `make:` commands, translations, views,
-front-end assets, the publishable stubs and six Livewire testing mixins; each of
-those follows the subsystem it belongs to rather than arriving ahead of it.
+The bundle owns the two Twig-side rows as well as its own, so all three share
+[tables-bundle.md](tables-bundle.md): what `loadExtension()` wires and why
+Filament's provider has no counterpart for it, the `renderTable()` helper, and
+the alias set's growth order.
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| [`TableExtension`](../../../packages/tables/src/Twig/Extension/TableExtension.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`SchemaExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | [schema-extension.md](../schemas/schema-extension.md#schemaextension-has-no-11-filament-source--it-is-the-twig-side-parallel-of-supports-componentextension) |
-| [`TablesIconAlias`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`View/TablesIconAlias.php`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — |
-| [`SylamentTablesBundle`](../../../packages/tables/src/SylamentTablesBundle.php) | [`TablesServiceProvider.php`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | in progress | — |
+| [`TableExtension`](../../../packages/tables/src/Twig/Extension/TableExtension.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`SchemaExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | [tables-bundle.md](tables-bundle.md#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
+| [`TablesIconAlias`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`View/TablesIconAlias.php`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | [tables-bundle.md](tables-bundle.md#the-alias-set-is-one-constant-of-filaments-23) |
+| [`SylamentTablesBundle`](../../../packages/tables/src/SylamentTablesBundle.php) | [`TablesServiceProvider.php`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | in progress | [tables-bundle.md](tables-bundle.md) |
 | _rest not audited yet_ | | | |

@@ -19,9 +19,7 @@ The class name follows the shipped family (`BooleanStateCast`,
 [renames.md's Sylament-only names](../renames.md#names-with-no-filament-source)
 when it lands.
 
-**Status:** todo — see the [status vocabulary](../README.md#statuses). This file
-records the epic's design decisions ahead of code, the
-[repeater precedent](../forms/repeater.md); rows flip as the code lands.
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 ## Surface
 
@@ -30,17 +28,19 @@ no Filament source to diff against.
 
 | Feature | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
-| `get()` — item array → fresh object (constructor params by name, then writable properties) | todo | — | [decision](#construction-is-a-hand-mapper-over-the-graphs-existing-pieces) · [decision](#the-name-set-is-the-fidelity-contract) |
-| `set()` — object → item array (readable properties over the same name set) | todo | — | [decision](#the-name-set-is-the-fidelity-contract) |
-| User-supplied conversion pair (`denormalizeUsing` / `normalizeUsing` closures overriding either half) | todo | — | [decision](#the-user-can-own-either-half-of-the-conversion) |
-| Guards — non-instantiable class at construction; wrong-class or scalar value in `set()`; a non-optional constructor param meeting null in `get()` | todo | — | [decision](#every-failure-names-its-fix) |
-| Unknown-key tolerance in `get()` (fail-open on extra keys, matching the fail-closed posture of `OptionStateCast` toward tampered payloads) | todo | — | [decision](#the-name-set-is-the-fidelity-contract) |
+| `get()` — item array → fresh object (constructor params by name, then writable properties) | done | — | [decision](#construction-is-a-hand-mapper-over-the-graphs-existing-pieces) · [decision](#the-name-set-is-the-fidelity-contract) |
+| `set()` — object → item array (readable properties over the same name set) | done | — | [decision](#the-name-set-is-the-fidelity-contract) |
+| User-supplied conversion pair (`denormalizeUsing` / `normalizeUsing` closures overriding either half) | done | — | [decision](#the-user-can-own-either-half-of-the-conversion) |
+| Guards — non-instantiable class at construction; wrong-class or scalar value in `set()`; a non-optional constructor param meeting null in `get()` | done | — | [decision](#every-failure-names-its-fix) |
+| Unknown-key tolerance in `get()` (fail-open on extra keys, matching the fail-closed posture of `OptionStateCast` toward tampered payloads) | done | — | [decision](#the-name-set-is-the-fidelity-contract) |
 
-Coverage lands with the code: a Unit edge matrix in
-`packages/schemas/tests/Unit/State/Casts/ObjectStateCastTest.php` (both
-directions over promoted-constructor, setter-based and public-property DTOs, the
-closure overrides, and every guard), plus the repeater-side Integration suite
-recorded in [repeater.md](../forms/repeater.md).
+Coverage: the full edge matrix — both directions over promoted-constructor and
+setter-based DTOs, the null and existing-instance passthroughs, the
+constructor-default and unknown-key arms, both closure overrides, and every
+guard — by
+[`ObjectStateCastTest`](../../../packages/schemas/tests/Unit/State/Casts/ObjectStateCastTest.php),
+plus the repeater-side Integration suite recorded in
+[repeater.md](../forms/repeater.md).
 
 ## Design decisions
 

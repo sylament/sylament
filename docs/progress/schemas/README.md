@@ -185,7 +185,7 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | `FileUploadStateCast` | [`Components/StateCasts/FileUploadStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/FileUploadStateCast.php) | todo | — |
 | `KeyValueStateCast` | [`Components/StateCasts/KeyValueStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/KeyValueStateCast.php) | todo | — |
 | `NumberStateCast` | [`Components/StateCasts/NumberStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/NumberStateCast.php) | todo | — |
-| `ObjectStateCast` | — | todo | [object-state-cast.md](object-state-cast.md) |
+| [`ObjectStateCast`](../../../packages/schemas/src/State/Casts/ObjectStateCast.php) | — | done | [object-state-cast.md](object-state-cast.md) |
 | [`OptionStateCast`](../../../packages/schemas/src/State/Casts/OptionStateCast.php) | [`Components/StateCasts/OptionStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/OptionStateCast.php) | done | [option-state-cast.md](option-state-cast.md) |
 | `OptionsArrayStateCast` | [`Components/StateCasts/OptionsArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/OptionsArrayStateCast.php) | todo | — |
 | `SliderStateCast` | [`Components/StateCasts/SliderStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/SliderStateCast.php) | todo | — |

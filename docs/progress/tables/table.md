@@ -7,10 +7,11 @@ object of the tables package, the counterpart to schemas'
 host builds through [`HasTable`](has-table.md), carrying the record data source
 and the empty-state copy. It ports Filament's
 [`Filament\Tables\Table`](../../../vendor/filament/tables/src/Table.php) together
-with the `Table\Concerns\` traits it composes — three today
+with the `Table\Concerns\` traits it composes — four today
 ([`BelongsToLiveComponent`](../../../packages/tables/src/Table/Concerns/BelongsToLiveComponent.php),
 [`HasRecords`](../../../packages/tables/src/Table/Concerns/HasRecords.php),
-[`HasEmptyState`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php)),
+[`HasEmptyState`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php),
+[`HasColumns`](../../../packages/tables/src/Table/Concerns/HasColumns.php)),
 thirty-one in Filament. Those concerns are folded into the surface table below
 rather than earning rows upstairs, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing).
@@ -29,6 +30,7 @@ Reference — the Filament source this is diffed against:
 - [`tables/src/Table/Concerns/BelongsToLivewire.php`](../../../vendor/filament/tables/src/Table/Concerns/BelongsToLivewire.php)
 - [`tables/src/Table/Concerns/HasRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php)
 - [`tables/src/Table/Concerns/HasEmptyState.php`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php)
+- [`tables/src/Table/Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php)
 
 ## Surface
 
@@ -54,7 +56,9 @@ sections do.
 | `emptyStateActions()` / `pushEmptyStateActions()` | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | blocked | table actions (M1 · 6) | — |
 | Record labels — `modelLabel()`, `pluralModelLabel()`, `recordTitle()`, `recordTitleAttribute()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | todo | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
 | Record identity — `getRecordKey()`, `hasPivotRecordKeys()`, `allowDuplicates()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | blocked | row identity (M1 · 6) | — |
-| Columns — `columns()`, the column manager | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php), [`HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — | [detail](#the-column-set-is-the-next-step-of-this-epic) |
+| [`columns()` / `getColumns()` / `getColumn()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) |
+| Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
+| The column manager — user-toggleable column visibility | [`HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — | — |
 | The `query()` lane — `query()`, `hasQuery()`, `getModel()`, `relationship()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | — |
 | Pagination and polling — `paginated()`, `deferLoading()`, `poll()` | [`CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
 | Sorting and searching — `defaultSort()`, `searchable()`, the session persistence | [`CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php), [`CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
@@ -66,12 +70,13 @@ sections do.
 | `HasArguments`, `HasExtraAttributes`, `HasDefaultDataFormattingSettings` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
 The four **done** rows are the host binding, the data-source declaration, the
-host-delegating `getRecords()`, and the closure-injection wiring. They are
-covered by
+host-delegating `getRecords()`, and the closure-injection wiring; the column set
+is partly in, one step behind them. They are covered by
 [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php) — `make()`
 binding the host, `records()` storing and returning the closure identity, the
-empty-state defaults, and both injection paths at once (`fn ($liveComponent)`
-resolved by name through
+empty-state defaults, `columns()` keying by name and binding the table on each
+member while a second call resets the set, and both injection paths at once
+(`fn ($liveComponent)` resolved by name through
 [`resolveDefaultClosureDependencyForEvaluationByName()`](../../../packages/tables/src/Table.php),
 `fn (Table $table)` resolved by type through `EvaluatesClosures`' own
 `is_a($this, $parameterType)` arm) — and, for `getRecords()`, by the host-side
@@ -104,12 +109,24 @@ the columns and the empty-state markup it renders. `getTemplate()` returns the
 path today, so `render()` throws a Twig loader error rather than returning
 `null`; nothing calls it yet. The row flips when the template ships.
 
-### The column set is the next step of this epic
+### `columns()` takes columns only, and does not push
 
-`use Table\Concerns\HasColumns;` joins the trait block in the next step of
-M1 · 5, together with the `TextColumn` catalog. `HasColumnManager` — the
-user-toggleable column visibility panel — is a separate, later concern and is
-not part of the minimal vertical.
+Filament's `columns()` accepts three kinds of member —
+`Column`, `ColumnGroup` and a `Columns\Layout\Component` — resets six
+properties, and delegates to `pushColumns()`, which sorts each member into the
+flat `$columns` map, the `$columnsLayout` list and the `$columnGroups` map,
+then walks the result to cache each column's action. Sylament's takes
+`array<Column>`, resets one property, and keys the map by
+[`getName()`](column.md).
+
+Everything trimmed is a tier that does not exist yet: groups and layouts are
+unported ([column.md](column.md) tracks both), and column actions arrive with
+table actions in **M1 · 6**, so the action-caching walk has nothing to cache.
+What is kept is the shape that matters — `columns()` **resets** rather than
+appends, and binds itself to each member as it goes, so a second call replaces
+the set and every column can reach the table and, through it, the host. Both are
+pinned by [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php).
+`pushColumns()` returns as the public append seam when the grouping tier lands.
 
 ## Semantics
 

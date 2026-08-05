@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
@@ -48,4 +49,23 @@ it('evaluates empty state values with table and live component injections', func
 
     expect($table->getEmptyStateHeading())->toBe('from host')
         ->and($table->getEmptyStateDescription())->toBe('from host');
+});
+
+it('keys columns by name and binds itself to each', function (): void {
+    $table = Table::make(new TableHost());
+    $title = TextColumn::make('title');
+
+    $table->columns([$title, TextColumn::make('slug')]);
+
+    expect(array_keys($table->getColumns()))->toBe(['title', 'slug'])
+        ->and($table->getColumn('title'))->toBe($title)
+        ->and($title->getTable())->toBe($table);
+});
+
+it('resets previously declared columns on a second columns() call', function (): void {
+    $table = Table::make(new TableHost())
+        ->columns([TextColumn::make('title')])
+        ->columns([TextColumn::make('slug')]);
+
+    expect(array_keys($table->getColumns()))->toBe(['slug']);
 });

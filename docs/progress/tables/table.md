@@ -60,7 +60,7 @@ sections do.
 | `emptyState()` (a whole replacement view) | [`HasEmptyState::emptyState()`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | todo | — | — |
 | `emptyStateActions()` / `pushEmptyStateActions()` | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | blocked | table actions (M1 · 6) | — |
 | Record labels — `modelLabel()`, `pluralModelLabel()`, `recordTitle()`, `recordTitleAttribute()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | todo | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
-| Record identity — `getRecordKey()`, `hasPivotRecordKeys()`, `allowDuplicates()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | blocked | row identity (M1 · 6) | [diverges](#rows-and-cells-carry-no-morph-stable-key) |
+| Record identity — `getRecordKey()`, `hasPivotRecordKeys()`, `allowDuplicates()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | in progress | — | [detail](#the-record-key-lives-on-the-host-until-the-table-delegate-lands) · [diverges](#rows-and-cells-carry-no-morph-stable-key) |
 | [`columns()` / `getColumns()` / `getColumn()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) |
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
 | The column manager — user-toggleable column visibility | [`HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — | — |
@@ -133,6 +133,20 @@ missing here: table actions arrive with **M1 · 6**, and the model label with th
 `getEmptyStateDescription()` returns `null` until a user sets one. The default
 returns in the same change as `Table\Concerns\HasActions`, where
 `hasAction('create')` finally has an answer.
+
+### The record key lives on the host until the table delegate lands
+
+The key itself exists: the host computes one per record and
+[`getTableRecords()`](has-table.md) hands back a map addressed by it. What this
+row still lacks is the `Table::getRecordKey($record)` one-liner Filament puts in
+front of it — the same host-delegating shape
+[`getRecords()`](#getrecords-delegates-to-the-host-and-fetches-nothing) already
+has, and the seam a template or a column reaches the key through. It lands with
+the rest of the table-side action concerns in **M1 · 6**, alongside the row keys
+the [morph divergence](#rows-and-cells-carry-no-morph-stable-key) below waits on.
+
+`hasPivotRecordKeys()` and `allowDuplicates()` are the `BelongsToMany` pivot arm
+and stay unported with the rest of the Eloquent relation surface.
 
 ### `columns()` takes columns only, and does not push
 
@@ -276,18 +290,18 @@ on every `<td>`, so Livewire's morph pairs a row with the same record across a
 re-render instead of matching by position. Sylament's rows and cells carry no key
 at all.
 
-There is nothing to key by yet: `$recordKey` comes from `getRecordKey()`, the
-**blocked** record-identity row above, and
-[`HasTable::getTableRecords()`](has-table.md) deliberately returns a plain
-re-indexed `list` where Filament re-keys the collection by record key. Emitting a
-positional index as the key would be worse than emitting nothing — it morphs
-row 2 onto row 2 after a delete, silently carrying the wrong record's DOM state
-across.
+The value now exists — [`HasTable::getTableRecords()`](has-table.md) keys its map
+by record key exactly as Filament does — but the template has no way to read it:
+`$recordKey` comes from `getRecordKey()`, the **in progress**
+[record-identity row](#the-record-key-lives-on-the-host-until-the-table-delegate-lands)
+above, whose table-side delegate is not written yet, and the loop iterates values
+rather than keys. Emitting a positional index instead would be worse than
+emitting nothing — it morphs row 2 onto row 2 after a delete, silently carrying
+the wrong record's DOM state across.
 
-Provisional, and it reverses in one step: row identity lands in **M1 · 6**, and
-the keys go on in the same change, because that is the change that first makes
-them mean something. Until then every table render replaces its rows wholesale,
-which is correct — just not incremental.
+Provisional, and one step smaller than it was: the keys go on in the same change
+as `Table::getRecordKey()`, in **M1 · 6**. Until then every table render replaces
+its rows wholesale, which is correct — just not incremental.
 
 _See also: the global [rename table](../renames.md) — `BelongsToLivewire` →
 `BelongsToLiveComponent`, `livewire()` → `liveComponent()` and `getLivewire()` →

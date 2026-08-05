@@ -26,7 +26,7 @@ use function Sylament\Tables\Tests\renderToHtml;
 
 it('renders header labels and cell values for object records', function (): void {
     $host = new TableHost(fn (Table $table): Table => $table
-        ->records(fn (): array => [new Song('Airbag', 'OK Computer'), new Song('Let Down', 'OK Computer')])
+        ->records(fn (): array => [new Song('Airbag', 'OK Computer', id: 1), new Song('Let Down', 'OK Computer', id: 2)])
         ->columns([TextColumn::make('title'), TextColumn::make('album')]));
 
     $html = renderToHtml($host->getTable());
@@ -42,7 +42,7 @@ it('renders header labels and cell values for object records', function (): void
 
 it('nests the populated table in the documented DOM contract', function (): void {
     $host = new TableHost(fn (Table $table): Table => $table
-        ->records(fn (): array => [new Song('Airbag', 'OK Computer'), new Song('Let Down', 'OK Computer')])
+        ->records(fn (): array => [new Song('Airbag', 'OK Computer', id: 1), new Song('Let Down', 'OK Computer', id: 2)])
         ->columns([TextColumn::make('title'), TextColumn::make('album')]));
 
     $crawler = new Crawler(renderToHtml($host->getTable()));

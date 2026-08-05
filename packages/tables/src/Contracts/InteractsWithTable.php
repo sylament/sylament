@@ -11,7 +11,7 @@ interface InteractsWithTable
     public function getTable(): Table;
 
     /**
-     * @return list<object|array<string, mixed>>
+     * @return array<array-key, object|array<string, mixed>> keyed by record key
      */
     public function getTableRecords(): array;
 }

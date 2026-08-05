@@ -179,7 +179,7 @@ one.
 | RelationshipJoiner | [`Services/RelationshipJoiner.php`](../../../vendor/filament/support/src/Services/RelationshipJoiner.php) | todo | — |
 | RelationshipOrderer | [`Services/RelationshipOrderer.php`](../../../vendor/filament/support/src/Services/RelationshipOrderer.php) | todo | — |
 | DenyResponse | [`Authorization/DenyResponse.php`](../../../vendor/filament/support/src/Authorization/DenyResponse.php) | todo | — |
-| ArrayRecord | [`ArrayRecord.php`](../../../vendor/filament/support/src/ArrayRecord.php) | todo | — |
+| [`ArrayRecord`](../../../packages/support/src/ArrayRecord.php) | [`ArrayRecord.php`](../../../vendor/filament/support/src/ArrayRecord.php) | done | — |
 | ChunkIterator | [`ChunkIterator.php`](../../../vendor/filament/support/src/ChunkIterator.php) | todo | — |
 | CliManager | [`CliManager.php`](../../../vendor/filament/support/src/CliManager.php) | todo | — |
 | Markdown | [`Markdown.php`](../../../vendor/filament/support/src/Markdown.php) | todo | — |

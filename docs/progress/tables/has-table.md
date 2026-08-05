@@ -13,12 +13,13 @@ schemas and actions already carry, recorded in the
 [rename table](../renames.md#interface-and-trait-names-are-swapped). ⚠️ Reading
 either name across the two codebases means checking which side it is on first.
 
-The trait is four methods wide today: `table()`, `getTable()`, `makeTable()`, and
-`getTableRecords()`. It builds the table once per request, resolves the
-`records()` closure once per request, and hands back a plain `list`. Everything
-else Filament's nineteen-trait host does — pagination, sorting, searching,
-filters, bulk actions, selection, reordering, the column manager — is unported
-and listed below.
+The trait is six methods wide today: `table()`, `getTable()`, `makeTable()`,
+`getTableRecords()`, the `resolveTableRecords()` half it caches, and
+`getTableRecordKey()`. It builds the table once per request, resolves the
+`records()` closure once per request, and hands back an array **keyed by record
+key**. Everything else Filament's nineteen-trait host does — pagination,
+sorting, searching, filters, bulk actions, selection, reordering, the column
+manager — is unported and listed below.
 
 The trait presumes no state shape. It declares no `#[LiveProp]` and reads no host
 property, so a host can mix it in beside
@@ -49,10 +50,11 @@ permanent note in [Divergences](#divergences).
 | [`table(Table $table): Table` — the identity default a host overrides](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::table()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | — |
 | [`getTable(): Table` — build once, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::getTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-table-is-built-lazily-on-first-gettable-not-in-a-booted-hook) |
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
-| [`getTableRecords(): list<…>` — evaluate the data source once, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [diverges](#the-records-closure-receives-no-named-injections-yet) · [diverges](#the-missing-data-source-error-names-only-records) · [diverges](#gettablerecords-returns-a-plain-re-indexed-list) |
+| [`getTableRecords()` — evaluate the data source once, re-key, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [diverges](#the-records-closure-receives-no-named-injections-yet) · [diverges](#the-missing-data-source-error-names-only-records) · [diverges](#gettablerecords-returns-a-keyed-array-not-a-collection-or-paginator) |
 | [`InteractsWithTable` — `getTable()` + `getTableRecords()`](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-two-methods-of-filaments-forty-six) |
 | `flushCachedTableRecords()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | todo | — | [detail](#nothing-invalidates-the-record-cache-yet) |
-| `getTableRecord(?string $key)` / `getTableRecordKey()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | row identity (M1 · 6) | [diverges](#gettablerecords-returns-a-plain-re-indexed-list) |
+| [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
+| `getTableRecord(?string $key)` | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | table actions (M1 · 6) | — |
 | `getAllTableRecordsCount()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
 | The query lane — `getFilteredTableQuery()`, `getFilteredSortedTableQuery()`, `getTableQueryForExport()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | — |
 | Pagination — `WithPagination`, `getTablePage()`, `getTableRecordsPerPage()` | [`CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php), [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
@@ -63,7 +65,8 @@ permanent note in [Divergences](#divergences).
 | Reordering, striping, the column manager, `HasContent`, `HasHeader` | [`CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) and four siblings | todo | — | — |
 | Translatable content driver — `getActiveTableLocale()`, `makeFilamentTranslatableContentDriver()` | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | todo | — | [has-schemas.md](../schemas/has-schemas.md#the-translatable-content-driver-is-not-ported) |
 
-The three **done** rows are the build-once core. They are covered by
+The four **done** rows are the build-once core plus the record key. They are
+covered by
 [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)
 via the
 [`TableHost`](../../../packages/tables/tests/Fixtures/Concerns/TableHost.php)
@@ -71,8 +74,16 @@ fixture, which takes the host's `table()` body as a constructor closure: the
 cache is proved by identity (`getTable()` returns the same instance) *and* by a
 configuration counter that must read exactly `1`, so a second build would fail
 even if it happened to produce an equal object. `getTableRecords()` is covered on
-all five of its paths in the same file — the fetch-once counter, the array and
-`Traversable` arms with their re-indexing, and both `LogicException`s.
+every path in the same file — the fetch-once counter, both data-source
+`LogicException`s, the object arm keyed by `id`, the array and `Traversable` arms
+with their `__key` synthesis (from the source key, and an explicit entry winning
+over it), the string cast, and the last-writer-wins collision. `getTableRecordKey()`'s
+three refusals sit beside them: an object whose `id` is null, one with no `id`
+property at all — the `AccessException` arm — and, called directly because
+resolution always synthesises one, an array with no key entry. Its **return** is
+pinned by calling it directly rather than reading a map key, which PHP would
+coerce back to an `int`: an integer `id` and a `Stringable` one both come back as
+the `string` the contract promises.
 
 ## Details
 
@@ -203,33 +214,51 @@ would send a reader looking for a method they cannot call. The message grows the
 other names in the same change as the lanes themselves — provisional, and
 mechanically so.
 
-### `getTableRecords()` returns a plain re-indexed list
+### `getTableRecords()` returns a keyed array, not a `Collection` or `Paginator`
 
-Filament returns a `Collection | Paginator | CursorPaginator` **keyed by record
-key**: `mapWithKeys()` re-keys each entry by `$record->getKey()` for a model, or
-by the `ArrayRecord` key entry for an array — synthesising one from the source
-array's own key when absent and casting it to `string`. That keying is what makes
-`resolveTableRecord($key)` a bare array lookup and what row-scoped actions
-address a record by.
+Filament returns a `Collection | Paginator | CursorPaginator`. Sylament returns a
+plain PHP `array<array-key, object|array<string, mixed>>`.
 
-Sylament returns `array_values(...)` — a plain `list`, positional, with any
-source keys discarded (an `ArrayIterator` keyed `['a' => …]` comes back as
-`[0 => …]`, pinned by a test). Two reasons. The **record key** is exactly the
-piece M1 · 6 introduces: row identity is what per-row actions and morph-stable
-re-rendering need, and inventing a key format now would mean changing it then.
-And there is no `Collection`/`Paginator` to return — pagination is
-[pulled forward · 11](../roadmap.md#pulled-forward), and the Laravel collection
-pipeline has no port; `iterator_to_array()` plus `array_values()` covers both the
-array and `Traversable` arms a closure can produce, and the `list` type survives
-PHPStan level max into the template. The `Traversable` arm passes
-`preserve_keys: false` — since the keys are discarded a line later anyway, the
-default would only give a generator yielding the same key twice a chance to drop
-a record silently.
+The **keying** is no longer a divergence: `mapWithKeys()`'s contract is ported
+whole — each entry re-keyed by the record key, an array record's `__key` entry
+synthesised from the source array's own key when absent and cast to `string`
+either way — so `$records[$key]` is the bare lookup a row-scoped action needs.
+Only the container differs. There is no `Collection` to return: the Laravel
+collection pipeline has no port and nothing in the package consumes one, so a
+`foreach`-able array carries the same information; and there is no
+`Paginator` arm because pagination is
+[pulled forward · 11](../roadmap.md#pulled-forward). The `Traversable` and array
+arms a closure can produce both fall out of one `foreach`, which is why nothing
+calls `iterator_to_array()` — a generator yielding the same key twice loses the
+earlier record either way, and that is the same last-writer-wins rule two records
+sharing an `id` already get.
 
-Both halves reverse on their own epic: the return type becomes key-preserving
-when row identity lands, and gains a paginated arm when pagination does. The
-`list` shape is therefore explicitly **not** a claim that record keys are
-unwanted — only that they have no correct value yet.
+Provisional in one direction only: the return type gains a paginated arm when
+pagination lands. A `Collection` port is not planned.
+
+### Object records are keyed by a readable `id`, rather than an Eloquent key
+
+Filament's non-array arm is `$record->getKey()` — every record is a `Model`, and
+a model always answers with the value of whatever column `$primaryKey` names.
+Sylament's record vocabulary has no such base class: a record is any `object`,
+usually a Doctrine entity but equally a DTO, so there is no `getKey()` to call.
+`getTableRecordKey()` therefore reads `id` through schemas'
+[`PropertyAccessor::getFromRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php),
+which is the same accessor a [`Column`](column.md) reads its state with — so a
+public property, a getter, or a `__get` all satisfy it, and `id` is the one
+convention the package assumes about a record.
+
+Three consequences worth stating. A `Stringable` id is string-cast before the
+scalar check, so a `Symfony\Component\Uid\Uuid` or a value object keys a table
+without unwrapping at the call site. An id that is missing, unreadable
+(`AccessException`), or [blank](../support/helpers.md) throws a `LogicException`
+naming the record class and pointing at the array-record alternative — the key
+addresses a record across a request boundary, so a silently empty or positional
+one would attach an action to the wrong row. And nothing configures the property
+name: Filament's `$primaryKey` counterpart is a Doctrine mapping concern, so it
+arrives, if at all, with the [`query()` lane](../roadmap.md#pulled-forward) that
+can read the metadata rather than guess. Until then a record whose identity is
+not `id` uses the array form and its `__key` entry.
 
 _See also: the global [rename table](../renames.md) — the interface⇄trait label
 swap (`InteractsWithTable` trait → `HasTable` trait, `HasTable` interface →

@@ -36,8 +36,9 @@ no Filament source to diff against.
 
 Coverage: the full edge matrix — both directions over promoted-constructor and
 setter-based DTOs, the null and existing-instance passthroughs, the
-constructor-default and unknown-key arms, both closure overrides, and every
-guard — by
+constructor-default arms (absent key, explicit null against a nullable and a
+non-nullable default), the unknown-key arms including property-path-shaped
+keys, both closure overrides, and every guard — by
 [`ObjectStateCastTest`](../../../packages/schemas/tests/Unit/State/Casts/ObjectStateCastTest.php),
 plus the repeater-side Integration suite recorded in
 [repeater.md](../forms/repeater.md).
@@ -76,7 +77,12 @@ class's constructor once, pass every parameter whose name matches an array key
 as a named argument, fall back to declared defaults, then write any remaining
 matched names through `symfony/property-access` (already in schemas' graph —
 the same package [`PropertyAccessor`](property-accessor.md) wraps) onto
-writable properties. `symfony/serializer` is deliberately **not** adopted,
+writable properties. A declared default is the fallback for a **missing** key
+only: a key present with an explicit `null` is passed to a nullable parameter,
+so blanking a field clears a defaulted-nullable value instead of resurrecting
+the default — the one case where the default still wins over a present `null`
+is a **non-nullable** defaulted parameter, where passing it would `TypeError`.
+`symfony/serializer` is deliberately **not** adopted,
 against [principles §2's](../../principles.md#2-prefer-the-ecosystem-over-invention)
 default, on named checkable grounds: the job here is *flat item array → fresh
 object by declared names* — the singular-denormalize slice — for which
@@ -102,10 +108,18 @@ One name set drives both directions, derived once from the item class:
 keys and **ignores every other key silently** — the dehydrated item can carry
 [unmanaged keys a client kept or invented](../forms/repeater.md#unmanaged-item-keys-round-trip-through-the-client),
 so an unknown key must never be able to throw (the fail-closed posture
-`OptionStateCast`'s tamper guards set). `set()` emits exactly the readable half
-of the same set. Two consequences, both the value-object contract rather than
-gaps: undeclared DTO state — a property outside the name set, a value only the
-old instance held — does **not** survive the round trip, the deliberate
+`OptionStateCast`'s tamper guards set). Holding that promise takes an explicit
+guard, because `symfony/property-access` reads its key as a property **path**,
+not a name: an empty or unparseable key (`inner[`) throws
+`InvalidPropertyPathException` before the accessor's own try/catch, and a
+parseable `inner.city` would *traverse* into an object the constructor built
+and write there — a client-controlled deep write, since item keys arrive from
+the browser. So only a bare property name reaches the accessor; every other key
+is skipped, which is the same silent-ignore the name-set contract already
+promised. `set()` emits exactly the readable half of the same set. Two
+consequences, both the value-object contract rather than gaps: undeclared DTO
+state — a property outside the name set, a value only the old instance held —
+does **not** survive the round trip, the deliberate
 opposite of the shipped unmanaged-keys semantics for array items (the two
 stories sit side by side in
 [repeater.md](../forms/repeater.md#value-object-items-are-a-declared-per-item-cast));

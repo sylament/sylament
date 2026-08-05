@@ -7,6 +7,8 @@ namespace Sylament\Schemas\Tests\Unit\State\Casts;
 use LogicException;
 use Sylament\Schemas\State\Casts\ObjectStateCast;
 use Sylament\Schemas\Tests\Fixtures\State\Casts\AbstractLine;
+use Sylament\Schemas\Tests\Fixtures\State\Casts\DefaultedLine;
+use Sylament\Schemas\Tests\Fixtures\State\Casts\NestedLine;
 use Sylament\Schemas\Tests\Fixtures\State\Casts\PromotedLine;
 use Sylament\Schemas\Tests\Fixtures\State\Casts\SetterLine;
 use Sylament\Schemas\Tests\Fixtures\State\Casts\StrictLine;
@@ -44,6 +46,50 @@ it('keeps a constructor default when the key is absent', function (): void {
 
     expect($item->title)->toBeNull()
         ->and($item->note)->toBe('b');
+});
+
+it('keeps a non-null constructor default when the key is absent', function (): void {
+    $item = new ObjectStateCast(DefaultedLine::class)->get([]);
+
+    expect($item->note)->toBe('n/a')
+        ->and($item->label)->toBe('fallback');
+});
+
+it('passes an explicit null to a nullable parameter that carries a non-null default', function (): void {
+    $item = new ObjectStateCast(DefaultedLine::class)->get(['note' => null]);
+
+    expect($item->note)->toBeNull();
+});
+
+it('keeps the default when an explicit null meets a non-nullable defaulted parameter', function (): void {
+    $item = new ObjectStateCast(DefaultedLine::class)->get(['label' => null]);
+
+    expect($item->label)->toBe('fallback');
+});
+
+it('ignores a dotted key instead of traversing into a nested object', function (): void {
+    $item = new ObjectStateCast(NestedLine::class)->get(['title' => 'a', 'inner.city' => 'tampered']);
+
+    expect($item->title)->toBe('a')
+        ->and($item->inner->city)->toBeNull();
+});
+
+it('ignores an indexed-path key instead of writing through it', function (): void {
+    $item = new ObjectStateCast(NestedLine::class)->get(['title' => 'a', 'inner[city]' => 'tampered']);
+
+    expect($item->inner->city)->toBeNull();
+});
+
+it('ignores an empty key rather than letting the accessor throw', function (): void {
+    $item = new ObjectStateCast(NestedLine::class)->get(['title' => 'a', '' => 'x']);
+
+    expect($item->title)->toBe('a');
+});
+
+it('ignores an unparseable property-path key rather than letting the accessor throw', function (): void {
+    $item = new ObjectStateCast(NestedLine::class)->get(['title' => 'a', 'inner[' => 'x']);
+
+    expect($item->title)->toBe('a');
 });
 
 it('passes null through get untouched', function (): void {

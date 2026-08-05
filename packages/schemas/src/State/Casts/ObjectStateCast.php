@@ -17,6 +17,8 @@ use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 class ObjectStateCast implements StateCast
 {
+    protected const string PROPERTY_NAME_PATTERN = '/^[a-zA-Z_\x80-\xff][a-zA-Z0-9_\x80-\xff]*$/';
+
     /**
      * @var class-string
      */
@@ -115,9 +117,10 @@ class ObjectStateCast implements StateCast
 
         foreach ($this->reflection->getConstructor()?->getParameters() ?? [] as $parameter) {
             $name = $parameter->getName();
-            $value = $item[$name] ?? null;
+            $supplied = array_key_exists($name, $item);
+            $value = $supplied ? $item[$name] : null;
 
-            if ($value === null) {
+            if ($value === null && (! $supplied || ! $parameter->allowsNull())) {
                 if ($parameter->isDefaultValueAvailable()) {
                     $consumed[$name] = true;
 
@@ -141,6 +144,12 @@ class ObjectStateCast implements StateCast
             }
 
             if (isset($consumed[$key])) {
+                continue;
+            }
+
+            // Security: the accessor reads its key as a property *path*, so only a bare
+            // name may reach it — anything else would traverse into the object graph.
+            if (preg_match(self::PROPERTY_NAME_PATTERN, $key) !== 1) {
                 continue;
             }
 

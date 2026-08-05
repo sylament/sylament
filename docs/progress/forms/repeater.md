@@ -26,8 +26,9 @@ modes are out with it.
 array-backed field ships end to end: item pipeline, per-item child schemas, the
 five structural actions, item chrome, the two partials and the record
 round-trip. What is left is chrome (collapse, `addBetween`, extra item actions,
-the items grid), the `table()` mode, and the relationship family behind its own
-epic.
+the items grid), the `table()` mode, the
+[value-object item mode](#value-object-items-are-a-declared-per-item-cast)
+(designed, next epic), and the relationship family behind its own epic.
 
 Reference — the Filament source this is diffed against, walked end to end for
 this table, so it carries no [unaudited row](../README.md#an-unaudited-table-says-so):
@@ -80,6 +81,7 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 | Deprecated members (`createItemButtonLabel()`, `disableItemCreation()` / `disableItemDeletion()` / `disableItemMovement()`, `orderable()`, `inset()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
 | `nullWhenBlank()` composition — an empty repeater as `null` instead of `[]` | — | done | — | [semantics](#the-blank-test-judges-a-repeater-by-its-own-value) · [diverges](#a-repeater-owns-its-record-subtree) |
 | Early object-collection refusal at hydration | — | done | — | [diverges](#object-collections-stay-refused--item-identity-belongs-to-the-relationship-epic) |
+| `itemsAs()` value-object item mode — explicit item class + optional denormalize/normalize pair over schemas' [`ObjectStateCast`](../schemas/object-state-cast.md) | — | todo | — | [detail](#value-object-items-are-a-declared-per-item-cast) |
 
 ## Details
 
@@ -108,6 +110,129 @@ uuid-keyed child schema — is untested surface until then); the **items grid**
 waits on the container-grid concerns deferred in M1 · 4. `table()` mode is out
 with them — it is a whole second rendering surface (`TableColumn`, header
 plumbing) with no consumer in sight.
+
+### Value-object items are a declared per-item cast
+
+The next epic, designed 2026-08-05 and recorded here ahead of code; this
+subsection migrates to Semantics/Divergences as it ships. It teaches a repeater
+to round-trip **identity-free value objects**: the live bag, validation and
+every structural action keep seeing value-shaped arrays — nothing in the client
+round-trip changes — while the record property holds `list<SomeDto>`, each
+object rebuilt fresh from its declared leaves on every save. The
+[scope boundary above](#object-collections-stay-refused--item-identity-belongs-to-the-relationship-epic)
+does not move by one bit: both mapper refusal triggers and the early hydration
+refusal stay, a `Traversable`-typed or adder-resolved property refuses with or
+without the declaration, and identity stays the relationship epic's. The
+decisions, each with its grounds:
+
+**The declaration is explicit, and only explicit.** `itemsAs(Line::class)` on
+the repeater — an invented name, Filament having no counterpart (their answer
+is `relationship()`); it and `ObjectStateCast` join
+[renames.md's Sylament-only names](../renames.md#names-with-no-filament-source)
+when they land. The optional `denormalizeUsing:` / `normalizeUsing:` closure
+pair overrides either conversion half while the class stays declared (it names
+the contract for guards and messages even when both halves are user-owned);
+the construction default and the fidelity contract live in
+[object-state-cast.md](../schemas/object-state-cast.md). *Implicit* derivation
+— a `list<Line>` docblock alone flipping the repeater into object mode — is
+**rejected**, permanently: it would silently change every existing
+docblock-typed array form the day it shipped, and a library cannot assume its
+consumers run PHPStan over their docblocks. *Opt-in inference* — a bare
+`itemsAs()` deriving the item class from the record property's docblock — is
+**deferred out of the epic by decision (Martin, 2026-08-05)**; the explicit
+class-string is the only arm that ships. The constraints already worked out
+for when inference returns, so a later slice designs against them instead of
+re-deriving: it reads through a separate, scoped docblock reader
+(`PhpStanExtractor`-backed, used for item-class resolution only), never
+through [`RecordTypeReader`](../schemas/record-type-reader.md), whose
+pinned-to-reflection mutator-first contract and collection flags must not
+change; an underivable type (no docblock, `array<string, mixed>`, a union, a
+non-instantiable class) throws loudly rather than falling back to array mode;
+and it costs a new production dependency (`phpstan/phpdoc-parser` behind
+property-info's `PhpStanExtractor`) — not taken now, and note the flat
+per-item construction needs no docblock extractor at all, which is part of why
+the epic ships dependency-free. Sugar over the explicit arm, additive,
+breaking nothing. Optional polish that survives the deferral: a dev-time
+mismatch guard when a readable docblock contradicts the explicit class.
+
+**Objects exist only on the positional side of both boundaries — the uuid bag
+never holds them.** The cast object reuses the `StateCast` contract but is
+**not** registered into `$stateCasts`: the generic seam's four firing points
+are each wrong for a container, and two of them corrupt nested repeaters.
+Get-ward at `getStateToDehydrate()` would construct the outer DTOs while a
+plain inner repeater's uuid map still sits inside them — the inner's
+positionalisation runs later, in the mutate pass, whose `setInArray()` would
+then vivify phantom uuid paths beside the already-built DTO list. Set-ward
+anywhere in the hook phase is the mirror image: `afterStateHydrated` runs
+children-first, so an inner repeater would read through outer items that are
+still DTOs, meet a non-array mid-path, and the write-back would clobber the
+DTO wholesale under `setInArray()`'s documented contract. So the repeater
+applies the cast itself, at its two item-pipeline boundaries, where the
+directionality is already correct: **set-ward in its `hydrateState()`
+position** (the flat pass walks parents before descendants and runs before
+every hook, so record-read DTOs are deconstructed to arrays — keys preserved
+— before any inner component or `hydrateItems()` re-key looks at them), and
+**get-ward at the tail of `dehydrateItems()`** (the mutate pass runs
+children-first, so an outer cast constructs from items whose inner repeaters
+are already positionalised — and already objects, when the inner declares a
+cast of its own, so nesting composes in both directions). `array_values()`
+therefore always runs over arrays, and construction always follows it.
+
+**Everything mid-edit keeps today's shapes.** Because `$stateCasts` stays
+empty, `getState()`, `getOldState()`, the `$state` closure injection,
+`getItemState()` / `getRawItemState()`, every structural action body, the
+structural freshness fingerprint, and validation (raw, per path, unchanged)
+all see exactly what they see on an uncast repeater — uuid-keyed value arrays.
+The `minItems()`/`maxItems()` `Count` constraint counts the raw map.
+Programmatic `$set()` takes array items, as it does today; handing it DTOs is
+undefined, not converted. The DTO shape exists at exactly two places: the
+record read that `fill()` makes, and the dehydrated bag from the mutate pass
+on — which is what `getData()` maps and what a host's `getState()` returns.
+
+**`simple()` and `itemsAs()` refuse each other, loudly.** The simple arm's
+dehydrate pluck (`$itemData[$name] ?? null` behind `is_array`) would silently
+null every constructed object, and the composed meaning — a one-scalar item
+that is also an object — belongs to a *leaf* cast on the simple field
+(`->simple(TextInput::make('value')->stateCast(…))`), which the shipped seam
+already runs correctly through the child walk. Declaring both on one repeater
+throws a `LogicException` naming that composition path, whichever order the
+two calls arrive in.
+
+**A cast item is schema-complete; unmanaged keys stop riding.** The
+[shipped semantics for array items](#unmanaged-item-keys-round-trip-through-the-client)
+— undeclared keys read whole, exposed to the client, written back — invert
+deliberately under the cast: `get()` consumes only the item class's name set
+(constructor params ∪ accessor-reachable properties) and ignores every other
+key fail-closed, `set()` emits only the readable half of the same set, so
+undeclared DTO state does not survive the round trip and a tampered extra key
+dies at construction instead of reaching the record. That is the value-object
+contract — schema-complete by definition — not a gap; the exact name-set
+mechanics and the three guards (non-instantiable class at declaration;
+wrong-class or scalar item at fill; a non-optional constructor parameter
+meeting null, whose designed message points at `required()` on the feeding
+field) are pinned in
+[object-state-cast.md](../schemas/object-state-cast.md#the-name-set-is-the-fidelity-contract).
+
+**`nullWhenBlank()` composes unchanged for the built-in test, and the closure
+arm's two-bags note gains one line.** The
+[owner value arm](#the-blank-test-judges-a-repeater-by-its-own-value) judges
+`blank()` over the branch's own slice, and that answer is shape-stable: a
+uuid-keyed array map at validation and a positional DTO list at mapping are
+both non-empty arrays or both empty ones, so an empty cast repeater still
+nulls and a filled one still survives, over `?array`-typed and untyped
+properties alike (a `Collection`-typed property never gets this far — the
+early refusal fires first). A **closure** condition, though, now sees arrays
+at validation and DTOs at mapping — a widening of the recorded
+[two-bags hazard](../schemas/belongs-to-record.md#a-nullwhenblank-closure-sees-two-different-bags)
+that lands in that note's text with the code.
+
+**The demo proof is the mapping page.** `/record-mapping` §5's `lines` flips
+to `list<Line>` (a real DTO with typed props) with `itemsAs(Line::class)`
+declared, its description and functional tests updated in the same change; the
+forms showcase keeps its card unchanged (a card's `$data` bag has no record to
+prove mapping against) and points at the mapping page instead. The cast is
+general by construction, repeater-only by test coverage — recorded as such in
+[its own file](../schemas/object-state-cast.md#general-by-construction-repeater-proven-by-coverage).
 
 ## Semantics
 
@@ -362,6 +487,7 @@ call breaks loudly — missing method, current name one grep away in Filament's
 own deprecation notice.
 
 _See also: the global [rename table](../renames.md) — `ownsRecordSubtree()`
-joins the Sylament-only names recorded there once it lands, and the unported
-`schema()` alias has its row there; everything else in this file keeps
+sits among the Sylament-only names recorded there, `itemsAs()` and
+`ObjectStateCast` join them when the value-object item epic lands, and the
+unported `schema()` alias has its row there; everything else in this file keeps
 Filament's spelling._

@@ -60,7 +60,7 @@ sections do.
 | [`getDefaultName()`](../../../packages/tables/src/Columns/Column.php) | [`Column::getDefaultName()`](../../../vendor/filament/tables/src/Columns/Column.php) | done | — | — |
 | [`name()` / `getName()`](../../../packages/tables/src/Columns/Concerns/HasName.php) | [`Concerns\HasName`](../../../vendor/filament/tables/src/Columns/Concerns/HasName.php) | done | — | — |
 | [`label()` / `getLabel()` — explicit value wins, else the name is humanised](../../../packages/tables/src/Columns/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php) | done | — | [semantics](#the-default-label-reads-the-second-to-last-dotted-segment) |
-| [`record()` / `getRecord()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | in progress | — | [diverges](#the-record-union-is-plain-object-where-filaments-is-model) · [detail](#recordkey-waits-on-row-identity) |
+| [`record()` / `getRecord()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | in progress | — | [diverges](#the-record-union-is-plain-object-where-filaments-is-model) · [detail](#recordkey-is-in-the-per-record-state-cache-is-not) |
 | [`table()` / `getTable()` / `getLiveComponent()`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php) | [`Concerns\BelongsToTable`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToTable.php) | in progress | — | [detail](#an-unbound-column-fails-without-filaments-message) |
 | [`state()` / `getStateUsing()` / `getState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | in progress | — | [diverges](#hascellstate-is-relocated-into-the-column-tier) · [semantics](#state-is-getstateusing-under-another-name) · [detail](#the-state-read-is-not-cached-per-record) |
 | [`getStateFromRecord()` — object graph or array, by dotted path](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`HasCellState::getStateFromRecord()`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | in progress | — | [diverges](#the-object-read-is-lenient-where-the-accessor-is-strict) · [detail](#relationship-traversal-is-the-doctrine-query-lanes) |
@@ -70,7 +70,7 @@ sections do.
 | `separator()` / `distinctList()` — split a string into a list | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | — |
 | `placeholder()` — the empty-cell copy | [`Support\Concerns\HasPlaceholder`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | todo | — | — |
 | `clearCachedState()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | [detail](#the-state-read-is-not-cached-per-record) |
-| `recordKey()` / `getRecordKey()` | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | blocked | row identity (M1 · 6) | [detail](#recordkey-waits-on-row-identity) |
+| [`recordKey()` / `getRecordKey()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | in progress | — | [detail](#recordkey-is-in-the-per-record-state-cache-is-not) |
 | `getRowLoop()` — the `$rowLoop` injection | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | blocked | the `Table` template | [detail](#rowloop-waits-on-the-table-template) |
 | Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#relationship-traversal-is-the-doctrine-query-lanes) |
 | Visibility — `hidden()`, `visible()`, `hiddenFrom()`, `toggleable()` | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeHiddenResponsively`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — | — |
@@ -116,14 +116,20 @@ property plus a hand-written throw now would encode a fallback with nothing to
 fall back to. The row flips when `BelongsToGroup` / `BelongsToLayout` land and
 the three-source chain is written in one piece, message included.
 
-### `recordKey()` waits on row identity
+### `recordKey()` is in, the per-record state cache is not
 
-`HasRecord` ports the record binding but not `recordKey()` / `getRecordKey()`.
-The key is what a table row is identified by across a morph — the same thing
-[`has-table.md`](has-table.md) defers with `getTableRecord()` — and it arrives
-with **M1 · 6**, which puts the table host on the live-component axis. Two things
-here wait on it: the per-record state cache below, and the record-scoped actions
-whose row is above.
+`recordKey()` / `getRecordKey()` land with the
+[table partial's morph keys](table.md#the-morph-key-is-an-id-attribute-not-wirekey):
+the row loop binds each column's record and its key together, so the column knows
+which row it is rendering in. The setter widens Filament's `?string` parameter to
+`string|int|null` and string-casts, because the key it receives comes from a Twig
+`{% for recordKey, record in records %}` over a PHP array — and PHP re-keys a
+numeric-string array key to an `int`, so a table of records keyed `'7'` hands the
+template `7`. Filament never meets that: its map is a Laravel `Collection`, whose
+keys survive as strings. The getter's `?string` is Filament's exactly.
+
+What the key is *for* is still outstanding — the per-record state cache below is
+what reads it, and that arrives with its own change.
 
 Filament's `getRecord()` also falls back to `$this->getLayout()?->getRecord()`;
 that arm is part of the unported column-layout tier, so the getter returns the
@@ -137,12 +143,12 @@ Sylament's `getState()` reads every time, and `clearCachedState()` has nothing t
 clear so it is not ported.
 
 That is a deliberate ordering, not an oversight: the cache key *is*
-`getRecordKey()`, which [waits on row identity](#recordkey-waits-on-row-identity).
-Caching before the key exists would mean either a second identity scheme to throw
-away, or a cache keyed on the record object — which memoises across rows when two
-rows are equal-but-distinct. Both rows flip together in **M1 · 6**. Until then a
-column re-reads, and the read is a property access rather than a query, so the
-cost is not user-visible.
+`getRecordKey()`, which [only just landed](#recordkey-is-in-the-per-record-state-cache-is-not).
+Caching before the key existed would have meant either a second identity scheme
+to throw away, or a cache keyed on the record object — which memoises across rows
+when two rows are equal-but-distinct. The key is now in and the cache is the
+remaining half, still in **M1 · 6**. Until then a column re-reads, and the read is
+a property access rather than a query, so the cost is not user-visible.
 
 ### Relationship traversal is the Doctrine `query()` lane's
 

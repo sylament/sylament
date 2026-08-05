@@ -13,20 +13,24 @@ schemas and actions already carry, recorded in the
 [rename table](../renames.md#interface-and-trait-names-are-swapped). ⚠️ Reading
 either name across the two codebases means checking which side it is on first.
 
-The trait is eight methods wide today: `table()`, `getTable()`, `makeTable()`,
+The trait is nine methods wide today: `table()`, `getTable()`, `makeTable()`,
 `getTableRecords()`, the `resolveTableRecords()` half it caches,
-`getTableRecordKey()`, `getTableRecord()` and `flushCachedTableRecords()`. It
-builds the table once per request, resolves the `records()` closure once per
-request, and hands back an array **keyed by record key** — plus a by-key lookup
-that reads fresh whenever the render cache is cold, and the flush that empties
-it. Everything else Filament's nineteen-trait host does — pagination, sorting,
+`getTableRecordKey()`, `getTableRecord()`, `flushCachedTableRecords()` and
+`getTableHostId()`. It builds the table once per request, resolves the
+`records()` closure once per request, and hands back an array **keyed by record
+key** — plus a by-key lookup that reads fresh whenever the render cache is cold,
+the flush that empties it, and the per-host id every row and cell is stamped
+with. Everything else Filament's nineteen-trait host does — pagination, sorting,
 searching, filters, bulk actions, selection, reordering, the column manager — is
 unported and listed below.
 
-The trait presumes no state shape. It declares no `#[LiveProp]` and reads no host
-property, so a host can mix it in beside
-[`HasSchemas`](../schemas/has-schemas.md) and
-[`HasActions`](../actions/has-actions.md) without collision.
+The trait reads no host property and presumes no state shape beyond the one
+`#[LiveProp]` it declares itself: `public ?string $tableHostId`, the persisted
+half of [`getTableHostId()`](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id).
+A host can still mix it in beside [`HasSchemas`](../schemas/has-schemas.md) and
+[`HasActions`](../actions/has-actions.md) — the three declare disjoint property
+names, which is what keeps them composable, rather than any of them declaring
+nothing.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -53,8 +57,9 @@ permanent note in [Divergences](#divergences).
 | [`getTable(): Table` — build once, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::getTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-table-is-built-lazily-on-first-gettable-not-in-a-booted-hook) |
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
 | [`getTableRecords()` — evaluate the data source once, re-key, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [diverges](#the-records-closure-receives-no-named-injections-yet) · [diverges](#the-missing-data-source-error-names-only-records) · [diverges](#gettablerecords-returns-a-keyed-array-not-a-collection-or-paginator) |
-| [`InteractsWithTable` — `getTable()`, `getTableRecords()`, `getTableRecord()`, `getTableRecordKey()`](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-four-methods-of-filaments-forty-six) |
+| [`InteractsWithTable` — `getTable()`, `getTableHostId()`, `getTableRecords()`, `getTableRecord()`, `getTableRecordKey()`](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-five-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | — |
+| [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
 | [`getTableRecord(?string $key)`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) |
 | `getAllTableRecordsCount()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
@@ -67,8 +72,8 @@ permanent note in [Divergences](#divergences).
 | Reordering, striping, the column manager, `HasContent`, `HasHeader` | [`CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) and four siblings | todo | — | — |
 | Translatable content driver — `getActiveTableLocale()`, `makeFilamentTranslatableContentDriver()` | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | todo | — | [has-schemas.md](../schemas/has-schemas.md#the-translatable-content-driver-is-not-ported) |
 
-The six **done** rows are the build-once core, the record key, and the by-key
-lookup with its flush. They are covered by
+The seven **done** rows are the build-once core, the record key, the by-key
+lookup with its flush, and the host id. They are covered by
 [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)
 via the
 [`TableHost`](../../../packages/tables/tests/Fixtures/Concerns/TableHost.php)
@@ -97,26 +102,40 @@ in one case. `flushCachedTableRecords()` is covered by the same counter across a
 read-flush-read cycle, which reaches `2` only if the flush actually emptied the
 cache.
 
+`getTableHostId()` is pinned from the render side rather than here, in two
+places. The Integration
+[`TableTest`](../../../packages/tables/tests/Integration/TableTest.php) reads the
+id off the host and asserts the `<tr>` and `<td>` the partial emitted carry
+exactly that prefix. The Integration
+[`HasTableTest`](../../../packages/tables/tests/Integration/Concerns/HasTableTest.php)
+covers the half that prefix is *for*: that the id in `data-live-props-value` is
+the id stamped on the rows, and that a live round trip comes back with the same
+one. Both fail if the
+[getter/property pairing](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id)
+is broken, which nothing else would catch.
+
 ## Details
 
 Specifics for rows that are not finished — what is left and what the next step
 is. Delete a subsection when its row flips to **done**; the row and any
 divergence stay behind.
 
-### The contract is four methods of Filament's forty-six
+### The contract is five methods of Filament's forty-six
 
 `Contracts\HasTable` declares 46 methods — the full host API a Filament table,
 column, filter, action, or test helper may call back into. Sylament's
-`InteractsWithTable` declares the four the shipped surface actually calls:
+`InteractsWithTable` declares the five the shipped surface actually calls:
 `getTable()` (the template and the column layer need the table from the host),
 `getTableRecords()` (which [`Table::getRecords()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
-delegates to), and two that arrived with the record-action lane (M1 · 6) —
+delegates to), and three that arrived with the record-action lane (M1 · 6) —
 `getTableRecord()`, because a row-scoped action carries a record *key* across the
 request boundary and nothing else, so the actions layer resolves the record
-through the contract rather than reaching into the trait, and
+through the contract rather than reaching into the trait,
 `getTableRecordKey()`, its inverse, which
 [`Table::getRecordKey()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
-delegates to so a template can address the row it is rendering. The contract
+delegates to so a template can address the row it is rendering, and
+`getTableHostId()`, which the partial reads directly off the host to prefix its
+row and cell ids. The contract
 grows a method at a time as the
 features that need it land — a host must be able to satisfy it, so declaring the
 pagination, filter and bulk-selection halves before those exist would force every
@@ -132,6 +151,60 @@ Eloquent-only rows above turn out not to need.
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
 what would reverse the decision when it is provisional.
+
+### The host id is a random `LiveProp`, rather than a framework component id
+
+Filament prefixes every morph key with `$this->getId()` — Livewire's own
+component id, a framework-generated string that is part of the component's
+snapshot and therefore stable across a re-render for free. UX LiveComponent has
+no equivalent a template can read: the id it stamps on the root element is
+generated by the frontend controller, not by PHP, so nothing server-side can
+address it while rendering.
+
+`getTableHostId()` therefore mints its own — `bin2hex(random_bytes(4))`, lazily
+on first read, into a `#[LiveProp] public ?string $tableHostId` so the *same*
+eight hex characters come back on every subsequent render of that component
+instance. That is the whole requirement: the value is never parsed, never
+addressed from JS, and never has to be unique across hosts for correctness — it
+only has to be **the same before and after** a round trip, and different enough
+between two tables on one page that their row ids do not collide. Four random
+bytes give that at a page-realistic number of tables. It is the same shape
+actions already ships as
+[`getActionsHostId()`](../actions/has-actions.md#the-host-id-is-a-round-tripped-liveprop-not-a-framework-component-id),
+for the same missing framework id, and the two are deliberately separate values
+rather than one shared id — the packages do not depend on each other in that
+direction.
+
+**The getter/property name collision is what makes the lazy fill work, and it is
+load-bearing.** `AddLiveAttributesSubscriber::onPreRender`
+(`vendor/symfony/ux-live-component/src/EventListener/AddLiveAttributesSubscriber.php`)
+dehydrates every `#[LiveProp]` *before* the component's template body renders, so
+an id first minted while rendering the table partial would miss that pass
+entirely: the next request would hydrate `$tableHostId` back to `null`, mint a
+different value, and every row id would change — the exact failure the key
+exists to prevent. It does not happen, because the dehydration pass reads the
+prop through Symfony's `PropertyAccessor`
+(`LiveComponentHydrator::dehydrate()`), which prefers the same-named **getter**
+over the property — so the read that dehydrates is itself the read that mints,
+and the template later finds the value already there. Renaming either half, or
+adding a differently-named getter, breaks morph stability with nothing failing
+loudly, which is why the Integration
+[`HasTableTest`](../../../packages/tables/tests/Integration/Concerns/HasTableTest.php)
+asserts the dehydrated `tableHostId` against the id actually stamped on the rows
+rather than trusting the reasoning.
+
+Two smaller consequences. The property is `public` because a `LiveProp` must be,
+so it is part of the host's public surface and is the one thing this trait adds
+to it — a host mixing in `HasSchemas` and `HasActions` alongside is unaffected
+only because the three names are disjoint. And a host that renders its table
+*without* being a live component (a plain Twig component, or the unit fixtures)
+still gets an id: the lazy read works with no hydration behind it, the ids are
+simply regenerated per request, which is exactly right for a render that never
+morphs.
+
+Permanent in mechanism, provisional in nothing — if UX ever exposes a
+server-readable component id, this becomes a one-line delegate and the `LiveProp`
+goes away.
 
 ### The table is built lazily on first `getTable()`, not in a booted hook
 

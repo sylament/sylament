@@ -102,6 +102,40 @@ trait HasRecordActions
         return $flatActions;
     }
 
+    /**
+     * Per-record clones of the registered actions, record-bound and with the
+     * hidden ones dropped — a record whose actions are all hidden keeps an
+     * empty entry, so the template can tell "no actions here" from "no such
+     * record".
+     *
+     * @return array<array-key, list<Action|ActionGroup>>
+     */
+    public function getVisibleRecordActionsByRecordKey(): array
+    {
+        if ($this->recordActions === []) {
+            return [];
+        }
+
+        $visibleByKey = [];
+
+        foreach ($this->getRecords() as $recordKey => $record) {
+            $visibleByKey[$recordKey] = [];
+
+            foreach ($this->getRecordActions() as $action) {
+                $clone = $action->getClone();
+                $clone->record($record);
+
+                if ($clone->isHidden()) {
+                    continue;
+                }
+
+                $visibleByKey[$recordKey][] = $clone;
+            }
+        }
+
+        return $visibleByKey;
+    }
+
     public function recordActionsPosition(RecordActionsPosition|Closure|null $position): static
     {
         $this->recordActionsPosition = $position;

@@ -66,7 +66,8 @@ Rows never disappear — only their detail sections do.
 | `emptyState()` (a whole replacement view) | [`HasEmptyState::emptyState()`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | todo | — | — |
 | `emptyStateActions()` / `pushEmptyStateActions()` | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | blocked | table actions (M1 · 6) | — |
 | Record labels — `modelLabel()`, `pluralModelLabel()`, `recordTitle()`, `recordTitleAttribute()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | todo | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
-| [Record identity — `getRecordKey()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getRecordKey()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#getrecords-delegates-to-the-host-and-fetches-nothing) · [diverges](#rows-and-cells-carry-no-morph-stable-key) |
+| [Record identity — `getRecordKey()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getRecordKey()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#getrecords-delegates-to-the-host-and-fetches-nothing) |
+| [Morph-stable row and cell keys](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `wire:key` stamps](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-morph-key-is-an-id-attribute-not-wirekey) · [semantics](#the-row-and-cell-morph-keys-disagree-on-record-vs-records) |
 | Pivot record identity — `hasPivotRecordKeys()`, `allowDuplicates()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | skipped | — | The `BelongsToMany` pivot arm — it stays unported with the rest of the Eloquent relation surface |
 | [`columns()` / `getColumns()` / `getColumn()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) |
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
@@ -76,10 +77,11 @@ Rows never disappear — only their detail sections do.
 | Sorting and searching — `defaultSort()`, `searchable()`, the session persistence | [`CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php), [`CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
 | Filters — `filters()`, the indicators, the query-string identifier | [`HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php), [`HasQueryStringIdentifier`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — | — |
 | [`recordActions()` / `pushRecordActions()` / `getRecordActions()` / `getFlatRecordActions()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) | [`Table\Concerns\HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | in progress | — | [detail](#record-actions-register-without-the-per-action-modifier-hook) |
-| [`recordActionsPosition()` / `getRecordActionsPosition()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) + [`RecordActionsPosition`](../../../packages/tables/src/Enums/RecordActionsPosition.php) | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php), [`Enums/RecordActionsPosition`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | in progress | — | [detail](#the-position-default-has-no-content-arm-to-choose-between-yet) · [diverges](#the-position-setter-drops-filaments-string-arm) |
+| [`recordActionsPosition()` / `getRecordActionsPosition()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) + [`RecordActionsPosition`](../../../packages/tables/src/Enums/RecordActionsPosition.php) | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php), [`Enums/RecordActionsPosition`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | in progress | — | [detail](#the-position-default-has-no-content-arm-to-choose-between-yet) · [diverges](#the-position-setter-drops-filaments-string-arm) · [diverges](#the-four-rendered-positions-collapse-to-two) |
+| [`getVisibleRecordActionsByRecordKey()` — per-record clones, record-bound, hidden dropped](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) | [`index.blade.php`'s `$reduceVisibleRecordActions` / `$recordActionsByRecordKey`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-visible-action-map-is-a-table-method-and-is-not-short-circuited) |
 | [The flat action map — `getAction()` / `hasAction()` / `getFlatActions()` / `cacheAction()` / `mergeCachedFlatActions()`](../../../packages/tables/src/Table/Concerns/HasActions.php) | [`Table\Concerns\HasActions`](../../../vendor/filament/tables/src/Table/Concerns/HasActions.php) | in progress | — | [detail](#the-flat-action-map-has-no-bulk-half-and-no-removal) |
 | `modifyUngroupedRecordActionsUsing()` | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | todo | — | [detail](#record-actions-register-without-the-per-action-modifier-hook) |
-| Record-action presentation — `recordActionsColumnLabel()`, `recordActionsAlignment()` | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | blocked | the `Table` template | — |
+| Record-action presentation — `recordActionsColumnLabel()`, `recordActionsAlignment()` | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | todo | — | [detail](#the-actions-header-cell-is-always-the-unlabelled-arm) |
 | The deprecated v3 aliases — `actions()`, `pushActions()`, `actionsPosition()`, `actionsColumnLabel()`, `actionsAlignment()`, `getActions()`, `getActionsPosition()`, `getActionsColumnLabel()`, `getActionsAlignment()` | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | skipped | — | The project has never ported a deprecated Filament surface; each is a one-line delegate to the `record*` name above |
 | Header, toolbar and bulk actions, `recordAction()`, `recordUrl()` | [`HasHeaderActions`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php), [`HasToolbarActions`](../../../vendor/filament/tables/src/Table/Concerns/HasToolbarActions.php), [`HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php), [`HasRecordAction`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php), [`HasRecordUrl`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | blocked | table actions (M1 · 6) | — |
 | Grouping and summaries — `groups()`, `defaultGroup()`, the summarizers | [`CanGroupRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php), [`CanSummarizeRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | todo | — | — |
@@ -87,11 +89,12 @@ Rows never disappear — only their detail sections do.
 | Presentation — `striped()`, `stackedOnMobile()`, `content()`, `header()`, the headings, `recordClasses()` | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) and five siblings | todo | — | — |
 | `HasArguments`, `HasExtraAttributes`, `HasDefaultDataFormattingSettings` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
-The nine **done** rows are `make()`, the host binding, the data-source
+The eleven **done** rows are `make()`, the host binding, the data-source
 declaration, the host-delegating `getRecords()` and `getRecordKey()`, the
-empty-state heading and icon, the closure-injection wiring, and the partial that
-renders all of it; the column set, the empty-state description and the three
-action rows are partly in, one step behind them.
+morph-stable row and cell keys built on the latter, the empty-state heading and
+icon, the closure-injection wiring, the per-record visible-action map, and the
+partial that renders all of it; the column set, the empty-state description and
+the three remaining action rows are partly in, one step behind them.
 
 The PHP surface is covered by
 [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php) — `make()`
@@ -118,7 +121,10 @@ call resetting the set where `pushRecordActions()` appends to it, the
 the table bound onto both an ungrouped action and a group member, the
 `AfterColumns` default with the two dropdown placements it picks by side, a
 closure position evaluated with the table injected, and the `InvalidArgumentException`
-a non-action member earns.
+a non-action member earns. `getVisibleRecordActionsByRecordKey()` is covered from
+the render side instead, in the Integration file below — the map's whole
+contract is what the partial does with it, and a unit assertion on a list of
+clones would restate the method body.
 [`HasActionsTest`](../../../packages/tables/tests/Unit/Table/Concerns/HasActionsTest.php)
 covers the map on its own, through an object composing the trait alone — the
 `shouldOverwriteExistingAction: false` arm of `cacheAction()` has no public
@@ -145,6 +151,26 @@ the icon background's `<svg>`, the `<h3>` heading and the `<p>` description — 
 a flattened wrapper or a renamed class fails here rather than silently
 downstream. A substring assertion passes through both of those changes, which is
 why the counts are selected and not grepped.
+
+Five more read the same way, for the row identity and the actions column. The
+morph keys are asserted by *reading the host's id back* and selecting
+`tr[id="{hostId}.table.records.7"]` and
+`td[id="{hostId}.table.record.7.column.title"]`, so the two spellings and the
+record key that fills them are pinned as one string rather than as a substring.
+The trailing default asserts the header `<th>` by all three of its
+class/`aria-label` markers *and* a header count of exactly two, which is what
+catches an actions column rendered in the body but not the head — a mismatch a
+per-selector count would miss. It then pins the **side** on both halves,
+`th:last-child` and `td:last-child`, because every other selector in that case
+is side-blind: presence, the child nesting, the href and the header count all
+hold just as well for a column rendered leading, so without the two
+`:last-child` reads a regression that moved the default to the wrong side would
+pass a test whose name promises trailing. The `BeforeColumns` case is the mirror
+image, selecting `td:first-child` and `th:first-child`. The all-hidden case asserts the absence of `sy-ta-actions`
+from the whole render, which is the only assertion that can prove the column was
+skipped in the header too. And the clone case gives two records a
+record-dependent `url()` and demands both hrefs, which fails if the actions are
+bound once and reused — the single bug the per-record clone exists to prevent.
 
 ## Details
 
@@ -191,6 +217,29 @@ tracked by
 [`action-group.md`](../actions/action-group.md#dropdownwidth-is-a-css-string-dropdownteleport-and-dropdownautoplacement-are-deferred),
 so the stamp here is the placement half alone and gains the second call if that
 row ever lands.
+
+### The actions header cell is always the unlabelled arm
+
+Filament's header renders one of two `<th>`s for the actions column: a normal
+`fi-ta-header-cell` carrying `$recordActionsColumnLabel` when the table set one,
+and otherwise an empty `fi-ta-actions-header-cell fi-ta-empty-header-cell` whose
+`aria-label` is the pluralised *"Actions"* translation. Sylament's partial
+renders only the second, with the English literal `aria-label="Actions"`.
+
+Both halves of the first arm are missing rather than declined:
+`recordActionsColumnLabel()` is the **todo** row above, and there is no label to
+read; the pluralisation `trans_choice(..., $flatRecordActionsCount)` needs the
+[i18n layer](#the-empty-state-heading-hardcodes-no-records) nothing in the port
+has, the same reason `'No records'` is a literal. The setter and the `{% if %}`
+that reads it land together, at which point the literal becomes the fallback of
+the second arm rather than the only arm.
+
+`recordActionsAlignment()` is the other half of that row and it is a CSS
+question, not a template one: Filament expresses it as `fi-align-*` modifier
+classes on `fi-ta-actions`, and the
+[ported stylesheet block](../../../packages/tables/assets/src/styles/components/table.css)
+deliberately stops at the base rule — the alignment and wrapping arms come back
+with the setter that can emit them.
 
 ### The position default has no content arm to choose between yet
 
@@ -274,6 +323,22 @@ the contract grew `getTableRecordKey()` rather than the table growing a resolver
 of its own — a second implementation of the `id` read would be one more place to
 keep in step with
 [`InteractsWithRecord::resolveRecordKey()`](../actions/action.md).
+
+### The row and cell morph keys disagree on `record` vs `records`
+
+A row's key is `{hostId}.table.**records**.{recordKey}` and a cell's is
+`{hostId}.table.**record**.{recordKey}.column.{columnName}` — plural on the row,
+singular on the cell, for the same record and the same host. It reads like a
+typo in one of the two.
+
+It is Filament's, copied deliberately:
+[`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php)
+writes `.table.records.` on the `<tr>` (twice) and `.table.record.` on the `<td>`.
+The strings are opaque — nothing parses them, they only have to be *stable* and
+*distinct* — so the asymmetry costs nothing, and "correcting" it would silently
+break any consumer that matched Filament's shape, which is the one thing porting
+the value verbatim buys. Keep both spellings if this template is ever
+restructured; they are not two spellings of one constant.
 
 ### The host binding is required, where the schemas one is optional
 
@@ -374,26 +439,87 @@ transient rather than permanent. The **class names** are already reserved by the
 Filament originals, so nothing about the eventual DOM depends on inventing them
 later.
 
-### Rows and cells carry no morph-stable key
+### The visible action map is a `Table` method, and is not short-circuited
+
+Filament builds its per-record action map **in the Blade template**: a
+`$reduceVisibleRecordActions` closure clones each registered action, binds the
+record, drops the hidden ones, and a preamble loop calls it per record filling
+`$recordActionsByRecordKey`. Sylament's
+[`getVisibleRecordActionsByRecordKey()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php)
+is the same computation on the `Table`, and the partial only reads the result.
+
+The move is the ordinary Blade → Twig translation — Twig has no `@php` block and
+a closure-building preamble is not idiom — but it changes one thing on purpose.
+Filament's preamble **breaks** out of the record loop the moment one record
+yields a visible action, because all it needs from that loop is the boolean
+`$hasRecordActionsForAnyRecord`; the rows it never reached compute their actions
+lazily, inside the row loop, through the same closure. Sylament computes every
+record's entry up front and returns the whole map.
+
+That is the cheaper shape here, not the more expensive one. The row loop needs
+each record's list anyway, so Filament's early break saves work only for the
+records between the first visible action and the end of the page — and it pays
+for the saving with a second call site and a per-record cache to keep the two in
+step. Computing all of it once, in one place, is the same total work in the
+common case (every record has the same actions) and one code path instead of
+two. The template's own `hasRecordActions` is then a `filter(...)|length > 0`
+over the finished map.
+
+One consequence to keep: a record whose actions are *all* hidden keeps an
+**empty list** in the map rather than being absent, so the template can tell
+"this record has no visible actions" from "this record is not in the map" — the
+first still renders its (empty) actions cell so the row keeps its column count.
+The whole map is empty only when nothing was registered at all, which is the
+early return at the top of the method.
+
+### The morph key is an `id` attribute, not `wire:key`
 
 Filament stamps `wire:key="{{ $this->getId() }}.table.records.{{ $recordKey }}"`
 on every `<tr>` and `wire:key="....table.record.{{ $recordKey }}.column.{{ $column->getName() }}"`
 on every `<td>`, so Livewire's morph pairs a row with the same record across a
-re-render instead of matching by position. Sylament's rows and cells carry no key
-at all.
+re-render instead of matching by position. Sylament stamps the *same two strings*
+as plain `id` attributes.
 
-Only the template half is left now. [`HasTable::getTableRecords()`](has-table.md)
-keys its map by record key exactly as Filament does, and
-[`getRecordKey()`](#getrecords-delegates-to-the-host-and-fetches-nothing) — the
-seam `$recordKey` comes from — is **done** on the row above. What has not
-happened is the partial reading either: its loop still iterates values rather
-than keys, and stamps nothing onto the `<tr>` or `<td>`. Emitting a positional
-index instead would be worse than emitting nothing — it morphs row 2 onto row 2
-after a delete, silently carrying the wrong record's DOM state across.
+The value is identical down to the separators, and the
+[`{{ $this->getId() }}` prefix](has-table.md#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id)
+has a port of its own; only the attribute differs, because the two morph
+libraries key on different things. Livewire's morphdom reads `wire:key`;
+UX LiveComponent uses **idiomorph**, which pairs nodes by `id` and has no
+per-framework key attribute to read. Emitting `wire:key` here would be a string
+no library looks at, and idiomorph would fall back to positional matching — the
+exact failure the key exists to prevent, where deleting row 1 morphs row 2's DOM
+state onto row 3's record.
 
-Provisional, and now purely a template change: the keys go on when the partial
-grows its record-action column, still in **M1 · 6**. Until then every table
-render replaces its rows wholesale, which is correct — just not incremental.
+Permanent, and it is the same substitution any Livewire → UX template port makes.
+The `id` is a real document id, so it is also addressable from CSS and tests,
+which `wire:key` never was — the Integration `TableTest` reads the rows back by
+`tr[id="…"]` for exactly that reason.
+
+### The four rendered positions collapse to two
+
+`RecordActionsPosition` has five cases and the partial branches on two:
+`BeforeCells` and `BeforeColumns` both render a **leading** `<td>`,
+`AfterColumns` and `AfterCells` both render a **trailing** one, and
+`AfterContent` renders neither.
+
+In Filament the pairs are distinct because there is a third thing in the row.
+`*Cells` sits outside the columns *and* outside the selection checkbox and the
+reorder handle; `*Columns` sits between them and the data columns — so
+`BeforeCells` puts the actions before the checkbox and `BeforeColumns` after it.
+Neither selection nor reordering is ported (both are **todo** rows above), so
+there is nothing between the two insertion points and the pairs coincide
+exactly. Rendering them as four distinct branches today would be four branches
+producing two outputs.
+
+`AfterContent` renders nothing on purpose rather than by omission: it is the
+columns-*layout* position, where records render as cards rather than rows and the
+actions go below the card body. That layout is unported
+([column grouping and layouts](#surface)), so a table asking for `AfterContent`
+gets no actions column at all — matching Filament, whose row-mode markup has no
+`AfterContent` arm either.
+
+Provisional and mechanical: the branches split back apart in the change that
+lands selection, and `AfterContent` gains its arm with the columns layout.
 
 ### The position setter drops Filament's `string` arm
 

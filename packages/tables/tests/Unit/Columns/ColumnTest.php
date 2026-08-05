@@ -85,3 +85,12 @@ it('injects itself into a differently named parameter type-hinted as the column'
 
     expect($column->state(fn (Column $boundColumn): Column => $boundColumn)->getState())->toBe($column);
 });
+
+it('casts an integer record key to a string and takes null back', function (): void {
+    $column = Column::make('title');
+
+    expect($column->getRecordKey())->toBeNull()
+        ->and($column->recordKey(7)->getRecordKey())->toBe('7')
+        ->and($column->recordKey('7')->getRecordKey())->toBe('7')
+        ->and($column->recordKey(null)->getRecordKey())->toBeNull();
+});

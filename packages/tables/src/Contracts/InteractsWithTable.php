@@ -11,6 +11,11 @@ interface InteractsWithTable
     public function getTable(): Table;
 
     /**
+     * The morph-key prefix every row and cell of this host's table is stamped with.
+     */
+    public function getTableHostId(): string;
+
+    /**
      * @return array<array-key, object|array<string, mixed>> keyed by record key
      */
     public function getTableRecords(): array;

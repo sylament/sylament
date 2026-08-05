@@ -10,12 +10,20 @@ use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Support\ArrayRecord;
 use Sylament\Tables\Table;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
+use Symfony\UX\LiveComponent\Attribute\LiveProp;
 
 use function Sylament\Support\blank;
 
 trait HasTable
 {
     use CanAccessProperties;
+
+    /**
+     * The morph-key prefix every row and cell of this host's table is stamped
+     * with — a `LiveProp` so the same ids come back on a re-render.
+     */
+    #[LiveProp]
+    public ?string $tableHostId = null;
 
     protected ?Table $cachedTable = null;
 
@@ -27,6 +35,11 @@ trait HasTable
     public function table(Table $table): Table
     {
         return $table;
+    }
+
+    public function getTableHostId(): string
+    {
+        return $this->tableHostId ??= bin2hex(random_bytes(4));
     }
 
     public function getTable(): Table

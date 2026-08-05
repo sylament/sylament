@@ -4,7 +4,7 @@
 value-shaped array across the object boundary: `get()` constructs a fresh
 instance of a declared class from an array's keys, `set()` deconstructs an
 instance back into that array. It is the mechanism behind the `Repeater`'s
-[value-object item mode](../forms/repeater.md#value-object-items-are-a-declared-per-item-cast),
+[value-object item mode](../forms/repeater.md#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam),
 where it runs once per item — but the cast itself knows nothing about items,
 lists or keys: it is a per-value transform over the existing
 [`StateCast`](../../../packages/schemas/src/State/Casts/Contracts/StateCast.php)
@@ -15,9 +15,8 @@ contract, and its consumer owns where it fires.
 `relationship()`, which is identity-keyed Eloquent mapping, the exact surface
 [this cast's scope excludes](#fresh-construction-is-the-contract-because-value-objects-carry-no-identity).
 The class name follows the shipped family (`BooleanStateCast`,
-`OptionStateCast`) and joins
-[renames.md's Sylament-only names](../renames.md#names-with-no-filament-source)
-when it lands.
+`OptionStateCast`) and sits among
+[renames.md's Sylament-only names](../renames.md#names-with-no-filament-source).
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -122,7 +121,7 @@ state — a property outside the name set, a value only the old instance held �
 does **not** survive the round trip, the deliberate
 opposite of the shipped unmanaged-keys semantics for array items (the two
 stories sit side by side in
-[repeater.md](../forms/repeater.md#value-object-items-are-a-declared-per-item-cast));
+[repeater.md](../forms/repeater.md#a-cast-item-is-schema-complete-so-unmanaged-keys-stop-riding));
 and a DTO is *schema-complete by definition* — if a field doesn't carry it and
 a constructor default doesn't supply it, it does not exist after save. Reverses
 only with an identity-aware populate arm, which is the relationship epic's.

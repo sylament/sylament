@@ -124,6 +124,36 @@ class Repeater extends Field
     }
 
     /**
+     * The set-ward firing point of a declared item cast: record-read objects are
+     * deconstructed into value-shaped arrays here, before any hook or descendant
+     * reads the items.
+     *
+     * @param array<string, true> $appliedStateCastPaths
+     */
+    public function hydrateState(bool $applyDefaults = true, array &$appliedStateCastPaths = []): void
+    {
+        parent::hydrateState($applyDefaults, $appliedStateCastPaths);
+
+        $cast = $this->getItemCast();
+
+        if (! $cast instanceof ObjectStateCast) {
+            return;
+        }
+
+        $rawState = $this->getRawState();
+
+        if (! is_array($rawState)) {
+            return;
+        }
+
+        $items = array_map($cast->set(...), $rawState);
+
+        if ($items !== $rawState) {
+            $this->rawState($items);
+        }
+    }
+
+    /**
      * Re-key whatever positional list the record read into per-request uuids, so a
      * structural mutation never renumbers a sibling's state path mid-edit. A
      * declared default has already produced its own keyed items, so it only takes
@@ -165,6 +195,9 @@ class Repeater extends Field
     }
 
     /**
+     * The get-ward firing point of a declared item cast: each item is
+     * constructed after the map has been positionalised.
+     *
      * @param array<array-key, mixed> $state
      *
      * @return array<int, mixed>
@@ -173,16 +206,24 @@ class Repeater extends Field
     {
         $simpleField = $this->getSimpleField();
 
-        if (! $simpleField instanceof Field) {
-            return array_values($state);
+        if ($simpleField instanceof Field) {
+            $name = (string) $simpleField->getName();
+
+            return array_map(
+                static fn (mixed $itemData): mixed => is_array($itemData) ? ($itemData[$name] ?? null) : null,
+                array_values($state),
+            );
         }
 
-        $name = (string) $simpleField->getName();
+        $items = array_values($state);
 
-        return array_map(
-            static fn (mixed $itemData): mixed => is_array($itemData) ? ($itemData[$name] ?? null) : null,
-            array_values($state),
-        );
+        $cast = $this->getItemCast();
+
+        if ($cast instanceof ObjectStateCast) {
+            return array_map($cast->get(...), $items);
+        }
+
+        return $items;
     }
 
     /**

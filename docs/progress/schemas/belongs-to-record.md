@@ -745,6 +745,14 @@ shape where the two bags could differ most: the value arm reads the branch's own
 slice, so the raw uuid-keyed bag at validation and the positional one at mapping
 answer the same question with the same verdict.
 
+It does widen, by one shape, for a repeater declaring
+[value-object items](../forms/repeater.md#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam):
+the built-in test stays verdict-stable there for the same reason (both bags are
+arrays, both empty or both not), but a **closure** condition on such a repeater
+reads uuid-keyed value *arrays* at validation and a positional list of
+*constructed objects* at mapping — so a closure reaching into an item
+(`$state[0]['title']`) is right about one bag and fatal on the other.
+
 The [presence guard](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled)
 narrowed that to a **mixed** branch. A branch whose leaves are *all* pruned is now
 skipped outright rather than nulled, so the discard needs at least one surviving

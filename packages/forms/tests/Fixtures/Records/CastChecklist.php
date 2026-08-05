@@ -7,8 +7,9 @@ namespace Sylament\Forms\Tests\Fixtures\Records;
 /**
  * The record shape a value-object repeater maps onto: `lines` is the
  * docblock-typed object list an `itemsAs()` repeater fills from and writes
- * back, and `groups` the plain nested arm beside it, so one record carries both
- * the cast and the uncast collection.
+ * back, `groups` the plain nested arm beside it, and `objectGroups` the nested
+ * arm whose outer items are objects too — so one record carries every nesting
+ * quadrant beside the flat cast and uncast collections.
  */
 final class CastChecklist
 {
@@ -21,4 +22,9 @@ final class CastChecklist
      * @var list<array<string, mixed>>|null
      */
     public ?array $groups = null;
+
+    /**
+     * @var list<GroupItem>|null
+     */
+    public ?array $objectGroups = null;
 }

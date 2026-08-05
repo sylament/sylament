@@ -245,6 +245,13 @@ object — belongs to a *leaf* cast on the simple field
 (`->simple(TextInput::make('value')->stateCast(…))`), which the shipped child
 walk already runs correctly. The `LogicException` names that path.
 
+Conversion closures beside a **prebuilt** `ObjectStateCast` refuse the same way,
+and in both spellings: the declaration-time guard catches the literal instance,
+and a second guard in `getItemCast()` catches the instance a closure declaration
+resolved to. Without the second one, `itemsAs(fn () => $cast, denormalizeUsing:
+…)` would silently drop the closures the literal spelling throws over — a
+fail-fast the evaluation seam would otherwise hide.
+
 ## Divergences
 
 Deliberate deviations from Filament, and the reason each holds. Provisional

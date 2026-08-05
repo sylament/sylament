@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Tests\Unit\State\Casts;
 use LogicException;
 use Sylament\Schemas\State\Casts\ObjectStateCast;
 use Sylament\Schemas\Tests\Fixtures\State\Casts\AbstractLine;
+use Sylament\Schemas\Tests\Fixtures\State\Casts\CanLine;
 use Sylament\Schemas\Tests\Fixtures\State\Casts\DefaultedLine;
 use Sylament\Schemas\Tests\Fixtures\State\Casts\NestedLine;
 use Sylament\Schemas\Tests\Fixtures\State\Casts\PromotedLine;
@@ -130,6 +131,18 @@ it('deconstructs a getter-backed item through the accessor', function (): void {
     expect(new ObjectStateCast(SetterLine::class)->set($line))->toBe(['title' => 'a']);
 });
 
+it('round-trips a can-prefixed accessor, whose prefix the accessor honours too', function (): void {
+    $cast = new ObjectStateCast(CanLine::class);
+
+    $line = new CanLine();
+    $line->setPublish(true);
+
+    $values = $cast->set($line);
+
+    expect($values)->toBe(['publish' => true])
+        ->and($cast->get($values)->canPublish())->toBeTrue();
+});
+
 it('passes an array through set untouched', function (): void {
     expect(new ObjectStateCast(PromotedLine::class)->set(['title' => 'a']))->toBe(['title' => 'a']);
 });
@@ -139,8 +152,10 @@ it('passes null through set untouched', function (): void {
 });
 
 it('refuses a foreign object in set, naming both classes', function (): void {
-    expect(fn (): mixed => new ObjectStateCast(PromotedLine::class)->set(new SetterLine()))
-        ->toThrow(LogicException::class, SetterLine::class);
+    $call = fn (): mixed => new ObjectStateCast(PromotedLine::class)->set(new SetterLine());
+
+    expect($call)->toThrow(LogicException::class, SetterLine::class)
+        ->and($call)->toThrow(LogicException::class, PromotedLine::class);
 });
 
 it('refuses a scalar in set', function (): void {

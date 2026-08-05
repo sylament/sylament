@@ -189,9 +189,12 @@ class ObjectStateCast implements StateCast
     }
 
     /**
-     * The one name set both directions share: constructor parameters, public
-     * non-static properties, and getter-derived names (`get`/`is`/`has`), so a
-     * promoted, a setter-based and a getter-backed item all reach the same keys.
+     * The `set()`-side name set: constructor parameters, public non-static
+     * properties, and getter-derived names (`get`/`is`/`has`/`can`, the
+     * accessor's own prefixes), so a promoted, a setter-based and a
+     * getter-backed item all deconstruct over the same keys. `construct()`
+     * derives its own write-ward set instead — constructor parameters, then a
+     * per-key accessor-writable check over whatever else the item carries.
      *
      * @return list<string>
      */
@@ -220,7 +223,7 @@ class ObjectStateCast implements StateCast
 
             $methodName = $method->getName();
 
-            foreach (['get', 'is', 'has'] as $prefix) {
+            foreach (['get', 'is', 'has', 'can'] as $prefix) {
                 if (str_starts_with($methodName, $prefix) && mb_strlen($methodName) > mb_strlen($prefix)) {
                     $names[lcfirst(mb_substr($methodName, mb_strlen($prefix)))] = true;
 

@@ -73,6 +73,16 @@ it('refuses closures beside a prebuilt cast instance', function (): void {
     ))->toThrow(LogicException::class, 'both conversion halves');
 });
 
+it('refuses closures beside a cast instance a closure declaration resolved to', function (): void {
+    $repeater = Repeater::make('lines')->itemsAs(
+        static fn (): ObjectStateCast => new ObjectStateCast(LineItem::class),
+        denormalizeUsing: static fn (array $item): LineItem => new LineItem(),
+    );
+
+    expect(fn (): ?ObjectStateCast => $repeater->getItemCast())
+        ->toThrow(LogicException::class, 'both conversion halves');
+});
+
 it('refuses itemsAs over a simple repeater, naming the leaf-cast path', function (): void {
     expect(fn (): Repeater => Repeater::make('lines')->simple(TextInput::make('value'))->itemsAs(LineItem::class))
         ->toThrow(LogicException::class, 'stateCast');

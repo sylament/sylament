@@ -375,6 +375,10 @@ class Repeater extends Field
         }
 
         if ($items instanceof ObjectStateCast) {
+            if ($this->denormalizeItemsUsing instanceof Closure || $this->normalizeItemsUsing instanceof Closure) {
+                throw new LogicException('itemsAs() resolved a prebuilt ObjectStateCast beside conversion closures; the instance already owns both conversion halves.');
+            }
+
             return $this->cachedItemCast = $items;
         }
 

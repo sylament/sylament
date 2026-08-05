@@ -33,8 +33,10 @@ no Filament source to diff against.
 | Guards — non-instantiable class at construction; wrong-class or scalar value in `set()`; a non-optional constructor param meeting null in `get()` | done | — | [decision](#every-failure-names-its-fix) |
 | Unknown-key tolerance in `get()` (fail-open on extra keys, matching the fail-closed posture of `OptionStateCast` toward tampered payloads) | done | — | [decision](#the-name-set-is-the-fidelity-contract) |
 
-Coverage: the full edge matrix — both directions over promoted-constructor and
-setter-based DTOs, the null and existing-instance passthroughs, the
+Coverage: the full edge matrix — both directions over promoted-constructor,
+setter-based and `can`-prefixed DTOs (the accessor honours `get`/`is`/`has`/`can`
+and so does the name set, so a `canPublish()`/`setPublish()` pair round-trips
+rather than dropping its value), the null and existing-instance passthroughs, the
 constructor-default arms (absent key, explicit null against a nullable and a
 non-nullable default), the unknown-key arms including property-path-shaped
 keys, both closure overrides, and every guard — by
@@ -101,10 +103,12 @@ proposed to Martin explicitly, never added in passing.
 
 ### The name set is the fidelity contract
 
-One name set drives both directions, derived once from the item class:
-**constructor parameter names ∪ property names the accessor can reach**
-(writable for `get()`, readable for `set()`). `get()` consumes exactly those
-keys and **ignores every other key silently** — the dehydrated item can carry
+Each direction derives its names from the item class — `set()` emits the
+readable name set (constructor parameters, public properties, and
+`get`/`is`/`has`/`can` accessor names), while `get()` consumes constructor
+parameters by name and writes any remaining key the accessor reports
+writable — so a name round-trips exactly when both sides reach it. `get()`
+**ignores every other key silently** — the dehydrated item can carry
 [unmanaged keys a client kept or invented](../forms/repeater.md#unmanaged-item-keys-round-trip-through-the-client),
 so an unknown key must never be able to throw (the fail-closed posture
 `OptionStateCast`'s tamper guards set). Holding that promise takes an explicit

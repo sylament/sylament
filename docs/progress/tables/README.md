@@ -13,9 +13,22 @@ views, translations and assets), so no table carries an
 vertical (M1 · 5) is what has landed so far — a linked first-column name is
 built and carries a real [status](../README.md#statuses), with a detail file
 wherever a divergence, an open gap or real sub-structure earns one; a plain-text
-name is not built yet and stays **todo**. Nothing here is **skipped**: a skip is
-a decision needing a recorded divergence, and tables has none for its unported
-surface.
+name is not built yet and is **todo** or **blocked**. Nothing here is
+**skipped**: a skip is a decision needing a recorded divergence, and tables has
+none for its unported surface.
+
+**todo** and **blocked** are distinguished here rather than collapsed, because
+the [vocabulary](../README.md#statuses) defines **todo** as having nothing to
+wait on — so a row whose detail file already names a prerequisite would be
+false as **todo**. These tables carry the same four columns as every package
+README, so a **blocked** row names its prerequisite at the head of _Detail_,
+ahead of the detail-file link that carries the full write-up: _table upgrades
+([pulled forward · 11](../roadmap.md#pulled-forward))_, _table actions (M1 · 6)_,
+_row identity (M1 · 6)_ and the _Doctrine `query()` lane
+([pulled forward · 12](../roadmap.md#pulled-forward))_ are the four this package
+waits on today. (The [`forms`](../forms/README.md) README records the opposite
+precedence — **todo** upstairs, **blocked** in the component's file — so the two
+packages disagree until that one is revisited.)
 
 Nine concerns the port has landed are **folded** into the detail file of the
 class that composes them and carry no row here, per
@@ -141,51 +154,51 @@ pairs with, so it shares the first row below.
 | --- | --- | --- | --- |
 | [`HasTable`](../../../packages/tables/src/Concerns/HasTable.php) / [`InteractsWithTable`](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`src/Concerns/InteractsWithTable.php`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php), [`src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | [has-table.md](has-table.md) |
 | Host / CanBeStriped | [`Concerns/CanBeStriped.php`](../../../vendor/filament/tables/src/Concerns/CanBeStriped.php) | todo | — |
-| Host / CanDeferLoading | [`Concerns/CanDeferLoading.php`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | todo | — |
+| Host / CanDeferLoading | [`Concerns/CanDeferLoading.php`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [has-table.md](has-table.md) |
 | Host / CanGroupRecords | [`Concerns/CanGroupRecords.php`](../../../vendor/filament/tables/src/Concerns/CanGroupRecords.php) | todo | — |
-| Host / CanPaginateRecords | [`Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | todo | — |
-| Host / CanPollRecords | [`Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | todo | — |
+| Host / CanPaginateRecords | [`Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [has-table.md](has-table.md) |
+| Host / CanPollRecords | [`Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [has-table.md](has-table.md) |
 | Host / CanReorderRecords | [`Concerns/CanReorderRecords.php`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | todo | — |
-| Host / CanSearchRecords | [`Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | todo | — |
-| Host / CanSortRecords | [`Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | todo | — |
+| Host / CanSearchRecords | [`Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [has-table.md](has-table.md) |
+| Host / CanSortRecords | [`Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [has-table.md](has-table.md) |
 | Host / CanSummarizeRecords | [`Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | todo | — |
-| Host / HasActions | [`Concerns/HasActions.php`](../../../vendor/filament/tables/src/Concerns/HasActions.php) | todo | — |
-| Host / HasBulkActions | [`Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | todo | — |
+| Host / HasActions | [`Concerns/HasActions.php`](../../../vendor/filament/tables/src/Concerns/HasActions.php) | blocked | table actions (M1 · 6) — [has-table.md](has-table.md) |
+| Host / HasBulkActions | [`Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | blocked | table actions (M1 · 6) — [has-table.md](has-table.md) |
 | Host / HasColumnManager | [`Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | todo | — |
 | Host / HasColumns | [`Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | todo | — |
 | Host / HasContent | [`Concerns/HasContent.php`](../../../vendor/filament/tables/src/Concerns/HasContent.php) | todo | — |
 | Host / HasEmptyState | [`Concerns/HasEmptyState.php`](../../../vendor/filament/tables/src/Concerns/HasEmptyState.php) | todo | — |
 | Host / HasFilters | [`Concerns/HasFilters.php`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | todo | — |
 | Host / HasHeader | [`Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Concerns/HasHeader.php) | todo | — |
-| Host / HasRecordAction | [`Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Concerns/HasRecordAction.php) | todo | — |
-| Host / HasRecords | [`Concerns/HasRecords.php`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | todo | — |
+| Host / HasRecordAction | [`Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Concerns/HasRecordAction.php) | blocked | table actions (M1 · 6) — [has-table.md](has-table.md) |
+| Host / HasRecords | [`Concerns/HasRecords.php`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | [has-table.md](has-table.md) |
 | Table / CanBeStackedOnMobile | [`Table/Concerns/CanBeStackedOnMobile.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStackedOnMobile.php) | todo | — |
 | Table / CanBeStriped | [`Table/Concerns/CanBeStriped.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) | todo | — |
-| Table / CanDeferLoading | [`Table/Concerns/CanDeferLoading.php`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php) | todo | — |
+| Table / CanDeferLoading | [`Table/Concerns/CanDeferLoading.php`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [table.md](table.md) |
 | Table / CanGroupRecords | [`Table/Concerns/CanGroupRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) | todo | — |
-| Table / CanPaginateRecords | [`Table/Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — |
-| Table / CanPollRecords | [`Table/Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | todo | — |
+| Table / CanPaginateRecords | [`Table/Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [table.md](table.md) |
+| Table / CanPollRecords | [`Table/Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [table.md](table.md) |
 | Table / CanReorderRecords | [`Table/Concerns/CanReorderRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanReorderRecords.php) | todo | — |
-| Table / CanSearchRecords | [`Table/Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — |
-| Table / CanSortRecords | [`Table/Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | todo | — |
+| Table / CanSearchRecords | [`Table/Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [table.md](table.md) |
+| Table / CanSortRecords | [`Table/Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [table.md](table.md) |
 | Table / CanSummarizeRecords | [`Table/Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | todo | — |
-| Table / HasActions | [`Table/Concerns/HasActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasActions.php) | todo | — |
+| Table / HasActions | [`Table/Concerns/HasActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasActions.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
 | Table / HasArguments | [`Table/Concerns/HasArguments.php`](../../../vendor/filament/tables/src/Table/Concerns/HasArguments.php) | todo | — |
-| Table / HasBulkActions | [`Table/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | todo | — |
+| Table / HasBulkActions | [`Table/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
 | Table / HasColumnManager | [`Table/Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — |
 | Table / HasContent | [`Table/Concerns/HasContent.php`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | todo | — |
 | Table / HasFilterIndicators | [`Table/Concerns/HasFilterIndicators.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | todo | — |
 | Table / HasFilters | [`Table/Concerns/HasFilters.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | todo | — |
 | Table / HasHeader | [`Table/Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php) | todo | — |
-| Table / HasHeaderActions | [`Table/Concerns/HasHeaderActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php) | todo | — |
+| Table / HasHeaderActions | [`Table/Concerns/HasHeaderActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
 | Table / HasHeadings | [`Table/Concerns/HasHeadings.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeadings.php) | todo | — |
-| Table / HasQuery | [`Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | todo | — |
+| Table / HasQuery | [`Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) — [table.md](table.md) |
 | Table / HasQueryStringIdentifier | [`Table/Concerns/HasQueryStringIdentifier.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — |
-| Table / HasRecordAction | [`Table/Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | todo | — |
-| Table / HasRecordActions | [`Table/Concerns/HasRecordActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | todo | — |
+| Table / HasRecordAction | [`Table/Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
+| Table / HasRecordActions | [`Table/Concerns/HasRecordActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
 | Table / HasRecordClasses | [`Table/Concerns/HasRecordClasses.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordClasses.php) | todo | — |
-| Table / HasRecordUrl | [`Table/Concerns/HasRecordUrl.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | todo | — |
-| Table / HasToolbarActions | [`Table/Concerns/HasToolbarActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasToolbarActions.php) | todo | — |
+| Table / HasRecordUrl | [`Table/Concerns/HasRecordUrl.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
+| Table / HasToolbarActions | [`Table/Concerns/HasToolbarActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasToolbarActions.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
 | Column / BelongsToGroup | [`Columns/Concerns/BelongsToGroup.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToGroup.php) | todo | — |
 | Column / BelongsToLayout | [`Columns/Concerns/BelongsToLayout.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToLayout.php) | todo | — |
 | Column / CanBeCopied | [`Columns/Concerns/CanBeCopied.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeCopied.php) | todo | — |
@@ -193,13 +206,13 @@ pairs with, so it shares the first row below.
 | Column / CanBeHidden | [`Columns/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php) | todo | — |
 | Column / CanBeHiddenResponsively | [`Columns/Concerns/CanBeHiddenResponsively.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php) | todo | — |
 | Column / CanBeInline | [`Columns/Concerns/CanBeInline.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeInline.php) | todo | — |
-| Column / CanBeSearchable | [`Columns/Concerns/CanBeSearchable.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | todo | — |
-| Column / CanBeSortable | [`Columns/Concerns/CanBeSortable.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php) | todo | — |
+| Column / CanBeSearchable | [`Columns/Concerns/CanBeSearchable.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [column.md](column.md) |
+| Column / CanBeSortable | [`Columns/Concerns/CanBeSortable.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [column.md](column.md) |
 | Column / CanBeSummarized | [`Columns/Concerns/CanBeSummarized.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | todo | — |
 | Column / CanBeToggled | [`Columns/Concerns/CanBeToggled.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — |
 | Column / CanBeValidated | [`Columns/Concerns/CanBeValidated.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php) | todo | — |
-| Column / CanCallAction | [`Columns/Concerns/CanCallAction.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanCallAction.php) | todo | — |
-| Column / CanOpenUrl | [`Columns/Concerns/CanOpenUrl.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | todo | — |
+| Column / CanCallAction | [`Columns/Concerns/CanCallAction.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanCallAction.php) | blocked | table actions (M1 · 6) — [column.md](column.md) |
+| Column / CanOpenUrl | [`Columns/Concerns/CanOpenUrl.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | blocked | table actions (M1 · 6) — [column.md](column.md) |
 | Column / CanUpdateState | [`Columns/Concerns/CanUpdateState.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php) | todo | — |
 | Column / HasColor | [`Columns/Concerns/HasColor.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php) | todo | — |
 | Column / HasDescription | [`Columns/Concerns/HasDescription.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php) | todo | — |
@@ -207,10 +220,10 @@ pairs with, so it shares the first row below.
 | Column / HasExtraHeaderAttributes | [`Columns/Concerns/HasExtraHeaderAttributes.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraHeaderAttributes.php) | todo | — |
 | Column / HasIcon | [`Columns/Concerns/HasIcon.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php) | todo | — |
 | Column / HasIconColor | [`Columns/Concerns/HasIconColor.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | todo | — |
-| Column / HasRowLoopObject | [`Columns/Concerns/HasRowLoopObject.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | todo | — |
+| Column / HasRowLoopObject | [`Columns/Concerns/HasRowLoopObject.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | blocked | the `Table` template — [column.md](column.md#rowloop-waits-on-the-table-template) |
 | Column / HasSpace | [`Columns/Concerns/HasSpace.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasSpace.php) | todo | — |
 | Column / HasTooltip | [`Columns/Concerns/HasTooltip.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — |
-| Column / InteractsWithTableQuery | [`Columns/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | todo | — |
+| Column / InteractsWithTableQuery | [`Columns/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [column.md](column.md) |
 | Summarizer / BelongsToColumn | [`Columns/Summarizers/Concerns/BelongsToColumn.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/BelongsToColumn.php) | todo | — |
 | Summarizer / CanBeHidden | [`Columns/Summarizers/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanBeHidden.php) | todo | — |
 | Summarizer / CanFormatState | [`Columns/Summarizers/Concerns/CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanFormatState.php) | todo | — |

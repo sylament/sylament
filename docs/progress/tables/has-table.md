@@ -161,24 +161,34 @@ their own features. A closure written today still receives everything the
 evaluation path resolves without those names: `$table` — by the parameter name,
 which is `Table`'s `$evaluationIdentifier`, or by a `Table` type hint —
 `$liveComponent` by name through
-[`Table`'s resolver override](table.md), and any explicit named or typed
-injection a future caller passes to `evaluate()`. So the injection *mechanism* is
-live and proven by
+[`Table`'s resolver override](table.md), any explicit named or typed injection a
+future caller passes to `evaluate()`, and a public container service by type
+(below). So the injection *mechanism* is live and proven by
 [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)'s
 `$table` case; only the table-state names are missing. Provisional by
 construction — each name arrives with the state it reads.
 
-One resolution arm is **not** live yet, and it is not this divergence's doing:
-type-hinting a **container service** in a `records()` closure does not work at
-this commit. `SylamentTablesBundle` registers no services — it has no
-`loadExtension()` — so `Table::newInstance()` misses the resolver's locator and
-falls to its `new $class()` arm, the `#[Required] setInvoker()` setter never
-fires, and `EvaluatesClosures::getInvoker()` builds its fallback `Invoker` around
-an **empty** container. That is the documented cost of a `new`-built component
-([component.md](../support/component.md#closure-resolution-lives-in-a-service)),
-not a tables decision. Service-by-type resolution starts working the moment the
-bundle registers `Table` as an autowired service, which is the bundle-wiring step
-of this same epic — nothing about the closure lane changes when it does.
+The **container** arm is live, and it arrived with the bundle wiring rather than
+with anything in this divergence. `SylamentTablesBundle::loadExtension()`
+registers `Table` as an autowired, autoconfigured service, so
+`Table::newInstance()` resolves through `ComponentResolver`'s locator, the
+`#[Required] setInvoker()` setter fires, and the table evaluates its closures
+through the container's `Invoker` instead of the fallback one built around an
+empty container. A `records()` closure may therefore type-hint a service and be
+handed it —
+[`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php)
+pins both halves: the table's `Invoker` is the container's, and a closure
+type-hinting a fixture repository receives the container's shared instance.
+
+One boundary comes with it, and it is a support-layer rule rather than a tables
+one: the `Invoker` holds `service_container`, and `Container::has()` on a compiled
+container answers for **public** ids only — so a **private** service, which is
+Symfony's default and what most of Sylament's own services are, still does not
+resolve by type. That is the same "only types the container `has()` resolve"
+constraint
+[component.md](../support/component.md#closure-resolution-lives-in-a-service)
+records, and it is why the fixture repository that test injects is
+`#[Autoconfigure(public: true)]`.
 
 ### The missing-data-source error names only `records()`
 

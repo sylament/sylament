@@ -43,12 +43,32 @@ Cross-cutting concerns and traits —
 
 ## Supporting surface
 
-Enums, contracts, templates, test helpers —
+Enums, contracts, the icon-alias registry, the `renderTable()` Twig helper,
+templates, test helpers, and the bundle wiring —
 [`src/Enums`](../../../vendor/filament/tables/src/Enums),
 [`src/Contracts`](../../../vendor/filament/tables/src/Contracts),
 [`src/Testing`](../../../vendor/filament/tables/src/Testing),
-[`src/View`](../../../vendor/filament/tables/src/View).
+[`src/View`](../../../vendor/filament/tables/src/View),
+[`TablesServiceProvider.php`](../../../vendor/filament/tables/src/TablesServiceProvider.php).
+A row whose Ports cell names no Filament source is Sylament-only — nothing to
+diff against. The host contract [`InteractsWithTable`](../../../packages/tables/src/Contracts/InteractsWithTable.php)
+is not listed here: it is inseparable from the trait it pairs with, so it shares
+that row in [Features](#features).
+
+Two rows are **in progress**, and neither has a detail file of its own — the gap
+is one sentence each. `TablesIconAlias` declares the one alias the shipped
+surface reads, `EMPTY_STATE`; Filament's class carries twenty-two more, each
+belonging to a feature (reordering, filtering, grouping, bulk actions, the column
+manager, the query builder) that is itself unported, so an alias lands with the
+feature that reads it. `SylamentTablesBundle` registers what the minimal vertical
+ships — the `Columns\` tier, `Table`, and the Twig extension — where Filament's
+provider also registers the package's `make:` commands, translations, views,
+front-end assets, the publishable stubs and six Livewire testing mixins; each of
+those follows the subsystem it belongs to rather than arriving ahead of it.
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| _not audited yet_ | | | |
+| [`TableExtension`](../../../packages/tables/src/Twig/Extension/TableExtension.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`SchemaExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | [schema-extension.md](../schemas/schema-extension.md#schemaextension-has-no-11-filament-source--it-is-the-twig-side-parallel-of-supports-componentextension) |
+| [`TablesIconAlias`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`View/TablesIconAlias.php`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — |
+| [`SylamentTablesBundle`](../../../packages/tables/src/SylamentTablesBundle.php) | [`TablesServiceProvider.php`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | in progress | — |
+| _rest not audited yet_ | | | |

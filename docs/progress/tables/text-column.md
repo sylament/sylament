@@ -61,9 +61,12 @@ The three state-pipeline rows are covered by
 `$record`, and a literal `formatStateUsing('fixed')` displacing the state. The
 `$template` row is covered by the Integration
 [`TextColumnTest`](../../../packages/tables/tests/Integration/Columns/TextColumnTest.php),
-which renders columns inside a real table: a dotted path and a `formatStateUsing()`
-closure landing in `div.sy-ta-text`, an iterable state arriving comma-joined, and a
-null state rendering the element empty rather than dropping it.
+which renders columns inside a real table and reads the cells back through a
+`DomCrawler` selecting the full chain
+(`td.sy-ta-cell > div.sy-ta-col > div.sy.sy-ta-text`), so the element carrying
+the state is the asserted one: a dotted path and a `formatStateUsing()` closure
+landing in the text element, an iterable state arriving comma-joined, and a null
+state rendering the element empty rather than dropping it.
 
 ## Details
 
@@ -163,9 +166,9 @@ Filament's cell has four list shapes: a multi-value state collapses to a single
 comma-joined item by default (`TextColumn.php:366-380`), `listWithLineBreaks()`
 keeps the items as separate lines, `bulleted()` renders them as a `<ul>`, and
 `limitList()` / `expandableLimitedList()` truncate the set with an expand
-trigger. Sylament's partial ships the default arm only —
-`state is iterable ? state|join(', ') : state` — and the other three have no
-setter to reach them.
+trigger. Sylament's partial ships the default arm only — one
+`div.sy.sy-ta-text` holding `state is iterable ? state|join(', ') : state` — and
+the other three have no setter to reach them.
 
 The collapse is the faithful half, and it is worth naming that it is Filament's
 *default*, not a simplification: a `TextColumn` over `['symfony', 'forms']`

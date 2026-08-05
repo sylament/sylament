@@ -97,6 +97,17 @@ icon reaching the raw-passthrough arm of
 [`generateIconHtml()`](../../../packages/support/src/Twig/Extension/IconExtension.php),
 and a `<script>` in a record value coming back escaped.
 
+Two of its cases pin the **structure** rather than the strings, because this is
+the DOM contract the tables stylesheet and the demo's browser tests are written
+against. They read the render back through a `DomCrawler` with the child
+combinator — `div.sy.sy-ta > div.sy-ta-ctn > table.sy-ta-table`,
+`tr.sy-ta-row > td.sy-ta-cell > div.sy-ta-col > div.sy.sy-ta-text`, and
+`div.sy-ta-empty-state[role="status"] > div.sy-ta-empty-state-content` holding
+the icon background's `<svg>`, the `<h3>` heading and the `<p>` description — so
+a flattened wrapper or a renamed class fails here rather than silently
+downstream. A substring assertion passes through both of those changes, which is
+why the counts are selected and not grepped.
+
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left, and

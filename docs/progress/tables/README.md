@@ -31,11 +31,12 @@ are the four this package waits on today. (The
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 
-Nine concerns the port has landed are **folded** into the detail file of the
+Eleven concerns the port has landed are **folded** into the detail file of the
 class that composes them and carry no row here, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing) — four
-`Table\Concerns\` traits (`BelongsToLivewire`, `HasColumns`, `HasEmptyState`,
-`HasRecords`) into [`table.md`](table.md), four `Columns\Concerns\` traits
+[one row per file](../README.md#one-row-per-file-one-file-per-thing) — six
+`Table\Concerns\` traits (`BelongsToLivewire`, `HasActions`, `HasColumns`,
+`HasEmptyState`, `HasRecordActions`, `HasRecords`) into
+[`table.md`](table.md), four `Columns\Concerns\` traits
 (`BelongsToTable`, `HasLabel`, `HasName`, `HasRecord`) into
 [`column.md`](column.md), and `Columns\Concerns\CanFormatState` into
 [`text-column.md`](text-column.md). Filament's `resources/views/index.blade.php`
@@ -144,7 +145,7 @@ The prefix is load-bearing rather than decorative: twenty trait names occur in
 two of these tiers and five (`BelongsToTable`, `CanBeHidden`, `HasColumns`,
 `HasLabel`, `InteractsWithTableQuery`) in three, which is the same
 [read-by-import, never by the bare `use`](../../../CLAUDE.md) trap the schemas
-tiers carry. The nine landed concerns folded into their component's detail file
+tiers carry. The eleven landed concerns folded into their component's detail file
 are named in the [preamble](#tables--port-progress) and carry no row here.
 
 `Contracts/HasTable.php` is not listed in
@@ -183,7 +184,6 @@ pairs with, so it shares the first row below.
 | Table / CanSearchRecords | [`Table/Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [table.md](table.md) |
 | Table / CanSortRecords | [`Table/Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [table.md](table.md) |
 | Table / CanSummarizeRecords | [`Table/Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | todo | — |
-| Table / HasActions | [`Table/Concerns/HasActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasActions.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
 | Table / HasArguments | [`Table/Concerns/HasArguments.php`](../../../vendor/filament/tables/src/Table/Concerns/HasArguments.php) | todo | — |
 | Table / HasBulkActions | [`Table/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
 | Table / HasColumnManager | [`Table/Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — |
@@ -196,7 +196,6 @@ pairs with, so it shares the first row below.
 | Table / HasQuery | [`Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) — [table.md](table.md) |
 | Table / HasQueryStringIdentifier | [`Table/Concerns/HasQueryStringIdentifier.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — |
 | Table / HasRecordAction | [`Table/Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
-| Table / HasRecordActions | [`Table/Concerns/HasRecordActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
 | Table / HasRecordClasses | [`Table/Concerns/HasRecordClasses.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordClasses.php) | todo | — |
 | Table / HasRecordUrl | [`Table/Concerns/HasRecordUrl.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
 | Table / HasToolbarActions | [`Table/Concerns/HasToolbarActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasToolbarActions.php) | blocked | table actions (M1 · 6) — [table.md](table.md) |
@@ -290,7 +289,7 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | FiltersLayout | [`Enums/FiltersLayout.php`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php) | todo | — |
 | FiltersResetActionPosition | [`Enums/FiltersResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | todo | — |
 | PaginationMode | [`Enums/PaginationMode.php`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | todo | — |
-| RecordActionsPosition | [`Enums/RecordActionsPosition.php`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | todo | — |
+| [`RecordActionsPosition`](../../../packages/tables/src/Enums/RecordActionsPosition.php) | [`Enums/RecordActionsPosition.php`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | done | [table.md](table.md#the-position-default-has-no-content-arm-to-choose-between-yet) |
 | RecordCheckboxPosition | [`Enums/RecordCheckboxPosition.php`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | todo | — |
 | TableComponent | [`TableComponent.php`](../../../vendor/filament/tables/src/TableComponent.php) | todo | — |
 | Commands | [`Commands/`](../../../vendor/filament/tables/src/Commands) | todo | — |

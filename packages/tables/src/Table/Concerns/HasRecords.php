@@ -29,4 +29,12 @@ trait HasRecords
     {
         return $this->getLiveComponent()->getTableRecords();
     }
+
+    /**
+     * @param object|array<string, mixed> $record
+     */
+    public function getRecordKey(object|array $record): string
+    {
+        return $this->getLiveComponent()->getTableRecordKey($record);
+    }
 }

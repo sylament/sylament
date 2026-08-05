@@ -19,4 +19,9 @@ interface InteractsWithTable
      * @return object|array<string, mixed>|null
      */
     public function getTableRecord(?string $key): object|array|null;
+
+    /**
+     * @param object|array<string, mixed> $record
+     */
+    public function getTableRecordKey(object|array $record): string;
 }

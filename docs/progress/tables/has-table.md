@@ -95,7 +95,7 @@ instead.
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | — |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
-| [`getTableRecord(?string $key)` with its `resolveQueryTableRecord()` query arm](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) |
+| [`getTableRecord(?string $key)` with its `resolveQueryTableRecord()` query arm](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) · [diverges](#record-resolution-applies-no-limit-1-where-filaments-find-does) |
 | [`getAllTableRecordsCount(): int`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getAllTableRecordsCount()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#the-all-records-count-answers-four-ways-where-filaments-answers-two) |
 | [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [semantics](#filtertablequery-applies-the-search-not-filters) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
 | `getTableQueryForExport()` | [`Concerns\HasRecords::getTableQueryForExport()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | the export surface | It bypasses the seams above, re-reading `getTable()->getQuery()` and re-applying filters, search and sorting itself, to assemble a query for Filament's export action — a surface with no counterpart here and on no milestone, the same one [`ExportColumn`](column.md#hascellstate-is-relocated-into-the-column-tier) waits on. It lands with that action or not at all |
@@ -177,14 +177,14 @@ cache" and "re-queries" differ visibly. Three more reach past the page the rende
 built: a record on page 3 of a `paginated([2])` table, a record the active search
 term excludes, and a fetch-joined `Artist` coming back with **all three** of its
 songs — the case that fails the moment a `setMaxResults(1)` joins the resolution
-query, which is [the guard this lane does not
-apply](#gettablerecord-reads-fresh-when-the-render-cache-is-cold). The scope flag
-is read through a `modifyQueryUsing()` closure recording its `isResolvingRecord`
-argument across a render and then a lookup, asserting exactly `[false, true]`.
-Three narrower answers sit beside them: an unknown key coming back null, a bare
-table naming both lanes, and a `CompositePair` query refusing loudly on
-*resolution*, which is a different method from the keying refusal above and is
-reached without it.
+query, which is
+[the limit this lane does not apply](#record-resolution-applies-no-limit-1-where-filaments-find-does).
+The scope flag is read through a `modifyQueryUsing()` closure recording its
+`isResolvingRecord` argument across a render and then a lookup, asserting exactly
+`[false, true]`. Three narrower answers sit beside them: an unknown key coming
+back null, a bare table naming both lanes, and a `CompositePair` query refusing
+loudly on *resolution*, which is a different method from the keying refusal above
+and is reached without it.
 
 `getAllTableRecordsCount()` has one case carrying all four arms. Seven seeded
 songs are counted through the query with nothing rendered; the same table with
@@ -1134,18 +1134,38 @@ excluded still resolves. No **pagination**: nothing constrains the page, so a
 record that left the current page between render and mount resolves anyway. And
 no **sorting**, which would only cost an `ORDER BY` on a single-row read. The one
 thing Filament's lane applies that this cannot is filters — there is no filter
-layer here yet, and it joins this query when there is.
+layer here yet, and it joins this query when there is. A fourth thing it does not
+apply — the row limit Filament's `find()` carries — is a deviation rather than a
+faithful omission, and has
+[its own note](#record-resolution-applies-no-limit-1-where-filaments-find-does).
 
-It also applies no `setMaxResults(1)`, which is worth stating because it looks
-missing. The identifier predicate already admits at most one root entity, so the
-limit guards nothing — while on a **fetch-joined** query it truncates the joined
-rows, handing back a root entity whose collection holds one element and claims to
-be complete, the same row-multiplication trap
-[the Tools paginator](#the-page-state-has-no-query-lane-and-no-session-half)
-exists to survive on the page query. A query that somehow does return two roots
-raises Doctrine's `NonUniqueResultException` instead of silently answering with
-the first, which is the failure we want. The fetch-join resolution case pins
-this: it asserts all three songs, and fails the moment the limit comes back.
+### Record resolution applies no `LIMIT 1` where Filament's `find()` does
+
+Filament resolves with `$query->find($key)`, and Eloquent's `find()` is
+`whereKey($id)->first()`, which is `limit(1)->get()->first()` — so its lane does
+ship a row limit. `resolveQueryTableRecord()` ends at `getOneOrNullResult()` with
+no `setMaxResults(1)`, which is worth stating because it reads as a missing line.
+
+The limit is free in Eloquent because a `with()` eager load is a **second**
+query, matched onto the parent models afterwards, so a `LIMIT 1` on the root
+query cannot reach a relation. Doctrine's fetch join selects the relation in the
+**same** query, so the limit truncates it: the root comes back holding one
+element in a collection that reports itself complete — the row-multiplication
+trap [the Tools paginator](#the-page-state-has-no-query-lane-and-no-session-half)
+exists to survive on the page query, except that here it corrupts a single
+resolved record rather than a page count, silently.
+
+It buys nothing in exchange. The identifier predicate already admits at most one
+root, and object hydration returns one entity per identity however many rows the
+join produced, so `getOneOrNullResult()` cannot throw from row multiplication. A
+query that somehow does return two roots raises Doctrine's
+`NonUniqueResultException` — `AbstractQuery::getOneOrNullResult()` throws on a
+result count above one — rather than silently answering with the first, which is
+the failure we want.
+
+Permanent. The fetch-join resolution case pins it: it asserts all three songs and
+fails with "actual size 1 matches expected size 3" the moment the limit comes
+back.
 
 ### The all-records count answers four ways where Filament's answers two
 

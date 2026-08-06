@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * Covers the query half of host-side sorting — the `ORDER BY` the lane composes.
+ * The `sortTable()` state cycle it reads stays in `HasTableTest`.
+ */
+
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
@@ -11,10 +16,6 @@ use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CompositePair;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 
-/**
- * Covers the query half of host-side sorting — the `ORDER BY` the lane composes.
- * The `sortTable()` state cycle it reads stays in `HasTableTest`.
- */
 function seededSongs(): EntityManager
 {
     $entityManager = EntityManagerFactory::create();
@@ -65,6 +66,18 @@ it('applies the default sort when the user has not sorted', function (): void {
 
     expect(sortedSongTitles($host))->toBe(['Charlie', 'Bravo', 'Alpha'])
         ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays desc, song.id desc');
+});
+
+it('lowercases a mixed-case default sort direction', function (): void {
+    $entityManager = seededSongs();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song'))
+        ->columns([TextColumn::make('title')->sortable(), TextColumn::make('plays')->sortable()])
+        ->defaultSort('plays', 'DESC'));
+
+    expect($host->getTable()->getDefaultSortDirection())->toBe('desc')
+        ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.plays desc, song.id desc')
+        ->and(sortedSongTitles($host))->toBe(['Charlie', 'Bravo', 'Alpha']);
 });
 
 it('appends the default sort as a secondary order under a user sort', function (): void {
@@ -148,6 +161,40 @@ it('lets a default sort closure replace the query', function (): void {
     expect($records)->toHaveCount(2)
         ->and(array_keys($records))->toBe([1, 3])
         ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('WHERE song.plays > 15 ORDER BY song.id asc');
+});
+
+it('drops the user sort when a default sort closure replaces the query', function (): void {
+    $entityManager = seededSongs();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song'))
+        ->columns([TextColumn::make('title')->sortable()])
+        ->defaultSort(fn (): QueryBuilder => $entityManager->createQueryBuilder()
+            ->select('song')
+            ->from(Song::class, 'song')
+            ->andWhere('song.plays > 15')));
+
+    $host->sortTable('title');
+
+    $dql = $host->getFilteredSortedTableQuery()?->getDQL() ?? '';
+
+    expect($dql)->toContain('WHERE song.plays > 15 ORDER BY song.id asc')
+        ->and($dql)->not->toContain('song.title')
+        ->and(array_keys($host->getTableRecords()))->toBe([1, 3]);
+});
+
+it('takes the default sort column and the key sort switch from closures', function (): void {
+    $entityManager = seededSongs();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song'))
+        ->columns([TextColumn::make('title')->sortable()])
+        ->defaultSort(fn (): string => 'plays', 'desc')
+        ->defaultKeySort(fn (): bool => false));
+
+    $dql = $host->getFilteredSortedTableQuery()?->getDQL() ?? '';
+
+    expect($dql)->toContain('ORDER BY song.plays desc')
+        ->and($dql)->not->toContain('song.id')
+        ->and(sortedSongTitles($host))->toBe(['Charlie', 'Bravo', 'Alpha']);
 });
 
 it('suppresses the tiebreaker when the key is already ordered', function (): void {

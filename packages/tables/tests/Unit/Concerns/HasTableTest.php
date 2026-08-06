@@ -205,7 +205,7 @@ it('refuses an entity whose identifier is blank', function (): void {
     $host->getTableRecordKey(new Book('', 'Blank'));
 })->throws(LogicException::class, 'is not a printable value');
 
-it('refuses an entity with no identifier set', function (): void {
+it('refuses an entity whose identifier was never initialised', function (): void {
     $entityManager = EntityManagerFactory::create();
     $host = new TableHost(fn (Table $table): Table => $table
         ->query($entityManager->createQueryBuilder()->select('book')->from(Book::class, 'book')));

@@ -94,7 +94,7 @@ instead.
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
 | [`getTableRecord(?string $key)`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) |
 | `getAllTableRecordsCount()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | todo | — | Filament's paginated arm is answerable here (`getTablePaginator()?->getTotalRecordCount()`) but its other arm is `getFilteredTableQuery()->count()`, the query lane's; nothing reads the method yet, so it ships whole or not at all |
-| [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`, `getTableQueryForExport()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-filtered-query-seams-are-wired-before-the-layers-that-fill-them) |
+| [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`, `getTableQueryForExport()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-filtered-query-seams-are-wired-before-the-layers-that-fill-them) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
 | [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `updatedTableRecordsPerPage()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-no-query-lane-and-no-session-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#no-table-state-is-persisted-in-the-session) |
@@ -140,7 +140,7 @@ convention, and never evaluates the query at all, which a counter on the query
 closure proves. A second case reads the same both-configured table through the
 seams instead, where `getFilteredTableQuery()` and
 `getFilteredSortedTableQuery()` must both answer null — the assertion that keeps
-the [lane gate](#the-filtered-query-seams-are-wired-before-the-layers-that-fill-them)
+the [lane gate](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder)
 from drifting back to "is there a builder to be had". The metadata keying has
 four cases of its own, none of them reachable by that convention: a `Book`, whose
 identifier is `code` and which has
@@ -214,18 +214,21 @@ and identifier order all disagree, so an ordering that is silently ignored canno
 pass: each asserts the composed `ORDER BY` off
 `getFilteredSortedTableQuery()->getDQL()` **and** the record order the database
 answered with. They are the user sort with its tiebreaker; the default sort
-alone, in the direction it declared; the default appended under a user sort;
-everything after the user's column taking the *declared* direction rather than
-the clicked one; the same-column default applied exactly once (a count of
-occurrences, since the failure being caught is a duplicate rather than an
-absence); the raw-path arm with no matching column; a default-sort closure
-ordering the query it was handed; another replacing it with a builder that also
-filters, asserted by the two records left; both tiebreaker suppressions, the
-qualified key and the joined `artist.id` one; `defaultKeySort(false)` leaving no
-key ordering at all; and a `query()`-authored `orderBy` staying in front of
-everything the table adds. One more pins the composite-identifier guard: a
-`CompositePair` query composes no `ORDER BY` at all rather than throwing on a
-single-identifier read.
+alone, in the direction it declared; a mixed-case `'DESC'` arriving lowercased,
+which is the only transformation the declaration side performs; the default
+appended under a user sort; everything after the user's column taking the
+*declared* direction rather than the clicked one; the same-column default applied
+exactly once (a count of occurrences, since the failure being caught is a
+duplicate rather than an absence); the raw-path arm with no matching column; a
+default-sort closure ordering the query it was handed; another replacing it with
+a builder that also filters, asserted by the two records left, and that same
+replacement under a user sort, where the clicked ordering goes with the builder
+it was applied to; the closure arms of both setters, one naming a column and one
+switching the tiebreaker off; both tiebreaker suppressions, the qualified key and
+the joined `artist.id` one; `defaultKeySort(false)` leaving no key ordering at
+all; and a `query()`-authored `orderBy` staying in front of everything the table
+adds. One more pins the composite-identifier guard: a `CompositePair` query
+composes no `ORDER BY` at all rather than throwing on a single-identifier read.
 
 The `#[LiveProp]` and `#[LiveAction]` attributes carry no runtime behaviour a
 render test would catch, so they are pinned by reflection in
@@ -275,9 +278,9 @@ injection a caller passes to `evaluate()`, and a public container service
 `getFilteredTableQuery()`, `filterTableQuery()` and `getFilteredSortedTableQuery()`
 ship with Filament's names, signatures and composition, and — apart from sorting
 — with none of the applications those signatures exist to hold.
-`getFilteredTableQuery()` answers null unless the table is
-[on the query lane](table.md#the-query-lane-is-on-exactly-while-no-records-closure-is-set),
-then reads [`Table::getQuery()`](table.md#every-read-clones-a-memoised-base-query)
+`getFilteredTableQuery()` answers null unless the table is on the query lane —
+[a gate Filament's seam does not have](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder)
+— then reads [`Table::getQuery()`](table.md#every-read-clones-a-memoised-base-query)
 — a scoped clone, so what comes back is always a builder the caller may mutate —
 answers null again when there is no query to read, and otherwise hands it to
 `filterTableQuery()`, which today returns it untouched.
@@ -286,14 +289,6 @@ answers null again when there is no query to read, and otherwise hands it to
 and nothing else. So a query-lane table resolves **every** record its query
 selects, in the order the sort composition asked for, and outside their own
 composition `resolveTableRecords()` is their only caller.
-
-The lane gate is the load-bearing half of that first null. `hasQuery()` is
-"no records closure is set", not "a query is declared", so a table configured
-with **both** answers null here — the same branch `resolveTableRecords()` takes,
-rather than "is there a builder to be had", which would hand a *records*-lane
-table a query nothing else in the request will use. Reading the seam is therefore
-a truthful answer to *is this table's data a query*, which the count and
-record-resolution arms built on it depend on.
 
 They land first, and public, on purpose: each layer still to come is a body
 inside one of them rather than a new call site, and anything that needs the lane
@@ -348,7 +343,10 @@ the same column resolution when it names a declared sortable column and through
 when it names a raw path instead — which is how `defaultSort('plays')` works on a
 table with no `plays` column. A default-sort **closure** is handed `query` and
 `direction`; ordering the builder it was given is the usual arm, and returning a
-builder replaces the query outright, filters and all.
+builder replaces the query outright, filters and all — **including the user's
+sort**, which was applied to the builder that just got replaced, so a table whose
+default sort closure returns one is ordered by that builder plus the tiebreaker
+and by nothing the user clicked. Filament's arm discards it the same way.
 
 Last is `defaultKeySort()`, on by default: the root alias's identifier field,
 read from the mapping metadata rather than assumed to be `id`, appended in the
@@ -362,6 +360,16 @@ almost always chosen its own tiebreaker. It also no-ops rather than throwing whe
 the table's records carry a composite identifier, or when the builder names no
 root entity to read metadata from — a query that cannot be keyed by one column
 cannot be tiebroken by one either.
+
+The two halves of that qualified key are read from different builders, which only
+matters after a replacement. The identifier **field** comes from the table's
+[record class](table.md#the-record-class-is-read-off-the-base-querys-root-entity),
+memoised off the declared base query, while the root **alias** comes off the
+builder actually in hand; Filament reads both off the effective one
+(`$query->getModel()->getQualifiedKeyName()`). They can only disagree when a
+default-sort closure hands back a builder over a *different* entity, which the
+lane rules out for other reasons already — the record class is what keys every
+row — so this is recorded rather than guarded.
 
 What is still missing from Filament's method is its two early returns.
 `isTableReordering()` replaces every ordering with the reorder column, and
@@ -594,6 +602,33 @@ Filament's own deprecation notice points at: a host configures its table by
 overriding `table()`. This is the same reasoning that kept
 [`schema()` out](../schemas/component.md#the-schema-alias-is-not-ported) as an
 alias for `components()`. Permanent.
+
+### The filtered-query seam is gated on the lane, not on the presence of a builder
+
+Filament's `getFilteredTableQuery()` reads `getTable()->getQuery()` and answers
+null only when there is no builder to read — the lane question is asked
+somewhere else, at the top of `getTableRecords()`, which branches on
+`hasQuery()` before the seam is ever reached. So a Filament table declaring
+**both** a `records()` closure and a `query()` resolves the closure for its rows
+and still hands the builder back to anything calling the seam directly. Sylament
+asks the lane question in the seam itself: no `hasQuery()`,
+[which is "no records closure is set"](table.md#the-query-lane-is-on-exactly-while-no-records-closure-is-set),
+no query — and `getFilteredSortedTableQuery()` answers null with it.
+
+The gate is there because the seam is public and its callers are not Filament's.
+Filament's two are `getTableRecords()` and `getTableQueryForExport()`, both of
+which have already settled the lane before they call; a caller here — the record
+resolution, and the count arm `getAllTableRecordsCount()` is waiting on above —
+asks the seam *instead* of deciding for itself, so the answer has to be true to
+the table rather than to the builder. Handing back a query a records-lane table
+will never execute is not a harmless extra: counted, it runs SQL for rows the
+render will not show.
+
+Nothing else changes. `resolveTableRecords()` takes the same branch either way,
+because it consults the data source first, so the gate is observable only through
+a direct read of the seam — which is exactly what the pinning case in
+[`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)
+does. Permanent while both lanes exist.
 
 ### `gotoTablePage()` replaces Livewire's paginator trio
 

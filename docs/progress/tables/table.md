@@ -647,6 +647,14 @@ column keeps the direction they clicked; nothing after it does. A table that
 never calls `defaultSort()` has a null default direction, so the tiebreaker
 follows the user instead.
 
+The `'desc'` comparison is the host's and it is case-sensitive, which is why
+`getDefaultSortDirection()` lowercases what it evaluates (Filament's
+`Str::lower()`) before handing it over: `defaultSort('plays', 'DESC')` means
+descending, and dropping that one call would silently turn every mixed-case
+declaration ascending. It is the only transformation on this side of the family,
+and the [sorting suite](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)
+pins it.
+
 `getDefaultSort()` is declared to return `string|QueryBuilder|null` — wider than
 the `string|Closure|null` property behind it, because the closure arm may hand
 back a builder to sort **and replace** the query with, which is the one way a

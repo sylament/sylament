@@ -704,8 +704,9 @@ containers inside `fi-ta-main` (`fi-ta-header-ctn`, `fi-ta-header-toolbar`) are
 emitted **unconditionally**, hidden with `x-cloak` + `x-show` when the table has
 no heading, description or toolbar action. Sylament's partial is three deep —
 `sy sy-ta` > `sy-ta-ctn` > `table.sy-ta-table` or `div.sy-ta-empty-state` — with
-no `sy-ta-main`, no `sy-ta-content-ctn`, neither header container, and no
-`aria-label` on the `<table>`.
+no `sy-ta-main`, no `sy-ta-content-ctn`, no `sy-ta-header-ctn`, and no
+`aria-label` on the `<table>`; `sy-ta-header-toolbar` is the one container that
+does render, and only when the table is searchable.
 
 The wrappers are not markup for their own sake in Filament: they exist so Livewire's
 DOM morph finds the same nodes before and after a toolbar's visibility flips,
@@ -721,6 +722,12 @@ change that lands the first feature it holds, at which point its emptiness is
 transient rather than permanent. The **class names** are already reserved by the
 Filament originals, so nothing about the eventual DOM depends on inventing them
 later.
+
+The `ms-auto` on `.sy-ta-search-field` is a stopgap for the same thinness — the
+ported `& > :nth-child(2)` rule pushes the toolbar's *second* child to its end
+and today's toolbar has exactly one child, so the search field would otherwise
+render start-aligned where Filament shows it at the end — and it drops when the
+slot-1 controls (filters, grouping) land beside it.
 
 ### The visible action map is a `Table` method, and is not short-circuited
 

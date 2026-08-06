@@ -50,8 +50,8 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `call()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | blocked | bulk actions (`InteractsWithSelectedRecords`), visibility cache | [detail](#call-drops-the-post-call-cleanup) |
 | `cancel()` / `halt()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | Doctrine transaction integration | [detail](#cancel-and-halt-drop-the-rollback-flag) |
 | `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getstatus-drops-the-bulk-record-tally) |
-| `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/InteractsWithSelectedRecords ports, the Action→schema record/operation hop (M1 · 6) | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-10-of-16-names) |
-| `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | tables/InteractsWithSelectedRecords ports, the Action→schema record hop (M1 · 6) | [detail](#resolvedefaultclosuredependencyforevaluationbytype-carries-only-the-added-getset-arms) |
+| `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | `InteractsWithSelectedRecords` (table bulk actions), the Action→schema record/operation hop | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-10-of-16-names) |
+| `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | `InteractsWithSelectedRecords` (table bulk actions), the Action→schema record hop | [detail](#resolvedefaultclosuredependencyforevaluationbytype-carries-only-the-added-getset-arms) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | bulk actions (`bulk` flag) | [diverges](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) |
 | `getClone()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`getClone()`) | done | — | Filament-exact one-liner (`clone $this`). A shallow clone is the whole contract on this side: what a caller needs is an action whose `record()` / `table()` / `group()` bindings can be re-stamped per row without touching the declared original. `ActionGroup`'s override adds the member deep-clone ([there](action-group.md#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately)) |
 | `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) decidable |
@@ -180,7 +180,7 @@ beyond today's `HasActions`), `selectedRecords`/`records` +
 `CanFetchSelectedRecords`), `schemaOperation`/`context`/`operation`
 (the value exists now — schemas' `Schema` has
 [`getOperation()`](../schemas/has-operation.md) — but no arm here reads it off
-the action's schema container; deferred to M1 · 6 with the record hop below),
+the action's schema container; it waits on the record hop below),
 and `table` (`BelongsToTable`). Coverage: `record`/`arguments` via `ActionTest`'s
 "calls the action closure…", `data` via `ActionTest`'s "injects $data from
 getData()", `liveComponent` via
@@ -198,7 +198,7 @@ record — so `fn (Model $record)` or `fn (Builder $query)` resolves without nam
 the parameter. **None of those three arms are ported**, and each is blocked on a
 different prerequisite: the query and collection arms on
 tables/`InteractsWithSelectedRecords`, the record arm on the Action→schema record
-hop (M1 · 6) — until [`getRecord()`](#the-record-title-and-model-metadata-surface-is-not-ported)
+hop — until [`getRecord()`](#the-record-title-and-model-metadata-surface-is-not-ported)
 walks to the schema container, a record arm would resolve `null` for every action
 bound to a record-carrying schema, so landing it first would be worse than not
 having it. A type-hinted record parameter therefore still falls through to
@@ -542,8 +542,10 @@ closure is covered by
 `model()` / `getModel()` / `getCustomModel()`, `modelLabel()` /
 `pluralModelLabel()` and their Title-Case variants, `recordTitle()` /
 `recordTitleAttribute()` and their `getRecordTitle()` / `getCustomRecordTitle()`
-/ `hasCustomRecordTitle()` family, `resolveRecordKey()`, and the
-`ensureCorrectRecordType()` custom-model guard. Of the fallback chain Filament
+/ `hasCustomRecordTitle()` family, and the
+`ensureCorrectRecordType()` custom-model guard — but **not**
+`resolveRecordKey()`, which the record-action lane ported and
+[diverges](#record-key-resolution-is-hoisted-to-hasactions). Of the fallback chain Filament
 walks when no record is set directly — `getGroup()?->getRecord()`,
 `getSchemaContainer()?->getRecord()`, `getSchemaComponent()?->getRecord()`,
 and the `getHasActionsLivewire()?->getDefaultActionRecord()` tail — only the
@@ -553,10 +555,11 @@ record-only vocabulary this trait already used
 ([`belongs-to-record.md`](../schemas/belongs-to-record.md); the two surfaces have
 converged, so the hop is a plain delegation with no name translation) — but the
 hop itself is unwired: an `Action` inside a record-bound schema still resolves
-`$record` from its own binding plus the group fallback only. **Deferred to
-M1 · 6** (record actions), which owns both hops and the
-`schemaOperation`/`operation` arm; there is still no default-action-record host
-hook. The
+`$record` from its own binding plus the group fallback only. **No epic carries
+it** — M1 · 6 (record actions) was the expected home and stamped the record onto
+the action directly instead, per row, from the table's key lookup, so both
+schema hops and the `schemaOperation`/`operation` arm are still open; there is
+still no default-action-record host hook. The
 `$record` property is typed `mixed`
 instead of Filament's `Model | string | array | Closure | null`, since there is
 no Doctrine-entity-aware resolution to type it against.

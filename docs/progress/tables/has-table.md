@@ -42,14 +42,15 @@ Reference — the Filament source this is diffed against:
 - [`tables/src/Concerns/HasRecords.php`](../../../vendor/filament/tables/src/Concerns/HasRecords.php)
   — the host-side record resolution `getTableRecords()` ports
 - [`tables/src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php)
-  — the 46-method interface this reduces to three
+  — the 46-method interface this reduces to five
 
 ## Surface
 
 Every point of this trait and its contract. _Blocked by_ names what has to land
 first. _Detail_ carries either **detail** → the write-up in
 [Details](#details), deleted once the row is **done**, or **diverges** → the
-permanent note in [Divergences](#divergences).
+permanent note in [Divergences](#divergences). A **skipped** row states its
+reason inline instead.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -67,7 +68,8 @@ permanent note in [Divergences](#divergences).
 | Pagination — `WithPagination`, `getTablePage()`, `getTableRecordsPerPage()` | [`CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php), [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
 | Sorting and searching — `sortTable()`, `getTableSearch()`, the session persistence | [`CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php), [`CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
 | Filters — the `tableFiltersForm` schema, `tableFilters` state, the indicators | [`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | todo | — | — |
-| Actions and bulk actions — mounting, record resolution, selection | [`Concerns\HasActions`](../../../vendor/filament/tables/src/Concerns/HasActions.php), [`HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php), [`HasRecordAction`](../../../vendor/filament/tables/src/Concerns/HasRecordAction.php) | blocked | table actions (M1 · 6) | — |
+| The deprecated `*TableAction` host shims — `mountTableAction()`, `callMountedTableAction()`, `getMountedTableActionRecord()`, `unmountTableAction()`, `getTableRecordAction()`, … | [`Concerns\HasActions`](../../../vendor/filament/tables/src/Concerns/HasActions.php), [`HasRecordAction`](../../../vendor/filament/tables/src/Concerns/HasRecordAction.php) | skipped | — | Every method in both files is a one-line deprecated delegate, and the project has never ported a deprecated Filament surface. What they front is built: the host resolves a table-context mount through actions' [`resolveTableAction()`](../actions/has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference) and binds the record through `getTableRecord()` |
+| Bulk actions and selection — `getSelectedTableRecords()`, `getAllSelectableTableRecordKeys()`, `deselectAllTableRecords()` | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | blocked | table bulk actions | — |
 | Grouping and summaries | [`CanGroupRecords`](../../../vendor/filament/tables/src/Concerns/CanGroupRecords.php), [`CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | todo | — | — |
 | Reordering, striping, the column manager, `HasContent`, `HasHeader` | [`CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) and four siblings | todo | — | — |
 | Translatable content driver — `getActiveTableLocale()`, `makeFilamentTranslatableContentDriver()` | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | todo | — | [has-schemas.md](../schemas/has-schemas.md#the-translatable-content-driver-is-not-ported) |

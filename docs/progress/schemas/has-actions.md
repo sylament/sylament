@@ -37,7 +37,7 @@ carries a **diverges** link to [Divergences](#divergences), or `—`.
 | [`prepareAction()` / `prepareActionGroup()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`prepareAction()` / `prepareActionGroup()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | done | — | — |
 | [`hasAction()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`hasAction()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | done | — | — |
 | Affix/extra-item action merging in `cacheActions()` | `cacheActions()` `HasAffixActions`/`HasExtraItemActions` branches | blocked | `HasAffixActions`/`HasExtraItemActions` contracts (forms affix/extra-item actions) | [diverges](#affix-and-extra-item-action-merging-is-not-ported) |
-| `actionSchemaModel()` / `getActionSchemaModel()` | [`actionSchemaModel()` / `getActionSchemaModel()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | blocked | the action→schema record hop (M1 · 6) | [diverges](#actionschemamodel-is-not-ported) |
+| `actionSchemaModel()` / `getActionSchemaModel()` | [`actionSchemaModel()` / `getActionSchemaModel()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | blocked | the action→schema record hop | [diverges](#actionschemamodel-is-not-ported) |
 
 ## Divergences
 
@@ -66,8 +66,10 @@ and both of those now exist on the schemas `Component` —
 [`BelongsToRecord`](belongs-to-record.md) supplies `getRecord()` and
 `getRecordClass()`. Neither the property, the setter, nor the getter exist on the
 port, and the consumer does not either: what would read them is the action-side
-hop that seeds a mounted action's schema with a record, deferred to M1 · 6
+hop that seeds a mounted action's schema with a record, which is still unbuilt
+and carried by no epic — M1 · 6 bound a record to the *action* and left the
+action→schema hop alone
 ([has-actions.md](../actions/has-actions.md#the-per-mount-schema-is-not-seeded-with-a-record-or-an-operation)).
-It lands there, and its naming follows the record-only vocabulary the concern
+It lands with that hop, and its naming follows the record-only vocabulary the concern
 already speaks — recorded in [`renames.md`](../renames.md) with the rest of the
 set if the port drops `model` from these two names too.

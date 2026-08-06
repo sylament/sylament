@@ -2,10 +2,15 @@
 
 declare(strict_types=1);
 
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Book;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CompositePair;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song as DoctrineSong;
+use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Records\Artist;
 use Sylament\Tables\Tests\Fixtures\Records\Song;
 
@@ -101,12 +106,9 @@ it('lets a later duplicate key overwrite an earlier record, matching the re-key 
         ->and($records[7]->title)->toBe('Let Down');
 });
 
-it('throws when no records() closure is declared', function (): void {
-    $host = new TableHost();
-
-    expect(fn (): array => $host->getTableRecords())
-        ->toThrow(LogicException::class, 'must have [records()]');
-});
+it('names both lanes when neither is configured', function (): void {
+    new TableHost()->getTableRecords();
+})->throws(LogicException::class, 'must have [records()] or [query()]');
 
 it('throws when the data source returns a non-iterable', function (): void {
     $host = new TableHost(fn (Table $table): Table => $table->records(fn (): string => 'nope'));
@@ -132,6 +134,99 @@ it('throws when getTableRecordKey meets an array without the key entry', functio
 
     $host->getTableRecordKey(['title' => 'Airbag']);
 })->throws(LogicException::class, '[__key] entry');
+
+it('resolves the query lane into entities keyed by their identifier', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new DoctrineSong(1, 'Alpha', 10), new DoctrineSong(2, 'Beta', 20));
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->columns([TextColumn::make('title')]));
+
+    $records = $host->getTableRecords();
+
+    expect(array_keys($records))->toBe([1, 2])
+        ->and($records['2'])->toBeInstanceOf(DoctrineSong::class)
+        ->and($records['2']->getTitle())->toBe('Beta');
+});
+
+it('lets a records closure win over a set query', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $queries = 0;
+    $host = new TableHost(function (Table $table) use (&$queries, $entityManager): Table {
+        return $table
+            ->query(function () use (&$queries, $entityManager): QueryBuilder {
+                $queries++;
+
+                return $entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song');
+            })
+            ->records(fn (): array => [new DoctrineSong(1, 'Airbag', 10)]);
+    });
+
+    $records = $host->getTableRecords();
+
+    expect(array_keys($records))->toBe([1])
+        ->and($records[1])->toBeInstanceOf(DoctrineSong::class)
+        ->and($queries)->toBe(0);
+});
+
+it('keys entities by their real identifier field through the metadata', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new Book('sy-001', 'One'), new Book('sy-002', 'Two'));
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('book')->from(Book::class, 'book')));
+
+    expect(array_keys($host->getTableRecords()))->toBe(['sy-001', 'sy-002']);
+});
+
+it('refuses a composite identifier loudly', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new CompositePair(1, 2, 'Pair'));
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('pair')->from(CompositePair::class, 'pair')));
+
+    $host->getTableRecords();
+})->throws(LogicException::class, 'composite');
+
+it('refuses an entity with no identifier set', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('book')->from(Book::class, 'book')));
+
+    $host->getTableRecordKey(new Book('', 'Blank'));
+})->throws(LogicException::class, 'is not a printable value');
+
+it('refuses an entity whose identifier was never initialised', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('book')->from(Book::class, 'book')));
+
+    $host->getTableRecordKey(new ReflectionClass(Book::class)->newInstanceWithoutConstructor());
+})->throws(LogicException::class, 'has none set');
+
+it('falls back to the id convention for a transient object on a query-lane table', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song')));
+
+    $record = new class {
+        public int $id = 7;
+    };
+
+    expect($host->getTableRecordKey($record))->toBe('7');
+});
+
+it('applies modifyQueryUsing scopes to the resolved records', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new DoctrineSong(1, 'Alpha', 10), new DoctrineSong(2, 'Beta', 20));
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->modifyQueryUsing(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 10')));
+
+    $records = $host->getTableRecords();
+
+    expect(array_keys($records))->toBe([2])
+        ->and($records[2]->getTitle())->toBe('Beta');
+});
 
 it('injects the table into the records closure', function (): void {
     $host = new TableHost(fn (Table $table): Table => $table

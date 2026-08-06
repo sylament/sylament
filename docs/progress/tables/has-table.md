@@ -13,15 +13,19 @@ schemas and actions already carry, recorded in the
 [rename table](../renames.md#interface-and-trait-names-are-swapped). ⚠️ Reading
 either name across the two codebases means checking which side it is on first.
 
-`HasTable` itself is eleven methods wide: `table()`, `getTable()`, `makeTable()`,
-`getTableRecords()`, the `resolveTableRecords()` half it caches and the
-`keyTableRecords()` half that re-keys, `getTablePaginator()`,
-`getTableRecordKey()`, `getTableRecord()`, `flushCachedTableRecords()` and
-`getTableHostId()`. It builds the table once per request, resolves the
-`records()` closure once per request, and hands back an array **keyed by record
-key** — or a [`Paginator`](../support/pagination.md) carrying such an array —
-plus a by-key lookup that reads fresh whenever the render cache is cold, the
-flush that empties it, and the per-host id every row and cell is stamped with.
+`HasTable` itself is fifteen methods wide: `table()`, `getTable()`,
+`makeTable()`, the three filtered-query seams `getFilteredTableQuery()`,
+`filterTableQuery()` and `getFilteredSortedTableQuery()`, `getTableRecords()`,
+the `resolveTableRecords()` half it caches, the `keyTableRecords()` half that
+re-keys and the `resolveQueryRecordKey()` half that reads an entity's identity,
+`getTablePaginator()`, `getTableRecordKey()`, `getTableRecord()`,
+`flushCachedTableRecords()` and `getTableHostId()`. It builds the table once per
+request, resolves its data source once per request — a `records()` closure, or
+the Doctrine query those three seams assemble — and hands back an array **keyed
+by record key** — or a [`Paginator`](../support/pagination.md) carrying such an
+array — plus a by-key lookup that reads fresh whenever the render cache is cold,
+the flush that empties it, and the per-host id every row and cell is stamped
+with.
 
 Around that core it composes three host concerns, all landed by the table
 upgrades epic:
@@ -81,7 +85,7 @@ instead.
 | [`table(Table $table): Table` — the identity default a host overrides](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::table()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | — |
 | [`getTable(): Table` — build once, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::getTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-table-is-built-lazily-on-first-gettable-not-in-a-booted-hook) |
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
-| [`getTableRecords()` — evaluate the data source once, re-key, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-six-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#the-missing-data-source-error-names-only-records) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) |
+| [`getTableRecords()` — resolve the data source once, re-key, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-six-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#the-missing-data-source-error-does-not-name-relationship) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
 | [`InteractsWithTable` — nine methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-nine-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | — |
@@ -89,7 +93,7 @@ instead.
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
 | [`getTableRecord(?string $key)`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) |
 | `getAllTableRecordsCount()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | todo | — | Filament's paginated arm is answerable here (`getTablePaginator()?->getTotalRecordCount()`) but its other arm is `getFilteredTableQuery()->count()`, the query lane's; nothing reads the method yet, so it ships whole or not at all |
-| The query lane — `getFilteredTableQuery()`, `getFilteredSortedTableQuery()`, `getTableQueryForExport()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | — |
+| [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`, `getTableQueryForExport()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-filtered-query-seams-are-wired-before-the-layers-that-fill-them) |
 | [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `updatedTableRecordsPerPage()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-no-query-lane-and-no-session-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-carries-no-query-application-and-no-default-sort) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#no-table-state-is-persisted-in-the-session) |
@@ -123,6 +127,26 @@ resolution always synthesises one, an array with no key entry. Its **return** is
 pinned by calling it directly rather than reading a map key, which PHP would
 coerce back to an `int`: an integer `id` and a `Stringable` one both come back as
 the `string` the contract promises.
+
+The query lane is covered in the same file, against the in-memory SQLite
+[`EntityManagerFactory`](../../../packages/tables/tests/Fixtures/Doctrine/EntityManagerFactory.php)
+rig rather than a mocked builder, so every case runs through Doctrine's own
+hydration. Resolution is pinned end to end — two seeded `Song`s coming back as
+entities under their identifiers, and a `modifyQueryUsing()` scope narrowing the
+same query to one — and so is the precedence between the lanes: a table declaring
+`records()` *and* `query()` resolves the closure, keys its entities by the `id`
+convention, and never evaluates the query at all, which a counter on the query
+closure proves. The metadata keying has four cases of its own, none of them
+reachable by that convention: a `Book`, whose identifier is `code` and which has
+no `id` anywhere, keying by `sy-001`; a `CompositePair` query refusing loudly; and
+the two identifier refusals, one blank and one never initialised. The fallback is
+pinned from the other side, an anonymous object carrying a public `$id` handed to
+`getTableRecordKey()` on a query-lane table and coming back `'7'` — the case that
+fails the moment the metadata read stops asking whether the record is one of the
+table's own entities. Both keying cases assert array *keys*, and they disagree on
+type for a reason: `Book`'s survive as strings while `Song`'s `'1'` and `'2'` come
+back as `int`s, the same PHP coercion the closure lane's `id` cases already
+record.
 
 `getTableRecord()` is pinned on both cache arms by an evaluation counter, because
 the difference between them is invisible in the returned record: the **cold**
@@ -217,6 +241,34 @@ before: `$table` — by the parameter name, which is `Table`'s
 through [`Table`'s resolver override](table.md), any explicit named or typed
 injection a caller passes to `evaluate()`, and a public container service
 [by type](#a-records-closure-resolves-public-container-services-by-type).
+
+### The filtered-query seams are wired before the layers that fill them
+
+`getFilteredTableQuery()`, `filterTableQuery()` and `getFilteredSortedTableQuery()`
+ship with Filament's names, signatures and composition, and with none of the
+applications those signatures exist to hold. `getFilteredTableQuery()` reads
+[`Table::getQuery()`](table.md#every-read-clones-a-memoised-base-query) — a
+scoped clone, so what comes back is always a builder the caller may mutate —
+answers null when the table declares no query, and otherwise hands it to
+`filterTableQuery()`, which today returns it untouched.
+`getFilteredSortedTableQuery()` is `getFilteredTableQuery()` and nothing else. So
+a query-lane table resolves **every** record its query selects, in whatever order
+the database returns them, and outside their own composition
+`resolveTableRecords()` is their only caller.
+
+They land first, and public, on purpose: each layer still to come is a body
+inside one of them rather than a new call site, and anything that needs the lane
+can ask for it before its own half exists. Filament's
+`filterTableQuery()` applies filters, the global and per-column search, and every
+visible column's relationship aggregates and eager loading; its
+`getFilteredSortedTableQuery()` adds grouping, then sorting. Of those, **search**
+arrives with `applySearchToTableQuery()` and **sorting** with
+`applySortingToTableQuery()`, both inside the Doctrine
+[`query()` lane](../roadmap.md#pulled-forward) this epic is; filters, grouping,
+aggregates and eager loading each wait on a layer that does not exist here at all
+and each has a **todo** row above. `getTableQueryForExport()` is not ported: it
+assembles a query for Filament's export action, which has no counterpart here, and
+it is the one member of this row with no epic behind it.
 
 ### The page state has no query lane and no session half
 
@@ -629,18 +681,18 @@ have let through.
 Permanent, and the query lane will not loosen it: an ignored request is
 recoverable (the user clicks again), a trusted-but-unchecked one is not.
 
-### The missing-data-source error names only `records()`
+### The missing-data-source error does not name `relationship()`
 
 Filament throws `"Table [{$livewireClass}] must have a [query()], [relationship()],
 or [records()]."` — three ways to give a table data, and the message lists all
-three so the reader can pick. Sylament's message is
-`"Table [%s] must have [records()]."`, because `records()` is the only one that
-exists: the Doctrine `query()` lane is
-[pulled forward · 12](../roadmap.md#pulled-forward) and `relationship()` sits on
-the Doctrine relation layer behind it. Naming an API the package does not ship
-would send a reader looking for a method they cannot call. The message grows the
-other names in the same change as the lanes themselves — provisional, and
-mechanically so.
+three so the reader can pick. Sylament's is
+`"Table [%s] must have [records()] or [query()]."`: it names the two lanes that
+exist and leaves out the third, which sits on
+[the Doctrine relation layer](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)
+no epic carries yet. Naming an API the package does not ship would send a reader
+looking for a method they cannot call — which is why the message grew its
+`query()` half in the change that landed the lane rather than ahead of it, and why
+it grows `relationship()` the same way. Provisional, and mechanically so.
 
 ### `getTableRecords()` returns a keyed array or a `Paginator`, never a `Collection`
 
@@ -694,10 +746,36 @@ without unwrapping at the call site. An id that is missing, unreadable
 naming the record class and pointing at the array-record alternative — the key
 addresses a record across a request boundary, so a silently empty or positional
 one would attach an action to the wrong row. And nothing configures the property
-name: Filament's `$primaryKey` counterpart is a Doctrine mapping concern, so it
-arrives, if at all, with the [`query()` lane](../roadmap.md#pulled-forward) that
-can read the metadata rather than guess. Until then a record whose identity is
-not `id` uses the array form and its `__key` entry.
+name on this arm: Filament's `$primaryKey` counterpart is a Doctrine mapping
+concern, so a record whose identity is not `id` either comes down the query lane
+below or uses the array form and its `__key` entry.
+
+**On the query lane the mapping answers instead of the convention.**
+`resolveQueryRecordKey()` runs before the `id` read and, when it returns a key,
+is the whole answer: for a table with a `query()`, whose
+[record class](table.md#the-record-class-is-read-off-the-base-querys-root-entity)
+the record is an instance of, the key is Doctrine's own —
+`ClassMetadata::getIdentifierValues()`, string-cast through the same `Stringable`
+unwrap and blank check. So a `Book` mapped on `code` keys by `code` with nothing
+configured, which is exactly what the `id` convention could not do. Everything
+else falls through to that convention unchanged: array records, every record on
+the closure lane, and — on the query lane — a DTO or any object that is not the
+table's entity, so a `SELECT NEW` projection or an object handed straight to
+`getTableRecordKey()` is keyed by its `id` exactly as before.
+
+Two things about that guard. It asks the **table** what its record class is and
+tests the record with `instanceof`, rather than asking Doctrine whether the
+record's own class is mapped, because the obvious API cannot answer:
+`AbstractClassMetadataFactory::isTransient()` returns `false` for an anonymous
+class while `getMetadataFor()` **throws** `MappingException` for one, so an
+anonymous DTO — the plainest transient object there is — would pass the transient
+check and then explode on the metadata read. Reading the declared class also
+means an anonymous *subclass* of an entity (a test double) keys by its parent's
+mapping instead of blowing up. And the arm adds two refusals of its own, both
+`LogicException`: a **composite** identifier, which a single string key cannot
+address, and an identifier that is set but empty or unprintable. Neither is
+recoverable — the table would otherwise index rows under a key no action can
+resolve.
 
 The action side has the same-shaped twin,
 [`InteractsWithRecord::resolveRecordKey()`](../actions/action.md#record-key-resolution-is-hoisted-to-hasactions)
@@ -711,6 +789,19 @@ a configuration error worth stopping on; an action assembling a mount context
 can simply omit `recordKey` and stay mountable. Keep them in step if the read
 ever changes: they are two implementations of one convention, not one method
 and its wrapper.
+
+The twin is deliberately **not** given the metadata arm. An action has no table to
+ask, and the direction that matters for a table context already runs through the
+host: a mounted action carries a *key* back, and
+[`resolveTableAction()`](../actions/has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference)
+turns it into a record with `getTableRecord()`, this trait's own map. What the
+twin still answers for itself is the outbound half — `Action::getContext()`'s
+`recordKey` for a row-scoped action — so on a query-lane table over an entity
+whose identifier is *not* `id`, the rows carry mapping keys while a record action
+on one of them carries none and mounts without its record. That is the one place
+the two reads disagree today; closing it means giving the actions layer the
+table's key rather than teaching it Doctrine, and nothing needs it until a
+non-`id` entity meets a record action.
 
 ### `getTableRecord()` reads fresh when the render cache is cold
 

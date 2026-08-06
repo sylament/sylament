@@ -83,6 +83,20 @@ it('hands scopes the isResolvingRecord flag', function (): void {
     expect($seen)->toBe([false, true]);
 });
 
+it('answers null for a table with no declared query', function (): void {
+    expect(new TableHost()->getTable()->getQuery())->toBeNull();
+});
+
+it('applies scopes to a builder the caller hands the public seam', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $table = new TableHost(fn (Table $table): Table => $table
+        ->modifyQueryUsing(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 1')))->getTable();
+    $query = $entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song');
+
+    expect($table->applyQueryScopes($query))->toBe($query)
+        ->and($query->getDQL())->toBe('SELECT song FROM ' . Song::class . ' song WHERE song.plays > 1');
+});
+
 it('reaches the entity manager behind the declared query', function (): void {
     $entityManager = EntityManagerFactory::create();
     $base = $entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song');

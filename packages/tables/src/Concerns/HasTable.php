@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Concerns;
 
+use Closure;
+use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Stringable;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
@@ -56,6 +58,27 @@ trait HasTable
         return Table::make($this);
     }
 
+    public function getFilteredTableQuery(): ?QueryBuilder
+    {
+        $query = $this->getTable()->getQuery();
+
+        if (!$query instanceof QueryBuilder) {
+            return null;
+        }
+
+        return $this->filterTableQuery($query);
+    }
+
+    public function filterTableQuery(QueryBuilder $query): QueryBuilder
+    {
+        return $query;
+    }
+
+    public function getFilteredSortedTableQuery(): ?QueryBuilder
+    {
+        return $this->getFilteredTableQuery();
+    }
+
     /**
      * @return array<array-key, object|array<string, mixed>>|Paginator keyed by record key
      */
@@ -106,6 +129,12 @@ trait HasTable
             return (string) $key;
         }
 
+        $queryRecordKey = $this->resolveQueryRecordKey($record);
+
+        if ($queryRecordKey !== null) {
+            return $queryRecordKey;
+        }
+
         try {
             $key = $this->getPropertyAccessor()->getFromRecord($record, 'id');
         } catch (AccessException) {
@@ -131,26 +160,35 @@ trait HasTable
         $table = $this->getTable();
         $dataSource = $table->getDataSource();
 
-        if ($dataSource === null) {
-            throw new LogicException(sprintf('Table [%s] must have [records()].', static::class));
+        if ($dataSource instanceof Closure) {
+            $records = $table->evaluate($dataSource, [
+                'page' => fn (): int => $this->getTablePage(),
+                'recordsPerPage' => fn (): int|string|null => $this->getTableRecordsPerPage(),
+                'search' => fn (): ?string => $this->getTableSearch(),
+                'sort' => fn (): array => [$this->getTableSortColumn(), $this->getTableSortDirection()],
+                'sortColumn' => fn (): ?string => $this->getTableSortColumn(),
+                'sortDirection' => fn (): ?string => $this->getTableSortDirection(),
+            ]);
+
+            if ($records instanceof Paginator) {
+                return $records->withRecords($this->keyTableRecords($records->getRecords()));
+            }
+
+            if (!is_iterable($records)) {
+                throw new LogicException(sprintf('The [records()] closure of table [%s] must return an iterable or a [%s], got %s.', static::class, Paginator::class, get_debug_type($records)));
+            }
+
+            return $this->keyTableRecords($records);
         }
 
-        $records = $table->evaluate($dataSource, [
-            'page' => fn (): int => $this->getTablePage(),
-            'recordsPerPage' => fn (): int|string|null => $this->getTableRecordsPerPage(),
-            'search' => fn (): ?string => $this->getTableSearch(),
-            'sort' => fn (): array => [$this->getTableSortColumn(), $this->getTableSortDirection()],
-            'sortColumn' => fn (): ?string => $this->getTableSortColumn(),
-            'sortDirection' => fn (): ?string => $this->getTableSortDirection(),
-        ]);
+        $query = $this->getFilteredSortedTableQuery();
 
-        if ($records instanceof Paginator) {
-            return $records->withRecords($this->keyTableRecords($records->getRecords()));
+        if (!$query instanceof QueryBuilder) {
+            throw new LogicException(sprintf('Table [%s] must have [records()] or [query()].', static::class));
         }
 
-        if (!is_iterable($records)) {
-            throw new LogicException(sprintf('The [records()] closure of table [%s] must return an iterable or a [%s], got %s.', static::class, Paginator::class, get_debug_type($records)));
-        }
+        /** @var list<object> $records */
+        $records = $query->getQuery()->getResult();
 
         return $this->keyTableRecords($records);
     }
@@ -178,5 +216,45 @@ trait HasTable
         }
 
         return $keyedRecords;
+    }
+
+    private function resolveQueryRecordKey(object $record): ?string
+    {
+        $table = $this->getTable();
+
+        if (!$table->hasQuery()) {
+            return null;
+        }
+
+        $recordClass = $table->getRecordClass();
+        $entityManager = $table->getQueryEntityManager();
+
+        if ($recordClass === null || $entityManager === null || !$record instanceof $recordClass) {
+            return null;
+        }
+
+        $metadata = $entityManager->getClassMetadata($recordClass);
+
+        if ($metadata->isIdentifierComposite) {
+            throw new LogicException(sprintf('Records of [%s] carry a composite identifier, which a table cannot key; use single-identifier entities or the records() lane.', $record::class));
+        }
+
+        $identifierValues = $metadata->getIdentifierValues($record);
+
+        if ($identifierValues === []) {
+            throw new LogicException(sprintf('Object records must expose a readable non-blank identifier; [%s] has none set.', $record::class));
+        }
+
+        $key = array_first($identifierValues);
+
+        if ($key instanceof Stringable) {
+            $key = (string) $key;
+        }
+
+        if (!is_scalar($key) || blank($key)) {
+            throw new LogicException(sprintf('The identifier of [%s] is not a printable value.', $record::class));
+        }
+
+        return (string) $key;
     }
 }

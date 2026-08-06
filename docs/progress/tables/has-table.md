@@ -13,24 +13,41 @@ schemas and actions already carry, recorded in the
 [rename table](../renames.md#interface-and-trait-names-are-swapped). ⚠️ Reading
 either name across the two codebases means checking which side it is on first.
 
-The trait is nine methods wide today: `table()`, `getTable()`, `makeTable()`,
-`getTableRecords()`, the `resolveTableRecords()` half it caches,
+`HasTable` itself is ten methods wide: `table()`, `getTable()`, `makeTable()`,
+`getTableRecords()`, the `resolveTableRecords()` half it caches and the
+`keyTableRecords()` half that re-keys, `getTablePaginator()`,
 `getTableRecordKey()`, `getTableRecord()`, `flushCachedTableRecords()` and
 `getTableHostId()`. It builds the table once per request, resolves the
 `records()` closure once per request, and hands back an array **keyed by record
-key** — plus a by-key lookup that reads fresh whenever the render cache is cold,
-the flush that empties it, and the per-host id every row and cell is stamped
-with. Everything else Filament's nineteen-trait host does — pagination, sorting,
-searching, filters, bulk actions, selection, reordering, the column manager — is
-unported and listed below.
+key** — or a [`Paginator`](../support/pagination.md) carrying such an array —
+plus a by-key lookup that reads fresh whenever the render cache is cold, the
+flush that empties it, and the per-host id every row and cell is stamped with.
 
-The trait reads no host property and presumes no state shape beyond the one
-`#[LiveProp]` it declares itself: `public ?string $tableHostId`, the persisted
-half of [`getTableHostId()`](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id).
-A host can still mix it in beside [`HasSchemas`](../schemas/has-schemas.md) and
-[`HasActions`](../actions/has-actions.md) — the three declare disjoint property
-names, which is what keeps them composable, rather than any of them declaring
-nothing.
+Around that core it composes three host concerns, all landed by the table
+upgrades epic:
+[`CanPaginateRecords`](../../../packages/tables/src/Concerns/CanPaginateRecords.php)
+(the page and per-page state plus the `gotoTablePage()` live action),
+[`CanSortRecords`](../../../packages/tables/src/Concerns/CanSortRecords.php)
+(the `column:direction` string and the `sortTable()` cycle) and
+[`CanSearchRecords`](../../../packages/tables/src/Concerns/CanSearchRecords.php)
+(the search term). Each is a per-file row below rather than a folded one, per
+[one row per file](../README.md#one-row-per-file-one-file-per-thing). What
+Filament's nineteen-trait host does beyond them — filters, bulk actions,
+selection, reordering, the column manager, and the whole query-lane half of the
+three above — is unported and listed below.
+
+The trait presumes no host property beyond the five `#[LiveProp]`s it and its
+concerns declare: `?string $tableHostId` (the persisted half of
+[`getTableHostId()`](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id)),
+`int $tablePage`, `?string $tableSort`, and the two **writable** props the
+chrome binds to, `?string $tableRecordsPerPage` and `?string $tableSearch`.
+Writability is the security line and it is
+[deliberate on each prop](#per-page-is-validated-in-the-getter-on-every-read):
+page and sort move only through a `#[LiveAction]`, so they stay checksummed,
+while the two a `data-model` writes are re-validated on every read. A host can
+still mix the trait in beside [`HasSchemas`](../schemas/has-schemas.md) and
+[`HasActions`](../actions/has-actions.md) — the property names are disjoint,
+which is what keeps them composable.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -41,32 +58,45 @@ Reference — the Filament source this is diffed against:
   — the host trait, reduced here to its build-and-fetch core
 - [`tables/src/Concerns/HasRecords.php`](../../../vendor/filament/tables/src/Concerns/HasRecords.php)
   — the host-side record resolution `getTableRecords()` ports
+- [`tables/src/Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php)
+  — the host's page and per-page state, plus the query-lane `paginateTableQuery()`
+- [`tables/src/Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php)
+  — `sortTable()`, the `column:direction` parse, and `applySortingToTableQuery()`
+- [`tables/src/Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php)
+  — the global search term, the per-column searches, and their query application
 - [`tables/src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php)
-  — the 46-method interface this reduces to five
+  — the 46-method interface this reduces to nine
 
 ## Surface
 
 Every point of this trait and its contract. _Blocked by_ names what has to land
-first. _Detail_ carries either **detail** → the write-up in
-[Details](#details), deleted once the row is **done**, or **diverges** → the
-permanent note in [Divergences](#divergences). A **skipped** row states its
-reason inline instead.
+first. _Detail_ carries up to three links: **detail** → the write-up in
+[Details](#details), deleted once the row is **done**; **diverges** → the
+permanent note in [Divergences](#divergences); **semantics** → the permanent
+note in [Semantics](#semantics). A **skipped** row states its reason inline
+instead.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`table(Table $table): Table` — the identity default a host overrides](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::table()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | — |
 | [`getTable(): Table` — build once, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::getTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-table-is-built-lazily-on-first-gettable-not-in-a-booted-hook) |
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
-| [`getTableRecords()` — evaluate the data source once, re-key, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [diverges](#the-records-closure-receives-no-named-injections-yet) · [diverges](#the-missing-data-source-error-names-only-records) · [diverges](#gettablerecords-returns-a-keyed-array-not-a-collection-or-paginator) |
-| [`InteractsWithTable` — `getTable()`, `getTableHostId()`, `getTableRecords()`, `getTableRecord()`, `getTableRecordKey()`](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-five-methods-of-filaments-forty-six) |
+| [`getTableRecords()` — evaluate the data source once, re-key, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-six-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#the-missing-data-source-error-names-only-records) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) |
+| [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
+| [`InteractsWithTable` — nine methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-nine-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | — |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
 | [`getTableRecord(?string $key)`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) |
-| `getAllTableRecordsCount()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
+| `getAllTableRecordsCount()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | todo | — | Filament's paginated arm is answerable here (`getTablePaginator()?->getTotalRecordCount()`) but its other arm is `getFilteredTableQuery()->count()`, the query lane's; nothing reads the method yet, so it ships whole or not at all |
 | The query lane — `getFilteredTableQuery()`, `getFilteredSortedTableQuery()`, `getTableQueryForExport()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | — |
-| Pagination — `WithPagination`, `getTablePage()`, `getTableRecordsPerPage()` | [`CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php), [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
-| Sorting and searching — `sortTable()`, `getTableSearch()`, the session persistence | [`CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php), [`CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
+| [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `updatedTableRecordsPerPage()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-no-query-lane-and-no-session-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
+| [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-carries-no-query-application-and-no-default-sort) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
+| [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#no-table-state-is-persisted-in-the-session) |
+| Table state in the URL — `#[Url]`-style query-string binding for page, sort and search | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | todo | — | [diverges](#no-table-state-is-bound-to-the-url) |
+| Per-column search — `$tableColumnSearches`, `updatedTableColumnSearches()`, the reserved keys | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | todo | — | [detail](#search-is-the-global-term-only) |
+| Deferred loading — `$isTableLoaded`, `loadTable()`, `isTableLoaded()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | todo | — | [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
+| Host polling — `getTablePollingInterval()` | [`CanPollRecords`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | skipped | — | The whole trait is `@deprecated Override the table() method to configure the table.`, one host getter returning null, and the project has never ported a deprecated Filament surface. The interval it fronts is `Table::poll()`, a **todo** row in [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | Filters — the `tableFiltersForm` schema, `tableFilters` state, the indicators | [`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | todo | — | — |
 | The deprecated `*TableAction` host shims — `mountTableAction()`, `callMountedTableAction()`, `getMountedTableActionRecord()`, `unmountTableAction()`, `getTableRecordAction()`, … | [`Concerns\HasActions`](../../../vendor/filament/tables/src/Concerns/HasActions.php), [`HasRecordAction`](../../../vendor/filament/tables/src/Concerns/HasRecordAction.php) | skipped | — | Every method in both files is a one-line deprecated delegate, and the project has never ported a deprecated Filament surface. What they front is built: the host resolves a table-context mount through actions' [`resolveTableAction()`](../actions/has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference) and binds the record through `getTableRecord()` |
 | Bulk actions and selection — `getSelectedTableRecords()`, `getAllSelectableTableRecordKeys()`, `deselectAllTableRecords()` | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | blocked | table bulk actions | — |
@@ -74,8 +104,8 @@ reason inline instead.
 | Reordering, striping, the column manager, `HasContent`, `HasHeader` | [`CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) and four siblings | todo | — | — |
 | Translatable content driver — `getActiveTableLocale()`, `makeFilamentTranslatableContentDriver()` | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | todo | — | [has-schemas.md](../schemas/has-schemas.md#the-translatable-content-driver-is-not-ported) |
 
-The seven **done** rows are the build-once core, the record key, the by-key
-lookup with its flush, and the host id. They are covered by
+The eight **done** rows are the build-once core, the record key, the by-key
+lookup with its flush, the host id, and the paginator peek. They are covered by
 [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)
 via the
 [`TableHost`](../../../packages/tables/tests/Fixtures/Concerns/TableHost.php)
@@ -116,17 +146,139 @@ one. Both fail if the
 [getter/property pairing](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id)
 is broken, which nothing else would catch.
 
+The three browsing concerns are covered in the same Unit
+[`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php).
+Sorting is driven through `sortTable()` rather than by writing `$tableSort`: the
+three-step cycle on one column (asc → desc → unsorted), a second column starting
+ascending, an explicit direction winning, the numeric-column string cast, and one
+case asserting that **all four** refusals leave the state untouched — an
+undeclared column, an unknown one, a null one, and an invalid direction. The
+parse is read the other way round, by setting `$tableSort` directly to a bare
+column and to `title:bogus`, which is the only way to reach the two arms
+`sortTable()` cannot produce. Pagination covers the seeded default (the getter
+answering `10` while the prop stays `null`, which is what proves it never
+writes), the unpaginated `null`, and the four normalisation arms — a valid
+option, `'all'`, an out-of-range number, and outright garbage, the last two
+falling back to the table default rather than to the forged value. Search covers
+the trim (with an NBSP), the blank-as-null read, and the all-whitespace case.
+One case ties the three together: page 4 is set, then each of sort, per-page and
+search is changed in turn, and the page must be back at `1` every time.
+
+Two cases pin the halves that only exist together. The **injection** case
+declares a `records()` closure taking all six names, mutates sort, page and
+search first, and asserts the exact array the closure saw — so a renamed
+injection or a stale read fails on the value, not on an arity error. The
+**Paginator** case returns one from the closure and asserts the re-keyed clone
+comes back from `getTableRecords()`, `getTablePaginator()` and
+`getTable()->getPaginator()` alike, with `getTableRecord('1')` reaching into it —
+which is what proves the carrier is unwrapped for lookups rather than special-cased
+at each call site. A closure returning an `int` is asserted to name `Paginator` in
+its `LogicException`, so the widened return type cannot silently accept garbage.
+
+The `#[LiveProp]` and `#[LiveAction]` attributes carry no runtime behaviour a
+render test would catch, so they are pinned by reflection in
+[`HasTableLivePropsTest`](../../../packages/tables/tests/Unit/Concerns/HasTableLivePropsTest.php):
+each of the four state props by writability *and* `onUpdated` hook name, and each
+live action by its `#[LiveArg]`-marked parameter names. Writability is a security
+property — a prop that silently became writable is exactly the failure
+[the validating getter](#per-page-is-validated-in-the-getter-on-every-read)
+exists to survive, and this is the test that would notice.
+
 ## Details
 
 Specifics for rows that are not finished — what is left and what the next step
 is. Delete a subsection when its row flips to **done**; the row and any
 divergence stay behind.
 
-### The contract is five methods of Filament's forty-six
+### The `records()` injections stop at six of Filament's eight
+
+Filament evaluates the data source with eight named injections —
+`columnSearches`, `filters`, `page`, `recordsPerPage`, `search`, `sort`,
+`sortColumn`, `sortDirection` — each a closure reading the corresponding piece of
+host state, so a userland `records()` closure can paginate, sort and filter its
+own result set. Sylament passes **six**, in the same shape (a `fn ()` per name,
+so the state is read only if the closure asks for it): `page`, `recordsPerPage`,
+`search`, `sort`, `sortColumn` and `sortDirection`. Every one is
+Filament's name, Filament's arity and Filament's value — `sort` is the same
+`[$column, $direction]` pair, redundant with the two singular names and kept
+because a migrating closure destructures it.
+
+The two missing names have no state behind them yet, which is the same reason
+all eight were missing before this epic. `columnSearches` waits on per-column
+search (its **todo** row above) and `filters` on the filter layer (likewise), and
+each arrives in the change that lands the feature it reads. One value differs
+rather than being absent: `recordsPerPage` is
+[nullable here](#the-recordsperpage-injection-is-nullable) where Filament types
+it `int|string`.
+
+Everything the evaluation path resolves without a named injection resolves as
+before: `$table` — by the parameter name, which is `Table`'s
+`$evaluationIdentifier`, or by a `Table` type hint — `$liveComponent` by name
+through [`Table`'s resolver override](table.md), any explicit named or typed
+injection a caller passes to `evaluate()`, and a public container service
+[by type](#a-records-closure-resolves-public-container-services-by-type).
+
+### The page state has no query lane and no session half
+
+`Concerns\CanPaginateRecords` here is the closure lane's half of Filament's
+trait: the page number, the per-page option, the reset-to-page-one hook, and the
+two getters the `records()` closure is handed. Three groups of Filament members
+are not in it.
+
+`paginateTableQuery()` is the **query lane** — it calls `$query->paginate()` /
+`simplePaginate()` / `cursorPaginate()` on an Eloquent builder and returns
+Laravel's paginator — and it lands with the Doctrine
+[`query()` lane](../roadmap.md#pulled-forward). Its `PaginationMode` switch comes
+with it, tracked as [`table.md`](table.md#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have)'s
+row: on the closure lane the userland closure decides how it slices, so a mode
+enum would configure nothing. The **session** half
+(`getTablePerPageSessionKey()`, the `session()->put()` in the updated hook) is a
+[deliberate omission](#no-table-state-is-persisted-in-the-session). The
+**query-string** page name (`getTablePaginationPageName()`, which feeds Livewire's
+`WithPagination`) is the [URL binding](#no-table-state-is-bound-to-the-url) that
+has a **todo** row of its own. The two `@deprecated` host getters
+(`getTableRecordsPerPageSelectOptions()`, `isTablePaginationEnabled()`) follow the
+project-wide rule and are not ported at all.
+
+### Sorting carries no query application and no default sort
+
+`sortTable()` and the `column:direction` parse are ported whole. What is missing
+from Filament's trait is `applySortingToTableQuery()` — 60 lines of Eloquent
+`orderBy` assembly reading `getDefaultSort()`, the reorder column, and the
+qualified key name — which belongs to the [`query()` lane](../roadmap.md#pulled-forward)
+along with the `Table`-side [`defaultSort()` family](table.md#the-default-sort-family-is-the-query-lanes)
+it reads. On the closure lane the `sortColumn` / `sortDirection` injections are
+the whole application: the userland closure orders its own data.
+
+`updatedTableSort()` and `updatedTableSortDirection()` collapse into the body of
+`sortTable()` here, because both exist to run the two things it already does —
+persist to the session (a [deliberate omission](#no-table-state-is-persisted-in-the-session))
+and reset the page. Filament needs them as separate members because Livewire
+calls them for a *property write*; `$tableSort` is not writable here, so nothing
+else can change it. The three `@deprecated` host getters are not ported.
+
+### Search is the global term only
+
+`$tableSearch` and its trimmed getter are ported. Filament's trait carries a
+second, larger half — `$tableColumnSearches`, `updatedTableColumnSearches()`,
+`getReservedTableColumnSearchKeys()` and the per-column query application — which
+is **per-column search**, a feature with a UI of its own (an input in each header
+cell) rather than a variant of this one. It has its own **todo** row above, and
+it is what the missing `columnSearches` injection reads.
+
+The query application (`applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`,
+the `generate_search_term_expression()` helpers, `shouldSplitSearchTerms()`)
+is the [`query()` lane](../roadmap.md#pulled-forward)'s, exactly as with sorting:
+here the `search` injection hands the closure a string and the closure decides
+what matching means. Filament's search **indicators**
+(`getTableSearchIndicator()`, `getTableColumnSearchIndicators()`) return
+`Filters\Indicator` objects and wait on the filter layer that defines that class.
+
+### The contract is nine methods of Filament's forty-six
 
 `Contracts\HasTable` declares 46 methods — the full host API a Filament table,
 column, filter, action, or test helper may call back into. Sylament's
-`InteractsWithTable` declares the five the shipped surface actually calls:
+`InteractsWithTable` declares the nine the shipped surface actually calls:
 `getTable()` (the template and the column layer need the table from the host),
 `getTableRecords()` (which [`Table::getRecords()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
 delegates to), and three that arrived with the record-action lane (M1 · 6) —
@@ -137,8 +289,22 @@ through the contract rather than reaching into the trait,
 [`Table::getRecordKey()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
 delegates to so a template can address the row it is rendering, and
 `getTableHostId()`, which the partial reads directly off the host to prefix its
-row and cell ids. The contract
-grows a method at a time as the
+row and cell ids. The table upgrades epic added the last four, every one of them
+because a **template** reads it: `getTableSortColumn()` and
+`getTableSortDirection()` (which `Table::getSortColumn()` / `getSortDirection()`
+delegate to, so a header cell can render its own `aria-sort`),
+`getTablePaginator()` (`Table::getPaginator()`'s delegate, the footer's data) and
+`getTableRecordsPerPage()`, which the partial reads **off the host directly** to
+mark the selected `<option>`. That last one is the reason
+[`TemplateHostCallsTest`](../../../packages/tables/tests/Architecture/TemplateHostCallsTest.php)
+exists: `component.getLiveComponent` is typed `InteractsWithTable`, so any method
+a template reads off it that lives only on the trait renders fine for a
+trait-using host and fatals in Twig for any other host satisfying the published
+interface. The test scans the shipped templates for `getLiveComponent.<method>`
+and fails unless the contract declares it — which is how that method was found
+missing after the first pass declared eight.
+
+The contract grows a method at a time as the
 features that need it land — a host must be able to satisfy it, so declaring the
 pagination, filter and bulk-selection halves before those exist would force every
 consumer to stub methods nothing calls. Growth is free for implementors while
@@ -148,6 +314,70 @@ the four tables fixtures (`TableHost`, `TableActionsHost`, `SongsTable`,
 an addition reaches them without an edit. This is a **growth order**, not a
 divergence: the end state is the same set of members, minus whatever the
 Eloquent-only rows above turn out not to need.
+
+## Semantics
+
+Faithful ports subtle enough that the next reader would misread the code.
+Permanent, and addressable by anchor.
+
+### A `records()` closure resolves public container services by type
+
+Closure evaluation reaches the container here, which is not obvious from the
+trait: `$table->evaluate($dataSource, [...])` passes six named injections and
+nothing else, yet a `records()` closure type-hinting a repository is handed one.
+`SylamentTablesBundle::loadExtension()` registers `Table` as an autowired,
+autoconfigured service, so `Table::newInstance()` resolves through
+`ComponentResolver`'s locator, the `#[Required] setInvoker()` setter fires, and
+the table evaluates through the container's `Invoker` instead of the fallback one
+built around an empty container.
+[`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php)
+pins both halves: the table's `Invoker` is the container's, and a closure
+type-hinting a fixture repository receives the container's shared instance.
+
+One boundary comes with it, and it is a support-layer rule rather than a tables
+one: the `Invoker` holds `service_container`, and `Container::has()` on a compiled
+container answers for **public** ids only — so a **private** service, which is
+Symfony's default and what most of Sylament's own services are, still does not
+resolve by type. That is the same "only types the container `has()` resolve"
+constraint
+[component.md](../support/component.md#closure-resolution-lives-in-a-service)
+records, and it is why the fixture repository that test injects is
+`#[Autoconfigure(public: true)]`.
+
+### The paginator is a return value, not a state holder
+
+`getTablePaginator()` looks like it owns paging state and does not: it calls
+`getTableRecords()` and returns the result only when it happens to be a
+[`Paginator`](../support/pagination.md), null otherwise. The carrier is whatever
+the userland `records()` closure returned — the host neither builds one nor slices
+anything — so a table is "paginated" for rendering purposes exactly when its
+closure chose to return one, regardless of what `Table::isPaginated()` says.
+`isPaginated()` governs the *inputs* (whether `recordsPerPage` is injected at
+all); the footer renders off the *output*. A closure that ignores its injections
+and returns a plain array on a paginated table therefore renders with no footer,
+correctly: there are no counts to render.
+
+The one place this shape matters is caching. Both methods read the same
+`$cachedTableRecords`, so asking for the paginator does not fetch a second time,
+and a template reading `component.getPaginator` before the row loop costs
+nothing.
+
+### A column name containing a colon cannot be cycled
+
+`$tableSort` encodes the pair as `"{$column}:{$direction}"` and
+`getTableSortColumn()` splits on the first colon, so a column literally named
+`a:b` round-trips as column `a`, direction `b` — and `sortTable('a:b')` writes a
+string whose column half no longer matches the name it was given, which means the
+same-column branch never fires and the column can never cycle past ascending.
+
+This is Filament's encoding, kept verbatim, and the edge is Filament's too
+(`str($this->tableSort)->before(':')`). It is recorded rather than fixed because
+the fix costs more than the edge: a column name is a record property path, where
+a colon is not legal PHP and not a Doctrine field name, so the case is reachable
+only through an array record with a hand-written key. Escaping the separator
+would change the wire format for every table to guard a name nobody can write in
+the common case. If it ever needs fixing, both halves — the writer in
+`sortTable()` and the two readers — move together.
 
 ## Divergences
 
@@ -244,51 +474,157 @@ overriding `table()`. This is the same reasoning that kept
 [`schema()` out](../schemas/component.md#the-schema-alias-is-not-ported) as an
 alias for `components()`. Permanent.
 
-### The `records()` closure receives no named injections yet
+### `gotoTablePage()` replaces Livewire's paginator trio
 
-Filament evaluates the data source with eight named injections —
-`columnSearches`, `filters`, `page`, `recordsPerPage`, `search`, `sort`,
-`sortColumn`, `sortDirection` — each a closure reading the corresponding piece of
-host state, so a userland `records()` closure can paginate, sort and filter its
-own result set. Sylament evaluates it with none: `$table->evaluate($dataSource)`.
+Filament's host does not implement paging at all: it composes Livewire's
+`WithPagination` trait, which supplies `$page`, `gotoPage()`, `nextPage()`,
+`previousPage()` and `resetPage()`, keeps the number in the query string under a
+per-table page name, and re-renders on each. UX LiveComponent ships no
+counterpart, so the page number is a `#[LiveProp] int $tablePage` here and
+`gotoTablePage(#[LiveArg] int $page)` is the one `#[LiveAction]` that moves it,
+clamped with `max(1, …)` and flushing the record cache.
 
-Nothing is dropped in principle; there is simply no state behind any of those
-names yet. Pagination and sorting are
-[pulled forward · 11](../roadmap.md#pulled-forward), which that epic's text names
-explicitly — the closure lane gains `page`, `recordsPerPage`, `sort`,
-`sortColumn` and `sortDirection` there — and the search and filter names follow
-their own features. A closure written today still receives everything the
-evaluation path resolves without those names: `$table` — by the parameter name,
-which is `Table`'s `$evaluationIdentifier`, or by a `Table` type hint —
-`$liveComponent` by name through
-[`Table`'s resolver override](table.md), any explicit named or typed injection a
-future caller passes to `evaluate()`, and a public container service by type
-(below). So the injection *mechanism* is live and proven by
-[`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)'s
-`$table` case; only the table-state names are missing. Provisional by
-construction — each name arrives with the state it reads.
+One live action covers the trio because the footer already computes its targets:
+every button in the [Pagination component](../support/pagination.md) — first,
+previous, each windowed number, next, last — knows the page it means, so
+`nextPage()` and `previousPage()` would be the same call with arithmetic moved
+from the template into PHP. `resetPage()` is likewise not a member: its three
+Filament callers (sort changed, per-page changed, search changed) each set
+`$this->tablePage = 1` inline here, which is one assignment against a member
+whose name would be the only thing it added. The clamp is not in Filament — its
+`gotoPage()` accepts what the client sends — and it is here because the page is
+handed to a userland closure that will use it as an offset.
 
-The **container** arm is live, and it arrived with the bundle wiring rather than
-with anything in this divergence. `SylamentTablesBundle::loadExtension()`
-registers `Table` as an autowired, autoconfigured service, so
-`Table::newInstance()` resolves through `ComponentResolver`'s locator, the
-`#[Required] setInvoker()` setter fires, and the table evaluates its closures
-through the container's `Invoker` instead of the fallback one built around an
-empty container. A `records()` closure may therefore type-hint a service and be
-handed it —
-[`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php)
-pins both halves: the table's `Invoker` is the container's, and a closure
-type-hinting a fixture repository receives the container's shared instance.
+Permanent in mechanism. If UX ever ships a pagination trait, this becomes a
+delegate; the `records()` closure's `page` injection does not change either way.
 
-One boundary comes with it, and it is a support-layer rule rather than a tables
-one: the `Invoker` holds `service_container`, and `Container::has()` on a compiled
-container answers for **public** ids only — so a **private** service, which is
-Symfony's default and what most of Sylament's own services are, still does not
-resolve by type. That is the same "only types the container `has()` resolve"
-constraint
-[component.md](../support/component.md#closure-resolution-lives-in-a-service)
-records, and it is why the fixture repository that test injects is
-`#[Autoconfigure(public: true)]`.
+### Per-page is validated in the getter, on every read
+
+Filament's `$tableRecordsPerPage` is a plain public Livewire property whose
+getter returns it verbatim, with `getDefaultTableRecordsPerPageSelectOption()`
+checking the session-restored value against the page options *once*, at seeding
+time. Sylament stores the raw client string in a
+`#[LiveProp(writable: true)] ?string $tableRecordsPerPage` and re-derives the
+answer in `getTableRecordsPerPage()` on **every** call: null passes through,
+`'all'` passes through, a numeric string becomes an `int`, anything else becomes
+null — and the result must then appear in `getPaginationPageOptions()` or the
+table's `getDefaultPaginationPageOption()` is returned instead.
+
+The reason is that the prop is writable, and a writable `LiveProp` is client
+input. UX LiveComponent checksums the props it hydrates, but a **writable** one
+is exempt by design — that is what writable means — so the `onUpdated` hook is
+not a gate: it runs when the client *tells* it the value changed, and a forged
+hydration payload never calls it. Validating in the getter makes the forgery
+irrelevant instead of trying to catch it: the value reaching a `records()`
+closure is always one the table declared, whatever the payload said. That
+matters because the closure will use it as a `LIMIT`.
+
+Two consequences, both intended. The prop stays `null` until the user picks
+something — the getter seeds from the table's default without writing, which is
+what the demo's select renders as its selected option and what
+[`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)
+asserts by checking the getter answers `10` while the property is still null.
+And the type is `?string` rather than Filament's `int|string`, because that is
+what a `<select>` posts; the normalisation is the cast, and it lives in one
+place.
+
+`updatedTableRecordsPerPage()` and `updatedTableSearch()` are kept as `onUpdated`
+hooks anyway, for the half validation cannot do: resetting to page 1 and
+flushing the record cache when the user changes either. Filament's same-named
+methods are Livewire's magic `updated<Property>` hooks; here the binding is
+explicit in the attribute, which is the ordinary Livewire → UX translation.
+
+### The `recordsPerPage` injection is nullable
+
+Filament types the injection `fn (): int | string`, but the property it reads is
+`public $tableRecordsPerPage = null` and nothing seeds it before the first
+render — `getDefaultTableRecordsPerPageSelectOption()` is read by the *view*, not
+by the getter — so an unseeded table hands the closure `null` against a
+non-nullable declaration. Sylament types it `int|string|null` and means it.
+
+Two paths reach null here, and only one of them is Filament's. An **unpaginated**
+table returns null because there is nothing to slice by, which Filament cannot
+express at all (its injection is unconditional). A **paginated** table with an
+empty `paginationPageOptions([])` returns null because its default page option is
+null too. A paginated table with options never does: the getter falls back to the
+table's default, so the common case hands the closure an `int` and a closure may
+type-hint `int` if it only supports paginated tables — the fixture host does
+exactly that, with an `assert(is_int(...))`. Declaring the null is the honest
+half of the same contract, and it is what lets a closure branch on
+"unpaginated" without asking the table.
+
+### No table state is persisted in the session
+
+Filament persists three pieces of table state in the Laravel session, keyed by
+`md5(static::class)`: the sort (`persistsSortInSession()`, opt-in), the search
+and column searches (`persistSearchInSession()`, opt-in), and the per-page
+option — that last one **unconditionally**, with no setter to turn it off.
+Sylament persists none of them, and ships no `persist*InSession()` setters.
+
+The unconditional one is the load-bearing difference: a Filament user who picks
+"50 per page" on one table gets 50 back on their next visit, and Sylament's user
+gets the table's default. That is the behaviour to weigh, not the missing
+setters. It is left out because session persistence is a decision about *where
+table state lives* that this epic could not make in isolation — the same question
+the [URL binding](#no-table-state-is-bound-to-the-url) asks, and the two answers
+have to agree, since Filament's own precedence (session seeds the property, the
+query string then overrides it) only makes sense once both exist. Persisting to
+the session also needs a stable per-table key: `md5(static::class)` collides for
+two instances of one component class on a page, which is exactly the case the
+[host id](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id)
+exists for and the host id cannot serve, being regenerated per component
+instance rather than per *table identity*.
+
+Provisional, and it is a panels-shaped decision: a panel knows a table's place in
+an application and can name it. Until then a host that wants persistence writes
+it in its own `mount()`.
+
+### No table state is bound to the URL
+
+Filament binds page, sort, search and filters to the query string through
+Livewire's `#[Url]` attribute, disambiguated per table by
+`getIdentifiedTableQueryStringPropertyNameFor()` and the table's
+`queryStringIdentifier()`. So a Filament table survives a refresh, a bookmark and
+a shared link. Sylament's does not: a refresh resets to page 1, unsorted,
+unsearched.
+
+UX LiveComponent has `#[LiveProp(url: true)]`, so the mechanism exists — what is
+missing is the disambiguation. The attribute takes a **static** binding: the
+query-string key is fixed at the property, so two tables on one page bind page to
+the same `?tablePage` and fight over it, and Filament's answer (a runtime-computed
+name) has no expression in an attribute. Shipping the binding anyway would make
+the two-table page silently wrong, which is worse than not having it, and the
+tables package has no vocabulary for naming a table within an application —
+[`HasQueryStringIdentifier`](table.md) is a **todo** row for exactly that reason.
+
+Provisional, and it reverses with the same panels-level decision as the session
+half above. The state itself is already shaped for it: page, sort and search are
+each a single scalar prop, which is what a URL binding needs.
+
+### `sortTable()` ignores a column the table did not declare sortable
+
+Filament's `sortTable()` writes whatever column string it is given straight into
+`$tableSort`; the check happens much later, in `applySortingToTableQuery()`,
+which only applies the sort if `getSortableVisibleColumn()` finds a column — so
+an unknown or unsortable name leaves the table *displaying* itself as sorted by a
+column it is not sorted by. Sylament checks first and returns without writing:
+`getSortableVisibleColumn($column) === null` is a no-op, as is a direction that
+is not `asc`, `desc` or null.
+
+The reason is the closure lane. Filament's late check is harmless because the
+query builder is the only consumer; here the value is handed to a **userland
+closure** through the `sortColumn` and `sortDirection` injections, and that
+closure will most likely interpolate it into a query. Filtering at the entry
+point is what keeps the injections trustworthy: a name arriving at a `records()`
+closure has been matched against a declared-sortable column, so the closure can
+use it without re-validating. The direction check is the same argument for the
+same reason, and it is why `sortTable()` types its parameters
+`string|int|null` — a `#[LiveArg]` carries whatever JSON the client sent, and an
+integer column name (a table sorted by a year) must survive the cast rather than
+be refused by the signature before the check runs.
+
+Permanent, and the query lane will not loosen it: an ignored request is
+recoverable (the user clicks again), a trusted-but-unchecked one is not.
 
 ### The missing-data-source error names only `records()`
 
@@ -303,27 +639,38 @@ would send a reader looking for a method they cannot call. The message grows the
 other names in the same change as the lanes themselves — provisional, and
 mechanically so.
 
-### `getTableRecords()` returns a keyed array, not a `Collection` or `Paginator`
+### `getTableRecords()` returns a keyed array or a `Paginator`, never a `Collection`
 
-Filament returns a `Collection | Paginator | CursorPaginator`. Sylament returns a
-plain PHP `array<array-key, object|array<string, mixed>>`.
+Filament returns a `Collection | Paginator | CursorPaginator`. Sylament returns
+`array<array-key, object|array<string, mixed>> | Paginator`, where `Paginator` is
+support's [own carrier](../support/pagination.md) rather than Laravel's.
 
-The **keying** is no longer a divergence: `mapWithKeys()`'s contract is ported
-whole — each entry re-keyed by the record key, an array record's `__key` entry
-synthesised from the source array's own key when absent and cast to `string`
-either way — so `$records[$key]` is the bare lookup a row-scoped action needs.
+The **keying** is Filament's whole: `mapWithKeys()`'s contract is ported — each
+entry re-keyed by the record key, an array record's `__key` entry synthesised
+from the source array's own key when absent and cast to `string` either way — so
+`$records[$key]` is the bare lookup a row-scoped action needs. It applies to both
+arms: a returned `Paginator` is re-keyed too, through `withRecords()`, so the
+carrier that comes back is a **clone** of the one the closure returned and the
+counts around it are untouched. `getTableRecord()` unwraps it before the lookup,
+which is why a row-scoped action works identically on a paginated table.
+
 Only the container differs. There is no `Collection` to return: the Laravel
 collection pipeline has no port and nothing in the package consumes one, so a
-`foreach`-able array carries the same information; and there is no
-`Paginator` arm because pagination is
-[pulled forward · 11](../roadmap.md#pulled-forward). The `Traversable` and array
-arms a closure can produce both fall out of one `foreach`, which is why nothing
-calls `iterator_to_array()` — a generator yielding the same key twice loses the
-earlier record either way, and that is the same last-writer-wins rule two records
-sharing an `id` already get.
+`foreach`-able array carries the same information. `CursorPaginator` has no
+counterpart either — cursor paging is a query-lane shape, and the closure lane
+has nothing to build a cursor from. The `Traversable` and array arms a closure
+can produce both fall out of one `foreach`, which is why nothing calls
+`iterator_to_array()` — a generator yielding the same key twice loses the earlier
+record either way, and that is the same last-writer-wins rule two records sharing
+an `id` already get.
 
-Provisional in one direction only: the return type gains a paginated arm when
-pagination lands. A `Collection` port is not planned.
+Anything else the closure returns is a `LogicException` naming both accepted
+shapes. Filament has no such guard, because Eloquent's builder cannot return
+garbage; a userland closure can, and a table that silently renders empty for a
+`null` return is the failure worth stopping on.
+
+Permanent for the `Collection` arm; the `Paginator` arm is now shipped rather
+than pending.
 
 ### Object records are keyed by a readable `id`, rather than an Eloquent key
 

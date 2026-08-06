@@ -6,12 +6,14 @@
 named after the record path it reads, bound to a [`Table`](table.md), and handed
 one record at a time. It ports Filament's
 [`Filament\Tables\Columns\Column`](../../../vendor/filament/tables/src/Columns/Column.php)
-together with the concern traits it composes — five today
+together with the concern traits it composes — seven today
 ([`BelongsToTable`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php),
 [`HasName`](../../../packages/tables/src/Columns/Concerns/HasName.php),
 [`HasLabel`](../../../packages/tables/src/Columns/Concerns/HasLabel.php),
 [`HasRecord`](../../../packages/tables/src/Columns/Concerns/HasRecord.php),
-[`HasCellState`](../../../packages/tables/src/Columns/Concerns/HasCellState.php)),
+[`HasCellState`](../../../packages/tables/src/Columns/Concerns/HasCellState.php),
+[`CanBeSortable`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php),
+[`CanBeSearchable`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php)),
 thirty in Filament — twenty from its `Columns\Concerns\` and ten from
 `Support\Concerns\`, `HasCellState` among the latter
 ([diverges](#hascellstate-is-relocated-into-the-column-tier)). The five ported
@@ -74,7 +76,10 @@ sections do.
 | `getRowLoop()` — the `$rowLoop` injection | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | blocked | the `Table` template | [detail](#rowloop-waits-on-the-table-template) |
 | Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#relationship-traversal-is-the-doctrine-query-lanes) |
 | Visibility — `hidden()`, `visible()`, `hiddenFrom()`, `toggleable()` | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeHiddenResponsively`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — | — |
-| Sorting and searching — `sortable()`, `searchable()`, the query application | [`CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php), [`CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php), [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
+| [`sortable()` / `isSortable()`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php) | [`Concerns\CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php) | done | — | [detail](#the-sort-and-search-column-lists-are-stored-and-read-by-nothing) |
+| [`searchable()` / `isSearchable()` / `isGloballySearchable()` / `isIndividuallySearchable()`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php) | [`Concerns\CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | done | — | [diverges](#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column) · [detail](#the-sort-and-search-column-lists-are-stored-and-read-by-nothing) |
+| `getSortColumns()` / `getSearchColumns()` and their `getDefault*` halves, `forceSearchCaseInsensitive()`, `splitIndividualSearchTerms()` | [`CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php), [`CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#the-sort-and-search-column-lists-are-stored-and-read-by-nothing) |
+| `applySort()`, `applySearchConstraint()` — the column's query application | [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | — |
 | Actions and links — `action()`, `url()`, `openUrlInNewTab()`, `disabledClick()` | [`CanCallAction`](../../../vendor/filament/tables/src/Columns/Concerns/CanCallAction.php), [`CanOpenUrl`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | todo | — | — |
 | Editing in place — `updateStateUsing()`, `rules()`, `disabled()` | [`CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php), [`CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php), [`CanBeDisabled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | todo | — | — |
 | Cell presentation — `alignment()`, `verticalAlignment()`, `width()`, `grow()`, `inline()`, `tooltip()`, the extra-attribute bags | [`HasAlignment`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) and seven siblings, [`HasTooltip`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — | — |
@@ -83,7 +88,7 @@ sections do.
 | The rest of the catalog — `BadgeColumn`, `BooleanColumn`, `CheckboxColumn`, `ColorColumn`, `IconColumn`, `ImageColumn`, `SelectColumn`, `TagsColumn`, `TextInputColumn`, `ToggleColumn`, `ViewColumn` | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | todo | — | — |
 | _rest not audited yet_ | | | | |
 
-The eleven **done**-or-partial rows are covered by
+The thirteen **done**-or-partial rows are covered by
 [`ColumnTest`](../../../packages/tables/tests/Unit/Columns/ColumnTest.php) — the
 blank-name refusal, the three label derivations
 (`title` → *Title*, `releasedAt` → *Released at*, `artist.name` → *Artist*), an
@@ -98,11 +103,54 @@ key served from the cache — including a cached `null`, which is why the lookup
 `array_key_exists()` and not `isset()` — a new key re-reading, an unkeyed column
 reading fresh every time, and `clearCachedState()` restoring the fresh read.
 
+The two browsing rows are covered in the same file. `sortable()` is asserted on
+all four arms — the default false, the bare call, an explicit `false`, a closure,
+and the column-list form still reading sortable. `searchable()` splits into four
+cases: the three unset defaults together (searchable, globally, individually all
+false); the bare call defaulting to **globally** searchable and not individually;
+the string and array forms staying searchable; and the `isIndividual: true,
+isGlobal: false` pair inverting both. A fifth case is the one that would fail
+against Filament's own implementation — a closure condition returning `false`
+leaving the column unsearchable, and one returning `true` leaving it globally
+searchable — which is the
+[vendor defect](#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column)
+this port fixes.
+
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
+
+### The sort and search column lists are stored, and read by nothing
+
+`sortable(['title', 'subtitle'])` and `searchable(['title', 'author.name'])` both
+store their list, and `sortable(query:)` / `searchable(query:)` both store their
+closure — exactly as Filament does — and no shipped code reads any of the four.
+That is Filament's situation too on the lane this port has: `$sortColumns` is
+read only by `getSortColumns(Model $record)`, whose only caller is
+`InteractsWithTableQuery::applySort()`, and the search pair is the same shape.
+Both are Eloquent-typed down to the parameter (`Model $record`) and neither can
+be ported before the Doctrine [`query()` lane](../roadmap.md#pulled-forward) gives
+them a query to apply to.
+
+They are stored rather than rejected because the **declaration** is the API a
+migrating user writes, and it is meaningful today: `sortable(['first_name',
+'last_name'])` still makes the column sortable, which is the half the closure lane
+honours — the userland `records()` closure receives the column *name* through
+[`sortColumn`](has-table.md#the-records-injections-stop-at-six-of-filaments-eight)
+and decides for itself what ordering by it means. Refusing the array arm would
+break that call site for no gain; reading it here would mean inventing a
+Doctrine-side meaning for it ahead of the lane that owns one.
+
+The two `getDefault*Columns()` halves are not stored at all, having nothing to
+store: each returns `[$this->getFullAttributeName($record)]`, a relationship-aware
+name resolution that is
+[the query lane's whole subject](#relationship-traversal-is-the-doctrine-query-lanes).
+`forceSearchCaseInsensitive()` and `splitIndividualSearchTerms()` are likewise
+out — both are read by the search-expression builders, and a stored flag no
+builder consults would be worse than an absent one, since it would read as
+configurable behaviour.
 
 ### An unbound column fails without Filament's message
 
@@ -217,6 +265,34 @@ stops being a read path and remains only a key and a label source.
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
 what would reverse the decision when it is provisional.
+
+### A `Closure` condition on `searchable()` is evaluated, not filed as a search column
+
+`Column::searchable()` takes `bool|array|string|Closure` as its condition, and
+Filament sorts the union with `is_bool($condition)`: the bool arm sets
+`$isSearchable` and clears the columns, and **everything else** — an array, a
+string, *and a closure* — goes to `Arr::wrap($condition)` in `$searchColumns`
+with `$isSearchable = true`. So `searchable(fn () => false)` in Filament makes the
+column unconditionally searchable and files the closure as a search *column*,
+where it is later interpolated into a `LIKE` expression. The condition is never
+evaluated. Sylament tests `is_bool($condition) || $condition instanceof Closure`
+instead, so a closure lands in `$isSearchable` and `isSearchable()` evaluates it
+the way `CanBeSortable` already evaluates its own.
+
+This is a vendor defect rather than a design difference, and the shape of the
+evidence is that Filament's *sibling* trait gets it right: `CanBeSortable`
+branches on `is_array($condition)`, so its closure reaches `$isSortable` and is
+evaluated by `isSortable()`. The two traits are otherwise line-for-line twins.
+The signature itself agrees with us — `Closure` is in the declared union, which
+it would not need to be if the intent were to accept a closure as a column name.
+
+The port therefore fixes it at the cause, the way the M1 · 6
+[clone-map defect](../actions/action-group.md#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately)
+was fixed rather than mirrored. The cost is that a Filament user who wrote
+`searchable($someClosure)` *expecting* a search column gets different behaviour —
+but that user's column was searching by a closure-shaped column name, which
+cannot have worked. `ColumnTest` pins both directions, so the arm cannot regress
+into Filament's shape unnoticed.
 
 ### `HasCellState` is relocated into the column tier
 

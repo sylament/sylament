@@ -7,17 +7,20 @@ object of the tables package, the counterpart to schemas'
 host builds through [`HasTable`](has-table.md), carrying the record data source
 and the empty-state copy. It ports Filament's
 [`Filament\Tables\Table`](../../../vendor/filament/tables/src/Table.php) together
-with the `Table\Concerns\` traits it composes — six today
+with the `Table\Concerns\` traits it composes — nine today
 ([`BelongsToLiveComponent`](../../../packages/tables/src/Table/Concerns/BelongsToLiveComponent.php),
 [`HasRecords`](../../../packages/tables/src/Table/Concerns/HasRecords.php),
 [`HasEmptyState`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php),
 [`HasColumns`](../../../packages/tables/src/Table/Concerns/HasColumns.php),
 [`HasActions`](../../../packages/tables/src/Table/Concerns/HasActions.php),
-[`HasRecordActions`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php)),
-thirty-one in Filament. The six ported are folded into the surface table below
+[`HasRecordActions`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php),
+[`CanPaginateRecords`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php),
+[`CanSortRecords`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php),
+[`CanSearchRecords`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php)),
+thirty-one in Filament. The nine ported are folded into the surface table below
 rather than earning rows upstairs, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing); the
-twenty-five still unported keep a per-file row in the package
+twenty-two still unported keep a per-file row in the package
 [README](README.md#features), the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
 reached yet. The rows below group those files by feature, which is what the
@@ -40,6 +43,9 @@ Reference — the Filament source this is diffed against:
 - [`tables/src/Table/Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php)
 - [`tables/src/Table/Concerns/HasActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasActions.php)
 - [`tables/src/Table/Concerns/HasRecordActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php)
+- [`tables/src/Table/Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php)
+- [`tables/src/Table/Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php)
+- [`tables/src/Table/Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php)
 - [`tables/src/Enums/RecordActionsPosition.php`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php)
 
 ## Surface
@@ -56,13 +62,14 @@ Rows never disappear — only their detail sections do.
 | --- | --- | --- | --- | --- |
 | [`make(InteractsWithTable $liveComponent)`](../../../packages/tables/src/Table.php) | [`Table::make()`](../../../vendor/filament/tables/src/Table.php) | done | — | [diverges](../renames.md#make-arguments-move-from-constructors-to-setters) |
 | [`liveComponent()` / `getLiveComponent()`](../../../packages/tables/src/Table/Concerns/BelongsToLiveComponent.php) | [`BelongsToLivewire`](../../../vendor/filament/tables/src/Table/Concerns/BelongsToLivewire.php) | done | — | [semantics](#the-host-binding-is-required-where-the-schemas-one-is-optional) |
-| [`records()` / `getDataSource()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::records()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [has-table.md](has-table.md#the-records-closure-receives-no-named-injections-yet) |
-| [`getRecords()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getRecords()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#getrecords-delegates-to-the-host-and-fetches-nothing) |
+| [`records()` / `getDataSource()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::records()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [has-table.md](has-table.md#the-records-injections-stop-at-six-of-filaments-eight) |
+| [`getRecords()` — always the current page's keyed array](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getRecords()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#getrecords-delegates-to-the-host-and-fetches-nothing) · [semantics](#getrecords-unwraps-the-paginator-and-getpaginator-is-the-only-seam-to-it) |
+| [`getPaginator(): ?Paginator`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | — (Sylament-only; Filament's `getRecords()` **is** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#getrecords-unwraps-the-paginator-and-getpaginator-is-the-only-seam-to-it) |
 | [`emptyStateHeading()` / `getEmptyStateHeading()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | done | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
 | [`emptyStateDescription()` / `getEmptyStateDescription()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | in progress | — | [detail](#the-create-action-default-description-waits-on-the-model-label) |
 | [`emptyStateIcon()` / `getEmptyStateIcon()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | done | — | [diverges](#the-empty-state-icon-getter-returns-null-and-the-fallback-lives-in-the-template) |
 | [`$evaluationIdentifier = 'table'` + the `$liveComponent` name injection](../../../packages/tables/src/Table.php) | [`Table::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Table.php) | done | — | — |
-| [`$template`](../../../packages/tables/src/Table.php) + [the partial it names](../../../packages/tables/templates/partials/Table/index.html.twig) | [`$view = 'filament-tables::index'`](../../../vendor/filament/tables/src/Table.php), [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) |
+| [`$template`](../../../packages/tables/src/Table.php) + [the partial it names](../../../packages/tables/templates/partials/Table/index.html.twig) | [`$view = 'filament-tables::index'`](../../../vendor/filament/tables/src/Table.php), [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) · [diverges](#a-markup-header-label-does-not-switch-the-sortable-header-to-a-span) · [semantics](#aria-sort-is-dropped-with-null-because-false-would-render-as-a-string) |
 | `emptyState()` (a whole replacement view) | [`HasEmptyState::emptyState()`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | todo | — | — |
 | `emptyStateActions()` / `pushEmptyStateActions()` | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | todo | — | — |
 | Record labels — `modelLabel()`, `pluralModelLabel()`, `recordTitle()`, `recordTitleAttribute()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | todo | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
@@ -73,8 +80,15 @@ Rows never disappear — only their detail sections do.
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
 | The column manager — user-toggleable column visibility | [`HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — | — |
 | The `query()` lane — `query()`, `hasQuery()`, `getModel()`, `relationship()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | — |
-| Pagination and polling — `paginated()`, `deferLoading()`, `poll()` | [`CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
-| Sorting and searching — `defaultSort()`, `searchable()`, the session persistence | [`CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php), [`CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) | — |
+| [`paginated()` / `isPaginated()` / `paginationPageOptions()` / `getPaginationPageOptions()` / `defaultPaginationPageOption()` / `getDefaultPaginationPageOption()` / `extremePaginationLinks()` / `hasExtremePaginationLinks()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | [diverges](#the-ten-per-page-default-is-matched-strictly) · [diverges](#ispaginated-has-no-groups-only-arm) |
+| `paginationMode()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
+| `paginatedWhileReordering()`, `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
+| [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
+| `defaultSort()`, `defaultSortDirection()`, `defaultKeySort()`, `defaultSortOptionLabel()` and their getters | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#the-default-sort-family-is-the-query-lanes) |
+| [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
+| [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) |
+| `persistSearchInSession()`, `persistColumnSearchesInSession()`, `splitSearchTerms()`, `searchUsing()`, `isSearchableByColumn()`, `hasSearch()`, the two indicator getters, `applyExtraSearchConstraints()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
+| Deferred loading and polling — `deferLoading()`, `poll()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | todo | — | [detail](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | Filters — `filters()`, the indicators, the query-string identifier | [`HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php), [`HasQueryStringIdentifier`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — | — |
 | [`recordActions()` / `pushRecordActions()` / `getRecordActions()` / `getFlatRecordActions()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) | [`Table\Concerns\HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | in progress | — | [detail](#record-actions-register-without-the-per-action-modifier-hook) |
 | [`recordActionsPosition()` / `getRecordActionsPosition()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) + [`RecordActionsPosition`](../../../packages/tables/src/Enums/RecordActionsPosition.php) | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php), [`Enums/RecordActionsPosition`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | in progress | — | [detail](#the-position-default-has-no-content-arm-to-choose-between-yet) · [diverges](#the-position-setter-drops-filaments-string-arm) · [diverges](#the-four-rendered-positions-collapse-to-two) |
@@ -90,12 +104,14 @@ Rows never disappear — only their detail sections do.
 | Presentation — `striped()`, `stackedOnMobile()`, `content()`, `header()`, the headings, `recordClasses()` | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) and five siblings | todo | — | — |
 | `HasArguments`, `HasExtraAttributes`, `HasDefaultDataFormattingSettings` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
-The eleven **done** rows are `make()`, the host binding, the data-source
-declaration, the host-delegating `getRecords()` and `getRecordKey()`, the
-morph-stable row and cell keys built on the latter, the empty-state heading and
-icon, the closure-injection wiring, the per-record visible-action map, and the
-partial that renders all of it; the column set, the empty-state description and
-the three remaining action rows are partly in, one step behind them.
+The sixteen **done** rows are `make()`, the host binding, the data-source
+declaration, the host-delegating `getRecords()`, `getPaginator()` and
+`getRecordKey()`, the morph-stable row and cell keys built on the last of those,
+the empty-state heading and icon, the closure-injection wiring, the per-record
+visible-action map, the pagination and sort-resolution surfaces, the two search
+rows, and the partial that renders all of it; the column set, the empty-state
+description and the three remaining action rows are partly in, one step behind
+them.
 
 The PHP surface is covered by
 [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php) — `make()`
@@ -112,6 +128,45 @@ differently named parameter would be needed to reach) — and, for `getRecords()
 by the host-side
 [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)
 it delegates into.
+
+The browsing configuration is covered in the same file, built through a real
+`TableHost` so every assertion runs against a configured `Table` rather than a
+bare trait object. Pagination: the untouched defaults as one case (paginated,
+`[5, 10, 25, 50]`, default `10`, no extreme links), `paginated(false)`,
+`paginated([12, 24])` routing its array into the page options *and* moving the
+default to `12`, the ten-preference against a list where ten is not first, the
+first-option fallback where there is no ten, and an explicit
+`defaultPaginationPageOption()` winning over both. Sorting: one case gives the
+table a sortable and a plain column and asserts `getSortableVisibleColumn()`
+returns a `Column` for the first and null for both the second and a name that
+does not exist — the three arms of the resolver the header cell and
+[`sortTable()`](has-table.md#sorttable-ignores-a-column-the-table-did-not-declare-sortable)
+both read. Search: `isSearchable()` derived from the columns (globally searchable
+→ true, individually-only → false, plain → false), then `searchable()` overriding
+it in both directions with `searchable(['author.name'])` also filling the extra
+columns; the chrome getters as one case; and the debounce translation as four
+values — the `null` default, `1s`, a bare `250`, and unparseable garbage falling
+back to 500.
+
+The rendered chrome is covered by the Integration
+[`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php),
+against a fixture host that is sortable, searchable and paginated **at once** —
+one render pass with all three on, because the failure mode worth catching is a
+toolbar or footer that only renders when nothing else does. Its assertions are
+Crawler selections, per the DOM-contract precedent above: a sortable `<th>`
+carrying `aria-sort="none"` around a `button.sy-ta-header-cell-sort-btn` whose
+`data-live-action-param` is `sortTable` and `data-live-column-param` the column
+name; an unsortable `<th>` with **no** button and **no** `aria-sort` attribute at
+all (the [null-not-false](#aria-sort-is-dropped-with-null-because-false-would-render-as-a-string)
+arm); the search input bound `debounce(500)|tableSearch`; and the footer's
+overview text, its single gap, its active item's `aria-current`, the page-2
+button's live-action parameters and the per-page `<select>` bound to
+`tableRecordsPerPage` with the right option selected. Two negative cases carry
+the rest: a plain table renders neither `sy-pagination` nor `sy-ta-header-toolbar`
+anywhere in its markup, and a page **past the end** renders the empty state *and*
+the footer together — which is the only way back for a user who paged past the
+data, and the case a naive `{% if records %}` wrapper around the footer would
+break.
 
 The action rows split their coverage by tier.
 [`HasRecordActionsTest`](../../../packages/tables/tests/Unit/Table/Concerns/HasRecordActionsTest.php)
@@ -179,6 +234,91 @@ bound once and reused — the single bug the per-record clone exists to prevent.
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
+
+### Three pagination setters configure machinery the closure lane does not have
+
+`paginationMode()` selects between Laravel's length-aware, simple and cursor
+paginators, all three built by the query lane's `paginateTableQuery()` — on the
+closure lane the userland closure returns whatever it built, so the enum would
+select nothing. It lands with the Doctrine
+[`query()` lane](../roadmap.md#pulled-forward), and the
+[`PaginationMode`](README.md#supporting-surface) enum is a **todo** row of its own
+until then; a simple or cursor shape would also need a second carrier beside
+[`Paginator`](../support/pagination.md), which counts pages it does not have.
+
+`paginatedWhileReordering()` reads on a table that is being reordered, and
+reordering is unported (its row is above). `scrollToTopOnPageChange()` is an
+Alpine `$el.scrollIntoView()` in Filament's view; the port has no scroll
+affordance and it belongs with the
+[loading affordances](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them)
+rather than with pagination configuration. Each returns with the feature it
+drives.
+
+### The default sort family is the query lane's
+
+`defaultSort()` — with `defaultSortDirection()`, `defaultKeySort()` and
+`defaultSortOptionLabel()` — declares how a table orders itself before the user
+has clicked anything. Every consumer of the four is
+[`applySortingToTableQuery()`](has-table.md#sorting-carries-no-query-application-and-no-default-sort):
+`getDefaultSort()` is even typed to take an Eloquent `Builder` and may *return*
+one, so the closure `defaultSort(fn (Builder $query) => …)` arm has no meaning
+without a query object to hand it. `defaultKeySort()` appends the model's
+qualified primary key as a tiebreaker, and `defaultSortOptionLabel()` labels the
+"unsorted" option of a sort **dropdown** that belongs to the unported mobile
+layout.
+
+On the closure lane the equivalent is already expressible and needs no API: a
+`records()` closure receiving `sortColumn` as null sorts however it likes. The
+family lands with the query lane, which is why the row is **blocked** on it and
+not merely todo — porting `defaultSort(string)` alone would ship a setter whose
+value nothing reads.
+
+### The unported search surface splits three ways
+
+Filament's `Table\Concerns\CanSearchRecords` is 300 lines; the port keeps the
+declaration and the chrome. What is left divides cleanly.
+
+**Session persistence** — `persistSearchInSession()` and
+`persistColumnSearchesInSession()` — is the
+[toolkit-wide omission](has-table.md#no-table-state-is-persisted-in-the-session)
+recorded on the host side, and returns with that decision rather than with
+search.
+
+**The query lane's** are `applyExtraSearchConstraints()` and
+`getExtraSearchableColumnRelationship()` (Eloquent `where`/`whereRelation`
+assembly over `generate_search_column_expression()`), `searchUsing()` with its
+`callSearchUsing()`/`hasSearchUsingCallback()` pair — a closure handed the query
+builder — and `splitSearchTerms()`, which governs how the term is broken up
+*before* being turned into constraints. Note the asymmetry this creates today:
+`getExtraSearchableColumns()` is ported and readable, but nothing consumes it,
+because consuming it means building a query. It is stored rather than dropped so
+a table declaring `searchable(['author.name'])` keeps its declaration and reads
+as searchable, which is the half the closure lane can honour.
+
+**Everything else waits on a neighbouring feature.** `isSearchableByColumn()`
+answers whether any column wants its own input, which is
+[per-column search](has-table.md#search-is-the-global-term-only); `hasSearch()`
+delegates to a host method that arrives with it; `getSearchIndicator()` and
+`getColumnSearchIndicators()` return `Filters\Indicator` objects and wait on the
+filter layer that defines the class.
+
+### Loading affordances are deferred with the JavaScript that would drive them
+
+`deferLoading()` renders the table shell immediately and fetches records on a
+second request; `poll()` re-fetches on an interval. Both are **todo** rather than
+blocked — nothing structural is missing, and UX LiveComponent can express each
+(`data-live-action` on connect, `data-poll`).
+
+What is missing is the affordance around them, and that is the reason to defer
+rather than ship them cheaply: a deferred table shows a loading skeleton, a
+polling one shows an in-flight indicator, and Filament's are Alpine-driven
+(`wire:loading`, `x-show`) with a `LoadingIndicator` contract and a
+`loading-indicator` view behind them — none of which is ported in support (both
+are **todo** rows in its
+[README](../support/README.md#components)). Shipping `poll()` without the
+indicator gives a table that silently changes under the reader, which is worse
+than one that does not poll. They land together, once support has a loading
+affordance to render.
 
 ### The create-action default description waits on the model label
 
@@ -327,6 +467,67 @@ of its own — a second implementation of the `id` read would be one more place 
 keep in step with
 [`InteractsWithRecord::resolveRecordKey()`](../actions/action.md).
 
+### `getRecords()` unwraps the paginator, and `getPaginator()` is the only seam to it
+
+`Table::getRecords()` returns `array` — never a `Paginator` — even when the
+host's `getTableRecords()` returned one: it unwraps with
+`$records instanceof Paginator ? $records->getRecords() : $records`. So the row
+loop is written once and reads the same shape on a paginated and an unpaginated
+table, and `records is empty` in the partial means *this page is empty*, which
+is what the empty state should say.
+
+Filament has no such method because its `getRecords()` **is** the paginator —
+Laravel's implements `IteratorAggregate`, so `@foreach ($records as $record)`
+walks the page while `$records->links()` renders the footer off the same object.
+Sylament's [`Paginator`](../support/pagination.md) is iterable too, so that shape
+was available; splitting it is what keeps the template's two readers honest about
+what they need. The counts a footer wants are reached through `getPaginator()`,
+which returns null on an unpaginated table — the partial's `{% if paginator %}`
+is therefore the whole condition for rendering a footer, and it needs no
+second `isPaginated()` read.
+
+The trap to avoid when extending either: `getRecords()` must not start returning
+the carrier "when there is one", and `getPaginator()` must not start building one
+when there is not. Both would put the same information behind two shapes.
+
+### A table is searchable when a column says so, and `searchable()` overrides in both directions
+
+`isSearchable()` reads three sources in order and the order is the API: an
+explicit `searchable(bool)` wins outright, then any extra searchable columns,
+then any column that is **globally** searchable. So a table with a
+`->searchable()` column renders a search field without the table itself being
+configured at all — which is how a migrating user expects it to work — while
+`->searchable(false)` on the table suppresses the field even when a column asks
+for it.
+
+The subtlety is that `$isSearchable` is `?bool`, not `bool`: null means *nobody
+said*, which is what makes the column-derived answer reachable, and it is why
+`searchable(false)` also clears `extraSearchableColumns` — leaving them would
+make the second source contradict the explicit false. A column marked
+`searchable(isGlobal: false, isIndividual: true)` deliberately does **not** make
+the table searchable, because it asked for its own input, not for the global
+field; that field arrives with
+[per-column search](has-table.md#search-is-the-global-term-only). All of it is
+Filament's, expressed the same way.
+
+### `aria-sort` is dropped with null, because `false` would render as a string
+
+The header cell's `aria-sort` is computed as
+`isColumnSortable ? (… 'ascending' : 'descending' : 'none') : null` — the
+unsortable arm is `null` and not `false`, which reads like an arbitrary choice
+between two falsy values and is not. `false` drops an attribute in
+[`ComponentAttributeBag::toScalarAttributes()`](../support/component-attribute-bag.md)
+*except* for an `aria-` name, which the bag converts to the **string** `"false"`
+first — ARIA states being string-valued, where `aria-hidden="false"` genuinely
+differs from an absent attribute. So the `false` arm would emit
+`aria-sort="false"` on every unsortable column: an invalid token for that
+particular attribute, whose vocabulary is `ascending`/`descending`/`other`/`none`.
+
+The general rule the rest of the partial relies on is unchanged — `null` and
+`false` both drop — and this is the one family where they differ. Reach for
+`null` whenever the intent is *no attribute*, and keep `false` for a genuine
+boolean attribute (`disabled`) outside the `aria-` namespace.
+
 ### The row and cell morph keys disagree on `record` vs `records`
 
 A row's key is `{hostId}.table.**records**.{recordKey}` and a cell's is
@@ -363,6 +564,85 @@ nullable one.
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
 what would reverse the decision when it is provisional.
+
+### The ten-per-page default is matched strictly
+
+`getDefaultPaginationPageOption()` prefers `10` when the page options contain it,
+and Filament tests that with a loose `in_array(10, $options)` where this port
+passes `strict: true`. The two disagree on one input:
+`paginationPageOptions(['10', 25])` yields the **string** `'10'` here (the loose
+match having failed, the first option wins) and the **int** `10` in Filament — a
+value that is not in the option list at all, which the host's
+[validating getter](has-table.md#per-page-is-validated-in-the-getter-on-every-read)
+would then reject in favour of… this same method.
+
+Strict is the arm to keep: the returned value is compared against the option list
+again on every read, so a default that is not literally one of the options is a
+loop. It is also the house rule — `in_array()` without `strict: true` is a
+PHPStan-flagged smell at level max — and the input that distinguishes them
+(numeric strings mixed with ints in one option list) has no reason to exist. The
+`'all'` option is a string on purpose and is unaffected: it is matched by value,
+not by this branch.
+
+### `isPaginated()` has no groups-only arm
+
+Filament's is `$this->evaluate($this->isPaginated) && (! $this->isGroupsOnly())` —
+a table showing only group headers has no rows to page through. `isGroupsOnly()`
+belongs to record grouping, which is unported (its row is above), so the second
+conjunct has nothing to read and the getter is the evaluation alone. It returns
+in the change that lands grouping, and this row is listed as a divergence rather
+than a gap because the *shipped* getter is complete for every table that can
+exist today.
+
+### `getSortableVisibleColumn()` has no hidden arm to check
+
+Filament's rejects three things — an unknown column, a **hidden** one, and an
+unsortable one. The port drops the middle check because column visibility is
+unported (`hidden()` / `visible()` / `toggleable()` are a **todo** row in
+[column.md](column.md)), so `isHidden()` does not exist to call. The name keeps
+the word *visible* deliberately: it is Filament's, the check returns with the
+concern, and renaming the method for the duration would break the API a migrating
+user greps for.
+
+### `getSearchDebounceMilliseconds()` is a Sylament-only translation of Filament's duration string
+
+Filament stores `searchDebounce('500ms')` and interpolates the string straight
+into the Blade attribute `wire:model.live.debounce.{{ $searchDebounce }}`, where
+Livewire parses it. ux-live-component's `data-model` modifier is
+`debounce(N)` with **N in milliseconds and nothing else**, so the string has to be
+parsed on the PHP side; `getSearchDebounceMilliseconds()` does that and is the
+value the partial renders.
+
+`searchDebounce()` and `getSearchDebounce()` keep Filament's exact shape — the
+setter takes and the getter returns the duration string, defaulting to `'500ms'`
+— so a migrating call site is unchanged; the new member sits beside them as a
+derived read. It accepts `500ms`, `1s`, a bare number (read as milliseconds), and
+returns 500 for anything it cannot parse rather than throwing: a debounce is a
+comfort setting, and a typo'd one should not take a page down. Recorded in the
+[rename table](../renames.md#names-with-no-filament-source) as a name with no
+Filament source. Permanent — the string is the API, the integer is the wire
+format.
+
+### A `Markup` header label does not switch the sortable header to a `<span>`
+
+Filament's header cell renders its sortable trigger as a `<button>` **unless**
+the column label is an `Htmlable`, in which case it emits a `<span>` with the
+same click handler instead — the escape hatch for a label that already contains
+interactive markup and would nest a control inside a button. Sylament's partial
+always renders a `<button>`.
+
+Twig has no type test for `Markup` — `label is instanceof('Twig\Markup')` needs
+`twig/extra`'s `instanceof` test, which the port does not ship and does not want
+for one branch, and the alternative (a `Column::hasMarkupLabel()` getter existing
+solely to answer a template's type question) puts a rendering concern on the
+column. Against that, the case is currently unreachable in a useful way: a
+`Markup` label containing a control would already be broken inside the button,
+and no ported column produces one. YAGNI wins.
+
+Provisional, and the reversal is cheap when a real case appears — the branch is
+one `{% if %}` around the trigger element, and the accessible name is the same
+either way. Note what does **not** reverse it: a `Markup` label with no
+interactive content renders correctly inside the button today.
 
 ### The empty state heading hardcodes "No records"
 

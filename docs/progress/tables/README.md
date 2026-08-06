@@ -10,40 +10,48 @@ filters, actions, grouping, summaries.
 These tables map the full `tables/src` surface end to end (plus the rendered
 views, translations and assets), so no table carries an
 [unaudited row](../README.md#an-unaudited-table-says-so). The minimal tables
-vertical (M1 · 5) and the record-action lane (M1 · 6) are what has landed so far
+vertical (M1 · 5), the record-action lane (M1 · 6) and the table upgrades epic
+([pulled forward · 11](../roadmap.md#pulled-forward)) are what has landed so far
 — a linked first-column name is built and carries a real
 [status](../README.md#statuses), with a detail file wherever a divergence, an
 open gap or real sub-structure earns one; a plain-text name is not built yet and
-is **todo**, **blocked** or **skipped**. Two rows are **skipped**, both for the
-same reason and both added by M1 · 6: Filament's host `HasActions` and
-`HasRecordAction` are wholly deprecated `*TableAction` delegates, and the project
-has never ported a deprecated Filament surface — the machinery they front is
-built, it just does not answer to those names here.
+is **todo**, **blocked** or **skipped**. Three rows are **skipped**, all for the
+same reason: Filament's host `HasActions` and `HasRecordAction` are wholly
+deprecated `*TableAction` delegates (both added by M1 · 6), and its host
+`CanPollRecords` is a single deprecated getter (added by the table upgrades
+epic) — the project has never ported a deprecated Filament surface, and the
+machinery each fronts is built or tracked elsewhere, it just does not answer to
+those names here.
 
 **todo** and **blocked** are distinguished here rather than collapsed, because
 the [vocabulary](../README.md#statuses) defines **todo** as having nothing to
 wait on — so a row whose detail file already names a prerequisite would be
 false as **todo**. These tables carry the same four columns as every package
 README, so a **blocked** row names its prerequisite at the head of _Detail_,
-ahead of the detail-file link that carries the full write-up: _table upgrades
-([pulled forward · 11](../roadmap.md#pulled-forward))_, _table bulk actions_,
-the _Doctrine `query()` lane
-([pulled forward · 12](../roadmap.md#pulled-forward))_ and _the `Table` template_
-are the four this package waits on today. Only _table bulk actions_ has no epic
-carrying it — it needs a `BulkAction` class and the row-selection machinery, and
-nothing on the roadmap is scheduled to build either. (The
+ahead of the detail-file link that carries the full write-up: the _Doctrine
+`query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward))_, _table
+bulk actions_ and _the `Table` template_ are the three this package waits on
+today. _Table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward))_ was
+a fourth until that epic landed: its rows are now **done**, **in progress** or —
+where what is left is Eloquent query assembly — moved onto the query lane, and
+the two that were waiting on nothing at all (deferred loading, polling) are plain
+**todo**. Only _table bulk actions_ has no epic carrying it — it needs a
+`BulkAction` class and the row-selection machinery, and nothing on the roadmap is
+scheduled to build either. (The
 [`forms`](../forms/README.md) README records the opposite
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 
-Eleven concerns the port has landed are **folded** into the detail file of the
+Sixteen concerns the port has landed are **folded** into the detail file of the
 class that composes them and carry no row here, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing) — six
-`Table\Concerns\` traits (`BelongsToLivewire`, `HasActions`, `HasColumns`,
+[one row per file](../README.md#one-row-per-file-one-file-per-thing) — nine
+`Table\Concerns\` traits (`BelongsToLivewire`, `CanPaginateRecords`,
+`CanSearchRecords`, `CanSortRecords`, `HasActions`, `HasColumns`,
 `HasEmptyState`, `HasRecordActions`, `HasRecords`) into
-[`table.md`](table.md), four `Columns\Concerns\` traits
-(`BelongsToTable`, `HasLabel`, `HasName`, `HasRecord`) into
-[`column.md`](column.md), and `Columns\Concerns\CanFormatState` into
+[`table.md`](table.md), six `Columns\Concerns\` traits
+(`BelongsToTable`, `CanBeSearchable`, `CanBeSortable`, `HasLabel`, `HasName`,
+`HasRecord`) into [`column.md`](column.md), and `Columns\Concerns\CanFormatState`
+into
 [`text-column.md`](text-column.md). Filament's `resources/views/index.blade.php`
 folds the same way, into `table.md`'s `$template` row. Everything Filament ships
 that the port has **not** reached keeps its own per-file row below, the way
@@ -161,15 +169,15 @@ pairs with, so it shares the first row below.
 | --- | --- | --- | --- |
 | [`HasTable`](../../../packages/tables/src/Concerns/HasTable.php) / [`InteractsWithTable`](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`src/Concerns/InteractsWithTable.php`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php), [`src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | [has-table.md](has-table.md) |
 | Host / CanBeStriped | [`Concerns/CanBeStriped.php`](../../../vendor/filament/tables/src/Concerns/CanBeStriped.php) | todo | — |
-| Host / CanDeferLoading | [`Concerns/CanDeferLoading.php`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [has-table.md](has-table.md) |
+| Host / CanDeferLoading | [`Concerns/CanDeferLoading.php`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | todo | [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | Host / CanGroupRecords | [`Concerns/CanGroupRecords.php`](../../../vendor/filament/tables/src/Concerns/CanGroupRecords.php) | todo | — |
-| Host / CanPaginateRecords | [`Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [has-table.md](has-table.md) |
-| Host / CanPollRecords | [`Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [has-table.md](has-table.md) |
+| Host / CanPaginateRecords | [`Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | [has-table.md](has-table.md#the-page-state-has-no-query-lane-and-no-session-half) |
+| Host / CanPollRecords | [`Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | skipped | The whole trait is a deprecated host getter (`getTablePollingInterval()`), and the project has never ported a deprecated Filament surface — the interval it fronts is `Table::poll()`, the `Table / CanPollRecords` row below ([has-table.md](has-table.md)) |
 | Host / CanReorderRecords | [`Concerns/CanReorderRecords.php`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | todo | — |
-| Host / CanSearchRecords | [`Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [has-table.md](has-table.md) |
-| Host / CanSortRecords | [`Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [has-table.md](has-table.md) |
+| Host / CanSearchRecords | [`Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | [has-table.md](has-table.md#search-is-the-global-term-only) |
+| Host / CanSortRecords | [`Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | [has-table.md](has-table.md#sorting-carries-no-query-application-and-no-default-sort) |
 | Host / CanSummarizeRecords | [`Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | todo | — |
-| Host / HasActions | [`Concerns/HasActions.php`](../../../vendor/filament/tables/src/Concerns/HasActions.php) | skipped | Every method in the file is a deprecated `*TableAction` delegate to the actions-package equivalent, and the project has never ported a deprecated Filament surface. What it fronts is built: mounting, resolution and record binding go through actions' [`HasActions`](../actions/has-actions.md#resolvetableaction-drops-the-bulk-arm) and the [`InteractsWithTable`](has-table.md#the-contract-is-five-methods-of-filaments-forty-six) contract |
+| Host / HasActions | [`Concerns/HasActions.php`](../../../vendor/filament/tables/src/Concerns/HasActions.php) | skipped | Every method in the file is a deprecated `*TableAction` delegate to the actions-package equivalent, and the project has never ported a deprecated Filament surface. What it fronts is built: mounting, resolution and record binding go through actions' [`HasActions`](../actions/has-actions.md#resolvetableaction-drops-the-bulk-arm) and the [`InteractsWithTable`](has-table.md#the-contract-is-nine-methods-of-filaments-forty-six) contract |
 | Host / HasBulkActions | [`Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | blocked | table bulk actions — [has-table.md](has-table.md) |
 | Host / HasColumnManager | [`Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | todo | — |
 | Host / HasColumns | [`Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | todo | — |
@@ -181,13 +189,10 @@ pairs with, so it shares the first row below.
 | Host / HasRecords | [`Concerns/HasRecords.php`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | [has-table.md](has-table.md) |
 | Table / CanBeStackedOnMobile | [`Table/Concerns/CanBeStackedOnMobile.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStackedOnMobile.php) | todo | — |
 | Table / CanBeStriped | [`Table/Concerns/CanBeStriped.php`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) | todo | — |
-| Table / CanDeferLoading | [`Table/Concerns/CanDeferLoading.php`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [table.md](table.md) |
+| Table / CanDeferLoading | [`Table/Concerns/CanDeferLoading.php`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php) | todo | [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | Table / CanGroupRecords | [`Table/Concerns/CanGroupRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php) | todo | — |
-| Table / CanPaginateRecords | [`Table/Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [table.md](table.md) |
-| Table / CanPollRecords | [`Table/Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [table.md](table.md) |
+| Table / CanPollRecords | [`Table/Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | todo | [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | Table / CanReorderRecords | [`Table/Concerns/CanReorderRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanReorderRecords.php) | todo | — |
-| Table / CanSearchRecords | [`Table/Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [table.md](table.md) |
-| Table / CanSortRecords | [`Table/Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [table.md](table.md) |
 | Table / CanSummarizeRecords | [`Table/Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | todo | — |
 | Table / HasArguments | [`Table/Concerns/HasArguments.php`](../../../vendor/filament/tables/src/Table/Concerns/HasArguments.php) | todo | — |
 | Table / HasBulkActions | [`Table/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | blocked | table bulk actions — [table.md](table.md) |
@@ -211,8 +216,6 @@ pairs with, so it shares the first row below.
 | Column / CanBeHidden | [`Columns/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php) | todo | — |
 | Column / CanBeHiddenResponsively | [`Columns/Concerns/CanBeHiddenResponsively.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php) | todo | — |
 | Column / CanBeInline | [`Columns/Concerns/CanBeInline.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeInline.php) | todo | — |
-| Column / CanBeSearchable | [`Columns/Concerns/CanBeSearchable.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [column.md](column.md) |
-| Column / CanBeSortable | [`Columns/Concerns/CanBeSortable.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [column.md](column.md) |
 | Column / CanBeSummarized | [`Columns/Concerns/CanBeSummarized.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | todo | — |
 | Column / CanBeToggled | [`Columns/Concerns/CanBeToggled.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — |
 | Column / CanBeValidated | [`Columns/Concerns/CanBeValidated.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php) | todo | — |
@@ -228,7 +231,7 @@ pairs with, so it shares the first row below.
 | Column / HasRowLoopObject | [`Columns/Concerns/HasRowLoopObject.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | blocked | the `Table` template — [column.md](column.md#rowloop-waits-on-the-table-template) |
 | Column / HasSpace | [`Columns/Concerns/HasSpace.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasSpace.php) | todo | — |
 | Column / HasTooltip | [`Columns/Concerns/HasTooltip.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — |
-| Column / InteractsWithTableQuery | [`Columns/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | blocked | table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward)) — [column.md](column.md) |
+| Column / InteractsWithTableQuery | [`Columns/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) — [column.md](column.md) |
 | Summarizer / BelongsToColumn | [`Columns/Summarizers/Concerns/BelongsToColumn.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/BelongsToColumn.php) | todo | — |
 | Summarizer / CanBeHidden | [`Columns/Summarizers/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanBeHidden.php) | todo | — |
 | Summarizer / CanFormatState | [`Columns/Summarizers/Concerns/CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanFormatState.php) | todo | — |
@@ -284,7 +287,7 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`TableExtension`](../../../packages/tables/src/Twig/Extension/TableExtension.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`SchemaExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | [tables-bundle.md](tables-bundle.md#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
-| [`TablesIconAlias`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`View/TablesIconAlias.php`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | [tables-bundle.md](tables-bundle.md#the-alias-set-is-one-constant-of-filaments-23) |
+| [`TablesIconAlias`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`View/TablesIconAlias.php`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | [tables-bundle.md](tables-bundle.md#the-alias-set-is-five-constants-of-filaments-23) |
 | [`SylamentTablesBundle`](../../../packages/tables/src/SylamentTablesBundle.php) | [`TablesServiceProvider.php`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | in progress | [tables-bundle.md](tables-bundle.md) |
 | [Styles](../../../packages/tables/assets/src/styles) | [`resources/css/`](../../../vendor/filament/tables/resources/css) | in progress | — |
 | HeaderActionsPosition | [`Actions/HeaderActionsPosition.php`](../../../vendor/filament/tables/src/Actions/HeaderActionsPosition.php) | todo | — |
@@ -293,7 +296,7 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | ColumnManagerResetActionPosition | [`Enums/ColumnManagerResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/ColumnManagerResetActionPosition.php) | todo | — |
 | FiltersLayout | [`Enums/FiltersLayout.php`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php) | todo | — |
 | FiltersResetActionPosition | [`Enums/FiltersResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | todo | — |
-| PaginationMode | [`Enums/PaginationMode.php`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | todo | — |
+| PaginationMode | [`Enums/PaginationMode.php`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) — [table.md](table.md#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
 | [`RecordActionsPosition`](../../../packages/tables/src/Enums/RecordActionsPosition.php) | [`Enums/RecordActionsPosition.php`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | done | [table.md](table.md#the-position-default-has-no-content-arm-to-choose-between-yet) |
 | RecordCheckboxPosition | [`Enums/RecordCheckboxPosition.php`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | todo | — |
 | TableComponent | [`TableComponent.php`](../../../vendor/filament/tables/src/TableComponent.php) | todo | — |
@@ -311,7 +314,7 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | views/components/column-manager/content | [`views/components/column-manager/content.blade.php`](../../../vendor/filament/tables/resources/views/components/column-manager/content.blade.php) | todo | — |
 | views/components/columns/layout | [`views/components/columns/layout.blade.php`](../../../vendor/filament/tables/resources/views/components/columns/layout.blade.php) | todo | — |
 | views/components/filters | [`views/components/filters.blade.php`](../../../vendor/filament/tables/resources/views/components/filters.blade.php) | todo | — |
-| views/components/search-field | [`views/components/search-field.blade.php`](../../../vendor/filament/tables/resources/views/components/search-field.blade.php) | todo | — |
+| views/components/search-field | [`views/components/search-field.blade.php`](../../../vendor/filament/tables/resources/views/components/search-field.blade.php) | in progress | ported **inline** into the [table partial](../../../packages/tables/templates/partials/Table/index.html.twig)'s toolbar rather than as a component of its own — its `wireModel` prop exists to serve the per-column search field, the second call site, which is unported ([has-table.md](has-table.md#search-is-the-global-term-only)); it becomes a component in the change that lands one |
 | views/components/summary | [`views/components/summary/index.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/index.blade.php) | todo | — |
 | views/components/summary/row | [`views/components/summary/row.blade.php`](../../../vendor/filament/tables/resources/views/components/summary/row.blade.php) | todo | — |
 | Translations | [`resources/lang/`](../../../vendor/filament/tables/resources/lang) | todo | — |

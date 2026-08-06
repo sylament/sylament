@@ -37,7 +37,8 @@ Reference — the Filament source this is diffed against:
 
 ## Surface
 
-Every provider responsibility, plus the two Twig-side classes the bundle owns.
+Every provider responsibility, plus the two Twig-side classes the bundle owns
+and the package manifest that declares what its `src/` needs.
 _Blocked by_ names what has to land first. _Detail_ carries a **detail** link to
 a [Details](#details) write-up, a **diverges** link to
 [Divergences](#divergences), or `—`.
@@ -46,14 +47,15 @@ a [Details](#details) write-up, a **diverges** link to
 | --- | --- | --- | --- | --- |
 | [`Columns\` glob + `Table` component services](../../../packages/tables/src/SylamentTablesBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
 | [TableExtension → `twig.extension`](../../../packages/tables/src/SylamentTablesBundle.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
-| [`TablesIconAlias::EMPTY_STATE`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias::EMPTY_STATE`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-one-constant-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
+| [`TablesIconAlias` — `EMPTY_STATE`, the three `HEADER_CELL_SORT_*`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-five-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
+| [`ext-mbstring` on the package manifest](../../../packages/tables/composer.json) | — (Sylament-only; Filament's manifest declares no extensions) | done | — | [diverges](#the-manifest-declares-ext-mbstring) |
 | [`@SylamentTables` view namespace](../../../packages/tables/templates) | [`->hasViews()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | Asset registration (`Js::make('tables')` + four column `AlpineComponent`s) | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#asset-registration) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php), [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#translations) |
 | `Testable::mixin(...)` — the six tables mixins | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 
-The three **done** rows are covered by
+Three of the four **done** rows are covered by
 [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php),
 which asserts each in the shape that fails without the registration rather
 than the shape that passes either way: the container's twig service exposes
@@ -74,35 +76,39 @@ against an `ArrayLoader` stub — the function name, the render, and both
 `RuntimeException` guards — and by its Integration
 [twin](../../../packages/tables/tests/Integration/Twig/Extension/TableExtensionTest.php),
 which renders a `<twig:SongsTable />` host through the real Twig so the shipped
-partial is in the loop. The unported responsibilities have no coverage because
-they have no code.
+partial is in the loop. The fourth — the `ext-mbstring` declaration — is a
+manifest fact with no runtime to assert; what would catch its absence is CI
+installing the split package on a build without the extension. The unported
+responsibilities have no coverage because they have no code.
 
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**.
 
-### The alias set is one constant of Filament's 23
+### The alias set is five constants of Filament's 23
 
 Filament's `TablesIconAlias` declares 23 alias constants up front — every
-overridable icon slot in the whole table builder. Sylament ships **one**,
-`EMPTY_STATE`, the only slot whose consuming surface is ported. The remaining 22
-all belong to features that are not built yet: reordering (`ACTIONS_ENABLE_REORDERING`,
+overridable icon slot in the whole table builder. Sylament ships **five**, the
+only slots whose consuming surface is ported: `EMPTY_STATE`, the three
+`HEADER_CELL_SORT_*` (unsorted, ascending, descending — the sortable header's
+chevron picks one by state) and `SEARCH_FIELD`. The remaining 18 all belong to
+features that are not built yet: reordering (`ACTIONS_ENABLE_REORDERING`,
 `ACTIONS_DISABLE_REORDERING`, `REORDER_HANDLE`), filtering and the query builder
 (`ACTIONS_FILTER`, `FILTERS_REMOVE_ALL_BUTTON`, the six
 `FILTERS_QUERY_BUILDER_CONSTRAINTS_*`), grouping (`ACTIONS_GROUP`,
 `GROUPING_COLLAPSE_BUTTON`), bulk actions (`ACTIONS_OPEN_BULK_ACTIONS`), the
-column manager (`ACTIONS_COLUMN_MANAGER`), the column catalog
-(`COLUMNS_COLLAPSE_BUTTON`, `COLUMNS_ICON_COLUMN_TRUE`, `COLUMNS_ICON_COLUMN_FALSE`),
-sorting (the three `HEADER_CELL_SORT_*`) and search (`SEARCH_FIELD`).
+column manager (`ACTIONS_COLUMN_MANAGER`) and the column catalog
+(`COLUMNS_COLLAPSE_BUTTON`, `COLUMNS_ICON_COLUMN_TRUE`, `COLUMNS_ICON_COLUMN_FALSE`).
 
 **Next step:** none on its own. An alias is only overridable once something reads
 it, so each constant lands in the same change as the component or feature that
 renders its icon — the same growth order
-[`SupportIconAlias`](../support/support-icon-alias.md#badge--breadcrumbs--pagination-aliases)
-follows. `EMPTY_STATE` is now read by
+[`SupportIconAlias`](../support/support-icon-alias.md#badge--breadcrumbs--rtl-aliases)
+follows, and the four that arrived with the sort headers and the search toolbar
+are that order in action. All five are read by
 [the table partial](../../../packages/tables/templates/partials/Table/index.html.twig),
-so the one constant that ships is overridable end to end.
+so every constant that ships is overridable end to end.
 
 ### Asset registration
 
@@ -175,7 +181,7 @@ silently wrong without it:
   `EvaluatesClosures::setInvoker()` receives the container's `Invoker` instead of
   one wrapping an empty container.
 - Because of the second point, a `records()` closure can type-hint a service —
-  the arm [`has-table.md`](has-table.md#the-records-closure-receives-no-named-injections-yet)
+  the arm [`has-table.md`](has-table.md#a-records-closure-resolves-public-container-services-by-type)
   records, together with its one boundary (the `Invoker` holds
   `service_container`, so only **public** ids resolve).
 
@@ -216,6 +222,27 @@ Adding a parameter nothing could vary would be API noise. Recorded in the
 [rename table](../renames.md#names-with-no-filament-source) as a name with no
 Filament source, alongside the reason `renderSchema()`/`renderAction()` are not
 renames either.
+
+### The manifest declares `ext-mbstring`
+
+`packages/tables/composer.json` requires `ext-mbstring`, which Filament's tables
+manifest does not (it declares no extensions at all, inheriting whatever the
+Laravel app has). The trigger is one call:
+[`CanSearchRecords::getTableSearch()`](../../../packages/tables/src/Concerns/CanSearchRecords.php)
+trims the raw search term with `mb_trim()`, and
+[`Table\Concerns\CanSearchRecords`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php)
+uses it again before parsing the debounce duration.
+
+This is the same **manifest correction** the minimal tables vertical made when it
+declared `symfony/property-access` on this package: not a new dependency — support
+has required `ext-mbstring` since it shipped `blank()`, and the root graph has
+therefore always had it — but the declaration the
+[split-repo dependency rule](../../../CLAUDE.md) requires, since each package is
+published standalone and inheriting an extension through a sibling is exactly how
+a split repo breaks. `mb_trim()` is used rather than `trim()` deliberately: it is
+the same
+[NBSP-and-em-space](../support/helpers.md) semantics `blank()` already applies to
+user input, so a search box containing only a non-breaking space reads as empty.
 
 ### The empty-state alias value drops Filament's package prefix
 

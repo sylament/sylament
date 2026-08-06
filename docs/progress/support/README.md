@@ -54,7 +54,7 @@ widget at all — is the `Color policies` row in the
 | Loading section | [`views/components/loading-section.blade.php`](../../../vendor/filament/support/resources/views/components/loading-section.blade.php) | todo | — |
 | [`Modal`](../../../packages/support/templates/components/Modal/index.html.twig) | [`View/Components/ModalComponent.php`](../../../vendor/filament/support/src/View/Components/ModalComponent.php) | in progress | [modal.md](modal.md) |
 | One-time code | [`views/components/input/one-time-code.blade.php`](../../../vendor/filament/support/resources/views/components/input/one-time-code.blade.php) | todo | — |
-| Pagination | [`views/components/pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | todo | — |
+| [`Pagination`](../../../packages/support/templates/components/Pagination/index.html.twig) | [`views/components/pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | in progress | [pagination.md](pagination.md) |
 | Radio | [`views/components/input/radio.blade.php`](../../../vendor/filament/support/resources/views/components/input/radio.blade.php) | todo | — |
 | [`Section`](../../../packages/support/templates/components/Section/index.html.twig) | [`views/components/section/index.blade.php`](../../../vendor/filament/support/resources/views/components/section/index.blade.php) | in progress | [section.md](section.md) |
 | Select | [`views/components/input/select.blade.php`](../../../vendor/filament/support/resources/views/components/input/select.blade.php) | todo | — |
@@ -180,6 +180,7 @@ one.
 | RelationshipOrderer | [`Services/RelationshipOrderer.php`](../../../vendor/filament/support/src/Services/RelationshipOrderer.php) | todo | — |
 | DenyResponse | [`Authorization/DenyResponse.php`](../../../vendor/filament/support/src/Authorization/DenyResponse.php) | todo | — |
 | [`ArrayRecord`](../../../packages/support/src/ArrayRecord.php) | [`ArrayRecord.php`](../../../vendor/filament/support/src/ArrayRecord.php) | done | — |
+| [`Paginator`](../../../packages/support/src/Pagination/Paginator.php) | — (Sylament-only; Filament carries a page in Laravel's `LengthAwarePaginator`) | done | [pagination.md](pagination.md) |
 | ChunkIterator | [`ChunkIterator.php`](../../../vendor/filament/support/src/ChunkIterator.php) | todo | — |
 | CliManager | [`CliManager.php`](../../../vendor/filament/support/src/CliManager.php) | todo | — |
 | Markdown | [`Markdown.php`](../../../vendor/filament/support/src/Markdown.php) | todo | — |

@@ -60,17 +60,17 @@ sections do.
 | [`getDefaultName()`](../../../packages/tables/src/Columns/Column.php) | [`Column::getDefaultName()`](../../../vendor/filament/tables/src/Columns/Column.php) | done | — | — |
 | [`name()` / `getName()`](../../../packages/tables/src/Columns/Concerns/HasName.php) | [`Concerns\HasName`](../../../vendor/filament/tables/src/Columns/Concerns/HasName.php) | done | — | — |
 | [`label()` / `getLabel()` — explicit value wins, else the name is humanised](../../../packages/tables/src/Columns/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php) | done | — | [semantics](#the-default-label-reads-the-second-to-last-dotted-segment) |
-| [`record()` / `getRecord()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | in progress | — | [diverges](#the-record-union-is-plain-object-where-filaments-is-model) · [detail](#recordkey-is-in-the-per-record-state-cache-is-not) |
+| [`record()` / `getRecord()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | in progress | — | [diverges](#the-record-union-is-plain-object-where-filaments-is-model) · [detail](#getrecord-has-no-layout-fallback) |
 | [`table()` / `getTable()` / `getLiveComponent()`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php) | [`Concerns\BelongsToTable`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToTable.php) | in progress | — | [detail](#an-unbound-column-fails-without-filaments-message) |
-| [`state()` / `getStateUsing()` / `getState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | in progress | — | [diverges](#hascellstate-is-relocated-into-the-column-tier) · [semantics](#state-is-getstateusing-under-another-name) · [detail](#the-state-read-is-not-cached-per-record) |
+| [`state()` / `getStateUsing()` / `getState()` — cached per record key](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#hascellstate-is-relocated-into-the-column-tier) · [diverges](#the-state-cache-keys-off-the-bound-record-key) · [semantics](#state-is-getstateusing-under-another-name) |
 | [`getStateFromRecord()` — object graph or array, by dotted path](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`HasCellState::getStateFromRecord()`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | in progress | — | [diverges](#the-object-read-is-lenient-where-the-accessor-is-strict) · [detail](#relationship-traversal-is-the-doctrine-query-lanes) |
 | [`$evaluationIdentifier = 'column'` + the `$record` / `$state` / `$table` / `$liveComponent` name injections](../../../packages/tables/src/Columns/Column.php) | [`Column::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Columns/Column.php) | in progress | — | [diverges](#the-by-type-record-injection-is-not-registered) · [detail](#rowloop-waits-on-the-table-template) |
 | `translateLabel()` | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php) | blocked | i18n ([table.md](table.md#the-empty-state-heading-hardcodes-no-records)) | — |
 | `default()` / `getDefaultState()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | — |
 | `separator()` / `distinctList()` — split a string into a list | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | — |
 | `placeholder()` — the empty-cell copy | [`Support\Concerns\HasPlaceholder`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | todo | — | — |
-| `clearCachedState()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | [detail](#the-state-read-is-not-cached-per-record) |
-| [`recordKey()` / `getRecordKey()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | in progress | — | [detail](#recordkey-is-in-the-per-record-state-cache-is-not) |
+| [`clearCachedState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-state-cache-keys-off-the-bound-record-key) |
+| [`recordKey()` / `getRecordKey()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | done | — | [diverges](#the-record-key-setter-admits-an-int) |
 | `getRowLoop()` — the `$rowLoop` injection | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | blocked | the `Table` template | [detail](#rowloop-waits-on-the-table-template) |
 | Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#relationship-traversal-is-the-doctrine-query-lanes) |
 | Visibility — `hidden()`, `visible()`, `hiddenFrom()`, `toggleable()` | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeHiddenResponsively`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — | — |
@@ -83,15 +83,20 @@ sections do.
 | The rest of the catalog — `BadgeColumn`, `BooleanColumn`, `CheckboxColumn`, `ColorColumn`, `IconColumn`, `ImageColumn`, `SelectColumn`, `TagsColumn`, `TextInputColumn`, `ToggleColumn`, `ViewColumn` | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | todo | — | — |
 | _rest not audited yet_ | | | | |
 
-The nine **done**-or-partial rows are covered by
+The eleven **done**-or-partial rows are covered by
 [`ColumnTest`](../../../packages/tables/tests/Unit/Columns/ColumnTest.php) — the
 blank-name refusal, the three label derivations
 (`title` → *Title*, `releasedAt` → *Released at*, `artist.name` → *Artist*), an
 explicit label winning and a label closure receiving the column, the object read
 by property, the dotted read through a nested object, the array read, all three
 unreadable arms returning null, `state()` overriding the record read while the
-`$record` injection still resolves, and the table binding reaching the host
-through `getLiveComponent()`.
+`$record` injection still resolves, the `$state` / `$liveComponent` / `$table`
+name injections and the by-type column injection under a different parameter
+name, the table binding reaching the host through `getLiveComponent()`, an
+integer record key stored as a string and `null` taken back, a second read of one
+key served from the cache — including a cached `null`, which is why the lookup is
+`array_key_exists()` and not `isset()` — a new key re-reading, an unkeyed column
+reading fresh every time, and `clearCachedState()` restoring the fresh read.
 
 ## Details
 
@@ -116,39 +121,15 @@ property plus a hand-written throw now would encode a fallback with nothing to
 fall back to. The row flips when `BelongsToGroup` / `BelongsToLayout` land and
 the three-source chain is written in one piece, message included.
 
-### `recordKey()` is in, the per-record state cache is not
+### `getRecord()` has no layout fallback
 
-`recordKey()` / `getRecordKey()` land with the
-[table partial's morph keys](table.md#the-morph-key-is-an-id-attribute-not-wirekey):
-the row loop binds each column's record and its key together, so the column knows
-which row it is rendering in. The setter widens Filament's `?string` parameter to
-`string|int|null` and string-casts, because the key it receives comes from a Twig
-`{% for recordKey, record in records %}` over a PHP array — and PHP re-keys a
-numeric-string array key to an `int`, so a table of records keyed `'7'` hands the
-template `7`. Filament never meets that: its map is a Laravel `Collection`, whose
-keys survive as strings. The getter's `?string` is Filament's exactly.
-
-What the key is *for* is still outstanding — the per-record state cache below is
-what reads it, and that arrives with its own change.
-
-Filament's `getRecord()` also falls back to `$this->getLayout()?->getRecord()`;
-that arm is part of the unported column-layout tier, so the getter returns the
-column's own record or null.
-
-### The state read is not cached per record
-
-Filament wraps `getState()` in `cacheState()`, keyed by the record key, so a
-column asked for its state twice while rendering one row reads the record once.
-Sylament's `getState()` reads every time, and `clearCachedState()` has nothing to
-clear so it is not ported.
-
-That is a deliberate ordering, not an oversight: the cache key *is*
-`getRecordKey()`, which [only just landed](#recordkey-is-in-the-per-record-state-cache-is-not).
-Caching before the key existed would have meant either a second identity scheme
-to throw away, or a cache keyed on the record object — which memoises across rows
-when two rows are equal-but-distinct. The key is now in and the cache is the
-remaining half, still in **M1 · 6**. Until then a column re-reads, and the read is
-a property access rather than a query, so the cost is not user-visible.
+Filament's `getRecord()` falls back to `$this->getLayout()?->getRecord()` when the
+column carries none of its own, so a column nested in a `Columns\Layout\`
+component reads the row the layout was handed. That arm belongs to the unported
+column-layout tier (its row is above), so the getter returns the column's own
+record or null. It lands with `BelongsToLayout` — in one piece with the
+`getTable()` chain [waiting on the same tier](#an-unbound-column-fails-without-filaments-message),
+rather than as a lone `?->` bolted on ahead of the thing it falls back to.
 
 ### Relationship traversal is the Doctrine `query()` lane's
 
@@ -264,6 +245,38 @@ require it) and still not `support`, because the accessor it reads through lives
 in schemas. This section then becomes a record of where it used to be; nothing
 else about it changes.
 
+### The state cache keys off the bound record key
+
+Filament wraps the whole of `getState()` in `cacheState()`, which works the key
+out for itself: a `Column` asks the Livewire host
+(`$this->getLivewire()->getTableRecordKey($record)`), anything else reads
+`ArrayRecord::getKeyName()` off an array record or `getKey()` off a model. Here
+[`getState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php)
+caches under `getRecordKey()` — the key the table already bound to the column
+alongside its record — and `resolveState()` holds the body Filament passes to
+`cacheState()` as a closure. Nothing is derived at read time and the host is
+never called back into — a keyed column reads a given record once however it was
+reached.
+
+The visible consequence is a column nobody keyed: `getRecordKey()` is null, so
+`getState()` resolves fresh on every call instead of memoising. That is the point
+of keying off the binding rather than the record — a column built by hand and
+handed one record after another (what every unit test does, and what a column
+used outside a table is) must see each one, where a derived key would have
+memoised the first read against a record the caller has since replaced. Inside a
+table the case cannot arise: the row loop binds record and key together, so every
+rendered cell is keyed.
+
+Two of Filament's guards are not ported with it. `cacheState()` returns `null`
+outright when the column has no record, which would make `->state('—')` or a
+record-free closure resolve to null on an unbound column; `getState()` here
+consults the record only if something reads it, so a literal or a closure still
+resolves. And the key test is `=== null` where Filament's is `blank()`, so an
+empty-string key caches here rather than reading fresh. Only an array record
+handed an explicit empty `__key` can produce one —
+[`HasTable::getTableRecordKey()`](../../../packages/tables/src/Concerns/HasTable.php)
+rejects a blank key on an object record outright.
+
 ### The object read is lenient where the accessor is strict
 
 `PropertyAccessor::getFromRecord()` lets an accessor failure on an object hop
@@ -297,6 +310,23 @@ applied to the column tier: there is no base class every Doctrine entity extends
 so `object` is the widest true bound, and a plain DTO, a value object or an
 entity are all equally valid rows. Nothing in the column asks the record what it
 is — `getStateFromRecord()` branches on `is_array()` alone.
+
+### The record key setter admits an `int`
+
+`recordKey()` takes `string|int|null` where Filament's takes `?string`, and
+string-casts on the way in so the property and `getRecordKey()` stay `?string` —
+Filament's getter exactly. The widening is forced by where the key comes from:
+the [table partial's row loop](table.md#the-morph-key-is-an-id-attribute-not-wirekey)
+binds each column's record and key together out of a Twig
+`{% for recordKey, record in records %}` over a PHP array, and PHP re-keys a
+numeric-string array key to an `int` — so a table of records keyed `'7'` hands
+the template `7`. Filament never meets that: its record map is a Laravel
+`Collection`, whose keys survive as strings.
+
+The cast lands at the setter, so `?string` is the only form anything downstream
+holds or reads — the property, the getter, and the
+[state cache](#the-state-cache-keys-off-the-bound-record-key) key that getter
+produces, where `7` and `'7'` have to be one entry and not two.
 
 ### The by-type record injection is not registered
 

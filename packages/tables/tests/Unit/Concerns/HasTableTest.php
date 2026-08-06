@@ -450,6 +450,24 @@ it('answers the total count on every lane that can', function (): void {
         ->toThrow(LogicException::class, 'carries no total');
 });
 
+it('answers a query-lane count from the rendered total until the cache is flushed', function (): void {
+    $entityManager = sevenSongs();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->paginated([2]));
+
+    $host->getTableRecords();
+
+    $entityManager->createQuery(sprintf('DELETE FROM %s song WHERE song.id = 7', DoctrineSong::class))->execute();
+    $entityManager->clear();
+
+    expect($host->getAllTableRecordsCount())->toBe(7);
+
+    $host->flushCachedTableRecords();
+
+    expect($host->getAllTableRecordsCount())->toBe(6);
+});
+
 it('counts the whole query lane when the rendered page carries no total', function (): void {
     $entityManager = sevenSongs();
     $host = new TableHost(fn (Table $table): Table => $table

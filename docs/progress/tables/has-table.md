@@ -193,10 +193,15 @@ the [filtered](#filtertablequery-applies-the-search-not-filters) query rather
 than the declared one; a records-lane array counts its own length; a records-lane
 carrier of two records declaring a total of `23` answers `23`, which is what
 tells the carrier arm apart from a plain `count()`; and a null-total carrier
-throws. A second case covers the arm those four cannot reach — a `Simple`-mode
-query-lane table, rendered, whose carrier carries no total at all: the count
-falls through to the query and still answers `7`, where reading the cached total
-without the null check would hand a `null` back through an `int` return.
+throws. Two more cases cover the arms those four cannot reach, both on a
+**rendered** query-lane table. One pins the order: seven songs paged at two, a
+DQL `DELETE` behind the render, and the count answers `7` from the carrier the
+page was built with — then `6`, and only after `flushCachedTableRecords()`, which
+is what proves the known total is preferred to a second `COUNT` rather than
+merely agreeing with one. The other is the same table in `Simple` mode, whose
+carrier carries no total at all: the count falls through to the query and still
+answers `7`, where reading the cached total without the null check would hand a
+`null` back through an `int` return.
 
 `getTableHostId()` is pinned from the render side rather than here, in two
 places. The Integration

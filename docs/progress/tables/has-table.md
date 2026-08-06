@@ -13,7 +13,7 @@ schemas and actions already carry, recorded in the
 [rename table](../renames.md#interface-and-trait-names-are-swapped). ⚠️ Reading
 either name across the two codebases means checking which side it is on first.
 
-`HasTable` itself is ten methods wide: `table()`, `getTable()`, `makeTable()`,
+`HasTable` itself is eleven methods wide: `table()`, `getTable()`, `makeTable()`,
 `getTableRecords()`, the `resolveTableRecords()` half it caches and the
 `keyTableRecords()` half that re-keys, `getTablePaginator()`,
 `getTableRecordKey()`, `getTableRecord()`, `flushCachedTableRecords()` and
@@ -618,10 +618,13 @@ closure will most likely interpolate it into a query. Filtering at the entry
 point is what keeps the injections trustworthy: a name arriving at a `records()`
 closure has been matched against a declared-sortable column, so the closure can
 use it without re-validating. The direction check is the same argument for the
-same reason, and it is why `sortTable()` types its parameters
+same reason, and it is why `sortTable()` types its `$column` parameter
 `string|int|null` — a `#[LiveArg]` carries whatever JSON the client sent, and an
 integer column name (a table sorted by a year) must survive the cast rather than
-be refused by the signature before the check runs.
+be refused by the signature before the check runs. Only `$column` carries that
+union — `$direction` stays `?string`, because its whole vocabulary is `asc`,
+`desc` and null, so there is no legitimate non-string value the widening would
+have let through.
 
 Permanent, and the query lane will not loosen it: an ignored request is
 recoverable (the user clicks again), a trusted-but-unchecked one is not.

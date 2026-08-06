@@ -86,7 +86,7 @@ Rows never disappear — only their detail sections do.
 | [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
 | `defaultSort()`, `defaultSortDirection()`, `defaultKeySort()`, `defaultSortOptionLabel()` and their getters | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#the-default-sort-family-is-the-query-lanes) |
 | [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
-| [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) |
+| [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) · [diverges](#searchonblur-renders-onchange-because-ux-live-component-has-no-blur-event) |
 | `persistSearchInSession()`, `persistColumnSearchesInSession()`, `splitSearchTerms()`, `searchUsing()`, `isSearchableByColumn()`, `hasSearch()`, the two indicator getters, `applyExtraSearchConstraints()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
 | Deferred loading and polling — `deferLoading()`, `poll()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | todo | — | [detail](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | Filters — `filters()`, the indicators, the query-string identifier | [`HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php), [`HasQueryStringIdentifier`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — | — |
@@ -482,9 +482,12 @@ walks the page while `$records->links()` renders the footer off the same object.
 Sylament's [`Paginator`](../support/pagination.md) is iterable too, so that shape
 was available; splitting it is what keeps the template's two readers honest about
 what they need. The counts a footer wants are reached through `getPaginator()`,
-which returns null on an unpaginated table — the partial's `{% if paginator %}`
-is therefore the whole condition for rendering a footer, and it needs no
-second `isPaginated()` read.
+which returns null on an unpaginated table — so the partial's footer condition
+is `paginator and paginator.getTotalRecordCount > 0`, the carrier's presence
+plus a total-gate that suppresses the chrome for a table with no records at
+all, and it needs no second `isPaginated()` read. The total is what the gate
+tests, not the page: a page **past the end** is empty and still renders the
+footer, which is the only way back for a user who paged past the data.
 
 The trap to avoid when extending either: `getRecords()` must not start returning
 the carrier "when there is one", and `getPaginator()` must not start building one
@@ -622,6 +625,37 @@ comfort setting, and a typo'd one should not take a page down. Recorded in the
 [rename table](../renames.md#names-with-no-filament-source) as a name with no
 Filament source. Permanent — the string is the API, the integer is the wire
 format.
+
+### `searchOnBlur()` renders `on(change)`, because ux-live-component has no blur event
+
+The sibling translation, one modifier over. Filament's `searchOnBlur()` swaps
+the input's binding to `wire:model.live.blur`, which commits the field on
+**every** blur. The partial renders `on(change)|tableSearch` instead:
+ux-live-component's `on()` modifier accepts `input` or `change` and throws on
+anything else — the whitelist is literal in
+`vendor/symfony/ux-live-component/assets/dist/live_controller.js`, in the
+`modelDirective.modifiers` switch — so there is no blur event to name. The
+delta is real rather than cosmetic: `change` fires when a **changed** value
+leaves the field, or on Enter, so blurring an untouched input commits nothing
+where Livewire would have committed it.
+
+The setter and its getter keep Filament's shape (`searchOnBlur()` /
+`isSearchOnBlur()`), so a migrating call site is unchanged and the intent the
+name states — *do not search while I type* — is served exactly. Schemas already
+made this translation for `lazy()`
+([has-state-binding-modifiers.md](../schemas/has-state-binding-modifiers.md#livewire-modifier-array-grammar-becomes-a-single-getdatamodel-data-model-string)),
+and it holds here for the same reason it holds there: the two client runtimes
+have incompatible binding grammars, and this one has no third option.
+
+One consequence of the binding to keep in view: the search `<input>` renders no
+`value` attribute at all. That is safe today — the morph preserves a modified
+model field's value, and no server-side path ever *clears* `tableSearch` — but
+the day a "reset search" action lands, it will null the prop while the DOM input
+keeps its stale text, because there is no attribute for idiomorph to reset
+against. The fix is the one [`TextInput`](../forms/text-input.md) already
+carries: render `value` explicitly and **empty rather than absent** (`?? ''`).
+Do it in the same change as the writer, not before — an unconditional `value`
+today would only re-render what the morph already preserves.
 
 ### A `Markup` header label does not switch the sortable header to a `<span>`
 

@@ -41,7 +41,7 @@ deleted once the row is **done**; **diverges** → the permanent note in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`__construct(records, totalRecordCount, page, recordsPerPage)` + the three refusals](../../../packages/support/src/Pagination/Paginator.php) | `LengthAwarePaginator::__construct()` | done | — | [diverges](#the-carrier-is-first-party-rather-than-an-ecosystem-package) · [semantics](#the-constructor-validates-what-its-docblock-cannot-narrow) |
+| [`__construct(records, totalRecordCount, page, recordsPerPage)` + the four refusals](../../../packages/support/src/Pagination/Paginator.php) | `LengthAwarePaginator::__construct()` | done | — | [diverges](#the-carrier-is-first-party-rather-than-an-ecosystem-package) · [semantics](#the-constructor-validates-what-its-docblock-cannot-narrow) |
 | [`getRecords()` / `count()` / `getIterator()`](../../../packages/support/src/Pagination/Paginator.php) | `LengthAwarePaginator::items()`, `count()`, `getIterator()` | done | — | — |
 | [`getTotalRecordCount()` / `getPage()` / `getRecordsPerPage()` / `getLastPage()`](../../../packages/support/src/Pagination/Paginator.php) | `total()`, `currentPage()`, `perPage()`, `lastPage()` | done | — | [diverges](#the-counts-are-named-in-full-not-abbreviated) |
 | [`getFirstRecordNumber()` / `getLastRecordNumber()` — null on an empty page](../../../packages/support/src/Pagination/Paginator.php) | `firstItem()`, `lastItem()` | done | — | — |
@@ -54,7 +54,7 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | A `Pagination\Item` component of its own | [`pagination/item.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/item.blade.php) | skipped | — | Filament's item exists to be reused by two call sites in one file; here the item markup is six lines inlined at its three uses, and a component whose only job is to pick between an icon and a label would be indirection without a second consumer |
 | Simple and cursor paging — the `$isSimple` branch, the standalone previous/next buttons | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | todo | — | [table.md](../tables/table.md#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
 | Number formatting and translated copy | `Number::format()`, `trans_choice()` in the same view | blocked | i18n ([table.md](../tables/table.md#the-empty-state-heading-hardcodes-no-records)) | — |
-| Styles — `sy-pagination*` | [`resources/css/`](../../../vendor/filament/support/resources/css) | in progress | — | — |
+| Styles — `sy-pagination*` | [`resources/css/`](../../../vendor/filament/support/resources/css) | in progress | — | [detail](#three-corrections-to-the-stylesheets-port-accounting) |
 
 The `Paginator` rows are covered by
 [`PaginatorTest`](../../../packages/support/tests/Unit/Pagination/PaginatorTest.php),
@@ -104,6 +104,39 @@ previous/next buttons are the **simple paginator's** whole UI, and simple paging
 has no carrier here — a `Paginator` always knows its total. Both arrive with the
 piece they wait on; the mobile layout is a stylesheet question that the
 `sy-pagination-items` list can answer on its own.
+
+### Three corrections to the stylesheet's port accounting
+
+The stylesheet's commit (`a1680ed`) enumerates the vendor selectors it skipped,
+and three lines of that accounting are wrong. A commit body cannot be corrected
+after the fact, so the accurate tracing lives here — it matters because the
+`:not(.fi-compact)` and responsive arms are exactly what this **in progress**
+row still owes, and a reader reconciling
+[`pagination.css`](../../../vendor/filament/support/resources/css/components/pagination.css)
+against ours needs to know which side of the line each one is on.
+
+**`.fi-pagination-records-per-page-select-ctn` was ported, not skipped.** Both
+of its declarations — `col-start-2` and `justify-self-center` — sit on
+`.sy-pagination-per-page`. Filament needs a container element because its select
+is wrapped by the `input.wrapper` component; ours is a bare `<select>` inside
+the `<label>`, so the container's *positioning* merged onto the label the way
+the wrapper's inline-label treatment did. The element is gone; its behaviour is
+not.
+
+**The dropped select arms are the `:not(.fi-compact)` ones, and they are
+responsive states.** `.fi-pagination-records-per-page-select` carries
+`&:not(.fi-compact) { hidden }` at the top level and `@md:inline` / `sm:inline`
+inside the two `@supports` blocks — the non-compact select is hidden until the
+container is wide enough, then swapped in for the compact one. All three arms go
+with the rest of the responsive trade, since we render one always-visible
+select; naming only "both `.fi-compact` arms" as skipped describes half of it.
+
+**`.sy-pagination-items`' `col-start-3` is carried over from the skipped
+`.fi-pagination-next-btn`.** Vendor's `.fi-pagination-items` declares
+`justify-self-end` and no column at all — `col-start-3` belongs to the
+standalone next button, which we do not render. Dropping the selector without
+its declaration would have left the item list unplaced in the three-column grid,
+so it moved onto the element that now occupies that column.
 
 ## Semantics
 

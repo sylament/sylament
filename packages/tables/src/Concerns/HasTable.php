@@ -6,6 +6,7 @@ namespace Sylament\Tables\Concerns;
 
 use Closure;
 use Doctrine\ORM\QueryBuilder;
+use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 use LogicException;
 use Stringable;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
@@ -115,6 +116,10 @@ trait HasTable
             return null;
         }
 
+        if ($this->getTable()->hasQuery()) {
+            return $this->resolveQueryTableRecord($key);
+        }
+
         $records = $this->cachedTableRecords ?? $this->resolveTableRecords();
 
         if ($records instanceof Paginator) {
@@ -162,6 +167,34 @@ trait HasTable
         }
 
         return (string) $key;
+    }
+
+    public function getAllTableRecordsCount(): int
+    {
+        if ($this->getTable()->hasQuery()) {
+            $cachedTotal = $this->cachedTableRecords instanceof Paginator
+                ? $this->cachedTableRecords->getTotalRecordCount()
+                : null;
+
+            if ($cachedTotal !== null) {
+                return $cachedTotal;
+            }
+
+            $query = $this->getFilteredTableQuery();
+
+            if ($query instanceof QueryBuilder) {
+                return new DoctrinePaginator($query->getQuery(), $query->getDQLPart('join') !== [])->count();
+            }
+        }
+
+        $records = $this->getTableRecords();
+
+        if ($records instanceof Paginator) {
+            return $records->getTotalRecordCount()
+                ?? throw new LogicException(sprintf('Table [%s] cannot count its records: a simple-paginated records() closure carries no total.', static::class));
+        }
+
+        return count($records);
     }
 
     /**
@@ -232,6 +265,35 @@ trait HasTable
         }
 
         return $keyedRecords;
+    }
+
+    private function resolveQueryTableRecord(string $key): ?object
+    {
+        $table = $this->getTable();
+        $query = $table->getQuery(isResolvingRecord: true);
+        $entityManager = $table->getQueryEntityManager();
+        $recordClass = $table->getRecordClass();
+
+        if (!$query instanceof QueryBuilder || $entityManager === null || $recordClass === null) {
+            throw new LogicException(sprintf('Table [%s] must have [records()] or [query()].', static::class));
+        }
+
+        $metadata = $entityManager->getClassMetadata($recordClass);
+
+        if ($metadata->isIdentifierComposite) {
+            throw new LogicException(sprintf('Records of [%s] carry a composite identifier, which a table cannot key; use single-identifier entities or the records() lane.', $recordClass));
+        }
+
+        $rootAlias = $query->getRootAliases()[0]
+            ?? throw new LogicException(sprintf('The query of table [%s] names no root alias to resolve a record against.', static::class));
+
+        $record = $query
+            ->andWhere(sprintf('%s.%s = :sylament_record_key', $rootAlias, $metadata->getSingleIdentifierFieldName()))
+            ->setParameter('sylament_record_key', $key)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return is_object($record) ? $record : null;
     }
 
     private function resolveQueryRecordKey(object $record): ?string

@@ -104,6 +104,19 @@ it('shows everything under the all option', function (): void {
         ->and($paginator->getLastPage())->toBe(1);
 });
 
+it('slices by a numeric-string page size as an integer', function (): void {
+    $entityManager = pagedSongs(11);
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song'))
+        ->paginated(['10', 25]));
+
+    $paginator = $host->getTableRecords();
+
+    expect($paginator->getRecords())->toHaveCount(10)
+        ->and($paginator->getRecordsPerPage())->toBe(10)
+        ->and($paginator->getTotalRecordCount())->toBe(11);
+});
+
 it('probes one extra record in simple mode instead of counting', function (): void {
     $entityManager = pagedSongs(5);
     $configure = fn (Table $table): Table => $table

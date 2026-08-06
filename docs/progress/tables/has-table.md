@@ -13,20 +13,23 @@ schemas and actions already carry, recorded in the
 [rename table](../renames.md#interface-and-trait-names-are-swapped). ⚠️ Reading
 either name across the two codebases means checking which side it is on first.
 
-`HasTable` itself is fifteen methods wide: `table()`, `getTable()`,
+`HasTable` itself is seventeen methods wide: `table()`, `getTable()`,
 `makeTable()`, the three filtered-query seams `getFilteredTableQuery()`,
 `filterTableQuery()` and `getFilteredSortedTableQuery()`, `getTableRecords()`,
 the `resolveTableRecords()` half it caches and the `keyTableRecords()` half that
 re-keys, `getTablePaginator()`, `getTableRecordKey()` with its
 `resolveQueryRecordKey()` helper that reads an entity's identity off the mapping
-metadata, `getTableRecord()`, `flushCachedTableRecords()` and `getTableHostId()`.
+metadata, `getTableRecord()` with its `resolveQueryTableRecord()` helper that
+re-queries for a single one, `getAllTableRecordsCount()`,
+`flushCachedTableRecords()` and `getTableHostId()`.
 It builds the table once per request, resolves its data source once per
 request — a `records()` closure, or
 the Doctrine query those three seams assemble — and hands back an array **keyed
 by record key** — or a [`Paginator`](../support/pagination.md) carrying such an
-array — plus a by-key lookup that reads fresh whenever the render cache is cold,
-the flush that empties it, and the per-host id every row and cell is stamped
-with.
+array — plus a by-key lookup that reads fresh whenever the render cache is cold
+and, on the query lane, every single time, the count of everything behind that
+page, the flush that empties the cache, and the per-host id every row and cell is
+stamped with.
 
 Around that core it composes three host concerns, all landed by the table
 upgrades epic:
@@ -92,9 +95,10 @@ instead.
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | — |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
-| [`getTableRecord(?string $key)`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) |
-| `getAllTableRecordsCount()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | todo | — | Filament's paginated arm is answerable here (`getTablePaginator()?->getTotalRecordCount()`) but its other arm is `getFilteredTableQuery()->count()`, the query lane's; nothing reads the method yet, so it ships whole or not at all |
-| [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`, `getTableQueryForExport()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-filtered-query-seams-are-wired-before-the-layers-that-fill-them) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
+| [`getTableRecord(?string $key)` with its `resolveQueryTableRecord()` query arm](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) |
+| [`getAllTableRecordsCount(): int`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getAllTableRecordsCount()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#the-all-records-count-answers-four-ways-where-filaments-answers-two) |
+| [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [semantics](#filtertablequery-applies-the-search-not-filters) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
+| `getTableQueryForExport()` | [`Concerns\HasRecords::getTableQueryForExport()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | the export surface | It bypasses the seams above, re-reading `getTable()->getQuery()` and re-applying filters, search and sorting itself, to assemble a query for Filament's export action — a surface with no counterpart here and on no milestone, the same one [`ExportColumn`](column.md#hascellstate-is-relocated-into-the-column-tier) waits on. It lands with that action or not at all |
 | [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-no-query-lane-and-no-session-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#no-table-state-is-persisted-in-the-session) · [table.md](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
@@ -109,8 +113,9 @@ instead.
 | Reordering, striping, the column manager, `HasContent`, `HasHeader` | [`CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) and four siblings | todo | — | — |
 | Translatable content driver — `getActiveTableLocale()`, `makeFilamentTranslatableContentDriver()` | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | todo | — | [has-schemas.md](../schemas/has-schemas.md#the-translatable-content-driver-is-not-ported) |
 
-The eight **done** rows are the build-once core, the record key, the by-key
-lookup with its flush, the host id, and the paginator peek. They are covered by
+The ten **done** rows are the build-once core, the record key, the by-key
+lookup with its flush, the all-records count, the three filtered-query seams, the
+host id, and the paginator peek. They are covered by
 [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)
 via the
 [`TableHost`](../../../packages/tables/tests/Fixtures/Concerns/TableHost.php)
@@ -163,6 +168,35 @@ never moves. Its two null arms — a `null` key and an unknown one — are asser
 in one case. `flushCachedTableRecords()` is covered by the same counter across a
 read-flush-read cycle, which reaches `2` only if the flush actually emptied the
 cache.
+
+Its **query** arm is pinned by what a cached page cannot answer. The
+fresh-resolution case renders a page, deletes the second `Song` through a DQL
+`DELETE` and clears the identity map, then asserts `getTableRecord('2')` is null
+while the still-warm page keeps both keys — the one shape in which "reads the
+cache" and "re-queries" differ visibly. Three more reach past the page the render
+built: a record on page 3 of a `paginated([2])` table, a record the active search
+term excludes, and a fetch-joined `Artist` coming back with **all three** of its
+songs — the case that fails the moment a `setMaxResults(1)` joins the resolution
+query, which is [the guard this lane does not
+apply](#gettablerecord-reads-fresh-when-the-render-cache-is-cold). The scope flag
+is read through a `modifyQueryUsing()` closure recording its `isResolvingRecord`
+argument across a render and then a lookup, asserting exactly `[false, true]`.
+Three narrower answers sit beside them: an unknown key coming back null, a bare
+table naming both lanes, and a `CompositePair` query refusing loudly on
+*resolution*, which is a different method from the keying refusal above and is
+reached without it.
+
+`getAllTableRecordsCount()` has one case carrying all four arms. Seven seeded
+songs are counted through the query with nothing rendered; the same table with
+`alpha` in the search box counts **two**, which is what proves the count reads
+the [filtered](#filtertablequery-applies-the-search-not-filters) query rather
+than the declared one; a records-lane array counts its own length; a records-lane
+carrier of two records declaring a total of `23` answers `23`, which is what
+tells the carrier arm apart from a plain `count()`; and a null-total carrier
+throws. A second case covers the arm those four cannot reach — a `Simple`-mode
+query-lane table, rendered, whose carrier carries no total at all: the count
+falls through to the query and still answers `7`, where reading the cached total
+without the null check would hand a `null` back through an `int` return.
 
 `getTableHostId()` is pinned from the render side rather than here, in two
 places. The Integration
@@ -320,41 +354,6 @@ before: `$table` — by the parameter name, which is `Table`'s
 through [`Table`'s resolver override](table.md), any explicit named or typed
 injection a caller passes to `evaluate()`, and a public container service
 [by type](#a-records-closure-resolves-public-container-services-by-type).
-
-### The filtered-query seams are wired before the layers that fill them
-
-`getFilteredTableQuery()`, `filterTableQuery()` and `getFilteredSortedTableQuery()`
-ship with Filament's names, signatures and composition, and — apart from search
-and sorting — with none of the applications those signatures exist to hold.
-`getFilteredTableQuery()` answers null unless the table is on the query lane —
-[a gate Filament's seam does not have](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder)
-— then reads [`Table::getQuery()`](table.md#every-read-clones-a-memoised-base-query)
-— a scoped clone, so what comes back is always a builder the caller may mutate —
-answers null again when there is no query to read, and otherwise hands it to
-`filterTableQuery()`, whose whole body is
-[the search application](#search-is-the-global-term-only).
-`getFilteredSortedTableQuery()` adds
-[the sorting](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)
-and nothing else. So what a query-lane table resolves is every record its query
-selects **that the search term matched**, in the order the sort composition asked
-for — one page of them once
-[pagination](#the-page-state-has-no-query-lane-and-no-session-half) slices the
-builder these seams handed over. Outside their own composition
-`resolveTableRecords()` is their only caller.
-
-They land first, and public, on purpose: each layer still to come is a body
-inside one of them rather than a new call site, and anything that needs the lane
-can ask for it before its own half exists. Filament's
-`filterTableQuery()` applies filters, the global and per-column search, and every
-visible column's relationship aggregates and eager loading; its
-`getFilteredSortedTableQuery()` adds grouping, then sorting. Of those, the global
-search arrived with this lane; **per-column** search is a
-[**todo** row above](#search-is-the-global-term-only) and slots in ahead of it
-inside `applySearchToTableQuery()`, and filters, grouping, aggregates and eager
-loading each wait on a layer that does not exist here at all and each has a
-**todo** row above too. `getTableQueryForExport()` is not ported: it assembles a
-query for Filament's export action, which has no counterpart here, and it is the
-one member of this row with no epic behind it.
 
 ### The page state has no query lane and no session half
 
@@ -556,7 +555,14 @@ missing after the first pass declared eight.
 The contract grows a method at a time as the
 features that need it land — a host must be able to satisfy it, so declaring the
 pagination, filter and bulk-selection halves before those exist would force every
-consumer to stub methods nothing calls. Growth is free for implementors while
+consumer to stub methods nothing calls. The Doctrine query lane added **none**:
+every member it shipped — the three filtered-query seams, the query-lane record
+resolution, `getAllTableRecordsCount()` — is called from inside the trait, from a
+test, or not yet at all, and no template reads one off `getLiveComponent`. So the
+count stays at nine, and `getAllTableRecordsCount()` is the clearest case of the
+rule at work: Filament's contract declares it, and
+[ours will](#the-all-records-count-answers-four-ways-where-filaments-answers-two)
+when a consumer here calls it. Growth is free for implementors while
 `HasTable` supplies every member: every host implementing the contract today —
 the four tables fixtures (`TableHost`, `TableActionsHost`, `SongsTable`,
 `RecordActionsTable`) and the demo's `TableShowcaseCard` — mixes the trait in, so
@@ -568,6 +574,32 @@ Eloquent-only rows above turn out not to need.
 
 Faithful ports subtle enough that the next reader would misread the code.
 Permanent, and addressable by anchor.
+
+### `filterTableQuery()` applies the search, not filters
+
+The name is Filament's and it will be accurate later; today the whole body is
+[the global search application](#search-is-the-global-term-only), because the
+filter layer it is named for is a **todo** row above. The composition around it
+is Filament's as well: `getFilteredTableQuery()` reads
+[`Table::getQuery()`](table.md#every-read-clones-a-memoised-base-query) — a
+scoped clone, so what comes back is always a builder the caller may mutate —
+[gated on the lane](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder)
+and null when there is no query to read, hands it to `filterTableQuery()`, and
+`getFilteredSortedTableQuery()` adds
+[the sorting](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)
+and nothing else. So a query-lane table resolves every record its query selects
+**that the search term matched**, in the order the sort composition asked for —
+one page of it once
+[pagination](#the-page-state-has-no-query-lane-and-no-session-half) slices what
+these seams handed over.
+
+Four of Filament's applications are still missing from them, and each is a body
+inside a seam rather than a new call site: **per-column** search slots into
+`applySearchToTableQuery()` ahead of the global half, and filters, grouping, and
+the visible columns' relationship aggregates and eager loading each wait on a
+layer that does not exist here at all. Every one has a **todo** row above. That
+is also why the seams were written public and whole before the layers that fill
+them: anything needing the lane can ask for it without waiting for its own half.
 
 ### A `records()` closure resolves public container services by type
 
@@ -758,11 +790,13 @@ reaches the seam indirectly, through the sorted one.
 (`getTableQueryForExport()` is not among the seven — it bypasses the seam
 entirely, re-reading `getTable()->getQuery()` and re-applying filters, search
 and sorting itself.) Asking in the seam answers the question once, where the
-table is, rather than at each call site — and the first caller waiting on it
-here is the count arm `getAllTableRecordsCount()` above, the one Filament
-reaches with no check at all. Handing back a query a records-lane table will
-never execute is not a harmless extra: counted, it runs SQL for rows the render
-will not show.
+table is, rather than at each call site — and the caller that needed the answer
+is [`getAllTableRecordsCount()`](#the-all-records-count-answers-four-ways-where-filaments-answers-two),
+the one Filament reaches with no check at all: the null the gate returns is what
+sends a records-lane table to count what its closure returned instead. Handing
+back a query a records-lane table will never execute is not a harmless extra —
+counted, it runs SQL for rows the render will not show, and a table whose closure
+ignores its query would be counted against the wrong data source entirely.
 
 Nothing else changes. `resolveTableRecords()` takes the same branch either way,
 because it consults the data source first, so the gate is observable only through
@@ -1072,9 +1106,81 @@ lane pays for the same guarantee. It is also why
 is a separate member rather than the whole answer: the cold read covers an action
 that resolves before anything has rendered, the flush covers one that mutates
 *after* something already has. Permanent — this diverges from a Filament lane we
-read as defective rather than from one we have yet to catch up with, and the
-Doctrine [`query()` lane](../roadmap.md#pulled-forward) will resolve exactly this
-way when it lands.
+read as defective rather than from one we have yet to catch up with.
+
+**The query lane has now landed and resolves fresh every time**, exactly as this
+note predicted. `resolveQueryTableRecord()` is the whole of it: the branch is
+taken on [`hasQuery()`](table.md#the-query-lane-is-on-exactly-while-no-records-closure-is-set),
+before the cache is read at all, and what it runs is
+`Table::getQuery(isResolvingRecord: true)` — the base query with its
+[scopes](table.md#every-read-clones-a-memoised-base-query) applied under that
+flag, so a scope can tell a row lookup from a render — narrowed by
+`{rootAlias}.{identifierField} = :sylament_record_key`, the identifier field read
+off the mapping metadata rather than assumed to be `id`, the key **bound** as a
+parameter. A composite identifier refuses with the message
+[keying uses](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key),
+a bare table names both lanes, and anything that hydrates to a non-object (a
+scalar or partial select) answers null.
+
+Three things it deliberately does **not** apply, all Filament-faithful. No
+**search**: a term typed into the search box must not make a row's own action
+miss, so the resolution query is the unfiltered one and a record the search
+excluded still resolves. No **pagination**: nothing constrains the page, so a
+record that left the current page between render and mount resolves anyway. And
+no **sorting**, which would only cost an `ORDER BY` on a single-row read. The one
+thing Filament's lane applies that this cannot is filters — there is no filter
+layer here yet, and it joins this query when there is.
+
+It also applies no `setMaxResults(1)`, which is worth stating because it looks
+missing. The identifier predicate already admits at most one root entity, so the
+limit guards nothing — while on a **fetch-joined** query it truncates the joined
+rows, handing back a root entity whose collection holds one element and claims to
+be complete, the same row-multiplication trap
+[the Tools paginator](#the-page-state-has-no-query-lane-and-no-session-half)
+exists to survive on the page query. A query that somehow does return two roots
+raises Doctrine's `NonUniqueResultException` instead of silently answering with
+the first, which is the failure we want. The fetch-join resolution case pins
+this: it asserts all three songs, and fails the moment the limit comes back.
+
+### The all-records count answers four ways where Filament's answers two
+
+Filament's `getAllTableRecordsCount()` is two lines: a `LengthAwarePaginator` in
+`$cachedTableRecords` answers with its `total()`, and everything else is
+`getFilteredTableQuery()->count()` — a call that assumes a builder is there and
+fatals on a `records()` table, since that seam
+[is not lane-gated](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder)
+there either. Sylament's has four arms, and the two extra ones are the two shapes
+Filament's method cannot meet: a lane that is not a query at all, and a carrier
+whose total is legitimately unknown.
+
+The order is what makes them readable. On the query lane a **rendered** page with
+a known total answers from the carrier — no second `COUNT` for a number already
+paid for — and otherwise the answer is a `COUNT` over
+[`getFilteredTableQuery()`](#filtertablequery-applies-the-search-not-filters)
+through Doctrine's `Tools\Pagination\Paginator`, asked for the
+`fetchJoinCollection` treatment on the same
+[join heuristic](#the-page-state-has-no-query-lane-and-no-session-half)
+`paginateTableQuery()` uses, so a fetch-joined table counts entities rather than
+rows. Search is applied and pagination is not, which is exactly what "all
+records" means here: the number a footer's *of N* renders under a filtered page.
+
+The records lane has no query to count, so the answer is whatever the closure
+returned. A plain array counts itself. A carrier answers with its total. A
+carrier with a **null** total — support's
+[simple-pagination shape](../support/pagination.md#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both)
+— throws a `LogicException` naming the limitation, which is the honest answer
+rather than a gap: a closure that deliberately skipped counting cannot be asked
+for the count afterwards, and `0` or the page size would be a number the caller
+would believe. A query-lane table in `Simple` mode is never in that position —
+its carrier carries no total either, but the query is still there, so the
+fall-through counts it.
+
+Nothing in the package reads the method yet. Filament's two callers are its
+`assertCountTableRecords()` test helper and panels' `ExposesTableToWidgets`,
+which hands the number to a page's widgets; neither is ported. So it stays off
+the [contract](#the-contract-is-nine-methods-of-filaments-forty-six), which grows
+only for members a shipped consumer calls, and it ships whole rather than in the
+half the closure lane could have answered on its own.
 
 _See also: the global [rename table](../renames.md) — the interface⇄trait label
 swap (`InteractsWithTable` trait → `HasTable` trait, `HasTable` interface →

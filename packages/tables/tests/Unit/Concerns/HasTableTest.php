@@ -2,17 +2,38 @@
 
 declare(strict_types=1);
 
+use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Columns\TextColumn;
+use Sylament\Tables\Enums\PaginationMode;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist as DoctrineArtist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Book;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CompositePair;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song as DoctrineSong;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Records\Artist;
 use Sylament\Tables\Tests\Fixtures\Records\Song;
+
+function sevenSongs(): EntityManager
+{
+    $entityManager = EntityManagerFactory::create();
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        new DoctrineSong(1, 'Alpha One', 10),
+        new DoctrineSong(2, 'Alpha Two', 20),
+        new DoctrineSong(3, 'Beta Three', 30),
+        new DoctrineSong(4, 'Beta Four', 40),
+        new DoctrineSong(5, 'Beta Five', 50),
+        new DoctrineSong(6, 'Beta Six', 60),
+        new DoctrineSong(7, 'Beta Seven', 70),
+    );
+
+    return $entityManager;
+}
 
 it('builds the table through the host table() method exactly once', function (): void {
     $configurations = 0;
@@ -285,6 +306,161 @@ it('returns null for a null or unknown key', function (): void {
 
     expect($host->getTableRecord(null))->toBeNull()
         ->and($host->getTableRecord('99'))->toBeNull();
+});
+
+it('resolves a query-lane record fresh, off the cache, every time', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new DoctrineSong(1, 'Alpha', 10), new DoctrineSong(2, 'Beta', 20));
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song')));
+
+    $host->getTableRecords();
+
+    $entityManager->createQuery(sprintf('DELETE FROM %s song WHERE song.id = 2', DoctrineSong::class))->execute();
+    $entityManager->clear();
+
+    expect($host->getTableRecord('2'))->toBeNull()
+        ->and(array_keys($host->getTableRecords()->getRecords()))->toBe([1, 2]);
+});
+
+it('resolves a record that is not on the current page', function (): void {
+    $entityManager = sevenSongs();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->paginated([2]));
+
+    $record = $host->getTableRecord('5');
+
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([1, 2])
+        ->and($record)->toBeInstanceOf(DoctrineSong::class)
+        ->and($record->getTitle())->toBe('Beta Five');
+});
+
+it('resolves a record the active search would exclude', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new DoctrineSong(1, 'Alpha', 10), new DoctrineSong(2, 'Noise', 20));
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->columns([TextColumn::make('title')->searchable()]));
+
+    $host->tableSearch = 'alpha';
+
+    $record = $host->getTableRecord('2');
+
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([1])
+        ->and($record)->toBeInstanceOf(DoctrineSong::class)
+        ->and($record->getTitle())->toBe('Noise');
+});
+
+it('resolves a fetch-joined record with its collection whole', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $artist = new DoctrineArtist(1, 'Radiohead');
+    EntityManagerFactory::seed(
+        $entityManager,
+        $artist,
+        new DoctrineSong(1, 'Airbag', 10, $artist),
+        new DoctrineSong(2, 'Let Down', 20, $artist),
+        new DoctrineSong(3, 'No Surprises', 30, $artist),
+    );
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()
+            ->select('artist')
+            ->from(DoctrineArtist::class, 'artist')
+            ->leftJoin('artist.songs', 'songs')
+            ->addSelect('songs')));
+
+    $record = $host->getTableRecord('1');
+
+    expect($record)->toBeInstanceOf(DoctrineArtist::class)
+        ->and($record->getSongs())->toHaveCount(3);
+});
+
+it('applies scopes with the resolving flag during record resolution', function (): void {
+    $flags = [];
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new DoctrineSong(1, 'Alpha', 10));
+    $host = new TableHost(function (Table $table) use ($entityManager, &$flags): Table {
+        return $table
+            ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+            ->modifyQueryUsing(function (QueryBuilder $query, bool $isResolvingRecord) use (&$flags): void {
+                $flags[] = $isResolvingRecord;
+            });
+    });
+
+    $host->getTableRecords();
+
+    $record = $host->getTableRecord('1');
+
+    expect($flags)->toBe([false, true])
+        ->and($record)->toBeInstanceOf(DoctrineSong::class);
+});
+
+it('returns null for an unknown key and throws for a bare table', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new DoctrineSong(1, 'Alpha', 10));
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song')));
+
+    expect($host->getTableRecord('999'))->toBeNull()
+        ->and(fn (): object|array|null => new TableHost()->getTableRecord('1'))
+        ->toThrow(LogicException::class, 'must have [records()] or [query()]');
+});
+
+it('refuses to resolve a record carrying a composite identifier', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    EntityManagerFactory::seed($entityManager, new CompositePair(1, 2, 'Pair'));
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('pair')->from(CompositePair::class, 'pair')));
+
+    $host->getTableRecord('1');
+})->throws(LogicException::class, 'composite');
+
+it('answers the total count on every lane that can', function (): void {
+    $entityManager = sevenSongs();
+    $configure = fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->columns([TextColumn::make('title')->searchable()]);
+    $queryLane = new TableHost($configure);
+    $searched = new TableHost($configure);
+    $arrayLane = new TableHost(fn (Table $table): Table => $table->records(fn (): array => [
+        new Song('Airbag', 'OK Computer', id: 7),
+        new Song('Let Down', 'OK Computer', id: 12),
+    ]));
+    $carrierLane = new TableHost(fn (Table $table): Table => $table->records(fn (): Paginator => new Paginator(
+        records: [['title' => 'Airbag'], ['title' => 'Let Down']],
+        totalRecordCount: 23,
+        page: 2,
+        recordsPerPage: 2,
+    )));
+    $simpleCarrierLane = new TableHost(fn (Table $table): Table => $table->records(fn (): Paginator => new Paginator(
+        records: [['title' => 'Airbag']],
+        totalRecordCount: null,
+        page: 1,
+        recordsPerPage: 1,
+        hasMoreRecords: true,
+    )));
+
+    $searched->tableSearch = 'alpha';
+
+    expect($queryLane->getAllTableRecordsCount())->toBe(7)
+        ->and($searched->getAllTableRecordsCount())->toBe(2)
+        ->and($arrayLane->getAllTableRecordsCount())->toBe(2)
+        ->and($carrierLane->getAllTableRecordsCount())->toBe(23)
+        ->and(fn (): int => $simpleCarrierLane->getAllTableRecordsCount())
+        ->toThrow(LogicException::class, 'carries no total');
+});
+
+it('counts the whole query lane when the rendered page carries no total', function (): void {
+    $entityManager = sevenSongs();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->paginated([2])
+        ->paginationMode(PaginationMode::Simple));
+
+    $page = $host->getTableRecords();
+
+    expect($page->getTotalRecordCount())->toBeNull()
+        ->and($host->getAllTableRecordsCount())->toBe(7);
 });
 
 it('flushes the cached records so the next read re-evaluates', function (): void {

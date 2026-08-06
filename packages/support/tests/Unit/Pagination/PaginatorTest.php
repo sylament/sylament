@@ -143,6 +143,13 @@ it('reports no pages for an empty simple first page and pages for a later one', 
         ->and($later->hasPages())->toBeTrue();
 });
 
+it('reports pages on a simple first page that has more records', function (): void {
+    $paginator = new Paginator(records: [['id' => 1]], totalRecordCount: null, page: 1, recordsPerPage: 1, hasMoreRecords: true);
+
+    expect($paginator->onFirstPage())->toBeTrue()
+        ->and($paginator->hasPages())->toBeTrue();
+});
+
 it('refuses a page window without a total', function (): void {
     $paginator = new Paginator(records: [], totalRecordCount: null, page: 1, recordsPerPage: 5);
 

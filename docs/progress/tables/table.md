@@ -188,11 +188,17 @@ arm); the search input bound `debounce(500)|tableSearch`; and the footer's
 overview text, its single gap, its active item's `aria-current`, the page-2
 button's live-action parameters and the per-page `<select>` bound to
 `tableRecordsPerPage` with the right option selected. Two negative cases carry
-the rest: a plain table renders neither `sy-pagination` nor `sy-ta-header-toolbar`
-anywhere in its markup, and a page **past the end** renders the empty state *and*
-the footer together — which is the only way back for a user who paged past the
-data, and the case a naive `{% if records %}` wrapper around the footer would
-break.
+the rest of that host: a plain table renders neither `sy-pagination` nor
+`sy-ta-header-toolbar` anywhere in its markup, and a page **past the end** renders
+the empty state *and* the footer together — which is the only way back for a user
+who paged past the data, and the case a naive `{% if records %}` wrapper around
+the footer would break. Three more cases drive a second host whose `records()`
+closure returns a carrier with **no total**, which is where the null arm of the
+footer condition is pinned: a middle page keeping prev/next while the window and
+the total drop out of the
+[simple footer](../support/pagination.md#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both),
+an empty first page rendering no footer at all, and an empty page past the data
+keeping one.
 
 The action rows split their coverage by tier.
 [`HasRecordActionsTest`](../../../packages/tables/tests/Unit/Table/Concerns/HasRecordActionsTest.php)
@@ -299,8 +305,12 @@ closure lane the userland closure returns whatever it built, so the enum would
 select nothing. It lands with the Doctrine
 [`query()` lane](../roadmap.md#pulled-forward), and the
 [`PaginationMode`](README.md#supporting-surface) enum is a **todo** row of its own
-until then; a simple or cursor shape would also need a second carrier beside
-[`Paginator`](../support/pagination.md), which counts pages it does not have.
+until then. The **simple** shape is no longer waiting on a carrier:
+[`Paginator`](../support/pagination.md) takes a null total and the footer
+[branches on it](../support/pagination.md#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both),
+so a `records()` closure reaches simple pagination today and what the enum owes
+is the query lane's fetching. A **cursor** shape still needs a keyset carrier the
+toolkit does not ship.
 
 `paginatedWhileReordering()` reads on a table that is being reordered, and
 reordering is unported (its row is above). `scrollToTopOnPageChange()` is an
@@ -615,12 +625,19 @@ walks the page while `$records->links()` renders the footer off the same object.
 Sylament's [`Paginator`](../support/pagination.md) is iterable too, so that shape
 was available; splitting it is what keeps the template's two readers honest about
 what they need. The counts a footer wants are reached through `getPaginator()`,
-which returns null on an unpaginated table — so the partial's footer condition
-is `paginator and paginator.getTotalRecordCount > 0`, the carrier's presence
-plus a total-gate that suppresses the chrome for a table with no records at
-all, and it needs no second `isPaginated()` read. The total is what the gate
-tests, not the page: a page **past the end** is empty and still renders the
-footer, which is the only way back for a user who paged past the data.
+which returns null on an unpaginated table — so the partial's `footerVisible` is
+the carrier's presence plus a gate on what it counts, and it needs no second
+`isPaginated()` read. With a known total the gate is
+`getTotalRecordCount > 0`, suppressing the chrome for a table with no records at
+all, and the total is what it tests rather than the page: a page **past the end**
+is empty and still renders the footer, which is the only way back for a user who
+paged past the data. A
+[simple carrier](../support/pagination.md#one-carrier-expresses-both-shapes-rather-than-a-length-aware-and-a-simple-sibling)
+has no total to gate on, so the null arm asks what it does know —
+`count > 0 or not onFirstPage or hasMorePages` — which suppresses exactly one
+shape, the first page of an empty simple table, and keeps the past-the-end footer
+for the same reason the total arm does. Treating a null total as visible on its
+own would put an empty footer under every empty simple table.
 
 The trap to avoid when extending either: `getRecords()` must not start returning
 the carrier "when there is one", and `getPaginator()` must not start building one

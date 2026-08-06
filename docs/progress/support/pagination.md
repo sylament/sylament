@@ -53,7 +53,8 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | [The four `SupportIconAlias` pagination constants](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | [support-icon-alias.md](support-icon-alias.md#badge--breadcrumbs--rtl-aliases) |
 | The four `*_RTL` alias constants and the `$isRtl` branch | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | todo | — | [diverges](#the-footer-has-no-rtl-branch) |
 | A `Pagination\Item` component of its own | [`pagination/item.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/item.blade.php) | skipped | — | Filament's item exists to be reused by two call sites in one file; here the item markup is six lines inlined at its three uses, and a component whose only job is to pick between an icon and a label would be indirection without a second consumer |
-| Simple and cursor paging — the `$isSimple` branch, the standalone previous/next buttons | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | todo | — | [table.md](../tables/table.md#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
+| [Simple paging — the null-total branch: an overview with no total, prev/next with no window](../../../packages/support/templates/components/Pagination/index.html.twig) | the `$isSimple` arms of [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | done | — | [diverges](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both) |
+| Cursor paging — the `CursorPaginator` arm, whose clicks carry an encoded cursor rather than a page number | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | blocked | a keyset carrier ([table.md](../tables/table.md#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have)) | — |
 | Number formatting and translated copy | `Number::format()`, `trans_choice()` in the same view | blocked | i18n ([table.md](../tables/table.md#the-empty-state-heading-hardcodes-no-records)) | — |
 | Styles — `sy-pagination*` | [`resources/css/`](../../../vendor/filament/support/resources/css) | in progress | — | [detail](#three-corrections-to-the-stylesheets-port-accounting) |
 
@@ -70,11 +71,14 @@ beginning, near the end, and the middle with a gap on both sides — plus an
 then narrowing its search, and which must still render a way back. `withRecords()`
 is asserted to return a different instance with the counts intact and the
 original untouched, and the four construction refusals run as one dataset. The
-unknown-total shape adds five: a null total reporting a null last page while
-`hasMoreRecords` drives both predicates and the record numbers still count off
+unknown-total shape adds six: a null total reporting a null last page while
+`hasMoreRecords` answers `hasMorePages()` and the record numbers still count off
 the page, the flag ignored beside a real total, an empty simple first page
-reporting no pages where a later page reports some, `getPageWindow()` refusing a
-carrier with no total, and the flag surviving `withRecords()`.
+reporting no pages where a later page reports some, a **first** page carrying the
+flag reporting pages off it alone — the only case where `hasMoreRecords` reaches
+`hasPages()`, since every later page already answers that from its number —
+`getPageWindow()` refusing a carrier with no total, and the flag surviving
+`withRecords()`.
 
 The component is covered from the tables side rather than here, because support's
 own fixture Kernel registers no TwigComponentBundle — the same split
@@ -85,7 +89,17 @@ Integration
 asserts the rendered footer: the overview text, the single gap, the active item's
 `aria-current`, a numbered button's `gotoTablePage` live-action parameters, and
 the per-page `<select>` bound to `tableRecordsPerPage` with the right option
-marked selected.
+marked selected. Three further cases render the null-total shape from a host whose
+`records()` closure returns a carrier with no total: page 2 of a simple table
+reports `Showing 3 to 4 results` with no ` of ` in it, no gap, and an item list
+holding exactly a `rel="prev"` and a `rel="next"` button aimed at pages 1 and 3
+beside the same per-page select; an empty simple first page renders the empty
+state with no footer at all; and an empty simple page *past* the data keeps the
+footer at `Showing 0 results` with a prev button and nothing else. The last two
+are the arms of the
+[footer condition](../tables/table.md#getrecords-unwraps-the-paginator-and-getpaginator-is-the-only-seam-to-it)
+a total-gate cannot express, and they are what separates the null arm from a
+plain "a carrier with no total is always visible".
 
 ## Details
 
@@ -106,11 +120,11 @@ Nothing is dropped in principle. The second per-page label is a
 `input.wrapper` / `input.select` support components the port has not built (both
 are **todo** rows in [README](README.md#components)), so today the select is a
 bare `<select class="sy-pagination-per-page-select">`. The standalone
-previous/next buttons are the **simple paginator's** whole UI, and the carrier
-now expresses that shape — a null `totalRecordCount` means the total is unknown
-([diverges](#one-carrier-expresses-both-shapes-rather-than-a-length-aware-and-a-simple-sibling))
-— so what they wait on is the footer's own `$isSimple` branch. Both arrive with
-the piece they wait on; the mobile layout is a stylesheet question that the
+previous/next buttons were the **simple paginator's** whole UI, and that shape
+has landed without them — the footer branches on a null `totalRecordCount` and
+serves simple mode from the item list's own prev/next
+([diverges](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both))
+— so what is left of the pair is the mobile layout, a stylesheet question the
 `sy-pagination-items` list can answer on its own.
 
 ### Three corrections to the stylesheet's port accounting
@@ -249,13 +263,13 @@ is the flag, and `hasPages()` is `AbstractPaginator`'s
 `currentPage() != 1 || hasMorePages()`.
 
 The closure lane gets simple pagination out of this for free — nothing to
-configure, once the footer's `$isSimple` branch lands (the **todo** row above):
-a `records()` closure that fetches one record more than the page needs and
-returns a carrier built with `totalRecordCount: null` and `hasMoreRecords` is
-simple-paginated, because the footer branches on what the carrier answers rather
-than on a table setting. A mode setting belongs to the coming Doctrine `query()`
-lane, where the toolkit owns the fetching and has to be told which shape to
-fetch.
+configure: a `records()` closure that fetches one record more than the page needs
+and returns a carrier built with `totalRecordCount: null` and `hasMoreRecords` is
+simple-paginated, because the footer
+[branches on what the carrier answers](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both)
+rather than on a table setting. A mode setting belongs to the coming Doctrine
+`query()` lane, where the toolkit owns the fetching and has to be told which
+shape to fetch.
 
 ### The counts are named in full, not abbreviated
 
@@ -319,6 +333,43 @@ tables is the first consumer of both. Revisit when a second one appears
 (pagination on a panels list page, or a widget): the action name becomes a prop
 beside `currentPageOptionProperty`, and the default stays where it is for
 compatibility.
+
+### The simple footer keeps the overview and the item list, where Filament drops both
+
+Filament's view computes
+`$isSimple = ! $paginator instanceof \Illuminate\Pagination\LengthAwarePaginator`
+and, in the simple arm, suppresses the overview (`@if (! $isSimple)`) and the
+whole `<ol class="fi-pagination-items">`
+(`@if ((! $isSimple) && $paginator->hasPages())`), leaving the standalone
+previous/next buttons and the per-page select. The port asks the same question of
+its one carrier — `totalRecordCount is null` — and keeps both elements: the
+overview renders its range without a total (`Showing 3 to 4 results`), and the
+item list renders with the page window skipped, so only its `rel="prev"` and
+`rel="next"` chevrons remain.
+
+The **overview** stays because the numbers are there and the copy is ours.
+`getFirstRecordNumber()` / `getLastRecordNumber()` need no total, and neither do
+Laravel's `firstItem()` / `lastItem()` — they sit on `AbstractPaginator`, so the
+simple paginator answers them too. What forces Filament's hand is the
+translation: `'{1} Showing 1 result|[2,*] Showing :first to :last of :total results'`
+is one key with no totals-free arm, so a simple footer there can only say
+nothing about where the user is. When
+[i18n](../tables/table.md#the-empty-state-heading-hardcodes-no-records) lands,
+the second arm is a second key rather than a re-decision.
+
+The **item list** stays because the port renders
+[one of Filament's two layouts](#the-component-renders-one-of-filaments-two-layouts):
+the standalone buttons simple mode falls back to are the layout we do not emit,
+so dropping the `<ol>` would leave a simple footer with no way to change page at
+all. Its prev/next items already key off `onFirstPage()` / `hasMorePages()`, the
+two predicates a carrier answers without a total, so the branch skips the window
+and nothing else and both shapes share one markup and one stylesheet path.
+
+The cost is that a simple footer here is heavier than Filament's — an overview
+and a list where Filament has two buttons — and that its controls are chevrons
+carrying `aria-label`s where Filament's are labelled "Previous" and "Next". It
+reverses if the standalone pair is ever built for the mobile breakpoint: simple
+mode should then render *that*, and this branch becomes its desktop half.
 
 ### The footer has no RTL branch
 

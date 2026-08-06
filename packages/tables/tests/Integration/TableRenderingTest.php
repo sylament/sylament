@@ -170,6 +170,19 @@ it('adds the first and last page links when extreme links are on', function (): 
         ->and(new Crawler(browsableTableHtml(page: 2))->filter('.sy-pagination-items button[rel="first"]')->count())->toBe(0);
 });
 
+it('renders the footer chevrons at the default icon size', function (): void {
+    $chevrons = new Crawler(extremeLinksTableHtml(page: 2))
+        ->filter('.sy-pagination-items button[rel] svg.sy-icon');
+
+    expect($chevrons->each(fn (Crawler $icon): ?string => $icon->closest('button')?->attr('rel')))
+        ->toBe(['first', 'prev', 'next', 'last']);
+
+    foreach ($chevrons->each(fn (Crawler $icon): array => explode(' ', (string) $icon->attr('class'))) as $classes) {
+        expect($classes)->toContain('sy-size-md')
+            ->and($classes)->not->toContain('sy-size-sm');
+    }
+});
+
 it('renders no footer and no toolbar for a plain unpaginated, unsearchable table', function (): void {
     $html = songsTableHtml();
 

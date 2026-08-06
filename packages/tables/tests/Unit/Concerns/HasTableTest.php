@@ -378,6 +378,17 @@ it('re-resolves after a sort, page, or search mutation flushes the cache', funct
     $host->getTableRecords();
 
     expect($fetches)->toBe(2);
+
+    $host->gotoTablePage(3);
+    $host->getTableRecords();
+
+    expect($fetches)->toBe(3);
+
+    $host->tableSearch = 'radiohead';
+    $host->updatedTableSearch();
+    $host->getTableRecords();
+
+    expect($fetches)->toBe(4);
 });
 
 it('re-keys a returned Paginator by record key and caches the clone', function (): void {

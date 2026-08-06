@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Integration;
 
+use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\BrowsableSongsTable;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\ExtremeLinksSongsTable;
 use Sylament\Tables\Twig\Extension\TableExtension;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Environment;
@@ -26,18 +28,32 @@ function browsingTwig(): Environment
     return $twig;
 }
 
-function browsableTableHtml(int $page = 1): string
+function renderTableHost(InteractsWithTable $component): string
 {
     $twig = browsingTwig();
 
-    if ($page === 1) {
-        return $twig->render('@TablesFixtures/browsable_table_page.html.twig');
+    return (string) $twig->getExtension(TableExtension::class)->renderTable($twig, ['this' => $component]);
+}
+
+function browsableTableHtml(int $page = 1, ?string $sort = null): string
+{
+    if ($page === 1 && $sort === null) {
+        return browsingTwig()->render('@TablesFixtures/browsable_table_page.html.twig');
     }
 
     $component = new BrowsableSongsTable();
     $component->tablePage = $page;
+    $component->tableSort = $sort;
 
-    return (string) $twig->getExtension(TableExtension::class)->renderTable($twig, ['this' => $component]);
+    return renderTableHost($component);
+}
+
+function extremeLinksTableHtml(int $page = 1): string
+{
+    $component = new ExtremeLinksSongsTable();
+    $component->tablePage = $page;
+
+    return renderTableHost($component);
 }
 
 function songsTableHtml(): string
@@ -51,11 +67,22 @@ it('renders a sortable header as an aria-annotated live action button', function
     $sortableHeader = $crawler->filter('th.sy-ta-header-cell')->first();
     $button = $sortableHeader->filter('button.sy-ta-header-cell-sort-btn');
 
-    expect($sortableHeader->attr('aria-sort'))->toBe('none')
+    expect($sortableHeader->attr('scope'))->toBe('col')
+        ->and($sortableHeader->attr('aria-sort'))->toBe('none')
         ->and($button->count())->toBe(1)
         ->and($button->attr('data-action'))->toContain('live#action')
         ->and($button->attr('data-live-action-param'))->toBe('sortTable')
         ->and($button->attr('data-live-column-param'))->toBe('title');
+});
+
+it('annotates the actively sorted header with its direction and sorted class', function (): void {
+    $crawler = new Crawler(browsableTableHtml(sort: 'title:asc'));
+
+    $sortedHeader = $crawler->filter('th.sy-ta-header-cell')->first();
+
+    expect($sortedHeader->attr('aria-sort'))->toBe('ascending')
+        ->and($sortedHeader->attr('class'))->toContain('sy-ta-header-cell-sorted')
+        ->and($sortedHeader->filter('button.sy-ta-header-cell-sort-btn svg.sy-icon')->count())->toBe(1);
 });
 
 it('renders an unsortable header without a button', function (): void {
@@ -97,6 +124,21 @@ it('renders the pagination footer with overview, gapped window, and per-page sel
     expect($select->attr('data-model'))->toBe('tableRecordsPerPage')
         ->and($select->filter('option[selected]')->attr('value'))->toBe('5')
         ->and($select->filter('option')->last()->text())->toContain('All');
+});
+
+it('adds the first and last page links when extreme links are on', function (): void {
+    $crawler = new Crawler(extremeLinksTableHtml(page: 2));
+
+    $first = $crawler->filter('.sy-pagination-items button[rel="first"]');
+    $last = $crawler->filter('.sy-pagination-items button[rel="last"]');
+
+    expect($first->count())->toBe(1)
+        ->and($first->attr('data-live-page-param'))->toBe('1')
+        ->and($first->filter('svg.sy-icon')->count())->toBe(1)
+        ->and($last->count())->toBe(1)
+        ->and($last->attr('data-live-page-param'))->toBe('9')
+        ->and($last->filter('svg.sy-icon')->count())->toBe(1)
+        ->and(new Crawler(browsableTableHtml(page: 2))->filter('.sy-pagination-items button[rel="first"]')->count())->toBe(0);
 });
 
 it('renders no footer and no toolbar for a plain unpaginated, unsearchable table', function (): void {

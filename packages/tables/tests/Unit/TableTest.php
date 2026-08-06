@@ -87,9 +87,17 @@ it('is paginated by default with Filament page options', function (): void {
 });
 
 it('turns pagination off and back on', function (): void {
-    $table = new TableHost(fn (Table $t): Table => $t->paginated(false))->getTable();
+    $off = new TableHost(fn (Table $t): Table => $t->paginated(false))->getTable();
+    $backOn = new TableHost(fn (Table $t): Table => $t->paginated(false)->paginated(true))->getTable();
 
-    expect($table->isPaginated())->toBeFalse();
+    expect($off->isPaginated())->toBeFalse()
+        ->and($backOn->isPaginated())->toBeTrue();
+});
+
+it('turns the extreme pagination links on', function (): void {
+    $table = new TableHost(fn (Table $t): Table => $t->extremePaginationLinks())->getTable();
+
+    expect($table->hasExtremePaginationLinks())->toBeTrue();
 });
 
 it('routes a paginated() array into the page options', function (): void {

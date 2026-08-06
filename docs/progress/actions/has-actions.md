@@ -286,11 +286,14 @@ call and a `context['bulk']` descriptor resolves as a plain record action. Two
 deltas are permanent and written up below
 ([the guarded soft reference to tables](#the-table-branch-reaches-tables-through-a-guarded-soft-reference)
 and [the non-table host throws a LogicException](#a-table-context-on-a-non-table-host-is-a-wiring-bug-not-a-miss)).
-The client-supplied `recordKey` also gets an `is_scalar()` gate Filament has no
+The client-supplied `recordKey` also gets an `is_scalar()` check Filament has no
 need for: `context` is a client-writable `#[LiveArg]`, so the value reaching
-`getTableRecord(string $key)` could be an array or object, and the gate makes a
-crafted descriptor miss instead of erroring. **Next step:** the bulk arm with
-table bulk actions.
+`getTableRecord(string $key)` could be an array or object. A filled non-scalar
+key throws `ActionNotResolvableException` naming its type, which the resolve
+pipeline swallows into the same graceful unmount a stale key gets — the throw is
+what keeps the record bind all-or-nothing, since skipping it instead would mount
+the action recordless and let a `fn (Song $record)` modal closure fatal further
+downstream. **Next step:** the bulk arm with table bulk actions.
 
 ### The per-mount schema is not seeded with a record or an operation
 

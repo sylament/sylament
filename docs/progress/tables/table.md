@@ -160,11 +160,12 @@ morph keys are asserted by *reading the host's id back* and selecting
 record key that fills them are pinned as one string rather than as a substring.
 The trailing default asserts the header `<th>` by all three of its
 class/`aria-label` markers *and* a header count of exactly two, which is what
-catches an actions column rendered in the body but not the head — a mismatch a
-per-selector count would miss. It then pins the **side** on both halves,
-`th:last-child` and `td:last-child`, because every other selector in that case
-is side-blind: presence, the child nesting, the href and the header count all
-hold just as well for a column rendered leading, so without the two
+catches a duplicated or otherwise extra header cell — the three-marker selector
+already fails on a column rendered in the body but not the head, but it counts a
+second stray `<th>` just as happily as one. It then pins the **side** on both
+halves, `th:last-child` and `td:last-child`, because every other selector in
+that case is side-blind: presence, the child nesting, the href and the header
+count all hold just as well for a column rendered leading, so without the two
 `:last-child` reads a regression that moved the default to the wrong side would
 pass a test whose name promises trailing. The `BeforeColumns` case is the mirror
 image, selecting `td:first-child` and `th:first-child`. The all-hidden case asserts the absence of `sy-ta-actions`

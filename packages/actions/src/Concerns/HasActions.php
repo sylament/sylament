@@ -639,7 +639,11 @@ trait HasActions
 
         $recordKey = $descriptor['context']['recordKey'] ?? null;
 
-        if (filled($recordKey) && is_scalar($recordKey)) {
+        if (filled($recordKey)) {
+            if (! is_scalar($recordKey)) {
+                throw new ActionNotResolvableException(sprintf('Record key of type [%s] is not a valid identifier.', get_debug_type($recordKey)));
+            }
+
             $record = $this->getTableRecord((string) $recordKey);
 
             if ($record === null) {

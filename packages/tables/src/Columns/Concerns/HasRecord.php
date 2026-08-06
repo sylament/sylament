@@ -24,9 +24,8 @@ trait HasRecord
     }
 
     /**
-     * The key the table addresses this cell's record by — `int` is admitted
-     * because PHP re-keys a numeric-string array key to an integer, so that is
-     * what a template loop hands back.
+     * The key the table addresses this cell's record by; `int` is admitted and
+     * stored as its string form.
      */
     public function recordKey(string|int|null $key): static
     {

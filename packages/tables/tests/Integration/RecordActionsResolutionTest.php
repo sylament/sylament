@@ -34,6 +34,13 @@ it('unmounts gracefully when the record key no longer resolves', function (): vo
     expect($component->component()->mountedActions)->toBe([]);
 });
 
+it('unmounts gracefully when the record key is not a scalar', function (): void {
+    $component = $this->createLiveComponent('RecordActionsTable')
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => ['nested' => 'array']]]);
+
+    expect($component->component()->mountedActions)->toBe([]);
+});
+
 it('unmounts gracefully for an action name the table does not know', function (): void {
     $component = $this->createLiveComponent('RecordActionsTable')
         ->call('mountAction', ['name' => 'promote', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => '1']]);

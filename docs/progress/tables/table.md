@@ -87,7 +87,7 @@ Rows never disappear — only their detail sections do.
 | [`getRecordClass()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getModel()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [rename](../renames.md#renames) · [semantics](#the-record-class-is-read-off-the-base-querys-root-entity) |
 | The relation arm — `relationship()`, `inverseRelationship()`, `getRelationship()`, `getRelationshipQuery()`, `getInverseRelationship()`, `getInverseRelationshipFor()`, `selectPivotDataInQuery()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | the Doctrine relation layer | [detail](#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer) |
 | [`paginated()` / `isPaginated()` / `paginationPageOptions()` / `getPaginationPageOptions()` / `defaultPaginationPageOption()` / `getDefaultPaginationPageOption()` / `extremePaginationLinks()` / `hasExtremePaginationLinks()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | [diverges](#the-ten-per-page-default-is-matched-strictly) · [diverges](#ispaginated-has-no-groups-only-arm) |
-| `paginationMode()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
+| [`paginationMode()` / `getPaginationMode()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) + [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | its `Cursor` arm — a keyset carrier ([pagination.md](../support/pagination.md)) | [detail](#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) · [has-table.md](has-table.md#the-page-state-has-no-query-lane-and-no-session-half) |
 | `paginatedWhileReordering()`, `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
 | [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
 | [`defaultSort()` / `getDefaultSort()` / `getDefaultSortDirection()` / `defaultKeySort()` / `hasDefaultKeySort()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [semantics](#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker) · [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) |
@@ -312,17 +312,23 @@ grounds.
 ### Three pagination setters configure machinery the closure lane does not have
 
 `paginationMode()` selects between Laravel's length-aware, simple and cursor
-paginators, all three built by the query lane's `paginateTableQuery()` — on the
-closure lane the userland closure returns whatever it built, so the enum would
-select nothing. It lands with the Doctrine
-[`query()` lane](../roadmap.md#pulled-forward), and the
-[`PaginationMode`](README.md#supporting-surface) enum is a **todo** row of its own
-until then. The **simple** shape is no longer waiting on a carrier:
-[`Paginator`](../support/pagination.md) takes a null total and the footer
-[branches on it](../support/pagination.md#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both),
-so a `records()` closure reaches simple pagination today and what the enum owes
-is the query lane's fetching. A **cursor** shape still needs a keyset carrier the
-toolkit does not ship.
+paginators, all three built by the query lane's
+[`paginateTableQuery()`](has-table.md#the-page-state-has-no-query-lane-and-no-session-half)
+— on the closure lane the userland closure returns whatever it built, so the enum
+selects nothing there, which is why it arrived with the lane rather than with the
+rest of the pagination configuration. Two of its three cases ship. **Default**
+pages against a true total, counted by Doctrine's Tools paginator. **Simple**
+runs no count: the lane probes one record past the page and support's
+[`Paginator`](../support/pagination.md) takes the null total, the footer
+[branching on it](../support/pagination.md#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both)
+— which a `records()` closure could already reach, so what the enum added was the
+query lane's fetching. **Cursor** still needs a keyset carrier the toolkit does
+not ship, and is refused where the mode is consumed rather than where it is set:
+a `Closure` mode has no value at set time, so `paginateTableQuery()` throws a
+`LogicException` naming the missing carrier and the two modes that work. The
+enum is Filament's verbatim, three pure cases in declaration order; the getter is
+typed `PaginationMode` where Filament declares `?PaginationMode` over a body that
+cannot return null.
 
 `paginatedWhileReordering()` reads on a table that is being reordered, and
 reordering is unported (its row is above). `scrollToTopOnPageChange()` is an

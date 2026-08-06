@@ -42,8 +42,8 @@ it('matches a single word across searchable columns', function (): void {
     $titleMatch->tableSearch = 'love';
     $playsMatch->tableSearch = '30';
 
-    expect(array_keys($titleMatch->getTableRecords()))->toBe([1, 2])
-        ->and(array_keys($playsMatch->getTableRecords()))->toBe([3])
+    expect(array_keys($titleMatch->getTableRecords()->getRecords()))->toBe([1, 2])
+        ->and(array_keys($playsMatch->getTableRecords()->getRecords()))->toBe([3])
         ->and($titleMatch->getFilteredTableQuery()?->getDQL())
         ->toContain('WHERE song.title LIKE :sylament_search_0 OR song.plays LIKE :sylament_search_1');
 });
@@ -59,8 +59,8 @@ it('composes split words with AND between groups', function (): void {
     $bothWords->tableSearch = 'silent love';
     $noOverlap->tableSearch = 'love noise';
 
-    expect(array_keys($bothWords->getTableRecords()))->toBe([2])
-        ->and($noOverlap->getTableRecords())->toBe([])
+    expect(array_keys($bothWords->getTableRecords()->getRecords()))->toBe([2])
+        ->and($noOverlap->getTableRecords()->getRecords())->toBe([])
         ->and($bothWords->getFilteredTableQuery()?->getDQL())
         ->toContain('WHERE (song.title LIKE :sylament_search_0 OR song.plays LIKE :sylament_search_1) AND (song.title LIKE :sylament_search_2 OR song.plays LIKE :sylament_search_3)');
 });
@@ -75,7 +75,7 @@ it('treats the term as one phrase when splitting is off', function (): void {
     $host->tableSearch = 'love song';
 
     expect($host->getTable()->shouldSplitSearchTerms())->toBeFalse()
-        ->and(array_keys($host->getTableRecords()))->toBe([1])
+        ->and(array_keys($host->getTableRecords()->getRecords()))->toBe([1])
         ->and($host->getFilteredTableQuery()?->getParameter('sylament_search_0')?->getValue())->toBe('%love song%');
 });
 
@@ -95,7 +95,7 @@ it('respects quoted phrases when splitting', function (): void {
 
     $host->tableSearch = '"love song"';
 
-    expect(array_keys($host->getTableRecords()))->toBe([1])
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([1])
         ->and($host->getFilteredTableQuery()?->getParameter('sylament_search_0')?->getValue())->toBe('%love song%');
 });
 
@@ -107,7 +107,7 @@ it('splits on the Unicode blanks that are not whitespace', function (): void {
 
     $host->tableSearch = "silent\u{3164}\u{1160}love";
 
-    expect(array_keys($host->getTableRecords()))->toBe([2])
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([2])
         ->and($host->getFilteredTableQuery()?->getParameter('sylament_search_0')?->getValue())->toBe('%silent%')
         ->and($host->getFilteredTableQuery()?->getParameter('sylament_search_1')?->getValue())->toBe('%love%');
 });
@@ -131,7 +131,7 @@ it('bypasses column assembly through searchUsing', function (): void {
     $dql = $host->getFilteredTableQuery()?->getDQL() ?? '';
 
     expect($host->getTable()->hasSearchUsingCallback())->toBeTrue()
-        ->and(array_keys($host->getTableRecords()))->toBe([2, 3])
+        ->and(array_keys($host->getTableRecords()->getRecords()))->toBe([2, 3])
         ->and($received)->toBe('anything')
         ->and($dql)->toContain('WHERE song.plays > 15')
         ->and($dql)->not->toContain('LIKE');
@@ -149,8 +149,8 @@ it('composes extra searchable columns and closure members', function (): void {
     $viaColumn->tableSearch = 'silent';
     $viaClosure->tableSearch = 'loud';
 
-    expect(array_keys($viaColumn->getTableRecords()))->toBe([2])
-        ->and(array_keys($viaClosure->getTableRecords()))->toBe([3])
+    expect(array_keys($viaColumn->getTableRecords()->getRecords()))->toBe([2])
+        ->and(array_keys($viaClosure->getTableRecords()->getRecords()))->toBe([3])
         ->and($viaColumn->getFilteredTableQuery()?->getDQL())->toContain('WHERE song.title LIKE :sylament_search_0')
         ->and($viaColumn->getFilteredTableQuery()?->getDQL())->not->toContain('song.plays')
         ->and($viaClosure->getFilteredTableQuery()?->getDQL())
@@ -166,7 +166,7 @@ it('skips an extra-column closure that constrained the query itself', function (
 
     $host->tableSearch = 'love';
 
-    expect(array_keys($host->getTableRecords()))->toBe([2])
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([2])
         ->and($host->getFilteredTableQuery()?->getDQL())
         ->toContain('WHERE song.plays > 15 AND song.title LIKE :sylament_search_0');
 });
@@ -180,7 +180,7 @@ it('applies no where at all when nothing is searchable', function (): void {
 
     $host->tableSearch = 'foo';
 
-    expect(array_keys($host->getTableRecords()))->toBe([1, 2, 3])
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([1, 2, 3])
         ->and($host->getFilteredTableQuery()?->getDQL())->not->toContain('WHERE');
 });
 
@@ -198,7 +198,7 @@ it('leaves the query untouched for a blank search', function (): void {
 
     expect($query?->getDQL())->toBe($unsearched->getFilteredTableQuery()?->getDQL())
         ->and($query?->getParameters()->count())->toBe(0)
-        ->and(array_keys($blank->getTableRecords()))->toBe([1, 2, 3]);
+        ->and(array_keys($blank->getTableRecords()->getRecords()))->toBe([1, 2, 3]);
 });
 
 it('marks case arms in the DQL, not the results', function (): void {

@@ -54,7 +54,7 @@ it('orders by the user sort with the identifier tiebreaker appended', function (
     $host->sortTable('title');
 
     expect(sortedSongTitles($host))->toBe(['Alpha', 'Bravo', 'Charlie'])
-        ->and(array_keys($host->getTableRecords()))->toBe([2, 3, 1])
+        ->and(array_keys($host->getTableRecords()->getRecords()))->toBe([2, 3, 1])
         ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('ORDER BY song.title asc, song.id asc');
 });
 
@@ -157,7 +157,7 @@ it('lets a default sort closure replace the query', function (): void {
             ->from(Song::class, 'song')
             ->andWhere('song.plays > 15')));
 
-    $records = $host->getTableRecords();
+    $records = $host->getTableRecords()->getRecords();
 
     expect($records)->toHaveCount(2)
         ->and(array_keys($records))->toBe([1, 3])
@@ -180,7 +180,7 @@ it('drops the user sort when a default sort closure replaces the query', functio
 
     expect($dql)->toContain('WHERE song.plays > 15 ORDER BY song.id asc')
         ->and($dql)->not->toContain('song.title')
-        ->and(array_keys($host->getTableRecords()))->toBe([1, 3]);
+        ->and(array_keys($host->getTableRecords()->getRecords()))->toBe([1, 3]);
 });
 
 it('reads the tiebreaker off the builder a default sort closure returned', function (): void {

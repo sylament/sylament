@@ -199,10 +199,14 @@ trait HasTable
             throw new LogicException(sprintf('Table [%s] must have [records()] or [query()].', static::class));
         }
 
-        /** @var list<object|array<string, mixed>> $records */
-        $records = $query->getQuery()->getResult();
+        if (!$table->isPaginated()) {
+            /** @var list<object|array<string, mixed>> $records */
+            $records = $query->getQuery()->getResult();
 
-        return $this->keyTableRecords($records);
+            return $this->keyTableRecords($records);
+        }
+
+        return $this->paginateTableQuery($query);
     }
 
     /**

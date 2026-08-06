@@ -95,7 +95,7 @@ instead.
 | [`getTableRecord(?string $key)`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) |
 | `getAllTableRecordsCount()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | todo | — | Filament's paginated arm is answerable here (`getTablePaginator()?->getTotalRecordCount()`) but its other arm is `getFilteredTableQuery()->count()`, the query lane's; nothing reads the method yet, so it ships whole or not at all |
 | [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`, `getTableQueryForExport()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-filtered-query-seams-are-wired-before-the-layers-that-fill-them) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
-| [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `updatedTableRecordsPerPage()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-no-query-lane-and-no-session-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
+| [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-no-query-lane-and-no-session-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#no-table-state-is-persisted-in-the-session) · [table.md](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
 | Table state in the URL — `#[Url]`-style query-string binding for page, sort and search | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | todo | — | [diverges](#no-table-state-is-bound-to-the-url) |
@@ -259,6 +259,25 @@ with `%Love%` against `LOWER(song.title) LIKE` with `%love%`); and four
 parameters named `sylament_search_0`…`_3` across two words and two columns, with
 `getSQL()` called on the result so the whole assembly is proved to parse.
 
+The **query half** of pagination is the third such file,
+[`CanPaginateRecordsTest`](../../../packages/tables/tests/Unit/Concerns/CanPaginateRecordsTest.php),
+driving seven seeded songs through `->paginated([2, 5])` so the default option is
+`2` and four pages exist. It asserts the true total and the sliced keys on page 1
+*and* page 3 (reached through `gotoTablePage()`, which is also what proves the
+flush); a page past the end holding no records and the total anyway; the `'all'`
+option returning everything with `recordsPerPage` `'all'` and a last page of `1`;
+`Simple` reporting a **null** total with `hasMorePages()` true on a full first
+page and false on the short last one, which only a probe answers correctly
+without a count; `Simple` plus `'all'` degenerating to a known total; `Cursor`
+throwing; and `paginated(false)` handing back a plain array with
+`getTablePaginator()` null. One case is the fetch join the Tools paginator exists
+for: three artists with three songs each, `leftJoin('artist.songs', 'songs')`
+with `addSelect()`, page size 2 — a raw `LIMIT 2` would answer two *rows* of one
+artist, so the case asserts two `Artist` records, a total of `3`, and a
+collection of three songs on the first of them. Because a query-lane table is
+paginated by default, the sorting and search suites reach their records through
+`getRecords()` on the carrier rather than treating the return value as an array.
+
 The `#[LiveProp]` and `#[LiveAction]` attributes carry no runtime behaviour a
 render test would catch, so they are pinned by reflection in
 [`HasTableLivePropsTest`](../../../packages/tables/tests/Unit/Concerns/HasTableLivePropsTest.php):
@@ -316,9 +335,12 @@ answers null again when there is no query to read, and otherwise hands it to
 [the search application](#search-is-the-global-term-only).
 `getFilteredSortedTableQuery()` adds
 [the sorting](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)
-and nothing else. So a query-lane table resolves every record its query selects
-**that the search term matched**, in the order the sort composition asked for,
-and outside their own composition `resolveTableRecords()` is their only caller.
+and nothing else. So what a query-lane table resolves is every record its query
+selects **that the search term matched**, in the order the sort composition asked
+for — one page of them once
+[pagination](#the-page-state-has-no-query-lane-and-no-session-half) slices the
+builder these seams handed over. Outside their own composition
+`resolveTableRecords()` is their only caller.
 
 They land first, and public, on purpose: each layer still to come is a body
 inside one of them rather than a new call site, and anything that needs the lane
@@ -336,23 +358,57 @@ one member of this row with no epic behind it.
 
 ### The page state has no query lane and no session half
 
-`Concerns\CanPaginateRecords` here is the closure lane's half of Filament's
-trait: the page number, the per-page option, the reset-to-page-one hook, and the
-two getters the `records()` closure is handed. Three groups of Filament members
-are not in it.
+`Concerns\CanPaginateRecords` is the page number, the per-page option, the
+reset-to-page-one hook, the two getters the `records()` closure is handed, and —
+since · 12 — `paginateTableQuery()`, the slice the query lane takes. Two groups
+of Filament members are still not in it.
 
-`paginateTableQuery()` is the **query lane** — it calls `$query->paginate()` /
-`simplePaginate()` / `cursorPaginate()` on an Eloquent builder and returns
-Laravel's paginator — and it lands with the Doctrine
-[`query()` lane](../roadmap.md#pulled-forward). Its `PaginationMode` switch comes
-with it, tracked as [`table.md`](table.md#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have)'s
-row: on the closure lane the userland closure decides how it slices, so a mode
-enum would configure nothing. The **session** half
-(`getTablePerPageSessionKey()`, the `session()->put()` in the updated hook) is a
+The query lane is a gate in `resolveTableRecords()`: an **unpaginated** table
+resolves its whole query into the keyed array it always did, and a **paginated**
+one returns [support's carrier](../support/pagination.md) instead, records keyed
+the same way, so the shape a query-lane table hands back is decided by
+[`Table::isPaginated()`](table.md#ispaginated-has-no-groups-only-arm). Filament
+calls `$query->paginate()` / `simplePaginate()` / `cursorPaginate()` on an
+Eloquent builder and returns Laravel's paginator. Here the page is
+`setFirstResult()` / `setMaxResults()` on the builder **before** `getQuery()`,
+which is what transfers both onto the `Query`, and the fetch goes through
+Doctrine's own
+[`Tools\Pagination\Paginator`](../../../vendor/doctrine/orm/src/Tools/Pagination/Paginator.php)
+— imported as `DoctrinePaginator`, support's carrier having the same short name.
+Wrapping it is why the slice is not a bare `LIMIT`: on a fetch-joined query a
+limit over the *joined rows* would hand back half a record's collection, where
+the Tools paginator limits a subquery over identifiers first and re-reads the
+whole rows. It is asked for that treatment whenever the builder carries a join at
+all (`getDQLPart('join') !== []`), which is broader than strictly needed — a
+to-one join fetches no collection and would page correctly without it — but the
+two directions cost differently: an extra subquery, against silently wrong rows.
+
+The three [modes](table.md#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have)
+differ in what they pay for the total, and the mode is read here, where it is
+consumed, rather than in the setter, because a `Closure` mode has no value at set
+time. `Default` reads `DoctrinePaginator::count()` — a `COUNT` subquery that
+ignores the first/max already set — so the carrier carries a true total and a
+page past the end comes back **empty with that total intact** rather than clamped
+to the last page, which is what leaves the footer a way back. `Simple` runs no
+count at all: it asks for one record more than the page holds, drops the extra,
+and reports `hasMoreRecords` from whether it arrived, support's carrier
+[taking a null total for exactly this](../support/pagination.md#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both).
+`Cursor` throws, naming the keyset carrier that would answer it. The `'all'`
+option bypasses the Tools paginator on every mode — a plain `getResult()`, the
+total being how many records came back — which makes `Simple` **plus** `'all'`
+degenerate to a *known* total, the one shape in which a simple paginator has one.
+A page size is an `int` in every ordinary case and a numeric **string** in the
+one the [strict ten-match](table.md#the-ten-per-page-default-is-matched-strictly)
+allows, so it is cast before the offset arithmetic rather than trusted.
+
+The **session** half (`getTablePerPageSessionKey()`, the `session()->put()` in
+the updated hook) is a
 [deliberate omission](#no-table-state-is-persisted-in-the-session). The
 **query-string** page name (`getTablePaginationPageName()`, which feeds Livewire's
 `WithPagination`) is the [URL binding](#no-table-state-is-bound-to-the-url) that
-has a **todo** row of its own. The two `@deprecated` host getters
+has a **todo** row of its own, and it is the one argument every Filament arm
+passes that `paginateTableQuery()` has nothing to pass: no page here is named in
+a query string. The two `@deprecated` host getters
 (`getTableRecordsPerPageSelectOptions()`, `isTablePaginationEnabled()`) follow the
 project-wide rule and are not ported at all.
 
@@ -437,7 +493,11 @@ The global half composes like this. A blank term is a no-op — `getTableSearch(
 already answers null for it, so nothing is applied and the query is returned as
 it came. A table with a `searchUsing()` closure hands it the builder and the term
 and stops there, columns and extra columns alike unread; that closure is the
-whole assembly. Otherwise the term is broken into **words** —
+whole assembly. `callSearchUsing()` returns `void`, Filament-exact: the closure
+constrains the builder it was handed, and a *replacement* builder returned from
+it is discarded — unlike
+[a `defaultSort()` closure](table.md#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker),
+whose returned builder wins. Otherwise the term is broken into **words** —
 `splitSearchTerms()` is on by default, and `extractTableSearchWords()` normalises
 the Unicode blanks Filament names (`\x{3164}`, `\x{1160}`) to spaces before
 `str_getcsv()` splits on them, so a `"quoted phrase"` survives as one word — and
@@ -537,14 +597,21 @@ records, and it is why the fixture repository that test injects is
 
 `getTablePaginator()` looks like it owns paging state and does not: it calls
 `getTableRecords()` and returns the result only when it happens to be a
-[`Paginator`](../support/pagination.md), null otherwise. The carrier is whatever
-the userland `records()` closure returned — the host neither builds one nor slices
-anything — so a table is "paginated" for rendering purposes exactly when its
-closure chose to return one, regardless of what `Table::isPaginated()` says.
-`isPaginated()` governs the *inputs* (whether `recordsPerPage` is injected at
-all); the footer renders off the *output*. A closure that ignores its injections
-and returns a plain array on a paginated table therefore renders with no footer,
-correctly: there are no counts to render.
+[`Paginator`](../support/pagination.md), null otherwise. On the **records** lane
+the carrier is whatever the userland closure returned — the host neither builds
+one nor slices anything — so a table is "paginated" for rendering purposes
+exactly when its closure chose to return one, regardless of what
+`Table::isPaginated()` says. `isPaginated()` governs the *inputs* (whether
+`recordsPerPage` is injected at all); the footer renders off the *output*. A
+closure that ignores its injections and returns a plain array on a paginated
+table therefore renders with no footer, correctly: there are no counts to render.
+
+On the **query** lane the two answers agree, because there the host does the
+slicing: [`paginateTableQuery()`](#the-page-state-has-no-query-lane-and-no-session-half)
+builds a carrier exactly when `isPaginated()` is true and the lane returns a
+plain keyed array when it is not, so a query-lane footer *is* `isPaginated()`.
+This method is unchanged by that — it still answers off whatever came back, never
+asking which lane produced it — which is why one footer condition serves both.
 
 The one place this shape matters is caching. Both methods read the same
 `$cachedTableRecords`, so asking for the paginator does not fetch a second time,

@@ -142,7 +142,7 @@ it('resolves the query lane into entities keyed by their identifier', function (
         ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
         ->columns([TextColumn::make('title')]));
 
-    $records = $host->getTableRecords();
+    $records = $host->getTableRecords()->getRecords();
 
     expect(array_keys($records))->toBe([1, 2])
         ->and($records['2'])->toBeInstanceOf(DoctrineSong::class)
@@ -185,7 +185,7 @@ it('keys entities by their real identifier field through the metadata', function
     $host = new TableHost(fn (Table $table): Table => $table
         ->query($entityManager->createQueryBuilder()->select('book')->from(Book::class, 'book')));
 
-    expect(array_keys($host->getTableRecords()))->toBe(['sy-001', 'sy-002']);
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe(['sy-001', 'sy-002']);
 });
 
 it('refuses a composite identifier loudly', function (): void {
@@ -232,7 +232,7 @@ it('applies modifyQueryUsing scopes to the resolved records', function (): void 
         ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
         ->modifyQueryUsing(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 10')));
 
-    $records = $host->getTableRecords();
+    $records = $host->getTableRecords()->getRecords();
 
     expect(array_keys($records))->toBe([2])
         ->and($records[2]->getTitle())->toBe('Beta');

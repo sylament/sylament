@@ -158,7 +158,7 @@ The prefix is load-bearing rather than decorative: twenty trait names occur in
 two of these tiers and five (`BelongsToTable`, `CanBeHidden`, `HasColumns`,
 `HasLabel`, `InteractsWithTableQuery`) in three, which is the same
 [read-by-import, never by the bare `use`](../../../CLAUDE.md) trap the schemas
-tiers carry. The eleven landed concerns folded into their component's detail file
+tiers carry. The sixteen landed concerns folded into their component's detail file
 are named in the [preamble](#tables--port-progress) and carry no row here.
 
 `Contracts/HasTable.php` is not listed in

@@ -28,8 +28,9 @@ Reference — the Filament and Laravel sources this is diffed against:
   — the rendered footer: overview, per-page select, the item list
 - [`support/resources/views/components/pagination/item.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/item.blade.php)
   — the single item, a button-or-span with an icon or a label
-- `Illuminate\Pagination\LengthAwarePaginator` and `Illuminate\Pagination\UrlWindow`
-  — the counts and the elided page window `Paginator` reimplements
+- `Illuminate\Pagination\LengthAwarePaginator`, `Illuminate\Pagination\Paginator`
+  and `Illuminate\Pagination\UrlWindow` — the counts, the unknown-total
+  predicates and the elided page window `Paginator` reimplements
 
 ## Surface
 
@@ -41,12 +42,12 @@ deleted once the row is **done**; **diverges** → the permanent note in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`__construct(records, totalRecordCount, page, recordsPerPage)` + the four refusals](../../../packages/support/src/Pagination/Paginator.php) | `LengthAwarePaginator::__construct()` | done | — | [diverges](#the-carrier-is-first-party-rather-than-an-ecosystem-package) · [semantics](#the-constructor-validates-what-its-docblock-cannot-narrow) |
+| [`__construct(records, totalRecordCount, page, recordsPerPage, hasMoreRecords)` — a null total means unknown — plus the four refusals](../../../packages/support/src/Pagination/Paginator.php) | `LengthAwarePaginator::__construct()` and `Illuminate\Pagination\Paginator::__construct()` | done | — | [diverges](#the-carrier-is-first-party-rather-than-an-ecosystem-package) · [semantics](#the-constructor-validates-what-its-docblock-cannot-narrow) |
 | [`getRecords()` / `count()` / `getIterator()`](../../../packages/support/src/Pagination/Paginator.php) | `LengthAwarePaginator::items()`, `count()`, `getIterator()` | done | — | — |
-| [`getTotalRecordCount()` / `getPage()` / `getRecordsPerPage()` / `getLastPage()`](../../../packages/support/src/Pagination/Paginator.php) | `total()`, `currentPage()`, `perPage()`, `lastPage()` | done | — | [diverges](#the-counts-are-named-in-full-not-abbreviated) |
+| [`getTotalRecordCount()` / `getPage()` / `getRecordsPerPage()` / `getLastPage()` — the first and the last are null when the total is unknown](../../../packages/support/src/Pagination/Paginator.php) | `total()`, `currentPage()`, `perPage()`, `lastPage()` | done | — | [diverges](#the-counts-are-named-in-full-not-abbreviated) |
 | [`getFirstRecordNumber()` / `getLastRecordNumber()` — null on an empty page](../../../packages/support/src/Pagination/Paginator.php) | `firstItem()`, `lastItem()` | done | — | — |
-| [`onFirstPage()` / `hasMorePages()` / `hasPages()`](../../../packages/support/src/Pagination/Paginator.php) | the same three on `LengthAwarePaginator` | done | — | — |
-| [`getPageWindow()` + the `GAP` constant](../../../packages/support/src/Pagination/Paginator.php) | `UrlWindow` at `onEachSide(0)` | done | — | [diverges](#the-page-window-is-a-flat-list-of-numbers-and-gaps-not-laravels-nested-elements-array) |
+| [`onFirstPage()` / `hasMorePages()` / `hasPages()` — the last two read `hasMoreRecords` when the total is unknown](../../../packages/support/src/Pagination/Paginator.php) | the same three across `LengthAwarePaginator` and `Illuminate\Pagination\Paginator` | done | — | [diverges](#one-carrier-expresses-both-shapes-rather-than-a-length-aware-and-a-simple-sibling) |
+| [`getPageWindow()` + the `GAP` constant — refuses a paginator with no total](../../../packages/support/src/Pagination/Paginator.php) | `UrlWindow` at `onEachSide(0)` | done | — | [diverges](#the-page-window-is-a-flat-list-of-numbers-and-gaps-not-laravels-nested-elements-array) |
 | [`withRecords()` — the re-keyed clone](../../../packages/support/src/Pagination/Paginator.php) | `setCollection()` | done | — | [semantics](#withrecords-is-how-a-readonly-carrier-gets-re-keyed) |
 | [The `Pagination` component — overview, per-page select, page window, extreme links](../../../packages/support/templates/components/Pagination/index.html.twig) | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | in progress | — | [detail](#the-component-renders-one-of-filaments-two-layouts) · [diverges](#the-page-buttons-are-hardcoded-to-the-tables-gototablepage-action) |
 | [The four `SupportIconAlias` pagination constants](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | [support-icon-alias.md](support-icon-alias.md#badge--breadcrumbs--rtl-aliases) |
@@ -68,7 +69,12 @@ beginning, near the end, and the middle with a gap on both sides — plus an
 **overflow** page past the end, which is the case a table reaches by paging and
 then narrowing its search, and which must still render a way back. `withRecords()`
 is asserted to return a different instance with the counts intact and the
-original untouched, and the four construction refusals run as one dataset.
+original untouched, and the four construction refusals run as one dataset. The
+unknown-total shape adds five: a null total reporting a null last page while
+`hasMoreRecords` drives both predicates and the record numbers still count off
+the page, the flag ignored beside a real total, an empty simple first page
+reporting no pages where a later page reports some, `getPageWindow()` refusing a
+carrier with no total, and the flag surviving `withRecords()`.
 
 The component is covered from the tables side rather than here, because support's
 own fixture Kernel registers no TwigComponentBundle — the same split
@@ -100,9 +106,11 @@ Nothing is dropped in principle. The second per-page label is a
 `input.wrapper` / `input.select` support components the port has not built (both
 are **todo** rows in [README](README.md#components)), so today the select is a
 bare `<select class="sy-pagination-per-page-select">`. The standalone
-previous/next buttons are the **simple paginator's** whole UI, and simple paging
-has no carrier here — a `Paginator` always knows its total. Both arrive with the
-piece they wait on; the mobile layout is a stylesheet question that the
+previous/next buttons are the **simple paginator's** whole UI, and the carrier
+now expresses that shape — a null `totalRecordCount` means the total is unknown
+([diverges](#one-carrier-expresses-both-shapes-rather-than-a-length-aware-and-a-simple-sibling))
+— so what they wait on is the footer's own `$isSimple` branch. Both arrive with
+the piece they wait on; the mobile layout is a stylesheet question that the
 `sy-pagination-items` list can answer on its own.
 
 ### Three corrections to the stylesheet's port accounting
@@ -211,6 +219,43 @@ It reverses if a lane ever appears whose slicing is *not* already owned — a
 third-party data source the toolkit paginates itself — at which point adopting
 the package for its adapter is exactly right, and this class becomes the shape a
 `PagerfantaAdapter` fills.
+
+### One carrier expresses both shapes rather than a length-aware and a simple sibling
+
+Laravel ships two classes and Filament's view type-tests between them —
+`$isSimple = ! $paginator instanceof \Illuminate\Pagination\LengthAwarePaginator`
+— where the length-aware one knows its total and `Illuminate\Pagination\Paginator`
+does not, answering `hasMorePages()` from a `hasMore` boolean it sets by fetching
+one record more than the page needs. Here that is one class: `totalRecordCount`
+is `?int` with null meaning *unknown*, and the `hasMoreRecords` constructor flag
+carries what the extra record found.
+
+A sibling `SimplePaginator` was the alternative, and what it costs is a union at
+every seam the [records lane](../tables/has-table.md) already built —
+`getTableRecords(): array|Paginator`, `getTablePaginator(): ?Paginator`, the
+`$cachedTableRecords` property, `HasRecords`' two accessors, the `instanceof`
+branch in `resolveTableRecords()` and the class name in the error it throws, and
+the component's `paginator` prop — each widened, and each `instanceof` doubled,
+to tell apart two classes differing in one field. The nullable total pays for
+that with two nullable getters and a `getPageWindow()` that throws a
+`LogicException` where a simple sibling would simply not have the method; the
+seams stay single-typed.
+
+`hasMoreRecords` is read **only** when the total is null. With a total the
+arithmetic answers both predicates, so the flag is ignored rather than rejected —
+a caller passing both gets the counted answer, which is the one that cannot be
+wrong. The null arms are the simple paginator's own predicates: `hasMorePages()`
+is the flag, and `hasPages()` is `AbstractPaginator`'s
+`currentPage() != 1 || hasMorePages()`.
+
+The closure lane gets simple pagination out of this for free — nothing to
+configure, once the footer's `$isSimple` branch lands (the **todo** row above):
+a `records()` closure that fetches one record more than the page needs and
+returns a carrier built with `totalRecordCount: null` and `hasMoreRecords` is
+simple-paginated, because the footer branches on what the carrier answers rather
+than on a table setting. A mode setting belongs to the coming Doctrine `query()`
+lane, where the toolkit owns the fetching and has to be told which shape to
+fetch.
 
 ### The counts are named in full, not abbreviated
 

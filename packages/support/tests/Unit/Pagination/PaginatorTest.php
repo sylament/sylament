@@ -115,3 +115,42 @@ it('refuses invalid construction values', function (int $total, int $page, int|s
     'zero per page' => [0, 1, 0],
     'unknown string option' => [0, 1, 'some'],
 ]);
+
+it('carries an unknown total for simple pagination', function (): void {
+    $paginator = new Paginator(records: [['id' => 3]], totalRecordCount: null, page: 2, recordsPerPage: 1, hasMoreRecords: true);
+
+    expect($paginator->getTotalRecordCount())->toBeNull()
+        ->and($paginator->getLastPage())->toBeNull()
+        ->and($paginator->hasMorePages())->toBeTrue()
+        ->and($paginator->hasPages())->toBeTrue()
+        ->and($paginator->getFirstRecordNumber())->toBe(2)
+        ->and($paginator->getLastRecordNumber())->toBe(2);
+});
+
+it('ignores the has-more flag when the total is known', function (): void {
+    $paginator = new Paginator(records: [['id' => 1]], totalRecordCount: 1, page: 1, recordsPerPage: 10, hasMoreRecords: true);
+
+    expect($paginator->hasMorePages())->toBeFalse()
+        ->and($paginator->hasPages())->toBeFalse();
+});
+
+it('reports no pages for an empty simple first page and pages for a later one', function (): void {
+    $first = new Paginator(records: [], totalRecordCount: null, page: 1, recordsPerPage: 5);
+    $later = new Paginator(records: [], totalRecordCount: null, page: 3, recordsPerPage: 5);
+
+    expect($first->hasPages())->toBeFalse()
+        ->and($first->hasMorePages())->toBeFalse()
+        ->and($later->hasPages())->toBeTrue();
+});
+
+it('refuses a page window without a total', function (): void {
+    $paginator = new Paginator(records: [], totalRecordCount: null, page: 1, recordsPerPage: 5);
+
+    $paginator->getPageWindow();
+})->throws(LogicException::class, 'total');
+
+it('carries the has-more flag through withRecords', function (): void {
+    $paginator = new Paginator(records: [['id' => 1]], totalRecordCount: null, page: 1, recordsPerPage: 1, hasMoreRecords: true);
+
+    expect($paginator->withRecords(['a' => ['id' => 1]])->hasMorePages())->toBeTrue();
+});

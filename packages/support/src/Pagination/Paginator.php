@@ -8,6 +8,7 @@ use ArrayIterator;
 use Countable;
 use InvalidArgumentException;
 use IteratorAggregate;
+use LogicException;
 use Traversable;
 
 /**
@@ -33,17 +34,19 @@ final readonly class Paginator implements Countable, IteratorAggregate
 
     /**
      * `$recordsPerPage` is a positive integer or the string `all`; anything
-     * else is rejected here.
+     * else is rejected here. A null `$totalRecordCount` means the total is
+     * unknown (simple pagination), and `$hasMoreRecords` is read only then.
      *
      * @param iterable<array-key, object|array<string, mixed>> $records
      */
     public function __construct(
         iterable $records,
-        private int $totalRecordCount,
+        private ?int $totalRecordCount,
         private int $page,
         int|string $recordsPerPage,
+        private bool $hasMoreRecords = false,
     ) {
-        if ($totalRecordCount < 0) {
+        if ($totalRecordCount !== null && $totalRecordCount < 0) {
             throw new InvalidArgumentException(sprintf('The total record count must be zero or more, got %d.', $totalRecordCount));
         }
 
@@ -71,7 +74,7 @@ final readonly class Paginator implements Countable, IteratorAggregate
         return $this->records;
     }
 
-    public function getTotalRecordCount(): int
+    public function getTotalRecordCount(): ?int
     {
         return $this->totalRecordCount;
     }
@@ -89,8 +92,12 @@ final readonly class Paginator implements Countable, IteratorAggregate
         return $this->recordsPerPage;
     }
 
-    public function getLastPage(): int
+    public function getLastPage(): ?int
     {
+        if ($this->totalRecordCount === null) {
+            return null;
+        }
+
         if ($this->recordsPerPage === 'all') {
             return 1;
         }
@@ -129,12 +136,20 @@ final readonly class Paginator implements Countable, IteratorAggregate
 
     public function hasMorePages(): bool
     {
-        return $this->page < $this->getLastPage();
+        $lastPage = $this->getLastPage();
+
+        return $lastPage === null ? $this->hasMoreRecords : $this->page < $lastPage;
     }
 
     public function hasPages(): bool
     {
-        return $this->getLastPage() > 1;
+        $lastPage = $this->getLastPage();
+
+        if ($lastPage === null) {
+            return $this->page > 1 || $this->hasMoreRecords;
+        }
+
+        return $lastPage > 1;
     }
 
     /**
@@ -145,7 +160,7 @@ final readonly class Paginator implements Countable, IteratorAggregate
      */
     public function getPageWindow(): array
     {
-        $lastPage = $this->getLastPage();
+        $lastPage = $this->getLastPage() ?? throw new LogicException('A page window needs a total record count; this paginator was built without one (simple pagination).');
 
         if ($lastPage < 8) {
             return range(1, $lastPage);
@@ -167,7 +182,7 @@ final readonly class Paginator implements Countable, IteratorAggregate
      */
     public function withRecords(array $records): self
     {
-        return new self($records, $this->totalRecordCount, $this->page, $this->recordsPerPage);
+        return new self($records, $this->totalRecordCount, $this->page, $this->recordsPerPage, $this->hasMoreRecords);
     }
 
     public function count(): int

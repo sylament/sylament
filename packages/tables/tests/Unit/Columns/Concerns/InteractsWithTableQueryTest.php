@@ -69,11 +69,13 @@ it('composes the default search columns into the Or expression', function (): vo
         ->and($listQuery->getParameter('sylament_search_1')?->getValue())->toBe('%foo%');
 });
 
-it('adds a searchable(query:) closure return to the expression and skips a null return', function (): void {
+it('adds a searchable(query:) closure return to the expression and skips what it applied itself', function (): void {
     $query = EntityManagerFactory::create()->createQueryBuilder()->select('song')->from(Song::class, 'song');
     $returned = $query->expr()->orX();
     $returnedDql = $query->expr()->orX();
     $skipped = $query->expr()->orX();
+    $applied = $query->expr()->orX();
+    $injected = [];
     $returning = new TableHost(fn (Table $table): Table => $table->columns([
         TextColumn::make('title')->searchable(query: fn (QueryBuilder $query, string $search): Comparison => $query->expr()
             ->eq('song.title', $query->expr()->literal($search))),
@@ -81,18 +83,30 @@ it('adds a searchable(query:) closure return to the expression and skips a null 
     $returningDql = new TableHost(fn (Table $table): Table => $table->columns([
         TextColumn::make('title')->searchable(query: fn (): string => 'song.plays > 0'),
     ]))->getTable();
-    $silent = new TableHost(fn (Table $table): Table => $table->columns([
-        TextColumn::make('title')->searchable(query: function (): void {
-        }),
+    $silent = new TableHost(function (Table $table) use (&$injected): Table {
+        return $table->columns([
+            TextColumn::make('title')->searchable(query: function (QueryBuilder $query, string $search, string $searchQuery) use (&$injected): void {
+                $injected = ['query' => $query, 'search' => $search, 'searchQuery' => $searchQuery];
+            }),
+        ]);
+    })->getTable();
+    $applying = new TableHost(fn (Table $table): Table => $table->columns([
+        TextColumn::make('title')->searchable(query: fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 15')),
     ]))->getTable();
 
     $returning->getColumn('title')?->applySearchConstraint($query, $returned, 'foo');
     $returningDql->getColumn('title')?->applySearchConstraint($query, $returnedDql, 'foo');
     $silent->getColumn('title')?->applySearchConstraint($query, $skipped, 'foo');
+    $applying->getColumn('title')?->applySearchConstraint($query, $applied, 'foo');
 
     expect((string) $returned)->toBe("song.title = 'foo'")
         ->and((string) $returnedDql)->toBe('song.plays > 0')
-        ->and($skipped->count())->toBe(0);
+        ->and($skipped->count())->toBe(0)
+        ->and($injected['query'])->toBe($query)
+        ->and($injected['search'])->toBe('foo')
+        ->and($injected['searchQuery'])->toBe('foo')
+        ->and($applied->count())->toBe(0)
+        ->and($query->getDQL())->toContain('WHERE song.plays > 15');
 });
 
 it('forces case-insensitivity per column', function (): void {
@@ -122,7 +136,8 @@ it('resolves alias-headed dotted names and refuses unknown heads', function (): 
 
     $column?->applySort($joined);
 
-    expect($joined->getDQL())->toContain('ORDER BY artist.name asc');
+    expect($joined->getDQL())->toContain('ORDER BY artist.name asc')
+        ->and($joined->getQuery()->getSQL())->toContain('ORDER BY');
     expect(fn (): ?QueryBuilder => $column?->applySort($unjoined))->toThrow(LogicException::class, 'is not an alias on the builder');
 });
 

@@ -77,7 +77,7 @@ trait HasTable
 
     public function filterTableQuery(QueryBuilder $query): QueryBuilder
     {
-        return $query;
+        return $this->applySearchToTableQuery($query);
     }
 
     public function getFilteredSortedTableQuery(): ?QueryBuilder

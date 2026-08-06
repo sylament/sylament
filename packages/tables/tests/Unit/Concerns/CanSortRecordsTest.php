@@ -1,10 +1,5 @@
 <?php
 
-/**
- * Covers the query half of host-side sorting — the `ORDER BY` the lane composes.
- * The `sortTable()` state cycle it reads stays in `HasTableTest`.
- */
-
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
@@ -12,9 +7,15 @@ use Doctrine\ORM\QueryBuilder;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Book;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CompositePair;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+
+/*
+ * Covers the query half of host-side sorting — the `ORDER BY` the lane composes.
+ * The `sortTable()` state cycle it reads stays in `HasTableTest`.
+ */
 
 function seededSongs(): EntityManager
 {
@@ -180,6 +181,22 @@ it('drops the user sort when a default sort closure replaces the query', functio
     expect($dql)->toContain('WHERE song.plays > 15 ORDER BY song.id asc')
         ->and($dql)->not->toContain('song.title')
         ->and(array_keys($host->getTableRecords()))->toBe([1, 3]);
+});
+
+it('reads the tiebreaker off the builder a default sort closure returned', function (): void {
+    $entityManager = seededSongs();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song'))
+        ->columns([TextColumn::make('title')->sortable()])
+        ->defaultSort(fn (): QueryBuilder => $entityManager->createQueryBuilder()
+            ->select('book')
+            ->from(Book::class, 'book')));
+
+    $query = $host->getFilteredSortedTableQuery();
+
+    expect($query?->getDQL())->toContain('ORDER BY book.code asc')
+        ->and($query?->getDQL())->not->toContain('song.')
+        ->and($query?->getQuery()->getSQL())->toContain('ORDER BY');
 });
 
 it('takes the default sort column and the key sort switch from closures', function (): void {

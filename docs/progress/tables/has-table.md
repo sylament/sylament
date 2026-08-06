@@ -97,7 +97,7 @@ instead.
 | [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`, `getTableQueryForExport()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-filtered-query-seams-are-wired-before-the-layers-that-fill-them) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
 | [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `updatedTableRecordsPerPage()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-no-query-lane-and-no-session-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
-| [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#no-table-state-is-persisted-in-the-session) |
+| [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#no-table-state-is-persisted-in-the-session) · [table.md](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
 | Table state in the URL — `#[Url]`-style query-string binding for page, sort and search | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | todo | — | [diverges](#no-table-state-is-bound-to-the-url) |
 | Per-column search — `$tableColumnSearches`, `updatedTableColumnSearches()`, the reserved keys | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | todo | — | [detail](#search-is-the-global-term-only) |
 | Deferred loading — `$isTableLoaded`, `loadTable()`, `isTableLoaded()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | todo | — | [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
@@ -223,12 +223,41 @@ duplicate rather than an absence); the raw-path arm with no matching column; a
 default-sort closure ordering the query it was handed; another replacing it with
 a builder that also filters, asserted by the two records left, and that same
 replacement under a user sort, where the clicked ordering goes with the builder
-it was applied to; the closure arms of both setters, one naming a column and one
-switching the tiebreaker off; both tiebreaker suppressions, the qualified key and
-the joined `artist.id` one; `defaultKeySort(false)` leaving no key ordering at
-all; and a `query()`-authored `orderBy` staying in front of everything the table
-adds. One more pins the composite-identifier guard: a `CompositePair` query
-composes no `ORDER BY` at all rather than throwing on a single-identifier read.
+it was applied to; a third replacing it with a builder over a **different
+entity**, where the tiebreaker must read `book.code` — `Book`'s identifier is not
+named `id`, so a tiebreaker taken from the table's own record class would compose
+`book.id` and the case asserts the assembled DQL *parses* as well as reading
+right; the closure arms of both setters, one naming a column and one switching
+the tiebreaker off; both tiebreaker suppressions, the qualified key and the
+joined `artist.id` one; `defaultKeySort(false)` leaving no key ordering at all;
+and a `query()`-authored `orderBy` staying in front of everything the table adds.
+One more pins the composite-identifier guard: a `CompositePair` query composes no
+`ORDER BY` at all rather than throwing on a single-identifier read.
+
+The **query half** of search has a file of its own for the same reason,
+[`CanSearchRecordsTest`](../../../packages/tables/tests/Unit/Concerns/CanSearchRecordsTest.php),
+driving the public lane against three seeded songs (`Love Song`, `Silent Love`,
+`Noise`, with disagreeing play counts) whose titles overlap on purpose, so an
+`OR` that silently became an `AND` — or a group that silently became a second
+`OR` — changes which records come back. Every case asserts the records **and**
+the composed `WHERE`, because SQLite matches `LIKE` case-insensitively for ASCII
+and the case arms would pass on rows either way: one word matching two records
+through the title column and a second word matching a third only through the
+`plays` column (the `OR` across columns); two words narrowing to the one record
+carrying both, and a two-word term matching nothing though each word matches
+something (the `AND` across groups); `splitSearchTerms(false)` binding
+`%love song%` as one phrase; a quoted `"love song"` binding the same thing while
+splitting stays on (the `str_getcsv` arm); a term joined by the two Hangul
+fillers splitting into two words, which is the whole point of the normalising
+regex — neither character is `\s`, so without it the pair is one word matching
+nothing; `searchUsing()` reaching the closure with the term, replacing the
+assembly and leaving no `LIKE` in the DQL at all; the extra-column arms above; a
+searchable table with nothing searchable on it composing **no** `WHERE`; an
+all-whitespace term leaving the DQL identical to an unsearched one and binding no
+parameters; the two case arms read as DQL and bound values (`song.title LIKE`
+with `%Love%` against `LOWER(song.title) LIKE` with `%love%`); and four
+parameters named `sylament_search_0`…`_3` across two words and two columns, with
+`getSQL()` called on the result so the whole assembly is proved to parse.
 
 The `#[LiveProp]` and `#[LiveAction]` attributes carry no runtime behaviour a
 render test would catch, so they are pinned by reflection in
@@ -276,32 +305,34 @@ injection a caller passes to `evaluate()`, and a public container service
 ### The filtered-query seams are wired before the layers that fill them
 
 `getFilteredTableQuery()`, `filterTableQuery()` and `getFilteredSortedTableQuery()`
-ship with Filament's names, signatures and composition, and — apart from sorting
-— with none of the applications those signatures exist to hold.
+ship with Filament's names, signatures and composition, and — apart from search
+and sorting — with none of the applications those signatures exist to hold.
 `getFilteredTableQuery()` answers null unless the table is on the query lane —
 [a gate Filament's seam does not have](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder)
 — then reads [`Table::getQuery()`](table.md#every-read-clones-a-memoised-base-query)
 — a scoped clone, so what comes back is always a builder the caller may mutate —
 answers null again when there is no query to read, and otherwise hands it to
-`filterTableQuery()`, which today returns it untouched.
+`filterTableQuery()`, whose whole body is
+[the search application](#search-is-the-global-term-only).
 `getFilteredSortedTableQuery()` adds
 [the sorting](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)
-and nothing else. So a query-lane table resolves **every** record its query
-selects, in the order the sort composition asked for, and outside their own
-composition `resolveTableRecords()` is their only caller.
+and nothing else. So a query-lane table resolves every record its query selects
+**that the search term matched**, in the order the sort composition asked for,
+and outside their own composition `resolveTableRecords()` is their only caller.
 
 They land first, and public, on purpose: each layer still to come is a body
 inside one of them rather than a new call site, and anything that needs the lane
 can ask for it before its own half exists. Filament's
 `filterTableQuery()` applies filters, the global and per-column search, and every
 visible column's relationship aggregates and eager loading; its
-`getFilteredSortedTableQuery()` adds grouping, then sorting. Of those, **search**
-arrives with `applySearchToTableQuery()`, inside the Doctrine
-[`query()` lane](../roadmap.md#pulled-forward) this epic is; filters, grouping,
-aggregates and eager loading each wait on a layer that does not exist here at all
-and each has a **todo** row above. `getTableQueryForExport()` is not ported: it
-assembles a query for Filament's export action, which has no counterpart here, and
-it is the one member of this row with no epic behind it.
+`getFilteredSortedTableQuery()` adds grouping, then sorting. Of those, the global
+search arrived with this lane; **per-column** search is a
+[**todo** row above](#search-is-the-global-term-only) and slots in ahead of it
+inside `applySearchToTableQuery()`, and filters, grouping, aggregates and eager
+loading each wait on a layer that does not exist here at all and each has a
+**todo** row above too. `getTableQueryForExport()` is not ported: it assembles a
+query for Filament's export action, which has no counterpart here, and it is the
+one member of this row with no epic behind it.
 
 ### The page state has no query lane and no session half
 
@@ -361,15 +392,18 @@ the table's records carry a composite identifier, or when the builder names no
 root entity to read metadata from — a query that cannot be keyed by one column
 cannot be tiebroken by one either.
 
-The two halves of that qualified key are read from different builders, which only
-matters after a replacement. The identifier **field** comes from the table's
-[record class](table.md#the-record-class-is-read-off-the-base-querys-root-entity),
-memoised off the declared base query, while the root **alias** comes off the
-builder actually in hand; Filament reads both off the effective one
-(`$query->getModel()->getQualifiedKeyName()`). They can only disagree when a
-default-sort closure hands back a builder over a *different* entity, which the
-lane rules out for other reasons already — the record class is what keys every
-row — so this is recorded rather than guarded.
+Both halves of that qualified key are read off the builder **actually in hand** —
+its root entity, its root alias, and the `EntityManager` the metadata comes from,
+never the table's memoised
+[record class](table.md#the-record-class-is-read-off-the-base-querys-root-entity)
+or its declared query. That is Filament's reading too
+(`$query->getModel()->getQualifiedKeyName()`), and it is what a replacement
+builder needs: a default-sort closure returning a builder over a different entity
+would otherwise get that entity's alias carrying the *declared* entity's
+identifier field — `book.id` for a `Book` keyed by `code` — which is not a
+mismatch a reader would spot, because it composes cleanly and fails only when
+Doctrine parses it. The table-level read stays where it belongs: keying a row is
+the record class's job, ordering this builder is this builder's.
 
 What is still missing from Filament's method is its two early returns.
 `isTableReordering()` replaces every ordering with the reorder column, and
@@ -388,20 +422,46 @@ else can change it. The three `@deprecated` host getters are not ported.
 
 ### Search is the global term only
 
-`$tableSearch` and its trimmed getter are ported. Filament's trait carries a
-second, larger half — `$tableColumnSearches`, `updatedTableColumnSearches()`,
-`getReservedTableColumnSearchKeys()` and the per-column query application — which
-is **per-column search**, a feature with a UI of its own (an input in each header
-cell) rather than a variant of this one. It has its own **todo** row above, and
-it is what the missing `columnSearches` injection reads.
+`$tableSearch`, its trimmed getter, and the query application over it are ported.
+Filament's trait carries a second, larger half — `$tableColumnSearches`,
+`updatedTableColumnSearches()`, `getReservedTableColumnSearchKeys()` and
+`applyColumnSearchesToTableQuery()` — which is **per-column search**, a feature
+with a UI of its own (an input in each header cell) rather than a variant of this
+one. It has its own **todo** row above, it is what the missing `columnSearches`
+injection reads, and it is why `applySearchToTableQuery()` exists as a one-line
+delegate to `applyGlobalSearchToTableQuery()` rather than being collapsed into
+it: the column half becomes a second call inside it — ahead of the global one,
+the order Filament applies them in.
 
-The query application (`applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`,
-the `generate_search_term_expression()` helpers, `shouldSplitSearchTerms()`)
-is the [`query()` lane](../roadmap.md#pulled-forward)'s, exactly as with sorting:
-here the `search` injection hands the closure a string and the closure decides
-what matching means. Filament's search **indicators**
-(`getTableSearchIndicator()`, `getTableColumnSearchIndicators()`) return
-`Filters\Indicator` objects and wait on the filter layer that defines that class.
+The global half composes like this. A blank term is a no-op — `getTableSearch()`
+already answers null for it, so nothing is applied and the query is returned as
+it came. A table with a `searchUsing()` closure hands it the builder and the term
+and stops there, columns and extra columns alike unread; that closure is the
+whole assembly. Otherwise the term is broken into **words** —
+`splitSearchTerms()` is on by default, and `extractTableSearchWords()` normalises
+the Unicode blanks Filament names (`\x{3164}`, `\x{1160}`) to spaces before
+`str_getcsv()` splits on them, so a `"quoted phrase"` survives as one word — and
+each word gets **its own `Orx`**: every globally searchable column applies
+[itself](column.md#a-search-closure-returns-its-expression-where-filaments-mutates-an-orwhere-group)
+into it, the table's
+[extra searchable columns](table.md#extra-searchable-columns-take-closures-that-return-their-expression)
+follow, and the group is `andWhere()`-d only if something joined it. So the
+composition is `OR` within a word and `AND` between words — *every* word must
+match *something* — and a table with nothing searchable adds no `WHERE` at all
+rather than an empty parenthesis or a false predicate. Filament's loop also skips
+a **hidden** column first; the port has no visibility to check and drops that arm
+[with its sorting sibling](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check).
+
+Two members of Filament's do not port. The `generate_search_term_expression()` /
+`generate_search_column_expression()` pair is Eloquent-and-driver-specific
+assembly, replaced by
+[`SearchConstraint::like()`](../../../packages/tables/src/Query/SearchConstraint.php)
+and its [narrower reach](table.md#the-default-search-comparison-assumes-a-string-typed-field).
+The search **indicators** (`getTableSearchIndicator()`,
+`getTableColumnSearchIndicators()`) return `Filters\Indicator` objects and wait on
+the filter layer that defines that class. On the records lane none of this runs:
+the `search` injection hands the closure a string and the closure decides what
+matching means.
 
 ### The contract is nine methods of Filament's forty-six
 

@@ -94,7 +94,8 @@ Rows never disappear — only their detail sections do.
 | `defaultSortOptionLabel()` / `getDefaultSortOptionLabel()` | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | skipped | — | It labels the "unsorted" entry of the mobile sort **dropdown**, which the port does not render and nothing else reads; it belongs to that layout rather than to sorting, and lands only if the layout does |
 | [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
 | [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) · [diverges](#searchonblur-renders-onchange-because-ux-live-component-has-no-blur-event) |
-| `persistSearchInSession()`, `persistColumnSearchesInSession()`, `splitSearchTerms()`, `searchUsing()`, `isSearchableByColumn()`, `hasSearch()`, the two indicator getters, `applyExtraSearchConstraints()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
+| [`splitSearchTerms()` / `shouldSplitSearchTerms()`, `searchUsing()` / `hasSearchUsingCallback()` / `callSearchUsing()`, `applyExtraSearchConstraints()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#search-is-the-global-term-only) · [semantics](#extra-searchable-columns-take-closures-that-return-their-expression) · [diverges](#the-default-search-comparison-assumes-a-string-typed-field) · [diverges](#a-search-term-is-not-escaped-for-like) |
+| `persistSearchInSession()`, `persistColumnSearchesInSession()`, `isSearchableByColumn()`, `hasSearch()`, the two indicator getters, `getExtraSearchableColumnRelationship()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
 | Deferred loading and polling — `deferLoading()`, `poll()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | todo | — | [detail](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | Filters — `filters()`, the indicators, the query-string identifier | [`HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php), [`HasQueryStringIdentifier`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — | — |
 | [`recordActions()` / `pushRecordActions()` / `getRecordActions()` / `getFlatRecordActions()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) | [`Table\Concerns\HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | in progress | — | [detail](#record-actions-register-without-the-per-action-modifier-hook) |
@@ -111,16 +112,16 @@ Rows never disappear — only their detail sections do.
 | Presentation — `striped()`, `stackedOnMobile()`, `content()`, `header()`, the headings, `recordClasses()` | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) and five siblings | todo | — | — |
 | `HasArguments`, `HasExtraAttributes`, `HasDefaultDataFormattingSettings` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
-The twenty **done** rows are `make()`, the host binding, the data-source
+The twenty-one **done** rows are `make()`, the host binding, the data-source
 declaration, the query-lane declaration and the two members that read off it
 (`hasQuery()`, `getRecordClass()`), the host-delegating `getRecords()`,
 `getPaginator()` and `getRecordKey()`, the morph-stable row and cell keys built
 on the last of those, the empty-state heading and icon, the closure-injection
 wiring, the per-record visible-action map, the pagination surface, the
-sort-resolution surface and the default-sort family beside it, the two search
-rows, and the partial that renders all of it; the column set, the empty-state
-description and the three remaining action rows are partly in, one step behind
-them.
+sort-resolution surface and the default-sort family beside it, the three search
+rows — the declaration, the chrome, and the query half · 12 landed — and the
+partial that renders all of it; the column set, the empty-state description and
+the three remaining action rows are partly in, one step behind them.
 
 The PHP surface is covered by
 [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php) — `make()`
@@ -155,7 +156,16 @@ both read. Search: `isSearchable()` derived from the columns (globally searchabl
 it in both directions with `searchable(['author.name'])` also filling the extra
 columns; the chrome getters as one case; and the debounce translation as four
 values — the `null` default, `1s`, a bare `250`, and unparseable garbage falling
-back to 500.
+back to 500. The three query-half members are asserted where they are consumed,
+in the host's
+[`CanSearchRecordsTest`](../../../packages/tables/tests/Unit/Concerns/CanSearchRecordsTest.php):
+`shouldSplitSearchTerms()` on all three arms (the default `true`, an explicit
+`false`, a closure), `hasSearchUsingCallback()` beside the `searchUsing()` case
+it gates, and `applyExtraSearchConstraints()` through a table whose columns are
+**unsearchable**, so a match can only have come from the extra list — one term
+reaching a record through the string member and another only through the closure
+member, a third proving the null return adds nothing, and a fourth proving a
+returned builder is skipped while the constraint it applied itself still lands.
 
 The query lane is covered by
 [`HasQueryTest`](../../../packages/tables/tests/Unit/Table/Concerns/HasQueryTest.php),
@@ -325,7 +335,8 @@ drives.
 ### The unported search surface splits three ways
 
 Filament's `Table\Concerns\CanSearchRecords` is 300 lines; the port keeps the
-declaration and the chrome. What is left divides cleanly.
+declaration, the chrome and — since · 12 — the query half. What the surface
+divides into stays worth naming, because two of the three arms are still out.
 
 **Session persistence** — `persistSearchInSession()` and
 `persistColumnSearchesInSession()` — is the
@@ -333,16 +344,29 @@ declaration and the chrome. What is left divides cleanly.
 recorded on the host side, and returns with that decision rather than with
 search.
 
-**The query lane's** are `applyExtraSearchConstraints()` and
-`getExtraSearchableColumnRelationship()` (Eloquent `where`/`whereRelation`
-assembly over `generate_search_column_expression()`), `searchUsing()` with its
-`callSearchUsing()`/`hasSearchUsingCallback()` pair — a closure handed the query
-builder — and `splitSearchTerms()`, which governs how the term is broken up
-*before* being turned into constraints. Note the asymmetry this creates today:
-`getExtraSearchableColumns()` is ported and readable, but nothing consumes it,
-because consuming it means building a query. It is stored rather than dropped so
-a table declaring `searchable(['author.name'])` keeps its declaration and reads
-as searchable, which is the half the closure lane can honour.
+**The query lane's members landed with · 12** and have a **done** row of their own:
+`splitSearchTerms()`, which governs how the term is broken up *before* being
+turned into constraints, `searchUsing()` with its
+`callSearchUsing()`/`hasSearchUsingCallback()` pair — a closure handed the
+builder, which bypasses column assembly entirely — and
+`applyExtraSearchConstraints()`, which is what finally consumes
+`getExtraSearchableColumns()`: a string member resolves through
+[`ColumnPathResolver`](../../../packages/tables/src/Query/ColumnPathResolver.php)
+and joins the word's `OR` group as one more `LIKE`, and a closure member
+[returns its expression](#extra-searchable-columns-take-closures-that-return-their-expression)
+the way a column's `searchable(query:)` does. So a table declaring
+`searchable(['author.name'])` now searches by it rather than merely reading as
+searchable. The composition around them —
+[one group per word, `AND`-ed](has-table.md#search-is-the-global-term-only) — is
+the host's.
+
+One member of the group stays out: `getExtraSearchableColumnRelationship()`,
+which walks a dotted name to decide whether its head is an Eloquent relationship
+so the constraint can become a `whereRelation`. That is
+[the relation layer's](#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)
+question, and here the same name is resolved against the builder instead — a
+head that is already a declared alias is used as written, anything else refused
+by name.
 
 **Everything else waits on a neighbouring feature.** `isSearchableByColumn()`
 answers whether any column wants its own input, which is
@@ -682,6 +706,32 @@ field; that field arrives with
 [per-column search](has-table.md#search-is-the-global-term-only). All of it is
 Filament's, expressed the same way.
 
+### Extra searchable columns take closures that return their expression
+
+`searchable(['author.name', fn () => …])` takes closures beside names, and they
+join the search group the same way a column's `searchable(query:)` closure does —
+by **returning** an expression, not by mutating a nested builder. The contract is
+one and the same, argued once in
+[column.md](column.md#a-search-closure-returns-its-expression-where-filaments-mutates-an-orwhere-group):
+a returned `Expr` node or raw DQL string is added to the word's `Orx`, a closure
+that returns nothing adds nothing, and a closure that returns the **builder** —
+which `andWhere()` does, so `fn (QueryBuilder $query) => $query->andWhere(…)`
+returns one whether or not the author meant to — is skipped rather than added,
+because its constraint is already on the query, outside the `OR` group. That
+skip is explicit in both places: `QueryBuilder` implements `Stringable`, so the
+`string|Stringable` test that admits raw DQL would otherwise hand it to
+`Orx::add()`, which refuses anything outside its `Comparison`/`Func`/`Andx`/`Orx`
+allow-list with an `InvalidArgumentException`.
+
+The injections are Filament's three — `$query`, `$search`, and the `$searchQuery`
+alias for it — and a blank member is skipped before any of it, so a list built
+conditionally (`['title', $extra ?? '']`) does not resolve an empty path.
+Filament's `blank($column)` guard is spelled `array_filter(…, filled(…))` over
+the list instead: the helper's `@phpstan-assert-if-false !null` makes a direct
+`blank()` call on a non-nullable member read as an impossible check at level max,
+where the same helper as an `array_filter` callback narrows the list and keeps
+the semantics exactly (a whitespace-only member is blank too).
+
 ### `aria-sort` is dropped with null, because `false` would render as a string
 
 The header cell's `aria-sort` is computed as
@@ -776,6 +826,13 @@ the word *visible* deliberately: it is Filament's, the check returns with the
 concern, and renaming the method for the duration would break the API a migrating
 user greps for.
 
+The host's [global search loop](has-table.md#search-is-the-global-term-only) has
+the same omission for the same reason: Filament skips a hidden column before
+asking whether it is globally searchable, and the port asks only the second
+question. Both arms return in the change that ports visibility, and neither can
+be written before it — there is no third behaviour here, only a check that has
+nothing to call.
+
 ### `getSearchDebounceMilliseconds()` is a Sylament-only translation of Filament's duration string
 
 Filament stores `searchDebounce('500ms')` and interpolates the string straight
@@ -825,6 +882,55 @@ against. The fix is the one [`TextInput`](../forms/text-input.md) already
 carries: render `value` explicitly and **empty rather than absent** (`?? ''`).
 Do it in the same change as the writer, not before — an unconditional `value`
 today would only re-render what the morph already preserves.
+
+### The default search comparison assumes a string-typed field
+
+[`SearchConstraint::like()`](../../../packages/tables/src/Query/SearchConstraint.php)
+emits `path LIKE :param` — or `LOWER(path) LIKE :param` on the case-insensitive
+arm — and nothing else. Filament's `generate_search_column_expression()` does
+more on Postgres: it double-quotes each segment of the name and appends `::text`,
+because Postgres refuses `integer LIKE text` outright where MySQL and SQLite
+coerce silently. So a `searchable()` integer column is portable in Filament and
+is not here: against Postgres it fails loudly at execution, while the same table
+against SQLite matches.
+
+There is no DQL counterpart to lift. `::text` is a Postgres cast written in SQL,
+and a DQL string is parsed by Doctrine before any platform sees it; the portable
+spelling would be a DQL function, and both candidates are wrong here.
+`CONCAT(path, '')` changes what an index can serve, and `CAST` is not a DQL
+function at all — the parser's built-in string list is `concat`, `substring`,
+`trim`, `lower`, `upper` and `identity`, anything else arriving through
+`Configuration::addCustomStringFunction()`, which the toolkit cannot assume a
+consumer has called. A platform-conditional emission would also have to happen
+*before* the parser runs, which is exactly where `SearchConstraint` already reads
+the platform for its case-insensitivity default — so a cast arm can be added
+there the day one is worth its dependency.
+
+Two escape hatches exist meanwhile, both first-class API rather than workarounds:
+`searchable(query:)` on the column hands the closure the builder and takes back
+whatever expression it wants (a registered `CAST`, a `LOWER(CONCAT(…))`, a
+platform-specific literal), and `searchUsing()` on the table replaces the whole
+assembly. The **column-name** half of Filament's helper — the quoting and the
+JSON-path spelling — has no counterpart by construction: a DQL path is
+`alias.field` against mapped metadata, never a quoted table name, and JSON access
+is not in the grammar.
+
+### A search term is not escaped for `LIKE`
+
+The bound parameter is `'%' . $search . '%'`, so `%` and `_` typed by the user
+stay wildcards: searching `a_c` matches `abc`, and searching `%` matches every
+row with a non-null value in any searchable column. This is Filament's behaviour
+exactly — its `generate_search_term_expression()` lowercases and returns, and the
+call site interpolates `"%{$search}%"` — and the port keeps it rather than
+quietly changing what a migrating table matches.
+
+It is a usability quirk and not an injection risk: the term is a **bound
+parameter** on both sides, never concatenated into DQL, so the worst a crafted
+term does is match too much. Escaping it properly needs a `LIKE … ESCAPE` clause
+(supported by the DQL grammar) plus a per-platform decision about the escape
+character, and it changes matching for every existing table — so if it lands it
+lands as an opt-in on the same setter that already governs case
+(`forceSearchCaseInsensitive()`'s neighbour), not as a silent fix.
 
 ### A `Markup` header label does not switch the sortable header to a `<span>`
 

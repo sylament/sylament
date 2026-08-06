@@ -87,7 +87,7 @@ sections do.
 | [`sortable()` / `isSortable()`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php) | [`Concerns\CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php) | done | — | — |
 | [`searchable()` / `isSearchable()` / `isGloballySearchable()` / `isIndividuallySearchable()`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php) | [`Concerns\CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | done | — | [diverges](#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column) |
 | [`getSortColumns()` / `getSearchColumns()`, `forceSearchCaseInsensitive()` / `isSearchForcedCaseInsensitive()`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php) | [`CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php), [`CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | done | — | [diverges](#the-list-getters-take-no-record-and-there-is-no-getdefaultcolumns-pair) · [semantics](#an-undeclared-sortable-has-no-sort-columns-where-an-undeclared-searchable-has-its-name) |
-| `splitIndividualSearchTerms()` / `shouldSplitIndividualSearchTerms()` | [`CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | todo | — | — |
+| `splitIndividualSearchTerms()` / `shouldSplitIndividualSearchTerms()` | [`CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | blocked | per-column search ([has-table.md](has-table.md#search-is-the-global-term-only)) | Both members exist to govern how a column's **own** search input splits its term, and the only reader is Filament's `applyColumnSearchesToTableQuery()`. The global term's splitting is the table's `splitSearchTerms()`, which landed with the query lane and is a separate flag. Storing this one now would ship a setter no builder consults — worse than an absent one, because it reads as configured |
 | [`applySort()`, `applySearchConstraint()` — the column's query application](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#sort-columns-apply-in-declared-order-where-filament-reverses-them) · [diverges](#a-search-closure-returns-its-expression-where-filaments-mutates-an-orwhere-group) |
 | Actions and links — `action()`, `url()`, `openUrlInNewTab()`, `disabledClick()` | [`CanCallAction`](../../../vendor/filament/tables/src/Columns/Concerns/CanCallAction.php), [`CanOpenUrl`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | todo | — | — |
 | Editing in place — `updateStateUsing()`, `rules()`, `disabled()` | [`CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php), [`CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php), [`CanBeDisabled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | todo | — | — |
@@ -137,8 +137,15 @@ the only thing applied, the default search column composing into the caller's
 `Orx` with its `%term%` parameter bound (and a two-name list composing both arms
 under distinct parameter names), a `searchable(query:)` closure's returned
 expression *and* returned DQL string both landing in that `Orx` while a closure
-returning nothing leaves it empty, `forceSearchCaseInsensitive()` lowering both
-sides of one column's comparison, a dotted name resolving against a joined alias
+returning nothing leaves it empty and one returning the **builder** it constrained
+leaves it empty too — with that constraint on the query, which is the
+[skip](#a-search-closure-returns-its-expression-where-filaments-mutates-an-orwhere-group)
+that keeps a `Stringable` builder out of `Orx::add()` — all three of Filament's
+injections proved by name (`$query` by identity against the builder passed in,
+`$search` and its `$searchQuery` alias by value),
+`forceSearchCaseInsensitive()` lowering both sides of one column's comparison, a
+dotted name resolving against a joined alias — asserted through `getSQL()`, so
+the alias-headed `ORDER BY` is proved to *parse* and not merely to read right —
 and refusing an unjoined one, and both getters' declared-and-defaulted arms.
 
 ## Details
@@ -499,6 +506,20 @@ nodes, and refusing anything else outright). A closure that returns nothing is
 not an error: it is also handed the real `QueryBuilder`, so `andWhere()`-ing a
 constraint that must apply *outside* the `OR` group is the one thing Filament's
 nested-group shape cannot express and this one can.
+
+Returning that builder is not an error either, and the distinction is the one
+sharp edge of the contract. `QueryBuilder::andWhere()` returns `$this`, so
+`fn (QueryBuilder $query) => $query->andWhere(…)` — the natural arrow-function
+spelling of *constrain the query yourself* — hands back a builder whether or not
+its author thought about the return value. That builder is **skipped**: its
+constraint is already on the query, adding it to the group would be a duplicate,
+and it is checked for by type *before* the `string|Stringable` test rather than
+being caught by it, because `QueryBuilder` implements `Stringable` (its
+`__toString()` is the DQL) and would otherwise sail into `Orx::add()` and die on
+the allow-list with a message about an expression type, naming nothing the author
+wrote. The rule reads the same at the table's
+[extra searchable columns](table.md#extra-searchable-columns-take-closures-that-return-their-expression),
+which take the same kind of closure.
 
 The three injections are Filament's, unchanged — `$query`, `$search` and its
 `$searchQuery` alias — and only the first differs in what it holds: the table's

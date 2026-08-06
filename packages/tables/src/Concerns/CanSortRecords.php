@@ -121,27 +121,20 @@ trait CanSortRecords
 
     private function applyDefaultKeySort(QueryBuilder $query, string $direction): QueryBuilder
     {
-        $table = $this->getTable();
-        $entityManager = $table->getQueryEntityManager();
-        $recordClass = $table->getRecordClass();
+        $recordClass = $query->getRootEntities()[0] ?? null;
+        $rootAlias = $query->getRootAliases()[0] ?? null;
 
-        if ($entityManager === null || $recordClass === null) {
+        if ($recordClass === null || $rootAlias === null) {
             return $query;
         }
 
-        $metadata = $entityManager->getClassMetadata($recordClass);
+        $metadata = $query->getEntityManager()->getClassMetadata($recordClass);
 
         if ($metadata->isIdentifierComposite) {
             return $query;
         }
 
         $identifierField = $metadata->getSingleIdentifierFieldName();
-        $rootAlias = $query->getRootAliases()[0] ?? null;
-
-        if ($rootAlias === null) {
-            return $query;
-        }
-
         $qualifiedKey = "{$rootAlias}.{$identifierField}";
 
         /** @var list<OrderBy> $orderings */

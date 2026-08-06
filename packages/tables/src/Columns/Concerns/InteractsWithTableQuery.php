@@ -36,6 +36,10 @@ trait InteractsWithTableQuery
         if ($this->searchQuery instanceof Closure) {
             $constraint = $this->evaluateSearchQuery($query, $search);
 
+            if ($constraint instanceof QueryBuilder) {
+                return;
+            }
+
             if (is_string($constraint) || $constraint instanceof Stringable) {
                 $searchExpression->add($constraint);
             }
@@ -55,7 +59,7 @@ trait InteractsWithTableQuery
 
     /**
      * Whatever the search closure returned — an expression to add to the search
-     * group, or nothing when it constrained the query itself.
+     * group, or the builder it constrained itself, which joins nothing.
      */
     protected function evaluateSearchQuery(QueryBuilder $query, string $search): mixed
     {

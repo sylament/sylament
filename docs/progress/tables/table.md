@@ -7,9 +7,10 @@ object of the tables package, the counterpart to schemas'
 host builds through [`HasTable`](has-table.md), carrying the record data source
 and the empty-state copy. It ports Filament's
 [`Filament\Tables\Table`](../../../vendor/filament/tables/src/Table.php) together
-with the `Table\Concerns\` traits it composes — nine today
+with the `Table\Concerns\` traits it composes — ten today
 ([`BelongsToLiveComponent`](../../../packages/tables/src/Table/Concerns/BelongsToLiveComponent.php),
 [`HasRecords`](../../../packages/tables/src/Table/Concerns/HasRecords.php),
+[`HasQuery`](../../../packages/tables/src/Table/Concerns/HasQuery.php),
 [`HasEmptyState`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php),
 [`HasColumns`](../../../packages/tables/src/Table/Concerns/HasColumns.php),
 [`HasActions`](../../../packages/tables/src/Table/Concerns/HasActions.php),
@@ -17,18 +18,19 @@ with the `Table\Concerns\` traits it composes — nine today
 [`CanPaginateRecords`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php),
 [`CanSortRecords`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php),
 [`CanSearchRecords`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php)),
-thirty-one in Filament. The nine ported are folded into the surface table below
+thirty-one in Filament. The ten ported are folded into the surface table below
 rather than earning rows upstairs, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing); the
-twenty-two still unported keep a per-file row in the package
+twenty-one still unported keep a per-file row in the package
 [README](README.md#features), the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
-reached yet. The rows below group those files by feature, which is what the
+reached yet — as does `HasQuery`, ported but keeping its row for the relation arm
+it still owes. The rows below group those files by feature, which is what the
 per-file rows upstairs point at.
 
 The `Table` fetches nothing itself. It declares *how* records are reached — a
-`records()` closure — and the host resolves and caches them; see
-[`has-table.md`](has-table.md) for that half of the axis.
+`records()` closure, or a Doctrine `query()` — and the host resolves and caches
+them; see [`has-table.md`](has-table.md) for that half of the axis.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -39,6 +41,7 @@ Reference — the Filament source this is diffed against:
   — the class, its `make()`, `setUp()` and closure-injection hook
 - [`tables/src/Table/Concerns/BelongsToLivewire.php`](../../../vendor/filament/tables/src/Table/Concerns/BelongsToLivewire.php)
 - [`tables/src/Table/Concerns/HasRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php)
+- [`tables/src/Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php)
 - [`tables/src/Table/Concerns/HasEmptyState.php`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php)
 - [`tables/src/Table/Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php)
 - [`tables/src/Table/Concerns/HasActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasActions.php)
@@ -79,7 +82,10 @@ Rows never disappear — only their detail sections do.
 | [`columns()` / `getColumns()` / `getColumn()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) |
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
 | The column manager — user-toggleable column visibility | [`HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — | — |
-| The `query()` lane — `query()`, `hasQuery()`, `getModel()`, `relationship()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | — |
+| [The `query()` lane — `query()` / `getQuery()` / `modifyQueryUsing()` / `applyQueryScopes()` / `getQueryEntityManager()`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | done | — | [semantics](#every-read-clones-a-memoised-base-query) |
+| [`hasQuery()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::hasQuery()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#the-query-lane-is-on-exactly-while-no-records-closure-is-set) |
+| [`getRecordClass()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getModel()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [rename](../renames.md#renames) · [semantics](#the-record-class-is-read-off-the-base-querys-root-entity) |
+| The relation arm — `relationship()`, `inverseRelationship()`, `getRelationship()`, `getRelationshipQuery()`, `getInverseRelationship()`, `getInverseRelationshipFor()`, `selectPivotDataInQuery()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | the Doctrine relation layer | [detail](#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer) |
 | [`paginated()` / `isPaginated()` / `paginationPageOptions()` / `getPaginationPageOptions()` / `defaultPaginationPageOption()` / `getDefaultPaginationPageOption()` / `extremePaginationLinks()` / `hasExtremePaginationLinks()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | [diverges](#the-ten-per-page-default-is-matched-strictly) · [diverges](#ispaginated-has-no-groups-only-arm) |
 | `paginationMode()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
 | `paginatedWhileReordering()`, `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
@@ -104,14 +110,15 @@ Rows never disappear — only their detail sections do.
 | Presentation — `striped()`, `stackedOnMobile()`, `content()`, `header()`, the headings, `recordClasses()` | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) and five siblings | todo | — | — |
 | `HasArguments`, `HasExtraAttributes`, `HasDefaultDataFormattingSettings` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
-The sixteen **done** rows are `make()`, the host binding, the data-source
-declaration, the host-delegating `getRecords()`, `getPaginator()` and
-`getRecordKey()`, the morph-stable row and cell keys built on the last of those,
-the empty-state heading and icon, the closure-injection wiring, the per-record
-visible-action map, the pagination and sort-resolution surfaces, the two search
-rows, and the partial that renders all of it; the column set, the empty-state
-description and the three remaining action rows are partly in, one step behind
-them.
+The nineteen **done** rows are `make()`, the host binding, the data-source
+declaration, the query-lane declaration and the two members that read off it
+(`hasQuery()`, `getRecordClass()`), the host-delegating `getRecords()`,
+`getPaginator()` and `getRecordKey()`, the morph-stable row and cell keys built
+on the last of those, the empty-state heading and icon, the closure-injection
+wiring, the per-record visible-action map, the pagination and sort-resolution
+surfaces, the two search rows, and the partial that renders all of it; the column
+set, the empty-state description and the three remaining action rows are partly
+in, one step behind them.
 
 The PHP surface is covered by
 [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php) — `make()`
@@ -147,6 +154,25 @@ it in both directions with `searchable(['author.name'])` also filling the extra
 columns; the chrome getters as one case; and the debounce translation as four
 values — the `null` default, `1s`, a bare `250`, and unparseable garbage falling
 back to 500.
+
+The query lane is covered by
+[`HasQueryTest`](../../../packages/tables/tests/Unit/Table/Concerns/HasQueryTest.php),
+against a real in-memory SQLite `EntityManager` rather than a mock — an assertion
+about clone isolation or a DQL string is only worth making against a builder
+Doctrine itself would accept.
+[`EntityManagerFactory`](../../../packages/tables/tests/Fixtures/Doctrine/EntityManagerFactory.php)
+builds one per case, schema included, over four fixture entities:
+`Song` and `Artist` carry the `ManyToOne` / `OneToMany` pair, `Book`'s identifier
+is `code` rather than `id`, and `CompositePair` has two. The last two exist for
+what comes later — a record key or a sort that assumes an `id` column passes
+against `Song` and fails against them. The eight cases are clone-per-read (two
+reads, neither the stored builder, same DQL), a caller mutation not leaking into
+the next read, a closure declaration evaluated once and re-evaluated after a
+fresh `query()`, two scopes applied in registration order with the `void` one
+still counted, the `isResolvingRecord` flag reaching a scope as `[false, true]`,
+`getQueryEntityManager()` answering the manager and null, `hasQuery()` across a
+bare table and a `records()` set and cleared, and `getRecordClass()` reading
+`Song`, caching, answering `null` with no query and re-reading after a new one.
 
 The rendered chrome is covered by the Integration
 [`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php),
@@ -234,6 +260,36 @@ bound once and reused — the single bug the per-record clone exists to prevent.
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
+
+### The relation arm of the query lane waits on a Doctrine relation layer
+
+Filament's `HasQuery` is two declarations, not one: `query()` hands over a
+builder, and `relationship()` hands over a closure returning an Eloquent
+`Relation`, from which `getRelationshipQuery()` derives the builder instead. The
+first arm is ported; the second is not, and its seven members
+(`relationship()`, `inverseRelationship()`, `getRelationship()`,
+`getRelationshipQuery()`, `getInverseRelationship()`,
+`getInverseRelationshipFor()`, `selectPivotDataInQuery()`) are the row above.
+`getQuery()` loses the second of its two arms with them: Filament falls back to
+the relationship query when no builder was declared, and here a declared query is
+the only source.
+
+What blocks it is not translation effort but a missing layer. Two of the seven
+exist only to work around Eloquent's own shapes — `getRelationshipQuery()` is
+mostly the `HasOneOrManyThrough` `select($table . '.*')` patch and the
+`withCasts()` call on the pivot class, and `selectPivotDataInQuery()` is
+pivot-column aliasing whole — and neither has a Doctrine referent: a Doctrine
+association is reached by joining from the owning entity, and an association
+table with payload is an entity of its own rather than a pivot with casts. `getInverseRelationship()` is likewise Eloquent-shaped, guessing the
+inverse accessor's name by singularising or pluralising the parent's class
+basename, where Doctrine already carries the inverse side on the mapping
+(`inversedBy` / `mappedBy`) and a guess would be strictly worse than a read. So
+the arm is deferred until the relation layer decides what a relation-scoped table
+*is* here — most likely a `QueryBuilder` with the join already applied, which
+`query()` accepts today, leaving `relationship()` to add only the inverse-side
+knowledge a nested create needs. Filament's `hasPivotRecordKeys()` /
+`allowDuplicates()` pair is already **skipped** in the surface table on the same
+grounds.
 
 ### Three pagination setters configure machinery the closure lane does not have
 
@@ -446,6 +502,83 @@ pinned by [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php).
 
 Faithful ports subtle enough that the next reader would misread the code.
 Permanent, and addressable by anchor.
+
+### The query lane is on exactly while no records closure is set
+
+`hasQuery()` returns `$this->dataSource === null` — it never asks whether a query
+was declared. A table with neither is on the query lane, and a table with **both**
+is on the records lane, because `records()` wins outright. That is Filament's
+precedence, carried over as-is: `hasQuery()` is `! $this->dataSource` there, and
+the host branches on it to decide whether to run the closure or assemble a query.
+
+The shape reads backwards until the two lanes are seen as one axis rather than
+two flags. The records closure is the escape hatch — a user who supplies one has
+said *I will produce the rows myself*, and a query left behind from an earlier
+configuration pass must not silently resurface. So the predicate asks the escape
+hatch, not the default. `records(null)` puts the table back on the query lane,
+which is what makes the setter a true reset rather than a one-way switch.
+
+The corollary is that "on the query lane" does not mean "has a query": a bare
+`Table` answers `true` and `getQuery()` answers `null`. Anything assembling a
+query has to handle that null itself, and cannot read `hasQuery()` as a
+guarantee.
+
+### Every read clones a memoised base query
+
+`getQuery()` never hands out the stored builder. It resolves the *base* query
+once — `getBaseQuery()` memoises into `$cachedBaseQuery`, so a `query(Closure)`
+declaration is evaluated on the first read and not again — then returns
+`applyQueryScopes(clone $baseQuery, …)`, a fresh clone per read. A caller may
+therefore mutate what it gets back (paginate it, sort it, add a `where`) without
+the next reader seeing any of it, and `modifyQueryUsing()` scopes run against
+that private copy rather than accumulating on a shared one.
+
+Both halves are load-bearing and neither is obvious from the signature.
+Doctrine's `QueryBuilder::__clone()` deep-clones the DQL parts and the parameter
+collection, so the clone is genuinely independent — but the builder is mutable
+and every `->andWhere()` returns `$this`, so without the clone a single
+`getQuery()` call site would permanently narrow the table. And without the
+memoisation a closure declaration would be re-run per read: the record class, the
+paginator's count query and the page query are three reads of the same table, and
+a closure doing real work — a repository call, an ACL scope — would run three
+times. `query()` resets both the base cache and the record-class cache, so a
+re-declared query re-evaluates.
+
+Filament clones too (`$query->clone()`) but memoises nothing: its `getQuery()`
+calls `$this->evaluate($this->query)` on every read, and `getModel()` keeps a
+cache of its own because it is the one reader hit per row. The port memoises one
+level lower, which subsumes that cache and covers the other readers with it.
+
+Two members carry the rest of the lane. `applyQueryScopes()` is public and takes
+the builder to scope, so a caller that built its own query — a count query, a
+relation-scoped one — can put the table's scopes on it; scopes run in
+registration order, and one returning nothing (a `void` closure mutating in
+place) leaves the query it was handed, which is what makes both closure shapes
+valid. `getQueryEntityManager()` is Sylament-only: an Eloquent builder carries
+its connection and every Filament consumer reaches the model statically, where
+Doctrine's read side needs the `EntityManagerInterface` explicitly — so the
+entity manager behind the declared query needs a seam, and it is read off the
+base query rather than injected, which keeps a `Table` free of container
+dependencies it would otherwise carry only for this.
+
+### The record class is read off the base query's root entity
+
+`getRecordClass()` answers the entity class the table's rows are instances of —
+`array_first($this->getBaseQuery()?->getRootEntities() ?? [])`, so a query with no
+`from()` and a table with no query both answer `null`. It is Filament's
+`getModel()` under the [record vocabulary](../renames.md#renames), and the read
+underneath is the one thing that changed: Eloquent's builder holds a model
+*instance* to take `::class` from, where Doctrine's holds the FROM clause's
+class-strings, plural because DQL admits several roots. The first is the table's;
+a second root is a join expressed as a cartesian FROM, and it describes the query
+rather than the record.
+
+The cache is a value plus a flag (`$cachedRecordClass`, `$hasCachedRecordClass`)
+rather than a `??=`, because `null` is a real answer and must not re-read on
+every call — Filament's shape, kept. The flag is what `query()` clears alongside
+the base-query cache. The null stays a null rather than becoming a throw: it
+means *this table is not on a Doctrine query*, which is a state every caller has
+to branch on anyway.
 
 ### `getRecords()` delegates to the host and fetches nothing
 

@@ -53,8 +53,12 @@ class that composes them and carry no row here, per
 `HasRecord`) into [`column.md`](column.md), and `Columns\Concerns\CanFormatState`
 into
 [`text-column.md`](text-column.md). Filament's `resources/views/index.blade.php`
-folds the same way, into `table.md`'s `$template` row. Everything Filament ships
-that the port has **not** reached keeps its own per-file row below, the way
+folds the same way, into `table.md`'s `$template` row.
+`Table\Concerns\HasQuery` is the one landed concern that keeps a row anyway: its
+`query()` arm is built and folded into [`table.md`](table.md), while the relation
+arm the same file carries is deferred whole, so the row is where that half stays
+findable. Everything Filament ships that the port has **not** reached keeps its
+own per-file row below, the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
 reached yet — so a deferred feature is findable here rather than only inside a
 detail file. [`support/component.md`](../support/component.md) is the shape each
@@ -203,7 +207,7 @@ pairs with, so it shares the first row below.
 | Table / HasHeader | [`Table/Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php) | todo | — |
 | Table / HasHeaderActions | [`Table/Concerns/HasHeaderActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php) | todo | — |
 | Table / HasHeadings | [`Table/Concerns/HasHeadings.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeadings.php) | todo | — |
-| Table / HasQuery | [`Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) — [table.md](table.md) |
+| [`Table / HasQuery`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | in progress | [table.md](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer) |
 | Table / HasQueryStringIdentifier | [`Table/Concerns/HasQueryStringIdentifier.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — |
 | Table / HasRecordAction | [`Table/Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | todo | — |
 | Table / HasRecordClasses | [`Table/Concerns/HasRecordClasses.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordClasses.php) | todo | — |

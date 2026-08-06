@@ -36,4 +36,6 @@ interface InteractsWithTable
     public function getTableSortDirection(): ?string;
 
     public function getTablePaginator(): ?Paginator;
+
+    public function getTableRecordsPerPage(): int|string|null;
 }

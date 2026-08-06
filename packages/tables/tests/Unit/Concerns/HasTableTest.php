@@ -169,6 +169,16 @@ it('lets a records closure win over a set query', function (): void {
         ->and($queries)->toBe(0);
 });
 
+it('answers a null filtered query when a records closure wins over a set query', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->records(fn (): array => [new DoctrineSong(1, 'Airbag', 10)]));
+
+    expect($host->getFilteredTableQuery())->toBeNull()
+        ->and($host->getFilteredSortedTableQuery())->toBeNull();
+});
+
 it('keys entities by their real identifier field through the metadata', function (): void {
     $entityManager = EntityManagerFactory::create();
     EntityManagerFactory::seed($entityManager, new Book('sy-001', 'One'), new Book('sy-002', 'Two'));
@@ -187,7 +197,7 @@ it('refuses a composite identifier loudly', function (): void {
     $host->getTableRecords();
 })->throws(LogicException::class, 'composite');
 
-it('refuses an entity with no identifier set', function (): void {
+it('refuses an entity whose identifier is blank', function (): void {
     $entityManager = EntityManagerFactory::create();
     $host = new TableHost(fn (Table $table): Table => $table
         ->query($entityManager->createQueryBuilder()->select('book')->from(Book::class, 'book')));
@@ -195,7 +205,7 @@ it('refuses an entity with no identifier set', function (): void {
     $host->getTableRecordKey(new Book('', 'Blank'));
 })->throws(LogicException::class, 'is not a printable value');
 
-it('refuses an entity whose identifier was never initialised', function (): void {
+it('refuses an entity with no identifier set', function (): void {
     $entityManager = EntityManagerFactory::create();
     $host = new TableHost(fn (Table $table): Table => $table
         ->query($entityManager->createQueryBuilder()->select('book')->from(Book::class, 'book')));

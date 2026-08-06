@@ -90,7 +90,8 @@ Rows never disappear — only their detail sections do.
 | `paginationMode()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
 | `paginatedWhileReordering()`, `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
 | [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
-| `defaultSort()`, `defaultSortDirection()`, `defaultKeySort()`, `defaultSortOptionLabel()` and their getters | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#the-default-sort-family-is-the-query-lanes) |
+| [`defaultSort()` / `getDefaultSort()` / `getDefaultSortDirection()` / `defaultKeySort()` / `hasDefaultKeySort()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [semantics](#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker) · [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) |
+| `defaultSortOptionLabel()` / `getDefaultSortOptionLabel()` | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | skipped | — | It labels the "unsorted" entry of the mobile sort **dropdown**, which the port does not render and nothing else reads; it belongs to that layout rather than to sorting, and lands only if the layout does |
 | [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
 | [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) · [diverges](#searchonblur-renders-onchange-because-ux-live-component-has-no-blur-event) |
 | `persistSearchInSession()`, `persistColumnSearchesInSession()`, `splitSearchTerms()`, `searchUsing()`, `isSearchableByColumn()`, `hasSearch()`, the two indicator getters, `applyExtraSearchConstraints()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
@@ -110,15 +111,16 @@ Rows never disappear — only their detail sections do.
 | Presentation — `striped()`, `stackedOnMobile()`, `content()`, `header()`, the headings, `recordClasses()` | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) and five siblings | todo | — | — |
 | `HasArguments`, `HasExtraAttributes`, `HasDefaultDataFormattingSettings` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
-The nineteen **done** rows are `make()`, the host binding, the data-source
+The twenty **done** rows are `make()`, the host binding, the data-source
 declaration, the query-lane declaration and the two members that read off it
 (`hasQuery()`, `getRecordClass()`), the host-delegating `getRecords()`,
 `getPaginator()` and `getRecordKey()`, the morph-stable row and cell keys built
 on the last of those, the empty-state heading and icon, the closure-injection
-wiring, the per-record visible-action map, the pagination and sort-resolution
-surfaces, the two search rows, and the partial that renders all of it; the column
-set, the empty-state description and the three remaining action rows are partly
-in, one step behind them.
+wiring, the per-record visible-action map, the pagination surface, the
+sort-resolution surface and the default-sort family beside it, the two search
+rows, and the partial that renders all of it; the column set, the empty-state
+description and the three remaining action rows are partly in, one step behind
+them.
 
 The PHP surface is covered by
 [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php) — `make()`
@@ -319,25 +321,6 @@ affordance and it belongs with the
 [loading affordances](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them)
 rather than with pagination configuration. Each returns with the feature it
 drives.
-
-### The default sort family is the query lane's
-
-`defaultSort()` — with `defaultSortDirection()`, `defaultKeySort()` and
-`defaultSortOptionLabel()` — declares how a table orders itself before the user
-has clicked anything. Every consumer of the four is
-[`applySortingToTableQuery()`](has-table.md#sorting-carries-no-query-application-and-no-default-sort):
-`getDefaultSort()` is even typed to take an Eloquent `Builder` and may *return*
-one, so the closure `defaultSort(fn (Builder $query) => …)` arm has no meaning
-without a query object to hand it. `defaultKeySort()` appends the model's
-qualified primary key as a tiebreaker, and `defaultSortOptionLabel()` labels the
-"unsorted" option of a sort **dropdown** that belongs to the unported mobile
-layout.
-
-On the closure lane the equivalent is already expressible and needs no API: a
-`records()` closure receiving `sortColumn` as null sorts however it likes. The
-family lands with the query lane, which is why the row is **blocked** on it and
-not merely todo — porting `defaultSort(string)` alone would ship a setter whose
-value nothing reads.
 
 ### The unported search surface splits three ways
 
@@ -642,6 +625,34 @@ own would put an empty footer under every empty simple table.
 The trap to avoid when extending either: `getRecords()` must not start returning
 the carrier "when there is one", and `getPaginator()` must not start building one
 when there is not. Both would put the same information behind two shapes.
+
+### The default sort is a secondary order, and its direction rules the tiebreaker
+
+`defaultSort()` does not mean *the order when nothing else applies*. It is
+appended **after** whatever the user clicked, so a table with both sorts by the
+user's column first and breaks its ties with the default — and only when the
+default names the very column the user is sorting by is it skipped, which is what
+keeps `defaultSort('title')` from ordering by `title` twice. Filament composes it
+exactly this way; the port keeps the composition, and
+[`applySortingToTableQuery()`](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)
+is where it is assembled.
+
+The direction is the second surprise. `defaultSort()` takes one and defaults it
+to `'asc'`, and that declared direction — not the direction the user clicked —
+is what the default sort **and** the `defaultKeySort()` tiebreaker are applied
+in: `getDefaultSortDirection() ?? getTableSortDirection()`, with anything but
+`'desc'` read as `'asc'`. So under a `title:desc` user sort, a table declaring
+`defaultSort('plays')` orders `title desc, plays asc, id asc`. The user's own
+column keeps the direction they clicked; nothing after it does. A table that
+never calls `defaultSort()` has a null default direction, so the tiebreaker
+follows the user instead.
+
+`getDefaultSort()` is declared to return `string|QueryBuilder|null` — wider than
+the `string|Closure|null` property behind it, because the closure arm may hand
+back a builder to sort **and replace** the query with, which is the one way a
+default sort can also filter. The declaration is the contract the host branches
+on, and it needs no evaluation seam: PHPStan reads the declared return, not the
+narrower type `evaluate()` infers from the property.
 
 ### A table is searchable when a column says so, and `searchable()` overrides in both directions
 

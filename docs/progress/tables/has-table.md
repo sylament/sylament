@@ -16,11 +16,12 @@ either name across the two codebases means checking which side it is on first.
 `HasTable` itself is fifteen methods wide: `table()`, `getTable()`,
 `makeTable()`, the three filtered-query seams `getFilteredTableQuery()`,
 `filterTableQuery()` and `getFilteredSortedTableQuery()`, `getTableRecords()`,
-the `resolveTableRecords()` half it caches, the `keyTableRecords()` half that
-re-keys and the `resolveQueryRecordKey()` half that reads an entity's identity,
-`getTablePaginator()`, `getTableRecordKey()`, `getTableRecord()`,
-`flushCachedTableRecords()` and `getTableHostId()`. It builds the table once per
-request, resolves its data source once per request — a `records()` closure, or
+the `resolveTableRecords()` half it caches and the `keyTableRecords()` half that
+re-keys, `getTablePaginator()`, `getTableRecordKey()` with its
+`resolveQueryRecordKey()` helper that reads an entity's identity off the mapping
+metadata, `getTableRecord()`, `flushCachedTableRecords()` and `getTableHostId()`.
+It builds the table once per request, resolves its data source once per
+request — a `records()` closure, or
 the Doctrine query those three seams assemble — and hands back an array **keyed
 by record key** — or a [`Paginator`](../support/pagination.md) carrying such an
 array — plus a by-key lookup that reads fresh whenever the render cache is cold,
@@ -95,7 +96,7 @@ instead.
 | `getAllTableRecordsCount()` | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | todo | — | Filament's paginated arm is answerable here (`getTablePaginator()?->getTotalRecordCount()`) but its other arm is `getFilteredTableQuery()->count()`, the query lane's; nothing reads the method yet, so it ships whole or not at all |
 | [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`, `getTableQueryForExport()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-filtered-query-seams-are-wired-before-the-layers-that-fill-them) |
 | [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `updatedTableRecordsPerPage()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-no-query-lane-and-no-session-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
-| [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-carries-no-query-application-and-no-default-sort) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
+| [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | Table state in the URL — `#[Url]`-style query-string binding for page, sort and search | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | todo | — | [diverges](#no-table-state-is-bound-to-the-url) |
 | Per-column search — `$tableColumnSearches`, `updatedTableColumnSearches()`, the reserved keys | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | todo | — | [detail](#search-is-the-global-term-only) |
@@ -136,8 +137,13 @@ entities under their identifiers, and a `modifyQueryUsing()` scope narrowing the
 same query to one — and so is the precedence between the lanes: a table declaring
 `records()` *and* `query()` resolves the closure, keys its entities by the `id`
 convention, and never evaluates the query at all, which a counter on the query
-closure proves. The metadata keying has four cases of its own, none of them
-reachable by that convention: a `Book`, whose identifier is `code` and which has
+closure proves. A second case reads the same both-configured table through the
+seams instead, where `getFilteredTableQuery()` and
+`getFilteredSortedTableQuery()` must both answer null — the assertion that keeps
+the [lane gate](#the-filtered-query-seams-are-wired-before-the-layers-that-fill-them)
+from drifting back to "is there a builder to be had". The metadata keying has
+four cases of its own, none of them reachable by that convention: a `Book`, whose
+identifier is `code` and which has
 no `id` anywhere, keying by `sy-001`; a `CompositePair` query refusing loudly; and
 the two identifier refusals, one blank and one never initialised. The fallback is
 pinned from the other side, an anonymous object carrying a public `$id` handed to
@@ -199,6 +205,28 @@ which is what proves the carrier is unwrapped for lookups rather than special-ca
 at each call site. A closure returning an `int` is asserted to name `Paginator` in
 its `LogicException`, so the widened return type cannot silently accept garbage.
 
+The **query half** of sorting is the one browsing concern with a file of its own,
+[`CanSortRecordsTest`](../../../packages/tables/tests/Unit/Concerns/CanSortRecordsTest.php)
+— the state half above stays with the rest of the host state, per
+[one row per file](../README.md#one-row-per-file-one-file-per-thing). Every case
+drives the public lane against three seeded songs whose title order, play order
+and identifier order all disagree, so an ordering that is silently ignored cannot
+pass: each asserts the composed `ORDER BY` off
+`getFilteredSortedTableQuery()->getDQL()` **and** the record order the database
+answered with. They are the user sort with its tiebreaker; the default sort
+alone, in the direction it declared; the default appended under a user sort;
+everything after the user's column taking the *declared* direction rather than
+the clicked one; the same-column default applied exactly once (a count of
+occurrences, since the failure being caught is a duplicate rather than an
+absence); the raw-path arm with no matching column; a default-sort closure
+ordering the query it was handed; another replacing it with a builder that also
+filters, asserted by the two records left; both tiebreaker suppressions, the
+qualified key and the joined `artist.id` one; `defaultKeySort(false)` leaving no
+key ordering at all; and a `query()`-authored `orderBy` staying in front of
+everything the table adds. One more pins the composite-identifier guard: a
+`CompositePair` query composes no `ORDER BY` at all rather than throwing on a
+single-identifier read.
+
 The `#[LiveProp]` and `#[LiveAction]` attributes carry no runtime behaviour a
 render test would catch, so they are pinned by reflection in
 [`HasTableLivePropsTest`](../../../packages/tables/tests/Unit/Concerns/HasTableLivePropsTest.php):
@@ -245,16 +273,27 @@ injection a caller passes to `evaluate()`, and a public container service
 ### The filtered-query seams are wired before the layers that fill them
 
 `getFilteredTableQuery()`, `filterTableQuery()` and `getFilteredSortedTableQuery()`
-ship with Filament's names, signatures and composition, and with none of the
-applications those signatures exist to hold. `getFilteredTableQuery()` reads
-[`Table::getQuery()`](table.md#every-read-clones-a-memoised-base-query) — a
-scoped clone, so what comes back is always a builder the caller may mutate —
-answers null when the table declares no query, and otherwise hands it to
+ship with Filament's names, signatures and composition, and — apart from sorting
+— with none of the applications those signatures exist to hold.
+`getFilteredTableQuery()` answers null unless the table is
+[on the query lane](table.md#the-query-lane-is-on-exactly-while-no-records-closure-is-set),
+then reads [`Table::getQuery()`](table.md#every-read-clones-a-memoised-base-query)
+— a scoped clone, so what comes back is always a builder the caller may mutate —
+answers null again when there is no query to read, and otherwise hands it to
 `filterTableQuery()`, which today returns it untouched.
-`getFilteredSortedTableQuery()` is `getFilteredTableQuery()` and nothing else. So
-a query-lane table resolves **every** record its query selects, in whatever order
-the database returns them, and outside their own composition
-`resolveTableRecords()` is their only caller.
+`getFilteredSortedTableQuery()` adds
+[the sorting](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)
+and nothing else. So a query-lane table resolves **every** record its query
+selects, in the order the sort composition asked for, and outside their own
+composition `resolveTableRecords()` is their only caller.
+
+The lane gate is the load-bearing half of that first null. `hasQuery()` is
+"no records closure is set", not "a query is declared", so a table configured
+with **both** answers null here — the same branch `resolveTableRecords()` takes,
+rather than "is there a builder to be had", which would hand a *records*-lane
+table a query nothing else in the request will use. Reading the seam is therefore
+a truthful answer to *is this table's data a query*, which the count and
+record-resolution arms built on it depend on.
 
 They land first, and public, on purpose: each layer still to come is a body
 inside one of them rather than a new call site, and anything that needs the lane
@@ -262,8 +301,7 @@ can ask for it before its own half exists. Filament's
 `filterTableQuery()` applies filters, the global and per-column search, and every
 visible column's relationship aggregates and eager loading; its
 `getFilteredSortedTableQuery()` adds grouping, then sorting. Of those, **search**
-arrives with `applySearchToTableQuery()` and **sorting** with
-`applySortingToTableQuery()`, both inside the Doctrine
+arrives with `applySearchToTableQuery()`, inside the Doctrine
 [`query()` lane](../roadmap.md#pulled-forward) this epic is; filters, grouping,
 aggregates and eager loading each wait on a layer that does not exist here at all
 and each has a **todo** row above. `getTableQueryForExport()` is not ported: it
@@ -292,15 +330,46 @@ has a **todo** row of its own. The two `@deprecated` host getters
 (`getTableRecordsPerPageSelectOptions()`, `isTablePaginationEnabled()`) follow the
 project-wide rule and are not ported at all.
 
-### Sorting carries no query application and no default sort
+### Sorting composes the user's order, the default, and the identifier tiebreaker
 
-`sortTable()` and the `column:direction` parse are ported whole. What is missing
-from Filament's trait is `applySortingToTableQuery()` — 60 lines of Eloquent
-`orderBy` assembly reading `getDefaultSort()`, the reorder column, and the
-qualified key name — which belongs to the [`query()` lane](../roadmap.md#pulled-forward)
-along with the `Table`-side [`defaultSort()` family](table.md#the-default-sort-family-is-the-query-lanes)
-it reads. On the closure lane the `sortColumn` / `sortDirection` injections are
-the whole application: the userland closure orders its own data.
+`applySortingToTableQuery()` is the query lane's half of the trait, and it
+composes three orderings onto whatever the declared query already carries — a
+user-authored `orderBy()` in `query()` stays in front of all of them. First the
+user's: `getTableSortColumn()` is resolved through
+[`getSortableVisibleColumn()`](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check)
+and the column applies **itself** through
+[`Column::applySort()`](column.md#sort-columns-apply-in-declared-order-where-filament-reverses-them),
+so a `sortable(query:)` closure or a multi-column `sortable([…])` list decides
+what its own name means. Then the
+[default sort](table.md#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker),
+skipped when it names the column the user is already sorting by, applied through
+the same column resolution when it names a declared sortable column and through
+[`ColumnPathResolver`](../../../packages/tables/src/Query/ColumnPathResolver.php)
+when it names a raw path instead — which is how `defaultSort('plays')` works on a
+table with no `plays` column. A default-sort **closure** is handed `query` and
+`direction`; ordering the builder it was given is the usual arm, and returning a
+builder replaces the query outright, filters and all.
+
+Last is `defaultKeySort()`, on by default: the root alias's identifier field,
+read from the mapping metadata rather than assumed to be `id`, appended in the
+same direction the default sort ran in. It is what makes a page boundary stable
+when the sorted column has ties. Two things suppress it. Any existing ordering
+whose path **is** the qualified key, and — Filament-faithfully — any ordering
+whose path merely *ends* in the same field name, so a query already ordered by
+`artist.id` gets no `song.id` appended; the heuristic is Filament's
+`afterLast('.')` comparison, kept because a query ordering by a joined key has
+almost always chosen its own tiebreaker. It also no-ops rather than throwing when
+the table's records carry a composite identifier, or when the builder names no
+root entity to read metadata from — a query that cannot be keyed by one column
+cannot be tiebroken by one either.
+
+What is still missing from Filament's method is its two early returns.
+`isTableReordering()` replaces every ordering with the reorder column, and
+belongs to reordering (a **todo** row above); `isGroupsOnly()` skips sorting
+entirely, and belongs to grouping (likewise). Each lands with the feature that
+gives it meaning. On the records lane none of this runs at all: the `sortColumn` /
+`sortDirection` injections are the whole application there, and the userland
+closure orders its own data.
 
 `updatedTableSort()` and `updatedTableSortDirection()` collapse into the body of
 `sortTable()` here, because both exist to run the two things it already does —

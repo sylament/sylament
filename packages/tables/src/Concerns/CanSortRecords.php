@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Concerns;
 
+use Doctrine\ORM\Query\Expr\OrderBy;
+use Doctrine\ORM\QueryBuilder;
+use Sylament\Tables\Columns\Column;
+use Sylament\Tables\Query\ColumnPathResolver;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -76,5 +80,90 @@ trait CanSortRecords
             'asc', 'desc' => $parts[1],
             default => null,
         };
+    }
+
+    protected function applySortingToTableQuery(QueryBuilder $query): QueryBuilder
+    {
+        $table = $this->getTable();
+        $tableSortColumn = $this->getTableSortColumn();
+
+        if ($tableSortColumn !== null) {
+            $column = $table->getSortableVisibleColumn($tableSortColumn);
+
+            if ($column instanceof Column) {
+                $column->applySort($query, $this->getTableSortDirection() === 'desc' ? 'desc' : 'asc');
+            }
+        }
+
+        $sortDirection = ($table->getDefaultSortDirection() ?? $this->getTableSortDirection()) === 'desc' ? 'desc' : 'asc';
+        $defaultSort = $table->getDefaultSort($query, $sortDirection);
+
+        if (is_string($defaultSort) && $defaultSort !== $tableSortColumn) {
+            $defaultSortColumn = $table->getSortableVisibleColumn($defaultSort);
+
+            if ($defaultSortColumn instanceof Column) {
+                $defaultSortColumn->applySort($query, $sortDirection);
+            } else {
+                $query->addOrderBy(ColumnPathResolver::resolve($query, $defaultSort), $sortDirection);
+            }
+        }
+
+        if ($defaultSort instanceof QueryBuilder) {
+            $query = $defaultSort;
+        }
+
+        if (!$table->hasDefaultKeySort()) {
+            return $query;
+        }
+
+        return $this->applyDefaultKeySort($query, $sortDirection);
+    }
+
+    private function applyDefaultKeySort(QueryBuilder $query, string $direction): QueryBuilder
+    {
+        $table = $this->getTable();
+        $entityManager = $table->getQueryEntityManager();
+        $recordClass = $table->getRecordClass();
+
+        if ($entityManager === null || $recordClass === null) {
+            return $query;
+        }
+
+        $metadata = $entityManager->getClassMetadata($recordClass);
+
+        if ($metadata->isIdentifierComposite) {
+            return $query;
+        }
+
+        $identifierField = $metadata->getSingleIdentifierFieldName();
+        $rootAlias = $query->getRootAliases()[0] ?? null;
+
+        if ($rootAlias === null) {
+            return $query;
+        }
+
+        $qualifiedKey = "{$rootAlias}.{$identifierField}";
+
+        /** @var list<OrderBy> $orderings */
+        $orderings = $query->getDQLPart('orderBy');
+
+        foreach ($orderings as $ordering) {
+            foreach ($ordering->getParts() as $part) {
+                $sortedPath = explode(' ', $part, 2)[0];
+
+                if ($sortedPath === $qualifiedKey) {
+                    return $query;
+                }
+
+                $dotPosition = mb_strrpos($sortedPath, '.');
+                $sortedField = $dotPosition === false ? $sortedPath : mb_substr($sortedPath, $dotPosition + 1);
+
+                if ($sortedField === $identifierField) {
+                    return $query;
+                }
+            }
+        }
+
+        return $query->addOrderBy($qualifiedKey, $direction);
     }
 }

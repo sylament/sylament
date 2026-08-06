@@ -60,7 +60,13 @@ trait HasTable
 
     public function getFilteredTableQuery(): ?QueryBuilder
     {
-        $query = $this->getTable()->getQuery();
+        $table = $this->getTable();
+
+        if (!$table->hasQuery()) {
+            return null;
+        }
+
+        $query = $table->getQuery();
 
         if (!$query instanceof QueryBuilder) {
             return null;
@@ -76,7 +82,13 @@ trait HasTable
 
     public function getFilteredSortedTableQuery(): ?QueryBuilder
     {
-        return $this->getFilteredTableQuery();
+        $query = $this->getFilteredTableQuery();
+
+        if (!$query instanceof QueryBuilder) {
+            return null;
+        }
+
+        return $this->applySortingToTableQuery($query);
     }
 
     /**
@@ -187,7 +199,7 @@ trait HasTable
             throw new LogicException(sprintf('Table [%s] must have [records()] or [query()].', static::class));
         }
 
-        /** @var list<object> $records */
+        /** @var list<object|array<string, mixed>> $records */
         $records = $query->getQuery()->getResult();
 
         return $this->keyTableRecords($records);

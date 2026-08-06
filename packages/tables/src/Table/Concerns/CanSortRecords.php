@@ -22,4 +22,14 @@ trait CanSortRecords
 
         return $column;
     }
+
+    public function getSortColumn(): ?string
+    {
+        return $this->getLiveComponent()->getTableSortColumn();
+    }
+
+    public function getSortDirection(): ?string
+    {
+        return $this->getLiveComponent()->getTableSortDirection();
+    }
 }

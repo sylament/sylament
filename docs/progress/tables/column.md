@@ -6,32 +6,40 @@
 named after the record path it reads, bound to a [`Table`](table.md), and handed
 one record at a time. It ports Filament's
 [`Filament\Tables\Columns\Column`](../../../vendor/filament/tables/src/Columns/Column.php)
-together with the concern traits it composes — seven today
+together with the concern traits it composes — eight today
 ([`BelongsToTable`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php),
 [`HasName`](../../../packages/tables/src/Columns/Concerns/HasName.php),
 [`HasLabel`](../../../packages/tables/src/Columns/Concerns/HasLabel.php),
 [`HasRecord`](../../../packages/tables/src/Columns/Concerns/HasRecord.php),
 [`HasCellState`](../../../packages/tables/src/Columns/Concerns/HasCellState.php),
 [`CanBeSortable`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php),
-[`CanBeSearchable`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php)),
+[`CanBeSearchable`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php),
+[`InteractsWithTableQuery`](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php)),
 thirty in Filament — twenty from its `Columns\Concerns\` and ten from
 `Support\Concerns\`, `HasCellState` among the latter
-([diverges](#hascellstate-is-relocated-into-the-column-tier)). The five ported
+([diverges](#hascellstate-is-relocated-into-the-column-tier)). Seven of the eight
 are folded into the surface table below rather than earning rows upstairs, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing); the
-`Columns\Concerns\` traits still unported keep a per-file row in the package
-[README](README.md#features), bar `CanFormatState`, which folds into
+[one row per file](../README.md#one-row-per-file-one-file-per-thing);
+`InteractsWithTableQuery` keeps a per-file row in the package
+[README](README.md#features) because the aggregate and eager-loading half of
+Filament's file is still out, and the `Columns\Concerns\` traits not ported at
+all keep a row there too, bar `CanFormatState`, which folds into
 [`text-column.md`](text-column.md) because [`TextColumn`](text-column.md) is
 what composes it. The rows below group those files by feature, which is what the
 per-file rows upstairs point at.
 
-The column is the read side of the record. It resolves nothing itself: the host
+The column is the read side of the record, and on the Doctrine lane it is also
+the piece that knows how to ask for it. It resolves nothing itself: the host
 fetches records ([`has-table.md`](has-table.md)), the table keys the columns
 ([`table.md`](table.md)), and a column asked for its state reads one path off one
 record through schemas'
 [`PropertyAccessor`](../schemas/property-accessor.md) — the same accessor the
 form fields write through, reached by composing schemas'
 [`CanAccessProperties`](../../../packages/schemas/src/Components/Concerns/CanAccessProperties.php).
+Given the table's [`QueryBuilder`](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)
+it also applies its own ordering and contributes its own `LIKE` arm, through
+`applySort()` and `applySearchConstraint()` — the column declares what sorting
+and searching *by it* mean, and the table decides when to ask.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -65,7 +73,7 @@ sections do.
 | [`record()` / `getRecord()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | in progress | — | [diverges](#the-record-union-is-plain-object-where-filaments-is-model) · [detail](#getrecord-has-no-layout-fallback) |
 | [`table()` / `getTable()` / `getLiveComponent()`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php) | [`Concerns\BelongsToTable`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToTable.php) | in progress | — | [detail](#an-unbound-column-fails-without-filaments-message) |
 | [`state()` / `getStateUsing()` / `getState()` — cached per record key](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#hascellstate-is-relocated-into-the-column-tier) · [diverges](#the-state-cache-keys-off-the-bound-record-key) · [semantics](#state-is-getstateusing-under-another-name) |
-| [`getStateFromRecord()` — object graph or array, by dotted path](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`HasCellState::getStateFromRecord()`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | in progress | — | [diverges](#the-object-read-is-lenient-where-the-accessor-is-strict) · [detail](#relationship-traversal-is-the-doctrine-query-lanes) |
+| [`getStateFromRecord()` — object graph or array, by dotted path](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`HasCellState::getStateFromRecord()`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | in progress | — | [diverges](#the-object-read-is-lenient-where-the-accessor-is-strict) · [detail](#relationship-traversal-is-the-doctrine-relation-layers) |
 | [`$evaluationIdentifier = 'column'` + the `$record` / `$state` / `$table` / `$liveComponent` name injections](../../../packages/tables/src/Columns/Column.php) | [`Column::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Columns/Column.php) | in progress | — | [diverges](#the-by-type-record-injection-is-not-registered) · [detail](#rowloop-waits-on-the-table-template) |
 | `translateLabel()` | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php) | blocked | i18n ([table.md](table.md#the-empty-state-heading-hardcodes-no-records)) | — |
 | `default()` / `getDefaultState()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | — |
@@ -74,12 +82,13 @@ sections do.
 | [`clearCachedState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-state-cache-keys-off-the-bound-record-key) |
 | [`recordKey()` / `getRecordKey()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | done | — | [diverges](#the-record-key-setter-admits-an-int) |
 | `getRowLoop()` — the `$rowLoop` injection | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | blocked | the `Table` template | [detail](#rowloop-waits-on-the-table-template) |
-| Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#relationship-traversal-is-the-doctrine-query-lanes) |
+| Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches, `applyRelationshipAggregates()`, `applyEagerLoading()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php), [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | blocked | the Doctrine relation layer ([table.md](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)) | [detail](#relationship-traversal-is-the-doctrine-relation-layers) |
 | Visibility — `hidden()`, `visible()`, `hiddenFrom()`, `toggleable()` | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeHiddenResponsively`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — | — |
-| [`sortable()` / `isSortable()`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php) | [`Concerns\CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php) | done | — | [detail](#the-sort-and-search-column-lists-are-stored-and-read-by-nothing) |
-| [`searchable()` / `isSearchable()` / `isGloballySearchable()` / `isIndividuallySearchable()`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php) | [`Concerns\CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | done | — | [diverges](#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column) · [detail](#the-sort-and-search-column-lists-are-stored-and-read-by-nothing) |
-| `getSortColumns()` / `getSearchColumns()` and their `getDefault*` halves, `forceSearchCaseInsensitive()`, `splitIndividualSearchTerms()` | [`CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php), [`CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | [detail](#the-sort-and-search-column-lists-are-stored-and-read-by-nothing) |
-| `applySort()`, `applySearchConstraint()` — the column's query application | [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) | — |
+| [`sortable()` / `isSortable()`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php) | [`Concerns\CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php) | done | — | — |
+| [`searchable()` / `isSearchable()` / `isGloballySearchable()` / `isIndividuallySearchable()`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php) | [`Concerns\CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | done | — | [diverges](#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column) |
+| [`getSortColumns()` / `getSearchColumns()`, `forceSearchCaseInsensitive()` / `isSearchForcedCaseInsensitive()`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php) | [`CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php), [`CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | done | — | [diverges](#the-list-getters-take-no-record-and-there-is-no-getdefaultcolumns-pair) · [semantics](#an-undeclared-sortable-has-no-sort-columns-where-an-undeclared-searchable-has-its-name) |
+| `splitIndividualSearchTerms()` / `shouldSplitIndividualSearchTerms()` | [`CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | todo | — | — |
+| [`applySort()`, `applySearchConstraint()` — the column's query application](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#sort-columns-apply-in-declared-order-where-filament-reverses-them) · [diverges](#a-search-closure-returns-its-expression-where-filaments-mutates-an-orwhere-group) |
 | Actions and links — `action()`, `url()`, `openUrlInNewTab()`, `disabledClick()` | [`CanCallAction`](../../../vendor/filament/tables/src/Columns/Concerns/CanCallAction.php), [`CanOpenUrl`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | todo | — | — |
 | Editing in place — `updateStateUsing()`, `rules()`, `disabled()` | [`CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php), [`CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php), [`CanBeDisabled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | todo | — | — |
 | Cell presentation — `alignment()`, `verticalAlignment()`, `width()`, `grow()`, `inline()`, `tooltip()`, the extra-attribute bags | [`HasAlignment`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) and seven siblings, [`HasTooltip`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — | — |
@@ -88,7 +97,7 @@ sections do.
 | The rest of the catalog — `BadgeColumn`, `BooleanColumn`, `CheckboxColumn`, `ColorColumn`, `IconColumn`, `ImageColumn`, `SelectColumn`, `TagsColumn`, `TextInputColumn`, `ToggleColumn`, `ViewColumn` | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | todo | — | — |
 | _rest not audited yet_ | | | | |
 
-The thirteen **done**-or-partial rows are covered by
+Thirteen of the fifteen **done**-or-partial rows are covered by
 [`ColumnTest`](../../../packages/tables/tests/Unit/Columns/ColumnTest.php) — the
 blank-name refusal, the three label derivations
 (`title` → *Title*, `releasedAt` → *Released at*, `artist.name` → *Artist*), an
@@ -116,41 +125,27 @@ searchable — which is the
 [vendor defect](#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column)
 this port fixes.
 
+The remaining two rows — the list getters and the query application — are
+[`InteractsWithTableQueryTest`](../../../packages/tables/tests/Unit/Columns/Concerns/InteractsWithTableQueryTest.php)'s,
+asserted against DQL and bound parameters rather than fetched rows: SQLite
+matches `LIKE` case-insensitively for ASCII, so an execution-level assertion
+would pass whether or not the `LOWER()` wrapping the case-insensitive arm exists.
+It pins the default sort column ordering in the direction it was handed, a
+declared list ordering [front to back](#sort-columns-apply-in-declared-order-where-filament-reverses-them),
+a `sortable(query:)` closure receiving the builder and the direction and being
+the only thing applied, the default search column composing into the caller's
+`Orx` with its `%term%` parameter bound (and a two-name list composing both arms
+under distinct parameter names), a `searchable(query:)` closure's returned
+expression *and* returned DQL string both landing in that `Orx` while a closure
+returning nothing leaves it empty, `forceSearchCaseInsensitive()` lowering both
+sides of one column's comparison, a dotted name resolving against a joined alias
+and refusing an unjoined one, and both getters' declared-and-defaulted arms.
+
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
-
-### The sort and search column lists are stored, and read by nothing
-
-`sortable(['title', 'subtitle'])` and `searchable(['title', 'author.name'])` both
-store their list, and `sortable(query:)` / `searchable(query:)` both store their
-closure — exactly as Filament does — and no shipped code reads any of the four.
-That is Filament's situation too on the lane this port has: `$sortColumns` is
-read only by `getSortColumns(Model $record)`, whose only caller is
-`InteractsWithTableQuery::applySort()`, and the search pair is the same shape.
-Both are Eloquent-typed down to the parameter (`Model $record`) and neither can
-be ported before the Doctrine [`query()` lane](../roadmap.md#pulled-forward) gives
-them a query to apply to.
-
-They are stored rather than rejected because the **declaration** is the API a
-migrating user writes, and it is meaningful today: `sortable(['first_name',
-'last_name'])` still makes the column sortable, which is the half the closure lane
-honours — the userland `records()` closure receives the column *name* through
-[`sortColumn`](has-table.md#the-records-injections-stop-at-six-of-filaments-eight)
-and decides for itself what ordering by it means. Refusing the array arm would
-break that call site for no gain; reading it here would mean inventing a
-Doctrine-side meaning for it ahead of the lane that owns one.
-
-The two `getDefault*Columns()` halves are not stored at all, having nothing to
-store: each returns `[$this->getFullAttributeName($record)]`, a relationship-aware
-name resolution that is
-[the query lane's whole subject](#relationship-traversal-is-the-doctrine-query-lanes).
-`forceSearchCaseInsensitive()` and `splitIndividualSearchTerms()` are likewise
-out — both are read by the search-expression builders, and a stored flag no
-builder consults would be worse than an absent one, since it would read as
-configurable behaviour.
 
 ### An unbound column fails without Filament's message
 
@@ -179,24 +174,38 @@ record or null. It lands with `BelongsToLayout` — in one piece with the
 `getTable()` chain [waiting on the same tier](#an-unbound-column-fails-without-filaments-message),
 rather than as a lone `?->` bolted on ahead of the thing it falls back to.
 
-### Relationship traversal is the Doctrine `query()` lane's
+### Relationship traversal is the Doctrine relation layer's
 
 Two thirds of Filament's `HasCellState` is Eloquent relationship machinery:
 `hasRelationship()`, `getRelationship()`, `getRelationshipResults()`,
 `hasMultipleRelationship()`, `getAttributeName()`, `getFullAttributeName()`,
 `getInverseRelationshipName()`, `hasNestedMorphToRelationship()` and their seven
-memo properties. They exist to answer *which prefix of a dotted name is a
-relationship hop and which is an attribute*, so a to-many hop can be flattened
-into a list.
+memo properties, and its `InteractsWithTableQuery` adds two consumers —
+`applyRelationshipAggregates()`, which reads six aggregate declarations onto
+`withAvg`/`withCount`/`withExists`/`withMax`/`withMin`/`withSum`, and
+`applyEagerLoading()`, which is `$query->with([$relationshipName])`. They exist
+to answer *which prefix of a dotted name is a relationship hop and which is an
+attribute*, so a to-many hop can be flattened into a list, counted, or preloaded.
 
 None of it ports as written. `artist.name` here is a **property path** walked by
 [`PropertyAccessor::getFromRecord()`](../schemas/property-accessor.md), which
 hops objects and arrays without asking whether a segment is a relation — so the
 to-one case, which is what the minimal vertical needs, already works and is
-tested. The to-many case (a column over a Doctrine collection yielding a list of
-values) needs the collection semantics that arrive with the Doctrine `query()`
-lane ([pulled forward · 12](../roadmap.md#pulled-forward)); the same lane is what
-makes `searchable()` and `sortable()` expressible at all.
+tested. On the query side the same name is resolved against the **builder** by
+[`ColumnPathResolver`](../../../packages/tables/src/Query/ColumnPathResolver.php),
+which asks only whether the head is an alias the query already declares: a table
+sorting or searching across a relation joins and aliases it in `query()`, and an
+unjoined head is refused by name rather than guessed at.
+
+What is left needs a layer that does not exist. Aggregates have no Doctrine
+referent as *builder methods* — `withCount()` has no `QueryBuilder` counterpart,
+only a correlated subquery or a `GROUP BY` the caller writes — and eager loading
+is a fetch-mode decision (`fetch: 'EAGER'` on the mapping, or a `leftJoin` plus
+`addSelect`) rather than a per-column call. The to-many read (a column over a
+Doctrine collection yielding a list of values) needs the same collection
+semantics. All three wait on the
+[Doctrine relation layer](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer),
+which is where a relation-scoped table gets defined at all.
 
 ### `$rowLoop` waits on the table template
 
@@ -260,6 +269,27 @@ The consequence to keep in mind is that they **overwrite each other** — the la
 call wins, and a column with `getStateUsing()` set never touches its record. Once
 either is set, `getStateFromRecord()` is not called at all, so the column name
 stops being a read path and remains only a key and a label source.
+
+### An undeclared `sortable()` has no sort columns, where an undeclared `searchable()` has its name
+
+`getSortColumns()` and `getSearchColumns()` read the same way —
+`$this->sortColumns ?? [$this->getName()]` — but their properties start
+differently: `$sortColumns` is `[]` and `$searchColumns` is `null`. So a column
+that never called `sortable()` answers `[]` and one that never called
+`searchable()` answers `[$this->getName()]`, and only the second falls through to
+the name. That asymmetry is Filament's, property initialiser for property
+initialiser, and it is invisible in the getter that looks symmetric.
+
+It is also harmless where a table reaches these getters, because it never reaches
+them on a column that declared nothing: a sort resolves its column through
+[`Table::getSortableVisibleColumn()`](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check),
+which returns nothing for a column that is not sortable, and a search reaches
+only the columns that answer `isGloballySearchable()`. Where it shows is a column
+asked directly — a hand-built `Column` in a test, or a caller reaching past the
+table — where `applySort()` adds no `ORDER BY` at all rather than ordering by the
+column's own name. Both arms are pinned in
+[`InteractsWithTableQueryTest`](../../../packages/tables/tests/Unit/Columns/Concerns/InteractsWithTableQueryTest.php)
+so the initialisers cannot be "tidied" into agreement without a failing test.
 
 ## Divergences
 
@@ -427,3 +457,83 @@ above. Reaching the `is_a()` arm takes a *differently* named parameter —
 [`ColumnTest`](../../../packages/tables/tests/Unit/Columns/ColumnTest.php)
 alongside the three name arms. A `Table`-hinted parameter under any other name
 resolves nowhere and throws, since a column is not a table.
+
+### Sort columns apply in declared order, where Filament reverses them
+
+`applySort()` walks `getSortColumns()` front to back, appending one
+`addOrderBy()` per name, so `sortable(['plays', 'title'])` orders by *plays* and
+breaks ties on *title*. Filament walks the same list through `array_reverse()`
+(`foreach (array_reverse($this->getSortColumns($query->getModel())) as $sortColumn)`)
+onto Eloquent's `orderBy()`, which **appends** to `$this->orders` exactly as
+`addOrderBy()` appends to the DQL `orderBy` part. Reversing the input to an
+appending sink inverts the priority: the same declaration sorts by *title* first
+over there, and `sortable(['first_name', 'last_name'])` — the natural way to
+write *sort people by name* — sorts by last name.
+
+The reversal is the vendor's behaviour verified in its own source rather than an
+inference from ours, and nothing around it reads as intent: no comment, no
+compensating reversal at the call site, and the sibling `Filters` and
+`Summarizers` copies of `InteractsWithTableQuery` have no such loop to compare
+against. A user's list is written in the order they want it applied, so we apply
+it as written. The cost is the one that matters and it is small and visible: a
+migrating table with a multi-column `sortable()` gets its tie-break priority the
+other way round on the first click.
+
+### A search closure returns its expression, where Filament's mutates an `orWhere` group
+
+Filament hands `searchable(query:)` a **nested builder**: it calls
+`$query->where(...)` for the first searchable column and `$query->orWhere(...)`
+for the rest, passing a closure that runs `$this->evaluate($this->searchQuery, …)`
+inside. Eloquent opens a parenthesised sub-clause for that callback, so the user's
+closure adds `where`s to a group that is already `OR`-ed into the outer query, and
+its return value is discarded.
+
+Doctrine has no equivalent shape. `QueryBuilder::orWhere()` takes expressions
+rather than a callback, and no object exists that *is* one arm of a predicate
+being assembled. So the port inverts the direction: the table assembles one
+`Doctrine\ORM\Query\Expr\Orx`, hands it to `applySearchConstraint()` alongside the
+builder, and the closure's **return** is what joins it — an `Expr` node or a raw
+DQL string, the `string|Stringable` pair `Orx::add()` declares (Doctrine narrows
+further at runtime, accepting only its own `Comparison`, `Func`, `Andx` and `Orx`
+nodes, and refusing anything else outright). A closure that returns nothing is
+not an error: it is also handed the real `QueryBuilder`, so `andWhere()`-ing a
+constraint that must apply *outside* the `OR` group is the one thing Filament's
+nested-group shape cannot express and this one can.
+
+The three injections are Filament's, unchanged — `$query`, `$search` and its
+`$searchQuery` alias — and only the first differs in what it holds: the table's
+builder, not a nested group. `$isFirst`, the by-reference flag Filament threads
+through the column loop to choose `where` versus `orWhere`, has nothing to track
+here and is gone: an `Orx` with one part renders as that part, so the first
+column is not a special case.
+
+The return is read through the `protected evaluateSearchQuery()` seam rather than
+inline because
+[`evaluate()`](../../../packages/support/src/Concerns/EvaluatesClosures.php) is
+`@template T @param T|Closure`: handed a value typed *exactly* `Closure`, PHPStan
+binds `T` to `Closure` and calls the result the callback rather than what it
+returned, so every test of the value reads as impossible at level max. A
+`mixed`-returning method takes it out of the generic. The shorter fix — a
+`@var mixed` on the assignment — does not survive `composer format`, whose
+`no_superfluous_phpdoc_tags` deletes it.
+
+### The list getters take no record, and there is no `getDefault*Columns()` pair
+
+`getSortColumns()` and `getSearchColumns()` are `(): array<string>` where
+Filament's are `(Model $record): array<string>`. The parameter exists there only
+to feed `getDefaultSortColumns($record)` / `getDefaultSearchColumns($record)`,
+each of which returns `[$this->getFullAttributeName($record)]` — the
+relationship-aware resolution that is
+[the relation layer's subject](#relationship-traversal-is-the-doctrine-relation-layers).
+
+Neither half has a Doctrine referent yet. A column name is a property path on the
+read side, and on the query side it is resolved against the **builder** by
+[`ColumnPathResolver`](../../../packages/tables/src/Query/ColumnPathResolver.php),
+which needs the query and never the record. So the default collapses to
+`[$this->getName()]`, written into the `??` rather than split into a
+`getDefault*Columns()` method with one caller and nothing left to derive. The
+pair comes back if the relation layer gives it something to compute; the getters
+gain a parameter only if that layer needs one, and it would be the query rather
+than a record — which is the port-wide
+[model → record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record)
+landing on a signature that had no record to name in the first place.

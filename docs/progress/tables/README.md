@@ -30,8 +30,14 @@ false as **todo**. These tables carry the same four columns as every package
 README, so a **blocked** row names its prerequisite at the head of _Detail_,
 ahead of the detail-file link that carries the full write-up: the _Doctrine
 `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward))_, _table
-bulk actions_ and _the `Table` template_ are the three this package waits on
-today. _Table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward))_ was
+bulk actions_ and _the `Table` template_ are the three the rows here wait on
+today, with _the Doctrine relation layer_ a fourth that only the detail files
+name so far — it is what the
+[relation arm of the query lane](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)
+and
+[relationship traversal](column.md#relationship-traversal-is-the-doctrine-relation-layers)
+are held by.
+_Table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward))_ was
 a fourth until that epic landed: its rows are now **done**, **in progress** or —
 where what is left is Eloquent query assembly — moved onto the query lane, and
 the two that were waiting on nothing at all (deferred loading, polling) are plain
@@ -54,10 +60,14 @@ class that composes them and carry no row here, per
 into
 [`text-column.md`](text-column.md). Filament's `resources/views/index.blade.php`
 folds the same way, into `table.md`'s `$template` row.
-`Table\Concerns\HasQuery` is the one landed concern that keeps a row anyway: its
-`query()` arm is built and folded into [`table.md`](table.md), while the relation
-arm the same file carries is deferred whole, so the row is where that half stays
-findable. Everything Filament ships that the port has **not** reached keeps its
+`Table\Concerns\HasQuery` and `Columns\Concerns\InteractsWithTableQuery` are the
+two landed concerns that keep a row anyway, for the same reason: `HasQuery`'s
+`query()` arm is built and folded into [`table.md`](table.md) while its relation
+arm is deferred whole, and `InteractsWithTableQuery`'s `applySort()` /
+`applySearchConstraint()` are built and folded into [`column.md`](column.md)
+while its relationship aggregates and eager loading are deferred with the same
+layer — so each row is where the deferred half stays findable. Everything
+Filament ships that the port has **not** reached keeps its
 own per-file row below, the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
 reached yet — so a deferred feature is findable here rather than only inside a
@@ -235,7 +245,7 @@ pairs with, so it shares the first row below.
 | Column / HasRowLoopObject | [`Columns/Concerns/HasRowLoopObject.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | blocked | the `Table` template — [column.md](column.md#rowloop-waits-on-the-table-template) |
 | Column / HasSpace | [`Columns/Concerns/HasSpace.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasSpace.php) | todo | — |
 | Column / HasTooltip | [`Columns/Concerns/HasTooltip.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — |
-| Column / InteractsWithTableQuery | [`Columns/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | blocked | Doctrine `query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward)) — [column.md](column.md) |
+| [`Column / InteractsWithTableQuery`](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`Columns/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | in progress | `applySort()` and `applySearchConstraint()` are in; the aggregate and eager-loading arms wait on the Doctrine relation layer — [column.md](column.md#relationship-traversal-is-the-doctrine-relation-layers) |
 | Summarizer / BelongsToColumn | [`Columns/Summarizers/Concerns/BelongsToColumn.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/BelongsToColumn.php) | todo | — |
 | Summarizer / CanBeHidden | [`Columns/Summarizers/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanBeHidden.php) | todo | — |
 | Summarizer / CanFormatState | [`Columns/Summarizers/Concerns/CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanFormatState.php) | todo | — |

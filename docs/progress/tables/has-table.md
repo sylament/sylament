@@ -607,11 +607,11 @@ alias for `components()`. Permanent.
 
 Filament's `getFilteredTableQuery()` reads `getTable()->getQuery()` and answers
 null only when there is no builder to read — the lane question is left to the
-callers, and `getTableRecords()` is the one that asks it, branching on
-`hasQuery()` before the seam is ever reached. So a Filament table declaring
-**both** a `records()` closure and a `query()` resolves the closure for its rows
-and still hands the builder back to anything calling the seam directly. Sylament
-asks the lane question in the seam itself: no `hasQuery()`,
+callers, and only some of them ask it, branching on `hasQuery()` before the
+seam is ever reached. So a Filament table declaring **both** a `records()`
+closure and a `query()` resolves the closure for its rows and still hands the
+builder back to anything calling the seam directly. Sylament asks the lane
+question in the seam itself: no `hasQuery()`,
 [which is "no records closure is set"](table.md#the-query-lane-is-on-exactly-while-no-records-closure-is-set),
 no query — and `getFilteredSortedTableQuery()` answers null with it.
 
@@ -623,8 +623,11 @@ counts what comes back; `getAllSelectableTableRecordKeys()` calls it a line
 both in one body, a bare `->get()` on its selectable branch and a null-safe
 `?->count() ?? $this->cachedTableRecords->count()` at its tail;
 `getFilteredSortedTableQuery()` and `getAllTableSummaryQuery()` pass the null
-on. Only `getTableRecords()` has settled the lane before the seam is reached,
-and it reaches it indirectly, through the sorted one.
+on. One of the six settles the lane first:
+`getGroupedSelectableTableRecordKeys()` tests `hasQuery()` at its top and
+returns out of the records-lane branch entirely, so its seam call below is
+reached on the query lane only. `getTableRecords()` settles it the same way and
+reaches the seam indirectly, through the sorted one.
 (`getTableQueryForExport()` is not among the seven — it bypasses the seam
 entirely, re-reading `getTable()->getQuery()` and re-applying filters, search
 and sorting itself.) Asking in the seam answers the question once, where the

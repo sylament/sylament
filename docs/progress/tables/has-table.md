@@ -52,7 +52,10 @@ chrome binds to, `?string $tableRecordsPerPage` and `?string $tableSearch`.
 Writability is the security line and it is
 [deliberate on each prop](#per-page-is-validated-in-the-getter-on-every-read):
 page and sort move only through a `#[LiveAction]`, so they stay checksummed,
-while the two a `data-model` writes are re-validated on every read. A host can
+while the two a `data-model` writes are re-validated on every read — and each of
+those two dehydrates
+[in the vocabulary of the element bound to it](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary)
+rather than through its validating getter. A host can
 still mix the trait in beside [`HasSchemas`](../schemas/has-schemas.md) and
 [`HasActions`](../actions/has-actions.md) — the property names are disjoint,
 which is what keeps them composable.
@@ -99,9 +102,9 @@ instead.
 | [`getAllTableRecordsCount(): int`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getAllTableRecordsCount()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#the-all-records-count-answers-four-ways-where-filaments-answers-two) |
 | [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [semantics](#filtertablequery-applies-the-search-not-filters) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
 | `getTableQueryForExport()` | [`Concerns\HasRecords::getTableQueryForExport()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | the export surface | It bypasses the seams above, re-reading `getTable()->getQuery()` and re-applying filters, search and sorting itself, to assemble a query for Filament's export action — a surface with no counterpart here and on no milestone, the same one [`ExportColumn`](column.md#hascellstate-is-relocated-into-the-column-tier) waits on. It lands with that action or not at all |
-| [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-no-query-lane-and-no-session-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
+| [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `dehydrateTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-no-query-lane-and-no-session-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
-| [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#no-table-state-is-persisted-in-the-session) · [table.md](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
+| [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `dehydrateTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#no-table-state-is-persisted-in-the-session) · [table.md](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
 | Table state in the URL — `#[Url]`-style query-string binding for page, sort and search | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | todo | — | [diverges](#no-table-state-is-bound-to-the-url) |
 | Per-column search — `$tableColumnSearches`, `updatedTableColumnSearches()`, the reserved keys | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | todo | — | [detail](#search-is-the-global-term-only) |
 | Deferred loading — `$isTableLoaded`, `loadTable()`, `isTableLoaded()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | todo | — | [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
@@ -215,6 +218,25 @@ one. Both fail if the
 [getter/property pairing](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id)
 is broken, which nothing else would catch.
 
+The same file carries the pin for the *other* face of that pairing — the
+[wire vocabulary](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary)
+of the two writable props. It renders
+[`PaginatedSongsTable`](../../../packages/tables/tests/Fixtures/Twig/Components/PaginatedSongsTable.php),
+a live host that paginates and searches at once, and asserts the props blob
+against the two elements bound to it: `tableRecordsPerPage` is the **string**
+`'10'` and equals the `value` of the `<option>` the footer marked selected, and
+`tableSearch` is `''` against a search `<input>` that renders no `value`
+attribute at all. A new fixture rather than a widened old one — the only other
+live host, `RecordActionsTable`, is unpaginated and belongs to the action tests,
+and the paginated `BrowsableSongsTable` is a plain Twig component that emits no
+props blob. **A functional test could not have caught this**: UX's
+`TestLiveComponent::call()` posts `args` and nothing else, and the only method
+that sends an `updated` payload at all is `set()`, which sends the one prop the
+test names. The client echoing a dirty model *of its own accord* — the round trip
+the mismatch actually breaks — therefore has no expression in a PHP test, in this
+suite or in the demo's. Asserting the dehydrated blob against the rendered
+element is the whole regression pin.
+
 The three browsing concerns are covered in the same Unit
 [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php).
 Sorting is driven through `sortTable()` rather than by writing `$tableSort`: the
@@ -231,7 +253,22 @@ option, `'all'`, an out-of-range number, and outright garbage, the last two
 falling back to the table default rather than to the forged value. Search covers
 the trim (with an NBSP), the blank-as-null read, and the all-whitespace case.
 One case ties the three together: page 4 is set, then each of sort, per-page and
-search is changed in turn, and the page must be back at `1` every time.
+search is changed in turn, and the page must be back at `1` every time — each
+change a *real* one, since an echoed value is now
+[a deliberate no-op](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary).
+
+The [wire bridges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary)
+are pinned in the same file, called the way the dehydration pass calls them —
+with the getter's value, since that is what `PropertyAccessor` hands over.
+`dehydrateTableRecordsPerPage()` answers the **string** `'10'` for the seeded
+default, `'all'` for the selected all-option, and `null` for a table whose page
+options are empty; `dehydrateTableSearch()` answers `''` where its getter answers
+null, and the untrimmed `'  ok computer '` where its getter answers
+`'ok computer'` — the two assertions that fail the moment either bridge starts
+mirroring its getter again. Both `onUpdated` guards have a case apiece, each
+carrying both arms against a fetch counter: an echoed value leaves the page at 4
+**and** the record cache warm, and the next real change resets to page 1 and
+flushes it.
 
 Two cases pin the halves that only exist together. The **injection** case
 declares a `records()` closure taking all six names, mutates sort, page and
@@ -320,9 +357,16 @@ paginated by default, the sorting and search suites reach their records through
 The `#[LiveProp]` and `#[LiveAction]` attributes carry no runtime behaviour a
 render test would catch, so they are pinned by reflection in
 [`HasTableLivePropsTest`](../../../packages/tables/tests/Unit/Concerns/HasTableLivePropsTest.php):
-each of the four state props by writability *and* `onUpdated` hook name, and each
-live action by its `#[LiveArg]`-marked parameter names. Writability is a security
-property — a prop that silently became writable is exactly the failure
+each of the four state props by writability, `onUpdated` hook name *and*
+`dehydrateWith` bridge name, and each live action by its `#[LiveArg]`-marked
+parameter names. Both names each prop carries are also asserted to **exist** as
+methods, because the attribute holds them as strings: renaming the method without
+the attribute leaves it pointing at nothing, and UX raises that only at runtime.
+For the bridge that is a `LogicException` from `dehydrateValue()`, which the
+Integration render above would catch too; for the hook it is
+`ensureOnUpdatedMethodExists()`, which nothing here reaches, since no test sends
+an `updated` payload. Writability is a
+security property — a prop that silently became writable is exactly the failure
 [the validating getter](#per-page-is-validated-in-the-getter-on-every-read)
 exists to survive, and this is the test that would notice.
 
@@ -718,6 +762,13 @@ loudly, which is why the Integration
 asserts the dehydrated `tableHostId` against the id actually stamped on the rows
 rather than trusting the reasoning.
 
+The same preference has a **second face**, and it is a liability rather than a
+convenience: on a prop the client also writes, the getter's answer is the wrong
+thing to put on the wire, which is what
+[the two writable props bridge around](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary).
+One mechanism, opposite signs — worth reading both notes before touching either
+getter.
+
 Two smaller consequences. The property is `public` because a `LiveProp` must be,
 so it is part of the host's public surface and is the one thing this trait adds
 to it — a host mixing in `HasSchemas` and `HasActions` alongside is unaffected
@@ -854,20 +905,84 @@ irrelevant instead of trying to catch it: the value reaching a `records()`
 closure is always one the table declared, whatever the payload said. That
 matters because the closure will use it as a `LIMIT`.
 
-Two consequences, both intended. The prop stays `null` until the user picks
-something — the getter seeds from the table's default without writing, which is
-what the demo's select renders as its selected option and what
+Two consequences, both intended. On the **first** render the prop is `null` and
+the getter seeds from the table's default without writing, which is what the
+select renders as its selected option and what
 [`HasTableTest`](../../../packages/tables/tests/Unit/Concerns/HasTableTest.php)
 asserts by checking the getter answers `10` while the property is still null.
-And the type is `?string` rather than Filament's `int|string`, because that is
-what a `<select>` posts; the normalisation is the cast, and it lives in one
-place.
+From the second request on the property holds the option string the client sent
+back, because that is what
+[the wire bridge](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary)
+puts on the wire and hydration writes straight onto it — a narrower claim than
+"until the user picks something", and one the getter is indifferent to, since it
+re-derives its answer either way. And the type is `?string` rather than
+Filament's `int|string`, because that is what a `<select>` posts; the
+normalisation is the cast, and it lives in one place.
 
 `updatedTableRecordsPerPage()` and `updatedTableSearch()` are kept as `onUpdated`
 hooks anyway, for the half validation cannot do: resetting to page 1 and
 flushing the record cache when the user changes either. Filament's same-named
 methods are Livewire's magic `updated<Property>` hooks; here the binding is
 explicit in the attribute, which is the ordinary Livewire → UX translation.
+
+### The writable props dehydrate in their elements' wire vocabulary
+
+Filament needs no counterpart to this: Livewire's snapshot carries the
+**property**, and `getTableRecordsPerPage()` is a separate read the view
+performs. Here the dehydration pass reads every `LiveProp` through Symfony's
+`PropertyAccessor` (`LiveComponentHydrator::dehydrate()`), which prefers the
+same-named **getter** — the [second face](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id)
+of the preference that mints the host id, and on these two props a liability
+rather than a convenience. Unbridged, the wire carried
+`getTableRecordsPerPage()`'s resolved option — the `int` `10` — while the
+`<select>` bound to the prop held the string `"10"`, and it carried
+`getTableSearch()`'s trimmed-or-null value — `null` — while the search `<input>`
+held `""`.
+
+A model that disagrees with its element is permanently dirty.
+`live_controller`'s `SetValueOntoModelFieldsPlugin` runs on attach and after
+every render, and for a non-multiple `<select>` it writes the element's value
+back into the store — where `ValueStore.set()` short-circuits on `===` and
+otherwise records a **dirty** prop. String `"10"` against `int` `10` is not
+`===`, so every subsequent request carried
+`updated: {tableRecordsPerPage: "10"}` — a sort click, a page click, cancelling
+a row action's modal — which calls `updatedTableRecordsPerPage()` and resets the
+table to page 1. That was the shipped defect: on the demo, opening a row's
+Delete modal on page 2 and cancelling it snapped the table back to page 1.
+
+Both props therefore declare a `dehydrateWith:` bridge, and each puts on the wire
+the value its **element** speaks. `dehydrateTableRecordsPerPage()` string-casts
+the resolved option the pass hands it, so the model is exactly the `value` of the
+`<option>` the footer rendered as selected (`5 → "5"`, `'all' → "all"`; `null` —
+an unpaginated table, or a paginated one with empty page options — stays null and
+renders no select at all). `dehydrateTableSearch()` ignores its argument and
+returns the property raw, so `""` stays `""` against an `<input>` that renders
+with no `value` attribute. Renaming the getters would fix the mismatch too, and
+is not available: `getTableRecordsPerPage()` and `getTableSearch()` are the
+Filament names migrating users grep for.
+
+The raw wire the search takes is **not** available to the per-page half, which is
+worth stating because a reader will otherwise simplify its bridge to
+`return $this->tableRecordsPerPage;`. The plugin's store → DOM write is
+unconditional for any model that is not `undefined`, and `setValueOnElement()`
+marks an `<option>` selected by string comparison — so a raw `null` model matches
+no option and the browser's selectedness algorithm picks the **first** one.
+Measured on the demo with exactly that bridge in place: the select read `2` while
+the table under it showed 10 rows, and the next live action posted
+`perPage: "2"`, a value the user never chose. A raw wire is stable only where the
+element's vocabulary contains the raw value; for the select that means the
+resolved option and nothing else.
+
+Both `onUpdated` hooks also grew a no-op guard — `$previousValue ===` the
+property returns without resetting the page or flushing the cache. It is belt and
+braces now that the wires agree, and it could not have substituted for the
+bridge: before it, `$previousValue` carried the wire's `10` while the property
+carried the echoed `"10"`, so the two were never `===`. Its one visible cost is
+that a hook called with the value the prop already holds does nothing, which is
+what the Unit cases assert from both sides.
+
+Permanent in mechanism: it follows from the `PropertyAccessor` read, and only a
+prop the client writes back needs it.
 
 ### The `recordsPerPage` injection is nullable
 

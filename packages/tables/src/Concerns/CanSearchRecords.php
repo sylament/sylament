@@ -11,11 +11,24 @@ use function Sylament\Support\filled;
 
 trait CanSearchRecords
 {
-    #[LiveProp(writable: true, onUpdated: 'updatedTableSearch')]
+    #[LiveProp(writable: true, dehydrateWith: 'dehydrateTableSearch', onUpdated: 'updatedTableSearch')]
     public ?string $tableSearch = '';
+
+    /**
+     * The wire value is the search input's own — the raw property, not the
+     * trimmed `$value` the dehydration pass reads through `getTableSearch()`.
+     */
+    public function dehydrateTableSearch(?string $value): ?string
+    {
+        return $this->tableSearch;
+    }
 
     public function updatedTableSearch(mixed $previousValue = null): void
     {
+        if ($previousValue === $this->tableSearch) {
+            return;
+        }
+
         $this->tablePage = 1;
         $this->flushCachedTableRecords();
     }

@@ -23,8 +23,18 @@ trait CanPaginateRecords
      * reader and validates on every call, so a forged value can never reach a
      * `records()` closure.
      */
-    #[LiveProp(writable: true, onUpdated: 'updatedTableRecordsPerPage')]
+    #[LiveProp(writable: true, dehydrateWith: 'dehydrateTableRecordsPerPage', onUpdated: 'updatedTableRecordsPerPage')]
     public ?string $tableRecordsPerPage = null;
+
+    /**
+     * The dehydration pass reads this prop through `getTableRecordsPerPage()`,
+     * so `$value` is the resolved option; the wire carries it as the string the
+     * `<select>` bound to the prop holds.
+     */
+    public function dehydrateTableRecordsPerPage(int|string|null $value): ?string
+    {
+        return $value === null ? null : (string) $value;
+    }
 
     #[LiveAction]
     public function gotoTablePage(#[LiveArg] int $page): void
@@ -40,6 +50,10 @@ trait CanPaginateRecords
 
     public function updatedTableRecordsPerPage(mixed $previousValue = null): void
     {
+        if ($previousValue === $this->tableRecordsPerPage) {
+            return;
+        }
+
         $this->tablePage = 1;
         $this->flushCachedTableRecords();
     }

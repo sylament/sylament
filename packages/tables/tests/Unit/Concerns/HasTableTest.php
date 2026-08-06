@@ -574,11 +574,13 @@ it('resets to the first page when sort, per-page, or search change', function ()
     expect($host->getTablePage())->toBe(1);
 
     $host->gotoTablePage(4);
+    $host->tableRecordsPerPage = '25';
     $host->updatedTableRecordsPerPage('10');
 
     expect($host->getTablePage())->toBe(1);
 
     $host->gotoTablePage(4);
+    $host->tableSearch = 'radiohead';
     $host->updatedTableSearch('');
 
     expect($host->getTablePage())->toBe(1);
@@ -631,6 +633,85 @@ it('trims the search and reads blank as null', function (): void {
 
     $host->tableSearch = "\u{00A0}\u{2003}";
     expect($host->getTableSearch())->toBeNull();
+});
+
+it('dehydrates the per-page prop as the resolved option, string-cast', function (): void {
+    $seeded = new TableHost();
+    $all = new TableHost(fn (Table $t): Table => $t->paginationPageOptions([5, 'all']));
+    $optionless = new TableHost(fn (Table $t): Table => $t->paginationPageOptions([]));
+
+    $all->tableRecordsPerPage = 'all';
+
+    expect($seeded->dehydrateTableRecordsPerPage($seeded->getTableRecordsPerPage()))->toBe('10')
+        ->and($all->dehydrateTableRecordsPerPage($all->getTableRecordsPerPage()))->toBe('all')
+        ->and($optionless->dehydrateTableRecordsPerPage($optionless->getTableRecordsPerPage()))->toBeNull();
+});
+
+it('dehydrates the search prop raw, where the getter trims and blanks it', function (): void {
+    $host = new TableHost();
+
+    expect($host->dehydrateTableSearch($host->getTableSearch()))->toBe('')
+        ->and($host->getTableSearch())->toBeNull();
+
+    $host->tableSearch = '  ok computer ';
+
+    expect($host->dehydrateTableSearch($host->getTableSearch()))->toBe('  ok computer ')
+        ->and($host->getTableSearch())->toBe('ok computer');
+});
+
+it('ignores an echoed per-page update and resets the page on a real change', function (): void {
+    $fetches = 0;
+    $host = new TableHost(function (Table $table) use (&$fetches): Table {
+        return $table->records(function () use (&$fetches): array {
+            $fetches++;
+
+            return [];
+        });
+    });
+
+    $host->gotoTablePage(4);
+    $host->getTableRecords();
+
+    $host->tableRecordsPerPage = '10';
+    $host->updatedTableRecordsPerPage('10');
+    $host->getTableRecords();
+
+    expect($host->getTablePage())->toBe(4)
+        ->and($fetches)->toBe(1);
+
+    $host->tableRecordsPerPage = '25';
+    $host->updatedTableRecordsPerPage('10');
+    $host->getTableRecords();
+
+    expect($host->getTablePage())->toBe(1)
+        ->and($fetches)->toBe(2);
+});
+
+it('ignores an echoed search update and resets the page on a real change', function (): void {
+    $fetches = 0;
+    $host = new TableHost(function (Table $table) use (&$fetches): Table {
+        return $table->records(function () use (&$fetches): array {
+            $fetches++;
+
+            return [];
+        });
+    });
+
+    $host->gotoTablePage(4);
+    $host->getTableRecords();
+
+    $host->updatedTableSearch('');
+    $host->getTableRecords();
+
+    expect($host->getTablePage())->toBe(4)
+        ->and($fetches)->toBe(1);
+
+    $host->tableSearch = 'radiohead';
+    $host->updatedTableSearch('');
+    $host->getTableRecords();
+
+    expect($host->getTablePage())->toBe(1)
+        ->and($fetches)->toBe(2);
 });
 
 it('injects the table state into the records closure lazily', function (): void {

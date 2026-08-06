@@ -606,8 +606,8 @@ alias for `components()`. Permanent.
 ### The filtered-query seam is gated on the lane, not on the presence of a builder
 
 Filament's `getFilteredTableQuery()` reads `getTable()->getQuery()` and answers
-null only when there is no builder to read — the lane question is asked
-somewhere else, at the top of `getTableRecords()`, which branches on
+null only when there is no builder to read — the lane question is left to the
+callers, and `getTableRecords()` is the one that asks it, branching on
 `hasQuery()` before the seam is ever reached. So a Filament table declaring
 **both** a `records()` closure and a `query()` resolves the closure for its rows
 and still hands the builder back to anything calling the seam directly. Sylament
@@ -615,14 +615,24 @@ asks the lane question in the seam itself: no `hasQuery()`,
 [which is "no records closure is set"](table.md#the-query-lane-is-on-exactly-while-no-records-closure-is-set),
 no query — and `getFilteredSortedTableQuery()` answers null with it.
 
-The gate is there because the seam is public and its callers are not Filament's.
-Filament's two are `getTableRecords()` and `getTableQueryForExport()`, both of
-which have already settled the lane before they call; a caller here — the record
-resolution, and the count arm `getAllTableRecordsCount()` is waiting on above —
-asks the seam *instead* of deciding for itself, so the answer has to be true to
-the table rather than to the builder. Handing back a query a records-lane table
-will never execute is not a harmless extra: counted, it runs SQL for rows the
-render will not show.
+The gate is there because the seam is public and Filament leaves that question
+to whoever calls it — seven call sites across six methods, each answering for
+itself, and not alike. `getAllTableRecordsCount()` calls the seam bare and
+counts what comes back; `getAllSelectableTableRecordKeys()` calls it a line
+*before* it tests `hasQuery()`; `getAllSelectableTableRecordsCount()` manages
+both in one body, a bare `->get()` on its selectable branch and a null-safe
+`?->count() ?? $this->cachedTableRecords->count()` at its tail;
+`getFilteredSortedTableQuery()` and `getAllTableSummaryQuery()` pass the null
+on. Only `getTableRecords()` has settled the lane before the seam is reached,
+and it reaches it indirectly, through the sorted one.
+(`getTableQueryForExport()` is not among the seven — it bypasses the seam
+entirely, re-reading `getTable()->getQuery()` and re-applying filters, search
+and sorting itself.) Asking in the seam answers the question once, where the
+table is, rather than at each call site — and the first caller waiting on it
+here is the count arm `getAllTableRecordsCount()` above, the one Filament
+reaches with no check at all. Handing back a query a records-lane table will
+never execute is not a harmless extra: counted, it runs SQL for rows the render
+will not show.
 
 Nothing else changes. `resolveTableRecords()` takes the same branch either way,
 because it consults the data source first, so the gate is observable only through

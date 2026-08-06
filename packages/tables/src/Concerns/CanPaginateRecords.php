@@ -41,9 +41,10 @@ trait CanPaginateRecords
 
     /**
      * Null on an unpaginated table — a closure asking for `recordsPerPage`
-     * there has nothing to slice by, matching Filament's unseeded state.
-     *
-     * @return int|'all'|null
+     * there has nothing to slice by, matching Filament's unseeded state — and
+     * null again on a paginated table with no page options, whose default is
+     * null too. The prop is validated against those options, so a string other
+     * than `'all'` only arrives from the table's `defaultPaginationPageOption()`.
      */
     public function getTableRecordsPerPage(): int|string|null
     {

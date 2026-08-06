@@ -10,3 +10,4 @@
 @import './components/badge.css' layer(components);
 @import './components/link.css' layer(components);
 @import './components/fieldset.css' layer(components);
+@import './components/pagination.css' layer(components);

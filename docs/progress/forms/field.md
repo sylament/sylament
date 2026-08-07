@@ -52,7 +52,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `HasExtraFieldWrapperAttributes` (composed by Filament's Field) | [`Components/Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | todo | — | [detail](#hasextrafieldwrapperattributes-is-not-composed) |
 | [`CanBeAutofocused`](../../../packages/forms/src/Components/Concerns/CanBeAutofocused.php) | [`Components/Concerns/CanBeAutofocused.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutofocused.php) | done | — | — |
 | [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Components/Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | — |
-| [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Components/Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | in progress | — | [detail](#hashint-omits-the-hint-actions) |
+| [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Components/Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field) |
 | [`HasPlaceholder`](../../../packages/forms/src/Components/Concerns/HasPlaceholder.php) | [`Components/Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](#hasplaceholder-is-composed-on-the-base-field) |
 
 ## Details
@@ -90,37 +90,6 @@ Filament's Field composes `HasExtraFieldWrapperAttributes`
 the trait; the `FieldWrapper` template merges only `field.getExtraAttributes`
 (the schemas-level `HasExtraAttributes`). **Next step:** port the concern and
 merge it in the wrapper template.
-
-### `HasHint` omits the hint actions
-
-**In:** `hint()`, `hintColor()`, `hintIcon($icon, $tooltip = null)` — with the
-`func_num_args() >= 2` guard so a one-argument call never clobbers a prior
-tooltip — and `hintIconTooltip()`, plus every accessor (`hasHint()`, `getHint()`,
-`getHintColor()`, `hasHintIcon()`, `getHintIcon()`, `getHintIconTooltip()`).
-`setUpHint()` registers an `afterLabel()` closure that seeds a `Text` (colored,
-visible-when-filled) and an `Icon` (tooltipped, colored, visible-when-filled)
-into the after-label slot, each reading back through
-`$icon/$text->getContainer()->getParentComponent()`. Covered by `FieldTest`
-(defaults, round-trip, closure evaluation, the `func_num_args` tooltip guard, the
-after-label slot seeding) and by the `TextInput` / `Textarea` integration suites.
-
-**Missing vs Filament:** `hintAction(Action | Closure)`, `hintActions(array)`,
-and `getHintActions()` — the hint-adjacent action buttons — are simply unwritten,
-so `setUpHint()` drops the `...$component->getHintActions()` spread Filament
-appends to the after-label components. Nothing external blocks them any more:
-[`Sylament\Actions\Action`](../../../packages/actions/src/Action.php) ships,
-`packages/forms/composer.json` already requires `sylament/actions`, and the
-after-label slot the spread feeds now defaults an embedded action to
-`Size::Small` / `Action::LINK_TEMPLATE` (the *Field-wrapper slots* row above), so
-a hint action lands as a small link rather than a full-size button.
-`setUpHint()`'s closure separately narrows its parameter from Filament's
-`Field | Placeholder` to `Field`, because `Placeholder` is not ported — that
-narrowing alone still waits on the `Placeholder` component. **Next step:** add
-the trio and re-add the spread; note that `setUpHint()` registers the seeding
-*as* the `afterLabel()` closure and
-[`childComponents()`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php)
-stores by key with replacement, so the spread has to go inside that existing
-closure — a second `afterLabel()` call would wipe the hint text and icon.
 
 ## Divergences
 
@@ -211,6 +180,26 @@ accessibility addition of this port, not a translation, and it renders with a
 [`ComponentAttributeBag`](../support/component-attribute-bag.md) maps a boolean
 on an `aria-*` name to the strings `"true"` / `"false"` instead of dropping a
 false one.
+
+### `setUpHint()` narrows its parameter to Field
+
+Filament's forms
+[`HasHint`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php)
+types the `afterLabel()` closure it registers `Field | Placeholder`. The port
+types it `Field` alone, because
+[`Placeholder`](../../../vendor/filament/forms/src/Components/Placeholder.php) is
+not ported and the second arm would name a class that does not exist.
+
+The arm is vestigial upstream as well, so this does not widen back when
+`Placeholder` lands: Filament v5 deprecated `Placeholder` and re-parented it onto
+[`TextEntry`](../../../vendor/filament/infolists/src/Components/TextEntry.php) →
+[`Entry`](../../../vendor/filament/infolists/src/Components/Entry.php), which
+composes the *infolists*
+[`HasHint`](../../../vendor/filament/infolists/src/Components/Concerns/HasHint.php)
+— a near-identical duplicate whose own closure is typed `Entry`. Nothing that
+reaches the forms `setUpHint()` can be a `Placeholder` any more. The union comes
+back only if the two traits are ever folded into one, which is the infolists
+port's decision, not this file's.
 
 ### HasPlaceholder is composed on the base Field
 

@@ -6,6 +6,7 @@ namespace Sylament\Forms\Components\Concerns;
 
 use BackedEnum;
 use Closure;
+use Sylament\Actions\Action;
 use Sylament\Forms\Components\Field;
 use Sylament\Schemas\Components\Icon;
 use Sylament\Schemas\Components\Text;
@@ -16,6 +17,11 @@ use function Sylament\Support\filled;
 trait HasHint
 {
     protected string|Markup|Closure|null $hint = null;
+
+    /**
+     * @var array<Action|Closure>
+     */
+    protected array $hintActions = [];
 
     /**
      * @var string|array<string>|Closure|null
@@ -79,7 +85,10 @@ trait HasHint
                     });
             }
 
-            return $components;
+            return [
+                ...$components,
+                ...$component->getHintActions(),
+            ];
         });
     }
 
@@ -118,6 +127,26 @@ trait HasHint
         return $this;
     }
 
+    public function hintAction(Action|Closure $action): static
+    {
+        $this->hintActions([$action]);
+
+        return $this;
+    }
+
+    /**
+     * @param array<Action|Closure> $actions
+     */
+    public function hintActions(array $actions): static
+    {
+        $this->hintActions = [
+            ...$this->hintActions,
+            ...$actions,
+        ];
+
+        return $this;
+    }
+
     public function hasHint(): bool
     {
         return filled($this->hint);
@@ -149,5 +178,16 @@ trait HasHint
     public function getHintIconTooltip(): ?string
     {
         return $this->evaluate($this->hintIconTooltip);
+    }
+
+    /**
+     * @return array<Action>
+     */
+    public function getHintActions(): array
+    {
+        return array_values(array_filter(array_map(
+            fn (Action|Closure|null $hintAction): ?Action => $this->evaluate($hintAction),
+            $this->hintActions,
+        )));
     }
 }

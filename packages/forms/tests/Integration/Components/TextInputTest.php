@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Integration\Components;
 
+use Sylament\Actions\Action;
 use Sylament\Forms\Components\TextInput;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Email;
@@ -102,6 +103,20 @@ it('renders the hint independent of a hidden label', function (): void {
     $hint = $crawler->filter('.sy-fo-field-label-ctn .sy-sc-text');
     expect($hint->count())->toBe(1)
         ->and($hint->text())->toContain('Need a hand');
+});
+
+it('renders a hint action as a small link in the after-label slot', function (): void {
+    $crawler = new Crawler(renderField(
+        TextInput::make('title')->hintAction(Action::make('edit')->label('Edit')),
+    ));
+
+    // Action::LINK_TEMPLATE composes support's Link, whose root carries
+    // `sy sy-link` plus the action's own `sy-ac`, and is a <button> with no URL.
+    $action = $crawler->filter('.sy-fo-field-label-col button.sy-link.sy-ac');
+
+    expect($action->count())->toBe(1)
+        ->and($action->text())->toContain('Edit')
+        ->and($action->attr('class'))->toContain('sy-size-sm');
 });
 
 it('renders arbitrary content in the label and content wrapper slots', function (): void {

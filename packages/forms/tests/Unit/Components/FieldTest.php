@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Unit\Components;
 
+use Sylament\Actions\Action;
 use Sylament\Forms\Components\Field;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureField;
 use Sylament\Schemas\Components\Icon;
@@ -143,6 +144,57 @@ it('seeds the hint text and icon into the after-label slot', function (): void {
 
 it('adds no after-label slot without a hint', function (): void {
     expect(wireField(FixtureField::make('title'))->getChildSchema(Field::AFTER_LABEL_SCHEMA_KEY))->toBeNull();
+});
+
+it('has no hint actions by default', function (): void {
+    expect(FixtureField::make('title')->getHintActions())->toBe([]);
+});
+
+it('appends hint actions and resolves closures through evaluate', function (): void {
+    $field = FixtureField::make('title')
+        ->hintAction(Action::make('first'))
+        ->hintActions([fn (): Action => Action::make('second')]);
+
+    $actions = $field->getHintActions();
+
+    expect($actions)->toHaveCount(2)
+        ->and($actions[0]->getName())->toBe('first')
+        ->and($actions[1]->getName())->toBe('second');
+});
+
+it('drops a hint action whose closure resolves to null', function (): void {
+    $field = FixtureField::make('title')->hintActions([fn (): ?Action => null]);
+
+    expect($field->getHintActions())->toBe([]);
+});
+
+it('seeds hint actions into the after-label slot after the text and icon', function (): void {
+    $slot = wireField(
+        FixtureField::make('title')
+            ->hint('A hint')
+            ->hintIcon('heroicon-o-star')
+            ->hintAction(Action::make('edit')),
+    )->getChildSchema(Field::AFTER_LABEL_SCHEMA_KEY);
+
+    $components = $slot->getComponents();
+
+    expect($components)->toHaveCount(3)
+        ->and($components[0])->toBeInstanceOf(Text::class)
+        ->and($components[1])->toBeInstanceOf(Icon::class)
+        ->and($components[2])->toBeInstanceOf(Action::class)
+        ->and($components[2]->getName())->toBe('edit');
+});
+
+it('seeds a hint action into the after-label slot with no hint text', function (): void {
+    $slot = wireField(FixtureField::make('title')->hintAction(Action::make('edit')))
+        ->getChildSchema(Field::AFTER_LABEL_SCHEMA_KEY);
+
+    expect($slot)->not->toBeNull();
+
+    $components = $slot->getComponents();
+
+    expect($components)->toHaveCount(1)
+        ->and($components[0])->toBeInstanceOf(Action::class);
 });
 
 it('round-trips the placeholder', function (): void {

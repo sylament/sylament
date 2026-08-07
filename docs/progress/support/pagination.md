@@ -54,7 +54,7 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | The four `*_RTL` alias constants and the `$isRtl` branch | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | todo | — | [diverges](#the-footer-has-no-rtl-branch) |
 | A `Pagination\Item` component of its own | [`pagination/item.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/item.blade.php) | skipped | — | Filament's item exists to be reused by two call sites in one file; here the item markup is six lines inlined at its three uses, and a component whose only job is to pick between an icon and a label would be indirection without a second consumer |
 | [Simple paging — the null-total branch: an overview with no total, prev/next with no window](../../../packages/support/templates/components/Pagination/index.html.twig) | the `$isSimple` arms of [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | done | — | [diverges](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both) |
-| Cursor paging — the `CursorPaginator` arm, whose clicks carry an encoded cursor rather than a page number | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | blocked | a keyset carrier ([table.md](../tables/table.md#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have)) | — |
+| Cursor paging — the `CursorPaginator` arm, whose clicks carry an encoded cursor rather than a page number | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | blocked | a keyset carrier ([table.md](../tables/table.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features)) | — |
 | Number formatting and translated copy | `Number::format()`, `trans_choice()` in the same view | blocked | i18n ([table.md](../tables/table.md#the-empty-state-heading-hardcodes-no-records)) | — |
 | Styles — `sy-pagination*` | [`resources/css/`](../../../vendor/filament/support/resources/css) | in progress | — | [detail](#three-corrections-to-the-stylesheets-port-accounting) |
 
@@ -214,10 +214,12 @@ of which knows how to count a source and fetch one slice of it. Sylament needs
 none of them, because in both of its lanes the slicing already has an owner. On
 the **closure lane** the userland `records()` closure slices — it is handed
 `page` and `recordsPerPage` and returns what it fetched, and an adapter would sit
-between the closure and its own data doing nothing. On the coming **Doctrine
-`query()` lane** the slicing is `setFirstResult()`/`setMaxResults()` plus a count
-query, which the lane must own anyway to apply filters, sorts and searches to the
-same builder. Strip the adapters and what is left of Pagerfanta is arithmetic
+between the closure and its own data doing nothing. On the **Doctrine `query()`
+lane**, which · 12 has since built, the slicing is
+`setFirstResult()`/`setMaxResults()` plus a count query, which the lane owns
+anyway to apply filters, sorts and searches to the same builder — and it landed
+that way, over Doctrine's own `Tools\Pagination\Paginator` rather than an
+adapter. Strip the adapters and what is left of Pagerfanta is arithmetic
 over four integers, which is what this class is — 180 lines, no dependency, and
 no `Countable`/`IteratorAggregate` mismatch with the record shapes the toolkit
 already carries.

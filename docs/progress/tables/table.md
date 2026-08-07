@@ -87,11 +87,12 @@ Rows never disappear — only their detail sections do.
 | [`getRecordClass()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getModel()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [rename](../renames.md#renames) · [semantics](#the-record-class-is-read-off-the-base-querys-root-entity) |
 | The relation arm — `relationship()`, `inverseRelationship()`, `getRelationship()`, `getRelationshipQuery()`, `getInverseRelationship()`, `getInverseRelationshipFor()`, `selectPivotDataInQuery()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | the Doctrine relation layer | [detail](#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer) |
 | [`paginated()` / `isPaginated()` / `paginationPageOptions()` / `getPaginationPageOptions()` / `defaultPaginationPageOption()` / `getDefaultPaginationPageOption()` / `extremePaginationLinks()` / `hasExtremePaginationLinks()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | [diverges](#the-ten-per-page-default-is-matched-strictly) · [diverges](#ispaginated-has-no-groups-only-arm) |
-| [`paginationMode()` / `getPaginationMode()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) + [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | its `Cursor` arm — a keyset carrier ([pagination.md](../support/pagination.md)) | [detail](#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) · [has-table.md](has-table.md#the-page-state-has-no-query-lane-and-no-session-half) |
-| `paginatedWhileReordering()`, `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
+| [`paginationMode()` / `getPaginationMode()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) + [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | its `Cursor` arm — a keyset carrier ([pagination.md](../support/pagination.md)) | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) · [has-table.md](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half) |
+| `paginatedWhileReordering()`, `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) |
 | [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
 | [`defaultSort()` / `getDefaultSort()` / `getDefaultSortDirection()` / `defaultKeySort()` / `hasDefaultKeySort()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [semantics](#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker) · [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) |
 | `defaultSortOptionLabel()` / `getDefaultSortOptionLabel()` | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | skipped | — | It labels the "unsorted" entry of the mobile sort **dropdown**, which the port does not render and nothing else reads; it belongs to that layout rather than to sorting, and lands only if the layout does |
+| `persistSortInSession()` / `persistsSortInSession()` | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | todo | — | The session half of sorting, and the [toolkit-wide omission](has-table.md#no-table-state-is-persisted-in-the-session) recorded on the host side — it returns with that decision rather than with sorting, the way the `persistSearchInSession()` row below does |
 | [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
 | [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) · [diverges](#searchonblur-renders-onchange-because-ux-live-component-has-no-blur-event) |
 | [`splitSearchTerms()` / `shouldSplitSearchTerms()`, `searchUsing()` / `hasSearchUsingCallback()` / `callSearchUsing()`, `applyExtraSearchConstraints()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#search-is-the-global-term-only) · [semantics](#extra-searchable-columns-take-closures-that-return-their-expression) · [diverges](#the-default-search-comparison-assumes-a-string-typed-field) · [diverges](#a-search-term-is-not-escaped-for-like) |
@@ -309,11 +310,11 @@ knowledge a nested create needs. Filament's `hasPivotRecordKeys()` /
 `allowDuplicates()` pair is already **skipped** in the surface table on the same
 grounds.
 
-### Three pagination setters configure machinery the closure lane does not have
+### The pagination mode ships two cases, and two setters wait on their features
 
 `paginationMode()` selects between Laravel's length-aware, simple and cursor
 paginators, all three built by the query lane's
-[`paginateTableQuery()`](has-table.md#the-page-state-has-no-query-lane-and-no-session-half)
+[`paginateTableQuery()`](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half)
 — on the closure lane the userland closure returns whatever it built, so the enum
 selects nothing there, which is why it arrived with the lane rather than with the
 rest of the pagination configuration. Two of its three cases ship. **Default**
@@ -550,11 +551,11 @@ guarantee.
 
 `getQuery()` never hands out the stored builder. It resolves the *base* query
 once — `getBaseQuery()` memoises into `$cachedBaseQuery`, so a `query(Closure)`
-declaration is evaluated on the first read and not again — then returns
-`applyQueryScopes(clone $baseQuery, …)`, a fresh clone per read. A caller may
-therefore mutate what it gets back (paginate it, sort it, add a `where`) without
-the next reader seeing any of it, and `modifyQueryUsing()` scopes run against
-that private copy rather than accumulating on a shared one.
+declaration that yields a builder is evaluated on the first read and not again —
+then returns `applyQueryScopes(clone $baseQuery, …)`, a fresh clone per read. A
+caller may therefore mutate what it gets back (paginate it, sort it, add a
+`where`) without the next reader seeing any of it, and `modifyQueryUsing()`
+scopes run against that private copy rather than accumulating on a shared one.
 
 Both halves are load-bearing and neither is obvious from the signature.
 Doctrine's `QueryBuilder::__clone()` deep-clones the DQL parts and the parameter
@@ -566,6 +567,16 @@ paginator's count query and the page query are three reads of the same table, an
 a closure doing real work — a repository call, an ACL scope — would run three
 times. `query()` resets both the base cache and the record-class cache, so a
 re-declared query re-evaluates.
+
+The memoisation is a `??=`, so it can hold a builder and cannot hold a `null`: a
+declaration evaluating to null — no `query()` at all, or a closure that returns
+one — is re-evaluated on every read. That is exactly the case the value-plus-flag
+pair [`getRecordClass()` keeps](#the-record-class-is-read-off-the-base-querys-root-entity)
+exists to cover on its side, and it is deliberately not kept here, because the
+null means *this table has no query*: every reader branches on it at once and
+none of them re-enters this getter, so the repeat costs one closure call rather
+than a getter per row. The shape to know about is a closure doing real work
+before returning null — it pays that call per read.
 
 Filament clones too (`$query->clone()`) but memoises nothing: its `getQuery()`
 calls `$this->evaluate($this->query)` on every read, and `getModel()` keeps a

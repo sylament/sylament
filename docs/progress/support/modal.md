@@ -190,7 +190,7 @@ branches on, so the window is a `<form>` exactly when its submit button is a bar
 a text field inside the form fires exactly one `callMountedAction` request and no
 page navigation, and an empty `required` field blocks the submit client-side with
 zero requests (see
-[forms/field.md](../forms/field.md#the-required-marker-defers-its-validation-fallback)).
+[schemas/can-be-marked-as-required.md](../schemas/can-be-marked-as-required.md#the-native-required-attribute-is-load-bearing-inside-a-modal-form)).
 
 ### ESC closes through the native `cancel` event
 

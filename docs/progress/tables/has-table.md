@@ -102,7 +102,7 @@ instead.
 | [`getAllTableRecordsCount(): int`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getAllTableRecordsCount()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#the-all-records-count-answers-four-ways-where-filaments-answers-two) |
 | [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [semantics](#filtertablequery-applies-the-search-not-filters) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
 | `getTableQueryForExport()` | [`Concerns\HasRecords::getTableQueryForExport()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | the export surface | It bypasses the seams above, re-reading `getTable()->getQuery()` and re-applying filters, search and sorting itself, to assemble a query for Filament's export action — a surface with no counterpart here and on no milestone, the same one [`ExportColumn`](column.md#hascellstate-is-relocated-into-the-column-tier) waits on. It lands with that action or not at all |
-| [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `dehydrateTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-no-query-lane-and-no-session-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
+| [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `dehydrateTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-its-query-lane-and-no-session-or-url-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `dehydrateTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#no-table-state-is-persisted-in-the-session) · [table.md](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
 | Table state in the URL — `#[Url]`-style query-string binding for page, sort and search | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | todo | — | [diverges](#no-table-state-is-bound-to-the-url) |
@@ -404,7 +404,7 @@ through [`Table`'s resolver override](table.md), any explicit named or typed
 injection a caller passes to `evaluate()`, and a public container service
 [by type](#a-records-closure-resolves-public-container-services-by-type).
 
-### The page state has no query lane and no session half
+### The page state has its query lane, and no session or URL half
 
 `Concerns\CanPaginateRecords` is the page number, the per-page option, the
 reset-to-page-one hook, the two getters the `records()` closure is handed, and —
@@ -431,7 +431,7 @@ all (`getDQLPart('join') !== []`), which is broader than strictly needed — a
 to-one join fetches no collection and would page correctly without it — but the
 two directions cost differently: an extra subquery, against silently wrong rows.
 
-The three [modes](table.md#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have)
+The three [modes](table.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features)
 differ in what they pay for the total, and the mode is read here, where it is
 consumed, rather than in the setter, because a `Closure` mode has no value at set
 time. `Default` reads `DoctrinePaginator::count()` — a `COUNT` subquery that
@@ -508,6 +508,17 @@ identifier field — `book.id` for a `Book` keyed by `code` — which is not a
 mismatch a reader would spot, because it composes cleanly and fails only when
 Doctrine parses it. The table-level read stays where it belongs: keying a row is
 the record class's job, ordering this builder is this builder's.
+
+That is one rule across the lane rather than two habits. An **identity** read —
+[keying a record](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key)
+and [resolving one back](#gettablerecord-reads-fresh-when-the-render-cache-is-cold)
+— sources its `EntityManager` and record class off the **table's declaration**,
+because a key has to mean the same thing on both sides of a round trip and the
+table is the only thing that outlives the builder a single read built. An
+**ordering** read — the tiebreaker here — sources both off the **builder in
+hand**, because an `ORDER BY` only has to be valid for the query it is appended
+to. Neither direction is a convenience: swapping them gives you row keys that
+change with a scope, or a qualified key that does not parse.
 
 What is still missing from Filament's method is its two early returns.
 `isTableReordering()` replaces every ordering with the reorder column, and
@@ -639,8 +650,8 @@ and null when there is no query to read, hands it to `filterTableQuery()`, and
 and nothing else. So a query-lane table resolves every record its query selects
 **that the search term matched**, in the order the sort composition asked for —
 one page of it once
-[pagination](#the-page-state-has-no-query-lane-and-no-session-half) slices what
-these seams handed over.
+[pagination](#the-page-state-has-its-query-lane-and-no-session-or-url-half)
+slices what these seams handed over.
 
 Four of Filament's applications are still missing from them, and each is a body
 inside a seam rather than a new call site: **per-column** search slots into
@@ -688,7 +699,7 @@ closure that ignores its injections and returns a plain array on a paginated
 table therefore renders with no footer, correctly: there are no counts to render.
 
 On the **query** lane the two answers agree, because there the host does the
-slicing: [`paginateTableQuery()`](#the-page-state-has-no-query-lane-and-no-session-half)
+slicing: [`paginateTableQuery()`](#the-page-state-has-its-query-lane-and-no-session-or-url-half)
 builds a carrier exactly when `isPaginated()` is true and the lane returns a
 plain keyed array when it is not, so a query-lane footer *is* `isPaginated()`.
 This method is unchanged by that — it still answers off whatever came back, never
@@ -1266,7 +1277,7 @@ query, matched onto the parent models afterwards, so a `LIMIT 1` on the root
 query cannot reach a relation. Doctrine's fetch join selects the relation in the
 **same** query, so the limit truncates it: the root comes back holding one
 element in a collection that reports itself complete — the row-multiplication
-trap [the Tools paginator](#the-page-state-has-no-query-lane-and-no-session-half)
+trap [the Tools paginator](#the-page-state-has-its-query-lane-and-no-session-or-url-half)
 exists to survive on the page query, except that here it corrupts a single
 resolved record rather than a page count, silently.
 
@@ -1293,13 +1304,15 @@ there either. Sylament's has four arms, and the two extra ones are the two shape
 Filament's method cannot meet: a lane that is not a query at all, and a carrier
 whose total is legitimately unknown.
 
-The order is what makes them readable. On the query lane a **rendered** page with
-a known total answers from the carrier — no second `COUNT` for a number already
-paid for — and otherwise the answer is a `COUNT` over
+The order is what makes them readable. On the query lane a **cached carrier**
+with a known total answers from itself — no second `COUNT` for a number already
+paid for — and only that shape short-circuits: a rendered *unpaginated* table
+caches a plain array, which carries no total to reuse, so it pays the count like
+a cold one. Otherwise the answer is a `COUNT` over
 [`getFilteredTableQuery()`](#filtertablequery-applies-the-search-not-filters)
 through Doctrine's `Tools\Pagination\Paginator`, asked for the
 `fetchJoinCollection` treatment on the same
-[join heuristic](#the-page-state-has-no-query-lane-and-no-session-half)
+[join heuristic](#the-page-state-has-its-query-lane-and-no-session-or-url-half)
 `paginateTableQuery()` uses, so a fetch-joined table counts entities rather than
 rows. Search is applied and pagination is not, which is exactly what "all
 records" means here: the number a footer's *of N* renders under a filtered page.

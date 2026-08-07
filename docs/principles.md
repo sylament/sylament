@@ -75,10 +75,10 @@ ones, which have no rename to record because the Laravel side is simply absent.
 | `config()` | bundle configuration and injected parameters |
 
 The table is not exhaustive, and an unmapped case is a decision waiting to be
-made rather than a licence to reach for the Laravel shape. Validation is the
-open one today: Filament emits Laravel rule strings, which have no Symfony
-analogue, and
-[the strategy is deliberately undecided](progress/forms/can-be-length-constrained.md#length-validation-rules-await-the-validation-port).
+made rather than a licence to reach for the Laravel shape. Validation was the
+open one, and M1 · 1 decided it: Filament emits Laravel rule strings, which have
+no Symfony analogue, so
+[`rule()` and `rules()` became `constraint()` and `constraints()` over Symfony `Constraint` objects](progress/forms/can-be-validated.md#rule-and-rules-become-constraint-and-constraints-over-symfony-constraint-objects).
 
 ## 2. Prefer the ecosystem over invention
 

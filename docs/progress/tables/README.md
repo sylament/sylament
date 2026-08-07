@@ -28,22 +28,26 @@ the [vocabulary](../README.md#statuses) defines **todo** as having nothing to
 wait on — so a row whose detail file already names a prerequisite would be
 false as **todo**. These tables carry the same four columns as every package
 README, so a **blocked** row names its prerequisite at the head of _Detail_,
-ahead of the detail-file link that carries the full write-up: the _Doctrine
-`query()` lane ([pulled forward · 12](../roadmap.md#pulled-forward))_, _table
-bulk actions_ and _the `Table` template_ are the three the rows here wait on
-today, with _the Doctrine relation layer_ a fourth that only the detail files
-name so far — it is what the
+ahead of the detail-file link that carries the full write-up: _table bulk
+actions_ and _the `Table` template_ are the two the rows here wait on today, with
+_the Doctrine relation layer_ a third that only the detail files name so far — it
+is what the
 [relation arm of the query lane](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)
 and
 [relationship traversal](column.md#relationship-traversal-is-the-doctrine-relation-layers)
 are held by.
-_Table upgrades ([pulled forward · 11](../roadmap.md#pulled-forward))_ was
-a fourth until that epic landed: its rows are now **done**, **in progress** or —
-where what is left is Eloquent query assembly — moved onto the query lane, and
-the two that were waiting on nothing at all (deferred loading, polling) are plain
-**todo**. Only _table bulk actions_ has no epic carrying it — it needs a
-`BulkAction` class and the row-selection machinery, and nothing on the roadmap is
-scheduled to build either. (The
+Two more stood here until their epics landed. _Table upgrades
+([pulled forward · 11](../roadmap.md#pulled-forward))_ went first: its rows are
+now **done**, **in progress** or — where what was left is Eloquent query
+assembly — moved onto the query lane, and the two that were waiting on nothing
+at all (deferred loading, polling) are plain **todo**. The _Doctrine `query()`
+lane ([pulled forward · 12](../roadmap.md#pulled-forward))_ then took those and
+flipped them in turn, leaving `HasQuery`, `InteractsWithTableQuery` and
+`PaginationMode` **in progress** against the relation layer and a keyset carrier
+rather than against an epic. Neither _table bulk actions_ nor the relation layer
+has an epic carrying it — bulk actions need a `BulkAction` class and the
+row-selection machinery, the relation layer is unordered under
+[Beyond](../roadmap.md#beyond), and the roadmap schedules neither. (The
 [`forms`](../forms/README.md) README records the opposite
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
@@ -185,7 +189,7 @@ pairs with, so it shares the first row below.
 | Host / CanBeStriped | [`Concerns/CanBeStriped.php`](../../../vendor/filament/tables/src/Concerns/CanBeStriped.php) | todo | — |
 | Host / CanDeferLoading | [`Concerns/CanDeferLoading.php`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | todo | [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | Host / CanGroupRecords | [`Concerns/CanGroupRecords.php`](../../../vendor/filament/tables/src/Concerns/CanGroupRecords.php) | todo | — |
-| Host / CanPaginateRecords | [`Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | [has-table.md](has-table.md#the-page-state-has-no-query-lane-and-no-session-half) |
+| Host / CanPaginateRecords | [`Concerns/CanPaginateRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | [has-table.md](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half) |
 | Host / CanPollRecords | [`Concerns/CanPollRecords.php`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | skipped | The whole trait is a deprecated host getter (`getTablePollingInterval()`), and the project has never ported a deprecated Filament surface — the interval it fronts is `Table::poll()`, the `Table / CanPollRecords` row below ([has-table.md](has-table.md)) |
 | Host / CanReorderRecords | [`Concerns/CanReorderRecords.php`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) | todo | — |
 | Host / CanSearchRecords | [`Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | [has-table.md](has-table.md#search-is-the-global-term-only) |
@@ -310,7 +314,7 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | ColumnManagerResetActionPosition | [`Enums/ColumnManagerResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/ColumnManagerResetActionPosition.php) | todo | — |
 | FiltersLayout | [`Enums/FiltersLayout.php`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php) | todo | — |
 | FiltersResetActionPosition | [`Enums/FiltersResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | todo | — |
-| [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Enums/PaginationMode.php`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | The enum ships whole; `Default` and `Simple` are read by [`paginateTableQuery()`](has-table.md#the-page-state-has-no-query-lane-and-no-session-half), `Cursor` is refused until a keyset carrier exists — [table.md](table.md#three-pagination-setters-configure-machinery-the-closure-lane-does-not-have) |
+| [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Enums/PaginationMode.php`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | The enum ships whole; `Default` and `Simple` are read by [`paginateTableQuery()`](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half), `Cursor` is refused until a keyset carrier exists — [table.md](table.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) |
 | [`RecordActionsPosition`](../../../packages/tables/src/Enums/RecordActionsPosition.php) | [`Enums/RecordActionsPosition.php`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | done | [table.md](table.md#the-position-default-has-no-content-arm-to-choose-between-yet) |
 | RecordCheckboxPosition | [`Enums/RecordCheckboxPosition.php`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | todo | — |
 | TableComponent | [`TableComponent.php`](../../../vendor/filament/tables/src/TableComponent.php) | todo | — |

@@ -9,9 +9,9 @@ the Surface table below (its detail and any divergence spliced in from its own
 audit) and no longer carries a row in the [package README](README.md) Features
 table. The sixth, [`CanBeValidated`](can-be-validated.md), keeps its own file —
 its Filament surface is some eighty methods against the handful each folded
-concern carries, and it is the field half of a vertical spanning three packages. The
-schemas-level `HasName` / `HasLabel` / `HasState` it inherits stay tracked in
-schemas, and so does
+concern carries, and it is the field half of a vertical spanning three
+packages. The schemas-level `HasName` / `HasLabel` / `HasState` it inherits stay
+tracked in schemas, and so does
 [`CanBeMarkedAsRequired`](../schemas/can-be-marked-as-required.md), which moved
 down to schemas so its `Fieldset` could reach it.
 
@@ -266,12 +266,28 @@ it into the `fi-fo-text-input` div it hands to `wrapInputHtml()`, `Textarea`,
 `Select`, `KeyValue` and `CodeEditor` onto their equivalent inner div, and
 [`Checkbox`](../../../vendor/filament/forms/src/Components/Checkbox.php) and
 `Toggle` straight onto the control element. So there is no precedence to
-inherit. (The `merge()` chain in
+inherit.
+
+The `merge()` chain in
 [`wrapEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Field.php) —
 `(new Bag)->merge($extraWrapperAttributes)->merge($this->getExtraFieldWrapperAttributes())`
-— is not that contest either: `$extraWrapperAttributes` is the method's own
-parameter, passed by exactly one caller, `ToggleButtons`, with a hardcoded
-`fi-fo-toggle-buttons-wrp` class.)
+— is not that contest either. `$extraWrapperAttributes` is the method's own
+parameter, and all five of its callers pass the same shape: a hardcoded
+per-field wrapper class, and nothing else that varies —
+[`ToggleButtons`](../../../vendor/filament/forms/src/Components/ToggleButtons.php)
+`fi-fo-toggle-buttons-wrp` (from two call sites, and the only one to add
+anything further, a `tabindex` of `-1`),
+[`TagsInput`](../../../vendor/filament/forms/src/Components/TagsInput.php)
+`fi-fo-tags-input-wrp`,
+[`Select`](../../../vendor/filament/forms/src/Components/Select.php)
+`fi-fo-select-wrp`,
+[`Textarea`](../../../vendor/filament/forms/src/Components/Textarea.php)
+`fi-fo-textarea-wrp`, and
+[`KeyValue`](../../../vendor/filament/forms/src/Components/KeyValue.php)
+`fi-fo-key-value-wrp`. It is the seam through which a field names its **own**
+wrapper, never a route for a user-supplied value — so each of those five carries
+a `sy-fo-*-wrp` hook of its own into the port as it lands, and reading the
+parameter as a `ToggleButtons` quirk would silently cost the other four theirs.
 
 The port has no inner element to put `extraAttributes()` on, because the
 [input affix wrapper is not ported](#the-input-affix-wrapper-is-not-ported) — the

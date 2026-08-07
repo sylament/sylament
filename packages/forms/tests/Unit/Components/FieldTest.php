@@ -9,6 +9,7 @@ use Sylament\Forms\Components\Field;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureField;
 use Sylament\Schemas\Components\Icon;
 use Sylament\Schemas\Components\Text;
+use Sylament\Support\Twig\ComponentAttributeBag;
 
 use function Sylament\Forms\Tests\wireField;
 
@@ -234,4 +235,13 @@ it('replaces extra field wrapper attributes by default and appends when merging'
 it('resolves closure extra field wrapper attributes through evaluate', function (): void {
     expect(FixtureField::make('title')->extraFieldWrapperAttributes(fn (): array => ['data-lazy' => 'yes'])->getExtraFieldWrapperAttributes())
         ->toBe(['data-lazy' => 'yes']);
+});
+
+it('exposes the extra field wrapper attributes as a bag', function (): void {
+    $bag = FixtureField::make('title')
+        ->extraFieldWrapperAttributes(['class' => 'custom'])
+        ->getExtraFieldWrapperAttributeBag();
+
+    expect($bag)->toBeInstanceOf(ComponentAttributeBag::class)
+        ->and($bag->getAttributes())->toBe(['class' => ['custom']]);
 });

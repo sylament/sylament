@@ -52,7 +52,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `HasExtraFieldWrapperAttributes` (composed by Filament's Field) | [`Components/Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | todo | — | [detail](#hasextrafieldwrapperattributes-is-not-composed) |
 | [`CanBeAutofocused`](../../../packages/forms/src/Components/Concerns/CanBeAutofocused.php) | [`Components/Concerns/CanBeAutofocused.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutofocused.php) | done | — | — |
 | [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Components/Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | — |
-| [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Components/Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field) |
+| [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Components/Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field), [diverges](#gethintactions-returns-a-list-not-a-gapped-array) |
 | [`HasPlaceholder`](../../../packages/forms/src/Components/Concerns/HasPlaceholder.php) | [`Components/Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](#hasplaceholder-is-composed-on-the-base-field) |
 
 ## Details
@@ -200,6 +200,16 @@ composes the *infolists*
 reaches the forms `setUpHint()` can be a `Placeholder` any more. The union comes
 back only if the two traits are ever folded into one, which is the infolists
 port's decision, not this file's.
+
+### `getHintActions()` returns a list, not a gapped array
+
+Filament's `getHintActions()` is `array_filter(array_map(…))`, which preserves the
+original keys — a hint action whose closure resolves to null leaves the survivors
+gapped, so two actions minus the first return `[1 => Action]`. The port wraps that
+in `array_values()` and types the return `list<Action>`. Only the keys differ: the
+one shipped consumer spreads the result into the after-label slot, which renumbers
+regardless, while a positional read is the shape a caller actually writes and the
+gap makes it silently miss.
 
 ### HasPlaceholder is composed on the base Field
 

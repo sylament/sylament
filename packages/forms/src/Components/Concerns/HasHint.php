@@ -181,7 +181,7 @@ trait HasHint
     }
 
     /**
-     * @return array<Action>
+     * @return list<Action>
      */
     public function getHintActions(): array
     {

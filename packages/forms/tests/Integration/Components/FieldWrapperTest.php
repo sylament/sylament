@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Integration\Components;
 
+use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Components\FixturePrefixedField;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -68,4 +69,22 @@ it('omits the label column entirely when nothing fills it', function (): void {
     ));
 
     expect($crawler->filter('.sy-fo-field-label-col')->count())->toBe(0);
+});
+
+it('merges extra field wrapper attributes onto the wrapper div', function (): void {
+    $crawler = new Crawler(renderField(
+        TextInput::make('title')->extraFieldWrapperAttributes(['data-wrapper' => 'yes']),
+    ));
+
+    expect($crawler->filter('div.sy.sy-fo-field')->attr('data-wrapper'))->toBe('yes');
+});
+
+it('lets the schemas extraAttributes win over extraFieldWrapperAttributes', function (): void {
+    $crawler = new Crawler(renderField(
+        TextInput::make('title')
+            ->extraFieldWrapperAttributes(['data-who' => 'wrapper'])
+            ->extraAttributes(['data-who' => 'component']),
+    ));
+
+    expect($crawler->filter('div.sy.sy-fo-field')->attr('data-who'))->toBe('component');
 });

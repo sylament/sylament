@@ -9,6 +9,7 @@ use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Forms\Components\Concerns\CanBeAutofocused;
 use Sylament\Forms\Components\Concerns\CanBeValidated;
+use Sylament\Forms\Components\Concerns\HasExtraFieldWrapperAttributes;
 use Sylament\Forms\Components\Concerns\HasHelperText;
 use Sylament\Forms\Components\Concerns\HasHint;
 use Sylament\Forms\Components\Concerns\HasPlaceholder;
@@ -29,6 +30,7 @@ abstract class Field extends Component implements HasValidationConstraints
     use CanBeAutofocused;
     use CanBeMarkedAsRequired;
     use CanBeValidated;
+    use HasExtraFieldWrapperAttributes;
     use HasHelperText;
     use HasHint;
     use HasLabel {

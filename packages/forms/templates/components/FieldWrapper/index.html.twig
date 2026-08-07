@@ -28,7 +28,7 @@
 <div
         {{ attrs({
             class: ['sy', 'sy-fo-field'],
-        }, field.getExtraAttributes) }}
+        }, field.getExtraFieldWrapperAttributes, field.getExtraAttributes) }}
 >
     {% if field.getLabel is not null and field.isLabelHidden %}
         {% if labelAsHeading %}

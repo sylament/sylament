@@ -212,3 +212,26 @@ it('round-trips the autofocus flag', function (): void {
 it('has no error messages without a live component to read the bag from', function (): void {
     expect(FixtureField::make('title')->getErrorMessages())->toBe([]);
 });
+
+it('has no extra field wrapper attributes by default', function (): void {
+    expect(FixtureField::make('title')->getExtraFieldWrapperAttributes())->toBe([]);
+});
+
+it('replaces extra field wrapper attributes by default and appends when merging', function (): void {
+    $replaced = FixtureField::make('title')
+        ->extraFieldWrapperAttributes(['data-one' => '1'])
+        ->extraFieldWrapperAttributes(['data-two' => '2']);
+
+    expect($replaced->getExtraFieldWrapperAttributes())->toBe(['data-two' => '2']);
+
+    $merged = FixtureField::make('title')
+        ->extraFieldWrapperAttributes(['data-one' => '1'])
+        ->extraFieldWrapperAttributes(['data-two' => '2'], merge: true);
+
+    expect($merged->getExtraFieldWrapperAttributes())->toEqualCanonicalizing(['data-one' => '1', 'data-two' => '2']);
+});
+
+it('resolves closure extra field wrapper attributes through evaluate', function (): void {
+    expect(FixtureField::make('title')->extraFieldWrapperAttributes(fn (): array => ['data-lazy' => 'yes'])->getExtraFieldWrapperAttributes())
+        ->toBe(['data-lazy' => 'yes']);
+});

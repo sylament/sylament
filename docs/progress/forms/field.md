@@ -4,12 +4,12 @@
 form field extends. It adds field identity (name + state-path seeding), the
 humanized-label fallback, the ten field-wrapper slots, the field-wrapper
 rendering and the error-message read on top of the schemas `Component`, and
-composes five field concerns. Four of them are **folded here**: each is a row in
+composes six field concerns. Five of them are **folded here**: each is a row in
 the Surface table below (its detail and any divergence spliced in from its own
 audit) and no longer carries a row in the [package README](README.md) Features
-table. The fifth, [`CanBeValidated`](can-be-validated.md), keeps its own file —
-its Filament surface is some eighty methods against this file's five-method
-concerns, and it is the field half of a vertical spanning three packages. The
+table. The sixth, [`CanBeValidated`](can-be-validated.md), keeps its own file —
+its Filament surface is some eighty methods against the handful each folded
+concern carries, and it is the field half of a vertical spanning three packages. The
 schemas-level `HasName` / `HasLabel` / `HasState` it inherits stay tracked in
 schemas, and so does
 [`CanBeMarkedAsRequired`](../schemas/can-be-marked-as-required.md), which moved
@@ -23,13 +23,13 @@ Reference — the Filament source this is diffed against:
   — the base class, the traits it composes, and its `wrapEmbeddedHtml` /
   `wrapInputHtml` rendering
 - [`forms/src/Components/Concerns/`](../../../vendor/filament/forms/src/Components/Concerns)
-  — the four folded field concerns audited below
+  — the five folded field concerns audited below
 - [`schemas/src/Components/Concerns/`](../../../vendor/filament/schemas/src/Components/Concerns)
   — the inherited `HasName` / `HasLabel` / `HasState` behind the identity rows
 
 ## Surface
 
-Every point of this component and its four folded concerns. _Blocked by_ names
+Every point of this component and its five folded concerns. _Blocked by_ names
 what has to land first. _Detail_ links the write-up in [Details](#details)
 (deleted once the row is **done**), the permanent note in
 [Divergences](#divergences), and/or a note carried by a concern's own file.
@@ -49,7 +49,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | Input affix wrapper (`wrapInputHtml`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | blocked | HasAffixes | [detail](#the-input-affix-wrapper-is-not-ported) |
 | State casts &amp; enum defaults (`getDefaultStateCasts` / `getEnumDefaultStateCast`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | blocked | HasEnum | [detail](#state-casts-and-enum-defaults-are-not-ported) |
 | `hasNullableBooleanState()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | — | [detail](#hasnullablebooleanstate-is-not-ported) |
-| `HasExtraFieldWrapperAttributes` (composed by Filament's Field) | [`Components/Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | todo | — | [detail](#hasextrafieldwrapperattributes-is-not-composed) |
+| [`HasExtraFieldWrapperAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | [`Components/Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | done | — | [diverges](#extra-attribute-precedence-is-fixed-by-source-order) |
 | [`CanBeAutofocused`](../../../packages/forms/src/Components/Concerns/CanBeAutofocused.php) | [`Components/Concerns/CanBeAutofocused.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutofocused.php) | done | — | — |
 | [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Components/Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | — |
 | [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Components/Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field), [diverges](#gethintactions-returns-a-list-not-a-gapped-array) |
@@ -82,14 +82,6 @@ Neither is composed or ported. **Blocked** on the `HasEnum` port and the schemas
 Filament's Field declares `hasNullableBooleanState(): bool` (default `false`),
 overridden by boolean fields to control tri-state casting. Not ported; no
 consumer exists until the boolean fields (Checkbox, Toggle) land.
-
-### `HasExtraFieldWrapperAttributes` is not composed
-
-Filament's Field composes `HasExtraFieldWrapperAttributes`
-(`extraFieldWrapperAttributes()` merged onto the wrapper `<div>`). The port omits
-the trait; the `FieldWrapper` template merges only `field.getExtraAttributes`
-(the schemas-level `HasExtraAttributes`). **Next step:** port the concern and
-merge it in the wrapper template.
 
 ## Divergences
 
@@ -263,6 +255,38 @@ ported. Humanization itself is faithful:
 `u($name)->afterLast('.')->kebab()->replace('-', ' ')->title()` matches Filament's
 `str(...)->afterLast('.')->kebab()->replace(['-','_'],' ')->ucfirst()` on the
 tested cases.
+
+### Extra-attribute precedence is fixed by source order
+
+In Filament the two setters never meet: `extraFieldWrapperAttributes()` is the
+only one that reaches the field wrapper, and the schemas-level
+`extraAttributes()` lands on the field's **own inner element** —
+[`TextInput`](../../../vendor/filament/forms/src/Components/TextInput.php) merges
+it into the `fi-fo-text-input` div it hands to `wrapInputHtml()`, `Textarea`,
+`Select`, `KeyValue` and `CodeEditor` onto their equivalent inner div, and
+[`Checkbox`](../../../vendor/filament/forms/src/Components/Checkbox.php) and
+`Toggle` straight onto the control element. So there is no precedence to
+inherit. (The `merge()` chain in
+[`wrapEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Field.php) —
+`(new Bag)->merge($extraWrapperAttributes)->merge($this->getExtraFieldWrapperAttributes())`
+— is not that contest either: `$extraWrapperAttributes` is the method's own
+parameter, passed by exactly one caller, `ToggleButtons`, with a hardcoded
+`fi-fo-toggle-buttons-wrp` class.)
+
+The port has no inner element to put `extraAttributes()` on, because the
+[input affix wrapper is not ported](#the-input-affix-wrapper-is-not-ported) — the
+field wrapper `<div>` is the only element either setter can reach, so one has to
+win. The port spells that as `attrs()` source order, which is later-source-wins:
+`attrs({class: [...]}, field.getExtraFieldWrapperAttributes, field.getExtraAttributes)`.
+`extraAttributes()` wins, for two reasons. It already rendered on that `<div>`
+before this trait existed, so composing the trait cannot silently override an
+attribute a consumer had already set. And it keeps the per-component setter
+authoritative over the wrapper one, which is the relationship Filament expresses
+by putting it on the inner element.
+
+Revisit when `HasAffixes` lands: `extraAttributes()` moves onto the input wrapper
+where Filament has it, the two setters stop sharing an element, and the ordering
+stops mattering.
 
 _See also: the global [rename table](../renames.md) — the field-wrapper
 rendering leans on the systematic `toEmbeddedHtml()`/Blade → Twig template,

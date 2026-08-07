@@ -18,12 +18,12 @@ carry no _Blocked by_ column, and a prerequisite only means anything against the
 component waiting on it, so `CanBeNative` is **todo** below and **blocked** in
 [`select.md`](select.md).
 
-The four single-use concerns Filament composes onto the base `Field` —
-`CanBeAutofocused`, `HasHelperText`, `HasHint`, and
-`HasPlaceholder` — have
+The five single-use concerns Filament composes onto the base `Field` —
+`CanBeAutofocused`, `HasExtraFieldWrapperAttributes`, `HasHelperText`, `HasHint`,
+and `HasPlaceholder` — have
 folded into [`field.md`](field.md) and left the Features table, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing).
-The fifth, `CanBeMarkedAsRequired`, is no longer tracked here at all: it
+The sixth, `CanBeMarkedAsRequired`, is no longer tracked here at all: it
 relocated to schemas so its `Fieldset` could reach it, and is tracked in
 [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md).
 `CanBeLengthConstrained` is shared by `TextInput` and `Textarea`, so it keeps its
@@ -102,9 +102,10 @@ Cross-cutting field concerns —
 [`src/Concerns`](../../../vendor/filament/forms/src/Concerns) trait a
 Livewire/LiveComponent host uses to resolve form schemas. A concern used by a
 single component is tracked in that component's detail file, not here: the base
-`Field`'s four started concerns (`CanBeAutofocused`, `HasHelperText`, `HasHint`,
+`Field`'s five started concerns (`CanBeAutofocused`,
+`HasExtraFieldWrapperAttributes`, `HasHelperText`, `HasHint`,
 `HasPlaceholder`) have folded into
-[`field.md`](field.md) — a fifth, `CanBeMarkedAsRequired`, relocated to schemas
+[`field.md`](field.md) — a sixth, `CanBeMarkedAsRequired`, relocated to schemas
 and is tracked in
 [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md)
 — `Select`'s three (`HasOptions`, `CanSelectPlaceholder`,
@@ -137,7 +138,6 @@ ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
 | HasDatalistOptions | [`Components/Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | todo | — |
 | HasDescriptions | [`Components/Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | todo | — |
 | HasEnum | [`Components/Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | todo | — |
-| HasExtraFieldWrapperAttributes | [`Components/Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | todo | — |
 | HasExtraInputAttributes | [`Components/Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | todo | — |
 | HasExtraItemActions | [`Components/Concerns/HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | todo | — |
 | HasFileAttachments | [`Components/Concerns/HasFileAttachments.php`](../../../vendor/filament/forms/src/Components/Concerns/HasFileAttachments.php) | todo | — |

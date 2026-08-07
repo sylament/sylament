@@ -272,3 +272,18 @@ it('treats false as a blank state value', function (): void {
         ->and(Toggle::make('flag')->isBlankStateValue(true))->toBeFalse()
         ->and(Toggle::make('flag')->isBlankStateValue(null))->toBeTrue();
 });
+
+it('merges extra input attributes onto the toggle input, not its wrapper', function (): void {
+    $crawler = new Crawler(renderField(
+        Toggle::make('flag')->disabled()->extraInputAttributes([
+            'data-extra' => 'yes',
+            'disabled' => false,
+        ]),
+    ));
+
+    $input = $crawler->filter('input.sy-fo-toggle-input');
+
+    expect($input->attr('data-extra'))->toBe('yes')
+        ->and($input->attr('disabled'))->toBeNull()
+        ->and($crawler->filter('.sy-fo-toggle[data-extra]')->count())->toBe(0);
+});

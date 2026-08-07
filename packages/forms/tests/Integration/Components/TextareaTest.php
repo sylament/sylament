@@ -100,3 +100,17 @@ it('renders the disabled attribute when disabled', function (): void {
     $disabled = new Crawler(renderField(Textarea::make('excerpt')->disabled()));
     expect($disabled->filter('textarea.sy-fo-input')->attr('disabled'))->not->toBeNull();
 });
+
+it('merges extra input attributes onto the textarea and lets them win', function (): void {
+    $crawler = new Crawler(renderField(
+        Textarea::make('excerpt')->rows(3)->extraInputAttributes([
+            'data-extra' => 'yes',
+            'rows' => 8,
+        ]),
+    ));
+
+    $textarea = $crawler->filter('textarea.sy-fo-input');
+
+    expect($textarea->attr('data-extra'))->toBe('yes')
+        ->and($textarea->attr('rows'))->toBe('8');
+});

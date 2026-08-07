@@ -38,6 +38,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | [`CanSelectPlaceholder`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php) | [`Concerns/CanSelectPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/CanSelectPlaceholder.php) | done | — | [diverges](#disableplaceholderselection-is-not-ported) |
 | [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) | [`Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [diverges](#a-null-callback-merges-to-nothing) |
 | [`Contracts\CanDisableOptions`](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Components/Contracts/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Contracts/CanDisableOptions.php) | done | — | [diverges](#the-contract-declares-the-read-surface-not-the-setter) |
+| [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
 | `boolean()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | — |
 | `getOptionLabel()` | [`resolveOptionLabel()`](../../../vendor/filament/forms/src/Components/Select.php) | in progress | relationship layer | [detail](#getoptionlabel-omits-the-getoptionlabelusing-arm) |
 | Option validation (`Choice`) | [`getInValidationRuleValues()`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-choice-constraint-is-the-fields-only-server-side-guard) |
@@ -56,7 +57,8 @@ the rendered markup (including a disabled option in both the flat and the groupe
 shape), the state round-trip, `boolean()`, `getOptionLabel()` over flat, grouped
 and boolean options, the no-options `LogicException` and the `Choice` guard — the
 tampered-value, disabled-option and int-keyed cases plus both stored forms of a
-`boolean()` option, all run through the container's real validator — by
+`boolean()` option, all run through the container's real validator — and the
+extra input attributes reaching the `<select>` rather than its `<option>`s — by
 [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php).
 
 ## Details

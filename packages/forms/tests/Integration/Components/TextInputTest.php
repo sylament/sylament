@@ -251,3 +251,17 @@ it('keeps required first and appends type arms after lengths', function (): void
         ->and($constraints[1])->toBeInstanceOf(Length::class)
         ->and($constraints[2])->toBeInstanceOf(Email::class);
 });
+
+it('merges extra input attributes onto the control and lets them win', function (): void {
+    $crawler = new Crawler(renderField(
+        TextInput::make('title')->numeric()->extraInputAttributes([
+            'data-extra' => 'yes',
+            'inputmode' => 'email',
+        ]),
+    ));
+
+    $input = $crawler->filter('input.sy-fo-input');
+
+    expect($input->attr('data-extra'))->toBe('yes')
+        ->and($input->attr('inputmode'))->toBe('email');
+});

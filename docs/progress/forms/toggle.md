@@ -37,6 +37,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`isBlankStateValue()`](../../../packages/forms/src/Components/Toggle.php) — an untouched switch reads blank | — | done | — | [semantics](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves) |
 | [`HasToggleColors`](../../../packages/forms/src/Components/Concerns/HasToggleColors.php) (`onColor()` / `offColor()`) | [`Concerns/HasToggleColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleColors.php) | done | — | [diverges](#the-two-colours-ride-on-two-elements) |
 | `CanFixIndistinctState` (`fixIndistinctState()`) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` + the distinct/live surface | [detail](#fixindistinctstate-awaits-the-repeater) |
+| [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#the-toggle-carries-extra-input-attributes-filaments-does-not) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — | [detail](#the-alpine-attribute-concern-is-not-ported) |
 
 Coverage:
@@ -56,7 +57,9 @@ ring depends on), the deliberately missing `required` attribute, the two
 colours landing on the elements that carry them — the resolved class list for a
 named palette, the inline `--sy-color-*` declarations for an array one, primary
 on the track and nothing on the root when neither is set, and nothing at all for
-gray — and `isBlankStateValue()` answering `true` for `false` and `null` but not
+gray — the extra input attributes reaching the input rather than the root and
+outranking what the field computes, and `isBlankStateValue()` answering `true`
+for `false` and `null` but not
 `true`, the override that keeps a resting switch from holding a
 [`nullWhenBlank()` branch](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves)
 alive.
@@ -136,6 +139,29 @@ One implementation constraint the template must respect: Twig hoists
 its content regardless of the condition. The template therefore declares **both**
 the `labelPrefix` and `content` blocks unconditionally and puts the
 `component.isInline` test *inside* each; the "renders exactly once" tests pin it.
+
+### The toggle carries extra input attributes, Filament's does not
+
+Filament composes `HasExtraInputAttributes` on thirteen form components and
+pointedly not on
+[`Toggle`](../../../vendor/filament/forms/src/Components/Toggle.php), which has
+no input element for it to address: the control is an Alpine `<button>`, and
+`extraAttributes()` is merged straight onto that button, so a Filament consumer
+already reaches the control by the setter every component has.
+
+Neither half of that holds here. The port's toggle is
+[a real `<input type="checkbox" role="switch">`](#the-toggle-is-a-styled-checkbox-not-a-button),
+so there *is* an input; and `extraAttributes()` does not reach it, because on a
+field it renders on the wrapper `<div>` rather than on the control
+([why](field.md#extra-attribute-precedence-is-fixed-by-source-order)). Withholding
+the concern would therefore leave the toggle the one field whose control no
+setter can reach — the opposite of what Filament's omission achieves.
+
+The extras merge onto `.sy-fo-toggle-input`, not the `.sy-fo-toggle` root that
+CSS paints the track from. The input is the element the other four fields' extras
+land on, so `extraInputAttributes()` means the same thing on every field: it
+addresses the form control. `ToggleTest` pins both halves — the attribute on the
+input, and no attribute on the root.
 
 ### The two colours ride on two elements
 

@@ -277,3 +277,21 @@ it('still derives required for a boolean() select on a non-nullable bool column'
     expect($field->isRequired())->toBeTrue()
         ->and($crawler->filter('select.sy-fo-select')->attr('required'))->not->toBeNull();
 });
+
+it('merges extra input attributes onto the select and lets them win', function (): void {
+    $crawler = new Crawler(renderField(
+        Select::make('status')
+            ->options(['draft' => 'Draft'])
+            ->disabled()
+            ->extraInputAttributes([
+                'data-extra' => 'yes',
+                'disabled' => false,
+            ]),
+    ));
+
+    $select = $crawler->filter('select.sy-fo-select');
+
+    expect($select->attr('data-extra'))->toBe('yes')
+        ->and($select->attr('disabled'))->toBeNull()
+        ->and($crawler->filter('option[data-extra]')->count())->toBe(0);
+});

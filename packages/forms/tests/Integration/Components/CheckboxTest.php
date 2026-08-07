@@ -179,3 +179,17 @@ it('treats false as a blank state value', function (): void {
         ->and(Checkbox::make('flag')->isBlankStateValue(true))->toBeFalse()
         ->and(Checkbox::make('flag')->isBlankStateValue(null))->toBeTrue();
 });
+
+it('merges extra input attributes onto the checkbox and lets them win', function (): void {
+    $crawler = new Crawler(renderField(
+        Checkbox::make('flag')->disabled()->extraInputAttributes([
+            'data-extra' => 'yes',
+            'disabled' => false,
+        ]),
+    ));
+
+    $input = $crawler->filter('input.sy-fo-checkbox');
+
+    expect($input->attr('data-extra'))->toBe('yes')
+        ->and($input->attr('disabled'))->toBeNull();
+});

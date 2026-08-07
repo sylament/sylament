@@ -6,6 +6,7 @@ namespace Sylament\Forms\Components;
 
 use Closure;
 use Sylament\Forms\Components\Concerns\CanBeLengthConstrained;
+use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Type;
@@ -13,6 +14,7 @@ use Symfony\Component\Validator\Constraints\Type;
 class TextInput extends Field implements Contracts\CanBeLengthConstrained
 {
     use CanBeLengthConstrained;
+    use HasExtraInputAttributes;
 
     protected string|Closure|null $template = '@SylamentForms/partials/TextInput/index.html.twig';
 

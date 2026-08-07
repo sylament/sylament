@@ -6,10 +6,12 @@ namespace Sylament\Forms\Components;
 
 use Closure;
 use Sylament\Forms\Components\Concerns\CanBeLengthConstrained;
+use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 
 class Textarea extends Field implements Contracts\CanBeLengthConstrained
 {
     use CanBeLengthConstrained;
+    use HasExtraInputAttributes;
 
     protected string|Closure|null $template = '@SylamentForms/partials/Textarea/index.html.twig';
 

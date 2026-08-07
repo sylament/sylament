@@ -39,8 +39,9 @@ alone and live in
 `CanLimitItemsLength` are `Repeater`'s alone and live in
 [`repeater.md`](repeater.md) — which also carries `helpers.php`, whose two
 reorder functions no other component calls — while `CanBeInline` and
-`CanBeAccepted` are shared by `Checkbox` and `Toggle` and so keep rows of their
-own. The fold reads the port,
+`CanBeAccepted` are shared by `Checkbox` and `Toggle`, and
+`HasExtraInputAttributes` by all five fields that render a control, so those keep
+rows of their own. The fold reads the port,
 not Filament — Filament composes `HasOptions` and `CanDisableOptions` onto
 `Radio`, `CheckboxList` and `ToggleButtons` as well, so each is promoted back to
 a row of its own the moment the second field lands.
@@ -115,7 +116,9 @@ and is tracked in
 into [`repeater.md`](repeater.md), per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). The shared
 ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
-`Textarea`, `CanBeInline` and `CanBeAccepted` by `Checkbox` and `Toggle`.
+`Textarea`, `CanBeInline` and `CanBeAccepted` by `Checkbox` and `Toggle`, and
+`HasExtraInputAttributes` by `TextInput`, `Textarea`, `Select`, `Checkbox` and
+`Toggle`.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -138,7 +141,7 @@ ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
 | HasDatalistOptions | [`Components/Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | todo | — |
 | HasDescriptions | [`Components/Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | todo | — |
 | HasEnum | [`Components/Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | todo | — |
-| HasExtraInputAttributes | [`Components/Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | todo | — |
+| [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Components/Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | [has-extra-input-attributes.md](has-extra-input-attributes.md) |
 | HasExtraItemActions | [`Components/Concerns/HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | todo | — |
 | HasFileAttachments | [`Components/Concerns/HasFileAttachments.php`](../../../vendor/filament/forms/src/Components/Concerns/HasFileAttachments.php) | todo | — |
 | HasGridDirection | [`Components/Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | todo | — |

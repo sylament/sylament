@@ -8,7 +8,7 @@
         'aria-invalid': component.getErrorMessages is not empty,
         disabled: component.isDisabled,
         autofocus: component.isAutofocused,
-    }) }}>
+    }, component.getExtraInputAttributes) }}>
         {% if component.canSelectPlaceholder %}
             <option value="">{{ component.isDisabled ? '' : component.getPlaceholder }}</option>
         {% endif %}

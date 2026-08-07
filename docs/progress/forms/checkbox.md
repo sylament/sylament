@@ -36,10 +36,11 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | Checked state rendered server-side | [`Checkbox::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) |
 | [`isBlankStateValue()`](../../../packages/forms/src/Components/Checkbox.php) — an untouched box reads blank | — | done | — | [semantics](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves) |
 | `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` | — |
-| `HasExtraInputAttributes` | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | todo | — | — |
+| [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#the-checkboxs-extra-input-attributes-win-where-filaments-lose) |
 
-Coverage: the inline / not-inline placement in both directions, the absent
-`value` attribute, the hydrated `false` default, the non-nullable cast, the
+Coverage: the inline / not-inline placement in both directions, the extra input
+attributes reaching the `<input>` and outranking what the field computes, the
+absent `value` attribute, the hydrated `false` default, the non-nullable cast, the
 `checked` attribute, the hidden-label path, the boolean constraint against a raw
 non-`bool` state, the `accepted()` / `declined()` constraints reaching the field,
 the `required` / `disabled` / `autofocus` attributes, and `isBlankStateValue()`
@@ -58,13 +59,10 @@ whose fixture form carries an `accepted()` checkbox beside its text fields.
 Specifics for rows that are not finished. Delete a subsection when its row flips
 to **done**.
 
-Neither unfinished row is partly ported. `CanFixIndistinctState` exists to
+The one unfinished row is not partly ported. `CanFixIndistinctState` exists to
 disambiguate identically-pathed checkboxes inside a `Repeater`, which is itself
 unported, so it has nothing to fix yet — **blocked** on that, the same reading
 [`Toggle`](toggle.md#fixindistinctstate-awaits-the-repeater) gives it.
-`HasExtraInputAttributes` is a shared field concern (its own README row) that no
-field reaches yet, and waits on nothing — a setter/getter plus one `attrs()`
-source on the template.
 
 ## Semantics
 
@@ -131,6 +129,30 @@ original leaves it to the client.
 The input carries **no `value` attribute**, and that absence is load-bearing
 rather than an omission: `live_controller` binds a valueless checkbox as
 `element.checked`, a real boolean, and binds one carrying `value` as that string.
+
+### The checkbox's extra input attributes win where Filament's lose
+
+`extraInputAttributes()` outranks the attributes the field computes on all five
+fields that compose
+[the concern](has-extra-input-attributes.md#the-extras-beat-the-attributes-the-field-computes).
+That is Filament's own order on `TextInput`, `Textarea` and `Select`, each of
+which starts the control's attributes *from* the extras bag and merges its own in
+as defaults — but not on
+[`Checkbox`](../../../vendor/filament/forms/src/Components/Checkbox.php), whose
+`toEmbeddedHtml()` builds the declared attributes first and then
+`->merge($this->getExtraInputAttributes())`. A Laravel bag's `merge()` takes its
+**argument** as the defaults, so there the extras lose every key the field
+already set: `extraInputAttributes(['disabled' => false])` cannot un-disable a
+Filament checkbox, though it can un-disable a Filament text input.
+
+The port applies one precedence to all five rather than reproducing the odd one
+out. Nothing in Filament's checkbox reads as intent: the same chain demotes
+`extraAttributes()` too, while the three fields that own a wrapper element start
+that element's bag from `getExtraAttributeBag()` — so the split tracks which
+`merge()` happens to come first in each embedded view, not a decision about who
+should win. A hatch whose precedence flips with the field it is called on is the
+shape a consumer cannot hold in their head. Reversible on a concrete report that
+someone depends on the checkbox arm losing.
 
 ### Both label slots are declared unconditionally
 

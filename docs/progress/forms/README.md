@@ -35,7 +35,8 @@ built component uses: `HasOptions`, `CanSelectPlaceholder` and
 `CanDisableOptions` are `Select`'s alone in the port and live in
 [`select.md`](select.md), `HasToggleIcons` and `HasToggleColors` are `Toggle`'s
 alone and live in
-[`toggle.md`](toggle.md), and `CanBeCloned`, `CanGenerateUuids` and
+[`toggle.md`](toggle.md), `HasStep` is `TextInput`'s alone and lives in
+[`text-input.md`](text-input.md), and `CanBeCloned`, `CanGenerateUuids` and
 `CanLimitItemsLength` are `Repeater`'s alone and live in
 [`repeater.md`](repeater.md) — which also carries `helpers.php`, whose two
 reorder functions no other component calls — while `CanBeInline` and
@@ -43,8 +44,9 @@ reorder functions no other component calls — while `CanBeInline` and
 `HasExtraInputAttributes` by all five fields that render a control, so those keep
 rows of their own. The fold reads the port,
 not Filament — Filament composes `HasOptions` and `CanDisableOptions` onto
-`Radio`, `CheckboxList` and `ToggleButtons` as well, so each is promoted back to
-a row of its own the moment the second field lands.
+`Radio`, `CheckboxList` and `ToggleButtons` as well, and `HasStep` onto
+`DateTimePicker` and `Slider` (and tables' `TextInputColumn`), so each is
+promoted back to a row of its own the moment the second field lands.
 [`support/component.md`](../support/component.md) is the shape each detail file
 follows.
 
@@ -111,7 +113,8 @@ and is tracked in
 [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md)
 — `Select`'s three (`HasOptions`, `CanSelectPlaceholder`,
 `CanDisableOptions`) into [`select.md`](select.md), `Toggle`'s
-`HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md), and
+`HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md),
+`TextInput`'s `HasStep` into [`text-input.md`](text-input.md), and
 `Repeater`'s three (`CanBeCloned`, `CanGenerateUuids`, `CanLimitItemsLength`)
 into [`repeater.md`](repeater.md), per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). The shared
@@ -153,7 +156,6 @@ ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
 | HasNestedRecursiveValidationRules | [`Components/Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | todo | — |
 | HasPivotData | [`Components/Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | todo | — |
 | HasPreview | [`Components/Concerns/HasPreview.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPreview.php) | todo | — |
-| HasStep | [`Components/Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | todo | — |
 | HasTooltips | [`Components/Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | todo | — |
 | HasUploadingMessage | [`Components/Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | todo | — |
 | InteractsWithForms | [`Concerns/InteractsWithForms.php`](../../../vendor/filament/forms/src/Concerns/InteractsWithForms.php) | todo | — |

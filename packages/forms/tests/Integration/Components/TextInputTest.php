@@ -180,6 +180,43 @@ it('emits inputmode=decimal for numeric inputs only', function (): void {
     expect($text->filter('input.sy-fo-input')->attr('inputmode'))->toBeNull();
 });
 
+it('renders no step attribute by default', function (): void {
+    $crawler = new Crawler(renderField(TextInput::make('title')));
+
+    expect($crawler->filter('input.sy-fo-input')->attr('step'))->toBeNull();
+});
+
+it('renders an explicit step', function (): void {
+    $crawler = new Crawler(renderField(TextInput::make('amount')->step(0.5)));
+
+    expect($crawler->filter('input.sy-fo-input')->attr('step'))->toBe('0.5');
+});
+
+it('seeds step any from numeric so the browser accepts decimals', function (): void {
+    $crawler = new Crawler(renderField(TextInput::make('amount')->numeric()));
+
+    $input = $crawler->filter('input.sy-fo-input');
+
+    expect($input->attr('type'))->toBe('number')
+        ->and($input->attr('step'))->toBe('any');
+});
+
+it('lets an explicit step override the one numeric seeds', function (): void {
+    $crawler = new Crawler(renderField(TextInput::make('amount')->numeric()->step(5)));
+
+    expect($crawler->filter('input.sy-fo-input')->attr('step'))->toBe('5');
+});
+
+it('seeds no step when a closure numeric condition resolves false', function (): void {
+    $crawler = new Crawler(renderField(TextInput::make('amount')->numeric(fn (): bool => false)));
+
+    $input = $crawler->filter('input.sy-fo-input');
+
+    expect($input->attr('type'))->toBe('text')
+        ->and($input->attr('step'))->toBeNull()
+        ->and($input->attr('inputmode'))->toBeNull();
+});
+
 it('renders the remaining html attributes', function (): void {
     $input = new Crawler(renderField(
         TextInput::make('title')

@@ -10,6 +10,7 @@
         placeholder: component.getPlaceholder ?: false,
         maxlength: component.getMaxLength,
         minlength: component.getMinLength,
+        step: component.getStep,
         required: component.isMarkedAsRequired,
         'aria-invalid': component.getErrorMessages is not empty,
         disabled: component.isDisabled,

@@ -7,6 +7,7 @@ namespace Sylament\Forms\Components;
 use Closure;
 use Sylament\Forms\Components\Concerns\CanBeLengthConstrained;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
+use Sylament\Forms\Components\Concerns\HasStep;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Type;
@@ -15,6 +16,7 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
 {
     use CanBeLengthConstrained;
     use HasExtraInputAttributes;
+    use HasStep;
 
     protected string|Closure|null $template = '@SylamentForms/partials/TextInput/index.html.twig';
 
@@ -43,6 +45,7 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
     public function numeric(bool|Closure $condition = true): static
     {
         $this->isNumeric = $condition;
+        $this->step(static fn (TextInput $component): ?string => $component->isNumeric() ? 'any' : null);
 
         return $this;
     }

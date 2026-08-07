@@ -3,12 +3,13 @@
 `Sylament\Forms\Components\TextInput` — the single-line text field, extending
 [`Field`](../../../packages/forms/src/Components/Field.php). An early subset of
 Filament's `TextInput`: the type sugar
-(`type`/`email`/`numeric`/`password`/`tel`/`url`), its `getType`/`getInputMode`
-derivation, length constraints via the shared
+(`type`/`email`/`integer`/`numeric`/`password`/`tel`/`url`), its
+`getType`/`getInputMode` derivation, length constraints via the shared
 [`CanBeLengthConstrained`](can-be-length-constrained.md) concern, the `Email` /
-numeric `Type` / tel `Regex` / `Url` validation arms that sugar contributes to
-[`CanBeValidated`](can-be-validated.md), and the `step` interval `numeric()`
-seeds. The affix/mask/copy/reveal/state-cast surface is not ported yet.
+numeric `Type` / integer and tel `Regex` / `Url` validation arms that sugar
+contributes to [`CanBeValidated`](can-be-validated.md), and the `step` interval
+`numeric()` and `integer()` seed. The affix/mask/copy/reveal/state-cast surface
+is not ported yet.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -24,17 +25,19 @@ Reference — the Filament source this is diffed against:
 Every point this field adds over `Field`. `Field`'s own surface (label, hint,
 helper text, placeholder, required, slots, rendering chrome) is tracked in
 [`field.md`](field.md), not here. _Blocked by_ names what has to land first.
+_Detail_ links a permanent note in [Semantics](#semantics) /
+[Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`type()` / `getType()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | — |
 | [`email()` / `isEmail()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
 | [`numeric()` / `isNumeric()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) · [diverges](#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition) |
-| [`buildValidationConstraints()` arms](../../../packages/forms/src/Components/TextInput.php) | [`TextInput::email()` / `numeric()` / `tel()` / `url()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
+| [`buildValidationConstraints()` arms](../../../packages/forms/src/Components/TextInput.php) | [`TextInput::email()` / `integer()` / `numeric()` / `tel()` / `url()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
 | [`password()` / `isPassword()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | — |
 | [`getInputMode()`](../../../packages/forms/src/Components/TextInput.php) | [`Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | done | — | [diverges](#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
 | `HasInputMode` (concern) | [`Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | skipped | — | [diverges](#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
-| `integer()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | — | — |
+| [`integer()` / `isInteger()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [semantics](#integer-delegates-to-numeric-so-both-arms-ship-and-the-step-order-matters) · [diverges](#integer-validates-with-a-regex-not-a-type-constraint) |
 | [`tel()` / `telRegex()` / `isTel()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
 | [`url()` / `isUrl()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
 | `currentPassword()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | authentication layer | — |
@@ -53,21 +56,55 @@ helper text, placeholder, required, slots, rendering chrome) is tracked in
 | `HasExtraAlpineAttributes` (concern) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — | — |
 | State casts + trim/strip (`getDefaultStateCasts`, `mutate*State`) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | schemas state-cast surface | — |
 
+## Semantics
+
+Behaviour that is faithful to Filament but easy to misread here.
+
+### `integer()` delegates to `numeric()`, so both arms ship and the step order matters
+
+`integer()` is not a peer of `numeric()` — it calls it, exactly as Filament's
+does. Two consequences a reader re-deriving them from the code would plausibly
+get backwards.
+
+**The call order is load-bearing.** `numeric()` seeds `step('any')`, so
+`integer()` has to call it *first* and overwrite that seed with `step(1)`
+afterwards. Written the other way round the `'any'` wins and an integer input
+silently accepts decimals — with a green suite, because nothing else about the
+field changes. `TextInputTest`'s _makes an integer input numeric with a step of
+one_ is what holds the order.
+
+**An integer field carries both type arms.** The delegation flips `isNumeric`
+too, so `buildValidationConstraints()` appends `Type('numeric')` *and* the
+integer [`Regex`](#integer-validates-with-a-regex-not-a-type-constraint), and
+`getType()` reports `number` off the same flag. That is Filament: its `integer()`
+likewise leaves `numeric()`'s `numeric` rule in place and adds `integer` beside
+it. The pair is not two independent checks, though — the regex accepts a strict
+subset of `is_numeric()`, so the `Type` arm rejects nothing the regex would
+accept; what it adds is a second violation on the same value, and
+[`FieldWrapper`](../../../packages/forms/templates/components/FieldWrapper/index.html.twig)
+lists every message, so `abc` in an integer field renders two. Dropping the
+`Type` arm would mean not calling `numeric()`, which is where the step, the
+`number` type and the input mode all come from. `TextInputTest`'s _validates an
+integer with the numeric arm plus a regex that accepts a numeric string_ holds
+both arms and their order.
+
 ## Divergences
 
 ### The type-sugar constraint arms live in an override, not in the setters
 
-Filament's `email()` / `numeric()` / `url()` push their validation rule into the
-shared rule list from inside the setter (`->rule('email', $condition)`), and
+Filament's `email()` / `integer()` / `numeric()` / `url()` push their validation
+rule into the shared rule list from inside the setter
+(`->rule('email', $condition)`), and
 `tel()` pushes its pattern through a `regex()` setter that reads `getTelRegex()`
 back off the component. So in Filament the rule is registered eagerly and the
 condition is what stays lazy. The port's setters register no constraint at all —
-they flip `isEmail` / `isNumeric` / `isTel` / `isUrl`, and `numeric()`
-additionally seeds the
+they flip `isEmail` / `isInteger` / `isNumeric` / `isTel` / `isUrl`, and
+`numeric()` and `integer()` additionally seed the
 [step](#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition) —
 while
 [`buildValidationConstraints()`](../../../packages/forms/src/Components/TextInput.php)
 overrides the parent to append `Email()` / `Type('numeric')` /
+[integer `Regex`](#integer-validates-with-a-regex-not-a-type-constraint) /
 `Regex(getTelRegex())` / `Url()` behind those flags. Same observable API and same
 laziness. `tel()` needs no `regex()` setter as plumbing — the override is already
 where every type arm lands — which is not a claim that `regex()` will never
@@ -79,9 +116,11 @@ The reason is **composition order**. These arms must land last — the order is
 `NotBlank` → length → escape hatch → type arms, pinned by `TextInputTest` — and a
 `constraint()` call from `setUp()` would file them among the escape-hatch pairs
 instead, ahead of anything the user registers later. The override is what keeps
-them at the tail, and it keeps the four arms in one block ordered the way
-`getType()` checks the same flags. Messages are keyed `Email::class` / `Type::class` /
-`Regex::class` / `Url::class` and applied by the
+them at the tail, and it keeps the five arms in one block, ordered the way
+`getType()` checks the flags they share — the integer arm slotting in beside the
+`numeric()` it [delegates to](#integer-delegates-to-numeric-so-both-arms-ship-and-the-step-order-matters),
+since `getType()` has no branch of its own for it. Messages are keyed
+`Email::class` / `Type::class` / `Regex::class` / `Url::class` and applied by the
 [post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built),
 so no arm passes a `message:` argument.
 
@@ -136,6 +175,17 @@ Whoever ports `regex()` chooses between accepting that (two patterns, both
 enforced, two identical messages) and standing the tel arm down when an explicit
 pattern is set. It is a `regex()` decision, not a `tel()` one.
 
+That collision is already reachable without `regex()`. `integer()` contributes a
+`Regex` of its own, so `->tel()->integer()` builds two today and a `Regex::class`
+message reaches both. Nothing guards it, and nothing should — an input is not
+sensibly both a phone number and an integer, so the pairing is meaningless rather
+than merely unsupported. Filament has no equivalent because its message keys are
+rule names, and there the two arms key `regex` and `integer` separately; the
+shared key is what
+[class-keyed messages](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built)
+cost. Worth knowing before a third `Regex` arm lands on a combination that *is*
+sensible.
+
 ### `numeric()` seeds the step through `isNumeric()`, not the captured condition
 
 Filament seeds the interval by capturing the argument —
@@ -155,6 +205,36 @@ divergence is the whole reason the seed is a component-reading closure rather
 than the shorter capture; `getInputMode()` below reads the flag back the same
 way, and gains the same correction for free.
 
+### `integer()` validates with a regex, not a `Type` constraint
+
+Filament's `integer()` applies Laravel's `integer` rule, which is
+`filter_var($value, FILTER_VALIDATE_INT) !== false` and so accepts the numeric
+**string** an HTML form actually submits (`"5"`). Neither Symfony counterpart
+does: `Type('integer')` is `is_int()`, which rejects `"5"`, and `Type('digit')`
+is `ctype_digit()`, which rejects `"-5"`. The port appends `Regex('/^[+-]?\d+$/')`
+instead — the same reasoning that makes `numeric()` reach for `Type('numeric')`
+(`is_numeric()`) rather than a strict numeric type. The pattern spells its digit
+class `\d` rather than `[0-9]` because Rector's `SimplifyRegexPatternRector`
+rewrites that class inside any string literal, so the character-class form does
+not survive `composer format` — the same normalisation the
+[tel pattern](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters)
+documents.
+
+Two edges where the regex and the rule it ports disagree, both accepted. The
+pattern is the stricter on whitespace — `filter_var` trims, so Laravel accepts
+`" 5 "` and the anchored pattern does not — and the looser on magnitude, since
+`filter_var` rejects a digit run past `PHP_INT_MAX` and the pattern takes any
+length. Neither is worth a normaliser: the strings a `type="number"` input
+submits carry no padding, and a value that overflows `int` is a state-cast
+problem rather than a validation one. A decimal string is rejected by both.
+
+Worth revisiting if a state cast ever converts the field's state to a real `int`
+before validation runs — a `Type('integer')` arm would then say what it means,
+though the regex keeps working either way, since `RegexValidator` stringifies a
+scalar before matching. Today validation reads the raw host property
+([semantics](checkbox.md#validation-reads-the-raw-state-so-the-boolean-type-constraint-is-live)),
+so there is nothing between the submitted string and the constraint.
+
 ### Input mode is a bespoke getter, not the `HasInputMode` concern
 
 Filament composes
@@ -162,14 +242,28 @@ Filament composes
 (an `inputMode()` setter + `getInputMode()`), and `numeric()` / `integer()` push
 closures into it (`'decimal'` / `'numeric'`). The port composes no such concern:
 [`getInputMode()`](../../../packages/forms/src/Components/TextInput.php) is a fixed
-method returning `'decimal'` when `isNumeric()` and `null` otherwise. The rendered
-result matches Filament for a `bool` condition — for a closure one it reads the
-flag back rather than capturing it, exactly as the
+method branching `isInteger()` → `'numeric'`, `isNumeric()` → `'decimal'`, else
+`null`. The rendered result matches Filament for a `bool` condition — for a
+closure one it reads the flag back rather than capturing it, exactly as the
 [step seed](#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition)
-does — but there is no user-facing `inputMode()` setter and no `'numeric'` mode
-(that arrives with `integer()`). Reversible when `HasInputMode` is ported — at
-which point the bespoke getter is replaced by the concern and the row above flips
-to a plain compose.
+does — but there is no user-facing `inputMode()` setter.
+
+What the fixed getter costs is a port-only accessor. Filament records "this field
+is an integer" *inside* `HasInputMode`, as one of the closures it pushes, and
+carries no `isInteger()` on `TextInput` at all — the closure is the only thing
+that knows. Reading a flag back needs somewhere to read it from, so the port
+keeps a `$isInteger` property and a public `isInteger()` beside the other four
+`is*()` accessors. The shape is Filament's own —
+[`NumberConstraint`](../../../vendor/filament/query-builder/src/Constraints/NumberConstraint.php)
+in `query-builder` carries exactly this pair, and its operators call it — just
+not on `TextInput`.
+
+Reversible when `HasInputMode` is ported — at which point the bespoke getter is
+replaced by the concern and the row above flips to a plain compose. `isInteger()`
+stays regardless: the
+[step seed](#integer-delegates-to-numeric-so-both-arms-ship-and-the-step-order-matters)
+and the [validation arm](#integer-validates-with-a-regex-not-a-type-constraint)
+both read it.
 
 ### The datalist drops the `Arrayable` arm
 

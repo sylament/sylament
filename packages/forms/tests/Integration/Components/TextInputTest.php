@@ -221,6 +221,31 @@ it('seeds no step when a closure numeric condition resolves false', function ():
         ->and($input->attr('inputmode'))->toBeNull();
 });
 
+it('makes an integer input numeric with a step of one', function (): void {
+    $crawler = new Crawler(renderField(TextInput::make('count')->integer()));
+
+    $input = $crawler->filter('input.sy-fo-input');
+
+    expect($input->attr('type'))->toBe('number')
+        ->and($input->attr('step'))->toBe('1')
+        ->and($input->attr('inputmode'))->toBe('numeric');
+});
+
+it('keeps decimal input mode for a plain numeric input', function (): void {
+    expect(TextInput::make('amount')->numeric()->getInputMode())->toBe('decimal');
+});
+
+it('drops every integer consequence when a closure condition resolves false', function (): void {
+    $field = TextInput::make('count')->integer(fn (): bool => false);
+
+    $input = new Crawler(renderField($field))->filter('input.sy-fo-input');
+
+    expect($input->attr('type'))->toBe('text')
+        ->and($input->attr('step'))->toBeNull()
+        ->and($input->attr('inputmode'))->toBeNull()
+        ->and($field->getValidationConstraints())->toBe([]);
+});
+
 it('renders the remaining html attributes', function (): void {
     $input = new Crawler(renderField(
         TextInput::make('title')
@@ -271,6 +296,24 @@ it('adds a numeric Type constraint when numeric()', function (): void {
     expect($constraints)->toHaveCount(1)
         ->and($constraints[0])->toBeInstanceOf(Type::class)
         ->and($constraints[0]->type)->toBe('numeric');
+});
+
+it('validates an integer with the numeric arm plus a regex that accepts a numeric string', function (): void {
+    $constraints = TextInput::make('count')->integer()->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(2)
+        ->and($constraints[0])->toBeInstanceOf(Type::class)
+        ->and($constraints[0]->type)->toBe('numeric')
+        ->and($constraints[1])->toBeInstanceOf(Regex::class);
+
+    $pattern = $constraints[1]->pattern;
+
+    expect(preg_match($pattern, '5'))->toBe(1)
+        ->and(preg_match($pattern, '-5'))->toBe(1)
+        ->and(preg_match($pattern, '+5'))->toBe(1)
+        ->and(preg_match($pattern, '5.5'))->toBe(0)
+        ->and(preg_match($pattern, 'abc'))->toBe(0)
+        ->and(preg_match($pattern, ''))->toBe(0);
 });
 
 it('adds a Regex constraint whose default pattern accepts phone numbers and rejects prose', function (): void {

@@ -32,6 +32,8 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
 
     protected bool|Closure $isEmail = false;
 
+    protected bool|Closure $isInteger = false;
+
     protected bool|Closure $isNumeric = false;
 
     protected bool|Closure $isPassword = false;
@@ -54,6 +56,15 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
     public function email(bool|Closure $condition = true): static
     {
         $this->isEmail = $condition;
+
+        return $this;
+    }
+
+    public function integer(bool|Closure $condition = true): static
+    {
+        $this->isInteger = $condition;
+        $this->numeric($condition);
+        $this->step(static fn (TextInput $component): ?int => $component->isInteger() ? 1 : null);
 
         return $this;
     }
@@ -130,12 +141,21 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
 
     public function getInputMode(): ?string
     {
+        if ($this->isInteger()) {
+            return 'numeric';
+        }
+
         return $this->isNumeric() ? 'decimal' : null;
     }
 
     public function isEmail(): bool
     {
         return (bool) $this->evaluate($this->isEmail);
+    }
+
+    public function isInteger(): bool
+    {
+        return (bool) $this->evaluate($this->isInteger);
     }
 
     public function isNumeric(): bool
@@ -171,6 +191,10 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
 
         if ($this->isNumeric()) {
             $constraints[] = new Type('numeric');
+        }
+
+        if ($this->isInteger()) {
+            $constraints[] = new Regex('/^[+-]?\d+$/');
         }
 
         if ($this->isTel()) {

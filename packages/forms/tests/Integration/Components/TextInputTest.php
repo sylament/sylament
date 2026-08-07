@@ -273,18 +273,33 @@ it('adds a numeric Type constraint when numeric()', function (): void {
         ->and($constraints[0]->type)->toBe('numeric');
 });
 
-it('adds a Regex constraint carrying the default tel pattern when tel()', function (): void {
+it('adds a Regex constraint whose default pattern accepts phone numbers and rejects prose', function (): void {
     $constraints = TextInput::make('phone')->tel()->getValidationConstraints();
 
     expect($constraints)->toHaveCount(1)
-        ->and($constraints[0])->toBeInstanceOf(Regex::class)
-        ->and($constraints[0]->pattern)->toBe(TextInput::make('phone')->getTelRegex());
+        ->and($constraints[0])->toBeInstanceOf(Regex::class);
+
+    $pattern = $constraints[0]->pattern;
+
+    expect(preg_match($pattern, '+420 123 456 789'))->toBe(1)
+        ->and(preg_match($pattern, '(123)456-7890'))->toBe(1)
+        ->and(preg_match($pattern, '1234567890'))->toBe(1)
+        ->and(preg_match($pattern, 'abc'))->toBe(0)
+        ->and(preg_match($pattern, ''))->toBe(0);
 });
 
 it('honours a custom tel regex', function (): void {
     $constraints = TextInput::make('phone')->tel()->telRegex('/^\d{9}$/')->getValidationConstraints();
 
-    expect($constraints[0])->toBeInstanceOf(Regex::class)
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0])->toBeInstanceOf(Regex::class)
+        ->and($constraints[0]->pattern)->toBe('/^\d{9}$/');
+});
+
+it('resolves a closure tel regex through evaluate', function (): void {
+    $constraints = TextInput::make('phone')->tel()->telRegex(fn (): string => '/^\d{9}$/')->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(1)
         ->and($constraints[0]->pattern)->toBe('/^\d{9}$/');
 });
 
@@ -293,6 +308,16 @@ it('adds a Url constraint when url()', function (): void {
 
     expect($constraints)->toHaveCount(1)
         ->and($constraints[0])->toBeInstanceOf(Url::class);
+});
+
+it('drops the tel and url arms when a closure condition resolves false', function (): void {
+    $tel = TextInput::make('phone')->tel(fn (): bool => false);
+    $url = TextInput::make('site')->url(fn (): bool => false);
+
+    expect($tel->getValidationConstraints())->toBe([])
+        ->and($tel->getType())->toBe('text')
+        ->and($url->getValidationConstraints())->toBe([])
+        ->and($url->getType())->toBe('text');
 });
 
 it('applies email and numeric messages to the type arms', function (): void {

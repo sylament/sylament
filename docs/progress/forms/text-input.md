@@ -69,8 +69,11 @@ while
 [`buildValidationConstraints()`](../../../packages/forms/src/Components/TextInput.php)
 overrides the parent to append `Email()` / `Type('numeric')` /
 `Regex(getTelRegex())` / `Url()` behind those flags. Same observable API and same
-laziness. There is no `regex()` setter to port `tel()` onto, and none is wanted:
-the override is already the place every type arm lands.
+laziness. `tel()` needs no `regex()` setter as plumbing — the override is already
+where every type arm lands — which is not a claim that `regex()` will never
+exist: [`can-be-validated.md`](can-be-validated.md) carries it **todo**, and when
+it lands it is a peer arm in this same override rather than something `tel()`
+routes through.
 
 The reason is **composition order**. These arms must land last — the order is
 `NotBlank` → length → escape hatch → type arms, pinned by `TextInputTest` — and a
@@ -96,7 +99,13 @@ stays. The cost is unchanged: a subclass overriding
 never correct there. `requireTld` already defaults to `true`, so the arm needs no
 argument for it either. `Regex` is the opposite — its first parameter *is* the
 pattern — so the tel arm passes `getTelRegex()` positionally, and `telRegex()`
-overrides that default, evaluated lazily like every other sugar value.
+overrides that default, evaluated lazily like every other sugar value. Pinned by
+`TextInputTest`'s `honours a custom tel regex`, `resolves a closure tel regex
+through evaluate` and `drops the tel and url arms when a closure condition
+resolves false`, the last of which also holds `getType()` to `text` on a false
+condition, the way `numeric()`'s
+[step seed](#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition)
+is held.
 
 The default pattern is Filament's, one token apart: Rector's
 `SimplifyRegexPatternRector` normalises the leading `[0-9]{1,4}` to `\d{1,4}`, so
@@ -104,6 +113,28 @@ a diff against Filament shows a difference that is not one. PHP's PCRE leaves
 `\d` ASCII-only without the `u` modifier, which the pattern does not carry, so the
 match set is identical — including that neither form accepts Eastern Arabic
 digits. Don't "restore" the character class; `composer format` puts it back.
+
+What guards that claim is a **behavioural** test, not a string comparison:
+`TextInputTest`'s `adds a Regex constraint whose default pattern accepts phone
+numbers and rejects prose` runs the built constraint's pattern over samples
+(`+420 123 456 789`, `(123)456-7890`, `1234567890` accepted; `abc` and the empty
+string rejected), so it survives the Rector normalisation while failing if anyone
+changes what the default *means*. Asserting the literal against `getTelRegex()`
+would be a tautology — both sides read the same getter — and pinning the literal
+string would break on the next formatter pass.
+
+One consequence of the peer-arm shape needs deciding when `regex()` is actually
+built. Filament can afford routing `tel()` through `regex()` because `regex()`
+writes a single `$regexPattern` property that `getValidationRules()` emits once,
+so `->tel()->regex('/…/')` keeps the later call and yields **one** rule. A peer
+arm built to the
+[recipe](can-be-validated.md#the-unsugared-rule-families-are-reachable-through-constraint)
+does not: `->tel()->regex('/…/')` stacks **two** `Regex` constraints — nothing in
+`buildValidationConstraints()` de-duplicates by class — and the message post-pass
+matches by class across the whole list, so a `Regex::class` message lands on both.
+Whoever ports `regex()` chooses between accepting that (two patterns, both
+enforced, two identical messages) and standing the tel arm down when an explicit
+pattern is set. It is a `regex()` decision, not a `tel()` one.
 
 ### `numeric()` seeds the step through `isNumeric()`, not the captured condition
 

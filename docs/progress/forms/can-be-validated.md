@@ -127,7 +127,11 @@ the setter and a flag, then append the constraint in `buildValidationConstraints
 behind that flag, exactly as `TextInput`'s `email()` / `numeric()` arms do —
 messages need no per-arm work, since the
 [post-pass](#validation-messages-apply-after-the-constraints-are-built) reaches
-any constraint by class. `in()` / `notIn()` additionally
+any constraint by class. `regex()` carries one extra decision the others do not:
+`TextInput`'s `tel()` already appends a `Regex` of its own, and a peer `regex()`
+arm makes `->tel()->regex('/…/')` enforce
+[both patterns](text-input.md#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters)
+where Filament's single `$regexPattern` keeps only the later call. `in()` / `notIn()` additionally
 want the `HasOptions` / `HasEnum` concerns Filament reads the value list from,
 which is why they name a blocker while staying **todo**.
 

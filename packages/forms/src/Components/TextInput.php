@@ -14,7 +14,9 @@ use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasStep;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Component\Validator\Constraints\Type;
+use Symfony\Component\Validator\Constraints\Url;
 
 class TextInput extends Field implements Contracts\CanBeLengthConstrained
 {
@@ -33,6 +35,12 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
     protected bool|Closure $isNumeric = false;
 
     protected bool|Closure $isPassword = false;
+
+    protected bool|Closure $isTel = false;
+
+    protected bool|Closure $isUrl = false;
+
+    protected string|Closure|null $telRegex = null;
 
     protected string|Closure|null $type = null;
 
@@ -65,6 +73,27 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
         return $this;
     }
 
+    public function tel(bool|Closure $condition = true): static
+    {
+        $this->isTel = $condition;
+
+        return $this;
+    }
+
+    public function telRegex(string|Closure|null $regex): static
+    {
+        $this->telRegex = $regex;
+
+        return $this;
+    }
+
+    public function url(bool|Closure $condition = true): static
+    {
+        $this->isUrl = $condition;
+
+        return $this;
+    }
+
     public function getType(): string
     {
         if ($type = $this->evaluate($this->type)) {
@@ -83,7 +112,20 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
             return 'password';
         }
 
+        if ($this->isTel()) {
+            return 'tel';
+        }
+
+        if ($this->isUrl()) {
+            return 'url';
+        }
+
         return 'text';
+    }
+
+    public function getTelRegex(): string
+    {
+        return $this->evaluate($this->telRegex) ?? '/^[+]*[(]{0,1}\d{1,4}[)]{0,1}[-\s\.\/0-9]*$/';
     }
 
     public function getInputMode(): ?string
@@ -106,6 +148,16 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
         return (bool) $this->evaluate($this->isPassword);
     }
 
+    public function isTel(): bool
+    {
+        return (bool) $this->evaluate($this->isTel);
+    }
+
+    public function isUrl(): bool
+    {
+        return (bool) $this->evaluate($this->isUrl);
+    }
+
     /**
      * @return list<Constraint>
      */
@@ -119,6 +171,14 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
 
         if ($this->isNumeric()) {
             $constraints[] = new Type('numeric');
+        }
+
+        if ($this->isTel()) {
+            $constraints[] = new Regex($this->getTelRegex());
+        }
+
+        if ($this->isUrl()) {
+            $constraints[] = new Url();
         }
 
         return $constraints;

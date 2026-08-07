@@ -10,7 +10,9 @@ use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Component\Validator\Constraints\Type;
+use Symfony\Component\Validator\Constraints\Url;
 
 use function Sylament\Forms\Tests\renderField;
 
@@ -170,6 +172,8 @@ it('derives the input type from the type sugar', function (string $method, strin
     'email' => ['email', 'email'],
     'numeric' => ['numeric', 'number'],
     'password' => ['password', 'password'],
+    'tel' => ['tel', 'tel'],
+    'url' => ['url', 'url'],
 ]);
 
 it('emits inputmode=decimal for numeric inputs only', function (): void {
@@ -267,6 +271,28 @@ it('adds a numeric Type constraint when numeric()', function (): void {
     expect($constraints)->toHaveCount(1)
         ->and($constraints[0])->toBeInstanceOf(Type::class)
         ->and($constraints[0]->type)->toBe('numeric');
+});
+
+it('adds a Regex constraint carrying the default tel pattern when tel()', function (): void {
+    $constraints = TextInput::make('phone')->tel()->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0])->toBeInstanceOf(Regex::class)
+        ->and($constraints[0]->pattern)->toBe(TextInput::make('phone')->getTelRegex());
+});
+
+it('honours a custom tel regex', function (): void {
+    $constraints = TextInput::make('phone')->tel()->telRegex('/^\d{9}$/')->getValidationConstraints();
+
+    expect($constraints[0])->toBeInstanceOf(Regex::class)
+        ->and($constraints[0]->pattern)->toBe('/^\d{9}$/');
+});
+
+it('adds a Url constraint when url()', function (): void {
+    $constraints = TextInput::make('site')->url()->getValidationConstraints();
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0])->toBeInstanceOf(Url::class);
 });
 
 it('applies email and numeric messages to the type arms', function (): void {

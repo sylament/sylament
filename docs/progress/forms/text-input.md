@@ -2,10 +2,11 @@
 
 `Sylament\Forms\Components\TextInput` — the single-line text field, extending
 [`Field`](../../../packages/forms/src/Components/Field.php). An early subset of
-Filament's `TextInput`: the type sugar (`type`/`email`/`numeric`/`password`), its
-`getType`/`getInputMode` derivation, length constraints via the shared
-[`CanBeLengthConstrained`](can-be-length-constrained.md) concern, the `Email`
-/ numeric `Type` validation arms `email()` / `numeric()` contribute to
+Filament's `TextInput`: the type sugar
+(`type`/`email`/`numeric`/`password`/`tel`/`url`), its `getType`/`getInputMode`
+derivation, length constraints via the shared
+[`CanBeLengthConstrained`](can-be-length-constrained.md) concern, the `Email` /
+numeric `Type` / tel `Regex` / `Url` validation arms that sugar contributes to
 [`CanBeValidated`](can-be-validated.md), and the `step` interval `numeric()`
 seeds. The affix/mask/copy/reveal/state-cast surface is not ported yet.
 
@@ -26,16 +27,16 @@ helper text, placeholder, required, slots, rendering chrome) is tracked in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`type()` / `getType()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | in progress | tel/url sugar | [detail](#gettype-drops-the-tel-and-url-branches) |
-| [`email()` / `isEmail()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-email-and-numeric-constraint-arms-live-in-an-override-not-in-the-setters) |
-| [`numeric()` / `isNumeric()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-email-and-numeric-constraint-arms-live-in-an-override-not-in-the-setters) · [diverges](#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition) |
-| [`buildValidationConstraints()` arms](../../../packages/forms/src/Components/TextInput.php) | [`TextInput::email()` / `numeric()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-email-and-numeric-constraint-arms-live-in-an-override-not-in-the-setters) |
+| [`type()` / `getType()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | — |
+| [`email()` / `isEmail()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
+| [`numeric()` / `isNumeric()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) · [diverges](#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition) |
+| [`buildValidationConstraints()` arms](../../../packages/forms/src/Components/TextInput.php) | [`TextInput::email()` / `numeric()` / `tel()` / `url()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
 | [`password()` / `isPassword()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | — |
 | [`getInputMode()`](../../../packages/forms/src/Components/TextInput.php) | [`Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | done | — | [diverges](#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
 | `HasInputMode` (concern) | [`Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | skipped | — | [diverges](#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
 | `integer()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | — | — |
-| `tel()` / `telRegex()` / `isTel()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | — | — |
-| `url()` / `isUrl()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | — | — |
+| [`tel()` / `telRegex()` / `isTel()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
+| [`url()` / `isUrl()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
 | `currentPassword()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | authentication layer | — |
 | `maxValue()` / `minValue()` / `getMaxValue()` / `getMinValue()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | — | — |
 | `mask()` / `getMask()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | `RawJs` | — |
@@ -52,42 +53,33 @@ helper text, placeholder, required, slots, rendering chrome) is tracked in
 | `HasExtraAlpineAttributes` (concern) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — | — |
 | State casts + trim/strip (`getDefaultStateCasts`, `mutate*State`) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | schemas state-cast surface | — |
 
-## Details
-
-Specifics for rows that are not finished. Delete a subsection when its row flips
-to **done**.
-
-### `getType()` drops the tel and url branches
-
-The port's [`getType()`](../../../packages/forms/src/Components/TextInput.php)
-resolves an explicit `type()` first, then falls through `email → number →
-password → text`. Filament's has two more branches, `isTel()` → `'tel'` and
-`isUrl()` → `'url'`, before the `text` default. They return with the `tel()` /
-`url()` rows above; until then the sugar chain is faithful for the four types it
-covers. Covered by TextInputTest's `derives the input type from the type sugar`
-and `honors an explicit type over the sugar`.
-
 ## Divergences
 
-### The email and numeric constraint arms live in an override, not in the setters
+### The type-sugar constraint arms live in an override, not in the setters
 
-Filament's `email()` / `numeric()` push their validation rule into the shared
-rule list from inside the setter (`->rule('email', fn () => $condition)`), so the
-rule is registered eagerly and the condition closure is what stays lazy. The
-port's setters register no constraint at all — they flip `isEmail` / `isNumeric`,
-and `numeric()` additionally seeds the
+Filament's `email()` / `numeric()` / `url()` push their validation rule into the
+shared rule list from inside the setter (`->rule('email', $condition)`), and
+`tel()` pushes its pattern through a `regex()` setter that reads `getTelRegex()`
+back off the component. So in Filament the rule is registered eagerly and the
+condition is what stays lazy. The port's setters register no constraint at all —
+they flip `isEmail` / `isNumeric` / `isTel` / `isUrl`, and `numeric()`
+additionally seeds the
 [step](#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition) —
 while
 [`buildValidationConstraints()`](../../../packages/forms/src/Components/TextInput.php)
-overrides the parent to append `Email()` / `Type('numeric')` behind those flags.
-Same observable API and same laziness.
+overrides the parent to append `Email()` / `Type('numeric')` /
+`Regex(getTelRegex())` / `Url()` behind those flags. Same observable API and same
+laziness. There is no `regex()` setter to port `tel()` onto, and none is wanted:
+the override is already the place every type arm lands.
 
 The reason is **composition order**. These arms must land last — the order is
 `NotBlank` → length → escape hatch → type arms, pinned by `TextInputTest` — and a
 `constraint()` call from `setUp()` would file them among the escape-hatch pairs
 instead, ahead of anything the user registers later. The override is what keeps
-them at the tail. Messages are keyed `Email::class` / `Type::class` and applied by
-the [post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built),
+them at the tail, and it keeps the four arms in one block ordered the way
+`getType()` checks the same flags. Messages are keyed `Email::class` / `Type::class` /
+`Regex::class` / `Url::class` and applied by the
+[post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built),
 so no arm passes a `message:` argument.
 
 A second reason retired when that post-pass landed: a `Constraint` baked at setter
@@ -97,6 +89,21 @@ once deferred through closures. Applying messages after the list is built remove
 that constraint everywhere; here the ordering reason still holds, so the shape
 stays. The cost is unchanged: a subclass overriding
 `buildValidationConstraints()` must call `parent::`.
+
+`Url` is constructed bare, and that is not a style choice: Symfony's
+`Url::__construct()` takes `?array $options` first and **throws**
+`InvalidArgumentException` on any non-null value, so a positional argument is
+never correct there. `requireTld` already defaults to `true`, so the arm needs no
+argument for it either. `Regex` is the opposite — its first parameter *is* the
+pattern — so the tel arm passes `getTelRegex()` positionally, and `telRegex()`
+overrides that default, evaluated lazily like every other sugar value.
+
+The default pattern is Filament's, one token apart: Rector's
+`SimplifyRegexPatternRector` normalises the leading `[0-9]{1,4}` to `\d{1,4}`, so
+a diff against Filament shows a difference that is not one. PHP's PCRE leaves
+`\d` ASCII-only without the `u` modifier, which the pattern does not carry, so the
+match set is identical — including that neither form accepts Eastern Arabic
+digits. Don't "restore" the character class; `composer format` puts it back.
 
 ### `numeric()` seeds the step through `isNumeric()`, not the captured condition
 

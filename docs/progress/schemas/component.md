@@ -49,7 +49,7 @@ only their detail sections do.
 | [`renderWrapperBladeComponent()`](../../../packages/schemas/src/Components/Component.php) | [`renderWrapperBladeComponent()`](../../../vendor/filament/schemas/src/Components/Component.php) | skipped | — | [diverges](#the-livewirealpine-render-wrapper-toschemahtml-is-not-ported) |
 | [`viewIdentifier = 'schemaComponent'`](../../../packages/schemas/src/Components/Component.php) | [`Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) | todo | — | [detail](#viewidentifier-is-not-set) |
 | [`BelongsToContainer`](../../../packages/schemas/src/Components/Concerns/BelongsToContainer.php) | [`Concerns/BelongsToContainer.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToContainer.php) | in progress | Doctrine relationship-state epic | [detail](#belongstocontainer-getmodelrootcontainer-awaits-its-consumer), [diverges](#belongstocontainer-gains-a-sylament-only-getlivecomponentornull-peek) |
-| [`HasChildComponents`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | [`Concerns/HasChildComponents.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php) | in progress | — | [detail](#haschildcomponents-only-the-materialization-core-is-ported) |
+| [`HasChildComponents`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | [`Concerns/HasChildComponents.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php) | in progress | — | [detail](#haschildcomponents-only-the-materialization-core-is-ported) · [semantics](#childcomponents-replaces-a-keys-contents-instead-of-appending) |
 | [`HasId`](../../../packages/schemas/src/Components/Concerns/HasId.php) | [`Concerns/HasId.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasId.php) | done | — | — |
 | [`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | in progress | — | [detail](#hasstate-the-getset-core-and-validation-flags-are-in-relationship-and-partial-render-state-are-out) · [semantics](#dehydration-prunes-around-shared-state-paths-and-pathless-components) |
 | [`HasKey`](../../../packages/schemas/src/Components/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasKey.php) | in progress | — | [detail](#getlivewirekey-is-deferred-to-the-live-component-layer) |
@@ -208,6 +208,25 @@ A **pathless** (layout) component has no key of its own to forget. It prunes by
 recursing into its child schemas with `isDehydrated: false` — that recursion is
 the whole mechanism carrying the prune down to its descendants, so a layout
 component reads as a no-op here while doing all the work.
+
+### `childComponents()` replaces a key's contents instead of appending
+
+[`childComponents($components, $key)`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php)
+is a plain `$this->childComponents[$key] = $components` — a second call for the
+same key discards whatever the first put there, with no merge and no error. Every
+named-slot setter funnels through it
+([`Section`](../../../packages/schemas/src/Components/Section.php)'s six,
+[`Field`](../../../packages/forms/src/Components/Field.php)'s ten), so "add this
+to the slot as well" is never what calling one twice does.
+
+The cost lands on concerns that seed a slot from `setUp()`, because each is
+written as a slot call and a component can compose several. Forms'
+[`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) registers
+exactly one `afterLabel()` closure and returns the hint text, the hint icon **and**
+the hint actions from inside it; splitting the actions into a second
+`afterLabel()` call would have left the slot holding the actions alone. Filament
+folds the same three into one closure for the same reason. A concern that has to
+add to a slot another concern owns cannot do it through the setter at all.
 
 ## Divergences
 

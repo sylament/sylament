@@ -63,9 +63,9 @@ composed on the Sylament `Textarea`, and the template emits none of these
 attributes. They are shared field concerns (their own README rows) that are
 simply not reached yet — each is a self-contained setter/getter plus a template
 attribute. **Next step:** port the concerns and emit their attributes on the
-`<textarea>` element. The fifth of the set,
-[`HasExtraInputAttributes`](has-extra-input-attributes.md), has landed and is off
-this list.
+`<textarea>` element. Filament composes a fifth alongside them,
+[`HasExtraInputAttributes`](has-extra-input-attributes.md); it is absent from
+this list because it has landed.
 
 ### The state-mutation surface is blocked on schemas
 

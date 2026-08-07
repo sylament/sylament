@@ -123,6 +123,23 @@ class/style tokens are concatenated (`[...$default, ...$value]`) **without**
 `array_unique` — a duplicate token survives to output. The defaults-first,
 existing-wins-for-scalar-keys ordering is preserved.
 
+Dropping the escape parameter costs nothing and settles a question upstream:
+**there is no per-source escaping policy here, so two attribute-passthrough
+setters cannot differ by escaping.** Filament ships two that look as though they
+do — [`HasExtraInputAttributes`](../forms/has-extra-input-attributes.md) and
+[`Support\Concerns\HasExtraAlpineAttributes`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php),
+whose `extraAlpineAttributes()` carries `x-on:*` / `x-bind:*` handlers — but both
+merge with `escape: false`, so even there the traits are identical code under two
+names, separated only by where each composer merges them (Filament's `TextInput`
+slots the Alpine bag between the extras and the field's own attributes, which is
+a precedence choice, not a capability). Against this bag the last difference goes
+too: a ported `extraAlpineAttributes()` landing on the same element would
+accumulate through the same `merge()` and render through the same `toHtml()`, and
+so emit **byte-identical** output to `extraInputAttributes()`. Whoever picks up
+that trait's **todo** row should weigh that first — it is the argument that the
+port would be shipping a synonym, and it holds whether or not the toolkit ever
+grows an Alpine-shaped surface to justify the name.
+
 ### The bag renders its own `html_attr()`-faithful output
 
 Filament never renders attributes from this class — Blade echoes the bag and

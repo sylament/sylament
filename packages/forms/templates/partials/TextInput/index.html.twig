@@ -14,6 +14,8 @@
         placeholder: component.getPlaceholder ?: false,
         maxlength: component.getMaxLength,
         minlength: component.getMinLength,
+        max: component.getMaxValue,
+        min: component.getMinValue,
         step: component.getStep,
         list: datalistOptions ? component.getId ~ '-list' : null,
         required: component.isMarkedAsRequired,

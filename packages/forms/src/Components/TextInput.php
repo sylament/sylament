@@ -14,6 +14,8 @@ use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasStep;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
+use Symfony\Component\Validator\Constraints\LessThanOrEqual;
 use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Constraints\Url;
@@ -42,6 +44,10 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
 
     protected bool|Closure $isUrl = false;
 
+    protected int|float|string|Closure|null $maxValue = null;
+
+    protected int|float|string|Closure|null $minValue = null;
+
     protected string|Closure|null $telRegex = null;
 
     protected string|Closure|null $type = null;
@@ -65,6 +71,20 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
         $this->isInteger = $condition;
         $this->numeric($condition);
         $this->step(static fn (TextInput $component): ?int => $component->isInteger() ? 1 : null);
+
+        return $this;
+    }
+
+    public function maxValue(int|float|string|Closure|null $value): static
+    {
+        $this->maxValue = $value;
+
+        return $this;
+    }
+
+    public function minValue(int|float|string|Closure|null $value): static
+    {
+        $this->minValue = $value;
 
         return $this;
     }
@@ -103,6 +123,16 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
         $this->isUrl = $condition;
 
         return $this;
+    }
+
+    public function getMaxValue(): int|float|string|null
+    {
+        return $this->evaluate($this->maxValue);
+    }
+
+    public function getMinValue(): int|float|string|null
+    {
+        return $this->evaluate($this->minValue);
     }
 
     public function getType(): string
@@ -203,6 +233,14 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
 
         if ($this->isUrl()) {
             $constraints[] = new Url();
+        }
+
+        if (($minValue = $this->getMinValue()) !== null) {
+            $constraints[] = new GreaterThanOrEqual($minValue);
+        }
+
+        if (($maxValue = $this->getMaxValue()) !== null) {
+            $constraints[] = new LessThanOrEqual($maxValue);
         }
 
         return $constraints;

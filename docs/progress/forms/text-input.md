@@ -5,8 +5,9 @@
 Filament's `TextInput`: the type sugar
 (`type`/`email`/`integer`/`numeric`/`password`/`tel`/`url`), its
 `getType`/`getInputMode` derivation, length constraints via the shared
-[`CanBeLengthConstrained`](can-be-length-constrained.md) concern, the `Email` /
-numeric `Type` / integer and tel `Regex` / `Url` validation arms that sugar
+[`CanBeLengthConstrained`](can-be-length-constrained.md) concern, the
+`maxValue()` / `minValue()` magnitude bounds, the `Email` / numeric `Type` /
+integer and tel `Regex` / `Url` / comparison validation arms that sugar
 contributes to [`CanBeValidated`](can-be-validated.md), and the `step` interval
 `numeric()` and `integer()` seed. The affix/mask/copy/reveal/state-cast surface
 is not ported yet.
@@ -41,12 +42,12 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 | [`tel()` / `telRegex()` / `isTel()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
 | [`url()` / `isUrl()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
 | `currentPassword()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | authentication layer | — |
-| `maxValue()` / `minValue()` / `getMaxValue()` / `getMinValue()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | — | — |
+| [`maxValue()` / `minValue()` / `getMaxValue()` / `getMinValue()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-value-bounds-are-comparison-constraints-not-laravels-min-and-max) |
 | `mask()` / `getMask()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | `RawJs` | — |
 | `revealable()` / `isPasswordRevealable()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | `TextInput/Actions` | — |
 | `copyable()` / `isCopyable()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | `HasAffixes`, `TextInput/Actions` | — |
 | [`HasStep`](../../../packages/forms/src/Components/Concerns/HasStep.php) | [`Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | done | — | — |
-| `HasAffixes` (concern) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | todo | prebuilt affix actions | — |
+| `HasAffixes` (concern) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | blocked | the input wrapper ([field.md](field.md#the-input-affix-wrapper-is-not-ported)) | — |
 | [`HasDatalistOptions`](../../../packages/forms/src/Components/Concerns/HasDatalistOptions.php) | [`Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | done | — | [diverges](#the-datalist-drops-the-arrayable-arm) |
 | [`CanBeAutocapitalized`](../../../packages/forms/src/Components/Concerns/CanBeAutocapitalized.php) | [`Concerns/CanBeAutocapitalized.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocapitalized.php) | done | — | — |
 | `disableAutocapitalize()` | [`Concerns/CanBeAutocapitalized.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocapitalized.php) | skipped | — | [diverges](can-be-autocompleted.md#the-deprecated-disable-aliases-are-not-ported) |
@@ -234,6 +235,65 @@ though the regex keeps working either way, since `RegexValidator` stringifies a
 scalar before matching. Today validation reads the raw host property
 ([semantics](checkbox.md#validation-reads-the-raw-state-so-the-boolean-type-constraint-is-live)),
 so there is nothing between the submitted string and the constraint.
+
+### The value bounds are comparison constraints, not Laravel's `min` and `max`
+
+Filament's `maxValue()` / `minValue()` push Laravel `max:` / `min:` rules —
+`->rule(fn (TextInput $component): string => "max:{$component->getMaxValue()}", …)`
+— and what those rules *mean* depends on the value **and** on the field's other
+rules.
+[`getSize()`](../../../vendor/laravel/framework/src/Illuminate/Validation/Concerns/ValidatesAttributes.php)
+returns the number itself only when the value `is_numeric()` *and* the field also
+carries one of `numeric` / `integer` / `decimal`; otherwise it falls back to
+`count()` for an array, kilobytes for a file, and `mb_strlen()` for everything
+else. So Filament's `maxValue(10)` on a field without `numeric()` caps the
+**length** at ten characters.
+
+The port appends
+[`GreaterThanOrEqual`](../../../vendor/symfony/validator/Constraints/GreaterThanOrEqual.php)
+/ [`LessThanOrEqual`](../../../vendor/symfony/validator/Constraints/LessThanOrEqual.php),
+which always compare magnitude, because length already has a home:
+[`CanBeLengthConstrained`](can-be-length-constrained.md) owns `maxLength()` /
+`minLength()` and the `maxlength` / `minlength` attributes. Splitting the two
+meanings across two APIs is what the HTML attributes do too — `max` and
+`maxlength` are different attributes, and this field renders all four — so the
+port matches the platform rather than the rule string. The arms are peers of the
+type arms in the same
+[override](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters),
+appended after them.
+
+Each arm is appended only when its bound is non-null, and that guard is required
+rather than defensive:
+[`AbstractComparison::__construct()`](../../../vendor/symfony/validator/Constraints/AbstractComparison.php)
+throws `ConstraintDefinitionException` when neither `value` nor `propertyPath` is
+set, so `new LessThanOrEqual(null)` never constructs. The guard reads the
+*evaluated* bound, so a closure resolving to `null` drops its arm as well —
+pinned by `TextInputTest`'s `adds only the bound that is set` and `drops a bound
+whose closure resolves null`.
+
+**The bounds compare the raw submitted string.** Validation reads the raw host
+property ([semantics](checkbox.md#validation-reads-the-raw-state-so-the-boolean-type-constraint-is-live)),
+so a browser sends `"7"` and the constraint receives a string, never an `int`.
+The port adds no cast and needs none for the numeric case: PHP compares a numeric
+string against an `int` or `float` bound numerically, so `"7" <= 10` holds and
+`"70" <= 10` does not — pinned by `TextInputTest`'s `compares a submitted numeric
+string by magnitude`. Two consequences follow from PHP's comparison rules, and
+neither has a Laravel counterpart, because `getSize()` measures a non-numeric
+string's *length* where PHP compares its *characters*. A non-numeric string is
+compared against the stringified bound, so `"abc" <= 10` becomes `"abc" <= "10"`
+→ false, and a junk value picks up a bounds violation beside whatever the
+`numeric()` `Type` arm reports, if the field carries one. And the empty string a
+cleared input submits is not numeric either, while
+[`AbstractComparisonValidator`](../../../vendor/symfony/validator/Constraints/AbstractComparisonValidator.php)
+skips only `null` — so on an optional field a *lower* bound fires against `""`
+(`"" >= "1"` is false) and an *upper* bound does not (`"" <= "10"` is true). On a
+`required()` field that is harmless, since `NotBlank` rejects `""` anyway; on one
+without it, `minValue()` quietly makes the field mandatory. Pinned by
+`TextInputTest`'s `reports a lower bound against the empty string a cleared input
+submits`, which also holds a `null` state skipping both arms.
+Revisit if a state cast ever converts the field's state to a real number before
+validation runs — the same condition the
+[integer regex](#integer-validates-with-a-regex-not-a-type-constraint) waits on.
 
 ### Input mode is a bespoke getter, not the `HasInputMode` concern
 

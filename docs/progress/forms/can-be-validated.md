@@ -142,7 +142,10 @@ another* (`gt:other`, `requiredIf:status,published`, `confirmed`). The host runs
 [`ValidatorInterface::validate($value, $constraints)`](../schemas/can-be-validated.md#validateschema-runs-symfonys-validator-per-state-path-instead-of-livewires-whole-component-validate)
 per path over a bare value, so Symfony's `AbstractComparison`-family constraints
 — which resolve `propertyPath` against the *object under validation* — have
-nothing to resolve against. **Next step:** validate the schema's state array as
+nothing to resolve against. The literal-bound arm of that same family is
+unaffected and already ships:
+[`maxValue()` / `minValue()`](text-input.md#the-value-bounds-are-comparison-constraints-not-laravels-min-and-max)
+pass a `value`, which needs no context. **Next step:** validate the schema's state array as
 one object (a `Collection` constraint keyed by path, or a per-path context
 seeded with the root), then the comparison constraints and a
 `When`-based conditional-required arm both drop in. `distinct()` waits on the

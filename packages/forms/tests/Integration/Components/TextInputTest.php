@@ -6,13 +6,18 @@ namespace Sylament\Forms\Tests\Integration\Components;
 
 use Sylament\Actions\Action;
 use Sylament\Forms\Components\TextInput;
+use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Schemas\Schema;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Email;
+use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
 use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\LessThanOrEqual;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Constraints\Url;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 use function Sylament\Forms\Tests\renderField;
 
@@ -451,4 +456,106 @@ it('merges extra input attributes onto the control and lets them win', function 
 
     expect($input->attr('data-extra'))->toBe('yes')
         ->and($input->attr('inputmode'))->toBe('email');
+});
+
+it('renders no min or max attribute by default', function (): void {
+    $input = new Crawler(renderField(TextInput::make('count')))->filter('input.sy-fo-input');
+
+    expect($input->attr('min'))->toBeNull()
+        ->and($input->attr('max'))->toBeNull();
+});
+
+it('renders the min and max attributes and resolves closures', function (): void {
+    $input = new Crawler(renderField(
+        TextInput::make('count')->numeric()->minValue(1)->maxValue(fn (): int => 10),
+    ))->filter('input.sy-fo-input');
+
+    expect($input->attr('min'))->toBe('1')
+        ->and($input->attr('max'))->toBe('10');
+});
+
+it('adds comparison constraints only for the bounds that are set', function (): void {
+    $bare = TextInput::make('count')->getValidationConstraints();
+
+    expect($bare)->toBe([]);
+
+    $bounded = TextInput::make('count')->minValue(1)->maxValue(10)->getValidationConstraints();
+
+    expect($bounded)->toHaveCount(2)
+        ->and($bounded[0])->toBeInstanceOf(GreaterThanOrEqual::class)
+        ->and($bounded[0]->value)->toBe(1)
+        ->and($bounded[1])->toBeInstanceOf(LessThanOrEqual::class)
+        ->and($bounded[1]->value)->toBe(10);
+});
+
+it('adds only the bound that is set', function (): void {
+    $min = TextInput::make('count')->minValue(1)->getValidationConstraints();
+    $max = TextInput::make('count')->maxValue(10)->getValidationConstraints();
+
+    expect($min)->toHaveCount(1)
+        ->and($min[0])->toBeInstanceOf(GreaterThanOrEqual::class)
+        ->and($max)->toHaveCount(1)
+        ->and($max[0])->toBeInstanceOf(LessThanOrEqual::class);
+});
+
+it('drops a bound whose closure resolves null', function (): void {
+    $field = TextInput::make('count')
+        ->minValue(fn (): ?int => null)
+        ->maxValue(fn (): int => 10);
+
+    expect($field->getValidationConstraints())->toHaveCount(1)
+        ->and($field->getValidationConstraints()[0])->toBeInstanceOf(LessThanOrEqual::class);
+});
+
+it('applies a validation message to a comparison arm', function (): void {
+    $constraints = TextInput::make('count')
+        ->maxValue(10)
+        ->validationMessages([LessThanOrEqual::class => 'Too big.'])
+        ->getValidationConstraints();
+
+    expect($constraints[0]->message)->toBe('Too big.');
+});
+
+it('compares a submitted numeric string by magnitude', function (): void {
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $schema = Schema::make($host)->statePath('data')->components([
+        TextInput::make('count')->numeric()->minValue(1)->maxValue(10),
+    ]);
+    $host->cacheSchema('schema', $schema);
+
+    $host->data['count'] = '7';
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.count'))->toBe([]);
+
+    $host->data['count'] = '70';
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.count'))
+        ->toBe(['This value should be less than or equal to 10.']);
+});
+
+it('reports a lower bound against the empty string a cleared input submits', function (): void {
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $schema = Schema::make($host)->statePath('data')->components([
+        TextInput::make('count')->minValue(1)->maxValue(10),
+    ]);
+    $host->cacheSchema('schema', $schema);
+
+    // Symfony's comparison validator skips only null, and '' is not a numeric
+    // string, so PHP compares it against the stringified bound.
+    $host->data['count'] = '';
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.count'))
+        ->toBe(['This value should be greater than or equal to 1.']);
+
+    $host->data['count'] = null;
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.count'))->toBe([]);
 });

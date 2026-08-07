@@ -46,7 +46,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `labelTag` (`label` vs `div`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#labeltag-is-a-boolean-labelasheading) |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | — | [detail](can-be-validated.md) |
 | Error display (`getErrorMessages()` ⟵ `hasErrorForPath` / `ViewErrorBag`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#error-display-shows-every-message-for-the-path) |
-| Input affix wrapper (`wrapInputHtml`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | blocked | HasAffixes | [detail](#the-input-affix-wrapper-is-not-ported) |
+| Input affix wrapper (`wrapInputHtml`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | — | [detail](#the-input-affix-wrapper-is-not-ported) |
 | State casts &amp; enum defaults (`getDefaultStateCasts` / `getEnumDefaultStateCast`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | blocked | HasEnum | [detail](#state-casts-and-enum-defaults-are-not-ported) |
 | `hasNullableBooleanState()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | — | [detail](#hasnullablebooleanstate-is-not-ported) |
 | [`HasExtraFieldWrapperAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | [`Components/Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | done | — | [diverges](#extra-attribute-precedence-is-fixed-by-source-order) |
@@ -66,9 +66,36 @@ and any divergence it earned stay behind.
 Filament's `wrapInputHtml` renders the `fi-input-wrp` prefix/suffix chrome (affix
 labels, icons, prefix/suffix actions, loading indicator, Alpine disabled/invalid
 class binding). None of it is ported — the port has no `HasAffixes`, no
-prefix/suffix API, and no input-wrapper template. **Blocked** on the `HasAffixes`
-concern port; until then fields render their raw control inside the field wrapper
-with no affix layer.
+prefix/suffix API, and no input-wrapper template, so fields render their raw
+control inside the field wrapper with no affix layer.
+
+This row is the **root** of that surface, not something waiting on `HasAffixes`:
+the concern is the API half and the wrapper is its renderer, so the two land in
+one change and neither is the other's prerequisite. What is missing is markup and
+styling rather than a dependency.
+[`fi-input-wrp`](../../../vendor/filament/support/resources/css/components/input/wrapper.css)
+is where the ring, background and `focus-within` state live
+(`rounded-lg bg-white shadow-sm ring-1 ring-gray-950/10`, plus
+`focus-within:ring-2`), with a deliberately
+[transparent `.fi-input`](../../../vendor/filament/support/resources/css/components/input/index.css)
+inside it (`bg-transparent border-none focus:ring-0`); the port's
+[`.sy-fo-input`](../../../packages/forms/assets/src/styles/components/input.css)
+carries all three itself. So porting affixes is not additive — it moves that
+styling onto a new `sy-fo-input-wrp` and touches every text-like field's
+template.
+
+That, and not the prebuilt affix actions, is what the affix surface waits on:
+[`HasAffixes`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php)
+never references `TextInput\Actions\CopyAction` / `ShowPasswordAction` /
+`HidePasswordAction` — it takes any `Action` through `prefixAction()` /
+`suffixAction()` and prepares it with `defaultSize()`, `defaultView()` and
+schemas' `prepareAction()`, every one of which the port already has
+([`defaultSize()`](../../../packages/actions/src/Concerns/HasSize.php),
+`defaultView()` as
+[`defaultTemplate()`](../../../packages/actions/src/Action.php),
+[`prepareAction()`](../../../packages/schemas/src/Components/Concerns/HasActions.php)).
+The three prebuilt actions are reached only from `TextInput::revealable()` and
+`copyable()`, which is where [text-input.md](text-input.md) names them.
 
 ### State casts and enum defaults are not ported
 

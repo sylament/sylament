@@ -48,7 +48,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | `relationship()` / create + edit option actions | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | the Doctrine relation layer | — |
 | `allowHtml()` | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | todo | — | — |
 | `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` | — |
-| Affixes (`HasAffixes`, `wrapInputHtml`) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | blocked | HasAffixes | — |
+| Affixes (`HasAffixes`, `wrapInputHtml`) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | blocked | the input wrapper ([field.md](field.md#the-input-affix-wrapper-is-not-ported)) | — |
 
 Coverage: the concern surface — flattening, per-option disabling, merge/replace,
 placeholder selectability and dynamic options — by

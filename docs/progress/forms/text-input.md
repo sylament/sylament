@@ -38,7 +38,7 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 | [`password()` / `isPassword()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | — |
 | [`getInputMode()`](../../../packages/forms/src/Components/TextInput.php) | [`Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | done | — | [diverges](#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
 | `HasInputMode` (concern) | [`Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | skipped | — | [diverges](#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
-| [`integer()` / `isInteger()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [semantics](#integer-delegates-to-numeric-so-both-arms-ship-and-the-step-order-matters) · [diverges](#integer-validates-with-a-regex-not-a-type-constraint) |
+| [`integer()` / `isInteger()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [semantics](#integer-delegates-to-numeric-so-both-arms-ship-and-the-step-order-matters) · [diverges](#integer-validates-with-a-regex-not-a-type-constraint) · [diverges](#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition) |
 | [`tel()` / `telRegex()` / `isTel()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
 | [`url()` / `isUrl()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
 | `currentPassword()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | authentication layer | — |
@@ -83,11 +83,11 @@ it. The pair is not two independent checks, though — the regex accepts a stric
 subset of `is_numeric()`, so the `Type` arm rejects nothing the regex would
 accept; what it adds is a second violation on the same value, and
 [`FieldWrapper`](../../../packages/forms/templates/components/FieldWrapper/index.html.twig)
-lists every message, so `abc` in an integer field renders two. Dropping the
-`Type` arm would mean not calling `numeric()`, which is where the step, the
-`number` type and the input mode all come from. `TextInputTest`'s _validates an
-integer with the numeric arm plus a regex that accepts a numeric string_ holds
-both arms and their order.
+[lists every message](field.md#error-display-shows-every-message-for-the-path), so
+`abc` in an integer field renders two. Dropping the `Type` arm would mean not
+calling `numeric()`, which is where the step, the `number` type and the input
+mode all come from. `TextInputTest`'s _validates an integer with the numeric arm
+plus a regex that accepts a numeric string_ holds both arms and their order.
 
 ## Divergences
 
@@ -280,10 +280,10 @@ less than or equal to ."*. Zero is a value and not a blank, so `maxValue(0)` and
 [`CanBeLengthConstrained`](can-be-length-constrained.md), which drops a zero
 bound with `> 0`, and deliberately: `Length(max: 0)` forbids all input and is
 never what a caller meant, while `maxValue(0)` ("at most zero") is an ordinary
-constraint on a signed field. Pinned by `TextInputTest`'s `adds only the bound
-that is set`, `drops a bound whose closure resolves null`, `drops a bound that
-resolves blank rather than building an empty comparison` and `keeps a zero bound,
-which is a value rather than a blank`.
+constraint on a signed field. Pinned by `TextInputTest`'s `adds a comparison
+constraint for each bound that is set`, `drops a bound whose closure resolves
+null`, `drops a bound that resolves blank rather than building an empty
+comparison` and `keeps a zero bound, which is a value rather than a blank`.
 
 The setters narrow Filament's `scalar | Closure | null` to
 `int|float|string|Closure|null`, so `maxValue(true)` is a `TypeError` here where

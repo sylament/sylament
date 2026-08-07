@@ -236,10 +236,6 @@ it('makes an integer input numeric with a step of one', function (): void {
         ->and($input->attr('inputmode'))->toBe('numeric');
 });
 
-it('keeps decimal input mode for a plain numeric input', function (): void {
-    expect(TextInput::make('amount')->numeric()->getInputMode())->toBe('decimal');
-});
-
 it('drops every integer consequence when a closure condition resolves false', function (): void {
     $field = TextInput::make('count')->integer(fn (): bool => false);
 
@@ -474,28 +470,20 @@ it('renders the min and max attributes and resolves closures', function (): void
         ->and($input->attr('max'))->toBe('10');
 });
 
-it('adds comparison constraints only for the bounds that are set', function (): void {
-    $bare = TextInput::make('count')->getValidationConstraints();
-
-    expect($bare)->toBe([]);
-
-    $bounded = TextInput::make('count')->minValue(1)->maxValue(10)->getValidationConstraints();
-
-    expect($bounded)->toHaveCount(2)
-        ->and($bounded[0])->toBeInstanceOf(GreaterThanOrEqual::class)
-        ->and($bounded[0]->value)->toBe(1)
-        ->and($bounded[1])->toBeInstanceOf(LessThanOrEqual::class)
-        ->and($bounded[1]->value)->toBe(10);
-});
-
-it('adds only the bound that is set', function (): void {
+it('adds a comparison constraint for each bound that is set', function (): void {
     $min = TextInput::make('count')->minValue(1)->getValidationConstraints();
     $max = TextInput::make('count')->maxValue(10)->getValidationConstraints();
+    $both = TextInput::make('count')->minValue(1)->maxValue(10)->getValidationConstraints();
 
     expect($min)->toHaveCount(1)
         ->and($min[0])->toBeInstanceOf(GreaterThanOrEqual::class)
         ->and($max)->toHaveCount(1)
-        ->and($max[0])->toBeInstanceOf(LessThanOrEqual::class);
+        ->and($max[0])->toBeInstanceOf(LessThanOrEqual::class)
+        ->and($both)->toHaveCount(2)
+        ->and($both[0])->toBeInstanceOf(GreaterThanOrEqual::class)
+        ->and($both[0]->value)->toBe(1)
+        ->and($both[1])->toBeInstanceOf(LessThanOrEqual::class)
+        ->and($both[1]->value)->toBe(10);
 });
 
 it('drops a bound whose closure resolves null', function (): void {

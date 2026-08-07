@@ -81,9 +81,15 @@ with a notice naming the setter it sits next to, and pushing
 into that very setter. Both are **skipped**.
 
 Nothing is lost. `disableAutocomplete()` is `autocomplete(false)`, and the
-conditional form is `autocomplete(fn () => $condition ? false : null)` — a
-closure the setter already takes, since the port's union is the same
-`bool|string|Closure|null` Filament declares. What the alias adds is a second
+conditional form is the alias' own body spelled at the call site,
+`autocomplete(fn (Field $component): ?bool => $component->evaluate($condition) ? false : null)`
+— a closure the setter already takes, since the port's union is the same
+`bool|string|Closure|null` Filament declares. The `evaluate()` is what makes the
+two equivalent: `$condition` is `bool|Closure`, and a `Closure` is an object and
+so truthy
+([the same trap](text-input.md#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition)),
+so testing it directly would render `autocomplete="off"` unconditionally for a
+closure condition. What the alias adds is a second
 name for one behaviour, deprecated the moment it arrived, carrying Filament's own
 users across a change this toolkit has no history of; porting it would ship a
 migration path away from an API that never existed here, and leave a reader

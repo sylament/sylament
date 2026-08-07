@@ -16,46 +16,45 @@ one. A plain-text name is not built yet and stays **todo** here even where a
 component's detail file marks that concern **blocked** for itself — these tables
 carry no _Blocked by_ column, and a prerequisite only means anything against the
 component waiting on it, so `CanBeNative` is **todo** below and **blocked** in
-[`select.md`](select.md).
+[`select.md`](select.md). That escape covers **blocked** only: a concern we have
+decided against is **skipped** in both places, since a non-goal is not relative to
+the component that reached the decision — so `HasInputMode` is **skipped** below
+and in
+[`text-input.md`](text-input.md#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern).
 
 The five single-use concerns Filament composes onto the base `Field` —
 `CanBeAutofocused`, `HasExtraFieldWrapperAttributes`, `HasHelperText`, `HasHint`,
-and `HasPlaceholder` — have
-folded into [`field.md`](field.md) and left the Features table, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing).
-The sixth, `CanBeMarkedAsRequired`, is no longer tracked here at all: it
-relocated to schemas so its `Fieldset` could reach it, and is tracked in
+and `HasPlaceholder` — have folded into [`field.md`](field.md) and left the
+Features table, per
+[one row per file](../README.md#one-row-per-file-one-file-per-thing). The sixth,
+`CanBeMarkedAsRequired`, is no longer tracked here at all: it relocated to schemas
+so its `Fieldset` could reach it, and is tracked in
 [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md).
 `CanBeLengthConstrained`, `CanBeReadOnly` and `CanBeAutocompleted` are shared by
 `TextInput` and `Textarea`, so they keep their own rows, and `CanBeValidated`
-keeps one despite
-sitting on `Field` alone, because its Filament surface is some eighty methods and
-it is the field half of a validation vertical spanning three packages — folding
-it would swamp [`field.md`](field.md). The same fold applies to every other
-concern only one built component uses: `HasOptions`, `CanSelectPlaceholder` and
-`CanDisableOptions` are `Select`'s alone in the port and live in
-[`select.md`](select.md), `HasToggleIcons` and `HasToggleColors` are `Toggle`'s
-alone and live in
-[`toggle.md`](toggle.md), `HasStep`, `HasDatalistOptions` and
-`CanBeAutocapitalized` are `TextInput`'s
-alone and live in [`text-input.md`](text-input.md), and `CanBeCloned`,
-`CanGenerateUuids` and
+keeps one despite sitting on `Field` alone, because its Filament surface is some
+eighty methods and it is the field half of a validation vertical spanning three
+packages — folding it would swamp [`field.md`](field.md). The same fold applies
+to every other concern only one built component uses: `HasOptions`,
+`CanSelectPlaceholder` and `CanDisableOptions` are `Select`'s alone in the port
+and live in [`select.md`](select.md), `HasToggleIcons` and `HasToggleColors` are
+`Toggle`'s alone and live in [`toggle.md`](toggle.md), `HasStep`,
+`HasDatalistOptions` and `CanBeAutocapitalized` are `TextInput`'s alone and live
+in [`text-input.md`](text-input.md), and `CanBeCloned`, `CanGenerateUuids` and
 `CanLimitItemsLength` are `Repeater`'s alone and live in
 [`repeater.md`](repeater.md) — which also carries `helpers.php`, whose two
 reorder functions no other component calls — while `CanBeInline` and
 `CanBeAccepted` are shared by `Checkbox` and `Toggle`, and
 `HasExtraInputAttributes` by all five fields that render a control, so those keep
-rows of their own. The fold reads the port,
-not Filament — Filament composes `HasOptions` and `CanDisableOptions` onto
-`Radio`, `CheckboxList` and `ToggleButtons` as well, `HasStep` onto
-`DateTimePicker` and `Slider` (and tables' `TextInputColumn`), and
-`HasDatalistOptions` onto `DateTimePicker`, so each is
-promoted back to a row of its own the moment the second field lands.
+rows of their own. The fold reads the port, not Filament — Filament composes
+`HasOptions` and `CanDisableOptions` onto `Radio`, `CheckboxList` and
+`ToggleButtons` as well, `HasStep` onto `DateTimePicker` and `Slider` (and
+tables' `TextInputColumn`), and `HasDatalistOptions` onto `DateTimePicker`, so
+each is promoted back to a row of its own the moment the second consumer lands.
 `CanBeAutocapitalized` is the one fold Filament agrees with — it composes that
-trait on `TextInput` and nothing else, so no unported field is queued to promote
-it.
-[`support/component.md`](../support/component.md) is the shape each detail file
-follows.
+trait on `TextInput` and nothing else, so no unported consumer is queued to
+promote it. [`support/component.md`](../support/component.md) is the shape each
+detail file follows.
 
 ## Components
 
@@ -155,7 +154,7 @@ ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and
 | HasFileAttachments | [`Components/Concerns/HasFileAttachments.php`](../../../vendor/filament/forms/src/Components/Concerns/HasFileAttachments.php) | todo | — |
 | HasGridDirection | [`Components/Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | todo | — |
 | HasIcons | [`Components/Concerns/HasIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasIcons.php) | todo | — |
-| HasInputMode | [`Components/Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | todo | — |
+| HasInputMode | [`Components/Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | skipped | [text-input.md](text-input.md#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
 | HasLoadingMessage | [`Components/Concerns/HasLoadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php) | todo | — |
 | HasMaxHeight | [`Components/Concerns/HasMaxHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMaxHeight.php) | todo | — |
 | HasMinHeight | [`Components/Concerns/HasMinHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMinHeight.php) | todo | — |

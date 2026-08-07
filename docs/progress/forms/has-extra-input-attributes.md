@@ -4,7 +4,9 @@
 for attributes on a field's **control element**, the sibling of `Field`'s
 [`HasExtraFieldWrapperAttributes`](field.md), which reaches the wrapper `<div>`
 instead. Every field rendering exactly one control composes it: `TextInput`,
-`Textarea`, `Select`, `Checkbox` and `Toggle`.
+`Textarea`, `Select` and `Checkbox` — Filament's own set among the ported fields
+— plus `Toggle`, which Filament pointedly leaves out and the port composes anyway
+([divergence](toggle.md#the-toggle-carries-extra-input-attributes-filaments-does-not)).
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -16,7 +18,11 @@ Reference — the Filament source this is diffed against:
   [`Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php),
   [`Select.php`](../../../vendor/filament/forms/src/Components/Select.php),
   [`Checkbox.php`](../../../vendor/filament/forms/src/Components/Checkbox.php)
-  — the four ported composers' embedded views, where the merge order lives
+  — the four composers the port shares with Filament, whose embedded views carry
+  the merge order
+- [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php)
+  — the field Filament withholds the trait from, against the port's fifth composer
+  ([divergence](toggle.md#the-toggle-carries-extra-input-attributes-filaments-does-not))
 
 ## Surface
 
@@ -55,7 +61,11 @@ element wrapping it, and `SelectTest` that no `<option>` picks them up.
 `$this->getExtraInputAttributeBag()->merge([…the field's own…])`, and a bag's
 `merge()` treats its argument as **defaults** — so the extras are what survives.
 ([`Checkbox`](checkbox.md#the-checkboxs-extra-input-attributes-win-where-filaments-lose)
-is Filament's one exception, and the port does not follow it there.)
+is the one exception among the four Filament also composes, and the port does not
+follow it there;
+[`Toggle`](toggle.md#the-toggle-carries-extra-input-attributes-filaments-does-not)
+has no Filament order to inherit at all, since Filament composes no such trait on
+it.)
 
 The port spells the same thing as `attrs()` source order, which is
 later-source-wins, so the extras are the **last** argument:

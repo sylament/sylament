@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Unit\Components;
 
+use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
 use Sylament\Forms\Components\Field;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureField;
 use Sylament\Schemas\Components\Component;
 use Sylament\Support\Enums\Alignment;
+use Sylament\Support\Enums\Size;
 
 use function Sylament\Forms\Tests\wireField;
 
@@ -98,4 +101,39 @@ it('passes the field to a closure slot as $component', function (): void {
     $field->getChildSchema(Field::ABOVE_CONTENT_SCHEMA_KEY);
 
     expect($received)->toBe($field);
+});
+
+it('defaults a slot action to a small link', function (): void {
+    $slot = wireField(FixtureField::make('title')->afterLabel([Action::make('edit')]))
+        ->getChildSchema(Field::AFTER_LABEL_SCHEMA_KEY);
+
+    expect($slot)->not->toBeNull();
+
+    $components = $slot->getComponents();
+
+    expect($components)->toHaveCount(1)
+        ->and($components[0])->toBeInstanceOf(Action::class)
+        ->and($components[0]->getTemplate())->toBe(Action::LINK_TEMPLATE)
+        ->and($components[0]->getSize())->toBe(Size::Small);
+});
+
+it('lets a slot action override the defaults', function (): void {
+    $slot = wireField(FixtureField::make('title')->afterLabel([Action::make('edit')->button()->size(Size::Large)]))
+        ->getChildSchema(Field::AFTER_LABEL_SCHEMA_KEY);
+
+    $components = $slot->getComponents();
+
+    expect($components[0]->getTemplate())->toBe(Action::BUTTON_TEMPLATE)
+        ->and($components[0]->getSize())->toBe(Size::Large);
+});
+
+it('defaults a slot action group to a small size', function (): void {
+    $slot = wireField(FixtureField::make('title')->afterLabel([ActionGroup::make([Action::make('edit')])]))
+        ->getChildSchema(Field::AFTER_LABEL_SCHEMA_KEY);
+
+    $components = $slot->getComponents();
+
+    expect($components)->toHaveCount(1)
+        ->and($components[0])->toBeInstanceOf(ActionGroup::class)
+        ->and($components[0]->getSize())->toBe(Size::Small);
 });

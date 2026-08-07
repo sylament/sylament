@@ -41,7 +41,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`HasLabel`](../../../packages/schemas/src/Components/Concerns/HasLabel.php) (schemas) | [`Concerns/HasLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasLabel.php) | done | — | — |
 | State-path seeding ([`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php), schemas) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | done | — | — |
 | `getLabel()` / `getDefaultLabel()` humanization | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#getdefaultlabel-drops-label-translation) |
-| Field-wrapper slots (10 constants + setters, `makeChildSchema` / `configureChildSchema`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#slot-child-schemas-drop-action--actiongroup-wiring) |
+| Field-wrapper slots (10 constants + setters, `makeChildSchema` / `configureChildSchema`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | — |
 | Field-wrapper rendering (`FieldWrapper` template ⟵ `wrapEmbeddedHtml`), including the `labelPrefix` / `labelSuffix` label slots a boolean field fills with its control. `inlineLabelVerticalAlignment` is omitted pending schemas' `HasInlineLabel`, the only thing that varies it; `labelTag` ships under a different shape — see the row below. | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#the-label-carries-an-inline-control-modifier-class), [semantics](../schemas/can-be-marked-as-required.md#the-native-required-attribute-is-load-bearing-inside-a-modal-form) |
 | `labelTag` (`label` vs `div`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#labeltag-is-a-boolean-labelasheading) |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | — | [detail](can-be-validated.md) |
@@ -243,17 +243,6 @@ name handling either side of that seam: there is no `getDefaultName()` hook and
 no unique-name guard, so `name(?string $name)` accepts and keeps a null
 name — anonymous fields are allowed (a null name yields a null state path and a
 null label, both covered by tests) where Filament's would throw.
-
-### Slot child-schemas drop Action / ActionGroup wiring
-
-Filament's slot setters accept `Action | ActionGroup` in their union and
-`configureChildSchema` calls `modifyActionsUsing(...)` /
-`modifyActionGroupsUsing(...)` to default embedded actions to `Size::Small` /
-`Action::LINK_VIEW`. The port's setters accept only
-`Schema|array|Component|string|Markup|Closure|null` and its
-[`configureChildSchema`](../../../packages/forms/src/Components/Field.php) sets
-`inline()` + `embeddedInParentComponent()` with no action defaults — the actions
-integration is not ported. Restore when `actions` is wired into forms.
 
 ### `getDefaultLabel` drops label translation
 

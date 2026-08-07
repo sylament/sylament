@@ -26,8 +26,9 @@ folded into [`field.md`](field.md) and left the Features table, per
 The sixth, `CanBeMarkedAsRequired`, is no longer tracked here at all: it
 relocated to schemas so its `Fieldset` could reach it, and is tracked in
 [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md).
-`CanBeLengthConstrained` and `CanBeReadOnly` are shared by `TextInput` and
-`Textarea`, so they keep their own rows, and `CanBeValidated` keeps one despite
+`CanBeLengthConstrained`, `CanBeReadOnly` and `CanBeAutocompleted` are shared by
+`TextInput` and `Textarea`, so they keep their own rows, and `CanBeValidated`
+keeps one despite
 sitting on `Field` alone, because its Filament surface is some eighty methods and
 it is the field half of a validation vertical spanning three packages — folding
 it would swamp [`field.md`](field.md). The same fold applies to every other
@@ -35,8 +36,9 @@ concern only one built component uses: `HasOptions`, `CanSelectPlaceholder` and
 `CanDisableOptions` are `Select`'s alone in the port and live in
 [`select.md`](select.md), `HasToggleIcons` and `HasToggleColors` are `Toggle`'s
 alone and live in
-[`toggle.md`](toggle.md), `HasStep` is `TextInput`'s alone and lives in
-[`text-input.md`](text-input.md), and `CanBeCloned`, `CanGenerateUuids` and
+[`toggle.md`](toggle.md), `HasStep` and `CanBeAutocapitalized` are `TextInput`'s
+alone and live in [`text-input.md`](text-input.md), and `CanBeCloned`,
+`CanGenerateUuids` and
 `CanLimitItemsLength` are `Repeater`'s alone and live in
 [`repeater.md`](repeater.md) — which also carries `helpers.php`, whose two
 reorder functions no other component calls — while `CanBeInline` and
@@ -47,6 +49,9 @@ not Filament — Filament composes `HasOptions` and `CanDisableOptions` onto
 `Radio`, `CheckboxList` and `ToggleButtons` as well, and `HasStep` onto
 `DateTimePicker` and `Slider` (and tables' `TextInputColumn`), so each is
 promoted back to a row of its own the moment the second field lands.
+`CanBeAutocapitalized` is the one fold Filament agrees with — it composes that
+trait on `TextInput` and nothing else, so no unported field is queued to promote
+it.
 [`support/component.md`](../support/component.md) is the shape each detail file
 follows.
 
@@ -114,21 +119,21 @@ and is tracked in
 — `Select`'s three (`HasOptions`, `CanSelectPlaceholder`,
 `CanDisableOptions`) into [`select.md`](select.md), `Toggle`'s
 `HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md),
-`TextInput`'s `HasStep` into [`text-input.md`](text-input.md), and
+`TextInput`'s `HasStep` and `CanBeAutocapitalized` into
+[`text-input.md`](text-input.md), and
 `Repeater`'s three (`CanBeCloned`, `CanGenerateUuids`, `CanLimitItemsLength`)
 into [`repeater.md`](repeater.md), per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). The shared
-ones stay below — `CanBeLengthConstrained` and `CanBeReadOnly` are used by
-`TextInput` and `Textarea`, `CanBeInline` and `CanBeAccepted` by `Checkbox` and
-`Toggle`, and `HasExtraInputAttributes` by `TextInput`, `Textarea`, `Select`,
-`Checkbox` and `Toggle`.
+ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and
+`CanBeAutocompleted` are used by `TextInput` and `Textarea`, `CanBeInline` and
+`CanBeAccepted` by `Checkbox` and `Toggle`, and `HasExtraInputAttributes` by
+`TextInput`, `Textarea`, `Select`, `Checkbox` and `Toggle`.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | CanAllowHtml | [`Components/Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | todo | — |
 | [`CanBeAccepted`](../../../packages/forms/src/Components/Concerns/CanBeAccepted.php) | [`Components/Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | [can-be-accepted.md](can-be-accepted.md) |
-| CanBeAutocapitalized | [`Components/Concerns/CanBeAutocapitalized.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocapitalized.php) | todo | — |
-| CanBeAutocompleted | [`Components/Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | todo | — |
+| [`CanBeAutocompleted`](../../../packages/forms/src/Components/Concerns/CanBeAutocompleted.php) | [`Components/Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | done | [can-be-autocompleted.md](can-be-autocompleted.md) |
 | [`CanBeInline`](../../../packages/forms/src/Components/Concerns/CanBeInline.php) | [`Components/Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) | done | [can-be-inline.md](can-be-inline.md) |
 | [`CanBeLengthConstrained`](../../../packages/forms/src/Components/Concerns/CanBeLengthConstrained.php) | [`Components/Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) | done | [can-be-length-constrained.md](can-be-length-constrained.md) |
 | CanBeNative | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | todo | — |

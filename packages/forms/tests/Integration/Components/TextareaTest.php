@@ -109,6 +109,14 @@ it('renders the readonly attribute only when read-only', function (): void {
     expect($readOnly->filter('textarea.sy-fo-input')->attr('readonly'))->not->toBeNull();
 });
 
+it('renders the autocomplete attribute only when set', function (): void {
+    $unset = new Crawler(renderField(Textarea::make('excerpt')));
+    expect($unset->filter('textarea.sy-fo-input')->attr('autocomplete'))->toBeNull();
+
+    $off = new Crawler(renderField(Textarea::make('excerpt')->autocomplete(false)));
+    expect($off->filter('textarea.sy-fo-input')->attr('autocomplete'))->toBe('off');
+});
+
 it('merges extra input attributes onto the textarea and lets them win', function (): void {
     $crawler = new Crawler(renderField(
         Textarea::make('excerpt')->rows(3)->extraInputAttributes([

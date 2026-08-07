@@ -297,6 +297,24 @@ it('keeps required first and appends type arms after lengths', function (): void
         ->and($constraints[2])->toBeInstanceOf(Email::class);
 });
 
+it('renders the autocapitalize and autocomplete attributes', function (): void {
+    $crawler = new Crawler(renderField(
+        TextInput::make('title')->autocapitalize('words')->autocomplete('given-name'),
+    ));
+
+    $input = $crawler->filter('input.sy-fo-input');
+
+    expect($input->attr('autocapitalize'))->toBe('words')
+        ->and($input->attr('autocomplete'))->toBe('given-name');
+});
+
+it('omits the autocapitalize and autocomplete attributes when unset', function (): void {
+    $input = new Crawler(renderField(TextInput::make('title')))->filter('input.sy-fo-input');
+
+    expect($input->attr('autocapitalize'))->toBeNull()
+        ->and($input->attr('autocomplete'))->toBeNull();
+});
+
 it('merges extra input attributes onto the control and lets them win', function (): void {
     $crawler = new Crawler(renderField(
         TextInput::make('title')->numeric()->extraInputAttributes([

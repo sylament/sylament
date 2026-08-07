@@ -7,6 +7,8 @@
         'data-model': component.getDataModel,
         value: component.getState ?? '',
         inputmode: component.getInputMode ?: false,
+        autocapitalize: component.getAutocapitalize,
+        autocomplete: component.getAutocomplete,
         placeholder: component.getPlaceholder ?: false,
         maxlength: component.getMaxLength,
         minlength: component.getMinLength,

@@ -74,14 +74,14 @@ sections do.
 | [`table()` / `getTable()` / `getLiveComponent()`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php) | [`Concerns\BelongsToTable`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToTable.php) | in progress | — | [detail](#an-unbound-column-fails-without-filaments-message) |
 | [`state()` / `getStateUsing()` / `getState()` — cached per record key](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#hascellstate-is-relocated-into-the-column-tier) · [diverges](#the-state-cache-keys-off-the-bound-record-key) · [semantics](#state-is-getstateusing-under-another-name) |
 | [`getStateFromRecord()` — object graph or array, by dotted path](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`HasCellState::getStateFromRecord()`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | in progress | — | [diverges](#the-object-read-is-lenient-where-the-accessor-is-strict) · [detail](#relationship-traversal-is-the-doctrine-relation-layers) |
-| [`$evaluationIdentifier = 'column'` + the `$record` / `$state` / `$table` / `$liveComponent` name injections](../../../packages/tables/src/Columns/Column.php) | [`Column::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Columns/Column.php) | in progress | — | [diverges](#the-by-type-record-injection-is-not-registered) · [detail](#rowloop-waits-on-the-table-template) |
+| [`$evaluationIdentifier = 'column'` + the `$record` / `$state` / `$table` / `$liveComponent` name injections](../../../packages/tables/src/Columns/Column.php) | [`Column::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Columns/Column.php) | in progress | — | [diverges](#the-by-type-record-injection-is-not-registered) · [detail](#rowloop-waits-on-a-decision-about-twigs-loop-not-on-the-table-template) |
 | `translateLabel()` | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php) | blocked | i18n ([table.md](table.md#the-empty-state-heading-hardcodes-no-records)) | — |
 | `default()` / `getDefaultState()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | — |
 | `separator()` / `distinctList()` — split a string into a list | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | — |
 | `placeholder()` — the empty-cell copy | [`Support\Concerns\HasPlaceholder`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | todo | — | — |
 | [`clearCachedState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-state-cache-keys-off-the-bound-record-key) |
 | [`recordKey()` / `getRecordKey()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | done | — | [diverges](#the-record-key-setter-admits-an-int) |
-| `getRowLoop()` — the `$rowLoop` injection | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | blocked | the `Table` template | [detail](#rowloop-waits-on-the-table-template) |
+| `getRowLoop()` — the `$rowLoop` injection | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | todo | — | [detail](#rowloop-waits-on-a-decision-about-twigs-loop-not-on-the-table-template) |
 | Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches, `applyRelationshipAggregates()`, `applyEagerLoading()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php), [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | blocked | the Doctrine relation layer ([table.md](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)) | [detail](#relationship-traversal-is-the-doctrine-relation-layers) |
 | Visibility — `hidden()`, `visible()`, `hiddenFrom()`, `toggleable()` | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeHiddenResponsively`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — | — |
 | [`sortable()` / `isSortable()`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php) | [`Concerns\CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php) | done | — | — |
@@ -92,7 +92,7 @@ sections do.
 | Actions and links — `action()`, `url()`, `openUrlInNewTab()`, `disabledClick()` | [`CanCallAction`](../../../vendor/filament/tables/src/Columns/Concerns/CanCallAction.php), [`CanOpenUrl`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | todo | — | — |
 | Editing in place — `updateStateUsing()`, `rules()`, `disabled()` | [`CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php), [`CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php), [`CanBeDisabled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | todo | — | — |
 | Cell presentation — `alignment()`, `verticalAlignment()`, `width()`, `grow()`, `inline()`, `tooltip()`, the extra-attribute bags | [`HasAlignment`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) and seven siblings, [`HasTooltip`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — | — |
-| Cell rendering — `renderInLayout()`, `getCellAttributeHtml()`, `getCachedCellAttributeHtml()` | [`Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) | todo | the `Table` template | [detail](#the-cell-wrapper-belongs-to-the-table-template) |
+| Cell rendering — `renderInLayout()`, `getCellAttributeHtml()`, `getCachedCellAttributeHtml()` | [`Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) | todo | — | [detail](#the-cell-wrapper-belongs-to-the-table-template) |
 | Grouping and layout — `ColumnGroup`, `Columns\Layout\`, `BelongsToGroup`, `BelongsToLayout`, `summarize()` | [`ColumnGroup`](../../../vendor/filament/tables/src/Columns/ColumnGroup.php), [`Columns/Layout`](../../../vendor/filament/tables/src/Columns/Layout), [`CanBeSummarized`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | todo | — | — |
 | The rest of the catalog — `BadgeColumn`, `BooleanColumn`, `CheckboxColumn`, `ColorColumn`, `IconColumn`, `ImageColumn`, `SelectColumn`, `TagsColumn`, `TextInputColumn`, `ToggleColumn`, `ViewColumn` | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | todo | — | — |
 | _rest not audited yet_ | | | | |
@@ -214,15 +214,23 @@ semantics. All three wait on the
 [Doctrine relation layer](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer),
 which is where a relation-scoped table gets defined at all.
 
-### `$rowLoop` waits on the table template
+### `$rowLoop` waits on a decision about Twig's loop, not on the table template
 
-Filament registers a fifth name injection, `rowLoop`, carrying Blade's
-`$loop` object for the row being rendered. It is dropped from the `match` here
-because nothing produces one: the `Table` template does not exist yet, and the
-Twig equivalent is `loop`, whose shape (`loop.index0`, `loop.first`, `loop.last`,
-no `remaining`/`odd` without a count) is not Blade's. The injection lands with
-the table template, in this same epic, and its name and contents are decided
-there rather than guessed here.
+Filament registers a fifth name injection, `rowLoop`, carrying Blade's `$loop`
+object for the row being rendered — `rowLoop(?stdClass $loop)` on
+[`HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php).
+It is dropped from the `match` here because nothing hands one over. The
+[table template](../../../packages/tables/templates/partials/Table/index.html.twig)
+shipped in M1 · 5 and iterates its records with a plain `{% for %}`, so a `loop`
+*is* in scope where a cell renders — but it is not Blade's, in shape or in type.
+Twig's is an **array** of `parent`, `index0`, `index` and `first`, gaining
+`length`, `revindex`, `revindex0` and `last` only when the iterated value is an
+array or `Countable`; Blade's is an object of `iteration`, `index`, `remaining`,
+`count`, `first`, `last`, `odd`, `even`, `depth` and `parent`, and its `index`
+counts from 0 where Twig's counts from 1. So porting the injection is a decision
+about what `rowLoop` carries here — Twig's array as it stands, or a Blade-shaped
+object built from it — and nothing has to land first for it to be made; it waits
+on a column feature that needs a row's position.
 
 ### The cell wrapper belongs to the table template
 
@@ -232,9 +240,12 @@ responsive-visibility classes concatenated into an attribute bag. Sylament emits
 attributes from Twig through
 [`attrs()`](../../../packages/support/src/Twig/Extension/AttributeExtension.php),
 so the wrapper is the table template's job and these three methods have no
-counterpart to port one-for-one. They stay listed because their *inputs* —
-alignment, width, grow, the extra-attribute bags — are real API a migrating user
-will look for, and those land with the template.
+counterpart to port one-for-one. That template shipped in M1 · 5 and already
+emits the `<td>` and its inner `<div>` with fixed classes, so what is left is not
+the wrapper but the *inputs* — alignment, width, grow, the extra-attribute bags —
+which stay listed because they are real API a migrating user will look for. They
+land on the cell-presentation row above, and the template grows the attributes
+that read them at the same time.
 
 ## Semantics
 

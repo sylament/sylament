@@ -29,9 +29,8 @@ wait on — so a row whose detail file already names a prerequisite would be
 false as **todo**. These tables carry the same four columns as every package
 README, so a **blocked** row names its prerequisite at the head of _Detail_,
 ahead of the detail-file link that carries the full write-up: _table bulk
-actions_ and _the `Table` template_ are the two the rows here wait on today, with
-_the Doctrine relation layer_ a third that only the detail files name so far — it
-is what the
+actions_ is the one the rows here wait on today, with _the Doctrine relation
+layer_ a second that only the detail files name so far — it is what the
 [relation arm of the query lane](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)
 and
 [relationship traversal](column.md#relationship-traversal-is-the-doctrine-relation-layers)
@@ -246,7 +245,7 @@ pairs with, so it shares the first row below.
 | Column / HasExtraHeaderAttributes | [`Columns/Concerns/HasExtraHeaderAttributes.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraHeaderAttributes.php) | todo | — |
 | Column / HasIcon | [`Columns/Concerns/HasIcon.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php) | todo | — |
 | Column / HasIconColor | [`Columns/Concerns/HasIconColor.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | todo | — |
-| Column / HasRowLoopObject | [`Columns/Concerns/HasRowLoopObject.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | blocked | the `Table` template — [column.md](column.md#rowloop-waits-on-the-table-template) |
+| Column / HasRowLoopObject | [`Columns/Concerns/HasRowLoopObject.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | todo | [column.md](column.md#rowloop-waits-on-a-decision-about-twigs-loop-not-on-the-table-template) |
 | Column / HasSpace | [`Columns/Concerns/HasSpace.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasSpace.php) | todo | — |
 | Column / HasTooltip | [`Columns/Concerns/HasTooltip.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — |
 | [`Column / InteractsWithTableQuery`](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`Columns/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | in progress | `applySort()` and `applySearchConstraint()` are in; the aggregate and eager-loading arms wait on the Doctrine relation layer — [column.md](column.md#relationship-traversal-is-the-doctrine-relation-layers) |

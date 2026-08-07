@@ -52,7 +52,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `HasExtraFieldWrapperAttributes` (composed by Filament's Field) | [`Components/Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | todo | — | [detail](#hasextrafieldwrapperattributes-is-not-composed) |
 | [`CanBeAutofocused`](../../../packages/forms/src/Components/Concerns/CanBeAutofocused.php) | [`Components/Concerns/CanBeAutofocused.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutofocused.php) | done | — | — |
 | [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Components/Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | — |
-| [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Components/Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | in progress | Actions bundle (`hintActions`) | [detail](#hashint-omits-the-hint-actions) |
+| [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Components/Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | in progress | — | [detail](#hashint-omits-the-hint-actions) |
 | [`HasPlaceholder`](../../../packages/forms/src/Components/Concerns/HasPlaceholder.php) | [`Components/Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](#hasplaceholder-is-composed-on-the-base-field) |
 
 ## Details
@@ -105,13 +105,22 @@ into the after-label slot, each reading back through
 after-label slot seeding) and by the `TextInput` / `Textarea` integration suites.
 
 **Missing vs Filament:** `hintAction(Action | Closure)`, `hintActions(array)`,
-and `getHintActions()` — the hint-adjacent action buttons — are not ported
-(`Filament\Actions\Action` has no Sylament equivalent yet), so `setUpHint()` drops
-the `...$component->getHintActions()` spread Filament appends to the after-label
-components. `setUpHint()`'s closure also narrows its parameter from Filament's
-`Field | Placeholder` to `Field`, because `Placeholder` is not ported.
-**Blocked** on the Actions bundle (and, for the parameter, the `Placeholder`
-component); add the trio and re-add the spread when they land.
+and `getHintActions()` — the hint-adjacent action buttons — are simply unwritten,
+so `setUpHint()` drops the `...$component->getHintActions()` spread Filament
+appends to the after-label components. Nothing external blocks them any more:
+[`Sylament\Actions\Action`](../../../packages/actions/src/Action.php) ships,
+`packages/forms/composer.json` already requires `sylament/actions`, and the
+after-label slot the spread feeds now defaults an embedded action to
+`Size::Small` / `Action::LINK_TEMPLATE` (the *Field-wrapper slots* row above), so
+a hint action lands as a small link rather than a full-size button.
+`setUpHint()`'s closure separately narrows its parameter from Filament's
+`Field | Placeholder` to `Field`, because `Placeholder` is not ported — that
+narrowing alone still waits on the `Placeholder` component. **Next step:** add
+the trio and re-add the spread; note that `setUpHint()` registers the seeding
+*as* the `afterLabel()` closure and
+[`childComponents()`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php)
+stores by key with replacement, so the spread has to go inside that existing
+closure — a second `afterLabel()` call would wipe the hint text and icon.
 
 ## Divergences
 

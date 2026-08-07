@@ -109,7 +109,7 @@ it('defaults a slot action to a small link', function (): void {
 
     expect($slot)->not->toBeNull();
 
-    $components = $slot->getComponents();
+    $components = $slot?->getComponents() ?? [];
 
     expect($components)->toHaveCount(1)
         ->and($components[0])->toBeInstanceOf(Action::class)
@@ -117,11 +117,34 @@ it('defaults a slot action to a small link', function (): void {
         ->and($components[0]->getSize())->toBe(Size::Small);
 });
 
+it('takes a bare action, unwrapped by an array, in a slot', function (): void {
+    $slot = wireField(FixtureField::make('title')->afterLabel(Action::make('edit')))
+        ->getChildSchema(Field::AFTER_LABEL_SCHEMA_KEY);
+
+    $components = $slot?->getComponents() ?? [];
+
+    expect($components)->toHaveCount(1)
+        ->and($components[0])->toBeInstanceOf(Action::class)
+        ->and($components[0]->getTemplate())->toBe(Action::LINK_TEMPLATE)
+        ->and($components[0]->getSize())->toBe(Size::Small);
+});
+
+it('takes a bare action group, unwrapped by an array, in a slot', function (): void {
+    $slot = wireField(FixtureField::make('title')->afterLabel(ActionGroup::make([Action::make('edit')])))
+        ->getChildSchema(Field::AFTER_LABEL_SCHEMA_KEY);
+
+    $components = $slot?->getComponents() ?? [];
+
+    expect($components)->toHaveCount(1)
+        ->and($components[0])->toBeInstanceOf(ActionGroup::class)
+        ->and($components[0]->getSize())->toBe(Size::Small);
+});
+
 it('lets a slot action override the defaults', function (): void {
     $slot = wireField(FixtureField::make('title')->afterLabel([Action::make('edit')->button()->size(Size::Large)]))
         ->getChildSchema(Field::AFTER_LABEL_SCHEMA_KEY);
 
-    $components = $slot->getComponents();
+    $components = $slot?->getComponents() ?? [];
 
     expect($components[0]->getTemplate())->toBe(Action::BUTTON_TEMPLATE)
         ->and($components[0]->getSize())->toBe(Size::Large);
@@ -131,7 +154,7 @@ it('defaults a slot action group to a small size', function (): void {
     $slot = wireField(FixtureField::make('title')->afterLabel([ActionGroup::make([Action::make('edit')])]))
         ->getChildSchema(Field::AFTER_LABEL_SCHEMA_KEY);
 
-    $components = $slot->getComponents();
+    $components = $slot?->getComponents() ?? [];
 
     expect($components)->toHaveCount(1)
         ->and($components[0])->toBeInstanceOf(ActionGroup::class)

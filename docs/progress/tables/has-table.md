@@ -103,7 +103,7 @@ instead.
 | [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [semantics](#filtertablequery-applies-the-search-not-filters) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
 | `getTableQueryForExport()` | [`Concerns\HasRecords::getTableQueryForExport()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | the export surface | It bypasses the seams above, re-reading `getTable()->getQuery()` and re-applying filters, search and sorting itself, to assemble a query for Filament's export action — a surface with no counterpart here and on no milestone, the same one [`ExportColumn`](column.md#hascellstate-is-relocated-into-the-column-tier) waits on. It lands with that action or not at all |
 | [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `dehydrateTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-its-query-lane-and-no-session-or-url-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
-| [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
+| [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [diverges](#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `dehydrateTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#no-table-state-is-persisted-in-the-session) · [table.md](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
 | Table state in the URL — `#[Url]`-style query-string binding for page, sort and search | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | todo | — | [diverges](#no-table-state-is-bound-to-the-url) |
 | Per-column search — `$tableColumnSearches`, `updatedTableColumnSearches()`, the reserved keys | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | todo | — | [detail](#search-is-the-global-term-only) |
@@ -481,7 +481,9 @@ table with no `plays` column. A default-sort **closure** is handed `query` and
 builder replaces the query outright, filters and all — **including the user's
 sort**, which was applied to the builder that just got replaced, so a table whose
 default sort closure returns one is ordered by that builder plus the tiebreaker
-and by nothing the user clicked. Filament's arm discards it the same way.
+and by nothing the user clicked. Filament writes the same replacement line and
+throws the result away at every call site, so the arm is live here and dead
+there — [its own divergence](#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded).
 
 Last is `defaultKeySort()`, on by default: the root alias's identifier field,
 read from the mapping metadata rather than assumed to be `id`, appended in the
@@ -1090,6 +1092,52 @@ have let through.
 Permanent, and the query lane will not loosen it: an ignored request is
 recoverable (the user clicks again), a trusted-but-unchecked one is not.
 
+### A default-sort closure's replacement builder reaches the caller, where Filament's is discarded
+
+Both codebases end `applySortingToTableQuery()` with the same two moves — a
+`$query = $defaultSort;` when the evaluated default sort came back as a builder,
+then the identifier tiebreaker — and the bodies are otherwise line for line. The
+divergence is in the **call sites**. This one returns the builder and
+[`getFilteredSortedTableQuery()`](../../../packages/tables/src/Concerns/HasTable.php)
+consumes the return (`return $this->applySortingToTableQuery($query);`), so the
+replacement really becomes the table's query. All four of Filament's callers
+invoke the method as a bare statement and then use the builder they passed in —
+`Concerns\HasRecords::getFilteredSortedTableQuery()` and
+`getTableQueryForExport()`, and two sites in `Concerns\HasBulkActions` — so over
+there `$query = $defaultSort` rebinds a local and nothing more. The replacement
+never leaves the method; what it does do is redirect the rest of it, so
+`getQualifiedKeyName()` and the tiebreaker are read off and appended to the
+builder that is about to be thrown away. Filament's observable behaviour for a
+`defaultSort()` closure returning a builder is therefore *the original query,
+still carrying the user's sort, with no identifier tiebreaker* — the replacement
+contributes nothing at all.
+
+The reach is narrow, and worth stating so the divergence is not read as bigger
+than it is. A closure written the ordinary way orders the builder it was handed
+and returns `$this` or nothing, so `$defaultSort` is either that same builder or
+not a builder, and both codebases behave identically on every such input. Only a
+closure returning a **different** builder reaches the arm — which is exactly what
+[`getDefaultSort()`'s widened `string|QueryBuilder|null` return](table.md#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker)
+exists to serve, and it is invisible to a reader diffing the two method bodies,
+because the bodies match.
+
+Ours is the reading the declared return states — and Filament declares the same
+`Builder` return, so the arm is dead over there rather than absent, which is why
+it is kept here rather than un-ported: a value a method computes and hands back
+is one the caller uses. The cost is that the replacement is **total**: it brings
+its own filters and drops the search and the user's sort along with everything
+else applied to the builder it replaced. Three cases in the
+[sorting suite](../../../packages/tables/tests/Unit/Concerns/CanSortRecordsTest.php)
+pin it — the replacement's `WHERE` reaching the executed query, the user's sort
+gone from the DQL, and the tiebreaker read off the replacement (`ORDER BY
+book.code asc` for a `Book` builder returned from a `Song` table's default sort).
+
+Permanent, and it closes on its own if Filament ever consumes the return — the
+two agree again with no change here. It is the third arm of this family the port
+declines to carry as written, beside
+[`searchable()`'s closure condition](column.md#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column)
+and [`applySort()`'s reversal](column.md#sort-columns-apply-in-declared-order-where-filament-reverses-them).
+
 ### The missing-data-source error does not name `relationship()`
 
 Filament throws `"Table [{$livewireClass}] must have a [query()], [relationship()],
@@ -1180,11 +1228,12 @@ class while `getMetadataFor()` **throws** `MappingException` for one, so an
 anonymous DTO — the plainest transient object there is — would pass the transient
 check and then explode on the metadata read. Reading the declared class also
 means an anonymous *subclass* of an entity (a test double) keys by its parent's
-mapping instead of blowing up. And the arm adds two refusals of its own, both
+mapping instead of blowing up. And the arm adds three refusals of its own, all
 `LogicException`: a **composite** identifier, which a single string key cannot
-address, and an identifier that is set but empty or unprintable. Neither is
-recoverable — the table would otherwise index rows under a key no action can
-resolve.
+address; an identifier the entity carries **none** of, which is what
+`getIdentifierValues()` answers for an entity that was never persisted or
+assigned one; and one that is set but empty or unprintable. None is recoverable —
+the table would otherwise index rows under a key no action can resolve.
 
 The action side has the same-shaped twin,
 [`InteractsWithRecord::resolveRecordKey()`](../actions/action.md#record-key-resolution-is-hoisted-to-hasactions)

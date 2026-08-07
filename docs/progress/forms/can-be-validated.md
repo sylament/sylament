@@ -462,7 +462,7 @@ Laravel checks presence **once, centrally, in front of every rule**.
 calls `presentOrRuleIsImplicit()`, which returns `isImplicit($rule)` outright when
 the value `is_string()` and `trim()`s to `''` — and `$implicitRules` is only the
 `Required*` / `Present*` / `Missing*` / `Accepted*` / `Declined*` / `Filled`
-family. So a blank string skips `min`, `max`, `email`, `numeric`, `regex` and
+family. So a blank string bypasses `min`, `max`, `email`, `numeric`, `regex` and
 `url` alike: they are never run, whatever they would have said.
 
 The port has no such gate.
@@ -472,14 +472,29 @@ and each Symfony validator decides for itself — and **they do not agree**.
 `EmailValidator`, `RegexValidator` and `UrlValidator` open with
 `if (null === $value || '' === $value) { return; }`; `TypeValidator`,
 `LengthValidator` and every `AbstractComparisonValidator` subclass return on
-`null` only. Measured over the arms this package ships today, the split falls by
-direction — a **minimum** violates on `''`, a **maximum** does not:
+`null` only, so `''` reaches their comparison. Measured over the arms this
+package ships today — *not run* meaning the validator returned before comparing
+anything, *runs, passes* meaning it compared `''` and found nothing wrong (the
+word **skipped** is avoided here: it is this tree's
+[status](../README.md#statuses) for a deliberate non-goal and means something
+else):
 
 | Constraint | `null` | `''` |
 | --- | --- | --- |
 | `NotBlank` | violates | violates |
-| `Length(min:)`, `Type('numeric')`, `GreaterThanOrEqual` | skipped | **violates** |
-| `Length(max:)`, `LessThanOrEqual`, `Email`, `Regex`, `Url` | skipped | skipped |
+| `Email`, `Regex`, `Url` | not run | not run |
+| `Type('numeric')`, `Length(min:)`, `GreaterThanOrEqual` | not run | **violates** |
+| `Length(max:)`, `LessThanOrEqual` | not run | runs, passes |
+
+The outcomes line up by direction — a **minimum** violates on `''` and a
+**maximum** does not — but that is only the bottom two rows. The
+`Email` / `Regex` / `Url` row lands on the no-violation side for an unrelated
+reason, having opted out of blank input altogether rather than compared it, and
+reading the two as one mechanism is what makes the last row look like a
+coincidence. It is not: `mb_strlen('')` is `0`, which clears any
+`max`, and `''` compared against a stringified bound sorts before every non-empty
+one, so `LessThanOrEqual` passes for **any** bound — `10`, `0`, `-5`, `1.5` alike
+— while `GreaterThanOrEqual` violates for all four.
 
 So on an **optional** field a cleared input can report a violation Filament would
 not: `numeric()` says the value is not numeric and

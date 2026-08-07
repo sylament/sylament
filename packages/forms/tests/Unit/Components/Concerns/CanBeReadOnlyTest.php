@@ -7,6 +7,7 @@ namespace Sylament\Forms\Tests\Unit\Components\Concerns;
 use Sylament\Forms\Components\Textarea;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Enums\Operation;
 
@@ -35,9 +36,12 @@ it('matches the container operation from readOnlyOn()', function (): void {
         ->and($attach(TextInput::make('title')->readOnlyOn(['create', 'view']))->isReadOnly())->toBeFalse();
 });
 
-it('matches the host class from readOnlyOn()', function (): void {
+it('matches the host from readOnlyOn() by instanceof', function (): void {
+    // The operation is set so the `===` arm cannot succeed against a class-string
+    // candidate, leaving `instanceof` the only way this can match.
     $field = Schema::make(new FieldRenderHost())
-        ->components([TextInput::make('title')->readOnlyOn(FieldRenderHost::class)])
+        ->operation('edit')
+        ->components([TextInput::make('title')->readOnlyOn(InteractsWithSchemas::class)])
         ->getComponents()[0];
 
     expect($field->isReadOnly())->toBeTrue();

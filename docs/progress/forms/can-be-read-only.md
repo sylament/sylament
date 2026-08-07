@@ -29,10 +29,15 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | The `readonly` attribute on each control | [`TextInput::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | — |
 
 Coverage: the `false` default, the literal and closure conditions, the operation
-match in both the string and enum spellings, a non-matching list, and the
-host-class `instanceof` arm by
+match in both the string and enum spellings, a non-matching list, and the host
+`instanceof` arm by
 [`CanBeReadOnlyTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeReadOnlyTest.php),
-which also pins that both text fields compose it. The rendered attribute is
+which also pins that both text fields compose it. That last case sets the
+schema's operation and matches against an **interface** the host implements, so
+the `===` arm beside it cannot be what satisfies the match — a candidate equal to
+the operation string short-circuits the `||` and leaves `instanceof` unexercised,
+which is exactly what a class-string candidate does under `getOperation()`'s
+host-class fallback. The rendered attribute is
 asserted present-and-absent per field by the `renders the readonly attribute only
 when read-only` case in
 [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php)
@@ -82,8 +87,10 @@ ways there: `readOnlyOn(Operation::Edit)` raises a `TypeError` at the signature,
 while `readOnlyOn([Operation::Edit])` is accepted, compares an enum object
 against a string, matches nothing, and reports no error at all.
 
-The port takes the widened signature for all three, so `readOnlyOn()` is
-`disabledOn()`'s body verbatim. Its one translation — `Arr::wrap` mapping to
+The port takes the widened signature for all three, so `readOnlyOn()` runs
+`disabledOn()`'s loop over `readOnly()` — the same matching, without the
+`saved()` coupling that [separates the two](#read-only-is-not-disabled--the-state-still-dehydrates).
+Its one translation — `Arr::wrap` mapping to
 support's [`wrap()`](../support/helpers.md) helper and never to the shorter
 `(array)` cast, which would dump an enum's properties instead of wrapping it —
 is written up once, in

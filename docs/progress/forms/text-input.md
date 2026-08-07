@@ -262,14 +262,37 @@ type arms in the same
 [override](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters),
 appended after them.
 
-Each arm is appended only when its bound is non-null, and that guard is required
-rather than defensive:
+Each arm is appended only when
+[`filled()`](../support/helpers.md) accepts its *evaluated* bound, and that guard
+is required rather than defensive:
 [`AbstractComparison::__construct()`](../../../vendor/symfony/validator/Constraints/AbstractComparison.php)
 throws `ConstraintDefinitionException` when neither `value` nor `propertyPath` is
-set, so `new LessThanOrEqual(null)` never constructs. The guard reads the
-*evaluated* bound, so a closure resolving to `null` drops its arm as well —
-pinned by `TextInputTest`'s `adds only the bound that is set` and `drops a bound
-whose closure resolves null`.
+set, so `new LessThanOrEqual(null)` never constructs. `filled()` rather than
+`!== null` because Filament guards its rule with `filled()` too, and the case is
+real: `maxValue(fn () => $settings->get('max_qty'))` resolving to `''` — an unset
+setting, an empty admin field — would otherwise build `LessThanOrEqual('')`,
+which every non-empty submission fails with the message *"This value should be
+less than or equal to ."*. Zero is a value and not a blank, so `maxValue(0)` and
+`minValue('0')` both build their arm:
+[`blank()`](../../../packages/support/src/helpers.php) answers `false` for an
+`is_numeric()` value, and a numeric *string* never reaches that arm because the
+`mb_trim` string arm above it already answers. That is the opposite of
+[`CanBeLengthConstrained`](can-be-length-constrained.md), which drops a zero
+bound with `> 0`, and deliberately: `Length(max: 0)` forbids all input and is
+never what a caller meant, while `maxValue(0)` ("at most zero") is an ordinary
+constraint on a signed field. Pinned by `TextInputTest`'s `adds only the bound
+that is set`, `drops a bound whose closure resolves null`, `drops a bound that
+resolves blank rather than building an empty comparison` and `keeps a zero bound,
+which is a value rather than a blank`.
+
+The setters narrow Filament's `scalar | Closure | null` to
+`int|float|string|Closure|null`, so `maxValue(true)` is a `TypeError` here where
+Filament interpolated it as `max:1`. `scalar` is a PHPDoc pseudo-type with no
+native equivalent, so a port that types its setters natively
+([convention](../../../CLAUDE.md)) has to enumerate the arms — and `bool` is the
+one left out, having no meaning as a numeric bound. The enumerated union is also
+what lets `getMaxValue()` carry a native return type at level max, since
+`evaluate()` infers it by subtracting `Closure` from the property's union.
 
 **The bounds compare the raw submitted string.** Validation reads the raw host
 property ([semantics](checkbox.md#validation-reads-the-raw-state-so-the-boolean-type-constraint-is-live)),
@@ -277,23 +300,25 @@ so a browser sends `"7"` and the constraint receives a string, never an `int`.
 The port adds no cast and needs none for the numeric case: PHP compares a numeric
 string against an `int` or `float` bound numerically, so `"7" <= 10` holds and
 `"70" <= 10` does not — pinned by `TextInputTest`'s `compares a submitted numeric
-string by magnitude`. Two consequences follow from PHP's comparison rules, and
-neither has a Laravel counterpart, because `getSize()` measures a non-numeric
-string's *length* where PHP compares its *characters*. A non-numeric string is
-compared against the stringified bound, so `"abc" <= 10` becomes `"abc" <= "10"`
-→ false, and a junk value picks up a bounds violation beside whatever the
-`numeric()` `Type` arm reports, if the field carries one. And the empty string a
-cleared input submits is not numeric either, while
-[`AbstractComparisonValidator`](../../../vendor/symfony/validator/Constraints/AbstractComparisonValidator.php)
-skips only `null` — so on an optional field a *lower* bound fires against `""`
-(`"" >= "1"` is false) and an *upper* bound does not (`"" <= "10"` is true). On a
-`required()` field that is harmless, since `NotBlank` rejects `""` anyway; on one
-without it, `minValue()` quietly makes the field mandatory. Pinned by
-`TextInputTest`'s `reports a lower bound against the empty string a cleared input
-submits`, which also holds a `null` state skipping both arms.
-Revisit if a state cast ever converts the field's state to a real number before
-validation runs — the same condition the
+string by magnitude`. A **non-numeric** string is the case that parts from
+Laravel, and `getSize()` is why: it measures such a string's *length* (3 for
+`"abc"`, which clears `max:10`) where PHP compares its *characters*, stringifying
+the bound — so `"abc" <= 10` becomes `"abc" <= "10"` → false, and a junk value
+picks up a bounds violation beside whatever the `numeric()` `Type` arm reports,
+if the field carries one. Revisit if a state cast ever converts the field's state
+to a real number before validation runs — the same condition the
 [integer regex](#integer-validates-with-a-regex-not-a-type-constraint) waits on.
+
+The **empty** string is not this divergence's doing and is not confined to these
+arms: Laravel never runs `min:` / `max:` on a blank string at all, because
+`presentOrRuleIsImplicit()` gates every non-implicit rule on presence, and the
+port has no such gate — so `minValue(1)` violates on `""` exactly as
+`Type('numeric')` and `Length(min:)` already do, while `maxValue(10)` stays
+quiet. Filed with the rest of that family under
+[There is no presence gate](can-be-validated.md#there-is-no-presence-gate-so-a-blank-string-reaches-every-constraint);
+`TextInputTest`'s `reports a lower bound against the empty string a cleared input
+submits` is the instance of it that lives here, and it also holds a `null` state
+skipping both arms.
 
 ### Input mode is a bespoke getter, not the `HasInputMode` concern
 

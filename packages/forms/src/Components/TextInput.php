@@ -20,6 +20,8 @@ use Symfony\Component\Validator\Constraints\Regex;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Constraints\Url;
 
+use function Sylament\Support\filled;
+
 class TextInput extends Field implements Contracts\CanBeLengthConstrained
 {
     use CanBeAutocapitalized;
@@ -235,11 +237,11 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
             $constraints[] = new Url();
         }
 
-        if (($minValue = $this->getMinValue()) !== null) {
+        if (filled($minValue = $this->getMinValue())) {
             $constraints[] = new GreaterThanOrEqual($minValue);
         }
 
-        if (($maxValue = $this->getMaxValue()) !== null) {
+        if (filled($maxValue = $this->getMaxValue())) {
             $constraints[] = new LessThanOrEqual($maxValue);
         }
 

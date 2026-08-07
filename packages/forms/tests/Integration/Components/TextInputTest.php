@@ -507,6 +507,26 @@ it('drops a bound whose closure resolves null', function (): void {
         ->and($field->getValidationConstraints()[0])->toBeInstanceOf(LessThanOrEqual::class);
 });
 
+it('drops a bound that resolves blank rather than building an empty comparison', function (): void {
+    $empty = TextInput::make('count')->minValue('')->maxValue('');
+    $whitespace = TextInput::make('count')->maxValue(fn (): string => '   ');
+
+    expect($empty->getValidationConstraints())->toBe([])
+        ->and($whitespace->getValidationConstraints())->toBe([]);
+});
+
+it('keeps a zero bound, which is a value rather than a blank', function (): void {
+    $int = TextInput::make('count')->maxValue(0)->getValidationConstraints();
+    $string = TextInput::make('count')->minValue('0')->getValidationConstraints();
+
+    expect($int)->toHaveCount(1)
+        ->and($int[0])->toBeInstanceOf(LessThanOrEqual::class)
+        ->and($int[0]->value)->toBe(0)
+        ->and($string)->toHaveCount(1)
+        ->and($string[0])->toBeInstanceOf(GreaterThanOrEqual::class)
+        ->and($string[0]->value)->toBe('0');
+});
+
 it('applies a validation message to a comparison arm', function (): void {
     $constraints = TextInput::make('count')
         ->maxValue(10)

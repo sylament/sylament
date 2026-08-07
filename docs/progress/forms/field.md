@@ -69,9 +69,13 @@ class binding). None of it is ported — the port has no `HasAffixes`, no
 prefix/suffix API, and no input-wrapper template, so fields render their raw
 control inside the field wrapper with no affix layer.
 
-This row is the **root** of that surface, not something waiting on `HasAffixes`:
-the concern is the API half and the wrapper is its renderer, so the two land in
-one change and neither is the other's prerequisite. What is missing is markup and
+This row is the **root** of that surface: the wrapper is the prerequisite and
+`HasAffixes` follows it, which is why
+[text-input.md](text-input.md) and [select.md](select.md) both file their affix
+rows as blocked *by this one*, and why this row names no blocker of its own.
+Ordering it that way round is not arbitrary — a prefix setter with nowhere to
+render is unusable and untestable, while the wrapper is a real improvement on its
+own (it is where a field's focus ring belongs). What it waits on is markup and
 styling rather than a dependency.
 [`fi-input-wrp`](../../../vendor/filament/support/resources/css/components/input/wrapper.css)
 is where the ring, background and `focus-within` state live
@@ -181,7 +185,12 @@ typed `?InteractsWithSchemas`, so no `instanceof` guard is needed) — and the
 `FieldWrapper` template loops the whole list.
 That is the Symfony violation-list idiom: a `ConstraintViolationList` is
 naturally plural, and the count is small in practice because every constraint
-except `NotBlank` skips blank input, so a single field rarely produces two.
+except `NotBlank` skips a `null` value, so a single field rarely produces two.
+A blank *string* is a different matter — the port has
+[no presence gate](can-be-validated.md#there-is-no-presence-gate-so-a-blank-string-reaches-every-constraint),
+and `Length(min:)`, `Type('numeric')` and `GreaterThanOrEqual` each violate on
+`''` — which is one reason the template loops rather than picking a first
+message.
 `showAllValidationMessages()` / `allowHtmlValidationMessages()` are
 [skipped](can-be-validated.md) accordingly — the flags exist to opt *into* what
 this port always does, and into raw HTML the port has no shape for. Reverses only

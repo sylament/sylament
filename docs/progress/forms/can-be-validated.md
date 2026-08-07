@@ -234,10 +234,15 @@ default test reads as blank.
 `required(fn () => ! evaluate($condition))`, so it is a *setter for the same
 flag*, not an independent one, and a later `required()` overwrites it. There is
 deliberately no Symfony counterpart constraint to add: every constraint in the
-ported subset (`Length`, `Email`, `Type`) returns without a violation for `null`
-and `''` by Symfony's own validator semantics, so "optional" is the absence of
-`NotBlank` — matching Laravel's implicit-rule skip, which is what made Filament's
-`nullable()` a pure inverse of `required()` in the first place.
+ported subset returns without a violation for `null`, so "optional" is the
+absence of `NotBlank` — matching Laravel's implicit-rule skip, which is what made
+Filament's `nullable()` a pure inverse of `required()` in the first place.
+
+That parity holds for `null` and **not** for the empty string a cleared input
+submits, which `Length(min:)`, `Type('numeric')` and `GreaterThanOrEqual` all
+violate on where Laravel would not have run the rule at all — see
+[There is no presence gate](#there-is-no-presence-gate-so-a-blank-string-reaches-every-constraint).
+`nullable()` is faithful; what is missing is the presence check in front of it.
 
 ## Divergences
 
@@ -449,6 +454,55 @@ The port's messages are plain strings escaped by Twig, and
 typing the list `list<string|Markup>` and threading a per-field flag into the
 wrapper template for no consumer. **Skipped** — a `Markup` message would be the
 port's shape if it is ever wanted, not a boolean flag.
+
+### There is no presence gate, so a blank string reaches every constraint
+
+Laravel checks presence **once, centrally, in front of every rule**.
+[`Validator::isValidatable()`](../../../vendor/laravel/framework/src/Illuminate/Validation/Validator.php)
+calls `presentOrRuleIsImplicit()`, which returns `isImplicit($rule)` outright when
+the value `is_string()` and `trim()`s to `''` — and `$implicitRules` is only the
+`Required*` / `Present*` / `Missing*` / `Accepted*` / `Declined*` / `Filled`
+family. So a blank string skips `min`, `max`, `email`, `numeric`, `regex` and
+`url` alike: they are never run, whatever they would have said.
+
+The port has no such gate.
+[`validateSchema()`](../schemas/can-be-validated.md#validateschema-runs-symfonys-validator-per-state-path-instead-of-livewires-whole-component-validate)
+hands the raw value straight to `ValidatorInterface::validate($value, $constraints)`
+and each Symfony validator decides for itself — and **they do not agree**.
+`EmailValidator`, `RegexValidator` and `UrlValidator` open with
+`if (null === $value || '' === $value) { return; }`; `TypeValidator`,
+`LengthValidator` and every `AbstractComparisonValidator` subclass return on
+`null` only. Measured over the arms this package ships today, the split falls by
+direction — a **minimum** violates on `''`, a **maximum** does not:
+
+| Constraint | `null` | `''` |
+| --- | --- | --- |
+| `NotBlank` | violates | violates |
+| `Length(min:)`, `Type('numeric')`, `GreaterThanOrEqual` | skipped | **violates** |
+| `Length(max:)`, `LessThanOrEqual`, `Email`, `Regex`, `Url` | skipped | skipped |
+
+So on an **optional** field a cleared input can report a violation Filament would
+not: `numeric()` says the value is not numeric and
+[`minValue(1)`](text-input.md#the-value-bounds-are-comparison-constraints-not-laravels-min-and-max)
+says it should be at least 1, while `maxValue(10)` and `maxLength()` stay quiet.
+On a `required()` field it is moot — `NotBlank` rejects `''` first and the extra
+message merely joins the
+[list](field.md#error-display-shows-every-message-for-the-path).
+
+This is filed as one divergence rather than per arm because the fix belongs where
+Laravel put it: a single presence check in front of the per-path run, not a blank
+guard repeated inside every field's constraint builder. The shape it would take
+is to skip a path whose value is a blank *string* unless that path's constraints
+include the required one — `NotBlank` / `NotNull` being this port's
+`$implicitRules` — which also restores `nullable()`'s promise
+[below](#nullable-removes-the-notblank-and-nothing-else) without touching a
+single arm. Until that lands, the table is what ships.
+
+Two things it is **not**. It is not the `"abc"` behaviour of a comparison arm,
+which is a separate consequence of comparing an unconverted string
+([there](text-input.md#the-value-bounds-are-comparison-constraints-not-laravels-min-and-max)).
+And it is not something a state cast fixes: Laravel does not reach a converted
+value here, it declines to run the rule at all.
 
 ### The required constraint is swappable per field
 

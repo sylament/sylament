@@ -269,9 +269,12 @@ configure: a `records()` closure that fetches one record more than the page need
 and returns a carrier built with `totalRecordCount: null` and `hasMoreRecords` is
 simple-paginated, because the footer
 [branches on what the carrier answers](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both)
-rather than on a table setting. A mode setting belongs to the coming Doctrine
-`query()` lane, where the toolkit owns the fetching and has to be told which
-shape to fetch.
+rather than on a table setting. The Doctrine `query()` lane needs a setting for
+it, because there the toolkit owns the fetching and has to be told which shape to
+fetch — and · 12 built one:
+[`paginationMode()` and two of `PaginationMode`'s three cases](../tables/table.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features),
+`Default` paying a `COUNT` for a true total and `Simple` probing one record past
+the page for the same `hasMoreRecords` flag a closure sets by hand.
 
 ### The counts are named in full, not abbreviated
 

@@ -36,7 +36,8 @@ concern only one built component uses: `HasOptions`, `CanSelectPlaceholder` and
 `CanDisableOptions` are `Select`'s alone in the port and live in
 [`select.md`](select.md), `HasToggleIcons` and `HasToggleColors` are `Toggle`'s
 alone and live in
-[`toggle.md`](toggle.md), `HasStep` and `CanBeAutocapitalized` are `TextInput`'s
+[`toggle.md`](toggle.md), `HasStep`, `HasDatalistOptions` and
+`CanBeAutocapitalized` are `TextInput`'s
 alone and live in [`text-input.md`](text-input.md), and `CanBeCloned`,
 `CanGenerateUuids` and
 `CanLimitItemsLength` are `Repeater`'s alone and live in
@@ -46,8 +47,9 @@ reorder functions no other component calls — while `CanBeInline` and
 `HasExtraInputAttributes` by all five fields that render a control, so those keep
 rows of their own. The fold reads the port,
 not Filament — Filament composes `HasOptions` and `CanDisableOptions` onto
-`Radio`, `CheckboxList` and `ToggleButtons` as well, and `HasStep` onto
-`DateTimePicker` and `Slider` (and tables' `TextInputColumn`), so each is
+`Radio`, `CheckboxList` and `ToggleButtons` as well, `HasStep` onto
+`DateTimePicker` and `Slider` (and tables' `TextInputColumn`), and
+`HasDatalistOptions` onto `DateTimePicker`, so each is
 promoted back to a row of its own the moment the second field lands.
 `CanBeAutocapitalized` is the one fold Filament agrees with — it composes that
 trait on `TextInput` and nothing else, so no unported field is queued to promote
@@ -119,7 +121,7 @@ and is tracked in
 — `Select`'s three (`HasOptions`, `CanSelectPlaceholder`,
 `CanDisableOptions`) into [`select.md`](select.md), `Toggle`'s
 `HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md),
-`TextInput`'s `HasStep` and `CanBeAutocapitalized` into
+`TextInput`'s `HasStep`, `HasDatalistOptions` and `CanBeAutocapitalized` into
 [`text-input.md`](text-input.md), and
 `Repeater`'s three (`CanBeCloned`, `CanGenerateUuids`, `CanLimitItemsLength`)
 into [`repeater.md`](repeater.md), per
@@ -146,7 +148,6 @@ ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and
 | CanFixIndistinctState | [`Components/Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — |
 | HasAffixes | [`Components/Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | todo | — |
 | HasColors | [`Components/Concerns/HasColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasColors.php) | todo | — |
-| HasDatalistOptions | [`Components/Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | todo | — |
 | HasDescriptions | [`Components/Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | todo | — |
 | HasEnum | [`Components/Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | todo | — |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Components/Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | [has-extra-input-attributes.md](has-extra-input-attributes.md) |

@@ -43,7 +43,7 @@ helper text, placeholder, required, slots, rendering chrome) is tracked in
 | `copyable()` / `isCopyable()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | `HasAffixes`, `TextInput/Actions` | — |
 | [`HasStep`](../../../packages/forms/src/Components/Concerns/HasStep.php) | [`Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | done | — | — |
 | `HasAffixes` (concern) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | todo | prebuilt affix actions | — |
-| `HasDatalistOptions` (concern) | [`Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | todo | — | — |
+| [`HasDatalistOptions`](../../../packages/forms/src/Components/Concerns/HasDatalistOptions.php) | [`Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | done | — | [diverges](#the-datalist-drops-the-arrayable-arm) |
 | [`CanBeAutocapitalized`](../../../packages/forms/src/Components/Concerns/CanBeAutocapitalized.php) | [`Concerns/CanBeAutocapitalized.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocapitalized.php) | done | — | — |
 | `disableAutocapitalize()` | [`Concerns/CanBeAutocapitalized.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocapitalized.php) | skipped | — | [diverges](can-be-autocompleted.md#the-deprecated-disable-aliases-are-not-ported) |
 | [`CanBeAutocompleted`](../../../packages/forms/src/Components/Concerns/CanBeAutocompleted.php) | [`Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | done | — | [detail](can-be-autocompleted.md) |
@@ -132,3 +132,21 @@ does — but there is no user-facing `inputMode()` setter and no `'numeric'` mod
 (that arrives with `integer()`). Reversible when `HasInputMode` is ported — at
 which point the bespoke getter is replaced by the concern and the row above flips
 to a plain compose.
+
+### The datalist drops the `Arrayable` arm
+
+Filament types `datalist()` as
+`array<string> | Arrayable | Closure | null` and `getDatalistOptions()` unwraps
+an `Illuminate\Contracts\Support\Arrayable` with `->toArray()`. That interface is
+Laravel's, with no Symfony counterpart and no port here, so the type is
+`array<string>|Closure|null` and the getter has no `instanceof` branch. A caller
+holding a collection-like object passes `$collection->toArray()` — or a closure
+returning it — which is what the `Closure` arm is for. `Select`'s `options()`
+[drops the same arm](select.md#hasoptions-drops-the-enum-class-string-arm) for
+the same reason.
+
+Everything else is Filament's: the `<datalist>` is keyed `<field id>-list`, and a
+single truthiness check gates both the element and the input's `list` attribute,
+so a field with no options renders neither. Pinned by `TextInputTest`'s `renders
+no datalist by default`, `renders a datalist and points the input at it` and
+`resolves closure datalist options through evaluate`.

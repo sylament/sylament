@@ -1,3 +1,5 @@
+{% set datalistOptions = component.getDatalistOptions %}
+
 <twig:SylamentForms:FieldWrapper :field="component">
     <input {{ attrs({
         class: 'sy-fo-input',
@@ -13,10 +15,19 @@
         maxlength: component.getMaxLength,
         minlength: component.getMinLength,
         step: component.getStep,
+        list: datalistOptions ? component.getId ~ '-list' : null,
         required: component.isMarkedAsRequired,
         'aria-invalid': component.getErrorMessages is not empty,
         readonly: component.isReadOnly,
         disabled: component.isDisabled,
         autofocus: component.isAutofocused,
     }, component.getExtraInputAttributes) }}>
+
+    {% if datalistOptions %}
+        <datalist id="{{ component.getId }}-list">
+            {% for option in datalistOptions %}
+                <option value="{{ option }}"></option>
+            {% endfor %}
+        </datalist>
+    {% endif %}
 </twig:SylamentForms:FieldWrapper>

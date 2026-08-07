@@ -315,6 +315,36 @@ it('omits the autocapitalize and autocomplete attributes when unset', function (
         ->and($input->attr('autocomplete'))->toBeNull();
 });
 
+it('renders no datalist by default', function (): void {
+    $crawler = new Crawler(renderField(TextInput::make('title')));
+
+    expect($crawler->filter('datalist')->count())->toBe(0)
+        ->and($crawler->filter('input.sy-fo-input')->attr('list'))->toBeNull();
+});
+
+it('renders a datalist and points the input at it', function (): void {
+    $crawler = new Crawler(renderField(
+        TextInput::make('title')->datalist(['Alpha', 'Beta']),
+    ));
+
+    expect($crawler->filter('input.sy-fo-input')->attr('list'))->toBe('title-list');
+
+    $datalist = $crawler->filter('datalist#title-list');
+
+    expect($datalist->count())->toBe(1)
+        ->and($datalist->filter('option')->count())->toBe(2)
+        ->and($datalist->filter('option')->eq(0)->attr('value'))->toBe('Alpha')
+        ->and($datalist->filter('option')->eq(1)->attr('value'))->toBe('Beta');
+});
+
+it('resolves closure datalist options through evaluate', function (): void {
+    $crawler = new Crawler(renderField(
+        TextInput::make('title')->datalist(fn (): array => ['Lazy']),
+    ));
+
+    expect($crawler->filter('datalist#title-list option')->attr('value'))->toBe('Lazy');
+});
+
 it('merges extra input attributes onto the control and lets them win', function (): void {
     $crawler = new Crawler(renderField(
         TextInput::make('title')->numeric()->extraInputAttributes([

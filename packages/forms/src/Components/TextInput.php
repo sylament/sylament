@@ -9,6 +9,7 @@ use Sylament\Forms\Components\Concerns\CanBeAutocapitalized;
 use Sylament\Forms\Components\Concerns\CanBeAutocompleted;
 use Sylament\Forms\Components\Concerns\CanBeLengthConstrained;
 use Sylament\Forms\Components\Concerns\CanBeReadOnly;
+use Sylament\Forms\Components\Concerns\HasDatalistOptions;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasStep;
 use Symfony\Component\Validator\Constraint;
@@ -21,6 +22,7 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained
     use CanBeAutocompleted;
     use CanBeLengthConstrained;
     use CanBeReadOnly;
+    use HasDatalistOptions;
     use HasExtraInputAttributes;
     use HasStep;
 

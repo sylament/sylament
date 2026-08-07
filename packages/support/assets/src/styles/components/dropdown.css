@@ -3,7 +3,7 @@
 }
 
 .sy-dropdown-trigger {
-    @apply inline-flex;
+    @apply flex cursor-pointer;
 }
 
 .sy-dropdown-panel {

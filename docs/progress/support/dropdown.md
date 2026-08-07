@@ -34,7 +34,7 @@ write-up in [Details](#details), and/or **diverges** → the note in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Root/trigger/panel shell + `placement`/`offset`/`flip`/`width`/`maxHeight` props | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) props, `$trigger`, `$slot` | done | — | — |
+| Root/trigger/panel shell + `placement`/`offset`/`flip`/`width`/`maxHeight` props | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) props, `$trigger`, `$slot` | done | — | [diverges](#the-root-is-a-positioned-shrink-to-fit-box-where-filaments-carries-no-rule-at-all) |
 | `sylament--support--dropdown` positioning controller (toggle + floating placement) | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `x-data="filamentDropdown"` / `x-float` | done | — | — |
 | Teleport (render panel outside the stacking context) | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `teleport` prop | todo | — | [detail](#details) |
 | Auto-placement when no explicit placement is given | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `placement` default `null` | todo | — | [detail](#details) |
@@ -53,13 +53,23 @@ rendered `placement`/`offset`/`flip` values, the hidden panel, and the
 `width`/`maxHeight` CSS custom properties. The submenu and section rows are
 exercised from the consumer side, in
 [`ActionGroupRenderTest`](../../../packages/actions/tests/Integration/ActionGroupRenderTest.php).
+The trigger's *box* is held separately by
+[`support/tests/Architecture/CssDropdownTriggerTest.php`](../../../packages/support/tests/Architecture/CssDropdownTriggerTest.php),
+which reads the stylesheet: the markup those render tests assert was never what
+went wrong there — `.sy-dropdown-trigger` shipped `inline-flex` where Filament
+applies `flex cursor-pointer`, so the wrapper reserved baseline descender space
+nothing filled and every ActionGroup trigger rode above the actions it was
+centred against (measured in the demo at 6px of slack on a 20px icon-button
+trigger, putting its icon 3px above its siblings'). A rule a render cannot see
+can only be pinned at its source.
 
-**Known unverified at merge.** The conditional-scrolling change was made to
-stop a submenu panel being clipped by its parent, and neither the clipping nor
-the fix is reachable from a render test — both are layout, and this repo has no
-browser driver. The CSS is verified by reading Filament's equivalent rules and
-by reasoning about the UA's `overflow` pair-adjustment; it has not been seen
-working. Same status as the [modal controller](modal.md).
+**Seen working since.** The conditional-scrolling change was made to stop a
+submenu panel being clipped by its parent, and neither the clipping nor the fix
+is reachable from a render test — both are layout. It shipped on the strength of
+Filament's equivalent rules and of reasoning about the UA's `overflow`
+pair-adjustment, unverified at merge; the peer demo has since shown it working,
+a three-level submenu chain on `/showcase/actions` rendering every panel outside
+its parent's box unclipped. The [modal controller](modal.md) is still unseen.
 
 ## Details
 
@@ -105,6 +115,34 @@ is *not* part of this row any more; it ships independently and has its
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
+
+### The root is a positioned, shrink-to-fit box where Filament's carries no rule at all
+
+`.sy-dropdown` applies `relative inline-block`. `.fi-dropdown` applies nothing:
+the class exists only as a hook, and grepping every package's CSS source plus
+the compiled `filament/dist/theme.css` finds no rule whose selector ends at it —
+only descendant rules and one `.fi-dropdown.sm\:fi-hidden` in tables. Filament's
+root is therefore a plain block-level `div`.
+
+Both declarations do work Filament's root does not have to do, because the
+positioning is the port's own — a Stimulus controller over `@floating-ui/dom`,
+not Alpine's `x-float`. `relative` makes the wrapper the panel's containing
+block, so the `left`/`top` the controller writes for Floating UI's default
+`absolute` strategy resolve against the trigger's own wrapper — a 20px trigger
+at the default 8px offset lands at `top: 28px` — rather than against whichever
+distant positioned ancestor a table row or a card would otherwise supply, and
+that ancestor's clipping and stacking with it. `inline-block` keeps the wrapper
+shrink-to-fit, so a dropdown dropped into a block formatting context wraps its
+trigger instead of stretching the width of its container; every consumer today
+sits in a flex or grid parent, which blockifies the wrapper and makes that moot,
+but the primitive is public.
+
+This is a hold rather than a proof: Floating UI would compute coordinates
+against a different offsetParent perfectly well, so neither declaration has been
+*shown* to be required. Nothing asks for parity here, and reaching it would
+change the layout of every dropdown to fix no observed defect, so the rule
+stays. Revisit alongside [teleport](#teleport), which moves the panel out of the
+wrapper and settles the question.
 
 ### The panel scrolls only when a max-height is set, and the gate is a CSS variable
 

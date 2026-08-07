@@ -6,6 +6,7 @@ namespace Sylament\Forms\Components;
 
 use Closure;
 use Sylament\Forms\Components\Concerns\CanBeLengthConstrained;
+use Sylament\Forms\Components\Concerns\CanBeReadOnly;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasStep;
 use Symfony\Component\Validator\Constraint;
@@ -15,6 +16,7 @@ use Symfony\Component\Validator\Constraints\Type;
 class TextInput extends Field implements Contracts\CanBeLengthConstrained
 {
     use CanBeLengthConstrained;
+    use CanBeReadOnly;
     use HasExtraInputAttributes;
     use HasStep;
 

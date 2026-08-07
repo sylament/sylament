@@ -101,6 +101,14 @@ it('renders the disabled attribute when disabled', function (): void {
     expect($disabled->filter('textarea.sy-fo-input')->attr('disabled'))->not->toBeNull();
 });
 
+it('renders the readonly attribute only when read-only', function (): void {
+    $writable = new Crawler(renderField(Textarea::make('excerpt')));
+    expect($writable->filter('textarea.sy-fo-input')->attr('readonly'))->toBeNull();
+
+    $readOnly = new Crawler(renderField(Textarea::make('excerpt')->readOnly()));
+    expect($readOnly->filter('textarea.sy-fo-input')->attr('readonly'))->not->toBeNull();
+});
+
 it('merges extra input attributes onto the textarea and lets them win', function (): void {
     $crawler = new Crawler(renderField(
         Textarea::make('excerpt')->rows(3)->extraInputAttributes([

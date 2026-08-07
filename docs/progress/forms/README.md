@@ -26,12 +26,12 @@ folded into [`field.md`](field.md) and left the Features table, per
 The sixth, `CanBeMarkedAsRequired`, is no longer tracked here at all: it
 relocated to schemas so its `Fieldset` could reach it, and is tracked in
 [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md).
-`CanBeLengthConstrained` is shared by `TextInput` and `Textarea`, so it keeps its
-own row, and `CanBeValidated` keeps one despite sitting on `Field` alone, because
-its Filament surface is some eighty methods and it is the field half of a
-validation vertical spanning three packages — folding it would swamp
-[`field.md`](field.md). The same fold applies to every other concern only one
-built component uses: `HasOptions`, `CanSelectPlaceholder` and
+`CanBeLengthConstrained` and `CanBeReadOnly` are shared by `TextInput` and
+`Textarea`, so they keep their own rows, and `CanBeValidated` keeps one despite
+sitting on `Field` alone, because its Filament surface is some eighty methods and
+it is the field half of a validation vertical spanning three packages — folding
+it would swamp [`field.md`](field.md). The same fold applies to every other
+concern only one built component uses: `HasOptions`, `CanSelectPlaceholder` and
 `CanDisableOptions` are `Select`'s alone in the port and live in
 [`select.md`](select.md), `HasToggleIcons` and `HasToggleColors` are `Toggle`'s
 alone and live in
@@ -118,10 +118,10 @@ and is tracked in
 `Repeater`'s three (`CanBeCloned`, `CanGenerateUuids`, `CanLimitItemsLength`)
 into [`repeater.md`](repeater.md), per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). The shared
-ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
-`Textarea`, `CanBeInline` and `CanBeAccepted` by `Checkbox` and `Toggle`, and
-`HasExtraInputAttributes` by `TextInput`, `Textarea`, `Select`, `Checkbox` and
-`Toggle`.
+ones stay below — `CanBeLengthConstrained` and `CanBeReadOnly` are used by
+`TextInput` and `Textarea`, `CanBeInline` and `CanBeAccepted` by `Checkbox` and
+`Toggle`, and `HasExtraInputAttributes` by `TextInput`, `Textarea`, `Select`,
+`Checkbox` and `Toggle`.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -133,7 +133,7 @@ ones stay below — `CanBeLengthConstrained` is used by `TextInput` and
 | [`CanBeLengthConstrained`](../../../packages/forms/src/Components/Concerns/CanBeLengthConstrained.php) | [`Components/Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) | done | [can-be-length-constrained.md](can-be-length-constrained.md) |
 | CanBeNative | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | todo | — |
 | CanBePreloaded | [`Components/Concerns/CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php) | todo | — |
-| CanBeReadOnly | [`Components/Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | todo | — |
+| [`CanBeReadOnly`](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Components/Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | [can-be-read-only.md](can-be-read-only.md) |
 | CanBeSearchable | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | todo | — |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | [can-be-validated.md](can-be-validated.md) |
 | CanDisableGrammarly | [`Components/Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | todo | — |

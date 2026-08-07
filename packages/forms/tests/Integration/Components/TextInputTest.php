@@ -246,6 +246,14 @@ it('renders the disabled attribute when disabled', function (): void {
     expect($disabled->filter('input.sy-fo-input')->attr('disabled'))->not->toBeNull();
 });
 
+it('renders the readonly attribute only when read-only', function (): void {
+    $writable = new Crawler(renderField(TextInput::make('title')));
+    expect($writable->filter('input.sy-fo-input')->attr('readonly'))->toBeNull();
+
+    $readOnly = new Crawler(renderField(TextInput::make('title')->readOnly()));
+    expect($readOnly->filter('input.sy-fo-input')->attr('readonly'))->not->toBeNull();
+});
+
 it('adds an Email constraint when email()', function (): void {
     $constraints = TextInput::make('mail')->email()->getValidationConstraints();
 

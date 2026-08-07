@@ -29,7 +29,7 @@ _Detail_ links the write-up in [Details](#details), deleted once the row is
 | Embedded view → Twig template | [`Textarea::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | — |
 | `autosize()` / `shouldAutosize()` | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | todo | — | [detail](#autosize-is-not-ported) |
 | Autocomplete (`CanBeAutocompleted`) | [`Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | todo | — | [detail](#the-input-attribute-concerns-are-not-ported) |
-| Read-only (`CanBeReadOnly`) | [`Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | todo | — | [detail](#the-input-attribute-concerns-are-not-ported) |
+| [Read-only (`CanBeReadOnly`)](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | — | [detail](can-be-read-only.md) |
 | Disable Grammarly (`CanDisableGrammarly`) | [`Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | todo | — | [detail](#the-input-attribute-concerns-are-not-ported) |
 | [Extra input attributes (`HasExtraInputAttributes`)](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — | [detail](#the-input-attribute-concerns-are-not-ported) |
@@ -57,15 +57,16 @@ getter and the (Stimulus) controller, then wire the wrapper height and
 ### The input-attribute concerns are not ported
 
 Filament's `Textarea` composes `CanBeAutocompleted` (`autocomplete`),
-`CanBeReadOnly` (`readonly`), `CanDisableGrammarly` (the `data-gramm*`
-attributes) and `HasExtraAlpineAttributes` (arbitrary `x-*` bindings). None is
-composed on the Sylament `Textarea`, and the template emits none of these
-attributes. They are shared field concerns (their own README rows) that are
-simply not reached yet — each is a self-contained setter/getter plus a template
-attribute. **Next step:** port the concerns and emit their attributes on the
-`<textarea>` element. Filament composes a fifth alongside them,
-[`HasExtraInputAttributes`](has-extra-input-attributes.md); it is absent from
-this list because it has landed.
+`CanDisableGrammarly` (the `data-gramm*` attributes) and
+`HasExtraAlpineAttributes` (arbitrary `x-*` bindings). None is composed on the
+Sylament `Textarea`, and the template emits none of these attributes. They are
+shared field concerns (their own README rows) that are simply not reached yet —
+each is a self-contained setter/getter plus a template attribute. **Next step:**
+port the concerns and emit their attributes on the `<textarea>` element. Filament
+composes two more alongside them,
+[`HasExtraInputAttributes`](has-extra-input-attributes.md) and
+[`CanBeReadOnly`](can-be-read-only.md); both are absent from this list because
+they have landed.
 
 ### The state-mutation surface is blocked on schemas
 

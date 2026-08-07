@@ -13,6 +13,7 @@
         step: component.getStep,
         required: component.isMarkedAsRequired,
         'aria-invalid': component.getErrorMessages is not empty,
+        readonly: component.isReadOnly,
         disabled: component.isDisabled,
         autofocus: component.isAutofocused,
     }, component.getExtraInputAttributes) }}>

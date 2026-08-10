@@ -54,9 +54,9 @@ sections do.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`formatStateUsing()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState::formatStateUsing()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#formatstateusing-accepts-a-literal-where-filament-accepts-only-a-closure) |
-| [`formatState(mixed $state)` — the `state` injection](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState::formatState()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#formatstate-throws-for-a-state-it-cannot-stringify) |
+| [`formatState(mixed $state)` — the `state` injection](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState::formatState()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#formatstate-throws-for-a-state-it-cannot-stringify) · [diverges](#formatstate-always-returns-a-string-where-filament-passes-a-scalar-through) |
 | [`getFormattedState()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | — (Sylament-only) | done | — | [diverges](#getformattedstate-replaces-the-embedded-views-local-preamble) |
-| [`getStateItems()` — the cell's value list](../../../packages/tables/src/Columns/TextColumn.php) | — (Sylament-only) | done | — | [semantics](#getstateitems-is-the-cells-value-list) |
+| [`getStateItems()` — the cell's value list](../../../packages/tables/src/Columns/TextColumn.php) | — (Sylament-only) | done | — | [semantics](#getstateitems-is-the-cells-value-list) · [diverges](#the-collapsed-join-flattens-a-markup-item-where-filament-keeps-it-raw) · [diverges](#formatstateforitem-throws-for-a-format-result-the-pipeline-cannot-produce) |
 | [`$template`](../../../packages/tables/src/Columns/TextColumn.php) + [the partial it names](../../../packages/tables/templates/partials/TextColumn/index.html.twig) | [`TextColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [diverges](#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) · [diverges](#the-item-element-is-never-merged-into-the-outer-div) · [diverges](#the-icons-gap-is-a-margin-because-the-line-clamp-owns-the-items-display) |
 | `hasStateFormatting()` — the raw-state fast path | [`CanFormatState::hasStateFormatting()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | skipped | — | [diverges](#hasstateformatting-has-nothing-to-guard) |
 | [`limit()` / `words()` — character and word truncation](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#limit-composes-slice-rather-than-calling-symfonys-truncate) |
@@ -64,10 +64,10 @@ sections do.
 | `html()` / `markdown()` — the sanitizer pass | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | [detail](#html--markdown-need-a-sanitizer-decision) |
 | `date()` / `dateTime()` / `time()` / `since()` and the `iso*` variants, `timezone()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
 | `money()` / `numeric()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
-| [`badge()`](../../../packages/tables/src/Columns/TextColumn.php) — the badge shell | [`TextColumn::badge()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`View\Components\BadgeComponent`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | done | — | [diverges](#a-badged-icon-goes-through-the-badges-own-props-and-loses-iconcolor-doing-it) · [diverges](#badges-and-descriptions-share-one-wrapping-flex-line-where-filament-nests-a-list) |
-| [`color()`](../../../packages/tables/src/Columns/Concerns/HasColor.php) / [`icon()` / `iconPosition()`](../../../packages/tables/src/Columns/Concerns/HasIcon.php) / [`iconColor()`](../../../packages/tables/src/Columns/Concerns/HasIconColor.php) | [`Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php), [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php), [`HasIconColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | done | — | [semantics](#the-colour-and-icon-maps-resolve-last-match-wins-and-false-suppresses-the-state-contract-fallback) · [semantics](#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon) · [diverges](#a-badged-icon-goes-through-the-badges-own-props-and-loses-iconcolor-doing-it) · [diverges](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes) |
-| [`description()` — the secondary line above or below](../../../packages/tables/src/Columns/Concerns/HasDescription.php) | [`Columns\Concerns\HasDescription`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php) | done | — | — |
-| [`size()`](../../../packages/tables/src/Columns/TextColumn.php) / [`weight()`](../../../packages/support/src/Components/Concerns/HasWeight.php) / [`fontFamily()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) / [`lineClamp()`](../../../packages/support/src/Components/Concerns/HasLineClamp.php) | [`TextColumn::size()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php), [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php), [`HasLineClamp`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | done | — | [diverges](#weight-and-fontfamily-are-column-level-where-filaments-are-per-item) |
+| [`badge()`](../../../packages/tables/src/Columns/TextColumn.php) — the badge shell | [`TextColumn::badge()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`View\Components\BadgeComponent`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | done | — | [diverges](#a-badged-icon-goes-through-the-badges-own-props-and-loses-iconcolor-doing-it) · [diverges](#badges-and-descriptions-share-one-wrapping-flex-line-where-filament-nests-a-list) · [diverges](#a-badge-row-ignores-alignment-for-want-of-a-justify-content-rule) |
+| [`color()`](../../../packages/tables/src/Columns/Concerns/HasColor.php) / [`icon()` / `iconPosition()`](../../../packages/tables/src/Columns/Concerns/HasIcon.php) / [`iconColor()`](../../../packages/tables/src/Columns/Concerns/HasIconColor.php) | [`Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php), [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php), [`HasIconColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | done | — | [semantics](#the-colour-and-icon-maps-resolve-last-match-wins-and-false-suppresses-the-state-contract-fallback) · [semantics](#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon) · [diverges](#a-badged-icon-goes-through-the-badges-own-props-and-loses-iconcolor-doing-it) · [diverges](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes) · [diverges](#a-colors-or-icons-closure-is-handed-the-item-state-where-filaments-is-handed-the-columns) |
+| [`description()` — the secondary line above or below](../../../packages/tables/src/Columns/Concerns/HasDescription.php) | [`Columns\Concerns\HasDescription`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php) | done | — | [semantics](#a-description-position-is-compared-never-evaluated) |
+| [`size()`](../../../packages/tables/src/Columns/TextColumn.php) / [`weight()`](../../../packages/support/src/Components/Concerns/HasWeight.php) / [`fontFamily()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) / [`lineClamp()`](../../../packages/support/src/Components/Concerns/HasLineClamp.php) | [`TextColumn::size()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php), [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php), [`HasLineClamp`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | done | — | [diverges](#weight-and-fontfamily-are-column-level-where-filaments-are-per-item) · [diverges](#getsizeclass-is-sylament-only-and-the-partial-resolves-the-size-twice) |
 | [`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — | [diverges](#badges-and-descriptions-share-one-wrapping-flex-line-where-filament-nests-a-list) |
 | `copyable()` | [`CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | todo | — | — |
 | Lists — `bulleted()`, `listWithLineBreaks()`, `limitList()`, `expandableLimitedList()` | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | todo | [`separator()`](column.md) | [diverges](#an-iterable-state-renders-as-one-comma-joined-line-and-nothing-else) |
@@ -75,14 +75,37 @@ sections do.
 
 The state-pipeline rows are covered by
 [`CanFormatStateTest`](../../../packages/tables/tests/Unit/Columns/Concerns/CanFormatStateTest.php)
-— the array-to-JSON coercion, the `HasLabel` unwrap, character and word
-truncation (including the ellipsis-after-length and trailing-whitespace-trim
-cases), prefix/suffix concatenation, and the state/affix markup-escaping
-matrix — plus
+— the array-to-JSON coercion, the `HasLabel` unwrap and the
+[backed-enum unwrap](#formatstate-throws-for-a-state-it-cannot-stringify) beneath
+it, the markup flag being re-read off an unwrapped `Markup` label (a second
+assignment that looks redundant and is what keeps that label out of the
+truncation), character and word truncation (including the ellipsis-after-length
+and trailing-whitespace-trim cases), the two **zero** limits as no-ops — the
+character one because `limit(0)` would otherwise slice the state away and return
+the ellipsis alone, the word one asserted with an error handler installed,
+because `words(0)` interpolates `{1,0}` into the quantifier and the failure is
+the raise rather than the returned string — the pipeline's order at both places a
+reader could get it wrong (truncation before affixing, so the limit measures the
+state alone; the character limit before the word limit), prefix/suffix
+concatenation, and the state/affix markup-escaping matrix — plus
 [`TextColumnTest`](../../../packages/tables/tests/Unit/Columns/TextColumnTest.php)'s
-three pre-pipeline cases: unformatted state passing through, a format closure
-receiving both `$state` and `$record`, and a literal `formatStateUsing('fixed')`
-displacing the state. The `$template` row is covered by the Integration
+pre-pipeline cases: unformatted state passing through, a format closure
+receiving both `$state` and `$record`, a literal `formatStateUsing('fixed')`
+displacing the state, and the collapse boundary itself, pinned with a
+single-entry array of a non-string so that `state` is still the `int` a colour
+closure would be handed — which is what a `count($values) >= 1` off-by-one would
+turn into the formatted string `content` already holds. Each presentation
+concern keeps a unit file of its own beside those —
+[`HasColorTest`](../../../packages/tables/tests/Unit/Columns/Concerns/HasColorTest.php),
+[`HasIconTest`](../../../packages/tables/tests/Unit/Columns/Concerns/HasIconTest.php)
+(where `hasIcon()` is asserted on all three arms, the `false` sentinel included,
+so an unconditional `return false` no longer passes),
+[`HasDescriptionTest`](../../../packages/tables/tests/Unit/Columns/Concerns/HasDescriptionTest.php)
+and
+[`HasIconColorTest`](../../../packages/tables/tests/Unit/Columns/Concerns/HasIconColorTest.php),
+the last covering the literal, the state-injected closure, an inline shade map,
+and the deliberate **absence** of the state-contract fallback `color()` and
+`icon()` both have. The `$template` row is covered by the Integration
 [`TextColumnTest`](../../../packages/tables/tests/Integration/Columns/TextColumnTest.php),
 which renders columns inside a real table and reads the cells back through a
 `DomCrawler` selecting the full chain
@@ -93,8 +116,26 @@ the outer element empty rather than dropping it, and — reaching one level
 deeper, into the `span.sy-ta-text-item` the partial always emits — a badge per
 value carrying its colour classes, the descriptions bracketing the item above
 and below, the size/weight/font-family classes with the line-clamp variable, the
-badged icon landing **inside** the badge rather than beside it, and a blank
-description dropping both its `<p>` and the layout class it would otherwise flip.
+badged icon landing **inside** the badge rather than beside it, a **non**-badged
+`->color()` reaching the item policy and a `->iconColor()` reaching the icon
+policy, the column's alignment class reaching the outer element, and a blank
+description dropping both its `<p>` and the layout class it would otherwise
+flip — in the plain-string form and again as a whitespace-only
+[`Markup`](../renames.md#idiom), which is a different mechanism rather than the
+same case twice, since `Markup` is `Countable` and only
+[`filled()`](../support/helpers.md)'s text-semantics carve-out keeps a
+count-first reading from calling it filled.
+
+The two colour cases are the only render-level reach into the policies, and the
+badged case cannot stand in for either: the badge branch
+[skips `ItemComponent` outright](#a-badged-icon-goes-through-the-badges-own-props-and-loses-iconcolor-doing-it),
+and `colorAttributes()` returns early on a blank colour, so with only a badged
+`->color('success')` rendered, neither of the partial's two policy class-string
+literals — nor the container lookup each drives — ran in any test. The icon one
+carries the sharper edge: its class-string sits a namespace level deeper than the
+item's, so a bundle glob that does not reach that depth is a container error at
+render rather than a quietly uncoloured icon, which is what that case now fails
+with.
 
 The icon-position case reads the item's inner HTML rather than its element
 children, and that is deliberate: the content is a *text node*, so
@@ -111,7 +152,12 @@ back to the notes below. What pins them is
 the same adversarial-palette sweep schemas runs — every emitted shade class has a
 rule in support's `utilities.css`, the slot variables those classes set are
 exactly the ones `text-column.css` reads, and the icon policy emits the two
-carriers and nothing else.
+carriers and nothing else. It also pins the
+[`gray` asymmetry](#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon)
+in **both** directions, that being the one decision here a later reader is most
+likely to "correct": the item must emit classes for `gray` and the icon must emit
+none, so re-adding `HasDefaultGrayColor` to `ItemComponent` — which nothing else
+in the suite notices — now fails.
 
 ## Details
 
@@ -194,7 +240,7 @@ implements `HasColor` **only**, so `->color('gray')` emits the full class set �
 same specificity, paints the item `gray-500` / `dark:gray-400`. Gray is
 therefore a *visible* choice on a cell, distinct from leaving the colour unset
 (which leaves the base `gray-950` / `dark:white`).
-[`IconComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/IconComponent.php)
+[`IconComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent/IconComponent.php)
 does implement `HasDefaultGrayColor`, so `->iconColor('gray')` emits nothing at
 all and the icon's own base grey stands. Adding the contract to `ItemComponent`
 — the obvious symmetry, and what schemas'
@@ -208,6 +254,28 @@ the two carrier classes swap the palette and `text-column.css` reads
 `text-(--sy-text)` — would compile, ship, and paint nothing, because no class an
 empty map emits ever sets that variable. `PolicyShadeGridTest` pins the emitted
 set exactly so a slot added later cannot land without the rule moving with it.
+
+### A `description()` position is compared, never evaluated
+
+`description($text, position: $position)` sorts its argument with
+`$position === 'above'` — a raw identity test, taken before anything is
+evaluated — so a **closure** position is compared against a string, never
+matches, and the description lands *below*. `description('1997', position:
+fn (): string => 'above')` therefore renders in the opposite place from the one
+it names, with nothing said about it.
+
+The signature is what makes the obvious reading wrong: `string|Closure|null
+$position` declares a closure legal, and every other closure-typed argument on a
+column is evaluated somewhere. This one is Filament's, parameter type and
+comparison both
+([`Columns\Concerns\HasDescription`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php)),
+and it is ported as written rather than repaired, because repairing it is not
+local: the position picks which of two *properties* the description is stored
+in, at configuration time, where a closure has no record and no state to answer
+against — so evaluating it here would either resolve it too early or force the
+pair of properties to collapse into one that `getDescriptionAbove()` /
+`getDescriptionBelow()` then have to re-sort on every read. A caller wanting a
+conditional position writes the condition around two calls instead.
 
 ### `getStateItems()` is the cell's value list
 
@@ -244,6 +312,18 @@ item's `state` is the joined string (`"symfony, forms"`), which cannot match
 any per-value key in the map. Badging a multi-value column is what turns
 per-value colouring back on — not a bug, the shape the state-item model was
 built to expose.
+
+This note and
+[`getFormattedState()`](#getformattedstate-replaces-the-embedded-views-local-preamble)'s
+sit in different sections despite identical provenance — both members are
+Sylament-only, and both have rows in
+[renames.md's no-Filament-source table](../renames.md#names-with-no-filament-source),
+which is where that shared fact is recorded once. What splits them is what each
+note *says*: the other one explains why a member exists at all where Filament had
+a local variable, which is a deviation in surface; this one explains behaviour
+that is Filament's inline loop unchanged and only reads wrong. Neither section
+claims provenance — read that off renames.md, not off which heading a note landed
+under.
 
 ## Divergences
 
@@ -430,7 +510,10 @@ when it does.
 under a name — the translation named above for the one value `toEmbeddedHtml()`'s
 preamble computed in two steps. It is the same kind of member as the
 [names with no Filament source](../renames.md#names-with-no-filament-source) —
-Sylament-only, nothing to rename from.
+Sylament-only, nothing to rename from, and so is
+[`getStateItems()`](#getstateitems-is-the-cells-value-list), which is filed under
+Semantics for [reasons of what its note says](#getstateitems-is-the-cells-value-list)
+rather than of where it came from.
 
 Its purpose is the composition, not being any particular caller's seam: a Twig
 template reaching one getter for the column's whole formatted state, the same
@@ -440,10 +523,17 @@ column state in one call, which is why it is not what
 hold more than one value, so the item list reads `getState()` and `formatState()`
 directly, per item, rather than through this method. `getFormattedState()` stays
 public and behaviourally unchanged either way: not a semantic addition, the
-composition is Filament's and only the naming is ours, and a caller wanting the
-column's one formatted value — independent of how many items the cell has —
-still reaches it directly, the same as `getState()` and `formatState($x)`, both
-of which also stay public.
+composition is Filament's and only the naming is ours, and it stays reachable
+directly, the same as `getState()` and `formatState($x)`, both of which also
+stay public.
+
+One value in one call is the whole claim, and on a multi-value state it is not
+the value the cell paints. `formatState()` handed the column's array reaches the
+array-to-JSON arm, so a `['a', 'b']` state answers `'["a","b"]'` where the
+rendered cell reads `a, b` — the join is `getStateItems()`'s, one pass per value,
+and it happens nowhere near this method. So this is the column's *state* run
+through the pipeline once, not a preview of the cell: a caller wanting what the
+cell shows reads the item list.
 
 ### `formatStateUsing()` accepts a literal where Filament accepts only a closure
 
@@ -497,19 +587,30 @@ that cast stand for a `mixed`-typed value without proof it is safe.
 immediately before the cast and throws a `LogicException` naming the column
 when neither holds — the same [fail-fast rule](../../../CLAUDE.md) already
 applied to `color()`/`icon()`'s `true` arm below. A scalar, a `Stringable`
-(including `Markup`), an array (already coerced to JSON above) or a
-`HasLabel` (already unwrapped above) never reach the check; only a genuinely
-unstringable object does.
+(including `Markup`), an array (already coerced to JSON above), a `HasLabel`
+(already unwrapped above) and a `BackedEnum` (unwrapped to its backing value
+immediately after) never reach the check.
+
+That enum unwrap is Filament's, reached from the other end, and it is what keeps
+the throw narrow. Filament's pipeline ends in Blade's `{{ }}` → `e()`, which
+turns a `BackedEnum` into its `->value` before escaping
+([`helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php)),
+so an enum that implements none of support's state contracts still prints there.
+Without the same unwrap here the guard would reach it first — and that is not a
+corner case but the ordinary shape of a Doctrine `enumType` column, since
+`HasLabel` is opt-in: a page rendering one would have fatalled. What is left for
+the throw is a genuinely unstringable object — an entity, a DTO, a closure —
+which has no print of its own in either framework.
 
 ### `hasStateFormatting()` has nothing to guard
 
 Filament's `hasStateFormatting()` reports whether *any* of twelve formatting
 properties is configured, so the embedded view can skip `formatState()` and emit
 the raw state — a fast path over a method that would otherwise run a dozen
-branches per cell. Eleven of those twelve properties do not exist here yet, and
-`formatState()` is a null check plus one `evaluate()`, so the predicate would
-guard nothing and its twelve-way condition would be a standing invitation to
-forget a property when adding one.
+branches per cell. Seven of those twelve are the date, money, numeric and
+HTML/markdown flags, which do not exist here yet, so the predicate's condition
+would be more than half dead and a standing invitation to forget a property when
+adding one.
 
 Marked **skipped** rather than **todo** because it does not return with the
 formatting setters either: the branch it optimises is a Twig template reading one
@@ -551,10 +652,17 @@ Provisional. The three list setters are a **todo** row above, blocked on
 `getStateItems()` grows the two extra shapes beside it — `listWithLineBreaks()`
 and `bulleted()` both need per-item formatting, which is exactly what the item
 list already produces, so it is the flags rather than the machinery that are
-missing. A consumer wanting a *different* join still writes a
-`formatStateUsing()` that receives the raw iterable and joins it itself
-(`fn (array $state): string => implode(', ', $state)`), which now displaces the
-per-item pass rather than working around it.
+missing.
+
+A consumer wanting a *different* join reaches for
+[`state()`](column.md#state-is-getstateusing-under-another-name), and **not**
+`formatStateUsing()`. The two read as interchangeable escape hatches and are
+not: the item list calls `formatState()` **per value**, so
+`formatStateUsing(fn (array $state) => implode(' · ', $state))` is handed
+`'symfony'` and then `'forms'` — never the list — and its `array` hint fails on
+the first one. `state(fn ($record) => implode(' · ', $record['tags']))` displaces
+the column's state *ahead of* the split instead, so `getStateItems()` sees one
+scalar and emits one item carrying the join the consumer wrote.
 
 ### `weight()` and `fontFamily()` are column-level, where Filament's are per item
 
@@ -604,9 +712,13 @@ for. Filament's own getters declare `string | array | null` /
 an evaluated `true` — nonsensical, but the type accepts it — falls through to
 `filled($color)`, which is `true` for a bare `true`, and the getter returns
 it: a `TypeError` at the return statement, since `true` is not a member of the
-declared return type. Nothing in Filament's own test suite exercises this arm;
-it is a latent gap in the vendor union that surfaces as an uncontrolled crash,
-not a contract anyone relies on.
+declared return type. There is no Filament test suite here to check that
+against — the distributed `filament/tables` package ships `src/`, `resources/`,
+`docs/` and `stubs/`, and no `tests/` directory at all — so the reading is off
+the vendor source alone: the union admits `true`, both getters test only for
+`false`, and neither declared return type has a `bool` arm to return it through.
+A latent gap in that union which surfaces as an uncontrolled crash, not a
+contract anyone relies on.
 
 Sylament's `getColor()` / `getIcon()` test `$color === true` / `$icon === true`
 ahead of the `false` check and throw a `LogicException` naming the column —
@@ -623,3 +735,143 @@ the declared `string|array|null` return type. Every `false` call site keeps
 its existing meaning; a `true` call site could never have returned
 successfully in Filament either, and now fails loudly at its own column
 instead of silently corrupting a render.
+
+### A `colors()` or `icons()` closure is handed the item state, where Filament's is handed the column's
+
+Both maps admit a `Closure` as an entry's condition, and the port evaluates it
+with an explicit `['state' => $state]` injection carrying the value `getColor()`
+/ `getIcon()` was called with. Filament evaluates the same closure as
+`$column->evaluate($condition)` — no injection at all — so `fn ($state) => …`
+falls through to
+[`Column::resolveDefaultClosureDependencyForEvaluationByName()`](column.md),
+whose `'state'` arm is `$this->getState()`: the **column's** whole state, once,
+whatever value the getter is resolving for.
+
+The evidence that this is a vendor defect rather than a design difference is
+inside the same `foreach`. The map's literal arm is `$condition === $state`,
+comparing against the *item* state in both codebases, because that `$state` is
+the wrapper closure's own injected parameter. So in Filament
+`colors(['success' => 'published'])` keys off the item and
+`colors(['success' => fn ($state) => $state === 'published'])` keys off the
+column — two arms of one map, written to read as alternatives, answering against
+different values. The port makes both arms agree, the same way the
+[`searchable()` closure arm](column.md#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column)
+was fixed at the cause rather than mirrored.
+
+Visible where a cell holds more than one value: on a badged column each badge
+gets its own verdict here and one shared verdict there; on a collapsed cell the
+closure sees the joined string, which is
+[what `state` means on a collapsed item](#getstateitems-is-the-cells-value-list).
+A single-valued cell — every cell in most tables — cannot tell the two apart,
+since the item state and the column state are the same value.
+
+### `formatState()` always returns a string, where Filament passes a scalar through
+
+The port casts once, explicitly (`(string) $state`), so `formatState(42)` is
+`'42'`, `formatState(1.5)` is `'1.5'` and `formatState(true)` is `'1'`.
+Filament's returns the scalar untouched: with no formatting configured its
+`hasStateFormatting()` fast path returns `$state` before any branch runs, and
+even configured it never casts — `Str::limit()` and the affix concatenation
+coerce where they happen to run, and the state reaches Blade as whatever it was.
+
+The cast is [the stringify guard's other half](#formatstate-throws-for-a-state-it-cannot-stringify)
+and the reason `getStateItems()` can type its `content` entries
+`string|Markup|null` at all. It costs nothing at the render — Twig prints `42`
+and `'42'` identically — so the difference is only visible to a **caller** that
+reads `formatState()` or `getFormattedState()` back in PHP and compares with
+`===`. The declared return type stays Filament's `mixed` rather than being
+narrowed to match: `formatStateUsing` is `mixed`, so PHPStan cannot see through
+`evaluate()`'s generic, which is what
+[`formatStateForItem()`](#formatstateforitem-throws-for-a-format-result-the-pipeline-cannot-produce)
+exists to bridge.
+
+### The collapsed join flattens a `Markup` item, where Filament keeps it raw
+
+`getStateItems()`' collapse branch maps `(string) $this->formatStateForItem($value)`
+over the values and joins the results, so an item that formatted to
+[`Markup`](../renames.md#idiom) contributes its raw HTML to a **plain** string —
+and the template escapes plain content, so that item's markup renders as visible
+tags. Filament joins through its `$formatState` closure, whose `e()` call
+[passes an `Htmlable` through with `toHtml()`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php)
+and escapes everything else, then echoes the joined result raw — so the markup
+survives the collapse there.
+
+The direction is the safe one and that is why it is not treated as a bug: the
+port over-escapes rather than emitting unreviewed HTML, and the per-item branch
+is unaffected — a badged or single-valued cell keeps `Markup` as `Markup` in
+`content` and renders it raw. What is inconsistent is that the *same* format
+callback returns raw markup on a badged column and escaped text on the collapsed
+one beside it. Closing it means deciding escaping per item inside the join and
+wrapping the result in `Markup` — precisely what
+[`affixState()`](#a-markup-state-skips-truncation-and-affixing-escapes-whichever-side-is-not-already-markup)
+already does for one value — and it lands with the list setters, which need a
+per-item join with the same question in it.
+
+### `getSizeClass()` is Sylament-only, and the partial resolves the size twice
+
+Filament reads `$size = $this->getSize($stateItem)` into a local at the top of
+its per-item closure and builds the class from that one value. The port has no
+local to read from, so `getSize()` answers the enum-or-string union and
+`getSizeClass()` turns it into `sy-size-<value>` or passes a custom string
+through — one of the Sylament-only [`*Class()` getters](../renames.md#names-with-no-filament-source),
+and the only one on this class.
+
+The cost is that the partial calls **both**: `getSize(item.state)` for the value
+the `Badge` prop and the icon-size choice need, and `getSizeClass(item.state)`
+for the class, which resolves the size a second time. So `size(fn ($state) => …)`
+runs twice per non-badge item where Filament's runs once — invisible for a pure
+closure, observable for one that counts calls or reads something that moves.
+
+That second call is also what makes `getSizeClass()`'s docblock read as though
+the template contradicts it. It says templates never have to type-sniff the
+enum-vs-string union, and the line above the call does exactly that
+(`itemSize.value ?? itemSize`) — for a different consumer, the raw *value*, which
+no getter hands over. Both go away together: a `getExtraTemplateData()` entry
+resolving the size once per item and passing value and class down would close the
+double evaluation and leave the docblock true of every line near it. Not done
+here because the hook is per **component**, not per item, and the item loop is
+the template's.
+
+### `formatStateForItem()` throws for a format result the pipeline cannot produce
+
+`formatStateForItem()` is the private helper every value in `getStateItems()`
+goes through: it re-tests what `formatState()` returned and throws a
+`LogicException` naming the column when that is not `string`, `Markup` or `null`.
+The throwing arm is **unreachable** against this class as it stands — the
+pipeline casts before it returns, so those three are the only shapes it
+produces.
+
+It exists because `formatState()`'s declared return is Filament's `mixed` and
+PHPStan cannot narrow through it — `formatStateUsing` is itself `mixed`, so
+`evaluate()`'s generic binds to nothing useful — while `getStateItems()` promises
+`content: string|Markup|null` in its own array shape. The choice at that point is
+a silent cast, an
+[inline suppression the codebase does not allow](../../../CLAUDE.md), or a
+runtime check; the check is the same [fail-fast rule](../../../CLAUDE.md) as the
+[stringify guard](#formatstate-throws-for-a-state-it-cannot-stringify) and the
+[`true` colour arm](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes),
+and unlike those two it is proof rather than a policy about user input. It
+becomes reachable the moment a subclass overrides `formatState()` — which is
+public API — and then it names the column instead of failing inside Twig.
+
+### A badge row ignores `alignment()`, for want of a `justify-content` rule
+
+`alignment()` puts `sy-align-center` / `sy-align-end` / `sy-align-justify` on the
+cell's outer `div.sy-ta-text`, and
+[`text-column.css`](../../../packages/tables/assets/src/styles/components/text-column.css)
+answers each with `text-center` / `text-end` / `text-justify`. `text-align` moves
+inline content, not flex items, and both of this element's badge branches make it
+a flex container — `flex gap-x-1.5` for badges alone, `flex-row flex-wrap` for
+badges beside descriptions
+([why](#badges-and-descriptions-share-one-wrapping-flex-line-where-filament-nests-a-list)).
+So on a badged column the alignment classes land, match their rules, and change
+nothing.
+
+Filament does not have the gap: its `columns/text.css` pairs every `fi-align-*`
+with a `justify-*` under `ul&, & ul`, because its badges sit in a `<ul>` that is
+the flex container. The port needs no selector that specific — the badge branches
+*are* this element — so closing it is about nine lines: a `justify-center`,
+`justify-end` and `justify-between` beside the three `text-*` declarations
+already there. Left out of this epic deliberately and recorded as one of its
+[two knowing gaps](../roadmap.md), not deferred to a prerequisite: nothing has to
+land first.

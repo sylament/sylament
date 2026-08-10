@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Columns\Concerns;
 
+use BackedEnum;
 use Closure;
 use LogicException;
 use Stringable;
@@ -121,6 +122,10 @@ trait CanFormatState
             $isMarkup = $state instanceof Markup;
         }
 
+        if ($state instanceof BackedEnum) {
+            $state = $state->value;
+        }
+
         if ($state === null) {
             return null;
         }
@@ -140,7 +145,7 @@ trait CanFormatState
 
     private function truncateState(string $state): string
     {
-        if (($characterLimit = $this->getCharacterLimit()) !== null) {
+        if ($characterLimit = $this->getCharacterLimit()) {
             $string = u($state);
 
             if ($string->length() > $characterLimit) {
@@ -148,7 +153,7 @@ trait CanFormatState
             }
         }
 
-        if (($wordLimit = $this->getWordLimit()) !== null && preg_match('/^\s*+(?:\S++\s*+){1,' . $wordLimit . '}/u', $state, $matches) === 1) {
+        if (($wordLimit = $this->getWordLimit()) && preg_match('/^\s*+(?:\S++\s*+){1,' . $wordLimit . '}/u', $state, $matches) === 1) {
             if (mb_strlen($matches[0]) < mb_strlen($state)) {
                 $state = mb_rtrim($matches[0]) . ($this->getWordLimitEnd() ?? '');
             }

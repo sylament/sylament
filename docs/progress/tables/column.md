@@ -6,7 +6,7 @@
 named after the record path it reads, bound to a [`Table`](table.md), and handed
 one record at a time. It ports Filament's
 [`Filament\Tables\Columns\Column`](../../../vendor/filament/tables/src/Columns/Column.php)
-together with the concern traits it composes — eight today
+together with the concern traits it composes — nine today
 ([`BelongsToTable`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php),
 [`HasName`](../../../packages/tables/src/Columns/Concerns/HasName.php),
 [`HasLabel`](../../../packages/tables/src/Columns/Concerns/HasLabel.php),
@@ -14,19 +14,24 @@ together with the concern traits it composes — eight today
 [`HasCellState`](../../../packages/tables/src/Columns/Concerns/HasCellState.php),
 [`CanBeSortable`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php),
 [`CanBeSearchable`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php),
-[`InteractsWithTableQuery`](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php)),
+[`InteractsWithTableQuery`](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php),
+[`HasAlignment`](../../../packages/support/src/Components/Concerns/HasAlignment.php)),
 thirty in Filament — twenty from its `Columns\Concerns\` and ten from
-`Support\Concerns\`, `HasCellState` among the latter
-([diverges](#hascellstate-is-relocated-into-the-column-tier)). Seven of the eight
-are folded into the surface table below rather than earning rows upstairs, per
+`Support\Concerns\`, `HasCellState`
+([diverges](#hascellstate-is-relocated-into-the-column-tier), the only one of the
+two that moved package) and `HasAlignment` among the latter. Both of Filament's
+tiers count toward that same thirty, which is why the support-hosted pair belongs
+in the numerator here as well. Eight of the nine are folded into the surface table below rather
+than earning rows upstairs, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing);
 `InteractsWithTableQuery` keeps a per-file row in the package
 [README](README.md#features) because the aggregate and eager-loading half of
 Filament's file is still out, and the `Columns\Concerns\` traits not ported at
-all keep a row there too, bar `CanFormatState`, which folds into
-[`text-column.md`](text-column.md) because [`TextColumn`](text-column.md) is
-what composes it. The rows below group those files by feature, which is what the
-per-file rows upstairs point at.
+all keep a row there too, bar the five [`TextColumn`](text-column.md) composes —
+`CanFormatState`, `HasColor`, `HasDescription`, `HasIcon` and `HasIconColor` —
+which fold into [`text-column.md`](text-column.md) instead, because that is the
+class composing them. The rows below group those files by feature, which is what
+the per-file rows upstairs point at.
 
 The column is the read side of the record, and on the Doctrine lane it is also
 the piece that knows how to ask for it. It resolves nothing itself: the host
@@ -91,14 +96,14 @@ sections do.
 | [`applySort()`, `applySearchConstraint()` — the column's query application](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#sort-columns-apply-in-declared-order-where-filament-reverses-them) · [diverges](#a-search-closure-returns-its-expression-where-filaments-mutates-an-orwhere-group) |
 | Actions and links — `action()`, `url()`, `openUrlInNewTab()`, `disabledClick()` | [`CanCallAction`](../../../vendor/filament/tables/src/Columns/Concerns/CanCallAction.php), [`CanOpenUrl`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | todo | — | — |
 | Editing in place — `updateStateUsing()`, `rules()`, `disabled()` | [`CanUpdateState`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php), [`CanBeValidated`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeValidated.php), [`CanBeDisabled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeDisabled.php) | todo | — | — |
-| [`alignment()` / `getAlignment()` / `getAlignmentClass()`](../../../packages/tables/src/Columns/Column.php) | [`HasAlignment`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | [has-alignment.md](../support/has-alignment.md) |
+| [`alignment()` / `getAlignment()` / `getAlignmentClass()`](../../../packages/tables/src/Columns/Column.php) | [`HasAlignment`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | — | [has-alignment.md](../support/has-alignment.md) · [diverges](text-column.md#a-badge-row-ignores-alignment-for-want-of-a-justify-content-rule) |
 | Cell presentation — `verticalAlignment()`, `width()`, `grow()`, `inline()`, `tooltip()`, the extra-attribute bags | `HasAlignment`'s siblings in [`support/Concerns/`](../../../vendor/filament/support/src/Concerns), [`HasTooltip`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — | — |
 | Cell rendering — `renderInLayout()`, `getCellAttributeHtml()`, `getCachedCellAttributeHtml()` | [`Column.php`](../../../vendor/filament/tables/src/Columns/Column.php) | todo | — | [detail](#the-cell-wrapper-belongs-to-the-table-template) |
 | Grouping and layout — `ColumnGroup`, `Columns\Layout\`, `BelongsToGroup`, `BelongsToLayout`, `summarize()` | [`ColumnGroup`](../../../vendor/filament/tables/src/Columns/ColumnGroup.php), [`Columns/Layout`](../../../vendor/filament/tables/src/Columns/Layout), [`CanBeSummarized`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSummarized.php) | todo | — | — |
 | The rest of the catalog — `BadgeColumn`, `BooleanColumn`, `CheckboxColumn`, `ColorColumn`, `IconColumn`, `ImageColumn`, `SelectColumn`, `TagsColumn`, `TextInputColumn`, `ToggleColumn`, `ViewColumn` | [`src/Columns`](../../../vendor/filament/tables/src/Columns) | todo | — | — |
 | _rest not audited yet_ | | | | |
 
-Thirteen of the fifteen **done**-or-partial rows are covered by
+Thirteen of the sixteen **done**-or-partial rows are covered by
 [`ColumnTest`](../../../packages/tables/tests/Unit/Columns/ColumnTest.php) — the
 blank-name refusal, the three label derivations
 (`title` → *Title*, `releasedAt` → *Released at*, `artist.name` → *Artist*), an
@@ -125,6 +130,14 @@ leaving the column unsearchable, and one returning `true` leaving it globally
 searchable — which is the
 [vendor defect](#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column)
 this port fixes.
+
+`alignment()` is the one row covered outside this package: the setter, the
+string-to-enum resolution and the `sy-align-*` fragment are support's, pinned in
+[has-alignment.md](../support/has-alignment.md), and what tables owes is the
+class reaching the cell — asserted by the Integration
+[`TextColumnTest`](../../../packages/tables/tests/Integration/Columns/TextColumnTest.php),
+which is also where the [gap on a badge row](text-column.md#a-badge-row-ignores-alignment-for-want-of-a-justify-content-rule)
+is recorded.
 
 The remaining two rows — the list getters and the query application — are
 [`InteractsWithTableQueryTest`](../../../packages/tables/tests/Unit/Columns/Concerns/InteractsWithTableQueryTest.php)'s,

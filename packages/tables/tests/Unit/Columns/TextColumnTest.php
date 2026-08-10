@@ -45,6 +45,17 @@ it('returns one item for a scalar state', function (): void {
         ->toBe([['state' => 'Airbag', 'content' => 'Airbag']]);
 });
 
+/*
+ * The collapse boundary, pinned with a value the join would change: one entry stays raw,
+ * so `state` is still the `int` a colour or icon closure would be handed, where collapsing
+ * it — what `count($values) >= 1` would do — formats it to the string `content` already
+ * holds and the two stop being distinguishable.
+ */
+it('leaves a single value raw rather than collapsing it', function (): void {
+    expect(TextColumn::make('plays')->record(['plays' => ['n' => 5]])->getStateItems())
+        ->toBe([['state' => 5, 'content' => '5']]);
+});
+
 it('collapses a multi-value state into one comma joined item', function (): void {
     expect(TextColumn::make('tags')->record(['tags' => ['symfony', 'forms']])->getStateItems())
         ->toBe([['state' => 'symfony, forms', 'content' => 'symfony, forms']]);

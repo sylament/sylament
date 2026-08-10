@@ -29,7 +29,7 @@
         {%- set itemSizeValue = itemSize.value ?? itemSize -%}
         {%- set itemIcon = component.getIcon(item.state) -%}
         {%- set itemIconSize = itemSizeValue in ['md', 'lg'] ? itemSizeValue : 'sm' -%}
-        {%- set iconColorAttrs = colorAttributes('Sylament\\Tables\\Colors\\Components\\TextColumnComponent\\IconComponent', component.getIconColor(item.state)) -%}
+        {%- set iconColorAttrs = colorAttributes('Sylament\\Tables\\Colors\\Components\\TextColumnComponent\\ItemComponent\\IconComponent', component.getIconColor(item.state)) -%}
         {%- set iconHtml = isBadge ? null : generateIconHtml(
             itemIcon,
             attributes: {

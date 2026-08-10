@@ -20,6 +20,12 @@ it('returns a literal icon and evaluates a closure against the passed state', fu
         ->and(TextColumn::make('status')->icon(fn ($state): string => "heroicons:{$state}")->getIcon('chevron-down'))->toBe('heroicons:chevron-down');
 });
 
+it('reports an icon once one is set, and never for the false sentinel', function (): void {
+    expect(TextColumn::make('status')->icon('heroicons:x-mark')->hasIcon())->toBeTrue()
+        ->and(TextColumn::make('status')->icon(fn (): string => 'heroicons:x-mark')->hasIcon())->toBeTrue()
+        ->and(TextColumn::make('status')->icon(false)->hasIcon())->toBeFalse();
+});
+
 it('treats false as no icon and suppresses the state contract', function (): void {
     expect(TextColumn::make('status')->icon(false)->getIcon(Status::Published))->toBeNull();
 });

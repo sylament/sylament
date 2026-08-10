@@ -85,7 +85,7 @@ class TextColumn extends Column
      * The class fragment templates emit for the size: `sy-size-<value>` for a `TextSize`
      * case, a custom string as-is — so templates never type-sniff the enum-vs-string union.
      */
-    public function getSizeClass(mixed $state): ?string
+    public function getSizeClass(mixed $state): string
     {
         $size = $this->getSize($state);
 
@@ -135,9 +135,7 @@ class TextColumn extends Column
 
     /**
      * Narrows `formatState()`'s `mixed` return to the `string|Markup|null` its pipeline
-     * actually produces. PHPStan cannot infer that narrowing through `evaluate()`'s
-     * generic — `formatStateUsing` is itself typed `mixed` — so it is checked here rather
-     * than assumed; the `else` arm is unreachable given the pipeline's own contract.
+     * actually produces.
      */
     private function formatStateForItem(mixed $value): string|Markup|null
     {

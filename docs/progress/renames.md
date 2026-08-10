@@ -180,15 +180,28 @@ The colour tier leaves `View\` for the same reason, and is the one place the
 | `Filament\Support\View\Components\ColorMaps\` | `Sylament\Support\Colors\Maps\` | `ComponentColorMap` and the two specialised resolvers |
 | `Filament\Support\View\Components\Contracts\` | `Sylament\Support\Colors\Contracts\` | `HasColor` (the `getColorMap()` one) and `HasDefaultGrayColor` |
 | `Filament\Schemas\View\Components\` | `Sylament\Schemas\Colors\Components\` | schemas' `TextComponent` and `IconComponent` |
+| `Filament\Tables\View\Components\Columns\` | `Sylament\Tables\Colors\Components\` | tables' `TextColumnComponent\ItemComponent` and `TextColumnComponent\ItemComponent\IconComponent` |
 
 `Sylament\Support\Twig\Components\` — where the translation would have put
 them — already means a class-backed **renderable** Twig component, the shape
 actions' `Modals` has. A colour policy is never rendered and has no template, so
 it is filed by capability at `src/` level like `Evaluation\Invoker` and
 `Configuration\ComponentManager`. Class names, including the nesting
-(`DropdownComponent\ItemComponent`), are Filament-verbatim; only the leading
-segments move. Detail:
+(`DropdownComponent\ItemComponent`, `TextColumnComponent\ItemComponent\IconComponent`),
+are Filament-verbatim to any depth; only the leading segments move. Detail:
 [color-policies.md](support/color-policies.md#the-tier-is-filed-under-colors-not-under-twigcomponents).
+
+The tables row absorbs one more segment than the others, and that is the whole of
+the difference: Filament groups its tables policies under a `Columns\` directory
+which is the **only** child `View\Components\` has there, so it separates nothing
+from anything and is dropped into the leading segments rather than carried.
+Everything below it is untouched — an icon policy that belongs to the text
+column's item is `TextColumnComponent\ItemComponent\IconComponent` here exactly as
+it is there, the same nesting support's still-blocked
+[`DropdownComponent\ItemComponent\IconComponent`](support/color-policies.md#surface)
+already carries. The nesting is a class-string a consumer types into
+`colorAttributes()`, so a flatter spelling would be a rename in everything but
+name.
 
 Support-level traits split by **who composes them**, so
 `Filament\Support\Concerns\` has two destinations:
@@ -247,6 +260,7 @@ nothing knows the absence is real.
 | [`renderTable()`](tables/tables-bundle.md#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) | `Sylament\Tables\Twig\Extension\TableExtension` | Renders the context host's table from a Twig template. Filament needs no member to rename from: its `ViewComponent` implements `Htmlable`, so Blade renders a table by echoing it, where Twig needs an explicit `Markup` conversion — the same gap that already produced schemas' `renderSchema(name)` and actions' `renderAction(name, arguments)`, both equally Sylament-only and neither a rename either. `renderTable()` takes no name argument, unlike `renderSchema()`: a host has exactly one table. |
 | [`getFormattedState()`](tables/text-column.md#getformattedstate-replaces-the-embedded-views-local-preamble) | `Sylament\Tables\Columns\Concerns\CanFormatState` | `formatState(getState())` under a name — the one-getter translation of `toEmbeddedHtml()`'s local-variable preamble, which a Twig template has no place to hold ([why](tables/text-column.md#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view)). Filament computes the same pair as two local variables and never names the composition; there is nothing to rename from. |
 | [`getStateItems()`](tables/text-column.md#getstateitems-is-the-cells-value-list) | `Sylament\Tables\Columns\TextColumn` | The cell's value list a Twig template loops over — one entry per badge, or one already-joined entry when a multi-value state collapses without one. Filament builds the equivalent per-item array inline inside `toEmbeddedHtml()` and never returns it to a caller; there is no method to rename from, only a PHP-side loop this port had to give a name because Twig cannot inline one. |
+| The `get*Class()` family — [`getSizeClass()`](tables/text-column.md#getsizeclass-is-sylament-only-and-the-partial-resolves-the-size-twice), `getAlignmentClass()`, `getWeightClass()`, `getFontFamilyClass()`, and schemas' own `Text::getSizeClass()` / forms' `Repeater::getAddActionAlignmentClass()` | `Sylament\Tables\Columns\TextColumn`, `Sylament\Support\Components\Concerns\HasAlignment` / `HasWeight` / `HasFontFamily`, `Sylament\Schemas\Components\Text`, `Sylament\Forms\Components\Repeater` | One pattern, not six independent names: a getter beside `getX()` that turns the enum-or-string union `getX()` answers into the CSS class fragment a template emits (`sy-size-lg`, `sy-align-center`, `sy-font-bold`), passing a custom string through untouched. Filament declares no `*Class()` getter anywhere — `grep` over `vendor/filament/*/src` returns nothing — because its embedded views hold the resolved value in a local and interpolate `"fi-size-{$size->value}"` at the point of use, which a Twig template has no place to do without type-sniffing the union in markup. So the family is the [template-side counterpart](tables/text-column.md#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) of the same preamble `getFormattedState()` translates, and new members follow the pattern rather than earning rows of their own. |
 
 `RecordTypeReader`, `RecordTarget` and `HasNullableBranch` are likewise
 Sylament-only classes rather than renamed Filament ones; the reason none of them

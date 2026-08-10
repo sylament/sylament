@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Tables\Colors\Components\TextColumnComponent;
+namespace Sylament\Tables\Colors\Components\TextColumnComponent\ItemComponent;
 
 use Sylament\Support\Colors\Contracts\HasColor;
 use Sylament\Support\Colors\Contracts\HasDefaultGrayColor;

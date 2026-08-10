@@ -6,8 +6,8 @@ namespace Sylament\Tables\Tests\Unit\Colors\Components;
 
 use Sylament\Support\Colors\Color;
 use Sylament\Support\Colors\ColorManager;
-use Sylament\Tables\Colors\Components\TextColumnComponent\IconComponent;
 use Sylament\Tables\Colors\Components\TextColumnComponent\ItemComponent;
+use Sylament\Tables\Colors\Components\TextColumnComponent\ItemComponent\IconComponent;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use UnexpectedValueException;
 
@@ -169,6 +169,22 @@ it('emits only the palette swap for the icon', function (array $palette): void {
 
     expect($classes)->toBe(['sy-color', 'sy-color-brand']);
 })->with('adversarial palettes');
+
+/**
+ * `gray` is the one colour the two policies answer differently, and the asymmetry is a decision
+ * rather than an oversight: `HasDefaultGrayColor` on the icon means the stylesheet's own grey
+ * stands, and its deliberate absence on the item is what keeps `.sy-color-gray` — a *visible*
+ * choice on a cell — reachable at all. Pinned in both directions because neither mistake shows
+ * up anywhere else: adding the contract to `ItemComponent` makes `->color('gray')` a silent
+ * no-op with a dead CSS rule behind it, and removing it from `IconComponent` paints the icon a
+ * palette it was told not to take.
+ */
+it('emits a colour for gray on the item and nothing at all on the icon', function (): void {
+    $colors = new ColorManager(new ContainerBuilder());
+
+    expect($colors->getComponentClasses(new ItemComponent($colors), 'gray'))->toContain('sy-color-gray')
+        ->and($colors->getComponentClasses(new IconComponent(), 'gray'))->toBe([]);
+});
 
 /**
  * The other half of the icon's markup contract, and the same silent failure as a missing shade

@@ -149,7 +149,7 @@ The nine bundles under `packages/`, each linked to the Filament package it ports
 | [`actions`](../../packages/actions) | [`vendor/filament/actions`](../../vendor/filament/actions) | in progress | [actions](actions/README.md) |
 | [`forms`](../../packages/forms) | [`vendor/filament/forms`](../../vendor/filament/forms) | in progress | [forms](forms/README.md) |
 | [`infolists`](../../packages/infolists) | [`vendor/filament/infolists`](../../vendor/filament/infolists) | todo | [infolists](infolists/README.md) |
-| [`notifications`](../../packages/notifications) | [`vendor/filament/notifications`](../../vendor/filament/notifications) | todo | [notifications](notifications/README.md) |
+| [`notifications`](../../packages/notifications) | [`vendor/filament/notifications`](../../vendor/filament/notifications) | in progress | [notifications](notifications/README.md) |
 | [`panels`](../../packages/panels) | [`vendor/filament/filament`](../../vendor/filament/filament) | todo | [panels](panels/README.md) |
 | [`schemas`](../../packages/schemas) | [`vendor/filament/schemas`](../../vendor/filament/schemas) | in progress | [schemas](schemas/README.md) |
 | [`support`](../../packages/support) | [`vendor/filament/support`](../../vendor/filament/support) | in progress | [support](support/README.md) |

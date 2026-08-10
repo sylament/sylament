@@ -59,7 +59,7 @@ sections do.
 | [`$template`](../../../packages/tables/src/Columns/TextColumn.php) + [the partial it names](../../../packages/tables/templates/partials/TextColumn/index.html.twig) | [`TextColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [diverges](#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) |
 | `hasStateFormatting()` — the raw-state fast path | [`CanFormatState::hasStateFormatting()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | skipped | — | [diverges](#hasstateformatting-has-nothing-to-guard) |
 | [`limit()` / `words()` — character and word truncation](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#limit-composes-slice-rather-than-calling-symfonys-truncate) |
-| [`prefix()` / `suffix()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | — |
+| [`prefix()` / `suffix()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [semantics](#a-markup-state-skips-truncation-and-affixing-escapes-whichever-side-is-not-already-markup) |
 | `html()` / `markdown()` — the sanitizer pass | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | [detail](#html--markdown-need-a-sanitizer-decision) |
 | `date()` / `dateTime()` / `time()` / `since()` and the `iso*` variants, `timezone()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
 | `money()` / `numeric()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
@@ -103,14 +103,38 @@ Filament runs a `RichContentAttribute` / `Htmlable` / markdown branch through
 ported neither setter: `symfony/html-sanitizer` is not a dependency of any
 bundle today, and picking it (or an alternative) is left for when these two
 land. Until then, a format callback returning [`Markup`](../renames.md#idiom)
-is the escape hatch — the pipeline skips truncation for a `Markup` state and
-escapes any plain affix concatenated against it, so the hatch composes with
-the rest of `formatState()` rather than bypassing it.
+is the escape hatch — see
+[Semantics](#a-markup-state-skips-truncation-and-affixing-escapes-whichever-side-is-not-already-markup)
+for how the rest of the pipeline already treats it.
 
 ## Semantics
 
 Faithful ports subtle enough that the next reader would misread the code.
 Permanent, and addressable by anchor.
+
+### A `Markup` state skips truncation, and affixing escapes whichever side is not already `Markup`
+
+`formatState()` captures `$isMarkup` before deciding whether to call
+`truncateState()`, and skips it whenever the state is already `Markup` —
+either because it arrived that way, or because the `HasLabel` unwrap
+returned one. That check runs on the state alone, before `affixState()` ever
+sees a prefix or suffix, so a `Markup` *affix* against a still-plain state
+does not suppress it: `limit()` / `words()` still truncate the state first,
+and only then does the affix step decide whether to escape or promote.
+Cutting into already-escaped markup mid-tag would corrupt it; cutting a
+plain string that only later picks up an escaped affix cannot. Pinned by
+[`CanFormatStateTest`](../../../packages/tables/tests/Unit/Columns/Concerns/CanFormatStateTest.php)'s
+`'skips truncation for a markup state'` case.
+
+`affixState()` then holds one invariant across both directions: the
+returned value never mixes raw and unescaped text, so whichever of the
+state or its affix is *not* already `Markup` gets escaped, and the result
+is promoted to `Markup` either way. A `Markup` prefix or suffix against a
+plain state escapes the state and trusts the affix raw; a plain prefix or
+suffix concatenated onto an already-`Markup` state is escaped before it is
+appended, trusting the state raw instead. Pinned by the same test file's
+`'escapes plain state when an affix is markup and returns markup'` and
+`'escapes a plain affix when the state is markup'` cases.
 
 ### The colour and icon maps resolve last match wins, and `false` suppresses the state-contract fallback
 

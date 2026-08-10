@@ -56,10 +56,11 @@ it('skips truncation for a markup state', function (): void {
         ->limit(3)
         ->formatState('ignored');
 
-    expect((string) $result)->toBe('<b>abcdefghij</b>');
+    expect($result)->toBeInstanceOf(Markup::class)
+        ->and((string) $result)->toBe('<b>abcdefghij</b>');
 });
 
 it('applies the format callback before the transforms', function (): void {
-    expect(TextColumn::make('title')->formatStateUsing(fn (string $state): string => mb_strtoupper($state))->limit(3)->formatState('airbag'))
-        ->toBe('AIR...');
+    expect(TextColumn::make('title')->formatStateUsing(fn (string $state): string => $state . $state)->limit(3)->formatState('airbag'))
+        ->toBe('air...');
 });

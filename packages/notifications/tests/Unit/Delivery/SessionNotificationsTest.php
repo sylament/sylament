@@ -9,10 +9,10 @@ use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
-function sessionNotifications(): SessionNotifications
+function sessionNotifications(?Session $session = null): SessionNotifications
 {
     $request = new Request();
-    $request->setSession(new Session(new MockArraySessionStorage()));
+    $request->setSession($session ?? new Session(new MockArraySessionStorage()));
 
     $requestStack = new RequestStack();
     $requestStack->push($request);
@@ -34,11 +34,23 @@ it('pushes onto the flash bag and pull() drains it', function (): void {
 });
 
 it('filters non-array flash entries out of pull()', function (): void {
-    $notifications = sessionNotifications();
+    $session = new Session(new MockArraySessionStorage());
+    $notifications = sessionNotifications($session);
 
+    $session->getFlashBag()->add(SessionNotifications::FLASH_KEY, 'junk');
     $notifications->push(['id' => 'a']);
 
     expect($notifications->pull())->toBe([['id' => 'a']]);
+});
+
+it('filters flash entries carrying a non-string key out of pull()', function (): void {
+    $session = new Session(new MockArraySessionStorage());
+    $notifications = sessionNotifications($session);
+
+    $session->getFlashBag()->add(SessionNotifications::FLASH_KEY, ['id' => 'a', 0 => 'junk']);
+    $notifications->push(['id' => 'b']);
+
+    expect($notifications->pull())->toBe([['id' => 'b']]);
 });
 
 it('fails fast outside a request with a session', function (): void {

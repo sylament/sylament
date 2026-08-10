@@ -37,6 +37,19 @@ it('dispatches flashed notifications as browser events on a live request', funct
         ->and($container->get(SessionNotifications::class)->pull())->toBe([]);
 });
 
+it('leaves the flash alone when a non-live component renders during a live request', function (): void {
+    pushLiveRequest(live: true);
+
+    $container = $this::getContainer();
+    $entry = Notification::make('n1')->title('Saved')->toArray();
+    $container->get(SessionNotifications::class)->push($entry);
+
+    $html = (string) $this->renderTwigComponent('NotificationsFixtures:Plain');
+
+    expect($html)->not->toContain('sylament:notification')
+        ->and($container->get(SessionNotifications::class)->pull())->toBe([$entry]);
+});
+
 it('leaves the flash alone on a non-live render, so a redirect carries it forward', function (): void {
     pushLiveRequest(live: false);
 

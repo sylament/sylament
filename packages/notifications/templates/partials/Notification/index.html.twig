@@ -1,0 +1,71 @@
+{% set toastController = 'sylament--notifications--notification' %}
+{% set status = component.getStatus %}
+{% set title = component.getTitle %}
+{% set body = component.getBody %}
+{% set duration = component.getDuration %}
+{% set color = component.getColor ?? 'gray' %}
+{% set colorAttrs = colorAttributes('Sylament\\Notifications\\Colors\\Components\\NotificationComponent', color) %}
+{% set iconColor = component.getIconColor ?? status %}
+{% set iconColorAttrs = iconColor ? colorAttributes('Sylament\\Notifications\\Colors\\Components\\NotificationComponent\\IconComponent', iconColor) : null %}
+{% set statusIcons = {
+    danger: 'heroicons:x-circle',
+    info: 'heroicons:information-circle',
+    success: 'heroicons:check-circle',
+    warning: 'heroicons:exclamation-circle',
+} %}
+{% set statusAliases = {
+    danger: constant('Sylament\\Notifications\\Twig\\NotificationsIconAlias::NOTIFICATION_DANGER'),
+    info: constant('Sylament\\Notifications\\Twig\\NotificationsIconAlias::NOTIFICATION_INFO'),
+    success: constant('Sylament\\Notifications\\Twig\\NotificationsIconAlias::NOTIFICATION_SUCCESS'),
+    warning: constant('Sylament\\Notifications\\Twig\\NotificationsIconAlias::NOTIFICATION_WARNING'),
+} %}
+{% set icon = component.getIcon ?? statusIcons[status] ?? null %}
+{% set iconHtml = generateIconHtml(
+    icon,
+    component.getIcon ? null : statusAliases[status] ?? null,
+    {
+        class: ['sy-no-notification-icon']|merge(iconColorAttrs ? iconColorAttrs.class : []),
+        style: iconColorAttrs ? iconColorAttrs.style : [],
+    },
+    component.getIconSize,
+) %}
+{% set toastStimulus = stimulus_controller(toastController, {
+    duration: duration == 'persistent' ? 0 : duration,
+}) %}
+
+<div
+    {{ attrs({
+        class: classes('sy sy-no-notification', {
+            ('sy-status-' ~ status): status is not empty,
+        }, colorAttrs.class),
+        style: styles(colorAttrs.style) ?: false,
+        role: status == 'danger' ? 'alert' : false,
+        ...toastStimulus,
+    }) }}
+>
+    {{ iconHtml }}
+
+    <div class="sy-no-notification-main">
+        {% if title is not empty or body is not empty %}
+            <div class="sy-no-notification-text">
+                {% if title is not empty %}
+                    <h3 class="sy-no-notification-title">{{ title|sanitize_html }}</h3>
+                {% endif %}
+
+                {% if body is not empty %}
+                    <div class="sy-no-notification-body">{{ body|sanitize_html }}</div>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <twig:SylamentSupport:IconButton
+        class="sy-no-notification-close-btn"
+        color="gray"
+        size="sm"
+        icon="heroicons:x-mark"
+        :iconAlias="constant('Sylament\\Notifications\\Twig\\NotificationsIconAlias::NOTIFICATION_CLOSE_BUTTON')"
+        label="Close notification"
+        :data-action="toastController ~ '#close'"
+    />
+</div>

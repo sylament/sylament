@@ -57,7 +57,7 @@ sections do.
 | [`formatState(mixed $state)` — the `state` injection](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState::formatState()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#formatstate-throws-for-a-state-it-cannot-stringify) |
 | [`getFormattedState()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | — (Sylament-only) | done | — | [diverges](#getformattedstate-replaces-the-embedded-views-local-preamble) |
 | [`getStateItems()` — the cell's value list](../../../packages/tables/src/Columns/TextColumn.php) | — (Sylament-only) | done | — | [semantics](#getstateitems-is-the-cells-value-list) |
-| [`$template`](../../../packages/tables/src/Columns/TextColumn.php) + [the partial it names](../../../packages/tables/templates/partials/TextColumn/index.html.twig) | [`TextColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [diverges](#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) |
+| [`$template`](../../../packages/tables/src/Columns/TextColumn.php) + [the partial it names](../../../packages/tables/templates/partials/TextColumn/index.html.twig) | [`TextColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [diverges](#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) · [diverges](#the-item-element-is-never-merged-into-the-outer-div) |
 | `hasStateFormatting()` — the raw-state fast path | [`CanFormatState::hasStateFormatting()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | skipped | — | [diverges](#hasstateformatting-has-nothing-to-guard) |
 | [`limit()` / `words()` — character and word truncation](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#limit-composes-slice-rather-than-calling-symfonys-truncate) |
 | [`prefix()` / `suffix()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [semantics](#a-markup-state-skips-truncation-and-affixing-escapes-whichever-side-is-not-already-markup) |
@@ -65,7 +65,7 @@ sections do.
 | `date()` / `dateTime()` / `time()` / `since()` and the `iso*` variants, `timezone()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
 | `money()` / `numeric()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
 | [`badge()`](../../../packages/tables/src/Columns/TextColumn.php) — the badge shell | [`TextColumn::badge()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`View\Components\BadgeComponent`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | done | — | — |
-| [`color()`](../../../packages/tables/src/Columns/Concerns/HasColor.php) / [`icon()` / `iconPosition()`](../../../packages/tables/src/Columns/Concerns/HasIcon.php) / [`iconColor()`](../../../packages/tables/src/Columns/Concerns/HasIconColor.php) | [`Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php), [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php), [`HasIconColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | done | — | [semantics](#the-colour-and-icon-maps-resolve-last-match-wins-and-false-suppresses-the-state-contract-fallback) · [diverges](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes) |
+| [`color()`](../../../packages/tables/src/Columns/Concerns/HasColor.php) / [`icon()` / `iconPosition()`](../../../packages/tables/src/Columns/Concerns/HasIcon.php) / [`iconColor()`](../../../packages/tables/src/Columns/Concerns/HasIconColor.php) | [`Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php), [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php), [`HasIconColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | done | — | [semantics](#the-colour-and-icon-maps-resolve-last-match-wins-and-false-suppresses-the-state-contract-fallback) · [semantics](#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon) · [diverges](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes) |
 | [`description()` — the secondary line above or below](../../../packages/tables/src/Columns/Concerns/HasDescription.php) | [`Columns\Concerns\HasDescription`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php) | done | — | — |
 | [`size()`](../../../packages/tables/src/Columns/TextColumn.php) / [`weight()`](../../../packages/support/src/Components/Concerns/HasWeight.php) / [`fontFamily()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) / [`lineClamp()`](../../../packages/support/src/Components/Concerns/HasLineClamp.php) | [`TextColumn::size()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php), [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php), [`HasLineClamp`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | done | — | [diverges](#weight-and-fontfamily-are-column-level-where-filaments-are-per-item) |
 | [`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — | — |
@@ -88,9 +88,22 @@ which renders columns inside a real table and reads the cells back through a
 `DomCrawler` selecting the full chain
 (`td.sy-ta-cell > div.sy-ta-col > div.sy.sy-ta-text`), so the element carrying
 the state is the asserted one: a dotted path and a `formatStateUsing()` closure
-landing in the text element, and a null state rendering the element empty
-rather than dropping it. Its iterable-state case is presently skipped — see
-[the divergence](#an-iterable-state-renders-as-one-comma-joined-line-and-nothing-else).
+landing in the cell, an iterable state joining into one, a null state rendering
+the outer element empty rather than dropping it, and — reaching one level
+deeper, into the `span.sy-ta-text-item` the partial always emits — a badge per
+value carrying its colour classes, the descriptions bracketing the item above
+and below, the size/weight/font-family classes with the line-clamp variable, and
+an icon rendering after the content.
+
+The two colour policies the partial names have their rows in the
+[package README](README.md#supporting-surface) rather than here, per
+[one row per file](../README.md#one-row-per-file-one-file-per-thing); both link
+back to the notes below. What pins them is
+[`PolicyShadeGridTest`](../../../packages/tables/tests/Unit/Colors/Components/PolicyShadeGridTest.php),
+the same adversarial-palette sweep schemas runs — every emitted shade class has a
+rule in support's `utilities.css`, the slot variables those classes set are
+exactly the ones `text-column.css` reads, and the icon policy emits the two
+carriers and nothing else.
 
 ## Details
 
@@ -161,6 +174,33 @@ where leaving the setter uncalled defers to the state's own `getColor()` /
 `getIcon()`. The other boolean, `true`, takes neither path: it throws — see
 [Divergences](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes).
 
+### `gray` is a colour on the item and the absence of one on the icon
+
+The two policies the partial names disagree about `gray` on purpose, and the
+asymmetry is Filament's.
+[`ItemComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent.php)
+implements `HasColor` **only**, so `->color('gray')` emits the full class set —
+`sy-color`, `sy-color-gray` and the resolved shade classes — and
+[`text-column.css`](../../../packages/tables/assets/src/styles/components/text-column.css)'s
+`.sy-color-gray` branch, declared after the `.sy-color` one and matching at the
+same specificity, paints the item `gray-500` / `dark:gray-400`. Gray is
+therefore a *visible* choice on a cell, distinct from leaving the colour unset
+(which leaves the base `gray-950` / `dark:white`).
+[`IconComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/IconComponent.php)
+does implement `HasDefaultGrayColor`, so `->iconColor('gray')` emits nothing at
+all and the icon's own base grey stands. Adding the contract to `ItemComponent`
+— the obvious symmetry, and what schemas'
+[`TextComponent`](../schemas/README.md#supporting-surface) does — would make
+`->color('gray')` a silent no-op and leave the `.sy-color-gray` rule dead.
+
+The icon's shade comes from the stylesheet rather than from its policy, which is
+what an empty `getColorMap()` [means](../support/color-policies.md#an-empty-map-is-a-real-answer-not-a-missing-one):
+the two carrier classes swap the palette and `text-column.css` reads
+`text-color-500` off it. Writing the icon rule the way the item's is written —
+`text-(--sy-text)` — would compile, ship, and paint nothing, because no class an
+empty map emits ever sets that variable. `PolicyShadeGridTest` pins the emitted
+set exactly so a slot added later cannot land without the rule moving with it.
+
 ### `getStateItems()` is the cell's value list
 
 `getStateItems()` is `getFormattedState()`'s per-item successor. A non-array
@@ -220,6 +260,45 @@ the markup below reads the locals. A Twig template has no such preamble: it read
 goes through `getExtraTemplateData()` — the house rule recorded in
 [CLAUDE.md](../../../CLAUDE.md). `getFormattedState()` below is that translation
 for the one value the preamble computed in two steps.
+
+### The item element is never merged into the outer div
+
+Filament's `toEmbeddedHtml()` has a fast path: when the cell holds a single
+value and has no descriptions, no bullets and no line clamp, it merges the item
+element's attributes onto the outer `div` and emits **one** element
+([`TextColumn.php:476`](../../../vendor/filament/tables/src/Columns/TextColumn.php)),
+falling back to the two-element shape otherwise. The port always splits —
+`div.sy.sy-ta-text` wrapping one `span.sy-ta-text-item` per value, whatever the
+cell holds.
+
+It costs one span per cell. It buys a single DOM shape, so a selector written
+against one cell holds for every cell; a single CSS path, so
+`.sy-ta-text` carries layout and `.sy-ta-text-item` carries type with no rule
+having to work in both roles; and a template with no branch — the merged arm is
+where Filament's method needs `$stateItemAttributes` merged into `$attributes`
+before either is rendered, which a Twig template would have to express as a
+second copy of the markup.
+
+### The item policy measures the dark surface against `gray-900`
+
+[`ItemComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent.php)
+resolves its `dark:text` slot against `$gray[900]` where
+[Filament's](../../../vendor/filament/tables/src/View/Components/Columns/TextColumnComponent/ItemComponent.php)
+uses `$gray[800]`; the light `text` slot's white surface is Filament's
+unchanged. The surface argument is not a style choice — it is a claim about what
+is actually behind the text, and the shipped `sy-ta` chrome paints its container
+`bg-white dark:bg-gray-900`
+([`table.css`](../../../packages/tables/assets/src/styles/components/table.css)),
+so `gray-800` would be measuring against a background this port does not render.
+Copying the literal would silently understate the contrast ratio of every dark
+cell.
+
+The same reasoning is why the surfaces are not schemas'
+[`TextComponent`](../schemas/README.md#supporting-surface)'s either — that one
+sits on a different container and measures `$gray[50]` / `$gray[700]`. Revisit
+if the table chrome's background changes, and re-run
+[`PolicyShadeGridTest`](../../../packages/tables/tests/Unit/Colors/Components/PolicyShadeGridTest.php)
+when it does.
 
 ### `getFormattedState()` replaces the embedded view's local preamble
 
@@ -327,36 +406,31 @@ Filament's cell has four list shapes: a multi-value state collapses to a single
 comma-joined item by default (`TextColumn.php:366-380`), `listWithLineBreaks()`
 keeps the items as separate lines, `bulleted()` renders them as a `<ul>`, and
 `limitList()` / `expandableLimitedList()` truncate the set with an expand
-trigger. Sylament's partial ships the default arm only — one
-`div.sy.sy-ta-text` holding `state is iterable ? state|join(', ') : state` — and
-the other three have no setter to reach them.
+trigger. Sylament ships the default arm only, and the other three have no setter
+to reach them.
 
-The collapse was meant to be the faithful half, and it is still worth naming
-*why* it is Filament's *default* rather than a simplification: a `TextColumn`
-over `['symfony', 'forms']` renders `symfony, forms` in Filament because
+The collapse is the faithful half, and it is worth naming *why* it is Filament's
+*default* rather than a simplification: a `TextColumn` over
+`['symfony', 'forms']` renders `symfony, forms` in Filament because
 `toEmbeddedHtml()` reduces the column's state to one item per list entry
 *before* any item reaches `formatState()` — the array `formatState()` itself
 ever coerces to JSON is always a single item's own value (a JSON column, say),
-never the column's whole list. Sylament's template has no such split: it reads
-`component.getFormattedState`, i.e. `formatState()` run once over the *whole*
-column state, so the array-to-JSON coercion `formatState()` grew for the
-single-item case now intercepts a multi-item list too — a `TextColumn` over
-`['symfony', 'forms']` currently renders `["symfony","forms"]` here, not
-`symfony, forms`. What the Twig one-liner cannot do is branch on the three
-list flags, and it does not pretend to — that part is unchanged.
+never the column's whole list.
+[`getStateItems()`](#getstateitems-is-the-cells-value-list) is where the port
+makes that same split, so the two coercions no longer compete: it formats each
+value on its own and joins the results, and the JSON arm only ever sees a value
+that is itself an array. The partial loops the item list, which is why the
+badged case keeps one element per value while the plain case gets one.
 
-Provisional, and presently regressed. The three list setters are a **todo**
-row above, blocked on [`separator()`](column.md), and when they land — with a
-per-item state accessor alongside them — the join moves out of the template
-into the formatting pipeline where the branch belongs, and it stops competing
-with the single-item JSON coercion. A template cannot express per-item
-formatting, which `listWithLineBreaks()` and `bulleted()` both need (Filament
-re-enters `$formatState` per item). Until then, even the *default* join needs
-a hand-written `formatStateUsing()` that receives the raw iterable and joins
-it itself (`fn (array $state): string => implode(', ', $state)`) — the same
-escape hatch a consumer wanting a *different* join already reached for. The
-Integration suite carries this as a named, skipped case rather than a passing
-assertion in the meantime.
+Provisional. The three list setters are a **todo** row above, blocked on
+[`separator()`](column.md); when they land, the collapse branch in
+`getStateItems()` grows the two extra shapes beside it — `listWithLineBreaks()`
+and `bulleted()` both need per-item formatting, which is exactly what the item
+list already produces, so it is the flags rather than the machinery that are
+missing. A consumer wanting a *different* join still writes a
+`formatStateUsing()` that receives the raw iterable and joins it itself
+(`fn (array $state): string => implode(', ', $state)`), which now displaces the
+per-item pass rather than working around it.
 
 ### `weight()` and `fontFamily()` are column-level, where Filament's are per item
 

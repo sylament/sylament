@@ -12,8 +12,9 @@ via [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php)) and
 Filament's [`View/TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php).
 
 Today `loadExtension()` wires exactly what the minimal tables vertical ships: the
-`Columns\` component tier, the [`Table`](table.md) root object, and the
-`twig.extension`-tagged `TableExtension`. The first two have **no** counterpart in
+`Columns\` component tier, the [`Table`](table.md) root object, the two
+[`TextColumn`](text-column.md) colour policies under `Colors\Components\`, and
+the `twig.extension`-tagged `TableExtension`. The first three have **no** counterpart in
 Filament's provider — it binds no container services at all — and they are what
 makes `make()` return an autowired, non-shared instance, which is in turn what
 lets [`CanAccessProperties`](../../../packages/schemas/src/Components/Concerns/CanAccessProperties.php)'
@@ -45,7 +46,7 @@ a [Details](#details) write-up, a **diverges** link to
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`Columns\` glob + `Table` component services](../../../packages/tables/src/SylamentTablesBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
+| [`Columns\` and `Colors\Components\` globs + `Table` component services](../../../packages/tables/src/SylamentTablesBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
 | [TableExtension → `twig.extension`](../../../packages/tables/src/SylamentTablesBundle.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
 | [`TablesIconAlias` — `EMPTY_STATE`, the three `HEADER_CELL_SORT_*`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-five-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
 | [`ext-mbstring` on the package manifest](../../../packages/tables/composer.json) | — (Sylament-only; Filament's manifest declares no extensions) | done | — | [diverges](#the-manifest-declares-ext-mbstring) |
@@ -165,6 +166,15 @@ a registration. Symfony's container cannot do that, so
 registers the tier explicitly — a top-level `Columns\*.php` glob (which keeps
 `Concerns/` out without an exclude list) and `->set(Table::class)`, both
 `autowire()` + `autoconfigure()`.
+
+A third registration rides along on the same mechanism for a different reason:
+the `Colors/Components/*/*.php` glob is `autowire()` + **`public()`**, not
+`autoconfigure()`. A colour policy is not a component and wants no
+`sylament.component` tag; what it needs is to survive
+`Container::get()`, because
+[`ColorManager`](../support/color-manager.md) resolves a policy from the
+container by the class-string a template names, and a private service is not
+reachable that way. Same rule and same comment as schemas' policy glob.
 
 That is not bookkeeping; it is what makes three things work, and each of them is
 silently wrong without it:

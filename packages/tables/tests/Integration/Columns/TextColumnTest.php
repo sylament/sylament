@@ -55,4 +55,68 @@ it('joins an iterable state into one comma-separated cell', function (): void {
         ->filter('td.sy-ta-cell > div.sy-ta-col > div.sy.sy-ta-text');
 
     expect($cells->eq(0)->text())->toBe('symfony, forms');
-})->skip('formatState() now JSON-encodes any array state unconditionally (Filament parity), so the is-iterable check the template runs against getFormattedState() no longer sees a raw array here; restored once a per-item state accessor replaces getFormattedState() in the template.');
+});
+
+it('renders a badge per value with colour classes when badged', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->records(fn (): array => [['tags' => ['symfony', 'forms']]])
+        ->columns([TextColumn::make('tags')->badge()->color('success')]));
+
+    $badges = new Crawler(renderToHtml($host->getTable()))
+        ->filter('div.sy-ta-text > span.sy-ta-text-item > span.sy-badge');
+
+    expect($badges->count())->toBe(2)
+        ->and($badges->eq(0)->text())->toBe('symfony')
+        ->and($badges->eq(1)->text())->toBe('forms')
+        ->and($badges->eq(0)->attr('class'))->toContain('sy-color-success');
+});
+
+it('renders descriptions above and below the item', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->records(fn (): array => [['title' => 'Airbag']])
+        ->columns([
+            TextColumn::make('title')
+                ->description('OK Computer', position: 'above')
+                ->description('1997'),
+        ]));
+
+    $cell = new Crawler(renderToHtml($host->getTable()))->filter('div.sy-ta-text');
+    $children = $cell->children();
+
+    expect($cell->attr('class'))->toContain('sy-ta-text-has-descriptions')
+        ->and($children->eq(0)->text())->toBe('OK Computer')
+        ->and($children->eq(1)->text())->toBe('Airbag')
+        ->and($children->eq(2)->text())->toBe('1997');
+});
+
+it('renders size, weight, font family, wrap and line clamp', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->records(fn (): array => [['title' => 'Airbag']])
+        ->columns([
+            TextColumn::make('title')
+                ->size('lg')
+                ->weight('bold')
+                ->fontFamily('mono')
+                ->wrap()
+                ->lineClamp(2),
+        ]));
+
+    $html = renderToHtml($host->getTable());
+    $item = new Crawler($html)->filter('div.sy-ta-text > span.sy-ta-text-item');
+
+    expect(new Crawler($html)->filter('div.sy-ta-text')->attr('class'))->toContain('sy-wrapped')
+        ->and($item->attr('class'))->toContain('sy-size-lg')
+        ->and($item->attr('class'))->toContain('sy-font-bold')
+        ->and($item->attr('class'))->toContain('sy-font-mono')
+        ->and($item->attr('style'))->toContain('--sy-line-clamp: 2');
+});
+
+it('renders an icon before or after the content', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->records(fn (): array => [['title' => 'Airbag']])
+        ->columns([TextColumn::make('title')->icon('heroicons:x-mark')->iconPosition('after')]));
+
+    $item = new Crawler(renderToHtml($host->getTable()))->filter('div.sy-ta-text > span.sy-ta-text-item');
+
+    expect($item->children()->last()->nodeName())->toBe('svg');
+});

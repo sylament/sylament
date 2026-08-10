@@ -18,6 +18,7 @@ use Sylament\Support\Components\Concerns\HasIcon;
 use Sylament\Support\Components\Concerns\HasIconColor;
 use Sylament\Support\Components\Concerns\HasIconSize;
 use Sylament\Support\Components\ViewComponent;
+use Sylament\Support\Contracts\ScalableIcon;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Contracts\Service\Attribute\Required;
 use Twig\Markup;
@@ -67,13 +68,13 @@ class Notification extends ViewComponent
     }
 
     /**
-     * @return array{id: string, title: ?string, body: ?string, status: ?string, color: string|array<string>|null, icon: string|Markup|null, iconColor: string|array<string>|null, duration: int|string}
+     * @return array{id: string, title: ?string, body: ?string, status: ?string, color: string|array<string>|null, icon: string|BackedEnum|Markup|null, iconColor: string|array<string>|null, duration: int|string}
      */
     public function toArray(): array
     {
         $icon = $this->getIcon();
 
-        if ($icon instanceof BackedEnum) {
+        if ($icon instanceof BackedEnum && !$icon instanceof ScalableIcon) {
             $icon = (string) $icon->value;
         }
 
@@ -113,7 +114,7 @@ class Notification extends ViewComponent
         $static->color(static::toColor($data['color'] ?? null));
 
         $icon = $data['icon'] ?? null;
-        $static->icon(is_string($icon) || $icon instanceof Markup ? $icon : null);
+        $static->icon(is_string($icon) || $icon instanceof BackedEnum || $icon instanceof Markup ? $icon : null);
 
         $static->iconColor(static::toColor($data['iconColor'] ?? null));
 

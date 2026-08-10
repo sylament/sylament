@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Sylament\Notifications\Notification;
+use Sylament\Notifications\Tests\Fixtures\ScalableFixtureIcon;
 use Symfony\Component\Uid\Uuid;
 
 it('mints a uuid id when make() is called without one', function (): void {
@@ -63,4 +64,11 @@ it('evaluates closure title and body at read time so toArray() stores values', f
     $array = Notification::make('n')->title(fn (): string => 'Lazy')->toArray();
 
     expect($array['title'])->toBe('Lazy');
+});
+
+it('carries a ScalableIcon through the round trip unflattened', function (): void {
+    $array = Notification::make('n')->icon(ScalableFixtureIcon::Check)->toArray();
+
+    expect($array['icon'])->toBe(ScalableFixtureIcon::Check)
+        ->and(Notification::fromArray($array)->getIcon())->toBe(ScalableFixtureIcon::Check);
 });

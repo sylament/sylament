@@ -55,7 +55,7 @@ deleted once the row is **done**; **semantics** → the permanent note in
 | [`role="alert"` on danger, polite otherwise](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#the-assertive-split-is-per-toast-and-the-container-stays-polite) |
 | [Title / body sanitization (`sanitize_html`)](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`str(...)->sanitizeHtml()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#the-default-sanitizer-is-stricter-than-the-one-filament-tunes) |
 | [Toast styles (`sy-no-notification*`)](../../../packages/notifications/assets/src/styles/components/notification.css) | [`resources/css/notification.css`](../../../vendor/filament/notifications/resources/css/notification.css) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
-| [Toast controller — auto-dismiss, hover-pause, close, delegated action clicks](../../../packages/notifications/assets/src/controllers/notification_controller.ts) | [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js) | in progress | the database-notifications panel | [detail](#markasread-and-markasunread-belong-to-the-database-panel) · [detail](#the-delegated-click-handler-is-the-controllers-next-step) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
+| [Toast controller — auto-dismiss, hover-pause, close, delegated action clicks](../../../packages/notifications/assets/src/controllers/notification_controller.ts) | [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js) | in progress | the database-notifications panel | [detail](#markasread-and-markasunread-belong-to-the-database-panel) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) · [diverges](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload) |
 | `close-notification` — closing a toast by id from a browser event | [`x-on:close-notification.window`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#closing-a-toast-by-id-needs-the-id-in-the-markup) |
 | [`actions()` (`HasActions`)](../../../packages/notifications/src/Concerns/HasActions.php) | [`Concerns/HasActions.php`](../../../vendor/filament/notifications/src/Concerns/HasActions.php), the `actions` key of `toArray()`/`fromArray()` | done | — | [semantics](#toast-actions-are-re-viewed-as-small-links-and-the-actions-key-restores-them) · [semantics](#toast-actions-cannot-open-modals-at-filament-parity) · [diverges](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload) |
 | `date()` (`HasDate`) | [`Concerns/HasDate.php`](../../../vendor/filament/notifications/src/Concerns/HasDate.php) | todo | — | [detail](#date-and-inline-arrive-with-the-database-notifications-panel) |
@@ -173,22 +173,6 @@ nothing here to read them yet.
 
 **Next step:** port both with the database-notifications panel, in the same change
 that gives them a listener.
-
-### The delegated click handler is the controller's next step
-
-The toast root already names `handleActionClick` — the
-[delegation divergence](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload)
-is what puts it there — and
-[`notification_controller.ts`](../../../packages/notifications/assets/src/controllers/notification_controller.ts)
-does not define it yet, so a toast action's payload attributes are read by nobody
-and clicking a dispatching or closing action does nothing. Stimulus binds an
-action naming an undefined method silently, so the gap costs a dead click rather
-than a console error.
-
-**Next step:** add `handleActionClick(event)` to the controller — `closest()` off
-the click target for a trigger carrying either payload attribute, `emit()` through
-the page's live component for `data-sylament-action-event`, then `close()` when
-`data-sylament-action-close` is present.
 
 ### `date()` and `inline()` arrive with the database-notifications panel
 
@@ -582,6 +566,36 @@ puts the handler on the element that already **is** the toast controller's scope
 so `close()` needs no lookup, and it leaves the close button alone: that
 `IconButton` carries neither payload attribute, so a delegated click cannot
 double-fire it.
+
+The receiving half is
+[`handleActionClick()`](../../../packages/notifications/assets/src/controllers/notification_controller.ts).
+It walks `closest()` from `event.target` rather than reading `currentTarget`, which
+on a delegated action is always the root — the trigger is only reachable by walking
+**up** from where the click actually landed. It then re-checks
+`this.element.contains(trigger)`, because `closest()` does not stop at the toast: a
+click on the toast's own chrome would otherwise keep walking past the root and
+claim an action attribute on some enclosing element. The emit runs first and
+`close()` last, so a `dispatch()->close()` action does both; `close()` fires on the
+marker alone, never as a side effect of dispatching.
+The payload is parsed only when its attribute is present, and a malformed one
+**throws** — it is written by the template's `|json_encode`, so a parse failure is
+a defect in the emitter rather than input to tolerate.
+
+Delivery goes through ux-live-component's public API, and the part worth knowing is
+that the emitting component is arbitrary. The handler takes the first
+`[data-controller~="live"]` element on the page and emits through it, which is
+sound because `Component.emit()` resolves its targets with
+`findComponents(this, onlyParents: false, …)` — a walk of the **whole** component
+registry, not of a subtree — so the emitter decides nothing about who hears the
+event, and `dispatchTo`'s name filter narrows globally too. That is what lets a
+toast rendered outside every live component dispatch into one at all.
+`getComponent()` polls the element→component map ten times at 5 ms and then
+rejects, so a page carrying no live component, or one whose controller has not
+connected yet, lands in the `catch` — and the silence there is the designed
+behaviour, matching a dispatch nobody listens to. A `dispatchSelf()` action reaches
+this path as a plain dispatch, because
+[no attribute distinguishes it](../actions/action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding)
+and a toast has no self to address.
 
 The cost is two-sided. On the payload arms it is the mild one: those attributes do
 nothing unless something delegates, so an action rendered where nothing does is

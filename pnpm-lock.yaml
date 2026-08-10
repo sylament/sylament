@@ -27,6 +27,9 @@ importers:
       '@hotwired/stimulus':
         specifier: ^3.0.0
         version: 3.2.2
+      '@symfony/ux-live-component':
+        specifier: ^3.2.0
+        version: 3.2.0(@hotwired/stimulus@3.2.2)
       esbuild:
         specifier: ^0.28.0
         version: 0.28.0
@@ -392,6 +395,11 @@ packages:
   '@parcel/watcher@2.5.6':
     resolution: {integrity: sha512-tmmZ3lQxAe/k/+rNnXQRawJ4NjxO2hqiOLTHvWchtGZULp4RyFeh6aU4XdOYBFe2KE1oShQTv4AblOs2iOrNnQ==}
     engines: {node: '>= 10.0.0'}
+
+  '@symfony/ux-live-component@3.2.0':
+    resolution: {integrity: sha512-PLioLIgnDQLJmdINm3gdkrLzpBj7imKW8HVLGbsaE28dwVAWQFQaeuo83Wxb4MX0+2ZTh8pYyMrvwDdjHMTXjg==}
+    peerDependencies:
+      '@hotwired/stimulus': ^3.0.0
 
   '@tailwindcss/cli@4.3.0':
     resolution: {integrity: sha512-X9kdlqyMopO9fewbgHsEeuy31YzMHbdZ9VsKt004tB+mxSg1CNbyhZYCzvhciN0AM4R4b5lvIprPjtNq7iQxpQ==}
@@ -914,6 +922,10 @@ snapshots:
       '@parcel/watcher-win32-arm64': 2.5.6
       '@parcel/watcher-win32-ia32': 2.5.6
       '@parcel/watcher-win32-x64': 2.5.6
+
+  '@symfony/ux-live-component@3.2.0(@hotwired/stimulus@3.2.2)':
+    dependencies:
+      '@hotwired/stimulus': 3.2.2
 
   '@tailwindcss/cli@4.3.0':
     dependencies:

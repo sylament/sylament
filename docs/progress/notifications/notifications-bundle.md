@@ -238,7 +238,28 @@ AssetMapper is not forced to install it.
 
 The asset workspace behind it is **JS-only** — two Stimulus controllers declared in
 its `package.json` under `symfony.controllers`, so StimulusBundle picks them up
-with no consumer wiring. Its stylesheet is *not* built here: support's
+with no consumer wiring. One of them, the toast controller, imports
+`@symfony/ux-live-component` for its
+[dispatch bridge](notification.md#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload);
+the workspace declares it as a dev **and** peer dependency at `^3.2.0`, which is
+the npm version the installed PHP package v3.3.0 ships (the two halves version
+independently — v3.3.0's own `assets/package.json` reads `3.2.0`). The build leaves
+it a bare specifier, so it resolves through the consuming app's importmap.
+
+No `symfony.importmap` entry is declared for it, and that is deliberate rather than
+an omission. Support's block declares `@hotwired/stimulus` because that entry is a
+**remote** one no PHP package of ours pulls in, and omits `@floating-ui/dom`
+because it is bundled — so the rule the block encodes is *"name what the consumer's
+importmap must hold and might not otherwise get"*. Here the manifest already
+requires `symfony/ux-live-component`, whose own recipe installs the entry as a
+**path** to the vendored `live_controller.js`; declaring a version constraint
+beside it would name the CDN copy — a second artifact, registering a second `live`
+controller — which Flex skips only because `PackageJsonSynchronizer` leaves an
+existing path entry alone. The one correct form, `path:%PACKAGE%/…`, is unwritable
+here: Flex expands `%PACKAGE%` to the *declaring* package's asset directory, and
+ours holds no live controller.
+
+Its stylesheet is *not* built here: support's
 `assets/src/styles/index.css` imports every sibling package's
 `src/styles/index.css`, notifications' included, so the `sy-no-*` rules compile
 into support's single built stylesheet and reach the page through support's `core`

@@ -167,8 +167,11 @@ registers the tier explicitly — a top-level `Columns\*.php` glob (which keeps
 `Concerns/` out without an exclude list) and `->set(Table::class)`, both
 `autowire()` + `autoconfigure()`.
 
-A third registration rides along on the same mechanism for a different reason:
-the `Colors/Components/*/*.php` glob is `autowire()` + **`public()`**, not
+Two more registrations ride along on the same mechanism for a different reason:
+the `Colors/Components/` globs — `*/*.php` and `*/*/*.php`, one per directory
+level the policies nest to, since
+[`TextColumnComponent\ItemComponent\IconComponent`](../renames.md#namespace-segments)
+sits a level below its item — are `autowire()` + **`public()`**, not
 `autoconfigure()`. A colour policy is not a component and wants no
 `sylament.component` tag; what it needs is to survive
 `Container::get()`, because

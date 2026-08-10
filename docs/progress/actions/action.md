@@ -55,7 +55,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | `InteractsWithSelectedRecords` (table bulk actions), the Action→schema record hop | [detail](#resolvedefaultclosuredependencyforevaluationbytype-carries-only-the-added-getset-arms) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | bulk actions (`bulk` flag) | [diverges](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) |
 | `getClone()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`getClone()`) | done | — | Filament-exact one-liner (`clone $this`). A shallow clone is the whole contract on this side: what a caller needs is an action whose `record()` / `table()` / `group()` bindings can be re-stamped per row without touching the declared original. `ActionGroup`'s override adds the member deep-clone ([there](action-group.md#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately)) |
-| `toArray()` / `fromArray()` — the 21 ported keys | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toArray()`/`fromArray()`) | done | — | [semantics](#the-serialized-key-list-drops-alpineclickhandler-and-shouldposttourl) · [semantics](#fromarray-restores-only-the-five-built-in-templates) · [semantics](#fromarray-degrades-a-to-dispatch-with-no-target-component-to-a-plain-dispatch) |
+| `toArray()` / `fromArray()` — the 21 ported keys | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toArray()`/`fromArray()`) | done | — | [diverges](#the-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened) · [semantics](#the-serialized-key-list-drops-alpineclickhandler-and-shouldposttourl) · [semantics](#fromarray-restores-only-the-five-built-in-templates) · [semantics](#fromarray-degrades-a-to-dispatch-with-no-target-component-to-a-plain-dispatch) |
 | `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) decidable |
 | [`CanCallParentAction`](../../../packages/actions/src/Concerns/CanCallParentAction.php) | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | done | — | Filament-exact two-method port (`callParent()` + getter). The getter is `getParentActionCallLiveComponentClickHandler()` against Filament's `…Livewire…`, the systematic Livewire → UX LiveComponent naming translation from the [rename table](../renames.md), not a rename of its own. Read by all five trigger templates, ranked **above** `shouldClose()` in the click precedence |
 | [`HasParentActions`](../../../packages/actions/src/Concerns/HasParentActions.php) | [`Concerns/HasParentActions.php`](../../../vendor/filament/actions/src/Concerns/HasParentActions.php) | done | — | Complete, method-for-method and body-for-body. Three of its accessors (`shouldCancelParentActionsOnClose()`, `shouldCancelAllParentActionsOnClose()`, `getParentActionToCancelToOnClose()`) have no consumer here — and none in `vendor/filament` either, so they are kept as declared API rather than trimmed |
@@ -738,9 +738,12 @@ custom click handler is a **live action name bound to a host**
 and a live action name means nothing to whatever host rehydrates the action on
 the far side of the hop, so there is no value worth writing. **`shouldPostToUrl`**
 has no getter to call at all — POST-to-url is
-[not ported](#post-to-url-support-is-not-ported). Everything else is present,
-with vendor's `view` key renamed `template` (the systematic Blade → Twig
-translation from [`renames.md`](../renames.md), not a rename of its own).
+[not ported](#post-to-url-support-is-not-ported). Every other key is present,
+with vendor's `view` renamed `template` (the systematic Blade → Twig
+translation from [`renames.md`](../renames.md), not a rename of its own) —
+though present is not the same as identical: four of them carry a different
+**value shape** than Filament writes
+([diverges](#the-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened)).
 
 Nothing closure-bearing is written either, and that *is* Filament-exact rather
 than a port decision: `action`, the modal configuration, the lifecycle hooks and
@@ -922,6 +925,46 @@ method. The serialization pair Filament keeps beside the view switch —
 `toArray()`/`fromArray()`, whose `view` key becomes `template` here — **has**
 landed, with its own Surface row and the key-list and whitelist notes under
 [Semantics](#semantics).
+
+### The serialized enum values flatten to scalars, and a `ScalableIcon` crosses unflattened
+
+Filament's `toArray()` writes whatever its getters return, objects included:
+`getIconPosition(): IconPosition` is non-nullable, so `iconPosition` is *always*
+an enum instance in the payload, and `iconSize` / `size` are `IconSize` / `Size`
+instances whenever the setter was handed one.
+[`Action::toArray()`](../../../packages/actions/src/Action.php) writes `->value`
+for all three — `iconPosition` unconditionally (no `instanceof` check, because
+there is nothing else it can be), `iconSize` and `size` only when the value is
+an enum, since those two getters return a union and a plain string passes
+straight through. The payload is scalar throughout, which is what lets it cross
+a session or a JSON hop without depending on how PHP serializes enums.
+
+Nothing is lost on the way back. `iconPosition` re-resolves exactly:
+`fromArray()` hands `'before'` to `iconPosition()` and the getter runs it
+through `IconPosition::tryFrom()`, returning the same case. `iconSize` and
+`size` restore as the **string** rather than the enum, and every consumer takes
+it — [`generateIconHtml()`](../../../packages/support/src/Twig/Extension/IconExtension.php)
+calls `IconSize::tryFrom()` on a string size, and the support primitives' `size`
+props are strings, which is what the trigger templates already pass literally as
+`component.getSize ?? 'md'`. So the divergence is one of wire format, not of
+what renders.
+
+`icon` diverges the other way, and for exactly the reason
+[notifications' does](../notifications/notification.md#a-scalableicon-crosses-the-session-unflattened-and-resolves-at-render-size).
+Filament resolves a scalable icon *at serialization time* — `$icon instanceof
+ScalableIcon` takes `getIconForSize($this->getIconSize() ?? IconSize::Medium)`,
+a size chosen before anyone knows how the action will render — and only a plain
+`BackedEnum` falls through to `->value`. The port inverts those two arms: a
+`BackedEnum` implementing
+[`ScalableIcon`](../../../packages/support/src/Contracts/ScalableIcon.php) is
+kept **as the enum** (the session PHP-serializes enums, and `fromArray()` admits
+a `BackedEnum` back through `icon()`), and only a plain enum flattens to its
+value. Resolution then happens where every other icon resolves — in
+`generateIconHtml()`'s `ScalableIcon` → `BackedEnum` cascade, at the size the
+trigger template actually passes — so a scalable icon is size-correct on the
+serialized path where Filament's is pinned to whatever `iconSize()` said at
+`toArray()` time. Pinned by the `ScalableFixtureIcon` case in
+[`ActionSerializationTest`](../../../packages/actions/tests/Unit/ActionSerializationTest.php).
 
 ### The rest of Filament's `Action` surface is unported
 

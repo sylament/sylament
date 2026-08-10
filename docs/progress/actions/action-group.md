@@ -79,7 +79,7 @@ permanent note in [Divergences](#divergences).
 | Rendering (`toEmbeddedHtml()`) incl. [`getDropdownActionLists()`](../../../packages/actions/src/ActionGroup.php) — flattened sections and embedded submenus | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | done | — | [diverges](#the-dropdown-plan-is-a-php-method-the-template-loops-not-an-inline-output-buffer), [diverges](#dropdownfalse-wraps-its-inline-row-in-a-bare-divsysy-ac-group-unlike-filaments-unwrapped-concatenation) |
 | Badge/button-group/link triggers | [`View/Concerns/CanGenerate*Html.php`](../../../vendor/filament/support/src/View/Concerns) | todo | — | [detail](#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup) |
 | Dropdown teleport & auto-placement | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) (`dropdownTeleport()`/`dropdownAutoPlacement()`) | todo | — | - |
-| `toArray()` / `fromArray()` — the 16 ported keys | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toArray()`/`fromArray()`) | done | — | [semantics](#the-groups-serialized-key-list-drops-iconposition-hasdropdownteleport-and-vendors-view) · [semantics](#fromarrays-hasdropdownflip-fallback-is-false-where-the-property-defaults-to-true) · [semantics](#fromarray-restores-only-the-three-built-in-trigger-templates) |
+| `toArray()` / `fromArray()` — the 16 ported keys | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toArray()`/`fromArray()`) | done | — | [diverges](#the-groups-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened) · [semantics](#the-groups-serialized-key-list-drops-iconposition-hasdropdownteleport-and-vendors-view) · [semantics](#fromarrays-hasdropdownflip-fallback-is-false-where-the-property-defaults-to-true) · [semantics](#fromarray-restores-only-the-three-built-in-trigger-templates) |
 | `hasNonBulkAction()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`hasNonBulkAction()`) | blocked | BulkAction | [detail](#hasnonbulkaction-is-blocked-on-the-bulkaction-port) |
 
 ## Details
@@ -536,3 +536,22 @@ row's children lay out horizontally with spacing — a rule Filament's
 unwrapped output has no element to carry. Reversible by dropping the wrapper
 (and its CSS rule) and emitting the loop bare the moment parity with
 Filament's unwrapped shape matters more than the flex layout.
+
+### The group's serialized enum values flatten to scalars, and a `ScalableIcon` crosses unflattened
+
+The same wire-format choice `Action` makes, minus the key the group does not
+compose: [`ActionGroup::toArray()`](../../../packages/actions/src/ActionGroup.php)
+writes `iconSize` and `size` as `->value` when the getter returned an
+`IconSize` / `Size` instance where Filament writes the instance itself, and it
+keeps a `BackedEnum` implementing
+[`ScalableIcon`](../../../packages/support/src/Contracts/ScalableIcon.php)
+**as the enum** where Filament resolves it to a string at serialization time
+through `getIconForSize($this->getIconSize() ?? IconSize::Medium)`. Only a plain
+`BackedEnum` flattens to its value. There is no `iconPosition` key to flatten
+here — the group composes no `HasIconPosition`
+([semantics](#the-groups-serialized-key-list-drops-iconposition-hasdropdownteleport-and-vendors-view)) —
+so this is three keys on the group side against `Action`'s four.
+
+The reasoning, the round-trip consequences and the render-size argument are
+written up once, on the class that carries all four:
+[`action.md`](action.md#the-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened).

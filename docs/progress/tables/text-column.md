@@ -163,9 +163,16 @@ where leaving the setter uncalled defers to the state's own `getColor()` /
 
 ### `getStateItems()` is the cell's value list
 
-`getStateItems()` is `getFormattedState()`'s per-item successor: `wrap($state)`
-turns a scalar into one item and leaves an already-iterable state as many, then
-`count($values) > 1 && ! isBadge()` picks the same collapse Filament defaults to
+`getStateItems()` is `getFormattedState()`'s per-item successor. A non-array
+`Traversable` state — a Doctrine `Collection`, an `ArrayIterator` — is
+materialized with `iterator_to_array()` first, the same unwrap Filament's own
+`toEmbeddedHtml()` runs before its `Arr::wrap()` (`$state instanceof
+Collection`, `TextColumn.php:281-283`). [`wrap()`](../support/helpers.md)
+itself only spreads arrays — it leaves anything else, Traversable included, as
+one item — so this unwrap has to run first; only then does `wrap($state)` turn
+a scalar into one item and leave an array (native, or just materialized) as
+many. `count($values) > 1 && ! isBadge()` then picks the same collapse
+Filament defaults to
 ([divergence](#an-iterable-state-renders-as-one-comma-joined-line-and-nothing-else))
 — every value formatted individually and joined with `', '` into a *single*
 item, unless the column is badged (or already single-valued), which keeps one

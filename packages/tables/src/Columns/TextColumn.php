@@ -17,6 +17,7 @@ use Sylament\Tables\Columns\Concerns\HasColor;
 use Sylament\Tables\Columns\Concerns\HasDescription;
 use Sylament\Tables\Columns\Concerns\HasIcon;
 use Sylament\Tables\Columns\Concerns\HasIconColor;
+use Traversable;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
@@ -106,6 +107,10 @@ class TextColumn extends Column
     public function getStateItems(): array
     {
         $state = $this->getState();
+
+        if (! is_array($state) && $state instanceof Traversable) {
+            $state = iterator_to_array($state, false);
+        }
 
         if (blank($state)) {
             return [];

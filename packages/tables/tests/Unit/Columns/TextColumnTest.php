@@ -58,12 +58,25 @@ it('keeps a multi-value state per item when badged', function (): void {
         ]);
 });
 
+it('collapses a traversable state the same as an array', function (): void {
+    expect(TextColumn::make('tags')->state(fn (): ArrayIterator => new ArrayIterator(['symfony', 'forms']))->getStateItems())
+        ->toBe([['state' => 'symfony, forms', 'content' => 'symfony, forms']]);
+});
+
+it('keeps a traversable state per item when badged', function (): void {
+    expect(TextColumn::make('tags')->badge()->state(fn (): ArrayIterator => new ArrayIterator(['symfony', 'forms']))->getStateItems())
+        ->toBe([
+            ['state' => 'symfony', 'content' => 'symfony'],
+            ['state' => 'forms', 'content' => 'forms'],
+        ]);
+});
+
 it('formats each item before collapsing', function (): void {
     expect(TextColumn::make('tags')
         ->record(['tags' => ['symfony', 'forms']])
-        ->formatStateUsing(fn (string $state): string => mb_strtoupper($state))
+        ->formatStateUsing(fn (string $state): string => "[{$state}]")
         ->getStateItems())
-        ->toBe([['state' => 'SYMFONY, FORMS', 'content' => 'SYMFONY, FORMS']]);
+        ->toBe([['state' => '[symfony], [forms]', 'content' => '[symfony], [forms]']]);
 });
 
 it('returns no items for a blank state', function (): void {

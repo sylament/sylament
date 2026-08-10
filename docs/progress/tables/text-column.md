@@ -2,8 +2,8 @@
 
 [`Sylament\Tables\Columns\TextColumn`](../../../packages/tables/src/Columns/TextColumn.php)
 — the first concrete column of the catalog: a [`Column`](column.md) that renders
-its cell state as text, plus the formatting hook that sits between the raw state
-and the template. It ports Filament's
+its cell state as text, plus the formatting pipeline that sits between the raw
+state and the template. It ports Filament's
 [`Filament\Tables\Columns\TextColumn`](../../../vendor/filament/tables/src/Columns/TextColumn.php)
 and the five `Columns\Concerns\` traits it adds today —
 [`CanFormatState`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php),
@@ -29,7 +29,10 @@ Reference — the Filament source this is diffed against:
 - [`tables/src/Columns/TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php)
   — the class, its composed traits and `toEmbeddedHtml()`
 - [`tables/src/Columns/Concerns/CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php)
-  — the formatting pipeline, of which the `formatStateUsing` hop ports here
+  — the formatting pipeline: `formatStateUsing`, the array-to-JSON coercion,
+  the `HasLabel` unwrap, `limit()` / `words()`, `prefix()` / `suffix()` and
+  their escaping port here; `html()` / `markdown()`, the date/money/numeric
+  formatters and the list-flattening branches do not yet
 - [`tables/src/Columns/Concerns/HasColor.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php)
   — the colour setter, the `colors()` map and the state-contract fallback
 - [`tables/src/Columns/Concerns/HasIcon.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php)
@@ -51,13 +54,13 @@ sections do.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`formatStateUsing()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState::formatStateUsing()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#formatstateusing-accepts-a-literal-where-filament-accepts-only-a-closure) |
-| [`formatState(mixed $state)` — the `state` injection](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState::formatState()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | in progress | — | [detail](#formatstate-is-the-hook-without-the-pipeline-around-it) |
+| [`formatState(mixed $state)` — the `state` injection](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState::formatState()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#formatstate-throws-for-a-state-it-cannot-stringify) |
 | [`getFormattedState()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | — (Sylament-only) | done | — | [diverges](#getformattedstate-replaces-the-embedded-views-local-preamble) |
 | [`$template`](../../../packages/tables/src/Columns/TextColumn.php) + [the partial it names](../../../packages/tables/templates/partials/TextColumn/index.html.twig) | [`TextColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [diverges](#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) |
 | `hasStateFormatting()` — the raw-state fast path | [`CanFormatState::hasStateFormatting()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | skipped | — | [diverges](#hasstateformatting-has-nothing-to-guard) |
-| `limit()` / `words()` — character and word truncation | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
-| `prefix()` / `suffix()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
-| `html()` / `markdown()` — the sanitizer pass | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | [detail](#formatstate-is-the-hook-without-the-pipeline-around-it) |
+| [`limit()` / `words()` — character and word truncation](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#limit-composes-slice-rather-than-calling-symfonys-truncate) |
+| [`prefix()` / `suffix()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | — |
+| `html()` / `markdown()` — the sanitizer pass | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | [detail](#html--markdown-need-a-sanitizer-decision) |
 | `date()` / `dateTime()` / `time()` / `since()` and the `iso*` variants, `timezone()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
 | `money()` / `numeric()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
 | `badge()` — the badge shell | [`TextColumn::badge()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`View\Components\BadgeComponent`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | todo | — | — |
@@ -68,18 +71,24 @@ sections do.
 | Lists — `bulleted()`, `listWithLineBreaks()`, `limitList()`, `expandableLimitedList()` | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | todo | [`separator()`](column.md) | [diverges](#an-iterable-state-renders-as-one-comma-joined-line-and-nothing-else) |
 | _rest not audited yet_ | | | | |
 
-The three state-pipeline rows are covered by
-[`TextColumnTest`](../../../packages/tables/tests/Unit/Columns/TextColumnTest.php)
-— unformatted state passing through, a format closure receiving both `$state` and
-`$record`, and a literal `formatStateUsing('fixed')` displacing the state. The
-`$template` row is covered by the Integration
+The state-pipeline rows are covered by
+[`CanFormatStateTest`](../../../packages/tables/tests/Unit/Columns/Concerns/CanFormatStateTest.php)
+— the array-to-JSON coercion, the `HasLabel` unwrap, character and word
+truncation (including the ellipsis-after-length and trailing-whitespace-trim
+cases), prefix/suffix concatenation, and the state/affix markup-escaping
+matrix — plus
+[`TextColumnTest`](../../../packages/tables/tests/Unit/Columns/TextColumnTest.php)'s
+three pre-pipeline cases: unformatted state passing through, a format closure
+receiving both `$state` and `$record`, and a literal `formatStateUsing('fixed')`
+displacing the state. The `$template` row is covered by the Integration
 [`TextColumnTest`](../../../packages/tables/tests/Integration/Columns/TextColumnTest.php),
 which renders columns inside a real table and reads the cells back through a
 `DomCrawler` selecting the full chain
 (`td.sy-ta-cell > div.sy-ta-col > div.sy.sy-ta-text`), so the element carrying
 the state is the asserted one: a dotted path and a `formatStateUsing()` closure
-landing in the text element, an iterable state arriving comma-joined, and a null
-state rendering the element empty rather than dropping it.
+landing in the text element, and a null state rendering the element empty
+rather than dropping it. Its iterable-state case is presently skipped — see
+[the divergence](#an-iterable-state-renders-as-one-comma-joined-line-and-nothing-else).
 
 ## Details
 
@@ -87,22 +96,16 @@ Specifics for rows that are not finished — what is already in, what is left, a
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
 
-### `formatState()` is the hook without the pipeline around it
+### `html()` / `markdown()` need a sanitizer decision
 
-Filament's `formatState()` is ~60 lines: the `formatStateUsing` evaluation is
-one hop inside it, wrapped by an array-to-JSON coercion, the `HasLabel`
-enum-label unwrap, a `RichContentAttribute` / `Htmlable` / markdown branch that
-runs `Str::sanitizeHtml()`, character and word truncation, prefix and suffix
-concatenation with per-branch escaping, and a final `HtmlString` wrap.
-
-Sylament ports the hop and nothing around it — every one of those steps is a
-setter whose row is above and unported, so there is nothing yet for the pipeline
-to do. Two of them are the load-bearing ones and will not be inlined the Filament
-way when they land: `html()`/`markdown()` need a sanitizer decision
-(`symfony/html-sanitizer` is not a dependency of any bundle today), and the
-`HtmlString` wrap is [`Twig\Markup`](../renames.md#idiom) here, which the
-templates already pass through unescaped. Until then a format callback returning
-`Markup` is the escape hatch, and it works today.
+Filament runs a `RichContentAttribute` / `Htmlable` / markdown branch through
+`Str::sanitizeHtml()` before the state reaches the template. Sylament has
+ported neither setter: `symfony/html-sanitizer` is not a dependency of any
+bundle today, and picking it (or an alternative) is left for when these two
+land. Until then, a format callback returning [`Markup`](../renames.md#idiom)
+is the escape hatch — the pipeline skips truncation for a `Markup` state and
+escapes any plain affix concatenated against it, so the hatch composes with
+the rest of `formatState()` rather than bypassing it.
 
 ## Semantics
 
@@ -185,6 +188,47 @@ and `evaluate()` returns a non-closure untouched, so the widening costs nothing
 and the narrower type here was the odd one out. Every closure Filament accepts
 still works unchanged; only previously-rejected literals are new.
 
+### `limit()` composes `slice()` rather than calling Symfony's `truncate()`
+
+`AbstractString::truncate($length, $ellipsis)` counts the ellipsis *toward*
+`$length` — it slices to `$length - mb_strlen($ellipsis)` characters before
+appending it, so `truncate(30, '...')` returns 30 characters total. Laravel's
+`Str::limit()` — which Filament calls, and whose semantics this port
+preserves — appends the ellipsis *after* the slice, so `limit(30)` returns 30
+characters **plus** the ellipsis. Calling `truncate()` here would silently
+cost a migrating Filament user three characters per cell, so `truncateState()`
+composes `slice()` / `trimEnd()` / `append()` by hand instead —
+[`CanFormatStateTest`](../../../packages/tables/tests/Unit/Columns/Concerns/CanFormatStateTest.php)
+pins the difference.
+
+A second, inherited delta rides along. Laravel's `Str::limit()` truncates by
+*display width* (`mb_strwidth()` — a fullwidth CJK character consumes two
+units of the limit), where Sylament's `u($state)->length()` / `slice()` count
+*grapheme clusters* (`grapheme_strlen()` / `grapheme_substr()`) — one unit per
+user-perceived character regardless of display width, which is not the same
+thing as a raw code-point count either. A migrating Filament user with CJK
+cell content gets roughly twice as many characters into the same numeric
+`limit()` here as Laravel gave them. Faithful to `Str::limit()`'s
+*ellipsis-placement*, not its *width-counting* — the two are independent
+behaviours, and only one made the port.
+
+### `formatState()` throws for a state it cannot stringify
+
+Filament never explicitly casts state to a string — `formatState()` passes it
+untouched into `Str::limit()`, string concatenation, and eventually Blade's
+`{{ }}`, so an object with no `__toString()` reaching that far fails wherever
+PHP's implicit string coercion first runs: uncontrolled, and with no column
+named in the error. Sylament's pipeline casts once, explicitly (`(string)
+$state`, ahead of truncation and affixing), and PHPStan level max will not let
+that cast stand for a `mixed`-typed value without proof it is safe.
+`formatState()` checks `is_scalar($state) || $state instanceof Stringable`
+immediately before the cast and throws a `LogicException` naming the column
+when neither holds — the same [fail-fast rule](../../../CLAUDE.md) already
+applied to `color()`/`icon()`'s `true` arm below. A scalar, a `Stringable`
+(including `Markup`), an array (already coerced to JSON above) or a
+`HasLabel` (already unwrapped above) never reach the check; only a genuinely
+unstringable object does.
+
 ### `hasStateFormatting()` has nothing to guard
 
 Filament's `hasStateFormatting()` reports whether *any* of twelve formatting
@@ -201,6 +245,13 @@ getter, not a PHP method with a dozen inline steps. If the pipeline ever grows
 expensive enough to matter, the memo belongs on `getFormattedState()` — one
 place, no property list to keep in sync.
 
+Reassessed when `formatState()` grew from a null check plus one `evaluate()`
+into the full truncation/affix/label pipeline — six more properties now back
+it beside `formatStateUsing` (`characterLimit`, `characterLimitEnd`,
+`wordLimit`, `wordLimitEnd`, `prefix`, `suffix`). The guard would have more to
+check than before, but the branch it would optimise is still a Twig template
+reading one getter, not a hot inline path, so the row stays **skipped**.
+
 ### An iterable state renders as one comma-joined line, and nothing else
 
 Filament's cell has four list shapes: a multi-value state collapses to a single
@@ -211,18 +262,32 @@ trigger. Sylament's partial ships the default arm only — one
 `div.sy.sy-ta-text` holding `state is iterable ? state|join(', ') : state` — and
 the other three have no setter to reach them.
 
-The collapse is the faithful half, and it is worth naming that it is Filament's
-*default*, not a simplification: a `TextColumn` over `['symfony', 'forms']`
-renders `symfony, forms` in both codebases. What the Twig one-liner cannot do is
-branch on the three flags, and it does not pretend to — a `join` is the whole
-behaviour, not a placeholder shaped like one.
+The collapse was meant to be the faithful half, and it is still worth naming
+*why* it is Filament's *default* rather than a simplification: a `TextColumn`
+over `['symfony', 'forms']` renders `symfony, forms` in Filament because
+`toEmbeddedHtml()` reduces the column's state to one item per list entry
+*before* any item reaches `formatState()` — the array `formatState()` itself
+ever coerces to JSON is always a single item's own value (a JSON column, say),
+never the column's whole list. Sylament's template has no such split: it reads
+`component.getFormattedState`, i.e. `formatState()` run once over the *whole*
+column state, so the array-to-JSON coercion `formatState()` grew for the
+single-item case now intercepts a multi-item list too — a `TextColumn` over
+`['symfony', 'forms']` currently renders `["symfony","forms"]` here, not
+`symfony, forms`. What the Twig one-liner cannot do is branch on the three
+list flags, and it does not pretend to — that part is unchanged.
 
-Provisional. The three list setters are a **todo** row above, blocked on
-[`separator()`](column.md), and when they land the join moves out of the template
-into the formatting pipeline where the branch belongs — a template cannot express
-per-item formatting, which `listWithLineBreaks()` and `bulleted()` both need
-(Filament re-enters `$formatState` per item). Until then, a consumer wanting a
-different join writes `formatStateUsing()`, which receives the raw iterable.
+Provisional, and presently regressed. The three list setters are a **todo**
+row above, blocked on [`separator()`](column.md), and when they land — with a
+per-item state accessor alongside them — the join moves out of the template
+into the formatting pipeline where the branch belongs, and it stops competing
+with the single-item JSON coercion. A template cannot express per-item
+formatting, which `listWithLineBreaks()` and `bulleted()` both need (Filament
+re-enters `$formatState` per item). Until then, even the *default* join needs
+a hand-written `formatStateUsing()` that receives the raw iterable and joins
+it itself (`fn (array $state): string => implode(', ', $state)`) — the same
+escape hatch a consumer wanting a *different* join already reached for. The
+Integration suite carries this as a named, skipped case rather than a passing
+assertion in the meantime.
 
 ### An explicit `true` colour or icon throws, where Filament lets it through and crashes
 

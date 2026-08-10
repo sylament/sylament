@@ -78,7 +78,7 @@ not here.
 | [`CanGrow`](../../../packages/support/src/Components/Concerns/CanGrow.php) | [`Concerns/CanGrow.php`](../../../vendor/filament/support/src/Concerns/CanGrow.php) | done | — |
 | [`CanOrderColumns`](../../../packages/support/src/Components/Concerns/CanOrderColumns.php) | [`Concerns/CanOrderColumns.php`](../../../vendor/filament/support/src/Concerns/CanOrderColumns.php) | done | — |
 | [`CanSpanColumns`](../../../packages/support/src/Components/Concerns/CanSpanColumns.php) | [`Concerns/CanSpanColumns.php`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | [can-span-columns.md](can-span-columns.md) |
-| CanWrap | [`Concerns/CanWrap.php`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | todo | — |
+| [`CanWrap`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`Concerns/CanWrap.php`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — |
 | CanWrapHeader | [`Concerns/CanWrapHeader.php`](../../../vendor/filament/support/src/Concerns/CanWrapHeader.php) | todo | — |
 | [`HasAlignment`](../../../packages/support/src/Components/Concerns/HasAlignment.php) | [`Concerns/HasAlignment.php`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | [has-alignment.md](has-alignment.md) |
 | HasBadge | [`Concerns/HasBadge.php`](../../../vendor/filament/support/src/Concerns/HasBadge.php) | todo | — |
@@ -94,7 +94,7 @@ not here.
 | [`HasIconColor`](../../../packages/support/src/Components/Concerns/HasIconColor.php) | [`Concerns/HasIconColor.php`](../../../vendor/filament/support/src/Concerns/HasIconColor.php) | done | — |
 | [`HasIconPosition`](../../../packages/support/src/Components/Concerns/HasIconPosition.php) | [`Concerns/HasIconPosition.php`](../../../vendor/filament/support/src/Concerns/HasIconPosition.php) | done | — |
 | [`HasIconSize`](../../../packages/support/src/Components/Concerns/HasIconSize.php) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — |
-| HasLineClamp | [`Concerns/HasLineClamp.php`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | todo | — |
+| [`HasLineClamp`](../../../packages/support/src/Components/Concerns/HasLineClamp.php) | [`Concerns/HasLineClamp.php`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | done | — |
 | HasPlaceholder | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | todo | — |
 | HasReorderAnimationDuration | [`Concerns/HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php) | todo | — |
 | [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — |
@@ -115,14 +115,23 @@ services, root value classes, translations, and the bundle wiring —
 [`src/View`](../../../vendor/filament/support/src/View),
 [`src/Commands`](../../../vendor/filament/support/src/Commands).
 
-Two unrelated interfaces are both called `HasColor`, and only one of them is
-ported. **`Contracts/HasColor.php`** is the *enum* contract — one method,
-`getColor(): string|array|null`, implemented by a user's status enum so a table
-column can colour itself — and it stays **todo**, with no consumer until tables.
-**`View/Components/Contracts/HasColor.php`** is the contract every contrast
-policy implements (`getColorMap()`); it shipped with the colour registry and is
-tracked in [color-policies.md](color-policies.md). The row below is the first
-one.
+Three symbols in this package share the name `HasColor`, and Filament collides
+the same way. **[`Components\Concerns\HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php)**
+is the fluent setter trait a component uses (`color()` / `defaultColor()` /
+`getColor()`); it is tracked in the [Features](#features) table above.
+**[`Colors\Contracts\HasColor`](../../../packages/support/src/Colors/Contracts/HasColor.php)**
+is the policy contract every contrast policy implements (`getColorMap()`); it
+shipped with the colour registry and is tracked in
+[color-policies.md](color-policies.md). **`Contracts\HasColor`** — the row
+below — is the *state* contract: one method, `getColor(): string|array|null`,
+meant for a user's status enum so a table column can colour itself from record
+state; it has no consumer in this package yet. Filament carries the same two
+contracts (`Support\Contracts\HasColor` and
+`Support\View\Components\Contracts\HasColor`) and hits the same clash one level
+up: its `forms` and `infolists` packages each ship a `Concerns/HasColor.php`
+setter trait that needs the enum contract, and both import it
+`as ColorInterface` — unaliased, the `use` would collide with the trait's own
+declaration of the same unqualified name.
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -141,10 +150,10 @@ one.
 | VerticalAlignment | [`Enums/VerticalAlignment.php`](../../../vendor/filament/support/src/Enums/VerticalAlignment.php) | todo | — |
 | Width | [`Enums/Width.php`](../../../vendor/filament/support/src/Enums/Width.php) | todo | — |
 | Collapsible | [`Contracts/Collapsible.php`](../../../vendor/filament/support/src/Contracts/Collapsible.php) | todo | — |
-| HasColor (enum contract) | [`Contracts/HasColor.php`](../../../vendor/filament/support/src/Contracts/HasColor.php) | todo | — |
+| [`HasColor` (state contract)](../../../packages/support/src/Contracts/HasColor.php) | [`Contracts/HasColor.php`](../../../vendor/filament/support/src/Contracts/HasColor.php) | done | — |
 | HasDescription | [`Contracts/HasDescription.php`](../../../vendor/filament/support/src/Contracts/HasDescription.php) | todo | — |
-| HasIcon (contract) | [`Contracts/HasIcon.php`](../../../vendor/filament/support/src/Contracts/HasIcon.php) | todo | — |
-| HasLabel | [`Contracts/HasLabel.php`](../../../vendor/filament/support/src/Contracts/HasLabel.php) | todo | — |
+| [`HasIcon` (contract)](../../../packages/support/src/Contracts/HasIcon.php) | [`Contracts/HasIcon.php`](../../../vendor/filament/support/src/Contracts/HasIcon.php) | done | — |
+| [`HasLabel`](../../../packages/support/src/Contracts/HasLabel.php) | [`Contracts/HasLabel.php`](../../../vendor/filament/support/src/Contracts/HasLabel.php) | done | — |
 | LoadingIndicator | [`Contracts/LoadingIndicator.php`](../../../vendor/filament/support/src/Contracts/LoadingIndicator.php) | todo | — |
 | [`ScalableIcon`](../../../packages/support/src/Contracts/ScalableIcon.php) | [`Contracts/ScalableIcon.php`](../../../vendor/filament/support/src/Contracts/ScalableIcon.php) | done | — |
 | TranslatableContentDriver | [`Contracts/TranslatableContentDriver.php`](../../../vendor/filament/support/src/Contracts/TranslatableContentDriver.php) | todo | — |

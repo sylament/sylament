@@ -111,12 +111,53 @@ it('renders size, weight, font family, wrap and line clamp', function (): void {
         ->and($item->attr('style'))->toContain('--sy-line-clamp: 2');
 });
 
+/*
+ * Ordering, not presence: the content is a text node, so `children()` holds the one
+ * `<svg>` either way and an assertion over it passes for both positions. Reading the
+ * item's inner HTML is what distinguishes them — deleting either branch of the
+ * template's position check fails exactly one of the two expectations below.
+ */
 it('renders an icon before or after the content', function (): void {
+    $itemHtml = function (string $position): string {
+        $host = new TableHost(fn (Table $table): Table => $table
+            ->records(fn (): array => [['title' => 'Airbag']])
+            ->columns([TextColumn::make('title')->icon('heroicons:x-mark')->iconPosition($position)]));
+
+        return new Crawler(renderToHtml($host->getTable()))
+            ->filter('div.sy-ta-text > span.sy-ta-text-item')
+            ->html();
+    };
+
+    expect($itemHtml('before'))->toStartWith('<svg')
+        ->and($itemHtml('before'))->toEndWith('Airbag')
+        ->and($itemHtml('after'))->toStartWith('Airbag')
+        ->and($itemHtml('after'))->toEndWith('</svg>');
+});
+
+it('renders a badged icon inside the badge, not beside it', function (): void {
     $host = new TableHost(fn (Table $table): Table => $table
         ->records(fn (): array => [['title' => 'Airbag']])
-        ->columns([TextColumn::make('title')->icon('heroicons:x-mark')->iconPosition('after')]));
+        ->columns([TextColumn::make('title')->badge()->icon('heroicons:x-mark')]));
 
     $item = new Crawler(renderToHtml($host->getTable()))->filter('div.sy-ta-text > span.sy-ta-text-item');
 
-    expect($item->children()->last()->nodeName())->toBe('svg');
+    expect($item->children()->count())->toBe(1)
+        ->and($item->children()->first()->nodeName())->toBe('span')
+        ->and($item->filter('span.sy-badge > svg')->count())->toBe(1)
+        ->and($item->filter('svg')->count())->toBe(1);
+});
+
+it('drops a blank description and the layout class it would flip', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->records(fn (): array => [['title' => 'Airbag']])
+        ->columns([
+            TextColumn::make('title')
+                ->description('   ', position: 'above')
+                ->description(''),
+        ]));
+
+    $cell = new Crawler(renderToHtml($host->getTable()))->filter('div.sy-ta-text');
+
+    expect($cell->attr('class'))->not->toContain('sy-ta-text-has-descriptions')
+        ->and($cell->filter('p.sy-ta-text-description')->count())->toBe(0);
 });

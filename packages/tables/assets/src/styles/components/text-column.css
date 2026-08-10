@@ -5,7 +5,11 @@
         @apply flex flex-col;
 
         &.sy-ta-text-has-badges {
-            @apply gap-y-2;
+            @apply flex-row flex-wrap gap-x-1.5 gap-y-2;
+
+            & > .sy-ta-text-description {
+                @apply w-full;
+            }
         }
 
         &:not(.sy-ta-text-has-badges) {

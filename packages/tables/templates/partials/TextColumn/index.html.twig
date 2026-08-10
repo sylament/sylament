@@ -2,9 +2,9 @@
 {% set isBadge = component.isBadge %}
 {% set descriptionAbove = component.getDescriptionAbove %}
 {% set descriptionBelow = component.getDescriptionBelow %}
-{% set hasDescriptions = descriptionAbove is not null or descriptionBelow is not null %}
+{% set hasDescriptions = descriptionAbove is filled or descriptionBelow is filled %}
 {% set lineClamp = component.getLineClamp %}
-{% set iconPosition = component.getIconPosition.value %}
+{% set iconPositionValue = component.getIconPosition.value %}
 {% set fontFamilyClass = component.getFontFamilyClass %}
 {% set weightClass = component.getWeightClass %}
 {% set alignmentClass = component.getAlignmentClass %}
@@ -19,23 +19,25 @@
         hasDescriptions ? 'sy-ta-text-has-descriptions' : null,
     ],
 }) }}>
-    {%- if descriptionAbove is not null -%}
+    {%- if descriptionAbove is filled -%}
         <p class="sy-ta-text-description">{{ descriptionAbove }}</p>
     {%- endif -%}
 
     {%- for item in items -%}
         {%- set itemColor = component.getColor(item.state) -%}
-        {%- set size = component.getSize(item.state) -%}
-        {%- set sizeValue = size.value ?? size -%}
+        {%- set itemSize = component.getSize(item.state) -%}
+        {%- set itemSizeValue = itemSize.value ?? itemSize -%}
+        {%- set itemIcon = component.getIcon(item.state) -%}
+        {%- set itemIconSize = itemSizeValue in ['md', 'lg'] ? itemSizeValue : 'sm' -%}
         {%- set iconColorAttrs = colorAttributes('Sylament\\Tables\\Colors\\Components\\TextColumnComponent\\IconComponent', component.getIconColor(item.state)) -%}
-        {%- set iconHtml = generateIconHtml(
-            component.getIcon(item.state),
+        {%- set iconHtml = isBadge ? null : generateIconHtml(
+            itemIcon,
             attributes: {
                 'aria-hidden': 'true',
                 class: iconColorAttrs.class,
                 style: iconColorAttrs.style,
             },
-            size: sizeValue in ['md', 'lg'] ? sizeValue : 'sm',
+            size: itemIconSize,
         ) -%}
         {%- set itemColorAttrs = isBadge
             ? {class: [], style: []}
@@ -54,19 +56,23 @@
                 itemColorAttrs.style,
             ],
         }) }}>
-            {%- if iconHtml and iconPosition == 'before' -%}{{ iconHtml }}{%- endif -%}
-
             {%- if isBadge -%}
-                <twig:SylamentSupport:Badge :color="itemColor ?? 'primary'" :size="sizeValue">{{- item.content -}}</twig:SylamentSupport:Badge>
+                <twig:SylamentSupport:Badge
+                    :color="itemColor ?? 'primary'"
+                    :size="itemSizeValue"
+                    :icon="itemIcon"
+                    :iconSize="itemIconSize"
+                    :iconPosition="iconPositionValue"
+                >{{- item.content -}}</twig:SylamentSupport:Badge>
             {%- else -%}
+                {%- if iconHtml and iconPositionValue == 'before' -%}{{ iconHtml }}{%- endif -%}
                 {{- item.content -}}
+                {%- if iconHtml and iconPositionValue == 'after' -%}{{ iconHtml }}{%- endif -%}
             {%- endif -%}
-
-            {%- if iconHtml and iconPosition == 'after' -%}{{ iconHtml }}{%- endif -%}
         </span>
     {%- endfor -%}
 
-    {%- if descriptionBelow is not null -%}
+    {%- if descriptionBelow is filled -%}
         <p class="sy-ta-text-description">{{ descriptionBelow }}</p>
     {%- endif -%}
 </div>

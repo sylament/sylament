@@ -64,11 +64,11 @@ sections do.
 | `html()` / `markdown()` — the sanitizer pass | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | [detail](#html--markdown-need-a-sanitizer-decision) |
 | `date()` / `dateTime()` / `time()` / `since()` and the `iso*` variants, `timezone()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
 | `money()` / `numeric()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
-| [`badge()`](../../../packages/tables/src/Columns/TextColumn.php) — the badge shell | [`TextColumn::badge()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`View\Components\BadgeComponent`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | done | — | — |
-| [`color()`](../../../packages/tables/src/Columns/Concerns/HasColor.php) / [`icon()` / `iconPosition()`](../../../packages/tables/src/Columns/Concerns/HasIcon.php) / [`iconColor()`](../../../packages/tables/src/Columns/Concerns/HasIconColor.php) | [`Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php), [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php), [`HasIconColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | done | — | [semantics](#the-colour-and-icon-maps-resolve-last-match-wins-and-false-suppresses-the-state-contract-fallback) · [semantics](#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon) · [diverges](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes) |
+| [`badge()`](../../../packages/tables/src/Columns/TextColumn.php) — the badge shell | [`TextColumn::badge()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`View\Components\BadgeComponent`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | done | — | [diverges](#a-badged-icon-goes-through-the-badges-own-props-and-loses-iconcolor-doing-it) · [diverges](#badges-and-descriptions-share-one-wrapping-flex-line-where-filament-nests-a-list) |
+| [`color()`](../../../packages/tables/src/Columns/Concerns/HasColor.php) / [`icon()` / `iconPosition()`](../../../packages/tables/src/Columns/Concerns/HasIcon.php) / [`iconColor()`](../../../packages/tables/src/Columns/Concerns/HasIconColor.php) | [`Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php), [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php), [`HasIconColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | done | — | [semantics](#the-colour-and-icon-maps-resolve-last-match-wins-and-false-suppresses-the-state-contract-fallback) · [semantics](#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon) · [diverges](#a-badged-icon-goes-through-the-badges-own-props-and-loses-iconcolor-doing-it) · [diverges](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes) |
 | [`description()` — the secondary line above or below](../../../packages/tables/src/Columns/Concerns/HasDescription.php) | [`Columns\Concerns\HasDescription`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php) | done | — | — |
 | [`size()`](../../../packages/tables/src/Columns/TextColumn.php) / [`weight()`](../../../packages/support/src/Components/Concerns/HasWeight.php) / [`fontFamily()`](../../../packages/support/src/Components/Concerns/HasFontFamily.php) / [`lineClamp()`](../../../packages/support/src/Components/Concerns/HasLineClamp.php) | [`TextColumn::size()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php), [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php), [`HasLineClamp`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | done | — | [diverges](#weight-and-fontfamily-are-column-level-where-filaments-are-per-item) |
-| [`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — | — |
+| [`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — | [diverges](#badges-and-descriptions-share-one-wrapping-flex-line-where-filament-nests-a-list) |
 | `copyable()` | [`CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | todo | — | — |
 | Lists — `bulleted()`, `listWithLineBreaks()`, `limitList()`, `expandableLimitedList()` | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | todo | [`separator()`](column.md) | [diverges](#an-iterable-state-renders-as-one-comma-joined-line-and-nothing-else) |
 | _rest not audited yet_ | | | | |
@@ -92,8 +92,16 @@ landing in the cell, an iterable state joining into one, a null state rendering
 the outer element empty rather than dropping it, and — reaching one level
 deeper, into the `span.sy-ta-text-item` the partial always emits — a badge per
 value carrying its colour classes, the descriptions bracketing the item above
-and below, the size/weight/font-family classes with the line-clamp variable, and
-an icon rendering after the content.
+and below, the size/weight/font-family classes with the line-clamp variable, the
+badged icon landing **inside** the badge rather than beside it, and a blank
+description dropping both its `<p>` and the layout class it would otherwise flip.
+
+The icon-position case reads the item's inner HTML rather than its element
+children, and that is deliberate: the content is a *text node*, so
+`children()` holds the one `<svg>` whichever side it renders on and an assertion
+over it passes for both orderings. It asserts `before` and `after` against the
+same column, each pinned at both ends of the markup — deleting either arm of the
+template's position check fails exactly one of them.
 
 The two colour policies the partial names have their rows in the
 [package README](README.md#supporting-surface) rather than here, per
@@ -278,6 +286,78 @@ having to work in both roles; and a template with no branch — the merged arm i
 where Filament's method needs `$stateItemAttributes` merged into `$attributes`
 before either is rendered, which a Twig template would have to express as a
 second copy of the markup.
+
+### Badges and descriptions share one wrapping flex line, where Filament nests a list
+
+Filament's cell keeps badges in a row *and* stacks descriptions because the two
+live at different depths: the outer `div` is `flex flex-col`, and the badge items
+sit inside a `<ul>` it contains, which the stylesheet gives `flex gap-x-1.5`
+(`ul&.fi-ta-text-has-badges, &.fi-ta-text-has-badges ul`). This port emits no
+such wrapper — the
+[one-shape rule](#the-item-element-is-never-merged-into-the-outer-div) puts every
+item directly under the outer `div` — so a flex-column container would stack the
+badges too, one per line.
+
+`text-column.css` resolves it in CSS rather than by reintroducing the wrapper:
+with both classes present the container is `flex-row flex-wrap` with
+`gap-x-1.5 gap-y-2`, and `& > .sy-ta-text-description` takes `w-full` so each
+description claims a line of its own while the badges flow along the line between
+them. Same visual result as Filament's `<ul>`, one element fewer, and no branch
+in the template.
+
+The wrap is not optional in this arrangement, and that is the one behavioural
+delta: `flex-wrap: nowrap` would put the descriptions back on the badge line,
+because a `width: 100%` flex item cannot force a line break in a non-wrapping
+container. So a badged cell **with descriptions** wraps its badges regardless of
+[`wrap()`](../../../packages/support/src/Components/Concerns/CanWrap.php), where
+Filament's would overflow the cell instead; the badges-without-descriptions case
+still honours `sy-wrapped` exactly as Filament does. Overflow is the worse of the
+two failure modes, so this is not treated as a regression to fix — but it is the
+reason `wrap()` looks inert on that one combination.
+
+### A badged icon goes through the `Badge`'s own props, and loses `iconColor()` doing it
+
+Filament builds the badge span by hand inside `toEmbeddedHtml()` and encloses
+`iconBefore` / content / `iconAfter` within it
+([`TextColumn.php:454-467`](../../../vendor/filament/tables/src/Columns/TextColumn.php)),
+so the icon it renders for the plain case is the same object it drops inside the
+pill — colour attributes and all. The port renders badges through the real
+[`Badge`](../support/badge.md) component instead, so the badged branch passes
+`icon`, `iconSize` and `iconPosition` to its props and lets it place the icon
+beside its own label container. Structure matches Filament exactly; one thing
+does not survive the handoff.
+
+**`iconColor()` has no effect on a badged column.** Support's `Badge` declares
+`icon`, `iconAlias`, `iconSize` and `iconPosition` but no icon *colour*, and its
+[`badge.css`](../../../packages/support/assets/src/styles/components/badge.css)
+has no counterpart to Filament's `& .fi-icon.fi-color { @apply text-color-500; }`
+— so even a coloured icon handed to it would land on an element no rule reads.
+Both halves have to move together to close this: an `iconColor` prop feeding
+`colorAttributes()` into the `Badge`'s `generateIconHtml()` call, and the missing
+`.sy-icon.sy-color` rule in support's badge stylesheet. Until then a badged icon
+takes the badge's own text colour, which is what
+`.sy-badge:not(.sy-color) .sy-icon` and the coloured badge's inherited
+`text-(--sy-text)` already give it — reasonable output, not the configured one.
+`iconColor()` on a **non**-badged column is unaffected and fully live.
+
+One consequence is a selector Filament needs and this port does not. Filament
+writes `& > .fi-icon, & > span:not(.fi-badge) > .fi-icon` because its item can
+hold a wrapper span that is *sometimes* the badge, so the icon rule has to
+exclude that case by name. Here the plain icon is a direct child of
+`.sy-ta-text-item` and the badged icon is two levels down inside `.sy-badge`, so
+the child combinator in `& > .sy-icon` excludes it structurally and no `:not()`
+is needed. Pinned by the Integration case asserting the item has exactly one
+element child and the `<svg>` sits under `span.sy-badge`.
+
+A second, smaller thing was checked while resolving this and is worth recording
+so it is not re-litigated: the partial's locals are named `itemIcon`,
+`itemIconSize`, `itemSizeValue` and `iconPositionValue` rather than `icon`,
+`iconSize`, `size` and `iconPosition` **only** to keep the pass-through
+mutation-detectable. A `{% props %}`-declared prop is *not* filled from the
+calling template's context — verified by renaming the local back to `icon` and
+deleting the `:icon` attribute, which renders no icon at all — so the collision
+was never load-bearing. The names remove the question permanently rather than
+leaving the next reader to re-run that probe.
 
 ### The item policy measures the dark surface against `gray-900`
 

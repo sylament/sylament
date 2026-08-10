@@ -2,11 +2,11 @@
 
 `Sylament\Actions\Action` — the base class every actions-package action
 extends. It composes `Sylament\Support\Components\ViewComponent` (Twig-backed
-rendering) and folds in 18 actions-package concerns — `BelongsToLiveComponent`,
-`CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`, `CanClose`, `CanNotify`,
-`CanOpenModal`, `CanOpenUrl`, `CanRequireConfirmation`, `HasAction`,
-`HasArguments`, `HasGroupedIcon`, `HasLabel`, `HasLifecycleHooks`,
-`HasMountableArguments`, `HasName`, `HasSize`,
+rendering) and folds in 19 actions-package concerns — `BelongsToLiveComponent`,
+`CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`, `CanClose`, `CanDispatchEvent`,
+`CanNotify`, `CanOpenModal`, `CanOpenUrl`, `CanRequireConfirmation`,
+`HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`,
+`HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasSize`,
 `InteractsWithRecord` — each a
 Surface row below with its own detail/divergence spliced in from its own
 audit. It also composes three multi-consumer actions-package concerns tracked
@@ -71,6 +71,8 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanBeHidden`](../../../packages/actions/src/Concerns/CanBeHidden.php) | [`Concerns/CanBeHidden.php`](../../../vendor/filament/actions/src/Concerns/CanBeHidden.php) | in progress | CanBeAuthorized, ActionGroup, BelongsToTable | [detail](#canbehidden-omits-authorization-group-and-table-cache-integration) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | [diverges](#outlined-styling-is-a-state-class-not-a-color-map) |
 | [`CanClose`](../../../packages/actions/src/Concerns/CanClose.php) | [`Concerns/CanClose.php`](../../../vendor/filament/actions/src/Concerns/CanClose.php) | done | — | [diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
+| [`CanDispatchEvent`](../../../packages/actions/src/Concerns/CanDispatchEvent.php) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | done | — | Filament-exact port of the whole non-deprecated surface. `dispatch()` / `dispatchSelf()` / `dispatchTo()` store the event and its payload and stamp `$dispatchDirection` — `false` for a plain dispatch, `'self'`, `'to'` — with only `dispatchTo()` recording a target component; both directed setters route through `dispatch()` first, so a re-`dispatch()` after them resets the direction to `false` exactly as upstream. `eventData()` sets the payload alone, and `getEvent()` / `getEventData()` evaluate at read time, so a closure sees the action's state when it is read rather than when it was declared. Composed onto `Action` only — vendor's `ActionGroup` composes it nowhere either. No consumer reads the getters yet. Covered by [`CanDispatchEventTest`](../../../packages/actions/tests/Unit/Concerns/CanDispatchEventTest.php) |
+| `emit()` / `emitSelf()` / `emitTo()` (deprecated) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | skipped | — | [diverges](#the-deprecated-emit-aliases-are-not-ported) |
 | [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | notifications package | [detail](#cannotify-only-ports-notification-titles-not-sending) |
 | [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
 | [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-drops-the-default-action-url-fallback) |
@@ -864,10 +866,11 @@ siblings that *have* landed so the list cannot silently go stale:
 - **Rate limiting & transactions**: `CanBeRateLimited`,
   `CanUseDatabaseTransactions` (see the `cancel()`/`halt()` rollback-flag
   detail above).
-- **Redirect/dispatch/mark conveniences**: `CanRedirect`, `CanDispatchEvent`,
+- **Redirect/dispatch/mark conveniences**: `CanRedirect`,
   `markAsRead()`/`markAsUnread()`, `livewireTarget()`, custom
-  `alpineClickHandler()`/`actionJs()` (the port's click wiring is the single
-  `live_action('mountAction', …)` call baked into the template).
+  `alpineClickHandler()`/`actionJs()` — the port's click wiring is the single
+  `live_action('mountAction', …)` call baked into the template
+  (`CanDispatchEvent` is ported, with a Surface row above).
 - **Rendering variants**: `HasBadge`, `HasBadgeTooltip`,
   `CanBeLabeledFrom`, and the `toArray()`/`fromArray()` serialization pair
   (folded into the view-switch divergence above).
@@ -1026,6 +1029,18 @@ place: `Action/IconButton.html.twig` suppresses click wiring for a **disabled**
 action as well as a URL-bearing one, where its four siblings emit the binding
 and lean on the rendered `disabled` attribute. Both bindings on that template
 read one hoisted `clickWiringSuppressed` flag so they cannot drift apart again.
+
+### The deprecated `emit*` aliases are not ported
+
+Filament's `CanDispatchEvent` carries three `@deprecated` aliases —
+`emit()`, `emitSelf()` and `emitTo()` — each a one-line forward to its
+`dispatch*` twin, kept for callers written against the older `emit` vocabulary.
+The port carries the three `dispatch*` methods and nothing else: Sylament has no
+deprecation-shim policy, and a fresh codebase has no older vocabulary to keep
+compatible with — the same call already made for
+[`disableLabel()`](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported),
+`CanNotify`'s `*NotificationMessage()` pair, and `HasData`'s `*FormData*` pair.
+Nothing is lost, since every alias's target is ported. Stays out regardless.
 
 ### HasGroupedIcon narrows its icon type to string
 

@@ -17,10 +17,10 @@ source) to a real [status](../README.md#statuses) — **done**, **in progress**,
 gap, or real sub-structure earns one. A plain-text name is not built yet and
 stays **todo**.
 
-The 20 concerns Filament composes onto the `Action` base —
+The 21 concerns Filament composes onto the `Action` base —
 `BelongsToLiveComponent`, `CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`,
-`CanCallParentAction`, `CanClose`, `CanNotify`, `CanOpenModal`, `CanOpenUrl`,
-`CanRequireConfirmation`,
+`CanCallParentAction`, `CanClose`, `CanDispatchEvent`, `CanNotify`,
+`CanOpenModal`, `CanOpenUrl`, `CanRequireConfirmation`,
 `HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`,
 `HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasParentActions`,
 `HasSize`, and
@@ -85,7 +85,7 @@ service provider live in [Supporting surface](#supporting-surface).)
 
 Cross-cutting action concerns — [`src/Concerns`](../../../vendor/filament/actions/src/Concerns).
 Most are mixed onto the `Action` base; the `InteractsWith*` traits are host-side
-(mixed onto the Livewire / LiveComponent page that mounts actions). The 20
+(mixed onto the Livewire / LiveComponent page that mounts actions). The 21
 concerns `Action` composes are folded into [`action.md`](action.md) and no longer
 carry rows here — the remaining rows are the not-yet-started concerns, the
 host-side `HasActions` trait, and the two-method extra-modal-attribute traits
@@ -113,7 +113,6 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 | CanBeSorted | [`Concerns/CanBeSorted.php`](../../../vendor/filament/actions/src/Concerns/CanBeSorted.php) | todo | - |
 | CanCustomizeProcess | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | todo | - |
 | CanDeselectRecordsAfterCompletion | [`Concerns/CanDeselectRecordsAfterCompletion.php`](../../../vendor/filament/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php) | todo | - |
-| CanDispatchEvent | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | todo | - |
 | CanExportRecords | [`Concerns/CanExportRecords.php`](../../../vendor/filament/actions/src/Concerns/CanExportRecords.php) | todo | - |
 | CanFetchSelectedRecords | [`Concerns/CanFetchSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/CanFetchSelectedRecords.php) | todo | - |
 | CanRedirect | [`Concerns/CanRedirect.php`](../../../vendor/filament/actions/src/Concerns/CanRedirect.php) | todo | - |

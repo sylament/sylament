@@ -15,6 +15,7 @@ use Sylament\Actions\Concerns\CanBeMounted;
 use Sylament\Actions\Concerns\CanBeOutlined;
 use Sylament\Actions\Concerns\CanCallParentAction;
 use Sylament\Actions\Concerns\CanClose;
+use Sylament\Actions\Concerns\CanDispatchEvent;
 use Sylament\Actions\Concerns\CanNotify;
 use Sylament\Actions\Concerns\CanOpenModal;
 use Sylament\Actions\Concerns\CanOpenUrl;
@@ -66,6 +67,7 @@ class Action extends ViewComponent
     use CanBeOutlined;
     use CanCallParentAction;
     use CanClose;
+    use CanDispatchEvent;
     use CanNotify;
     use CanOpenModal;
     use CanOpenUrl;

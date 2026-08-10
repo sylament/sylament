@@ -128,6 +128,16 @@
     & > .sy-icon {
         @apply inline-block shrink-0 text-gray-400 dark:text-gray-500;
 
+        /* The gap `Button` and `Link` put on their container, as a margin: the line clamp owns
+           this element's `display`, so there is no flex or grid box here to hang a gap on. */
+        &.sy-ta-text-icon-before {
+            @apply me-1.5;
+        }
+
+        &.sy-ta-text-icon-after {
+            @apply ms-1.5;
+        }
+
         &.sy-color {
             @apply text-color-500;
         }

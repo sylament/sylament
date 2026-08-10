@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Unit\Colors\Components;
 
+use Sylament\Support\Colors\Color;
 use Sylament\Support\Colors\ColorManager;
 use Sylament\Tables\Colors\Components\TextColumnComponent\IconComponent;
 use Sylament\Tables\Colors\Components\TextColumnComponent\ItemComponent;
@@ -168,3 +169,116 @@ it('emits only the palette swap for the icon', function (array $palette): void {
 
     expect($classes)->toBe(['sy-color', 'sy-color-brand']);
 })->with('adversarial palettes');
+
+/**
+ * The other half of the icon's markup contract, and the same silent failure as a missing shade
+ * class: the partial stamps a position class the margin rule reads, and a rule that goes missing
+ * renders the icon flush against the text with nothing in the console. The Integration suite pins
+ * the emission; this pins the rule.
+ */
+it('defines a margin rule for both icon positions the partial stamps', function (string $position): void {
+    expect(textColumnStylesheet())->toContain("&.sy-ta-text-icon-{$position} {");
+})->with(['before', 'after']);
+
+/**
+ * The shades the icon rules hardcode, read back out of the stylesheets rather than restated, so a
+ * shade edit moves the measurement instead of quietly invalidating it.
+ *
+ * @return array{itemGray: array{int, int}, itemColor: int, badgeSurface: int, badgeGray: array{int, int}}
+ */
+function iconShades(): array
+{
+    $item = mb_strstr(textColumnStylesheet(), '& > .sy-icon {');
+
+    if ($item === false) {
+        throw new UnexpectedValueException('No `& > .sy-icon` rule in components/text-column.css — the item icon has moved or gone.');
+    }
+
+    if (preg_match('/@apply[^;]*\btext-gray-(?<light>\d+)\b[^;]*\bdark:text-gray-(?<dark>\d+)\b[^;]*;/', $item, $itemGray) !== 1) {
+        throw new UnexpectedValueException('The item icon no longer applies a light and a dark gray shade.');
+    }
+
+    if (preg_match('/&\.sy-color\s*\{\s*@apply\s+(?<utilities>[^;]+);/', $item, $itemColor) !== 1) {
+        throw new UnexpectedValueException('No `&.sy-color` branch under the item icon rule.');
+    }
+
+    if (preg_match('/^text-color-(?<shade>\d+)$/', mb_trim($itemColor['utilities']), $itemColorShade) !== 1) {
+        throw new UnexpectedValueException("The coloured item icon applies [{$itemColor['utilities']}] where a single `text-color-<shade>` is measured — add the new arm to this test.");
+    }
+
+    $badge = mb_strstr(supportStylesheet('components/badge.css'), '&:not(.sy-color) {');
+
+    if ($badge === false) {
+        throw new UnexpectedValueException('No `&:not(.sy-color)` rule in support components/badge.css — the gray badge has moved or gone.');
+    }
+
+    if (preg_match('/@apply[^;]*\bbg-gray-(?<shade>\d+)\b[^;]*;/', $badge, $badgeSurface) !== 1) {
+        throw new UnexpectedValueException('The gray badge no longer paints a gray background shade.');
+    }
+
+    if (preg_match('/&\s+\.sy-icon\s*\{\s*@apply\s+text-gray-(?<light>\d+)\s+dark:text-gray-(?<dark>\d+);/', $badge, $badgeGray) !== 1) {
+        throw new UnexpectedValueException('The gray badge icon no longer applies a light and a dark gray shade.');
+    }
+
+    return [
+        'itemGray' => [(int) $itemGray['light'], (int) $itemGray['dark']],
+        'itemColor' => (int) $itemColorShade['shade'],
+        'badgeSurface' => (int) $badgeSurface['shade'],
+        'badgeGray' => [(int) $badgeGray['light'], (int) $badgeGray['dark']],
+    ];
+}
+
+/**
+ * The icons a `TextColumn` paints take their shade from a stylesheet, not from a policy —
+ * `IconComponent` resolves none and the badged icon goes through the `Badge`'s own props — so no
+ * contrast test upstairs reaches them, and five of the pairings miss the 3.0:1 a non-text element
+ * owes. Every shade involved is Filament's (`columns/text.css`, `badge.css`), so the list is
+ * pinned rather than fixed: raising them is a
+ * [rule 1](../../../../../../docs/styling.md) sweep across two packages, and this goes red in
+ * either direction — when a shade is raised, and when a palette lands that fails one that passes
+ * today.
+ *
+ * Surfaces are the two the table chrome paints (`bg-white dark:bg-gray-900` on `.sy-ta-ctn`), the
+ * same pair [`ItemComponent`](../../../../src/Colors/Components/TextColumnComponent/ItemComponent.php)
+ * resolves its own slots against. The gray badge is measured light-only: its dark background is
+ * `bg-gray-400/10`, an alpha overlay this ratio cannot express without compositing, and a browser
+ * measured it at 3.14:1 — passing, so nothing failing is hidden by the omission.
+ */
+it('leaves the icon shades short of the non-text ratio in exactly the light-mode pairings Filament hands us', function (): void {
+    $shades = iconShades();
+    $gray = ColorManager::DEFAULT_COLORS['gray'];
+    $surfaces = ['light' => 'oklch(1 0 0)', 'dark' => $gray[900]];
+
+    $pairings = [];
+
+    foreach (ColorManager::DEFAULT_COLORS as $palette => $colors) {
+        foreach ($surfaces as $mode => $surface) {
+            $pairings["coloured item icon · {$palette} {$mode}"] = [$surface, $colors[$shades['itemColor']]];
+        }
+    }
+
+    [$itemLight, $itemDark] = $shades['itemGray'];
+    $pairings['uncoloured item icon light'] = [$surfaces['light'], $gray[$itemLight]];
+    $pairings['uncoloured item icon dark'] = [$surfaces['dark'], $gray[$itemDark]];
+
+    [$badgeLight] = $shades['badgeGray'];
+    $pairings['gray badge icon light'] = [$gray[$shades['badgeSurface']], $gray[$badgeLight]];
+
+    $failures = [];
+
+    foreach ($pairings as $label => [$surface, $icon]) {
+        if (Color::calculateContrastRatio($surface, $icon) >= Color::WCAG_AA_NON_TEXT) {
+            continue;
+        }
+
+        $failures[] = $label;
+    }
+
+    expect($failures)->toBe([
+        'coloured item icon · primary light',
+        'coloured item icon · success light',
+        'coloured item icon · warning light',
+        'uncoloured item icon light',
+        'gray badge icon light',
+    ]);
+});

@@ -34,7 +34,7 @@
             itemIcon,
             attributes: {
                 'aria-hidden': 'true',
-                class: iconColorAttrs.class,
+                class: ['sy-ta-text-icon-' ~ iconPositionValue, ...iconColorAttrs.class],
                 style: iconColorAttrs.style,
             },
             size: itemIconSize,

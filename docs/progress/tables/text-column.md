@@ -57,7 +57,7 @@ sections do.
 | [`formatState(mixed $state)` — the `state` injection](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState::formatState()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#formatstate-throws-for-a-state-it-cannot-stringify) |
 | [`getFormattedState()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | — (Sylament-only) | done | — | [diverges](#getformattedstate-replaces-the-embedded-views-local-preamble) |
 | [`getStateItems()` — the cell's value list](../../../packages/tables/src/Columns/TextColumn.php) | — (Sylament-only) | done | — | [semantics](#getstateitems-is-the-cells-value-list) |
-| [`$template`](../../../packages/tables/src/Columns/TextColumn.php) + [the partial it names](../../../packages/tables/templates/partials/TextColumn/index.html.twig) | [`TextColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [diverges](#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) · [diverges](#the-item-element-is-never-merged-into-the-outer-div) |
+| [`$template`](../../../packages/tables/src/Columns/TextColumn.php) + [the partial it names](../../../packages/tables/templates/partials/TextColumn/index.html.twig) | [`TextColumn::toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | done | — | [diverges](#the-cell-renders-a-twig-partial-where-filament-emits-an-embedded-view) · [diverges](#the-item-element-is-never-merged-into-the-outer-div) · [diverges](#the-icons-gap-is-a-margin-because-the-line-clamp-owns-the-items-display) |
 | `hasStateFormatting()` — the raw-state fast path | [`CanFormatState::hasStateFormatting()`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | skipped | — | [diverges](#hasstateformatting-has-nothing-to-guard) |
 | [`limit()` / `words()` — character and word truncation](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [diverges](#limit-composes-slice-rather-than-calling-symfonys-truncate) |
 | [`prefix()` / `suffix()`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php) | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | done | — | [semantics](#a-markup-state-skips-truncation-and-affixing-escapes-whichever-side-is-not-already-markup) |
@@ -355,7 +355,9 @@ so it is not re-litigated: the partial's locals are named `itemIcon`,
 `iconSize`, `size` and `iconPosition` **only** to keep the pass-through
 mutation-detectable. A `{% props %}`-declared prop that carries a **default** is
 not filled from the calling template's context — `PropsNode` resets it to that
-default whenever the caller's context holds the name — and every one of
+default whenever `__context` holds the name, that being the caller's context
+minus whatever the tag passed as an attribute, so an explicit `:name=` still
+wins — and every one of
 [`Badge`](../../../packages/support/templates/components/Badge/index.html.twig)'s
 props does, so the collision was never load-bearing here. Verified by renaming
 the local back to `icon` and deleting the `:icon` attribute, which renders no
@@ -364,6 +366,42 @@ declared *without* a default is silently filled from the caller in the
 `<twig:X>…</twig:X>` block form (the self-closing form inherits no context at
 all, and throws instead). The names remove the question permanently rather than
 leaving the next reader to re-run that probe.
+
+### The icon's gap is a margin, because the line clamp owns the item's `display`
+
+Filament puts nothing between a text column's icon and its value but the
+whitespace its PHP-echo template happens to print — `$stateItemIconBeforeHtml`,
+the state and `$stateItemIconAfterHtml` sit on separate lines of
+[`toEmbeddedHtml()`](../../../vendor/filament/tables/src/Columns/TextColumn.php),
+and HTML collapses that to one space. Neither its CSS nor ours declares a gap
+there. This port's partial controls whitespace on every tag, so it printed none
+and the icon rendered flush against the value — `⊘Grace Hopper`. A browser pass
+is what found it, and no assertion could have: the ordering cases read the
+item's inner HTML, where a space *between* the two changes neither
+`toStartWith('<svg')` nor `toEndWith('Airbag')`, so restoring Filament's space
+would have passed the suite unchanged and been just as easy to reformat away
+again.
+
+The space was rejected in favour of a margin, because a margin is what the rest
+of the toolkit already means by this. `Button`, `Link` and `Badge` each space
+their icon from their label with `gap-1.5` on a flex or grid container, and
+`.sy-ta-text-item` is the one place that cannot: the unconditional
+`line-clamp-(--sy-line-clamp,none)` that makes
+[`lineClamp()`](../../../packages/support/src/Components/Concerns/HasLineClamp.php)
+work sets this element's `display` itself — measured `-webkit-box` with no clamp
+value and `flow-root` once one lands — so there is never a flex box here to hang
+a gap on, and taking one by force would break the clamp. The margin survives
+both, measured 6px in each. The partial instead stamps the icon
+`sy-ta-text-icon-before` or `sy-ta-text-icon-after` from the position it already
+computes, and `text-column.css` gives each the matching `me-1.5` / `ms-1.5`,
+which is the same 6px those container gaps produce.
+
+Both halves are pinned because either one failing alone is silent, in the way a
+[missing shade class](#the-item-policy-measures-the-dark-surface-against-gray-900)
+is: the Integration case asserts the partial stamps exactly one position class
+per position, and the Unit stylesheet case asserts `text-column.css` defines a
+rule for both. A class with no rule, or a rule no class reaches, renders the
+icon flush again with nothing in the console.
 
 ### The item policy measures the dark surface against `gray-900`
 

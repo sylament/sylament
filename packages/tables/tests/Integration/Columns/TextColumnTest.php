@@ -134,6 +134,28 @@ it('renders an icon before or after the content', function (): void {
         ->and($itemHtml('after'))->toEndWith('</svg>');
 });
 
+/*
+ * The icon's spacing hook, which nothing else emits: Filament separates icon from text with the
+ * collapsed whitespace its PHP-echo template happens to print, and this port's partial strips all
+ * of it, so without a class the two render flush against each other.
+ */
+it('stamps the icon with the position class its margin rule reads', function (): void {
+    $iconClasses = function (string $position): string {
+        $host = new TableHost(fn (Table $table): Table => $table
+            ->records(fn (): array => [['title' => 'Airbag']])
+            ->columns([TextColumn::make('title')->icon('heroicons:x-mark')->iconPosition($position)]));
+
+        return (string) new Crawler(renderToHtml($host->getTable()))
+            ->filter('span.sy-ta-text-item > svg.sy-icon')
+            ->attr('class');
+    };
+
+    expect($iconClasses('before'))->toContain('sy-ta-text-icon-before')
+        ->not->toContain('sy-ta-text-icon-after')
+        ->and($iconClasses('after'))->toContain('sy-ta-text-icon-after')
+        ->not->toContain('sy-ta-text-icon-before');
+});
+
 it('renders a badged icon inside the badge, not beside it', function (): void {
     $host = new TableHost(fn (Table $table): Table => $table
         ->records(fn (): array => [['title' => 'Airbag']])

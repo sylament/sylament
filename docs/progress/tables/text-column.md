@@ -5,9 +5,13 @@
 its cell state as text, plus the formatting hook that sits between the raw state
 and the template. It ports Filament's
 [`Filament\Tables\Columns\TextColumn`](../../../vendor/filament/tables/src/Columns/TextColumn.php)
-and the one `Columns\Concerns\` trait it adds today,
-[`CanFormatState`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php)
-— folded into the surface table below rather than earning a row upstairs, per
+and the five `Columns\Concerns\` traits it adds today —
+[`CanFormatState`](../../../packages/tables/src/Columns/Concerns/CanFormatState.php),
+[`HasColor`](../../../packages/tables/src/Columns/Concerns/HasColor.php),
+[`HasDescription`](../../../packages/tables/src/Columns/Concerns/HasDescription.php),
+[`HasIcon`](../../../packages/tables/src/Columns/Concerns/HasIcon.php) and
+[`HasIconColor`](../../../packages/tables/src/Columns/Concerns/HasIconColor.php)
+— folded into the surface table below rather than earning rows upstairs, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). Everything
 [`Column`](column.md) carries — the name, the label, the record binding, the
 state read, the closure injections — is tracked there, not repeated here.
@@ -26,14 +30,23 @@ Reference — the Filament source this is diffed against:
   — the class, its composed traits and `toEmbeddedHtml()`
 - [`tables/src/Columns/Concerns/CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php)
   — the formatting pipeline, of which the `formatStateUsing` hop ports here
+- [`tables/src/Columns/Concerns/HasColor.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php)
+  — the colour setter, the `colors()` map and the state-contract fallback
+- [`tables/src/Columns/Concerns/HasIcon.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php)
+  — the icon setter, the `icons()` map, the position enum and the state-contract fallback
+- [`tables/src/Columns/Concerns/HasIconColor.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php)
+  — the icon-colour setter, evaluated with no map and no state-contract fallback
+- [`tables/src/Columns/Concerns/HasDescription.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php)
+  — the above/below secondary line
 
 ## Surface
 
 Every point of this component. _Blocked by_ names what has to land first.
-_Detail_ carries either **detail** → the write-up in [Details](#details),
-deleted once the row is **done**, or **diverges** → the permanent note in
-[Divergences](#divergences). Rows never disappear — only their detail sections
-do.
+_Detail_ carries up to three links: **detail** → the write-up in
+[Details](#details), deleted once the row is **done**; **diverges** → the
+permanent note in [Divergences](#divergences); **semantics** → the permanent
+note in [Semantics](#semantics). Rows never disappear — only their detail
+sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -48,8 +61,8 @@ do.
 | `date()` / `dateTime()` / `time()` / `since()` and the `iso*` variants, `timezone()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
 | `money()` / `numeric()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
 | `badge()` — the badge shell | [`TextColumn::badge()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`View\Components\BadgeComponent`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | todo | — | — |
-| `color()` / `icon()` / `iconColor()` / `iconPosition()` | [`Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php), [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php), [`HasIconColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | todo | — | — |
-| `description()` — the secondary line above or below | [`Columns\Concerns\HasDescription`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php) | todo | — | — |
+| [`color()`](../../../packages/tables/src/Columns/Concerns/HasColor.php) / [`icon()` / `iconPosition()`](../../../packages/tables/src/Columns/Concerns/HasIcon.php) / [`iconColor()`](../../../packages/tables/src/Columns/Concerns/HasIconColor.php) | [`Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php), [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php), [`HasIconColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | done | — | [semantics](#the-colour-and-icon-maps-resolve-last-match-wins-and-false-suppresses-the-state-contract-fallback) · [diverges](#an-explicit-true-colour-or-icon-is-treated-the-same-as-false-where-filament-crashes) |
+| [`description()` — the secondary line above or below](../../../packages/tables/src/Columns/Concerns/HasDescription.php) | [`Columns\Concerns\HasDescription`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php) | done | — | — |
 | `size()` / `weight()` / `fontFamily()` / `lineClamp()` | [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php), [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php), [`HasLineClamp`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | todo | — | — |
 | `wrap()` / `copyable()` | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php), [`CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | todo | — | — |
 | Lists — `bulleted()`, `listWithLineBreaks()`, `limitList()`, `expandableLimitedList()` | [`TextColumn.php`](../../../vendor/filament/tables/src/Columns/TextColumn.php) | todo | [`separator()`](column.md) | [diverges](#an-iterable-state-renders-as-one-comma-joined-line-and-nothing-else) |
@@ -90,6 +103,32 @@ way when they land: `html()`/`markdown()` need a sanitizer decision
 `HtmlString` wrap is [`Twig\Markup`](../renames.md#idiom) here, which the
 templates already pass through unescaped. Until then a format callback returning
 `Markup` is the escape hatch, and it works today.
+
+## Semantics
+
+Faithful ports subtle enough that the next reader would misread the code.
+Permanent, and addressable by anchor.
+
+### The colour and icon maps resolve last match wins, and `false` suppresses the state-contract fallback
+
+`colors()` and `icons()` walk every entry of the given map on every call —
+there is no `break` — so the last entry that matches wins, not the first.
+That includes the bare, numeric-keyed default: `['gray', 'success' =>
+'published']` does not read as *gray unless published*; the default applies
+unconditionally at its position in the iteration and is only left standing if
+nothing declared after it also matches the state. Reordering the array
+reorders the result — [`HasColorTest`](../../../packages/tables/tests/Unit/Columns/Concerns/HasColorTest.php)
+pins the case where two keyed entries match the same state and the second
+wins.
+
+`getColor()` and `getIcon()` add a second rule at the state-contract fallback:
+`$color === false` / `$icon === false` — reachable only through an explicit
+`->color(false)` / `->icon(false)` — returns `null` immediately and never
+reaches the `$state instanceof ColorContract` / `IconContract` check below it.
+An unset colour or icon, the property's `null` default, *does* reach that
+check. So `false` does not mean *no colour*, it means *no colour, and do not
+ask the state either* — where leaving the setter uncalled defers to the
+state's own `getColor()` / `getIcon()`.
 
 ## Divergences
 
@@ -182,3 +221,29 @@ into the formatting pipeline where the branch belongs — a template cannot expr
 per-item formatting, which `listWithLineBreaks()` and `bulleted()` both need
 (Filament re-enters `$formatState` per item). Until then, a consumer wanting a
 different join writes `formatStateUsing()`, which receives the raw iterable.
+
+### An explicit `true` colour or icon is treated the same as `false`, where Filament crashes
+
+`color()` / `icon()` accept `bool` in their union, mirroring
+[`Filament\Tables\Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php)
+and [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php)
+exactly — but only `false` carries meaning, as the sentinel the getters test
+for. Filament's own getters declare `string | array | null` /
+`string | BackedEnum | Htmlable | null` and check only `$color === false`, so
+a caller who passes the *other* boolean — nonsensical, but the type accepts
+it — falls through to `filled($color)`, which is `true` for a bare `true`, and
+the getter returns it: a `TypeError` at the return statement, since `true` is
+not a member of the declared return type. Nothing in Filament's own test suite
+exercises this arm; it is a latent gap in the vendor union, not a contract
+anyone relies on.
+
+Sylament's `getColor()` / `getIcon()` test `is_bool($color)` in place of
+`$color === false`, so `true` is treated exactly like `false` — suppressed to
+`null`, state-contract fallback skipped — rather than reaching a return
+statement it cannot satisfy. PHPStan level max is what surfaces the gap: the
+narrower return type correctly will not admit `true` once `false` alone is
+excluded from it, the same class of vendor defect the port already
+[fixes at the cause](column.md#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column)
+for `searchable()`. Every `false` call site keeps its existing meaning; a
+`true` call site could never have returned successfully before and now fails
+soft instead of throwing.

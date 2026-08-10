@@ -51,7 +51,7 @@ row-selection machinery, the relation layer is unordered under
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 
-Sixteen concerns the port has landed are **folded** into the detail file of the
+Twenty concerns the port has landed are **folded** into the detail file of the
 class that composes them and carry no row here, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing) — nine
 `Table\Concerns\` traits (`BelongsToLivewire`, `CanPaginateRecords`,
@@ -59,7 +59,8 @@ class that composes them and carry no row here, per
 `HasEmptyState`, `HasRecordActions`, `HasRecords`) into
 [`table.md`](table.md), six `Columns\Concerns\` traits
 (`BelongsToTable`, `CanBeSearchable`, `CanBeSortable`, `HasLabel`, `HasName`,
-`HasRecord`) into [`column.md`](column.md), and `Columns\Concerns\CanFormatState`
+`HasRecord`) into [`column.md`](column.md), and five `Columns\Concerns\` traits
+(`CanFormatState`, `HasColor`, `HasDescription`, `HasIcon`, `HasIconColor`)
 into
 [`text-column.md`](text-column.md). Filament's `resources/views/index.blade.php`
 folds the same way, into `table.md`'s `$template` row.
@@ -175,7 +176,7 @@ The prefix is load-bearing rather than decorative: twenty trait names occur in
 two of these tiers and five (`BelongsToTable`, `CanBeHidden`, `HasColumns`,
 `HasLabel`, `InteractsWithTableQuery`) in three, which is the same
 [read-by-import, never by the bare `use`](../../../CLAUDE.md) trap the schemas
-tiers carry. The sixteen landed concerns folded into their component's detail file
+tiers carry. The twenty landed concerns folded into their component's detail file
 are named in the [preamble](#tables--port-progress) and carry no row here.
 
 `Contracts/HasTable.php` is not listed in
@@ -239,12 +240,8 @@ pairs with, so it shares the first row below.
 | Column / CanCallAction | [`Columns/Concerns/CanCallAction.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanCallAction.php) | todo | — |
 | Column / CanOpenUrl | [`Columns/Concerns/CanOpenUrl.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanOpenUrl.php) | todo | — |
 | Column / CanUpdateState | [`Columns/Concerns/CanUpdateState.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanUpdateState.php) | todo | — |
-| Column / HasColor | [`Columns/Concerns/HasColor.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php) | todo | — |
-| Column / HasDescription | [`Columns/Concerns/HasDescription.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php) | todo | — |
 | Column / HasExtraCellAttributes | [`Columns/Concerns/HasExtraCellAttributes.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraCellAttributes.php) | todo | — |
 | Column / HasExtraHeaderAttributes | [`Columns/Concerns/HasExtraHeaderAttributes.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasExtraHeaderAttributes.php) | todo | — |
-| Column / HasIcon | [`Columns/Concerns/HasIcon.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php) | todo | — |
-| Column / HasIconColor | [`Columns/Concerns/HasIconColor.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | todo | — |
 | Column / HasRowLoopObject | [`Columns/Concerns/HasRowLoopObject.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | todo | [column.md](column.md#rowloop-waits-on-a-decision-about-twigs-loop-not-on-the-table-template) |
 | Column / HasSpace | [`Columns/Concerns/HasSpace.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasSpace.php) | todo | — |
 | Column / HasTooltip | [`Columns/Concerns/HasTooltip.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — |

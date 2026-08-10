@@ -44,6 +44,21 @@ it('applies fromArray() defaults for absent keys and ignores junk types', functi
         ->and($restored->getStatus())->toBeNull();
 });
 
+it('restores an array shade map and drops an array holding a non-string shade', function (): void {
+    $shades = [50 => '#eef2ff', 500 => '#3333ff'];
+
+    $restored = Notification::fromArray(['id' => 'x', 'color' => $shades, 'iconColor' => $shades]);
+
+    expect($restored->getColor())->toBe($shades)
+        ->and($restored->getIconColor())->toBe($shades)
+        ->and($restored->toArray()['color'])->toBe($shades);
+
+    $mixed = Notification::fromArray(['id' => 'x', 'color' => [50 => '#eef2ff', 500 => 3], 'iconColor' => [500 => 3]]);
+
+    expect($mixed->getColor())->toBeNull()
+        ->and($mixed->getIconColor())->toBeNull();
+});
+
 it('evaluates closure title and body at read time so toArray() stores values', function (): void {
     $array = Notification::make('n')->title(fn (): string => 'Lazy')->toArray();
 

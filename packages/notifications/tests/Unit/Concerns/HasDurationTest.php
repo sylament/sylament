@@ -16,3 +16,8 @@ it('converts seconds to milliseconds and persistent() to the sentinel', function
     expect(Notification::make('n')->seconds(2.5)->getDuration())->toBe(2500)
         ->and(Notification::make('n')->persistent()->getDuration())->toBe('persistent');
 });
+
+it('throws when a closure duration evaluates to null, where Filament falls back to persistent', function (): void {
+    expect(fn (): int|string => Notification::make('n')->duration(fn (): null => null)->getDuration())
+        ->toThrow(TypeError::class);
+});

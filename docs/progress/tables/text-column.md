@@ -353,10 +353,16 @@ A second, smaller thing was checked while resolving this and is worth recording
 so it is not re-litigated: the partial's locals are named `itemIcon`,
 `itemIconSize`, `itemSizeValue` and `iconPositionValue` rather than `icon`,
 `iconSize`, `size` and `iconPosition` **only** to keep the pass-through
-mutation-detectable. A `{% props %}`-declared prop is *not* filled from the
-calling template's context — verified by renaming the local back to `icon` and
-deleting the `:icon` attribute, which renders no icon at all — so the collision
-was never load-bearing. The names remove the question permanently rather than
+mutation-detectable. A `{% props %}`-declared prop that carries a **default** is
+not filled from the calling template's context — `PropsNode` resets it to that
+default whenever the caller's context holds the name — and every one of
+[`Badge`](../../../packages/support/templates/components/Badge/index.html.twig)'s
+props does, so the collision was never load-bearing here. Verified by renaming
+the local back to `icon` and deleting the `:icon` attribute, which renders no
+icon at all. The narrowing matters because the rule is not general: a prop
+declared *without* a default is silently filled from the caller in the
+`<twig:X>…</twig:X>` block form (the self-closing form inherits no context at
+all, and throws instead). The names remove the question permanently rather than
 leaving the next reader to re-run that probe.
 
 ### The item policy measures the dark surface against `gray-900`

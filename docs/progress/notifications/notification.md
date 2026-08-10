@@ -57,7 +57,7 @@ deleted once the row is **done**; **semantics** → the permanent note in
 | [Toast styles (`sy-no-notification*`)](../../../packages/notifications/assets/src/styles/components/notification.css) | [`resources/css/notification.css`](../../../vendor/filament/notifications/resources/css/notification.css) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
 | [Toast controller — auto-dismiss, hover-pause, close, delegated action clicks](../../../packages/notifications/assets/src/controllers/notification_controller.ts) | [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js) | in progress | the database-notifications panel | [detail](#markasread-and-markasunread-belong-to-the-database-panel) · [detail](#the-delegated-click-handler-is-the-controllers-next-step) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
 | `close-notification` — closing a toast by id from a browser event | [`x-on:close-notification.window`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#closing-a-toast-by-id-needs-the-id-in-the-markup) |
-| [`actions()` (`HasActions`)](../../../packages/notifications/src/Concerns/HasActions.php) | [`Concerns/HasActions.php`](../../../vendor/filament/notifications/src/Concerns/HasActions.php), the `actions` key of `toArray()`/`fromArray()` | done | — | [semantics](#toast-actions-are-re-viewed-as-small-links-and-the-actions-key-restores-them) · [semantics](#toast-actions-cannot-open-modals-at-filament-parity) · [diverges](#the-toast-root-owns-the-click-and-the-triggers-carry-only-payload) |
+| [`actions()` (`HasActions`)](../../../packages/notifications/src/Concerns/HasActions.php) | [`Concerns/HasActions.php`](../../../vendor/filament/notifications/src/Concerns/HasActions.php), the `actions` key of `toArray()`/`fromArray()` | done | — | [semantics](#toast-actions-are-re-viewed-as-small-links-and-the-actions-key-restores-them) · [semantics](#toast-actions-cannot-open-modals-at-filament-parity) · [diverges](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload) |
 | `date()` (`HasDate`) | [`Concerns/HasDate.php`](../../../vendor/filament/notifications/src/Concerns/HasDate.php) | todo | — | [detail](#date-and-inline-arrive-with-the-database-notifications-panel) |
 | `inline()` (`CanBeInline`) | [`Concerns/CanBeInline.php`](../../../vendor/filament/notifications/src/Concerns/CanBeInline.php) | todo | — | [detail](#date-and-inline-arrive-with-the-database-notifications-panel) |
 | `view()` / `viewData()` / `safeViews()` | [`safeViews()` / `isViewSafe()`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#custom-views-and-their-safe-view-gate-are-unported) |
@@ -177,12 +177,13 @@ that gives them a listener.
 ### The delegated click handler is the controller's next step
 
 The toast root already names `handleActionClick` — the
-[delegation divergence](#the-toast-root-owns-the-click-and-the-triggers-carry-only-payload)
+[delegation divergence](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload)
 is what puts it there — and
 [`notification_controller.ts`](../../../packages/notifications/assets/src/controllers/notification_controller.ts)
 does not define it yet, so a toast action's payload attributes are read by nobody
-and a click on one does nothing. Stimulus binds an action naming an undefined
-method silently, so the gap costs a dead click rather than a console error.
+and clicking a dispatching or closing action does nothing. Stimulus binds an
+action naming an undefined method silently, so the gap costs a dead click rather
+than a console error.
 
 **Next step:** add `handleActionClick(event)` to the controller — `closest()` off
 the click target for a trigger carrying either payload attribute, `emit()` through
@@ -539,21 +540,40 @@ DOM and nothing re-renders behind it — which is the same property that makes t
 [zombie-toast class](notifications.md#a-toast-closes-client-side-and-is-never-re-rendered)
 impossible.
 
-### The toast root owns the click, and the triggers carry only payload
+### The toast root owns the click, and the dispatch arm carries only payload
 
 Filament wires each toast action's behaviour onto the trigger itself:
 [`getAlpineClickHandler()`](../../../vendor/filament/actions/src/Action.php) emits
 one `x-on:click` per action — `$dispatch(…)`, or `close()` when the action closes
-— so the handler and its data sit on the same element. Sylament splits them. The
-five
-[trigger templates](../../../packages/actions/templates/partials/Action) emit
-**payload** attributes and no handler at all —
-`data-sylament-action-event`, `-event-data`, `-dispatch-to` and `-close` — and the
-single delegated handler lives on the toast root, written by the same
-`stimulus_controller(…)|stimulus_action(…)` hash that already carries the duration
-value, so the root keeps exactly one `data-action` writer.
+— so the handler and its data sit on the same element. Sylament splits them on the
+arm a toast action actually takes: the **dispatch** branch of the five
+[trigger templates](../../../packages/actions/templates/partials/Action) emits
+`data-sylament-action-event`, `-event-data`, `-dispatch-to` and `-close` and stamps
+no handler beside them, and the single delegated handler lives on the toast root,
+written by the same `stimulus_controller(…)|stimulus_action(…)` hash that already
+carries the duration value, so the root keeps exactly one `data-action` writer.
 
-The split is forced by where those templates ship. An action renders inside
+The split is that branch's, not the whole cascade's, and the other arms are what a
+reader has to know before building against this. A trigger's click wiring is one
+`{% if %}` chain (identical in `Badge`, `Button`, `Grouped` and `Link`, the same
+set as ternaries in `IconButton`) picking exactly one of five:
+
+| Arm | What the trigger emits |
+| --- | --- |
+| a client click handler | `data-action="live#action"` with that handler |
+| an **event** (`dispatch()` / `dispatchSelf()` / `dispatchTo()`) | the four payload attributes, **no handler** |
+| a parent action's call handler | `data-action="live#action"` with that handler |
+| **close only** — `close()` with no event | `data-action="sylament--support--modal#dismiss"` **and** `data-sylament-action-close` |
+| nothing of the above | `data-action="live#action"` with `action: mountAction` |
+
+A `url()` short-circuits the chain entirely and emits an `<a href>` with no wiring
+at all. So the two arms a toast is built for — dispatch, and dispatch with
+`close()` — are handler-free and reach the delegation; the **close-only** arm
+carries the modal token as well, harmless in a toast because no
+`sylament--support--modal` controller is an ancestor there, so Stimulus binds it to
+nothing while the root's delegation still reads the close marker.
+
+Delegation is forced by where those templates ship. An action renders inside
 modals, tables and schemas as well as inside a toast, and a Stimulus action
 attribute has to name its controller at write time — the trigger cannot know which
 one surrounds it, whereas a `data-sylament-action-*` attribute means the same
@@ -563,10 +583,24 @@ so `close()` needs no lookup, and it leaves the close button alone: that
 `IconButton` carries neither payload attribute, so a delegated click cannot
 double-fire it.
 
-The cost is that an action rendered where nothing delegates is inert — Stimulus
-binds no handler and the attributes are read by nobody, silently. That is the
-price of context-free triggers, and it is paid once per host: a host that wants
-toast-style dispatch adds one delegating action to its own root.
+The cost is two-sided. On the payload arms it is the mild one: those attributes do
+nothing unless something delegates, so an action rendered where nothing does is
+silently inert — the price of context-free triggers, paid once per host, since a
+host that wants toast-style dispatch adds one delegating action to its own root.
+The **mount** arm is the sharp one, and it is the trap to know when building
+against this passage. A bare `Action::make('x')` — no `url()`, no event, no
+`close()` — falls through to it and emits `live#action` with `action: mountAction`,
+which is not inert at all: inside a live component's subtree Stimulus binds it and
+a click fires a real round trip against the **surrounding** component, which is not
+the toast and knows nothing about the action. It is only silent when no `live`
+controller is an ancestor.
+
+Which arm a delivered toast action lands on is decided entirely by what survives
+the hop. `Action::toArray()` carries no client click handler and no parent-action
+handler, so a restored action can only reach the url arm, the dispatch arm, the
+close-only arm — or, given none of those, the mount arm. A toast action is
+therefore written with `url()`, `dispatch()` or `close()`, and a bare one is a
+mistake the markup will not announce.
 
 ### The Laravel array and embedded-view contracts have no counterpart
 

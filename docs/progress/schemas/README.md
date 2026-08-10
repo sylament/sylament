@@ -157,7 +157,7 @@ shared with the base `Component` or not yet started.
 
 Everything with no user-instantiated component of its own: the state loop
 (`$get`/`$set`, the `PropertyAccessor` backend, the `RecordTypeReader` behind
-record mapping, and the state casts), contracts,
+record mapping, and the state casts), the validation presence gate, contracts,
 the view layer, the test helper, value objects, CLI commands, templates, assets,
 and translations —
 [`src/Components/Utilities`](../../../vendor/filament/schemas/src/Components/Utilities),
@@ -193,6 +193,7 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | [`CanConcealComponents`](../../../packages/schemas/src/Components/Contracts/CanConcealComponents.php) | [`Components/Contracts/CanConcealComponents.php`](../../../vendor/filament/schemas/src/Components/Contracts/CanConcealComponents.php) | done | — |
 | [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php) | [`HasValidationRules.php` (forms)](../../../vendor/filament/forms/src/Components/Contracts/HasValidationRules.php) | done | [can-be-validated.md](can-be-validated.md) |
 | [`ValidationException`](../../../packages/schemas/src/Exceptions/ValidationException.php) | — | done | [can-be-validated.md](can-be-validated.md) |
+| [`PresenceGate`](../../../packages/schemas/src/Validation/PresenceGate.php) + [`ImplicitConstraint`](../../../packages/schemas/src/Validation/Contracts/ImplicitConstraint.php) | — | done | [presence-gate.md](presence-gate.md) |
 | `CanEntangleWithSingularRelationships` | [`Components/Contracts/CanEntangleWithSingularRelationships.php`](../../../vendor/filament/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php) | todo | — |
 | `ExposesStateToActionData` | [`Components/Contracts/ExposesStateToActionData.php`](../../../vendor/filament/schemas/src/Components/Contracts/ExposesStateToActionData.php) | todo | — |
 | `HasAffixActions` | [`Components/Contracts/HasAffixActions.php`](../../../vendor/filament/schemas/src/Components/Contracts/HasAffixActions.php) | todo | — |

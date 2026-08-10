@@ -312,13 +312,17 @@ to a real number before validation runs — the same condition the
 The **empty** string is not this divergence's doing and is not confined to these
 arms: Laravel never runs `min:` / `max:` on a blank string at all, because
 `presentOrRuleIsImplicit()` gates every non-implicit rule on presence, and the
-port has no such gate — so `minValue(1)` violates on `""` exactly as
-`Type('numeric')` and `Length(min:)` already do, while `maxValue(10)` stays
-quiet. Filed with the rest of that family under
-[There is no presence gate](can-be-validated.md#there-is-no-presence-gate-so-a-blank-string-reaches-every-constraint);
-`TextInputTest`'s `reports a lower bound against the empty string a cleared input
-submits` is the instance of it that lives here, and it also holds a `null` state
-skipping both arms.
+port now does the same one layer up — schemas'
+[presence gate](../schemas/presence-gate.md) filters both comparison arms out
+before the runner sees them, so a cleared input reports nothing where it once
+reported the lower bound only. It is worth knowing that the arms themselves are
+unguarded, because the asymmetry is still latent in them: reached with `''`,
+`GreaterThanOrEqual` violates for any bound while `LessThanOrEqual` passes for
+any bound, and only the gate in front stands between that and a user's screen.
+`TextInputTest`'s `reports neither bound against the empty string a cleared input
+submits` pins the outcome, holding a `null` state skipping both arms beside it,
+and `still reports both bounds on a required field, whose NotBlank survives the
+gate` pins that `required()` is untouched.
 
 ### Input mode is a bespoke getter, not the `HasInputMode` concern
 

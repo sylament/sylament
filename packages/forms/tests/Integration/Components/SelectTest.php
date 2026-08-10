@@ -224,6 +224,25 @@ it('builds no Choice constraint for blank state', function (): void {
     expect($field->getValidationConstraints())->toBe([]);
 });
 
+it('builds no Choice constraint for the empty string a placeholder submits, so the presence gate finds nothing to skip', function (): void {
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $field = Select::make('status')->options(['draft' => 'Draft']);
+    $schema = Schema::make($host)->statePath('data')->components([$field]);
+    $host->cacheSchema('schema', $schema);
+
+    $host->data['status'] = '';
+    $schema->getComponents();
+
+    expect($field->getRawState())->toBe('')
+        ->and($field->getValidationConstraints())->toBe([]);
+
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.status'))->toBe([]);
+});
+
 it('throws when validating a select with no options', function (): void {
     $field = wireSelect(Select::make('status'));
     $field->state('draft');

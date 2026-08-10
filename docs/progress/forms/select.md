@@ -106,6 +106,16 @@ that "validates nothing" can never be the silent default: a select whose options
 come from somewhere the port cannot see must say so loudly rather than wave every
 payload through.
 
+The *whenever state is filled* half of that has an upstream twin now, and the two
+do not stack. `Choice` is not implicit, so the
+[presence gate](../schemas/presence-gate.md#the-gate-is-a-no-op-for-select-which-already-guarded-itself)
+would skip it against the `''` a placeholder submits — except this builder never
+emits one for a blank state in the first place, so the gate finds nothing to
+filter and select validation is unchanged in both directions. The guard here is
+not redundant with it either: it exists because there are no choices to enumerate
+for a value that is not there, which is a different question from whether a
+constraint should run.
+
 ### The `Choice` choices cover both forms the raw state can take
 
 `getEnabledOptions()` returns PHP array keys, while validation runs against the

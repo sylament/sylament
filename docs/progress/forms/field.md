@@ -186,11 +186,14 @@ typed `?InteractsWithSchemas`, so no `instanceof` guard is needed) — and the
 That is the Symfony violation-list idiom: a `ConstraintViolationList` is
 naturally plural, and the count is small in practice because every constraint
 except `NotBlank` skips a `null` value, so a single field rarely produces two.
-A blank *string* is a different matter — the port has
-[no presence gate](can-be-validated.md#there-is-no-presence-gate-so-a-blank-string-reaches-every-constraint),
-and `Length(min:)`, `Type('numeric')` and `GreaterThanOrEqual` each violate on
-`''` — which is one reason the template loops rather than picking a first
-message.
+A blank *string* used to be a different matter — `Length(min:)`,
+`Type('numeric')` and `GreaterThanOrEqual` each violate on `''` where they skip
+`null` — until the [presence gate](../schemas/presence-gate.md) stopped them
+reaching the validator, which makes a `required()` field's `''` report one
+message rather than several. The template still loops rather than picking a
+first message, because a filled value legitimately fails several arms at once
+(a too-short non-numeric string under `numeric()->minLength()`), and because
+picking one would make *which* one a template concern.
 `showAllValidationMessages()` / `allowHtmlValidationMessages()` are
 [skipped](can-be-validated.md) accordingly — the flags exist to opt *into* what
 this port always does, and into raw HTML the port has no shape for. Reverses only

@@ -545,7 +545,7 @@ it('compares a submitted numeric string by magnitude', function (): void {
         ->toBe(['This value should be less than or equal to 10.']);
 });
 
-it('reports a lower bound against the empty string a cleared input submits', function (): void {
+it('reports neither bound against the empty string a cleared input submits', function (): void {
     $host = new FieldRenderHost();
     $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
 
@@ -554,16 +554,28 @@ it('reports a lower bound against the empty string a cleared input submits', fun
     ]);
     $host->cacheSchema('schema', $schema);
 
-    // Symfony's comparison validator skips only null, and '' is not a numeric
-    // string, so PHP compares it against the stringified bound.
     $host->data['count'] = '';
     $host->validateSchema($schema, shouldThrow: false);
 
-    expect($host->getErrorsForSchemaStatePath('data.count'))
-        ->toBe(['This value should be greater than or equal to 1.']);
+    expect($host->getErrorsForSchemaStatePath('data.count'))->toBe([]);
 
     $host->data['count'] = null;
     $host->validateSchema($schema, shouldThrow: false);
 
     expect($host->getErrorsForSchemaStatePath('data.count'))->toBe([]);
+});
+
+it('still reports both bounds on a required field, whose NotBlank survives the gate', function (): void {
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $schema = Schema::make($host)->statePath('data')->components([
+        TextInput::make('count')->required()->minValue(1)->maxValue(10),
+    ]);
+    $host->cacheSchema('schema', $schema);
+
+    $host->data['count'] = '';
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.count'))->toBe(['This value should not be blank.']);
 });

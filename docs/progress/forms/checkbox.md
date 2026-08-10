@@ -89,6 +89,18 @@ and `Type('bool')` is what rejects it. Deleting it would remove real protection;
 exactly that, asserting a raw `'yes'` violates the constraint even though
 `getState()` reports `true`.
 
+One shape of raw value is carved out of that guard, and it costs nothing:
+`Type('bool')` is not implicit, so schemas'
+[presence gate](../schemas/presence-gate.md) filters it out when the raw value is
+a blank string, and a tampered `''` is accepted where `'yes'` is rejected.
+Laravel's `boolean` rule is not implicit either, so this is the faithful
+behaviour, and the value it lets through is one the cast already normalizes —
+`BooleanStateCast(isNullable: false)` reads `''` as `false`, so what the mapper
+writes to a `bool` target is a `bool`. `accepted()` and `declined()` are the arms
+that must still bite on `''`, and they do:
+[`IsTrue` and `IsFalse` are in the implicit set](../schemas/presence-gate.md#istrue-and-isfalse-are-in-the-set-because-the-runner-validates-raw-state)
+precisely because this path exists.
+
 An unset field still passes: `TypeValidator` short-circuits on `null` before it
 reaches `is_bool`, so a state bag with no key for the field produces no violation
 here. `required()` is what rejects that case.

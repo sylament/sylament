@@ -56,6 +56,7 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | [`HasValidationConstraints` contract](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php) | [`HasValidationRules.php` (forms)](../../../vendor/filament/forms/src/Components/Contracts/HasValidationRules.php) | done | — | [diverges](#the-component-contract-is-relocated-from-forms-into-schemas) |
 | [`ValidationException`](../../../packages/schemas/src/Exceptions/ValidationException.php) | — | done | — | [diverges](#validationexception-rides-the-http-exception-re-render-pipeline) |
 | [`HasSchemas::validateSchema()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#validateschema-runs-symfonys-validator-per-state-path-instead-of-livewires-whole-component-validate) · [semantics](#the-bag-section-is-replaced-wholesale-on-every-validation) |
+| [`PresenceGate::apply()`](../../../packages/schemas/src/Validation/PresenceGate.php) in front of each path's run | [`Validator::presentOrRuleIsImplicit()`](../../../vendor/laravel/framework/src/Illuminate/Validation/Validator.php) (Laravel) | done | — | [detail](presence-gate.md) |
 | [`HasSchemas::getErrorsForSchemaStatePath()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | — |
 | [`HasSchemas::clearSchemaValidation()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](interacts-with-schemas.md#clearschemavalidation-is-scoped-where-filament-resets-the-whole-livewire-error-bag) |
 | [`$validatedSchemas` `#[LiveProp]` + `#[PostHydrate(priority: -20)]` sticky re-validation](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](#sticky-re-validation-replaces-filaments-submit-only-model) · [semantics](#a-clean-silent-re-validation-keeps-the-schema-sticky) |
@@ -255,7 +256,9 @@ bag. Sylament's `validateSchema(Schema $schema, bool $shouldThrow = true)`
 validates one schema: it collects `$schema->getValidationConstraints()` and,
 per path, reads the raw client state through
 `$schema->getPropertyAccessor()->get($host, $path)` (the same read
-`getRawState()` does) and runs `ValidatorInterface::validate($value,
+`getRawState()` does), filters the path's constraints through
+[`PresenceGate::apply()`](presence-gate.md) so a blank string reaches only the
+implicit ones, and runs `ValidatorInterface::validate($value,
 $constraints)`, stringifying each violation message. Results key by
 `$schema->getKey()` — every cached schema is keyed by
 `getSchema()`/`cacheSchema()`, and a keyless schema throws a `LogicException` —

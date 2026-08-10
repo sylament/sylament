@@ -226,6 +226,21 @@ it('requires presence rather than truth', function (): void {
         ->and($violations)->toHaveCount(0);
 });
 
+it('still violates NotNull through the presence gate when the host holds null', function (): void {
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $schema = Schema::make($host)->statePath('data')->components([
+        Toggle::make('isFeatured')->required(),
+    ]);
+    $host->cacheSchema('schema', $schema);
+
+    $host->data['isFeatured'] = null;
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.isFeatured'))->toBe(['This value should not be null.']);
+});
+
 it('renders disabled, autofocus and aria-invalid', function (): void {
     $input = new Crawler(renderField(
         Toggle::make('isFeatured')->disabled()->autofocus(),

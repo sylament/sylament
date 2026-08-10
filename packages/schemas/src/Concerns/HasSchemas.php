@@ -8,6 +8,7 @@ use LogicException;
 use RuntimeException;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\Validation\PresenceGate;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -187,7 +188,8 @@ trait HasSchemas
         $errors = [];
 
         foreach ($schema->getValidationConstraints() as $path => $constraints) {
-            $violations = $validator->validate($schema->getPropertyAccessor()->get($this, $path), $constraints);
+            $value = $schema->getPropertyAccessor()->get($this, $path);
+            $violations = $validator->validate($value, PresenceGate::apply($value, $constraints));
 
             foreach ($violations as $violation) {
                 $errors[$path][] = (string) $violation->getMessage();

@@ -149,6 +149,21 @@ it('validates the raw state rather than the cast one', function (): void {
         ->toBe(['This value should be of type bool.']);
 });
 
+it('keeps accepted() biting on a raw blank state the presence gate would otherwise skip', function (): void {
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $schema = Schema::make($host)->statePath('data')->components([
+        Checkbox::make('isFeatured')->accepted(),
+    ]);
+    $host->cacheSchema('schema', $schema);
+
+    $host->data['isFeatured'] = '';
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.isFeatured'))->toBe(['This value should be true.']);
+});
+
 it('renders required, disabled and autofocus', function (): void {
     $input = new Crawler(renderField(
         Checkbox::make('isFeatured')->required()->disabled()->autofocus(),

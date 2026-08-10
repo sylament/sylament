@@ -10,6 +10,11 @@ use Sylament\Schemas\Tests\Fixtures\Components\ConstrainedField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
+use Symfony\Component\Validator\Constraints\Count;
+use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
+use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
@@ -149,6 +154,59 @@ it('validates a constrained leaf under a group path the host holds as null', fun
 
     expect($host->getErrorsForSchemaStatePath('data.author.name'))
         ->toBe(['This value should not be blank.']);
+});
+
+it('gates a blank string down to the implicit constraints before running the validator', function (): void {
+    $host = $this->createLiveComponent('ValidationHost')->component();
+    $host->data = ['title' => ''];
+
+    $schema = Schema::make($host)->key('gated')->statePath('data')->components([
+        ConstrainedField::make('title')->fixtureConstraints([new Length(min: 3), new GreaterThanOrEqual(1)]),
+    ]);
+
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.title'))->toBe([]);
+});
+
+it('still runs the implicit constraints against a blank string', function (): void {
+    $host = $this->createLiveComponent('ValidationHost')->component();
+    $host->data = ['title' => ''];
+
+    $schema = Schema::make($host)->key('gated')->statePath('data')->components([
+        ConstrainedField::make('title')->fixtureConstraints([new NotBlank(), new Length(min: 3)]),
+    ]);
+
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.']);
+});
+
+it('does not gate a null value, which every ported constraint already skips', function (): void {
+    $host = $this->createLiveComponent('ValidationHost')->component();
+    $host->data = ['title' => null];
+
+    $schema = Schema::make($host)->key('gated')->statePath('data')->components([
+        ConstrainedField::make('title')->fixtureConstraints([new NotNull(), new Length(min: 3)]),
+    ]);
+
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be null.']);
+});
+
+it('does not gate a value that is blank but not a string', function (): void {
+    $host = $this->createLiveComponent('ValidationHost')->component();
+    $host->data = ['tags' => []];
+
+    $schema = Schema::make($host)->key('gated')->statePath('data')->components([
+        ConstrainedField::make('tags')->fixtureConstraints([new Count(min: 1)]),
+    ]);
+
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.tags'))
+        ->toBe(['This collection should contain 1 element or more.']);
 });
 
 it('skips callBeforeStateDehydrated when shouldCallHooksBefore is false', function (): void {

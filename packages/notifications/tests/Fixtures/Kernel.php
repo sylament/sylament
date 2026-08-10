@@ -55,6 +55,12 @@ class Kernel extends BaseKernel
             ],
         ]);
 
+        $container->extension('twig', [
+            'paths' => [
+                __DIR__ . '/Twig/templates' => 'NotificationsFixtures',
+            ],
+        ]);
+
         $container->extension('twig_component', [
             'anonymous_template_directory' => 'components',
             'defaults' => [],

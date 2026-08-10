@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Notifications;
 
+use Sylament\Notifications\Delivery\LiveDeliverySubscriber;
+use Sylament\Notifications\Delivery\SessionNotifications;
 use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -17,6 +19,7 @@ class SylamentNotificationsBundle extends SylamentBundle
     {
         $this->configureComponents($configurator);
         $this->configureColorPolicies($configurator);
+        $this->configureDelivery($configurator);
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
@@ -48,6 +51,16 @@ class SylamentNotificationsBundle extends SylamentBundle
             ->load(__NAMESPACE__ . '\\Colors\\Components\\', __DIR__ . '/Colors/Components/*/*.php')
             ->autowire()
             ->public();
+    }
+
+    private function configureDelivery(ContainerConfigurator $configurator): void
+    {
+        $configurator->services()
+            ->defaults()
+                ->autowire()
+                ->autoconfigure()
+            ->set(SessionNotifications::class)
+            ->set(LiveDeliverySubscriber::class);
     }
 
     private function prependAssetMapper(ContainerBuilder $container): void

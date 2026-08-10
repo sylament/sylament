@@ -6,17 +6,20 @@ namespace Sylament\Notifications;
 
 use BackedEnum;
 use Closure;
+use LogicException;
 use Sylament\Notifications\Concerns\HasBody;
 use Sylament\Notifications\Concerns\HasDuration;
 use Sylament\Notifications\Concerns\HasId;
 use Sylament\Notifications\Concerns\HasStatus;
 use Sylament\Notifications\Concerns\HasTitle;
+use Sylament\Notifications\Delivery\SessionNotifications;
 use Sylament\Support\Components\Concerns\HasColor;
 use Sylament\Support\Components\Concerns\HasIcon;
 use Sylament\Support\Components\Concerns\HasIconColor;
 use Sylament\Support\Components\Concerns\HasIconSize;
 use Sylament\Support\Components\ViewComponent;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Contracts\Service\Attribute\Required;
 use Twig\Markup;
 
 class Notification extends ViewComponent
@@ -32,6 +35,25 @@ class Notification extends ViewComponent
     use HasTitle;
 
     protected string|Closure|null $defaultTemplate = '@SylamentNotifications/partials/Notification/index.html.twig';
+
+    protected ?SessionNotifications $sessionNotifications = null;
+
+    #[Required]
+    public function setSessionNotifications(SessionNotifications $sessionNotifications): void
+    {
+        $this->sessionNotifications = $sessionNotifications;
+    }
+
+    public function send(): static
+    {
+        $sessionNotifications = $this->sessionNotifications ?? throw new LogicException(
+            'Notification::send() needs the container-built instance — boot the bundle and create notifications through Notification::make().',
+        );
+
+        $sessionNotifications->push($this->toArray());
+
+        return $this;
+    }
 
     public static function make(?string $id = null): static
     {

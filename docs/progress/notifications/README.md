@@ -102,6 +102,15 @@ they dress — the `.sy-no` container rules and the stack controller are rows in
 controller rows in [notification.md](notification.md) — so the rows here point at
 whichever file carries the gap.
 
+Two rows below name the provider in _Ports_ — once for the bundle as a whole, once
+for the `on('dehydrate')` hook `LiveDeliverySubscriber` replaces — and carry
+different statuses, because they describe different things. Neither is the hook's
+own status: that lives in
+[notifications-bundle.md](notifications-bundle.md)'s surface table, and both rows
+here are navigational entries pointing at it, per
+[one row per file](../README.md#one-row-per-file-one-file-per-thing). Update the
+hook there; if these two ever disagree about it, that file wins.
+
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`SylamentNotificationsBundle`](../../../packages/notifications/src/SylamentNotificationsBundle.php) | [`NotificationsServiceProvider.php`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | in progress | [notifications-bundle.md](notifications-bundle.md) |
@@ -110,7 +119,7 @@ whichever file carries the gap.
 | [`NotificationsIconAlias`](../../../packages/notifications/src/Twig/NotificationsIconAlias.php) | [`View/NotificationsIconAlias.php`](../../../vendor/filament/notifications/src/View/NotificationsIconAlias.php) | in progress | [notifications-icon-alias.md](notifications-icon-alias.md) |
 | [`Colors\Components\NotificationComponent`](../../../packages/notifications/src/Colors/Components/NotificationComponent.php) | [`View/Components/NotificationComponent.php`](../../../vendor/filament/notifications/src/View/Components/NotificationComponent.php) | done | an empty colour map is complete, not a stub — the two base classes swap the palette and the stylesheet picks the shades ([colour policies](../support/color-policies.md)) |
 | [`Colors\Components\NotificationComponent\IconComponent`](../../../packages/notifications/src/Colors/Components/NotificationComponent/IconComponent.php) | [`View/Components/NotificationComponent/IconComponent.php`](../../../vendor/filament/notifications/src/View/Components/NotificationComponent/IconComponent.php) | done | same, for the toast's icon slot |
-| [Styles](../../../packages/notifications/assets/src/styles) | [`resources/css/notification.css`](../../../vendor/filament/notifications/resources/css/notification.css), [`css/notifications.css`](../../../vendor/filament/notifications/resources/css/notifications.css) | in progress | the container rules are complete; the toast rules lack the date and inline arms — [notification.md](notification.md#the-toast-markup-is-missing-the-date-and-inline-arms) |
+| [Styles](../../../packages/notifications/assets/src/styles) | [`resources/css/notification.css`](../../../vendor/filament/notifications/resources/css/notification.css), [`css/notifications.css`](../../../vendor/filament/notifications/resources/css/notifications.css), [`css/index.css`](../../../vendor/filament/notifications/resources/css/index.css) (the aggregator, ported by [`src/styles/index.css`](../../../packages/notifications/assets/src/styles/index.css)) | in progress | the container rules are complete; the toast rules lack the date and inline arms — [notification.md](notification.md#the-toast-markup-is-missing-the-date-and-inline-arms) |
 | [Scripts](../../../packages/notifications/assets/src/controllers) | [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js), [`js/index.js`](../../../vendor/filament/notifications/resources/js/index.js) | in progress | the two Stimulus controllers replace the Alpine plugin; `markAsRead()`/`markAsUnread()` are unported — [notification.md](notification.md#markasread-and-markasunread-belong-to-the-database-panel) |
 | Collection | [`Collection.php`](../../../vendor/filament/notifications/src/Collection.php) | skipped | the stack holds no server-side state, so there is nothing for a `Wireable` carrier to carry — [notifications.md](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported) |
 | Events / DatabaseNotificationsSent | [`Events/DatabaseNotificationsSent.php`](../../../vendor/filament/notifications/src/Events/DatabaseNotificationsSent.php) | blocked | the broadcast delivery arm — it is a `ShouldBroadcast` event on a private Echo channel |

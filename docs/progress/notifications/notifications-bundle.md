@@ -42,7 +42,7 @@ permanent note in [Semantics](#semantics); **diverges** → the permanent note i
 | [`Notification`, the delivery pair, the colour policies and the Twig component as services](../../../packages/notifications/src/SylamentNotificationsBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
 | [`SessionNotifications` — the `sylament.notifications` flash key](../../../packages/notifications/src/Delivery/SessionNotifications.php) | [`session()->push('filament.notifications', …)`](../../../vendor/filament/notifications/src/Notification.php), [`session()->pull(…)`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](#the-flash-bag-replaces-laravels-session-push-and-owns-the-key) |
 | [`LiveDeliverySubscriber` — the live arm](../../../packages/notifications/src/Delivery/LiveDeliverySubscriber.php) | [`on('dehydrate', …)`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](#the-live-delivery-decision-point-is-a-prerenderevent-subscriber-not-a-dehydrate-hook) · [diverges](#there-is-no-claimed-notifications-key-because-the-toast-travels-in-the-same-response) · [semantics](#a-redirecting-live-action-keeps-its-toast-for-the-destination-page-for-free) |
-| [AssetMapper prepend — `@sylament/notifications`](../../../packages/notifications/src/SylamentNotificationsBundle.php) | [`FilamentAsset::register([Js::make('notifications', …)])`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build) |
+| [AssetMapper prepend — `@sylament/notifications`](../../../packages/notifications/src/SylamentNotificationsBundle.php) | [`FilamentAsset::register([Js::make('notifications', …)])`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | in progress | — | [detail](#asset-registration) · [diverges](#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build) |
 | [`@SylamentNotifications` template namespace](../../../packages/notifications/templates) | [`->hasViews()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | [The package manifest's seven `symfony/*` requires](../../../packages/notifications/composer.json) | [`notifications/composer.json`](../../../vendor/filament/notifications/composer.json) | done | — | [diverges](#the-manifest-declares-every-symfony-package-src-imports) |
 | `Livewire::component('notifications', …)` | [`packageBooted()`](../../../vendor/filament/notifications/src/NotificationsServiceProvider.php) | done | — | [diverges](#the-stack-is-registered-as-a-twig-component-not-a-live-one) |
@@ -63,14 +63,34 @@ outside a request;
 [`SendTest`](../../../packages/notifications/tests/Integration/SendTest.php) and
 [`NotificationsTest`](../../../packages/notifications/tests/Integration/Twig/Components/NotificationsTest.php)
 reach `Notification` and the stack **through the container**, so a missing service
-registration or a missing template namespace fails them. The AssetMapper prepend
-and the manifest are declarations with no runtime to assert; what would catch them
-is a consumer install and the CI split.
+registration or a missing template namespace fails them. The manifest is a
+declaration with no runtime to assert; what would catch it is a consumer install
+and the CI split. The AssetMapper prepend is untested too, but unlike the manifest
+it *is* assertable against the compiled container — which is why its row is **in
+progress** rather than done, on the same terms support's
+[identical row](../support/support-bundle.md#asset-registration) holds.
 
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**.
+
+### Asset registration
+
+`prependExtension()` registers `packages/notifications/assets/dist` into
+`framework.asset_mapper.paths` under the alias `@sylament/notifications`, but only
+when [`isAssetMapperAvailable()`](../../../packages/support/src/SylamentBundle.php)
+confirms AssetMapper is installed — the guard that keeps `symfony/asset-mapper`
+optional for production consumers. The shape and its reasoning are the
+[divergence below](#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build).
+
+What is missing: **no test.** Nothing asserts the path and alias are prepended when
+AssetMapper is present, and nothing exercises the negative branch of
+`isAssetMapperAvailable()` (the short-circuit that returns without prepending).
+**Next step:** an Integration test asserting the compiled
+`framework.asset_mapper.paths` contains `@sylament/notifications`, plus a Unit test
+for the guard's false branch — then this row flips to **done**. Support's row wants
+the same two tests for `@sylament/support`; one shape written once covers both.
 
 ### The database-notifications component registration
 

@@ -49,7 +49,7 @@ deleted once the row is **done**; **semantics** → the permanent note in
 | [`icon()` / `iconSize()` + the status icon fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIcon.php`](../../../vendor/filament/notifications/src/Concerns/HasIcon.php), support's `HasIcon`/`HasIconSize` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) |
 | [`iconColor()` + the status colour fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIconColor.php`](../../../vendor/filament/notifications/src/Concerns/HasIconColor.php), support's `HasIconColor` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) |
 | [`color()` (support `HasColor`)](../../../packages/notifications/src/Notification.php) | [`Filament\Support\Concerns\HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
-| [`toArray()` / `fromArray()` — the eight ported keys](../../../packages/notifications/src/Notification.php) | [`toArray()` / `fromArray()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#fromarray-drops-a-value-it-cannot-type-rather-than-trusting-the-session) |
+| [`toArray()` / `fromArray()` — the eight ported keys](../../../packages/notifications/src/Notification.php) | [`toArray()` / `fromArray()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#fromarray-drops-a-value-it-cannot-type-where-filaments-typed-setters-throw) |
 | [`send()` → the session flash bag](../../../packages/notifications/src/Notification.php) | [`send()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#send-always-writes-the-flash-bag-and-the-live-arm-decides-late) · [semantics](#a-send-during-the-acting-components-own-render-arrives-on-the-next-page-load) |
 | [The toast markup — chrome, icon, title, body, close button](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/notifications/src/Notification.php) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) |
 | [`role="alert"` on danger, polite otherwise](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#the-assertive-split-is-per-toast-and-the-container-stays-polite) |
@@ -90,17 +90,25 @@ table row and any divergence or semantics note it earned stay behind.
 
 ### The toast markup is missing the date and inline arms
 
-`toEmbeddedHtml()` renders five things the port renders too — the icon, the title,
-the body, the actions container and the close button — plus two it does not: a
+`toEmbeddedHtml()` renders four things the port renders too — the icon, the title,
+the body and the close button — plus two it does not: a
 `<time class="fi-no-notification-date">` element when `getDate()` is filled, and
 an `fi-inline` class that switches the whole toast from a floating card to a list
 row (the database-notifications modal renders its stored notifications inline).
 Both are the markup half of the `date()` and `inline()` rows below and land with
 them; the stylesheet mirrors the same two gaps, carrying no
-`.sy-no-notification-date` rule and no `&:not(.sy-inline)` split — every rule it
-does carry is a rule-for-rule port of `notification.css`, allowing the
-`fi-*` → `sy-*` prefix rename and the transition divergence below. The actions
+`.sy-no-notification-date` rule and no `&:not(.sy-inline)` split. The actions
 container is the third gap and is tracked by its own **blocked** row.
+
+Scoping the stylesheet claim, since one file carries three things: every
+`.sy-no-notification*` rule is a rule-for-rule port of `notification.css`,
+allowing the `fi-*` → `sy-*` prefix rename. The leading `.sy-no` container block
+in the same file is not — it ports `notifications.css` and is
+[the stack's row](notifications.md), **done** there. And the `.sy-closing` rule,
+the `@starting-style` blocks and the `prefers-reduced-motion` query port no vendor
+rule at all: they are what the
+[transition divergence](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller)
+puts in place of Filament's four `fi-transition-*` class hooks.
 
 **Next step:** none on its own — the markup arrives in the change that ports the
 concern behind it.
@@ -224,18 +232,6 @@ around them. The behaviour is Filament's too, arrived at from the other side —
 their `on('dehydrate')` hook fires after the component has rendered, so a
 render-time `send()` misses that response as well.
 
-### `fromArray()` drops a value it cannot type rather than trusting the session
-
-Every key comes back through a type check: a non-string `title`, `body` or
-`status` becomes `null`, a `duration` that is neither `int` nor `string` falls back
-to the default, and a `color`/`iconColor` array is accepted only when **every**
-shade in it is a string — one non-string entry drops the whole map. Filament
-assigns each key straight through, because its setters take `mixed` where these
-are typed. The values cross a session boundary, so they are attacker-adjacent
-input by the time `fromArray()` sees them; dropping a value that does not type is
-the fail-fast reading, not a silent one — the notification still renders, minus
-the field that arrived malformed.
-
 ### The assertive split is per toast, and the container stays polite
 
 The stack container is a single `role="status"` live region (`aria-atomic="false"`,
@@ -257,9 +253,12 @@ same one, reached here through the twig-bridge
 filter (declared `is_safe: ['html']`, auto-wired by FrameworkBundle + TwigBundle
 the moment the component is installed — zero consumer config). What differs is the
 **configuration**. Sylament renders through Symfony's `default` sanitizer, which
-allows safe elements only. Filament tunes theirs further: `class`, `style` and
-`data-*` attributes on every element, relative links and media, and
-`withMaxInputLength(500000)` — the settings a rich-text editor's output needs.
+allows safe elements only.
+[Filament tunes theirs further](../../../vendor/filament/support/src/SupportServiceProvider.php):
+`class` and `style` on every element, six **named** data attributes and no
+wildcard (`data-color`, `data-cols`, `data-col-span`, `data-from-breakpoint`,
+`data-id`, `data-type`), `width`/`height` on `img` only, relative links and media,
+and `withMaxInputLength(500000)` — the settings a rich-text editor's output needs.
 
 So markup that survives in Filament (a styled `<span class="…">` in a body) is
 stripped of its attributes here. A consumer who wants Filament's latitude
@@ -300,6 +299,34 @@ This is the global
 [`make()` arguments move from constructors to setters](../renames.md#make-arguments-move-from-constructors-to-setters)
 rule applied here, and it is invisible at the call site: `Notification::make()` and
 `Notification::make('my-id')` both behave exactly as they do in Filament.
+
+### `fromArray()` drops a value it cannot type, where Filament's typed setters throw
+
+Every key comes back through a type check: a non-string `title`, `body` or
+`status` becomes `null`, a `duration` that is neither `int` nor `string` falls back
+to the default, and a `color`/`iconColor` array is accepted only when **every**
+shade in it is a string — one non-string entry drops the whole map.
+
+Filament's `fromArray()` assigns each key straight into the setter, and those
+setters are typed unions, not `mixed` —
+[`title(string | Closure | null)`](../../../vendor/filament/notifications/src/Concerns/HasTitle.php),
+[`body(...)`](../../../vendor/filament/notifications/src/Concerns/HasBody.php),
+[`status(...)`](../../../vendor/filament/notifications/src/Concerns/HasStatus.php),
+[`duration(int | string | Closure | null)`](../../../vendor/filament/notifications/src/Concerns/HasDuration.php).
+So a junk value out of the session is an uncaught `TypeError` there, and the port
+is the **tolerant** arm rather than the strict one: the notification still renders,
+minus the field that arrived malformed.
+
+Tolerant is the deliberate reading here, and it does not soften the house
+fail-fast rule — that rule is about **our own callers'** mistakes, and this is a
+deserializer reading input it does not control. The values cross a session
+boundary, so they are attacker-adjacent by the time `fromArray()` sees them, and
+the reader is a *delivery* path: one malformed entry throwing would take down the
+page that was trying to show the user a message, and take the other notifications
+in the bag with it. A field that does not type is a data fact, not a bug, so
+it is dropped and the rest of the notification is delivered. Both arms are pinned
+by the junk-type and array-shade cases in
+[`NotificationTest`](../../../packages/notifications/tests/Unit/NotificationTest.php).
 
 ### `send()` always writes the flash bag, and the live arm decides late
 

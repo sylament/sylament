@@ -28,9 +28,6 @@ class LiveDeliverySubscriber implements EventSubscriberInterface
      */
     public static function getSubscribedEvents(): array
     {
-        // Priority 20: LiveResponder's queues are drained into the component's root
-        // attributes by AddLiveAttributesSubscriber on this same event at priority 0,
-        // so the notifications must be queued before it runs.
         return [PreRenderEvent::class => ['onPreRender', 20]];
     }
 

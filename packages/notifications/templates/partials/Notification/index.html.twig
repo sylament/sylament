@@ -2,6 +2,7 @@
 {% set status = component.getStatus %}
 {% set title = component.getTitle %}
 {% set body = component.getBody %}
+{% set actions = component.getActions %}
 {% set duration = component.getDuration %}
 {% set color = component.getColor ?? 'gray' %}
 {% set colorAttrs = colorAttributes('Sylament\\Notifications\\Colors\\Components\\NotificationComponent', color) %}
@@ -31,7 +32,8 @@
 ) %}
 {% set toastStimulus = stimulus_controller(toastController, {
     duration: duration == 'persistent' ? 0 : duration,
-}) %}
+})
+    |stimulus_action(toastController, 'handleActionClick', 'click') %}
 
 <div
     {{ attrs({
@@ -55,6 +57,14 @@
                 {% if body is not empty %}
                     <div class="sy-no-notification-body">{{ body|sanitize_html }}</div>
                 {% endif %}
+            </div>
+        {% endif %}
+
+        {% if actions is not empty %}
+            <div class="sy-ac sy-no-notification-actions">
+                {% for action in actions %}
+                    {{ renderComponent(action) }}
+                {% endfor %}
             </div>
         {% endif %}
     </div>

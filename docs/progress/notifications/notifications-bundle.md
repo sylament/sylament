@@ -263,7 +263,8 @@ database-notifications panel's own component when it lands — as a live one.
 Filament's notifications manifest requires `filament/actions`, `filament/support`
 and the Laravel/Livewire stack. The port's
 [manifest](../../../packages/notifications/composer.json) requires
-`sylament/support` and seven Symfony packages, one per thing `src/` or
+`sylament/actions`, `sylament/support` and seven Symfony packages, one per thing
+`src/` or
 `templates/` cannot work without: `symfony/ux-twig-component` (the stack's
 `AsTwigComponent`, the subscriber's `PreRenderEvent`), `symfony/ux-live-component`
 (`LiveResponder`), `symfony/http-foundation` (`RequestStack`, the flash-bag
@@ -274,12 +275,14 @@ pipes its title and body through — a template that cannot resolve the filter d
 not render). The [split-repo dependency rule](../../../CLAUDE.md) is why each is
 named rather than inherited through a sibling that already pulls it in.
 
-Two absences are deliberate. `sylament/actions` is **not** required — nothing in
-`src/` imports an actions symbol, and it arrives with
-[the actions arm](notification.md#actions-on-a-notification-wait-on-actiontoarray).
-And `twig/twig` is not declared despite `Twig\Markup` and `Twig\Environment`
-appearing in `src/`, on the same grounds every other package leaves it out:
-`sylament/support` declares it and Twig cannot leave the graph.
+`sylament/actions` joined the list with
+[toast actions](notification.md#toast-actions-are-re-viewed-as-small-links-and-the-actions-key-restores-them):
+[`Concerns\HasActions`](../../../packages/notifications/src/Concerns/HasActions.php)
+and `Notification`'s two array methods import `Action` and `ActionGroup`
+unconditionally, which is a `require` rather than a `suggest`. One absence stays
+deliberate: `twig/twig` is not declared despite `Twig\Markup` and
+`Twig\Environment` appearing in `src/`, on the same grounds every other package
+leaves it out — `sylament/support` declares it and Twig cannot leave the graph.
 
 ### Livewire-specific provider responsibilities are dropped, not ported
 

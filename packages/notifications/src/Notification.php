@@ -7,6 +7,9 @@ namespace Sylament\Notifications;
 use BackedEnum;
 use Closure;
 use LogicException;
+use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
+use Sylament\Notifications\Concerns\HasActions;
 use Sylament\Notifications\Concerns\HasBody;
 use Sylament\Notifications\Concerns\HasDuration;
 use Sylament\Notifications\Concerns\HasId;
@@ -25,6 +28,7 @@ use Twig\Markup;
 
 class Notification extends ViewComponent
 {
+    use HasActions;
     use HasBody;
     use HasColor;
     use HasDuration;
@@ -68,7 +72,7 @@ class Notification extends ViewComponent
     }
 
     /**
-     * @return array{id: string, title: ?string, body: ?string, status: ?string, color: string|array<string>|null, icon: string|BackedEnum|Markup|null, iconColor: string|array<string>|null, duration: int|string}
+     * @return array{id: string, title: ?string, body: ?string, actions: list<array<string, mixed>>, status: ?string, color: string|array<string>|null, icon: string|BackedEnum|Markup|null, iconColor: string|array<string>|null, duration: int|string}
      */
     public function toArray(): array
     {
@@ -82,6 +86,7 @@ class Notification extends ViewComponent
             'id' => $this->getId(),
             'title' => $this->getTitle(),
             'body' => $this->getBody(),
+            'actions' => array_values(array_map(fn (Action|ActionGroup $action): array => $action->toArray(), $this->getActions())),
             'status' => $this->getStatus(),
             'color' => $this->getColor(),
             'icon' => $icon,
@@ -120,6 +125,21 @@ class Notification extends ViewComponent
 
         $duration = $data['duration'] ?? null;
         $static->duration(is_int($duration) || is_string($duration) ? $duration : $static->getDuration());
+
+        $actions = $data['actions'] ?? [];
+
+        if (is_array($actions)) {
+            $static->actions(array_map(
+                static function (array $action): Action|ActionGroup {
+                    $entry = array_filter($action, is_string(...), ARRAY_FILTER_USE_KEY);
+
+                    return array_key_exists('actions', $entry)
+                        ? ActionGroup::fromArray($entry)
+                        : Action::fromArray($entry);
+                },
+                array_values(array_filter($actions, is_array(...))),
+            ));
+        }
 
         return $static;
     }

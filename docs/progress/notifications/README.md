@@ -21,20 +21,20 @@ plain-text name is not built yet and is **todo**, **blocked** or **skipped**.
 Filament's notifications package — the database panel, database storage and
 broadcast — are wanted for parity and each waits on infrastructure that has no
 epic yet (a notifications entity and the live panel that lists it; a Symfony
-transport for broadcast, where Mercure is the direction; `Action::toArray()` /
-`fromArray()` for actions on a notification). A row whose detail section names one
-of those is **blocked**; a row waiting on nothing at all — `date()`, `inline()`,
+transport for broadcast, where Mercure is the direction). A row whose detail
+section names one of those is **blocked**; a row waiting on nothing at all —
+`date()`, `inline()`,
 custom views, the client-side builder, the test helpers, translations — is
 **todo**.
 
-Five ported concerns are **folded** into
+Six ported concerns are **folded** into
 [`notification.md`](notification.md) and carry no row below, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing): `HasId`,
-`HasTitle`, `HasBody`, `HasStatus` and `HasDuration`, each with exactly one
-consumer today. Filament's `Concerns\HasIcon` and `Concerns\HasIconColor` fold
-there too — they are status fallbacks over support's traits, and this port
+`HasTitle`, `HasBody`, `HasStatus`, `HasDuration` and `HasActions`, each with
+exactly one consumer today. Filament's `Concerns\HasIcon` and `Concerns\HasIconColor`
+fold there too — they are status fallbacks over support's traits, and this port
 [resolves them in the template](notification.md#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template);
-so do the three unported concerns (`HasActions`, `HasDate`, `CanBeInline`), which
+so do the two unported concerns (`HasDate` and `CanBeInline`), which
 are rows in that file's surface table because that is where their write-ups are.
 Both Blade views fold the same way: Filament renders a toast from
 `Notification::toEmbeddedHtml()` rather than a view file, so the toast partial is
@@ -58,7 +58,7 @@ detail-file link.
 | --- | --- | --- | --- |
 | [`Notification`](../../../packages/notifications/src/Notification.php) | [`src/Notification.php`](../../../vendor/filament/notifications/src/Notification.php) | in progress | [notification.md](notification.md) |
 | [`Notifications`](../../../packages/notifications/src/Twig/Components/Notifications.php) (the stack) | [`Livewire/Notifications.php`](../../../vendor/filament/notifications/src/Livewire/Notifications.php) | in progress | [notifications.md](notifications.md) |
-| DatabaseNotifications | [`Livewire/DatabaseNotifications.php`](../../../vendor/filament/notifications/src/Livewire/DatabaseNotifications.php) | blocked | notification storage + the actions arm — the panel is its own epic, with its own live component ([why the stack's shape does not paint it into a corner](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported)) |
+| DatabaseNotifications | [`Livewire/DatabaseNotifications.php`](../../../vendor/filament/notifications/src/Livewire/DatabaseNotifications.php) | blocked | notification storage — the panel is its own epic, with its own live component ([why the stack's shape does not paint it into a corner](notifications.md#the-stack-holds-no-server-side-collection-so-filaments-collection-is-not-ported)) |
 | BroadcastNotification | [`BroadcastNotification.php`](../../../vendor/filament/notifications/src/BroadcastNotification.php) | blocked | the broadcast delivery arm — [notification.md](notification.md#the-broadcast-and-database-delivery-arms-are-deferred-whole) |
 | DatabaseNotification | [`DatabaseNotification.php`](../../../vendor/filament/notifications/src/DatabaseNotification.php) | blocked | notification storage — [notification.md](notification.md#the-broadcast-and-database-delivery-arms-are-deferred-whole) |
 

@@ -49,15 +49,15 @@ deleted once the row is **done**; **semantics** → the permanent note in
 | [`icon()` / `iconSize()` + the status icon fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIcon.php`](../../../vendor/filament/notifications/src/Concerns/HasIcon.php), support's `HasIcon`/`HasIconSize` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) · [semantics](#iconsize-does-not-survive-the-delivery-hop) |
 | [`iconColor()` + the status colour fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIconColor.php`](../../../vendor/filament/notifications/src/Concerns/HasIconColor.php), support's `HasIconColor` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) |
 | [`color()` (support `HasColor`)](../../../packages/notifications/src/Notification.php) | [`Filament\Support\Concerns\HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
-| [`toArray()` / `fromArray()` — the eight ported keys](../../../packages/notifications/src/Notification.php) | [`toArray()` / `fromArray()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#fromarray-drops-a-value-it-cannot-type-where-filaments-typed-setters-throw) · [diverges](#a-scalableicon-crosses-the-session-unflattened-and-resolves-at-render-size) |
+| [`toArray()` / `fromArray()` — the nine ported keys](../../../packages/notifications/src/Notification.php) | [`toArray()` / `fromArray()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#fromarray-drops-a-value-it-cannot-type-where-filaments-typed-setters-throw) · [diverges](#a-scalableicon-crosses-the-session-unflattened-and-resolves-at-render-size) · [diverges](#the-actions-key-is-a-list-on-both-sides-of-the-hop) |
 | [`send()` → the session flash bag](../../../packages/notifications/src/Notification.php) | [`send()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#send-always-writes-the-flash-bag-and-the-live-arm-decides-late) · [semantics](#a-send-during-the-acting-components-own-render-arrives-on-the-next-page-load) |
-| [The toast markup — chrome, icon, title, body, close button](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/notifications/src/Notification.php) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) |
+| [The toast markup — chrome, icon, title, body, actions, close button](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/notifications/src/Notification.php) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) |
 | [`role="alert"` on danger, polite otherwise](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#the-assertive-split-is-per-toast-and-the-container-stays-polite) |
 | [Title / body sanitization (`sanitize_html`)](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`str(...)->sanitizeHtml()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#the-default-sanitizer-is-stricter-than-the-one-filament-tunes) |
 | [Toast styles (`sy-no-notification*`)](../../../packages/notifications/assets/src/styles/components/notification.css) | [`resources/css/notification.css`](../../../vendor/filament/notifications/resources/css/notification.css) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
-| [Toast controller — auto-dismiss, hover-pause, close](../../../packages/notifications/assets/src/controllers/notification_controller.ts) | [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js) | in progress | the database-notifications panel | [detail](#markasread-and-markasunread-belong-to-the-database-panel) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
+| [Toast controller — auto-dismiss, hover-pause, close, delegated action clicks](../../../packages/notifications/assets/src/controllers/notification_controller.ts) | [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js) | in progress | the database-notifications panel | [detail](#markasread-and-markasunread-belong-to-the-database-panel) · [detail](#the-delegated-click-handler-is-the-controllers-next-step) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
 | `close-notification` — closing a toast by id from a browser event | [`x-on:close-notification.window`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#closing-a-toast-by-id-needs-the-id-in-the-markup) |
-| `actions()` (`HasActions`) | [`Concerns/HasActions.php`](../../../vendor/filament/notifications/src/Concerns/HasActions.php), the `actions` key of `toArray()`/`fromArray()` | blocked | `Action::toArray()` / `fromArray()` | [detail](#actions-on-a-notification-wait-on-actiontoarray) · [semantics](#toast-actions-cannot-open-modals-at-filament-parity) |
+| [`actions()` (`HasActions`)](../../../packages/notifications/src/Concerns/HasActions.php) | [`Concerns/HasActions.php`](../../../vendor/filament/notifications/src/Concerns/HasActions.php), the `actions` key of `toArray()`/`fromArray()` | done | — | [semantics](#toast-actions-are-re-viewed-as-small-links-and-the-actions-key-restores-them) · [semantics](#toast-actions-cannot-open-modals-at-filament-parity) · [diverges](#the-toast-root-owns-the-click-and-the-triggers-carry-only-payload) |
 | `date()` (`HasDate`) | [`Concerns/HasDate.php`](../../../vendor/filament/notifications/src/Concerns/HasDate.php) | todo | — | [detail](#date-and-inline-arrive-with-the-database-notifications-panel) |
 | `inline()` (`CanBeInline`) | [`Concerns/CanBeInline.php`](../../../vendor/filament/notifications/src/Concerns/CanBeInline.php) | todo | — | [detail](#date-and-inline-arrive-with-the-database-notifications-panel) |
 | `view()` / `viewData()` / `safeViews()` | [`safeViews()` / `isViewSafe()`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#custom-views-and-their-safe-view-gate-are-unported) |
@@ -66,10 +66,12 @@ deleted once the row is **done**; **semantics** → the permanent note in
 | `assertNotified()` / `assertNotNotified()` | [`Notification.php`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#the-assertion-helpers-read-a-collection-that-no-longer-exists) |
 | `Arrayable` / `HasEmbeddedView` | [`Notification.php`](../../../vendor/filament/notifications/src/Notification.php) (the `implements` list) | skipped | — | [diverges](#the-laravel-array-and-embedded-view-contracts-have-no-counterpart) |
 
-The **done** rows are covered by five suites:
+The **done** rows are covered by six suites:
 [`NotificationTest`](../../../packages/notifications/tests/Unit/NotificationTest.php)
-(the minted uuid, the eight-key `toArray()` shape, the `fromArray()` round trip,
-the junk-type and array-shade arms, closure evaluation at read time),
+(the minted uuid, the nine-key `toArray()` shape, the `fromArray()` round trip,
+the junk-type and array-shade arms, closure evaluation at read time, and the
+actions arm — the link re-view, the group discriminator, the list re-index and the
+junk entries dropped),
 [`HasDurationTest`](../../../packages/notifications/tests/Unit/Concerns/HasDurationTest.php)
 and
 [`HasStatusTest`](../../../packages/notifications/tests/Unit/Concerns/HasStatusTest.php)
@@ -78,7 +80,11 @@ and
 (the rendered toast: status class, sanitized title with the `<script>` stripped,
 `role="alert"` on danger and its absence otherwise, the status icon fallback and
 an explicit icon overriding it, the duration value on the controller, the colour
-policy's classes, the labelled close button) and
+policy's classes, the labelled close button),
+[`NotificationActionsRenderTest`](../../../packages/notifications/tests/Integration/NotificationActionsRenderTest.php)
+(the actions slot with its payload attributes and the root's delegated click
+action, a group behind its small link trigger, and the slot's absence when the
+notification carries no actions) and
 [`SendTest`](../../../packages/notifications/tests/Integration/SendTest.php)
 (`send()` writing the flash, and the fail-fast on an instance built outside the
 container). The unported rows have no coverage because they have no code.
@@ -168,25 +174,20 @@ nothing here to read them yet.
 **Next step:** port both with the database-notifications panel, in the same change
 that gives them a listener.
 
-### Actions on a notification wait on `Action::toArray()`
+### The delegated click handler is the controller's next step
 
-`Concerns/HasActions` holds `actions()` / `getActions()`, defaulting each entry to
-the link view at small size, and the `actions` key of `toArray()`/`fromArray()`
-serializes them through `Action::toArray()` / `ActionGroup::fromArray()`. The port
-has neither half: `Sylament\Actions\Action` ships no `toArray()`/`fromArray()`
-pair ([action.md](../actions/action.md) tracks it), and without one an action
-cannot survive the session hop that every delivery here goes through.
+The toast root already names `handleActionClick` — the
+[delegation divergence](#the-toast-root-owns-the-click-and-the-triggers-carry-only-payload)
+is what puts it there — and
+[`notification_controller.ts`](../../../packages/notifications/assets/src/controllers/notification_controller.ts)
+does not define it yet, so a toast action's payload attributes are read by nobody
+and a click on one does nothing. Stimulus binds an action naming an undefined
+method silently, so the gap costs a dead click rather than a console error.
 
-The second cost is a manifest one. `sylament/notifications`
-[requires no `sylament/actions`](../../../packages/notifications/composer.json)
-today, deliberately: nothing in `src/` imports an actions symbol, and the
-[split-repo dependency rule](../../../CLAUDE.md) declares what a package uses, not
-what it may use later.
-
-**Next step:** land `Action::toArray()`/`fromArray()`, then port the concern, the
-two serialization keys, the `sy-ac` actions container in the toast template and
-the `sylament/actions` require in one change. What that change does **not** buy is
-modals on those actions — see the [semantics note](#toast-actions-cannot-open-modals-at-filament-parity).
+**Next step:** add `handleActionClick(event)` to the controller — `closest()` off
+the click target for a trigger carrying either payload attribute, `emit()` through
+the page's live component for `data-sylament-action-event`, then `close()` when
+`data-sylament-action-close` is present.
 
 ### `date()` and `inline()` arrive with the database-notifications panel
 
@@ -307,10 +308,30 @@ the evolution path if the toolkit ever ships rich content of its own. Nothing
 about this is a divergence in the port — the same library, a different default
 config — but it is the one thing a reader would get wrong from the template alone.
 
+### Toast actions are re-viewed as small links, and the `actions` key restores them
+
+[`getActions()`](../../../packages/notifications/src/Concerns/HasActions.php)
+re-views every entry at read time — `defaultTemplate(Action::LINK_TEMPLATE)` on an
+action, `defaultTriggerTemplate(ActionGroup::LINK_TEMPLATE)` on a group, and
+`defaultSize(Size::Small)` on both. They are **defaults**, not settings, so an
+action that called `template()` or `size()` itself keeps what it chose; only an
+unconfigured one becomes a small link. That is Filament's
+[`defaultView` / `defaultTriggerView`](../../../vendor/filament/notifications/src/Concerns/HasActions.php)
+pair with the [Blade view → Twig template](../renames.md#idiom) translation
+applied, and it runs on the
+way **out** as well: `toArray()` serializes the re-viewed action, so the template
+and size cross the hop as literal values rather than being re-derived.
+
+Coming back, `fromArray()` tells a group from an action by the presence of an
+`actions` key on the entry — the same discriminator
+[`ActionGroup::fromArray()`](../../../packages/actions/src/ActionGroup.php) uses
+for its own children, and it is exact because `Action::toArray()` never writes
+that key and `ActionGroup::toArray()` always does. Nesting therefore restores to
+any depth without a type tag in the payload.
+
 ### Toast actions cannot open modals at Filament parity
 
-When the [actions row](#actions-on-a-notification-wait-on-actiontoarray) lands, its
-actions will dispatch events and open URLs, and they will **not** mount modals —
+Toast actions dispatch events and open URLs, and they do **not** mount modals —
 and that is parity, not a shortfall.
 [`Action::toArray()`](../../../vendor/filament/actions/src/Action.php) serializes
 no modal configuration and no closures, and Filament's `Notifications` Livewire
@@ -398,6 +419,25 @@ so a scalable icon is size-correct on the delivery path where Filament's is
 pinned to `Large` regardless of what renders it. The round trip is pinned by the
 `ScalableFixtureIcon` case in
 [`NotificationTest`](../../../packages/notifications/tests/Unit/NotificationTest.php).
+
+### The `actions` key is a list on both sides of the hop
+
+Filament's `array_map` preserves whatever keys `getActions()` returned, on both
+`toArray()` and `fromArray()`, so `actions(['undo' => $action])` serializes to
+`['undo' => […]]` and comes back keyed. The port re-indexes at both ends —
+`array_values()` around the serializing map, and again around the restoring one —
+which makes the key a genuine `list<array<string, mixed>>` (the shape the
+`toArray()` docblock declares) and makes the round trip idempotent: a keyed input
+would otherwise serialize keyed, restore re-indexed, and serialize differently the
+second time. Nothing reads those keys — the toast renders the actions in order —
+so the only thing given up is a label the payload never used. Pinned by the keyed
+round-trip case in
+[`NotificationTest`](../../../packages/notifications/tests/Unit/NotificationTest.php).
+
+The restoring map also skips a non-array entry rather than passing it into
+`Action::fromArray()`, and drops any non-string key inside an entry it keeps —
+the same [tolerant-deserializer stance](#fromarray-drops-a-value-it-cannot-type-where-filaments-typed-setters-throw)
+every other key here takes, applied to a value that crossed the session boundary.
 
 ### `send()` always writes the flash bag, and the live arm decides late
 
@@ -498,6 +538,35 @@ between morphs. Here removal is client-owned — the element takes itself out of
 DOM and nothing re-renders behind it — which is the same property that makes the
 [zombie-toast class](notifications.md#a-toast-closes-client-side-and-is-never-re-rendered)
 impossible.
+
+### The toast root owns the click, and the triggers carry only payload
+
+Filament wires each toast action's behaviour onto the trigger itself:
+[`getAlpineClickHandler()`](../../../vendor/filament/actions/src/Action.php) emits
+one `x-on:click` per action — `$dispatch(…)`, or `close()` when the action closes
+— so the handler and its data sit on the same element. Sylament splits them. The
+five
+[trigger templates](../../../packages/actions/templates/partials/Action) emit
+**payload** attributes and no handler at all —
+`data-sylament-action-event`, `-event-data`, `-dispatch-to` and `-close` — and the
+single delegated handler lives on the toast root, written by the same
+`stimulus_controller(…)|stimulus_action(…)` hash that already carries the duration
+value, so the root keeps exactly one `data-action` writer.
+
+The split is forced by where those templates ship. An action renders inside
+modals, tables and schemas as well as inside a toast, and a Stimulus action
+attribute has to name its controller at write time — the trigger cannot know which
+one surrounds it, whereas a `data-sylament-action-*` attribute means the same
+thing everywhere and the surrounding context decides what to do with it. It also
+puts the handler on the element that already **is** the toast controller's scope,
+so `close()` needs no lookup, and it leaves the close button alone: that
+`IconButton` carries neither payload attribute, so a delegated click cannot
+double-fire it.
+
+The cost is that an action rendered where nothing delegates is inert — Stimulus
+binds no handler and the attributes are read by nobody, silently. That is the
+price of context-free triggers, and it is paid once per host: a host that wants
+toast-style dispatch adds one delegating action to its own root.
 
 ### The Laravel array and embedded-view contracts have no counterpart
 

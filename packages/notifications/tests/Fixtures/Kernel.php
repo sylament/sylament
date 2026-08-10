@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Notifications\Tests\Fixtures;
 
+use Sylament\Actions\SylamentActionsBundle;
 use Sylament\Notifications\SylamentNotificationsBundle;
+use Sylament\Schemas\SylamentSchemasBundle;
 use Sylament\Support\SylamentSupportBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
@@ -31,7 +33,9 @@ class Kernel extends BaseKernel
             new StimulusBundle(),
             new LiveComponentBundle(),
 
+            new SylamentActionsBundle(),
             new SylamentNotificationsBundle(),
+            new SylamentSchemasBundle(),
             new SylamentSupportBundle(),
         ];
     }

@@ -28,7 +28,7 @@ Reference — the Filament source this is diffed against:
 - [`notifications/resources/views/notifications.blade.php`](../../../vendor/filament/notifications/resources/views/notifications.blade.php)
   — the container markup and the Echo subscription script
 - [`notifications/resources/css/notifications.css`](../../../vendor/filament/notifications/resources/css/notifications.css)
-  — the nine container rules
+  — the seven container rules
 
 ## Surface
 
@@ -63,7 +63,8 @@ an enum or a bare string. The live-delivery row is covered from the other side, 
 
 The container-styles row is the one **done** row with no assertion of its own, and
 it cannot have one — no suite reads CSS. What stands behind its status is that its
-nine rules are a selector-for-selector port of `notifications.css` under the
+seven rules — the base plus the six placement variants — are a
+selector-for-selector port of `notifications.css` under the
 `fi-*` → `sy-*` rename, and that the three classes they key off (`sy-no`,
 `sy-align-*`, `sy-vertical-align-*`) are pinned by the two placement cases above,
 so a template that stopped emitting them would fail.

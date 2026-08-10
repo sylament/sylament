@@ -100,8 +100,9 @@ Both are the markup half of the `date()` and `inline()` rows below and land with
 them; the stylesheet mirrors the same two gaps, carrying no
 `.sy-no-notification-date` rule and no `&:not(.sy-inline)` split. The actions
 container is the third gap and is tracked by its own **blocked** row, and the
-notification **id** — which Filament's root attributes carry for the
-`close-notification` listener and for `wire:key` — is the fourth, tracked by
+notification **id** — which Filament's root carries three times over, in
+`wire:key`, in the `close-notification` listener and in the Alpine data object —
+is the fourth, tracked by
 [its own **todo** row](#closing-a-toast-by-id-needs-the-id-in-the-markup).
 
 Scoping the stylesheet claim, since one file carries three things. The
@@ -130,11 +131,15 @@ Filament's toast root carries
 `x-on:close-notification.window="if ($event.detail.id == '<id>') close()"`, and
 the package documents that event as public API: anything on the page dispatches
 `close-notification` with an `id` and the matching toast closes itself. The port
-renders neither half. The notification id reaches the markup nowhere — Filament's
-only other use of it is `wire:key`, which is Livewire plumbing with no counterpart
-here, so the id had no reason to be emitted — and the
-[toast controller](../../../packages/notifications/assets/src/controllers/notification_controller.ts)
-listens for no window event.
+renders neither half. The notification id reaches the markup nowhere, and until
+this row nothing here had asked for it: Filament's other two uses of it are
+`wire:key`, Livewire plumbing with no counterpart here, and the Alpine data
+object, whose id travels back out in the `notificationClosed` /
+`markedNotificationAsRead` / `markedNotificationAsUnread` events — the first
+[skipped because the stack holds nothing to forget](notifications.md#a-toast-closes-client-side-and-is-never-re-rendered),
+the other two [deferred with the database panel](#markasread-and-markasunread-belong-to-the-database-panel).
+The [toast controller](../../../packages/notifications/assets/src/controllers/notification_controller.ts)
+listens for no window event either.
 
 Nothing waits on this, which is why it is **todo** rather than **blocked**: the id
 is already on the object (`getId()`), the event is a plain `CustomEvent`, and

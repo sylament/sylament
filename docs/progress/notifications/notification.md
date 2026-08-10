@@ -56,6 +56,7 @@ deleted once the row is **done**; **semantics** → the permanent note in
 | [Title / body sanitization (`sanitize_html`)](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`str(...)->sanitizeHtml()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#the-default-sanitizer-is-stricter-than-the-one-filament-tunes) |
 | [Toast styles (`sy-no-notification*`)](../../../packages/notifications/assets/src/styles/components/notification.css) | [`resources/css/notification.css`](../../../vendor/filament/notifications/resources/css/notification.css) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
 | [Toast controller — auto-dismiss, hover-pause, close](../../../packages/notifications/assets/src/controllers/notification_controller.ts) | [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js) | in progress | the database-notifications panel | [detail](#markasread-and-markasunread-belong-to-the-database-panel) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
+| `close-notification` — closing a toast by id from a browser event | [`x-on:close-notification.window`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#closing-a-toast-by-id-needs-the-id-in-the-markup) |
 | `actions()` (`HasActions`) | [`Concerns/HasActions.php`](../../../vendor/filament/notifications/src/Concerns/HasActions.php), the `actions` key of `toArray()`/`fromArray()` | blocked | `Action::toArray()` / `fromArray()` | [detail](#actions-on-a-notification-wait-on-actiontoarray) · [semantics](#toast-actions-cannot-open-modals-at-filament-parity) |
 | `date()` (`HasDate`) | [`Concerns/HasDate.php`](../../../vendor/filament/notifications/src/Concerns/HasDate.php) | todo | — | [detail](#date-and-inline-arrive-with-the-database-notifications-panel) |
 | `inline()` (`CanBeInline`) | [`Concerns/CanBeInline.php`](../../../vendor/filament/notifications/src/Concerns/CanBeInline.php) | todo | — | [detail](#date-and-inline-arrive-with-the-database-notifications-panel) |
@@ -65,7 +66,7 @@ deleted once the row is **done**; **semantics** → the permanent note in
 | `assertNotified()` / `assertNotNotified()` | [`Notification.php`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#the-assertion-helpers-read-a-collection-that-no-longer-exists) |
 | `Arrayable` / `HasEmbeddedView` | [`Notification.php`](../../../vendor/filament/notifications/src/Notification.php) (the `implements` list) | skipped | — | [diverges](#the-laravel-array-and-embedded-view-contracts-have-no-counterpart) |
 
-The **done** rows are covered by four suites:
+The **done** rows are covered by five suites:
 [`NotificationTest`](../../../packages/notifications/tests/Unit/NotificationTest.php)
 (the minted uuid, the eight-key `toArray()` shape, the `fromArray()` round trip,
 the junk-type and array-shade arms, closure evaluation at read time),
@@ -98,12 +99,22 @@ row (the database-notifications modal renders its stored notifications inline).
 Both are the markup half of the `date()` and `inline()` rows below and land with
 them; the stylesheet mirrors the same two gaps, carrying no
 `.sy-no-notification-date` rule and no `&:not(.sy-inline)` split. The actions
-container is the third gap and is tracked by its own **blocked** row.
+container is the third gap and is tracked by its own **blocked** row, and the
+notification **id** — which Filament's root attributes carry for the
+`close-notification` listener and for `wire:key` — is the fourth, tracked by
+[its own **todo** row](#closing-a-toast-by-id-needs-the-id-in-the-markup).
 
-Scoping the stylesheet claim, since one file carries three things: every
-`.sy-no-notification*` rule is a rule-for-rule port of `notification.css`,
-allowing the `fi-*` → `sy-*` prefix rename. The leading `.sy-no` container block
-in the same file is not — it ports `notifications.css` and is
+Scoping the stylesheet claim, since one file carries three things. The
+`.sy-no-notification*` rules port `notification.css` selector for selector and
+declaration for declaration, under the `fi-*` → `sy-*` class rename and the
+`--color-*` / `--gray-*` → `--sy-*` custom-property rename, with two edits the
+port's own shape forces: Filament's `&:not(.fi-inline)` block is folded into the
+base rule, because [`inline()` is unported](#date-and-inline-arrive-with-the-database-notifications-panel)
+and a two-arm split with one arm is just the base; and the base rule drops
+`invisible` and spells its `transition` out per property, because nothing here
+toggles visibility from JS and the enter/leave animation is the CSS below rather
+than Alpine's. The leading `.sy-no` container block in the same file ports no part
+of `notification.css` — it ports `notifications.css` and is
 [the stack's row](notifications.md), **done** there. And the `.sy-closing` rule,
 the `@starting-style` blocks and the `prefers-reduced-motion` query port no vendor
 rule at all: they are what the
@@ -113,10 +124,34 @@ puts in place of Filament's four `fi-transition-*` class hooks.
 **Next step:** none on its own — the markup arrives in the change that ports the
 concern behind it.
 
+### Closing a toast by id needs the id in the markup
+
+Filament's toast root carries
+`x-on:close-notification.window="if ($event.detail.id == '<id>') close()"`, and
+the package documents that event as public API: anything on the page dispatches
+`close-notification` with an `id` and the matching toast closes itself. The port
+renders neither half. The notification id reaches the markup nowhere — Filament's
+only other use of it is `wire:key`, which is Livewire plumbing with no counterpart
+here, so the id had no reason to be emitted — and the
+[toast controller](../../../packages/notifications/assets/src/controllers/notification_controller.ts)
+listens for no window event.
+
+Nothing waits on this, which is why it is **todo** rather than **blocked**: the id
+is already on the object (`getId()`), the event is a plain `CustomEvent`, and
+`close()` is the method the close button already calls.
+
+**Next step:** emit the id as a Stimulus value on the toast root and add a
+`sylament:close-notification@window` action that closes when the detail id
+matches. The event name takes the
+[`sylament:` prefix](../renames.md#names-with-no-filament-source) the delivery
+event already uses, so the pair reads as one namespace.
+
 ### `markAsRead()` and `markAsUnread()` belong to the database panel
 
-Filament's Alpine `notificationComponent` carries five behaviours. Three are
-ported by
+Filament's Alpine `notificationComponent` carries five behaviours beyond the
+transition and FLIP machinery that the
+[transition divergence](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller)
+replaces wholesale. Three are ported by
 [`notification_controller.ts`](../../../packages/notifications/assets/src/controllers/notification_controller.ts):
 the auto-dismiss timer, its hover-pause (at expiry over a hovered toast, wait for
 `mouseleave`), and `close()`. The other two — `markAsRead()` and

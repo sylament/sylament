@@ -61,6 +61,13 @@ and the flash draining as they do; and `alignment` / `verticalAlignment` accepti
 an enum or a bare string. The live-delivery row is covered from the other side, by
 [`LiveDeliverySubscriberTest`](../../../packages/notifications/tests/Integration/Delivery/LiveDeliverySubscriberTest.php).
 
+The container-styles row is the one **done** row with no assertion of its own, and
+it cannot have one — no suite reads CSS. What stands behind its status is that its
+nine rules are a selector-for-selector port of `notifications.css` under the
+`fi-*` → `sy-*` rename, and that the three classes they key off (`sy-no`,
+`sy-align-*`, `sy-vertical-align-*`) are pinned by the two placement cases above,
+so a template that stopped emitting them would fail.
+
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left, and

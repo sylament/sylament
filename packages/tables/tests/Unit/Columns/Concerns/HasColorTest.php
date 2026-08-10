@@ -19,6 +19,11 @@ it('treats false as no color and suppresses the state contract', function (): vo
     expect(TextColumn::make('status')->color(false)->getColor(Status::Published))->toBeNull();
 });
 
+it('throws when the color evaluates to true, naming the column', function (): void {
+    expect(fn (): string|array|null => TextColumn::make('status')->color(true)->getColor('draft'))
+        ->toThrow(LogicException::class, '[status]');
+});
+
 it('falls back to a state implementing the color contract', function (): void {
     expect(TextColumn::make('status')->getColor(Status::Published))->toBe('success')
         ->and(TextColumn::make('status')->getColor(Status::Draft))->toBe('gray');

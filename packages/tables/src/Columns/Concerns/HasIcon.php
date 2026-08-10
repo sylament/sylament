@@ -6,6 +6,7 @@ namespace Sylament\Tables\Columns\Concerns;
 
 use BackedEnum;
 use Closure;
+use LogicException;
 use Sylament\Support\Contracts\HasIcon as IconContract;
 use Sylament\Support\Enums\IconPosition;
 use Sylament\Tables\Columns\Column;
@@ -66,7 +67,11 @@ trait HasIcon
             'state' => $state,
         ]);
 
-        if (is_bool($icon)) {
+        if ($icon === true) {
+            throw new LogicException(sprintf('Icon of column [%s] must be an icon name, an enum, markup, or false; true given.', $this->getName()));
+        }
+
+        if ($icon === false) {
             return null;
         }
 

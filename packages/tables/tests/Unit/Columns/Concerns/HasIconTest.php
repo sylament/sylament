@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Support\Enums\IconPosition;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Tests\Fixtures\Records\Status;
+use Twig\Markup;
 
 it('has no icon by default and reports the before position', function (): void {
     $column = TextColumn::make('status');
@@ -21,6 +22,11 @@ it('returns a literal icon and evaluates a closure against the passed state', fu
 
 it('treats false as no icon and suppresses the state contract', function (): void {
     expect(TextColumn::make('status')->icon(false)->getIcon(Status::Published))->toBeNull();
+});
+
+it('throws when the icon evaluates to true, naming the column', function (): void {
+    expect(fn (): string|BackedEnum|Markup|null => TextColumn::make('status')->icon(true)->getIcon('draft'))
+        ->toThrow(LogicException::class, '[status]');
 });
 
 it('falls back to a state implementing the icon contract', function (): void {

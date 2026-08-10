@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Columns\Concerns;
 
 use Closure;
+use LogicException;
 use Sylament\Support\Contracts\HasColor as ColorContract;
 use Sylament\Tables\Columns\Column;
 
@@ -62,7 +63,11 @@ trait HasColor
             'state' => $state,
         ]);
 
-        if (is_bool($color)) {
+        if ($color === true) {
+            throw new LogicException(sprintf('Color of column [%s] must be a palette name, a shade map, or false; true given.', $this->getName()));
+        }
+
+        if ($color === false) {
             return null;
         }
 

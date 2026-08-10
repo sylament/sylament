@@ -61,7 +61,7 @@ sections do.
 | `date()` / `dateTime()` / `time()` / `since()` and the `iso*` variants, `timezone()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
 | `money()` / `numeric()` | [`CanFormatState`](../../../vendor/filament/tables/src/Columns/Concerns/CanFormatState.php) | todo | — | — |
 | `badge()` — the badge shell | [`TextColumn::badge()`](../../../vendor/filament/tables/src/Columns/TextColumn.php), [`View\Components\BadgeComponent`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | todo | — | — |
-| [`color()`](../../../packages/tables/src/Columns/Concerns/HasColor.php) / [`icon()` / `iconPosition()`](../../../packages/tables/src/Columns/Concerns/HasIcon.php) / [`iconColor()`](../../../packages/tables/src/Columns/Concerns/HasIconColor.php) | [`Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php), [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php), [`HasIconColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | done | — | [semantics](#the-colour-and-icon-maps-resolve-last-match-wins-and-false-suppresses-the-state-contract-fallback) · [diverges](#an-explicit-true-colour-or-icon-is-treated-the-same-as-false-where-filament-crashes) |
+| [`color()`](../../../packages/tables/src/Columns/Concerns/HasColor.php) / [`icon()` / `iconPosition()`](../../../packages/tables/src/Columns/Concerns/HasIcon.php) / [`iconColor()`](../../../packages/tables/src/Columns/Concerns/HasIconColor.php) | [`Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php), [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php), [`HasIconColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasIconColor.php) | done | — | [semantics](#the-colour-and-icon-maps-resolve-last-match-wins-and-false-suppresses-the-state-contract-fallback) · [diverges](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes) |
 | [`description()` — the secondary line above or below](../../../packages/tables/src/Columns/Concerns/HasDescription.php) | [`Columns\Concerns\HasDescription`](../../../vendor/filament/tables/src/Columns/Concerns/HasDescription.php) | done | — | — |
 | `size()` / `weight()` / `fontFamily()` / `lineClamp()` | [`HasWeight`](../../../vendor/filament/support/src/Concerns/HasWeight.php), [`HasFontFamily`](../../../vendor/filament/support/src/Concerns/HasFontFamily.php), [`HasLineClamp`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | todo | — | — |
 | `wrap()` / `copyable()` | [`CanWrap`](../../../vendor/filament/support/src/Concerns/CanWrap.php), [`CanBeCopied`](../../../vendor/filament/support/src/Concerns/CanBeCopied.php) | todo | — | — |
@@ -122,13 +122,15 @@ pins the case where two keyed entries match the same state and the second
 wins.
 
 `getColor()` and `getIcon()` add a second rule at the state-contract fallback:
-`$color === false` / `$icon === false` — reachable only through an explicit
-`->color(false)` / `->icon(false)` — returns `null` immediately and never
-reaches the `$state instanceof ColorContract` / `IconContract` check below it.
-An unset colour or icon, the property's `null` default, *does* reach that
-check. So `false` does not mean *no colour*, it means *no colour, and do not
-ask the state either* — where leaving the setter uncalled defers to the
-state's own `getColor()` / `getIcon()`.
+an evaluated `false` — whether from a literal `->color(false)` / `->icon(false)`,
+a closure that returns `false`, or a `colors()` / `icons()` map that resolves
+to `false` — returns `null` immediately and never reaches the `$state
+instanceof ColorContract` / `IconContract` check below it. An unset colour or
+icon, the property's `null` default, *does* reach that check. So `false` does
+not mean *no colour*, it means *no colour, and do not ask the state either* —
+where leaving the setter uncalled defers to the state's own `getColor()` /
+`getIcon()`. The other boolean, `true`, takes neither path: it throws — see
+[Divergences](#an-explicit-true-colour-or-icon-throws-where-filament-lets-it-through-and-crashes).
 
 ## Divergences
 
@@ -222,7 +224,7 @@ per-item formatting, which `listWithLineBreaks()` and `bulleted()` both need
 (Filament re-enters `$formatState` per item). Until then, a consumer wanting a
 different join writes `formatStateUsing()`, which receives the raw iterable.
 
-### An explicit `true` colour or icon is treated the same as `false`, where Filament crashes
+### An explicit `true` colour or icon throws, where Filament lets it through and crashes
 
 `color()` / `icon()` accept `bool` in their union, mirroring
 [`Filament\Tables\Columns\Concerns\HasColor`](../../../vendor/filament/tables/src/Columns/Concerns/HasColor.php)
@@ -230,20 +232,25 @@ and [`HasIcon`](../../../vendor/filament/tables/src/Columns/Concerns/HasIcon.php
 exactly — but only `false` carries meaning, as the sentinel the getters test
 for. Filament's own getters declare `string | array | null` /
 `string | BackedEnum | Htmlable | null` and check only `$color === false`, so
-a caller who passes the *other* boolean — nonsensical, but the type accepts
-it — falls through to `filled($color)`, which is `true` for a bare `true`, and
-the getter returns it: a `TypeError` at the return statement, since `true` is
-not a member of the declared return type. Nothing in Filament's own test suite
-exercises this arm; it is a latent gap in the vendor union, not a contract
-anyone relies on.
+an evaluated `true` — nonsensical, but the type accepts it — falls through to
+`filled($color)`, which is `true` for a bare `true`, and the getter returns
+it: a `TypeError` at the return statement, since `true` is not a member of the
+declared return type. Nothing in Filament's own test suite exercises this arm;
+it is a latent gap in the vendor union that surfaces as an uncontrolled crash,
+not a contract anyone relies on.
 
-Sylament's `getColor()` / `getIcon()` test `is_bool($color)` in place of
-`$color === false`, so `true` is treated exactly like `false` — suppressed to
-`null`, state-contract fallback skipped — rather than reaching a return
-statement it cannot satisfy. PHPStan level max is what surfaces the gap: the
-narrower return type correctly will not admit `true` once `false` alone is
-excluded from it, the same class of vendor defect the port already
-[fixes at the cause](column.md#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column)
-for `searchable()`. Every `false` call site keeps its existing meaning; a
-`true` call site could never have returned successfully before and now fails
-soft instead of throwing.
+Sylament's `getColor()` / `getIcon()` test `$color === true` / `$icon === true`
+ahead of the `false` check and throw a `LogicException` naming the column —
+`Color of column [%s] must be a palette name, a shade map, or false; true
+given.` and the icon equivalent — rather than reaching Filament's uncontrolled
+`TypeError`, and rather than swallowing the mistake into `null`. This is the
+project's [fail-fast rule](../../../CLAUDE.md): `true` is not a value to
+absorb — a caller who sets it meant something else — so the toolkit says so at
+the point the mistake was made, in a message naming the column, rather than
+downstream and unnamed. PHPStan level max stays clean either way (confirmed
+for both this arm and the `false` arm below it): a `throw` removes `true` from
+the flow the same way an early `return` does, so nothing is left over against
+the declared `string|array|null` return type. Every `false` call site keeps
+its existing meaning; a `true` call site could never have returned
+successfully in Filament either, and now fails loudly at its own column
+instead of silently corrupting a render.

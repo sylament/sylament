@@ -20,6 +20,7 @@ class SylamentNotificationsBundle extends SylamentBundle
         $this->configureComponents($configurator);
         $this->configureColorPolicies($configurator);
         $this->configureDelivery($configurator);
+        $this->configureTwigComponents($configurator);
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
@@ -61,6 +62,14 @@ class SylamentNotificationsBundle extends SylamentBundle
                 ->autoconfigure()
             ->set(SessionNotifications::class)
             ->set(LiveDeliverySubscriber::class);
+    }
+
+    private function configureTwigComponents(ContainerConfigurator $configurator): void
+    {
+        $configurator->services()
+            ->load(__NAMESPACE__ . '\\Twig\\Components\\', __DIR__ . '/Twig/Components/')
+            ->autowire()
+            ->autoconfigure();
     }
 
     private function prependAssetMapper(ContainerBuilder $container): void

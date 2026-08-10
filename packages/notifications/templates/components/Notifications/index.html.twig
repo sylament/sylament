@@ -1,0 +1,16 @@
+{% set stackController = 'sylament--notifications--notifications' %}
+{% set stackStimulus = stimulus_controller(stackController)
+    |stimulus_action(stackController, 'receive', 'sylament:notification@window') %}
+
+<div
+    {{ attributes.defaults({
+        class: classes('sy sy-no', 'sy-align-' ~ this.alignment, 'sy-vertical-align-' ~ this.verticalAlignment),
+        role: 'status',
+        'aria-atomic': 'false',
+        ...stackStimulus,
+    }) }}
+>
+    {% for notification in this.flashed %}
+        {{ renderComponent(notification) }}
+    {% endfor %}
+</div>

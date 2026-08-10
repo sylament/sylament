@@ -128,10 +128,10 @@ meant for a user's status enum so a table column can colour itself from record
 state; it has no consumer in this package yet. Filament carries the same two
 contracts (`Support\Contracts\HasColor` and
 `Support\View\Components\Contracts\HasColor`) and hits the same clash one level
-up: its `forms` and `infolists` packages each ship a `Concerns/HasColor.php`
-setter trait that needs the enum contract, and both import it
-`as ColorInterface` — unaliased, the `use` would collide with the trait's own
-declaration of the same unqualified name.
+up: `infolists/Components/Concerns/HasColor.php` declares `trait HasColor` and
+needs the enum contract, so it imports it `as ColorInterface` — unaliased, the
+`use` would collide with the trait's own declaration of the same unqualified
+name.
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |

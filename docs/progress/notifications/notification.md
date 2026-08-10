@@ -46,7 +46,7 @@ deleted once the row is **done**; **semantics** → the permanent note in
 | [`body()` (`HasBody`)](../../../packages/notifications/src/Concerns/HasBody.php) | [`Concerns/HasBody.php`](../../../vendor/filament/notifications/src/Concerns/HasBody.php) | done | — | — |
 | [`status()` + `success()`/`info()`/`warning()`/`danger()` (`HasStatus`)](../../../packages/notifications/src/Concerns/HasStatus.php) | [`Concerns/HasStatus.php`](../../../vendor/filament/notifications/src/Concerns/HasStatus.php) | done | — | — |
 | [`duration()` / `seconds()` / `persistent()` (`HasDuration`)](../../../packages/notifications/src/Concerns/HasDuration.php) | [`Concerns/HasDuration.php`](../../../vendor/filament/notifications/src/Concerns/HasDuration.php) | done | — | [diverges](#a-closure-duration-evaluating-to-null-throws-where-filament-falls-back-to-persistent) |
-| [`icon()` / `iconSize()` + the status icon fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIcon.php`](../../../vendor/filament/notifications/src/Concerns/HasIcon.php), support's `HasIcon`/`HasIconSize` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) |
+| [`icon()` / `iconSize()` + the status icon fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIcon.php`](../../../vendor/filament/notifications/src/Concerns/HasIcon.php), support's `HasIcon`/`HasIconSize` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) · [semantics](#iconsize-does-not-survive-the-delivery-hop) |
 | [`iconColor()` + the status colour fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIconColor.php`](../../../vendor/filament/notifications/src/Concerns/HasIconColor.php), support's `HasIconColor` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) |
 | [`color()` (support `HasColor`)](../../../packages/notifications/src/Notification.php) | [`Filament\Support\Concerns\HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
 | [`toArray()` / `fromArray()` — the eight ported keys](../../../packages/notifications/src/Notification.php) | [`toArray()` / `fromArray()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#fromarray-drops-a-value-it-cannot-type-where-filaments-typed-setters-throw) · [diverges](#a-scalableicon-crosses-the-session-unflattened-and-resolves-at-render-size) |
@@ -367,6 +367,19 @@ in the bag with it. A field that does not type is a data fact, not a bug, so
 it is dropped and the rest of the notification is delivered. Both arms are pinned
 by the junk-type and array-shade cases in
 [`NotificationTest`](../../../packages/notifications/tests/Unit/NotificationTest.php).
+
+### `iconSize()` does not survive the delivery hop
+
+`toArray()` writes no size key and `fromArray()` never calls the setter, and
+both delivery paths — the session flash bag and the live round trip — rebuild
+the toast through that pair, so a **sent** notification renders its icon at the
+template's default size regardless of what `iconSize()` was set to; only a
+directly rendered instance (`render($twig)` on the live object) honours it.
+This is Filament parity, not a port gap: their
+[`toArray()` / `fromArray()`](../../../vendor/filament/notifications/src/Notification.php)
+carry no size key either, and their delivered toasts rebuild through the same
+pair. Carrying the size across would be a Sylament-only extension; declined
+while the surface stays at parity.
 
 ### A `ScalableIcon` crosses the session unflattened and resolves at render size
 

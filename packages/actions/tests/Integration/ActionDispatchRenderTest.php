@@ -27,6 +27,15 @@ it('renders dispatchTo with the target component and plain dispatch without it',
 
     expect(renderDispatchAction(Action::make('a')->dispatch('x')))
         ->not->toContain('data-sylament-action-dispatch-to');
+
+    /*
+     * A re-`dispatch()` resets the direction to false but leaves the target component
+     * set (vendor-exact), so a template reading `getDispatchToComponent` truthiness
+     * instead of the direction would address a plain dispatch at a stale target.
+     */
+    expect(renderDispatchAction(Action::make('a')->dispatchTo('App:PostList', 'a')->dispatch('b')))
+        ->toContain('data-sylament-action-event="b"')
+        ->not->toContain('data-sylament-action-dispatch-to');
 });
 
 it('renders the close marker on a closing dispatch and on a bare close', function (): void {
@@ -37,6 +46,22 @@ it('renders the close marker on a closing dispatch and on a bare close', functio
     expect(renderDispatchAction(Action::make('a')->close()))
         ->toContain('data-sylament-action-close');
 });
+
+it('ranks the event above the parent-call handler and below a client handler', function (string $template): void {
+    expect(renderDispatchAction(Action::make('a')->template($template)->callParent('callMountedAction')->dispatch('x')))
+        ->toContain('data-sylament-action-event="x"')
+        ->not->toContain('callMountedAction');
+
+    expect(renderDispatchAction(Action::make('a')->template($template)->action('handleClick')->dispatch('x')))
+        ->toContain('data-live-action-param="handleClick"')
+        ->not->toContain('data-sylament-action-event');
+})->with([
+    'button' => Action::BUTTON_TEMPLATE,
+    'link' => Action::LINK_TEMPLATE,
+    'badge' => Action::BADGE_TEMPLATE,
+    'grouped' => Action::GROUPED_TEMPLATE,
+    'icon button' => Action::ICON_BUTTON_TEMPLATE,
+]);
 
 it('renders event data JSON only when non-empty', function (): void {
     expect(renderDispatchAction(Action::make('a')->dispatch('x')))

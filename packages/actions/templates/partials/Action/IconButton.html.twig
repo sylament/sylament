@@ -1,7 +1,6 @@
 {% set clickWiringSuppressed = component.getUrl or component.isDisabled %}
 {% set hasEventBinding = component.getEvent
     and not component.getClientClickHandler
-    and not component.getParentActionCallLiveComponentClickHandler
     and not component.canSubmitForm
     and not clickWiringSuppressed %}
 {% set dispatchAttributes = hasEventBinding
@@ -24,19 +23,21 @@
     : {} %}
 {% set clickParameters = component.getClientClickHandler
     ? {action: component.getClientClickHandler}
-    : (component.getParentActionCallLiveComponentClickHandler
-        ? {
-            action: component.getParentActionCallLiveComponentClickHandler,
-            ...(component.getArguments ? {arguments: component.getArguments} : {}),
-        }
-        : (hasEventBinding or component.shouldClose
-            ? null
-            : {
-                action: 'mountAction',
-                name: component.getName,
-                ...(component.getInvokedArguments ? {arguments: component.getInvokedArguments} : {}),
-                ...(component.getContext ? {context: component.getContext} : {}),
-            })) %}
+    : (hasEventBinding
+        ? null
+        : (component.getParentActionCallLiveComponentClickHandler
+            ? {
+                action: component.getParentActionCallLiveComponentClickHandler,
+                ...(component.getArguments ? {arguments: component.getArguments} : {}),
+            }
+            : (component.shouldClose
+                ? null
+                : {
+                    action: 'mountAction',
+                    name: component.getName,
+                    ...(component.getInvokedArguments ? {arguments: component.getInvokedArguments} : {}),
+                    ...(component.getContext ? {context: component.getContext} : {}),
+                }))) %}
 {% set mountAttributes = clickWiringSuppressed or component.canSubmitForm or clickParameters is null
     ? {}
     : stimulus_action('live', 'action', parameters: clickParameters) %}

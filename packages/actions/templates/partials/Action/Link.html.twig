@@ -5,17 +5,17 @@
 {%- if not component.getUrl -%}
     {%- if hasLiveClickBinding and component.getClientClickHandler -%}
         {%- set clickParameters = {action: component.getClientClickHandler} -%}
-    {%- elseif hasLiveClickBinding and component.getParentActionCallLiveComponentClickHandler -%}
-        {%- set clickParameters = {
-            action: component.getParentActionCallLiveComponentClickHandler,
-            ...(component.getArguments ? {arguments: component.getArguments} : {}),
-        } -%}
     {%- elseif hasLiveClickBinding and component.getEvent -%}
         {%- set dispatchAttributes = {
             'data-sylament-action-event': component.getEvent,
             'data-sylament-action-event-data': component.getEventData ? component.getEventData|json_encode : false,
             'data-sylament-action-dispatch-to': component.getDispatchDirection == 'to' ? component.getDispatchToComponent : false,
             'data-sylament-action-close': component.shouldClose,
+        } -%}
+    {%- elseif hasLiveClickBinding and component.getParentActionCallLiveComponentClickHandler -%}
+        {%- set clickParameters = {
+            action: component.getParentActionCallLiveComponentClickHandler,
+            ...(component.getArguments ? {arguments: component.getArguments} : {}),
         } -%}
     {%- elseif component.shouldClose -%}
         {%- set closeAttributes = {

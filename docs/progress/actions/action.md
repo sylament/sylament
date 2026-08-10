@@ -524,8 +524,9 @@ Ported: both value shapes. `action(Closure|string|null $action): static` /
 no-op semantics) — covered by `ActionTest`. The string branch renders through
 `getClientClickHandler(): ?string` — the Sylament port of
 `getLivewireClickHandler()`'s string arm — which every trigger template reads
-first in its click precedence (string handler, then a `callParent()` handler,
-then a [dispatch payload](#a-dispatch-action-renders-payload-attributes-not-a-click-binding),
+first in its click precedence (string handler, then a
+[dispatch payload](#a-dispatch-action-renders-payload-attributes-not-a-click-binding),
+then a `callParent()` handler,
 then `shouldClose()` → a client-side dismiss, then the `mountAction`
 round-trip); the reinterpretation of
 the string as a live-action name rather than a raw client expression is
@@ -843,23 +844,24 @@ attribute: a `dispatchSelf()` action is indistinguishable in the DOM from a plai
 no meaningful "self" to address. Add a `data-sylament-action-dispatch-self`
 marker when one does.
 
-Two deltas against Filament. Filament emits
-`getLivewireEventClickHandler()` — a `$dispatch(...)` / `$dispatchSelf(...)` /
-`$dispatchTo(...)` **JavaScript expression** on `wire:click`; the port has no
-arbitrary-JS seam and does not want one
+One delta against Filament, and it is the shape rather than the rank. Filament
+emits `getLivewireEventClickHandler()` — a `$dispatch(...)` /
+`$dispatchSelf(...)` / `$dispatchTo(...)` **JavaScript expression** on
+`wire:click`; the port has no arbitrary-JS seam and does not want one
 ([same reading](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side)
 as the string click handler), so the payload crosses as data instead of code.
-And the arm sits one rank **lower**: Filament's `getLivewireClickHandler()`
-ranks the event above `getParentActionCallLivewireClickHandler()`, the port
-ranks it below, so an action carrying both a `callParent()` handler and a
-`dispatch()` calls the parent here and dispatches upstream. The combination has
-no caller in either codebase; the order is the one the trigger templates already
-read, and closing the gap means moving the arm in all five.
+The **rank** is vendor-exact: `getLivewireClickHandler()` tries the string
+handler, then the event, then `getParentActionCallLivewireClickHandler()`, and
+the five templates rank them the same way, so an action carrying both a
+`callParent()` handler and a `dispatch()` dispatches rather than calling the
+parent — in both codebases.
 
 Pinned by
 [`ActionDispatchRenderTest`](../../../packages/actions/tests/Integration/ActionDispatchRenderTest.php),
-which covers the payload, the direction branch, the empty-payload omission, the
-close marker on both arms, the url arm still winning, and the icon-button shape
+which covers the payload, the direction branch (including the stale-target
+`dispatchTo(…)->dispatch(…)` case), the empty-payload omission, the close marker
+on both arms, the url arm still winning, the rank against the client and
+parent-call handlers across all five templates, and the icon-button shape
 reaching the same arms through its own guard expressions.
 
 ## Divergences
@@ -1201,8 +1203,8 @@ live-action name.
 
 All five trigger templates share one click precedence, the port of
 `getLivewireClickHandler()`'s arm order: a string handler first, then a
-`callParent()` handler (with the action's own `arguments` attached), then a
 [dispatch payload](#a-dispatch-action-renders-payload-attributes-not-a-click-binding),
+then a `callParent()` handler (with the action's own `arguments` attached),
 then `shouldClose()`, then the `mountAction` round-trip — and the whole chain is
 suppressed when `getUrl()` is filled, because a link navigates. `shouldClose()`
 now emits `data-action="sylament--support--modal#dismiss"`, a **client-side**

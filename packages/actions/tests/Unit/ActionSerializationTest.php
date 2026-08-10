@@ -78,3 +78,12 @@ it('round-trips a group with its child actions and dropdown config', function ()
     expect($restored->getFlatActions())->toHaveKeys(['one', 'two'])
         ->and($restored->toArray())->toBe($array);
 });
+
+it('round-trips a link-triggered group', function (): void {
+    $array = ActionGroup::make()->actions([Action::make('one')])->link()->toArray();
+    $restored = ActionGroup::fromArray($array);
+
+    expect($restored->getTriggerTemplate())->toBe(ActionGroup::LINK_TEMPLATE)
+        ->and($restored->isLink())->toBeTrue()
+        ->and($restored->toArray())->toBe($array);
+});

@@ -1,0 +1,14 @@
+{% set extraAttributes = group.getExtraAttributeBag.toScalarAttributes %}
+
+<twig:SylamentSupport:Link
+    tag="button"
+    :icon="group.getIcon"
+    :iconSize="group.getIconSize"
+    :color="group.getColor ?? 'gray'"
+    :size="group.getSize ?? 'md'"
+    :labelSrOnly="group.isLabelHidden"
+    {{ ...(group.getTooltip ? {title: group.getTooltip} : {}) }}
+    {{ ...extraAttributes }}
+>
+    {{- group.getLabel -}}
+</twig:SylamentSupport:Link>

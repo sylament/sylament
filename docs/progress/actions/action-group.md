@@ -77,9 +77,10 @@ permanent note in [Divergences](#divergences).
 | Grouped **trigger** template ([`action-group/GroupedTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/GroupedTrigger.html.twig)) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toGroupedTriggerHtml()`) | in progress | badge support | [detail](#the-grouped-trigger-drops-the-badge-and-filaments-default-ellipsis-icon) |
 | Trigger machinery | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getTriggerView()`/`toTriggerHtml()`) | done | — | [diverges](#trigger-defaults-diverge-from-filament-gray-over-primary-and-the-ellipsis-icon-is-per-template) |
 | Rendering (`toEmbeddedHtml()`) incl. [`getDropdownActionLists()`](../../../packages/actions/src/ActionGroup.php) — flattened sections and embedded submenus | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | done | — | [diverges](#the-dropdown-plan-is-a-php-method-the-template-loops-not-an-inline-output-buffer), [diverges](#dropdownfalse-wraps-its-inline-row-in-a-bare-divsysy-ac-group-unlike-filaments-unwrapped-concatenation) |
-| Badge/button-group/link triggers | [`View/Concerns/CanGenerate*Html.php`](../../../vendor/filament/support/src/View/Concerns) | todo | — | [detail](#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup) |
+| Link **trigger** template ([`action-group/LinkTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/LinkTrigger.html.twig)), with `link()` / `isLink()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toLinkTriggerHtml()`, `link()`/`isLink()`) | in progress | badge support | [detail](#the-link-trigger-carries-every-ported-prop-and-drops-the-badge) |
+| Badge/button-group triggers | [`View/Concerns/CanGenerate*Html.php`](../../../vendor/filament/support/src/View/Concerns) | todo | — | [detail](#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup) |
 | Dropdown teleport & auto-placement | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) (`dropdownTeleport()`/`dropdownAutoPlacement()`) | todo | — | - |
-| `toArray()` / `fromArray()` — the 16 ported keys | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toArray()`/`fromArray()`) | done | — | [diverges](#the-groups-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened) · [semantics](#the-groups-serialized-key-list-drops-iconposition-hasdropdownteleport-and-vendors-view) · [semantics](#fromarrays-hasdropdownflip-fallback-is-false-where-the-property-defaults-to-true) · [semantics](#fromarray-restores-only-the-three-built-in-trigger-templates) |
+| `toArray()` / `fromArray()` — the 16 ported keys | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toArray()`/`fromArray()`) | done | — | [diverges](#the-groups-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened) · [semantics](#the-groups-serialized-key-list-drops-iconposition-hasdropdownteleport-and-vendors-view) · [semantics](#fromarrays-hasdropdownflip-fallback-is-false-where-the-property-defaults-to-true) · [semantics](#fromarray-restores-only-the-four-built-in-trigger-templates) |
 | `hasNonBulkAction()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`hasNonBulkAction()`) | blocked | BulkAction | [detail](#hasnonbulkaction-is-blocked-on-the-bulkaction-port) |
 
 ## Details
@@ -115,6 +116,39 @@ chevron — and the port drops its `fi-ac-grouped-group` marker class, so a
 submenu row is not distinguishable from a plain action row by CSS today. Add
 the marker class first if a chevron is ever wanted.
 
+### The link trigger carries every ported prop and drops the badge
+
+[`LinkTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/LinkTrigger.html.twig)
+is the port of Filament's `toLinkTriggerHtml()`, selected by `link()` (or a
+raw `triggerTemplate(ActionGroup::LINK_TEMPLATE)`) and reported by `isLink()` —
+the same setter/predicate pair `button()`/`isButton()` and
+`iconButton()`/`isIconButton()` already carry, which is why the constant is
+wired in four places rather than one: the pair, the
+[restore whitelist](#fromarray-restores-only-the-four-built-in-trigger-templates),
+and the template file itself. It composes support's
+[`Link`](../../../packages/support/templates/components/Link/index.html.twig)
+with `tag="button"` — the primitive defaults to `'a'`, and a dropdown trigger is
+never an anchor — and threads through every prop Filament passes that the port
+has: `icon`, `iconSize`, `color`, `size`, `labelSrOnly` (from
+`isLabelHidden()`), the tooltip as `title`, the label as content, and the extra
+attribute bag.
+
+Two of Filament's arguments have nothing to map to. **`badge` / `badgeColor`**:
+no `HasBadge` concern exists anywhere in the port, the same gap
+[the grouped trigger carries](#the-grouped-trigger-drops-the-badge-and-filaments-default-ellipsis-icon).
+**`iconPosition`**: `ActionGroup` composes no `HasIconPosition`, so there is no
+getter to read — the group's `toArray()`
+[drops the key](#the-groups-serialized-key-list-drops-iconposition-hasdropdownteleport-and-vendors-view)
+for the same reason, and the `Link` primitive's own `iconPosition = 'before'`
+default stands.
+
+Its prop list is deliberately wider than
+[`ButtonTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/ButtonTrigger.html.twig)'s,
+which passes only `icon` / `color` / `outlined` / `size` and silently ignores a
+group's `iconSize`, `hiddenLabel()` and `tooltip()` even though Filament's
+`toButtonTriggerHtml()` threads all three. That is the button trigger's gap, not
+a convention worth copying; widen it when a caller trips over it.
+
 ### The button-group trigger is unported, which is why `hasDropdown()` stands in for `isButtonGroup()`
 
 Filament ships six trigger views —
@@ -124,8 +158,9 @@ Filament ships six trigger views —
 with `buttonGroup()` / `isButtonGroup()`
 selecting a **non-dropdown row of buttons** (`div.fi-btn-group`), distinct from
 `button()`, which is a dropdown whose trigger happens to look like a button.
-The port has `BUTTON_TEMPLATE`, `ICON_BUTTON_TEMPLATE`, and now
-`GROUPED_TEMPLATE`; badge, link, and **button-group** have none, which is why
+The port has `BUTTON_TEMPLATE`, `ICON_BUTTON_TEMPLATE`, `GROUPED_TEMPLATE` and
+now [`LINK_TEMPLATE`](#the-link-trigger-carries-every-ported-prop-and-drops-the-badge);
+badge and **button-group** have none, which is why
 `isButtonGroup()` has nothing to be ported as and
 [`hasDropdown()` stands in for it](#the-child-template-split-keys-off-hasdropdown-where-filament-keys-off-isbuttongroup).
 The port's inline-row shape is `dropdown(false)`, which Filament also supports
@@ -166,7 +201,7 @@ so there is no flag to write. **`view`** — Filament's group serializes its own
 custom template as `hasView() ? getView() : null`, the escape hatch for a group
 rendered through a user-supplied view; that surface is not ported, and the
 restore side would drop the value anyway
-([whitelist](#fromarray-restores-only-the-three-built-in-trigger-templates)).
+([whitelist](#fromarray-restores-only-the-four-built-in-trigger-templates)).
 Vendor's `triggerView` is the key that *did* survive, renamed `triggerTemplate`
 by the systematic Blade → Twig translation in [`renames.md`](../renames.md).
 
@@ -205,7 +240,7 @@ pair itself, since `toArray()` always writes the key. Only a hand-built or
 truncated payload can hit it. Corrected here, a group would round-trip
 differently from its Filament counterpart; the divergence is not worth that.
 
-### `fromArray()` restores only the three built-in trigger templates
+### `fromArray()` restores only the four built-in trigger templates
 
 Same trust boundary as
 [`Action`'s template whitelist](action.md#fromarray-restores-only-the-five-built-in-templates),
@@ -213,7 +248,7 @@ and the same shape: a restored `triggerTemplate` reaches `{% include %}` in
 [`ActionGroup/index.html.twig`](../../../packages/actions/templates/partials/ActionGroup/index.html.twig),
 so [`fromArray()`](../../../packages/actions/src/ActionGroup.php) admits it only
 when it is one of the group's own `ICON_BUTTON_TEMPLATE` / `BUTTON_TEMPLATE` /
-`GROUPED_TEMPLATE` constants. Anything else is dropped and
+`GROUPED_TEMPLATE` / `LINK_TEMPLATE` constants. Anything else is dropped and
 `getTriggerTemplate()` falls through its
 `triggerTemplate → defaultTriggerTemplate → ICON_BUTTON_TEMPLATE` cascade — so
 a tampered value lands on whatever the group's *context* asked for, which for a

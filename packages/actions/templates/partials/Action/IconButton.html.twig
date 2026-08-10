@@ -1,9 +1,26 @@
 {% set clickWiringSuppressed = component.getUrl or component.isDisabled %}
+{% set hasEventBinding = component.getEvent
+    and not component.getClientClickHandler
+    and not component.getParentActionCallLiveComponentClickHandler
+    and not component.canSubmitForm
+    and not clickWiringSuppressed %}
+{% set dispatchAttributes = hasEventBinding
+    ? {
+        'data-sylament-action-event': component.getEvent,
+        'data-sylament-action-event-data': component.getEventData ? component.getEventData|json_encode : false,
+        'data-sylament-action-dispatch-to': component.getDispatchDirection == 'to' ? component.getDispatchToComponent : false,
+        'data-sylament-action-close': component.shouldClose,
+    }
+    : {} %}
 {% set closeAttributes = component.shouldClose
     and not component.getClientClickHandler
     and not component.getParentActionCallLiveComponentClickHandler
+    and not hasEventBinding
     and not clickWiringSuppressed
-    ? {'data-action': 'sylament--support--modal#dismiss'}
+    ? {
+        'data-action': 'sylament--support--modal#dismiss',
+        'data-sylament-action-close': true,
+    }
     : {} %}
 {% set clickParameters = component.getClientClickHandler
     ? {action: component.getClientClickHandler}
@@ -12,7 +29,7 @@
             action: component.getParentActionCallLiveComponentClickHandler,
             ...(component.getArguments ? {arguments: component.getArguments} : {}),
         }
-        : (component.shouldClose
+        : (hasEventBinding or component.shouldClose
             ? null
             : {
                 action: 'mountAction',
@@ -45,4 +62,5 @@
     {{ ...extraAttributes }}
     {{ ...mountAttributes }}
     {{ ...closeAttributes }}
+    {{ ...dispatchAttributes }}
 />

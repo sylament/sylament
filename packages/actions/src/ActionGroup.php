@@ -65,6 +65,8 @@ class ActionGroup extends ViewComponent
 
     public const string GROUPED_TEMPLATE = '@SylamentActions/partials/ActionGroup/GroupedTrigger.html.twig';
 
+    public const string LINK_TEMPLATE = '@SylamentActions/partials/ActionGroup/LinkTrigger.html.twig';
+
     protected string $evaluationIdentifier = 'group';
 
     protected string|Closure|null $template = '@SylamentActions/partials/ActionGroup/index.html.twig';
@@ -287,6 +289,11 @@ class ActionGroup extends ViewComponent
         return $this->triggerTemplate(static::BUTTON_TEMPLATE);
     }
 
+    public function link(): static
+    {
+        return $this->triggerTemplate(static::LINK_TEMPLATE);
+    }
+
     public function isIconButton(): bool
     {
         return $this->getTriggerTemplate() === static::ICON_BUTTON_TEMPLATE;
@@ -295,6 +302,11 @@ class ActionGroup extends ViewComponent
     public function isButton(): bool
     {
         return $this->getTriggerTemplate() === static::BUTTON_TEMPLATE;
+    }
+
+    public function isLink(): bool
+    {
+        return $this->getTriggerTemplate() === static::LINK_TEMPLATE;
     }
 
     public function isHidden(): bool
@@ -396,6 +408,7 @@ class ActionGroup extends ViewComponent
             static::BUTTON_TEMPLATE,
             static::GROUPED_TEMPLATE,
             static::ICON_BUTTON_TEMPLATE,
+            static::LINK_TEMPLATE,
         ], true)) {
             $static->triggerTemplate($triggerTemplate);
         }

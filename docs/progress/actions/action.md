@@ -74,7 +74,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanBeMarkedAsRead`](../../../packages/actions/src/Concerns/CanBeMarkedAsRead.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`markAsRead()`/`markAsUnread()`, `shouldMarkAsRead()`/`shouldMarkAsUnread()`, `hasMarkAsRead()`/`hasMarkAsUnread()`) | in progress | the database-notifications panel | [detail](#canbemarkedasread-carries-the-flags-nothing-reads-them-yet) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | [diverges](#outlined-styling-is-a-state-class-not-a-color-map) |
 | [`CanClose`](../../../packages/actions/src/Concerns/CanClose.php) | [`Concerns/CanClose.php`](../../../vendor/filament/actions/src/Concerns/CanClose.php) | done | — | [diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
-| [`CanDispatchEvent`](../../../packages/actions/src/Concerns/CanDispatchEvent.php) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | done | — | Filament-exact port of the whole non-deprecated surface. `dispatch()` / `dispatchSelf()` / `dispatchTo()` store the event and its payload and stamp `$dispatchDirection` — `false` for a plain dispatch, `'self'`, `'to'` — with only `dispatchTo()` recording a target component; both directed setters route through `dispatch()` first, so a re-`dispatch()` after them resets the direction to `false` exactly as upstream. `eventData()` sets the payload alone, and `getEvent()` / `getEventData()` evaluate at read time, so a closure sees the action's state when it is read rather than when it was declared. Composed onto `Action` only — vendor's `ActionGroup` composes it nowhere either. No consumer reads the getters yet. Covered by [`CanDispatchEventTest`](../../../packages/actions/tests/Unit/Concerns/CanDispatchEventTest.php) |
+| [`CanDispatchEvent`](../../../packages/actions/src/Concerns/CanDispatchEvent.php) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | done | — | Filament-exact port of the whole non-deprecated surface. `dispatch()` / `dispatchSelf()` / `dispatchTo()` store the event and its payload and stamp `$dispatchDirection` — `false` for a plain dispatch, `'self'`, `'to'` — with only `dispatchTo()` recording a target component; both directed setters route through `dispatch()` first, so a re-`dispatch()` after them resets the direction to `false` exactly as upstream. `eventData()` sets the payload alone, and `getEvent()` / `getEventData()` evaluate at read time, so a closure sees the action's state when it is read rather than when it was declared. Composed onto `Action` only — vendor's `ActionGroup` composes it nowhere either. All five trigger templates read the getters, as an arm of their shared click precedence that emits [payload attributes rather than a click binding](#a-dispatch-action-renders-payload-attributes-not-a-click-binding). Covered by [`CanDispatchEventTest`](../../../packages/actions/tests/Unit/Concerns/CanDispatchEventTest.php) and [`ActionDispatchRenderTest`](../../../packages/actions/tests/Integration/ActionDispatchRenderTest.php) |
 | `emit()` / `emitSelf()` / `emitTo()` (deprecated) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | skipped | — | [diverges](#the-deprecated-emit-aliases-are-not-ported) |
 | [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | notifications package | [detail](#cannotify-only-ports-notification-titles-not-sending) |
 | [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
@@ -525,6 +525,7 @@ no-op semantics) — covered by `ActionTest`. The string branch renders through
 `getClientClickHandler(): ?string` — the Sylament port of
 `getLivewireClickHandler()`'s string arm — which every trigger template reads
 first in its click precedence (string handler, then a `callParent()` handler,
+then a [dispatch payload](#a-dispatch-action-renders-payload-attributes-not-a-click-binding),
 then `shouldClose()` → a client-side dismiss, then the `mountAction`
 round-trip); the reinterpretation of
 the string as a live-action name rather than a raw client expression is
@@ -803,6 +804,63 @@ That is Filament's behaviour, not a divergence — `badge.blade.php` and
 where the gray branch *is* reachable is `Grouped`, because
 [`DropdownItem`](../support/dropdown-item.md) defaults to `'gray'` instead,
 matching `dropdown/list/item.blade.php`.
+
+### A dispatch action renders payload attributes, not a click binding
+
+An action carrying `dispatch()` / `dispatchSelf()` / `dispatchTo()` renders no
+handler at all. Its trigger root gets four data attributes and nothing else:
+
+| Attribute | Source | Omitted when |
+| --- | --- | --- |
+| `data-sylament-action-event` | `getEvent()` | the arm never fires without it |
+| `data-sylament-action-event-data` | `getEventData()`, JSON-encoded | the payload is empty |
+| `data-sylament-action-dispatch-to` | `getDispatchToComponent()` | `getDispatchDirection()` is not `'to'` |
+| `data-sylament-action-close` | `shouldClose()` | the action does not close |
+
+The split is the point: the templates stamp the **payload**, and whatever owns
+the click context does the **delivery**. A toast is rendered by the
+notifications component, not by the live component whose action it is, so the
+`data-action="live#action"` binding every other arm emits would be dead markup
+there — bound to a controller that dispatches against the wrong host, or against
+no host at all. Handing the payload to the context owner is what lets the same
+`Action` render inside a modal, a table row, or a toast without the template
+knowing which.
+
+Three things about the attribute set are easy to get wrong.
+`data-sylament-action-dispatch-to` branches on the **direction**, never on the
+component being non-null: `dispatchTo('X', 'a')->dispatch('b')` leaves
+`$dispatchToComponent` set to `'X'` while resetting the direction to `false`
+(vendor-exact, since both directed setters route through `dispatch()` first), so
+reading the component alone would address a plain dispatch at a stale target.
+`data-sylament-action-close` is a **neutral marker** — it says the action closes,
+not how — and it is emitted by both the dispatch arm and the bare-close arm;
+the bare-close arm keeps its `data-action="sylament--support--modal#dismiss"`
+alongside, which is inert outside a modal (Stimulus resolves an action token
+against ancestor controllers only, so a token naming a controller that is not
+one binds nothing and logs nothing). And the `'self'` direction has **no**
+attribute: a `dispatchSelf()` action is indistinguishable in the DOM from a plain
+`dispatch()`, because the only consumer today dispatches from a context that has
+no meaningful "self" to address. Add a `data-sylament-action-dispatch-self`
+marker when one does.
+
+Two deltas against Filament. Filament emits
+`getLivewireEventClickHandler()` — a `$dispatch(...)` / `$dispatchSelf(...)` /
+`$dispatchTo(...)` **JavaScript expression** on `wire:click`; the port has no
+arbitrary-JS seam and does not want one
+([same reading](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side)
+as the string click handler), so the payload crosses as data instead of code.
+And the arm sits one rank **lower**: Filament's `getLivewireClickHandler()`
+ranks the event above `getParentActionCallLivewireClickHandler()`, the port
+ranks it below, so an action carrying both a `callParent()` handler and a
+`dispatch()` calls the parent here and dispatches upstream. The combination has
+no caller in either codebase; the order is the one the trigger templates already
+read, and closing the gap means moving the arm in all five.
+
+Pinned by
+[`ActionDispatchRenderTest`](../../../packages/actions/tests/Integration/ActionDispatchRenderTest.php),
+which covers the payload, the direction branch, the empty-payload omission, the
+close marker on both arms, the url arm still winning, and the icon-button shape
+reaching the same arms through its own guard expressions.
 
 ## Divergences
 
@@ -1143,8 +1201,9 @@ live-action name.
 
 All five trigger templates share one click precedence, the port of
 `getLivewireClickHandler()`'s arm order: a string handler first, then a
-`callParent()` handler (with the action's own `arguments` attached), then
-`shouldClose()`, then the `mountAction` round-trip — and the whole chain is
+`callParent()` handler (with the action's own `arguments` attached), then a
+[dispatch payload](#a-dispatch-action-renders-payload-attributes-not-a-click-binding),
+then `shouldClose()`, then the `mountAction` round-trip — and the whole chain is
 suppressed when `getUrl()` is filled, because a link navigates. `shouldClose()`
 now emits `data-action="sylament--support--modal#dismiss"`, a **client-side**
 close, matching Filament's `getJsClickHandler()`: the dialog closes in the
@@ -1161,8 +1220,12 @@ the button and icon-button shapes.
 One shape delta among the five templates, deliberate and now commented in
 place: `Action/IconButton.html.twig` suppresses click wiring for a **disabled**
 action as well as a URL-bearing one, where its four siblings emit the binding
-and lean on the rendered `disabled` attribute. Both bindings on that template
-read one hoisted `clickWiringSuppressed` flag so they cannot drift apart again.
+and lean on the rendered `disabled` attribute. That template also expresses the
+whole precedence as guard expressions rather than the four siblings'
+`{% if %}` chain, so its three attribute sets (mount, close, dispatch) each
+restate the arms above them — they read one hoisted `clickWiringSuppressed`
+flag, and the close and mount sets both read the hoisted `hasEventBinding`
+flag, so no pair can drift apart.
 
 ### The deprecated `emit*` aliases are not ported
 

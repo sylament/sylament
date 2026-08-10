@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/controllers/notifications_controller.ts"],
+  "sourcesContent": ["import { Controller } from \"@hotwired/stimulus\";\n\n/** Appends server-rendered toast HTML delivered by the `sylament:notification` browser event. */\nexport default class extends Controller<HTMLElement> {\n  receive(event: CustomEvent<{ html?: unknown }>): void {\n    const html = event.detail?.html;\n\n    if (typeof html !== \"string\") {\n      return;\n    }\n\n    this.element.insertAdjacentHTML(\"beforeend\", html);\n  }\n}\n"],
+  "mappings": "AAAA,SAAS,kBAAkB;AAG3B,MAAO,yCAAsB,WAAwB;AAAA,EACnD,QAAQ,OAA8C;AACpD,UAAM,OAAO,MAAM,QAAQ;AAE3B,QAAI,OAAO,SAAS,UAAU;AAC5B;AAAA,IACF;AAEA,SAAK,QAAQ,mBAAmB,aAAa,IAAI;AAAA,EACnD;AACF;",
+  "names": []
+}

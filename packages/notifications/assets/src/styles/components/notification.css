@@ -1,0 +1,124 @@
+.sy-no {
+    @apply pointer-events-none fixed inset-4 z-50 mx-auto flex gap-3;
+
+    &.sy-align-start,
+    &.sy-align-left {
+        @apply items-start;
+    }
+
+    &.sy-align-center {
+        @apply items-center;
+    }
+
+    &.sy-align-end,
+    &.sy-align-right {
+        @apply items-end;
+    }
+
+    &.sy-vertical-align-start {
+        @apply flex-col-reverse justify-end;
+    }
+
+    &.sy-vertical-align-center {
+        @apply flex-col justify-center;
+    }
+
+    &.sy-vertical-align-end {
+        @apply flex-col justify-end;
+    }
+}
+
+.sy-no-notification {
+    @apply pointer-events-auto flex w-full max-w-sm shrink-0 gap-3 overflow-hidden rounded-xl bg-white p-4 shadow-lg ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10;
+    transition:
+        opacity 0.3s,
+        scale 0.3s,
+        translate 0.3s,
+        height 0.3s,
+        margin 0.3s,
+        padding 0.3s;
+
+    @starting-style {
+        opacity: 0;
+    }
+
+    &.sy-color {
+        @apply ring-color-600/20 dark:ring-color-400/30;
+        background-color: color-mix(in oklab, white 90%, var(--sy-color-400));
+
+        @variant dark {
+            background-color: color-mix(in oklab, var(--sy-gray-900) 90%, var(--sy-color-400));
+        }
+
+        & .sy-no-notification-body {
+            @apply text-gray-700/75 dark:text-gray-300/75;
+        }
+    }
+
+    & .sy-no-notification-icon {
+        @apply text-gray-400;
+
+        &.sy-color {
+            @apply text-color-400;
+        }
+    }
+
+    & .sy-no-notification-main {
+        @apply mt-0.5 grid flex-1 gap-3;
+    }
+
+    & .sy-no-notification-text {
+        @apply grid gap-1;
+    }
+
+    & .sy-no-notification-title {
+        @apply text-sm font-medium text-gray-950 dark:text-white;
+    }
+
+    & .sy-no-notification-body {
+        @apply overflow-hidden text-sm text-pretty break-words text-gray-500 dark:text-gray-400;
+
+        & > p:not(:first-of-type) {
+            @apply mt-1;
+        }
+    }
+
+    &.sy-closing {
+        @apply opacity-0;
+        scale: 0.95;
+        margin-block-start: -0.75rem;
+        padding-block: 0;
+    }
+}
+
+.sy-no.sy-align-start .sy-no-notification,
+.sy-no.sy-align-left .sy-no-notification {
+    @starting-style {
+        translate: -3rem 0;
+    }
+}
+
+.sy-no.sy-align-end .sy-no-notification,
+.sy-no.sy-align-right .sy-no-notification {
+    @starting-style {
+        translate: 3rem 0;
+    }
+}
+
+.sy-no.sy-align-center.sy-vertical-align-start .sy-no-notification {
+    @starting-style {
+        translate: 0 -3rem;
+    }
+}
+
+.sy-no.sy-align-center.sy-vertical-align-end .sy-no-notification {
+    @starting-style {
+        translate: 0 3rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sy-no-notification {
+        transition: none;
+    }
+}

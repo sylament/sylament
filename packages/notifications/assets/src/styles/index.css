@@ -1,2 +1,1 @@
-/* Aggregator for this package's component styles, e.g.:
-   @import './components/notification.css' layer(components); */
+@import './components/notification.css' layer(components);

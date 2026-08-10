@@ -49,7 +49,7 @@ deleted once the row is **done**; **semantics** → the permanent note in
 | [`icon()` / `iconSize()` + the status icon fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIcon.php`](../../../vendor/filament/notifications/src/Concerns/HasIcon.php), support's `HasIcon`/`HasIconSize` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) |
 | [`iconColor()` + the status colour fallback](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`Concerns/HasIconColor.php`](../../../vendor/filament/notifications/src/Concerns/HasIconColor.php), support's `HasIconColor` | done | — | [diverges](#the-status-fallbacks-for-icon-and-icon-colour-live-in-the-template) |
 | [`color()` (support `HasColor`)](../../../packages/notifications/src/Notification.php) | [`Filament\Support\Concerns\HasColor`](../../../vendor/filament/support/src/Concerns/HasColor.php) | done | — | — |
-| [`toArray()` / `fromArray()` — the eight ported keys](../../../packages/notifications/src/Notification.php) | [`toArray()` / `fromArray()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#fromarray-drops-a-value-it-cannot-type-where-filaments-typed-setters-throw) |
+| [`toArray()` / `fromArray()` — the eight ported keys](../../../packages/notifications/src/Notification.php) | [`toArray()` / `fromArray()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#fromarray-drops-a-value-it-cannot-type-where-filaments-typed-setters-throw) · [diverges](#toarray-flattens-a-scalableicon-to-its-bare-enum-value) |
 | [`send()` → the session flash bag](../../../packages/notifications/src/Notification.php) | [`send()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [diverges](#send-always-writes-the-flash-bag-and-the-live-arm-decides-late) · [semantics](#a-send-during-the-acting-components-own-render-arrives-on-the-next-page-load) |
 | [The toast markup — chrome, icon, title, body, close button](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/notifications/src/Notification.php) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) |
 | [`role="alert"` on danger, polite otherwise](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#the-assertive-split-is-per-toast-and-the-container-stays-polite) |
@@ -368,6 +368,30 @@ it is dropped and the rest of the notification is delivered. Both arms are pinne
 by the junk-type and array-shade cases in
 [`NotificationTest`](../../../packages/notifications/tests/Unit/NotificationTest.php).
 
+### `toArray()` flattens a `ScalableIcon` to its bare enum value
+
+Filament's `toArray()` resolves a scalable icon before serializing it — `$icon
+instanceof ScalableIcon` takes `getIconForSize(IconSize::Large)`, and only a plain
+`BackedEnum` falls through to `->value`. The port keeps the `BackedEnum` arm and
+drops the `ScalableIcon` one, so an icon implementing
+[`ScalableIcon`](../../../packages/support/src/Contracts/ScalableIcon.php) — a
+**done** contract in [support](../support/README.md) — crosses the session as its
+bare enum value.
+
+The loss is delivery-path only, and that is the whole of it: `send()` serializes
+through `toArray()` and the toast is rebuilt by `fromArray()` before it renders, so
+by the time [`generateIconHtml()`](../../../packages/support/src/Twig/Extension/IconExtension.php)
+applies its own `ScalableIcon` → `BackedEnum` cascade there is no object left to
+apply it to. A directly rendered instance (`render($twig)` on the live object, the
+shape [`NotificationRenderTest`](../../../packages/notifications/tests/Integration/NotificationRenderTest.php)
+uses) never goes through `toArray()` and keeps the size resolution.
+
+Nothing shipped is affected today: support's only implementation of the contract is
+a test fixture, and every icon this package sets is a string
+(`heroicons:x-circle`). Reversal condition — the first shipped icon **enum** that
+implements it, Filament's `Heroicon` being the one a port would add, at which point
+`toArray()` takes the same two-arm cascade `IconExtension` already carries.
+
 ### `send()` always writes the flash bag, and the live arm decides late
 
 Filament's `send()` pushes onto the Laravel session under
@@ -414,12 +438,20 @@ writes the empty-state icon as `:icon="emptyStateIcon ?? 'heroicons:x-mark'"` wi
 template's expression with one status instead of four. A fallback chain the
 template can compute is template data, and putting it in PHP would mean a getter
 whose value depends on a second getter — exactly what
-[`getExtraTemplateData()` is told to keep out](../../../CLAUDE.md). The public API
-is unaffected: `getIcon()` returns what the user set, `icon()` and `iconColor()`
-take the same arguments as Filament's, and the rendered result is identical.
-Reversal condition: a **PHP** consumer that needs the resolved icon — the database
-panel is the plausible one — moves the chain onto the class, where the template
-then reads it as one getter.
+[`getExtraTemplateData()` is told to keep out](../../../CLAUDE.md). The rendered
+result is identical and the setters are untouched — `icon()` and `iconColor()` take
+the same arguments as Filament's.
+
+The **getters** are where it shows, and it is a real API difference rather than an
+invisible one. Filament's `Notification::getIcon()` / `getIconColor()` return the
+status fallback (`Heroicon::OutlinedCheckCircle`, `'success'`); these return only
+what the user set, so a status-only notification answers `null` from both — and
+`toArray()` therefore carries `null` in the `icon` and `iconColor` keys where
+Filament's carries the resolved icon and the status string. Nothing here reads
+either: the template resolves the chain itself, and `fromArray()` re-derives it the
+same way on the far side of the session. Reversal condition: a **PHP** consumer
+that needs the resolved icon — the database panel is the plausible one — moves the
+chain onto the class, where the template then reads it as one getter.
 
 ### A closure duration evaluating to `null` throws, where Filament falls back to persistent
 

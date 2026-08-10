@@ -11,11 +11,13 @@ manifest it ships behind:
 — Spatie's `PackageServiceProvider` lifecycle becoming a Symfony `AbstractBundle`
 via [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php).
 
-The provider's own body is six statements: register the JS asset, register two
-Livewire components, install the `on('dehydrate')` notification hook, and mix the
-test helpers into Livewire's `Testable`. Five of the six have a row below; the
-sixth (the database-notifications component) is **blocked** with its panel. What
-the port adds on top is container wiring, which Filament needs none of.
+The provider's own body is six statements carrying seven responsibilities:
+`configurePackage()` is one chain calling `hasTranslations()` and `hasViews()`, and
+`packageBooted()` is five — register the JS asset, register two Livewire
+components, install the `on('dehydrate')` notification hook, and mix the test
+helpers into Livewire's `Testable`. All seven have a row below; the
+database-notifications registration is the one that is **blocked**, with its panel.
+What the port adds on top is container wiring, which Filament needs none of.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).

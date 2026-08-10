@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Actions;
 
+use BackedEnum;
 use Closure;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
@@ -27,6 +28,9 @@ use Sylament\Support\Components\Concerns\HasIcon;
 use Sylament\Support\Components\Concerns\HasIconSize;
 use Sylament\Support\Components\Concerns\HasTooltip;
 use Sylament\Support\Components\ViewComponent;
+use Sylament\Support\Contracts\ScalableIcon;
+use Sylament\Support\Enums\IconSize;
+use Sylament\Support\Enums\Size;
 use Sylament\Support\Evaluation\ClosureParameter;
 use Sylament\Support\Twig\ComponentAttributeBag;
 use Twig\Markup;
@@ -325,6 +329,123 @@ class ActionGroup extends ViewComponent
     public function getLabel(): string|Markup|null
     {
         return $this->evaluate($this->label) ?? 'Actions';
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        $icon = $this->getIcon();
+
+        if ($icon instanceof BackedEnum && !$icon instanceof ScalableIcon) {
+            $icon = (string) $icon->value;
+        }
+
+        $iconSize = $this->getIconSize();
+        $size = $this->getSize();
+
+        return [
+            'actions' => array_map(
+                static fn (Action|self $action): array => $action->toArray(),
+                $this->getActions(),
+            ),
+            'color' => $this->getColor(),
+            'dropdownMaxHeight' => $this->getDropdownMaxHeight(),
+            'dropdownOffset' => $this->getDropdownOffset(),
+            'dropdownPlacement' => $this->getDropdownPlacement(),
+            'dropdownWidth' => $this->getDropdownWidth(),
+            'extraAttributes' => $this->getExtraAttributes(),
+            'hasDropdown' => $this->hasDropdown(),
+            'hasDropdownFlip' => $this->hasDropdownFlip(),
+            'icon' => $icon,
+            'iconSize' => $iconSize instanceof IconSize ? $iconSize->value : $iconSize,
+            'isOutlined' => $this->isOutlined(),
+            'label' => $this->getLabel(),
+            'size' => $size instanceof Size ? $size->value : $size,
+            'tooltip' => $this->getTooltip(),
+            'triggerTemplate' => $this->getTriggerTemplate(),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public static function fromArray(array $data): static
+    {
+        $actions = $data['actions'] ?? [];
+        $members = [];
+
+        foreach (is_array($actions) ? $actions : [] as $action) {
+            if (!is_array($action)) {
+                continue;
+            }
+
+            $member = array_filter($action, is_string(...), ARRAY_FILTER_USE_KEY);
+
+            $members[] = array_key_exists('actions', $member)
+                ? self::fromArray($member)
+                : Action::fromArray($member);
+        }
+
+        $static = static::make($members);
+
+        $triggerTemplate = $data['triggerTemplate'] ?? null;
+
+        if (in_array($triggerTemplate, [
+            static::BUTTON_TEMPLATE,
+            static::GROUPED_TEMPLATE,
+            static::ICON_BUTTON_TEMPLATE,
+        ], true)) {
+            $static->triggerTemplate($triggerTemplate);
+        }
+
+        $size = $data['size'] ?? null;
+
+        if ($size instanceof Size || is_string($size)) {
+            $static->size($size);
+        }
+
+        $color = $data['color'] ?? null;
+        $static->color(match (true) {
+            is_string($color) => $color,
+            is_array($color) => array_filter($color, is_string(...)),
+            default => null,
+        });
+
+        $static->dropdown((bool) ($data['hasDropdown'] ?? true));
+        $static->dropdownFlip((bool) ($data['hasDropdownFlip'] ?? false));
+
+        $dropdownMaxHeight = $data['dropdownMaxHeight'] ?? null;
+        $static->dropdownMaxHeight(is_string($dropdownMaxHeight) ? $dropdownMaxHeight : null);
+
+        $dropdownOffset = $data['dropdownOffset'] ?? null;
+        $static->dropdownOffset(is_int($dropdownOffset) ? $dropdownOffset : null);
+
+        $dropdownPlacement = $data['dropdownPlacement'] ?? null;
+        $static->dropdownPlacement(is_string($dropdownPlacement) ? $dropdownPlacement : null);
+
+        $dropdownWidth = $data['dropdownWidth'] ?? null;
+        $static->dropdownWidth(is_string($dropdownWidth) ? $dropdownWidth : null);
+
+        $extraAttributes = $data['extraAttributes'] ?? [];
+        $static->extraAttributes(is_array($extraAttributes) ? $extraAttributes : []);
+
+        $icon = $data['icon'] ?? null;
+        $static->icon(is_string($icon) || $icon instanceof BackedEnum || $icon instanceof Markup ? $icon : null);
+
+        $iconSize = $data['iconSize'] ?? null;
+        $static->iconSize($iconSize instanceof IconSize || is_string($iconSize) ? $iconSize : null);
+
+        $label = $data['label'] ?? null;
+        $static->label(is_string($label) || $label instanceof Markup ? $label : null);
+
+        $static->outlined((bool) ($data['isOutlined'] ?? false));
+
+        $tooltip = $data['tooltip'] ?? null;
+        $static->tooltip(is_string($tooltip) || $tooltip instanceof Markup ? $tooltip : null);
+
+        return $static;
     }
 
     protected function resolveDefaultClosureDependencyForEvaluationByName(string $parameterName): ?ClosureParameter

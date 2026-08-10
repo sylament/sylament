@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Actions;
 
+use BackedEnum;
 use Closure;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
@@ -11,6 +12,7 @@ use Sylament\Actions\Concerns\BelongsToSchemaComponent;
 use Sylament\Actions\Concerns\BelongsToTable;
 use Sylament\Actions\Concerns\CanBeDisabled;
 use Sylament\Actions\Concerns\CanBeHidden;
+use Sylament\Actions\Concerns\CanBeMarkedAsRead;
 use Sylament\Actions\Concerns\CanBeMounted;
 use Sylament\Actions\Concerns\CanBeOutlined;
 use Sylament\Actions\Concerns\CanCallParentAction;
@@ -48,9 +50,14 @@ use Sylament\Support\Components\Concerns\HasIconPosition;
 use Sylament\Support\Components\Concerns\HasIconSize;
 use Sylament\Support\Components\Concerns\HasTooltip;
 use Sylament\Support\Components\ViewComponent;
+use Sylament\Support\Contracts\ScalableIcon;
+use Sylament\Support\Enums\IconPosition;
+use Sylament\Support\Enums\IconSize;
+use Sylament\Support\Enums\Size;
 use Sylament\Support\Evaluation\ClosureParameter;
 use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
+use Twig\Markup;
 
 use function Sylament\Support\filled;
 
@@ -63,6 +70,7 @@ class Action extends ViewComponent
     use CanAccessProperties;
     use CanBeDisabled;
     use CanBeHidden;
+    use CanBeMarkedAsRead;
     use CanBeMounted;
     use CanBeOutlined;
     use CanCallParentAction;
@@ -128,6 +136,125 @@ class Action extends ViewComponent
         $action->configure();
 
         return $action;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        $icon = $this->getIcon();
+
+        if ($icon instanceof BackedEnum && !$icon instanceof ScalableIcon) {
+            $icon = (string) $icon->value;
+        }
+
+        $iconSize = $this->getIconSize();
+        $size = $this->getSize();
+
+        return [
+            'name' => $this->getName(),
+            'color' => $this->getColor(),
+            'event' => $this->getEvent(),
+            'eventData' => $this->getEventData(),
+            'dispatchDirection' => $this->getDispatchDirection(),
+            'dispatchToComponent' => $this->getDispatchToComponent(),
+            'extraAttributes' => $this->getExtraAttributes(),
+            'icon' => $icon,
+            'iconPosition' => $this->getIconPosition()->value,
+            'iconSize' => $iconSize instanceof IconSize ? $iconSize->value : $iconSize,
+            'isOutlined' => $this->isOutlined(),
+            'isDisabled' => $this->isDisabled(),
+            'label' => $this->getLabel(),
+            'shouldClose' => $this->shouldClose(),
+            'shouldMarkAsRead' => $this->shouldMarkAsRead(),
+            'shouldMarkAsUnread' => $this->shouldMarkAsUnread(),
+            'shouldOpenUrlInNewTab' => $this->shouldOpenUrlInNewTab(),
+            'size' => $size instanceof Size ? $size->value : $size,
+            'template' => $this->getTemplate(),
+            'tooltip' => $this->getTooltip(),
+            'url' => $this->getUrl(),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public static function fromArray(array $data): static
+    {
+        $name = $data['name'] ?? null;
+        $static = static::make(is_string($name) ? $name : null);
+
+        $template = $data['template'] ?? null;
+
+        if (in_array($template, [
+            static::BADGE_TEMPLATE,
+            static::BUTTON_TEMPLATE,
+            static::GROUPED_TEMPLATE,
+            static::ICON_BUTTON_TEMPLATE,
+            static::LINK_TEMPLATE,
+        ], true)) {
+            $static->template($template);
+        }
+
+        $size = $data['size'] ?? null;
+
+        if ($size instanceof Size || is_string($size)) {
+            $static->size($size);
+        }
+
+        $static->close((bool) ($data['shouldClose'] ?? false));
+
+        $color = $data['color'] ?? null;
+        $static->color(match (true) {
+            is_string($color) => $color,
+            is_array($color) => array_filter($color, is_string(...)),
+            default => null,
+        });
+
+        $static->disabled((bool) ($data['isDisabled'] ?? false));
+
+        $direction = $data['dispatchDirection'] ?? null;
+        $event = $data['event'] ?? null;
+        $event = is_string($event) ? $event : null;
+
+        $eventData = $data['eventData'] ?? [];
+        $eventData = is_array($eventData) ? $eventData : [];
+
+        $to = $data['dispatchToComponent'] ?? null;
+
+        match (true) {
+            $direction === 'self' => $static->dispatchSelf($event, $eventData),
+            $direction === 'to' && is_string($to) => $static->dispatchTo($to, $event, $eventData),
+            default => $static->dispatch($event, $eventData),
+        };
+
+        $extraAttributes = $data['extraAttributes'] ?? [];
+        $static->extraAttributes(is_array($extraAttributes) ? $extraAttributes : []);
+
+        $icon = $data['icon'] ?? null;
+        $static->icon(is_string($icon) || $icon instanceof BackedEnum || $icon instanceof Markup ? $icon : null);
+
+        $iconPosition = $data['iconPosition'] ?? null;
+        $static->iconPosition($iconPosition instanceof IconPosition || is_string($iconPosition) ? $iconPosition : null);
+
+        $iconSize = $data['iconSize'] ?? null;
+        $static->iconSize($iconSize instanceof IconSize || is_string($iconSize) ? $iconSize : null);
+
+        $label = $data['label'] ?? null;
+        $static->label(is_string($label) || $label instanceof Markup ? $label : null);
+
+        $static->markAsRead((bool) ($data['shouldMarkAsRead'] ?? false));
+        $static->markAsUnread((bool) ($data['shouldMarkAsUnread'] ?? false));
+        $static->outlined((bool) ($data['isOutlined'] ?? false));
+
+        $url = $data['url'] ?? null;
+        $static->url(is_string($url) ? $url : null, (bool) ($data['shouldOpenUrlInNewTab'] ?? false));
+
+        $tooltip = $data['tooltip'] ?? null;
+        $static->tooltip(is_string($tooltip) || $tooltip instanceof Markup ? $tooltip : null);
+
+        return $static;
     }
 
     public function isBadge(): bool

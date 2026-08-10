@@ -28,8 +28,9 @@ defaults propagated to it.
 **Status:** in progress — the dropdown-rendering base (model, visibility,
 triggers, submenus, and `render()` producing the complete dropdown or inline
 row) is complete, as is the per-row layer a table needs (the table binding, the
-root-group walk, and the deep clone); the remaining rows are deferred
-(additional trigger kinds, teleport/auto-placement, `Arrayable`, bulk actions)
+root-group walk, and the deep clone), as is serialization through
+`toArray()`/`fromArray()`; the remaining rows are deferred
+(additional trigger kinds, teleport/auto-placement, bulk actions)
 — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -46,7 +47,8 @@ Reference — the Filament source this is diffed against:
 
 Every point of this component and its own folded concern. _Blocked by_ names
 a later task in this same epic or an unbuilt package. _Detail_ links the
-write-up in [Details](#details) (deleted once the row is **done**) and/or the
+write-up in [Details](#details) (deleted once the row is **done**), the
+permanent faithful-but-subtle note in [Semantics](#semantics), and/or the
 permanent note in [Divergences](#divergences).
 
 | Feature | Ports | Status | Blocked by | Detail |
@@ -77,7 +79,7 @@ permanent note in [Divergences](#divergences).
 | Rendering (`toEmbeddedHtml()`) incl. [`getDropdownActionLists()`](../../../packages/actions/src/ActionGroup.php) — flattened sections and embedded submenus | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | done | — | [diverges](#the-dropdown-plan-is-a-php-method-the-template-loops-not-an-inline-output-buffer), [diverges](#dropdownfalse-wraps-its-inline-row-in-a-bare-divsysy-ac-group-unlike-filaments-unwrapped-concatenation) |
 | Badge/button-group/link triggers | [`View/Concerns/CanGenerate*Html.php`](../../../vendor/filament/support/src/View/Concerns) | todo | — | [detail](#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup) |
 | Dropdown teleport & auto-placement | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) (`dropdownTeleport()`/`dropdownAutoPlacement()`) | todo | — | - |
-| `toArray()`/`fromArray()` (`Arrayable`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toArray()`/`fromArray()`) | todo | — | - |
+| `toArray()` / `fromArray()` — the 16 ported keys | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toArray()`/`fromArray()`) | done | — | [semantics](#the-groups-serialized-key-list-drops-iconposition-hasdropdownteleport-and-vendors-view) · [semantics](#fromarrays-hasdropdownflip-fallback-is-false-where-the-property-defaults-to-true) · [semantics](#fromarray-restores-only-the-three-built-in-trigger-templates) |
 | `hasNonBulkAction()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`hasNonBulkAction()`) | blocked | BulkAction | [detail](#hasnonbulkaction-is-blocked-on-the-bulkaction-port) |
 
 ## Details
@@ -142,6 +144,82 @@ the group-side half of the same gap
 tracks. **Blocked** on `BulkAction`; port both together. The other half of
 this row's former blocker is gone: `BelongsToTable` now ships
 ([belongs-to-table.md](belongs-to-table.md)).
+
+## Semantics
+
+Faithful ports whose behaviour a reader would plausibly misread from the source.
+Permanent — these outlive the detail sections above.
+
+### The group's serialized key list drops `iconPosition`, `hasDropdownTeleport` and vendor's `view`
+
+[`toArray()`](../../../packages/actions/src/ActionGroup.php) writes 16 keys
+where Filament's writes 19, and each of the three gaps is a getter that does not
+exist on this side rather than a value judged not worth carrying.
+**`iconPosition`** — Filament's `ActionGroup` composes `HasIconPosition` and
+this one does not (the trigger templates render the group's icon in a fixed
+position), so there is no `getIconPosition()` to call; the sibling
+[`Action`](action.md#the-serialized-key-list-drops-alpineclickhandler-and-shouldposttourl)
+*does* compose it and *does* serialize it, which is what makes the group's
+omission look like a slip. **`hasDropdownTeleport`** — teleport is
+[deferred](#dropdownwidth-is-a-css-string-dropdownteleport-and-dropdownautoplacement-are-deferred),
+so there is no flag to write. **`view`** — Filament's group serializes its own
+custom template as `hasView() ? getView() : null`, the escape hatch for a group
+rendered through a user-supplied view; that surface is not ported, and the
+restore side would drop the value anyway
+([whitelist](#fromarray-restores-only-the-three-built-in-trigger-templates)).
+Vendor's `triggerView` is the key that *did* survive, renamed `triggerTemplate`
+by the systematic Blade → Twig translation in [`renames.md`](../renames.md).
+
+Neither class implements an interface for the pair. Filament's `Action` and
+`ActionGroup` both implement Laravel's `Illuminate\Contracts\Support\Arrayable`,
+which is what lets `collect($this->getActions())->toArray()` serialize the
+children by walking a contract; there is no Symfony counterpart to adopt, so
+`toArray()`/`fromArray()` are plain public methods and the group maps its
+children by union type (`Action|self`) instead.
+
+Two shapes on the restore side are load-bearing and read as noise. The nested
+group recurses through `self::fromArray()` where Filament writes
+`ActionGroup::fromArray()` — not a choice, since PHP-CS-Fixer's `self_accessor`
+rule rewrites the class name inside its own class, and the consequence is that
+the call **forwards** late static binding (a subclass restores nested groups as
+itself, where Filament's non-forwarding call resets them to the base). And each
+child payload passes through
+`array_filter($action, is_string(...), ARRAY_FILTER_USE_KEY)` before the
+discriminator reads it: `$data['actions']` is `mixed`, so its entries narrow
+only to `array<int|string, mixed>`, and dropping the non-string keys is what
+proves the declared `array<string, mixed>` at level max. It is lossless —
+every read inside `fromArray()` is by string key — so removing it would trade a
+silent behaviour change for a static-analysis failure.
+
+### `fromArray()`'s `hasDropdownFlip` fallback is `false` where the property defaults to `true`
+
+Reading
+[`$static->dropdownFlip($data['hasDropdownFlip'] ?? false)`](../../../packages/actions/src/ActionGroup.php)
+next to `$static->dropdown($data['hasDropdown'] ?? true)`, the obvious conclusion
+is that each fallback restates its property's default. Only the second one does:
+`HasDropdown` declares **both** `$hasDropdown` and `$hasDropdownFlip` as `true`,
+so a payload that omits the flip key restores a group with flipping *off*.
+This is copied from Filament, whose `fromArray()` and `HasDropdown` disagree the
+same way, so it is parity rather than a slip — and it is unreachable through the
+pair itself, since `toArray()` always writes the key. Only a hand-built or
+truncated payload can hit it. Corrected here, a group would round-trip
+differently from its Filament counterpart; the divergence is not worth that.
+
+### `fromArray()` restores only the three built-in trigger templates
+
+Same trust boundary as
+[`Action`'s template whitelist](action.md#fromarray-restores-only-the-five-built-in-templates),
+and the same shape: a restored `triggerTemplate` reaches `{% include %}` in
+[`ActionGroup/index.html.twig`](../../../packages/actions/templates/partials/ActionGroup/index.html.twig),
+so [`fromArray()`](../../../packages/actions/src/ActionGroup.php) admits it only
+when it is one of the group's own `ICON_BUTTON_TEMPLATE` / `BUTTON_TEMPLATE` /
+`GROUPED_TEMPLATE` constants. Anything else is dropped and
+`getTriggerTemplate()` falls through its
+`triggerTemplate → defaultTriggerTemplate → ICON_BUTTON_TEMPLATE` cascade — so
+a tampered value lands on whatever the group's *context* asked for, which for a
+nested group is the `GROUPED_TEMPLATE` its parent stamped. The whitelist grows
+with the constant list; it is written out rather than derived, so adding a
+trigger kind means editing both.
 
 ## Divergences
 

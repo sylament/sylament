@@ -2,8 +2,9 @@
 
 `Sylament\Actions\Action` — the base class every actions-package action
 extends. It composes `Sylament\Support\Components\ViewComponent` (Twig-backed
-rendering) and folds in 19 actions-package concerns — `BelongsToLiveComponent`,
-`CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`, `CanClose`, `CanDispatchEvent`,
+rendering) and folds in 20 actions-package concerns — `BelongsToLiveComponent`,
+`CanBeDisabled`, `CanBeHidden`, `CanBeMarkedAsRead`, `CanBeOutlined`,
+`CanClose`, `CanDispatchEvent`,
 `CanNotify`, `CanOpenModal`, `CanOpenUrl`, `CanRequireConfirmation`,
 `HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`,
 `HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasSize`,
@@ -54,6 +55,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | `InteractsWithSelectedRecords` (table bulk actions), the Action→schema record hop | [detail](#resolvedefaultclosuredependencyforevaluationbytype-carries-only-the-added-getset-arms) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | bulk actions (`bulk` flag) | [diverges](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) |
 | `getClone()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`getClone()`) | done | — | Filament-exact one-liner (`clone $this`). A shallow clone is the whole contract on this side: what a caller needs is an action whose `record()` / `table()` / `group()` bindings can be re-stamped per row without touching the declared original. `ActionGroup`'s override adds the member deep-clone ([there](action-group.md#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately)) |
+| `toArray()` / `fromArray()` — the 21 ported keys | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toArray()`/`fromArray()`) | done | — | [semantics](#the-serialized-key-list-drops-alpineclickhandler-and-shouldposttourl) · [semantics](#fromarray-restores-only-the-five-built-in-templates) · [semantics](#fromarray-degrades-a-to-dispatch-with-no-target-component-to-a-plain-dispatch) |
 | `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) decidable |
 | [`CanCallParentAction`](../../../packages/actions/src/Concerns/CanCallParentAction.php) | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | done | — | Filament-exact two-method port (`callParent()` + getter). The getter is `getParentActionCallLiveComponentClickHandler()` against Filament's `…Livewire…`, the systematic Livewire → UX LiveComponent naming translation from the [rename table](../renames.md), not a rename of its own. Read by all five trigger templates, ranked **above** `shouldClose()` in the click precedence |
 | [`HasParentActions`](../../../packages/actions/src/Concerns/HasParentActions.php) | [`Concerns/HasParentActions.php`](../../../vendor/filament/actions/src/Concerns/HasParentActions.php) | done | — | Complete, method-for-method and body-for-body. Three of its accessors (`shouldCancelParentActionsOnClose()`, `shouldCancelAllParentActionsOnClose()`, `getParentActionToCancelToOnClose()`) have no consumer here — and none in `vendor/filament` either, so they are kept as declared API rather than trimmed |
@@ -69,6 +71,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`BelongsToTable`](../../../packages/actions/src/Concerns/BelongsToTable.php) (shared with `ActionGroup`) | [`Concerns/BelongsToTable.php`](../../../vendor/filament/actions/src/Concerns/BelongsToTable.php) | done | — | [belongs-to-table](belongs-to-table.md) |
 | [`CanBeDisabled`](../../../packages/actions/src/Concerns/CanBeDisabled.php) | [`Concerns/CanBeDisabled.php`](../../../vendor/filament/actions/src/Concerns/CanBeDisabled.php) | done | — | [diverges](#canbedisabled-drops-the-authorization-short-circuits) |
 | [`CanBeHidden`](../../../packages/actions/src/Concerns/CanBeHidden.php) | [`Concerns/CanBeHidden.php`](../../../vendor/filament/actions/src/Concerns/CanBeHidden.php) | in progress | CanBeAuthorized, ActionGroup, BelongsToTable | [detail](#canbehidden-omits-authorization-group-and-table-cache-integration) |
+| [`CanBeMarkedAsRead`](../../../packages/actions/src/Concerns/CanBeMarkedAsRead.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`markAsRead()`/`markAsUnread()`, `shouldMarkAsRead()`/`shouldMarkAsUnread()`, `hasMarkAsRead()`/`hasMarkAsUnread()`) | in progress | the database-notifications panel | [detail](#canbemarkedasread-carries-the-flags-nothing-reads-them-yet) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | [diverges](#outlined-styling-is-a-state-class-not-a-color-map) |
 | [`CanClose`](../../../packages/actions/src/Concerns/CanClose.php) | [`Concerns/CanClose.php`](../../../vendor/filament/actions/src/Concerns/CanClose.php) | done | — | [diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
 | [`CanDispatchEvent`](../../../packages/actions/src/Concerns/CanDispatchEvent.php) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | done | — | Filament-exact port of the whole non-deprecated surface. `dispatch()` / `dispatchSelf()` / `dispatchTo()` store the event and its payload and stamp `$dispatchDirection` — `false` for a plain dispatch, `'self'`, `'to'` — with only `dispatchTo()` recording a target component; both directed setters route through `dispatch()` first, so a re-`dispatch()` after them resets the direction to `false` exactly as upstream. `eventData()` sets the payload alone, and `getEvent()` / `getEventData()` evaluate at read time, so a closure sees the action's state when it is read rather than when it was declared. Composed onto `Action` only — vendor's `ActionGroup` composes it nowhere either. No consumer reads the getters yet. Covered by [`CanDispatchEventTest`](../../../packages/actions/tests/Unit/Concerns/CanDispatchEventTest.php) |
@@ -252,6 +255,36 @@ record-keyed visibility cache once `BelongsToTable`/`BelongsToGroup` give
 `hasTable()`/`getGroup()` a real implementation — `getRecord()` (via
 `InteractsWithRecord`) already exists and can back
 `getCurrentVisibilityRecordKey()` unchanged.
+
+### CanBeMarkedAsRead carries the flags; nothing reads them yet
+
+**In:** [`CanBeMarkedAsRead`](../../../packages/actions/src/Concerns/CanBeMarkedAsRead.php)
+is a method-for-method, body-for-body port of the six members Filament declares
+inline on its `Action` class rather than in a `Concerns/` trait —
+`markAsRead()` / `markAsUnread()` setters, their `shouldMarkAsRead()` /
+`shouldMarkAsUnread()` evaluate-and-cast getters, and the
+`hasMarkAsRead()` / `hasMarkAsUnread()` `!== false` declared-ness pair. It is a
+trait here because that is where this port files a single-purpose member group
+(the same call `CanClose` made, whose shape it copies exactly); the surface is
+identical either way. Both flags round-trip through
+[`toArray()`/`fromArray()`](#the-serialized-key-list-drops-alpineclickhandler-and-shouldposttourl),
+which is the reason it ships now: a notification action declares
+`->markAsRead()` on the sending side and the flag has to survive the flash bag.
+
+**Out:** the behaviour. Filament reads the pair in
+`getAlpineClickHandler()`, which emits the literal `markAsRead()` /
+`markAsUnread()` Alpine expressions against the database-notifications panel's
+Livewire component, and in `hasNoClickHandler()`, where the two `has*()` getters
+join the "this action does something on click" test. Neither exists here:
+there is no database-notifications panel to mark anything read *in*, and the
+port's click wiring is the single `live_action('mountAction', …)` call baked
+into the trigger templates rather than a resolved handler expression
+([diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side)).
+So `->markAsRead()` currently changes nothing a user can see.
+
+**Next step:** wire both flags into the click cascade when the
+database-notifications panel lands, alongside the notification-side surface
+[`notifications/README.md`](../notifications/README.md) tracks.
 
 ### CanNotify only ports notification titles, not sending
 
@@ -693,6 +726,61 @@ expected, this is coverage-only.
 Faithful ports whose behaviour a reader would plausibly misread from the source.
 Permanent — these outlive the detail sections above.
 
+### The serialized key list drops `alpineClickHandler` and `shouldPostToUrl`
+
+[`toArray()`](../../../packages/actions/src/Action.php) writes 21 keys where
+Filament's writes 23, and the two missing ones read as an oversight only until
+you check what they would carry. **`alpineClickHandler`** is Filament's
+`getCustomAlpineClickHandler()` — an Alpine expression, a string evaluated in
+the browser against the component that renders it. The port's translation of a
+custom click handler is a **live action name bound to a host**
+([diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side)),
+and a live action name means nothing to whatever host rehydrates the action on
+the far side of the hop, so there is no value worth writing. **`shouldPostToUrl`**
+has no getter to call at all — POST-to-url is
+[not ported](#post-to-url-support-is-not-ported). Everything else is present,
+with vendor's `view` key renamed `template` (the systematic Blade → Twig
+translation from [`renames.md`](../renames.md), not a rename of its own).
+
+Nothing closure-bearing is written either, and that *is* Filament-exact rather
+than a port decision: `action`, the modal configuration, the lifecycle hooks and
+the visibility closures are absent from both key lists, because a `Closure` does
+not survive a session. An action restored from an array is the **trigger** —
+label, colour, icon, url, dispatch, template — not the behaviour behind it.
+
+### `fromArray()` restores only the five built-in templates
+
+The `template` key crosses a trust boundary — a serialized action rides the
+session flash bag, and its restored value is handed to `$twig->render()` by
+[`ViewComponent::render()`](../../../packages/support/src/Components/ViewComponent.php)
+— so [`fromArray()`](../../../packages/actions/src/Action.php) admits it only
+when it is one of `Action`'s own five `*_TEMPLATE` constants
+(`BADGE`, `BUTTON`, `GROUPED`, `ICON_BUTTON`, `LINK`). Anything else is
+**dropped, not rejected**: the setter is simply never called, `getTemplate()`
+falls through to `$defaultTemplate`, and the action renders as a button. The
+whitelist is `static::`-qualified, so a subclass that overrides a constant
+whitelists its own value.
+
+Filament gates the same key with `isViewSafe()`, a
+`Str::startsWith($view, 'filament::')` prefix test, which admits any view in the
+package namespace including ones a user registered there. That arm is not
+ported: with five templates and no custom-template surface yet, a prefix test
+would only widen what a tampered payload can name. It returns with the custom
+template surface, not before.
+
+### `fromArray()` degrades a `to` dispatch with no target component to a plain dispatch
+
+Filament restores the dispatch trio with
+`dispatchTo($data['dispatchToComponent'] ?? null, …)` — passing a possible
+`null` straight into a non-nullable `string $component` parameter, which Laravel
+tolerates and `declare(strict_types=1)` does not. The port guards the arm
+instead (`$direction === 'to' && is_string($to)`), so a payload claiming
+direction `to` without a usable component falls through to the `default` arm and
+dispatches the event **plainly** rather than throwing a `TypeError` mid-render.
+The event and its data still travel; only the targeting is lost. Pinned by the
+tampered-payload case in
+[`ActionSerializationTest`](../../../packages/actions/tests/Unit/ActionSerializationTest.php).
+
 ### An uncolored badge or link action renders primary, not gray
 
 Every trigger template passes `:color="component.getColor"`, which is `null` for
@@ -826,11 +914,14 @@ dispatch, the `toBadgeHtml()`/`toButtonHtml()`/… renderers and their
 no counterpart; every shape renders through Twig via `ViewComponent::render()`.
 **`badge()` is argless** — Filament's `badge(string|Closure|null $badge)`
 doubles as the badge-*text* setter via `func_num_args()`; `HasBadge` is
-deferred, so the overload widens when it lands. **No `toArray()`/`fromArray()`**
-serialization, and no `renderModal()`/`toModalHtmlable()` — the confirmation
+deferred, so the overload widens when it lands.
+**No `renderModal()`/`toModalHtmlable()`** — the confirmation
 modal ([`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig))
 is rendered host-side, driven by `CanOpenModal`'s getters, not by an `Action`
-method.
+method. The serialization pair Filament keeps beside the view switch —
+`toArray()`/`fromArray()`, whose `view` key becomes `template` here — **has**
+landed, with its own Surface row and the key-list and whitelist notes under
+[Semantics](#semantics).
 
 ### The rest of Filament's `Action` surface is unported
 
@@ -866,14 +957,14 @@ siblings that *have* landed so the list cannot silently go stale:
 - **Rate limiting & transactions**: `CanBeRateLimited`,
   `CanUseDatabaseTransactions` (see the `cancel()`/`halt()` rollback-flag
   detail above).
-- **Redirect/dispatch/mark conveniences**: `CanRedirect`,
-  `markAsRead()`/`markAsUnread()`, `livewireTarget()`, custom
-  `alpineClickHandler()`/`actionJs()` — the port's click wiring is the single
-  `live_action('mountAction', …)` call baked into the template
-  (`CanDispatchEvent` is ported, with a Surface row above).
-- **Rendering variants**: `HasBadge`, `HasBadgeTooltip`,
-  `CanBeLabeledFrom`, and the `toArray()`/`fromArray()` serialization pair
-  (folded into the view-switch divergence above).
+- **Redirect/dispatch/mark conveniences**: `CanRedirect`, `livewireTarget()`,
+  custom `alpineClickHandler()`/`actionJs()` — the port's click wiring is the
+  single `live_action('mountAction', …)` call baked into the template
+  (`CanDispatchEvent` and `CanBeMarkedAsRead` are both ported, each with a
+  Surface row above; only the mark flags' *click behaviour* is still missing).
+- **Rendering variants**: `HasBadge`, `HasBadgeTooltip` and
+  `CanBeLabeledFrom` (the `toArray()`/`fromArray()` pair Filament files beside
+  them has landed — Surface row above).
 
 None of these is a per-row **blocked**/**todo** entry because none has any
 ported surface yet to anchor a row to — they will earn Surface rows (and

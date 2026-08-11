@@ -79,6 +79,24 @@ it('round-trips a group with its child actions and dropdown config', function ()
         ->and($restored->toArray())->toBe($array);
 });
 
+it('round-trips a group nested in a group beside a flat sibling', function (): void {
+    $array = ActionGroup::make()
+        ->actions([
+            ActionGroup::make()->actions([Action::make('edit'), Action::make('delete')]),
+            Action::make('view'),
+        ])
+        ->toArray();
+
+    $restored = ActionGroup::fromArray($array);
+    $members = $restored->getActions();
+
+    expect($restored->getFlatActions())->toHaveKeys(['edit', 'delete', 'view'])
+        ->and($members[0])->toBeInstanceOf(ActionGroup::class)
+        ->and($members[0]->getFlatActions())->toHaveKeys(['edit', 'delete'])
+        ->and($members[1])->toBeInstanceOf(Action::class)
+        ->and($restored->toArray())->toBe($array);
+});
+
 it('round-trips a link-triggered group', function (): void {
     $array = ActionGroup::make()->actions([Action::make('one')])->link()->toArray();
     $restored = ActionGroup::fromArray($array);

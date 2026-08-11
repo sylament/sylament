@@ -40,7 +40,7 @@ Reference — the Filament source this is diffed against:
 | [`label()` / `getLabel()`](../../../packages/tables/src/Filters/Concerns/HasLabel.php) | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Filters/Concerns/HasLabel.php) | done | — | [diverges](#translatelabel-is-not-ported) |
 | [`name()` / `getName()`](../../../packages/tables/src/Filters/Concerns/HasName.php) | [`Concerns\HasName`](../../../vendor/filament/tables/src/Filters/Concerns/HasName.php) | done | — | — |
 | [`schema()` / `modifyFormFieldUsing()` / `getSchemaComponents()` / `hasSchema()` / `getFormField()`](../../../packages/tables/src/Filters/Concerns/HasSchema.php) | [`Concerns\HasSchema`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | done | — | [diverges](#the-form-alias-is-not-ported) |
-| `getSchema()` — the filter's live child schema | [`Concerns\HasSchema::getSchema()`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | todo | the host filters form | [detail](#getschema-lands-with-the-host-filters-form-not-here) |
+| [`getSchema()` — the filter's live child schema](../../../packages/tables/src/Filters/Concerns/HasSchema.php) | [`Concerns\HasSchema::getSchema()`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | done | — | [semantics](#getschema-is-unguarded-where-the-state-readers-beside-it-are-not) |
 | [`apply()` / `applyToBaseQuery()` / `query()` / `baseQuery()` / `excludeWhenResolvingRecord()`](../../../packages/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | [`Concerns\InteractsWithTableQuery`](../../../vendor/filament/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#there-is-no-closure-where-group-around-apply) · [semantics](#isactive-is-an-opt-out-not-an-opt-in) |
 | `HasRelationship` | [`Concerns/HasRelationship.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasRelationship.php) | blocked | a future tables-relations epic | — |
 
@@ -49,22 +49,37 @@ Coverage is the fifteen files under
 source file, plus two
 [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php)
 cases: a filter and an indicator built through `make()` carry the **container's**
-`Invoker`, and `FilterIndicator` is absent from the container.
-
-## Details
-
-### `getSchema()` lands with the host filters form, not here
-
-The filter's live child schema is read off the host's `getTableFiltersForm()`,
-which [`InteractsWithTable`](has-table.md) does not declare yet — so
-`getSchema()` is not written in this commit at all. Guarding it would be
-scaffolding: the host-state change adds that method to the contract, and the
-same change appends `getSchema()` to
-[`Filters\Concerns\HasSchema`](../../../packages/tables/src/Filters/Concerns/HasSchema.php),
-unguarded, typed at level max. **Next step:** it arrives with the host concern,
-covered by the deferred/live round trips.
+`Invoker`, and `FilterIndicator` is absent from the container. One member is
+covered from outside that set: `getSchema()` needs a host with a real filters
+form to read from, so its two cases — the happy path and the no-group refusal —
+sit in
+[`tests/Integration/Concerns/HasFiltersTest.php`](../../../packages/tables/tests/Integration/Concerns/HasFiltersTest.php)
+beside the form that produces them, not in `Unit/Filters/Concerns/HasSchemaTest.php`.
 
 ## Semantics
+
+### `getSchema()` is unguarded where the state readers beside it are not
+
+`getSchema()` reads the filter's live child schema off
+`$this->getLiveComponent()->getTableFiltersForm()` with no `method_exists()`
+check, two files away from `BelongsToTable`'s `getState()` / `getFormState()`,
+which
+[carry one and throw when it fails](#the-state-readers-are-guarded-because-the-contract-does-not-declare-them).
+The asymmetry is not an oversight and not a style drift: `getTableFiltersForm()`
+is [on the contract](has-table.md#the-contract-is-eleven-methods-of-filaments-forty-six)
+and the two state readers are not, so `getLiveComponent()` — typed
+`InteractsWithTable` — answers the first call at level max and cannot answer the
+other two. A guard here would be unreachable code guarding a declared method;
+a guard there is the only thing standing between a contract-satisfying host and
+a fatal. Both disappear the same way, by the contract growing, and the rule for
+adding a guard is the same either way: check what the interface declares, not
+what the trait happens to supply.
+
+That is also why this method landed a commit after the rest of the trait rather
+than with it. The contract addition and this reader ship together by necessity —
+level max cannot type a call the interface does not declare — and the
+alternative, a temporary `method_exists()` guard deleted one commit later, would
+have been scaffolding written to be removed.
 
 ### The span getters return raw closures
 

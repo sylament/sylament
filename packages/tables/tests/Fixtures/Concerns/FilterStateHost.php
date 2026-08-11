@@ -11,8 +11,10 @@ use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
 
 /**
- * A table host carrying the two filter-state readers the filter model pulls
- * through, standing in for the host `Concerns\HasFilters` until it lands.
+ * A table host whose two filter-state readers answer from constructor-seeded
+ * arrays rather than the live props `Concerns\HasFilters` reads. Overriding the
+ * trait's pair lets a filter test state the slice it wants directly, without
+ * standing up the filters form the real readers resolve names against.
  */
 final class FilterStateHost implements InteractsWithTable
 {

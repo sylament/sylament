@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Contracts;
 
+use Sylament\Schemas\Schema;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Filters\Indicator;
 use Sylament\Tables\Table;
@@ -45,4 +46,11 @@ interface InteractsWithTable
      * searched for. Read by `Table::getSearchIndicator()`.
      */
     public function getTableSearchIndicator(): ?Indicator;
+
+    /**
+     * The one schema holding every visible filter's fields, one `Group` per
+     * filter. Read by the filters panel; a host that is not a schema host
+     * throws rather than answering.
+     */
+    public function getTableFiltersForm(): Schema;
 }

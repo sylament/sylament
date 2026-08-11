@@ -27,6 +27,7 @@ trait HasTable
     use CanPaginateRecords;
     use CanSearchRecords;
     use CanSortRecords;
+    use HasFilters;
 
     /**
      * The morph-key prefix every row and cell of this host's table is stamped

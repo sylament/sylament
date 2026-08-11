@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Fixtures\Concerns;
 
 use LogicException;
+use Sylament\Schemas\Schema;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Filters\Indicator;
@@ -73,5 +74,10 @@ final class BareTableHost implements InteractsWithTable
     public function getTableSearchIndicator(): ?Indicator
     {
         return null;
+    }
+
+    public function getTableFiltersForm(): Schema
+    {
+        throw new LogicException('The bare table host builds no filters form.');
     }
 }

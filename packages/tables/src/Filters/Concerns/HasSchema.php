@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Sylament\Tables\Filters\Concerns;
 
 use Closure;
+use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Forms\Components\Field;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Schema;
 
 trait HasSchema
 {
@@ -71,6 +73,28 @@ trait HasSchema
     public function hasSchema(): bool
     {
         return $this->evaluate($this->schema) !== null;
+    }
+
+    /**
+     * The live child schema this filter's group owns inside the host's filters form.
+     */
+    public function getSchema(): Schema
+    {
+        $form = $this->getLiveComponent()->getTableFiltersForm();
+
+        foreach ($form->getComponents(withActions: false) as $component) {
+            if ($component->getKey(isAbsolute: false) !== $this->getName()) {
+                continue;
+            }
+
+            $childSchema = $component->getChildSchema();
+
+            if ($childSchema instanceof Schema) {
+                return $childSchema;
+            }
+        }
+
+        throw new LogicException(sprintf('Filter [%s] has no group in the filters form.', $this->getName()));
     }
 
     public function getFormField(): ?Field

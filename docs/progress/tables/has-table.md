@@ -94,7 +94,7 @@ instead.
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
 | [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-six-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#the-missing-data-source-error-does-not-name-relationship) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
-| [`InteractsWithTable` — ten methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-ten-methods-of-filaments-forty-six) |
+| [`InteractsWithTable` — eleven methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-eleven-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | — |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
@@ -109,7 +109,7 @@ instead.
 | Per-column search — `$tableColumnSearches`, `updatedTableColumnSearches()`, the reserved keys | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | todo | — | [detail](#search-is-the-global-term-only) |
 | Deferred loading — `$isTableLoaded`, `loadTable()`, `isTableLoaded()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | todo | — | [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | Host polling — `getTablePollingInterval()` | [`CanPollRecords`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | skipped | — | The whole trait is `@deprecated Override the table() method to configure the table.`, one host getter returning null, and the project has never ported a deprecated Filament surface. The interval it fronts is `Table::poll()`, a **todo** row in [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
-| Filters — the `tableFiltersForm` schema, `tableFilters` state, the indicators | [`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | todo | — | — |
+| [`Concerns\HasFilters` — the `$tableFilters` / `$tableDeferredFilters` bags, `getTableFilterState()`, `getTableFilterFormState()`, `parseTableFilterName()`, `getTableFiltersForm()`, the `#[PostMount]` fill and the `#[PostHydrate(priority: 10)]` re-cache](../../../packages/tables/src/Concerns/HasFilters.php) | [`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | in progress | — | [diverges](#the-filter-bags-are-arrays-never-null-and-carry-no-getters) · [diverges](#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk) · [semantics](#updatedtablefilters-fires-for-a-whole-prop-write-never-for-a-field-inside-it) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | The deprecated `*TableAction` host shims — `mountTableAction()`, `callMountedTableAction()`, `getMountedTableActionRecord()`, `unmountTableAction()`, `getTableRecordAction()`, … | [`Concerns\HasActions`](../../../vendor/filament/tables/src/Concerns/HasActions.php), [`HasRecordAction`](../../../vendor/filament/tables/src/Concerns/HasRecordAction.php) | skipped | — | Every method in both files is a one-line deprecated delegate, and the project has never ported a deprecated Filament surface. What they front is built: the host resolves a table-context mount through actions' [`resolveTableAction()`](../actions/has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference) and binds the record through `getTableRecord()` |
 | Bulk actions and selection — `getSelectedTableRecords()`, `getAllSelectableTableRecordKeys()`, `deselectAllTableRecords()` | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | blocked | table bulk actions | — |
 | Grouping and summaries | [`CanGroupRecords`](../../../vendor/filament/tables/src/Concerns/CanGroupRecords.php), [`CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | todo | — | — |
@@ -594,17 +594,17 @@ Of the search **indicators**, the global one ships —
 term, labelled `Search: <term>` (Filament's
 `filament-tables::table.fields.search.indicator` at its English value,
 [hardcoded like the rest of the copy](table.md#the-empty-state-heading-hardcodes-no-records)),
-and is the [tenth contract method](#the-contract-is-ten-methods-of-filaments-forty-six)
+and is the [tenth contract method](#the-contract-is-eleven-methods-of-filaments-forty-six)
 — while `getTableColumnSearchIndicators()` waits on per-column search with the
 rest of that half. On the records lane none of this runs:
 the `search` injection hands the closure a string and the closure decides what
 matching means.
 
-### The contract is ten methods of Filament's forty-six
+### The contract is eleven methods of Filament's forty-six
 
 `Contracts\HasTable` declares 46 methods — the full host API a Filament table,
 column, filter, action, or test helper may call back into. Sylament's
-`InteractsWithTable` declares the ten the shipped surface actually calls:
+`InteractsWithTable` declares the eleven the shipped surface actually calls:
 `getTable()` (the template and the column layer need the table from the host),
 `getTableRecords()` (which [`Table::getRecords()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
 delegates to), and three that arrived with the record-action lane (M1 · 6) —
@@ -640,6 +640,28 @@ Filament's separate `hasSearch()` gate stay off the contract — null *is* "noth
 is searched for" — and the writable `$tableSearch` prop stays off it too, since
 the host mints the chip rather than exposing the term. The raw state a host holds
 is never the contract's business; what a shipped consumer calls is.
+
+The host-state layer added the eleventh, `getTableFiltersForm()`, for the same
+reason the tenth arrived and one more.
+[`Filters\Concerns\HasSchema::getSchema()`](base-filter.md#getschema-is-unguarded-where-the-state-readers-beside-it-are-not)
+reads the form off a `getLiveComponent()` typed as this interface, and at level
+max that call cannot compile until the method is declared here — which is why
+the two shipped in the same change, and why the filter-side reader was held back
+a commit rather than guarded. The second reason is the one that found the
+eighth: the filters panel will read the form off `getLiveComponent` in a
+template, which is exactly what `TemplateHostCallsTest` scans for, so a
+contract-only host would fatal in Twig. That half is not shipped yet — no
+template reads it today — but the member it needs is already declared, so the
+panel lands without touching the interface. The two state bags stay off the contract on the
+same grounds as `$tableSearch`: a consumer reads a *slice* through
+`getTableFilterState()` / `getTableFilterFormState()`, never the whole bag, and
+[no getter for either exists at all](#the-filter-bags-are-arrays-never-null-and-carry-no-getters).
+Those two readers are on Filament's contract and are not on ours yet, because
+today's only caller is `Filters\Concerns\BelongsToTable`, which reaches them
+through a `method_exists()` check that names `HasTable` in its failure — a
+deliberate hold, not an oversight: the check predates this trait and flipping it
+to a contract call is the filters panel's change to make, alongside the rest of
+the applying half.
 
 The contract grows a method at a time as the
 features that need it land — a host must be able to satisfy it, so declaring the
@@ -766,6 +788,31 @@ only through an array record with a hand-written key. Escaping the separator
 would change the wire format for every table to guard a name nobody can write in
 the common case. If it ever needs fixing, both halves — the writer in
 `sortTable()` and the two readers — move together.
+
+### `updatedTableFilters()` fires for a whole-prop write, never for a field inside it
+
+`$tableFilters` carries `onUpdated: 'updatedTableFilters'`, and it is easy to
+read that as *"any client write under this prop calls the hook"*. It does not,
+and the mechanism is worth stating because the live-mode page reset turns on it.
+
+`LiveComponentHydrator::processOnUpdatedHook()` normalises a **string** hook to
+`[LiveProp::IDENTITY => $method]`, then walks the map. The `IDENTITY` branch
+`continue`s unless `$dehydratedUpdatedProps->hasPropValue('tableFilters')`, and
+`DehydratedProps::hasPropValue()` is `array_key_exists($propName, $this->propValues)`
+— an exact key lookup, no prefix matching. A client write to a field inside the
+bag arrives under its own key, `tableFilters.status.value`, which is not
+`tableFilters`, so the identity hook does not fire. The array form of
+`onUpdated` is what covers nested paths, and it takes **fixed** path strings —
+which dynamic filter names, keyed by whatever the user called the filter, cannot
+supply.
+
+So the hook covers exactly the direct whole-prop writes: a test helper's
+`set('tableFilters', [...])`, and the applying half's own PHP-side assignment,
+which is inside our code and calls `handleTableFilterUpdates()` outright rather
+than relying on a hydration hook to notice. Live-mode per-field resets ride the
+schema's `afterStateUpdated` walk instead — the `-10` `PostHydrate` in
+[`HasSchemas`](../schemas/has-schemas.md), which is also why this trait rebuilds
+its cache-only form at priority `10`.
 
 ## Divergences
 
@@ -1440,7 +1487,7 @@ fall-through counts it.
 Nothing in the package reads the method yet. Filament's two callers are its
 `assertCountTableRecords()` test helper and panels' `ExposesTableToWidgets`,
 which hands the number to a page's widgets; neither is ported. So it stays off
-the [contract](#the-contract-is-ten-methods-of-filaments-forty-six), which grows
+the [contract](#the-contract-is-eleven-methods-of-filaments-forty-six), which grows
 only for members a shipped consumer calls, and it ships whole rather than in the
 half the closure lane could have answered on its own.
 
@@ -1520,6 +1567,73 @@ Filament table sorted by a relation is never suppressed either. The narrow case
 that does change is a user who hand-wrote `orderBy('artist.id')` and relied on the
 root key dropping out; they now get one extra `ORDER BY` term, which cannot
 change the row order they already had.
+
+### The filter bags are arrays, never null, and carry no getters
+
+Filament types both filter props `?array` and defaults them to `null`
+(`public ?array $tableFilters = null;`), and its boot hook deliberately writes
+`null` back when the bag is empty. Ours are `array` with an `[]` default, both
+of them.
+
+The reason is the element on the other end. The filters form binds a field to a
+model path like `tableFilters.status.value`, and the client resolves that path
+against the props payload on both reads *and* writes — `ValueStore.set()` calls
+`get()` first to compare, and `get()` falls through to `getDeepData()` unless a
+flat key of that exact dotted name is already sitting in the dirty, pending or
+server-sent props. On the render that matters — the first one, where the server
+sent the bag under `tableFilters` and nothing has been written yet — nothing is.
+`getDeepData()` guards `undefined` and only
+`undefined`; the walk beneath it is a bare
+`currentLevelData = currentLevelData[parts[i]]` loop. So a `null` parent is not
+an empty object to descend into — it is `null['status']`, an uncaught
+`TypeError` in the browser, with nothing on the server to catch or report it.
+The symptom is a field that silently stops working, not an error anyone can
+trace. `[]` walks.
+
+Filament gets away with `null` because Livewire's `data_get`/`data_set` pair
+tolerates it on both sides; ux-live-component has no such layer, so this is the
+ordinary Eloquent-to-Symfony shape of that difference rather than a judgment
+about which default reads better. The one thing Filament's `null` bought — a
+tri-state where *"never set"* differs from *"set to nothing"* — is only load-bearing
+for the session and query-string lanes deciding whether to seed from a stored bag,
+and [neither is ported](#no-table-state-is-persisted-in-the-session).
+
+The second half is a rule rather than a type. **There is no `getTableFilters()`,
+and there must never be one**, for either bag. A `LiveProp` is de/hydrated
+through Symfony's `PropertyAccessor`, which prefers a same-named getter over the
+property — so a `getTableFilters()` would become what goes on the wire, and any
+value it returned that differs from the raw property leaves every element bound
+under that path permanently dirty, re-firing its update hook on every request.
+The same mechanism is [load-bearing one way and a defect the other](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary)
+for `$tableHostId` and the two writable props above; the bags are the case where
+the answer is simply not to write the getter. Reading a slice is what consumers
+want anyway, and that is what
+[`getTableFilterState()`](#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk)
+is for.
+
+### One filter slice is a plain array read, not a `PropertyAccessor` walk
+
+Filament reads a slice with `Arr::get($this->tableFilters, $this->parseTableFilterName($name))`,
+a dotted-path accessor. Ours is `$this->tableFilters[$name] ?? null` — a single
+array read — and then checks the result is an array before returning it.
+
+The path lookup buys nothing here, because a filter name can never be dotted. It
+is the key the table files the filter under *and* the state-path segment its
+`Group` binds to, so a dot in one would split the other; the accessor is for
+schema state paths resolved against the host object, which is a different job
+done by a different layer. What the plain read costs is the `null` a missing key
+would have produced anyway, so the arms match.
+
+The `is_array()` check is the part that is not just a simplification. Both bags
+are **writable** `LiveProp`s, which ux-live-component exempts from the prop
+checksum by design — the client can put anything under any key, and a forged or
+merely stale payload can leave a string where a filter's state map should be.
+Validating on read means the filter layer receives either a state map or
+`null`, never a scalar it will index into; the same posture the per-page getter
+takes, for the same reason. `parseTableFilterName()` carries a smaller version of
+it: Filament's returns `$name::getDefaultName()` unguarded against a `string`
+return type, so a `BaseFilter` subclass that never declared a default name is a
+`TypeError` there, where ours falls back to the class-string with `?? $name`.
 
 _See also: the global [rename table](../renames.md) — the interface⇄trait label
 swap (`InteractsWithTable` trait → `HasTable` trait, `HasTable` interface →

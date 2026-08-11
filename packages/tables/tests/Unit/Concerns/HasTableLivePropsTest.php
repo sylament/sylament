@@ -26,6 +26,8 @@ it('declares the table state as LiveProps with the intended writability, hooks a
     'page' => ['tablePage', false, null, null],
     'per page' => ['tableRecordsPerPage', true, 'updatedTableRecordsPerPage', 'dehydrateTableRecordsPerPage'],
     'search' => ['tableSearch', true, 'updatedTableSearch', 'dehydrateTableSearch'],
+    'filters' => ['tableFilters', true, 'updatedTableFilters', null],
+    'deferred filters' => ['tableDeferredFilters', true, null, null],
 ]);
 
 it('exposes sortTable and gotoTablePage as live actions with live args', function (string $method, array $argNames): void {

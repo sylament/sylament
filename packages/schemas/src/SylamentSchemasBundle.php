@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Schemas\State\RecordTypeReader;
 use Sylament\Schemas\Twig\Extension\SchemaExtension;
 use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+
+use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 class SylamentSchemasBundle extends SylamentBundle
 {
@@ -58,5 +62,10 @@ class SylamentSchemasBundle extends SylamentBundle
         $services
             ->set('sylament_schemas.record_type_reader', RecordTypeReader::class)
             ->alias(RecordTypeReader::class, 'sylament_schemas.record_type_reader');
+
+        $services
+            ->set('sylament_schemas.association_reader', AssociationReader::class)
+            ->args([service(EntityManagerInterface::class)->nullOnInvalid()])
+            ->alias(AssociationReader::class, 'sylament_schemas.association_reader');
     }
 }

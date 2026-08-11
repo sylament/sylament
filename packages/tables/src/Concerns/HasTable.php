@@ -12,6 +12,8 @@ use Stringable;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Support\ArrayRecord;
 use Sylament\Support\Pagination\Paginator;
+use Sylament\Tables\Query\AggregateDeclaration;
+use Sylament\Tables\Query\AggregateQuery;
 use Sylament\Tables\Query\JoinCardinality;
 use Sylament\Tables\Table;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
@@ -269,7 +271,69 @@ trait HasTable
             $keyedRecords[$this->getTableRecordKey($record)] = $record;
         }
 
+        $this->fillTableAggregateValues(array_map(static fn (int|string $key): string => (string) $key, array_keys($keyedRecords)));
+
         return $keyedRecords;
+    }
+
+    /**
+     * One batched read per aggregate column, over the keys of the page just
+     * resolved, landing in the table's side store for the cells to read — so
+     * the page query stays a plain entity read. A no-op off the query lane,
+     * where there is no entity manager to batch against, and asked before the
+     * declared query is reached at all, since a records closure wins over one
+     * that must then stay unevaluated.
+     *
+     * @param list<string> $keys
+     */
+    protected function fillTableAggregateValues(array $keys): void
+    {
+        $table = $this->getTable();
+
+        if (!$table->hasQuery()) {
+            return;
+        }
+
+        $entityManager = $table->getQueryEntityManager();
+        $recordClass = $table->getRecordClass();
+
+        if ($entityManager === null || $recordClass === null || $keys === []) {
+            return;
+        }
+
+        foreach ($table->getColumns() as $column) {
+            $declaration = $column->getCellAggregateDeclaration();
+
+            if (!$declaration instanceof AggregateDeclaration) {
+                continue;
+            }
+
+            $scope = $declaration->scope;
+
+            $fetched = AggregateQuery::fetch($entityManager, $recordClass, new AggregateDeclaration(
+                function: $declaration->function,
+                relationshipPath: $declaration->relationshipPath,
+                column: $declaration->column,
+                scope: $scope instanceof Closure ? fn (QueryBuilder $query, string $alias): mixed => $column->evaluate($scope, ['alias' => $alias, 'query' => $query]) : null,
+                castToBool: $declaration->castToBool,
+            ), $keys);
+
+            $default = match (true) {
+                $declaration->castToBool => false,
+                $declaration->function === 'COUNT' => 0,
+                default => null,
+            };
+
+            $values = [];
+
+            foreach ($keys as $key) {
+                $value = $fetched[$key] ?? $default;
+
+                $values[$key] = $declaration->castToBool ? ((int) $value > 0) : $value;
+            }
+
+            $table->setAggregateValues($column->getName(), $values);
+        }
     }
 
     private function resolveQueryTableRecord(string $key): ?object

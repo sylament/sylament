@@ -70,13 +70,22 @@ trait HasCellState
     }
 
     /**
-     * A single value for a name the record answers directly and for a chain of
-     * to-one hops; a list — blanks dropped, `distinctList()` applied — for a
-     * path that fans out over a collection, so a to-many column reads the same
-     * shape on every row, one match or none included.
+     * The batched value first, for a column whose aggregate the table already
+     * read for this page — the record carries no such property to walk to.
+     *
+     * Otherwise a single value for a name the record answers directly and for a
+     * chain of to-one hops; a list — blanks dropped, `distinctList()` applied —
+     * for a path that fans out over a collection, so a to-many column reads the
+     * same shape on every row, one match or none included.
      */
     public function getStateFromRecord(): mixed
     {
+        $table = isset($this->table) ? $this->getTable() : null;
+
+        if ($table?->hasAggregateValuesFor($this->getName()) === true) {
+            return $table->getAggregateValue($this->getName(), (string) $this->getRecordKey());
+        }
+
         $record = $this->getRecord();
 
         if ($record === null) {

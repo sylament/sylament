@@ -13,6 +13,7 @@ use Sylament\Tables\Table\Concerns\CanPaginateRecords;
 use Sylament\Tables\Table\Concerns\CanSearchRecords;
 use Sylament\Tables\Table\Concerns\CanSortRecords;
 use Sylament\Tables\Table\Concerns\HasActions;
+use Sylament\Tables\Table\Concerns\HasAggregateValues;
 use Sylament\Tables\Table\Concerns\HasColumns;
 use Sylament\Tables\Table\Concerns\HasEmptyState;
 use Sylament\Tables\Table\Concerns\HasQuery;
@@ -26,6 +27,7 @@ class Table extends ViewComponent
     use CanSearchRecords;
     use CanSortRecords;
     use HasActions;
+    use HasAggregateValues;
     use HasColumns;
     use HasEmptyState;
     use HasQuery;

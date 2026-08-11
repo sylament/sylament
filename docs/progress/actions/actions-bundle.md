@@ -276,6 +276,41 @@ a lazy controller is registered only when a matching element appears, which for
 an element-less controller is never. A module-level `listening` flag guards the
 one `document.addEventListener` against a double registration.
 
+**The consuming app has to enable the package, and nothing warns it if it
+doesn't.** `fetch: eager` decides *how* a controller registers; it has no say in
+*whether* the app considers this package at all. That is decided by the app's own
+`assets/controllers.json`:
+[`ControllersMapGenerator::loadUxControllers()`](../../../vendor/symfony/stimulus-bundle/src/AssetMapper/ControllersMapGenerator.php)
+iterates the packages **listed in that file**, and `continue`s past any entry
+whose local `enabled` is false. So the map needs
+
+```json
+"@sylament/actions": { "dispatch": { "enabled": true, "fetch": "eager" } }
+```
+
+and without it the controller is never registered, `afterLoad()` never runs, the
+document listener is never added, and **every** dispatch on the page is a silent
+no-op — including a toast's, whose local emit
+[was removed](../notifications/notification.md#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload)
+in favour of this one. Nothing throws, nothing logs, and the click still looks
+handled: the close arm keeps working, so a `dispatch()->close()` toast collapses
+exactly as it should while the event goes nowhere. This is the mirror image of the
+[missing prepend](#asset-registration-is-an-assetmapper-prepend), which fails loudly
+at controllers-map generation — a consumer that gets the prepend but not the entry
+sees no error anywhere.
+
+In a Flex app the entry writes itself, on a `composer` run rather than a cache
+clear. `PackageJsonSynchronizer::updateControllersJsonFile()` walks the installed
+PHP packages, skips any whose composer manifest lacks the `symfony-ux` keyword
+(`packages/actions/composer.json` carries it, as support's and notifications' do),
+reads `assets/package.json`'s `symfony.controllers` block and copies each
+controller's declared `enabled`/`fetch` in as the default for a package it has not
+seen before — leaving an existing entry's `enabled` alone, so a consumer who turned
+it off stays off. For the peer demo that means `composer update "sylament/*"` in
+`../demo`, not an edit. The trap is that a **path**-repository consumer sees no new
+package boundary when the monorepo merely gains an asset workspace, so nothing
+triggers the sync until something in that package's composer metadata moves.
+
 **It listens in the capture phase**, and that is the load-bearing choice. A
 delegated listener on `document` in the bubble phase is at the mercy of every
 ancestor between the trigger and the root: support's section header already calls

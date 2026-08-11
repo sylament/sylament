@@ -253,6 +253,16 @@ hover-pause and a
 The dev **and** peer declarations of `@symfony/ux-live-component` went with it, so
 `@hotwired/stimulus` is the workspace's only dependency of either kind.
 
+That subtraction moved a prerequisite onto the consumer, and it is one a
+notifications reader will not otherwise go looking for: **a toast action's dispatch
+now needs `@sylament/actions` enabled in the app's `assets/controllers.json`.**
+Enabling `@sylament/notifications` alone buys auto-dismiss, hover-pause and close;
+the event itself is delivered by the other package's page-wide controller, which
+StimulusBundle never registers for an app that does not list it — with no error
+anywhere, since the close arm keeps working while the event goes nowhere. What the
+entry looks like, how Flex writes it, and why the failure is silent:
+[actions-bundle.md](../actions/actions-bundle.md#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it).
+
 That subtraction is also what closed this workspace's importmap question, and the
 reasoning is worth keeping because the sibling workspace still faces it. No
 `symfony.importmap` entry was ever declared for `@symfony/ux-live-component`, and

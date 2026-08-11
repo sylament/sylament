@@ -140,8 +140,14 @@ itself carries the schema-scoped surface: `validateSchema()` (execution),
 uses), and `clearSchemaValidation()` (reset). The promotion rationale is the
 same as for `schemas()`/`makeSchema()` above: `Schema::validate()` and the
 actions pipeline call these on a host typed as *this interface*, so under
-PHPStan level max the interface must carry them. The machinery, semantics, and
-per-member divergences live in [`can-be-validated.md`](can-be-validated.md).
+PHPStan level max the interface must carry them. Composing
+[`HasSchemas`](../../../packages/schemas/src/Concerns/HasSchemas.php) is the
+supported way to satisfy all four — `validateSchemaRecord()` included, since a
+host implementing it by hand has to reproduce the translator, the bag section and
+the sticky-key bookkeeping that
+[`getErrorsForSchemaStatePath()`](#the-contract-declares-a-schema-scoped-validation-surface-livewire-owns-in-filament)
+reads back. The machinery, semantics, and per-member divergences live in
+[`can-be-validated.md`](can-be-validated.md).
 
 ### clearSchemaValidation() is scoped where Filament resets the whole Livewire error bag
 

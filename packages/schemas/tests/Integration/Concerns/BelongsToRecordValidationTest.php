@@ -120,6 +120,20 @@ it('folds a cascaded violation onto the nested components state path', function 
         ->and($host->getErrorsForSchemaStatePath('data.author.name'))->toBe(['The author name is too short.']);
 });
 
+it('folds an untranslatable violation at the empty root key of a pathless schema', function (): void {
+    $post = constrainedPost(ConstrainedPost::REJECTED_POST);
+
+    $host = new StateHostFixture();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $schema = Schema::make($host)->record($post)->components([]);
+    $host->cacheSchema('schema', $schema);
+
+    expect(fn (): object => $schema->getData())->toThrow(ValidationException::class)
+        ->and($host->getErrorsForSchemaStatePath(''))->toBe(['That post is not publishable.'])
+        ->and($host->getErrorsForSchemaStatePath('data'))->toBe([]);
+});
+
 it('returns the mapped record when the record validates', function (): void {
     $post = constrainedPost();
 

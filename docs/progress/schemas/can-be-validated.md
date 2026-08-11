@@ -82,6 +82,7 @@ the component-tier flag trio the walk guards on by the component
 [`HasStateTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasStateTest.php)
 (see [`component.md`](component.md)); the record tail — the four fold
 destinations (mapped leaf, nested cascade, class-level, unmapped property), the
+[empty root key of a pathless schema](#a-pathless-schema-folds-its-untranslatable-violations-at-the-empty-key), the
 clean pass, the mutated-but-unflushed reality, and the no-validator skip — by
 [`BelongsToRecordValidationTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordValidationTest.php)
 over real Doctrine entities, and over a real `Repeater::relationship()` by forms'
@@ -137,6 +138,19 @@ interaction, rather than clearing field-by-field the way a state error does.
 That is the intended shape (a `UniqueEntity` verdict is stale the moment
 anything changes), not an oversight; what it costs is that the two error
 families age differently in the same bag.
+
+### A pathless schema folds its untranslatable violations at the empty key
+
+The fold destination is the schema's **own** state path, and a schema declared
+without one has `''` for it — so a class-level or otherwise untranslatable
+violation is filed under the empty-string key rather than being dropped.
+Consistent rather than degenerate: `getErrorsForSchemaStatePath('')` reads that
+key back, and the message rides the `ValidationException` payload either way. It
+is worth stating because the empty key belongs to no input, so a host wanting
+those messages on screen has to ask for `''` explicitly — the same requirement a
+`data`-rooted schema has for `data`, only easier to mistake for a missing value.
+Pinned by a case in `BelongsToRecordValidationTest`, so the shape cannot drift
+into a silent drop.
 
 ### A clean silent re-validation keeps the schema sticky
 

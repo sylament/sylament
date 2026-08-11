@@ -1121,7 +1121,7 @@ class Repeater extends Field implements HasKeyedItems
      */
     private function getItemsFromRelationship(object $record): array
     {
-        $this->getRelationshipCollectionTarget();
+        $this->requireRelationshipCollectionTarget();
 
         $reader = $this->getAssociationReader();
         $accessor = $this->getPropertyAccessor();
@@ -1152,10 +1152,7 @@ class Repeater extends Field implements HasKeyedItems
                 $accessor->setInArray($itemData, $itemStatePath, $value);
             }
 
-            $items[self::RECORD_ITEM_KEY_PREFIX . $reader->getRecordKey($child)] = $this->mutateRelationshipItemData(
-                $this->mutateRelationshipDataBeforeFillUsing,
-                $itemData,
-            );
+            $items[self::RECORD_ITEM_KEY_PREFIX . $reader->getRecordKey($child)] = $this->requireFilledItemData($itemData);
         }
 
         return $items;
@@ -1169,7 +1166,7 @@ class Repeater extends Field implements HasKeyedItems
      */
     private function saveItemsToRelationship(object $record, mixed $state): void
     {
-        $target = $this->getRelationshipCollectionTarget();
+        $target = $this->requireRelationshipCollectionTarget();
         $name = $this->getRelationshipNameOrFail();
         $reader = $this->getAssociationReader();
         $accessor = $this->getPropertyAccessor();
@@ -1195,9 +1192,20 @@ class Repeater extends Field implements HasKeyedItems
 
             $child = $this->findRelationshipItemRecord((string) $itemKey, $existingRecords);
 
-            $itemData = ($child === null)
+            $mutated = ($child === null)
                 ? $this->mutateRelationshipItemData($this->mutateRelationshipDataBeforeCreateUsing, $itemData)
-                : $this->mutateRelationshipItemData($this->mutateRelationshipDataBeforeSaveUsing, $itemData, ['record' => $child]);
+                : $this->mutateRelationshipItemData($this->mutateRelationshipDataBeforeSaveUsing, $itemData, $child);
+
+            if ($mutated === null) {
+                if ($child !== null) {
+                    $desiredRecords[] = $child;
+                    $desiredItemKeys[] = (string) $itemKey;
+                }
+
+                continue;
+            }
+
+            $itemData = $mutated;
 
             $child ??= $accessor->constructRecord(
                 $target->targetClass,
@@ -1266,7 +1274,7 @@ class Repeater extends Field implements HasKeyedItems
      *                        than a collection, or when removing an item from it
      *                        would leave the record behind instead of deleting it
      */
-    private function getRelationshipCollectionTarget(): AssociationTarget
+    private function requireRelationshipCollectionTarget(): AssociationTarget
     {
         $target = $this->getRelationshipTarget();
 
@@ -1316,37 +1324,65 @@ class Repeater extends Field implements HasKeyedItems
     }
 
     /**
+     * One loaded child as an item array, after the fill callback has had it.
+     * Only the create and save callbacks may decline an item; a fill has an item
+     * to show either way, so a null here is a mistake rather than a skip.
+     *
      * @param array<string, mixed> $itemData
-     * @param array<string, mixed> $namedInjections
      *
      * @return array<string, mixed>
      *
-     * @throws LogicException when the callback returns something other than the
-     *                        item array
+     * @throws LogicException when the fill callback returns null
      */
-    private function mutateRelationshipItemData(?Closure $callback, array $itemData, array $namedInjections = []): array
+    private function requireFilledItemData(array $itemData): array
+    {
+        return $this->mutateRelationshipItemData($this->mutateRelationshipDataBeforeFillUsing, $itemData)
+            ?? throw new LogicException(sprintf(
+                'The [%s] repeater\'s mutateRelationshipDataBeforeFillUsing callback returned null, but a fill has no item to skip — only the create and save callbacks may decline one. Return the array the callback was handed.',
+                (string) $this->getName(),
+            ));
+    }
+
+    /**
+     * The item array a mutation callback hands back, or null where it declined
+     * the item — `$record` is the child the item names, injected by name and by
+     * its own class so a hook may type-hint the entity.
+     *
+     * @param array<string, mixed> $itemData
+     *
+     * @return array<string, mixed>|null
+     *
+     * @throws LogicException when the callback returns something other than the
+     *                        item array or null
+     */
+    private function mutateRelationshipItemData(?Closure $callback, array $itemData, ?object $record = null): ?array
     {
         if (! $callback instanceof Closure) {
             return $itemData;
         }
 
-        return $this->requireMutatedItemData($this->evaluate($callback, [
-            'state' => $itemData,
-            ...$namedInjections,
-        ]));
+        return $this->requireMutatedItemData($this->evaluate(
+            $callback,
+            ($record === null) ? ['state' => $itemData] : ['state' => $itemData, 'record' => $record],
+            ($record === null) ? [] : [$record::class => $record],
+        ));
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<string, mixed>|null
      *
      * @throws LogicException when a mutation callback returned something other
-     *                        than the item array
+     *                        than the item array or null
      */
-    private function requireMutatedItemData(mixed $mutated): array
+    private function requireMutatedItemData(mixed $mutated): ?array
     {
+        if ($mutated === null) {
+            return null;
+        }
+
         if (! is_array($mutated)) {
             throw new LogicException(sprintf(
-                'A relationship mutation callback on the [%s] repeater returned %s where the mutated item array was expected. Return the array the callback was handed.',
+                'A relationship mutation callback on the [%s] repeater returned %s where the mutated item array was expected. Return the array the callback was handed, or null to skip the item.',
                 (string) $this->getName(),
                 get_debug_type($mutated),
             ));

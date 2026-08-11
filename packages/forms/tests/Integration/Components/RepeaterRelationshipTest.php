@@ -129,6 +129,7 @@ it('creates an added item and deletes a removed one on flush', function (): void
 
     $repeater = Repeater::make('sections')
         ->relationship()
+        ->orderColumn('position')
         ->components([TextInput::make('heading'), TextInput::make('body')]);
 
     [$schema, $host] = wireRelationshipRepeater($repeater, $post);
@@ -225,6 +226,87 @@ it('runs the mutate hooks at their moments', function (): void {
         ->and($one->getBody())->toBe('saved one')
         ->and($two->getBody())->toBe('saved two')
         ->and($post->getSections()->last()->getBody())->toBe('created');
+});
+
+it('skips creating an item whose before-create hook returns null', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = seedSectionedPost($entityManager);
+
+    $postId = $post->getId();
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->mutateRelationshipDataBeforeCreateUsing(static fn (): null => null)
+        ->components([TextInput::make('heading')]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $filledKeys = array_map(strval(...), array_keys($host->data['sections']));
+
+    $repeater->getAction($repeater->getAddActionName())?->call();
+
+    $host->data['sections'][addedItemKey($host->data['sections'], $filledKeys)]['heading'] = 'three';
+
+    $schema->getData();
+
+    expect($post->getSections()->count())->toBe(2);
+
+    $entityManager->flush();
+    $entityManager->clear();
+
+    $reloaded = $entityManager->find(Post::class, $postId);
+    assert($reloaded instanceof Post);
+
+    expect(array_map(static fn (PostSection $section): string => $section->getHeading(), $reloaded->getSections()->toArray()))
+        ->toBe(['one', 'two']);
+});
+
+it('leaves a child whose before-save hook returns null untouched and still kept', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one, $two] = seedSectionedPost($entityManager);
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->mutateRelationshipDataBeforeSaveUsing(
+            static fn (array $state, PostSection $record): ?array => ($record->getHeading() === 'two') ? null : $state,
+        )
+        ->components([TextInput::make('heading')]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $host->data['sections']['record-' . $one->getId()]['heading'] = 'edited one';
+    $host->data['sections']['record-' . $two->getId()]['heading'] = 'edited two';
+
+    $schema->getData();
+
+    expect($one->getHeading())->toBe('edited one')
+        ->and($two->getHeading())->toBe('two')
+        ->and($post->getSections()->contains($two))->toBeTrue()
+        ->and($post->getSections()->count())->toBe(2);
+});
+
+it('injects the child record by type into the before-save hook', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one] = seedSectionedPost($entityManager);
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->mutateRelationshipDataBeforeSaveUsing(static fn (array $state, PostSection $section): array => [
+            ...$state,
+            'body' => 'saved ' . $section->getHeading(),
+        ])
+        ->components([TextInput::make('heading'), TextInput::make('body')]);
+
+    [$schema] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+    $schema->getData();
+
+    expect($one->getBody())->toBe('saved one');
 });
 
 it('keeps refusing an object collection without relationship()', function (): void {

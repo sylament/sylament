@@ -80,7 +80,7 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 | `extraItemActions()` (`HasExtraItemActions`) | [`HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
 | Items grid (`HasContainerGridLayout`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
 | `table()` mode (`table()` / `getTableColumns()` / `isTable()` / `toTableEmbeddedHtml()`; the `TableColumn` class keeps [its own README row](README.md#components)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
-| Relationship family — **shipped**: `relationship()`, `hasRelationship()` / `getRelationshipName()`, `orderColumn()` / `getOrderColumn()`, `mutateRelationshipDataBeforeCreate/Fill/Save()Using()`, the fill and save arms (Filament's `fillFromRelationship()` / `getStateFromRelatedRecords()` / `saveToRelationship()`, here the two [component-tier hooks](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)). **Not ported**: `getRelationship()` / `getRelatedModel()` (Eloquent objects with no Doctrine counterpart — `AssociationTarget` answers both), `getCachedExistingRecords()` / `clearCachedExistingRecords()`, `afterCreate()` / `afterUpdate()` / `afterDelete()`, the `getLabel()` override, item `constantState()` / record stamping | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) · [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
+| Relationship family — **shipped**: `relationship()`, `hasRelationship()` / `getRelationshipName()`, `orderColumn()` / `getOrderColumn()`, the three setters `mutateRelationshipDataBeforeFillUsing()` / `mutateRelationshipDataBeforeCreateUsing()` / `mutateRelationshipDataBeforeSaveUsing()`, the fill and save arms (Filament's `fillFromRelationship()` / `getStateFromRelatedRecords()` / `saveToRelationship()`, here the two [component-tier hooks](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)). **Not ported**: `getRelationship()` / `getRelatedModel()` (Eloquent objects with no Doctrine counterpart — `AssociationTarget` answers both), `getCachedExistingRecords()` / `clearCachedExistingRecords()`, `afterCreate()` / `afterUpdate()` / `afterDelete()`, the three public callers `mutateRelationshipDataBeforeFill()` / `mutateRelationshipDataBeforeCreate()` / `mutateRelationshipDataBeforeSave()` (the arms call the callbacks through one private helper instead), the `getLabel()` override, item `constantState()` / record stamping | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) · [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
 | `partiallyRenderAfterActionsCalled()` / `shouldPartiallyRenderAfterActionsCalled()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | UX LiveComponent partial-render equivalent | — |
 | `array_move_before()` / `array_move_after()` (`packages/forms/src/helpers.php`, the reorder bodies) | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | — | — |
 | Deprecated members (`createItemButtonLabel()`, `disableItemCreation()` / `disableItemDeletion()` / `disableItemMovement()`, `orderable()`, `inset()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
@@ -295,15 +295,19 @@ repeater over one has nothing to repeat. Item fields are written per declared le
 the root, so a dotted item path (`address.city`) reaches through the child's own
 graph on [`setOnRecord()`](../schemas/property-accessor.md#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs)'s terms.
 
-Four consequences worth stating. A `record-` key naming a child the collection
+Five consequences worth stating. A `record-` key naming a child the collection
 no longer holds **throws** — it means the record changed under a filled form, and
 resurrecting it as a new row would be worse than a refusal. The clone action
 mints a uuid key, so cloning a loaded item creates a *new* record rather than
 double-writing the old one. `orderColumn()` stamps `0..n-1` in state order onto
 each child before the write, and the read side is Doctrine's — the association
 needs its own `#[ORM\OrderBy]` on that property, since nothing here orders the
-query. And the whole diff runs inside the single `getData()` call, with no flush
-of its own: the caller flushes, once, exactly as with every other mapped field.
+query. A mutation callback returning **null** declines the item, Filament-exact:
+before-create skips constructing it (nothing is written, nothing joins the
+desired list), before-save skips writing it but the child stays in the desired
+list, so declining a save is not a deletion. And the whole diff runs inside the
+single `getData()` call, with no flush of its own: the caller flushes, once,
+exactly as with every other mapped field.
 
 ### A save records which collection key each item was written to
 
@@ -381,11 +385,57 @@ item array injected as **`state`**, not Filament's `$data` — every other
 mutation seam in the port names it `state` (`mutateDehydratedStateUsing`,
 `dehydrateStateUsing`), and the evaluation vocabulary is one word per meaning;
 `mutateRelationshipDataBeforeSaveUsing` additionally receives the child as
-`record`. And `simple()`, `itemsAs()` and `relationship()` are now a **three-way**
+`record` **and** typed by its own class, so `fn (PostSection $section)` resolves
+the way the [component-tier hooks](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)
+already inject the record. And `simple()`, `itemsAs()` and `relationship()` are now a **three-way**
 mode exclusion, each pair refusing in either declaration order for the reason
 that pair fails: the simple pluck would reduce a related record to one scalar,
 and a freshly constructed value object would throw away the identity the
 relationship exists to preserve.
+
+### The order stamp is 0-based, written onto the child, and out of the callbacks' reach
+
+Filament stamps `$itemData[$orderColumn] = $itemOrder` with `$itemOrder`
+starting at **1**, *before* either mutation callback sees the item — so a hook
+reads the position it is about to be given and may overwrite it, and the value
+reaches the record through the same `fill()` that writes every other key
+(`vendor/filament/forms/src/Components/Repeater.php:1024-1030`). Here the stamp
+is `0..n-1`, written straight onto the child with
+[`setOnRecord()`](../schemas/property-accessor.md#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs)
+*after* the callbacks have run, and never present in the item array at all.
+
+Two reasons, one per half. **0-based** because the number is the element's index
+in the collection the save is building (`count($desiredRecords)`), not a
+human-facing rank — nothing here renders it, and the read side is Doctrine's
+`#[ORM\OrderBy]`, which sorts either numbering identically. **Outside the
+callbacks** because the port writes the item array through the item schema's
+*declared* leaf paths, and an order column is precisely the property no field
+declares: a key a callback added under that name would be dropped on the way to
+the record, so offering it there would be a seam that silently does nothing.
+
+The cost is real and bounded: a callback cannot read or rewrite the position,
+which Filament's can. Reverses if a case turns up for reordering from a hook —
+the stamp would move into the item array before the callbacks and be written
+from there, alongside the declared paths rather than through them.
+
+One consequence of the [null-skip](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
+arm follows from the ordering half. A child whose before-save callback declined
+it is kept in the desired list but never written, so it keeps whatever position
+it already had while the items around it are restamped — the same outcome as
+Filament, where a `continue` skips the `fill()` that would have carried the
+stamp. A declined **create** costs no number here (the stamps stay contiguous),
+where Filament's `$itemOrder` has already been incremented and leaves a gap.
+
+### The fill callback may not decline an item
+
+`mutateRelationshipDataBeforeCreateUsing` and
+`mutateRelationshipDataBeforeSaveUsing` return `?array` because Filament's do —
+null declines the item. `mutateRelationshipDataBeforeFillUsing` returns `array`
+in Filament too, and here a null from it **throws** rather than being read as a
+skip: the fill is showing the children the record already holds, so declining one
+would hide a row the user is editing, and the state the form is built from would
+disagree with the collection the save diffs against. The refusal names the
+callback and says which two may decline.
 
 ### Every item schema is keyed as well as re-pathed
 

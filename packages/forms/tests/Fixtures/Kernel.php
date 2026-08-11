@@ -70,11 +70,17 @@ class Kernel extends BaseKernel
             'defaults' => [],
         ]);
 
+        $container->import(__DIR__ . '/services_doctrine.php');
+
         $container->services()
             ->defaults()
                 ->autowire()
                 ->autoconfigure()
             ->load('Sylament\\Forms\\Tests\\Fixtures\\', __DIR__ . '/*')
-                ->exclude([__DIR__ . '/Kernel.php']);
+                ->exclude([
+                    __DIR__ . '/Kernel.php',
+                    __DIR__ . '/Doctrine/Entity',
+                    __DIR__ . '/services_doctrine.php',
+                ]);
     }
 }

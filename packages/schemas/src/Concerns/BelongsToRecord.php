@@ -108,14 +108,21 @@ trait BelongsToRecord
      * @return array<string, Component>
      *
      * @throws LogicException when a component declared outside an owner's tree
-     *                        carries a state path nesting under the owner's
+     *                        carries a state path nesting under the owner's, or
+     *                        when a component the map does not carry declares a
+     *                        relationship hook
      */
     protected function getRecordPathMap(): array
     {
         $map = [];
         $owners = [];
+        $hooked = [];
 
         foreach ($this->getFlatComponents(withActions: false) as $component) {
+            if ($component->hasLoadStateFromRelationships() || $component->hasSaveRelationships()) {
+                $hooked[] = $component;
+            }
+
             if (! $component->hasStatePath()) {
                 continue;
             }
@@ -166,7 +173,34 @@ trait BelongsToRecord
             }
         }
 
+        foreach ($hooked as $component) {
+            if (! in_array($component, $map, true)) {
+                $this->refuseUnmappedRelationshipHook($component);
+            }
+        }
+
         return $map;
+    }
+
+    /**
+     * Both walks consult a relationship hook only for a path the map carries, so
+     * a hook on a component the map skips could never fire — no error, no write,
+     * no trace. Refuse it at map time instead, naming which of the three
+     * exclusions this component met and the way back into the map.
+     *
+     * @throws LogicException always
+     */
+    private function refuseUnmappedRelationshipHook(Component $component): never
+    {
+        throw new LogicException(sprintf(
+            '%s declares a relationship hook, but the record path map does not carry it, so the hook could never fire — %s',
+            $component::class,
+            match (true) {
+                $component->getRecordStatePath() === null => 'it names no record path. Give it the statePath() of the association it maps, or drop the hook.',
+                $component->hasPathBearingDescendants() && ! $component->ownsRecordSubtree() => 'the map takes the paths of the components nested inside it instead of its own. Declare ownsRecordSubtree() so it maps whole, or drop the hook.',
+                default => 'a component above it owns its record subtree and speaks for every path beneath. Move it out from under that component, or drop the hook.',
+            },
+        ));
     }
 
     /**
@@ -325,11 +359,13 @@ trait BelongsToRecord
      * ({@see hasDehydratedBranchLeaf()}). A leaf whose component declares
      * {@see Component::saveRelationshipsUsing()} is handed to that hook instead
      * of written through the accessor, so the hook owns the write and the
-     * object-collection refusal never applies to its path.
+     * object-collection refusal never applies to its path — a hook on a
+     * component the map does not carry is refused rather than skipped.
      *
      * @throws LogicException when a declared branch names no property, names
      *                        one the record declares non-nullable, or composes
-     *                        with a relationship save hook
+     *                        with a relationship save hook, or when a component
+     *                        the record path map excludes declares one
      */
     public function getData(): object
     {

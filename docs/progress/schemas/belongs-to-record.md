@@ -77,8 +77,8 @@ Sylament-only.
 | [`getRecordStatePath()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it) |
 | [`ownsRecordSubtree()`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | — | done | — | [diverges](#a-component-can-own-its-whole-record-subtree) |
 | [`nullWhenBlank()` / `isNullableBranch()` / `shouldNullBranch()` / `isBlankStateValue()`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#the-built-in-blank-test-asks-the-branchs-own-leaves) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [diverges](#a-nullwhenblank-closure-sees-two-different-bags) · [diverges](#a-doctrine-embeddable-cannot-be-nulled) |
-| [`loadStateFromRelationshipsUsing()` / `hasLoadStateFromRelationships()` / `loadStateFromRelationships(object $record)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`loadStateFromRelationshipsUsing()` / `loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) |
-| [`saveRelationshipsUsing()` / `hasSaveRelationships()` / `saveRelationships(object $record, mixed $state)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`saveRelationshipsUsing()` / `saveRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#nullwhenblank-cannot-compose-with-a-save-hook) |
+| [`loadStateFromRelationshipsUsing()` / `hasLoadStateFromRelationships()` / `loadStateFromRelationships(object $record)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`loadStateFromRelationshipsUsing()` / `loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#a-hook-the-record-path-map-does-not-carry-is-refused) |
+| [`saveRelationshipsUsing()` / `hasSaveRelationships()` / `saveRelationships(object $record, mixed $state)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`saveRelationshipsUsing()` / `saveRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#a-hook-the-record-path-map-does-not-carry-is-refused) · [semantics](#nullwhenblank-cannot-compose-with-a-save-hook) |
 | [`setAssociationReader()` / `getAssociationReader()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#every-component-reaches-the-association-reader-through-a-required-setter) |
 | `saveRelationshipsBeforeChildrenUsing()` / `saveRelationshipsBeforeChildren()` | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
 | `saveRelationshipsWhenDisabled()` / `saveRelationshipsWhenHidden()` / their `should*` readers | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-exists-guarded-members-are-not-ported) |
@@ -177,9 +177,12 @@ by
 otherwise skip as an object-valued leaf, a save hook taking the write off
 `setOnRecord()` while the property its path names stays untouched, an *unhooked*
 object collection still meeting the refusal — the pin that keeps the bypass
-opt-in — the `nullWhenBlank()`-plus-save-hook refusal, and a container-built
-component receiving the container's `AssociationReader` rather than the
-`new`-built fallback).
+opt-in — the `nullWhenBlank()`-plus-save-hook refusal, the three
+map-exclusion refusals, one per exclusion: a container whose children carry the
+mapped paths, a component with no state path, and a component beneath a subtree
+owner — each raised from `fill()`, which is the earlier of the two edges to reach
+the map — and a container-built component receiving the container's
+`AssociationReader` rather than the `new`-built fallback).
 
 ## Details
 
@@ -193,6 +196,35 @@ one-line addition to whichever epic lands them.
 **Next step:** land it with the partial-render decision.
 
 ## Semantics
+
+### A hook the record path map does not carry is refused
+
+Both hooks are consulted from inside the map walk, so a component the map
+excludes is never asked whether it declares one. Three exclusions produce that
+shape, and `getRecordPathMap()` refuses each of them with a `LogicException`
+naming the component, which exclusion it met, and the way back into the map:
+
+| the component | why the map skips it | the way out |
+| --- | --- | --- |
+| carries no state path (or one that resolves to no record path) | the map is keyed by record path | give it the `statePath()` of the association it maps |
+| nests path-bearing components without [owning its subtree](#a-component-can-own-its-whole-record-subtree) | the map takes its leaves, never the container | declare `ownsRecordSubtree()` so it maps whole |
+| sits beneath a subtree owner | the owner speaks for every path under its own | move it out from under that owner |
+
+Left as a silent skip, a hook on any of the three would be the worst shape this
+mapper can produce: no error, no write, no trace — a relationship that simply
+never saves. The middle row is the one a user hits, because a container is the
+natural place to hang a relationship, and it is exactly the shape the forms
+`Repeater` needs; it maps only because `Repeater::ownsRecordSubtree()` returns
+true. The refusal is [the same stance](#reads-are-lenient-writes-are-strict) the
+mapper takes on a foreign path nesting under an owner, and the same one
+[`nullWhenBlank()` without a state path](#a-nullable-branch-with-no-state-path-is-refused-not-ignored)
+takes two lines away.
+
+The guard collects hook-declaring components in the map build's own walk and
+tests membership after the owner pass, so it costs no extra traversal and sees
+the map exactly as the two edges will consult it. It fires from `fill()` as well
+as `getData()` — both go through the map — so a misconfigured hook is reported
+on the first render, not first on submit.
 
 ### `nullWhenBlank()` cannot compose with a save hook
 
@@ -691,8 +723,9 @@ per-component callbacks, driven from `Schema::getState()` and again by the
 create pages once the model row exists. Sylament has no such walk on either tier
 and does not port one. The two mapping edges already walk the record path map —
 `fill()`
-through `readStateFromRecord()`, `getData()` through its leaf loop — so a hooked
-path is simply routed to its component instead of to the property accessor:
+through `readStateFromRecord()`, `getData()` through its leaf loop — so a path
+**the map carries** is routed to its component instead of to the property
+accessor:
 
 - **`fill()`** — a component answering `hasLoadStateFromRelationships()` supplies
   the value at its path, bypassing the record read *and* the object-leaf skip.
@@ -703,6 +736,13 @@ path is simply routed to its component instead of to the property accessor:
   [object-collection refusal](property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused)
   never run for it. An **unhooked** collection path still meets that refusal
   unchanged, which is the guard that keeps the hook opt-in.
+
+Map membership is the precondition, not a detail: Filament's walk visits every
+component in the tree, ours visits only the components
+[`getRecordPathMap()`](#mapping-walks-the-record-graph-by-declared-leaf-paths)
+carries, which is a strictly smaller set. A hook declared on a component outside
+it is refused at map time rather than left to no-op —
+[a hook the record path map does not carry is refused](#a-hook-the-record-path-map-does-not-carry-is-refused).
 
 Three consequences follow from collapsing the third pass into the two edges.
 

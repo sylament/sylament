@@ -10,6 +10,7 @@ use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
+use Sylament\Schemas\Tests\Fixtures\Components\SubtreeOwner;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Author;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
@@ -96,19 +97,57 @@ it('still refuses an unhooked object collection', function (): void {
 it('refuses nullWhenBlank on a component with a save hook', function (): void {
     $post = seedPost();
 
-    $section = Section::make()
-        ->statePath('author')
+    $owner = SubtreeOwner::make('author')
         ->nullWhenBlank()
         ->saveRelationshipsUsing(fn (): null => null)
         ->components([StateField::make('name')]);
 
-    [$schema, $host] = wireHookedComponent($section, $post);
+    [$schema, $host] = wireHookedComponent($owner, $post);
 
     $schema->fill($post);
     $host->data['author'] = ['name' => ''];
 
     expect(fn (): object => $schema->getData())
         ->toThrow(LogicException::class, 'nullWhenBlank()');
+});
+
+it('refuses a hook on a container whose children carry the mapped paths', function (): void {
+    $post = seedPost();
+
+    $section = Section::make()
+        ->statePath('author')
+        ->saveRelationshipsUsing(fn (): null => null)
+        ->components([StateField::make('name')]);
+
+    [$schema] = wireHookedComponent($section, $post);
+
+    expect(fn (): Schema => $schema->fill($post))
+        ->toThrow(LogicException::class, 'ownsRecordSubtree()');
+});
+
+it('refuses a hook on a component with no state path', function (): void {
+    $post = seedPost();
+
+    $section = Section::make()
+        ->loadStateFromRelationshipsUsing(fn (): string => 'never');
+
+    [$schema] = wireHookedComponent($section, $post);
+
+    expect(fn (): Schema => $schema->fill($post))
+        ->toThrow(LogicException::class, 'names no record path');
+});
+
+it('refuses a hook on a component beneath a subtree owner', function (): void {
+    $post = seedPost();
+
+    $owner = SubtreeOwner::make('sections')->components([
+        StateField::make('title')->saveRelationshipsUsing(fn (): null => null),
+    ]);
+
+    [$schema] = wireHookedComponent($owner, $post);
+
+    expect(fn (): Schema => $schema->fill($post))
+        ->toThrow(LogicException::class, 'owns its record subtree');
 });
 
 it('injects the container association reader into a container-built component', function (): void {

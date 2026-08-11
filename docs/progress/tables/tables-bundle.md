@@ -51,7 +51,7 @@ a [Details](#details) write-up, a **diverges** link to
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`Columns\` and `Colors\Components\` globs + `Table` component services](../../../packages/tables/src/SylamentTablesBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
+| [`Columns\`, `Filters\` and `Colors\Components\` globs + `Table` component services](../../../packages/tables/src/SylamentTablesBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
 | [TableExtension → `twig.extension`](../../../packages/tables/src/SylamentTablesBundle.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
 | [`TablesIconAlias` — `EMPTY_STATE`, the three `HEADER_CELL_SORT_*`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-five-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
 | [`ext-mbstring` on the package manifest](../../../packages/tables/composer.json) | — (Sylament-only; Filament's manifest declares no extensions) | done | — | [diverges](#the-manifest-declares-ext-mbstring) |
@@ -69,8 +69,11 @@ than the shape that passes either way: the container's twig service exposes
 `make()` returns the **container's** `PropertyAccessor` service, not the
 `new`-built fallback the trait would otherwise construct, and a table built
 through `Table::make()` carries the container's `Invoker` and hands a
-`records()` closure the container's shared fixture repository (two assertions
-for one row — the `Columns\` glob and `->set(Table::class)`); and the booted
+`records()` closure the container's shared fixture repository, and a
+`BaseFilter` and an `Indicator` built the same way carry that same `Invoker`
+while `FilterIndicator` is absent from the container (four assertions for one
+row — the `Columns\` glob, `->set(Table::class)`, the `Filters\` glob and its
+one `exclude()`); and the booted
 kernel's Twig loader lists a `SylamentTables` namespace under which
 `@SylamentTables/partials/Table/index.html.twig` resolves
 (the view namespace — the assertion that failed with
@@ -202,6 +205,14 @@ silently wrong without it:
   the arm [`has-table.md`](has-table.md#a-records-closure-resolves-public-container-services-by-type)
   records, together with its one boundary (the `Invoker` holds
   `service_container`, so only **public** ids resolve).
+
+The `Filters\*.php` glob is the third, and it carries the only `exclude()` in
+this bundle:
+[`FilterIndicator`](../../../packages/tables/src/Filters/FilterIndicator.php) is
+a readonly carrier whose `string` and `array` constructor arguments cannot be
+autowired, so leaving it in fails the container compile rather than registering
+something harmless — the same correction support's `Components/*.php` glob makes
+for `ComponentManager`. `BaseFilter` is **concrete** and registers normally.
 
 Permanent: the registration is the Symfony-idiom replacement for Laravel's
 reflective container, not a temporary scaffold. It is filed as a provider row

@@ -57,7 +57,7 @@ and the row-selection machinery, and nothing on the roadmap schedules either. (T
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 
-Twenty-one concerns the port has landed are **folded** into the detail file of
+Thirty-two concerns the port has landed are **folded** into the detail file of
 the class that composes them and carry no row here, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing) — nine
 `Table\Concerns\` traits (`BelongsToLivewire`, `CanPaginateRecords`,
@@ -65,11 +65,15 @@ the class that composes them and carry no row here, per
 `HasEmptyState`, `HasRecordActions`, `HasRecords`) into
 [`table.md`](table.md), seven `Columns\Concerns\` traits
 (`BelongsToTable`, `CanBeSearchable`, `CanBeSortable`, `HasLabel`, `HasName`,
-`HasRecord`, `InteractsWithTableQuery`) into [`column.md`](column.md), and five
+`HasRecord`, `InteractsWithTableQuery`) into [`column.md`](column.md), five
 `Columns\Concerns\` traits
 (`CanFormatState`, `HasColor`, `HasDescription`, `HasIcon`, `HasIconColor`)
 into
-[`text-column.md`](text-column.md). Filament's `resources/views/index.blade.php`
+[`text-column.md`](text-column.md), and eleven `Filters\Concerns\` traits
+(`BelongsToTable`, `CanBeHidden`, `CanResetState`, `CanSpanColumns`,
+`HasColumns`, `HasDefaultState`, `HasIndicators`, `HasLabel`, `HasName`,
+`HasSchema`, `InteractsWithTableQuery`) into
+[`base-filter.md`](base-filter.md). Filament's `resources/views/index.blade.php`
 folds the same way, into `table.md`'s `$template` row.
 `Table\Concerns\HasQuery` is the one landed concern that keeps a row anyway: its
 `query()` arm is built and folded into [`table.md`](table.md) while the
@@ -136,9 +140,9 @@ milestone.
 | Columns / Summarizers / Sum | [`Columns/Summarizers/Sum.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Sum.php) | todo | — |
 | Columns / Summarizers / Summarizer | [`Columns/Summarizers/Summarizer.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) | todo | — |
 | Columns / Summarizers / Values | [`Columns/Summarizers/Values.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Values.php) | todo | — |
-| Filters / BaseFilter | [`Filters/BaseFilter.php`](../../../vendor/filament/tables/src/Filters/BaseFilter.php) | todo | — |
+| [`Filters / BaseFilter`](../../../packages/tables/src/Filters/BaseFilter.php) | [`Filters/BaseFilter.php`](../../../vendor/filament/tables/src/Filters/BaseFilter.php) | in progress | [base-filter.md](base-filter.md) |
 | Filters / Filter | [`Filters/Filter.php`](../../../vendor/filament/tables/src/Filters/Filter.php) | todo | — |
-| Filters / Indicator | [`Filters/Indicator.php`](../../../vendor/filament/tables/src/Filters/Indicator.php) | todo | — |
+| [`Filters / Indicator`](../../../packages/tables/src/Filters/Indicator.php) | [`Filters/Indicator.php`](../../../vendor/filament/tables/src/Filters/Indicator.php) | done | [indicator.md](indicator.md) |
 | Filters / MultiSelectFilter | [`Filters/MultiSelectFilter.php`](../../../vendor/filament/tables/src/Filters/MultiSelectFilter.php) | todo | — |
 | Filters / QueryBuilder | [`Filters/QueryBuilder.php`](../../../vendor/filament/tables/src/Filters/QueryBuilder.php) | todo | — |
 | Filters / QueryBuilder / Constraints | [`Filters/QueryBuilder/Constraints/`](../../../vendor/filament/tables/src/Filters/QueryBuilder/Constraints) | todo | — |
@@ -182,8 +186,8 @@ The prefix is load-bearing rather than decorative: twenty trait names occur in
 two of these tiers and five (`BelongsToTable`, `CanBeHidden`, `HasColumns`,
 `HasLabel`, `InteractsWithTableQuery`) in three, which is the same
 [read-by-import, never by the bare `use`](../../../CLAUDE.md) trap the schemas
-tiers carry. The twenty-one landed concerns folded into their component's detail file
-are named in the [preamble](#tables--port-progress) and carry no row here.
+tiers carry. The thirty-two landed concerns folded into their component's detail
+file are named in the [preamble](#tables--port-progress) and carry no row here.
 
 `Contracts/HasTable.php` is not listed in
 [Supporting surface](#supporting-surface): it is inseparable from the trait it
@@ -256,20 +260,9 @@ pairs with, so it shares the first row below.
 | Summarizer / CanFormatState | [`Columns/Summarizers/Concerns/CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanFormatState.php) | todo | — |
 | Summarizer / HasLabel | [`Columns/Summarizers/Concerns/HasLabel.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/HasLabel.php) | todo | — |
 | Summarizer / InteractsWithTableQuery | [`Columns/Summarizers/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/InteractsWithTableQuery.php) | todo | — |
-| Filter / BelongsToTable | [`Filters/Concerns/BelongsToTable.php`](../../../vendor/filament/tables/src/Filters/Concerns/BelongsToTable.php) | todo | — |
-| Filter / CanBeHidden | [`Filters/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Filters/Concerns/CanBeHidden.php) | todo | — |
-| Filter / CanResetState | [`Filters/Concerns/CanResetState.php`](../../../vendor/filament/tables/src/Filters/Concerns/CanResetState.php) | todo | — |
-| Filter / CanSpanColumns | [`Filters/Concerns/CanSpanColumns.php`](../../../vendor/filament/tables/src/Filters/Concerns/CanSpanColumns.php) | todo | — |
-| Filter / HasColumns | [`Filters/Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasColumns.php) | todo | — |
-| Filter / HasDefaultState | [`Filters/Concerns/HasDefaultState.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasDefaultState.php) | todo | — |
-| Filter / HasIndicators | [`Filters/Concerns/HasIndicators.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasIndicators.php) | todo | — |
-| Filter / HasLabel | [`Filters/Concerns/HasLabel.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasLabel.php) | todo | — |
-| Filter / HasName | [`Filters/Concerns/HasName.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasName.php) | todo | — |
-| Filter / HasOptions | [`Filters/Concerns/HasOptions.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | todo | — |
-| Filter / HasPlaceholder | [`Filters/Concerns/HasPlaceholder.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php) | todo | — |
+| [`Filter / HasOptions`](../../../packages/tables/src/Filters/Concerns/HasOptions.php) | [`Filters/Concerns/HasOptions.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | in progress | ships for `SelectFilter`; folds into `select-filter.md` when it lands |
+| [`Filter / HasPlaceholder`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | [`Filters/Concerns/HasPlaceholder.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php) | in progress | ships for `SelectFilter`; folds into `select-filter.md` when it lands |
 | Filter / HasRelationship | [`Filters/Concerns/HasRelationship.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasRelationship.php) | todo | — |
-| Filter / HasSchema | [`Filters/Concerns/HasSchema.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | todo | — |
-| Filter / InteractsWithTableQuery | [`Filters/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | todo | — |
 | Group / BelongsToTable | [`Grouping/Concerns/BelongsToTable.php`](../../../vendor/filament/tables/src/Grouping/Concerns/BelongsToTable.php) | todo | — |
 
 ## Supporting surface

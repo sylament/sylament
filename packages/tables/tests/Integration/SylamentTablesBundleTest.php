@@ -9,6 +9,9 @@ use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Support\Evaluation\Invoker;
 use Sylament\Tables\Columns\TextColumn;
+use Sylament\Tables\Filters\BaseFilter;
+use Sylament\Tables\Filters\FilterIndicator;
+use Sylament\Tables\Filters\Indicator;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\SchemaStateHost;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
@@ -80,4 +83,15 @@ it('renders a forms field inside the tables kernel', function (): void {
         ->toContain('sy-fo-checkbox')
         ->toContain('Featured')
         ->and($html)->not->toBe('');
+});
+
+it('builds filters and indicators through the container so their closures reach it', function (): void {
+    $invoker = $this::getContainer()->get(Invoker::class);
+
+    expect(BaseFilter::make('status')->getInvoker())->toBe($invoker)
+        ->and(Indicator::make('Published')->getInvoker())->toBe($invoker);
+});
+
+it('keeps the filter indicator carrier out of the filters service glob', function (): void {
+    expect($this::getContainer()->has(FilterIndicator::class))->toBeFalse();
 });

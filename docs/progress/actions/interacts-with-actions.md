@@ -108,8 +108,10 @@ a host-resolved default, and the `panels` package — the layer that would
 supply page-level defaults — is `todo` (per [the top-level progress
 table](../README.md#packages)). Dropping the whole cluster is consistent with
 that: no host exists yet that could implement it meaningfully. **Blocked** on
-the `panels` package landing (and, for `getDefaultActionRelationship`
-specifically, a Doctrine relation equivalent to Eloquent's `Relation`).
+the `panels` package landing. `getDefaultActionRelationship` additionally wanted
+a Doctrine equivalent of Eloquent's `Relation`, and that half is answered:
+[`AssociationTarget`](../schemas/association-reader.md) carries a described
+association, so only the host remains.
 
 ## Divergences
 

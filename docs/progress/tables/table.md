@@ -85,7 +85,7 @@ Rows never disappear — only their detail sections do.
 | [The `query()` lane — `query()` / `getQuery()` / `modifyQueryUsing()` / `applyQueryScopes()` / `getQueryEntityManager()`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | done | — | [semantics](#every-read-clones-a-memoised-base-query) |
 | [`hasQuery()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::hasQuery()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#the-query-lane-is-on-exactly-while-no-records-closure-is-set) |
 | [`getRecordClass()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getModel()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [rename](../renames.md#renames) · [semantics](#the-record-class-is-read-off-the-base-querys-root-entity) |
-| The relation arm — `relationship()`, `inverseRelationship()`, `getRelationship()`, `getRelationshipQuery()`, `getInverseRelationship()`, `getInverseRelationshipFor()`, `selectPivotDataInQuery()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | the Doctrine relation layer | [detail](#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer) |
+| The relation arm — `relationship()`, `inverseRelationship()`, `getRelationship()`, `getRelationshipQuery()`, `getInverseRelationship()`, `getInverseRelationshipFor()`, `selectPivotDataInQuery()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | a future tables-relations epic | [detail](#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic) |
 | [`paginated()` / `isPaginated()` / `paginationPageOptions()` / `getPaginationPageOptions()` / `defaultPaginationPageOption()` / `getDefaultPaginationPageOption()` / `extremePaginationLinks()` / `hasExtremePaginationLinks()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | [diverges](#the-ten-per-page-default-is-matched-strictly) · [diverges](#ispaginated-has-no-groups-only-arm) |
 | [`paginationMode()` / `getPaginationMode()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) + [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | its `Cursor` arm — a keyset carrier ([pagination.md](../support/pagination.md)) | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) · [has-table.md](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half) |
 | `paginatedWhileReordering()`, `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) |
@@ -280,7 +280,7 @@ Specifics for rows that are not finished — what is already in, what is left, a
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
 
-### The relation arm of the query lane waits on a Doctrine relation layer
+### The relation arm of the query lane waits on a future tables-relations epic
 
 Filament's `HasQuery` is two declarations, not one: `query()` hands over a
 builder, and `relationship()` hands over a closure returning an Eloquent
@@ -293,7 +293,12 @@ first arm is ported; the second is not, and its seven members
 the relationship query when no builder was declared, and here a declared query is
 the only source.
 
-What blocks it is not translation effort but a missing layer. Two of the seven
+What blocks it is not translation effort but a missing definition. The
+[Doctrine relation layer](../roadmap.md#pulled-forward) has since shipped for
+schemas and forms — `AssociationReader` over `ClassMetadata`, relation-backed
+fields, singular entanglement — and deliberately left the tables arm out, so
+what is waited on now is a **future tables-relations epic** rather than the
+association machinery itself, which exists and is reusable. Two of the seven
 exist only to work around Eloquent's own shapes — `getRelationshipQuery()` is
 mostly the `HasOneOrManyThrough` `select($table . '.*')` patch and the
 `withCasts()` call on the pivot class, and `selectPivotDataInQuery()` is
@@ -303,7 +308,7 @@ table with payload is an entity of its own rather than a pivot with casts. `getI
 inverse accessor's name by singularising or pluralising the parent's class
 basename, where Doctrine already carries the inverse side on the mapping
 (`inversedBy` / `mappedBy`) and a guess would be strictly worse than a read. So
-the arm is deferred until the relation layer decides what a relation-scoped table
+the arm is deferred until that epic decides what a relation-scoped table
 *is* here — most likely a `QueryBuilder` with the join already applied, which
 `query()` accepts today, leaving `relationship()` to add only the inverse-side
 knowledge a nested create needs. Filament's `hasPivotRecordKeys()` /
@@ -370,7 +375,7 @@ the host's.
 One member of the group stays out: `getExtraSearchableColumnRelationship()`,
 which walks a dotted name to decide whether its head is an Eloquent relationship
 so the constraint can become a `whereRelation`. That is
-[the relation layer's](#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)
+[the relation layer's](#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic)
 question, and here the same name is resolved against the builder instead — a
 head that is already a declared alias is used as written, anything else refused
 by name.

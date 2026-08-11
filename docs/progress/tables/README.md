@@ -29,11 +29,14 @@ wait on — so a row whose detail file already names a prerequisite would be
 false as **todo**. These tables carry the same four columns as every package
 README, so a **blocked** row names its prerequisite at the head of _Detail_,
 ahead of the detail-file link that carries the full write-up: _table bulk
-actions_ is the one the rows here wait on today, with _the Doctrine relation
-layer_ a second that only the detail files name so far — it is what the
-[relation arm of the query lane](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)
+actions_ is the one the rows here wait on today, with _a future
+tables-relations epic_ a second that only the detail files name so far — the
+[Doctrine relation layer](../roadmap.md#pulled-forward) shipped for schemas and
+forms and deliberately left tables out, so what is waited on is that epic rather
+than the association machinery. It is what the
+[relation arm of the query lane](table.md#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic)
 and
-[relationship traversal](column.md#relationship-traversal-is-the-doctrine-relation-layers)
+[relationship traversal](column.md#relationship-traversal-is-a-future-tables-relations-epics)
 are held by.
 Two more stood here until their epics landed. _Table upgrades
 ([pulled forward · 11](../roadmap.md#pulled-forward))_ went first: its rows are
@@ -221,7 +224,7 @@ pairs with, so it shares the first row below.
 | Table / HasHeader | [`Table/Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php) | todo | — |
 | Table / HasHeaderActions | [`Table/Concerns/HasHeaderActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php) | todo | — |
 | Table / HasHeadings | [`Table/Concerns/HasHeadings.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeadings.php) | todo | — |
-| [`Table / HasQuery`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | in progress | [table.md](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer) |
+| [`Table / HasQuery`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | in progress | [table.md](table.md#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic) |
 | Table / HasQueryStringIdentifier | [`Table/Concerns/HasQueryStringIdentifier.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — |
 | Table / HasRecordAction | [`Table/Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | todo | — |
 | Table / HasRecordClasses | [`Table/Concerns/HasRecordClasses.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordClasses.php) | todo | — |
@@ -245,7 +248,7 @@ pairs with, so it shares the first row below.
 | Column / HasRowLoopObject | [`Columns/Concerns/HasRowLoopObject.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | todo | [column.md](column.md#rowloop-waits-on-a-decision-about-twigs-loop-not-on-the-table-template) |
 | Column / HasSpace | [`Columns/Concerns/HasSpace.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasSpace.php) | todo | — |
 | Column / HasTooltip | [`Columns/Concerns/HasTooltip.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — |
-| [`Column / InteractsWithTableQuery`](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`Columns/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | in progress | `applySort()` and `applySearchConstraint()` are in; the aggregate and eager-loading arms wait on the Doctrine relation layer — [column.md](column.md#relationship-traversal-is-the-doctrine-relation-layers) |
+| [`Column / InteractsWithTableQuery`](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`Columns/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | in progress | `applySort()` and `applySearchConstraint()` are in; the aggregate and eager-loading arms wait on a future tables-relations epic — [column.md](column.md#relationship-traversal-is-a-future-tables-relations-epics) |
 | Summarizer / BelongsToColumn | [`Columns/Summarizers/Concerns/BelongsToColumn.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/BelongsToColumn.php) | todo | — |
 | Summarizer / CanBeHidden | [`Columns/Summarizers/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanBeHidden.php) | todo | — |
 | Summarizer / CanFormatState | [`Columns/Summarizers/Concerns/CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanFormatState.php) | todo | — |

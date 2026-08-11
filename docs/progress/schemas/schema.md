@@ -163,8 +163,14 @@ and the shared-state-path sibling handling. **Left**, all unported:
   infolists epic alone — plus the relationship state paths for its
   `getStatePathForRelationship()` arm.
 - **The relationship layer** (`saveRelationships()`/
-  `loadStateFromRelationships()`) — **blocked** on the Doctrine
-  relationship-state epic.
+  `loadStateFromRelationships()`) — **skipped**. The
+  [Doctrine relation layer](../roadmap.md#pulled-forward) landed the capability
+  without either walk: the per-component hook pair is
+  [consulted by the two mapping edges](belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)
+  — `fill()` and `getData()` already traverse the record path map — and
+  Doctrine's UnitOfWork collapses the two-phase create these root-tier walks
+  exist to sequence, so a third pass would have nothing left to do.
+  [Recorded in renames.md](../renames.md#renames).
 - **Partial rendering** (`partiallyRender()`/`shouldPartiallyRender()`/
   `fillPartially()`/`hydrateStatePartially()`) — **blocked** on a UX
   LiveComponent partial-render equivalent; decide whether targeted re-render is
@@ -175,7 +181,8 @@ and the shared-state-path sibling handling. **Left**, all unported:
   protected `flushCachedAbsoluteStatePath()` exists; add the tree-walking flush
   when post-cache mutation (dynamic repeaters) becomes reachable.
 
-**Next:** port each with the epic named in its bullet. Two small additions over
+**Next:** port each with the epic named in its bullet — bar the skipped one,
+which has no next step. Two small additions over
 Filament's container trait already ship: `hasStatePath()` is defined here (Filament
 inlines `filled($this->statePath)`), and the shared assembly resets the dehydrated
 cache on entry so each run rebuilds it.

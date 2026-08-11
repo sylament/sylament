@@ -1145,8 +1145,8 @@ or [records()]."` — three ways to give a table data, and the message lists all
 three so the reader can pick. Sylament's is
 `"Table [%s] must have [records()] or [query()]."`: it names the two lanes that
 exist and leaves out the third, which sits on
-[the Doctrine relation layer](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)
-no epic carries yet. Naming an API the package does not ship would send a reader
+[a future tables-relations epic](table.md#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic)
+nobody has scheduled yet. Naming an API the package does not ship would send a reader
 looking for a method they cannot call — which is why the message grew its
 `query()` half in the change that landed the lane rather than ahead of it, and why
 it grows `relationship()` the same way. Provisional, and mechanically so.

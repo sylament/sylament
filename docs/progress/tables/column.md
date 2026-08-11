@@ -41,7 +41,7 @@ record through schemas'
 [`PropertyAccessor`](../schemas/property-accessor.md) — the same accessor the
 form fields write through, reached by composing schemas'
 [`CanAccessProperties`](../../../packages/schemas/src/Components/Concerns/CanAccessProperties.php).
-Given the table's [`QueryBuilder`](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)
+Given the table's [`QueryBuilder`](table.md#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic)
 it also applies its own ordering and contributes its own `LIKE` arm, through
 `applySort()` and `applySearchConstraint()` — the column declares what sorting
 and searching *by it* mean, and the table decides when to ask.
@@ -78,7 +78,7 @@ sections do.
 | [`record()` / `getRecord()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | in progress | — | [diverges](#the-record-union-is-plain-object-where-filaments-is-model) · [detail](#getrecord-has-no-layout-fallback) |
 | [`table()` / `getTable()` / `getLiveComponent()`](../../../packages/tables/src/Columns/Concerns/BelongsToTable.php) | [`Concerns\BelongsToTable`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToTable.php) | in progress | — | [detail](#an-unbound-column-fails-without-filaments-message) |
 | [`state()` / `getStateUsing()` / `getState()` — cached per record key](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#hascellstate-is-relocated-into-the-column-tier) · [diverges](#the-state-cache-keys-off-the-bound-record-key) · [semantics](#state-is-getstateusing-under-another-name) |
-| [`getStateFromRecord()` — object graph or array, by dotted path](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`HasCellState::getStateFromRecord()`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | in progress | — | [diverges](#the-object-read-is-lenient-where-the-accessor-is-strict) · [detail](#relationship-traversal-is-the-doctrine-relation-layers) |
+| [`getStateFromRecord()` — object graph or array, by dotted path](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`HasCellState::getStateFromRecord()`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | in progress | — | [diverges](#the-object-read-is-lenient-where-the-accessor-is-strict) · [detail](#relationship-traversal-is-a-future-tables-relations-epics) |
 | [`$evaluationIdentifier = 'column'` + the `$record` / `$state` / `$table` / `$liveComponent` name injections](../../../packages/tables/src/Columns/Column.php) | [`Column::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Columns/Column.php) | in progress | — | [diverges](#the-by-type-record-injection-is-not-registered) · [detail](#rowloop-waits-on-a-decision-about-twigs-loop-not-on-the-table-template) |
 | `translateLabel()` | [`Concerns\HasLabel`](../../../vendor/filament/tables/src/Columns/Concerns/HasLabel.php) | blocked | i18n ([table.md](table.md#the-empty-state-heading-hardcodes-no-records)) | — |
 | `default()` / `getDefaultState()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | todo | — | — |
@@ -87,7 +87,7 @@ sections do.
 | [`clearCachedState()`](../../../packages/tables/src/Columns/Concerns/HasCellState.php) | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php) | done | — | [diverges](#the-state-cache-keys-off-the-bound-record-key) |
 | [`recordKey()` / `getRecordKey()`](../../../packages/tables/src/Columns/Concerns/HasRecord.php) | [`Concerns\HasRecord`](../../../vendor/filament/tables/src/Columns/Concerns/HasRecord.php) | done | — | [diverges](#the-record-key-setter-admits-an-int) |
 | `getRowLoop()` — the `$rowLoop` injection | [`Concerns\HasRowLoopObject`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | todo | — | [detail](#rowloop-waits-on-a-decision-about-twigs-loop-not-on-the-table-template) |
-| Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches, `applyRelationshipAggregates()`, `applyEagerLoading()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php), [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | blocked | the Doctrine relation layer ([table.md](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer)) | [detail](#relationship-traversal-is-the-doctrine-relation-layers) |
+| Relationship traversal — `hasRelationship()`, `getRelationshipResults()`, `inverseRelationship()`, the seven name caches, `applyRelationshipAggregates()`, `applyEagerLoading()` | [`Support\Concerns\HasCellState`](../../../vendor/filament/support/src/Concerns/HasCellState.php), [`InteractsWithTableQuery`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | blocked | a future tables-relations epic ([table.md](table.md#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic)) | [detail](#relationship-traversal-is-a-future-tables-relations-epics) |
 | Visibility — `hidden()`, `visible()`, `hiddenFrom()`, `toggleable()` | [`CanBeHidden`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHidden.php), [`CanBeHiddenResponsively`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeHiddenResponsively.php), [`CanBeToggled`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeToggled.php) | todo | — | — |
 | [`sortable()` / `isSortable()`](../../../packages/tables/src/Columns/Concerns/CanBeSortable.php) | [`Concerns\CanBeSortable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSortable.php) | done | — | — |
 | [`searchable()` / `isSearchable()` / `isGloballySearchable()` / `isIndividuallySearchable()`](../../../packages/tables/src/Columns/Concerns/CanBeSearchable.php) | [`Concerns\CanBeSearchable`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeSearchable.php) | done | — | [diverges](#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column) |
@@ -195,7 +195,7 @@ record or null. It lands with `BelongsToLayout` — in one piece with the
 `getTable()` chain [waiting on the same tier](#an-unbound-column-fails-without-filaments-message),
 rather than as a lone `?->` bolted on ahead of the thing it falls back to.
 
-### Relationship traversal is the Doctrine relation layer's
+### Relationship traversal is a future tables-relations epic's
 
 Two thirds of Filament's `HasCellState` is Eloquent relationship machinery:
 `hasRelationship()`, `getRelationship()`, `getRelationshipResults()`,
@@ -218,15 +218,20 @@ which asks only whether the head is an alias the query already declares: a table
 sorting or searching across a relation joins and aliases it in `query()`, and an
 unjoined head is refused by name rather than guessed at.
 
-What is left needs a layer that does not exist. Aggregates have no Doctrine
+What is left needs a decision this port has not taken. Aggregates have no Doctrine
 referent as *builder methods* — `withCount()` has no `QueryBuilder` counterpart,
 only a correlated subquery or a `GROUP BY` the caller writes — and eager loading
 is a fetch-mode decision (`fetch: 'EAGER'` on the mapping, or a `leftJoin` plus
 `addSelect`) rather than a per-column call. The to-many read (a column over a
 Doctrine collection yielding a list of values) needs the same collection
-semantics. All three wait on the
-[Doctrine relation layer](table.md#the-relation-arm-of-the-query-lane-waits-on-a-doctrine-relation-layer),
-which is where a relation-scoped table gets defined at all.
+semantics. All three wait on a
+[future tables-relations epic](table.md#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic),
+which is where a relation-scoped table gets defined at all. The
+[Doctrine relation layer](../roadmap.md#pulled-forward) that shipped for schemas
+and forms is not that epic and does not unblock these: its
+[`AssociationReader`](../schemas/association-reader.md) reads a mapping to
+resolve, load and write an association on a **record**, where every member here
+is a builder-side declaration on a *query*.
 
 ### `$rowLoop` waits on a decision about Twig's loop, not on the table template
 
@@ -570,7 +575,7 @@ Filament's are `(Model $record): array<string>`. The parameter exists there only
 to feed `getDefaultSortColumns($record)` / `getDefaultSearchColumns($record)`,
 each of which returns `[$this->getFullAttributeName($record)]` — the
 relationship-aware resolution that is
-[the relation layer's subject](#relationship-traversal-is-the-doctrine-relation-layers).
+[that epic's subject](#relationship-traversal-is-a-future-tables-relations-epics).
 
 Neither half has a Doctrine referent yet. A column name is a property path on the
 read side, and on the query side it is resolved against the **builder** by

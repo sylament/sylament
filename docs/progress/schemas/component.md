@@ -48,7 +48,7 @@ only their detail sections do.
 | [`toSchemaHtml()` render wrapper](../../../packages/schemas/src/Components/Component.php) | [`toSchemaHtml()`](../../../vendor/filament/schemas/src/Components/Component.php) | blocked | live-component-state | [diverges](#the-livewirealpine-render-wrapper-toschemahtml-is-not-ported) |
 | [`renderWrapperBladeComponent()`](../../../packages/schemas/src/Components/Component.php) | [`renderWrapperBladeComponent()`](../../../vendor/filament/schemas/src/Components/Component.php) | skipped | — | [diverges](#the-livewirealpine-render-wrapper-toschemahtml-is-not-ported) |
 | [`viewIdentifier = 'schemaComponent'`](../../../packages/schemas/src/Components/Component.php) | [`Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) | todo | — | [detail](#viewidentifier-is-not-set) |
-| [`BelongsToContainer`](../../../packages/schemas/src/Components/Concerns/BelongsToContainer.php) | [`Concerns/BelongsToContainer.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToContainer.php) | in progress | Doctrine relationship-state epic | [detail](#belongstocontainer-getmodelrootcontainer-awaits-its-consumer), [diverges](#belongstocontainer-gains-a-sylament-only-getlivecomponentornull-peek) |
+| [`BelongsToContainer`](../../../packages/schemas/src/Components/Concerns/BelongsToContainer.php) | [`Concerns/BelongsToContainer.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToContainer.php) | in progress | a consumer — the subtree-owner fold ([entangles](entangles-state-with-singular-relationship.md#two-components-entangling-one-relationship-throw-rather-than-merge)) | [detail](#belongstocontainer-getmodelrootcontainer-awaits-its-consumer), [diverges](#belongstocontainer-gains-a-sylament-only-getlivecomponentornull-peek) |
 | [`HasChildComponents`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | [`Concerns/HasChildComponents.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php) | in progress | — | [detail](#haschildcomponents-only-the-materialization-core-is-ported) · [semantics](#childcomponents-replaces-a-keys-contents-instead-of-appending) |
 | [`HasId`](../../../packages/schemas/src/Components/Concerns/HasId.php) | [`Concerns/HasId.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasId.php) | done | — | — |
 | [`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | in progress | — | [detail](#hasstate-the-getset-core-and-validation-flags-are-in-relationship-and-partial-render-state-are-out) · [semantics](#dehydration-prunes-around-shared-state-paths-and-pathless-components) |
@@ -119,10 +119,20 @@ and `ComponentTest`'s `$liveComponent` case. Left: `getModelRootContainer()`,
 which walks the parent chain looking for the outermost container bound to the
 same record — `@internal` in Filament but wanted for parity. The getters it
 compares now exist ([`BelongsToRecord`](belongs-to-record.md) supplies
-`getRecordClass()`/`getRecord()`), so what it waits on is its consumer:
-Filament's only callers are the relationship-entangling components, so it lands
-with the Doctrine relationship-state epic and would otherwise be untested dead
-code. Next step: port it there, renamed off the `model` vocabulary with the rest.
+`getRecordClass()`/`getRecord()`), so what it waits on is its consumer — and the
+[Doctrine relation layer](../roadmap.md#pulled-forward) shipped **without**
+becoming one. Filament's only callers are the relationship-entangling
+components, where the method roots the walk that collects every component naming
+one relationship so the first of them fills and saves for all; the port
+[refuses that merge outright](entangles-state-with-singular-relationship.md#two-components-entangling-one-relationship-throw-rather-than-merge)
+(two subtree owners at one record path is a `LogicException`), and the
+record-relative machinery it did need reads
+[`getRecordClass()`'s container fallback](belongs-to-record.md) through the
+ordinary `getRootContainer()`. The remaining trigger is that refusal being
+reversed — teaching the record path map to fold several subtree owners at one
+path — which is the only shape here that needs *the outermost container bound to
+the same record* rather than the root. Next step: port it with that fold,
+renamed off the `model` vocabulary with the rest.
 
 ### HasChildComponents: only the materialization core is ported
 
@@ -172,7 +182,8 @@ relationship-derived and constant state, the `mutateStateForValidation`
 members, and partial-render/JS hooks (each a divergence below) — and because
 one ported method, `formatStateUsing()`, has no direct test. Next step: add a
 `formatStateUsing` test; port the absent families under their respective epics
-(Doctrine relationship-state, `CanPartiallyRender`).
+(the [relationship-derived state](#relationship-derived-and-constant-state-are-dropped-from-the-component-trait)
+families below, `CanPartiallyRender`).
 
 ### getLivewireKey() is deferred to the live-component layer
 
@@ -331,8 +342,14 @@ Filament's `HasState` composes `CanGetStateFromRelationships` and carries
 `getConstantStatePath`, `getRecordConstantStatePath`, `getConstantStateFromRecord`,
 `getStatePathForRelationship`, `hasConstantState`) and the list-splitting helpers
 (`separator`/`getSeparator`, `distinctList`/`isDistinctList`). None is ported —
-they all assume Eloquent models/relationships. Reversed by the Doctrine
-relationship-state epic (Filament's T6).
+they all assume Eloquent models/relationships. The
+[Doctrine relation layer](../roadmap.md#pulled-forward) did **not** reverse this,
+as an earlier note here predicted it would: it answers the relationship read
+with the [per-component hook pair](belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)
+consulted by the two mapping edges, so `loadStateFromRelationships` on the trait
+has nothing left to do, and constant state — a *display* value read across a
+relation, never dehydrated — has no consumer in the port yet. Revisit when one
+arrives (infolists is the likely first).
 
 ### The mutateStateForValidation members are not ported
 

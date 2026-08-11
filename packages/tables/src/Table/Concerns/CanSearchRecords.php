@@ -7,12 +7,7 @@ namespace Sylament\Tables\Table\Concerns;
 use Closure;
 use Doctrine\ORM\Query\Expr\Orx;
 use Doctrine\ORM\QueryBuilder;
-use LogicException;
 use Stringable;
-use Sylament\Tables\Query\ColumnPathResolver;
-use Sylament\Tables\Query\RelationConstraint;
-use Sylament\Tables\Query\RelationPathResolver;
-use Sylament\Tables\Query\ResolvedRelationPath;
 use Sylament\Tables\Query\SearchConstraint;
 
 use function Sylament\Support\filled;
@@ -182,20 +177,7 @@ trait CanSearchRecords
                 continue;
             }
 
-            $analysed = RelationPathResolver::analyseQueryPath($query, $column);
-
-            if ($analysed instanceof ResolvedRelationPath && $analysed->isRelationPath()) {
-                $searchExpression->add(RelationConstraint::existsLike($query, $analysed, $search, forceCaseInsensitive: null));
-
-                continue;
-            }
-
-            $path = match (true) {
-                !$analysed instanceof ResolvedRelationPath => ColumnPathResolver::resolve($query, $column),
-                default => ($query->getRootAliases()[0] ?? throw new LogicException('The table query has no root alias to resolve column paths against.')) . ".{$analysed->fieldPath}",
-            };
-
-            $searchExpression->add(SearchConstraint::like($query, $path, $search, forceCaseInsensitive: null));
+            $searchExpression->add(SearchConstraint::forColumn($query, $column, $search, forceCaseInsensitive: null));
         }
     }
 

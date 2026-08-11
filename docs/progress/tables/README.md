@@ -141,7 +141,7 @@ milestone.
 | Columns / Summarizers / Summarizer | [`Columns/Summarizers/Summarizer.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Summarizer.php) | todo | — |
 | Columns / Summarizers / Values | [`Columns/Summarizers/Values.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Values.php) | todo | — |
 | [`Filters / BaseFilter`](../../../packages/tables/src/Filters/BaseFilter.php) | [`Filters/BaseFilter.php`](../../../vendor/filament/tables/src/Filters/BaseFilter.php) | in progress | [base-filter.md](base-filter.md) |
-| Filters / Filter | [`Filters/Filter.php`](../../../vendor/filament/tables/src/Filters/Filter.php) | todo | — |
+| [`Filters / Filter`](../../../packages/tables/src/Filters/Filter.php) | [`Filters/Filter.php`](../../../vendor/filament/tables/src/Filters/Filter.php) | done | [filter.md](filter.md) |
 | [`Filters / Indicator`](../../../packages/tables/src/Filters/Indicator.php) | [`Filters/Indicator.php`](../../../vendor/filament/tables/src/Filters/Indicator.php) | done | [indicator.md](indicator.md) |
 | Filters / MultiSelectFilter | [`Filters/MultiSelectFilter.php`](../../../vendor/filament/tables/src/Filters/MultiSelectFilter.php) | todo | — |
 | Filters / QueryBuilder | [`Filters/QueryBuilder.php`](../../../vendor/filament/tables/src/Filters/QueryBuilder.php) | todo | — |

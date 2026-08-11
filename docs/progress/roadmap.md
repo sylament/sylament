@@ -29,7 +29,7 @@ stops mid-M2, M1 still demos on its own.
 **M2 · 1 — Panel shell.** The next epic to pick up: the layout Twig components
 — sidebar, topbar, content frame — plus the navigation model and the page base
 class the rest of M2 composes its pages from. Ahead of it, the pulled-forward
-[Doctrine relation layer](#pulled-forward) (17) is in flight — its monorepo half
+[Doctrine relation layer](#pulled-forward) (19) is in flight — its monorepo half
 has landed and its row flips with the demo task.
 
 ## Pulled forward
@@ -164,7 +164,7 @@ Unordered and uncommitted; promote one into a milestone when M2 closes.
 - Breadth parity per package — working down the [progress tables](README.md).
 - Auth: login page, user menu, panel access control.
 - Relation-backed fields (`Select` from Doctrine relations, repeaters) —
-  pulled forward as [17](#pulled-forward).
+  pulled forward as [19](#pulled-forward).
 - Infolists and the resource view page.
 - Widgets and dashboard stats.
 - Table search and filters.

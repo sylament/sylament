@@ -16,6 +16,7 @@ use Sylament\Schemas\State\Casts\OptionsArrayStateCast;
 use Sylament\Schemas\State\Casts\OptionStateCast;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Choice;
+use Symfony\Component\Validator\Constraints\Type;
 
 use function Sylament\Support\blank;
 
@@ -103,6 +104,11 @@ class Select extends Field implements Contracts\CanDisableOptions
     }
 
     /**
+     * Validation runs against the raw state, and `Choice(multiple: true)` is only
+     * defined over an array — its validator throws on any other value rather than
+     * failing it — so a multiple select whose raw state is not an array is failed
+     * by a type constraint instead of being handed to the Choice.
+     *
      * @return list<Constraint>
      */
     protected function buildValidationConstraints(): array
@@ -119,9 +125,17 @@ class Select extends Field implements Contracts\CanDisableOptions
             );
         }
 
+        $isMultiple = $this->isMultiple();
+
+        if ($isMultiple && ! is_array($this->getRawState())) {
+            $constraints[] = new Type('array');
+
+            return $constraints;
+        }
+
         $constraints[] = new Choice(
             choices: $this->getEnabledOptionValues(),
-            multiple: $this->isMultiple(),
+            multiple: $isMultiple,
             strict: true,
         );
 

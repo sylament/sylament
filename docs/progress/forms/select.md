@@ -101,6 +101,10 @@ value and a value whose option is disabled. Symfony's `Choice` is always strict
 (`ChoiceValidator` throws on any other setting), so the comparison is identity,
 which is why the choices are built in the field's *stored* form (see below).
 
+One shape is guarded by a different constraint, because `Choice` cannot express
+it: a `multiple` select whose raw state is not an array
+([below](#a-non-array-raw-state-is-failed-by-a-type-constraint)).
+
 The constraint carries no message argument: one is written afterwards by the
 [post-pass](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built),
 keyed `validationMessages([Choice::class => …])` where Filament keyed the `in`
@@ -173,6 +177,24 @@ the code:
 - **The cast is non-nullable.** `OptionsArrayStateCast(isNullable: false)` writes
   `[]` for an empty selection, not `null`, so the host's bag keeps an array the
   template can iterate and the browser can write back.
+
+### A non-array raw state is failed by a `Type` constraint
+
+`Choice(multiple: true)` is defined over arrays only:
+[`ChoiceValidator::validate()`](../../../vendor/symfony/validator/Constraints/ChoiceValidator.php)
+throws `UnexpectedValueException` for any other value rather than building a
+violation. Validation runs against the **raw** state, which a tampered payload
+controls, and the field's `blank($this->getState())` gate does not stop a scalar
+from reaching the builder — `getState()` wraps it into a one-element list, so the
+state reads as filled while the raw value is still a string. Handing that to the
+`Choice` would end the request in a 500 instead of a rejection.
+
+The builder therefore branches before it appends the `Choice`: when the field is
+`multiple` and the raw state is not an array, it appends a `Type('array')` and
+returns. The payload is failed, with a violation on the field, and every
+array-shaped state takes the `Choice` path unchanged. The no-`options()`
+`LogicException` still comes first, so a tampered payload cannot mask a
+misconfiguration.
 
 ### The template renders the selected state itself
 

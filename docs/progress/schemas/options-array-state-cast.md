@@ -50,7 +50,11 @@ and keep the rest of the selection, exactly as Filament does. Nothing reports th
 drop, and nothing needs to: the field's
 [`Choice` constraint](../forms/select.md#the-choice-constraint-is-the-fields-only-server-side-guard)
 validates the **raw** state, where the tampered element is still present, so the
-payload is rejected there rather than quietly accepted minus one element.
+payload is rejected there rather than quietly accepted minus one element. That
+holds for the array-shaped raw state this paragraph is about; a raw state that is
+not an array at all is failed by
+[a `Type` constraint](../forms/select.md#a-non-array-raw-state-is-failed-by-a-type-constraint)
+instead, since `Choice(multiple: true)` cannot be evaluated against one.
 
 ## Divergences
 

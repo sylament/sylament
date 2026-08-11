@@ -12,6 +12,7 @@ use Sylament\Schemas\State\Casts\OptionsArrayStateCast;
 use Sylament\Schemas\State\Casts\OptionStateCast;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Choice;
+use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 use function Sylament\Forms\Tests\renderToHtml;
@@ -108,6 +109,19 @@ it('rejects a tampered element of a multiple selection server-side', function ()
 
     expect($validator->validate($field->getRawState(), $constraints))->toHaveCount(0)
         ->and($validator->validate(['draft', 'tampered'], $constraints))->toHaveCount(1);
+});
+
+it('fails a non-array raw state instead of crashing the Choice validator', function (): void {
+    $field = wireMultiSelect(Select::make('tags')->multiple()->options(['draft' => 'Draft', 'published' => 'Published']));
+    $field->rawState('draft');
+
+    $constraints = $field->getValidationConstraints();
+    $validator = $this::getContainer()->get(ValidatorInterface::class);
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0])->toBeInstanceOf(Type::class)
+        ->and($constraints[0]->type)->toBe('array')
+        ->and($validator->validate($field->getRawState(), $constraints))->toHaveCount(1);
 });
 
 it('throws when validating a multiple select with no options', function (): void {

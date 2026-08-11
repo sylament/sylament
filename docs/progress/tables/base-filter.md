@@ -9,7 +9,10 @@ schema and query application. It ports Filament's
 and the eleven concerns it composes, folded into the surface table below per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing).
 [`Indicator`](indicator.md) is tracked separately, because it is a component of
-its own rather than a concern.
+its own rather than a concern, and so is each subclass that extends this one —
+[`Filter`](filter.md), [`SelectFilter`](select-filter.md) and
+[`TernaryFilter`](ternary-filter.md), each carrying its own status in its own
+file.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -39,7 +42,6 @@ Reference — the Filament source this is diffed against:
 | [`schema()` / `modifyFormFieldUsing()` / `getSchemaComponents()` / `hasSchema()` / `getFormField()`](../../../packages/tables/src/Filters/Concerns/HasSchema.php) | [`Concerns\HasSchema`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | done | — | [diverges](#the-form-alias-is-not-ported) |
 | `getSchema()` — the filter's live child schema | [`Concerns\HasSchema::getSchema()`](../../../vendor/filament/tables/src/Filters/Concerns/HasSchema.php) | todo | the host filters form | [detail](#getschema-lands-with-the-host-filters-form-not-here) |
 | [`apply()` / `applyToBaseQuery()` / `query()` / `baseQuery()` / `excludeWhenResolvingRecord()`](../../../packages/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | [`Concerns\InteractsWithTableQuery`](../../../vendor/filament/tables/src/Filters/Concerns/InteractsWithTableQuery.php) | done | — | [diverges](#there-is-no-closure-where-group-around-apply) · [semantics](#isactive-is-an-opt-out-not-an-opt-in) |
-| `Filter`, `SelectFilter`, `TernaryFilter` | [`Filters/`](../../../vendor/filament/tables/src/Filters) | todo | — | — |
 | `HasRelationship` | [`Concerns/HasRelationship.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasRelationship.php) | blocked | a future tables-relations epic | — |
 
 Coverage is the fifteen files under

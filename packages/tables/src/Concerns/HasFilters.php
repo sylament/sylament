@@ -186,7 +186,7 @@ trait HasFilters
      * modification first, then every visible filter's own constraint. Record
      * resolution skips the second pass for filters that opted out of it.
      */
-    public function applyFiltersToTableQuery(QueryBuilder $query, bool $isResolvingRecord = false): QueryBuilder
+    protected function applyFiltersToTableQuery(QueryBuilder $query, bool $isResolvingRecord = false): QueryBuilder
     {
         $filters = $this->getTable()->getFilters();
 

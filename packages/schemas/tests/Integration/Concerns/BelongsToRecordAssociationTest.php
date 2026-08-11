@@ -108,7 +108,7 @@ it('refuses nullWhenBlank on a component with a save hook', function (): void {
     $host->data['author'] = ['name' => ''];
 
     expect(fn (): object => $schema->getData())
-        ->toThrow(LogicException::class, 'nullWhenBlank()');
+        ->toThrow(LogicException::class, 'nullWhenBlank() alongside a relationship save hook');
 });
 
 it('refuses a hook on a container whose children carry the mapped paths', function (): void {

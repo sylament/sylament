@@ -3,7 +3,7 @@
 `Sylament\Schemas\State\Casts\OptionsArrayStateCast` — the state cast behind
 multi-value option fields. It is the plural of
 [`OptionStateCast`](option-state-cast.md): the whole selection is wrapped into an
-array, every element is run through a private `OptionStateCast`, and anything
+array, every element is run through a composed `OptionStateCast`, and anything
 that element cast fails closed on — a nested array, an object, a blank — is
 dropped rather than kept as a bogus option value. The result is always a list, so
 a drop reindexes.
@@ -78,7 +78,8 @@ option does not.
 
 Filament inlines the same normalization body twice: once in `OptionStateCast`,
 once per element inside `OptionsArrayStateCast`'s `array_reduce`. The port
-composes a private `OptionStateCast` and maps it over the wrapped state, so the
+composes an `OptionStateCast` — a `protected` property, so a subclass may swap
+it — and maps it over the wrapped state, so the
 two casts cannot drift, and the array cast inherits the element cast's
 [int-passthrough divergence](option-state-cast.md#an-int-state-skips-the-overflow-check)
 by construction. Blank and fail-closed elements come back as `null` from that

@@ -280,8 +280,6 @@ test kernels, none of which registers Doctrine, and the setter has to autowire
 cleanly there. A container-compile failure in one of those suites is the signal
 that the nullability wiring broke.
 
-
-
 ### The built-in blank test asks the branch's own leaves
 
 `shouldNullBranch()` without a closure does **not** scan the values in the
@@ -780,7 +778,8 @@ nested repeater's items cannot save until the item that owns them has an id.
 Doctrine has no such moment: `getData()` mutates an in-memory graph and the
 caller's single `flush()` sorts the INSERTs itself
 (`UnitOfWork`'s `TopologicalSort` over the association graph). A split hook pair
-would let a user write an ordering Doctrine then re-derives anyway. Skipped, not
+would let a user declare a write ordering that Doctrine then re-derives anyway,
+so the declaration could only ever be ignored or contradicted. Skipped, not
 deferred — revisit only if a shape turns up where the *graph mutation* is itself
 order-sensitive.
 

@@ -136,14 +136,23 @@ resolve. An entity mapped on `code` therefore keys by `code` with nothing
 configured, and an entity that was never persisted fails at the point of binding
 instead of producing a row the client cannot address.
 
-One shape difference from tables, and it is mechanical: the scalar value is
-normalised to `?string` *before* the blank check, so the single
-[`blank()`](../support/helpers.md) call sees `string|null` and the throw covers
-both the non-printable and the blank arms. Written the other way round —
-`! is_scalar($key) || blank($key)`, tables' order — the helper is called with a
-type PHPStan has already proven non-null, and its `@phpstan-assert-if-false !null`
-docblock makes that call a level-max `function.impossibleType` error in a class
-context. Same behaviour, one call, no suppression.
+One shape difference from tables: the scalar value is normalised to `?string`
+*before* the blank check, so the single [`blank()`](../support/helpers.md) call
+sees `string|null` and the throw covers both the non-printable and the blank
+arms. Written the other way round — `! is_scalar($key) || blank($key)`, tables'
+order — the helper is called with a type PHPStan has already proven non-null, and
+its `@phpstan-assert-if-false !null` docblock makes that call a level-max
+`function.impossibleType` error in a class context. One call, no suppression.
+
+The order is **not** behaviour-neutral, and the one value it parts ways on is
+`false`. [`blank()`](../support/helpers.md) answers `false` for a boolean —
+bools are never blank, mirroring Laravel — while `(string) false` is `''`, which
+is blank. So an entity whose identifier is boolean `false` throws here and yields
+the empty string in tables' order. The reader's answer is the one worth keeping:
+its return feeds an item key and a `getReference()` lookup, and `''` is not a key
+anything can resolve. Nothing in either package maps a boolean identifier today,
+so this is a recorded delta rather than a bug filed against tables — but it is a
+delta, not a rephrasing.
 
 ### The option query is a starting point, not a result
 

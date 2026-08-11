@@ -53,7 +53,7 @@ a [Details](#details) write-up, a **diverges** link to
 | --- | --- | --- | --- | --- |
 | [`Columns\`, `Filters\` and `Colors\Components\` globs + `Table` component services](../../../packages/tables/src/SylamentTablesBundle.php) | — (Sylament-only; Filament's provider binds no services) | done | — | [diverges](#the-bundle-registers-container-services-which-filaments-provider-has-no-counterpart-for) |
 | [TableExtension → `twig.extension`](../../../packages/tables/src/SylamentTablesBundle.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
-| [`TablesIconAlias` — `EMPTY_STATE`, the three `HEADER_CELL_SORT_*`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-five-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
+| [`TablesIconAlias` — `ACTIONS_FILTER`, `EMPTY_STATE`, `FILTERS_REMOVE_ALL_BUTTON`, the three `HEADER_CELL_SORT_*`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-seven-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
 | [`ext-mbstring` on the package manifest](../../../packages/tables/composer.json) | — (Sylament-only; Filament's manifest declares no extensions) | done | — | [diverges](#the-manifest-declares-ext-mbstring) |
 | [`@SylamentTables` view namespace](../../../packages/tables/templates) | [`->hasViews()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | Asset registration (`Js::make('tables')` + four column `AlpineComponent`s) | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#asset-registration) |
@@ -95,16 +95,18 @@ responsibilities have no coverage because they have no code.
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**.
 
-### The alias set is five constants of Filament's 23
+### The alias set is seven constants of Filament's 23
 
 Filament's `TablesIconAlias` declares 23 alias constants up front — every
-overridable icon slot in the whole table builder. Sylament ships **five**, the
-only slots whose consuming surface is ported: `EMPTY_STATE`, the three
+overridable icon slot in the whole table builder. Sylament ships **seven** —
+`ACTIONS_FILTER` (the toolbar funnel), `EMPTY_STATE`,
+`FILTERS_REMOVE_ALL_BUTTON` (the indicators row's clear-all button), the three
 `HEADER_CELL_SORT_*` (unsorted, ascending, descending — the sortable header's
-chevron picks one by state) and `SEARCH_FIELD`. The remaining 18 all belong to
-features that are not built yet: reordering (`ACTIONS_ENABLE_REORDERING`,
-`ACTIONS_DISABLE_REORDERING`, `REORDER_HANDLE`), filtering and the query builder
-(`ACTIONS_FILTER`, `FILTERS_REMOVE_ALL_BUTTON`, the six
+chevron picks one by state) and `SEARCH_FIELD`. Six of those have their
+consuming surface ported; `FILTERS_REMOVE_ALL_BUTTON` is the exception recorded
+below. The remaining 16 all belong to features that are not built yet:
+reordering (`ACTIONS_ENABLE_REORDERING`, `ACTIONS_DISABLE_REORDERING`,
+`REORDER_HANDLE`), the filters query builder (the six
 `FILTERS_QUERY_BUILDER_CONSTRAINTS_*`), grouping (`ACTIONS_GROUP`,
 `GROUPING_COLLAPSE_BUTTON`), bulk actions (`ACTIONS_OPEN_BULK_ACTIONS`), the
 column manager (`ACTIONS_COLUMN_MANAGER`) and the column catalog
@@ -115,9 +117,16 @@ it, so each constant lands in the same change as the component or feature that
 renders its icon — the same growth order
 [`SupportIconAlias`](../support/support-icon-alias.md#badge--breadcrumbs--rtl-aliases)
 follows, and the four that arrived with the sort headers and the search toolbar
-are that order in action. All five are read by
-[the table partial](../../../packages/tables/templates/partials/Table/index.html.twig),
-so every constant that ships is overridable end to end.
+are that order in action. Six of the seven are read by
+[the table partial](../../../packages/tables/templates/partials/Table/index.html.twig)
+— `ACTIONS_FILTER` by the filters chrome in its toolbar rather than by the
+table's own rows — so those are overridable end to end.
+
+`FILTERS_REMOVE_ALL_BUTTON` is the one exception to the growth order, and
+deliberately so: it landed with the filters trigger while its consumer, the
+indicators row's clear-all button, is still unbuilt in the same epic. Until that
+row ships, registering an override for it does nothing — no icon reads it. It
+is the only constant here in that state, and the rule holds for every other.
 
 ### Asset registration
 

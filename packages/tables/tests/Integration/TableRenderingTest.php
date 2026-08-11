@@ -4,16 +4,24 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Integration;
 
+use Closure;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Contracts\InteractsWithTable;
+use Sylament\Tables\Enums\FiltersLayout;
+use Sylament\Tables\Enums\FiltersResetActionPosition;
+use Sylament\Tables\Filters\BaseFilter;
+use Sylament\Tables\Filters\Filter;
+use Sylament\Tables\Filters\SelectFilter;
 use Sylament\Tables\Table;
+use Sylament\Tables\Tests\Fixtures\Concerns\SchemaTableHost;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\BrowsableSongsTable;
 use Sylament\Tables\Tests\Fixtures\Twig\Components\ExtremeLinksSongsTable;
 use Sylament\Tables\Twig\Extension\TableExtension;
 use Symfony\Component\DomCrawler\Crawler;
 use Twig\Environment;
+use Twig\Error\RuntimeError;
 
 /*
  * The browsing chrome of the shipped `Table` partial — sortable headers, the
@@ -245,4 +253,140 @@ it('keeps the simple footer on an empty page past the data', function (): void {
         ->and($overview)->toContain('Showing 0 results')
         ->and($overview)->not->toContain(' of ')
         ->and($crawler->filter('ol.sy-pagination-items button')->each(fn (Crawler $item): ?string => $item->attr('rel')))->toBe(['prev']);
+});
+
+/**
+ * @return list<BaseFilter>
+ */
+function songFilters(): array
+{
+    return [
+        SelectFilter::make('plays')->options(['100' => 'Hundred', '200' => 'Two hundred']),
+        Filter::make('popular'),
+    ];
+}
+
+/**
+ * @param array<string, mixed> $tableFilters
+ * @param array<string, mixed> $tableDeferredFilters
+ */
+function filtersTableHtml(Closure $configureTable, array $tableFilters = [], array $tableDeferredFilters = []): string
+{
+    $component = new SchemaTableHost($configureTable);
+    $component->tableFilters = $tableFilters;
+    $component->tableDeferredFilters = $tableDeferredFilters;
+
+    return renderTableHost($component);
+}
+
+function filteredSongsTable(Closure $configureTable): Closure
+{
+    return fn (Table $table): Table => $configureTable(
+        $table
+            ->records(fn (): array => [['__key' => '1', 'title' => 'Airbag']])
+            ->columns([TextColumn::make('title')]),
+    );
+}
+
+it('renders the filters trigger with a badge counting the active indicators', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters())),
+        ['plays' => ['value' => '200'], 'popular' => ['isActive' => true]],
+    ));
+
+    $trigger = $crawler->filter('.sy-ta-header-toolbar .sy-ta-header-toolbar-end .sy-ta-filters-trigger');
+
+    expect($trigger->count())->toBe(1)
+        ->and($trigger->filter('button.sy-icon-btn')->attr('aria-label'))->toBe('Filter')
+        ->and($trigger->filter('button.sy-icon-btn svg.sy-icon')->count())->toBe(1)
+        ->and(mb_trim($trigger->filter('.sy-ta-filters-trigger-badge')->text()))->toBe('2');
+});
+
+it('puts the search field and the filters trigger in one end group', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters())->searchable()),
+    ));
+
+    $toolbar = $crawler->filter('.sy-ta-header-toolbar');
+    $end = $toolbar->filter('.sy-ta-header-toolbar-end');
+
+    expect($toolbar->children()->count())->toBe(1)
+        ->and($end->filter('.sy-ta-search-field')->count())->toBe(1)
+        ->and($end->filter('.sy-ta-filters-trigger')->count())->toBe(1);
+});
+
+it('renders no filters trigger and no toolbar when the table declares none', function (): void {
+    $html = filtersTableHtml(filteredSongsTable(fn (Table $table): Table => $table));
+
+    expect($html)->not->toContain('sy-ta-filters-trigger')
+        ->and($html)->not->toContain('sy-ta-header-toolbar');
+});
+
+it('renders neither trigger nor panel for the hidden filters layout', function (): void {
+    $html = filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters(), FiltersLayout::Hidden)),
+    );
+
+    expect($html)->not->toContain('sy-ta-filters-trigger')
+        ->and($html)->not->toContain('sy-ta-filters-dropdown')
+        ->and($html)->not->toContain('sy-ta-header-toolbar');
+});
+
+it('renders the panel fields and the apply button while filters are deferred', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters())),
+    ));
+
+    $panel = $crawler->filter('.sy-ta-filters-dropdown .sy-dropdown-panel .sy-ta-filters');
+
+    expect($panel->count())->toBe(1)
+        ->and(mb_trim($panel->filter('h3.sy-ta-filters-heading')->text()))->toBe('Filters')
+        ->and($panel->filter('select.sy-fo-select')->count())->toBe(1)
+        ->and($panel->filter('input.sy-fo-checkbox')->count())->toBe(1);
+
+    $apply = $panel->filter('.sy-ta-filters-actions-ctn button.sy-btn');
+
+    expect($apply->count())->toBe(1)
+        ->and($apply->attr('data-action'))->toContain('live#action')
+        ->and($apply->attr('data-live-action-param'))->toBe('applyTableFilters');
+});
+
+it('renders no footer at all when filters are live and the reset sits in the header', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters())->deferFilters(false)),
+    ));
+
+    $panel = $crawler->filter('.sy-ta-filters');
+    $reset = $panel->filter('.sy-ta-filters-header button.sy-link');
+
+    expect($panel->filter('.sy-ta-filters-actions-ctn')->count())->toBe(0)
+        ->and($reset->count())->toBe(1)
+        ->and($reset->attr('data-live-action-param'))->toBe('resetTableFiltersForm');
+});
+
+it('moves the reset control into the footer for the footer position', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table
+            ->filters(songFilters())
+            ->filtersResetActionPosition(FiltersResetActionPosition::Footer)),
+    ));
+
+    $panel = $crawler->filter('.sy-ta-filters');
+    $footerButtons = $panel->filter('.sy-ta-filters-actions-ctn button.sy-btn');
+
+    expect($panel->filter('.sy-ta-filters-header button.sy-link')->count())->toBe(0)
+        ->and($footerButtons->count())->toBe(2)
+        ->and($footerButtons->eq(1)->attr('data-live-action-param'))->toBe('resetTableFiltersForm');
+});
+
+/*
+ * The refusal is a `LogicException` from `hasFiltersDropdown()`, and Twig wraps
+ * anything a template throws in a `RuntimeError` carrying the original message
+ * (`Template::yield()`), so that is what a consumer sees — the same shape
+ * actions' `ModalsRenderTest` pins for its host-resolution throw.
+ */
+it('refuses an unshipped filters layout on render', function (): void {
+    expect(static fn (): string => filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters(), FiltersLayout::AboveContent)),
+    ))->toThrow(RuntimeError::class, '[AboveContent] filters layout');
 });

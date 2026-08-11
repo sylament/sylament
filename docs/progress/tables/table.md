@@ -81,6 +81,8 @@ Rows never disappear — only their detail sections do.
 | Record labels — `modelLabel()`, `pluralModelLabel()`, `recordTitle()`, `recordTitleAttribute()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | todo | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
 | [Record identity — `getRecordKey()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getRecordKey()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#getrecords-delegates-to-the-host-and-fetches-nothing) |
 | [Morph-stable row and cell keys](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `wire:key` stamps](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-morph-key-is-an-id-attribute-not-wirekey) · [semantics](#the-row-and-cell-morph-keys-disagree-on-record-vs-records) |
+| [The filters trigger — the toolbar dropdown, the funnel icon button and the active-count badge](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `FiltersLayout::Dropdown` branch](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-trigger-badge-is-composed-in-the-table-partial-because-iconbutton-has-no-slot) |
+| [The filters panel — `<twig:SylamentTables:Filters>`](../../../packages/tables/templates/components/Filters/index.html.twig) | [`views/components/filters.blade.php`](../../../vendor/filament/tables/resources/views/components/filters.blade.php) | done | — | [diverges](#the-panel-is-fixed-chrome-with-no-action-objects-behind-it) |
 | Pivot record identity — `hasPivotRecordKeys()`, `allowDuplicates()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | skipped | — | The `BelongsToMany` pivot arm — it stays unported with the [relation-scoped table surface](#the-relation-scoped-table-arm-travels-with-relation-managers) it belongs to, and a Doctrine association table carrying payload is an entity of its own rather than a pivot |
 | [`columns()` / `getColumns()` / `getColumn()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) |
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
@@ -1372,14 +1374,16 @@ no heading, description or toolbar action. Sylament's partial is three deep —
 `sy sy-ta` > `sy-ta-ctn` > `table.sy-ta-table` or `div.sy-ta-empty-state` — with
 no `sy-ta-main`, no `sy-ta-content-ctn`, no `sy-ta-header-ctn`, and no
 `aria-label` on the `<table>`; `sy-ta-header-toolbar` is the one container that
-does render, and only when the table is searchable.
+does render, and only when the table is searchable or shows a filters trigger —
+in which case it carries its `sy-ta-header-toolbar-end` group, Filament's second
+toolbar child, and still no start group.
 
 The wrappers are not markup for their own sake in Filament: they exist so Livewire's
 DOM morph finds the same nodes before and after a toolbar's visibility flips,
-which is why they render empty rather than being wrapped in an `@if`. Nothing
-here can flip yet — the heading, description, toolbar actions, filters and
-pagination they host all sit in **todo** or **blocked** rows above, and the
-`<table>`'s `aria-label` needs the [record labels](#the-empty-state-heading-hardcodes-no-records)
+which is why they render empty rather than being wrapped in an `@if`. The ones
+still missing cannot flip yet — the heading, description and toolbar actions they
+host all sit in **todo** or **blocked** rows above, and the `<table>`'s
+`aria-label` needs the [record labels](#the-empty-state-heading-hardcodes-no-records)
 that the same rows wait on. A wrapper emitted now would be a permanently empty
 node with a class no stylesheet targets.
 
@@ -1389,11 +1393,19 @@ transient rather than permanent. The **class names** are already reserved by the
 Filament originals, so nothing about the eventual DOM depends on inventing them
 later.
 
-The `ms-auto` on `.sy-ta-search-field` is a stopgap for the same thinness — the
-ported `& > :nth-child(2)` rule pushes the toolbar's *second* child to its end
-and today's toolbar has exactly one child, so the search field would otherwise
-render start-aligned where Filament shows it at the end — and it drops when the
-slot-1 controls (filters, grouping) land beside it.
+The `ms-auto` stopgap on `.sy-ta-search-field` is gone, and the prediction it
+carried was wrong in an instructive way: it expected filters to land in **slot
+1** beside the search field, and they do not. Filament's toolbar has exactly two
+children — a start-aligned actions group (reordering, toolbar actions, the
+grouping selector) and an end group holding the search field, the filters trigger
+and the column manager — so filters join the search field in the *same* child,
+and the toolbar still has one child here. The positional `& > :nth-child(2)` rule
+therefore never fired and could not, so both it and the stopgap drop together,
+replaced by `& > .sy-ta-header-toolbar-end { ms-auto }`: the end group is named
+rather than counted, which is correct with or without the slot-1 group and needs
+no second reversal when reordering and grouping land. The toolbar is pinned in
+all four states — search only, filters only, both, neither — by
+[`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php).
 
 ### The visible action map is a `Table` method, and is not short-circuited
 
@@ -1495,6 +1507,32 @@ caller wrote. A migrating user passing `'after-columns'` gets told immediately,
 at the line that is wrong. Permanent — it reverses only if Filament ever adds
 the conversion the arm implies, at which point this becomes a real feature
 rather than a dead union member.
+
+### The trigger badge is composed in the table partial, because `IconButton` has no slot
+
+Filament badges its trigger by calling `->badge($activeFiltersCount)` on the
+`openFilters` **action**, which the action's own view renders inside the button.
+There is no action object here — the v1 chrome is a fixed template — and
+support's `IconButton` renders exactly one thing, `generateIconHtml()`, with no
+slot and no children. So the count is composed one level out: a
+`.sy-ta-filters-trigger` wrapper holds the icon button and, when the count is
+above zero, a `sm` `Badge` positioned at its top end. A slot on `IconButton` is
+a possible later support enhancement; it is not built for this.
+
+### The panel is fixed chrome, with no action objects behind it
+
+Filament's `filters.blade.php` takes an `applyAction` object and reads
+`isVisible()` off it; the header reset is a `link` with `tag="button"` built
+through `prepare_inherited_attributes()`, the footer reset a `button`. Ours
+takes a plain `applyVisible` boolean and renders support's `Link` and `Button`
+directly, wired with `stimulus_action('live', 'action', …)`. The trigger, apply
+and remove-all actions plus their `modify*Using` seams wait on table-context
+`Action` rendering; `filtersFormSchema()` — the whole-form override closure —
+rides the same follow-up. Only `Dropdown` and `Hidden` are honored;
+`getFiltersLayout()` stays total and `hasFiltersDropdown()` — the one layout read
+this markup makes — throws for every other case, refused where consumed on the
+`PaginationMode::Cursor` pattern, and `Hidden` renders no trigger and no panel
+while its indicators still render.
 
 _See also: the global [rename table](../renames.md) — `BelongsToLivewire` →
 `BelongsToLiveComponent`, `livewire()` → `liveComponent()` and `getLivewire()` →

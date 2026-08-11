@@ -348,11 +348,20 @@ dispatch and is dropped. Then, inside one `try`:
 **Close is deliberately not handled here.** `data-sylament-action-close` is a
 neutral marker meaning *this action closes its context*, and only the context
 knows what closing means — a toast removes itself, a modal dismisses. So the
-close arm stays with whoever owns the click context (the toast root's controller,
-support's modal controller) and this controller reads the attribute nowhere. The
-split is the same one the [payload attributes](action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding)
+close arm stays with whoever owns the click context and this controller reads the
+attribute nowhere. The split is the same one the [payload attributes](action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding)
 were designed around: templates stamp payload, context owners deliver behaviour,
 and dispatch is the one behaviour that has no context.
+
+Exactly **one** context implements the marker today, and the asymmetry is worth
+stating rather than assuming from the design. The toast root's controller is its
+only reader in the repo; support's modal is served instead by the explicit
+`data-action="sylament--support--modal#dismiss"` token the **bare-close** arm
+emits beside the marker, and the dispatch arm emits no `data-action` at all — so a
+`dispatch()->close()` rendered inside a modal stamps a marker nothing reads, and
+the modal stays open. A toast is the only place that pairing closes anything.
+Closing the gap is a modal-side read of the marker, in `support`, not a change
+here.
 
 ### Every package declares what its own source needs, transitives notwithstanding
 

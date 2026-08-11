@@ -55,7 +55,7 @@ deleted once the row is **done**; **semantics** → the permanent note in
 | [`role="alert"` on danger, polite otherwise](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#the-assertive-split-is-per-toast-and-the-container-stays-polite) |
 | [Title / body sanitization (`sanitize_html`)](../../../packages/notifications/templates/partials/Notification/index.html.twig) | [`str(...)->sanitizeHtml()`](../../../vendor/filament/notifications/src/Notification.php) | done | — | [semantics](#the-default-sanitizer-is-stricter-than-the-one-filament-tunes) |
 | [Toast styles (`sy-no-notification*`)](../../../packages/notifications/assets/src/styles/components/notification.css) | [`resources/css/notification.css`](../../../vendor/filament/notifications/resources/css/notification.css) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
-| [Toast controller — auto-dismiss, hover-pause, close, delegated action clicks](../../../packages/notifications/assets/src/controllers/notification_controller.ts) | [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js) | in progress | the database-notifications panel | [detail](#markasread-and-markasunread-belong-to-the-database-panel) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) · [diverges](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload) |
+| [Toast controller — auto-dismiss, hover-pause, delegated close clicks](../../../packages/notifications/assets/src/controllers/notification_controller.ts) | [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js) | in progress | the database-notifications panel | [detail](#markasread-and-markasunread-belong-to-the-database-panel) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) · [diverges](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload) |
 | `close-notification` — closing a toast by id from a browser event | [`x-on:close-notification.window`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#closing-a-toast-by-id-needs-the-id-in-the-markup) |
 | [`actions()` (`HasActions`)](../../../packages/notifications/src/Concerns/HasActions.php) | [`Concerns/HasActions.php`](../../../vendor/filament/notifications/src/Concerns/HasActions.php), the `actions` key of `toArray()`/`fromArray()` | done | — | [semantics](#toast-actions-are-re-viewed-as-small-links-and-the-actions-key-restores-them) · [semantics](#toast-actions-cannot-open-modals-at-filament-parity) · [diverges](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload) |
 | `date()` (`HasDate`) | [`Concerns/HasDate.php`](../../../vendor/filament/notifications/src/Concerns/HasDate.php) | todo | — | [detail](#date-and-inline-arrive-with-the-database-notifications-panel) |
@@ -598,8 +598,9 @@ arm exactly as before.
 
 The workspace shed a dependency with the bridge: the toast controller no longer
 imports `@symfony/ux-live-component`, so `packages/notifications/assets` declares
-it neither dev nor peer, and its built controller carries no bare specifier an
-importmap has to resolve — the
+it neither dev nor peer, and the only bare specifier its built controller still
+carries is `@hotwired/stimulus`, which the workspace's own `symfony.importmap`
+block names — the
 [blast radius](notifications-bundle.md#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build)
 a missing importmap entry used to have over auto-dismiss and hover-pause is gone
 with it.

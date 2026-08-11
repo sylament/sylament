@@ -62,10 +62,33 @@ it('returns null for a path leading with an index', function (): void {
 
 it('resolves an index against the owning components item keys', function (): void {
     $translator = new ViolationPathTranslator([
-        'sections' => KeyedItemsOwner::make('sections')->itemKeys(['record-7', '01H-added', 'record-9']),
+        'sections' => KeyedItemsOwner::make('sections')
+            ->itemKeys(['record-7', '01H-added', 'record-9'])
+            ->itemStatePaths(['heading']),
     ], 'data');
 
     expect($translator->translate('sections[2].heading'))->toBe('data.sections.record-9.heading');
+});
+
+it('resolves an index against the collection key rather than the position', function (): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')
+            ->itemKeys([3 => 'record-7', 9 => 'record-9'])
+            ->itemStatePaths(['heading']),
+    ], 'data');
+
+    expect($translator->translate('sections[9].heading'))->toBe('data.sections.record-9.heading')
+        ->and($translator->translate('sections[1].heading'))->toBe('data.sections');
+});
+
+it('resolves a string collection key', function (): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')
+            ->itemKeys(['intro' => 'record-7'])
+            ->itemStatePaths(['heading']),
+    ], 'data');
+
+    expect($translator->translate('sections[intro].heading'))->toBe('data.sections.record-7.heading');
 });
 
 it('translates a violation on the collection itself onto the component path', function (): void {
@@ -84,7 +107,7 @@ it('stops at the component when the index names no item', function (): void {
     expect($translator->translate('sections[4].heading'))->toBe('data.sections');
 });
 
-it('stops at the component when the index is not a position', function (): void {
+it('stops at the component when the index names a key the collection does not hold', function (): void {
     $translator = new ViolationPathTranslator([
         'sections' => KeyedItemsOwner::make('sections')->itemKeys(['record-7']),
     ], 'data');
@@ -92,9 +115,41 @@ it('stops at the component when the index is not a position', function (): void 
     expect($translator->translate('sections[alpha].heading'))->toBe('data.sections');
 });
 
+it('stops at the item when the violation names a path the item declares nothing for', function (): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')
+            ->itemKeys(['record-7'])
+            ->itemStatePaths(['heading']),
+    ], 'data');
+
+    expect($translator->translate('sections[0].internalNote'))->toBe('data.sections.record-7');
+});
+
+it('stops at the item for a class-level violation on the item record', function (): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')
+            ->itemKeys(['record-7'])
+            ->itemStatePaths(['heading']),
+    ], 'data');
+
+    expect($translator->translate('sections[0]'))->toBe('data.sections.record-7');
+});
+
+it('folds a violation beneath a declared item path onto that path', function (): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')
+            ->itemKeys(['record-7'])
+            ->itemStatePaths(['meta.locale']),
+    ], 'data');
+
+    expect($translator->translate('sections[0].meta.locale.code'))->toBe('data.sections.record-7.meta.locale');
+});
+
 it('stops at the item when a second index nests inside it', function (): void {
     $translator = new ViolationPathTranslator([
-        'sections' => KeyedItemsOwner::make('sections')->itemKeys(['record-7']),
+        'sections' => KeyedItemsOwner::make('sections')
+            ->itemKeys(['record-7'])
+            ->itemStatePaths(['tags']),
     ], 'data');
 
     expect($translator->translate('sections[0].tags[1].name'))->toBe('data.sections.record-7.tags');

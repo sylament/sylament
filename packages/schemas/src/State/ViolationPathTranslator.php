@@ -72,15 +72,19 @@ final readonly class ViolationPathTranslator
 
         $statePath .= '.' . $itemKey;
 
-        for ($index = $matchedDepth + 1; $index < $propertyPath->getLength(); $index++) {
-            if ($propertyPath->isIndex($index)) {
-                break;
-            }
+        $remainder = $this->readItemRemainder($propertyPath, $matchedDepth);
 
-            $statePath .= '.' . $elements[$index];
+        if ($remainder === []) {
+            return $statePath;
         }
 
-        return $statePath;
+        $declaredDepth = $this->matchItemDepth($remainder, $component->getItemStatePaths());
+
+        if ($declaredDepth === null) {
+            return $statePath;
+        }
+
+        return $statePath . '.' . implode('.', array_slice($remainder, 0, $declaredDepth));
     }
 
     /**
@@ -111,8 +115,8 @@ final readonly class ViolationPathTranslator
 
     /**
      * The state key of the item the violation's index names, or null when the
-     * element is not an index, names no position the component currently holds,
-     * or is a collection key rather than a position.
+     * element is not an index or names a collection key the component holds no
+     * item under.
      */
     private function resolveItemKey(HasKeyedItems $component, PropertyPath $propertyPath, int $matchedDepth): ?string
     {
@@ -124,12 +128,55 @@ final readonly class ViolationPathTranslator
             return null;
         }
 
-        $position = $propertyPath->getElement($matchedDepth);
+        return $component->getItemKeys()[$propertyPath->getElement($matchedDepth)] ?? null;
+    }
 
-        if (! ctype_digit($position)) {
-            return null;
+    /**
+     * The property elements the violation carries inside the item, stopping at
+     * any further index — an item's own collection is a second keying this
+     * translator cannot resolve.
+     *
+     * @return list<string>
+     */
+    private function readItemRemainder(PropertyPath $propertyPath, int $matchedDepth): array
+    {
+        $elements = $propertyPath->getElements();
+        $remainder = [];
+
+        for ($index = $matchedDepth + 1; $index < $propertyPath->getLength(); $index++) {
+            if ($propertyPath->isIndex($index)) {
+                break;
+            }
+
+            $remainder[] = $elements[$index];
         }
 
-        return $component->getItemKeys()[(int) $position] ?? null;
+        return $remainder;
+    }
+
+    /**
+     * How many leading elements of the in-item remainder the deepest path the
+     * item schema declares covers, or null when none does — the item's own
+     * repetition of the map walk, so a violation inside an item folds by the
+     * same rule as one at the root.
+     *
+     * @param list<string> $remainder
+     * @param list<string> $itemStatePaths
+     */
+    private function matchItemDepth(array $remainder, array $itemStatePaths): ?int
+    {
+        $declared = array_flip($itemStatePaths);
+        $matchedDepth = null;
+        $itemPath = '';
+
+        foreach ($remainder as $index => $element) {
+            $itemPath = ($index === 0) ? $element : $itemPath . '.' . $element;
+
+            if (array_key_exists($itemPath, $declared)) {
+                $matchedDepth = $index + 1;
+            }
+        }
+
+        return $matchedDepth;
     }
 }

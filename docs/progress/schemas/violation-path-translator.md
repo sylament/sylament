@@ -24,28 +24,34 @@ offending value there.
 ## Surface
 
 Every point of the translator and the contract. _Detail_ carries a
-**semantics** link (a permanent note in [Semantics](#semantics)) and/or a
-**diverges** link (the permanent note in [Divergences](#divergences)), or `—`.
-Nothing here ports a Filament source, so the _Ports_ column is dropped.
+**semantics** link (a permanent note in [Semantics](#semantics)) or `—`.
+Nothing here ports a Filament source, so the _Ports_ column is dropped, and
+nothing here diverges from one, so there is no Divergences section.
 
 | Feature | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
 | [`__construct(array $recordPathMap, ?string $rootStatePath)`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — built by [`Schema::getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | done | — | [semantics](#the-state-path-is-rebuilt-from-the-prefix-rather-than-read-off-the-component) |
 | [`translate(string $violationPropertyPath): ?string`](../../../packages/schemas/src/State/ViolationPathTranslator.php) — deepest declared path wins | done | — | [semantics](#a-violation-beneath-a-declared-leaf-folds-onto-that-leaf) |
 | The `null` return — a violation no declared path owns | done | — | [semantics](#an-unowned-violation-returns-null-so-the-caller-folds-it-at-the-schema-root) |
-| The index arm — `sections[2].heading` → the item key at position 2 | done | — | [diverges](#the-index-is-read-as-a-position-which-a-reordered-or-thinned-collection-breaks) |
-| [`HasKeyedItems::getItemKeys()`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php) — implemented by [`Repeater`](../forms/repeater.md) | done | — | [diverges](#the-index-is-read-as-a-position-which-a-reordered-or-thinned-collection-breaks) |
+| The index arm — `sections[2].heading` → the item key the record's collection holds at key `2` | done | — | [semantics](#the-index-is-a-collection-key-not-a-position) |
+| The in-item fold — a violation naming a path the item schema declares nothing for | done | — | [semantics](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root) |
+| [`HasKeyedItems::getItemKeys()`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php) — implemented by [`Repeater`](../forms/repeater.md) | done | — | [semantics](#the-index-is-a-collection-key-not-a-position) |
+| [`HasKeyedItems::getItemStatePaths()`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php) — implemented by [`Repeater`](../forms/repeater.md) | done | — | [semantics](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root) |
 | Parsing — `Symfony\Component\PropertyAccess\PropertyPath` | done | — | [semantics](#the-path-is-parsed-by-symfonys-own-parser-not-by-splitting-on-dots) |
 
 Coverage: every arm by
 [`ViolationPathTranslatorTest`](../../../packages/schemas/tests/Unit/State/ViolationPathTranslatorTest.php)
 (leaf, nested leaf, deepest-wins, fold-onto-owner, no-prefix, the three `null`
-arms, the index hop, the collection's own path, and the four stop conditions);
-end-to-end against real Doctrine records by
+arms, the index hop over a list key / a sparse key / a string key, the
+collection's own path, and the five stop conditions — an index naming no item,
+an in-item path the item declares nothing for, a class-level violation on the
+item record, a fold onto a declared item path, and a second index nesting
+inside the item); end-to-end against real Doctrine records by
 [`BelongsToRecordValidationTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordValidationTest.php)
 and, for the index arm over a real `Repeater::relationship()`, by
 [`RepeaterRecordValidationTest`](../../../packages/forms/tests/Integration/Components/RepeaterRecordValidationTest.php)
-— which also pins both halves of the divergence below.
+— which pins the attribution through a deletion and through a reorder, and both
+in-item fold shapes.
 
 ## Semantics
 
@@ -70,9 +76,10 @@ The component is consulted for one thing only: whether it keys its items.
 component that
 [owns its record subtree](belongs-to-record.md#a-component-can-own-its-whole-record-subtree)
 declares no leaf beneath it, so it is the deepest thing that can speak for the
-path. The message then shows on the owner rather than vanishing. The one
-exception is the index arm, which appends the remainder *because* a keyed-item
-component's item schema mirrors the child record's own paths.
+path. The message then shows on the owner rather than vanishing. A keyed-item
+component is the one owner that can go deeper, because its items declare paths
+of their own — see
+[the in-item fold](#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root).
 
 ### An unowned violation returns null so the caller folds it at the schema root
 
@@ -86,6 +93,46 @@ such a message is carried on the `ValidationException` and reachable through
 deliberate: dropping it would lose a refusal the record made, and guessing a
 field for it would be a lie. A schema wanting them on screen reads that path.
 
+### The index is a collection key, not a position
+
+A violation path indexes the **record**, so `sections[2]` names whatever key the
+record's collection holds that element under — which is not the item's position
+in the state, and after an edit is often not a position at all.
+`HasKeyedItems::getItemKeys()` therefore returns `array<int|string, string>`,
+the item key keyed by the collection key it was written to, and `translate()`
+indexes that array rather than counting.
+
+Only the write can know the pairing, which is why the
+[repeater](../forms/repeater.md) records it in its save hook rather than
+deriving it: Symfony's accessor hands the desired list to the record's adder and
+remover, so an unchanged membership keeps its old order and a thinned one is
+keyed sparsely (removing the element at key `0` of two leaves key `1` behind).
+Reading the collection back after the write, and pairing each element with the
+item key it was written from **by identity**, survives both — and an added item,
+which has no key of its own until a flush. A key the map does not carry folds at
+the component's own path, which is the honest answer for a violation on a
+collection nothing in the state produced.
+
+### A violation inside an item folds by the same rule as one at the root
+
+An item's own paths are invisible to the record path map: a repeater
+[owns its record subtree](belongs-to-record.md#a-component-can-own-its-whole-record-subtree),
+so the map carries `sections` and nothing beneath it. The remainder after the
+index (`sections[2].heading` → `heading`) is therefore matched against
+`HasKeyedItems::getItemStatePaths()` — the paths the item schema declares, which
+are exactly what the save wrote onto the item's record — deepest-prefix-wins,
+the same walk `translate()` runs over the map at the root.
+
+So `heading` appends when a field declares it, `meta.locale.code` folds onto a
+declared `meta.locale`, and a path no item field maps (`internalNote`, or a
+child's class-level violation carrying no remainder at all) folds at the item's
+own state path — `data.sections.record-7`, the item schema's key. That is the
+in-item counterpart of the
+[root fold](#an-unowned-violation-returns-null-so-the-caller-folds-it-at-the-schema-root):
+a message on a container rather than an input, carried on the exception and
+reachable by path, never a state path no component owns. Appending the remainder
+unconditionally would invent one.
+
 ### The path is parsed by Symfony's own parser, not by splitting on dots
 
 `PropertyPath` is what produced these strings, so it is what reads them back:
@@ -94,40 +141,3 @@ inside a property name, and strips a null-safe `?`. Splitting on `.` would take
 `sections[2]` for a property named `sections[2]` and mis-handle any escaped
 name. A string `PropertyPath` refuses — the empty path included — is caught and
 answered `null`.
-
-## Divergences
-
-Deliberate deviations, and the reason each holds. Provisional ones say what
-would reverse them.
-
-### The index is read as a position, which a reordered or thinned collection breaks
-
-`HasKeyedItems::getItemKeys()` returns the item keys **in state order**, and
-`sections[2]` is resolved as `getItemKeys()[2]`. That is exact whenever the
-record's collection is keyed `0..n-1` in the same order the state holds the
-items — a record built fresh, or an edit that kept every child in place, which
-is the common submit.
-
-It is **not** exact otherwise, and both failure shapes are pinned by test rather
-than left to be discovered:
-
-- **A deletion** leaves a `PersistentCollection` keyed sparsely (removing the
-  element at key `0` of two leaves key `1` behind), so the violation on the
-  survivor arrives as `sections[1]` while the state holds one item at position
-  `0`. The index is out of range and the message folds at the repeater's own
-  path — a visible, correctly-scoped error on the wrong granularity.
-- **A reorder** is worse. Symfony's adder/remover diffing does not re-key a
-  collection whose membership is unchanged, so the record still iterates in the
-  old order while the state holds the new one, and the violation is attributed
-  to the item that now occupies that position. The message shows under the wrong
-  item.
-
-The cause is that a violation path carries a collection **key**, and
-`list<string>` cannot express a mapping from a sparse key set. The fix is to
-widen the contract to `array<int|string, string>` — the item key keyed by the
-collection key of the element it was mapped onto, which a repeater can build by
-walking the record's own collection and asking the
-[association reader](association-reader.md) for each child's record key. Nothing
-else changes: the translator would index that array instead of a list.
-**Reverses when that widening lands**; until then this section, and the two
-tests named above, are the record of what the positional read costs.

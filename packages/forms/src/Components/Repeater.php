@@ -65,6 +65,15 @@ class Repeater extends Field implements HasKeyedItems
      */
     protected ?array $hydratedDefaultState = null;
 
+    /**
+     * The item key each element of the record's collection was written from,
+     * keyed by the key that collection holds the element under — recorded by the
+     * last relationship save, since only the write knows the pairing.
+     *
+     * @var array<int|string, string>|null
+     */
+    protected ?array $itemKeysByCollectionKey = null;
+
     protected bool $shouldMergeHydratedDefaultStateWithItemsStateAfterStateHydrated = true;
 
     protected Field|Closure|null $simpleField = null;
@@ -291,15 +300,52 @@ class Repeater extends Field implements HasKeyedItems
     }
 
     /**
-     * The item keys as the state holds them now, which is the order the save
-     * hands the items to the record — so the nth key names the item the record's
-     * nth element was mapped from.
+     * The item keys keyed the way the record holds the items: a relationship
+     * save records the pairing element by element, because the accessor's
+     * adder/remover diffing leaves the collection's own keys alone rather than
+     * re-keying it into state order. Without such a save — a plain-array
+     * repeater, or a read before any `getData()` — the items are positional and
+     * state order is the record's order.
      */
     public function getItemKeys(): array
     {
+        if ($this->itemKeysByCollectionKey !== null) {
+            return $this->itemKeysByCollectionKey;
+        }
+
         $rawState = $this->getRawState();
 
         return array_map(strval(...), array_keys(is_array($rawState) ? $rawState : []));
+    }
+
+    /**
+     * The dotted state paths the item schema declares, relative to one item —
+     * what a fill reads off each related record and a save writes back onto it.
+     * Read off a clone, so the shared field instances the item schemas are cloned
+     * from keep their own cached paths.
+     *
+     * @return list<string>
+     */
+    public function getItemStatePaths(): array
+    {
+        $itemSchema = $this->getChildSchema()?->getClone();
+
+        if (! $itemSchema instanceof Schema) {
+            return [];
+        }
+
+        $prefix = $itemSchema->getStatePath() . '.';
+        $itemStatePaths = [];
+
+        foreach ($itemSchema->getFlatComponents(withActions: false) as $component) {
+            $statePath = $component->getStatePath();
+
+            if (($statePath !== null) && str_starts_with($statePath, $prefix)) {
+                $itemStatePaths[] = mb_substr($statePath, mb_strlen($prefix));
+            }
+        }
+
+        return $itemStatePaths;
     }
 
     public function defaultItems(int|Closure $count): static
@@ -1141,6 +1187,7 @@ class Repeater extends Field implements HasKeyedItems
         }
 
         $desiredRecords = [];
+        $desiredItemKeys = [];
 
         foreach (is_array($state) ? $state : [] as $itemKey => $itemData) {
             /** @var array<string, mixed> $itemData */
@@ -1169,39 +1216,49 @@ class Repeater extends Field implements HasKeyedItems
             }
 
             $desiredRecords[] = $child;
+            $desiredItemKeys[] = (string) $itemKey;
         }
 
         $accessor->setAssociationOnRecord($record, $name, $desiredRecords);
+
+        $this->itemKeysByCollectionKey = $this->readItemKeysByCollectionKey($record, $name, $desiredRecords, $desiredItemKeys);
     }
 
     /**
-     * The dotted state paths the item schema declares, relative to one item —
-     * what a fill reads off each related record and a save writes back onto it.
-     * Read off a clone, so the shared field instances the item schemas are cloned
-     * from keep their own cached paths.
+     * Pair each element of the collection the record now holds with the item key
+     * it was written from, read back **after** the write: the accessor diffs the
+     * desired list through the record's adder and remover, which leaves an
+     * unchanged membership in its old order and a thinned one keyed sparsely, so
+     * the keys a violation path will carry are only knowable from the collection
+     * itself. Identity is the pairing — a key of its own would miss an item the
+     * client added, which has none until a flush.
      *
-     * @return list<string>
+     * @param list<object> $desiredRecords
+     * @param list<string> $desiredItemKeys
+     *
+     * @return array<int|string, string>
      */
-    private function getItemStatePaths(): array
+    private function readItemKeysByCollectionKey(object $record, string $name, array $desiredRecords, array $desiredItemKeys): array
     {
-        $itemSchema = $this->getChildSchema()?->getClone();
+        $related = $this->getPropertyAccessor()->getFromRecord($record, $name);
 
-        if (! $itemSchema instanceof Schema) {
-            return [];
-        }
+        $itemKeys = [];
 
-        $prefix = $itemSchema->getStatePath() . '.';
-        $itemStatePaths = [];
-
-        foreach ($itemSchema->getFlatComponents(withActions: false) as $component) {
-            $statePath = $component->getStatePath();
-
-            if (($statePath !== null) && str_starts_with($statePath, $prefix)) {
-                $itemStatePaths[] = mb_substr($statePath, mb_strlen($prefix));
+        foreach (is_iterable($related) ? $related : [] as $collectionKey => $child) {
+            if (! is_int($collectionKey) && ! is_string($collectionKey)) {
+                continue;
             }
+
+            $index = array_search($child, $desiredRecords, true);
+
+            if ($index === false) {
+                continue;
+            }
+
+            $itemKeys[$collectionKey] = $desiredItemKeys[$index];
         }
 
-        return $itemStatePaths;
+        return $itemKeys;
     }
 
     /**

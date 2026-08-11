@@ -62,7 +62,7 @@ function seedValidatedSectionedPost(EntityManagerInterface $entityManager): arra
     return [$post, $one, $two];
 }
 
-it('reports its item keys in state order', function (): void {
+it('reports its item keys in state order before any save', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post, $one, $two] = seedValidatedSectionedPost($entityManager);
 
@@ -75,6 +75,29 @@ it('reports its item keys in state order', function (): void {
     $schema->fill($post);
 
     expect($repeater->getItemKeys())->toBe(['record-' . $one->getId(), 'record-' . $two->getId()]);
+});
+
+it('keys its item keys by the collection key a save left behind', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one, $two] = seedValidatedSectionedPost($entityManager);
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->orderColumn('position')
+        ->components([TextInput::make('heading')]);
+
+    [$schema] = wireValidatedRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $repeater->getAction($repeater->getMoveUpActionName())?->__invoke(['item' => 'record-' . $two->getId()])->call();
+
+    $schema->getData();
+
+    expect($repeater->getItemKeys())->toBe([
+        'record-' . $one->getId(),
+        'record-' . $two->getId(),
+    ]);
 });
 
 it('folds a child violation onto the item field that maps it', function (): void {
@@ -116,7 +139,7 @@ it('folds the violation of a later child onto that childs item', function (): vo
         ->toBe(['That heading is taken.']);
 });
 
-it('folds at the repeater when a deletion shifted the collection past the item keys', function (): void {
+it('holds the attribution when a deletion left the collection keyed sparsely', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post, $one, $two] = seedValidatedSectionedPost($entityManager);
 
@@ -133,11 +156,12 @@ it('folds at the repeater when a deletion shifted the collection past the item k
     $host->data['sections']['record-' . $two->getId()]['heading'] = PostSection::REJECTED_HEADING;
 
     expect(fn (): object => $schema->getData())->toThrow(ValidationException::class)
-        ->and($host->getErrorsForSchemaStatePath('data.sections'))->toBe(['That heading is taken.'])
-        ->and($host->getErrorsForSchemaStatePath('data.sections.record-' . $two->getId() . '.heading'))->toBe([]);
+        ->and($host->getErrorsForSchemaStatePath('data.sections.record-' . $two->getId() . '.heading'))
+        ->toBe(['That heading is taken.'])
+        ->and($host->getErrorsForSchemaStatePath('data.sections'))->toBe([]);
 });
 
-it('mis-attributes a violation when a reorder left the collection in its old order', function (): void {
+it('holds the attribution when a reorder left the collection in its old order', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post, $one, $two] = seedValidatedSectionedPost($entityManager);
 
@@ -155,8 +179,50 @@ it('mis-attributes a violation when a reorder left the collection in its old ord
     $host->data['sections']['record-' . $two->getId()]['heading'] = PostSection::REJECTED_HEADING;
 
     expect(fn (): object => $schema->getData())->toThrow(ValidationException::class)
+        ->and($host->getErrorsForSchemaStatePath('data.sections.record-' . $two->getId() . '.heading'))
+        ->toBe(['That heading is taken.'])
         ->and($host->getErrorsForSchemaStatePath('data.sections.record-' . $one->getId() . '.heading'))
-        ->toBe(['That heading is taken.']);
+        ->toBe([]);
+});
+
+it('folds a violation on a property no item field maps onto the item itself', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one] = seedValidatedSectionedPost($entityManager);
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([TextInput::make('heading')]);
+
+    [$schema, $host] = wireValidatedRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $host->data['sections']['record-' . $one->getId()]['heading'] = PostSection::REJECTED_BODY;
+
+    expect(fn (): object => $schema->getData())->toThrow(ValidationException::class)
+        ->and($host->getErrorsForSchemaStatePath('data.sections.record-' . $one->getId()))
+        ->toBe(['That body is too short.'])
+        ->and($host->getErrorsForSchemaStatePath('data.sections.record-' . $one->getId() . '.body'))->toBe([]);
+});
+
+it('folds a class-level violation on a child onto the item itself', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one] = seedValidatedSectionedPost($entityManager);
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([TextInput::make('heading')]);
+
+    [$schema, $host] = wireValidatedRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $host->data['sections']['record-' . $one->getId()]['heading'] = PostSection::REJECTED_SECTION;
+
+    expect(fn (): object => $schema->getData())->toThrow(ValidationException::class)
+        ->and($host->getErrorsForSchemaStatePath('data.sections.record-' . $one->getId()))
+        ->toBe(['That section is not publishable.'])
+        ->and($host->getErrorsForSchemaStatePath('data.sections'))->toBe([]);
 });
 
 it('leaves the rejected child mutated and unflushed', function (): void {

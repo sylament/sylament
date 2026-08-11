@@ -73,7 +73,7 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 | `CanLimitItemsLength` (`minItems()` / `maxItems()` / `getItemsCount()`) | [`CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [semantics](#an-item-field-derives-no-requirement-from-the-record) |
 | Item chrome (`itemLabel()` / `getItemLabel()` / `hasItemLabels()` / `itemNumbers()` / `itemHeaders()` / `truncateItemLabel()` / `getHeadingsCount()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
 | `getItemState()` / `getRawItemState()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
-| `getItemKeys()` ([`HasKeyedItems`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php)) — the state-order item keys the [violation-path translator](../schemas/violation-path-translator.md) resolves a record-side index against | — | done | — | [diverges](../schemas/violation-path-translator.md#the-index-is-read-as-a-position-which-a-reordered-or-thinned-collection-breaks) |
+| `getItemKeys()` / `getItemStatePaths()` ([`HasKeyedItems`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php)) — the collection-keyed item keys and the item's declared paths the [violation-path translator](../schemas/violation-path-translator.md) resolves a record-side violation against | — | done | — | [semantics](#a-save-records-which-collection-key-each-item-was-written-to) |
 | Template + stylesheet (`toEmbeddedHtml()` / `toSimpleEmbeddedHtml()` → `partials/Repeater/`, `repeater.css`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](field.md#labeltag-is-a-boolean-labelasheading) |
 | Collapse chrome (`getCollapseAction()` / `getExpandAction()` / `getCollapseAllAction()` / `getExpandAllAction()` + their modifiers, `CanBeCollapsed` / `CanBeCompact` composition, `canConcealComponents()`, `shouldPersistCollapsed()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
 | `addBetween` pair (`getAddBetweenAction()` / `addBetweenAction()` / `addBetweenActionLabel()`) + `labelBetweenItems()` / `getLabelBetweenItems()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
@@ -304,6 +304,30 @@ each child before the write, and the read side is Doctrine's — the association
 needs its own `#[ORM\OrderBy]` on that property, since nothing here orders the
 query. And the whole diff runs inside the single `getData()` call, with no flush
 of its own: the caller flushes, once, exactly as with every other mapped field.
+
+### A save records which collection key each item was written to
+
+`getItemKeys()` answers the
+[violation-path translator](../schemas/violation-path-translator.md#the-index-is-a-collection-key-not-a-position),
+which resolves `sections[2]` against the key the **record's** collection holds
+that element under. State order is not that key: the association write goes
+through the accessor's adder/remover diffing, which leaves an unchanged
+membership in its old order and a thinned one keyed sparsely, so the desired
+list's order is not what the collection ends up keyed by.
+
+So the save hook reads the collection back after the write and pairs each
+element with the item key it was written from — **by identity**, since an item
+the client added has no record key of its own until a flush — and
+`getItemKeys()` returns that pairing. Before any save (a fill, or an array-mode
+repeater whose items the record holds as a positional list) there is nothing to
+pair and the state's own keys are returned in order, which is exactly how a
+plain array is written.
+
+`getItemStatePaths()` is the same list the fill and save arms already walk,
+published on the contract: a violation naming an in-item path it does not carry
+is a path no field maps, and the translator
+[folds it at the item](../schemas/violation-path-translator.md#a-violation-inside-an-item-folds-by-the-same-rule-as-one-at-the-root)
+rather than inventing a state path.
 
 ## Divergences
 

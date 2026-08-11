@@ -42,6 +42,7 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | Conditional panel scrolling (`fi-scrollable` equivalent) | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `fi-scrollable` class, gated on `$maxHeight` | done | — | [diverges](#the-panel-scrolls-only-when-a-max-height-is-set-and-the-gate-is-a-css-variable) |
 | `sy-dropdown-list` sections and their dividers | [`dropdown/list/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/list/index.blade.php) `fi-dropdown-list` | done | — | — |
 | Submenu support (nested dropdowns for nested action groups) | — (no Filament dropdown equivalent) | done | — | [diverges](#submenus-are-consumer-composition-not-a-shell-feature) |
+| Open state survives a live re-render morph | — (no Filament equivalent — Alpine's `x-data` state outlives a Livewire morph by construction) | done | — | [diverges](#the-open-state-is-a-controller-field-re-asserted-through-a-mutationobserver) |
 
 The shell row, plus the markup half of the positioning-controller row, is
 exercised by
@@ -211,3 +212,85 @@ turned out to be smaller than this row anticipated:
 
 Nothing further is provisioned. A shell-level submenu *prop* would still be
 speculative — the consumer composes the primitive instead.
+
+### The open state is a controller field, re-asserted through a MutationObserver
+
+Filament has nothing to port here. Its dropdown is `x-data="filamentDropdown"`,
+and Livewire's morph leaves an Alpine component's own reactive state alone — the
+panel's visibility is an `x-show` binding over that state, so a re-render simply
+re-runs the binding and the panel stays open. This port's visibility is a
+server-rendered `hidden` attribute on the panel, which idiomorph re-applies from
+the freshly rendered markup, so an open dropdown snapped shut on every live
+re-render. Deferred filter panels never noticed — they issue no request while
+open — but a `deferFilters(false)` table re-renders per change, and that is the
+consumer that made this a defect rather than a footnote
+([tables' filters chrome](../tables/table.md)).
+
+The state now lives in a private instance field on the controller, which outlives
+the morph because the controller's root element does, and the panel is re-asserted
+from it. **Two paths, because a morph can do two different things to the panel.**
+When idiomorph morphs it in place, the element is the same and only the attribute
+changes — a `MutationObserver` with `attributeFilter: ["hidden"]` catches that and
+re-opens. When it replaces the element outright, no mutation reaches the old node
+— Stimulus' `panelTargetConnected` fires for the new one, re-binds the observer and
+re-opens. Both re-entrant paths run `autoUpdate` again, stopping the previous
+updater first, which also repaints `left`/`top` after a morph reset the inline
+`style` the previous positioning pass had written.
+
+**`panelTargetDisconnected` ignores a panel that is no longer the target**, because
+the replacement path can deliver the two callbacks in either order. Idiomorph
+swaps a hard-mismatched child with `replaceChild` (`live_controller.js:482`) — one
+mutation record carrying both nodes, and Stimulus reads removals before additions
+within a record (`stimulus.js:485`/`:486`) — but an *unmatched* new child is
+inserted before the insertion point and the leftovers swept afterwards
+(`live_controller.js:532`, sweep at `:536`), which is two records in
+added-then-removed order. There the disconnect for the **old** panel arrives after
+the new one is already wired, and an unconditional teardown would disconnect the
+observer and stop the `autoUpdate` that `panelTargetConnected` had just installed —
+leaving a visibly open panel that no longer repositions and no longer survives the
+next morph. Comparing the argument against the current `panelTarget` makes the
+callback inert in exactly that case while keeping the full teardown for the case it
+exists for: a panel removed and not replaced, where leaving the observer and the
+updater running would poll a detached node forever.
+
+**The guard against a controller-initiated toggle looping is the state pair, not a
+re-entrancy flag.** MutationObserver callbacks arrive on a microtask, so a
+`flag = true; panel.hidden = …; flag = false` fence is already `false` by the time
+the callback reads it. Instead `close()` clears the field *before* writing the
+attribute and the callback ignores a closed dropdown; `open()` leaves the attribute
+removed and the callback ignores a visible panel. Nothing else is needed, and a
+flag added back "for safety" would be inert at best.
+
+**Why not the vendor's post-render signal.** ux-live-component has one, and it is
+not reachable from here. Its post-morph notification is a JS hook on the `Component`
+object — [`live_controller.js:1585`](../../../vendor/symfony/ux-live-component/assets/dist/live_controller.js)
+triggers `render:finished`, typed at `live_controller.d.ts:77` as
+`'render:finished': (component: Component) => MaybePromise`, subscribed through
+`Component#on()`/`off()` at `live_controller.js:1416`/`1419`. It is **not** a DOM
+event: the only CustomEvents the live controller dispatches are `live:connect` and
+`live:disconnect` (`live_controller.js:2228`/`2235`, through the `prefix: "live"`
+dispatcher at `:2279`), plus the intersection plugin's one-shot `live:appear`
+(`:1802`) — there is no `live:render` to listen for on an ancestor. Reaching the
+hook means either the undeclared `element.__component` expando the controller
+defines at `live_controller.js:2205`, or importing `getComponent` from
+`@symfony/ux-live-component` — which `packages/support/assets/package.json` does not
+depend on (its dependencies are `@floating-ui/dom` plus the Stimulus peer), and
+which `packages/actions/assets` is deliberately the toolkit's only npm consumer of.
+The observer needs neither, and it keeps the primitive correct in a page with no
+live component in it at all, where the hook does not exist.
+
+**One accepted gap.** ux-live-component's `ExternalMutationTracker`
+(`live_controller.js:1064`) observes the component subtree with
+`attributes: true` (`:1075`) and replays an externally changed attribute onto the
+incoming node during the morph (`elementChanges.applyToElement(toEl)` at `:917`,
+applied at `:1043`), so in the common case it *already* preserves the removed
+`hidden`. This fix does not depend on that and does not fight it: when the tracker
+wins, the observer sees no mutation and does nothing. It is the cases the tracker
+misses — a replaced panel element, a tracker restarted between renders — that this
+covers, which is why the belt is kept alongside the braces.
+
+**Unpinned by test, on purpose.** No JS test rig exists in this repo — no
+`vitest`/`test:unit` target in any asset workspace — so `tsc` and Biome are the
+only automatic verifiers of this file, and the behavioural verification is the demo
+browser pass on the filters card in live mode; the `dist` byte-stability gate is
+the only automatic check the change itself carries.

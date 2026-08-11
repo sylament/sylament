@@ -20,12 +20,15 @@ export default class extends Controller<HTMLElement> {
 
   declare readonly triggerTarget: HTMLElement;
   declare readonly panelTarget: HTMLElement;
+  declare readonly hasPanelTarget: boolean;
   declare readonly placementValue: string;
   declare readonly offsetValue: number;
   declare readonly flipValue: boolean;
   declare readonly teleportValue: boolean;
 
+  #isOpen = false;
   #stopPositioning: (() => void) | null = null;
+  #panelObserver: MutationObserver | null = null;
 
   #onPointerDown = (event: PointerEvent): void => {
     if (event.target instanceof Node && !this.element.contains(event.target)) {
@@ -40,45 +43,78 @@ export default class extends Controller<HTMLElement> {
     }
   };
 
+  #onPanelMutated = (): void => {
+    if (!this.#isOpen || !this.hasPanelTarget || !this.panelTarget.hidden) {
+      return;
+    }
+
+    this.#showPanel(this.panelTarget);
+  };
+
   connect(): void {
     this.#focusableTrigger()?.setAttribute("aria-haspopup", "true");
-    this.#syncExpanded(false);
+    this.#syncExpanded(this.#isOpen);
   }
 
   disconnect(): void {
     this.close();
+
+    this.#panelObserver?.disconnect();
+    this.#panelObserver = null;
+  }
+
+  panelTargetConnected(panel: HTMLElement): void {
+    this.#panelObserver?.disconnect();
+    this.#panelObserver = new MutationObserver(this.#onPanelMutated);
+    this.#panelObserver.observe(panel, { attributeFilter: ["hidden"] });
+
+    if (!this.#isOpen) {
+      return;
+    }
+
+    this.#showPanel(panel);
+  }
+
+  panelTargetDisconnected(panel: HTMLElement): void {
+    if (this.hasPanelTarget && this.panelTarget !== panel) {
+      return;
+    }
+
+    this.#panelObserver?.disconnect();
+    this.#panelObserver = null;
+
+    this.#stopPositioning?.();
+    this.#stopPositioning = null;
   }
 
   toggle(): void {
-    if (this.panelTarget.hidden) {
-      this.open();
+    if (this.#isOpen) {
+      this.close();
 
       return;
     }
 
-    this.close();
+    this.open();
   }
 
   open(): void {
-    if (!this.panelTarget.hidden) {
+    if (this.#isOpen) {
       return;
     }
 
-    this.panelTarget.hidden = false;
-    this.#syncExpanded(true);
-
-    this.#stopPositioning = autoUpdate(this.triggerTarget, this.panelTarget, () => {
-      void this.#position();
-    });
+    this.#isOpen = true;
+    this.#showPanel(this.panelTarget);
 
     document.addEventListener("pointerdown", this.#onPointerDown);
     document.addEventListener("keydown", this.#onKeyDown);
   }
 
   close(): void {
-    if (this.#stopPositioning === null) {
+    if (!this.#isOpen) {
       return;
     }
+
+    this.#isOpen = false;
 
     this.#stopPositioning?.();
     this.#stopPositioning = null;
@@ -86,14 +122,30 @@ export default class extends Controller<HTMLElement> {
     document.removeEventListener("pointerdown", this.#onPointerDown);
     document.removeEventListener("keydown", this.#onKeyDown);
 
-    this.panelTarget.hidden = true;
+    if (this.hasPanelTarget) {
+      this.panelTarget.hidden = true;
+    }
+
     this.#syncExpanded(false);
   }
 
-  async #position(): Promise<void> {
-    this.panelTarget.style.position = this.teleportValue ? "fixed" : "";
+  #showPanel(panel: HTMLElement): void {
+    panel.hidden = false;
+    this.#syncExpanded(true);
+    this.#startPositioning(panel);
+  }
 
-    const { x, y } = await computePosition(this.triggerTarget, this.panelTarget, {
+  #startPositioning(panel: HTMLElement): void {
+    this.#stopPositioning?.();
+    this.#stopPositioning = autoUpdate(this.triggerTarget, panel, () => {
+      void this.#position(panel);
+    });
+  }
+
+  async #position(panel: HTMLElement): Promise<void> {
+    panel.style.position = this.teleportValue ? "fixed" : "";
+
+    const { x, y } = await computePosition(this.triggerTarget, panel, {
       placement: this.placementValue as Placement,
       strategy: this.teleportValue ? "fixed" : "absolute",
       middleware: [
@@ -103,8 +155,8 @@ export default class extends Controller<HTMLElement> {
       ],
     });
 
-    this.panelTarget.style.left = `${x}px`;
-    this.panelTarget.style.top = `${y}px`;
+    panel.style.left = `${x}px`;
+    panel.style.top = `${y}px`;
   }
 
   #syncExpanded(isOpen: boolean): void {

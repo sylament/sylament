@@ -1336,7 +1336,9 @@ var dropdown_controller_default = class extends Controller {
     flip: { type: Boolean, default: true },
     teleport: { type: Boolean, default: false }
   };
+  #isOpen = false;
   #stopPositioning = null;
+  #panelObserver = null;
   #onPointerDown = (event) => {
     if (event.target instanceof Node && !this.element.contains(event.target)) {
       this.close();
@@ -1348,46 +1350,83 @@ var dropdown_controller_default = class extends Controller {
       this.#focusableTrigger()?.focus();
     }
   };
+  #onPanelMutated = () => {
+    if (!this.#isOpen || !this.hasPanelTarget || !this.panelTarget.hidden) {
+      return;
+    }
+    this.#showPanel(this.panelTarget);
+  };
   connect() {
     this.#focusableTrigger()?.setAttribute("aria-haspopup", "true");
-    this.#syncExpanded(false);
+    this.#syncExpanded(this.#isOpen);
   }
   disconnect() {
     this.close();
+    this.#panelObserver?.disconnect();
+    this.#panelObserver = null;
+  }
+  panelTargetConnected(panel) {
+    this.#panelObserver?.disconnect();
+    this.#panelObserver = new MutationObserver(this.#onPanelMutated);
+    this.#panelObserver.observe(panel, { attributeFilter: ["hidden"] });
+    if (!this.#isOpen) {
+      return;
+    }
+    this.#showPanel(panel);
+  }
+  panelTargetDisconnected(panel) {
+    if (this.hasPanelTarget && this.panelTarget !== panel) {
+      return;
+    }
+    this.#panelObserver?.disconnect();
+    this.#panelObserver = null;
+    this.#stopPositioning?.();
+    this.#stopPositioning = null;
   }
   toggle() {
-    if (this.panelTarget.hidden) {
-      this.open();
+    if (this.#isOpen) {
+      this.close();
       return;
     }
-    this.close();
+    this.open();
   }
   open() {
-    if (!this.panelTarget.hidden) {
+    if (this.#isOpen) {
       return;
     }
-    this.panelTarget.hidden = false;
-    this.#syncExpanded(true);
-    this.#stopPositioning = autoUpdate(this.triggerTarget, this.panelTarget, () => {
-      void this.#position();
-    });
+    this.#isOpen = true;
+    this.#showPanel(this.panelTarget);
     document.addEventListener("pointerdown", this.#onPointerDown);
     document.addEventListener("keydown", this.#onKeyDown);
   }
   close() {
-    if (this.#stopPositioning === null) {
+    if (!this.#isOpen) {
       return;
     }
+    this.#isOpen = false;
     this.#stopPositioning?.();
     this.#stopPositioning = null;
     document.removeEventListener("pointerdown", this.#onPointerDown);
     document.removeEventListener("keydown", this.#onKeyDown);
-    this.panelTarget.hidden = true;
+    if (this.hasPanelTarget) {
+      this.panelTarget.hidden = true;
+    }
     this.#syncExpanded(false);
   }
-  async #position() {
-    this.panelTarget.style.position = this.teleportValue ? "fixed" : "";
-    const { x, y } = await computePosition2(this.triggerTarget, this.panelTarget, {
+  #showPanel(panel) {
+    panel.hidden = false;
+    this.#syncExpanded(true);
+    this.#startPositioning(panel);
+  }
+  #startPositioning(panel) {
+    this.#stopPositioning?.();
+    this.#stopPositioning = autoUpdate(this.triggerTarget, panel, () => {
+      void this.#position(panel);
+    });
+  }
+  async #position(panel) {
+    panel.style.position = this.teleportValue ? "fixed" : "";
+    const { x, y } = await computePosition2(this.triggerTarget, panel, {
       placement: this.placementValue,
       strategy: this.teleportValue ? "fixed" : "absolute",
       middleware: [
@@ -1396,8 +1435,8 @@ var dropdown_controller_default = class extends Controller {
         shift2({ padding: 8 })
       ]
     });
-    this.panelTarget.style.left = `${x}px`;
-    this.panelTarget.style.top = `${y}px`;
+    panel.style.left = `${x}px`;
+    panel.style.top = `${y}px`;
   }
   #syncExpanded(isOpen) {
     this.#focusableTrigger()?.setAttribute("aria-expanded", isOpen ? "true" : "false");

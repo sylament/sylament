@@ -7,6 +7,7 @@ namespace Sylament\Forms\Tests\Fixtures\Doctrine\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 class Post
@@ -27,6 +28,7 @@ class Post
      */
     #[ORM\OneToMany(targetEntity: PostSection::class, mappedBy: 'post', cascade: ['persist'], orphanRemoval: true)]
     #[ORM\OrderBy(['position' => 'ASC'])]
+    #[Assert\Valid]
     private Collection $sections;
 
     /**

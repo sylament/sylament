@@ -5,10 +5,19 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests\Fixtures\Doctrine\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 #[ORM\Entity]
 class PostSection
 {
+    /**
+     * The heading a child rejects itself for, so a record-validating test can
+     * fail one item of a collection while every other test's headings stay
+     * acceptable.
+     */
+    public const string REJECTED_HEADING = 'reject-heading';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -70,5 +79,15 @@ class PostSection
     public function setPost(Post $post): void
     {
         $this->post = $post;
+    }
+
+    #[Assert\Callback]
+    public function reviewHeading(ExecutionContextInterface $context): void
+    {
+        if ($this->heading !== self::REJECTED_HEADING) {
+            return;
+        }
+
+        $context->buildViolation('That heading is taken.')->atPath('heading')->addViolation();
     }
 }

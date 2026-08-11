@@ -59,6 +59,7 @@ Sylament-only.
 | [`getRecord(bool $withParentComponentRecord = true)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getRecord()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | — |
 | [`getRecordInstance()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
 | [`getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#reads-are-lenient-writes-are-strict) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#a-missing-singular-intermediate-is-constructed-from-its-declared-type) |
+| [`getData()`'s record-validation tail](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + [`getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](can-be-validated.md#a-refused-submit-leaves-the-record-mutated) · [detail](violation-path-translator.md) |
 | [`getNullableBranches()` + the branch pass in `getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [diverges](#a-component-can-own-its-whole-record-subtree) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [semantics](#a-nullable-branch-with-no-state-path-is-refused-not-ignored) · [semantics](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order) |
 | [`fill(object …)` object arm](../../../packages/schemas/src/Concerns/HasState.php) + [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#fillobject-does-not-bind-the-record) |
 | [`$record` property](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`public $model`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-root-record-property-is-protected) |
@@ -649,6 +650,15 @@ own idiom — `dehydrated(false)` removes it from `getState()` and therefore fro
 the mapping. Ordering matters and is deliberate:
 `getData()` runs the validating `getState()` first, so a failing submit throws
 [`ValidationException`](can-be-validated.md) before the record is touched at all.
+
+The **second** throw is the other way round. After the leaf walk, the written
+record is validated in its own right —
+[record-sourced constraints](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object)
+are answered against the object the mapping produced, which means by then the
+record already carries the rejected value
+([the cost of that ordering](can-be-validated.md#a-refused-submit-leaves-the-record-mutated)).
+So the two failure modes of one call differ: a state failure leaves the record
+untouched, and a record failure leaves it mutated and unflushed.
 
 ### Mapping walks the record graph by declared leaf paths
 

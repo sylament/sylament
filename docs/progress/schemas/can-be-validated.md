@@ -64,7 +64,9 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | Host `validateOnly()` per-path validation | [`InteractsWithSchemas::validateOnly()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#sticky-re-validation-replaces-filaments-submit-only-model) |
 | Host `onValidationError()` hook | [`InteractsWithSchemas::onValidationError()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-onvalidationerror-hook-is-not-ported) |
 | Host `getRules()` / `getValidationAttributes()` merges + `prepareForValidation()` | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#the-livewire-whole-component-validate-plumbing-is-not-ported) |
-| Record-sourced constraints (an entity's own `#[Assert]` metadata) | — | todo | — | [detail](#record-sourced-constraints-validate-the-mapped-object-direction-decided) |
+| Record-sourced constraints (an entity's own `#[Assert]` metadata) — the [`getData()`](belongs-to-record.md) tail | — | done | — | [diverges](#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](#a-refused-submit-leaves-the-record-mutated) |
+| [`HasSchemas::validateSchemaRecord()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [semantics](#a-host-holding-no-validator-skips-the-record-run-rather-than-refusing-to-map) · [semantics](#record-errors-are-sticky-but-the-silent-pass-cannot-reproduce-them) |
+| [`Schema::getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + the translator it builds | — | done | — | [detail](violation-path-translator.md) |
 
 Coverage: the walk (path keying, `isNeitherDehydratedNorValidated()` skip
 variants, child-schema recursion) by
@@ -78,70 +80,14 @@ the exception by
 [`ValidationExceptionTest`](../../../packages/schemas/tests/Unit/Exceptions/ValidationExceptionTest.php);
 the component-tier flag trio the walk guards on by the component
 [`HasStateTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasStateTest.php)
-(see [`component.md`](component.md)).
+(see [`component.md`](component.md)); the record tail — the four fold
+destinations (mapped leaf, nested cascade, class-level, unmapped property), the
+clean pass, the mutated-but-unflushed reality, and the no-validator skip — by
+[`BelongsToRecordValidationTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordValidationTest.php)
+over real Doctrine entities, and over a real `Repeater::relationship()` by forms'
+[`RepeaterRecordValidationTest`](../../../packages/forms/tests/Integration/Components/RepeaterRecordValidationTest.php).
 
 ## Details
-
-### Record-sourced constraints validate the mapped object (direction decided)
-
-Now that a schema can bind a record and map state onto it
-([`belongs-to-record.md`](belongs-to-record.md)), the question of what to do
-with constraints an entity already declares — `#[Assert\Length]` on a property,
-`#[UniqueEntity]` on the class — has a decided answer, though no implementation
-yet. **Direction: validate the mapped object, after mapping.** A later epic
-extends `getData()`'s tail to run `ValidatorInterface::validate($record)` and
-fold the violations back into the host error bag by translating each violation's
-property path to the owning component's state path — the Symfony Form idiom
-(map, validate the object, flush only when valid). Class-level constraints come
-free that way, which is the only route by which `UniqueEntity` can ever work: it
-needs the managed object, not a scalar path value.
-
-The alternative — pulling `getMetadataFor($class)` property constraints into the
-per-field [`buildValidationConstraints()`](../forms/can-be-validated.md#the-subclass-seam-is-a-protected-builder-not-the-public-getter) seam
-before validation — is **rejected**: typed constraints (a `#[Assert\Positive]`
-on an `int` property) misfire against the raw, pre-cast string state a form bag
-holds, and every message would then travel two different pipelines depending on
-where the constraint was declared.
-
-**One class of failure this direction structurally cannot report, and how it is
-covered instead.** Validating the mapped object happens *after* mapping, so it
-only ever sees objects that mapping successfully produced — and a blank value for
-a non-nullable target is exactly the case where mapping does not get that far. A
-blank `data.author.name` against `Author::setName(string)` throws
-`InvalidTypeException` from the accessor, so `getData()` dies before any object
-exists to validate and the user gets a 500 rather than a field message. No
-ordering of this epic's tail fixes that: moving the object validation earlier
-would mean validating an object that has not been populated yet.
-
-The hole is closed from the other side, by
-[deriving requirement from the record's write-side types](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types):
-a field bound to a non-nullable target emits `NotBlank` on its own, so the blank
-submit fails *field* validation — asterisk, native `required` attribute, message
-under the input, sticky field-by-field clearing — and the mapper crash becomes
-unreachable rather than merely loud.
-
-That does **not** disturb the rejection above, and the distinction is the whole
-reason it does not: derivation reads a **type**, not a constraint. Nullability
-comes from `ReflectionExtractor` reading the property's mutator, so there is no
-`#[Assert]` metadata being pulled forward, no typed constraint evaluated against
-raw pre-cast state, and no second message pipeline — the field emits the same
-`NotBlank` it would have emitted from an explicit `required()`. Entity-declared
-constraints still all travel the one post-mapping route this section decides on.
-
-Caveat to carry into that epic, stated now because it is the non-obvious cost of
-this direction: mapping happens *before* the object-level validation, so a
-failing submit leaves the managed entity mutated in Doctrine's identity map even
-though nothing is flushed. Symfony Form has exactly the same property, and the
-escape is the same — `EntityManager::refresh()` on the failure path (or simply
-never flushing and discarding the request's entity manager). Nothing in the M1
-demo needs the feature: the Article entity carries no `#[Assert]` constraints,
-and its unique-slug rule is served today by M1 · 1's escape hatch — a `Callback`
-constraint querying the repository — which doubles as the motivating showcase for
-the object-validation epic.
-
-**Next step:** land it as a `getData()` tail plus a violation-path → state-path
-translator, in the epic that also wants `unique`/`exists` as first-class
-constraints.
 
 ### The onValidationError hook is not ported
 
@@ -166,6 +112,32 @@ merge would leave a hidden-then-shown field's old errors behind. Reads
 (`getErrorsForSchemaStatePath()`) merge across schema sections, but in practice
 a path lives under one schema.
 
+### A host holding no validator skips the record run rather than refusing to map
+
+`validateSchema()` throws a `LogicException` naming the `#[Required]` setter when
+no validator was injected; `validateSchemaRecord()` returns instead. The
+asymmetry follows from who calls them: `validateSchema()` is called on purpose,
+so a missing validator is the caller's bug, while the record run is a **tail of
+`getData()`** that every mapping call reaches. Throwing there would make a host
+built with `new` — a unit test, a standalone script — unable to map at all,
+which is a much larger break than skipping a check nothing asked for. A
+container-built host always holds the validator, so production never takes this
+arm.
+
+### Record errors are sticky but the silent pass cannot reproduce them
+
+A record failure records the schema key in `$validatedSchemas` exactly as a state
+failure does, and that is what eventually clears the messages: the sticky
+`#[PostHydrate]` pass
+[replaces the bag section wholesale](#the-bag-section-is-replaced-wholesale-on-every-validation)
+on the next request, and it re-runs only the **state** constraints — it has no
+record to validate, `getData()` being a submit-time call. So a record error is
+shown on the 422 re-render it caused and is gone after the user's next
+interaction, rather than clearing field-by-field the way a state error does.
+That is the intended shape (a `UniqueEntity` verdict is stale the moment
+anything changes), not an oversight; what it costs is that the two error
+families age differently in the same bag.
+
 ### A clean silent re-validation keeps the schema sticky
 
 Only the submit path (`shouldThrow: true`) removes a key from
@@ -180,6 +152,76 @@ harmless while clean and is cleared by the next successful submit or a scoped
 
 Deliberate deviations from Filament, and the reason each holds. Provisional
 ones say what would reverse them.
+
+### Record-sourced constraints are validated on the mapped object
+
+An entity's own metadata — `#[Assert\Length]` on a property, `#[UniqueEntity]`
+on the class — is answered by validating the object
+[`getData()`](belongs-to-record.md) has just written, not by pulling that
+metadata into the per-field constraint build. The tail is
+`HasSchemas::validateSchemaRecord()`: `ValidatorInterface::validate($record)`,
+each violation's property path through the
+[translator](violation-path-translator.md), the messages merged into the same
+per-schema bag `validateSchema()` fills, the schema key recorded sticky, and
+`ValidationException` thrown — the Symfony Form idiom (map, validate the object,
+flush only when valid). Class-level constraints come free that way, which is the
+only route by which `UniqueEntity` can ever work: it needs the managed object,
+not a scalar path value.
+
+The alternative — pulling `getMetadataFor($class)` property constraints into the
+per-field [`buildValidationConstraints()`](../forms/can-be-validated.md#the-subclass-seam-is-a-protected-builder-not-the-public-getter)
+seam before validation — is **rejected**: typed constraints (a
+`#[Assert\Positive]` on an `int` property) misfire against the raw, pre-cast
+string state a form bag holds, and every message would then travel two different
+pipelines depending on where the constraint was declared.
+
+**One class of failure this direction structurally cannot report, and how it is
+covered instead.** Validating the mapped object happens *after* mapping, so it
+only ever sees objects that mapping successfully produced — and a blank value for
+a non-nullable target is exactly the case where mapping does not get that far. A
+blank `data.author.name` against `Author::setName(string)` throws
+`InvalidTypeException` from the accessor (an empty string
+[dehydrates to `null`](component.md) before the write), so `getData()` dies
+before any object exists to validate. No ordering of the tail fixes that: moving
+the object validation earlier would mean validating an object that has not been
+populated yet.
+
+The hole is closed from the other side, by
+[deriving requirement from the record's write-side types](../forms/can-be-validated.md#requirement-is-derived-from-the-records-write-side-types):
+a field bound to a non-nullable target emits `NotBlank` on its own, so the blank
+submit fails *field* validation — asterisk, native `required` attribute, message
+under the input, sticky field-by-field clearing — and the mapper crash becomes
+unreachable rather than merely loud.
+
+That does **not** disturb the rejection above, and the distinction is the whole
+reason it does not: derivation reads a **type**, not a constraint. Nullability
+comes from `ReflectionExtractor` reading the property's mutator, so there is no
+`#[Assert]` metadata being pulled forward, no typed constraint evaluated against
+raw pre-cast state, and no second message pipeline — the field emits the same
+`NotBlank` it would have emitted from an explicit `required()`. Entity-declared
+constraints all travel the one post-mapping route.
+
+Permanent — reverses only if Symfony Validator stops being the engine. Filament
+has no counterpart at all: Laravel rules are declared on the form, and an
+Eloquent model carries no constraint metadata to consult.
+
+### A refused submit leaves the record mutated
+
+The non-obvious cost of validating what the mapping produced: mapping happens
+*before* the object-level validation, so a failing submit leaves the managed
+entity mutated in Doctrine's identity map even though nothing is flushed. Symfony
+Form has exactly the same property, and the escape is the same —
+`EntityManager::refresh()` on the failure path, or simply never flushing and
+discarding the request's entity manager, which is what a live component doing
+`getData()` then `flush()` already does. Both halves are pinned by test: the
+record carries the rejected value after the exception, and a re-read from the
+database still returns the old one.
+
+This is deliberate rather than a defect, and the alternative is worse: validating
+a copy would need a deep clone of an object graph the toolkit does not own, and
+validating before mapping would mean validating the un-updated record. The
+contract a consumer must hold up is therefore stated as a rule — **never flush on
+the failure path** — not as something the tail can enforce.
 
 ### The collection walk cannot skip directly-hidden child schemas
 

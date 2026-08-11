@@ -46,6 +46,16 @@ interface InteractsWithSchemas
     public function validateSchema(Schema $schema, bool $shouldThrow = true): void;
 
     /**
+     * Run the validator over the record a schema has just mapped, folding each
+     * violation into the same error bag under the state path that owns it — the
+     * schema's own path for a violation no declared path claims — recording the
+     * schema key sticky and throwing when any exist. A host holding no validator
+     * (one built outside the container) skips the run rather than refusing to
+     * map at all.
+     */
+    public function validateSchemaRecord(Schema $schema, object $record): void;
+
+    /**
      * All bag messages recorded for an absolute state path; null returns none.
      *
      * @return list<string>

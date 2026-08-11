@@ -164,14 +164,24 @@ take an Eloquent table/model, and `uniqueValidationIgnoresRecordByDefault()` lea
 The record binding half of that now exists — a schema binds an entity and a field
 can reach it (`$record`, `getRecordClass()`, see
 [belongs-to-record.md](../schemas/belongs-to-record.md)), so
-`uniqueValidationIgnoresRecordByDefault()` has an id to ignore. What is still
-missing is the **query** layer: a repository/`QueryBuilder` seam a field-level
-constraint can run a lookup through, plus the entity-level route for Symfony's
-`UniqueEntity`, which needs the managed object rather than a scalar path value
-(decided direction:
-[validate the mapped object](../schemas/can-be-validated.md#record-sourced-constraints-validate-the-mapped-object-direction-decided)).
-**Blocked** on that Doctrine query layer. Until then the escape hatch covers the case: a closure constraint that queries
-the repository itself.
+`uniqueValidationIgnoresRecordByDefault()` has an id to ignore.
+
+The **entity-level** route is no longer missing: `getData()` now
+[validates the record it mapped](../schemas/can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object),
+so a `#[UniqueEntity]` declared on the entity runs against the managed object and
+its message lands on the field the offending property maps — which is exactly
+what that constraint needs and what a scalar path value could never give it. That
+route is the toolkit's answer for uniqueness today, and it is declared on the
+**record**, not on the field.
+
+What is still missing, and what this row stays **blocked** on, is the **query**
+layer that would make these five *field* members work: a repository/`QueryBuilder`
+seam a field-level constraint can run a lookup through, plus the scope closures
+`scopedUnique()` / `scopedExists()` hand it. None of that is supplied by the
+record tail — a field asking "is this string free?" without a mapped object to
+validate is a different question from "is this entity unique?". Until the seam
+lands, the two escapes are the entity-level route above and a closure constraint
+that queries the repository itself.
 
 ### The validation-state mutation hooks wait on schemas
 
@@ -340,7 +350,7 @@ Two behaviours make this safe to have on by default, and both are load-bearing:
 and native `required` attributes now appear wherever a bound target is
 non-nullable, without anyone writing `required()`. That is the intended layering
 fix — [a blank non-nullable leaf becomes a field error instead of a mapper
-crash](../schemas/can-be-validated.md#record-sourced-constraints-validate-the-mapped-object-direction-decided)
+crash](../schemas/can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object)
 — but it does change existing forms, and a field that should stay optional against
 a non-nullable target now has to say `nullable()` out loud.
 

@@ -7,6 +7,8 @@ namespace Sylament\Schemas\Concerns;
 use Closure;
 use LogicException;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Exceptions\ValidationException;
+use Sylament\Schemas\State\ViolationPathTranslator;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
 
 use function Sylament\Support\filled;
@@ -319,6 +321,15 @@ trait BelongsToRecord
     }
 
     /**
+     * The inverse of the mapping walk, handed to the host so a violation raised
+     * against the mapped record can be spoken back in this schema's state paths.
+     */
+    public function getRecordViolationPathTranslator(): ViolationPathTranslator
+    {
+        return new ViolationPathTranslator($this->getRecordPathMap(), $this->getStatePath());
+    }
+
+    /**
      * Whether the dehydrated bag still carries the branch at `$branchPath` — at
      * least one of the leaf paths the schema declares beneath it is present.
      *
@@ -373,10 +384,18 @@ trait BelongsToRecord
      * object-collection refusal never applies to its path — a hook on a
      * component the map does not carry is refused rather than skipped.
      *
-     * @throws LogicException when a declared branch names no property, names
-     *                        one the record declares non-nullable, or composes
-     *                        with a relationship save hook, or when a component
-     *                        the record path map excludes declares one
+     * The written record is then validated in its own right, so the constraint
+     * metadata it declares — including the class-level ones a per-path run can
+     * never reach — is answered against the object the mapping produced rather
+     * than against raw state.
+     *
+     * @throws LogicException     when a declared branch names no property, names
+     *                            one the record declares non-nullable, or composes
+     *                            with a relationship save hook, or when a component
+     *                            the record path map excludes declares one
+     * @throws ValidationException when the mapped record violates a constraint it
+     *                             declares — the record stays mutated, nothing here
+     *                             having been flushed
      */
     public function getData(): object
     {
@@ -455,6 +474,8 @@ trait BelongsToRecord
 
             $accessor->setOnRecord($record, $recordPath, $accessor->getFromArray($state, $recordPath));
         }
+
+        $this->getLiveComponentOrNull()?->validateSchemaRecord($this, $record);
 
         return $record;
     }

@@ -201,7 +201,7 @@ in front of the runner is also what makes a consumer's escape-hatch
 `->constraint(new Regex('/…/'))` gate without the consumer doing anything.
 
 Permanent while validation runs per state path. Whether
-[record-sourced constraints](can-be-validated.md#record-sourced-constraints-validate-the-mapped-object-direction-decided)
+[record-sourced constraints](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object)
 want an equivalent when they land is genuinely open and belongs to that change:
 that pass validates a *mapped* object, so its values have been through the state
 casts — but a `string` property is written the `''` it was given, and an entity's

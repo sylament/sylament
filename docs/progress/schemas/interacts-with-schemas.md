@@ -37,6 +37,7 @@ _Detail_ carries a **detail** link to the write-up in [Details](#details)
 | [`hasCachedSchema(string $name): bool`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-host-contract-declares-schemas-and-makeschema-that-filament-keeps-only-on-the-trait) |
 | [`getOldSchemaState(?string $path): mixed`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Contracts\HasSchemas::getOldSchemaState()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | done | — | [diverges](#getoldschemastate-takes-a-nullable-path) |
 | [`validateSchema(Schema $schema, bool $shouldThrow = true): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-contract-declares-a-schema-scoped-validation-surface-livewire-owns-in-filament) |
+| [`validateSchemaRecord(Schema $schema, object $record): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) |
 | [`getErrorsForSchemaStatePath(?string $path): list<string>`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](#the-contract-declares-a-schema-scoped-validation-surface-livewire-owns-in-filament) |
 | [`clearSchemaValidation(?string $schemaKey = null): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](#clearschemavalidation-is-scoped-where-filament-resets-the-whole-livewire-error-bag) |
 | `getSchemaComponent($key, $withHidden, $skip…)` — absolute-key component addressing | [`Contracts\HasSchemas::getSchemaComponent()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | todo | — | [detail](#getschemacomponent-absolute-key-addressing-is-not-declared) |
@@ -133,6 +134,8 @@ Filament's contract declares no validation method beyond
 component-wide `validate()`/error bag, reached as `$livewire->validate(…)` and
 `$livewire->getErrorBag()`. Sylament has no Livewire base, so the host contract
 itself carries the schema-scoped surface: `validateSchema()` (execution),
+`validateSchemaRecord()` (the [record tail](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object)
+`Schema::getData()` calls on the host it belongs to),
 `getErrorsForSchemaStatePath()` (the read side forms' `Field::getErrorMessages()`
 uses), and `clearSchemaValidation()` (reset). The promotion rationale is the
 same as for `schemas()`/`makeSchema()` above: `Schema::validate()` and the

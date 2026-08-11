@@ -219,6 +219,44 @@ trait HasSchemas
         throw new ValidationException($errors);
     }
 
+    public function validateSchemaRecord(Schema $schema, object $record): void
+    {
+        if (!$this->schemaStateValidator instanceof ValidatorInterface) {
+            return;
+        }
+
+        $schemaKey = $schema->getKey()
+            ?? throw new LogicException('Cannot validate the record of a schema without a key — register it through getSchema()/cacheSchema() so it is keyed.');
+
+        $violations = $this->schemaStateValidator->validate($record);
+
+        if (count($violations) === 0) {
+            return;
+        }
+
+        $translator = $schema->getRecordViolationPathTranslator();
+        $rootPath = (string) $schema->getStatePath();
+
+        $errors = [];
+
+        foreach ($violations as $violation) {
+            $path = $translator->translate($violation->getPropertyPath()) ?? $rootPath;
+
+            $errors[$path][] = (string) $violation->getMessage();
+        }
+
+        $this->schemaValidationErrors[$schemaKey] = [
+            ...$this->schemaValidationErrors[$schemaKey] ?? [],
+            ...$errors,
+        ];
+
+        if (!in_array($schemaKey, $this->validatedSchemas, true)) {
+            $this->validatedSchemas[] = $schemaKey;
+        }
+
+        throw new ValidationException($errors);
+    }
+
     /**
      * @return list<string>
      */

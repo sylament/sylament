@@ -1,0 +1,107 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sylament\Schemas\Tests\Unit\State;
+
+use Sylament\Schemas\State\ViolationPathTranslator;
+use Sylament\Schemas\Tests\Fixtures\Components\KeyedItemsOwner;
+use Sylament\Schemas\Tests\Fixtures\Components\StateField;
+use Sylament\Schemas\Tests\Fixtures\Components\SubtreeOwner;
+
+it('translates a declared leaf path onto the schema state path', function (): void {
+    $translator = new ViolationPathTranslator(['title' => StateField::make('title')], 'data');
+
+    expect($translator->translate('title'))->toBe('data.title');
+});
+
+it('translates a declared nested leaf path whole', function (): void {
+    $translator = new ViolationPathTranslator(['author.name' => StateField::make('name')], 'data');
+
+    expect($translator->translate('author.name'))->toBe('data.author.name');
+});
+
+it('takes the deepest declared path when a shallower one also maps', function (): void {
+    $translator = new ViolationPathTranslator([
+        'author' => StateField::make('author'),
+        'author.name' => StateField::make('name'),
+    ], 'data');
+
+    expect($translator->translate('author.name'))->toBe('data.author.name');
+});
+
+it('folds a violation beneath a declared leaf onto that leaf', function (): void {
+    $translator = new ViolationPathTranslator(['author' => SubtreeOwner::make('author')], 'data');
+
+    expect($translator->translate('author.name'))->toBe('data.author');
+});
+
+it('needs no prefix when the schema carries no state path', function (): void {
+    $translator = new ViolationPathTranslator(['title' => StateField::make('title')], null);
+
+    expect($translator->translate('title'))->toBe('title');
+});
+
+it('returns null for a path no declared path owns', function (): void {
+    $translator = new ViolationPathTranslator(['title' => StateField::make('title')], 'data');
+
+    expect($translator->translate('publishedAt'))->toBeNull();
+});
+
+it('returns null for the empty path a class-level constraint carries', function (): void {
+    $translator = new ViolationPathTranslator(['title' => StateField::make('title')], 'data');
+
+    expect($translator->translate(''))->toBeNull();
+});
+
+it('returns null for a path leading with an index', function (): void {
+    $translator = new ViolationPathTranslator(['title' => StateField::make('title')], 'data');
+
+    expect($translator->translate('[0].title'))->toBeNull();
+});
+
+it('resolves an index against the owning components item keys', function (): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')->itemKeys(['record-7', '01H-added', 'record-9']),
+    ], 'data');
+
+    expect($translator->translate('sections[2].heading'))->toBe('data.sections.record-9.heading');
+});
+
+it('translates a violation on the collection itself onto the component path', function (): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')->itemKeys(['record-7']),
+    ], 'data');
+
+    expect($translator->translate('sections'))->toBe('data.sections');
+});
+
+it('stops at the component when the index names no item', function (): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')->itemKeys(['record-7']),
+    ], 'data');
+
+    expect($translator->translate('sections[4].heading'))->toBe('data.sections');
+});
+
+it('stops at the component when the index is not a position', function (): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')->itemKeys(['record-7']),
+    ], 'data');
+
+    expect($translator->translate('sections[alpha].heading'))->toBe('data.sections');
+});
+
+it('stops at the item when a second index nests inside it', function (): void {
+    $translator = new ViolationPathTranslator([
+        'sections' => KeyedItemsOwner::make('sections')->itemKeys(['record-7']),
+    ], 'data');
+
+    expect($translator->translate('sections[0].tags[1].name'))->toBe('data.sections.record-7.tags');
+});
+
+it('ignores an index against a component that keys no items', function (): void {
+    $translator = new ViolationPathTranslator(['meta' => SubtreeOwner::make('meta')], 'data');
+
+    expect($translator->translate('meta[0].locale'))->toBe('data.meta');
+});

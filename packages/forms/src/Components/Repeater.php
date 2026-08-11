@@ -11,6 +11,7 @@ use Sylament\Forms\Components\Concerns\BelongsToRelationship;
 use Sylament\Forms\Components\Concerns\CanBeCloned;
 use Sylament\Forms\Components\Concerns\CanGenerateUuids;
 use Sylament\Forms\Components\Concerns\CanLimitItemsLength;
+use Sylament\Schemas\Components\Contracts\HasKeyedItems;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\AssociationTarget;
 use Sylament\Schemas\State\Casts\ObjectStateCast;
@@ -27,7 +28,7 @@ use function Sylament\Forms\array_move_after;
 use function Sylament\Forms\array_move_before;
 use function Symfony\Component\String\u;
 
-class Repeater extends Field
+class Repeater extends Field implements HasKeyedItems
 {
     use BelongsToRelationship;
     use CanBeCloned;
@@ -287,6 +288,18 @@ class Repeater extends Field
     public function getItems(): array
     {
         return $this->getCachedDefaultChildSchemas();
+    }
+
+    /**
+     * The item keys as the state holds them now, which is the order the save
+     * hands the items to the record — so the nth key names the item the record's
+     * nth element was mapped from.
+     */
+    public function getItemKeys(): array
+    {
+        $rawState = $this->getRawState();
+
+        return array_map(strval(...), array_keys(is_array($rawState) ? $rawState : []));
     }
 
     public function defaultItems(int|Closure $count): static

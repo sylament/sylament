@@ -91,6 +91,8 @@ export default class extends Controller<HTMLElement> {
   }
 
   async #position(): Promise<void> {
+    this.panelTarget.style.position = this.teleportValue ? "fixed" : "";
+
     const { x, y } = await computePosition(this.triggerTarget, this.panelTarget, {
       placement: this.placementValue as Placement,
       strategy: this.teleportValue ? "fixed" : "absolute",
@@ -101,7 +103,6 @@ export default class extends Controller<HTMLElement> {
       ],
     });
 
-    this.panelTarget.style.position = this.teleportValue ? "fixed" : "";
     this.panelTarget.style.left = `${x}px`;
     this.panelTarget.style.top = `${y}px`;
   }

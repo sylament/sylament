@@ -1386,6 +1386,7 @@ var dropdown_controller_default = class extends Controller {
     this.#syncExpanded(false);
   }
   async #position() {
+    this.panelTarget.style.position = this.teleportValue ? "fixed" : "";
     const { x, y } = await computePosition2(this.triggerTarget, this.panelTarget, {
       placement: this.placementValue,
       strategy: this.teleportValue ? "fixed" : "absolute",
@@ -1395,7 +1396,6 @@ var dropdown_controller_default = class extends Controller {
         shift2({ padding: 8 })
       ]
     });
-    this.panelTarget.style.position = this.teleportValue ? "fixed" : "";
     this.panelTarget.style.left = `${x}px`;
     this.panelTarget.style.top = `${y}px`;
   }

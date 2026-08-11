@@ -214,6 +214,26 @@ notification toast opts in today, through
 the scrolling table container is the [next candidate](../tables/table.md) and is not
 stamped yet.
 
+**The inline write has to precede the compute, and the `strategy` option does not
+substitute for it.** Floating UI decides both of the things that matter here by reading
+the panel's **computed** `position`, never the `strategy` it was handed:
+`getTrueOffsetParent()` short-circuits to `null` only for
+`getComputedStyle(element).position === 'fixed'`, and `getClippingElementAncestors()`
+opens with the same test to decide whether to start its walk at the panel's parent
+(`@floating-ui/dom@1.8.0`, `dist/floating-ui.dom.mjs:319-324` and `:434-437`). So a pass
+computed while the panel is still stylesheet-`absolute` resolves `.sy-dropdown` as the
+offsetParent and *keeps the toast in the clipping set* — offsetParent-relative
+coordinates written out as fixed ones, with `flip`/`shift` having clamped to the card
+it was supposed to escape. `#position()` therefore assigns
+`panelTarget.style.position` **before** `await computePosition(...)`, not beside the
+`left`/`top` writes after it. This is the one ordering in the controller that a tidy-up
+would silently undo: the three style writes look like they belong in one block, and the
+bug they cause is invisible whenever a second positioning pass happens to follow in the
+same frame — which `autoUpdate`'s observers usually do arrange, which is exactly why it
+cannot be relied on. Filament reaches the same invariant structurally, setting
+`n.style.position = "fixed"` at `x-float`'s directive setup, before any compute can run
+(`support/dist/index.js`, `c.float.strategy=="fixed"&&(n.style.position="fixed")`).
+
 The property pair is vendor-exact and the `??` between them is the whole of it:
 `$hasDropdownTeleport` and `$hasDefaultDropdownTeleport` are both **nullable** and
 default to `null`, so `hasDropdownTeleport()` falls through to the default only when

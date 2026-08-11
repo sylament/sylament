@@ -8,6 +8,7 @@ use Closure;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Stringable;
+use Sylament\Forms\Components\Select;
 use Sylament\Schemas\State\AssociationTarget;
 
 use function Sylament\Support\blank;
@@ -23,6 +24,11 @@ trait HasRelationship
     protected ?Closure $modifyRelationshipQueryUsing = null;
 
     /**
+     * @var array<string|int, string>|null
+     */
+    protected ?array $cachedRelationshipOptions = null;
+
+    /**
      * Back this field with a Doctrine association: the option map becomes the
      * target entity's table, `fill()` reads the association's key off the record,
      * and `getData()` writes the selection back onto it. `$name` names the
@@ -36,13 +42,14 @@ trait HasRelationship
         $this->relationship = $name ?? $this->getName();
         $this->relationshipTitleAttribute = $titleAttribute;
         $this->modifyRelationshipQueryUsing = $modifyQueryUsing;
+        $this->cachedRelationshipOptions = null;
 
-        $this->options(fn (): array => $this->getOptionsFromRelationship());
+        $this->options(static fn (Select $component): array => $component->getOptionsFromRelationship());
 
-        $this->loadStateFromRelationshipsUsing(fn (object $record): mixed => $this->getStateFromRelationship($record));
+        $this->loadStateFromRelationshipsUsing(static fn (Select $component, object $record): mixed => $component->getStateFromRelationship($record));
 
-        $this->saveRelationshipsUsing(function (object $record, mixed $state): void {
-            $this->saveStateToRelationship($record, $state);
+        $this->saveRelationshipsUsing(static function (Select $component, object $record, mixed $state): void {
+            $component->saveStateToRelationship($record, $state);
         });
 
         return $this;
@@ -68,12 +75,18 @@ trait HasRelationship
      * client speaks and labelled by the declared title attribute. Always a full
      * map: an option list this field cannot build is an exception rather than an
      * empty array, because an empty enumeration would silently reject every
-     * submitted value.
+     * submitted value. The map is memoized for the field's lifetime unless a
+     * query scope is declared, whose closure may read state that changes within
+     * the request.
      *
      * @return array<string|int, string>
      */
     public function getOptionsFromRelationship(): array
     {
+        if ($this->modifyRelationshipQueryUsing === null && $this->cachedRelationshipOptions !== null) {
+            return $this->cachedRelationshipOptions;
+        }
+
         $target = $this->getRelationshipTarget();
         $titleAttribute = $this->getRelationshipTitleAttributeOrFail();
         $reader = $this->getAssociationReader();
@@ -94,6 +107,10 @@ trait HasRelationship
             $title = $accessor->getFromRecord($related, $titleAttribute);
 
             $options[$reader->getRecordKey($related)] = (is_scalar($title) || $title instanceof Stringable) ? (string) $title : '';
+        }
+
+        if ($this->modifyRelationshipQueryUsing === null) {
+            $this->cachedRelationshipOptions = $options;
         }
 
         return $options;

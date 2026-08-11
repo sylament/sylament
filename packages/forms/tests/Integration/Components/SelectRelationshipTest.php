@@ -177,6 +177,49 @@ it('scopes options through modifyQueryUsing', function (): void {
     expect($select->getOptions())->toBe([$ada->getId() => 'Ada']);
 });
 
+it('memoizes the option map, and re-queries whenever a query scope is declared', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $ada, $bob] = seedAuthoredPost($entityManager);
+
+    $select = Select::make('author')->relationship(titleAttribute: 'name');
+    wireRecordSelect($select, $post);
+
+    $scoped = Select::make('author')->relationship(
+        titleAttribute: 'name',
+        modifyQueryUsing: static fn (QueryBuilder $query): QueryBuilder => $query,
+    );
+    wireRecordSelect($scoped, $post);
+
+    $seeded = [$ada->getId() => 'Ada', $bob->getId() => 'Bob'];
+
+    expect($select->getOptions())->toBe($seeded)
+        ->and($scoped->getOptions())->toBe($seeded);
+
+    $carol = new Author();
+    $carol->setName('Carol');
+
+    $entityManager->persist($carol);
+    $entityManager->flush();
+
+    expect($select->getOptions())->toBe($seeded)
+        ->and($scoped->getOptions())->toBe($seeded + [$carol->getId() => 'Carol']);
+});
+
+it("evaluates a cloned select's relationship closures against the clone", function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $ada, $bob] = seedAuthoredPost($entityManager);
+
+    $select = Select::make('author')->relationship(titleAttribute: 'name');
+    wireRecordSelect($select, $post);
+
+    $clone = $select->getClone();
+
+    $select->relationship('tags', 'name');
+
+    expect($clone->getOptions())->toBe([$ada->getId() => 'Ada', $bob->getId() => 'Bob'])
+        ->and($clone->loadStateFromRelationships($post))->toBe((string) $ada->getId());
+});
+
 it('throws loudly when the relationship declares no title attribute', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post] = seedAuthoredPost($entityManager);

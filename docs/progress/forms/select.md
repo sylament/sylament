@@ -73,7 +73,10 @@ options in both the flat and the grouped shape — by
 [`SelectMultipleTest`](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php);
 the relationship arm — the to-one fill/option-map/`getOptionLabel` trio, the
 selected-id write, the empty-submission null, the `Choice` rejection of an id
-outside the map, `modifyQueryUsing` scoping, the missing-`titleAttribute` throw, a
+outside the map, `modifyQueryUsing` scoping, the memoized map (a row inserted
+between two `getOptions()` calls surfaces only on the scoped select), a clone
+reading its own configuration rather than the original's, the
+missing-`titleAttribute` throw, a
 relationship named apart from the field, and the to-many arm's fill, collection
 sync (the `PersistentCollection` instance surviving, the dropped `Tag` row
 surviving, `multiple()` declared on either side of `relationship()`), empty
@@ -145,10 +148,30 @@ to-one/to-many branch is read off the mapping on each call rather than captured,
 and `isMultiple()` is likewise evaluated rather than snapshotted, so
 `multiple()` may be declared on either side of `relationship()`.
 
+All three take the component as an injected parameter
+(`static function (Select $component)`, Filament-exact) rather than closing over
+`$this`. [`getClone()`](../schemas/component.md) is a shallow `clone`, so a
+closure bound to `$this` would keep pointing at the *original* component after
+the clone — every per-item schema a `Repeater` builds is a clone of the child
+schema, so a relationship select inside one would read the template's
+configuration, not the item's. The values it reads happen to be
+instance-invariant today, which is precisely why the binding has to be right
+before something instance-varying (`ignoreRecord:`, a per-item scope) makes it
+observable.
+
 `$name` defaults to the field's own name at declaration time
 (`$name ?? $this->getName()`, Filament-exact), which is what keeps
 `hasRelationship()` false for a select that never declared one — the fallback
 lives in the assignment, not in the getter.
+
+The option map is memoized on the component, and reset by `relationship()`
+itself — again Filament-exact, and load-bearing here because the v1 map is the
+*whole* target table: `getOptions()` runs at least twice per request (once
+through `getEnabledOptionValues()` during validation, once from the template)
+plus once per `getOptionLabel()`, and without the memo each is another unbounded
+`SELECT`. A field declaring `modifyQueryUsing` neither reads nor writes the
+memo, because a scoping closure may read state that changes within the request
+and a cached first answer would freeze it.
 
 The concern imports `Doctrine\ORM\QueryBuilder` directly, so `forms` declares
 `doctrine/orm` in its own `require` rather than inheriting it through `schemas` —

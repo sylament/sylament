@@ -14,6 +14,7 @@ use Sylament\Tables\Filters\BaseFilter;
 use Sylament\Tables\Filters\Filter;
 use Sylament\Tables\Filters\Indicator;
 use Sylament\Tables\Filters\SelectFilter;
+use Sylament\Tables\Filters\TernaryFilter;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\SchemaTableHost;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
@@ -282,6 +283,64 @@ it('overwrites a mount-passed bag wherever the field declares a default', functi
 
     expect($host->tableDeferredFilters)->toBe(['featured' => ['isActive' => false], 'status' => ['value' => 'draft']])
         ->and($host->tableFilters)->toBe($host->tableDeferredFilters);
+});
+
+it('clears a ternary chip to null rather than to its false arm', function (): void {
+    $host = filtersHost(fn (Table $table): Table => $table->filters([
+        TernaryFilter::make('isFeatured'),
+    ]));
+
+    $host->getTableFiltersForm();
+    $host->tableDeferredFilters = ['isFeatured' => ['value' => 1]];
+    $host->tableFilters = $host->tableDeferredFilters;
+
+    $filter = $host->getTable()->getFilter('isFeatured');
+
+    expect($filter?->getIndicators())->toHaveCount(1)
+        ->and($filter?->getResetState())->toBe(['value' => null]);
+
+    $host->removeTableFilter('isFeatured');
+
+    $query = $host->getTable()->getQuery();
+    $filter?->apply($query, $host->getTableFilterState('isFeatured') ?? []);
+
+    expect($host->tableDeferredFilters)->toBe(['isFeatured' => ['value' => null]])
+        ->and($host->tableFilters)->toBe(['isFeatured' => ['value' => null]])
+        ->and($filter?->getIndicators())->toBe([])
+        ->and($query->getDQL())->not->toContain('WHERE');
+});
+
+it('falls back to false for a nullable boolean field whose filter declares no reset state', function (): void {
+    $host = filtersHost(fn (Table $table): Table => $table->filters([
+        Filter::make('custom')->schema([Select::make('flag')->boolean()]),
+    ]));
+
+    $host->getTableFiltersForm();
+    $host->tableDeferredFilters = ['custom' => ['flag' => 1]];
+
+    $host->removeTableFilter('custom');
+
+    expect($host->getTable()->getFilter('custom')?->getResetState())->toBe([])
+        ->and($host->tableDeferredFilters)->toBe(['custom' => ['flag' => 0]]);
+});
+
+it('writes a non-deferred removal straight into the applied bag', function (): void {
+    $host = filtersHost(fn (Table $table): Table => $table
+        ->deferFilters(false)
+        ->filters([Filter::make('featured')]));
+
+    $host->getTableFiltersForm();
+    $host->tableFilters = ['featured' => ['isActive' => true]];
+    $host->tablePage = 3;
+
+    expect($host->getTableRecords()->getRecords())->toBe([]);
+
+    $host->removeTableFilter('featured');
+
+    expect($host->tableFilters)->toBe(['featured' => ['isActive' => false]])
+        ->and($host->tableDeferredFilters)->toBe([])
+        ->and($host->tablePage)->toBe(1)
+        ->and($host->getTableRecords()->getRecords())->toHaveCount(5);
 });
 
 it('resets the page from a field hook in live mode', function (): void {

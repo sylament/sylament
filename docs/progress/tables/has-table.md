@@ -715,13 +715,31 @@ receives the write.
 Per field the new value is `getResetState()[$fieldName]` when the filter names
 one, and otherwise derived from the current state's type: an array resets to
 `[]`, a bool to `false`, anything else to `null`. Filament's bool arm consults
-`hasNullableBooleanState()` first, which only its `Radio` and `ToggleButtons`
-answer true — neither is ported, and our `Checkbox`/`Toggle` both cast through
-a non-nullable `BooleanStateCast` — so that arm is dropped rather than ported
-to a method that would always answer false. A named `$field` narrows the reset
-to that one field only when the group actually carries it — an unknown name
-resets the whole group, which is Filament's `array_key_exists` guard and keeps
-a stale chip from becoming a no-op.
+`hasNullableBooleanState()` first and writes `null` instead of `false` when it
+answers true — which `Radio`, `ToggleButtons` **and `Select`** all do. That
+predicate is not ported, and the resulting one-arm difference is unreachable
+through any filter that ships: the fallback runs only for a field the filter's
+`getResetState()` does not name, and `SelectFilter` seeds `['value' => null]`
+in `setUp()` — as Filament's does, at `SelectFilter.php:148` — so every
+`SelectFilter` and every `TernaryFilter` takes the explicit-null left side and
+clears rather than flipping to its false arm. Our `Checkbox`/`Toggle` are the
+other side of it: both cast through a non-nullable `BooleanStateCast`, where
+`false` genuinely is the resting value.
+
+What is left is a hand-built nullable boolean inside a custom filter schema —
+`Filter::make('x')->schema([Select::make('f')->boolean()])` — which declares no
+reset state, so Filament clears it to `null` where we write `false`. Its cast
+stores that as `0` (`false` is not `blank()`, so the nullable arm does not
+catch it), and a ternary-shaped query arm reads `0` as an active *false* filter
+rather than as cleared. Pinned as characterization rather than fixed, since the
+line that closes it is a `resetState(['f' => null])` on that filter. Port the
+predicate onto `Field`/`Select` the moment a shipped filter can reach this
+fallback with a nullable boolean.
+
+A named `$field` narrows the reset to that one field only when the group
+actually carries it — an unknown name resets the whole group, which is
+Filament's `array_key_exists` guard and keeps a stale chip from becoming a
+no-op.
 
 `removeTableFilters()` removes a filter only when **every** one of its
 indicators is removable; a filter with no indicators is vacuously removable and

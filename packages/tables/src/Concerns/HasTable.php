@@ -233,6 +233,10 @@ trait HasTable
             throw new LogicException(sprintf('Table [%s] must have [records()] or [query()].', static::class));
         }
 
+        foreach ($table->getColumns() as $column) {
+            $column->applyEagerLoading($query);
+        }
+
         if (!$table->isPaginated()) {
             /** @var list<object|array<string, mixed>> $records */
             $records = $query->getQuery()->getResult();

@@ -12,8 +12,11 @@ use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist as DoctrineArtist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Book;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\CompositePair;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Genre;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Label;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song as DoctrineSong;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 use Sylament\Tables\Tests\Fixtures\Records\Artist;
 use Sylament\Tables\Tests\Fixtures\Records\Song;
 
@@ -816,4 +819,167 @@ it('names the Paginator arm when the closure returns garbage', function (): void
 
     expect(fn (): array|Paginator => $host->getTableRecords())
         ->toThrow(LogicException::class, 'Paginator');
+});
+
+/*
+ * Eager loading — the fetch joins the page read adds for the relation columns
+ * it will display, counted against the statements the connection actually runs.
+ */
+
+/**
+ * Two songs on labelled artists and one on no artist at all, the first two
+ * carrying a genre — a to-one chain and a collection over the same page.
+ */
+function songsWithRelations(?RecordingMiddleware $recorder = null): EntityManager
+{
+    $entityManager = EntityManagerFactory::create($recorder);
+
+    $parlophone = new Label(1, 'Parlophone');
+    $xl = new Label(2, 'XL');
+    $radiohead = new DoctrineArtist(1, 'Radiohead', $parlophone);
+    $adele = new DoctrineArtist(2, 'Adele', $xl);
+    $rock = new Genre(1, 'Rock');
+    $pop = new Genre(2, 'Pop');
+    $airbag = new DoctrineSong(1, 'Airbag', 10, $radiohead);
+    $hello = new DoctrineSong(2, 'Hello', 20, $adele);
+    $orphan = new DoctrineSong(3, 'Orphan', 30);
+
+    $airbag->getGenres()->add($rock);
+    $hello->getGenres()->add($pop);
+
+    EntityManagerFactory::seed($entityManager, $parlophone, $xl, $radiohead, $adele, $rock, $pop, $airbag, $hello, $orphan);
+
+    return $entityManager;
+}
+
+/**
+ * Every cell of every row, read the way the row template reads them.
+ *
+ * @return list<mixed>
+ */
+function everyCellState(TableHost $host): array
+{
+    $records = $host->getTableRecords();
+    $states = [];
+
+    foreach ($records instanceof Paginator ? $records->getRecords() : $records as $recordKey => $record) {
+        foreach ($host->getTable()->getColumns() as $column) {
+            $states[] = $column->record($record)->recordKey($recordKey)->getState();
+        }
+    }
+
+    return $states;
+}
+
+it('fetch-joins a to-one relation column so cell reads add no queries', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = songsWithRelations($recorder);
+    $configure = fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->columns([TextColumn::make('title'), TextColumn::make('artist.label.name')]);
+    $unpaginated = new TableHost(fn (Table $table): Table => $configure($table)->paginated(false));
+
+    $recorder->reset();
+
+    expect(everyCellState($unpaginated))->toBe(['Airbag', 'Parlophone', 'Hello', 'XL', 'Orphan', null])
+        ->and($recorder->statements())->toHaveCount(1)
+        ->and(mb_substr_count($recorder->statements()[0], 'LEFT JOIN'))->toBe(2);
+
+    $showingAll = new TableHost(fn (Table $table): Table => $configure($table)
+        ->paginated([10, 'all'])
+        ->defaultPaginationPageOption('all'));
+
+    $recorder->reset();
+
+    expect(everyCellState($showingAll))->toBe(['Airbag', 'Parlophone', 'Hello', 'XL', 'Orphan', null])
+        ->and($recorder->statements())->toHaveCount(1)
+        ->and(mb_substr_count($recorder->statements()[0], 'LEFT JOIN'))->toBe(2);
+});
+
+it('pages a fetch-joined to-one column with a plain LIMIT beside the count', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = songsWithRelations($recorder);
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->columns([TextColumn::make('artist.name')])
+        ->paginated([2]));
+
+    $recorder->reset();
+
+    $states = everyCellState($host);
+    $statements = $recorder->statements();
+
+    expect($states)->toBe(['Radiohead', 'Adele'])
+        ->and($statements)->toHaveCount(2)
+        ->and($statements[0])->toContain('LEFT JOIN')
+        ->and($statements[0])->toContain('LIMIT')
+        ->and($statements[1])->toContain('COUNT(');
+});
+
+it('reuses the sort join when the sorted relation column is also displayed', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = songsWithRelations($recorder);
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->columns([TextColumn::make('artist.name')->sortable()])
+        ->paginated(false));
+
+    $host->sortTable('artist.name');
+
+    $recorder->reset();
+
+    expect(everyCellState($host))->toBe([null, 'Adele', 'Radiohead'])
+        ->and($recorder->statements())->toHaveCount(1)
+        ->and(mb_substr_count($recorder->statements()[0], 'LEFT JOIN'))->toBe(1);
+});
+
+it('leaves a to-many column lazy, initialising its collection per row', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = songsWithRelations($recorder);
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->columns([TextColumn::make('genres.name')])
+        ->paginated(false));
+
+    $recorder->reset();
+
+    $states = everyCellState($host);
+
+    expect($states)->toBe([['Rock'], ['Pop'], null])
+        ->and($recorder->statements()[0])->not->toContain('LEFT JOIN')
+        ->and($recorder->statements())->toHaveCount(4);
+});
+
+it('adds no eager join to the standalone count or to record resolution', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = songsWithRelations($recorder);
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->columns([TextColumn::make('artist.name')]));
+
+    $recorder->reset();
+
+    $count = $host->getAllTableRecordsCount();
+    $countStatements = $recorder->statements();
+
+    $recorder->reset();
+
+    $record = $host->getTableRecord('1');
+
+    expect($count)->toBe(3)
+        ->and($countStatements)->toHaveCount(1)
+        ->and($countStatements[0])->not->toContain('LEFT JOIN')
+        ->and($record)->toBeInstanceOf(DoctrineSong::class)
+        ->and($recorder->statements())->toHaveCount(1)
+        ->and($recorder->statements()[0])->not->toContain('LEFT JOIN');
+});
+
+it('refuses a column that names an association rather than a field', function (): void {
+    $entityManager = songsWithRelations();
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+        ->columns([TextColumn::make('artist.label')]));
+
+    expect(fn (): array|Paginator => $host->getTableRecords())
+        ->toThrow(LogicException::class, 'the path ends in an association rather than a field');
 });

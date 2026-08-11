@@ -26,6 +26,11 @@ costs the bundle no code, since TwigBundle maps `packages/tables/templates` by
 convention the moment the directory exists. Asset registration, the three
 `make:` commands and their stubs, translations, and the six Livewire testing
 mixins are unported.
+The package manifest gained `sylament/forms` with the filter layer: a filter
+builds its control out of real form fields (`Checkbox`, `Select`), so `src/`
+imports `Sylament\Forms\Components\Field` directly and the split-repo dependency
+rule makes that a `require` rather than something inherited through a sibling —
+[below](#the-manifest-declares-sylamentforms).
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -288,6 +293,26 @@ not the idea of test helpers: Filament's
 [supporting surface](README.md#supporting-surface) — one per `Tests*.php` file,
 `TestsActions` through `TestsSummaries` — because the helpers may still be worth
 porting in a Pest shape.
+
+### The manifest declares `sylament/forms`
+
+Filament's `filament/tables` requires `filament/forms` for exactly one reason and
+so does ours: a filter's control is a form field.
+[`Filters\Concerns\HasSchema`](../../../packages/tables/src/Filters/Concerns/HasSchema.php)
+types `getFormField(): ?Sylament\Forms\Components\Field` and
+[`Filter`](base-filter.md) builds a `Checkbox`, so the symbol is imported
+unconditionally by `src/` — the test the
+[split-repo dependency rule](../../../CLAUDE.md) sets for a `require`, not a
+`suggest`. No cycle: `sylament/forms` requires only `actions`, `schemas`,
+`support` and its own Symfony deps, and nothing in forms references tables.
+
+The test-kernel half rides along: `tests/Fixtures/Kernel.php` registers
+`SylamentFormsBundle`, without which a filter form cannot be built in the
+Integration suite at all — the same trap schemas' kernel already documents. Two
+`SylamentTablesBundleTest` cases pin it in the shape that fails without the
+registration: the booted kernel's Twig loader lists a `SylamentForms` namespace
+under which the checkbox partial resolves, and a real `Checkbox` renders inside a
+`Schema` bound to a `data`-bag host.
 
 _See also: the global [rename table](../renames.md) — the
 `TablesServiceProvider` → `SylamentTablesBundle` swap and the Spatie

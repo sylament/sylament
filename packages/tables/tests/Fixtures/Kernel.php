@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Fixtures;
 
 use Sylament\Actions\SylamentActionsBundle;
+use Sylament\Forms\SylamentFormsBundle;
 use Sylament\Schemas\SylamentSchemasBundle;
 use Sylament\Support\SylamentSupportBundle;
 use Sylament\Tables\SylamentTablesBundle;
@@ -34,6 +35,7 @@ class Kernel extends BaseKernel
             new LiveComponentBundle(),
 
             new SylamentActionsBundle(),
+            new SylamentFormsBundle(),
             new SylamentSchemasBundle(),
             new SylamentSupportBundle(),
             new SylamentTablesBundle(),

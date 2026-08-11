@@ -61,9 +61,14 @@ Covered by
 which drives a `Section` over `Post::$profile` against the real SQLite rig: fill
 from an existing profile, fill to nulls without one, an edit that holds the
 profile's identity across a flush, a create-when-missing that the cascade
-persists, a `condition: false` save that is gone after the flush, and the four
+persists, a `condition: false` save that is gone after the flush, a nested
+container whose *leaves* are written rather than its own path, and the four
 refusals (duplicate siblings, a property with no association, a to-many
-association, a `relationship()` naming nothing).
+association, a `relationship()` naming nothing). One case runs over a second
+association, `Post::$byline`, mapped deliberately **without** `orphanRemoval`:
+switching that relationship off still deletes the row, which is the property the
+[explicit removal](#a-switched-off-relationship-nulls-the-property-and-removes-the-record-explicitly)
+exists for and the one an `orphanRemoval` association could never distinguish.
 
 ## Details
 
@@ -174,6 +179,16 @@ leaf paths** of the component's child schemas instead — the same discipline th
 field declares is never read and never written. Unreadable and object-valued
 leaves are skipped on the way in, and a leaf the dehydrated state does not carry
 is skipped on the way out.
+
+*Leaf* is meant in the record walk's sense, so the collection filters exactly as
+[`getRecordPathMap()`](belongs-to-record.md#mapping-walks-the-record-graph-by-declared-leaf-paths)
+does: a nested container carrying path-bearing components contributes its leaves,
+never its own path, unless it
+[owns its subtree](belongs-to-record.md#a-component-can-own-its-whole-record-subtree).
+Without that filter a plain `Section` at `post` around a field at `post.title`
+would yield both, and the save's first write would hand the whole subtree array
+to the object property — the write
+[the mapper refuses](property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused).
 
 ### A switched-off relationship nulls the property and removes the record explicitly
 

@@ -87,7 +87,7 @@ trait EntanglesStateWithSingularRelationship
      */
     public function getStateFromRelationship(object $record): array
     {
-        $this->getSingularRelationshipTarget();
+        $this->requireSingularRelationshipTarget();
 
         $accessor = $this->getPropertyAccessor();
         $related = $accessor->getFromRecord($record, $this->getRelationshipNameOrFail());
@@ -129,7 +129,7 @@ trait EntanglesStateWithSingularRelationship
      */
     public function saveStateToRelationship(object $record, mixed $state): void
     {
-        $target = $this->getSingularRelationshipTarget();
+        $target = $this->requireSingularRelationshipTarget();
         $name = $this->getRelationshipNameOrFail();
         $accessor = $this->getPropertyAccessor();
 
@@ -178,8 +178,13 @@ trait EntanglesStateWithSingularRelationship
     }
 
     /**
-     * The dotted state paths this component's subtree declares, relative to the
-     * related record — what a fill reads off it and a save writes back onto it.
+     * The declared **leaf** paths this component's subtree carries, relative to
+     * the related record — what a fill reads off it and a save writes back onto
+     * it. A container nesting path-bearing components contributes its leaves
+     * rather than itself, exactly as
+     * {@see \Sylament\Schemas\Concerns\BelongsToRecord::getRecordPathMap()} filters
+     * the root walk: its own path names a subtree, and writing that subtree as an
+     * array is the write the mapper refuses.
      *
      * @return list<string>
      */
@@ -190,6 +195,10 @@ trait EntanglesStateWithSingularRelationship
 
         foreach ($this->getChildSchemas() as $childSchema) {
             foreach ($childSchema->getFlatComponents(withActions: false) as $component) {
+                if (! $component->ownsRecordSubtree() && $component->hasPathBearingDescendants()) {
+                    continue;
+                }
+
                 $statePath = $component->getStatePath();
 
                 if (($statePath !== null) && str_starts_with($statePath, $prefix)) {
@@ -210,7 +219,7 @@ trait EntanglesStateWithSingularRelationship
      * @throws LogicException when the relationship cannot be resolved to a to-one
      *                        association
      */
-    private function getSingularRelationshipTarget(): AssociationTarget
+    private function requireSingularRelationshipTarget(): AssociationTarget
     {
         $target = $this->getRelationshipTarget();
 

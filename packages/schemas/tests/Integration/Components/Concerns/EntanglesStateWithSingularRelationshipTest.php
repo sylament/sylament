@@ -11,6 +11,7 @@ use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Byline;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Profile;
 
@@ -182,6 +183,66 @@ it('deletes the related record when the relationship condition is false', functi
     $entityManager->flush();
 
     expect($entityManager->find(Profile::class, $profileId))->toBeNull();
+});
+
+it('writes a nested containers leaves rather than the container path itself', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    [$post, $profile] = seedProfiledPost($entityManager);
+
+    $section = Section::make()
+        ->relationship('profile')
+        ->components([
+            StateField::make('bio'),
+            Section::make()->statePath('post')->components([StateField::make('title')]),
+        ]);
+
+    [$schema, $host] = wireEntangledComponents($post, $section);
+
+    $schema->fill($post);
+
+    expect($host->data['profile']['post']['title'])->toBe('t');
+
+    $host->data['profile']['bio'] = 'edited';
+    $host->data['profile']['post']['title'] = 'renamed';
+
+    expect($schema->getData())->toBe($post)
+        ->and($profile->getBio())->toBe('edited')
+        ->and($post->getTitle())->toBe('renamed');
+});
+
+it('deletes a related record whose association is not mapped orphanRemoval', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    $post = new Post();
+    $post->setTitle('t');
+
+    $byline = new Byline();
+    $byline->setCredit('seeded');
+
+    $post->setByline($byline);
+
+    $entityManager->persist($post);
+    $entityManager->flush();
+
+    $bylineId = $byline->getId();
+
+    $section = Section::make()
+        ->relationship('byline', condition: false)
+        ->components([StateField::make('credit')]);
+
+    [$schema, $host] = wireEntangledComponents($post, $section);
+
+    $schema->fill($post);
+    $host->data['byline']['credit'] = 'edited';
+
+    $schema->getData();
+
+    expect($post->getByline())->toBeNull();
+
+    $entityManager->flush();
+
+    expect($entityManager->find(Byline::class, $bylineId))->toBeNull();
 });
 
 it('refuses two components entangling the same relationship', function (): void {

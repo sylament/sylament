@@ -25,6 +25,9 @@ class Post
     #[ORM\OneToOne(mappedBy: 'post', cascade: ['persist'], orphanRemoval: true)]
     private ?Profile $profile = null;
 
+    #[ORM\OneToOne(cascade: ['persist'])]
+    private ?Byline $byline = null;
+
     /**
      * @var Collection<int, PostSection>
      */
@@ -81,6 +84,16 @@ class Post
         }
 
         $this->profile = $profile;
+    }
+
+    public function getByline(): ?Byline
+    {
+        return $this->byline;
+    }
+
+    public function setByline(?Byline $byline): void
+    {
+        $this->byline = $byline;
     }
 
     /**

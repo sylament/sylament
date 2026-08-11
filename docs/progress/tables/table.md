@@ -1531,8 +1531,11 @@ and remove-all actions plus their `modify*Using` seams wait on table-context
 rides the same follow-up. Only `Dropdown` and `Hidden` are honored;
 `getFiltersLayout()` stays total and `hasFiltersDropdown()` — the one layout read
 this markup makes — throws for every other case, refused where consumed on the
-`PaginationMode::Cursor` pattern, and `Hidden` renders no trigger and no panel
-while its indicators still render.
+`PaginationMode::Cursor` pattern. `Hidden` renders no trigger and no panel while
+the filtering itself stays applied: the layout is read in that one template
+branch and nowhere in the query or indicator lanes, so a hidden filter still
+constrains the query and still produces its indicators. Rendering those
+indicators waits on the indicators row.
 
 _See also: the global [rename table](../renames.md) — `BelongsToLivewire` →
 `BelongsToLiveComponent`, `livewire()` → `liveComponent()` and `getLivewire()` →

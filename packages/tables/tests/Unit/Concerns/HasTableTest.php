@@ -7,6 +7,7 @@ use Doctrine\ORM\QueryBuilder;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Enums\PaginationMode;
+use Sylament\Tables\Filters\Filter;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist as DoctrineArtist;
@@ -195,12 +196,24 @@ it('lets a records closure win over a set query', function (): void {
 
 it('answers a null filtered query when a records closure wins over a set query', function (): void {
     $entityManager = EntityManagerFactory::create();
-    $host = new TableHost(fn (Table $table): Table => $table
-        ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
-        ->records(fn (): array => [new DoctrineSong(1, 'Airbag', 10)]));
+    $applications = 0;
+    $host = new TableHost(function (Table $table) use ($entityManager, &$applications): Table {
+        return $table
+            ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
+            ->filters([
+                Filter::make('popular')->query(function () use (&$applications): void {
+                    $applications++;
+                }),
+            ])
+            ->records(fn (): array => [new DoctrineSong(1, 'Airbag', 10)]);
+    });
+
+    $host->tableFilters = ['popular' => ['isActive' => true]];
+    $host->getTableRecords();
 
     expect($host->getFilteredTableQuery())->toBeNull()
-        ->and($host->getFilteredSortedTableQuery())->toBeNull();
+        ->and($host->getFilteredSortedTableQuery())->toBeNull()
+        ->and($applications)->toBe(0);
 });
 
 it('keys entities by their real identifier field through the metadata', function (): void {
@@ -722,8 +735,8 @@ it('injects the table state into the records closure lazily', function (): void 
     $host = new TableHost(function (Table $t) use (&$seen): Table {
         return $t
             ->columns([TextColumn::make('title')->sortable()])
-            ->records(function (int $page, int|string|null $recordsPerPage, ?string $search, array $sort, ?string $sortColumn, ?string $sortDirection) use (&$seen): array {
-                $seen = ['page' => $page, 'recordsPerPage' => $recordsPerPage, 'search' => $search, 'sort' => $sort, 'sortColumn' => $sortColumn, 'sortDirection' => $sortDirection];
+            ->records(function (int $page, int|string|null $recordsPerPage, ?string $search, array $sort, ?string $sortColumn, ?string $sortDirection, array $filters) use (&$seen): array {
+                $seen = ['page' => $page, 'recordsPerPage' => $recordsPerPage, 'search' => $search, 'sort' => $sort, 'sortColumn' => $sortColumn, 'sortDirection' => $sortDirection, 'filters' => $filters];
 
                 return [];
             });
@@ -732,6 +745,7 @@ it('injects the table state into the records closure lazily', function (): void 
     $host->sortTable('title', 'desc');
     $host->gotoTablePage(3);
     $host->tableSearch = 'radiohead';
+    $host->tableFilters = ['status' => ['value' => 'published']];
     $host->getTableRecords();
 
     expect($seen)->toBe([
@@ -741,7 +755,17 @@ it('injects the table state into the records closure lazily', function (): void 
         'sort' => ['title', 'desc'],
         'sortColumn' => 'title',
         'sortDirection' => 'desc',
+        'filters' => ['status' => ['value' => 'published']],
     ]);
+});
+
+it('reads no filter state for a closure that does not ask for it', function (): void {
+    $host = new TableHost(fn (Table $t): Table => $t->records(fn (int $page): array => [['page' => $page]]));
+
+    $host->tableFilters = ['status' => ['value' => 'published']];
+
+    expect($host->getTableRecords())->toBe([['page' => 1, '__key' => '0']])
+        ->and($host->tableFilters)->toBe(['status' => ['value' => 'published']]);
 });
 
 it('re-resolves after a sort, page, or search mutation flushes the cache', function (): void {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Concerns;
 
+use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Sylament\Forms\Components\Field;
 use Sylament\Schemas\Concerns\HasSchemas;
@@ -178,6 +179,30 @@ trait HasFilters
     {
         $this->tablePage = 1;
         $this->flushCachedTableRecords();
+    }
+
+    /**
+     * Both filter passes over one builder: every visible filter's base-query
+     * modification first, then every visible filter's own constraint. Record
+     * resolution skips the second pass for filters that opted out of it.
+     */
+    public function applyFiltersToTableQuery(QueryBuilder $query, bool $isResolvingRecord = false): QueryBuilder
+    {
+        $filters = $this->getTable()->getFilters();
+
+        foreach ($filters as $filterName => $filter) {
+            $filter->applyToBaseQuery($query, $this->getTableFilterState($filterName) ?? []);
+        }
+
+        foreach ($filters as $filterName => $filter) {
+            if ($isResolvingRecord && $filter->shouldExcludeWhenResolvingRecord()) {
+                continue;
+            }
+
+            $filter->apply($query, $this->getTableFilterState($filterName) ?? []);
+        }
+
+        return $query;
     }
 
     #[LiveAction]

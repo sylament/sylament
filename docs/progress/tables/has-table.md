@@ -92,7 +92,7 @@ instead.
 | [`table(Table $table): Table` — the identity default a host overrides](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::table()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | — |
 | [`getTable(): Table` — build once, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::getTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-table-is-built-lazily-on-first-gettable-not-in-a-booted-hook) |
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
-| [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-six-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#the-missing-data-source-error-does-not-name-relationship) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
+| [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-seven-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#the-missing-data-source-error-does-not-name-relationship) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
 | [`InteractsWithTable` — eleven methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-eleven-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | — |
@@ -100,7 +100,7 @@ instead.
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
 | [`getTableRecord(?string $key)` with its `resolveQueryTableRecord()` query arm](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) · [diverges](#record-resolution-applies-no-limit-1-where-filaments-find-does) |
 | [`getAllTableRecordsCount(): int`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getAllTableRecordsCount()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#the-all-records-count-answers-four-ways-where-filaments-answers-two) |
-| [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [semantics](#filtertablequery-applies-the-search-not-filters) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
+| [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `applyFiltersToTableQuery()`, `getFilteredSortedTableQuery()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [semantics](#filtertablequery-applies-the-filters-then-the-search) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
 | `getTableQueryForExport()` | [`Concerns\HasRecords::getTableQueryForExport()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | the export surface | It bypasses the seams above, re-reading `getTable()->getQuery()` and re-applying filters, search and sorting itself, to assemble a query for Filament's export action — a surface with no counterpart here and on no milestone, the same one [`ExportColumn`](column.md#hascellstate-is-relocated-into-the-column-tier) waits on. It lands with that action or not at all |
 | [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `dehydrateTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-its-query-lane-and-no-session-or-url-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [diverges](#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [diverges](#the-identifier-tiebreaker-is-suppressed-only-by-the-qualified-key) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
@@ -194,7 +194,7 @@ and is reached without it.
 `getAllTableRecordsCount()` has one case carrying all four arms. Seven seeded
 songs are counted through the query with nothing rendered; the same table with
 `alpha` in the search box counts **two**, which is what proves the count reads
-the [filtered](#filtertablequery-applies-the-search-not-filters) query rather
+the [filtered](#filtertablequery-applies-the-filters-then-the-search) query rather
 than the declared one; a records-lane array counts its own length; a records-lane
 carrier of two records declaring a total of `23` answers `23`, which is what
 tells the carrier arm apart from a plain `count()`; and a null-total carrier
@@ -378,26 +378,31 @@ Specifics for rows that are not finished — what is left and what the next step
 is. Delete a subsection when its row flips to **done**; the row and any
 divergence stay behind.
 
-### The `records()` injections stop at six of Filament's eight
+### The `records()` injections stop at seven of Filament's eight
 
 Filament evaluates the data source with eight named injections —
 `columnSearches`, `filters`, `page`, `recordsPerPage`, `search`, `sort`,
 `sortColumn`, `sortDirection` — each a closure reading the corresponding piece of
 host state, so a userland `records()` closure can paginate, sort and filter its
-own result set. Sylament passes **six**, in the same shape (a `fn ()` per name,
-so the state is read only if the closure asks for it): `page`, `recordsPerPage`,
-`search`, `sort`, `sortColumn` and `sortDirection`. Every one is
+own result set. Sylament passes **seven**, in the same shape (a `fn ()` per name,
+so the state is read only if the closure asks for it): `filters`, `page`,
+`recordsPerPage`, `search`, `sort`, `sortColumn` and `sortDirection`. Every one is
 Filament's name, Filament's arity and Filament's value — `sort` is the same
 `[$column, $direction]` pair, redundant with the two singular names and kept
 because a migrating closure destructures it.
 
-The two missing names have no state behind them yet, which is the same reason
-all eight were missing before this epic. `columnSearches` waits on per-column
-search (its **todo** row above) and `filters` on the filter layer (likewise), and
-each arrives in the change that lands the feature it reads. One value differs
-rather than being absent: `recordsPerPage` is
-[nullable here](#the-recordsperpage-injection-is-nullable) where Filament types
-it `int|string`.
+One name is still missing, and it is the same reason all eight were missing
+before the table-upgrades epic: `columnSearches` waits on per-column search (its
+**todo** row above) and arrives in the change that lands it. `filters` arrived
+here, with the layer that gives it state — the raw applied `tableFilters` bag,
+read lazily like every other name, so a closure-lane table filters its own data
+exactly as it paginates and sorts it. The value is typed `array` where Filament
+types it `?array`: our prop is
+[an array and never null](#the-filter-bags-are-arrays-never-null-and-carry-no-getters),
+so a migrating `fn (?array $filters)` still matches and a `fn (array $filters)`
+needs no null guard. One other value differs rather than being absent:
+`recordsPerPage` is [nullable here](#the-recordsperpage-injection-is-nullable)
+where Filament types it `int|string`.
 
 Everything the evaluation path resolves without a named injection resolves as
 before: `$table` — by the parameter name, which is `Table`'s
@@ -758,31 +763,37 @@ would have unchecked it. The two are deliberately different operations.
 Faithful ports subtle enough that the next reader would misread the code.
 Permanent, and addressable by anchor.
 
-### `filterTableQuery()` applies the search, not filters
+### `filterTableQuery()` applies the filters, then the search
 
-The name is Filament's and it will be accurate later; today the whole body is
-[the global search application](#search-is-the-global-term-only), because the
-filter layer it is named for is a **todo** row above. The composition around it
-is Filament's as well: `getFilteredTableQuery()` reads
+The name is Filament's and it is now accurate: the body is
+`applySearchToTableQuery($this->applyFiltersToTableQuery($query))` — filters
+first, then [the global search](#search-is-the-global-term-only), Filament's
+order. `applyFiltersToTableQuery()` runs two passes over the one builder, every
+visible filter's `applyToBaseQuery()` before every visible filter's `apply()`,
+and returns the same builder both times. The composition around it is Filament's
+as well: `getFilteredTableQuery()` reads
 [`Table::getQuery()`](table.md#every-read-clones-a-memoised-base-query) — a
 scoped clone, so what comes back is always a builder the caller may mutate —
 [gated on the lane](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder)
 and null when there is no query to read, hands it to `filterTableQuery()`, and
 `getFilteredSortedTableQuery()` adds
 [the sorting](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)
-and nothing else. So a query-lane table resolves every record its query selects
-**that the search term matched**, in the order the sort composition asked for —
-one page of it once
-[pagination](#the-page-state-has-its-query-lane-and-no-session-or-url-half)
-slices what these seams handed over.
+and nothing else.
 
-Two of Filament's applications are still missing from them, and each is a body
-inside a seam rather than a new call site: **per-column** search slots into
-`applySearchToTableQuery()` ahead of the global half, and filters and grouping
-each wait on a layer that does not exist here at all. Both have a **todo** row
-above. That is also why the seams were written public and whole before the layers
-that fill them: anything needing the lane can ask for it without waiting for its
-own half.
+Record resolution takes the same filters and not the rest:
+`resolveQueryTableRecord()` runs `applyFiltersToTableQuery($query, isResolvingRecord: true)`
+before narrowing on the identifier, so a row action cannot reach a record
+outside the filtered set — and the `isResolvingRecord` flag skips the *apply*
+pass of any filter that called `excludeWhenResolvingRecord()`, never the base
+pass, which is where a filter's joins live. Search, sorting and pagination stay
+unapplied there per the epic-12 decision.
+
+Two of Filament's applications are still missing from these seams, and each is a
+body inside a seam rather than a new call site: **per-column** search slots into
+`applySearchToTableQuery()` ahead of the global half, and grouping waits on a
+layer that does not exist here at all. Both have a **todo** row above. That is
+also why the seams were written public and whole before the layers that fill
+them: anything needing the lane can ask for it without waiting for its own half.
 
 Filament runs two more inside this seam that this port deliberately runs
 elsewhere. Its column loop calls `applyRelationshipAggregates()` and
@@ -796,7 +807,7 @@ so a `COUNT` never carries joins added purely to fill cells.
 ### A `records()` closure resolves public container services by type
 
 Closure evaluation reaches the container here, which is not obvious from the
-trait: `$table->evaluate($dataSource, [...])` passes six named injections and
+trait: `$table->evaluate($dataSource, [...])` passes seven named injections and
 nothing else, yet a `records()` closure type-hinting a repository is handed one.
 `SylamentTablesBundle::loadExtension()` registers `Table` as an autowired,
 autoconfigured service, so `Table::newInstance()` resolves through
@@ -1474,10 +1485,13 @@ miss, so the resolution query is the unfiltered one and a record the search
 excluded still resolves. No **pagination**: nothing constrains the page, so a
 record that left the current page between render and mount resolves anyway. And
 no **sorting**, which would only cost an `ORDER BY` on a single-row read. The one
-thing Filament's lane applies that this cannot is filters — there is no filter
-layer here yet, and it joins this query when there is. A fourth thing it does not
-apply — the row limit Filament's `find()` carries — is a deviation rather than a
-faithful omission, and has
+thing Filament's lane applies that this one applies too is **filters**, and they
+joined it with the layer that gives them state:
+[`applyFiltersToTableQuery($query, isResolvingRecord: true)`](#filtertablequery-applies-the-filters-then-the-search)
+runs before the identifier narrowing, so a row action cannot reach a record
+outside the filtered set. A fourth thing it does not apply — the row limit
+Filament's `find()` carries — is a deviation rather than a faithful omission,
+and has
 [its own note](#record-resolution-applies-no-limit-1-where-filaments-find-does).
 
 ### Record resolution applies no `LIMIT 1` where Filament's `find()` does
@@ -1532,7 +1546,7 @@ with a known total answers from itself — no second `COUNT` for a number alread
 paid for — and only that shape short-circuits: a rendered *unpaginated* table
 caches a plain array, which carries no total to reuse, so it pays the count like
 a cold one. Otherwise the answer is a `COUNT` over
-[`getFilteredTableQuery()`](#filtertablequery-applies-the-search-not-filters)
+[`getFilteredTableQuery()`](#filtertablequery-applies-the-filters-then-the-search)
 through Doctrine's `Tools\Pagination\Paginator`, asked for the
 `fetchJoinCollection` treatment on the same
 [join heuristic](#the-page-state-has-its-query-lane-and-no-session-or-url-half)

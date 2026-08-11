@@ -82,7 +82,7 @@ trait HasTable
 
     public function filterTableQuery(QueryBuilder $query): QueryBuilder
     {
-        return $this->applySearchToTableQuery($query);
+        return $this->applySearchToTableQuery($this->applyFiltersToTableQuery($query));
     }
 
     public function getFilteredSortedTableQuery(): ?QueryBuilder
@@ -211,6 +211,7 @@ trait HasTable
 
         if ($dataSource instanceof Closure) {
             $records = $table->evaluate($dataSource, [
+                'filters' => fn (): array => $this->tableFilters,
                 'page' => fn (): int => $this->getTablePage(),
                 'recordsPerPage' => fn (): int|string|null => $this->getTableRecordsPerPage(),
                 'search' => fn (): ?string => $this->getTableSearch(),
@@ -357,7 +358,7 @@ trait HasTable
         $rootAlias = $query->getRootAliases()[0]
             ?? throw new LogicException(sprintf('The query of table [%s] names no root alias to resolve a record against.', static::class));
 
-        $record = $query
+        $record = $this->applyFiltersToTableQuery($query, isResolvingRecord: true)
             ->andWhere(sprintf('%s.%s = :sylament_record_key', $rootAlias, $metadata->getSingleIdentifierFieldName()))
             ->setParameter('sylament_record_key', $key)
             ->getQuery()

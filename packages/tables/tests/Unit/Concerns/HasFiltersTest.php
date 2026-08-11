@@ -3,12 +3,14 @@
 declare(strict_types=1);
 
 use Doctrine\ORM\EntityManager;
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Forms\Components\Checkbox;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
+use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Filters\BaseFilter;
 use Sylament\Tables\Filters\Filter;
@@ -383,4 +385,117 @@ it('attaches no field hook in deferred mode', function (): void {
     }
 
     expect($host->tablePage)->toBe(7);
+});
+
+it('narrows the query lane with an active filter', function (): void {
+    $host = filtersHost(fn (Table $table): Table => $table->filters([
+        Filter::make('popular')->query(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 25')),
+    ]));
+
+    $host->tableFilters = ['popular' => ['isActive' => true]];
+
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([3, 4, 5]);
+});
+
+it('leaves the query alone while a filter is inactive', function (): void {
+    $host = filtersHost(fn (Table $table): Table => $table->filters([
+        Filter::make('popular')->query(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 25')),
+    ]));
+
+    $host->tableFilters = ['popular' => ['isActive' => false]];
+
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([1, 2, 3, 4, 5]);
+});
+
+it('never applies a hidden filter', function (): void {
+    $host = filtersHost(fn (Table $table): Table => $table->filters([
+        Filter::make('popular')
+            ->hidden()
+            ->query(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 25')),
+    ]));
+
+    $host->tableFilters = ['popular' => ['isActive' => true]];
+
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([1, 2, 3, 4, 5]);
+});
+
+it('keeps a hidden select filter out of the pipeline, though a direct apply would narrow', function (): void {
+    $host = filtersHost(fn (Table $table): Table => $table->filters([
+        SelectFilter::make('plays')
+            ->hidden()
+            ->options([10 => 'Ten', 50 => 'Fifty']),
+    ]));
+
+    $host->tableFilters = ['plays' => ['value' => 10]];
+
+    $directQuery = $host->getTable()->getQuery();
+    $host->getTable()->getFilter('plays', withHidden: true)?->apply($directQuery, $host->getTableFilterState('plays') ?? []);
+
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([1, 2, 3, 4, 5])
+        ->and($host->getFilteredTableQuery()?->getDQL())->not->toContain('song.plays')
+        ->and(array_map(
+            static fn (DoctrineSong $song): int => $song->getId(),
+            $directQuery->getQuery()->getResult(),
+        ))->toBe([1]);
+});
+
+it('runs the base pass before the apply pass', function (): void {
+    $order = [];
+    $host = filtersHost(function (Table $table) use (&$order): Table {
+        return $table->filters([
+            Filter::make('popular')
+                ->baseQuery(function (QueryBuilder $query) use (&$order): void {
+                    $order[] = 'base';
+                })
+                ->query(function (QueryBuilder $query) use (&$order): void {
+                    $order[] = 'apply';
+                }),
+        ]);
+    });
+
+    $host->tableFilters = ['popular' => ['isActive' => true]];
+    $host->getFilteredTableQuery();
+
+    expect($order)->toBe(['base', 'apply']);
+});
+
+it('composes the filters ahead of the search', function (): void {
+    $host = filtersHost(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->searchable()])
+        ->filters([
+            Filter::make('popular')->query(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 25')),
+        ]));
+
+    $host->tableFilters = ['popular' => ['isActive' => true]];
+    $host->tableSearch = 'Beta F';
+
+    $dql = (string) $host->getFilteredTableQuery()?->getDQL();
+
+    expect(array_keys($host->getTableRecords()->getRecords()))->toBe([4, 5])
+        ->and($dql)->toContain('song.plays > 25')
+        ->and(mb_strpos($dql, 'song.plays > 25'))->toBeLessThan(mb_strpos($dql, 'song.title'));
+});
+
+it('cannot resolve a record the filters excluded', function (): void {
+    $host = filtersHost(fn (Table $table): Table => $table->filters([
+        Filter::make('popular')->query(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 25')),
+    ]));
+
+    $host->tableFilters = ['popular' => ['isActive' => true]];
+
+    expect($host->getTableRecord('1'))->toBeNull()
+        ->and($host->getTableRecord('5'))->toBeInstanceOf(DoctrineSong::class);
+});
+
+it('restores an excluded record when the filter opts out of record resolution', function (): void {
+    $host = filtersHost(fn (Table $table): Table => $table->filters([
+        Filter::make('popular')
+            ->excludeWhenResolvingRecord()
+            ->query(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 25')),
+    ]));
+
+    $host->tableFilters = ['popular' => ['isActive' => true]];
+
+    expect($host->getTableRecord('1'))->toBeInstanceOf(DoctrineSong::class)
+        ->and(array_keys($host->getTableRecords()->getRecords()))->toBe([3, 4, 5]);
 });

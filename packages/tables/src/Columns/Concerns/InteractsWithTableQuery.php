@@ -8,7 +8,6 @@ use Closure;
 use Doctrine\ORM\Query\Expr\Orx;
 use Doctrine\ORM\Query\Expr\Select;
 use Doctrine\ORM\QueryBuilder;
-use LogicException;
 use Stringable;
 use Sylament\Tables\Query\ColumnPathResolver;
 use Sylament\Tables\Query\RelationJoiner;
@@ -61,13 +60,13 @@ trait InteractsWithTableQuery
      * Fetch-joins the relation this column reads through, so every cell of the
      * page is answered from the page query rather than by a lazy load per row.
      * A no-op unless the name resolves to a chain of to-one hops: a to-many one
-     * would multiply the page's rows, and stays lazy.
-     *
-     * @throws LogicException when the name ends in an association rather than a field
+     * would multiply the page's rows, and stays lazy. Nothing here is strict
+     * about the field at the end — only the hops are read — so a name sorting
+     * or searching would refuse still renders, joined or not.
      */
     public function applyEagerLoading(QueryBuilder $query): QueryBuilder
     {
-        $analysed = RelationPathResolver::analyseQueryPath($query, $this->getName());
+        $analysed = RelationPathResolver::tryAnalyseQueryPath($query, $this->getName());
 
         if (!$analysed instanceof ResolvedRelationPath || !$analysed->isRelationPath() || $analysed->hasToManyHop()) {
             return $query;

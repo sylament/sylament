@@ -974,12 +974,16 @@ it('adds no eager join to the standalone count or to record resolution', functio
         ->and($recorder->statements()[0])->not->toContain('LEFT JOIN');
 });
 
-it('refuses a column that names an association rather than a field', function (): void {
-    $entityManager = songsWithRelations();
+it('renders a column named after an association without joining it', function (): void {
+    $recorder = new RecordingMiddleware();
+    $entityManager = songsWithRelations($recorder);
     $host = new TableHost(fn (Table $table): Table => $table
         ->query($entityManager->createQueryBuilder()->select('song')->from(DoctrineSong::class, 'song'))
-        ->columns([TextColumn::make('artist.label')]));
+        ->columns([TextColumn::make('artist.label')->state(fn (DoctrineSong $record): ?string => $record->getArtist()?->getLabel()?->getName())])
+        ->paginated(false));
 
-    expect(fn (): array|Paginator => $host->getTableRecords())
-        ->toThrow(LogicException::class, 'the path ends in an association rather than a field');
+    $recorder->reset();
+
+    expect(everyCellState($host))->toBe(['Parlophone', 'XL', null])
+        ->and($recorder->statements()[0])->not->toContain('LEFT JOIN');
 });

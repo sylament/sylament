@@ -207,7 +207,7 @@ it('reuses the sort join for eager loading and selects the alias once', function
         ->and($query->getDQL())->toContain('ORDER BY sy_artist.name asc');
 });
 
-it('leaves a dotless, to-many, alias-headed or unmapped column unjoined', function (): void {
+it('leaves a dotless, to-many, alias-headed, unmapped or association-terminal column unjoined', function (): void {
     $entityManager = EntityManagerFactory::create();
     $queries = [];
     $table = new TableHost(fn (Table $table): Table => $table->columns([
@@ -215,9 +215,10 @@ it('leaves a dotless, to-many, alias-headed or unmapped column unjoined', functi
         TextColumn::make('genres.name'),
         TextColumn::make('artist.name'),
         TextColumn::make('publisher.name'),
+        TextColumn::make('artist.label'),
     ]))->getTable();
 
-    foreach (['title', 'genres.name', 'artist.name', 'publisher.name'] as $name) {
+    foreach (['title', 'genres.name', 'artist.name', 'publisher.name', 'artist.label'] as $name) {
         $queries[$name] = $entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song');
     }
 
@@ -230,6 +231,7 @@ it('leaves a dotless, to-many, alias-headed or unmapped column unjoined', functi
     expect($queries['title']->getDQL())->toBe('SELECT song FROM ' . Song::class . ' song')
         ->and($queries['genres.name']->getDQL())->toBe('SELECT song FROM ' . Song::class . ' song')
         ->and($queries['publisher.name']->getDQL())->toBe('SELECT song FROM ' . Song::class . ' song')
+        ->and($queries['artist.label']->getDQL())->toBe('SELECT song FROM ' . Song::class . ' song')
         ->and($queries['artist.name']->getDQL())->toContain('SELECT song FROM')
         ->and($queries['artist.name']->getDQL())->not->toContain('sy_artist');
 });

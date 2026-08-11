@@ -124,6 +124,25 @@ it('throws for a dotted path ending in an association', function (): void {
     RelationPathResolver::analyseQueryPath($query, 'artist.label');
 })->throws(LogicException::class, 'artist.label');
 
+it('answers null for the association-terminal path the strict analysis throws for', function (): void {
+    $query = EntityManagerFactory::create()->createQueryBuilder()->select('song')->from(Song::class, 'song');
+
+    expect(RelationPathResolver::tryAnalyseQueryPath($query, 'artist.label'))->toBeNull()
+        ->and(fn (): mixed => RelationPathResolver::analyseQueryPath($query, 'artist.label'))
+        ->toThrow(LogicException::class, 'the path ends in an association rather than a field');
+});
+
+it('resolves and refuses everything but that ending exactly as the strict analysis does', function (): void {
+    $query = EntityManagerFactory::create()->createQueryBuilder()->select('song')->from(Song::class, 'song');
+
+    expect(RelationPathResolver::tryAnalyseQueryPath($query, 'artist.name')?->fieldPath)->toBe('name')
+        ->and(RelationPathResolver::tryAnalyseQueryPath($query, 'artist.label.name')?->hops)->toHaveCount(2)
+        ->and(RelationPathResolver::tryAnalyseQueryPath($query, 'genres.name')?->hasToManyHop())->toBeTrue()
+        ->and(RelationPathResolver::tryAnalyseQueryPath($query, 'title'))->toBeNull()
+        ->and(RelationPathResolver::tryAnalyseQueryPath($query, 'nonsense.name'))->toBeNull()
+        ->and(RelationPathResolver::tryAnalyseQueryPath($query, 'artist.nonsense'))->toBeNull();
+});
+
 it('analyses a path against a class without a query builder', function (): void {
     $entityManager = EntityManagerFactory::create();
 

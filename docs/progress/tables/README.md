@@ -45,11 +45,13 @@ assembly — moved onto the query lane, and the two that were waiting on nothing
 at all (deferred loading, polling) are plain **todo**. The _Doctrine `query()`
 lane ([pulled forward · 12](../roadmap.md#pulled-forward))_ then took those and
 flipped them in turn, leaving `HasQuery`, `InteractsWithTableQuery` and
-`PaginationMode` **in progress** against the relation layer and a keyset carrier
-rather than against an epic. Neither _table bulk actions_ nor the relation layer
-has an epic carrying it — bulk actions need a `BulkAction` class and the
-row-selection machinery, the relation layer is unordered under
-[Beyond](../roadmap.md#beyond), and the roadmap schedules neither. (The
+`PaginationMode` **in progress** against relation-aware resolution and a keyset
+carrier rather than against an epic. Neither _table bulk actions_ nor the tables
+relation arm has an epic carrying it — bulk actions need a `BulkAction` class and
+the row-selection machinery, and the tables arm was left out of the
+[Doctrine relation layer](../roadmap.md#pulled-forward) that shipped for schemas
+and forms, so it waits on a future tables-relations epic the roadmap does not
+schedule. (The
 [`forms`](../forms/README.md) README records the opposite
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)

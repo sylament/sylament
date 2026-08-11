@@ -695,8 +695,11 @@ round-trip. Three consequences are deliberate:
 - **Scope: plain nested objects and embeddable-shaped value objects.** The
   walk will mechanically traverse a loaded Doctrine association and mutate the
   associated entity in place — almost never what a form edit means, and
-  undetectable here (`schemas` has no EntityManager). Associations remain the
-  relationship epic's surface; this note is the warning, not a guard.
+  undetectable here (this walk is handed no `EntityManager`, so it reads declared
+  PHP types and no mapping metadata, even though `schemas` now ships
+  [`AssociationReader`](association-reader.md) for the component tier).
+  Associations are declared instead — `relationship()` on the owning component,
+  routed through that reader — and this note is the warning, not a guard.
 
 The container test is `hasPathBearingDescendants()`, and it carries a second arm
 for the component that is both leaf and container:
@@ -859,7 +862,8 @@ branches, on three grounds — the third is the one that changed:
   "construct what the record says goes here" is a reading of the record rather
   than an inference about it. A singular association that should be *looked up*
   is a field concern — a `Select` over related records — not a nested branch, and
-  that surface belongs to the deferred relationship epic either way.
+  that surface is [`Select::relationship()`](../forms/select.md)'s either way,
+  which the walk never sees.
 
 Construction needs no declaration of its own: `record(SomeClass::class)` plus
 nested state paths is the entire user-facing flow, and the demo's vivifying
@@ -972,10 +976,13 @@ mapper's `null` is written and accepted; it simply does not survive the
 round trip.
 
 Documented rather than worked around. Detecting it would mean reading Doctrine
-mapping metadata, which `schemas` deliberately cannot do (it has no
-`EntityManager`, the same boundary that leaves association traversal to the
-relationship epic), and faking it — writing a fresh empty embeddable instead of
-null — would only rename the same outcome. A branch that genuinely has to be
+mapping metadata, which this walk is deliberately not handed: `schemas` does own
+[`AssociationReader`](association-reader.md), which holds an `EntityManager` and
+reads `ClassMetadata`, but only the component tier reaches it — the record walk
+in [`Concerns/BelongsToRecord`](../../../packages/schemas/src/Concerns/BelongsToRecord.php)
+takes no reader and works entirely off the declared PHP types
+[`RecordTypeReader`](record-type-reader.md) supplies. Faking it — writing a fresh
+empty embeddable instead of null — would only rename the same outcome. A branch that genuinely has to be
 absent wants a nullable `OneToOne` or a plain nullable property, not an
 embeddable.
 

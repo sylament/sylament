@@ -462,8 +462,9 @@ fallback is restored.
 Filament builds each item schema with `->constantState(null)` and
 `->inlineLabel(false)`; ours builds neither, and both are waiting rather than
 rejected. Constant state is
-[blocked on the relationship epic](../schemas/schema.md) — the only thing that
-sets it on an item is the record stamping this epic does not do — and schemas'
+[unported for want of a consumer](../schemas/component.md#relationship-derived-and-constant-state-are-dropped-from-the-component-trait) —
+the Doctrine relation layer did not bring one, and the only thing that would set
+it on an item is the record stamping this epic does not do — and schemas'
 `HasInlineLabel` is unported (deferred in M1 · 3), so an item schema has no
 inherited inline-label state to switch off. Each stamp lands with its owner.
 

@@ -80,9 +80,11 @@ tagged `twig.extension`.
 covers the asset-registration row against the compiled container: it asks the
 real `AssetMapperInterface` for the built dispatch controller by source path and
 requires the logical path back, so a missing or misaliased prepend fails it.
-That is the shape support's and notifications'
-[identical rows](../notifications/notifications-bundle.md#asset-registration)
-still want, and it is written once here to be copied. The unported
+That is the shape
+[support's](../support/support-bundle.md#asset-registration) and
+[notifications'](../notifications/notifications-bundle.md#asset-registration)
+identical rows still want, and it is written once here to be copied — both point
+back at it. The unported
 responsibilities have no coverage because they have no code.
 
 ## Details

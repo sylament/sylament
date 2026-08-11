@@ -25,7 +25,7 @@ just the case where the bound object happens to be managed by Doctrine.
 
 `symfony/asset-mapper` is optional but recommended — it is how the compiled CSS
 and the Stimulus controllers reach your pages without you wiring anything. See
-[Front-end assets](#front-end-assets) for what to do without it.
+[Front-end assets](#3-front-end-assets) for what to do without it.
 
 ## 1. Add the packages
 
@@ -117,6 +117,13 @@ and the Stimulus controllers through `assets/controllers.json`:
 ```json
 {
     "controllers": {
+        "@sylament/actions": {
+            "dispatch": { "enabled": true, "fetch": "eager" }
+        },
+        "@sylament/notifications": {
+            "notifications": { "enabled": true, "fetch": "eager" },
+            "notification":  { "enabled": true, "fetch": "eager" }
+        },
         "@sylament/support": {
             "core": {
                 "enabled": true,
@@ -134,9 +141,25 @@ and the Stimulus controllers through `assets/controllers.json`:
 }
 ```
 
-The `core` controller's `autoimport` is what pulls in the stylesheet. The other
-three power collapsible sections, modals and dropdown positioning; leave one
-disabled if you do not use that component.
+List a block for each Sylament package you installed. In a Flex app you do not
+write this by hand — `composer` runs the package-json synchronizer, which copies
+each package's declared `enabled`/`fetch` in for you; the block above is what it
+produces for `support`, `notifications` and `actions` together.
+
+Support's `core` controller carries the `autoimport` that pulls in the
+stylesheet; the other three power collapsible sections, modals and dropdown
+positioning, and you can disable one you do not use. Notifications' two
+controllers drive the toast stack and each toast's auto-dismiss, hover-pause and
+close.
+
+**`@sylament/actions` is easy to leave out and fails silently.** Its single
+`dispatch` controller binds to no element of its own — it registers one
+page-wide click listener that delivers every `dispatch()` / `dispatchSelf()` /
+`dispatchTo()` action on the page, wherever the trigger renders. Omit the block
+and nothing throws and nothing is logged: the buttons still render, an action
+that also closes still closes, and the events simply never arrive. If you use
+action event dispatch at all — including on a notification toast — keep it
+enabled.
 
 <details>
 <summary>Without AssetMapper</summary>
@@ -145,9 +168,15 @@ The bundles detect AssetMapper and stay out of the way when it is absent, so
 nothing breaks — but nothing is delivered either. Serve the compiled files
 yourself from `vendor/sylament/support/assets/dist/`:
 
-- `styles/index.css` — the whole stylesheet
+- `styles/index.css` — the whole stylesheet, every package's rules compiled into
+  this one file
 - `controllers/*.js` — the Stimulus controllers, if you want the interactive
   components
+
+The stylesheet is support's alone, but the controllers are not: serve
+`vendor/sylament/notifications/assets/dist/controllers/*.js` and
+`vendor/sylament/actions/assets/dist/controllers/*.js` too if you installed those
+packages and want toasts or action event dispatch.
 
 Copy them into your public directory, or point your own build at them.
 </details>

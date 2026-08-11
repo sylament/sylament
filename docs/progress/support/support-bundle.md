@@ -51,10 +51,23 @@ AssetMapper is present, and nothing exercises the negative branch of
 `isAssetMapperAvailable()` (the short-circuit that returns without prepending).
 The bundle's other wiring is covered by
 [`SylamentSupportBundleTest`](../../../packages/support/tests/Integration/SylamentSupportBundleTest.php),
-but that suite never inspects the prepended asset config. Next step: an
-Integration test asserting the compiled `framework.asset_mapper.paths` contains
-`@sylament/support`, plus a Unit test for the guard's false branch — then this
-row flips to **done**.
+but that suite never inspects the prepended asset config.
+
+**Next step:** an Integration test asserting `@sylament/support` maps the built
+directory, plus a Unit test for the guard's false branch — then this row flips to
+**done**. The positive half is already written, for the bundle that needed it
+first:
+[`SylamentActionsBundleTest`](../../../packages/actions/tests/Integration/SylamentActionsBundleTest.php)
+asks the real `AssetMapperInterface` for a built asset by source path and requires
+the logical path back. Copy that shape rather than asserting the compiled
+`framework.asset_mapper.paths` array directly: the AssetMapper seam is the call
+StimulusBundle's controllers-map generator actually makes, so a prepend that is
+present but misaliased fails it where a config-array assertion passes. It was
+[written once there to be copied](../actions/actions-bundle.md#asset-registration-is-an-assetmapper-prepend),
+by this row and by
+[notifications'](../notifications/notifications-bundle.md#asset-registration).
+The guard's false branch is **this** package's to pin for all three, since
+[`SylamentBundle`](../../../packages/support/src/SylamentBundle.php) owns it.
 
 ### Livewire request and component wiring is not ported
 

@@ -323,14 +323,19 @@ it('renders no filters trigger and no toolbar when the table declares none', fun
         ->and($html)->not->toContain('sy-ta-header-toolbar');
 });
 
-it('renders neither trigger nor panel for the hidden filters layout', function (): void {
+it('renders neither trigger nor panel for the hidden filters layout, and keeps the indicators', function (): void {
     $html = filtersTableHtml(
         filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters(), FiltersLayout::Hidden)),
+        ['plays' => ['value' => '200'], 'popular' => ['isActive' => true]],
     );
+
+    $chips = new Crawler($html)->filter('.sy-ta-filter-indicators .sy-ta-filter-indicator');
 
     expect($html)->not->toContain('sy-ta-filters-trigger')
         ->and($html)->not->toContain('sy-ta-filters-dropdown')
-        ->and($html)->not->toContain('sy-ta-header-toolbar');
+        ->and($html)->not->toContain('sy-ta-header-toolbar')
+        ->and($chips->count())->toBe(2)
+        ->and(mb_trim($chips->eq(0)->filter('.sy-badge-label')->text()))->toBe('Plays: Two hundred');
 });
 
 it('renders the panel fields and the apply button while filters are deferred', function (): void {

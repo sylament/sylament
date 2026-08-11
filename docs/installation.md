@@ -7,9 +7,9 @@ ships.
 > **Project status.** Sylament is early-stage and **not yet released**. There are
 > no tags and nothing is on Packagist, so the instructions below install the
 > development branch from GitHub. Expect the API to move. Today `support`,
-> `schemas`, `forms` and `actions` carry real functionality; `infolists`,
-> `notifications`, `panels`, `tables` and `widgets` are placeholders that ship a
-> bundle class and nothing else.
+> `schemas`, `forms`, `actions`, `notifications` and `tables` carry real
+> functionality; `infolists`, `panels` and `widgets` are placeholders that ship
+> a bundle class and nothing else.
 
 ## Requirements
 

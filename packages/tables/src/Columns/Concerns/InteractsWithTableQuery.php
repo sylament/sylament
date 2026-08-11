@@ -19,6 +19,14 @@ use Sylament\Tables\Query\SearchConstraint;
 
 trait InteractsWithTableQuery
 {
+    /**
+     * Ordered by how explicit the declaration is: a `sortable(query:)` closure
+     * first, then the columns a `sortable([...])` list named, then the
+     * aggregate the cell reads, then the column's own name as a field path. So
+     * an aggregate column claims the sort only where the user named no column
+     * to sort by — `$sortColumns` is null exactly then, a list of any length
+     * being the user's own.
+     */
     public function applySort(QueryBuilder $query, string $direction = 'asc'): QueryBuilder
     {
         if ($this->sortQuery instanceof Closure) {
@@ -30,7 +38,7 @@ trait InteractsWithTableQuery
             return $query;
         }
 
-        $declaration = $this->getCellAggregateDeclaration();
+        $declaration = $this->sortColumns === null ? $this->getCellAggregateDeclaration() : null;
 
         if ($declaration instanceof AggregateDeclaration) {
             $recordClass = $this->getTable()->getRecordClass();

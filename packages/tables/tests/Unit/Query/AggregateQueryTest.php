@@ -85,6 +85,19 @@ it('applies the scope closure to the batch builder', function (): void {
     expect($values)->toBe([3 => 1]);
 });
 
+it('keeps the key narrowing when a scope replaces the where clause', function (): void {
+    $scope = static fn (QueryBuilder $query, string $alias): QueryBuilder => $query->where("{$alias}.plays > 15");
+
+    $values = AggregateQuery::fetch(
+        aggregateFixtureEntityManager(),
+        Artist::class,
+        aggregateDeclaration('COUNT', 'songs', scope: $scope),
+        [1],
+    );
+
+    expect($values)->toBe([1 => 1]);
+});
+
 it('walks a dotted relationship path', function (): void {
     $values = AggregateQuery::fetch(
         aggregateFixtureEntityManager(),

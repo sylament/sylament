@@ -26,6 +26,10 @@ final class AggregateQuery
      * arrives already bound, and is handed the builder and the alias of the
      * path's last hop so it can narrow the aggregated set.
      *
+     * The key narrowing is added *after* the scope has run, because Doctrine's
+     * `where()` replaces where Eloquent's adds: a scope written with the
+     * Filament reflex would otherwise drop the narrowing this batch depends on.
+     *
      * @param class-string     $recordClass
      * @param list<int|string> $keys
      *
@@ -57,13 +61,15 @@ final class AggregateQuery
 
         $query
             ->select("sy_r.{$identifier} AS sy_key", "{$declaration->function}({$expression}) AS sy_value")
-            ->where("sy_r.{$identifier} IN (:sylament_agg_keys)")
-            ->setParameter('sylament_agg_keys', $keys)
             ->groupBy("sy_r.{$identifier}");
 
         if ($declaration->scope instanceof Closure) {
             ($declaration->scope)($query, $alias);
         }
+
+        $query
+            ->andWhere("sy_r.{$identifier} IN (:sylament_agg_keys)")
+            ->setParameter('sylament_agg_keys', $keys);
 
         return self::readValues($query, $recordClass);
     }
@@ -76,8 +82,9 @@ final class AggregateQuery
      *
      * The subselect is built the way {@see fetch()} builds its batch — inner
      * joins along the declared path, the scope closure arriving already bound
-     * and handed the builder with the alias of the path's last hop — correlated
-     * to the outer row by identifier rather than narrowed to a key list. What
+     * and handed the builder with the alias of the path's last hop, and the
+     * correlation added after it has run so a `where()` cannot replace it —
+     * correlated to the outer row by identifier rather than to a key list. What
      * an empty related set reads as is the aggregate's own answer here: a count
      * over no rows is 0, every other function is null, so the two lanes agree
      * with the defaults the cells fill in.
@@ -124,13 +131,13 @@ final class AggregateQuery
 
         $expression = $declaration->column === null ? $joinAlias : "{$joinAlias}.{$declaration->column}";
 
-        $subQuery
-            ->select("{$declaration->function}({$expression})")
-            ->where("{$subAlias}.{$identifier} = {$rootAlias}.{$identifier}");
+        $subQuery->select("{$declaration->function}({$expression})");
 
         if ($declaration->scope instanceof Closure) {
             ($declaration->scope)($subQuery, $joinAlias);
         }
+
+        $subQuery->andWhere("{$subAlias}.{$identifier} = {$rootAlias}.{$identifier}");
 
         foreach ($subQuery->getParameters() as $parameter) {
             $type = $parameter->getType();

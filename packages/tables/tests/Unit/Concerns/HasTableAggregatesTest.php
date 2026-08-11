@@ -315,6 +315,37 @@ it('carries a scoped aggregate sort and its parameters onto the page query', fun
         ->and(aggregateCellStates($secondPage, 'songs_count'))->toBe([0, 0]);
 });
 
+it('keeps the correlation when a scope replaces the where clause', function (): void {
+    $entityManager = artistsBySongCount();
+    $scope = static fn (string $alias, QueryBuilder $query): QueryBuilder => $query->where("{$alias}.plays > 15");
+    $columns = static fn (): array => [
+        TextColumn::make('name'),
+        TextColumn::make('songs_count')->counts(['songs' => $scope])->sortable(),
+    ];
+
+    $firstPage = sortedArtistTableHost($entityManager, $columns(), 'songs_count:desc');
+    $secondPage = sortedArtistTableHost($entityManager, $columns(), 'songs_count:desc', page: 2);
+
+    expect(aggregateCellStates($firstPage, 'name'))->toBe(['Radiohead', 'Björk'])
+        ->and(aggregateCellStates($firstPage, 'songs_count'))->toBe([3, 2])
+        ->and(aggregateCellStates($secondPage, 'name'))->toBe(['Sade', 'Adele'])
+        ->and(aggregateCellStates($secondPage, 'songs_count'))->toBe([0, 0]);
+});
+
+it('honours an explicit sort-column list over the aggregate', function (): void {
+    $host = sortedArtistTableHost(
+        artistsBySongCount(),
+        [TextColumn::make('name'), TextColumn::make('songs_count')->counts('songs')->sortable(['name'])],
+        'songs_count:asc',
+    );
+    $dql = $host->getFilteredSortedTableQuery()?->getDQL();
+
+    expect(aggregateCellStates($host, 'name'))->toBe(['Adele', 'Björk'])
+        ->and(aggregateCellStates($host, 'songs_count'))->toBe([1, 2])
+        ->and($dql)->toContain('ORDER BY artist.name asc')
+        ->and($dql)->not->toContain('HIDDEN');
+});
+
 it('a searched, aggregate-sorted, paginated table stays consistent', function (): void {
     $entityManager = artistsBySongCount();
     $columns = static fn (): array => [

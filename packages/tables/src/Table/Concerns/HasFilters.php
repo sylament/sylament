@@ -121,7 +121,7 @@ trait HasFilters
 
     public function hasDeferredFilters(): bool
     {
-        return $this->evaluate($this->hasDeferredFilters);
+        return (bool) $this->evaluate($this->hasDeferredFilters);
     }
 
     public function filtersLayout(FiltersLayout|Closure|null $layout): static

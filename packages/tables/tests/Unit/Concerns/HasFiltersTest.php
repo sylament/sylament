@@ -312,7 +312,7 @@ it('clears a ternary chip to null rather than to its false arm', function (): vo
         ->and($query->getDQL())->not->toContain('WHERE');
 });
 
-it('falls back to false for a nullable boolean field whose filter declares no reset state', function (): void {
+it('falls back to false, stored as 0, for a nullable boolean field whose filter declares no reset state', function (): void {
     $host = filtersHost(fn (Table $table): Table => $table->filters([
         Filter::make('custom')->schema([Select::make('flag')->boolean()]),
     ]));
@@ -488,14 +488,27 @@ it('cannot resolve a record the filters excluded', function (): void {
 });
 
 it('restores an excluded record when the filter opts out of record resolution', function (): void {
-    $host = filtersHost(fn (Table $table): Table => $table->filters([
-        Filter::make('popular')
-            ->excludeWhenResolvingRecord()
-            ->query(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays > 25')),
-    ]));
+    $passes = [];
+    $host = filtersHost(function (Table $table) use (&$passes): Table {
+        return $table->filters([
+            Filter::make('popular')
+                ->excludeWhenResolvingRecord()
+                ->baseQuery(function (QueryBuilder $query) use (&$passes): void {
+                    $passes[] = 'base';
+                })
+                ->query(function (QueryBuilder $query) use (&$passes): QueryBuilder {
+                    $passes[] = 'apply';
+
+                    return $query->andWhere('song.plays > 25');
+                }),
+        ]);
+    });
 
     $host->tableFilters = ['popular' => ['isActive' => true]];
 
-    expect($host->getTableRecord('1'))->toBeInstanceOf(DoctrineSong::class)
+    $record = $host->getTableRecord('1');
+
+    expect($record)->toBeInstanceOf(DoctrineSong::class)
+        ->and($passes)->toBe(['base'])
         ->and(array_keys($host->getTableRecords()->getRecords()))->toBe([3, 4, 5]);
 });

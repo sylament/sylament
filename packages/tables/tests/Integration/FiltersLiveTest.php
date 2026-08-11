@@ -23,9 +23,10 @@ uses(InteractsWithLiveComponents::class);
  * fields carry `tableFilters.<filter>.<field>`. Do not collapse those into one
  * whole-prop `set()` — it replaces the bag, and a filter whose key the
  * replacement drops then applies unconditionally, silently and with no chip, per
- * `docs/progress/tables/has-table.md`. Exactly one whole-prop write survives, and
- * it is there to pin `updatedTableFilters()`, which is the only thing that shape
- * reaches.
+ * `docs/progress/tables/has-table.md`. Exactly one whole-prop write to a filter
+ * bag survives, and it is there to pin `updatedTableFilters()`, which is the only
+ * thing that shape reaches; the two `tableSearch` writes are a different prop,
+ * where a whole-prop write is the only shape there is.
  */
 
 it('leaves the rows alone until the draft is applied, then resets the page', function (): void {

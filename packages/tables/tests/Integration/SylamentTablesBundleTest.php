@@ -79,10 +79,9 @@ it('renders a forms field inside the tables kernel', function (): void {
     );
 
     expect($html)
-        ->toContain('input')
+        ->toContain('type="checkbox"')
         ->toContain('sy-fo-checkbox')
-        ->toContain('Featured')
-        ->and($html)->not->toBe('');
+        ->toContain('Featured');
 });
 
 it('builds filters and indicators through the container so their closures reach it', function (): void {

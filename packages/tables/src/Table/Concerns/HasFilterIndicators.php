@@ -27,7 +27,7 @@ trait HasFilterIndicators
      */
     public function getFilterIndicators(): array
     {
-        if ($this->evaluate($this->areFilterIndicatorsHidden)) {
+        if ((bool) $this->evaluate($this->areFilterIndicatorsHidden)) {
             return [];
         }
 

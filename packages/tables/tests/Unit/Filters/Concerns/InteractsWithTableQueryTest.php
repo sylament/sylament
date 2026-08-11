@@ -19,6 +19,13 @@ it('does nothing without a query callback', function (): void {
         ->and($query->getDQLPart('where'))->toBeNull();
 });
 
+it('does nothing without a base query callback', function (): void {
+    $query = filterQuery();
+
+    expect(BaseFilter::make('status')->applyToBaseQuery($query))->toBe($query)
+        ->and($query->getDQLPart('where'))->toBeNull();
+});
+
 it('skips a hidden filter that has a callback', function (): void {
     $query = filterQuery();
 

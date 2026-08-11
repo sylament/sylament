@@ -26,10 +26,11 @@ use Twig\Error\RuntimeError;
 
 /*
  * The browsing chrome of the shipped `Table` partial — sortable headers, the
- * search toolbar and the pagination footer — rendered through the booted
- * kernel's Twig against a host that turns all three on at once, and asserted
- * with the Crawler so a renamed class or a flattened wrapper fails here rather
- * than silently downstream in the stylesheet or the demo's browser pass.
+ * search toolbar, the pagination footer, the filters trigger and its panel, and
+ * the active-filter indicator row — rendered through the booted kernel's Twig
+ * against hosts that turn them on, and asserted with the Crawler so a renamed
+ * class or a flattened wrapper fails here rather than silently downstream in the
+ * stylesheet or the demo's browser pass.
  */
 
 function browsingTwig(): Environment
@@ -269,13 +270,11 @@ function songFilters(): array
 
 /**
  * @param array<string, mixed> $tableFilters
- * @param array<string, mixed> $tableDeferredFilters
  */
-function filtersTableHtml(Closure $configureTable, array $tableFilters = [], array $tableDeferredFilters = []): string
+function filtersTableHtml(Closure $configureTable, array $tableFilters = []): string
 {
     $component = new SchemaTableHost($configureTable);
     $component->tableFilters = $tableFilters;
-    $component->tableDeferredFilters = $tableDeferredFilters;
 
     return renderTableHost($component);
 }

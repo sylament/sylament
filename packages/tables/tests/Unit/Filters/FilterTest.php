@@ -35,7 +35,7 @@ function checkboxFilterSongs(): EntityManager
 
 function checkboxFilterQuery(EntityManager $entityManager): QueryBuilder
 {
-    return $entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song');
+    return $entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song')->orderBy('song.id');
 }
 
 /**

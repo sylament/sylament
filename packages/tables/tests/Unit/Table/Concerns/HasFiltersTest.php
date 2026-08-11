@@ -95,6 +95,7 @@ it('builds one keyed Group per visible filter, state-pathed and keyed by the fil
         ->and($group->getStatePath(isAbsolute: false))->toBe('isPublished')
         ->and($group->getKey(isAbsolute: false))->toBe('isPublished')
         ->and($group->getColumnSpan('lg'))->toBe(3)
+        ->and($group->getColumnSpan('default'))->toBe(1)
         ->and($group->getColumns('lg'))->toBe(2);
 });
 

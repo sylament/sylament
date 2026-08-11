@@ -8,7 +8,7 @@ a `ViewComponent` subclass that sits at `src/` root the way actions'
 [`Action`](../actions/action.md) does, and it is the only class the toast surface
 exposes to application code.
 
-The five ported concerns carry no rows of their own upstairs: each has exactly
+The six ported concerns carry no rows of their own upstairs: each has exactly
 one consumer, so they are folded into the table below per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). Filament's
 toast markup lives in `toEmbeddedHtml()` rather than in a Blade view, so its port

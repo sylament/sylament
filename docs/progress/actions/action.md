@@ -1028,7 +1028,8 @@ serialized path where Filament's is pinned to whatever `iconSize()` said at
 
 ### The rest of Filament's `Action` surface is unported
 
-Filament's `Action` composes roughly 50 traits/interfaces; 14 are folded into
+Filament's `Action` composes roughly 50 traits/interfaces; the 21 the
+[package README](README.md#actions--port-progress) lists are folded into
 this file's Surface table (ported, in some form), 6 more are the
 support-level traits referenced above, and a handful carry their own rows in the
 [package README](README.md#features) or their own detail file rather than

@@ -298,21 +298,21 @@ it('names the object that rejected the array, not the root record', function ():
         ->toThrow(LogicException::class, Author::class);
 });
 
-it('refuses an object-collection segment and names the relationship layer', function (): void {
+it('refuses an object-collection segment and names relationship()', function (): void {
     expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags.0.name', 'Ada'))
-        ->toThrow(LogicException::class, 'Doctrine relationship layer');
+        ->toThrow(LogicException::class, 'Declare relationship() on the component bound to this property');
 });
 
 it('refuses an object-collection leaf', function (): void {
     expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags', ['a']))
-        ->toThrow(LogicException::class, 'Doctrine relationship layer');
+        ->toThrow(LogicException::class, 'Declare relationship() on the component bound to this property');
 });
 
-it('points an object-collection refusal at plain-array repeater items and getData()', function (): void {
+it('points an object-collection refusal at relationship() and getData()', function (): void {
     expect(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags', ['a']))
-        ->toThrow(LogicException::class, 'the Repeater maps plain-array items only')
+        ->toThrow(LogicException::class, 'the Repeater maps plain-array items otherwise')
         ->and(fn () => accessor()->setOnRecord(new TypedRecord(), 'tags', ['a']))
-        ->toThrow(LogicException::class, 'map this property by hand after getData()');
+        ->toThrow(LogicException::class, 'map it by hand after getData()');
 });
 
 it('refuses a leaf write onto an adder-shaped collection property', function (): void {

@@ -395,9 +395,14 @@ The mapper's object-collection refusal
 **does not relax** for a plain Repeater; the array-backed epic narrowed what the
 message promises. `refuseCollection()` named "the Repeater epic" as the future
 owner; once the Repeater existed that read as a bug report, so the message was
-reworded to state the real boundary: array-backed lists are the Repeater's,
-object collections need identity, and the interim escape is mapping the
-collection by hand after `getData()`. A repeater also refuses *early*:
+reworded to state the real boundary: array-backed lists are the Repeater's, and
+object collections need identity. That precedent applied a second time here —
+"which arrives with the Doctrine relationship layer … until then, map this
+property by hand" is a wait the reader has already finished, on the one path
+this epic fixes. Both messages now name the answer instead: `relationship()`
+supplies the item identity, so declare it on the component bound to the
+collection; hand-mapping after `getData()` is what is left for a collection no
+component declares one for. A repeater also refuses *early*:
 `hydrateItems()` asks the type reader at the repeater's own record path and
 throws when the declared type is an object collection — otherwise `fill()`
 silently skips the object-valued read, the repeater renders empty, and the
@@ -417,8 +422,9 @@ so both refusals now step aside for a repeater that declares one: the early
 check returns before it reads the type, and the mapper's own refusal is never
 reached because the save hook, not `setOnRecord()`, owns that path. The reversal
 is *scoped to the declaration* — everything above still holds verbatim for a
-repeater without `relationship()`, which is why the early refusal's message and
-its test are unchanged. The docblock-only DTO list is unaffected in both modes.
+repeater without `relationship()`, so the early refusal itself is unchanged and
+still fires; only its *advice* moved on, reworded in the same commit that made
+the old advice false. The docblock-only DTO list is unaffected in both modes.
 
 ### A repeater owns its record subtree
 

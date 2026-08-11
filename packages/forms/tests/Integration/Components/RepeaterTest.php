@@ -93,5 +93,5 @@ it('refuses an object-collection record property through the wired type reader',
         ->getComponents();
 
     expect(fn (): mixed => $repeater->hydrateItems())
-        ->toThrow(LogicException::class, 'the Repeater maps plain-array items only');
+        ->toThrow(LogicException::class, 'Declare relationship() on this repeater');
 });

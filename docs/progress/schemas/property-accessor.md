@@ -277,7 +277,7 @@ acts, and the two answers split the behaviour:
   record declares as anything but a constructible object still falls through to
   the array remainder, which is what keeps the JSON-column shape working.
 - **A segment or leaf that is an object collection throws**, naming the path and
-  the Doctrine relationship layer that will own item identity. The message named
+  `relationship()` as what supplies item identity. The message named
   the `Repeater` epic until the [`Repeater`](../forms/repeater.md#object-collections-stay-refused-until-a-relationship-supplies-the-identity)
   shipped, at which point pointing at it would have read as a bug report: the
   repeater maps plain-array items, and an object collection needs to know which
@@ -287,9 +287,12 @@ acts, and the two answers split the behaviour:
   writes its collection through
   [`setAssociationOnRecord()`](#the-association-write-is-the-collection-refusals-counterpart)
   from its own save hook, so this refusal is never on that path — it still
-  governs every collection nobody declared a relationship for, message included.
-  The interim escape the message offers is unchanged — map the property by hand
-  after `getData()`. Two triggers raise the one message `refuseCollection()`
+  governs every collection nobody declared a relationship for. The same
+  rewording precedent fired a second time for the *advice*: telling the reader
+  identity "arrives with the Doctrine relationship layer — until then, map this
+  property by hand" is stale the moment the layer lands, so the message now
+  names `relationship()` first and keeps hand-mapping after `getData()` as the
+  fallback. Two triggers raise the one message `refuseCollection()`
   holds. The **declared type** is the designed one: `assertNotCollection()` asks
   the [`RecordTypeReader`](record-type-reader.md) at both the intermediate and the
   leaf site. The **runtime instance** is the one that has to exist anyway — a

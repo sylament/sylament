@@ -1307,8 +1307,7 @@ class Repeater extends Field
 
     /**
      * A repeater bound to an object collection would render empty and meet the
-     * mapper's refusal only on first save, so it refuses at hydration instead:
-     * mapping collection items needs identity, which this epic does not build.
+     * mapper's refusal only on first save, so it refuses at hydration instead.
      *
      * @throws LogicException when the record declares an object collection at this
      *                        component's record path
@@ -1339,7 +1338,7 @@ class Repeater extends Field
         $segments = explode('.', $recordPath);
 
         throw new LogicException(sprintf(
-            'Cannot map state path "%s" onto %s: "%s" is an object collection. Collection items need identity mapping (which state item is which entity), which arrives with the Doctrine relationship layer — the Repeater maps plain-array items only. Until then, map this property by hand after getData().',
+            'Cannot map state path "%s" onto %s: "%s" is an object collection. Collection items need identity mapping (which state item is which entity), which only relationship() supplies — the Repeater maps plain-array items otherwise. Declare relationship() on this repeater, or map this property by hand after getData().',
             $recordPath,
             $recordClass,
             $segments[count($segments) - 1],

@@ -237,7 +237,9 @@ it('keeps refusing an object collection without relationship()', function (): vo
     );
 
     expect(fn (): Schema => $schema->fill($post))
-        ->toThrow(LogicException::class, 'is an object collection');
+        ->toThrow(LogicException::class, 'is an object collection')
+        ->and(fn (): Schema => $schema->fill($post))
+        ->toThrow(LogicException::class, 'Declare relationship() on this repeater');
 });
 
 it('refuses a relation-backed field declared inside a relationship item', function (): void {

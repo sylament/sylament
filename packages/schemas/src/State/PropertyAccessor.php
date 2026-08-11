@@ -375,7 +375,7 @@ final readonly class PropertyAccessor
 
     /**
      * @throws LogicException when the record declares a collection at a mapped
-     *                        path, which has no supported item identity yet
+     *                        path, where state items carry no record identity
      */
     private function assertNotCollection(RecordTarget $target, object $holder, string $segment, string $path): void
     {
@@ -389,7 +389,7 @@ final readonly class PropertyAccessor
     private function refuseCollection(object $holder, string $segment, string $path): never
     {
         throw new LogicException(sprintf(
-            'Cannot map state path "%s" onto %s: "%s" is an object collection. Collection items need identity mapping (which state item is which entity), which arrives with the Doctrine relationship layer — the Repeater maps plain-array items only. Until then, map this property by hand after getData().',
+            'Cannot map state path "%s" onto %s: "%s" is an object collection. Collection items need identity mapping (which state item is which entity), which only a Repeater declaring relationship() supplies — the Repeater maps plain-array items otherwise. Declare relationship() on the component bound to this property, or map it by hand after getData().',
             $path,
             $holder::class,
             $segment,

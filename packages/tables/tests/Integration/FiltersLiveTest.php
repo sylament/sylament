@@ -17,13 +17,15 @@ uses(InteractsWithLiveComponents::class);
  * the indicator derivation — is pinned in the Unit bucket; this file pins that
  * the props, actions and schema state paths agree once hydration is involved.
  *
- * A draft edit is written at the field's own model path — the model the panel's
- * fields render, and the only write that leaves the sibling keys the mount fill
- * seeded standing. Do not collapse those into one whole-prop `set()`: a filter
- * whose key the replacement drops then applies unconditionally, silently and
- * with no chip, per `docs/progress/tables/has-table.md`. The live host keeps its
- * whole-prop write on purpose — that is the one shape `updatedTableFilters()`
- * fires for.
+ * Every filter edit is written at the field's own model path, in both modes,
+ * because that is the model the panel renders and the two paths differ below it:
+ * deferred fields carry `norender|tableDeferredFilters.<filter>.<field>`, live
+ * fields carry `tableFilters.<filter>.<field>`. Do not collapse those into one
+ * whole-prop `set()` — it replaces the bag, and a filter whose key the
+ * replacement drops then applies unconditionally, silently and with no chip, per
+ * `docs/progress/tables/has-table.md`. Exactly one whole-prop write survives, and
+ * it is there to pin `updatedTableFilters()`, which is the only thing that shape
+ * reaches.
  */
 
 it('leaves the rows alone until the draft is applied, then resets the page', function (): void {
@@ -104,7 +106,7 @@ it('restores the field defaults when the filters form is reset', function (): vo
 
     expect($component->component()->tableFilters['plays']['value'])->toBe('200');
 
-    $component->set('tableFilters', ['plays' => ['value' => '100']]);
+    $component->set('tableFilters.plays.value', '100');
 
     expect((string) $component->render())->toContain('Airbag')
         ->and((string) $component->render())->not->toContain('Exit Music');
@@ -118,8 +120,39 @@ it('restores the field defaults when the filters form is reset', function (): vo
         ->and($html)->not->toContain('Airbag');
 });
 
-it('re-filters on a bare prop write when filters are live', function (): void {
+/*
+ * The panel's own live path, which no whole-prop write reaches: a nested write
+ * fires no `onUpdated` hook at all, so the page reset can only arrive through
+ * the chain this trait's `#[PostHydrate(priority: 10)]` rebuild exists to keep
+ * ordered — rebuild, then schemas' `-10` old-state diff, then the field's
+ * `afterStateUpdated`, then `handleTableFilterUpdates()`. Paging off page 1
+ * first is what makes the reset non-vacuous, and it is load-bearing twice over:
+ * the filtered set is two rows deep at two per page, so a page that failed to
+ * reset would render the empty state and none of the asserted titles.
+ */
+it('re-filters and resets the page from a panel field write when filters are live', function (): void {
     $component = $this->createLiveComponent('LiveFiltersTable')
+        ->call('gotoTablePage', ['page' => 2]);
+
+    expect($component->component()->tablePage)->toBe(2)
+        ->and((string) $component->render())->not->toContain('Paranoid Android');
+
+    $component->set('tableFilters.plays.value', '100');
+
+    $host = $component->component();
+    $html = (string) $component->render();
+
+    expect($host->tablePage)->toBe(1)
+        ->and($host->tableFilters['plays']['value'])->toBe('100')
+        ->and($html)->toContain('Airbag')
+        ->and($html)->toContain('Let Down')
+        ->and($html)->not->toContain('Paranoid Android')
+        ->and($html)->not->toContain('Exit Music');
+});
+
+it('re-filters from the updatedTableFilters hook on a whole-prop write', function (): void {
+    $component = $this->createLiveComponent('LiveFiltersTable')
+        ->call('gotoTablePage', ['page' => 2])
         ->set('tableFilters', ['plays' => ['value' => '100']]);
 
     $html = (string) $component->render();

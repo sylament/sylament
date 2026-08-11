@@ -914,11 +914,22 @@ chips count applied indicators, and the apply button is simply always visible
 while deferring.
 
 Live mode roots the schema at `tableFilters` itself with a root `->live()`, so a
-field write *is* the mutation and `updatedTableFilters()` carries the same page
-reset and flush. The observable contract is identical either way, which is why
-one suite covers both: `FiltersLiveTest` drives the draft path through the
-panel's own field models and the apply action, and the live path through a bare
-whole-prop write.
+field write *is* the mutation. Which mechanism carries the page reset and the
+flush depends on the write's shape, and the panel only ever sends one of them: a
+**nested** write at the field's own model fires no `onUpdated` hook at all (the
+identity hook is an exact key match — see the note above), so it reaches
+`handleTableFilterUpdates()` through the field's `afterStateUpdated` instead,
+which is why this trait rebuilds its cache-only form at `#[PostHydrate(priority:
+10)]` — above the `-10` walk that fires those hooks. A **whole-prop** write is
+the shape `updatedTableFilters()` exists for, and no rendered element produces
+it.
+
+The observable contract is the same at the end of either path, which is why one
+suite covers all three: `FiltersLiveTest` drives the deferred path through the
+panel's field models and the apply action, the live path through the panel's
+field models after paging off page 1 — so the reset is observable, and a broken
+link anywhere in that chain renders the empty state — and the hook through the
+one whole-prop write it keeps for that purpose.
 
 Three consequences of removal being a **schema-state** mutation rather than an
 array edit are pinned there too. A chip's X resets the field its indicator was
@@ -942,11 +953,11 @@ handed an empty slice — which
 [`isActive`'s opt-out polarity](base-filter.md#isactive-is-an-opt-out-not-an-opt-in)
 reads as *active*, while the indicator gate's opposite polarity shows no chip for
 it. The panel never produces that shape, because each field writes at its own
-`tableDeferredFilters.<filter>.<field>` model and the `#[PostMount]` fill seeded
-every key before it; custom chrome that assigns the bag wholesale has to seed
-them itself. `FiltersLiveTest` drives the field models for exactly this reason,
-and keeps the whole-prop write only for the live host, where it is the one shape
-`updatedTableFilters()` fires for.
+`<bag>.<filter>.<field>` model and the `#[PostMount]` fill seeded every key
+before it; custom chrome that assigns the bag wholesale has to seed them itself.
+`FiltersLiveTest` drives the field models in both modes for exactly this reason,
+and keeps a single whole-prop write, on the live host, purely as the
+`updatedTableFilters()` pin.
 
 ## Divergences
 

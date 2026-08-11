@@ -52,7 +52,7 @@ class LiveFiltersTable implements InteractsWithSchemas, InteractsWithTable
             ])
             ->deferFilters(false)
             ->searchable()
-            ->paginated(false);
+            ->paginated([2]);
     }
 
     private function songs(): EntityManager

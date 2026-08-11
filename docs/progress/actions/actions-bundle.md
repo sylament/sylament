@@ -49,6 +49,8 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | [Bundle registration + `@SylamentActions` view namespace](../../../packages/actions/src/SylamentActionsBundle.php) | [`->hasViews()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | done | — | [diverges](#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | [Twig component service registration](../../../packages/actions/src/SylamentActionsBundle.php) (`loadExtension()`) | — (new; Filament's Blade components need no service) | done | — | [diverges](#the-bundle-registers-a-twig-component-service-which-filament-has-no-counterpart-for) |
 | [Twig extension service registration](../../../packages/actions/src/SylamentActionsBundle.php) (`loadExtension()`, `renderAction()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-renderaction-twig-extension-which-filament-has-no-counterpart-for) |
+| [`@sylament/actions` asset workspace](../../../packages/actions/assets/package.json) | — (new; Filament ships a prebuilt `dist/index.js` and no workspace) | done | — | [diverges](#the-asset-workspace-is-js-only-and-its-importmap-block-names-only-stimulus) |
+| [Page-wide dispatch controller](../../../packages/actions/assets/src/controllers/dispatch_controller.ts) | — (Sylament-only; Filament dispatches from an inline `wire:click` expression) | done | — | [diverges](#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it) |
 | Asset registration (`Js::make('actions', dist/index.js)`) | [`packageBooted()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | todo | — | [detail](#asset-registration) |
 | Exports/Imports provider wiring (`hasMigrations`, `hasRoutes('web')`, `filament.actions` middleware group, `hasCommands`) | [`configurePackage()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php), [`packageRegistered()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | blocked | Exports/Imports subsystem | [detail](#exportsimports-provider-wiring) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | todo | — | [detail](#translations) |
@@ -83,13 +85,36 @@ Filament's `packageBooted()` calls `FilamentAsset::register([...],
 '/../dist/index.js')` (the actions Alpine bundle: modal open/close, confirmation
 wiring). Sylament's translation is a `prependExtension()` that registers
 `packages/actions/assets/dist` as `@sylament/actions` (mirroring
-[`SylamentSupportBundle::prependAssetMapper()`](../../../packages/support/src/SylamentSupportBundle.php)).
-Nothing is wired: the bundle has no `prependExtension()` override and
-`packages/actions/assets/dist` does not exist (only
-[`assets/src/styles/index.css`](../../../packages/actions/assets/src/styles/index.css)).
-**Next step:** add the `prependExtension()` registration once the actions
-Stimulus controller (modal open/close, confirmation) is ported — deferred until
-that JS lands.
+[`SylamentSupportBundle::prependAssetMapper()`](../../../packages/support/src/SylamentSupportBundle.php)
+and [`SylamentNotificationsBundle::prependAssetMapper()`](../../../packages/notifications/src/SylamentNotificationsBundle.php)).
+
+The deferral this section used to carry — "once the actions Stimulus controller
+is ported" — is over: `packages/actions/assets/dist` now exists and holds the
+built [dispatch controller](#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it).
+The bundle still has **no** `prependExtension()` override, and that is now the
+one thing standing between the built controller and a consuming app. The base
+[`SylamentBundle`](../../../packages/support/src/SylamentBundle.php) supplies only
+the `isAssetMapperAvailable()` guard — each bundle writes its own prepend, and
+only `support` and `notifications` have — so nothing maps the directory today.
+
+The failure mode is loud rather than silent, which is the one mercy here.
+StimulusBundle resolves a `controllers.json` entry by reading the PHP package's
+`assets/package.json` ([`UxPackageReader`](../../../vendor/symfony/stimulus-bundle/src/Ux/UxPackageReader.php)
+turns `@sylament/actions` back into the `sylament/actions` install path), then
+calls `assetMapper->getAssetFromSourcePath()` on `<packageDirectory>/` plus the
+controller's `main` and **throws** `Could not find an asset mapper path that
+points to the "…" controller` when the path sits outside every registered one
+([`ControllersMapGenerator`](../../../vendor/symfony/stimulus-bundle/src/AssetMapper/ControllersMapGenerator.php)).
+So an app that enables the controller without the prepend fails at
+controllers-map generation, not at the first click.
+
+**Next step:** add `prependExtension()` → `prependAssetMapper()` to
+[`SylamentActionsBundle`](../../../packages/actions/src/SylamentActionsBundle.php),
+a byte-for-byte sibling of notifications', and flip this row to **done** with the
+Integration test that file's own [asset-registration
+row](../notifications/notifications-bundle.md#asset-registration) already wants —
+one shape written once covers `@sylament/support`, `@sylament/notifications` and
+`@sylament/actions`.
 
 ### Exports/Imports provider wiring
 
@@ -197,6 +222,101 @@ host. An optional second parameter binds per-render arguments —
 clone, so the host-cached action stays argument-free, and the serialized
 `arguments` mount param reaches the trigger markup. The order is resolve →
 bind → hidden-check, so a visibility closure can read the bound arguments.
+
+### The asset workspace is JS-only, and its importmap block names only Stimulus
+
+`packages/actions/assets` joins the pnpm workspace through
+[`pnpm-workspace.yaml`](../../../pnpm-workspace.yaml)'s `packages/*/assets` glob
+the moment it gains a `package.json`; its `tsconfig.json` and
+`scripts/build-js.mjs` are byte-copies of notifications', `BUNDLED_ENTRIES` empty,
+so every entry ships per-file and unbundled with its import specifiers verbatim.
+`@symfony/ux-live-component` is declared dev **and** peer at `^3.2.0` — the npm
+version the installed PHP package v3.3.0 ships, the two halves versioning
+independently — and stays a bare specifier in the built file, resolved by the
+consuming app's importmap.
+
+No `symfony.importmap` entry is declared for it, and that is a decision rather
+than an omission — the same one notifications' workspace
+[records](../notifications/notifications-bundle.md#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build).
+The block names what a consumer's importmap must hold and might not otherwise
+get; here this package's own composer manifest requires
+`symfony/ux-live-component`, whose recipe installs the entry as a **path** to the
+vendored `live_controller.js`, and a version constraint beside it would name the
+CDN copy — a second artifact registering a second `live` controller. The blast
+radius if the path entry is missing anyway is the whole controller, not one arm:
+`@symfony/ux-live-component` is a **top-level** import in the built
+`dispatch_controller.js`, so an importmap without it 404s the module before
+`afterLoad()` ever runs, and every dispatch on the page dies with it.
+
+Its stylesheet is *not* built here either. Support's
+`assets/src/styles/index.css` imports this package's
+[`src/styles/index.css`](../../../packages/actions/assets/src/styles/index.css)
+directly, so the `sy-ac-*` rules compile into support's single built stylesheet;
+`build` only ever emits the JS, and actions ships no CSS dist of its own.
+
+### The dispatch controller is page-wide, and Filament has no counterpart for it
+
+Filament needs no such controller: its trigger Blade emits
+`wire:click="$dispatch(…)"`, an inline JavaScript expression Livewire evaluates
+against whatever component encloses it. The port has no arbitrary-JS seam and
+[does not want one](action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding),
+so the templates stamp payload attributes and something else does the delivery.
+[`dispatch_controller.ts`](../../../packages/actions/assets/src/controllers/dispatch_controller.ts)
+is that something, and it is deliberately *not* a per-element controller.
+
+**It never binds to an element.** Stimulus calls `static afterLoad()` once, at
+**registration** time, with the identifier and the application rather than a
+host element (verified against the installed 3.2.2
+`Controller.afterLoad(_identifier, _application)`), so a controller class can run
+setup for a page that contains none of its elements — and this one contains none
+by design, since no template emits `data-controller="sylament--actions--dispatch"`.
+`fetch: eager` in the `symfony.controllers` block is what makes that fire at all:
+a lazy controller is registered only when a matching element appears, which for
+an element-less controller is never. A module-level `listening` flag guards the
+one `document.addEventListener` against a double registration.
+
+**It listens in the capture phase**, and that is the load-bearing choice. A
+delegated listener on `document` in the bubble phase is at the mercy of every
+ancestor between the trigger and the root: support's section header already calls
+`event.stopPropagation()` in
+[`toggleFromButton`](../../../packages/support/assets/src/controllers/section_controller.ts),
+and any future `:stop` action option would do the same silently. Capture runs
+top-down before all of them. It also fixes the ordering `dispatch()->close()`
+depends on — the toast root's `handleActionClick` is a plain bubble-phase
+Stimulus action, so the emit is guaranteed to happen before the toast takes
+itself out of the DOM.
+
+**The arms, in order.** From `event.target` the handler walks
+`closest('[data-sylament-action-event]')`; a trigger with no event name is not a
+dispatch and is dropped. Then, inside one `try`:
+
+1. `data-sylament-action-dispatch-self` present → resolve the trigger's *closest*
+   `[data-controller~="live"]` ancestor and `emitSelf(name, data)` on it. This is
+   the only arm that reads the DOM relative to the trigger, and the one that will
+   give `dispatchSelf()` real self semantics — no template
+   [emits that attribute yet](action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding),
+   so as of this commit the read is inert, which is exactly what reading an
+   always-absent attribute costs.
+2. No self marker, or no live ancestor to be self of → the page's **first**
+   `[data-controller~="live"]` element, `emit(name, data, to)`, with
+   `data-sylament-action-dispatch-to` passed as `emit()`'s third argument and
+   `null` when absent or empty. Any host works as the emitter: live's `emit()`
+   broadcasts to every component on the page, and `dispatchTo`'s name filter
+   narrows globally, which is what lets an action rendered outside every live
+   component dispatch into one at all.
+3. Anything that rejects or resolves to nothing — `getComponent()` on an element
+   the live application has not registered yet (a lazy or boot race), or a page
+   with no live component at all — is **silent**. That matches a dispatch nobody
+   listens to, and it is why the `catch` is empty but for its why-swallow comment.
+
+**Close is deliberately not handled here.** `data-sylament-action-close` is a
+neutral marker meaning *this action closes its context*, and only the context
+knows what closing means — a toast removes itself, a modal dismisses. So the
+close arm stays with whoever owns the click context (the toast root's controller,
+support's modal controller) and this controller reads the attribute nowhere. The
+split is the same one the [payload attributes](action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding)
+were designed around: templates stamp payload, context owners deliver behaviour,
+and dispatch is the one behaviour that has no context.
 
 ### Every package declares what its own source needs, transitives notwithstanding
 

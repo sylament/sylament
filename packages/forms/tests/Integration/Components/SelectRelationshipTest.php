@@ -249,6 +249,32 @@ it('maps a relationship named apart from the field onto that association', funct
         ->and($post->getAuthor())->toBe($bob);
 });
 
+it('refuses a to-many association the field never declared multiple() for', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = seedTaggedPost($entityManager);
+
+    $select = Select::make('tags')->relationship(titleAttribute: 'name');
+    [$schema] = wireRecordSelect($select, $post);
+
+    expect(fn (): array => $select->getOptions())
+        ->toThrow(LogicException::class, 'Call multiple() on this field')
+        ->and(fn (): Schema => $schema->fill($post))
+        ->toThrow(LogicException::class, 'holds a collection of');
+});
+
+it('refuses a to-one association the field declared multiple() for', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = seedAuthoredPost($entityManager);
+
+    $select = Select::make('author')->relationship(titleAttribute: 'name')->multiple();
+    [$schema] = wireRecordSelect($select, $post);
+
+    expect(fn (): array => $select->getOptions())
+        ->toThrow(LogicException::class, 'Drop multiple()')
+        ->and(fn (): Schema => $schema->fill($post))
+        ->toThrow(LogicException::class, 'holds a single');
+});
+
 it('fills stored tag ids and syncs the collection on getData', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post, $a, $b, $c] = seedTaggedPost($entityManager);
@@ -302,10 +328,11 @@ it('empties the collection on an empty multi submission', function (): void {
 
 it('round-trips a reloaded post whose collection is still lazy', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
-    [$seeded, $a, , $c] = seedTaggedPost($entityManager);
+    [$seeded, $a, $b, $c] = seedTaggedPost($entityManager);
 
     $postId = $seeded->getId();
     $aId = $a->getId();
+    $bId = $b->getId();
     $cId = $c->getId();
 
     $entityManager->clear();
@@ -318,7 +345,7 @@ it('round-trips a reloaded post whose collection is still lazy', function (): vo
 
     $schema->fill($post);
 
-    expect($host->data['tags'])->toBe([(string) $aId, (string) $post->getTags()->last()->getId()]);
+    expect($host->data['tags'])->toBe([(string) $aId, (string) $bId]);
 
     $host->data['tags'] = [(string) $aId, (string) $cId];
 

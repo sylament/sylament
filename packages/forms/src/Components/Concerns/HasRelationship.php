@@ -9,6 +9,7 @@ use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Stringable;
 use Sylament\Forms\Components\Select;
+use Sylament\Schemas\State\AssociationTarget;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
@@ -76,7 +77,7 @@ trait HasRelationship
             return $this->cachedRelationshipOptions;
         }
 
-        $target = $this->getRelationshipTarget();
+        $target = $this->getMultiplicityMatchedRelationshipTarget();
         $titleAttribute = $this->getRelationshipTitleAttributeOrFail();
         $reader = $this->getAssociationReader();
         $accessor = $this->getPropertyAccessor();
@@ -134,6 +135,43 @@ trait HasRelationship
         ));
     }
 
+    /**
+     * What the mapping declares at the association, refused when its multiplicity
+     * and `multiple()` disagree: a select speaks one value or a list, and the
+     * association holds one record or a collection, so the two declarations have
+     * to name the same shape. Resolved on every read, never snapshotted, so
+     * `multiple()` may be declared on either side of `relationship()`.
+     *
+     * @throws LogicException when the association holds a collection the field
+     *                        never declared `multiple()` for, or a single record
+     *                        it did
+     */
+    private function getMultiplicityMatchedRelationshipTarget(): AssociationTarget
+    {
+        $target = $this->getRelationshipTarget();
+        $isMultiple = $this->isMultiple();
+
+        if ($target->isToMany && ! $isMultiple) {
+            throw new LogicException(sprintf(
+                'The [%s] field declares relationship("%s"), but that association holds a collection of %s while the field speaks a single value — every selection but one would be dropped. Call multiple() on this field, or point relationship() at a to-one association.',
+                (string) $this->getName(),
+                $this->getRelationshipNameOrFail(),
+                $target->targetClass,
+            ));
+        }
+
+        if (! $target->isToMany && $isMultiple) {
+            throw new LogicException(sprintf(
+                'The [%s] field declares relationship("%s") alongside multiple(), but that association holds a single %s rather than a collection, so a list of selections could not map it. Drop multiple(), or point relationship() at a to-many association.',
+                (string) $this->getName(),
+                $this->getRelationshipNameOrFail(),
+                $target->targetClass,
+            ));
+        }
+
+        return $target;
+    }
+
     private function scopeOptionQuery(QueryBuilder $query): QueryBuilder
     {
         return $this->requireScopedOptionQuery($this->evaluate($this->modifyRelationshipQueryUsing, [
@@ -169,7 +207,7 @@ trait HasRelationship
      */
     private function getStateFromRelationship(object $record): array|string|null
     {
-        $target = $this->getRelationshipTarget();
+        $target = $this->getMultiplicityMatchedRelationshipTarget();
         $reader = $this->getAssociationReader();
         $related = $this->getPropertyAccessor()->getFromRecord($record, $this->getRelationshipNameOrFail());
 
@@ -190,7 +228,7 @@ trait HasRelationship
 
     private function saveStateToRelationship(object $record, mixed $state): void
     {
-        $target = $this->getRelationshipTarget();
+        $target = $this->getMultiplicityMatchedRelationshipTarget();
         $name = $this->getRelationshipNameOrFail();
         $reader = $this->getAssociationReader();
         $accessor = $this->getPropertyAccessor();

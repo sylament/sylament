@@ -80,8 +80,10 @@ missing-`titleAttribute` throw, a
 relationship named apart from the field, and the to-many arm's fill, collection
 sync (the `PersistentCollection` instance surviving, the dropped `Tag` row
 surviving, `multiple()` declared on either side of `relationship()`), empty
-submission and a round-trip against a reloaded post whose collection is still
-lazy — by
+submission, a round-trip against a reloaded post whose collection is still
+lazy, and both multiplicity refusals (a to-many association without `multiple()`,
+a to-one association with it, each asserted from the option map and from
+`fill()`) — by
 [`SelectRelationshipTest`](../../../packages/forms/tests/Integration/Components/SelectRelationshipTest.php),
 against the in-memory SQLite rig
 ([`EntityManagerFactory`](../../../packages/forms/tests/Fixtures/Doctrine/EntityManagerFactory.php),
@@ -154,9 +156,16 @@ Every one of them resolves the record class and the reader **at evaluation
 time**, never at `relationship()` time — the same lazy shape
 [`Repeater::refuseObjectCollectionRecord()`](repeater.md) uses, and what lets
 `relationship()` be declared before the component is attached to a schema. The
-to-one/to-many branch is read off the mapping on each call rather than captured,
-and `isMultiple()` is likewise evaluated rather than snapshotted, so
-`multiple()` may be declared on either side of `relationship()`.
+to-one/to-many branch is read off the mapping on each call rather than captured:
+all three go through `getMultiplicityMatchedRelationshipTarget()`, which reads
+`isMultiple()` on the same call and refuses the two shapes where the field and
+the mapping disagree — a to-many association the field never declared
+`multiple()` for (every selection but one would be dropped on the way in, and the
+save would write a single reference over the collection), and a to-one
+association it did (a list of selections has no single record to map onto). Both
+sides are still read per call rather than snapshotted, so `multiple()` may be
+declared on either side of `relationship()`; it is the *pairing* that is fixed,
+not the declaration order.
 
 All three take the component as an injected parameter
 (`static function (Select $component)`, Filament-exact) rather than closing over

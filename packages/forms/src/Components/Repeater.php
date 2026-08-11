@@ -6,7 +6,6 @@ namespace Sylament\Forms\Components;
 
 use Closure;
 use LogicException;
-use ReflectionClass;
 use Sylament\Actions\Action;
 use Sylament\Forms\Components\Concerns\BelongsToRelationship;
 use Sylament\Forms\Components\Concerns\CanBeCloned;
@@ -1140,7 +1139,11 @@ class Repeater extends Field
                 ? $this->mutateRelationshipItemData($this->mutateRelationshipDataBeforeCreateUsing, $itemData)
                 : $this->mutateRelationshipItemData($this->mutateRelationshipDataBeforeSaveUsing, $itemData, ['record' => $child]);
 
-            $child ??= $this->constructRelationshipItemRecord($target->targetClass);
+            $child ??= $accessor->constructRecord(
+                $target->targetClass,
+                sprintf('an added item of the [%s] repeater onto a new record', (string) $this->getName()),
+                'drop relationship() and add the records by hand after getData().',
+            );
 
             foreach ($itemStatePaths as $itemStatePath) {
                 if ($accessor->hasInArray($itemData, $itemStatePath)) {
@@ -1240,28 +1243,6 @@ class Repeater extends Field
             $itemKey,
             $this->getRelationshipNameOrFail(),
         ));
-    }
-
-    /**
-     * @param class-string $targetClass
-     *
-     * @throws LogicException when the association's target cannot be built
-     *                        without arguments
-     */
-    private function constructRelationshipItemRecord(string $targetClass): object
-    {
-        $reflection = new ReflectionClass($targetClass);
-        $constructor = $reflection->getConstructor();
-
-        if (($constructor !== null) && $constructor->getNumberOfRequiredParameters() > 0) {
-            throw new LogicException(sprintf(
-                'Cannot map an added item of the [%s] repeater onto %s: it requires constructor arguments, so the mapper cannot build it. Give the constructor defaults, or drop relationship() and add the records by hand after getData().',
-                (string) $this->getName(),
-                $targetClass,
-            ));
-        }
-
-        return $reflection->newInstance();
     }
 
     /**

@@ -6,7 +6,6 @@ namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
 use LogicException;
-use ReflectionClass;
 use Sylament\Schemas\Components\Contracts\CanEntangleWithSingularRelationships;
 use Sylament\Schemas\State\AssociationTarget;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
@@ -19,10 +18,13 @@ use function Sylament\Support\filled;
  * component takes the association's property as its state path and maps that
  * path wholesale, so the fields nested inside it read off the related record and
  * write back onto it rather than onto the record the schema is bound to.
+ *
+ * The association itself — the name, the target and the refusals — comes from
+ * {@see BelongsToRelationship}, shared with the relation-backed fields.
  */
 trait EntanglesStateWithSingularRelationship
 {
-    protected ?string $relationship = null;
+    use BelongsToRelationship;
 
     protected bool|Closure $hasRelationship = false;
 
@@ -63,11 +65,6 @@ trait EntanglesStateWithSingularRelationship
         });
 
         return $this;
-    }
-
-    public function getRelationshipName(): ?string
-    {
-        return $this->relationship;
     }
 
     /**
@@ -150,7 +147,11 @@ trait EntanglesStateWithSingularRelationship
             return;
         }
 
-        $related = $existing ?? $this->constructRelatedRecord($target->targetClass);
+        $related = $existing ?? $accessor->constructRecord(
+            $target->targetClass,
+            sprintf('state path "%s" onto a new related record', (string) $this->getStatePath()),
+            'drop relationship() and create the related record by hand after getData().',
+        );
 
         /** @var array<string, mixed> $state */
         $state = is_array($state) ? $state : [];
@@ -164,6 +165,16 @@ trait EntanglesStateWithSingularRelationship
         if ($existing === null) {
             $accessor->setOnRecord($record, $name, $related);
         }
+    }
+
+    protected function getMissingEntityManagerConsequence(): string
+    {
+        return 'the related record could neither be read nor written';
+    }
+
+    protected function getRelationshipFallbackAdvice(): string
+    {
+        return 'or drop relationship() and map the related record by hand after getData().';
     }
 
     /**
@@ -191,85 +202,29 @@ trait EntanglesStateWithSingularRelationship
     }
 
     /**
-     * What the mapping declares at the entangled property, refusing everything
-     * this component cannot map: an association it cannot resolve, or one holding
-     * a collection rather than a single record.
+     * What the mapping declares at the entangled property, refusing the one shape
+     * {@see BelongsToRelationship::getRelationshipTarget()} allows and this
+     * component cannot map: an association holding a collection rather than a
+     * single record.
      *
      * @throws LogicException when the relationship cannot be resolved to a to-one
      *                        association
      */
     private function getSingularRelationshipTarget(): AssociationTarget
     {
-        $name = $this->getRelationshipNameOrFail();
-        $recordClass = $this->getRecordClass();
-        $reader = $this->getAssociationReader();
-
-        $target = ($recordClass === null) ? null : $reader->describe($recordClass, $name);
-
-        if (! $target instanceof AssociationTarget) {
-            throw new LogicException(sprintf(
-                '%s declares relationship("%s"), but %s %s',
-                static::class,
-                $name,
-                match (true) {
-                    ! $reader->hasEntityManager() => 'no Doctrine EntityManager backs it, so the related record could neither be read nor written. Register Doctrine (doctrine/doctrine-bundle),',
-                    $recordClass === null => 'the schema names no record class to read the association off. Give the schema a record() instance or class-string,',
-                    default => sprintf('[%s] maps no association at "%s". Name the property Doctrine maps,', $recordClass, $name),
-                },
-                $this->getRelationshipFallbackAdvice(),
-            ));
-        }
+        $target = $this->getRelationshipTarget();
 
         if ($target->isToMany) {
             throw new LogicException(sprintf(
                 '%s declares relationship("%s"), but that association holds a collection of %s rather than a single record, so one set of fields could not map it. Use a Repeater for a to-many association, %s',
-                static::class,
-                $name,
+                $this->getRelationshipSubject(),
+                $this->getRelationshipNameOrFail(),
                 $target->targetClass,
                 $this->getRelationshipFallbackAdvice(),
             ));
         }
 
         return $target;
-    }
-
-    private function getRelationshipFallbackAdvice(): string
-    {
-        return 'or drop relationship() and map the related record by hand after getData().';
-    }
-
-    /**
-     * @throws LogicException when the component is asked for its relationship
-     *                        while declaring none
-     */
-    private function getRelationshipNameOrFail(): string
-    {
-        return $this->relationship ?? throw new LogicException(sprintf(
-            '%s was asked for its relationship, but relationship() declared none.',
-            static::class,
-        ));
-    }
-
-    /**
-     * @param class-string $targetClass
-     *
-     * @throws LogicException when the association's target cannot be built
-     *                        without arguments
-     */
-    private function constructRelatedRecord(string $targetClass): object
-    {
-        $reflection = new ReflectionClass($targetClass);
-        $constructor = $reflection->getConstructor();
-
-        if (($constructor !== null) && $constructor->getNumberOfRequiredParameters() > 0) {
-            throw new LogicException(sprintf(
-                'Cannot map state path "%s" onto a new %s: it requires constructor arguments, so the mapper cannot build it. Give the constructor defaults, or drop relationship() and create the related record by hand after getData().',
-                (string) $this->getStatePath(),
-                $targetClass,
-            ));
-        }
-
-        return $reflection->newInstance();
     }
 
     /**

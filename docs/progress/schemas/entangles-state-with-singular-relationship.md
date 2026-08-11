@@ -17,7 +17,10 @@ contract, which is what the wired hook closures type-hint.
 The mechanics it stands on are elsewhere: the hook pair and the record path map
 in [`belongs-to-record.md`](belongs-to-record.md), the mapping reads in
 [`association-reader.md`](association-reader.md), the graph reads and writes in
-[`property-accessor.md`](property-accessor.md).
+[`property-accessor.md`](property-accessor.md). The association itself — the
+name, the target and the refusals — comes from
+[`BelongsToRelationship`](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php),
+[shared with forms' relation-backed fields](#the-association-core-is-shared-with-forms-relation-backed-fields).
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -43,8 +46,8 @@ permanent note in [Divergences](#divergences).
 | [Save onto the existing related record](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`saveRelationshipsBeforeChildrenUsing()`'s `$record` arm](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | — |
 | [Construct the related record when there is none](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`saveRelationshipsBeforeChildrenUsing()`'s `new $relatedModel` arm](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | [semantics](#a-constructed-related-record-is-written-through-the-property-so-the-mapping-persists-it) |
 | [Delete when the condition is false](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`$record?->delete()`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | [diverges](#a-switched-off-relationship-nulls-the-property-and-removes-the-record-explicitly) |
-| [`hasRelationship()` / `getRelationshipName()`](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`hasRelationship()` / `getRelationshipName()`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | — |
-| [Association resolution + refusals](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`getRelationship()` / `getRelatedModel()`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | [diverges](#the-relation-object-becomes-an-associationtarget-and-the-morphone-arm-is-cut) |
+| [`hasRelationship()` / `getRelationshipName()`](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`hasRelationship()` / `getRelationshipName()`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | [diverges](#the-association-core-is-shared-with-forms-relation-backed-fields) |
+| [Association resolution + refusals](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php) | [`getRelationship()` / `getRelatedModel()`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | [diverges](#the-relation-object-becomes-an-associationtarget-and-the-morphone-arm-is-cut) · [diverges](#the-association-core-is-shared-with-forms-relation-backed-fields) |
 | [`CanEntangleWithSingularRelationships`](../../../packages/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php) | [`Contracts/CanEntangleWithSingularRelationships.php`](../../../vendor/filament/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php) | done | — | [diverges](#the-contract-carries-the-two-hook-bodies-not-the-cache-surface) |
 | Sibling merge across components sharing one relationship | [both closures' `findComponentsWithThisRelationship`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | skipped | — | [diverges](#two-components-entangling-one-relationship-throw-rather-than-merge) |
 | `cachedExistingRecord()` / `getCachedExistingRecord()` / `clearCachedExistingRecord()` | [the cache trio](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | skipped | — | [diverges](#the-existing-record-is-read-off-the-graph-rather-than-cached-on-the-component) |
@@ -123,9 +126,11 @@ its save hook gets the chance to delete.
 ### A constructed related record is written through the property, so the mapping persists it
 
 When the record holds no related object, the save builds the association's target
-(refusing a constructor with required arguments, in
-[`PropertyAccessor::constructIntermediate()`](property-accessor.md)'s words),
-maps the submitted leaves onto it, and writes it onto the record through
+through
+[`PropertyAccessor::constructRecord()`](property-accessor.md#the-mappers-construct-or-refuse-is-one-method-three-callers-borrow) —
+the same construct-or-refuse the accessor uses for a null intermediate, refusing
+a constructor with required arguments — maps the submitted leaves onto it, and
+writes it onto the record through
 `setOnRecord()` — the record's own setter. In the test rig that setter is
 `Post::setProfile()`, which maintains the owning side, and the association's
 `cascade: ['persist']` inserts the new row at flush. Nothing is persisted by the
@@ -186,6 +191,30 @@ an inverse side: the test rig's `Post::$profile` is the inverse of
 is still nulled so the in-memory graph agrees with the database, and it is nulled
 through the accessor, so a property that rejects null is refused with a message
 rather than a bare type error.
+
+### The association core is shared with forms' relation-backed fields
+
+Filament writes the association lookup three times — once in this trait, once in
+`Select`, once in `Repeater` — because each reaches a different Eloquent relation
+API. Ours is one Doctrine lookup, so the port keeps one copy:
+[`BelongsToRelationship`](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php)
+holds `$relationship`, `getRelationshipName()`, `getRelationshipNameOrFail()`,
+`getRelationshipTarget()` and its three-arm refusal (no entity manager, no record
+class, no association at that property), and this trait, forms'
+[`Select`](../forms/select.md) and forms'
+[`Repeater`](../forms/repeater.md) all compose it. It sits in **schemas** rather
+than forms because that is the direction the dependency already runs — forms
+requires schemas, not the reverse — and forms' same-named trait is now a
+three-line adapter filling in the clauses a *field* says differently.
+
+Three seams carry the per-consumer prose, so no message lost a word to the
+sharing: `getRelationshipSubject()` (how a refusal names the thing that declared
+the relationship — `The [bio] field` against a field, the component class against
+a layout component), `getMissingEntityManagerConsequence()` (why a missing
+entity manager is fatal for *this* consumer), and
+`getMissingRelationshipNameNote()` (whether there was a name to fall back on).
+The to-many refusal stays here, since it is this trait's alone — one set of
+fields cannot map a collection, where a `Repeater` wants exactly that.
 
 ### The relation object becomes an `AssociationTarget`, and the MorphOne arm is cut
 

@@ -42,7 +42,11 @@ no Filament concern at all, being the relationship half of `Select` itself, kept
 as a trait here because a fourteen-method relation surface on a field class is
 what `Concerns/` exists to prevent, and its association-resolution core split off
 again as `BelongsToRelationship` once `Repeater` grew a `relationship()` of its
-own, so that one is shared and keeps a row — `HasToggleIcons` and `HasToggleColors` are
+own — and moved down to
+[schemas](../schemas/entangles-state-with-singular-relationship.md#the-association-core-is-shared-with-forms-relation-backed-fields)
+once the entangled layout components needed the same lookup, leaving forms'
+same-named trait as the field-flavoured adapter over it, which still keeps a
+row — `HasToggleIcons` and `HasToggleColors` are
 `Toggle`'s alone and live in [`toggle.md`](toggle.md), `HasStep`,
 `HasDatalistOptions` and `CanBeAutocapitalized` are `TextInput`'s alone and live
 in [`text-input.md`](text-input.md), and `CanBeCloned`, `CanGenerateUuids` and
@@ -138,7 +142,7 @@ and `Repeater`, and `HasExtraInputAttributes` by
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| [`BelongsToRelationship`](../../../packages/forms/src/Components/Concerns/BelongsToRelationship.php) — no Filament concern of its own; the association-resolution core `Select` and `Repeater` share | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) · [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | [repeater.md](repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) |
+| [`BelongsToRelationship`](../../../packages/forms/src/Components/Concerns/BelongsToRelationship.php) — no Filament concern of its own; the field-flavoured adapter over [schemas' association-resolution core](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php), which `Select` and `Repeater` share with the entangled layout components | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) · [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | [select.md](select.md#relationship-is-three-lazy-closures-over-the-association-reader) · [schemas](../schemas/entangles-state-with-singular-relationship.md#the-association-core-is-shared-with-forms-relation-backed-fields) |
 | CanAllowHtml | [`Components/Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | todo | — |
 | [`CanBeAccepted`](../../../packages/forms/src/Components/Concerns/CanBeAccepted.php) | [`Components/Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | [can-be-accepted.md](can-be-accepted.md) |
 | [`CanBeAutocompleted`](../../../packages/forms/src/Components/Concerns/CanBeAutocompleted.php) | [`Components/Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | done | [can-be-autocompleted.md](can-be-autocompleted.md) |

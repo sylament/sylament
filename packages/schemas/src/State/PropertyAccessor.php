@@ -209,6 +209,34 @@ final readonly class PropertyAccessor
     }
 
     /**
+     * Build a record the mapper has to create for itself, refusing a class whose
+     * constructor requires arguments — the mapper has nothing to pass it. The two
+     * clauses that differ per caller come in: `$subject` is what is being mapped,
+     * in the "Cannot map …" position, and `$advice` closes the refusal with what
+     * to do instead.
+     *
+     * @param class-string $class
+     *
+     * @throws LogicException when the class cannot be built without arguments
+     */
+    public function constructRecord(string $class, string $subject, string $advice): object
+    {
+        $reflection = new ReflectionClass($class);
+        $constructor = $reflection->getConstructor();
+
+        if (($constructor !== null) && $constructor->getNumberOfRequiredParameters() > 0) {
+            throw new LogicException(sprintf(
+                'Cannot map %s: %s requires constructor arguments, so the mapper cannot build it. Give the constructor defaults, or %s',
+                $subject,
+                $class,
+                $advice,
+            ));
+        }
+
+        return $reflection->newInstance();
+    }
+
+    /**
      * Whether a dotted path exists in a detached nested array — unlike
      * {@see getFromArray()}, distinguishes an absent key from a present null
      * (matching `Arr::has`).
@@ -357,20 +385,11 @@ final readonly class PropertyAccessor
             return null;
         }
 
-        $reflection = new ReflectionClass($target->objectClass);
-        $constructor = $reflection->getConstructor();
-
-        if ($constructor !== null && $constructor->getNumberOfRequiredParameters() > 0) {
-            throw new LogicException(sprintf(
-                'Cannot map state path "%s" onto %s: %s requires constructor arguments, so the mapper cannot build it. Give the constructor defaults, or initialize "%s" before mapping.',
-                $path,
-                $holder::class,
-                $target->objectClass,
-                $segment,
-            ));
-        }
-
-        return $reflection->newInstance();
+        return $this->constructRecord(
+            $target->objectClass,
+            sprintf('state path "%s" onto %s', $path, $holder::class),
+            sprintf('initialize "%s" before mapping.', $segment),
+        );
     }
 
     /**

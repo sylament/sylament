@@ -276,7 +276,11 @@ which is precisely how the save tells a new child from a loaded one.
 **desired list** in state order: a `record-` key resolves to the very instance
 the collection holds (never a fresh `getReference()` — strict identity is what
 makes an update an update), an un-prefixed key constructs the association's
-target class, and a loaded child no item names is simply left out. The list goes
+target class through
+[`PropertyAccessor::constructRecord()`](../schemas/property-accessor.md#the-mappers-construct-or-refuse-is-one-method-three-callers-borrow)
+— the mapper's shared construct-or-refuse, so an item class needing constructor
+arguments is refused in the same words everywhere — and a loaded child no item
+names is simply left out. The list goes
 to [`setAssociationOnRecord()`](../schemas/property-accessor.md#the-association-write-is-the-collection-refusals-counterpart), whose
 adder/remover diffing keeps the collection instance, calls `addSection()` for
 the new children (so the owning side is set by the record's own code) and

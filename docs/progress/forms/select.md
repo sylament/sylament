@@ -122,10 +122,13 @@ closures and nothing else. The association *name* and the target resolution
 below moved one level down into
 [`BelongsToRelationship`](../../../packages/forms/src/Components/Concerns/BelongsToRelationship.php)
 when [`Repeater::relationship()`](repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
-needed the same three-arm refusal; the two clauses that differ per field — why an
-unresolvable relationship is fatal for *this* field, and what to do instead —
-stay with each field as small hooks, so neither message lost a word to the
-sharing:
+needed the same three-arm refusal, and one package down into
+[schemas' trait of the same name](../schemas/entangles-state-with-singular-relationship.md#the-association-core-is-shared-with-forms-relation-backed-fields)
+when the entangled layout components needed it too — what is left in forms is the
+adapter that says "The [name] field" and that a field has its own name to fall
+back on. The clauses that differ per field — why an unresolvable relationship is
+fatal for *this* field, and what to do instead — stay with each field as small
+hooks, so no message lost a word to the sharing:
 
 - **`options()`** — [`AssociationReader::describe()`](../schemas/association-reader.md)
   resolves the record class's mapping at that property, `createOptionQuery()`

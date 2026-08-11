@@ -49,11 +49,12 @@ exists. _Blocked by_ names what has to land first. _Detail_ carries a
 | [`setAssociationOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write an association value onto a record property, past `setOnRecord()`'s object-collection refusal | — (Sylament-invented) | done | — | [semantics](#the-association-write-is-the-collection-refusals-counterpart) |
 | [`hasInArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether a dotted path exists in a detached array (absent vs present-null) | [`Arr::has()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | — |
 | [`acceptsNullOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether the record's declared write-side type at a dotted path takes null (true when the type cannot be read) | — (Sylament-invented) | done | — | [semantics](#the-nullability-probe-lives-here-because-the-type-reader-does) |
+| [`constructRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — build a record the mapper has to create for itself, refusing a constructor that requires arguments with the caller's own subject and advice | — (Sylament-invented) | done | — | [semantics](#the-mappers-construct-or-refuse-is-one-method-three-callers-borrow) |
 | [Service wiring](../../../packages/schemas/src/State/PropertyAccessor.php) — registration and class alias, injected through `CanAccessProperties` | — (Sylament-invented) | done | — | [diverges](#the-accessor-is-injected-not-reached-for) |
 
 Every row is **done** — the unit suite
 ([`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php))
-exercises the eight database-free public methods across their branches (nested reads returning
+exercises the database-free public methods across their branches (nested reads returning
 null past an absent, null or non-array segment, on a bag and on a record;
 single-segment, auto-vivifying and clobbering writes; the detached trio's
 present/missing/past-scalar reads, deep auto-vivify and non-array
@@ -72,7 +73,8 @@ rather than the root record; `hasInArray()`'s present, present-null, absent and
 past-scalar answers; and
 `acceptsNullOnRecord()`'s four — a nullable property, a non-nullable one, a path
 whose type cannot be read, and one read through an object hop rather than off the
-root), a
+root; and `constructRecord()` through the intermediate construction and the
+refusal that reach it), a
 wiring test
 ([`PropertyAccessorBootTest`](../../../packages/schemas/tests/Integration/State/PropertyAccessorBootTest.php))
 pins both paths — a component from `make()` holds the container's accessor, one
@@ -88,6 +90,22 @@ vendor behaviour it delegates to, in
 
 Behaviour a reader would plausibly misread from the source. Permanent — these
 outlive the detail sections above.
+
+### The mapper's construct-or-refuse is one method three callers borrow
+
+`constructRecord()` is public for callers outside this class, but the rule it
+enforces is the accessor's own: the mapper builds a record only when it can build
+it with no arguments, because it has nothing to pass a constructor. Three places
+need exactly that — `setOnRecord()`'s null singular intermediate, the
+[entangled layout component](entangles-state-with-singular-relationship.md)
+building the related record a to-one association is missing, and the
+[relationship repeater](../forms/repeater.md) building an added item — and each
+wrote its own reflection-plus-refusal before this method existed. The two clauses
+that genuinely differ come in as arguments: `$subject` (what is being mapped, in
+the "Cannot map …" position) and `$advice` (what to do instead). Everything
+between them — the required-arguments test, the class name, "so the mapper cannot
+build it. Give the constructor defaults, or" — is stated once, so the three
+refusals cannot drift apart.
 
 ### The association write is the collection refusal's counterpart
 

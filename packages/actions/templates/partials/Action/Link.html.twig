@@ -10,6 +10,7 @@
             'data-sylament-action-event': component.getEvent,
             'data-sylament-action-event-data': component.getEventData ? component.getEventData|json_encode : false,
             'data-sylament-action-dispatch-to': component.getDispatchDirection == 'to' ? component.getDispatchToComponent : false,
+            'data-sylament-action-dispatch-self': component.getDispatchDirection == 'self',
             'data-sylament-action-close': component.shouldClose,
         } -%}
     {%- elseif hasLiveClickBinding and component.getParentActionCallLiveComponentClickHandler -%}

@@ -20,8 +20,10 @@ a **class**-based Twig component, so it must be registered and tagged
 `twig.component`, and the
 [`ActionExtension`](../../../packages/actions/src/Twig/Extension/ActionExtension.php)
 supplying the `renderAction()` template helper is registered and tagged
-`twig.extension` (see their rows). Asset registration,
-the `filament.actions` middleware group, the export/import routes and
+`twig.extension` (see their rows). A third responsibility runs before those, in
+`prependExtension()`: mapping `assets/dist` into AssetMapper as
+`@sylament/actions`, which is what makes the built dispatch controller reachable
+at all. The `filament.actions` middleware group, the export/import routes and
 migrations, the `Make*Exporter`/`Make*Importer` commands, translations, and the
 `TestsActions` `Testable` mixin are not ported yet — all of them either serve
 the unbuilt Exports/Imports subsystem or are Livewire-specific.
@@ -51,7 +53,7 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | [Twig extension service registration](../../../packages/actions/src/SylamentActionsBundle.php) (`loadExtension()`, `renderAction()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-renderaction-twig-extension-which-filament-has-no-counterpart-for) |
 | [`@sylament/actions` asset workspace](../../../packages/actions/assets/package.json) | — (new; Filament ships a prebuilt `dist/index.js` and no workspace) | done | — | [diverges](#the-asset-workspace-is-js-only-and-its-importmap-block-names-only-stimulus) |
 | [Page-wide dispatch controller](../../../packages/actions/assets/src/controllers/dispatch_controller.ts) | — (Sylament-only; Filament dispatches from an inline `wire:click` expression) | done | — | [diverges](#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it) |
-| Asset registration (`Js::make('actions', dist/index.js)`) | [`packageBooted()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | todo | — | [detail](#asset-registration) |
+| [Asset registration — the `@sylament/actions` AssetMapper prepend](../../../packages/actions/src/SylamentActionsBundle.php) (`Js::make('actions', dist/index.js)`) | [`packageBooted()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | done | — | [diverges](#asset-registration-is-an-assetmapper-prepend) |
 | Exports/Imports provider wiring (`hasMigrations`, `hasRoutes('web')`, `filament.actions` middleware group, `hasCommands`) | [`configurePackage()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php), [`packageRegistered()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | blocked | Exports/Imports subsystem | [detail](#exportsimports-provider-wiring) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | todo | — | [detail](#translations) |
 | `Testable::mixin(new TestsActions)` | [`packageBooted()`](../../../vendor/filament/actions/src/ActionsServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
@@ -73,48 +75,17 @@ only resolves if the service was registered and tagged.
 [`ActionExtensionTest`](../../../packages/actions/tests/Integration/Twig/Extension/ActionExtensionTest.php)
 covers the Twig-extension row the same way: its fixture host template's
 `{{ renderAction('delete') }}` only renders if the service was registered and
-tagged `twig.extension`. The unported
+tagged `twig.extension`.
+[`SylamentActionsBundleTest`](../../../packages/actions/tests/Integration/SylamentActionsBundleTest.php)
+covers the asset-registration row against the compiled container: it asks the
+real `AssetMapperInterface` for the built dispatch controller by source path and
+requires the logical path back, so a missing or misaliased prepend fails it.
+That is the shape support's and notifications'
+[identical rows](../notifications/notifications-bundle.md#asset-registration)
+still want, and it is written once here to be copied. The unported
 responsibilities have no coverage because they have no code.
 
 ## Details
-
-### Asset registration
-
-Filament's `packageBooted()` calls `FilamentAsset::register([...],
-'filament/actions')` with a single `Js::make('actions', __DIR__ .
-'/../dist/index.js')` (the actions Alpine bundle: modal open/close, confirmation
-wiring). Sylament's translation is a `prependExtension()` that registers
-`packages/actions/assets/dist` as `@sylament/actions` (mirroring
-[`SylamentSupportBundle::prependAssetMapper()`](../../../packages/support/src/SylamentSupportBundle.php)
-and [`SylamentNotificationsBundle::prependAssetMapper()`](../../../packages/notifications/src/SylamentNotificationsBundle.php)).
-
-The deferral this section used to carry — "once the actions Stimulus controller
-is ported" — is over: `packages/actions/assets/dist` now exists and holds the
-built [dispatch controller](#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it).
-The bundle still has **no** `prependExtension()` override, and that is now the
-one thing standing between the built controller and a consuming app. The base
-[`SylamentBundle`](../../../packages/support/src/SylamentBundle.php) supplies only
-the `isAssetMapperAvailable()` guard — each bundle writes its own prepend, and
-only `support` and `notifications` have — so nothing maps the directory today.
-
-The failure mode is loud rather than silent, which is the one mercy here.
-StimulusBundle resolves a `controllers.json` entry by reading the PHP package's
-`assets/package.json` ([`UxPackageReader`](../../../vendor/symfony/stimulus-bundle/src/Ux/UxPackageReader.php)
-turns `@sylament/actions` back into the `sylament/actions` install path), then
-calls `assetMapper->getAssetFromSourcePath()` on `<packageDirectory>/` plus the
-controller's `main` and **throws** `Could not find an asset mapper path that
-points to the "…" controller` when the path sits outside every registered one
-([`ControllersMapGenerator`](../../../vendor/symfony/stimulus-bundle/src/AssetMapper/ControllersMapGenerator.php)).
-So an app that enables the controller without the prepend fails at
-controllers-map generation, not at the first click.
-
-**Next step:** add `prependExtension()` → `prependAssetMapper()` to
-[`SylamentActionsBundle`](../../../packages/actions/src/SylamentActionsBundle.php),
-a byte-for-byte sibling of notifications', and flip this row to **done** with the
-Integration test that file's own [asset-registration
-row](../notifications/notifications-bundle.md#asset-registration) already wants —
-one shape written once covers `@sylament/support`, `@sylament/notifications` and
-`@sylament/actions`.
 
 ### Exports/Imports provider wiring
 
@@ -223,6 +194,34 @@ clone, so the host-cached action stays argument-free, and the serialized
 `arguments` mount param reaches the trigger markup. The order is resolve →
 bind → hidden-check, so a visibility closure can read the bound arguments.
 
+### Asset registration is an AssetMapper prepend
+
+Filament's `packageBooted()` calls `FilamentAsset::register([...],
+'filament/actions')` with a single `Js::make('actions', __DIR__ .
+'/../dist/index.js')` (the actions Alpine bundle: modal open/close, confirmation
+wiring). Sylament's translation is a
+[`prependExtension()`](../../../packages/actions/src/SylamentActionsBundle.php)
+mapping `packages/actions/assets/dist` to `@sylament/actions`, guarded by
+`isAssetMapperAvailable()` — the same shape and the same guard support's and
+notifications' carry, so a consumer without AssetMapper is not forced to install
+it. The base [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php)
+supplies only that guard; each bundle writes its own prepend.
+
+Without it the failure is loud rather than silent, which is worth knowing because
+it lands nowhere near a click. StimulusBundle resolves a `controllers.json` entry
+by reading the PHP package's `assets/package.json`
+([`UxPackageReader`](../../../vendor/symfony/stimulus-bundle/src/Ux/UxPackageReader.php)
+turns `@sylament/actions` back into the `sylament/actions` install path), then
+calls `assetMapper->getAssetFromSourcePath()` on `<packageDirectory>/` plus the
+controller's `main` and **throws** `Could not find an asset mapper path that
+points to the "…" controller` when the path sits outside every registered one
+([`ControllersMapGenerator`](../../../vendor/symfony/stimulus-bundle/src/AssetMapper/ControllersMapGenerator.php)).
+So an app that enables the controller without the prepend fails at
+controllers-map generation. That is exactly the call
+[`SylamentActionsBundleTest`](../../../packages/actions/tests/Integration/SylamentActionsBundleTest.php)
+makes, which is why the test is written at the AssetMapper seam rather than
+against the raw config array.
+
 ### The asset workspace is JS-only, and its importmap block names only Stimulus
 
 `packages/actions/assets` joins the pnpm workspace through
@@ -231,9 +230,11 @@ the moment it gains a `package.json`; its `tsconfig.json` and
 `scripts/build-js.mjs` are byte-copies of notifications', `BUNDLED_ENTRIES` empty,
 so every entry ships per-file and unbundled with its import specifiers verbatim.
 `@symfony/ux-live-component` is declared dev **and** peer at `^3.2.0` — the npm
-version the installed PHP package v3.3.0 ships, the two halves versioning
+version the installed PHP package v3.4.0 ships, the two halves versioning
 independently — and stays a bare specifier in the built file, resolved by the
-consuming app's importmap.
+consuming app's importmap. This workspace is the toolkit's only npm consumer of
+it: notifications' dropped both declarations when its toast controller
+[handed the emit over](#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it).
 
 No `symfony.importmap` entry is declared for it, and that is a decision rather
 than an omission — the same one notifications' workspace
@@ -292,11 +293,11 @@ dispatch and is dropped. Then, inside one `try`:
 
 1. `data-sylament-action-dispatch-self` present → resolve the trigger's *closest*
    `[data-controller~="live"]` ancestor and `emitSelf(name, data)` on it. This is
-   the only arm that reads the DOM relative to the trigger, and the one that will
-   give `dispatchSelf()` real self semantics — no template
-   [emits that attribute yet](action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding),
-   so as of this commit the read is inert, which is exactly what reading an
-   always-absent attribute costs.
+   the only arm that reads the DOM relative to the trigger, and it is what gives
+   `dispatchSelf()` real self semantics: all five trigger templates
+   [emit the marker](action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding)
+   whenever the direction is `'self'`. The read is a **presence** test, matching a
+   marker that carries no value.
 2. No self marker, or no live ancestor to be self of → the page's **first**
    `[data-controller~="live"]` element, `emit(name, data, to)`, with
    `data-sylament-action-dispatch-to` passed as `emit()`'s third argument and

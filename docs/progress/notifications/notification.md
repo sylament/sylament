@@ -532,10 +532,11 @@ one `x-on:click` per action — `$dispatch(…)`, or `close()` when the action c
 — so the handler and its data sit on the same element. Sylament splits them on the
 arm a toast action actually takes: the **dispatch** branch of the five
 [trigger templates](../../../packages/actions/templates/partials/Action) emits
-`data-sylament-action-event`, `-event-data`, `-dispatch-to` and `-close` and stamps
-no handler beside them, and the single delegated handler lives on the toast root,
-written by the same `stimulus_controller(…)|stimulus_action(…)` hash that already
-carries the duration value, so the root keeps exactly one `data-action` writer.
+`data-sylament-action-event`, `-event-data`, `-dispatch-to`, `-dispatch-self` and
+`-close` and stamps no handler beside them, and the single delegated handler lives
+on the toast root, written by the same
+`stimulus_controller(…)|stimulus_action(…)` hash that already carries the duration
+value, so the root keeps exactly one `data-action` writer.
 
 The split is that branch's, not the whole cascade's, and the other arms are what a
 reader has to know before building against this. A trigger's click wiring is one
@@ -545,15 +546,15 @@ set as ternaries in `IconButton`) picking exactly one of five:
 | Arm | What the trigger emits |
 | --- | --- |
 | a client click handler | `data-action="live#action"` with that handler |
-| an **event** (`dispatch()` / `dispatchSelf()` / `dispatchTo()`) | the four payload attributes, **no handler** |
+| an **event** (`dispatch()` / `dispatchSelf()` / `dispatchTo()`) | the five payload attributes, **no handler** |
 | a parent action's call handler | `data-action="live#action"` with that handler |
 | **close only** — `close()` with no event | `data-action="sylament--support--modal#dismiss"` **and** `data-sylament-action-close` |
 | nothing of the above | `data-action="live#action"` with `action: mountAction` |
 
 A `url()` short-circuits the chain entirely and emits an `<a href>` with no wiring
 at all. So the two arms a toast is built for — dispatch, and dispatch with
-`close()` — are handler-free and reach the delegation; the **close-only** arm
-carries the modal token as well, harmless in a toast because no
+`close()` — are handler-free and reach a delegated handler instead; the
+**close-only** arm carries the modal token as well, harmless in a toast because no
 `sylament--support--modal` controller is an ancestor there, so Stimulus binds it to
 nothing while the root's delegation still reads the close marker.
 
@@ -564,47 +565,48 @@ one surrounds it, whereas a `data-sylament-action-*` attribute means the same
 thing everywhere and the surrounding context decides what to do with it. It also
 puts the handler on the element that already **is** the toast controller's scope,
 so `close()` needs no lookup, and it leaves the close button alone: that
-`IconButton` carries neither payload attribute, so a delegated click cannot
+`IconButton` carries no payload attribute at all, so a delegated click cannot
 double-fire it.
 
 The receiving half is
-[`handleActionClick()`](../../../packages/notifications/assets/src/controllers/notification_controller.ts).
-It walks `closest()` from `event.target` rather than reading `currentTarget`, which
-on a delegated action is always the root — the trigger is only reachable by walking
-**up** from where the click actually landed. It then re-checks
-`this.element.contains(trigger)`, because `closest()` does not stop at the toast: a
-click on the toast's own chrome would otherwise keep walking past the root and
-claim an action attribute on some enclosing element. The emit runs first and
-`close()` last, so a `dispatch()->close()` action does both; `close()` fires on the
-marker alone, never as a side effect of dispatching.
-The payload is parsed only when its attribute is present, and a malformed one
-**throws** — it is written by the template's `|json_encode`, so a parse failure is
-a defect in the emitter rather than input to tolerate.
+[`handleActionClick()`](../../../packages/notifications/assets/src/controllers/notification_controller.ts),
+and what it receives is **only the close**. It walks
+`closest('[data-sylament-action-close]')` from `event.target` rather than reading
+`currentTarget`, which on a delegated action is always the root — the trigger is
+only reachable by walking **up** from where the click actually landed. It then
+re-checks `this.element.contains(trigger)`, because `closest()` does not stop at
+the toast: a click on the toast's own chrome would otherwise keep walking past the
+root and claim a close marker on some enclosing element. Then it calls `close()`.
+That is the whole handler, and it is synchronous — there is nothing left to await.
 
-Delivery goes through ux-live-component's public API, and the part worth knowing is
-that the emitting component is arbitrary. The handler takes the first
-`[data-controller~="live"]` element on the page and emits through it, which is
-sound because `Component.emit()` resolves its targets with
-`findComponents(this, onlyParents: false, …)` — a walk of the **whole** component
-registry, not of a subtree — so the emitter decides nothing about who hears the
-event, and `dispatchTo`'s name filter narrows globally too. That is what lets a
-toast rendered outside every live component dispatch into one at all.
-`getComponent()` polls the element→component map eleven times at 5 ms before
-rejecting, at roughly 55 ms: it increments its counter *after* the resolve
-check and rejects on `count > maxCount`, where `maxCount` is 10, so the tenth
-miss is not yet fatal. A page carrying no live component, or one whose
-controller has not connected yet, lands in the `catch` — and the silence there
-is the designed behaviour, matching a dispatch nobody listens to. A `dispatchSelf()` action reaches
-this path as a plain dispatch, because
-[no attribute distinguishes it](../actions/action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding)
-and a toast has no self to address.
+Dispatch delivery is **not** here. It moved to a page-wide capture-phase document
+listener that actions ships, along with the payload parsing, the `getComponent()`
+call and the arbitrary-emitter reasoning that used to sit in this paragraph:
+[actions-bundle.md](../actions/actions-bundle.md#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it).
+Three consequences land on the toast side. A toast is no longer the only context
+that can deliver a dispatch, so the payload attributes stopped being inert
+everywhere else — the "one delegating action per host" cost this section used to
+name is now paid once, globally, by a controller nothing has to opt into. The
+ordering `dispatch()->close()` depends on holds by phase rather than by statement
+order: the document listener runs in **capture**, so the emit is guaranteed to
+happen before this bubble-phase handler removes the toast from the DOM. And
+`dispatchSelf()` finally means something in a toast — the marker
+[is emitted now](../actions/action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding),
+though a toast is rendered outside every live component, so the trigger has no
+`live` ancestor to be self of and the delivery falls through to the plain-dispatch
+arm exactly as before.
 
-The cost is two-sided. On the payload arms it is the mild one: those attributes do
-nothing unless something delegates, so an action rendered where nothing does is
-silently inert — the price of context-free triggers, paid once per host, since a
-host that wants toast-style dispatch adds one delegating action to its own root.
-The **mount** arm is the sharp one, and it is the trap to know when building
-against this passage. A bare `Action::make('x')` — no `url()`, no event, no
+The workspace shed a dependency with the bridge: the toast controller no longer
+imports `@symfony/ux-live-component`, so `packages/notifications/assets` declares
+it neither dev nor peer, and its built controller carries no bare specifier an
+importmap has to resolve — the
+[blast radius](notifications-bundle.md#asset-registration-is-an-assetmapper-prepend-and-the-css-rides-supports-build)
+a missing importmap entry used to have over auto-dismiss and hover-pause is gone
+with it.
+
+The remaining cost is one-sided, and the **mount** arm carries it. It is the trap
+to know when building against this passage. A bare `Action::make('x')` — no
+`url()`, no event, no
 `close()` — falls through to it and emits `live#action` with `action: mountAction`,
 which is not inert at all: inside a live component's subtree Stimulus binds it and
 a click fires a real round trip against the **surrounding** component, which is not

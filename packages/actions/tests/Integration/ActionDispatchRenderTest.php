@@ -38,6 +38,24 @@ it('renders dispatchTo with the target component and plain dispatch without it',
         ->not->toContain('data-sylament-action-dispatch-to');
 });
 
+it('renders the self marker exactly for dispatchSelf', function (): void {
+    expect(renderDispatchAction(Action::make('a')->dispatchSelf('x')))
+        ->toContain('data-sylament-action-event="x"')
+        ->toContain('data-sylament-action-dispatch-self')
+        ->not->toContain('data-sylament-action-dispatch-to');
+
+    expect(renderDispatchAction(Action::make('a')->dispatch('x')))
+        ->not->toContain('data-sylament-action-dispatch-self');
+
+    expect(renderDispatchAction(Action::make('a')->dispatchTo('App:PostList', 'x')))
+        ->not->toContain('data-sylament-action-dispatch-self');
+});
+
+it('renders the self marker through the icon-button template', function (): void {
+    expect(renderDispatchAction(Action::make('a')->iconButton()->icon('heroicons:x-mark')->dispatchSelf('x')))
+        ->toContain('data-sylament-action-dispatch-self');
+});
+
 it('renders the close marker on a closing dispatch and on a bare close', function (): void {
     expect(renderDispatchAction(Action::make('a')->dispatch('x')->close()))
         ->toContain('data-sylament-action-event="x"')

@@ -21,6 +21,11 @@ class SylamentActionsBundle extends SylamentBundle
         $this->configureTwigExtensions($configurator);
     }
 
+    public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
+    {
+        $this->prependAssetMapper($container);
+    }
+
     private function configureComponents(ContainerConfigurator $configurator): void
     {
         $configurator->services()
@@ -45,5 +50,20 @@ class SylamentActionsBundle extends SylamentBundle
             ->set('sylament_actions.action_extension', ActionExtension::class)
             ->autowire()
             ->tag('twig.extension');
+    }
+
+    private function prependAssetMapper(ContainerBuilder $container): void
+    {
+        if (!$this->isAssetMapperAvailable($container)) {
+            return;
+        }
+
+        $container->prependExtensionConfig('framework', [
+            'asset_mapper' => [
+                'paths' => [
+                    __DIR__ . '/../assets/dist' => '@sylament/actions',
+                ],
+            ],
+        ]);
     }
 }

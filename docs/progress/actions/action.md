@@ -809,13 +809,14 @@ matching `dropdown/list/item.blade.php`.
 ### A dispatch action renders payload attributes, not a click binding
 
 An action carrying `dispatch()` / `dispatchSelf()` / `dispatchTo()` renders no
-handler at all. Its trigger root gets four data attributes and nothing else:
+handler at all. Its trigger root gets five data attributes and nothing else:
 
 | Attribute | Source | Omitted when |
 | --- | --- | --- |
 | `data-sylament-action-event` | `getEvent()` | the arm never fires without it |
 | `data-sylament-action-event-data` | `getEventData()`, JSON-encoded | the payload is empty |
 | `data-sylament-action-dispatch-to` | `getDispatchToComponent()` | `getDispatchDirection()` is not `'to'` |
+| `data-sylament-action-dispatch-self` | `getDispatchDirection()` | the direction is not `'self'` |
 | `data-sylament-action-close` | `shouldClose()` | the action does not close |
 
 The split is the point: the templates stamp the **payload**, and whatever owns
@@ -838,11 +839,13 @@ not how — and it is emitted by both the dispatch arm and the bare-close arm;
 the bare-close arm keeps its `data-action="sylament--support--modal#dismiss"`
 alongside, which is inert outside a modal (Stimulus resolves an action token
 against ancestor controllers only, so a token naming a controller that is not
-one binds nothing and logs nothing). And the `'self'` direction has **no**
-attribute: a `dispatchSelf()` action is indistinguishable in the DOM from a plain
-`dispatch()`, because the only consumer today dispatches from a context that has
-no meaningful "self" to address. Add a `data-sylament-action-dispatch-self`
-marker when one does.
+one binds nothing and logs nothing). And `data-sylament-action-dispatch-self` is
+a **valueless** marker rather than a target: `'self'` names no component, so the
+key carries the boolean `getDispatchDirection() == 'self'` and the attribute bag
+renders it bare on `true` and drops it on `false` — which is why the reading side
+tests for presence, never for a value. Its meaning is *resolve the emitter
+relative to this trigger*, so it and `-dispatch-to` are mutually exclusive by
+construction: a direction is one or the other.
 
 One delta against Filament, and it is the shape rather than the rank. Filament
 emits `getLivewireEventClickHandler()` — a `$dispatch(...)` /
@@ -859,10 +862,15 @@ parent — in both codebases.
 Pinned by
 [`ActionDispatchRenderTest`](../../../packages/actions/tests/Integration/ActionDispatchRenderTest.php),
 which covers the payload, the direction branch (including the stale-target
-`dispatchTo(…)->dispatch(…)` case), the empty-payload omission, the close marker
+`dispatchTo(…)->dispatch(…)` case and the self marker's presence for
+`dispatchSelf()` alone), the empty-payload omission, the close marker
 on both arms, the url arm still winning, the rank against the client and
 parent-call handlers across all five templates, and the icon-button shape
 reaching the same arms through its own guard expressions.
+
+The delivery half — who reads these attributes, and how a `'self'` emitter is
+resolved — is
+[actions-bundle.md](actions-bundle.md#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it).
 
 ## Divergences
 

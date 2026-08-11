@@ -89,10 +89,16 @@ optional for production consumers. The shape and its reasoning are the
 What is missing: **no test.** Nothing asserts the path and alias are prepended when
 AssetMapper is present, and nothing exercises the negative branch of
 `isAssetMapperAvailable()` (the short-circuit that returns without prepending).
-**Next step:** an Integration test asserting the compiled
-`framework.asset_mapper.paths` contains `@sylament/notifications`, plus a Unit test
-for the guard's false branch — then this row flips to **done**. Support's row wants
-the same two tests for `@sylament/support`; one shape written once covers both.
+**Next step:** an Integration test asserting `@sylament/notifications` maps the
+built directory, plus a Unit test for the guard's false branch — then this row
+flips to **done**. The positive half is already written for the third bundle:
+[`SylamentActionsBundleTest`](../../../packages/actions/tests/Integration/SylamentActionsBundleTest.php)
+asks the real `AssetMapperInterface` for a built controller by source path and
+requires the logical path back, which is the same call StimulusBundle's
+controllers-map generator makes. Copy it here and into support's suite; the guard's
+false branch is `support`'s to pin, since
+[`SylamentBundle`](../../../packages/support/src/SylamentBundle.php) owns it for
+all three.
 
 ### The database-notifications component registration
 
@@ -238,31 +244,35 @@ AssetMapper is not forced to install it.
 
 The asset workspace behind it is **JS-only** — two Stimulus controllers declared in
 its `package.json` under `symfony.controllers`, so StimulusBundle picks them up
-with no consumer wiring. One of them, the toast controller, imports
-`@symfony/ux-live-component` for its
-[dispatch bridge](notification.md#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload);
-the workspace declares it as a dev **and** peer dependency at `^3.2.0`, which is
-the npm version the installed PHP package v3.3.0 ships (the two halves version
-independently — v3.3.0's own `assets/package.json` reads `3.2.0`). The build leaves
-it a bare specifier, so it resolves through the consuming app's importmap.
+with no consumer wiring. Both are now **Stimulus-only**: the toast controller used
+to import `@symfony/ux-live-component` for a dispatch bridge, and that bridge
+[moved to actions](../actions/actions-bundle.md#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it)
+when dispatch delivery went page-wide, leaving this controller with auto-dismiss,
+hover-pause and a
+[close-only click handler](notification.md#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload).
+The dev **and** peer declarations of `@symfony/ux-live-component` went with it, so
+`@hotwired/stimulus` is the workspace's only dependency of either kind.
 
-No `symfony.importmap` entry is declared for it, and that is deliberate rather than
-an omission. Support's block declares `@hotwired/stimulus` because that entry is a
-**remote** one no PHP package of ours pulls in, and omits `@floating-ui/dom`
-because it is bundled — so the rule the block encodes is *"name what the consumer's
-importmap must hold and might not otherwise get"*. Here the manifest already
-requires `symfony/ux-live-component`, whose own recipe installs the entry as a
-**path** to the vendored `live_controller.js`; declaring a version constraint
-beside it would name the CDN copy — a second artifact, registering a second `live`
-controller — which Flex skips only because `PackageJsonSynchronizer` leaves an
-existing path entry alone. The one correct form, `path:%PACKAGE%/…`, is unwritable
-here: Flex expands `%PACKAGE%` to the *declaring* package's asset directory, and
-ours holds no live controller. The blast radius if that entry is missing anyway
-is the whole controller, not the dispatch alone: the built
-`notification_controller.js` carries `@symfony/ux-live-component` as a
-**top-level** bare specifier, so an importmap without the path entry 404s the
-module before it registers, taking auto-dismiss, hover-pause and close down with
-the bridge.
+That subtraction is also what closed this workspace's importmap question, and the
+reasoning is worth keeping because the sibling workspace still faces it. No
+`symfony.importmap` entry was ever declared for `@symfony/ux-live-component`, and
+that was deliberate rather than an omission. Support's block declares
+`@hotwired/stimulus` because that entry is a **remote** one no PHP package of ours
+pulls in, and omits `@floating-ui/dom` because it is bundled — so the rule the
+block encodes is *"name what the consumer's importmap must hold and might not
+otherwise get"*. A package requiring `symfony/ux-live-component` already has the
+entry installed by that package's own recipe, as a **path** to the vendored
+`live_controller.js`; declaring a version constraint beside it would name the CDN
+copy — a second artifact, registering a second `live` controller — which Flex skips
+only because `PackageJsonSynchronizer` leaves an existing path entry alone. The one
+correct form, `path:%PACKAGE%/…`, is unwritable: Flex expands `%PACKAGE%` to the
+*declaring* package's asset directory, and no asset directory of ours holds a live
+controller. The blast radius used to be the whole controller rather than the
+dispatch alone, because the built `notification_controller.js` carried the
+specifier at **top level** — an importmap missing the path entry 404s the module
+before it registers. That risk is gone here and inherited intact by
+[`@sylament/actions`](../actions/actions-bundle.md#the-asset-workspace-is-js-only-and-its-importmap-block-names-only-stimulus),
+which is the toolkit's only npm consumer of live-component now.
 
 Its stylesheet is *not* built here: support's
 `assets/src/styles/index.css` imports every sibling package's

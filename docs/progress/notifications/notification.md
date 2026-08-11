@@ -589,10 +589,12 @@ sound because `Component.emit()` resolves its targets with
 registry, not of a subtree — so the emitter decides nothing about who hears the
 event, and `dispatchTo`'s name filter narrows globally too. That is what lets a
 toast rendered outside every live component dispatch into one at all.
-`getComponent()` polls the element→component map ten times at 5 ms and then
-rejects, so a page carrying no live component, or one whose controller has not
-connected yet, lands in the `catch` — and the silence there is the designed
-behaviour, matching a dispatch nobody listens to. A `dispatchSelf()` action reaches
+`getComponent()` polls the element→component map eleven times at 5 ms before
+rejecting, at roughly 55 ms: it increments its counter *after* the resolve
+check and rejects on `count > maxCount`, where `maxCount` is 10, so the tenth
+miss is not yet fatal. A page carrying no live component, or one whose
+controller has not connected yet, lands in the `catch` — and the silence there
+is the designed behaviour, matching a dispatch nobody listens to. A `dispatchSelf()` action reaches
 this path as a plain dispatch, because
 [no attribute distinguishes it](../actions/action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding)
 and a toast has no self to address.

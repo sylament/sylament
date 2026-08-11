@@ -199,9 +199,9 @@ omission look like a slip. **`hasDropdownTeleport`** — teleport is
 [deferred](#dropdownwidth-is-a-css-string-dropdownteleport-and-dropdownautoplacement-are-deferred),
 so there is no flag to write. **`view`** — Filament's group serializes its own
 custom template as `hasView() ? getView() : null`, the escape hatch for a group
-rendered through a user-supplied view; that surface is not ported, and the
-restore side would drop the value anyway
-([whitelist](#fromarray-restores-only-the-four-built-in-trigger-templates)).
+rendered through a user-supplied view; that surface is not ported, and
+`fromArray()` never reads a `view` key, so there is nothing on the restore side
+for the value to land in.
 Vendor's `triggerView` is the key that *did* survive, renamed `triggerTemplate`
 by the systematic Blade → Twig translation in [`renames.md`](../renames.md).
 

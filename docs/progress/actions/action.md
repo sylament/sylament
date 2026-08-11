@@ -996,8 +996,11 @@ instances whenever the setter was handed one.
 for all three — `iconPosition` unconditionally (no `instanceof` check, because
 there is nothing else it can be), `iconSize` and `size` only when the value is
 an enum, since those two getters return a union and a plain string passes
-straight through. The payload is scalar throughout, which is what lets it cross
-a session or a JSON hop without depending on how PHP serializes enums.
+straight through. Those three keys are scalar, which is what lets them cross a
+session or a JSON hop without depending on how PHP serializes enums; the
+payload as a whole is not, since `color` carries a shade map, `eventData` and
+`extraAttributes` carry arrays, `label` and `tooltip` carry `Markup`, and
+`icon` carries a `ScalableIcon` unflattened.
 
 Nothing is lost on the way back. `iconPosition` re-resolves exactly:
 `fromArray()` hands `'before'` to `iconPosition()` and the getter runs it

@@ -257,7 +257,12 @@ beside it would name the CDN copy — a second artifact, registering a second `l
 controller — which Flex skips only because `PackageJsonSynchronizer` leaves an
 existing path entry alone. The one correct form, `path:%PACKAGE%/…`, is unwritable
 here: Flex expands `%PACKAGE%` to the *declaring* package's asset directory, and
-ours holds no live controller.
+ours holds no live controller. The blast radius if that entry is missing anyway
+is the whole controller, not the dispatch alone: the built
+`notification_controller.js` carries `@symfony/ux-live-component` as a
+**top-level** bare specifier, so an importmap without the path entry 404s the
+module before it registers, taking auto-dismiss, hover-pause and close down with
+the bridge.
 
 Its stylesheet is *not* built here: support's
 `assets/src/styles/index.css` imports every sibling package's

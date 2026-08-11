@@ -165,6 +165,17 @@ through the reader keeps the "only seam" property true: no relation-aware
 component holds an `EntityManager` of its own, and the null-manager refusal above
 covers deletion for free.
 
+The first component to replace a collection did **not** end up calling it. The
+[relationship repeater](../forms/repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
+leaves a dropped child out of the desired list and lets the mapping's
+`orphanRemoval` delete it, refusing an association that declares none rather
+than deleting on its own authority — because the mapping is where ownership is
+declared, and a form layer issuing DELETEs against a mapping that says "merely
+detach" is the data-loss shape `isOrphanRemoval` exists to warn about. So
+`remove()` stands unused today, kept for the caller that must delete a record no
+mapping owns; it is a seam, not dead weight, and the reasoning above is why it
+was built before its consumer rather than after.
+
 ### The owning-side and orphan-removal flags are what a writer needs, not trivia
 
 `AssociationTarget` carries four fields because a writer cannot act correctly on

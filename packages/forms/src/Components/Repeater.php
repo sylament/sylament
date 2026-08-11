@@ -6,15 +6,19 @@ namespace Sylament\Forms\Components;
 
 use Closure;
 use LogicException;
+use ReflectionClass;
 use Sylament\Actions\Action;
+use Sylament\Forms\Components\Concerns\BelongsToRelationship;
 use Sylament\Forms\Components\Concerns\CanBeCloned;
 use Sylament\Forms\Components\Concerns\CanGenerateUuids;
 use Sylament\Forms\Components\Concerns\CanLimitItemsLength;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\AssociationTarget;
 use Sylament\Schemas\State\Casts\ObjectStateCast;
 use Sylament\Schemas\State\RecordTarget;
 use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Enums\Size;
+use Symfony\Component\PropertyAccess\Exception\AccessException;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Type;
@@ -26,6 +30,7 @@ use function Symfony\Component\String\u;
 
 class Repeater extends Field
 {
+    use BelongsToRelationship;
     use CanBeCloned;
     use CanGenerateUuids;
     use CanLimitItemsLength;
@@ -33,6 +38,13 @@ class Repeater extends Field
     public const string TEMPLATE = '@SylamentForms/partials/Repeater/index.html.twig';
 
     public const string SIMPLE_TEMPLATE = '@SylamentForms/partials/Repeater/Simple.html.twig';
+
+    /**
+     * The item-key prefix that carries a loaded child's record key, so a save
+     * can tell an item that was filled off the collection from one the client
+     * added.
+     */
+    private const string RECORD_ITEM_KEY_PREFIX = 'record-';
 
     protected string|Closure|null $defaultTemplate = self::TEMPLATE;
 
@@ -66,6 +78,14 @@ class Repeater extends Field
     protected ?Closure $normalizeItemsUsing = null;
 
     protected ?ObjectStateCast $cachedItemCast = null;
+
+    protected string|Closure|null $orderColumn = null;
+
+    protected ?Closure $mutateRelationshipDataBeforeCreateUsing = null;
+
+    protected ?Closure $mutateRelationshipDataBeforeFillUsing = null;
+
+    protected ?Closure $mutateRelationshipDataBeforeSaveUsing = null;
 
     protected string|Markup|Closure|null $itemLabel = null;
 
@@ -163,6 +183,10 @@ class Repeater extends Field
     {
         $this->refuseObjectCollectionRecord();
 
+        if ($this->hasRelationship()) {
+            return;
+        }
+
         if (
             is_array($this->hydratedDefaultState)
             && $this->shouldMergeHydratedDefaultStateWithItemsStateAfterStateHydrated
@@ -196,14 +220,20 @@ class Repeater extends Field
 
     /**
      * The get-ward firing point of a declared item cast: each item is
-     * constructed after the map has been positionalised.
+     * constructed after the map has been positionalised. Relationship items are
+     * keyed by identity rather than position, so they pass through untouched —
+     * the save hook reads those keys.
      *
      * @param array<array-key, mixed> $state
      *
-     * @return array<int, mixed>
+     * @return array<array-key, mixed>
      */
     public function dehydrateItems(array $state): array
     {
+        if ($this->hasRelationship()) {
+            return $state;
+        }
+
         $simpleField = $this->getSimpleField();
 
         if ($simpleField instanceof Field) {
@@ -314,6 +344,10 @@ class Repeater extends Field
             throw new LogicException('simple() cannot compose with itemsAs(): the simple pluck would null every constructed object. Put a leaf stateCast() on the simple field instead.');
         }
 
+        if ($field !== null && $this->relationship !== null) {
+            throw new LogicException("simple() cannot compose with relationship(): a related record is mapped by the item schema's own fields, which the simple pluck would reduce to one scalar. Declare that one field with components() instead.");
+        }
+
         $this->simpleField = $field;
 
         $this->defaultTemplate(($field === null) ? self::TEMPLATE : self::SIMPLE_TEMPLATE);
@@ -348,6 +382,10 @@ class Repeater extends Field
     {
         if ($items !== null && $this->isSimple()) {
             throw new LogicException('itemsAs() cannot compose with simple(): the simple pluck would null every constructed object. Put a leaf stateCast() on the simple field instead.');
+        }
+
+        if ($items !== null && $this->relationship !== null) {
+            throw new LogicException("itemsAs() cannot compose with relationship(): the relationship already constructs each item as the association's target entity, and a freshly built value object would lose its identity. Drop itemsAs().");
         }
 
         if ($items instanceof ObjectStateCast && ($denormalizeUsing instanceof Closure || $normalizeUsing instanceof Closure)) {
@@ -399,6 +437,95 @@ class Repeater extends Field
     public function getRawItemState(string $key): array
     {
         return $this->getChildSchema($key)?->getStateSnapshot() ?? [];
+    }
+
+    /**
+     * Back this repeater with a Doctrine collection association: `fill()` reads
+     * the children the record holds as identity-keyed items, and `getData()`
+     * diffs the submitted items back onto that collection — an item still keyed
+     * to a loaded child updates that very instance, an item the client added
+     * constructs the association's target, and a child no item names is left out
+     * of the desired list for `orphanRemoval` to delete. `$name` names the
+     * association property and defaults to the field's own name.
+     *
+     * @throws LogicException when the repeater already declares another item
+     *                        mode, or when a query scope is passed
+     */
+    public function relationship(string|Closure|null $name = null, ?Closure $modifyQueryUsing = null): static
+    {
+        if ($this->isSimple()) {
+            throw new LogicException("relationship() cannot compose with simple(): a related record is mapped by the item schema's own fields, which the simple pluck would reduce to one scalar. Declare that one field with components() instead.");
+        }
+
+        if ($this->itemsAs !== null) {
+            throw new LogicException("relationship() cannot compose with itemsAs(): the relationship already constructs each item as the association's target entity, and a freshly built value object would lose its identity. Drop itemsAs().");
+        }
+
+        if ($modifyQueryUsing instanceof Closure) {
+            throw new LogicException('relationship() was passed a modifyQueryUsing scope, but the items come from the collection the record already holds rather than from a query of their own, so the scope would silently never run. Scope the association itself with Doctrine\'s #[ORM\OrderBy] or a filtered collection.');
+        }
+
+        $this->relationship = $name ?? $this->getName();
+
+        $this->loadStateFromRelationshipsUsing(static fn (Repeater $component, object $record): array => $component->getItemsFromRelationship($record));
+
+        $this->saveRelationshipsUsing(static function (Repeater $component, object $record, mixed $state): void {
+            $component->saveItemsToRelationship($record, $state);
+        });
+
+        return $this;
+    }
+
+    /**
+     * The property each item's position in the list is stamped onto before the
+     * collection is written, so the order the user arranged survives a reload.
+     * Doctrine orders the read side: the association needs an `#[ORM\OrderBy]`
+     * on this same property for the stamped order to come back.
+     */
+    public function orderColumn(string|Closure|null $column = 'sort'): static
+    {
+        $this->orderColumn = $column;
+
+        return $this;
+    }
+
+    public function getOrderColumn(): ?string
+    {
+        return $this->evaluate($this->orderColumn);
+    }
+
+    /**
+     * Rewrite an item's array after it was read off a related record and before
+     * the item schema fills from it.
+     */
+    public function mutateRelationshipDataBeforeFillUsing(?Closure $callback): static
+    {
+        $this->mutateRelationshipDataBeforeFillUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * Rewrite an added item's array before it is mapped onto a freshly
+     * constructed related record.
+     */
+    public function mutateRelationshipDataBeforeCreateUsing(?Closure $callback): static
+    {
+        $this->mutateRelationshipDataBeforeCreateUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * Rewrite an item's array before it is mapped onto the related record it was
+     * filled from, which the callback receives as `$record` in its pre-write
+     * state.
+     */
+    public function mutateRelationshipDataBeforeSaveUsing(?Closure $callback): static
+    {
+        $this->mutateRelationshipDataBeforeSaveUsing = $callback;
+
+        return $this;
     }
 
     public function itemLabel(string|Markup|Closure|null $label): static
@@ -923,6 +1050,261 @@ class Repeater extends Field
         return $this->evaluate($callback, ['action' => $action]) ?? $action;
     }
 
+    protected function getRelationshipFallbackAdvice(): string
+    {
+        return 'or drop relationship() and map the items onto the record by hand after getData().';
+    }
+
+    /**
+     * The children the record holds, each as an item array keyed by the child's
+     * record key — the identity a save diffs against.
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function getItemsFromRelationship(object $record): array
+    {
+        $this->getRelationshipCollectionTarget();
+
+        $reader = $this->getAssociationReader();
+        $accessor = $this->getPropertyAccessor();
+        $itemStatePaths = $this->getItemStatePaths();
+
+        $related = $accessor->getFromRecord($record, $this->getRelationshipNameOrFail());
+
+        $items = [];
+
+        foreach (is_iterable($related) ? $related : [] as $child) {
+            if (! is_object($child)) {
+                continue;
+            }
+
+            $itemData = [];
+
+            foreach ($itemStatePaths as $itemStatePath) {
+                try {
+                    $value = $accessor->getFromRecord($child, $itemStatePath);
+                } catch (AccessException) {
+                    continue;
+                }
+
+                if (is_object($value)) {
+                    continue;
+                }
+
+                $accessor->setInArray($itemData, $itemStatePath, $value);
+            }
+
+            $items[self::RECORD_ITEM_KEY_PREFIX . $reader->getRecordKey($child)] = $this->mutateRelationshipItemData(
+                $this->mutateRelationshipDataBeforeFillUsing,
+                $itemData,
+            );
+        }
+
+        return $items;
+    }
+
+    /**
+     * Map the submitted items back onto the association: each item is written
+     * onto the child it names or onto a freshly constructed one, and the whole
+     * desired list is handed to the accessor in state order, whose adder/remover
+     * diffing leaves the kept children untouched and drops the rest.
+     */
+    private function saveItemsToRelationship(object $record, mixed $state): void
+    {
+        $target = $this->getRelationshipCollectionTarget();
+        $name = $this->getRelationshipNameOrFail();
+        $reader = $this->getAssociationReader();
+        $accessor = $this->getPropertyAccessor();
+        $itemStatePaths = $this->getItemStatePaths();
+        $orderColumn = $this->getOrderColumn();
+
+        $related = $accessor->getFromRecord($record, $name);
+
+        $existingRecords = [];
+
+        foreach (is_iterable($related) ? $related : [] as $child) {
+            if (is_object($child)) {
+                $existingRecords[$reader->getRecordKey($child)] = $child;
+            }
+        }
+
+        $desiredRecords = [];
+
+        foreach (is_array($state) ? $state : [] as $itemKey => $itemData) {
+            /** @var array<string, mixed> $itemData */
+            $itemData = is_array($itemData) ? $itemData : [];
+
+            $child = $this->findRelationshipItemRecord((string) $itemKey, $existingRecords);
+
+            $itemData = ($child === null)
+                ? $this->mutateRelationshipItemData($this->mutateRelationshipDataBeforeCreateUsing, $itemData)
+                : $this->mutateRelationshipItemData($this->mutateRelationshipDataBeforeSaveUsing, $itemData, ['record' => $child]);
+
+            $child ??= $this->constructRelationshipItemRecord($target->targetClass);
+
+            foreach ($itemStatePaths as $itemStatePath) {
+                if ($accessor->hasInArray($itemData, $itemStatePath)) {
+                    $accessor->setOnRecord($child, $itemStatePath, $accessor->getFromArray($itemData, $itemStatePath));
+                }
+            }
+
+            if ($orderColumn !== null) {
+                $accessor->setOnRecord($child, $orderColumn, count($desiredRecords));
+            }
+
+            $desiredRecords[] = $child;
+        }
+
+        $accessor->setAssociationOnRecord($record, $name, $desiredRecords);
+    }
+
+    /**
+     * The dotted state paths the item schema declares, relative to one item —
+     * what a fill reads off each related record and a save writes back onto it.
+     * Read off a clone, so the shared field instances the item schemas are cloned
+     * from keep their own cached paths.
+     *
+     * @return list<string>
+     */
+    private function getItemStatePaths(): array
+    {
+        $itemSchema = $this->getChildSchema()?->getClone();
+
+        if (! $itemSchema instanceof Schema) {
+            return [];
+        }
+
+        $prefix = $itemSchema->getStatePath() . '.';
+        $itemStatePaths = [];
+
+        foreach ($itemSchema->getFlatComponents(withActions: false) as $component) {
+            $statePath = $component->getStatePath();
+
+            if (($statePath !== null) && str_starts_with($statePath, $prefix)) {
+                $itemStatePaths[] = mb_substr($statePath, mb_strlen($prefix));
+            }
+        }
+
+        return $itemStatePaths;
+    }
+
+    /**
+     * @throws LogicException when the association holds a single record rather
+     *                        than a collection, or when removing an item from it
+     *                        would leave the record behind instead of deleting it
+     */
+    private function getRelationshipCollectionTarget(): AssociationTarget
+    {
+        $target = $this->getRelationshipTarget();
+
+        if (! $target->isToMany) {
+            throw new LogicException(sprintf(
+                'The [%s] repeater declares relationship("%s"), but that association holds a single %s rather than a collection, so there is nothing to repeat. Use a Select for a to-one association.',
+                (string) $this->getName(),
+                $this->getRelationshipNameOrFail(),
+                $target->targetClass,
+            ));
+        }
+
+        if (! $target->isOrphanRemoval) {
+            throw new LogicException(sprintf(
+                'The [%s] repeater declares relationship("%s"), but that association is not mapped orphanRemoval, so an item the user deletes would only be detached and would survive the flush. Map the association orphanRemoval: true — a repeater edits records the parent owns — or drop relationship() and diff the collection by hand after getData().',
+                (string) $this->getName(),
+                $this->getRelationshipNameOrFail(),
+            ));
+        }
+
+        return $target;
+    }
+
+    /**
+     * The loaded child an item names, or null when the item is one the client
+     * added.
+     *
+     * @param array<string, object> $existingRecords
+     *
+     * @throws LogicException when the item names a child the association no
+     *                        longer holds
+     */
+    private function findRelationshipItemRecord(string $itemKey, array $existingRecords): ?object
+    {
+        if (! str_starts_with($itemKey, self::RECORD_ITEM_KEY_PREFIX)) {
+            return null;
+        }
+
+        $recordKey = mb_substr($itemKey, mb_strlen(self::RECORD_ITEM_KEY_PREFIX));
+
+        return $existingRecords[$recordKey] ?? throw new LogicException(sprintf(
+            'The [%s] repeater carries item "%s", but the [%s] association no longer holds a record with that identifier — it was deleted or detached since the schema was filled. Fill the schema from the record again before saving.',
+            (string) $this->getName(),
+            $itemKey,
+            $this->getRelationshipNameOrFail(),
+        ));
+    }
+
+    /**
+     * @param class-string $targetClass
+     *
+     * @throws LogicException when the association's target cannot be built
+     *                        without arguments
+     */
+    private function constructRelationshipItemRecord(string $targetClass): object
+    {
+        $reflection = new ReflectionClass($targetClass);
+        $constructor = $reflection->getConstructor();
+
+        if (($constructor !== null) && $constructor->getNumberOfRequiredParameters() > 0) {
+            throw new LogicException(sprintf(
+                'Cannot map an added item of the [%s] repeater onto %s: it requires constructor arguments, so the mapper cannot build it. Give the constructor defaults, or drop relationship() and add the records by hand after getData().',
+                (string) $this->getName(),
+                $targetClass,
+            ));
+        }
+
+        return $reflection->newInstance();
+    }
+
+    /**
+     * @param array<string, mixed> $itemData
+     * @param array<string, mixed> $namedInjections
+     *
+     * @return array<string, mixed>
+     *
+     * @throws LogicException when the callback returns something other than the
+     *                        item array
+     */
+    private function mutateRelationshipItemData(?Closure $callback, array $itemData, array $namedInjections = []): array
+    {
+        if (! $callback instanceof Closure) {
+            return $itemData;
+        }
+
+        return $this->requireMutatedItemData($this->evaluate($callback, [
+            'state' => $itemData,
+            ...$namedInjections,
+        ]));
+    }
+
+    /**
+     * @return array<string, mixed>
+     *
+     * @throws LogicException when a mutation callback returned something other
+     *                        than the item array
+     */
+    private function requireMutatedItemData(mixed $mutated): array
+    {
+        if (! is_array($mutated)) {
+            throw new LogicException(sprintf(
+                'A relationship mutation callback on the [%s] repeater returned %s where the mutated item array was expected. Return the array the callback was handed.',
+                (string) $this->getName(),
+                get_debug_type($mutated),
+            ));
+        }
+
+        /** @var array<string, mixed> $mutated */
+        return $mutated;
+    }
+
     /**
      * A repeater bound to an object collection would render empty and meet the
      * mapper's refusal only on first save, so it refuses at hydration instead:
@@ -933,6 +1315,10 @@ class Repeater extends Field
      */
     private function refuseObjectCollectionRecord(): void
     {
+        if ($this->hasRelationship()) {
+            return;
+        }
+
         if (! isset($this->container)) {
             return;
         }

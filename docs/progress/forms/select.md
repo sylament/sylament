@@ -117,8 +117,15 @@ honest answer for a value that is not an option.
 ### `relationship()` is three lazy closures over the association reader
 
 [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php)
-stores the association name, its title attribute and the optional query scope,
-then wires three closures and nothing else:
+stores the title attribute and the optional query scope, then wires three
+closures and nothing else. The association *name* and the target resolution
+below moved one level down into
+[`BelongsToRelationship`](../../../packages/forms/src/Components/Concerns/BelongsToRelationship.php)
+when [`Repeater::relationship()`](repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
+needed the same three-arm refusal; the two clauses that differ per field — why an
+unresolvable relationship is fatal for *this* field, and what to do instead —
+stay with each field as small hooks, so neither message lost a word to the
+sharing:
 
 - **`options()`** — [`AssociationReader::describe()`](../schemas/association-reader.md)
   resolves the record class's mapping at that property, `createOptionQuery()`

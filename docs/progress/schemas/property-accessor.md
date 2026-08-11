@@ -278,11 +278,17 @@ acts, and the two answers split the behaviour:
   the array remainder, which is what keeps the JSON-column shape working.
 - **A segment or leaf that is an object collection throws**, naming the path and
   the Doctrine relationship layer that will own item identity. The message named
-  the `Repeater` epic until the [`Repeater`](../forms/repeater.md#object-collections-stay-refused--item-identity-belongs-to-the-relationship-epic)
+  the `Repeater` epic until the [`Repeater`](../forms/repeater.md#object-collections-stay-refused-until-a-relationship-supplies-the-identity)
   shipped, at which point pointing at it would have read as a bug report: the
   repeater maps plain-array items, and an object collection needs to know which
-  state item is which entity, which is the relationship epic's problem. The
-  interim escape the message offers is unchanged — map the property by hand
+  state item is which entity, which is the relationship epic's problem. That
+  epic then answered it: a repeater declaring
+  [`relationship()`](../forms/repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
+  writes its collection through
+  [`setAssociationOnRecord()`](#the-association-write-is-the-collection-refusals-counterpart)
+  from its own save hook, so this refusal is never on that path — it still
+  governs every collection nobody declared a relationship for, message included.
+  The interim escape the message offers is unchanged — map the property by hand
   after `getData()`. Two triggers raise the one message `refuseCollection()`
   holds. The **declared type** is the designed one: `assertNotCollection()` asks
   the [`RecordTypeReader`](record-type-reader.md) at both the intermediate and the

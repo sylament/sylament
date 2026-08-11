@@ -10,25 +10,29 @@ path-bearing children, which is the case the record walks were
 [explicitly flagged as unready for](../schemas/belongs-to-record.md#mapping-walks-the-record-graph-by-declared-leaf-paths)
 and now [answer with an owner predicate](#a-repeater-owns-its-record-subtree).
 
-**Scope boundary, stated up front:** this epic maps **value-shaped array items
-only**. Object collections — a `Traversable`-typed property, a Doctrine
-`Collection` behind an adder — [stay refused by the mapper](../schemas/property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused),
+**Scope boundary, stated up front:** the *plain* repeater maps **value-shaped
+array items only**. Object collections — a `Traversable`-typed property, a
+Doctrine `Collection` behind an adder — [stay refused by the mapper](../schemas/property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused),
 because mapping collection *items* needs identity — which state row is which
-entity, and what happens to the rows that disappeared — and identity is the
-Doctrine relationship-state epic's surface, not this one's. The measured failure
+entity, and what happens to the rows that disappeared. The measured failure
 that draws the line is recorded in
 [the Serializer rejection](../schemas/belongs-to-record.md#a-serializer-based-mapper-stays-rejected-on-amended-grounds):
 identity-less collection population produced duplicate INSERTs and orphan
-deletions on a real two-tag `Post`. Filament's `relationship()` and `table()`
-modes are out with it.
+deletions on a real two-tag `Post`. That identity is exactly what
+[`relationship()`](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
+supplies, so a repeater that declares one maps a Doctrine collection and the
+refusal steps aside for it — [and only for it](#object-collections-stay-refused-until-a-relationship-supplies-the-identity).
+`table()` mode remains out.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses). The
 array-backed field ships end to end: item pipeline, per-item child schemas, the
-five structural actions, item chrome, the two partials, the record round-trip
+five structural actions, item chrome, the two partials, the record round-trip,
+the
+[value-object item mode](#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam)
 and the
-[value-object item mode](#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam).
-What is left is chrome (collapse, `addBetween`, extra item actions, the items
-grid), the `table()` mode, and the relationship family behind its own epic.
+[relationship mode](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
+over a Doctrine collection. What is left is chrome (collapse, `addBetween`,
+extra item actions, the items grid) and the `table()` mode.
 
 Reference — the Filament source this is diffed against, walked end to end for
 this table, so it carries no [unaudited row](../README.md#an-unaudited-table-says-so):
@@ -75,12 +79,12 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 | `extraItemActions()` (`HasExtraItemActions`) | [`HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
 | Items grid (`HasContainerGridLayout`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
 | `table()` mode (`table()` / `getTableColumns()` / `isTable()` / `toTableEmbeddedHtml()`; the `TableColumn` class keeps [its own README row](README.md#components)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
-| Relationship family (`relationship()`, `orderColumn()` / `getOrderColumn()`, `saveToRelationship()`, `fillFromRelationship()`, `getStateFromRelatedRecords()`, `getCachedExistingRecords()` / `clearCachedExistingRecords()`, `getRelationship()` / `getRelationshipName()` / `getRelatedModel()` / `hasRelationship()`, `mutateRelationshipDataBeforeCreate/Fill/Save()` + `*Using()`, `afterCreate()` / `afterUpdate()` / `afterDelete()`, the `getLabel()` override, item `constantState()` / record stamping) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | Doctrine relationship-state epic | [diverges](#object-collections-stay-refused--item-identity-belongs-to-the-relationship-epic) |
+| Relationship family — **shipped**: `relationship()`, `hasRelationship()` / `getRelationshipName()`, `orderColumn()` / `getOrderColumn()`, `mutateRelationshipDataBeforeCreate/Fill/Save()Using()`, the fill and save arms (Filament's `fillFromRelationship()` / `getStateFromRelatedRecords()` / `saveToRelationship()`, here the two [component-tier hooks](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)). **Not ported**: `getRelationship()` / `getRelatedModel()` (Eloquent objects with no Doctrine counterpart — `AssociationTarget` answers both), `getCachedExistingRecords()` / `clearCachedExistingRecords()`, `afterCreate()` / `afterUpdate()` / `afterDelete()`, the `getLabel()` override, item `constantState()` / record stamping | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) · [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
 | `partiallyRenderAfterActionsCalled()` / `shouldPartiallyRenderAfterActionsCalled()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | UX LiveComponent partial-render equivalent | — |
 | `array_move_before()` / `array_move_after()` (`packages/forms/src/helpers.php`, the reorder bodies) | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | — | — |
 | Deprecated members (`createItemButtonLabel()`, `disableItemCreation()` / `disableItemDeletion()` / `disableItemMovement()`, `orderable()`, `inset()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
 | `nullWhenBlank()` composition — an empty repeater as `null` instead of `[]` | — | done | — | [semantics](#the-blank-test-judges-a-repeater-by-its-own-value) · [diverges](#a-repeater-owns-its-record-subtree) |
-| Early object-collection refusal at hydration | — | done | — | [diverges](#object-collections-stay-refused--item-identity-belongs-to-the-relationship-epic) |
+| Early object-collection refusal at hydration | — | done | — | [diverges](#object-collections-stay-refused-until-a-relationship-supplies-the-identity) |
 | `itemsAs()` value-object item mode — explicit item class + optional denormalize/normalize pair over schemas' [`ObjectStateCast`](../schemas/object-state-cast.md) | — | done | — | [semantics](#a-cast-item-is-schema-complete-so-unmanaged-keys-stop-riding) · [diverges](#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam) · [diverges](#item-class-inference-is-deferred-the-declaration-stays-explicit) |
 
 ## Details
@@ -214,7 +218,7 @@ tamper with them) — do not keep server-only values inside repeater items.
 And they survive only as payload: scoping the read to declared leaves, the way
 the section walk does, would need to know *which* saved item a state item is to
 merge into — the identity question this epic's
-[scope boundary](#object-collections-stay-refused--item-identity-belongs-to-the-relationship-epic)
+[scope boundary](#object-collections-stay-refused-until-a-relationship-supplies-the-identity)
 defers. Filament behaves identically.
 
 ### A cast item is schema-complete, so unmanaged keys stop riding
@@ -252,10 +256,107 @@ resolved to. Without the second one, `itemsAs(fn () => $cast, denormalizeUsing:
 …)` would silently drop the closures the literal spelling throws over — a
 fail-fast the evaluation seam would otherwise hide.
 
+### A relationship repeater keys its items by identity and diffs the collection
+
+`relationship()` swaps the item pipeline's two ends and leaves everything
+between them alone. `fill()` no longer reads the property (an object collection
+would be skipped as an object leaf anyway) — the
+[component-tier load hook](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) reads the collection
+and returns one item per child, keyed `record-<recordKey>` (Filament's shape,
+over [`AssociationReader::getRecordKey()`](../schemas/association-reader.md)),
+each item filled by reading the item schema's own declared leaf paths off that
+child through the record accessor. So the keys stop being per-request uuids and
+start being *identity*, and three places follow from it: `hydrateItems()`
+returns before it re-keys (the map is already keyed, and re-keying would erase
+the identity), `dehydrateItems()` returns before it positionalises (position is
+not what the save reads), and an item the add action mints keeps its uuid key —
+which is precisely how the save tells a new child from a loaded one.
+
+`getData()` hands the whole keyed map to the save hook, which builds the
+**desired list** in state order: a `record-` key resolves to the very instance
+the collection holds (never a fresh `getReference()` — strict identity is what
+makes an update an update), an un-prefixed key constructs the association's
+target class, and a loaded child no item names is simply left out. The list goes
+to [`setAssociationOnRecord()`](../schemas/property-accessor.md#the-association-write-is-the-collection-refusals-counterpart), whose
+adder/remover diffing keeps the collection instance, calls `addSection()` for
+the new children (so the owning side is set by the record's own code) and
+`removeSection()` for the departed — which `orphanRemoval` turns into a DELETE
+at flush. Nothing is deleted by the repeater itself, which is why an association
+not mapped `orphanRemoval` is refused rather than silently leaving rows
+behind — and refused at **fill**, like the array mode's own early refusal, so the
+mapping is corrected before anyone types into the form rather than at the save
+that would have lost the deletion. A to-one association is refused there too: a
+repeater over one has nothing to repeat. Item fields are written per declared leaf path with the *child* as
+the root, so a dotted item path (`address.city`) reaches through the child's own
+graph on [`setOnRecord()`](../schemas/property-accessor.md#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs)'s terms.
+
+Four consequences worth stating. A `record-` key naming a child the collection
+no longer holds **throws** — it means the record changed under a filled form, and
+resurrecting it as a new row would be worse than a refusal. The clone action
+mints a uuid key, so cloning a loaded item creates a *new* record rather than
+double-writing the old one. `orderColumn()` stamps `0..n-1` in state order onto
+each child before the write, and the read side is Doctrine's — the association
+needs its own `#[ORM\OrderBy]` on that property, since nothing here orders the
+query. And the whole diff runs inside the single `getData()` call, with no flush
+of its own: the caller flushes, once, exactly as with every other mapped field.
+
 ## Divergences
 
 Deliberate deviations from Filament, and the reason each holds. Provisional
 ones say what would reverse them.
+
+### The relationship family loses its caches, its lifecycle hooks and its query scope
+
+Four members of Filament's relationship surface have no counterpart here, each
+for a stated reason rather than as deferral.
+
+`getCachedExistingRecords()` / `clearCachedExistingRecords()` **are not ported**:
+Filament caches the related rows because its fill and its save each run their own
+Eloquent query. Ours reads the collection off the record through the accessor
+both times, and the collection *is* the cache — Doctrine's identity map already
+guarantees the same instances come back, which is the very property the
+strict-identity update depends on. A memo on top would only add a second source
+of truth.
+
+`afterCreate()` / `afterUpdate()` / `afterDelete()` **are not ported**, and this
+one is a real capability gap: Filament fires them around its per-item
+`save()`/`delete()` calls, and in the
+[single-flush shape](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) no such moment exists —
+`getData()` mutates an object graph and returns, so at the time the repeater is
+done nothing has touched the database and no row has an identifier yet. Firing
+them at map time would be a lie about when they run. Consumers that need a
+post-write moment use Doctrine's own lifecycle events (`postPersist`,
+`postUpdate`, `postRemove`, or an `onFlush` subscriber) — the same seam the ORM
+already gives every other write in the application. Reverses only if a
+`saveRelationships()` phase with its own flush is ever adopted, which the epic
+[decided against](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk).
+
+`dehydrated(false)` **is not applied**. Filament prunes the repeater's state from
+the dehydrated bag because its record save would otherwise try to write an array
+into a relation. Our dehydration walk is what *routes* the value: `getData()`
+consults the save hook only for a path the bag still carries, so pruning would
+switch the whole feature off. The state stays in the bag and the hook takes it.
+
+`relationship()`'s second parameter, `$modifyQueryUsing`, is **accepted and
+refused**. The signature stays Filament's so the call site ports unchanged, but
+the items come from the collection the record already holds rather than from a
+query of our own, so a scope would silently never run — and a silent no-op is
+exactly what this codebase refuses. Passing one throws, naming Doctrine's
+`#[ORM\OrderBy]` and a filtered collection as the two places that scoping
+actually belongs. Reverses if the fill ever grows a query of its own (a paginated
+or filtered relationship repeater), at which point the parameter gets its
+Filament meaning back.
+
+Two smaller shapes go with them. The mutation callbacks are evaluated with the
+item array injected as **`state`**, not Filament's `$data` — every other
+mutation seam in the port names it `state` (`mutateDehydratedStateUsing`,
+`dehydrateStateUsing`), and the evaluation vocabulary is one word per meaning;
+`mutateRelationshipDataBeforeSaveUsing` additionally receives the child as
+`record`. And `simple()`, `itemsAs()` and `relationship()` are now a **three-way**
+mode exclusion, each pair refusing in either declaration order for the reason
+that pair fails: the simple pluck would reduce a related record to one scalar,
+and a freshly constructed value object would throw away the identity the
+relationship exists to preserve.
 
 ### Every item schema is keyed as well as re-pathed
 
@@ -287,29 +388,37 @@ sets it on an item is the record stamping this epic does not do — and schemas'
 `HasInlineLabel` is unported (deferred in M1 · 3), so an item schema has no
 inherited inline-label state to switch off. Each stamp lands with its owner.
 
-### Object collections stay refused — item identity belongs to the relationship epic
+### Object collections stay refused until a relationship supplies the identity
 
 The mapper's object-collection refusal
 ([both triggers](../schemas/property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused))
-**does not relax** for the Repeater; this epic narrows what the message
-promises. Today `refuseCollection()` names "the Repeater epic" as the future
-owner; once the Repeater exists that would read as a bug report, so the message
-is reworded to state the real boundary: array-backed lists are the Repeater's,
-object collections wait for the Doctrine relationship-state epic, and the
-interim escape is mapping the collection by hand after `getData()`. A repeater
-also refuses *early*: `hydrateItems()` asks the type reader at the repeater's
-own record path and throws when the declared type is an object collection —
-otherwise `fill()` silently skips the object-valued read, the repeater renders
-empty, and the developer meets the mapper's refusal only on first save. A
+**does not relax** for a plain Repeater; the array-backed epic narrowed what the
+message promises. `refuseCollection()` named "the Repeater epic" as the future
+owner; once the Repeater existed that read as a bug report, so the message was
+reworded to state the real boundary: array-backed lists are the Repeater's,
+object collections need identity, and the interim escape is mapping the
+collection by hand after `getData()`. A repeater also refuses *early*:
+`hydrateItems()` asks the type reader at the repeater's own record path and
+throws when the declared type is an object collection — otherwise `fill()`
+silently skips the object-valued read, the repeater renders empty, and the
+developer meets the mapper's refusal only on first save. A
 DTO list typed only by docblock (`/** @var list<Money> */ private array $items`)
 remains invisible to both checks and takes the array path — the repeater will
 overwrite it with value-shaped arrays, the
 [recorded price of reflection-only types](../schemas/record-type-reader.md#docblock-generics-are-invisible-and-that-is-the-point).
 `RecordTarget`'s provenance fields stay
 [skipped](../schemas/record-type-reader.md#the-value-object-carries-no-provenance):
-this epic was their named candidate, but its refusal builds the target it
+that epic was their named candidate, but its refusal builds the target it
 consumes in the same method, so provenance still has nothing to tell a caller.
-Reverses only if the relationship epic lands identity-keyed item state.
+
+**The reversal fired**, exactly as written — identity-keyed item state landed
+with [`relationship()`](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection),
+so both refusals now step aside for a repeater that declares one: the early
+check returns before it reads the type, and the mapper's own refusal is never
+reached because the save hook, not `setOnRecord()`, owns that path. The reversal
+is *scoped to the declaration* — everything above still holds verbatim for a
+repeater without `relationship()`, which is why the early refusal's message and
+its test are unchanged. The docblock-only DTO list is unaffected in both modes.
 
 ### A repeater owns its record subtree
 
@@ -341,7 +450,7 @@ from under the repeater).
 
 Filament has no value-object item mode to diverge from — its answer to
 object-shaped repeater state is `relationship()`, identity-keyed Eloquent
-mapping, [the surface this excludes](#object-collections-stay-refused--item-identity-belongs-to-the-relationship-epic)
+mapping, [the surface this excludes](#object-collections-stay-refused-until-a-relationship-supplies-the-identity)
 — so `itemsAs()` diverges by existing at all. Inside the port it diverges a
 second time, from the generic state-cast seam: the cast object reuses the
 `StateCast` contract but is **not** registered into `$stateCasts`, because that

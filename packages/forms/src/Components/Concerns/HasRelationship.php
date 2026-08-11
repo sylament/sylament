@@ -9,7 +9,6 @@ use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Stringable;
 use Sylament\Forms\Components\Select;
-use Sylament\Schemas\State\AssociationTarget;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
@@ -17,7 +16,7 @@ use function Sylament\Support\wrap;
 
 trait HasRelationship
 {
-    protected string|Closure|null $relationship = null;
+    use BelongsToRelationship;
 
     protected string|Closure|null $relationshipTitleAttribute = null;
 
@@ -53,16 +52,6 @@ trait HasRelationship
         });
 
         return $this;
-    }
-
-    public function hasRelationship(): bool
-    {
-        return filled($this->getRelationshipName());
-    }
-
-    public function getRelationshipName(): ?string
-    {
-        return $this->evaluate($this->relationship);
     }
 
     public function getRelationshipTitleAttribute(): ?string
@@ -116,50 +105,14 @@ trait HasRelationship
         return $options;
     }
 
-    /**
-     * @throws LogicException when the field declares a relationship the mapping
-     *                        cannot resolve — no entity manager, no record class,
-     *                        or no association at that property
-     */
-    protected function getRelationshipTarget(): AssociationTarget
+    protected function getMissingEntityManagerConsequence(): string
     {
-        $name = $this->getRelationshipNameOrFail();
-        $recordClass = $this->getRecordClass();
-        $reader = $this->getAssociationReader();
-
-        $target = ($recordClass === null) ? null : $reader->describe($recordClass, $name);
-
-        if ($target instanceof AssociationTarget) {
-            return $target;
-        }
-
-        throw new LogicException(sprintf(
-            'The [%s] field declares relationship("%s"), but %s',
-            (string) $this->getName(),
-            $name,
-            match (true) {
-                ! $reader->hasEntityManager() => 'no Doctrine EntityManager backs it, so its options could only ever come back empty — and an empty option list silently rejects every submitted value. Register Doctrine (doctrine/doctrine-bundle), or replace relationship() with an options() map.',
-                $recordClass === null => 'the schema names no record class to read the association off. Give the schema a record() instance or class-string, or replace relationship() with an options() map.',
-                default => sprintf('[%s] maps no association at "%s". Name the property Doctrine maps, or replace relationship() with an options() map.', $recordClass, $name),
-            },
-        ));
+        return 'its options could only ever come back empty — and an empty option list silently rejects every submitted value';
     }
 
-    /**
-     * @throws LogicException when the field declares no relationship at all
-     */
-    protected function getRelationshipNameOrFail(): string
+    protected function getRelationshipFallbackAdvice(): string
     {
-        $name = $this->getRelationshipName();
-
-        if (filled($name)) {
-            return $name;
-        }
-
-        throw new LogicException(sprintf(
-            'The [%s] field was asked for its relationship, but relationship() named none and the field carries no name to fall back on.',
-            (string) $this->getName(),
-        ));
+        return 'or replace relationship() with an options() map.';
     }
 
     /**

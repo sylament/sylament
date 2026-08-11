@@ -63,13 +63,18 @@ INSERTs and orphan deletions on a managed Doctrine collection — and every
 refusal that guards that boundary
 ([both mapper triggers](property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused),
 the repeater's
-[early hydration refusal](../forms/repeater.md#object-collections-stay-refused--item-identity-belongs-to-the-relationship-epic))
+[early hydration refusal](../forms/repeater.md#object-collections-stay-refused-until-a-relationship-supplies-the-identity))
 stays exactly as shipped: a `Traversable`-typed or adder-resolved property
 refuses with or without this cast declared. The cast serves plain `?array`
 (or untyped) properties whose docblock says `list<SomeDto>` — the shape
 [the type reader cannot see](record-type-reader.md#docblock-generics-are-invisible-and-that-is-the-point)
-and the declaration now stands in for. Reverses never; identity arrives as the
-Doctrine relationship-state epic's own machinery, not as an arm of this cast.
+and the declaration now stands in for. Reverses never, and the prediction held:
+identity arrived as
+[`Repeater::relationship()`](../forms/repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)'s
+own machinery — record-keyed items diffed onto a Doctrine collection through the
+component-tier hooks — and **not** as an arm of this cast. The two modes refuse
+each other loudly: `itemsAs()` builds a fresh identity-free object per item,
+which is precisely what a relationship must never do.
 
 ### Construction is a hand mapper over the graph's existing pieces
 
@@ -128,7 +133,10 @@ stories sit side by side in
 [repeater.md](../forms/repeater.md#a-cast-item-is-schema-complete-so-unmanaged-keys-stop-riding));
 and a DTO is *schema-complete by definition* — if a field doesn't carry it and
 a constructor default doesn't supply it, it does not exist after save. Reverses
-only with an identity-aware populate arm, which is the relationship epic's.
+only with an identity-aware populate arm, and that arm landed elsewhere as
+predicted — [the relationship repeater](../forms/repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
+writes each item onto the record it is keyed to rather than constructing one, so
+this cast keeps the identity-free contract intact.
 
 ### The user can own either half of the conversion
 

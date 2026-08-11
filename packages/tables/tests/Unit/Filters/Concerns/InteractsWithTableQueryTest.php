@@ -30,6 +30,17 @@ it('skips a hidden filter that has a callback', function (): void {
     expect($query->getDQLPart('where'))->toBeNull();
 });
 
+it('skips a hidden filter on the base pass too', function (): void {
+    $query = filterQuery();
+
+    BaseFilter::make('status')
+        ->hidden()
+        ->baseQuery(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.title = :t'))
+        ->applyToBaseQuery($query);
+
+    expect($query->getDQLPart('where'))->toBeNull();
+});
+
 it('treats isActive as an opt-out, not an opt-in', function (): void {
     $callback = fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.title = :t');
 
@@ -45,6 +56,19 @@ it('treats isActive as an opt-out, not an opt-in', function (): void {
     expect((string) $absent->getDQLPart('where'))->toBe('song.title = :t')
         ->and($inactive->getDQLPart('where'))->toBeNull()
         ->and((string) $active->getDQLPart('where'))->toBe('song.title = :t');
+});
+
+it('treats isActive as an opt-out on the base pass too', function (): void {
+    $callback = fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.title = :t');
+
+    $absent = filterQuery();
+    BaseFilter::make('status')->baseQuery($callback)->applyToBaseQuery($absent, ['value' => 'x']);
+
+    $inactive = filterQuery();
+    BaseFilter::make('status')->baseQuery($callback)->applyToBaseQuery($inactive, ['isActive' => false]);
+
+    expect((string) $absent->getDQLPart('where'))->toBe('song.title = :t')
+        ->and($inactive->getDQLPart('where'))->toBeNull();
 });
 
 it('injects data, query and state, and discards the closure return', function (): void {
@@ -69,14 +93,15 @@ it('runs the base pass through its own callback', function (): void {
     $query = filterQuery();
 
     BaseFilter::make('status')
-        ->baseQuery(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.album = :a'))
+        ->baseQuery(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays = :p'))
         ->applyToBaseQuery($query, ['isActive' => true]);
 
-    expect((string) $query->getDQLPart('where'))->toBe('song.album = :a');
+    expect((string) $query->getDQLPart('where'))->toBe('song.plays = :p')
+        ->and($query->setParameter('p', 10)->getQuery()->getResult())->toBe([]);
 
     $apply = filterQuery();
     BaseFilter::make('status')
-        ->baseQuery(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.album = :a'))
+        ->baseQuery(fn (QueryBuilder $query): QueryBuilder => $query->andWhere('song.plays = :p'))
         ->apply($apply, ['isActive' => true]);
 
     expect($apply->getDQLPart('where'))->toBeNull();

@@ -81,10 +81,12 @@ field null, so removing the chip clears the whole filter.
 
 ### `isActive` is an opt-out, not an opt-in
 
-`apply()` consults `$data['isActive']` only when the key is present:
-`!($data['isActive'] ?? true)`. A filter whose schema has no `isActive` field —
-every `SelectFilter`, every custom `schema()` — therefore applies unconditionally
-once it has a query callback, while a checkbox `Filter` skips when unticked. The
+`apply()` and `applyToBaseQuery()` each consult `$data['isActive']` only when
+the key is present: `!($data['isActive'] ?? true)`. Both passes carry the same
+pair of guards, the hidden check included. A filter whose schema has no
+`isActive` field — every `SelectFilter`, every custom `schema()` — therefore
+applies unconditionally once it has a query callback, while a checkbox `Filter`
+skips when unticked. The
 indicator default runs the opposite polarity (`$state['isActive'] ?? false`), so
 an unticked filter shows no chip; that asymmetry is Filament's and is preserved.
 

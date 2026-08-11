@@ -6,6 +6,7 @@ namespace Sylament\Tables\Concerns;
 
 use Doctrine\ORM\QueryBuilder;
 use Sylament\Tables\Filters\Indicator;
+use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 
 use function Sylament\Support\filled;
@@ -30,6 +31,14 @@ trait CanSearchRecords
             return;
         }
 
+        $this->tablePage = 1;
+        $this->flushCachedTableRecords();
+    }
+
+    #[LiveAction]
+    public function resetTableSearch(): void
+    {
+        $this->tableSearch = '';
         $this->tablePage = 1;
         $this->flushCachedTableRecords();
     }

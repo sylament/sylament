@@ -109,7 +109,9 @@ instead.
 | Per-column search — `$tableColumnSearches`, `updatedTableColumnSearches()`, the reserved keys | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | todo | — | [detail](#search-is-the-global-term-only) |
 | Deferred loading — `$isTableLoaded`, `loadTable()`, `isTableLoaded()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Concerns/CanDeferLoading.php) | todo | — | [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | Host polling — `getTablePollingInterval()` | [`CanPollRecords`](../../../vendor/filament/tables/src/Concerns/CanPollRecords.php) | skipped | — | The whole trait is `@deprecated Override the table() method to configure the table.`, one host getter returning null, and the project has never ported a deprecated Filament surface. The interval it fronts is `Table::poll()`, a **todo** row in [table.md](table.md#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
-| [`Concerns\HasFilters` — the `$tableFilters` / `$tableDeferredFilters` bags, `getTableFilterState()`, `getTableFilterFormState()`, `parseTableFilterName()`, `getTableFiltersForm()`, the `#[PostMount]` fill and the `#[PostHydrate(priority: 10)]` re-cache](../../../packages/tables/src/Concerns/HasFilters.php) | [`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | in progress | — | [diverges](#the-filter-bags-are-arrays-never-null-and-carry-no-getters) · [diverges](#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk) · [semantics](#updatedtablefilters-fires-for-a-whole-prop-write-never-for-a-field-inside-it) · [diverges](#no-table-state-is-persisted-in-the-session) |
+| [`Concerns\HasFilters` — the `$tableFilters` / `$tableDeferredFilters` bags, `getTableFilterState()`, `getTableFilterFormState()`, `parseTableFilterName()`, `getTableFiltersForm()`, the `#[PostMount]` fill and the `#[PostHydrate(priority: 10)]` re-cache](../../../packages/tables/src/Concerns/HasFilters.php) | [`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | in progress | — | [diverges](#the-filter-bags-are-arrays-never-null-and-carry-no-getters) · [diverges](#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk) · [diverges](#the-mount-fill-applies-defaults-and-seeds-nothing-from-a-passed-bag) · [semantics](#updatedtablefilters-fires-for-a-whole-prop-write-never-for-a-field-inside-it) · [diverges](#no-table-state-is-persisted-in-the-session) |
+| [`applyTableFilters()`, `removeTableFilter()`, `removeTableFilters()`, `resetTableFiltersForm()`, `updatedTableFilters()`, `handleTableFilterUpdates()`](../../../packages/tables/src/Concerns/HasFilters.php) | [`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | done | — | [detail](#filter-mutations-reset-the-page-and-flush-the-record-cache) · [diverges](#the-live-mode-filter-hook-is-a-per-field-afterstateupdated-not-the-props-onupdated) |
+| [`resetTableSearch()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords::resetTableSearch()`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | done | — | [detail](#filter-mutations-reset-the-page-and-flush-the-record-cache) |
 | The deprecated `*TableAction` host shims — `mountTableAction()`, `callMountedTableAction()`, `getMountedTableActionRecord()`, `unmountTableAction()`, `getTableRecordAction()`, … | [`Concerns\HasActions`](../../../vendor/filament/tables/src/Concerns/HasActions.php), [`HasRecordAction`](../../../vendor/filament/tables/src/Concerns/HasRecordAction.php) | skipped | — | Every method in both files is a one-line deprecated delegate, and the project has never ported a deprecated Filament surface. What they front is built: the host resolves a table-context mount through actions' [`resolveTableAction()`](../actions/has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference) and binds the record through `getTableRecord()` |
 | Bulk actions and selection — `getSelectedTableRecords()`, `getAllSelectableTableRecordKeys()`, `deselectAllTableRecords()` | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | blocked | table bulk actions | — |
 | Grouping and summaries | [`CanGroupRecords`](../../../vendor/filament/tables/src/Concerns/CanGroupRecords.php), [`CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | todo | — | — |
@@ -683,6 +685,56 @@ the contract without the trait, so each new member lands there as an explicit
 divergence: the end state is the same set of members, minus whatever the
 Eloquent-only rows above turn out not to need.
 
+### Filter mutations reset the page and flush the record cache
+
+Every filter mutation ends in the same two lines — `tablePage = 1` and
+`flushCachedTableRecords()` — because a narrowed result set makes the current
+page number meaningless and the render cache stale. That is
+`handleTableFilterUpdates()`, and it is the tail of `updatedTableFilters()`, of
+`removeTableFilter()`, `removeTableFilters()` and `resetTableFiltersForm()` in
+live mode, and of `applyTableFilters()` in every mode. Filament's tail is the
+same reset plus two things that do not exist here — the session write and
+`deselectAllTableRecords()` — and it omits the flush because a Livewire request
+starts with a null cache; ours is one object across the whole request, so the
+flush is what the page reset would otherwise lie about.
+
+The deferred branch is the fork: `removeTableFilter()`, `removeTableFilters()`
+and `resetTableFiltersForm()` call `applyTableFilters()` instead of the tail
+when the table defers, which copies the draft bag over the applied one. So a
+chip removal on a deferred table also **applies whatever else was pending in
+the panel** — Filament's semantics exactly, and the reason removal writes
+through the schema rather than the arrays: `resetTableFilterState()` resolves
+the filter's `Group` through `Schema::getComponentByStatePath()` (built from
+the form's own root path plus the filter name, since our lookup takes an
+absolute path), walks its child schema's flat components for `Field` instances
+— Filament reads the same set off a `getFlatFields()` that
+[schemas has not ported](../schemas/schema.md#hascomponents-still-lacks-the-lookup-layer)
+— and calls `state()` on each. Whichever bag the form's state path names
+receives the write.
+
+Per field the new value is `getResetState()[$fieldName]` when the filter names
+one, and otherwise derived from the current state's type: an array resets to
+`[]`, a bool to `false`, anything else to `null`. Filament's bool arm consults
+`hasNullableBooleanState()` first, which only its `Radio` and `ToggleButtons`
+answer true — neither is ported, and our `Checkbox`/`Toggle` both cast through
+a non-nullable `BooleanStateCast` — so that arm is dropped rather than ported
+to a method that would always answer false. A named `$field` narrows the reset
+to that one field only when the group actually carries it — an unknown name
+resets the whole group, which is Filament's `array_key_exists` guard and keeps
+a stale chip from becoming a no-op.
+
+`removeTableFilters()` removes a filter only when **every** one of its
+indicators is removable; a filter with no indicators is vacuously removable and
+is reset. It then clears the global search through `resetTableSearch()`, the
+host action the search chip's X also targets — `tableSearch = ''`, page one,
+flush — which is why that method lives on `CanSearchRecords` beside
+`updatedTableSearch()` rather than in the filters concern that calls it.
+
+`resetTableFiltersForm()` fills the form with **defaults**, not reset state:
+`Schema::fill()` with no argument runs `hydrateState(applyDefaults: true)`, so
+a `Filter::make('featured')->default()` comes back checked where a chip removal
+would have unchecked it. The two are deliberately different operations.
+
 ## Semantics
 
 Faithful ports subtle enough that the next reader would misread the code.
@@ -894,12 +946,16 @@ leave the property unassigned.
 `getTable()` therefore builds on first call and memoises into a nullable
 `$cachedTable`, the same lazy shape
 [`HasSchemas::$cachedSchemas`](../schemas/has-schemas.md) already uses on the
-schemas host. Two consequences, both wanted: the table is never built for a
-request that does not touch it, and a host that never calls `getTable()` pays
-nothing. The one Filament behaviour lost is the guaranteed build order — Filament
-can rely on the table existing before any other hook runs; here anything that
-needs it calls `getTable()` and gets it built on the spot. Permanent, unless UX
-adds a construct-and-hydrate-alike boot hook.
+schemas host. The consequence, and it is the wanted one: the table is never
+built for a request that does not touch it. Laziness is no longer *total*,
+though — `mountTableFilters()` is a `#[PostMount]` hook and calls `getTable()`
+unconditionally, so a **mounted** host builds its table whether or not anything
+else asks for it, and only a host reached outside the mount path (a plain
+`new`, a hydration-only request) still pays nothing. The one Filament behaviour
+lost is the guaranteed build order — Filament can rely on the table existing
+before any other hook runs; here anything that needs it calls `getTable()` and
+gets it built on the spot. Permanent, unless UX adds a
+construct-and-hydrate-alike boot hook.
 
 ### `makeTable()` seeds nothing from deprecated host getters
 
@@ -1634,6 +1690,60 @@ takes, for the same reason. `parseTableFilterName()` carries a smaller version o
 it: Filament's returns `$name::getDefaultName()` unguarded against a `string`
 return type, so a `BaseFilter` subclass that never declared a default name is a
 `TypeError` there, where ours falls back to the class-string with `?? $name`.
+
+### The mount fill applies defaults and seeds nothing from a passed bag
+
+Filament's mount pass is `$this->getTableFiltersForm()->fill($this->tableFilters)`
+— an **argument**, so an incoming bag (from the query string, the session, or a
+parent passing `tableFilters` in) is written into the form as raw state and the
+schema's own defaults are skipped. Ours is `fill()` with no argument, which runs
+`hydrateState(applyDefaults: true)`, and that arm writes the declared default
+**over** whatever is already at the path rather than only into a blank one.
+
+So a bag handed to `mountTableFilters()` survives exactly where the field
+declares no default, and the split is not the one a caller would guess: a plain
+`Filter` is a `Checkbox`, which declares `default(false)` in its own `setUp()`,
+so a mount-passed `['featured' => ['isActive' => true]]` comes back `false`,
+while a `SelectFilter` with no `default()` keeps its passed `value`. Both bags
+lose it under deferral, since the mount pass then copies the draft over the
+applied one.
+
+Nothing is lost today, because the two lanes Filament's argument exists to serve
+are both unported — [the session](#no-table-state-is-persisted-in-the-session)
+and [the query string](#no-table-state-is-bound-to-the-url) — and there is no
+third caller: mount-time seeding of filter state is simply not a supported
+entry point here. It is recorded rather than pre-built because the argument form
+alone would not be the whole fix — Filament seeds the bag *before* filling, with
+a null-when-empty normalisation and a query-string coercion pass, and picking
+the branch without a lane asking for it would be guessing at which of those a
+consumer wants. Reversed by the first lane that needs to restore a bag, which
+brings its own read side with it.
+
+### The live-mode filter hook is a per-field `afterStateUpdated`, not the prop's `onUpdated`
+
+Livewire calls `updatedTableFilters()` for a write to any path *inside* the bag
+— `SupportLifecycleHooks::update()` derives the hook name from the dotted path's
+head (`studly()->before('.')`) and hands the remainder over as a second argument
+— so Filament's live mode gets its page reset from that hook alone.
+Ux-live-component's identity `onUpdated` fires only for a write to the whole
+prop — [the mechanism is in Semantics](#updatedtablefilters-fires-for-a-whole-prop-write-never-for-a-field-inside-it),
+and its array form takes compile-time path strings where ours are the user's
+filter names — so the same hook covers strictly less here and live mode needs a
+second path.
+
+That path is the schema: the non-deferred branch of `getTableFiltersForm()`
+attaches `afterStateUpdated(fn () => $this->handleTableFilterUpdates())` to
+every `Field` in the form, and `HasSchemas::callAfterSchemaStateUpdated()` — the
+`#[PostHydrate(priority: -10)]` pass that diffs `$oldState` against the hydrated
+state — fires them for exactly the fields that changed. The filters form is in
+`getCachedSchemas()` by then because
+[the re-cache hook runs at priority `10`](../schemas/has-schemas.md). Deferred
+mode attaches nothing, since a draft edit is meant not to touch the query; the
+pinning cases assert both halves.
+
+`updatedTableFilters()` is kept rather than deleted: it is the whole-bag write
+path — a server-side assignment, a test, a `data-model="tableFilters"` binding —
+and it is what mirrors an applied write back into the deferred bag.
 
 _See also: the global [rename table](../renames.md) — the interface⇄trait label
 swap (`InteractsWithTable` trait → `HasTable` trait, `HasTable` interface →

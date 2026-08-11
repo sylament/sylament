@@ -5,13 +5,18 @@ declare(strict_types=1);
 namespace Sylament\Tables\Concerns;
 
 use LogicException;
+use Sylament\Forms\Components\Field;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
 use Sylament\Tables\Filters\BaseFilter;
+use Symfony\UX\LiveComponent\Attribute\LiveAction;
+use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Symfony\UX\TwigComponent\Attribute\PostMount;
+
+use function Sylament\Support\filled;
 
 trait HasFilters
 {
@@ -94,6 +99,16 @@ trait HasFilters
             $schema->statePath('tableDeferredFilters');
         } else {
             $schema->statePath('tableFilters')->live();
+
+            foreach ($schema->getFlatComponents(withActions: false) as $component) {
+                if (!$component instanceof Field) {
+                    continue;
+                }
+
+                $component->afterStateUpdated(function (): void {
+                    $this->handleTableFilterUpdates();
+                });
+            }
         }
 
         $this->cacheSchema('tableFiltersForm', $schema);
@@ -163,5 +178,130 @@ trait HasFilters
     {
         $this->tablePage = 1;
         $this->flushCachedTableRecords();
+    }
+
+    #[LiveAction]
+    public function applyTableFilters(): void
+    {
+        $this->tableFilters = $this->tableDeferredFilters;
+
+        $this->handleTableFilterUpdates();
+    }
+
+    #[LiveAction]
+    public function removeTableFilter(#[LiveArg] string $filterName, #[LiveArg] ?string $field = null): void
+    {
+        $this->resetTableFilterState($filterName, $field);
+
+        if ($this->getTable()->hasDeferredFilters()) {
+            $this->applyTableFilters();
+
+            return;
+        }
+
+        $this->handleTableFilterUpdates();
+    }
+
+    #[LiveAction]
+    public function removeTableFilters(): void
+    {
+        foreach ($this->getTable()->getFilters() as $filterName => $filter) {
+            foreach ($filter->getIndicators() as $indicator) {
+                if (!$indicator->isRemovable()) {
+                    continue 2;
+                }
+            }
+
+            $this->resetTableFilterState($filterName, null);
+        }
+
+        $this->resetTableSearch();
+
+        if ($this->getTable()->hasDeferredFilters()) {
+            $this->applyTableFilters();
+
+            return;
+        }
+
+        $this->handleTableFilterUpdates();
+    }
+
+    #[LiveAction]
+    public function resetTableFiltersForm(): void
+    {
+        $this->getTableFiltersForm()->fill();
+
+        if ($this->getTable()->hasDeferredFilters()) {
+            $this->applyTableFilters();
+
+            return;
+        }
+
+        $this->handleTableFilterUpdates();
+    }
+
+    /**
+     * Reset the schema fields backing one filter — the whole group, or only
+     * `$field` when the removed indicator named one that the group actually
+     * carries. The write goes through the fields, so the form's state path
+     * decides which bag receives it.
+     */
+    private function resetTableFilterState(string $filterName, ?string $field): void
+    {
+        $filter = $this->getTable()->getFilter($filterName);
+
+        if ($filter === null) {
+            return;
+        }
+
+        $form = $this->getTableFiltersForm();
+        $formStatePath = $form->getStatePath();
+        $groupStatePath = filled($formStatePath)
+            ? "{$formStatePath}.{$filterName}"
+            : $filterName;
+
+        $childSchema = $form->getComponentByStatePath($groupStatePath)?->getChildSchema();
+
+        if (!$childSchema instanceof Schema) {
+            return;
+        }
+
+        $fields = [];
+
+        foreach ($childSchema->getFlatComponents(withActions: false) as $component) {
+            if (!$component instanceof Field) {
+                continue;
+            }
+
+            $fieldName = $component->getName();
+
+            if ($fieldName === null) {
+                continue;
+            }
+
+            $fields[$fieldName] = $component;
+        }
+
+        if (filled($field) && array_key_exists($field, $fields)) {
+            $fields = [$field => $fields[$field]];
+        }
+
+        $resetState = $filter->getResetState();
+
+        foreach ($fields as $fieldName => $fieldComponent) {
+            if (array_key_exists($fieldName, $resetState)) {
+                $fieldComponent->state($resetState[$fieldName]);
+
+                continue;
+            }
+
+            $state = $fieldComponent->getState();
+
+            $fieldComponent->state(match (true) {
+                is_array($state) => [],
+                is_bool($state) => false,
+                default => null,
+            });
+        }
     }
 }

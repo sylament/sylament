@@ -21,7 +21,7 @@ Reference — the Filament source this is diffed against:
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`trueLabel()` / `falseLabel()` + getters](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::trueLabel()` | done | — | — |
+| [`trueLabel()` / `falseLabel()` + getters](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::trueLabel()` | done | — | [diverges](#the-arm-labels-are-hardcoded-english) |
 | [`getFormField()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::getFormField()` | done | — | [semantics](#boolean-rebuilds-the-options-the-parent-chain-just-set) |
 | [`queries()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::queries()` | done | — | [semantics](#the-dispatcher-is-installed-as-the-filters-own-query-callback) |
 | [`boolean()`](../../../packages/tables/src/Filters/TernaryFilter.php) | `TernaryFilter::boolean()` | in progress | — | [diverges](#the-arms-qualify-the-attribute-where-filaments-leave-it-bare) · [diverges](#the-whererelation-arms-are-deferred) |
@@ -58,6 +58,13 @@ check straight into the base seam — so the ternary arms and a user's own
 calls `boolean()`, so a consumer's `queries()` or `nullable()` replaces the
 default arms rather than stacking with them.
 
+The **dispatcher** is what gets evaluated; the three arms do not. It calls each
+one positionally — `$true($query, $data)` — so an arm takes the builder and the
+state by position and gets none of the `Invoker`'s injections: no named `data` /
+`query` / `state`, no container services, no `$filter`. An arm needing anything
+else closes over it, which is exactly what `boolean()` and `nullable()` do with
+`$this`. Filament's dispatcher calls its arms the same way.
+
 ### The state is `1 | 0 | null`, not `true | false | null`
 
 `Select::boolean()` keys its options `1` and `0` and stores them as ints, so the
@@ -89,6 +96,17 @@ so a bare name is qualified with the root alias and a dotted path is checked
 against the builder's aliases. A fix, not a mirror; recorded in the
 [renames table](../renames.md) and pinned by the DQL assertions in
 `TernaryFilterTest`.
+
+### The arm labels are hardcoded English
+
+`setUp()` seeds `trueLabel('Yes')` and `falseLabel('No')` where Filament reads
+`__('filament-forms::components.select.boolean.true')` and its `false` twin. The
+values are that catalogue's English ones, so the rendered chip and the two
+options match Filament byte for byte — but there is no catalogue to look them up
+in, the same
+[hardcoded-copy gap](table.md#the-empty-state-heading-hardcodes-no-records) the
+empty state and the search chip carry, and it lifts with the toolkit-wide i18n
+epic. The `'-'` placeholder is not part of it: Filament hardcodes that one too.
 
 ### The `whereRelation` arms are deferred
 

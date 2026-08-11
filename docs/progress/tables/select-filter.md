@@ -36,7 +36,7 @@ Reference — the Filament source this is diffed against:
 | [`apply()`](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::apply()` | in progress | — | [semantics](#every-comparison-is-parameter-bound) · [semantics](#the-bail-test-asks-whether-any-element-is-filled-not-whether-the-array-is-empty) · [diverges](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
 | [`getActiveCount()`](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::getActiveCount()` | done | — | [semantics](#the-active-count-is-a-filled-test-not-an-indicator-count) |
 | [reset state](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::setUp()` | done | — | [diverges](#the-reset-state-clears-the-key-the-state-actually-uses) |
-| [indicators](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::setUp()` | in progress | — | [semantics](#a-user-supplied-indicator-object-passes-through-unsuffixed) · [diverges](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
+| [indicators](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::setUp()` | in progress | — | [semantics](#a-user-supplied-indicator-object-passes-through-unsuffixed) · [diverges](#the-multi-value-label-follows-selection-order-and-a-blank-option-key-still-indicates) · [diverges](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
 | `searchable()`, `native()`, `preload()`, `optionsLimit()`, `getSearchResultsUsing()`, `getOptionLabelUsing()`, `getOptionLabelsUsing()`, `getOptionLabelFromRecordUsing()`, `forceSearchCaseInsensitive()` | `SelectFilter` | blocked | a JS-select epic | [diverges](#the-js-select-surface-is-dropped-from-the-field-chain) |
 | `relationship()`, `emptyRelationshipOptionLabel()`, `hasEmptyRelationshipOption()`, the `getOptions*FromRelationship()` family | `Concerns\HasRelationship` | blocked | the tables-relations epic | [diverges](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
 
@@ -126,6 +126,26 @@ and `optionsLimit()`, plus the four `getOption*Using()` seams and
 `<select>`; calling them would mean building an entire JS select first. They
 wait on a future JS-select epic, and the filter's field chain is the six methods
 that do exist.
+
+### The multi-value label follows selection order, and a blank option key still indicates
+
+Two small deltas in how the chip's label is derived, both in `getStateLabels()`.
+Filament builds the multiple arm with `->only($state['values'])` over the option
+map, which preserves **option** order and drops duplicates; ours walks the state
+instead, so `options(['a' => 'Alpha', 'b' => 'Bravo', 'c' => 'Charlie'])` with
+`['c', 'a']` reads *"Charlie & Alpha"* here and *"Alpha & Charlie"* upstream, and
+a value the state repeats repeats its label. The state is the order the user's
+`<select multiple>` sent, so neither reading is wrong, and the walk is the
+cheaper one.
+
+The second is the blank arm: Filament short-circuits on
+`blank($state['value'] ?? null)` *before* the lookup, where ours lets the lookup
+decide. They part company for exactly one shape — a filter declaring
+`options(['' => 'None'])` with the state `['value' => '']` — which renders a
+*None* chip here and no chip upstream. The query behaves identically either way,
+since [the bail test](#the-bail-test-asks-whether-any-element-is-filled-not-whether-the-array-is-empty)
+skips a blank value in both, so the difference is the chip alone: ours says the
+declared option is selected, Filament's says nothing is.
 
 ### The relationship arm is deferred, with a documented escape hatch
 

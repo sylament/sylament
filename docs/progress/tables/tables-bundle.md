@@ -55,13 +55,14 @@ a [Details](#details) write-up, a **diverges** link to
 | [TableExtension → `twig.extension`](../../../packages/tables/src/SylamentTablesBundle.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`renderSchema()`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | — | [diverges](#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
 | [`TablesIconAlias` — `ACTIONS_FILTER`, `EMPTY_STATE`, `FILTERS_REMOVE_ALL_BUTTON`, the three `HEADER_CELL_SORT_*`, `SEARCH_FIELD`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`TablesIconAlias`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | — | [detail](#the-alias-set-is-seven-constants-of-filaments-23) · [diverges](#the-empty-state-alias-value-drops-filaments-package-prefix) |
 | [`ext-mbstring` on the package manifest](../../../packages/tables/composer.json) | — (Sylament-only; Filament's manifest declares no extensions) | done | — | [diverges](#the-manifest-declares-ext-mbstring) |
+| [`sylament/forms` on the package manifest](../../../packages/tables/composer.json) | [`filament/forms` on Filament's](../../../vendor/filament/tables/composer.json) | done | — | [diverges](#the-manifest-declares-sylamentforms) |
 | [`@SylamentTables` view namespace](../../../packages/tables/templates) | [`->hasViews()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | Asset registration (`Js::make('tables')` + four column `AlpineComponent`s) | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#asset-registration) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php), [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#translations) |
 | `Testable::mixin(...)` — the six tables mixins | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 
-Three of the four **done** rows are covered by
+Four of the five **done** rows are covered by
 [`SylamentTablesBundleTest`](../../../packages/tables/tests/Integration/SylamentTablesBundleTest.php),
 which asserts each in the shape that fails without the registration rather
 than the shape that passes either way: the container's twig service exposes
@@ -78,14 +79,17 @@ kernel's Twig loader lists a `SylamentTables` namespace under which
 `@SylamentTables/partials/Table/index.html.twig` resolves
 (the view namespace — the assertion that failed with
 _"There are no registered paths for namespace `SylamentTables`"_ until
-`packages/tables/templates/` existed). `renderTable()` itself is covered twice:
-by the Unit
+`packages/tables/templates/` existed); and the same loader lists a
+`SylamentForms` namespace under which a real `Checkbox` renders inside a `Schema`
+(the [`sylament/forms` declaration](#the-manifest-declares-sylamentforms), whose
+test-kernel half is what those two cases can actually assert).
+`renderTable()` itself is covered twice: by the Unit
 [`TableExtensionTest`](../../../packages/tables/tests/Unit/Twig/Extension/TableExtensionTest.php)
 against an `ArrayLoader` stub — the function name, the render, and both
 `RuntimeException` guards — and by its Integration
 [twin](../../../packages/tables/tests/Integration/Twig/Extension/TableExtensionTest.php),
 which renders a `<twig:SongsTable />` host through the real Twig so the shipped
-partial is in the loop. The fourth — the `ext-mbstring` declaration — is a
+partial is in the loop. The fifth — the `ext-mbstring` declaration — is a
 manifest fact with no runtime to assert; what would catch its absence is CI
 installing the split package on a build without the extension. The unported
 responsibilities have no coverage because they have no code.
@@ -318,7 +322,8 @@ types `getFormField(): ?Sylament\Forms\Components\Field` and
 unconditionally by `src/` — the test the
 [split-repo dependency rule](../../../CLAUDE.md) sets for a `require`, not a
 `suggest`. No cycle: `sylament/forms` requires only `actions`, `schemas`,
-`support` and its own Symfony deps, and nothing in forms references tables.
+`support`, `doctrine/orm` and its own Symfony deps, and nothing in forms
+references tables.
 
 The test-kernel half rides along: `tests/Fixtures/Kernel.php` registers
 `SylamentFormsBundle`, without which a filter form cannot be built in the

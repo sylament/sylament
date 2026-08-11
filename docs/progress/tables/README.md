@@ -76,16 +76,19 @@ into
 [`base-filter.md`](base-filter.md). Filament's `resources/views/index.blade.php`
 folds the same way, into `table.md`'s `$template` row.
 `Table\Concerns\HasQuery`, `Table\Concerns\HasFilters` and
-`Table\Concerns\HasFilterIndicators` are the three landed concerns that keep a
-row anyway, all for the same reason: `HasQuery`'s `query()` arm is built and
-folded into [`table.md`](table.md) while its relation-scoped arm beside it is
-deferred whole, and the two filter concerns are built and folded into
+`Table\Concerns\HasFilterIndicators` are three landed concerns that keep a row
+anyway, all for the same reason: `HasQuery`'s `query()` arm is built and folded
+into [`table.md`](table.md) while its relation-scoped arm beside it is deferred
+whole, and the two filter concerns are built and folded into
 [`table.md`](table.md) while the trigger, apply and remove-all actions, the
 `filtersFormSchema()` override and the column-search indicators are not — so each
-row is where the deferred half stays findable.
-`Columns\Concerns\InteractsWithTableQuery` kept a row on the same grounds until
-[· 20](../roadmap.md#pulled-forward) landed its aggregate and eager-loading half,
-and folded when it did. Everything
+row is where the deferred half stays findable. `Filters\Concerns\HasOptions` and
+`Filters\Concerns\HasPlaceholder` keep rows for a different reason: they ship for
+`SelectFilter` alone, so they fold into
+[`select-filter.md`](select-filter.md) rather than into `base-filter.md` with the
+eleven above. `Columns\Concerns\InteractsWithTableQuery` kept a row on the same
+grounds until [· 20](../roadmap.md#pulled-forward) landed its aggregate and
+eager-loading half, and folded when it did. Everything
 Filament ships that the port has **not** reached keeps its
 own per-file row below, the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
@@ -265,8 +268,8 @@ pairs with, so it shares the first row below.
 | Summarizer / CanFormatState | [`Columns/Summarizers/Concerns/CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanFormatState.php) | todo | — |
 | Summarizer / HasLabel | [`Columns/Summarizers/Concerns/HasLabel.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/HasLabel.php) | todo | — |
 | Summarizer / InteractsWithTableQuery | [`Columns/Summarizers/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/InteractsWithTableQuery.php) | todo | — |
-| [`Filter / HasOptions`](../../../packages/tables/src/Filters/Concerns/HasOptions.php) | [`Filters/Concerns/HasOptions.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | in progress | ships for `SelectFilter`; folds into `select-filter.md` when it lands |
-| [`Filter / HasPlaceholder`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | [`Filters/Concerns/HasPlaceholder.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php) | in progress | ships for `SelectFilter`; folds into `select-filter.md` when it lands |
+| [`Filter / HasOptions`](../../../packages/tables/src/Filters/Concerns/HasOptions.php) | [`Filters/Concerns/HasOptions.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasOptions.php) | in progress | the `options()` / `getOptions()` pair ships for `SelectFilter`; the enum and `Arrayable` arms and the three `getOption*Using()` seams wait on a JS-select epic — [select-filter.md](select-filter.md) |
+| [`Filter / HasPlaceholder`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | [`Filters/Concerns/HasPlaceholder.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasPlaceholder.php) | done | ships for `SelectFilter`, folded into [select-filter.md](select-filter.md) |
 | Filter / HasRelationship | [`Filters/Concerns/HasRelationship.php`](../../../vendor/filament/tables/src/Filters/Concerns/HasRelationship.php) | todo | — |
 | Group / BelongsToTable | [`Grouping/Concerns/BelongsToTable.php`](../../../vendor/filament/tables/src/Grouping/Concerns/BelongsToTable.php) | todo | — |
 
@@ -304,9 +307,9 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`TableExtension`](../../../packages/tables/src/Twig/Extension/TableExtension.php) (`renderTable()`) | — (Sylament-only; mirrors schemas' [`SchemaExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php)) | done | [tables-bundle.md](tables-bundle.md#the-bundle-registers-a-rendertable-twig-extension-which-filament-has-no-counterpart-for) |
-| [`TablesIconAlias`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`View/TablesIconAlias.php`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | [tables-bundle.md](tables-bundle.md#the-alias-set-is-five-constants-of-filaments-23) |
+| [`TablesIconAlias`](../../../packages/tables/src/Twig/TablesIconAlias.php) | [`View/TablesIconAlias.php`](../../../vendor/filament/tables/src/View/TablesIconAlias.php) | in progress | [tables-bundle.md](tables-bundle.md#the-alias-set-is-seven-constants-of-filaments-23) |
 | [`SylamentTablesBundle`](../../../packages/tables/src/SylamentTablesBundle.php) | [`TablesServiceProvider.php`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | in progress | [tables-bundle.md](tables-bundle.md) |
-| [Styles](../../../packages/tables/assets/src/styles) | [`resources/css/`](../../../vendor/filament/tables/resources/css) | in progress | `table.css`, `header-toolbar.css` and `text-column.css` ship — the last split along Filament's own line into the cell's layout, the item's type and the description ([text-column.md](text-column.md#the-item-element-is-never-merged-into-the-outer-div)); the remaining column, filter, summary and column-manager sheets follow their features |
+| [Styles](../../../packages/tables/assets/src/styles) | [`resources/css/`](../../../vendor/filament/tables/resources/css) | in progress | `table.css`, `header-toolbar.css`, `text-column.css` and `filters.css` ship — the third split along Filament's own line into the cell's layout, the item's type and the description ([text-column.md](text-column.md#the-item-element-is-never-merged-into-the-outer-div)), the fourth carrying the filters panel, its trigger and the indicator row; the remaining column, summary and column-manager sheets follow their features |
 | [`Colors\Components\TextColumnComponent\ItemComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent.php) | [`View/Components/Columns/TextColumnComponent/ItemComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/TextColumnComponent/ItemComponent.php) | done | [text-column.md](text-column.md#the-item-policy-measures-the-dark-surface-against-gray-900) |
 | [`Colors\Components\TextColumnComponent\ItemComponent\IconComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent/IconComponent.php) | [`View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php) | done | [text-column.md](text-column.md#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon) |
 | HeaderActionsPosition | [`Actions/HeaderActionsPosition.php`](../../../vendor/filament/tables/src/Actions/HeaderActionsPosition.php) | todo | — |

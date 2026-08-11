@@ -270,7 +270,13 @@ triggers `render:finished`, typed at `live_controller.d.ts:77` as
 event: the only CustomEvents the live controller dispatches are `live:connect` and
 `live:disconnect` (`live_controller.js:2228`/`2235`, through the `prefix: "live"`
 dispatcher at `:2279`), plus the intersection plugin's one-shot `live:appear`
-(`:1802`) — there is no `live:render` to listen for on an ancestor. Reaching the
+(`:1802`) — there is no `live:render` to listen for on an ancestor. A re-render
+*can* put one more `CustomEvent` on the wire, but it is the host's own: whatever
+the PHP side queued through `dispatchBrowserEvent()` is replayed as a bubbling
+event at `:1579`-`:1583`, immediately before the hook — so its name is the
+server's choice and every host would have to emit one on every render, which is
+an application-level signal rather than a post-morph one a support primitive can
+subscribe to. Reaching the
 hook means either the undeclared `element.__component` expando the controller
 defines at `live_controller.js:2205`, or importing `getComponent` from
 `@symfony/ux-live-component` — which `packages/support/assets/package.json` does not
@@ -281,7 +287,7 @@ live component in it at all, where the hook does not exist.
 
 **One accepted gap.** ux-live-component's `ExternalMutationTracker`
 (`live_controller.js:1064`) observes the component subtree with
-`attributes: true` (`:1075`) and replays an externally changed attribute onto the
+`attributes: true` (`:1080`) and replays an externally changed attribute onto the
 incoming node during the morph (`elementChanges.applyToElement(toEl)` at `:917`,
 applied at `:1043`), so in the common case it *already* preserves the removed
 `hidden`. This fix does not depend on that and does not fight it: when the tracker

@@ -31,32 +31,39 @@ and, on the query lane, every single time, the count of everything behind that
 page, the flush that empties the cache, and the per-host id every row and cell is
 stamped with.
 
-Around that core it composes three host concerns, all landed by the table
-upgrades epic:
+Around that core it composes four host concerns, three of them landed by the
+table upgrades epic:
 [`CanPaginateRecords`](../../../packages/tables/src/Concerns/CanPaginateRecords.php)
 (the page and per-page state plus the `gotoTablePage()` live action),
 [`CanSortRecords`](../../../packages/tables/src/Concerns/CanSortRecords.php)
 (the `column:direction` string and the `sortTable()` cycle) and
 [`CanSearchRecords`](../../../packages/tables/src/Concerns/CanSearchRecords.php)
-(the search term). Each is a per-file row below rather than a folded one, per
+(the search term) — plus
+[`HasFilters`](../../../packages/tables/src/Concerns/HasFilters.php) (the two
+filter bags, the filters form and the five filter live actions), from the filter
+layer. Each is a per-file row below rather than a folded one, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). What
-Filament's nineteen-trait host does beyond them — filters, bulk actions,
-selection, reordering, the column manager, and the whole query-lane half of the
-three above — is unported and listed below.
+Filament's nineteen-trait host does beyond them — bulk actions, selection,
+reordering, the column manager, and the whole query-lane half of the three
+above — is unported and listed below.
 
-The trait presumes no host property beyond the five `#[LiveProp]`s it and its
+The trait presumes no host property beyond the seven `#[LiveProp]`s it and its
 concerns declare: `?string $tableHostId` (the persisted half of
 [`getTableHostId()`](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id)),
-`int $tablePage`, `?string $tableSort`, and the two **writable** props the
-chrome binds to, `?string $tableRecordsPerPage` and `?string $tableSearch`.
+`int $tablePage`, `?string $tableSort`, and the four **writable** props the
+chrome binds to — `?string $tableRecordsPerPage`, `?string $tableSearch` and the
+two [filter bags](#the-filter-bags-are-arrays-never-null-and-carry-no-getters),
+`array $tableFilters` and `array $tableDeferredFilters`.
 Writability is the security line and it is
 [deliberate on each prop](#per-page-is-validated-in-the-getter-on-every-read):
 page and sort move only through a `#[LiveAction]`, so they stay checksummed,
-while the two a `data-model` writes are re-validated on every read — and each of
-those two dehydrates
+while the four a `data-model` writes are re-validated on every read — and the
+per-page and search props each dehydrate
 [in the vocabulary of the element bound to it](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary)
-rather than through its validating getter. A host can
-still mix the trait in beside [`HasSchemas`](../schemas/has-schemas.md) and
+rather than through a validating getter, which is also why
+[neither bag may grow one](#the-filter-bags-are-arrays-never-null-and-carry-no-getters).
+A host can still mix the trait in beside
+[`HasSchemas`](../schemas/has-schemas.md) and
 [`HasActions`](../actions/has-actions.md) — the property names are disjoint,
 which is what keeps them composable.
 
@@ -76,7 +83,7 @@ Reference — the Filament source this is diffed against:
 - [`tables/src/Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php)
   — the global search term, the per-column searches, and their query application
 - [`tables/src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php)
-  — the 46-method interface this reduces to nine
+  — the 46-method interface this reduces to eleven
 
 ## Surface
 
@@ -661,7 +668,7 @@ reads the form off a `getLiveComponent()` typed as this interface, and at level
 max that call cannot compile until the method is declared here — which is why
 the two shipped in the same change, and why the filter-side reader was held back
 a commit rather than guarded. The second reason is the one that found the
-eighth: the filters panel reads the form off `getLiveComponent` in a template,
+ninth: the filters panel reads the form off `getLiveComponent` in a template,
 which is exactly what `TemplateHostCallsTest` scans for, so a contract-only host
 would fatal in Twig. That half has since shipped — the partial's dropdown branch
 is the reader — and it landed without touching the interface, because the member
@@ -688,8 +695,9 @@ the clearest case of the rule at work: Filament's contract declares it, and
 [ours will](#the-all-records-count-answers-four-ways-where-filaments-answers-two)
 when a consumer here calls it. Growth is nearly free for implementors, because
 `HasTable` supplies every member: every tables fixture that mixes the trait in,
-and the demo's `TableShowcaseCard`, takes an addition without an edit. One
-fixture is deliberately outside that, and costs a stub per growth —
+and the demo's two implementors — `TableShowcaseCard` and the actions page's
+`DispatchAnywhere` — take an addition without an edit. One fixture is
+deliberately outside that, and costs a stub per growth —
 `BareTableHost` implements the interface **by hand**, to prove a host can satisfy
 the contract without the trait, so each new member lands there as an explicit
 `null` stub. This is a **growth order**, not a
@@ -725,11 +733,17 @@ receives the write.
 
 Per field the new value is `getResetState()[$fieldName]` when the filter names
 one, and otherwise derived from the current state's type: an array resets to
-`[]`, a bool to `false`, anything else to `null`. Filament's bool arm consults
-`hasNullableBooleanState()` first and writes `null` instead of `false` when it
-answers true — which `Radio`, `ToggleButtons` **and `Select`** all do. That
-predicate is not ported, and the resulting one-arm difference is unreachable
-through any filter that ships: the fallback runs only for a field the filter's
+`[]`, a bool to `false`, anything else to `null`. "Names one" is
+`array_key_exists()` here and `$filterResetState[$fieldName] ?? …` upstream, so a
+reset state that names a field **with a null value** is honoured here and falls
+through to the type-derived arm there — a fix rather than a mirror, and the one
+that makes `SelectFilter`'s `['value' => null]` do what it says.
+
+Filament's bool arm consults `hasNullableBooleanState()` first and writes `null`
+instead of `false` when it answers true — which `Radio`, `ToggleButtons` **and
+`Select`** all do. That predicate is not ported, and the resulting one-arm
+difference is out of reach of the fields the shipped filters build for
+themselves: the fallback runs only for a field the filter's
 `getResetState()` does not name, and `SelectFilter` seeds `['value' => null]`
 in `setUp()` — as Filament's does, at `SelectFilter.php:148` — so every
 `SelectFilter` and every `TernaryFilter` takes the explicit-null left side and
@@ -739,9 +753,12 @@ other side of it: both cast through a non-nullable `BooleanStateCast`, where
 
 What is left is a hand-built nullable boolean inside a custom filter schema —
 `Filter::make('x')->schema([Select::make('f')->boolean()])` — which declares no
-reset state, so Filament clears it to `null` where we write `false`. Its cast
-stores that as `0` (`false` is not `blank()`, so the nullable arm does not
-catch it), and a ternary-shaped query arm reads `0` as an active *false* filter
+reset state, so Filament clears it to `null` where we write `false`. A
+**shipped** filter given the same schema is exposed identically: `SelectFilter`'s
+seeded `['value' => null]` does not name `f` either, so it is the custom schema
+rather than the filter class that reaches the arm. Its cast stores that as `0`
+(`false` is not `blank()`, so the nullable arm does not catch it), and a
+ternary-shaped query arm reads `0` as an active *false* filter
 rather than as cleared. Pinned as characterization rather than fixed, since the
 line that closes it is a `resetState(['f' => null])` on that filter. Port the
 predicate onto `Field`/`Select` the moment a shipped filter can reach this
@@ -758,6 +775,19 @@ is reset. It then clears the global search through `resetTableSearch()`, the
 host action the search chip's X also targets — `tableSearch = ''`, page one,
 flush — which is why that method lives on `CanSearchRecords` beside
 `updatedTableSearch()` rather than in the filters concern that calls it.
+
+Two signature-level deltas fall out of that pair. Filament's `removeTableFilter()`
+carries a third parameter, `bool $isRemovingAllFilters = false`, which
+`removeTableFilters()` passes to borrow the body without the tail; ours splits the
+body into the private `resetTableFilterState()` instead, so the public action's
+signature is exactly the two `#[LiveArg]`s a chip sends and no caller can ask it
+to skip its own tail. And Filament's `resetTableSearch()` delegates
+(`$this->tableSearch = ''; $this->updatedTableSearch();`) where ours inlines the
+same three lines, because our `updatedTableSearch()` carries a `$previousValue`
+no-op guard Filament's hook does not — delegating would work only by the accident
+that the defaulted `null` never equals `''`. Behaviour is identical today; the
+cost is that a host overriding `updatedTableSearch()` does not see its override
+run from the reset path.
 
 `resetTableFiltersForm()` fills the form with **defaults**, not reset state:
 `Schema::fill()` with no argument runs `hydrateState(applyDefaults: true)`, so
@@ -793,6 +823,17 @@ outside the filtered set — and the `isResolvingRecord` flag skips the *apply*
 pass of any filter that called `excludeWhenResolvingRecord()`, never the base
 pass, which is where a filter's joins live. Search, sorting and pagination stay
 unapplied there per the epic-12 decision.
+
+One thing Filament wraps around both passes has no port and needs none. On a
+deferring table its `applyFiltersToTableQuery()` re-roots the filters form at
+`tableFilters`, flushes the schema's cached absolute state paths and child
+schemas, and puts the path back to `tableDeferredFilters` in a `finally`, so
+anything resolving state *through the form* during the pass reads the applied bag
+rather than the draft. Nothing here resolves it that way:
+[`getTableFilterState()`](#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk)
+names the applied bag directly, whatever the form happens to be bound to, so
+there is no path to flip and no cache to invalidate — the seam is the two loops
+and nothing else.
 
 Two of Filament's applications are still missing from these seams, and each is a
 body inside a seam rather than a new call site: **per-column** search slots into
@@ -911,7 +952,12 @@ the single copy that promotes draft to applied and runs
 `handleTableFilterUpdates()` — page to 1, record cache flushed. There is no
 "unapplied changes" affordance, matching Filament: the trigger badge and the
 chips count applied indicators, and the apply button is simply always visible
-while deferring.
+while deferring. Filament's deferred branch also calls
+`Schema::partiallyRender()`, which stamps a `wire:partial` on the rendered schema
+so Livewire can re-render that subtree alone; there is no port and nothing to
+port it to — a ux-live-component request re-renders the whole component and
+idiomorph diffs the result — so the branch here is the `statePath()` and nothing
+more.
 
 Live mode roots the schema at `tableFilters` itself with a root `->live()`, so a
 field write *is* the mutation. Which mechanism carries the page reset and the
@@ -936,8 +982,7 @@ array edit are pinned there too. A chip's X resets the field its indicator was
 keyed to and leaves the sibling field of the same filter standing, because
 `removeTableFilter()` narrows the group's `Field` walk to that one name. In
 deferred mode a chip removal also applies any pending draft edits, because its
-tail *is*
-`applyTableFilters()` — Filament's semantics, inherited deliberately.
+tail *is* `applyTableFilters()` — Filament's semantics, inherited deliberately.
 `resetTableFiltersForm()` re-fills from the field **defaults**, not from
 `getResetState()`, so a filter carrying `default()` comes back set rather than
 empty.
@@ -1545,7 +1590,7 @@ scalar or partial select) answers null.
 
 Three things it deliberately does **not** apply, all Filament-faithful. No
 **search**: a term typed into the search box must not make a row's own action
-miss, so the resolution query is the unfiltered one and a record the search
+miss, so the resolution query carries no search term and a record the search
 excluded still resolves. No **pagination**: nothing constrains the page, so a
 record that left the current page between render and mount resolves anyway. And
 no **sorting**, which would only cost an `ORDER BY` on a single-row read. The one
@@ -1622,8 +1667,9 @@ heuristic in one place is worth more than a call site that answers a question
 nobody asks, and if the flag ever reaches the count path it will already be
 right.
 
-Search is applied and pagination is not, which is exactly what "all
-records" means here: the number a footer's *of N* renders under a filtered page.
+Both filters and search are applied and pagination is not, which is exactly what
+"all records" means here: the number a footer's *of N* renders under a filtered
+page.
 
 The records lane has no query to count, so the answer is whatever the closure
 returned. A plain array counts itself. A carrier answers with its total. A

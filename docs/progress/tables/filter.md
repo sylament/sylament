@@ -4,10 +4,12 @@
 — the checkbox filter: a [`BaseFilter`](base-filter.md) whose form is one boolean
 field named `isActive`, and whose query pass that field gates. It ports
 [`Filament\Tables\Filters\Filter`](../../../vendor/filament/tables/src/Filters/Filter.php),
-which adds exactly five members over its base. Everything the base carries — the
-name, the label, the schema resolution, the reset state, the query seam, the
-closure injections — is tracked in [`base-filter.md`](base-filter.md), not
-repeated here.
+which declares seven members over its base — four of its own (`$formComponent`,
+`toggle()`, `checkbox()`, `formComponent()`) and three overrides (`setUp()`,
+`getFormField()`, `getResetState()`), folded into five surface rows below.
+Everything the base carries — the name, the label, the schema resolution, the
+reset state, the query seam, the closure injections — is tracked in
+[`base-filter.md`](base-filter.md), not repeated here.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -60,10 +62,10 @@ dead configuration. Only a filter with an explicit `schema()` reaches
 
 ### The indicator gate defaults to `false` where the query gate defaults to `true`
 
-`setUp()`'s `indicateUsing` bails on `! ($state['isActive'] ?? false)` — an
+`setUp()`'s `indicateUsing` bails on `!($state['isActive'] ?? false)` — an
 absent key means *no indicator*. The query seam in
 [`InteractsWithTableQuery`](base-filter.md) bails on
-`! ($data['isActive'] ?? true)` — an absent key means *apply anyway*. The
+`!(bool) ($data['isActive'] ?? true)` — an absent key means *apply anyway*. The
 polarities are opposite on purpose: the query gate is opt-out so a
 custom-`schema()` filter (which has no `isActive` key at all) still applies,
 while the indicator gate is opt-in so a filter nobody has ticked shows no chip.

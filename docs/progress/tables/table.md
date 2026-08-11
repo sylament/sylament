@@ -28,8 +28,8 @@ nineteen still unported keep a per-file row in the package
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
 reached yet — as do `HasQuery`, ported but keeping its row for the relation arm
 it still owes, and the two filter concerns, keeping theirs for the form seam and
-the chrome actions they do not carry yet. The rows below group those files by feature, which is what the
-per-file rows upstairs point at.
+the chrome actions they do not carry yet. The rows below group those files by
+feature, which is what the per-file rows upstairs point at.
 
 The `Table` fetches nothing itself. It declares *how* records are reached — a
 `records()` closure, or a Doctrine `query()` — and the host resolves and caches
@@ -601,6 +601,13 @@ it is set — and the reason is the same: a `Closure` layout has no value at set
 time, so a setter-side check would be unenforceable for exactly the callers most
 likely to need it. Each refused case lifts as its chrome lands; nothing about
 the enum changes when it does.
+
+The declaration **order** differs: ours leads with the two shipped cases,
+Filament leads with `AboveContent` and declares `Dropdown` eighth. The cases are
+pure — no backing values, no interface — so the only thing that can observe it is
+`FiltersLayout::cases()`, which nothing reads today. Left as declared rather than
+re-sorted to vendor, since the order that reads best is the one that puts what
+ships first.
 
 ### The filters form columns default to one, without Filament's responsive branch
 
@@ -1539,6 +1546,14 @@ constrains the query and still produces its indicators — and the
 [indicators row](#the-chip-is-a-badge-beside-a-button-because-badge-has-no-delete-slot)
 renders them, because it is gated on the indicator list alone.
 
+Two smaller shapes belong to the same panel. `getFiltersFormSchema()` returns its
+`Group`s **keyed** by filter name where Filament ends on `array_values()` — the
+keys are what its evaluate call would have handed the dropped override, they
+survive into `Schema::getComponents()` untouched, and they make one filter's
+group a direct read rather than a scan. And the header's
+`.sy-ta-filters-header-actions` wrapper is a named hook carrying no rule of its
+own, matching the bare `<div>` Filament has at that spot.
+
 ### The chip is a `Badge` beside a button, because `Badge` has no delete slot
 
 Filament's badge takes a `deleteButton` slot and renders the remove affordance
@@ -1560,6 +1575,12 @@ buys — a keyed chip carrying both `filterName` and `field`, the search chip on
 `resetTableSearch`, a non-removable chip with neither a delete button nor a
 remove-all beside it, and the remove-all appearing the moment one chip is
 removable.
+
+Only the chip wrapper carries a CSS rule of its own. The two button classes,
+`.sy-ta-filter-indicator-remove-btn` and
+`.sy-ta-filter-indicators-remove-all-btn`, are named hooks a consuming
+stylesheet can reach — the same shape as the panel's `-header-actions` wrapper
+— and both buttons take their whole appearance from support's `IconButton`.
 
 The chip's own X carries **no** icon alias, and that follows from the same
 composition. Filament's overridable slot for it is

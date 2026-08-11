@@ -97,6 +97,34 @@ it('array form with no matching alias resolves to null', function (): void {
         ->and(TextColumn::make('unrelated')->counts(['songs'])->getCellAggregateDeclaration())->toBeNull();
 });
 
+it('resolves the string form beside an array form that names another cell', function (): void {
+    $declaration = TextColumn::make('anything')
+        ->counts('songs')
+        ->avg(['songs'], 'duration')
+        ->getCellAggregateDeclaration();
+
+    expect($declaration?->function)->toBe('COUNT')
+        ->and($declaration?->relationshipPath)->toBe('songs');
+});
+
+it('leaves two array forms that name no cell inert', function (): void {
+    $column = TextColumn::make('title')
+        ->counts(['songs'])
+        ->sum(['plays'], 'count');
+
+    expect($column->getCellAggregateDeclaration())->toBeNull()
+        ->and($column->hasRelationshipAggregates())->toBeTrue();
+});
+
+it('refuses a string form beside an array entry aliased to the column name', function (): void {
+    $column = TextColumn::make('total_plays')
+        ->counts('songs')
+        ->sum(['plays as total_plays'], 'count');
+
+    expect(fn (): ?AggregateDeclaration => $column->getCellAggregateDeclaration())
+        ->toThrow(LogicException::class, 'declares multiple aggregates');
+});
+
 it('a column declaring two aggregate kinds resolves the one matching its name and otherwise refuses', function (): void {
     $matching = TextColumn::make('songs_count')->counts('songs')->avg('songs', 'duration');
 

@@ -199,68 +199,115 @@ trait CanAggregateRelatedRecords
 
     /**
      * The one declaration whose value this column's cell reads, or null when
-     * none does. A kind declared in the singular string form belongs to this
-     * column whatever it is named; the array form declares several at once, so
-     * an entry only belongs here when its alias — explicit through
-     * `relationship as alias`, otherwise derived the way Eloquent derives it —
-     * is the column name.
+     * none does.
      *
-     * @throws LogicException when the column declares more than one kind and
-     *                        no alias among them names it, which cannot be a
-     *                        cell value and is always a misdeclaration
+     * A kind claims the cell either by construction — the singular string form
+     * binds to the column whatever it is named — or by name, when one of its
+     * aliases (explicit through `relationship as alias`, otherwise derived the
+     * way Eloquent derives it) is the column name. A kind that does neither is
+     * inert here: the array form declares several aggregates at once and the
+     * ones aliased elsewhere simply belong to other cells.
+     *
+     * More than one claim cannot fill a single cell, and the column name breaks
+     * that tie only between claims of the same kind — two string-form
+     * declarations are told apart by which one's derived alias is the column
+     * name. A string-form claim beside an array entry deliberately aliased to
+     * that same name is not a tie the name can break, so it refuses.
+     *
+     * @throws LogicException when more than one kind claims this cell and the
+     *                        name cannot say which, always a misdeclaration
      */
     public function getCellAggregateDeclaration(): ?AggregateDeclaration
     {
-        $groups = array_values(array_filter([
-            $this->buildAggregateEntries($this->getRelationshipToAvg(), 'AVG', 'avg', $this->getColumnToAvg()),
-            $this->buildAggregateEntries($this->getRelationshipsToCount(), 'COUNT', 'count'),
-            $this->buildAggregateEntries($this->getRelationshipsToExistenceCheck(), 'COUNT', 'exists', castToBool: true),
-            $this->buildAggregateEntries($this->getRelationshipToMax(), 'MAX', 'max', $this->getColumnToMax()),
-            $this->buildAggregateEntries($this->getRelationshipToMin(), 'MIN', 'min', $this->getColumnToMin()),
-            $this->buildAggregateEntries($this->getRelationshipToSum(), 'SUM', 'sum', $this->getColumnToSum()),
-        ], static fn (array $entries): bool => $entries !== []));
+        $name = $this->getName();
 
-        if ($groups === []) {
+        $claims = $this->getAggregateClaims($name);
+
+        if ($claims === []) {
             return null;
         }
 
-        $name = $this->getName();
+        if (count($claims) === 1) {
+            return $claims[0]['declaration'];
+        }
 
-        foreach ($groups as $entries) {
-            foreach ($entries as $entry) {
+        $named = array_values(array_filter($claims, static fn (array $claim): bool => $claim['isNamed']));
+
+        if (count($named) === 1 && $named[0]['bindsToAnyName']) {
+            return $named[0]['declaration'];
+        }
+
+        throw new LogicException(sprintf(
+            'Column [%s] declares multiple aggregates claiming its cell, and its name cannot say which one fills it. Alias the one it reads [relationship as %s], or move the others onto columns of their own.',
+            $name,
+            $name,
+        ));
+    }
+
+    /**
+     * The declaration each declared kind puts forward for the cell named
+     * $name, skipping the kinds that put forward none.
+     *
+     * @return list<array{declaration: AggregateDeclaration, isNamed: bool, bindsToAnyName: bool}>
+     */
+    private function getAggregateClaims(string $name): array
+    {
+        $claims = [];
+
+        $groups = [
+            $this->buildAggregateGroup($this->getRelationshipToAvg(), 'AVG', 'avg', $this->getColumnToAvg()),
+            $this->buildAggregateGroup($this->getRelationshipsToCount(), 'COUNT', 'count'),
+            $this->buildAggregateGroup($this->getRelationshipsToExistenceCheck(), 'COUNT', 'exists', castToBool: true),
+            $this->buildAggregateGroup($this->getRelationshipToMax(), 'MAX', 'max', $this->getColumnToMax()),
+            $this->buildAggregateGroup($this->getRelationshipToMin(), 'MIN', 'min', $this->getColumnToMin()),
+            $this->buildAggregateGroup($this->getRelationshipToSum(), 'SUM', 'sum', $this->getColumnToSum()),
+        ];
+
+        foreach ($groups as $group) {
+            if ($group['entries'] === []) {
+                continue;
+            }
+
+            $named = null;
+
+            foreach ($group['entries'] as $entry) {
                 if ($entry['alias'] === $name) {
-                    return $entry['declaration'];
+                    $named = $entry['declaration'];
+
+                    break;
                 }
             }
+
+            if ($named === null && ! $group['bindsToAnyName']) {
+                continue;
+            }
+
+            $claims[] = [
+                'declaration' => $named ?? $group['entries'][0]['declaration'],
+                'isNamed' => $named instanceof AggregateDeclaration,
+                'bindsToAnyName' => $group['bindsToAnyName'],
+            ];
         }
 
-        if (count($groups) > 1) {
-            throw new LogicException(sprintf(
-                'Column [%s] declares multiple aggregates and none of them is aliased [%s], so no single value can fill its cell. Alias the one it reads, or move the others onto columns of their own.',
-                $name,
-                $name,
-            ));
-        }
-
-        return $groups[0][0]['bindsToAnyName'] ? $groups[0][0]['declaration'] : null;
+        return $claims;
     }
 
     /**
      * @param string|array<int|string, string|Closure>|null $relationships
-     * @return list<array{alias: string, declaration: AggregateDeclaration, bindsToAnyName: bool}>
+     * @return array{bindsToAnyName: bool, entries: list<array{alias: string, declaration: AggregateDeclaration}>}
      */
-    private function buildAggregateEntries(
+    private function buildAggregateGroup(
         string|array|null $relationships,
         string $function,
         string $aliasSuffix,
         ?string $column = null,
         bool $castToBool = false,
     ): array {
-        if ($relationships === null) {
-            return [];
-        }
-
         $bindsToAnyName = is_string($relationships);
+
+        if ($relationships === null) {
+            return ['bindsToAnyName' => $bindsToAnyName, 'entries' => []];
+        }
 
         $entries = [];
 
@@ -286,11 +333,10 @@ trait CanAggregateRelatedRecords
                     scope: $scope,
                     castToBool: $castToBool,
                 ),
-                'bindsToAnyName' => $bindsToAnyName,
             ];
         }
 
-        return $entries;
+        return ['bindsToAnyName' => $bindsToAnyName, 'entries' => $entries];
     }
 
     /**

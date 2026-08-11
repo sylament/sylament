@@ -16,8 +16,6 @@ final class JoinCardinality
      * True for a collection-valued association, and true for anything the
      * mapping cannot classify — an arbitrary-class join, a join off an alias
      * this builder never declared, a join on a property that is no association.
-     * The unclassifiable arm is deliberate: the two directions cost differently,
-     * an extra subquery against silently truncated collections.
      */
     public static function joinsCollection(QueryBuilder $query): bool
     {

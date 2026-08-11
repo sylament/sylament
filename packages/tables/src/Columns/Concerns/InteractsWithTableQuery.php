@@ -81,10 +81,10 @@ trait InteractsWithTableQuery
     /**
      * Fetch-joins the relation this column reads through, so every cell of the
      * page is answered from the page query rather than by a lazy load per row.
-     * A no-op unless the name resolves to a chain of to-one hops: a to-many one
-     * would multiply the page's rows, and stays lazy. Nothing here is strict
-     * about the field at the end — only the hops are read — so a name sorting
-     * or searching would refuse still renders, joined or not.
+     * A no-op unless the name resolves to a chain of to-one hops. Only the hops
+     * are read, never the field at the end, so a name that sorting or searching
+     * would refuse still renders — joined where its hops resolve, lazy where
+     * they do not.
      */
     public function applyEagerLoading(QueryBuilder $query): QueryBuilder
     {

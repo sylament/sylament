@@ -78,14 +78,14 @@ Rows never disappear — only their detail sections do.
 | Record labels — `modelLabel()`, `pluralModelLabel()`, `recordTitle()`, `recordTitleAttribute()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | todo | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
 | [Record identity — `getRecordKey()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getRecordKey()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#getrecords-delegates-to-the-host-and-fetches-nothing) |
 | [Morph-stable row and cell keys](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `wire:key` stamps](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-morph-key-is-an-id-attribute-not-wirekey) · [semantics](#the-row-and-cell-morph-keys-disagree-on-record-vs-records) |
-| Pivot record identity — `hasPivotRecordKeys()`, `allowDuplicates()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | skipped | — | The `BelongsToMany` pivot arm — it stays unported with the rest of the Eloquent relation surface |
+| Pivot record identity — `hasPivotRecordKeys()`, `allowDuplicates()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | skipped | — | The `BelongsToMany` pivot arm — it stays unported with the [relation-scoped table surface](#the-relation-scoped-table-arm-travels-with-relation-managers) it belongs to, and a Doctrine association table carrying payload is an entity of its own rather than a pivot |
 | [`columns()` / `getColumns()` / `getColumn()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) |
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
 | The column manager — user-toggleable column visibility | [`HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — | — |
 | [The `query()` lane — `query()` / `getQuery()` / `modifyQueryUsing()` / `applyQueryScopes()` / `getQueryEntityManager()`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | done | — | [semantics](#every-read-clones-a-memoised-base-query) |
 | [`hasQuery()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::hasQuery()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#the-query-lane-is-on-exactly-while-no-records-closure-is-set) |
 | [`getRecordClass()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getModel()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [rename](../renames.md#renames) · [semantics](#the-record-class-is-read-off-the-base-querys-root-entity) |
-| The relation arm — `relationship()`, `inverseRelationship()`, `getRelationship()`, `getRelationshipQuery()`, `getInverseRelationship()`, `getInverseRelationshipFor()`, `selectPivotDataInQuery()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | a future tables-relations epic | [detail](#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic) |
+| The relation-scoped table — `relationship()`, `inverseRelationship()`, `getRelationship()`, `getRelationshipQuery()`, `getInverseRelationship()`, `getInverseRelationshipFor()`, `selectPivotDataInQuery()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | relation managers | [detail](#the-relation-scoped-table-arm-travels-with-relation-managers) |
 | [`paginated()` / `isPaginated()` / `paginationPageOptions()` / `getPaginationPageOptions()` / `defaultPaginationPageOption()` / `getDefaultPaginationPageOption()` / `extremePaginationLinks()` / `hasExtremePaginationLinks()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | [diverges](#the-ten-per-page-default-is-matched-strictly) · [diverges](#ispaginated-has-no-groups-only-arm) |
 | [`paginationMode()` / `getPaginationMode()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) + [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | its `Cursor` arm — a keyset carrier ([pagination.md](../support/pagination.md)) | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) · [has-table.md](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half) |
 | `paginatedWhileReordering()`, `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) |
@@ -96,7 +96,8 @@ Rows never disappear — only their detail sections do.
 | [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
 | [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) · [diverges](#searchonblur-renders-onchange-because-ux-live-component-has-no-blur-event) |
 | [`splitSearchTerms()` / `shouldSplitSearchTerms()`, `searchUsing()` / `hasSearchUsingCallback()` / `callSearchUsing()`, `applyExtraSearchConstraints()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#search-is-the-global-term-only) · [semantics](#extra-searchable-columns-take-closures-that-return-their-expression) · [diverges](#the-default-search-comparison-assumes-a-string-typed-field) · [diverges](#a-search-term-is-not-escaped-for-like) |
-| `persistSearchInSession()`, `persistColumnSearchesInSession()`, `isSearchableByColumn()`, `hasSearch()`, the two indicator getters, `getExtraSearchableColumnRelationship()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
+| `persistSearchInSession()`, `persistColumnSearchesInSession()`, `isSearchableByColumn()`, `hasSearch()`, the two indicator getters | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
+| `getExtraSearchableColumnRelationship()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | skipped | — | It answers *is this dotted name's head a relationship*, so Filament's caller can switch to `whereRelation`. Here [one resolution](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) answers that inside `SearchConstraint::forColumn()` for every tier at once, so an extra searchable column crosses an association with nothing to ask first — there is no caller left to hold the branch this member exists to decide |
 | Deferred loading and polling — `deferLoading()`, `poll()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | todo | — | [detail](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | Filters — `filters()`, the indicators, the query-string identifier | [`HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php), [`HasQueryStringIdentifier`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — | — |
 | [`recordActions()` / `pushRecordActions()` / `getRecordActions()` / `getFlatRecordActions()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) | [`Table\Concerns\HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | in progress | — | [detail](#record-actions-register-without-the-per-action-modifier-hook) |
@@ -123,6 +124,17 @@ sort-resolution surface and the default-sort family beside it, the three search
 rows — the declaration, the chrome, and the query half · 12 landed — and the
 partial that renders all of it; the column set, the empty-state description and
 the three remaining action rows are partly in, one step behind them.
+
+The relation arm · 20 added to the lane has no row of its own here, and that is
+the [one-row-per-file](../README.md#one-row-per-file-one-file-per-thing) rule
+holding: its surface belongs to the **column** ([column.md](column.md)), and the
+`Query/` helpers behind it are Sylament-only engines with no Filament file to
+diff, the way `ColumnPathResolver` and `SearchConstraint` already are. What lands
+here is what the lane decided — the [resolution order](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused),
+the [search shape](#a-relation-search-is-a-correlated-exists-at-every-cardinality),
+the [sort shape](#a-relation-sort-joins-where-filaments-orders-by-a-correlated-subquery)
+and the [aggregate delivery](#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query)
+— in the sections below.
 
 The PHP surface is covered by
 [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php) — `make()`
@@ -280,7 +292,7 @@ Specifics for rows that are not finished — what is already in, what is left, a
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
 
-### The relation arm of the query lane waits on a future tables-relations epic
+### The relation-scoped table arm travels with relation managers
 
 Filament's `HasQuery` is two declarations, not one: `query()` hands over a
 builder, and `relationship()` hands over a closure returning an Eloquent
@@ -293,27 +305,35 @@ first arm is ported; the second is not, and its seven members
 the relationship query when no builder was declared, and here a declared query is
 the only source.
 
-What blocks it is not translation effort but a missing definition. The
-[Doctrine relation layer](../roadmap.md#pulled-forward) has since shipped for
-schemas and forms — `AssociationReader` over `ClassMetadata`, relation-backed
-fields, singular entanglement — and deliberately left the tables arm out, so
-what is waited on now is a **future tables-relations epic** rather than the
-association machinery itself, which exists and is reusable. Two of the seven
-exist only to work around Eloquent's own shapes — `getRelationshipQuery()` is
-mostly the `HasOneOrManyThrough` `select($table . '.*')` patch and the
-`withCasts()` call on the pivot class, and `selectPivotDataInQuery()` is
-pivot-column aliasing whole — and neither has a Doctrine referent: a Doctrine
-association is reached by joining from the owning entity, and an association
-table with payload is an entity of its own rather than a pivot with casts. `getInverseRelationship()` is likewise Eloquent-shaped, guessing the
-inverse accessor's name by singularising or pluralising the parent's class
-basename, where Doctrine already carries the inverse side on the mapping
-(`inversedBy` / `mappedBy`) and a guess would be strictly worse than a read. So
-the arm is deferred until that epic decides what a relation-scoped table
-*is* here — most likely a `QueryBuilder` with the join already applied, which
-`query()` accepts today, leaving `relationship()` to add only the inverse-side
-knowledge a nested create needs. Filament's `hasPivotRecordKeys()` /
-`allowDuplicates()` pair is already **skipped** in the surface table on the same
-grounds.
+**This is the whole-table face of relations, and it is a different feature from
+the column one.** The [relation arm](../roadmap.md#pulled-forward) shipped the
+column face — a name that reads, sorts, searches and counts *through* an
+association — deliberately without touching this, because `relationship()` does
+not resolve a path: it makes the table's entire data source one parent record's
+collection, which is a **data lane** decision. Adopting it means a third case
+beside `records()` and `query()` in `hasQuery()` and in both "must have"
+messages, an inverse side to write back through, and a parent record to bind —
+none of which a column path needs and all of which a relation manager supplies.
+So the destination is now named rather than open: **relation managers**, listed
+out of scope for the panel milestone and unordered beyond it.
+
+Two of the seven exist only to work around Eloquent's own shapes —
+`getRelationshipQuery()` is mostly the `HasOneOrManyThrough`
+`select($table . '.*')` patch and the `withCasts()` call on the pivot class, and
+`selectPivotDataInQuery()` is pivot-column aliasing whole — and neither has a
+Doctrine referent: a Doctrine association is reached by joining from the owning
+entity, and an association table with payload is an entity of its own rather than
+a pivot with casts. `getInverseRelationship()` is likewise Eloquent-shaped,
+guessing the inverse accessor's name by singularising or pluralising the parent's
+class basename, where Doctrine already carries the inverse side on the mapping
+(`inversedBy` / `mappedBy`) and a guess would be strictly worse than a read — and
+that read is [`AssociationReader`](../schemas/association-reader.md), shipped and
+reusable, which is why nothing here waits on machinery any more, only on the
+feature that needs it. The likely shape stands as the earlier draft left it: a
+`QueryBuilder` with the join already applied, which `query()` accepts today,
+leaving `relationship()` to add only the inverse-side knowledge a nested create
+needs. Filament's `hasPivotRecordKeys()` / `allowDuplicates()` pair is already
+**skipped** in the surface table on the same grounds.
 
 ### The pagination mode ships two cases, and two setters wait on their features
 
@@ -362,23 +382,29 @@ turned into constraints, `searchUsing()` with its
 `callSearchUsing()`/`hasSearchUsingCallback()` pair — a closure handed the
 builder, which bypasses column assembly entirely — and
 `applyExtraSearchConstraints()`, which is what finally consumes
-`getExtraSearchableColumns()`: a string member resolves through
-[`ColumnPathResolver`](../../../packages/tables/src/Query/ColumnPathResolver.php)
-and joins the word's `OR` group as one more `LIKE`, and a closure member
+`getExtraSearchableColumns()`: a string member goes through
+[`SearchConstraint::forColumn()`](../../../packages/tables/src/Query/SearchConstraint.php)
+— the same dispatch a column's own search columns take, so it joins the word's
+`OR` group as a `LIKE` or as a correlated `EXISTS` depending on what the name
+[resolves to](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused)
+— and a closure member
 [returns its expression](#extra-searchable-columns-take-closures-that-return-their-expression)
 the way a column's `searchable(query:)` does. So a table declaring
-`searchable(['author.name'])` now searches by it rather than merely reading as
+`searchable(['author.name'])` searches by it — across the association since · 20,
+where · 12 needed the join declared in `query()` — rather than merely reading as
 searchable. The composition around them —
 [one group per word, `AND`-ed](has-table.md#search-is-the-global-term-only) — is
 the host's.
 
-One member of the group stays out: `getExtraSearchableColumnRelationship()`,
-which walks a dotted name to decide whether its head is an Eloquent relationship
-so the constraint can become a `whereRelation`. That is
-[the relation layer's](#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic)
-question, and here the same name is resolved against the builder instead — a
-head that is already a declared alias is used as written, anything else refused
-by name.
+One member of the group is **skipped** rather than pending:
+`getExtraSearchableColumnRelationship()`, which walks a dotted name to decide
+whether its head is an Eloquent relationship so the constraint can become a
+`whereRelation`. Here that question is answered one layer down and for every
+tier at once — `SearchConstraint::forColumn()` resolves the name
+[against the mapping](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused)
+and returns either a `LIKE` or a correlated `EXISTS` — so
+`searchable(['author.name'])` searches across the association with nothing
+declared, and no caller is left holding the branch this member exists to decide.
 
 **Everything else waits on a neighbouring feature.** `isSearchableByColumn()`
 answers whether any column wants its own input, which is
@@ -597,12 +623,98 @@ the builder to scope, so a caller that built its own query — a count query, a
 relation-scoped one — can put the table's scopes on it; scopes run in
 registration order, and one returning nothing (a `void` closure mutating in
 place) leaves the query it was handed, which is what makes both closure shapes
-valid. `getQueryEntityManager()` is Sylament-only: an Eloquent builder carries
+valid. It has no such caller yet, and one shipped query deliberately does not
+become one: the
+[aggregate batch](#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query)
+builds its own builder over the record class and is *not* scoped, because it is
+already narrowed to the keys of a page the scopes produced — running them again
+would re-filter a set that has been filtered, and a scope reading the search term
+would filter it by a term the aggregated relation has no field for.
+`getQueryEntityManager()` is Sylament-only: an Eloquent builder carries
 its connection and every Filament consumer reaches the model statically, where
 Doctrine's read side needs the `EntityManagerInterface` explicitly — so the
 entity manager behind the declared query needs a seam, and it is read off the
 base query rather than injected, which keeps a `Table` free of container
 dependencies it would otherwise carry only for this.
+
+### A dotted name is resolved against the mapping before it is refused
+
+Every query-side consumer of a column name — `Column::applySort()`, the host's
+`defaultSort` branch, `Column::applySearchConstraint()`, the table's extra
+searchable columns and `applyEagerLoading()` — resolves it the same way, in one
+fixed order, and the order is what keeps · 12's behaviour byte-for-byte intact
+while adding the relation arm on top of it:
+
+1. **A dotless name** is `{rootAlias}.{name}`, exactly as before.
+2. **A dotted name whose head is an alias the builder already declares** is
+   returned verbatim, exactly as before — so a join written by hand in `query()`
+   still wins, under whatever alias it was given, and a table that worked
+   yesterday cannot be re-resolved out from under it.
+3. Otherwise
+   [`RelationPathResolver`](../../../packages/tables/src/Query/RelationPathResolver.php)
+   walks the name against `ClassMetadata` from the root entity, and what it
+   answers decides the arm.
+4. Only if that resolves nothing does
+   [`ColumnPathResolver`](../../../packages/tables/src/Query/ColumnPathResolver.php)
+   throw — with a message naming all three resolutions it tried.
+
+The walk itself has one rule worth stating, because it is not the obvious one:
+at each step the **whole remaining path** is tested as a field name *before* the
+head is tested as an association. That is what makes `address.street` resolve —
+a Doctrine embeddable's fields are mapped under their dotted names, so
+`hasField('address.street')` is true on the root and the path never becomes a
+hop. It is also Filament's own precedence, arrived at differently: their
+`hasRelationship()` asks `$record->hasAttribute()` before `$record->isRelation()`
+for the same reason, an attribute that happens to share a relation's name wins.
+The result is a `ResolvedRelationPath` — a list of hops and the field remainder —
+with **zero** hops for the embeddable case (rendered `{rootAlias}.{fieldPath}`)
+and one or more for a real relation path.
+
+A path that runs out of segments standing **on** an association —
+`sortable(['artist'])`, where `artist` is the relation itself and no field
+follows — is the one resolution the two entry points answer differently, and the
+split is deliberate. `analyseQueryPath()` **throws**, naming the missing field
+segment, because sorting or searching *by an entity* is undefined and a silent
+no-op there would read as a broken sort. `tryAnalyseQueryPath()` returns null,
+and eager loading uses that one: a column named after an association is a
+perfectly good display column (the cell renders the entity, or a
+`formatStateUsing()` closure turns it into something), so the fetch-join arm has
+no business refusing what the render will happily do. The failure contract is
+therefore **strict on the query seams and lenient on the display seam**, drawn at
+exactly one call site rather than at a `catch`.
+
+### A relation search is a correlated `EXISTS` at every cardinality
+
+Where a relation **sort** has to join, a relation search must not: a to-many join
+multiplies the root's rows, and a search that turns one matching row into three
+would break the count, the page arithmetic and the rendered list at once. So
+`RelationConstraint::existsLike()` builds a subselect re-rooted on the *same*
+entity, joins it along the path, correlates it back by identifier and puts the
+`LIKE` on the far end:
+
+```
+EXISTS (SELECT sy_x0.id FROM Song sy_x0 JOIN sy_x0.genres sy_x0_0
+        WHERE sy_x0.id = s.id AND sy_x0_0.name LIKE :sylament_search_0)
+```
+
+Filament reaches the same SQL shape from the other direction — `whereRelation`
+is `whereHas`, which Eloquent compiles to `exists (select …)` — so this is a
+faithful port rather than a divergence, and it earns a note only because three
+of its details look like choices and are constraints. The subselect is re-rooted
+on the **root entity** rather than started at the association, because DQL's
+`FROM` cannot name an association path (the installed parser answers "NOT YET
+IMPLEMENTED"). The correlation is **identifier equality** rather than entity
+equality, which sidesteps comparing objects across the two scopes. And the
+`LIKE` parameter is registered on the **outer** builder, because one DQL query
+has one parameter space no matter how deeply a subselect nests — which is also
+why the subselect's own aliases are seeded from the outer parameter count, so two
+searchable relation columns in one word's `OR` group cannot collide.
+
+Everything the search assembly does around it is unchanged: one `Orx` per word,
+this predicate joining it like any other, no joins and no state left behind — so
+it is idempotent across the per-word loop by construction, and the count clone,
+which applies search but not sort, gets identical predicates and counts
+correctly.
 
 ### The record class is read off the base query's root entity
 
@@ -961,6 +1073,158 @@ term does is match too much. Escaping it properly needs a `LIKE … ESCAPE` clau
 character, and it changes matching for every existing table — so if it lands it
 lands as an opt-in on the same setter that already governs case
 (`forceSearchCaseInsensitive()`'s neighbour), not as a silent fix.
+
+### A dotted path into a JSON column is refused, where Filament's Eloquent pushes it through
+
+Filament's `getJsonSafeColumnName()` replaces every dot in a name that is **not**
+a relationship with the driver's JSON arrow (`data.theme` → `data->theme`), and
+it does so unconditionally — no cast is consulted, no column is looked up — so a
+dotted name that survives the relationship check sorts and searches straight into
+the document, and a typo'd one becomes a JSON path that quietly matches nothing.
+Here the same name is refused: the resolver asks Doctrine's mapping, which knows
+the column's type is `json` and nothing whatever about its contents, so no field
+and no association matches and `ColumnPathResolver` throws — with the JSON case
+named in the message, so the refusal reads as a decision rather than a missing
+feature.
+
+The cell **display** side is unaffected and this is the asymmetry to keep in
+mind: `getStateFromRecord()` walks a decoded array by key, so a `data.theme`
+column renders perfectly and only refuses when someone marks it `sortable()` or
+`searchable()`.
+
+What it would take to close it is the reason it is not closed: DQL has no JSON
+path operator, so the query would need a registered custom DQL function per
+platform (`JSON_EXTRACT` on MySQL/SQLite, `#>>` on PostgreSQL) plus a way for the
+resolver to know which prefix is a JSON column and which is a path inside it —
+a per-application registration, not something a port can infer from mapping
+metadata. Until then the escape hatches are the ones the message names:
+`sortable(query:)` and `searchable(query:)`, which hand the user the builder and
+let them write the platform's own expression.
+
+### A relation sort joins, where Filament's orders by a correlated subquery
+
+Sorting by `artist.name`, both codebases starting from a name with no join
+declared anywhere, reaches the same rows by opposite mechanics. Filament hands
+the name to `RelationshipOrderer::buildSubquery()`, which builds the relation's
+own query, selects the sorted column off it, correlates it to the outer row and
+`limit(1)`s it, then orders by that subquery. Sylament's
+[`ColumnPathResolver::resolveOrderable()`](../../../packages/tables/src/Query/ColumnPathResolver.php)
+`LEFT JOIN`s each hop through
+[`RelationJoiner`](../../../packages/tables/src/Query/RelationJoiner.php) and
+orders by `{alias}.{field}`.
+
+The join is the better shape *here* for a reason that is Doctrine's rather than
+a preference: the same join is what
+[eager loading](column.md#a-to-many-relation-stays-lazy-where-filament-eager-loads-every-cardinality)
+wants anyway, so a column that is both sorted and displayed costs exactly one
+`LEFT JOIN` and no extra query — where Eloquent's subquery buys nothing for the
+display side, its eager load being a separate query regardless. Three
+consequences worth knowing:
+
+- **LEFT, unconditionally.** An `INNER` join would drop every row whose relation
+  is null the moment a user clicks a sortable header — rows vanishing on a
+  *sort* is a data change, not an ordering change. Filament's correlated subquery
+  yields `null` for the same rows, so LEFT is also what matches its outcome.
+- **The join is reused, including a user's own.** `ensureJoined()` scans
+  `getDQLPart('join')` for a join whose expression is exactly
+  `{parentAlias}.{property}` and adopts its alias if one is there. That
+  deliberately adopts a join the user wrote in `query()` **whatever its type** —
+  an `INNER JOIN` or one carrying a `WITH` condition included. The alternative is
+  worse in both directions: minting a second join over the same association
+  doubles the rows the user's own join was there to shape, and refusing to reuse
+  it would make a hand-written `innerJoin` a hard error. So a table that
+  inner-joins its author in `query()` and then sorts by `author.name` keeps its
+  own narrowing, which is what it asked for by writing the join.
+- **Minted aliases are deterministic** — `sy_{property}`, nested as
+  `sy_{parent}_{property}`, numerically suffixed only on a real collision with
+  `getAllAliases()` — so the DQL a table produces is stable across renders and
+  reads in a log.
+
+A **to-many** hop anywhere in the chain is refused with a `LogicException`
+naming both ways out (`sortable(query:)`, or an aggregate column). That is
+Filament's own behaviour, not a limitation of this port: their
+`RelationshipOrderer::validateRelationshipType()` throws an
+`InvalidArgumentException` for anything that is not `BelongsTo`, `HasOne`,
+`MorphOne`, `BelongsToThrough` or `HasOneThrough`. Ours is a `LogicException`
+for consistency with the lane's other refusals, and it fires **before** anything
+is joined, so a refused sort leaves the query untouched.
+
+### An aggregate is a batched side query and a HIDDEN subselect, never a select on the page query
+
+Filament's aggregates ride the page query: `withCount()` and its five siblings
+add a correlated sub-select per declaration, Eloquent hydrates the result onto
+each model as an attribute, and the cell reads it from there. That is one query
+for rows and values together, and it is unavailable here for a reason that is
+structural rather than aesthetic — a non-`HIDDEN` scalar in a Doctrine `SELECT`
+switches the whole result to **mixed hydration** (`[0 => Entity, 'sy_value' => 3]`
+per row), which breaks record keying, cell state, the row loop and
+`Paginator::getIterator()`, all of which expect entities.
+
+So the value takes a second path. After the page's records are resolved and
+keyed, the host runs one batched query per aggregate column —
+`SELECT {root}.{id} AS sy_key, {FN}({t}.{col}) AS sy_value … WHERE {root}.{id} IN
+(:keys) GROUP BY {root}.{id}` — and drops the result into the table's
+[side store](../../../packages/tables/src/Table/Concerns/HasAggregateValues.php),
+where the cell reads it ahead of walking the record. The page query stays a plain
+entity read, the count query is untouched, and the cost is +1 query per aggregate
+column per render.
+
+Two details of that batch are contracts rather than incidentals. Its joins are
+**inner**, so a key whose related set is empty produces no group and is simply
+absent from the result — the host fills the gap with SQL's own semantics (`0` for
+a count, `false` for an existence check, `null` for the rest), which keeps the
+defaults in one place instead of asking the database to invent them. And the key
+narrowing is applied **after** the scope closure has run, because Doctrine's
+`where()` *replaces* where Eloquent's `where()` *adds*: a scope written with the
+Filament reflex would otherwise silently drop the `IN (:keys)` and aggregate the
+whole table into one arbitrary key's cell. (A scope calling `groupBy()` still
+replaces the grouping — the same hazard, one layer along, and unfixed rather than
+unnoticed.)
+
+**Sorting** cannot use the store, since the database has to do the ordering, so
+it takes a third shape: the same aggregate as a correlated subselect added to the
+sorted clone `AS HIDDEN sy_agg{n}`, with `addOrderBy()` naming that alias.
+`HIDDEN` is what keeps hydration pure — the scalar is projected for the SQL's
+benefit and dropped before the result is built — and it survives both paginator
+walkers (`LimitSubqueryOutputWalker` un-hides it into the inner SQL by design,
+`CountOutputWalker` wraps the whole statement), which is the property the whole
+approach rests on. Only the sorted clone carries it; the count clone never
+applies sort at all.
+
+The cost shape is worth stating plainly, because "correlated subselect" sounds
+worse than the alternative and is in fact the *same* alternative: Laravel's
+`withAggregate()` is also a correlated sub-select in the SELECT list, so both
+codebases pay per candidate row when ordering by an aggregate. What differs is
+that Filament pays it **once** for value and order together, while this port pays
+the subselect on the sorted clone *and* a batch query for the values. One extra
+query per aggregate column, in exchange for a page of clean entities. An
+`exists()` column sorts by the raw `COUNT` rather than by the boolean it
+displays: the zero/non-zero boundary is identical, so the two partitions land the
+same way round, and only the order *within* the true group differs — by count,
+not by tiebreak. With no `castToBool` in the ordering there is nothing to
+collapse them.
+
+### A composite-identifier root refuses relation search and aggregates
+
+Both of the mechanisms above correlate a subquery to the outer row by a **single**
+identifier column — `WHERE sub.id = root.id` for the search `EXISTS`, `WHERE
+root.id IN (:keys)` and `GROUP BY root.id` for the aggregate batch. A record
+class whose identifier is composite has no such column, so
+`getSingleIdentifierFieldName()` throws `MappingException` and both sites catch
+it and re-throw a `LogicException` naming the limitation and the class.
+
+That is louder than the rest of the lane treats the same shape, and deliberately
+so. Record keying
+[refuses composite identifiers](has-table.md#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key)
+at the same point, and the identifier tiebreaker
+[no-ops rather than throwing](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)
+— a missing tiebreak degrades a page boundary, which is survivable, where a
+search that silently matched nothing or an aggregate that silently filled every
+cell with the same value is a wrong answer presented as a right one. A
+composite-identifier table can still render, sort by plain and to-one relation
+paths, and page; what it cannot do is type into the search box against a relation
+column, or declare an aggregate. Composite identifiers are out of the relation
+layer on the schemas side too, which is where the stance was set.
 
 ### A `Markup` header label does not switch the sortable header to a `<span>`
 

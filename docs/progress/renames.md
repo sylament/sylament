@@ -26,6 +26,7 @@ derive from the conventions below.
 | `Filament\Schemas\Concerns\BelongsToModel` | `BelongsToRecord` | trait | `Sylament\Schemas\Concerns\BelongsToRecord` | [Record vocabulary](#the-model-vocabulary-collapses-onto-record). |
 | `Filament\Schemas\Concerns\InteractsWithSchemas` | `HasSchemas` | trait | `Sylament\Schemas\Concerns\HasSchemas` | [Swapped](#interface-and-trait-names-are-swapped) — `Has*` matches the house trait prefix (`HasComponents`, `HasKey`, `HasGap`, …). |
 | `Filament\Schemas\Contracts\HasSchemas` | `InteractsWithSchemas` | interface | `Sylament\Schemas\Contracts\InteractsWithSchemas` | [Swapped](#interface-and-trait-names-are-swapped) — the interface names the behavior. |
+| `Filament\Support\Concerns\CanAggregateRelatedModels` | `CanAggregateRelatedRecords` | trait | `Sylament\Tables\Columns\Concerns\CanAggregateRelatedRecords` | [Record vocabulary](#the-model-vocabulary-collapses-onto-record) — the trait declares aggregates over related **records**, and "model" is the Eloquent concept-name the port drops everywhere. It also [moved package](#namespace-segments), support carrying no Doctrine; the six setters (`avg()`, `counts()`, `exists()`, `max()`, `min()`, `sum()`) and every getter keep Filament's names and signatures ([column.md](tables/column.md#an-aggregate-column-names-itself-freely-where-filaments-must-match-laravels-alias)). |
 | `Filament\Tables\Concerns\InteractsWithTable` | `HasTable` | trait | `Sylament\Tables\Concerns\HasTable` | [Swapped](#interface-and-trait-names-are-swapped) — `Has*` matches the house trait prefix (`HasRecords`, `HasEmptyState`, …). |
 | `Filament\Tables\Contracts\HasTable` | `InteractsWithTable` | interface | `Sylament\Tables\Contracts\InteractsWithTable` | [Swapped](#interface-and-trait-names-are-swapped) — the interface names the behavior the host implements. |
 | `afterCreate()` / `afterUpdate()` / `afterDelete()` (`Repeater`'s relationship surface) | — not ported | method | — | Filament fires them around the per-item `save()`/`delete()` its relationship save makes. The port's [single-flush shape](schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) has no such moment — `getData()` mutates an object graph and returns, so nothing has reached the database and no new item has an identifier yet, and firing them there would be a lie about when they run. Doctrine's own lifecycle events (`postPersist` / `postUpdate` / `postRemove`, or an `onFlush` subscriber) are the seam instead. A real capability gap, recorded as one: [repeater.md](forms/repeater.md#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope). |
@@ -243,6 +244,27 @@ sibling declares breaks the moment it is installed on its own. See
 [schemas/can-be-marked-as-required.md](schemas/can-be-marked-as-required.md).
 The class name, methods and body are unchanged, which is why this is a
 relocation rather than a rename.
+
+Two traits move **up** out of `support`, and the same layering argument runs the
+other way for them — they are two of the traits Filament's
+`Column` composes from `Support\Concerns\`. Both reach Doctrine, and `support`
+depends on neither Doctrine nor schemas — deliberately, since
+[nothing is pushed down into support that support does not use](../../CLAUDE.md)
+— so hosting them there would mean either dragging the ORM into the base package
+for one consumer or splitting one read across two packages:
+
+| Filament | Sylament | Which trait |
+| --- | --- | --- |
+| `Filament\Support\Concerns\HasCellState` | `Sylament\Tables\Columns\Concerns\HasCellState` | The cell read, which goes through schemas' `PropertyAccessor` — [why](tables/column.md#hascellstate-is-relocated-into-the-column-tier) |
+| `Filament\Support\Concerns\CanAggregateRelatedModels` | `Sylament\Tables\Columns\Concerns\CanAggregateRelatedRecords` | The six aggregate declarations, read by tables' own [batched aggregate query](tables/table.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query) |
+
+Filament's placement pays off for a **second** consumer in both cases —
+`Actions\Exports\ExportColumn` composes each of them — and that class is
+unported, the export surface being on no milestone. When it lands, both move to
+the lowest package both consumers reach, which is `schemas` (`tables` and
+`actions` each require it) and still not `support`. The first is a pure
+relocation; the second is [also renamed](#renames), which is why it has a table
+row of its own and this one does not repeat it.
 
 ### Names with no Filament source
 

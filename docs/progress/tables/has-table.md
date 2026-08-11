@@ -92,7 +92,7 @@ instead.
 | [`table(Table $table): Table` — the identity default a host overrides](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::table()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | — |
 | [`getTable(): Table` — build once, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::getTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-table-is-built-lazily-on-first-gettable-not-in-a-booted-hook) |
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
-| [`getTableRecords()` — resolve the data source once, re-key, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-six-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#the-missing-data-source-error-does-not-name-relationship) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) |
+| [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-six-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#the-missing-data-source-error-does-not-name-relationship) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
 | [`InteractsWithTable` — nine methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-nine-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | — |
@@ -103,7 +103,7 @@ instead.
 | [The query lane — `getFilteredTableQuery()`, `filterTableQuery()`, `getFilteredSortedTableQuery()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [semantics](#filtertablequery-applies-the-search-not-filters) · [diverges](#the-filtered-query-seam-is-gated-on-the-lane-not-on-the-presence-of-a-builder) |
 | `getTableQueryForExport()` | [`Concerns\HasRecords::getTableQueryForExport()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | blocked | the export surface | It bypasses the seams above, re-reading `getTable()->getQuery()` and re-applying filters, search and sorting itself, to assemble a query for Filament's export action — a surface with no counterpart here and on no milestone, the same one [`ExportColumn`](column.md#hascellstate-is-relocated-into-the-column-tier) waits on. It lands with that action or not at all |
 | [`CanPaginateRecords` — `$tablePage`, `$tableRecordsPerPage`, `gotoTablePage()`, `getTablePage()`, `getTableRecordsPerPage()`, `dehydrateTableRecordsPerPage()`, `updatedTableRecordsPerPage()`, `paginateTableQuery()`](../../../packages/tables/src/Concerns/CanPaginateRecords.php) | [`Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Concerns/CanPaginateRecords.php) | in progress | — | [detail](#the-page-state-has-its-query-lane-and-no-session-or-url-half) · [diverges](#gototablepage-replaces-livewires-paginator-trio) · [diverges](#per-page-is-validated-in-the-getter-on-every-read) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#the-recordsperpage-injection-is-nullable) · [diverges](#no-table-state-is-persisted-in-the-session) |
-| [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [diverges](#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
+| [`CanSortRecords` — `$tableSort`, `sortTable()`, `getTableSortColumn()`, `getTableSortDirection()`, `applySortingToTableQuery()`](../../../packages/tables/src/Concerns/CanSortRecords.php) | [`Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | — | [detail](#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [diverges](#sorttable-ignores-a-column-the-table-did-not-declare-sortable) · [diverges](#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [diverges](#the-identifier-tiebreaker-is-suppressed-only-by-the-qualified-key) · [semantics](#a-column-name-containing-a-colon-cannot-be-cycled) · [diverges](#no-table-state-is-persisted-in-the-session) |
 | [`CanSearchRecords` — `$tableSearch`, `updatedTableSearch()`, `getTableSearch()`, `dehydrateTableSearch()`, `applySearchToTableQuery()`, `applyGlobalSearchToTableQuery()`, `extractTableSearchWords()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | — | [detail](#search-is-the-global-term-only) · [diverges](#the-writable-props-dehydrate-in-their-elements-wire-vocabulary) · [diverges](#no-table-state-is-persisted-in-the-session) · [table.md](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
 | Table state in the URL — `#[Url]`-style query-string binding for page, sort and search | [`getIdentifiedTableQueryStringPropertyNameFor()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | todo | — | [diverges](#no-table-state-is-bound-to-the-url) |
 | Per-column search — `$tableColumnSearches`, `updatedTableColumnSearches()`, the reserved keys | [`Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | todo | — | [detail](#search-is-the-global-term-only) |
@@ -426,10 +426,21 @@ Doctrine's own
 Wrapping it is why the slice is not a bare `LIMIT`: on a fetch-joined query a
 limit over the *joined rows* would hand back half a record's collection, where
 the Tools paginator limits a subquery over identifiers first and re-reads the
-whole rows. It is asked for that treatment whenever the builder carries a join at
-all (`getDQLPart('join') !== []`), which is broader than strictly needed — a
-to-one join fetches no collection and would page correctly without it — but the
-two directions cost differently: an extra subquery, against silently wrong rows.
+whole rows. **Which joins earn that treatment narrowed with · 20.** Until then
+the test was `getDQLPart('join') !== []` — any join at all, deliberately broader
+than needed on the grounds that an extra subquery is cheaper than silently wrong
+rows. Then the relation arm started joining *for* the user, and "broader than
+needed" stopped being free: a to-one join added because someone clicked a
+sortable header would have flipped every such table into id-subquery mode for a
+join that multiplies no rows. So the heuristic became cardinality-aware —
+[`JoinCardinality::joinsCollection()`](../../../packages/tables/src/Query/JoinCardinality.php)
+walks each join expression back to its class through the root entities and the
+joins before it, and answers true only for a **collection-valued** association.
+The original trade survives where it still applies: anything the mapping cannot
+classify — an arbitrary-class join, a join off an alias this builder never
+declared, a join on a property that is no association — counts as collection
+fetching, because there the two directions still cost differently, an extra
+subquery against silently truncated collections.
 
 The three [modes](table.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features)
 differ in what they pay for the total, and the mode is read here, where it is
@@ -488,12 +499,12 @@ there — [its own divergence](#a-default-sort-closures-replacement-builder-reac
 Last is `defaultKeySort()`, on by default: the root alias's identifier field,
 read from the mapping metadata rather than assumed to be `id`, appended in the
 same direction the default sort ran in. It is what makes a page boundary stable
-when the sorted column has ties. Two things suppress it. Any existing ordering
-whose path **is** the qualified key, and — Filament-faithfully — any ordering
-whose path merely *ends* in the same field name, so a query already ordered by
-`artist.id` gets no `song.id` appended; the heuristic is Filament's
-`afterLast('.')` comparison, kept because a query ordering by a joined key has
-almost always chosen its own tiebreaker. It also no-ops rather than throwing when
+when the sorted column has ties. Exactly one thing suppresses it: an existing
+ordering whose path **is** the qualified key. Filament's second suppression —
+any ordering whose path merely *ends* in the same field name — shipped with · 12
+and was [removed by · 20](#the-identifier-tiebreaker-is-suppressed-only-by-the-qualified-key),
+because the relation arm made `artist.id` an ordering the table can now produce
+by itself. It also no-ops rather than throwing when
 the table's records carry a composite identifier, or when the builder names no
 root entity to read metadata from — a query that cannot be keyed by one column
 cannot be tiebroken by one either.
@@ -655,13 +666,22 @@ one page of it once
 [pagination](#the-page-state-has-its-query-lane-and-no-session-or-url-half)
 slices what these seams handed over.
 
-Four of Filament's applications are still missing from them, and each is a body
+Two of Filament's applications are still missing from them, and each is a body
 inside a seam rather than a new call site: **per-column** search slots into
-`applySearchToTableQuery()` ahead of the global half, and filters, grouping, and
-the visible columns' relationship aggregates and eager loading each wait on a
-layer that does not exist here at all. Every one has a **todo** row above. That
-is also why the seams were written public and whole before the layers that fill
-them: anything needing the lane can ask for it without waiting for its own half.
+`applySearchToTableQuery()` ahead of the global half, and filters and grouping
+each wait on a layer that does not exist here at all. Both have a **todo** row
+above. That is also why the seams were written public and whole before the layers
+that fill them: anything needing the lane can ask for it without waiting for its
+own half.
+
+Filament runs two more inside this seam that this port deliberately runs
+elsewhere. Its column loop calls `applyRelationshipAggregates()` and
+`applyEagerLoading()` here, so both land on the filtered query — which is the
+same clone the **count** takes. Here the aggregate value never touches a query
+clone at all ([why](table.md#an-aggregate-is-a-batched-side-query-and-a-hidden-subselect-never-a-select-on-the-page-query)),
+and eager loading runs one step later, on the
+[page clone alone](#eager-loading-runs-over-every-column-on-the-page-clone-alone),
+so a `COUNT` never carries joins added purely to fill cells.
 
 ### A `records()` closure resolves public container services by type
 
@@ -1144,12 +1164,19 @@ Filament throws `"Table [{$livewireClass}] must have a [query()], [relationship(
 or [records()]."` — three ways to give a table data, and the message lists all
 three so the reader can pick. Sylament's is
 `"Table [%s] must have [records()] or [query()]."`: it names the two lanes that
-exist and leaves out the third, which sits on
-[a future tables-relations epic](table.md#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic)
-nobody has scheduled yet. Naming an API the package does not ship would send a reader
+exist and leaves out the third, which travels with
+[relation managers](table.md#the-relation-scoped-table-arm-travels-with-relation-managers).
+Naming an API the package does not ship would send a reader
 looking for a method they cannot call — which is why the message grew its
 `query()` half in the change that landed the lane rather than ahead of it, and why
 it grows `relationship()` the same way. Provisional, and mechanically so.
+
+The [relation arm](../roadmap.md#pulled-forward) is what makes that worth
+restating rather than repeating: relations reached the tables package in · 20 and
+this message did **not** change, because what · 20 shipped is relation-aware
+*column paths* — a name that reads, sorts and searches through an association on
+a table whose data source is still its own `query()`. The third lane is a
+different feature, and the message grows only with it.
 
 ### `getTableRecords()` returns a keyed array or a `Paginator`, never a `Collection`
 
@@ -1342,6 +1369,14 @@ Permanent. The fetch-join resolution case pins it: it asserts all three songs an
 fails with "actual size 1 matches expected size 3" the moment the limit comes
 back.
 
+· 20 sharpened the *reason* without touching the code. Record resolution now
+takes neither the [eager joins](#eager-loading-runs-over-every-column-on-the-page-clone-alone)
+nor the aggregate batch, so a query written by a `query()` closure is the only
+thing that can fetch-join this clone — which narrows the trap to the case the
+test covers and widens the argument for keeping the limit off: the port cannot
+know whether the user's own declaration fetch-joins, so the safe reading is that
+it might.
+
 ### The all-records count answers four ways where Filament's answers two
 
 Filament's `getAllTableRecordsCount()` is two lines: a `LengthAwarePaginator` in
@@ -1362,8 +1397,15 @@ a cold one. Otherwise the answer is a `COUNT` over
 through Doctrine's `Tools\Pagination\Paginator`, asked for the
 `fetchJoinCollection` treatment on the same
 [join heuristic](#the-page-state-has-its-query-lane-and-no-session-or-url-half)
-`paginateTableQuery()` uses, so a fetch-joined table counts entities rather than
-rows. Search is applied and pagination is not, which is exactly what "all
+`paginateTableQuery()` uses. That flag is **inert on this call** in the installed
+ORM and is passed anyway: `Paginator::count()` never reads it — its count query
+is built with `CountWalker::HINT_DISTINCT`, so a fetch-joined table counts
+distinct roots either way — and only `getIterator()` branches on it. One
+heuristic in one place is worth more than a call site that answers a question
+nobody asks, and if the flag ever reaches the count path it will already be
+right.
+
+Search is applied and pagination is not, which is exactly what "all
 records" means here: the number a footer's *of N* renders under a filtered page.
 
 The records lane has no query to count, so the answer is whatever the closure
@@ -1383,6 +1425,83 @@ which hands the number to a page's widgets; neither is ported. So it stays off
 the [contract](#the-contract-is-nine-methods-of-filaments-forty-six), which grows
 only for members a shipped consumer calls, and it ships whole rather than in the
 half the closure lane could have answered on its own.
+
+### Eager loading runs over every column, on the page clone alone
+
+Two loops on the page read carry the relation arm's host half, and both differ
+from Filament's in where they run and what they run over.
+
+**Eager loading** is a loop over `$table->getColumns()`, calling
+[`applyEagerLoading()`](column.md#a-to-many-relation-stays-lazy-where-filament-eager-loads-every-cardinality)
+on each, placed **after** `getFilteredSortedTableQuery()` has returned and before
+the query is paginated. Filament loops over `getVisibleColumns()` inside
+`filterTableQuery()`. Two deltas fall out.
+
+The first is **visibility**, and it is an absence rather than a decision: column
+visibility (`hidden()`, `visible()`, `toggleable()`) is unported, so
+`getColumns()` *is* the visible set here — there is no third state for a loop to
+skip. It is listed as a **todo** row in [column.md](column.md), and this loop is
+one of the places that will grow a filter when it lands, alongside the
+[sort](table.md#getsortablevisiblecolumn-has-no-hidden-arm-to-check) and search
+loops that already record the same gap. Until then a to-one column a user cannot
+see still costs its share of one `LEFT JOIN`, which is the cheapest way to be
+wrong about this.
+
+The second is the **clone**, and it is deliberate. Filament's placement puts the
+eager loads on the filtered query, which the count path also reads; ours puts
+them one step later, so they reach the page query and nothing else. The count
+clone therefore stays join-free — it counts what the search matched, and a join
+added to fill cells has no business widening or narrowing it — and record
+resolution, which builds its own clone through `getQuery(isResolvingRecord: true)`,
+never passes this seam at all. A resolved record lazy-loads what a rendered row
+fetch-joined, which is the honest trade: it is one row, and the alternative is
+[a fetch join under a row limit](#record-resolution-applies-no-limit-1-where-filaments-find-does).
+A test pins both halves by asserting the standalone count and the record
+resolution each issue exactly one statement with no `LEFT JOIN` in it.
+
+**The aggregate store** is filled by the second loop, `fillTableAggregateValues()`,
+and it runs from `keyTableRecords()` — the one funnel every arm passes through,
+paginated and `'all'` alike — because the batch needs the page's keys and those
+only exist once the records are keyed. It is a no-op off the query lane (no
+entity manager to batch against, and a `records()` closure that returns rows the
+port never queried) and a no-op for a page with no keys.
+
+Filament applies its aggregates on **record resolution** too. Ours does not, and
+the reason is that nothing there would read them: a resolved record feeds a
+row-scoped action, not a rendered cell, and the store is keyed per column for
+cells. Revisit with bulk actions or an export surface, which are the two
+consumers that would want a resolved record carrying its aggregates.
+
+### The identifier tiebreaker is suppressed only by the qualified key
+
+`defaultKeySort()` appends the root's identifier so a page boundary is stable
+under ties, and it stands down when the query is already ordered by that key.
+Filament tests that with `afterLast('.')` — an ordering *ending* in the same
+field name suppresses it, whichever alias it hangs off — and · 12 ported the
+heuristic as written, with the reasoning that a query ordering by a joined key
+has almost always chosen its own tiebreaker. · 20 removed the loose half: the
+comparison is now against the fully qualified `{rootAlias}.{identifierField}`
+(or the bare field name, pre-resolution) and nothing else.
+
+What changed is who can produce the ordering being tested. Under · 12 an
+`artist.id` ordering could only come from a user who had written the join *and*
+named that column, which is the case the heuristic was charitable about. The
+relation arm makes the same ordering something the **table** produces on its own:
+a user clicks a sortable `artist.id` column, the arm joins and orders by it, and
+the loose comparison would then read the port's own join as the user's chosen
+tiebreaker and drop the root key — leaving the page boundary unstable between
+rows sharing an artist, which is precisely the failure `defaultKeySort()` exists
+to prevent, and one that only shows up as rows repeating or vanishing across a
+page change.
+
+It restores Filament's *outcome* rather than departing from it, which is why this
+counts as a tightening and not a behaviour change to migrate: their tiebreak scan
+only ever meets orderings a user wrote, since their relation sort orders by a
+correlated **subquery** object rather than by a dotted string — so a
+Filament table sorted by a relation is never suppressed either. The narrow case
+that does change is a user who hand-wrote `orderBy('artist.id')` and relied on the
+root key dropping out; they now get one extra `ORDER BY` term, which cannot
+change the row order they already had.
 
 _See also: the global [rename table](../renames.md) — the interface⇄trait label
 swap (`InteractsWithTable` trait → `HasTable` trait, `HasTable` interface →

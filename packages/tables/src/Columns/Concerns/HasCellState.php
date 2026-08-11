@@ -131,9 +131,9 @@ trait HasCellState
     /**
      * Every value the path reaches, depth-first — one entry for a walk of
      * to-one hops, one per item for each collection crossed — paired with
-     * whether a collection was crossed at all, which is the value-derived half
-     * of the shape decision. A null or scalar met before the path ends
-     * contributes nothing, and neither does a segment the record cannot answer.
+     * whether a collection was crossed at all. A null or scalar met before the
+     * path ends contributes nothing, and neither does a segment the record
+     * cannot answer.
      *
      * @param list<string> $segments
      *

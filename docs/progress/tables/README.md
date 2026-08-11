@@ -10,8 +10,10 @@ filters, actions, grouping, summaries.
 These tables map the full `tables/src` surface end to end (plus the rendered
 views, translations and assets), so no table carries an
 [unaudited row](../README.md#an-unaudited-table-says-so). The minimal tables
-vertical (M1 · 5), the record-action lane (M1 · 6) and the table upgrades epic
-([pulled forward · 11](../roadmap.md#pulled-forward)) are what has landed so far
+vertical (M1 · 5), the record-action lane (M1 · 6) and three pulled-forward epics
+— table upgrades ([· 11](../roadmap.md#pulled-forward)), the Doctrine `query()`
+lane ([· 12](../roadmap.md#pulled-forward)) and the relation arm
+([· 20](../roadmap.md#pulled-forward)) — are what has landed so far
 — a linked first-column name is built and carries a real
 [status](../README.md#statuses), with a detail file wherever a divergence, an
 open gap or real sub-structure earns one; a plain-text name is not built yet and
@@ -29,16 +31,13 @@ wait on — so a row whose detail file already names a prerequisite would be
 false as **todo**. These tables carry the same four columns as every package
 README, so a **blocked** row names its prerequisite at the head of _Detail_,
 ahead of the detail-file link that carries the full write-up: _table bulk
-actions_ is the one the rows here wait on today, with _a future
-tables-relations epic_ a second that only the detail files name so far — the
-[Doctrine relation layer](../roadmap.md#pulled-forward) shipped for schemas and
-forms and deliberately left tables out, so what is waited on is that epic rather
-than the association machinery. It is what the
-[relation arm of the query lane](table.md#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic)
-and
-[relationship traversal](column.md#relationship-traversal-is-a-future-tables-relations-epics)
-are held by.
-Two more stood here until their epics landed. _Table upgrades
+actions_ is the one most rows here wait on today, with _relation managers_ a
+second that one row names — the
+[relation-scoped table](table.md#the-relation-scoped-table-arm-travels-with-relation-managers),
+`Table::relationship()` and the pivot surface around it, which is a **data lane**
+rather than a column path and belongs to the feature that supplies a parent
+record.
+Three more stood here until their epics landed. _Table upgrades
 ([pulled forward · 11](../roadmap.md#pulled-forward))_ went first: its rows are
 now **done**, **in progress** or — where what was left is Eloquent query
 assembly — moved onto the query lane, and the two that were waiting on nothing
@@ -46,36 +45,38 @@ at all (deferred loading, polling) are plain **todo**. The _Doctrine `query()`
 lane ([pulled forward · 12](../roadmap.md#pulled-forward))_ then took those and
 flipped them in turn, leaving `HasQuery`, `InteractsWithTableQuery` and
 `PaginationMode` **in progress** against relation-aware resolution and a keyset
-carrier rather than against an epic. Neither _table bulk actions_ nor the tables
-relation arm has an epic carrying it — bulk actions need a `BulkAction` class and
-the row-selection machinery, and the tables arm was left out of the
-[Doctrine relation layer](../roadmap.md#pulled-forward) that shipped for schemas
-and forms, so it waits on a future tables-relations epic the roadmap does not
-schedule. (The
+carrier rather than against an epic. The _relation arm
+([pulled forward · 20](../roadmap.md#pulled-forward))_ closed the first of those:
+[relationship traversal](column.md#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member),
+the aggregates and eager loading are in, so `InteractsWithTableQuery` folded into
+[`column.md`](column.md) and lost its row here, and what it did **not** take on —
+the relation-scoped table — now has a destination instead of an open question.
+_Table bulk actions_ still has no epic carrying it: it needs a `BulkAction` class
+and the row-selection machinery, and nothing on the roadmap schedules either. (The
 [`forms`](../forms/README.md) README records the opposite
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 
-Twenty concerns the port has landed are **folded** into the detail file of the
-class that composes them and carry no row here, per
+Twenty-one concerns the port has landed are **folded** into the detail file of
+the class that composes them and carry no row here, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing) — nine
 `Table\Concerns\` traits (`BelongsToLivewire`, `CanPaginateRecords`,
 `CanSearchRecords`, `CanSortRecords`, `HasActions`, `HasColumns`,
 `HasEmptyState`, `HasRecordActions`, `HasRecords`) into
-[`table.md`](table.md), six `Columns\Concerns\` traits
+[`table.md`](table.md), seven `Columns\Concerns\` traits
 (`BelongsToTable`, `CanBeSearchable`, `CanBeSortable`, `HasLabel`, `HasName`,
-`HasRecord`) into [`column.md`](column.md), and five `Columns\Concerns\` traits
+`HasRecord`, `InteractsWithTableQuery`) into [`column.md`](column.md), and five
+`Columns\Concerns\` traits
 (`CanFormatState`, `HasColor`, `HasDescription`, `HasIcon`, `HasIconColor`)
 into
 [`text-column.md`](text-column.md). Filament's `resources/views/index.blade.php`
 folds the same way, into `table.md`'s `$template` row.
-`Table\Concerns\HasQuery` and `Columns\Concerns\InteractsWithTableQuery` are the
-two landed concerns that keep a row anyway, for the same reason: `HasQuery`'s
-`query()` arm is built and folded into [`table.md`](table.md) while its relation
-arm is deferred whole, and `InteractsWithTableQuery`'s `applySort()` /
-`applySearchConstraint()` are built and folded into [`column.md`](column.md)
-while its relationship aggregates and eager loading are deferred with the same
-layer — so each row is where the deferred half stays findable. Everything
+`Table\Concerns\HasQuery` is the one landed concern that keeps a row anyway: its
+`query()` arm is built and folded into [`table.md`](table.md) while the
+relation-scoped arm beside it is deferred whole, so the row is where that
+deferred half stays findable. `Columns\Concerns\InteractsWithTableQuery` kept a
+row on the same grounds until [· 20](../roadmap.md#pulled-forward) landed its
+aggregate and eager-loading half, and folded when it did. Everything
 Filament ships that the port has **not** reached keeps its
 own per-file row below, the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
@@ -181,7 +182,7 @@ The prefix is load-bearing rather than decorative: twenty trait names occur in
 two of these tiers and five (`BelongsToTable`, `CanBeHidden`, `HasColumns`,
 `HasLabel`, `InteractsWithTableQuery`) in three, which is the same
 [read-by-import, never by the bare `use`](../../../CLAUDE.md) trap the schemas
-tiers carry. The twenty landed concerns folded into their component's detail file
+tiers carry. The twenty-one landed concerns folded into their component's detail file
 are named in the [preamble](#tables--port-progress) and carry no row here.
 
 `Contracts/HasTable.php` is not listed in
@@ -226,7 +227,7 @@ pairs with, so it shares the first row below.
 | Table / HasHeader | [`Table/Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php) | todo | — |
 | Table / HasHeaderActions | [`Table/Concerns/HasHeaderActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php) | todo | — |
 | Table / HasHeadings | [`Table/Concerns/HasHeadings.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeadings.php) | todo | — |
-| [`Table / HasQuery`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | in progress | [table.md](table.md#the-relation-arm-of-the-query-lane-waits-on-a-future-tables-relations-epic) |
+| [`Table / HasQuery`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | in progress | relation managers, for the relation-scoped arm only — [table.md](table.md#the-relation-scoped-table-arm-travels-with-relation-managers) |
 | Table / HasQueryStringIdentifier | [`Table/Concerns/HasQueryStringIdentifier.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — |
 | Table / HasRecordAction | [`Table/Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | todo | — |
 | Table / HasRecordClasses | [`Table/Concerns/HasRecordClasses.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordClasses.php) | todo | — |
@@ -250,7 +251,6 @@ pairs with, so it shares the first row below.
 | Column / HasRowLoopObject | [`Columns/Concerns/HasRowLoopObject.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasRowLoopObject.php) | todo | [column.md](column.md#rowloop-waits-on-a-decision-about-twigs-loop-not-on-the-table-template) |
 | Column / HasSpace | [`Columns/Concerns/HasSpace.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasSpace.php) | todo | — |
 | Column / HasTooltip | [`Columns/Concerns/HasTooltip.php`](../../../vendor/filament/tables/src/Columns/Concerns/HasTooltip.php) | todo | — |
-| [`Column / InteractsWithTableQuery`](../../../packages/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | [`Columns/Concerns/InteractsWithTableQuery.php`](../../../vendor/filament/tables/src/Columns/Concerns/InteractsWithTableQuery.php) | in progress | `applySort()` and `applySearchConstraint()` are in; the aggregate and eager-loading arms wait on a future tables-relations epic — [column.md](column.md#relationship-traversal-is-a-future-tables-relations-epics) |
 | Summarizer / BelongsToColumn | [`Columns/Summarizers/Concerns/BelongsToColumn.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/BelongsToColumn.php) | todo | — |
 | Summarizer / CanBeHidden | [`Columns/Summarizers/Concerns/CanBeHidden.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanBeHidden.php) | todo | — |
 | Summarizer / CanFormatState | [`Columns/Summarizers/Concerns/CanFormatState.php`](../../../vendor/filament/tables/src/Columns/Summarizers/Concerns/CanFormatState.php) | todo | — |

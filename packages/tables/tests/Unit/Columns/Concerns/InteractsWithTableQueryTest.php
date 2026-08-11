@@ -148,6 +148,26 @@ it('resolves alias-headed dotted names, joins unaliased ones, and refuses unknow
         ->toThrow(LogicException::class, 'is not an alias on the builder, a mapped field path, or an association path');
 });
 
+it('leaves an alias-headed search path to the caller and still refuses an unknown head', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $joined = $entityManager->createQueryBuilder()
+        ->select('song')->from(Song::class, 'song')
+        ->leftJoin('song.artist', 'artist');
+    $unknown = $entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song');
+    $joinedExpression = $joined->expr()->orX();
+    $table = new TableHost(fn (Table $table): Table => $table->columns([
+        TextColumn::make('artist.name')->searchable(),
+        TextColumn::make('publisher.name')->searchable(),
+    ]))->getTable();
+
+    $table->getColumn('artist.name')?->applySearchConstraint($joined, $joinedExpression, 'foo');
+
+    expect((string) $joinedExpression)->toBe('artist.name LIKE :sylament_search_0')
+        ->and($joined->getDQL())->not->toContain('EXISTS');
+    expect(fn (): mixed => $table->getColumn('publisher.name')?->applySearchConstraint($unknown, $unknown->expr()->orX(), 'foo'))
+        ->toThrow(LogicException::class, 'is not an alias on the builder, a mapped field path, or an association path');
+});
+
 it('answers its sort and search column lists', function (): void {
     expect(TextColumn::make('title')->sortable()->getSortColumns())->toBe(['title'])
         ->and(TextColumn::make('title')->sortable(['plays'])->getSortColumns())->toBe(['plays'])

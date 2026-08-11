@@ -76,6 +76,10 @@ class Post
 
     public function setProfile(?Profile $profile): void
     {
+        if ($profile instanceof Profile && $profile->getPost() !== $this) {
+            $profile->setPost($this);
+        }
+
         $this->profile = $profile;
     }
 

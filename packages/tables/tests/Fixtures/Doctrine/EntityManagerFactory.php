@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Tests\Fixtures\Doctrine;
 
 use Doctrine\DBAL\DriverManager;
+use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\ORMSetup;
 use Doctrine\ORM\Tools\SchemaTool;
@@ -17,6 +18,10 @@ final class EntityManagerFactory
      */
     public static function create(?RecordingMiddleware $recorder = null): EntityManager
     {
+        if (!Type::hasType(HandleType::NAME)) {
+            Type::addType(HandleType::NAME, HandleType::class);
+        }
+
         $config = ORMSetup::createAttributeMetadataConfig(paths: [__DIR__ . '/Entity'], isDevMode: true);
         $config->enableNativeLazyObjects(true);
 

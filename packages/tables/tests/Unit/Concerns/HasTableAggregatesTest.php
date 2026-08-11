@@ -10,8 +10,11 @@ use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\TableHost;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Gig;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Venue;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Handle;
 use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
 
 /**
@@ -129,6 +132,27 @@ it('leaves an inert declaration to the record walk', function (): void {
         ->and($column?->getCellAggregateDeclaration())->toBeNull()
         ->and(aggregateCellStates($host, 'name'))->toBe(['Radiohead', 'Adele'])
         ->and($recorder->statements())->toHaveCount(2);
+});
+
+it('fills a table whose records carry an object identifier', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $arena = new Venue(new Handle('arena'), 'The Arena');
+    $shed = new Venue(new Handle('shed'), 'The Shed');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $arena,
+        $shed,
+        new Gig(1, 'Opening', 400, $arena),
+        new Gig(2, 'Encore', 900, $arena),
+    );
+
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('venue')->from(Venue::class, 'venue')->orderBy('venue.handle', 'ASC'))
+        ->columns([TextColumn::make('gigs_count')->counts('gigs')])
+        ->paginated(false));
+
+    expect(aggregateCellStates($host, 'gigs_count'))->toBe([2, 0]);
 });
 
 it("fills on the 'all' per-page arm too", function (): void {

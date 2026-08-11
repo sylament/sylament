@@ -46,13 +46,14 @@ exists. _Blocked by_ names what has to land first. _Detail_ carries a
 | [`forgetFromArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — unset leaf path(s) from a detached array, leaving emptied parents | [`Arr::forget()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#the-detached-array-trio-ports-laravels-arr-helpers-because-propertyaccess-is-host-only-and-has-no-key-removal) |
 | [`getFromRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — read a record's object graph by dotted path (objects hop by property, arrays by key, null past a null/scalar intermediate) | [`data_get()`](../../../vendor/laravel/framework/src/Illuminate/Collections/helpers.php) | done | — | [diverges](#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) |
 | [`setOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write into a record's object graph; a null singular segment is constructed from its declared type, the remainder past the first segment that is neither an object nor constructible writes as a nested array | [`data_set()`](../../../vendor/laravel/framework/src/Illuminate/Collections/helpers.php) | done | — | [diverges](#the-record-pair-completes-the-data_getdata_set-port-for-object-graphs) · [diverges](#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused) · [semantics](#a-throwing-setonrecord-can-leave-a-constructed-intermediate-behind) |
+| [`setAssociationOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — write an association value onto a record property, past `setOnRecord()`'s object-collection refusal | — (Sylament-invented) | done | — | [semantics](#the-association-write-is-the-collection-refusals-counterpart) |
 | [`hasInArray()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether a dotted path exists in a detached array (absent vs present-null) | [`Arr::has()`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | — |
 | [`acceptsNullOnRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php) — whether the record's declared write-side type at a dotted path takes null (true when the type cannot be read) | — (Sylament-invented) | done | — | [semantics](#the-nullability-probe-lives-here-because-the-type-reader-does) |
 | [Service wiring](../../../packages/schemas/src/State/PropertyAccessor.php) — registration and class alias, injected through `CanAccessProperties` | — (Sylament-invented) | done | — | [diverges](#the-accessor-is-injected-not-reached-for) |
 
 Every row is **done** — the unit suite
 ([`PropertyAccessorTest`](../../../packages/schemas/tests/Unit/State/PropertyAccessorTest.php))
-exercises all eight public methods across their branches (nested reads returning
+exercises the eight database-free public methods across their branches (nested reads returning
 null past an absent, null or non-array segment, on a bag and on a record;
 single-segment, auto-vivifying and clobbering writes; the detached trio's
 present/missing/past-scalar reads, deep auto-vivify and non-array
@@ -78,12 +79,41 @@ pins both paths — a component from `make()` holds the container's accessor, on
 from `new` holds a locally built one — and
 [`LiveStateTest`](../../../packages/schemas/tests/Integration/LiveStateTest.php)
 drives it end-to-end through a real UX LiveComponent hydrate/dehydrate round-trip
-via `HasState`. No row has a write-up here.
+via `HasState`. The ninth method needs a database, so it is pinned beside the
+vendor behaviour it delegates to, in
+[`DoctrineCollectionWriteTest`](../../../packages/schemas/tests/Integration/State/DoctrineCollectionWriteTest.php)
+— the same case asserting that `setOnRecord()` refuses the write it accepts.
 
 ## Semantics
 
 Behaviour a reader would plausibly misread from the source. Permanent — these
 outlive the detail sections above.
+
+### The association write is the collection refusal's counterpart
+
+`setOnRecord()` refuses to write an object collection because a plain state array
+carries no identity for its items: nothing says which item is which entity, so a
+write could only replace the collection wholesale and lose every association
+Doctrine tracks. `setAssociationOnRecord()` is the same write with that premise
+removed — its caller has already resolved entities, and the identity is the
+mapping's own — so it hands the value straight to Symfony's accessor.
+
+The bypass is narrow on purpose. It takes a single property rather than a dotted
+path (an association is a property, and a path through one is a different
+question), it makes no attempt to distinguish a to-one from a to-many (the caller
+read that off the Doctrine mapping to build the value in the first place), and it
+performs no type check at all — Symfony's accessor picks the adder/remover pair
+for a collection and the setter for a single object, which is exactly the
+difference the caller already encoded in what it passes. What it must never
+become is a general "write without checks" escape hatch: everything else on a
+record still goes through `setOnRecord()`, and the refusal it raises stays the
+default answer for a state-array write.
+
+Its only caller today is forms'
+[`HasRelationship`](../forms/select.md#the-save-arm-writes-a-desired-list-not-attachdetach),
+whose desired-list semantics (identity diffing, surviving collection instance,
+adders maintaining the owning side) are the vendor behaviour characterized in the
+same test file.
 
 ### A throwing `setOnRecord()` can leave a constructed intermediate behind
 

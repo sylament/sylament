@@ -1,10 +1,11 @@
 # Select (forms)
 
 `Sylament\Forms\Components\Select` — the native `<select>` field, over a static
-option map. It composes three single-use concerns
+option map or a Doctrine association. It composes four single-use concerns
 ([`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php),
 [`CanSelectPlaceholder`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php),
-[`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php))
+[`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php),
+[`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php))
 plus the
 [`Contracts\CanDisableOptions`](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php)
 interface, casts its state through schemas'
@@ -41,12 +42,15 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | [`Contracts\CanDisableOptions`](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Components/Contracts/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Contracts/CanDisableOptions.php) | done | — | [diverges](#the-contract-declares-the-read-surface-not-the-setter) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
 | `boolean()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | — |
-| `getOptionLabel()` | [`resolveOptionLabel()`](../../../vendor/filament/forms/src/Components/Select.php) | in progress | relationship layer | [detail](#getoptionlabel-omits-the-getoptionlabelusing-arm) |
+| `getOptionLabel()` | [`resolveOptionLabel()`](../../../vendor/filament/forms/src/Components/Select.php) | in progress | the JS select control | [detail](#getoptionlabel-omits-the-getoptionlabelusing-arm) |
 | Option validation (`Choice`) | [`getInValidationRuleValues()`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-choice-constraint-is-the-fields-only-server-side-guard) |
 | `CanBeNative` | [`Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | blocked | the JS select control | [diverges](#canbenative-is-not-ported) |
 | `multiple()` / [`OptionsArrayStateCast`](../schemas/options-array-state-cast.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#a-multiple-select-validates-element-by-element) · [diverges](#multiple-renders-a-native-multi-select-and-nothing-else) |
 | `searchable()` / `preload()` / `HasLoadingMessage` | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | todo | the JS select control | — |
-| `relationship()` / create + edit option actions | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | the Doctrine relation layer | — |
+| [`relationship()`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — to-one and to-many, over the [association reader](../schemas/association-reader.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](#relationship-is-three-lazy-closures-over-the-association-reader) · [semantics](#a-relationship-select-is-always-enumerable-or-it-throws) · [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
+| `relationship()` create + edit option actions (`createOptionUsing`, `editOptionForm`, …) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | — | — |
+| `relationship()` `ignoreRecord:` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | the `unique`/`exists` constraint family | — |
+| `pivotData()` | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity recipe | [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | `allowHtml()` | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | todo | — | — |
 | `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` | — |
 | Affixes (`HasAffixes`, `wrapInputHtml`) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | blocked | the input wrapper ([field.md](field.md#the-input-affix-wrapper-is-not-ported)) | — |
@@ -66,7 +70,23 @@ swap (and a custom cast still winning), the state round-trip, the
 `Choice(multiple: true)` guard against a tampered element, the empty-selection
 and no-options cases, and the rendered `multiple` attribute with its selected
 options in both the flat and the grouped shape — by
-[`SelectMultipleTest`](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php).
+[`SelectMultipleTest`](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php);
+the relationship arm — the to-one fill/option-map/`getOptionLabel` trio, the
+selected-id write, the empty-submission null, the `Choice` rejection of an id
+outside the map, `modifyQueryUsing` scoping, the missing-`titleAttribute` throw, a
+relationship named apart from the field, and the to-many arm's fill, collection
+sync (the `PersistentCollection` instance surviving, the dropped `Tag` row
+surviving, `multiple()` declared on either side of `relationship()`), empty
+submission and a round-trip against a reloaded post whose collection is still
+lazy — by
+[`SelectRelationshipTest`](../../../packages/forms/tests/Integration/Components/SelectRelationshipTest.php),
+against the in-memory SQLite rig
+([`EntityManagerFactory`](../../../packages/forms/tests/Fixtures/Doctrine/EntityManagerFactory.php),
+smoke-tested by
+[`DoctrineRigTest`](../../../packages/forms/tests/Integration/Fixtures/DoctrineRigTest.php));
+the wiring that needs no database — `hasRelationship()`, the name fallback, the
+title attribute, and the no-entity-manager throw — by
+[`HasRelationshipTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasRelationshipTest.php).
 
 ## Details
 
@@ -80,11 +100,59 @@ the field's casts spell it. A `bool` state is normalized to `int` first — the
 coercion PHP would apply to an array offset anyway, and the one `boolean()`
 depends on to resolve `true` to its `1 => 'Yes'` option.
 
-Filament's `getOptionLabelUsing` closure arm exists
-for relationship-backed options, where the label is fetched rather than known, so
-it lands with that layer. Filament's `$withDefault` parameter — falling back to
-the raw state when no option matches — is also unported: the port returns `null`,
-which is the honest answer for a value that is not an option.
+Filament's `getOptionLabelUsing` closure arm exists for the case where the
+selected record is *not* in the option map — a searchable, non-preloaded select
+fetches one record's label by id. The port's
+[`relationship()`](#relationship-is-three-lazy-closures-over-the-association-reader)
+always builds the full map, so a relationship-backed label resolves off it like
+any other and needs no second lookup; the closure arm therefore lands with the JS
+select control that makes partial option maps possible, not with the relation
+layer. Filament's `$withDefault` parameter — falling back to the raw state when
+no option matches — is also unported: the port returns `null`, which is the
+honest answer for a value that is not an option.
+
+### `relationship()` is three lazy closures over the association reader
+
+[`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php)
+stores the association name, its title attribute and the optional query scope,
+then wires three closures and nothing else:
+
+- **`options()`** — [`AssociationReader::describe()`](../schemas/association-reader.md)
+  resolves the record class's mapping at that property, `createOptionQuery()`
+  builds `SELECT record FROM <target> record`, `modifyQueryUsing` scopes it, and
+  each row becomes its `getRecordKey()` mapped to the title attribute, read
+  through
+  [`PropertyAccessor::getFromRecord()`](../schemas/property-accessor.md). The
+  keys are the identifier strings the client speaks, so PHP canonicalizes numeric
+  ones to `int` array keys — the same vocabulary
+  [`getEnabledOptionValues()`](#the-choice-choices-cover-both-forms-the-raw-state-can-take)
+  already reconciles, which is why the `Choice` guard needed no relationship arm.
+- **`loadStateFromRelationshipsUsing()`** — the association value's record key
+  (null when unset), or the list of keys for a to-many. This is the
+  [hook pair](../schemas/belongs-to-record.md) `fill()` consults instead of the
+  ordinary record read, which would have skipped the path entirely: an
+  object-valued leaf is skipped by `readStateFromRecord()`, and a collection is
+  refused by `setOnRecord()`.
+- **`saveRelationshipsUsing()`** — the reverse, through
+  [`AssociationReader::getReference()`](../schemas/association-reader.md), so
+  `getData()` writes managed references without loading the target rows.
+
+Every one of them resolves the record class and the reader **at evaluation
+time**, never at `relationship()` time — the same lazy shape
+[`Repeater::refuseObjectCollectionRecord()`](repeater.md) uses, and what lets
+`relationship()` be declared before the component is attached to a schema. The
+to-one/to-many branch is read off the mapping on each call rather than captured,
+and `isMultiple()` is likewise evaluated rather than snapshotted, so
+`multiple()` may be declared on either side of `relationship()`.
+
+`$name` defaults to the field's own name at declaration time
+(`$name ?? $this->getName()`, Filament-exact), which is what keeps
+`hasRelationship()` false for a select that never declared one — the fallback
+lives in the assignment, not in the getter.
+
+The concern imports `Doctrine\ORM\QueryBuilder` directly, so `forms` declares
+`doctrine/orm` in its own `require` rather than inheriting it through `schemas` —
+the split-repo rule, since each package is published standalone.
 
 ## Semantics
 
@@ -196,6 +264,31 @@ array-shaped state takes the `Choice` path unchanged. The no-`options()`
 `LogicException` still comes first, so a tampered payload cannot mask a
 misconfiguration.
 
+### A relationship select is always enumerable, or it throws
+
+The `Choice` guard enumerates `getOptions()`, so an option map that comes back
+empty does not fail open — it fails *closed*, rejecting every value the user can
+pick, with a violation that names nothing wrong with the submission. That is the
+one outcome a relationship select must never produce, and it is exactly what a
+silently-degrading options closure would produce: no entity manager, no record
+class, or a property Doctrine maps nothing at, each yielding `[]`.
+
+So the closure throws instead. Each arm names which of the three it hit and what
+would fix it, and the reader's own
+[`getReference()`](../schemas/association-reader.md) and `createOptionQuery()`
+throw on the same missing entity manager from the write side. There is no
+fallback option map and no empty-map arm anywhere in the concern; a select whose
+options the port cannot enumerate is a configuration error, not a runtime state.
+Validation then stays exactly as it was — the `Choice` is built over a full map,
+which is what makes the epic's "never a partial enumeration" rule mechanical
+rather than a convention.
+
+One consequence worth stating: because the map is full and the constraint strict,
+the save hook receives an identifier that has already been checked against the
+target table by the time it runs. Its own "not an identifier" throw is therefore
+a belt-and-braces guard for a state that reached `getData()` without validation,
+not the primary defence.
+
 ### The template renders the selected state itself
 
 The template emits `selected` per option, comparing the option's key against
@@ -224,8 +317,47 @@ are meaningful for a native `<select multiple>` — the state cast swap, the
 `multiple` attribute, the multi-value `Choice`, and the selected state — because
 [`CanBeNative` is not ported](#canbenative-is-not-ported). The affordances that
 belong to the JS control (searchable, `maxItems`, option reordering) land with
-it, as does Filament's `dehydrated(false)` arm, which exists for the
-relationship-saving path rather than for multi-value state.
+it. Filament's `dehydrated(false)` arm is not among them and never will be: it
+exists for the relationship-saving path rather than for multi-value state, and
+that path works the other way round here
+([below](#the-save-arm-writes-a-desired-list-not-attachdetach)).
+
+### The save arm writes a desired list, not attach/detach
+
+Filament's `saveStateToRelationship()` speaks Eloquent relation verbs:
+`associate()` for a `BelongsTo`, and for a `BelongsToMany` a `detach()` of the
+diff followed by `sync(detaching: false)` — plus `unsetRelation()` to drop the
+stale in-memory copy, and `syncWithPivotValues()` when `pivotData()` is set.
+Doctrine has no equivalent verbs on the entity: the association *is* the
+property, and the unit of work computes the difference at flush.
+
+The port therefore writes the whole desired list onto the property, through
+[`PropertyAccessor::setAssociationOnRecord()`](../schemas/property-accessor.md) —
+Symfony's accessor diffs it against the collection by strict identity and calls
+the entity's own `addX()`/`removeX()` per element, so the collection instance
+survives, the owning side is maintained by the adder the maker generated, and
+Doctrine emits only the join rows that actually changed
+([characterized in `DoctrineCollectionWriteTest`](../../../packages/schemas/tests/Integration/State/DoctrineCollectionWriteTest.php)).
+Kept elements diff as kept because `getReference()` answers from the identity
+map with the very instances the loaded collection holds. Two things follow from
+the mechanism rather than from a choice of ours: removing an element from a
+`ManyToMany` deletes the join row only — the target entity survives, since
+nothing declares `orphanRemoval` there — while a `OneToMany` that does declare it
+deletes the child, which is Doctrine's contract and not something the select
+decides.
+
+`pivotData()` has no home in this shape at all: a Doctrine many-to-many with
+columns of its own is modelled as a join *entity*, which is a repeater over that
+entity rather than extra data on a select's write. It is blocked on that recipe,
+not on this arm.
+
+The single-flush shape also removes Filament's `dehydrated(false)` for the
+multiple arm. Upstream it exists because a `BelongsToMany` cannot be written as a
+model attribute and is saved afterwards by a separate `saveRelationships()` pass;
+here the save hook fires *from* the dehydrated bag
+([`getData()`](../schemas/belongs-to-record.md)), so switching dehydration off
+would silence the hook instead of protecting it — the multiple relationship
+select stays dehydrated, deliberately.
 
 ### `CanBeNative` is not ported
 

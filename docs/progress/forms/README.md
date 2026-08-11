@@ -36,8 +36,11 @@ keeps one despite sitting on `Field` alone, because its Filament surface is some
 eighty methods and it is the field half of a validation vertical spanning three
 packages — folding it would swamp [`field.md`](field.md). The same fold applies
 to every other concern only one built component uses: `HasOptions`,
-`CanSelectPlaceholder` and `CanDisableOptions` are `Select`'s alone in the port
-and live in [`select.md`](select.md), `HasToggleIcons` and `HasToggleColors` are
+`CanSelectPlaceholder`, `CanDisableOptions` and `HasRelationship` are `Select`'s
+alone in the port and live in [`select.md`](select.md) — the last of those ports
+no Filament concern at all, being the relationship half of `Select` itself, kept
+as a trait here because a fourteen-method relation surface on a field class is
+what `Concerns/` exists to prevent — `HasToggleIcons` and `HasToggleColors` are
 `Toggle`'s alone and live in [`toggle.md`](toggle.md), `HasStep`,
 `HasDatalistOptions` and `CanBeAutocapitalized` are `TextInput`'s alone and live
 in [`text-input.md`](text-input.md), and `CanBeCloned`, `CanGenerateUuids` and
@@ -117,8 +120,8 @@ single component is tracked in that component's detail file, not here: the base
 [`field.md`](field.md) — a sixth, `CanBeMarkedAsRequired`, relocated to schemas
 and is tracked in
 [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md)
-— `Select`'s three (`HasOptions`, `CanSelectPlaceholder`,
-`CanDisableOptions`) into [`select.md`](select.md), `Toggle`'s
+— `Select`'s four (`HasOptions`, `CanSelectPlaceholder`,
+`CanDisableOptions`, `HasRelationship`) into [`select.md`](select.md), `Toggle`'s
 `HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md),
 `TextInput`'s `HasStep`, `HasDatalistOptions` and `CanBeAutocapitalized` into
 [`text-input.md`](text-input.md), and
@@ -159,8 +162,9 @@ ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and
 | HasMaxHeight | [`Components/Concerns/HasMaxHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMaxHeight.php) | todo | — |
 | HasMinHeight | [`Components/Concerns/HasMinHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMinHeight.php) | todo | — |
 | HasNestedRecursiveValidationRules | [`Components/Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | todo | — |
-| HasPivotData | [`Components/Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | todo | — |
+| HasPivotData | [`Components/Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | [select.md](select.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | HasPreview | [`Components/Concerns/HasPreview.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPreview.php) | todo | — |
+| [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — no Filament concern of its own; `Select`'s relation surface, split off the class | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | [select.md](select.md#relationship-is-three-lazy-closures-over-the-association-reader) |
 | HasTooltips | [`Components/Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | todo | — |
 | HasUploadingMessage | [`Components/Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | todo | — |
 | InteractsWithForms | [`Concerns/InteractsWithForms.php`](../../../vendor/filament/forms/src/Concerns/InteractsWithForms.php) | todo | — |

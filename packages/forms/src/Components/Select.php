@@ -10,6 +10,7 @@ use Sylament\Forms\Components\Concerns\CanDisableOptions;
 use Sylament\Forms\Components\Concerns\CanSelectPlaceholder;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasOptions;
+use Sylament\Forms\Components\Concerns\HasRelationship;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Schemas\State\Casts\OptionsArrayStateCast;
@@ -26,6 +27,7 @@ class Select extends Field implements Contracts\CanDisableOptions
     use CanSelectPlaceholder;
     use HasExtraInputAttributes;
     use HasOptions;
+    use HasRelationship;
 
     protected string|Closure|null $template = '@SylamentForms/partials/Select/index.html.twig';
 

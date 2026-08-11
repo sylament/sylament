@@ -178,6 +178,21 @@ final readonly class PropertyAccessor
     }
 
     /**
+     * Write an association value straight onto a record property, bypassing the
+     * object-collection refusal {@see setOnRecord()} raises. That refusal exists
+     * because a plain state array carries no identity for its items; an
+     * association write carries entities, and the identity is the mapping's own.
+     * A collection-valued association takes the whole desired list — Symfony's
+     * accessor diffs it against what the property holds and calls the record's
+     * adder and remover per element, so the collection instance survives and
+     * Doctrine sees only the difference.
+     */
+    public function setAssociationOnRecord(object $record, string $property, mixed $value): void
+    {
+        $this->accessor->setValue($record, $property, $value);
+    }
+
+    /**
      * Whether the record's declared write-side type at a dotted path accepts
      * null, so a caller about to write one there can refuse first with a message
      * of its own rather than letting Symfony raise a bare type error. True when

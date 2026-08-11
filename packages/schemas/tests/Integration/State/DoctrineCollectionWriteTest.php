@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\PersistentCollection;
+use Sylament\Schemas\State\PropertyAccessor;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSection;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tag;
@@ -117,4 +118,21 @@ it('maintains the owning side through the adder so a new child inserts on flush'
     $entityManager->flush();
 
     expect($section->getId())->not->toBeNull();
+});
+
+it('writes a collection through setAssociationOnRecord where setOnRecord refuses one', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    $accessor = $this::getContainer()->get(PropertyAccessor::class);
+
+    $post = seededPost($entityManager);
+    $kept = $post->getTags()->first();
+    assert($kept instanceof Tag);
+
+    expect(fn () => $accessor->setOnRecord($post, 'tags', [$kept]))
+        ->toThrow(LogicException::class, 'is an object collection');
+
+    $accessor->setAssociationOnRecord($post, 'tags', [$kept]);
+
+    expect($post->getTags()->count())->toBe(1)
+        ->and($post->getTags()->first())->toBe($kept);
 });

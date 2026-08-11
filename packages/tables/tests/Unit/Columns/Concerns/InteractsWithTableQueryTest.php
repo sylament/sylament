@@ -124,21 +124,28 @@ it('forces case-insensitivity per column', function (): void {
         ->and(TextColumn::make('title')->forceSearchCaseInsensitive(fn (): bool => true)->isSearchForcedCaseInsensitive())->toBeTrue();
 });
 
-it('resolves alias-headed dotted names and refuses unknown heads', function (): void {
+it('resolves alias-headed dotted names, joins unaliased ones, and refuses unknown heads', function (): void {
     $entityManager = EntityManagerFactory::create();
     $joined = $entityManager->createQueryBuilder()
         ->select('song')->from(Song::class, 'song')
         ->leftJoin('song.artist', 'artist');
     $unjoined = $entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song');
-    $table = new TableHost(fn (Table $table): Table => $table
-        ->columns([TextColumn::make('artist.name')->sortable()]))->getTable();
+    $unknown = $entityManager->createQueryBuilder()->select('song')->from(Song::class, 'song');
+    $table = new TableHost(fn (Table $table): Table => $table->columns([
+        TextColumn::make('artist.name')->sortable(),
+        TextColumn::make('publisher.name')->sortable(),
+    ]))->getTable();
     $column = $table->getColumn('artist.name');
 
     $column?->applySort($joined);
+    $column?->applySort($unjoined);
 
     expect($joined->getDQL())->toContain('ORDER BY artist.name asc')
-        ->and($joined->getQuery()->getSQL())->toContain('ORDER BY');
-    expect(fn (): ?QueryBuilder => $column?->applySort($unjoined))->toThrow(LogicException::class, 'is not an alias on the builder');
+        ->and($joined->getQuery()->getSQL())->toContain('ORDER BY')
+        ->and($unjoined->getDQL())->toContain('LEFT JOIN song.artist sy_artist', 'ORDER BY sy_artist.name asc')
+        ->and($unjoined->getQuery()->getSQL())->toContain('ORDER BY');
+    expect(fn (): ?QueryBuilder => $table->getColumn('publisher.name')?->applySort($unknown))
+        ->toThrow(LogicException::class, 'is not an alias on the builder, a mapped field path, or an association path');
 });
 
 it('answers its sort and search column lists', function (): void {

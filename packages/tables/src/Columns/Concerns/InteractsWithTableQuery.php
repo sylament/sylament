@@ -25,7 +25,7 @@ trait InteractsWithTableQuery
         }
 
         foreach ($this->getSortColumns() as $sortColumn) {
-            $query->addOrderBy(ColumnPathResolver::resolve($query, $sortColumn), $direction);
+            $query->addOrderBy(ColumnPathResolver::resolveOrderable($query, $sortColumn), $direction);
         }
 
         return $query;

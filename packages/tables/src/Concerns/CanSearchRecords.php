@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Concerns;
 
 use Doctrine\ORM\QueryBuilder;
+use Sylament\Tables\Filters\Indicator;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 
 use function Sylament\Support\filled;
@@ -42,6 +43,22 @@ trait CanSearchRecords
         $search = mb_trim((string) $this->tableSearch);
 
         return $search === '' ? null : $search;
+    }
+
+    /**
+     * The chip the indicators row renders for the global search term, or null
+     * when nothing is searched for — Filament gates on a separate `hasSearch()`
+     * where the nullable return says the same thing once.
+     */
+    public function getTableSearchIndicator(): ?Indicator
+    {
+        $search = $this->getTableSearch();
+
+        if ($search === null) {
+            return null;
+        }
+
+        return Indicator::make('Search: ' . $search);
     }
 
     protected function applySearchToTableQuery(QueryBuilder $query): QueryBuilder

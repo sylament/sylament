@@ -16,6 +16,8 @@ use Sylament\Tables\Table\Concerns\HasActions;
 use Sylament\Tables\Table\Concerns\HasAggregateValues;
 use Sylament\Tables\Table\Concerns\HasColumns;
 use Sylament\Tables\Table\Concerns\HasEmptyState;
+use Sylament\Tables\Table\Concerns\HasFilterIndicators;
+use Sylament\Tables\Table\Concerns\HasFilters;
 use Sylament\Tables\Table\Concerns\HasQuery;
 use Sylament\Tables\Table\Concerns\HasRecordActions;
 use Sylament\Tables\Table\Concerns\HasRecords;
@@ -30,6 +32,8 @@ class Table extends ViewComponent
     use HasAggregateValues;
     use HasColumns;
     use HasEmptyState;
+    use HasFilterIndicators;
+    use HasFilters;
     use HasQuery;
     use HasRecordActions;
     use HasRecords;

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables\Contracts;
 
 use Sylament\Support\Pagination\Paginator;
+use Sylament\Tables\Filters\Indicator;
 use Sylament\Tables\Table;
 
 interface InteractsWithTable
@@ -38,4 +39,10 @@ interface InteractsWithTable
     public function getTablePaginator(): ?Paginator;
 
     public function getTableRecordsPerPage(): int|string|null;
+
+    /**
+     * The global-search chip for the indicators row, or null when nothing is
+     * searched for. Read by `Table::getSearchIndicator()`.
+     */
+    public function getTableSearchIndicator(): ?Indicator;
 }

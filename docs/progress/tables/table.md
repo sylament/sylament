@@ -7,7 +7,7 @@ object of the tables package, the counterpart to schemas'
 host builds through [`HasTable`](has-table.md), carrying the record data source
 and the empty-state copy. It ports Filament's
 [`Filament\Tables\Table`](../../../vendor/filament/tables/src/Table.php) together
-with the `Table\Concerns\` traits it composes — ten today
+with the `Table\Concerns\` traits it composes — twelve today
 ([`BelongsToLiveComponent`](../../../packages/tables/src/Table/Concerns/BelongsToLiveComponent.php),
 [`HasRecords`](../../../packages/tables/src/Table/Concerns/HasRecords.php),
 [`HasQuery`](../../../packages/tables/src/Table/Concerns/HasQuery.php),
@@ -17,15 +17,18 @@ with the `Table\Concerns\` traits it composes — ten today
 [`HasRecordActions`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php),
 [`CanPaginateRecords`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php),
 [`CanSortRecords`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php),
-[`CanSearchRecords`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php)),
-thirty-one in Filament. The ten ported are folded into the surface table below
+[`CanSearchRecords`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php),
+[`HasFilters`](../../../packages/tables/src/Table/Concerns/HasFilters.php),
+[`HasFilterIndicators`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php)),
+thirty-one in Filament. The twelve ported are folded into the surface table below
 rather than earning rows upstairs, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing); the
-twenty-one still unported keep a per-file row in the package
+nineteen still unported keep a per-file row in the package
 [README](README.md#features), the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
-reached yet — as does `HasQuery`, ported but keeping its row for the relation arm
-it still owes. The rows below group those files by feature, which is what the
+reached yet — as do `HasQuery`, ported but keeping its row for the relation arm
+it still owes, and the two filter concerns, keeping theirs for the form seam and
+the chrome actions they do not carry yet. The rows below group those files by feature, which is what the
 per-file rows upstairs point at.
 
 The `Table` fetches nothing itself. It declares *how* records are reached — a
@@ -96,10 +99,16 @@ Rows never disappear — only their detail sections do.
 | [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
 | [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) · [diverges](#searchonblur-renders-onchange-because-ux-live-component-has-no-blur-event) |
 | [`splitSearchTerms()` / `shouldSplitSearchTerms()`, `searchUsing()` / `hasSearchUsingCallback()` / `callSearchUsing()`, `applyExtraSearchConstraints()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#search-is-the-global-term-only) · [semantics](#extra-searchable-columns-take-closures-that-return-their-expression) · [diverges](#the-default-search-comparison-assumes-a-string-typed-field) · [diverges](#a-search-term-is-not-escaped-for-like) |
-| `persistSearchInSession()`, `persistColumnSearchesInSession()`, `isSearchableByColumn()`, `hasSearch()`, the two indicator getters | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
+| [`getSearchIndicator()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-contract-is-ten-methods-of-filaments-forty-six) · [detail](#the-unported-search-surface-splits-three-ways) |
+| `persistSearchInSession()`, `persistColumnSearchesInSession()`, `isSearchableByColumn()`, `hasSearch()`, `getColumnSearchIndicators()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
 | `getExtraSearchableColumnRelationship()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | skipped | — | It answers *is this dotted name's head a relationship*, so Filament's caller can switch to `whereRelation`. Here [one resolution](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) answers that inside `SearchConstraint::forColumn()` for every tier at once, so an extra searchable column crosses an association with nothing to ask first — there is no caller left to hold the branch this member exists to decide |
 | Deferred loading and polling — `deferLoading()`, `poll()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | todo | — | [detail](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
-| Filters — `filters()`, the indicators, the query-string identifier | [`HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php), [`HasQueryStringIdentifier`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — | — |
+| [`filters()` / `pushFilters()` / `getFilters()` / `getFilter()` / `getFiltersFormSchema()` / `deferFilters()` / `hasDeferredFilters()` / `filtersLayout()` / `getFiltersLayout()` / `hasFiltersDropdown()` / `filtersFormColumns()` / `getFiltersFormColumns()` / `filtersFormMaxHeight()` / `getFiltersFormMaxHeight()` / `filtersFormWidth()` / `getFiltersFormWidth()` / `filtersResetActionPosition()` / `getFiltersResetActionPosition()` / `isFilterable()` / `getActiveFiltersCount()` / `isFiltered()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) + [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php), [`FiltersResetActionPosition`](../../../packages/tables/src/Enums/FiltersResetActionPosition.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`Enums/FiltersLayout`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php), [`Enums/FiltersResetActionPosition`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | in progress | — | [detail](#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it) · [detail](#the-filters-form-columns-default-to-one-without-filaments-responsive-branch) |
+| [`hiddenFilterIndicators()` / `getFilterIndicators()`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php) | [`Table\Concerns\HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | in progress | — | [indicator.md](indicator.md#removal-is-structured-not-a-click-handler-string) |
+| The filters form seam and its chrome actions — `getFiltersForm()`, `filtersFormSchema()`, `filtersTriggerAction()`, `filtersApplyAction()`, `filtersRemoveAllAction()` and their getters | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | todo | — | — |
+| `persistFiltersInSession()` | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | todo | — | The session half of filtering, and the [toolkit-wide omission](has-table.md#no-table-state-is-persisted-in-the-session) recorded on the host side — it returns with that decision rather than with filters, the way the `persistSortInSession()` and `persistSearchInSession()` rows above do |
+| `deselectAllRecordsWhenFiltered()` | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | blocked | table bulk actions | It clears the row **selection** when a filter changes, and there is [no selection to clear](#the-flat-action-map-has-no-bulk-half-and-no-removal) |
+| The query-string identifier — `queryStringIdentifier()` | [`HasQueryStringIdentifier`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — | — |
 | [`recordActions()` / `pushRecordActions()` / `getRecordActions()` / `getFlatRecordActions()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) | [`Table\Concerns\HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | in progress | — | [detail](#record-actions-register-without-the-per-action-modifier-hook) |
 | [`recordActionsPosition()` / `getRecordActionsPosition()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) + [`RecordActionsPosition`](../../../packages/tables/src/Enums/RecordActionsPosition.php) | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php), [`Enums/RecordActionsPosition`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | in progress | — | [detail](#the-position-default-has-no-content-arm-to-choose-between-yet) · [diverges](#the-position-setter-drops-filaments-string-arm) · [diverges](#the-four-rendered-positions-collapse-to-two) |
 | [`getVisibleRecordActionsByRecordKey()` — per-record clones, record-bound, hidden dropped](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) | [`index.blade.php`'s `$reduceVisibleRecordActions` / `$recordActionsByRecordKey`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-visible-action-map-is-a-table-method-and-is-not-short-circuited) |
@@ -409,9 +418,13 @@ declared, and no caller is left holding the branch this member exists to decide.
 **Everything else waits on a neighbouring feature.** `isSearchableByColumn()`
 answers whether any column wants its own input, which is
 [per-column search](has-table.md#search-is-the-global-term-only); `hasSearch()`
-delegates to a host method that arrives with it; `getSearchIndicator()` and
-`getColumnSearchIndicators()` return `Filters\Indicator` objects and wait on the
-filter layer that defines the class.
+delegates to a host method that arrives with it; `getColumnSearchIndicators()`
+returns one `Filters\Indicator` per column-scoped term and waits on that same
+per-column search. Only the global one ships: `getSearchIndicator()` is a
+nullable delegate to the host's `getTableSearchIndicator()` — the
+[tenth contract method](has-table.md#the-contract-is-ten-methods-of-filaments-forty-six)
+— where the null return carries what Filament's separate `hasSearch()` gate
+says, so no companion method is needed.
 
 ### Loading affordances are deferred with the JavaScript that would drive them
 
@@ -556,6 +569,56 @@ appends, and binds itself to each member as it goes, so a second call replaces
 the set and every column can reach the table and, through it, the host. Both are
 pinned by [`TableTest`](../../../packages/tables/tests/Unit/TableTest.php).
 `pushColumns()` returns as the public append seam when the grouping tier lands.
+
+### An unshipped filters layout is refused where the chrome reads it
+
+[`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php) ships all
+ten of Filament's cases, and the epic renders two of them. `Dropdown` puts the
+filters form behind the toolbar's trigger; `Hidden` renders no filter chrome at
+all while the filters themselves still constrain the query, nothing in the
+application path consulting the layout. The other eight —
+`Modal`, `AboveContent`, `AboveContentCollapsible`, `BelowContent`,
+`BeforeContent`, `BeforeContentCollapsible`, `AfterContent`,
+`AfterContentCollapsible` — each need chrome the toolkit has not built: a modal
+host for the form, or a content-adjacent panel with its own collapse state.
+
+The enum ships whole rather than trimmed to two, because the case *names* are
+the API a migrating user greps for and a missing case is a fatal
+`Error: undefined constant` at the call site with nothing to explain it. What
+the port refuses instead is the *consumption*, and it does so in
+`hasFiltersDropdown()` — the method the toolbar calls to decide whether to
+render the trigger and its panel — with a `LogicException` naming the case and
+the two that work. `getFiltersLayout()` stays total: it evaluates the closure
+arm and returns whatever was set, so a reader, a test or a future layout can ask
+what the table wants without tripping the refusal.
+
+That split is [`PaginationMode::Cursor`'s](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features)
+precedent applied a second time — refuse where the value is consumed, not where
+it is set — and the reason is the same: a `Closure` layout has no value at set
+time, so a setter-side check would be unenforceable for exactly the callers most
+likely to need it. Each refused case lifts as its chrome lands; nothing about
+the enum changes when it does.
+
+### The filters form columns default to one, without Filament's responsive branch
+
+Filament's `getFiltersFormColumns()` falls back to
+`['sm' => 2, 'lg' => 3, 'xl' => 4, '2xl' => 5]` for the `AboveContent`,
+`AboveContentCollapsible` and `BelowContent` layouts and to `1` for everything
+else. The port keeps the `1` and drops the match.
+
+The responsive arm is not a general default — it is the full-width layouts'
+default, and it reads as one only because the layout is in scope. All three
+layouts it names are [unported](#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it),
+so the branch as written would be dead code choosing between two answers where
+only one is reachable. `getFiltersFormWidth()` is trimmed on the same grounds and
+in the other direction: Filament's derives a `Width` enum case from the column
+count for the dropdown panel, and support ships no `Width` enum, so the getter is
+the plain evaluated value with a `null` default — a width the caller states or
+does not.
+
+Both arms return with the layouts they belong to — the column match with the
+above/below-content chrome, the width match if and when a `Width` enum lands in
+support.
 
 ## Semantics
 

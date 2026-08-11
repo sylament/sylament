@@ -75,12 +75,17 @@ into
 `HasSchema`, `InteractsWithTableQuery`) into
 [`base-filter.md`](base-filter.md). Filament's `resources/views/index.blade.php`
 folds the same way, into `table.md`'s `$template` row.
-`Table\Concerns\HasQuery` is the one landed concern that keeps a row anyway: its
-`query()` arm is built and folded into [`table.md`](table.md) while the
-relation-scoped arm beside it is deferred whole, so the row is where that
-deferred half stays findable. `Columns\Concerns\InteractsWithTableQuery` kept a
-row on the same grounds until [· 20](../roadmap.md#pulled-forward) landed its
-aggregate and eager-loading half, and folded when it did. Everything
+`Table\Concerns\HasQuery`, `Table\Concerns\HasFilters` and
+`Table\Concerns\HasFilterIndicators` are the three landed concerns that keep a
+row anyway, all for the same reason: `HasQuery`'s `query()` arm is built and
+folded into [`table.md`](table.md) while its relation-scoped arm beside it is
+deferred whole, and the two filter concerns are built and folded into
+[`table.md`](table.md) while the trigger, apply and remove-all actions, the
+`filtersFormSchema()` override and the column-search indicators are not — so each
+row is where the deferred half stays findable.
+`Columns\Concerns\InteractsWithTableQuery` kept a row on the same grounds until
+[· 20](../roadmap.md#pulled-forward) landed its aggregate and eager-loading half,
+and folded when it did. Everything
 Filament ships that the port has **not** reached keeps its
 own per-file row below, the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
@@ -205,7 +210,7 @@ pairs with, so it shares the first row below.
 | Host / CanSearchRecords | [`Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | [has-table.md](has-table.md#search-is-the-global-term-only) |
 | Host / CanSortRecords | [`Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) |
 | Host / CanSummarizeRecords | [`Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | todo | — |
-| Host / HasActions | [`Concerns/HasActions.php`](../../../vendor/filament/tables/src/Concerns/HasActions.php) | skipped | Every method in the file is a deprecated `*TableAction` delegate to the actions-package equivalent, and the project has never ported a deprecated Filament surface. What it fronts is built: mounting, resolution and record binding go through actions' [`HasActions`](../actions/has-actions.md#resolvetableaction-drops-the-bulk-arm) and the [`InteractsWithTable`](has-table.md#the-contract-is-nine-methods-of-filaments-forty-six) contract |
+| Host / HasActions | [`Concerns/HasActions.php`](../../../vendor/filament/tables/src/Concerns/HasActions.php) | skipped | Every method in the file is a deprecated `*TableAction` delegate to the actions-package equivalent, and the project has never ported a deprecated Filament surface. What it fronts is built: mounting, resolution and record binding go through actions' [`HasActions`](../actions/has-actions.md#resolvetableaction-drops-the-bulk-arm) and the [`InteractsWithTable`](has-table.md#the-contract-is-ten-methods-of-filaments-forty-six) contract |
 | Host / HasBulkActions | [`Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | blocked | table bulk actions — [has-table.md](has-table.md) |
 | Host / HasColumnManager | [`Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | todo | — |
 | Host / HasColumns | [`Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | todo | — |
@@ -226,8 +231,8 @@ pairs with, so it shares the first row below.
 | Table / HasBulkActions | [`Table/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | blocked | table bulk actions — [table.md](table.md) |
 | Table / HasColumnManager | [`Table/Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — |
 | Table / HasContent | [`Table/Concerns/HasContent.php`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | todo | — |
-| Table / HasFilterIndicators | [`Table/Concerns/HasFilterIndicators.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | todo | — |
-| Table / HasFilters | [`Table/Concerns/HasFilters.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | todo | — |
+| [`Table / HasFilterIndicators`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php) | [`Table/Concerns/HasFilterIndicators.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | in progress | [table.md](table.md) |
+| [`Table / HasFilters`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table/Concerns/HasFilters.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | in progress | [table.md](table.md) |
 | Table / HasHeader | [`Table/Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php) | todo | — |
 | Table / HasHeaderActions | [`Table/Concerns/HasHeaderActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php) | todo | — |
 | Table / HasHeadings | [`Table/Concerns/HasHeadings.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeadings.php) | todo | — |
@@ -308,8 +313,8 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | Editable (contract) | [`Columns/Contracts/Editable.php`](../../../vendor/filament/tables/src/Columns/Contracts/Editable.php) | todo | — |
 | ColumnManagerLayout | [`Enums/ColumnManagerLayout.php`](../../../vendor/filament/tables/src/Enums/ColumnManagerLayout.php) | todo | — |
 | ColumnManagerResetActionPosition | [`Enums/ColumnManagerResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/ColumnManagerResetActionPosition.php) | todo | — |
-| FiltersLayout | [`Enums/FiltersLayout.php`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php) | todo | — |
-| FiltersResetActionPosition | [`Enums/FiltersResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | todo | — |
+| [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php) | [`Enums/FiltersLayout.php`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php) | in progress | The enum ships whole; `Dropdown` and `Hidden` are honored, the other eight refused where [the chrome reads them](table.md#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it) |
+| [`FiltersResetActionPosition`](../../../packages/tables/src/Enums/FiltersResetActionPosition.php) | [`Enums/FiltersResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | done | [table.md](table.md) |
 | [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Enums/PaginationMode.php`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | The enum ships whole; `Default` and `Simple` are read by [`paginateTableQuery()`](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half), `Cursor` is refused until a keyset carrier exists — [table.md](table.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) |
 | [`RecordActionsPosition`](../../../packages/tables/src/Enums/RecordActionsPosition.php) | [`Enums/RecordActionsPosition.php`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | done | [table.md](table.md#the-position-default-has-no-content-arm-to-choose-between-yet) |
 | RecordCheckboxPosition | [`Enums/RecordCheckboxPosition.php`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | todo | — |

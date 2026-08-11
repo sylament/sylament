@@ -8,6 +8,7 @@ use Closure;
 use Doctrine\ORM\Query\Expr\Orx;
 use Doctrine\ORM\QueryBuilder;
 use Stringable;
+use Sylament\Tables\Filters\Indicator;
 use Sylament\Tables\Query\SearchConstraint;
 
 use function Sylament\Support\filled;
@@ -179,6 +180,11 @@ trait CanSearchRecords
 
             $searchExpression->add(SearchConstraint::forColumn($query, $column, $search, forceCaseInsensitive: null));
         }
+    }
+
+    public function getSearchIndicator(): ?Indicator
+    {
+        return $this->getLiveComponent()->getTableSearchIndicator();
     }
 
     /**

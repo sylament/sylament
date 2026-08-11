@@ -7,6 +7,7 @@ namespace Sylament\Tables\Tests\Fixtures\Concerns;
 use LogicException;
 use Sylament\Support\Pagination\Paginator;
 use Sylament\Tables\Contracts\InteractsWithTable;
+use Sylament\Tables\Filters\Indicator;
 use Sylament\Tables\Table;
 
 /**
@@ -65,6 +66,11 @@ final class BareTableHost implements InteractsWithTable
     }
 
     public function getTableRecordsPerPage(): int|string|null
+    {
+        return null;
+    }
+
+    public function getTableSearchIndicator(): ?Indicator
     {
         return null;
     }

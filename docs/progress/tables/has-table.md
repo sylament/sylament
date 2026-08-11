@@ -94,7 +94,7 @@ instead.
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
 | [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-six-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#the-missing-data-source-error-does-not-name-relationship) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
-| [`InteractsWithTable` — nine methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-nine-methods-of-filaments-forty-six) |
+| [`InteractsWithTable` — ten methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-ten-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | — |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
@@ -589,17 +589,22 @@ Two members of Filament's do not port. The `generate_search_term_expression()` /
 assembly, replaced by
 [`SearchConstraint::like()`](../../../packages/tables/src/Query/SearchConstraint.php)
 and its [narrower reach](table.md#the-default-search-comparison-assumes-a-string-typed-field).
-The search **indicators** (`getTableSearchIndicator()`,
-`getTableColumnSearchIndicators()`) return `Filters\Indicator` objects and wait on
-the filter layer that defines that class. On the records lane none of this runs:
+Of the search **indicators**, the global one ships —
+`getTableSearchIndicator()` mints the `Filters\Indicator` chip for the current
+term, labelled `Search: <term>` (Filament's
+`filament-tables::table.fields.search.indicator` at its English value,
+[hardcoded like the rest of the copy](table.md#the-empty-state-heading-hardcodes-no-records)),
+and is the [tenth contract method](#the-contract-is-ten-methods-of-filaments-forty-six)
+— while `getTableColumnSearchIndicators()` waits on per-column search with the
+rest of that half. On the records lane none of this runs:
 the `search` injection hands the closure a string and the closure decides what
 matching means.
 
-### The contract is nine methods of Filament's forty-six
+### The contract is ten methods of Filament's forty-six
 
 `Contracts\HasTable` declares 46 methods — the full host API a Filament table,
 column, filter, action, or test helper may call back into. Sylament's
-`InteractsWithTable` declares the nine the shipped surface actually calls:
+`InteractsWithTable` declares the ten the shipped surface actually calls:
 `getTable()` (the template and the column layer need the table from the host),
 `getTableRecords()` (which [`Table::getRecords()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
 delegates to), and three that arrived with the record-action lane (M1 · 6) —
@@ -610,7 +615,7 @@ through the contract rather than reaching into the trait,
 [`Table::getRecordKey()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
 delegates to so a template can address the row it is rendering, and
 `getTableHostId()`, which the partial reads directly off the host to prefix its
-row and cell ids. The table upgrades epic added the last four, every one of them
+row and cell ids. The table upgrades epic added the next four, every one of them
 because a **template** reads it: `getTableSortColumn()` and
 `getTableSortDirection()` (which `Table::getSortColumn()` / `getSortDirection()`
 delegate to, so a header cell can render its own `aria-sort`),
@@ -625,21 +630,34 @@ interface. The test scans the shipped templates for `getLiveComponent.<method>`
 and fails unless the contract declares it — which is how that method was found
 missing after the first pass declared eight.
 
+The filter layer added the tenth, `getTableSearchIndicator()`, and it is the
+first member no template reads. `Table::getSearchIndicator()` — what the
+indicators row calls for the global-search chip — delegates to the host, and
+`Table::getLiveComponent()` is typed `InteractsWithTable`, so at PHPStan level
+max the delegate cannot compile against a method the interface does not declare.
+It is the minimum that buys that: the return is **nullable**, which is what lets
+Filament's separate `hasSearch()` gate stay off the contract — null *is* "nothing
+is searched for" — and the writable `$tableSearch` prop stays off it too, since
+the host mints the chip rather than exposing the term. The raw state a host holds
+is never the contract's business; what a shipped consumer calls is.
+
 The contract grows a method at a time as the
 features that need it land — a host must be able to satisfy it, so declaring the
 pagination, filter and bulk-selection halves before those exist would force every
 consumer to stub methods nothing calls. The Doctrine query lane added **none**:
 every member it shipped — the three filtered-query seams, the query-lane record
 resolution, `getAllTableRecordsCount()` — is called from inside the trait, from a
-test, or not yet at all, and no template reads one off `getLiveComponent`. So the
-count stays at nine, and `getAllTableRecordsCount()` is the clearest case of the
-rule at work: Filament's contract declares it, and
+test, or not yet at all, and no template reads one off `getLiveComponent`. So
+that lane left the count where it found it, and `getAllTableRecordsCount()` is
+the clearest case of the rule at work: Filament's contract declares it, and
 [ours will](#the-all-records-count-answers-four-ways-where-filaments-answers-two)
-when a consumer here calls it. Growth is free for implementors while
-`HasTable` supplies every member: every host implementing the contract today —
-the four tables fixtures (`TableHost`, `TableActionsHost`, `SongsTable`,
-`RecordActionsTable`) and the demo's `TableShowcaseCard` — mixes the trait in, so
-an addition reaches them without an edit. This is a **growth order**, not a
+when a consumer here calls it. Growth is nearly free for implementors, because
+`HasTable` supplies every member: every tables fixture that mixes the trait in,
+and the demo's `TableShowcaseCard`, takes an addition without an edit. One
+fixture is deliberately outside that, and costs a stub per growth —
+`BareTableHost` implements the interface **by hand**, to prove a host can satisfy
+the contract without the trait, so each new member lands there as an explicit
+`null` stub. This is a **growth order**, not a
 divergence: the end state is the same set of members, minus whatever the
 Eloquent-only rows above turn out not to need.
 
@@ -1422,7 +1440,7 @@ fall-through counts it.
 Nothing in the package reads the method yet. Filament's two callers are its
 `assertCountTableRecords()` test helper and panels' `ExposesTableToWidgets`,
 which hands the number to a page's widgets; neither is ported. So it stays off
-the [contract](#the-contract-is-nine-methods-of-filaments-forty-six), which grows
+the [contract](#the-contract-is-ten-methods-of-filaments-forty-six), which grows
 only for members a shipped consumer calls, and it ships whole rather than in the
 half the closure lane could have answered on its own.
 

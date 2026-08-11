@@ -14,7 +14,12 @@ plus the extracted `CanBeAside` and `HasContentBefore` — are tracked as rows h
 rather than in files of their own. Shared concerns keep their own rows in the
 [package README](README.md): the label surface is the `HasLabel` concern (also
 used by forms' `Field`), the icon surface is the support `HasIcon`/`HasIconColor`/
-`HasIconSize` trio, and the contained flag is support's `CanBeContained`.
+`HasIconSize` trio, the contained flag is support's `CanBeContained`, and binding
+the box's children to a to-one Doctrine association is
+[`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md),
+shared with `Grid`, `Group` and `Fieldset` — `Section` implements its
+`CanEntangleWithSingularRelationships` contract, and that concern's file carries
+the status of what is and is not ported.
 
 `setUp()` seeds the after-header slot with a closure returning
 `getHeaderActions()` and the footer slot with a closure building an
@@ -26,7 +31,7 @@ four label/content slots to `Size::Small` and the link trigger template
 small size only; header/footer slot actions keep the button default —
 Filament-exact, and an explicit `->button()` on a slot action still wins.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
@@ -40,9 +45,8 @@ Reference — the Filament source this is diffed against:
 ## Surface
 
 Every point of this component and its folded concerns. _Blocked by_ names what
-has to land first. _Detail_ carries either or both: **detail** → the write-up in
-[Details](#details), deleted once the row is **done**; **diverges** → the
-permanent note in [Divergences](#divergences).
+has to land first. _Detail_ carries a **diverges** link to the permanent note in
+[Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -55,7 +59,6 @@ permanent note in [Divergences](#divergences).
 | [Key derivation from heading slug](../../../packages/schemas/src/Components/Section.php) | [`Section::setUp()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [diverges](#the-heading-derived-key-omits-the-state-path-segment) |
 | [Header actions (`HasHeaderActions` + `setUp` seed)](../../../packages/schemas/src/Components/Concerns/HasHeaderActions.php) | [`Concerns/HasHeaderActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeaderActions.php) | done | — | — |
 | [Footer actions + alignment (`HasFooterActions`)](../../../packages/schemas/src/Components/Concerns/HasFooterActions.php) | [`Concerns/HasFooterActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasFooterActions.php) | done | — | — |
-| Singular-relationship entanglement (`EntanglesStateWithSingularRelationship`) | [`Concerns/EntanglesStateWithSingularRelationship.php`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | blocked | schemas state / Doctrine layer | [detail](#singular-relationship-state-entanglement-is-not-ported) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](#extra-alpine-attribute-passthrough-is-not-ported) |
 | [`canConcealComponents()`](../../../packages/schemas/src/Components/Section.php) | [`Section::canConcealComponents()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
 | [`getHeadingsCount()`](../../../packages/schemas/src/Components/Section.php) | [`Section::getHeadingsCount()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | — |
@@ -68,21 +71,6 @@ permanent note in [Divergences](#divergences).
 | [`HasDescription`](../../../packages/schemas/src/Components/Concerns/HasDescription.php) | [`Concerns/HasDescription.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasDescription.php) | done | — | — |
 | [`CanBeAside`](../../../packages/schemas/src/Components/Concerns/CanBeAside.php) | [`Section::aside()` (inline)](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [diverges](#aside-is-extracted-into-a-canbeaside-concern) |
 | [`HasContentBefore`](../../../packages/schemas/src/Components/Concerns/HasContentBefore.php) | [`Section::formBefore()` (inline)](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [diverges](#formbefore-becomes-contentbefore-extracted-into-a-hascontentbefore-concern) |
-
-## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and
-the next step. Delete a subsection when its row flips to **done**; the table row
-and any divergence it earned stay behind.
-
-### Singular-relationship state entanglement is not ported
-
-Filament's `Section` uses `EntanglesStateWithSingularRelationship` and implements
-`CanEntangleWithSingularRelationships`, letting the box bind its children to a
-singular Doctrine/Eloquent relationship. Sylament implements only
-`CanConcealComponents`. **Blocked** on the schemas state loop and the Doctrine
-relationship layer, neither of which exists yet; it returns once `HasState` and
-relationship entanglement land.
 
 ## Divergences
 

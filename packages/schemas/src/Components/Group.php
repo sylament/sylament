@@ -7,11 +7,15 @@ namespace Sylament\Schemas\Components;
 use Closure;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
+use Sylament\Schemas\Components\Concerns\EntanglesStateWithSingularRelationship;
+use Sylament\Schemas\Components\Contracts\CanEntangleWithSingularRelationships;
 use Sylament\Schemas\Schema;
 use Twig\Markup;
 
-class Group extends Component
+class Group extends Component implements CanEntangleWithSingularRelationships
 {
+    use EntanglesStateWithSingularRelationship;
+
     protected string|Closure|null $template = '@SylamentSchemas/partials/Group/index.html.twig';
 
     /**

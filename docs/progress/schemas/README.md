@@ -45,7 +45,7 @@ the layout/content components in
 | [`Component`](../../../packages/schemas/src/Components/Component.php) | [`Components/Component.php`](../../../vendor/filament/schemas/src/Components/Component.php) | in progress | [component.md](component.md) |
 | [`Grid`](../../../packages/schemas/src/Components/Grid.php) | [`Components/Grid.php`](../../../vendor/filament/schemas/src/Components/Grid.php) | done | [grid.md](grid.md) |
 | [`Group`](../../../packages/schemas/src/Components/Group.php) | [`Components/Group.php`](../../../vendor/filament/schemas/src/Components/Group.php) | done | [group.md](group.md) |
-| [`Section`](../../../packages/schemas/src/Components/Section.php) | [`Components/Section.php`](../../../vendor/filament/schemas/src/Components/Section.php) | in progress | [section.md](section.md) |
+| [`Section`](../../../packages/schemas/src/Components/Section.php) | [`Components/Section.php`](../../../vendor/filament/schemas/src/Components/Section.php) | done | [section.md](section.md) |
 | [`Fieldset`](../../../packages/schemas/src/Components/Fieldset.php) | [`Components/Fieldset.php`](../../../vendor/filament/schemas/src/Components/Fieldset.php) | done | [fieldset.md](fieldset.md) |
 | `Flex` | [`Components/Flex.php`](../../../vendor/filament/schemas/src/Components/Flex.php) | todo | — |
 | `FusedGroup` | [`Components/FusedGroup.php`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | todo | — |
@@ -116,7 +116,7 @@ own single-use concerns folded into [`component.md`](component.md).
 | `CanStripCharactersFromState` | [`Components/Concerns/CanStripCharactersFromState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | todo | — |
 | `CanTrimState` | [`Components/Concerns/CanTrimState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanTrimState.php) | todo | — |
 | [`Cloneable`](../../../packages/schemas/src/Components/Concerns/Cloneable.php) | [`Components/Concerns/Cloneable.php`](../../../vendor/filament/schemas/src/Components/Concerns/Cloneable.php) | done | [component.md](component.md#haschildcomponents-only-the-materialization-core-is-ported) |
-| `EntanglesStateWithSingularRelationship` | [`Components/Concerns/EntanglesStateWithSingularRelationship.php`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | todo | — |
+| [`EntanglesStateWithSingularRelationship`](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`Components/Concerns/EntanglesStateWithSingularRelationship.php`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | in progress | [entangles-state-with-singular-relationship.md](entangles-state-with-singular-relationship.md) |
 | [`HasActions`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`Components/Concerns/HasActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | in progress | [has-actions.md](has-actions.md) |
 | `HasContainerGridLayout` | [`Components/Concerns/HasContainerGridLayout.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php) | todo | — |
 | `HasEntryWrapper` | [`Components/Concerns/HasEntryWrapper.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasEntryWrapper.php) | todo | — |
@@ -196,7 +196,7 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php) | [`HasValidationRules.php` (forms)](../../../vendor/filament/forms/src/Components/Contracts/HasValidationRules.php) | done | [can-be-validated.md](can-be-validated.md) |
 | [`ValidationException`](../../../packages/schemas/src/Exceptions/ValidationException.php) | — | done | [can-be-validated.md](can-be-validated.md) |
 | [`PresenceGate`](../../../packages/schemas/src/Validation/PresenceGate.php) + [`ImplicitConstraint`](../../../packages/schemas/src/Validation/Contracts/ImplicitConstraint.php) | — | done | [presence-gate.md](presence-gate.md) |
-| `CanEntangleWithSingularRelationships` | [`Components/Contracts/CanEntangleWithSingularRelationships.php`](../../../vendor/filament/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php) | todo | — |
+| [`CanEntangleWithSingularRelationships`](../../../packages/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php) | [`Components/Contracts/CanEntangleWithSingularRelationships.php`](../../../vendor/filament/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php) | done | [entangles-state-with-singular-relationship.md](entangles-state-with-singular-relationship.md#the-contract-carries-the-two-hook-bodies-not-the-cache-surface) |
 | `ExposesStateToActionData` | [`Components/Contracts/ExposesStateToActionData.php`](../../../vendor/filament/schemas/src/Components/Contracts/ExposesStateToActionData.php) | todo | — |
 | `HasAffixActions` | [`Components/Contracts/HasAffixActions.php`](../../../vendor/filament/schemas/src/Components/Contracts/HasAffixActions.php) | todo | — |
 | `HasExtraItemActions` | [`Components/Contracts/HasExtraItemActions.php`](../../../vendor/filament/schemas/src/Components/Contracts/HasExtraItemActions.php) | todo | — |

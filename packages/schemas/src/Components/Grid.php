@@ -5,9 +5,13 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components;
 
 use Closure;
+use Sylament\Schemas\Components\Concerns\EntanglesStateWithSingularRelationship;
+use Sylament\Schemas\Components\Contracts\CanEntangleWithSingularRelationships;
 
-class Grid extends Component
+class Grid extends Component implements CanEntangleWithSingularRelationships
 {
+    use EntanglesStateWithSingularRelationship;
+
     protected string|Closure|null $template = '@SylamentSchemas/partials/Grid/index.html.twig';
 
     /**

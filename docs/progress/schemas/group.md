@@ -8,6 +8,12 @@ is that a `Group` claims one cell of the outer grid and stacks everything inside
 it — which is the whole point of the component, and what makes it the way to keep
 a run of fields together inside a wider layout.
 
+It composes the shared
+[`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md)
+concern and implements its `CanEntangleWithSingularRelationships` contract, so
+`Group::make()->relationship('profile')` binds its children to a to-one Doctrine
+association; that concern's file carries the status of what is and is not ported.
+
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -51,13 +57,6 @@ Tailwind preflight identifies Sylament markup — and `sy-sc-group` follows the
 hook-class convention the rest of the port uses. Both are inert today; no CSS
 rule matches either. (Filament renders `Group` through the shared grid view,
 which is why [`grid.md`](grid.md) records the one-template-each split.)
-
-### Relationship entanglement is not ported
-
-Filament's `Group` implements `CanEntangleWithSingularRelationships` and uses
-`EntanglesStateWithSingularRelationship`. Both are blocked on the Doctrine
-relationship layer, which M1 defers; they return together with
-`saveRelationships()` / `loadStateFromRelationships()`.
 
 ### `make()` takes the full `components()` union
 

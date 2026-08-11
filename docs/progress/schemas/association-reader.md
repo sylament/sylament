@@ -171,10 +171,17 @@ leaves a dropped child out of the desired list and lets the mapping's
 `orphanRemoval` delete it, refusing an association that declares none rather
 than deleting on its own authority — because the mapping is where ownership is
 declared, and a form layer issuing DELETEs against a mapping that says "merely
-detach" is the data-loss shape `isOrphanRemoval` exists to warn about. So
-`remove()` stands unused today, kept for the caller that must delete a record no
-mapping owns; it is a seam, not dead weight, and the reasoning above is why it
-was built before its consumer rather than after.
+detach" is the data-loss shape `isOrphanRemoval` exists to warn about.
+
+Its caller is the one anticipated above: the record no mapping owns. A layout
+component
+[entangled with a to-one association](entangles-state-with-singular-relationship.md#a-switched-off-relationship-nulls-the-property-and-removes-the-record-explicitly)
+whose `relationship()` condition evaluates false nulls the property and calls
+`remove()` on what was there, `orphanRemoval` or not — the developer declared
+that this related record must not exist, which is a different statement from an
+end user dropping an item out of a list. Nulling alone would not even reach the
+database on an inverse side, so the explicit call is what makes the outcome
+independent of which side of the association the component is declared on.
 
 ### The owning-side and orphan-removal flags are what a writer needs, not trivia
 

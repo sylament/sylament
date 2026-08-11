@@ -9,6 +9,13 @@ component, which the schemas partial bridges onto. Like `Grid` and
 [`Group`](group.md) it builds no grid of its own; `setUp()`'s `columns(2)` lands
 on the child [`Schema`](schema.md), which resolves the actual layout.
 
+It composes the shared
+[`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md)
+concern and implements its `CanEntangleWithSingularRelationships` contract, so
+`Fieldset::make()->relationship('profile')` binds its children to a to-one
+Doctrine association; that concern's file carries the status of what is and is
+not ported.
+
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -100,13 +107,6 @@ receiver holding the id overrides the extras it is passed). The partial therefor
 spreads `{id: component.getId}` over the flattened map **last**, which is the
 same last-source-wins placement [`Section`](section.md)'s `attrs()` call uses and
 which [`Grid`](grid.md) and [`Group`](group.md) repeat.
-
-### Relationship entanglement is not ported
-
-Filament's `Fieldset` implements `CanEntangleWithSingularRelationships` and uses
-`EntanglesStateWithSingularRelationship`. Both are blocked on the Doctrine
-relationship layer, which M1 defers; they return together with
-`saveRelationships()` / `loadStateFromRelationships()`.
 
 _See also: the global [rename table](../renames.md) — `make()` arguments moving
 from constructors to setters, the `toEmbeddedHtml()` → Twig-template render

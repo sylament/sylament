@@ -139,6 +139,17 @@ trait BelongsToRecord
                 continue;
             }
 
+            $claimant = $map[$recordPath] ?? null;
+
+            if (($claimant instanceof Component) && ($ownsSubtree || $claimant->ownsRecordSubtree())) {
+                throw new LogicException(sprintf(
+                    '%s and %s both map record path "%s", which one of them maps wholesale — the walks route a path through a single component, so the other would neither fill nor save. Give one of them a different state path; two components entangling the same relationship() are not merged, so declare it on one of them and nest every field it maps inside that one.',
+                    $claimant::class,
+                    $component::class,
+                    $recordPath,
+                ));
+            }
+
             $map[$recordPath] = $component;
 
             if ($ownsSubtree) {

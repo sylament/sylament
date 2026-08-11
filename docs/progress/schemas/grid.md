@@ -9,6 +9,12 @@ that map into the `sy-grid-cols` classes plus the inline `--cols-*` custom
 properties. So `Grid::make(3)` contributes a column map and a `<div>` carrying
 its id and extra attributes; the layout is the child schema's doing.
 
+It composes the shared
+[`EntanglesStateWithSingularRelationship`](entangles-state-with-singular-relationship.md)
+concern and implements its `CanEntangleWithSingularRelationships` contract, so
+`Grid::make()->relationship('profile')` binds its children to a to-one Doctrine
+association; that concern's file carries the status of what is and is not ported.
+
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -62,13 +68,6 @@ Filament points both components' `publishedViewOverrideCheckPath` at
 The port's per-component template layout gives each its own
 `partials/<Name>/index.html.twig`, which is what lets each name its own hook
 class ([`group.md`](group.md) records Group's side).
-
-### Relationship entanglement is not ported
-
-Filament's `Grid` implements `CanEntangleWithSingularRelationships` and uses
-`EntanglesStateWithSingularRelationship`. Both are blocked on the Doctrine
-relationship layer, which M1 defers; they return together with
-`saveRelationships()` / `loadStateFromRelationships()`.
 
 ### `make()` accepts a `Closure`, where Filament's constructor does not
 

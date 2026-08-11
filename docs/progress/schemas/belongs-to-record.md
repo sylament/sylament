@@ -75,7 +75,7 @@ Sylament-only.
 | [`getRecord(bool $withContainerRecord = true)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`getRecord()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-record-type-probe-is-instanceof-not-a-model-gate) |
 | [`getRecordInstance()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
 | [`getRecordStatePath()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it) |
-| [`ownsRecordSubtree()`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | — | done | — | [diverges](#a-component-can-own-its-whole-record-subtree) |
+| [`ownsRecordSubtree()`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | — | done | — | [diverges](#a-component-can-own-its-whole-record-subtree) · [semantics](#two-components-cannot-both-map-one-record-path-wholesale) |
 | [`nullWhenBlank()` / `isNullableBranch()` / `shouldNullBranch()` / `isBlankStateValue()`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#the-built-in-blank-test-asks-the-branchs-own-leaves) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [diverges](#a-nullwhenblank-closure-sees-two-different-bags) · [diverges](#a-doctrine-embeddable-cannot-be-nulled) |
 | [`loadStateFromRelationshipsUsing()` / `hasLoadStateFromRelationships()` / `loadStateFromRelationships(object $record)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`loadStateFromRelationshipsUsing()` / `loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#a-hook-the-record-path-map-does-not-carry-is-refused) |
 | [`saveRelationshipsUsing()` / `hasSaveRelationships()` / `saveRelationships(object $record, mixed $state)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`saveRelationshipsUsing()` / `saveRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#a-hook-the-record-path-map-does-not-carry-is-refused) · [semantics](#nullwhenblank-cannot-compose-with-a-save-hook) |
@@ -225,6 +225,22 @@ tests membership after the owner pass, so it costs no extra traversal and sees
 the map exactly as the two edges will consult it. It fires from `fill()` as well
 as `getData()` — both go through the map — so a misconfigured hook is reported
 on the first render, not first on submit.
+
+### Two components cannot both map one record path wholesale
+
+The map is keyed by record path, so two components claiming the same one would
+leave the second silently replacing the first — and where one of them
+[owns its subtree](#a-component-can-own-its-whole-record-subtree), what is lost
+is not a shared leaf but a whole branch that one of the two would stop filling
+and saving without a trace. `getRecordPathMap()` refuses the pair, naming both
+classes and the path. Two path-bearing components sharing a record path where
+**neither** owns a subtree are untouched: that is the ordinary case of two fields
+bound to one property, and both still write it.
+
+The shape a user meets this in is
+[two layout components entangling one relationship](entangles-state-with-singular-relationship.md#two-components-entangling-one-relationship-throw-rather-than-merge),
+which Filament merges instead; that file carries the decision and what would
+reverse it.
 
 ### `nullWhenBlank()` cannot compose with a save hook
 

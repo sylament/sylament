@@ -12,6 +12,7 @@ use Stringable;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Support\ArrayRecord;
 use Sylament\Support\Pagination\Paginator;
+use Sylament\Tables\Query\JoinCardinality;
 use Sylament\Tables\Table;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -183,7 +184,7 @@ trait HasTable
             $query = $this->getFilteredTableQuery();
 
             if ($query instanceof QueryBuilder) {
-                return new DoctrinePaginator($query->getQuery(), $query->getDQLPart('join') !== [])->count();
+                return new DoctrinePaginator($query->getQuery(), JoinCardinality::joinsCollection($query))->count();
             }
         }
 

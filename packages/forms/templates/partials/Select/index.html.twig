@@ -1,9 +1,12 @@
+{% set state = component.getState %}
+
 <twig:SylamentForms:FieldWrapper :field="component">
     <select {{ attrs({
         class: 'sy-fo-select',
         id: component.getId,
         name: component.getName,
         'data-model': component.getDataModel,
+        multiple: component.isMultiple,
         required: component.isMarkedAsRequired,
         'aria-invalid': component.getErrorMessages is not empty,
         disabled: component.isDisabled,
@@ -19,6 +22,7 @@
                     {% for groupedValue, groupedLabel in label %}
                         <option {{ attrs({
                             value: groupedValue,
+                            selected: state is iterable ? groupedValue in state : (state is not null and groupedValue == state),
                             disabled: component.isOptionDisabled(groupedValue, groupedLabel),
                         }) }}>{{ groupedLabel }}</option>
                     {% endfor %}
@@ -26,6 +30,7 @@
             {% else %}
                 <option {{ attrs({
                     value: value,
+                    selected: state is iterable ? value in state : (state is not null and value == state),
                     disabled: component.isOptionDisabled(value, label),
                 }) }}>{{ label }}</option>
             {% endif %}

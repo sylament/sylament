@@ -8,9 +8,10 @@ option map. It composes three single-use concerns
 plus the
 [`Contracts\CanDisableOptions`](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php)
 interface, casts its state through schemas'
-[`OptionStateCast`](../schemas/README.md), and appends a Symfony `Choice`
-constraint over its enabled options so a tampered payload is rejected
-server-side.
+[`OptionStateCast`](../schemas/option-state-cast.md) — or, under `multiple()`,
+[`OptionsArrayStateCast`](../schemas/options-array-state-cast.md) — and appends a
+Symfony `Choice` constraint over its enabled options so a tampered payload is
+rejected server-side.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -33,7 +34,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Native `<select>` rendering | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [diverges](#canbenative-is-not-ported) · [diverges](#the-default-placeholder-is-an-untranslated-literal) |
+| Native `<select>` rendering | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-template-renders-the-selected-state-itself) · [diverges](#canbenative-is-not-ported) · [diverges](#the-default-placeholder-is-an-untranslated-literal) |
 | [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | in progress | HasEnum | [diverges](#hasoptions-drops-the-enum-class-string-arm) |
 | [`CanSelectPlaceholder`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php) | [`Concerns/CanSelectPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/CanSelectPlaceholder.php) | done | — | [diverges](#disableplaceholderselection-is-not-ported) |
 | [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) | [`Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [diverges](#a-null-callback-merges-to-nothing) |
@@ -43,7 +44,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | `getOptionLabel()` | [`resolveOptionLabel()`](../../../vendor/filament/forms/src/Components/Select.php) | in progress | relationship layer | [detail](#getoptionlabel-omits-the-getoptionlabelusing-arm) |
 | Option validation (`Choice`) | [`getInValidationRuleValues()`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-choice-constraint-is-the-fields-only-server-side-guard) |
 | `CanBeNative` | [`Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | blocked | the JS select control | [diverges](#canbenative-is-not-ported) |
-| `multiple()` / `OptionsArrayStateCast` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | array state mapping in `getData()` | — |
+| `multiple()` / [`OptionsArrayStateCast`](../schemas/options-array-state-cast.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#a-multiple-select-validates-element-by-element) · [diverges](#multiple-renders-a-native-multi-select-and-nothing-else) |
 | `searchable()` / `preload()` / `HasLoadingMessage` | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | todo | the JS select control | — |
 | `relationship()` / create + edit option actions | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | the Doctrine relation layer | — |
 | `allowHtml()` | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | todo | — | — |
@@ -59,7 +60,13 @@ and boolean options, the no-options `LogicException` and the `Choice` guard — 
 tampered-value, disabled-option and int-keyed cases plus both stored forms of a
 `boolean()` option, all run through the container's real validator — and the
 extra input attributes reaching the `<select>` rather than its `<option>`s — by
-[`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php).
+[`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php);
+the multi-value arm — `multiple()` as literal, `false` and closure, the cast
+swap (and a custom cast still winning), the state round-trip, the
+`Choice(multiple: true)` guard against a tampered element, the empty-selection
+and no-options cases, and the rendered `multiple` attribute with its selected
+options in both the flat and the grouped shape — by
+[`SelectMultipleTest`](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php).
 
 ## Details
 
@@ -143,10 +150,60 @@ stores `int 1`, the choices are `[1, '1', 0, '0']` — without the string arm a
 browser. Nothing is loosened by the extra arm: `Choice` stays strict and a
 tampered or disabled value is still absent from the list.
 
+### A multiple select validates element by element
+
+`multiple()` swaps the field's default cast for
+[`OptionsArrayStateCast`](../schemas/options-array-state-cast.md), so the state is
+a list and the `Choice` gains `multiple: true` — which is what makes Symfony
+validate each submitted element against the choices instead of the array as a
+whole. Three consequences worth stating, because each looks like an omission in
+the code:
+
+- **An empty selection builds no constraint.** The builder's existing
+  `blank($this->getState())` early return already covers it —
+  [`blank([])`](../support/helpers.md) is true — so the empty-selection case
+  needs no branch of its own, and validation of "must this field be filled?"
+  stays with the presence/required layer where it belongs.
+- **The choices stay scalar.** `getEnabledOptionValues()` runs each option key
+  through the cast chain, and a multi-value cast turns one key into a
+  *one-element list*; the builder spreads that list rather than pushing it, since
+  `Choice(multiple: true)` compares elements and a value wrapped in an array
+  would match nothing. Both stored forms of a key are still emitted — the
+  reasoning is [unchanged](#the-choice-choices-cover-both-forms-the-raw-state-can-take).
+- **The cast is non-nullable.** `OptionsArrayStateCast(isNullable: false)` writes
+  `[]` for an empty selection, not `null`, so the host's bag keeps an array the
+  template can iterate and the browser can write back.
+
+### The template renders the selected state itself
+
+The template emits `selected` per option, comparing the option's key against
+`getState()` — `in` when the state is a list, a loose `==` otherwise. For a
+single select this is redundant with the live binding on a first render and
+becomes load-bearing on any server-rendered non-live one; for a multiple select
+there is no alternative, since a multi-select's value cannot be expressed as an
+attribute at all. The comparison is deliberately loose because the two sides
+speak different vocabularies — an option key is an `int` where the state may hold
+the `'1'` a browser submitted — the same mismatch
+[`getEnabledOptionValues()`](#the-choice-choices-cover-both-forms-the-raw-state-can-take)
+answers on the validation side. Nothing is loosened security-wise: `selected` is
+presentation, and the strict `Choice` is what admits or rejects a value.
+
 ## Divergences
 
 Deliberate deviations from Filament, and the reason each holds. Provisional ones
 say what would reverse them.
+
+### `multiple()` renders a native multi-select and nothing else
+
+In Filament `multiple()` is coupled to the Choices.js control: it forces
+`native(false)` territory, drives tag-style rendering, and switches
+`dehydrated()` off for the relationship arm. The port carries only the parts that
+are meaningful for a native `<select multiple>` — the state cast swap, the
+`multiple` attribute, the multi-value `Choice`, and the selected state — because
+[`CanBeNative` is not ported](#canbenative-is-not-ported). The affordances that
+belong to the JS control (searchable, `maxItems`, option reordering) land with
+it, as does Filament's `dehydrated(false)` arm, which exists for the
+relationship-saving path rather than for multi-value state.
 
 ### `CanBeNative` is not ported
 

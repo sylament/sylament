@@ -189,7 +189,7 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | `NumberStateCast` | [`Components/StateCasts/NumberStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/NumberStateCast.php) | todo | — |
 | [`ObjectStateCast`](../../../packages/schemas/src/State/Casts/ObjectStateCast.php) | — | done | [object-state-cast.md](object-state-cast.md) |
 | [`OptionStateCast`](../../../packages/schemas/src/State/Casts/OptionStateCast.php) | [`Components/StateCasts/OptionStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/OptionStateCast.php) | done | [option-state-cast.md](option-state-cast.md) |
-| `OptionsArrayStateCast` | [`Components/StateCasts/OptionsArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/OptionsArrayStateCast.php) | todo | — |
+| [`OptionsArrayStateCast`](../../../packages/schemas/src/State/Casts/OptionsArrayStateCast.php) | [`Components/StateCasts/OptionsArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/OptionsArrayStateCast.php) | done | [options-array-state-cast.md](options-array-state-cast.md) |
 | `SliderStateCast` | [`Components/StateCasts/SliderStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/SliderStateCast.php) | todo | — |
 | `StripCharactersStateCast` | [`Components/StateCasts/StripCharactersStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/StripCharactersStateCast.php) | todo | — |
 | [`CanConcealComponents`](../../../packages/schemas/src/Components/Contracts/CanConcealComponents.php) | [`Components/Contracts/CanConcealComponents.php`](../../../vendor/filament/schemas/src/Components/Contracts/CanConcealComponents.php) | done | — |

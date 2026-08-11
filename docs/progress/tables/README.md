@@ -147,7 +147,7 @@ milestone.
 | Filters / QueryBuilder | [`Filters/QueryBuilder.php`](../../../vendor/filament/tables/src/Filters/QueryBuilder.php) | todo | — |
 | Filters / QueryBuilder / Constraints | [`Filters/QueryBuilder/Constraints/`](../../../vendor/filament/tables/src/Filters/QueryBuilder/Constraints) | todo | — |
 | [Filters / SelectFilter](../../../packages/tables/src/Filters/SelectFilter.php) | [`Filters/SelectFilter.php`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | in progress | [select-filter.md](select-filter.md) |
-| Filters / TernaryFilter | [`Filters/TernaryFilter.php`](../../../vendor/filament/tables/src/Filters/TernaryFilter.php) | todo | — |
+| [Filters / TernaryFilter](../../../packages/tables/src/Filters/TernaryFilter.php) | [`Filters/TernaryFilter.php`](../../../vendor/filament/tables/src/Filters/TernaryFilter.php) | in progress | [ternary-filter.md](ternary-filter.md) |
 | Filters / TrashedFilter | [`Filters/TrashedFilter.php`](../../../vendor/filament/tables/src/Filters/TrashedFilter.php) | todo | — |
 | Grouping / Group | [`Grouping/Group.php`](../../../vendor/filament/tables/src/Grouping/Group.php) | todo | — |
 | IconColumn | [`Columns/IconColumn.php`](../../../vendor/filament/tables/src/Columns/IconColumn.php) | todo | — |

@@ -26,7 +26,9 @@ class Song
         #[ORM\Column]
         private int $plays,
         #[ORM\ManyToOne(targetEntity: Artist::class, inversedBy: 'songs')]
-        private ?Artist $artist = null
+        private ?Artist $artist = null,
+        #[ORM\Column(nullable: true)]
+        private ?bool $isFeatured = null
     ) {
         $this->genres = new ArrayCollection();
     }
@@ -49,6 +51,11 @@ class Song
     public function getArtist(): ?Artist
     {
         return $this->artist;
+    }
+
+    public function isFeatured(): ?bool
+    {
+        return $this->isFeatured;
     }
 
     /**

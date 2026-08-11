@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Tables\Query;
 
 use Closure;
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\ParameterType;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\QueryBuilder;
@@ -64,6 +66,85 @@ final class AggregateQuery
         }
 
         return self::readValues($query, $recordClass);
+    }
+
+    /**
+     * The same declared aggregate as a correlated subselect on the page query,
+     * selected `AS HIDDEN` so the ordering can name it while hydration never
+     * sees it: the page's rows stay the plain entities they were, and only the
+     * sorted clone carries the select.
+     *
+     * The subselect is built the way {@see fetch()} builds its batch — inner
+     * joins along the declared path, the scope closure arriving already bound
+     * and handed the builder with the alias of the path's last hop — correlated
+     * to the outer row by identifier rather than narrowed to a key list. What
+     * an empty related set reads as is the aggregate's own answer here: a count
+     * over no rows is 0, every other function is null, so the two lanes agree
+     * with the defaults the cells fill in.
+     *
+     * Whatever the scope bound onto the sub-builder is transferred to the outer
+     * query, which is the one executed — the subselect travels as DQL text and
+     * its parameter bag does not come with it.
+     *
+     * @param class-string $recordClass
+     *
+     * @return string the hidden alias the caller orders by
+     *
+     * @throws LogicException when the record class carries a composite
+     *                        identifier, which no single column correlates
+     */
+    public static function addHiddenSortSelect(QueryBuilder $query, string $recordClass, AggregateDeclaration $declaration): string
+    {
+        $entityManager = $query->getEntityManager();
+
+        try {
+            $identifier = $entityManager->getClassMetadata($recordClass)->getSingleIdentifierFieldName();
+        } catch (MappingException) {
+            throw new LogicException(sprintf('Cannot sort by an aggregate over [%s]: the record class [%s] has a composite identifier.', $declaration->relationshipPath, $recordClass));
+        }
+
+        $rootAlias = $query->getRootAliases()[0]
+            ?? throw new LogicException(sprintf('Cannot sort by an aggregate over [%s]: the table query has no root alias to correlate it against.', $declaration->relationshipPath));
+
+        $selectPart = $query->getDQLPart('select');
+        $seed = count(is_array($selectPart) ? $selectPart : []);
+        $subAlias = "sy_ag{$seed}";
+        $alias = "sy_agg{$seed}";
+
+        $subQuery = $entityManager->createQueryBuilder()->from($recordClass, $subAlias);
+        $joinAlias = $subAlias;
+
+        foreach (explode('.', $declaration->relationshipPath) as $index => $segment) {
+            $next = "{$subAlias}_{$index}";
+
+            $subQuery->join("{$joinAlias}.{$segment}", $next);
+
+            $joinAlias = $next;
+        }
+
+        $expression = $declaration->column === null ? $joinAlias : "{$joinAlias}.{$declaration->column}";
+
+        $subQuery
+            ->select("{$declaration->function}({$expression})")
+            ->where("{$subAlias}.{$identifier} = {$rootAlias}.{$identifier}");
+
+        if ($declaration->scope instanceof Closure) {
+            ($declaration->scope)($subQuery, $joinAlias);
+        }
+
+        foreach ($subQuery->getParameters() as $parameter) {
+            $type = $parameter->getType();
+
+            if (!$type instanceof ParameterType && !$type instanceof ArrayParameterType && !is_string($type) && !is_int($type)) {
+                $type = null;
+            }
+
+            $query->setParameter($parameter->getName(), $parameter->getValue(), $type);
+        }
+
+        $query->addSelect("({$subQuery->getDQL()}) AS HIDDEN {$alias}");
+
+        return $alias;
     }
 
     /**

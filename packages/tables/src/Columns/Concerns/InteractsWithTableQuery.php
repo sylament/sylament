@@ -9,6 +9,8 @@ use Doctrine\ORM\Query\Expr\Orx;
 use Doctrine\ORM\Query\Expr\Select;
 use Doctrine\ORM\QueryBuilder;
 use Stringable;
+use Sylament\Tables\Query\AggregateDeclaration;
+use Sylament\Tables\Query\AggregateQuery;
 use Sylament\Tables\Query\ColumnPathResolver;
 use Sylament\Tables\Query\RelationJoiner;
 use Sylament\Tables\Query\RelationPathResolver;
@@ -26,6 +28,18 @@ trait InteractsWithTableQuery
             ]);
 
             return $query;
+        }
+
+        $declaration = $this->getCellAggregateDeclaration();
+
+        if ($declaration instanceof AggregateDeclaration) {
+            $recordClass = $this->getTable()->getRecordClass();
+
+            if ($recordClass !== null) {
+                $query->addOrderBy(AggregateQuery::addHiddenSortSelect($query, $recordClass, $this->bindAggregateScope($declaration)), $direction);
+
+                return $query;
+            }
         }
 
         foreach ($this->getSortColumns() as $sortColumn) {
@@ -112,6 +126,28 @@ trait InteractsWithTableQuery
         }
 
         return $selected;
+    }
+
+    /**
+     * The same declaration with its scope closure bound to this column's
+     * evaluator, so the aggregate lane hands the query builder to a closure
+     * that reads its injections exactly as the cell-filling batch does.
+     */
+    private function bindAggregateScope(AggregateDeclaration $declaration): AggregateDeclaration
+    {
+        $scope = $declaration->scope;
+
+        if (!$scope instanceof Closure) {
+            return $declaration;
+        }
+
+        return new AggregateDeclaration(
+            function: $declaration->function,
+            relationshipPath: $declaration->relationshipPath,
+            column: $declaration->column,
+            scope: fn (QueryBuilder $query, string $alias): mixed => $this->evaluate($scope, ['alias' => $alias, 'query' => $query]),
+            castToBool: $declaration->castToBool,
+        );
     }
 
     /**

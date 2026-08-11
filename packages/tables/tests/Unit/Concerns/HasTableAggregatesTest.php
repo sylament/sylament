@@ -60,6 +60,56 @@ function artistTableHost(EntityManager $entityManager, array $columns, int|strin
 }
 
 /**
+ * Four artists whose song counts run against their id order — Adele 1,
+ * Radiohead 3, Sade 0, Björk 2 — so an id-ordered page and a count-ordered one
+ * can never be mistaken for each other.
+ */
+function artistsBySongCount(?RecordingMiddleware $recorder = null): EntityManager
+{
+    $entityManager = EntityManagerFactory::create($recorder);
+
+    $adele = new Artist(1, 'Adele');
+    $radiohead = new Artist(2, 'Radiohead');
+    $sade = new Artist(3, 'Sade');
+    $bjork = new Artist(4, 'Björk');
+
+    EntityManagerFactory::seed(
+        $entityManager,
+        $adele,
+        $radiohead,
+        $sade,
+        $bjork,
+        new Song(1, 'Hello', 10, $adele),
+        new Song(2, 'Airbag', 20, $radiohead),
+        new Song(3, 'Let Down', 30, $radiohead),
+        new Song(4, 'No Surprises', 40, $radiohead),
+        new Song(5, 'Jóga', 500, $bjork),
+        new Song(6, 'Hyperballad', 600, $bjork),
+    );
+
+    return $entityManager;
+}
+
+/**
+ * A host over the unordered artist query, so the sort under test is the only
+ * ordering the page has beyond the identifier tiebreak the host appends.
+ *
+ * @param array<Column> $columns
+ */
+function sortedArtistTableHost(EntityManager $entityManager, array $columns, string $sort, int $page = 1, int $recordsPerPage = 2): TableHost
+{
+    $host = new TableHost(fn (Table $table): Table => $table
+        ->query($entityManager->createQueryBuilder()->select('artist')->from(Artist::class, 'artist'))
+        ->columns($columns)
+        ->paginated([$recordsPerPage]));
+
+    $host->tableSort = $sort;
+    $host->tablePage = $page;
+
+    return $host;
+}
+
+/**
  * The named column's cell state on every row of the resolved page.
  *
  * @return list<mixed>
@@ -159,4 +209,128 @@ it("fills on the 'all' per-page arm too", function (): void {
     $host = artistTableHost(artistsWithSongs(), [TextColumn::make('songs_count')->counts('songs')], recordsPerPage: 'all');
 
     expect(aggregateCellStates($host, 'songs_count'))->toBe([2, 0, 1]);
+});
+
+it('sorts by a counts column across a page boundary', function (): void {
+    $entityManager = artistsBySongCount();
+    $columns = static fn (): array => [
+        TextColumn::make('name'),
+        TextColumn::make('songs_count')->counts('songs')->sortable(),
+    ];
+
+    $firstPage = sortedArtistTableHost($entityManager, $columns(), 'songs_count:desc');
+    $secondPage = sortedArtistTableHost($entityManager, $columns(), 'songs_count:desc', page: 2);
+
+    expect(aggregateCellStates($firstPage, 'name'))->toBe(['Radiohead', 'Björk'])
+        ->and(aggregateCellStates($firstPage, 'songs_count'))->toBe([3, 2])
+        ->and(aggregateCellStates($secondPage, 'name'))->toBe(['Adele', 'Sade'])
+        ->and(aggregateCellStates($secondPage, 'songs_count'))->toBe([1, 0])
+        ->and($firstPage->getAllTableRecordsCount())->toBe(4)
+        ->and($secondPage->getAllTableRecordsCount())->toBe(4);
+});
+
+it('sorts ascending with the identifier tiebreak intact', function (): void {
+    $entityManager = artistsBySongCount();
+    $columns = static fn (): array => [
+        TextColumn::make('name'),
+        TextColumn::make('songs_count')->counts('songs')->sortable(),
+    ];
+
+    $firstPage = sortedArtistTableHost($entityManager, $columns(), 'songs_count:asc');
+    $secondPage = sortedArtistTableHost($entityManager, $columns(), 'songs_count:asc', page: 2);
+    $dql = $firstPage->getFilteredSortedTableQuery()?->getDQL();
+
+    expect(aggregateCellStates($firstPage, 'name'))->toBe(['Sade', 'Adele'])
+        ->and(aggregateCellStates($secondPage, 'name'))->toBe(['Björk', 'Radiohead'])
+        ->and(aggregateCellStates($secondPage, 'songs_count'))->toBe([2, 3])
+        ->and($dql)->toContain('AS HIDDEN sy_agg1')
+        ->and($dql)->toContain('ORDER BY sy_agg1 asc, artist.id asc');
+});
+
+it('sorts a fetch-joined collection query through the limit-subquery walker', function (): void {
+    $entityManager = artistsBySongCount();
+    $host = static function (int $page) use ($entityManager): TableHost {
+        $host = new TableHost(fn (Table $table): Table => $table
+            ->query($entityManager->createQueryBuilder()
+                ->select('artist')
+                ->addSelect('song')
+                ->from(Artist::class, 'artist')
+                ->leftJoin('artist.songs', 'song'))
+            ->columns([TextColumn::make('name'), TextColumn::make('songs_count')->counts('songs')->sortable()])
+            ->paginated([2]));
+
+        $host->tableSort = 'songs_count:desc';
+        $host->tablePage = $page;
+
+        return $host;
+    };
+
+    $firstPage = $host(1);
+    $secondPage = $host(2);
+
+    expect(aggregateCellStates($firstPage, 'name'))->toBe(['Radiohead', 'Björk'])
+        ->and(aggregateCellStates($firstPage, 'songs_count'))->toBe([3, 2])
+        ->and(aggregateCellStates($secondPage, 'name'))->toBe(['Adele', 'Sade'])
+        ->and($firstPage->getAllTableRecordsCount())->toBe(4);
+});
+
+it('keeps the count query free of the hidden select', function (): void {
+    $recorder = new RecordingMiddleware();
+    $host = sortedArtistTableHost(
+        artistsBySongCount($recorder),
+        [TextColumn::make('songs_count')->counts('songs')->sortable()],
+        'songs_count:desc',
+    );
+
+    $recorder->reset();
+
+    $total = $host->getAllTableRecordsCount();
+    $statements = $recorder->statements();
+
+    expect($total)->toBe(4)
+        ->and($host->getFilteredSortedTableQuery()?->getDQL())->toContain('AS HIDDEN')
+        ->and($host->getFilteredTableQuery()?->getDQL())->not->toContain('HIDDEN')
+        ->and($statements)->toHaveCount(1)
+        ->and($statements[0])->toContain('COUNT(')
+        ->and($statements[0])->not->toContain('Song')
+        ->and($statements[0])->not->toContain('ORDER BY');
+});
+
+it('carries a scoped aggregate sort and its parameters onto the page query', function (): void {
+    $entityManager = artistsBySongCount();
+    $scope = static fn (string $alias, QueryBuilder $query): QueryBuilder => $query
+        ->andWhere("{$alias}.plays > :sylament_test_plays")
+        ->setParameter('sylament_test_plays', 100);
+    $columns = static fn (): array => [
+        TextColumn::make('name'),
+        TextColumn::make('songs_count')->counts(['songs' => $scope])->sortable(),
+    ];
+
+    $firstPage = sortedArtistTableHost($entityManager, $columns(), 'songs_count:desc');
+    $secondPage = sortedArtistTableHost($entityManager, $columns(), 'songs_count:desc', page: 2);
+
+    expect(aggregateCellStates($firstPage, 'name'))->toBe(['Björk', 'Sade'])
+        ->and(aggregateCellStates($firstPage, 'songs_count'))->toBe([2, 0])
+        ->and(aggregateCellStates($secondPage, 'name'))->toBe(['Radiohead', 'Adele'])
+        ->and(aggregateCellStates($secondPage, 'songs_count'))->toBe([0, 0]);
+});
+
+it('a searched, aggregate-sorted, paginated table stays consistent', function (): void {
+    $entityManager = artistsBySongCount();
+    $columns = static fn (): array => [
+        TextColumn::make('name')->searchable(),
+        TextColumn::make('songs_count')->counts('songs')->sortable(),
+    ];
+
+    $firstPage = sortedArtistTableHost($entityManager, $columns(), 'songs_count:desc');
+    $firstPage->tableSearch = 'a';
+
+    $secondPage = sortedArtistTableHost($entityManager, $columns(), 'songs_count:desc', page: 2);
+    $secondPage->tableSearch = 'a';
+
+    expect(aggregateCellStates($firstPage, 'name'))->toBe(['Radiohead', 'Adele'])
+        ->and(aggregateCellStates($firstPage, 'songs_count'))->toBe([3, 1])
+        ->and(aggregateCellStates($secondPage, 'name'))->toBe(['Sade'])
+        ->and(aggregateCellStates($secondPage, 'songs_count'))->toBe([0])
+        ->and($firstPage->getAllTableRecordsCount())->toBe(3);
 });

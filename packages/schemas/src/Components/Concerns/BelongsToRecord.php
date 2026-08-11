@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
+use Sylament\Schemas\State\AssociationReader;
+use Symfony\Contracts\Service\Attribute\Required;
 
 use function Sylament\Support\filled;
 
@@ -12,6 +14,12 @@ trait BelongsToRecord
 {
     /** @var object|array<string, mixed>|class-string|null */
     protected object|array|string|null $record = null;
+
+    protected ?Closure $loadStateFromRelationshipsUsing = null;
+
+    protected ?Closure $saveRelationshipsUsing = null;
+
+    protected ?AssociationReader $associationReader = null;
 
     /**
      * A bound instance, raw record data, a class-string declaring the class
@@ -114,5 +122,73 @@ trait BelongsToRecord
         }
 
         return null;
+    }
+
+    /**
+     * Take over how this component's record path is read by `fill()`. A path
+     * that declares this bypasses the record read entirely — the object-leaf
+     * skip included — so an association can supply state a property read
+     * cannot.
+     */
+    public function loadStateFromRelationshipsUsing(?Closure $callback): static
+    {
+        $this->loadStateFromRelationshipsUsing = $callback;
+
+        return $this;
+    }
+
+    /**
+     * Take over how this component's record path is written by `getData()`. The
+     * hook owns the write, so neither `setOnRecord()` nor its object-collection
+     * refusal runs for that path.
+     */
+    public function saveRelationshipsUsing(?Closure $callback): static
+    {
+        $this->saveRelationshipsUsing = $callback;
+
+        return $this;
+    }
+
+    public function hasLoadStateFromRelationships(): bool
+    {
+        return $this->loadStateFromRelationshipsUsing !== null;
+    }
+
+    public function hasSaveRelationships(): bool
+    {
+        return $this->saveRelationshipsUsing !== null;
+    }
+
+    /**
+     * @return mixed the state to fill at this component's record path
+     */
+    public function loadStateFromRelationships(object $record): mixed
+    {
+        return $this->evaluate($this->loadStateFromRelationshipsUsing, [
+            'record' => $record,
+        ], [
+            $record::class => $record,
+        ]);
+    }
+
+    public function saveRelationships(object $record, mixed $state): void
+    {
+        $this->evaluate($this->saveRelationshipsUsing, [
+            'record' => $record,
+            'state' => $state,
+        ], [
+            $record::class => $record,
+        ]);
+    }
+
+    #[Required]
+    public function setAssociationReader(AssociationReader $associationReader): void
+    {
+        $this->associationReader = $associationReader;
+    }
+
+    public function getAssociationReader(): AssociationReader
+    {
+        return $this->associationReader ??= new AssociationReader();
     }
 }

@@ -12,7 +12,10 @@ under the record-only vocabulary (see
 object, raw record data, or a class-string, and the two Sylament-only mapping
 edges — the [`fill()`](#fillobject-reads-only-the-paths-the-schema-declares)
 object arm and `getData()` — carry state between that object and the schema's
-state bag. The operation half of the same epic lives in
+state bag. The per-component relationship hooks reroute a path through its own
+component when a plain property read or write cannot express the association
+([the collapse of Filament's third pass](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)).
+The operation half of the same epic lives in
 [`has-operation.md`](has-operation.md).
 
 One further Sylament-only trait is tracked here rather than in a file of its own,
@@ -59,9 +62,9 @@ Sylament-only.
 | [`getNullableBranches()` + the branch pass in `getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [diverges](#a-component-can-own-its-whole-record-subtree) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [semantics](#a-nullable-branch-with-no-state-path-is-refused-not-ignored) · [semantics](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order) |
 | [`fill(object …)` object arm](../../../packages/schemas/src/Concerns/HasState.php) + [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#fillobject-does-not-bind-the-record) |
 | [`$record` property](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`public $model`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-root-record-property-is-protected) |
-| `saveRelationships()` | [`saveRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | blocked | Doctrine relationship-state epic | [detail](#the-relationship-layer-is-not-ported) |
-| `loadStateFromRelationships()` | [`loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | blocked | Doctrine relationship-state epic | [detail](#the-relationship-layer-is-not-ported) |
-| `fillPartially()` object arm | — | blocked | schemas partial-fill port | [detail](#the-relationship-layer-is-not-ported) |
+| `saveRelationships()` | [`saveRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
+| `loadStateFromRelationships()` | [`loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
+| `fillPartially()` object arm | — | blocked | schemas partial-fill port | [detail](#fillpartiallys-object-arm-waits-on-partial-rendering) |
 
 ### Component tier — base `Component`
 
@@ -74,7 +77,12 @@ Sylament-only.
 | [`getRecordStatePath()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it) |
 | [`ownsRecordSubtree()`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | — | done | — | [diverges](#a-component-can-own-its-whole-record-subtree) |
 | [`nullWhenBlank()` / `isNullableBranch()` / `shouldNullBranch()` / `isBlankStateValue()`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#the-built-in-blank-test-asks-the-branchs-own-leaves) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [diverges](#a-nullwhenblank-closure-sees-two-different-bags) · [diverges](#a-doctrine-embeddable-cannot-be-nulled) |
-| Per-component relationship members (`saveRelationships*`, `loadStateFromRelationships`, `castStateAfterLoadingFromRelationships`, the `*Using` setters, `saveRelationshipsWhenDisabled`/`WhenHidden`) | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | blocked | Doctrine relationship-state epic | [detail](#the-relationship-layer-is-not-ported) |
+| [`loadStateFromRelationshipsUsing()` / `hasLoadStateFromRelationships()` / `loadStateFromRelationships(object $record)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`loadStateFromRelationshipsUsing()` / `loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) |
+| [`saveRelationshipsUsing()` / `hasSaveRelationships()` / `saveRelationships(object $record, mixed $state)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`saveRelationshipsUsing()` / `saveRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#nullwhenblank-cannot-compose-with-a-save-hook) |
+| [`setAssociationReader()` / `getAssociationReader()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#every-component-reaches-the-association-reader-through-a-required-setter) |
+| `saveRelationshipsBeforeChildrenUsing()` / `saveRelationshipsBeforeChildren()` | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
+| `saveRelationshipsWhenDisabled()` / `saveRelationshipsWhenHidden()` / their `should*` readers | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-exists-guarded-members-are-not-ported) |
+| `castStateAfterLoadingFromRelationships()` | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
 
 ### Closure injection
 
@@ -162,35 +170,68 @@ round trip through a real live host by
 (`fill($object)` → edited bag → `getData()` returns the same mutated instance;
 a failing validation leaves the record untouched; and the same pair over a
 nested `Post`/`Author` graph — the round trip mutating the associated object in
-place, a failing nested submit leaving it untouched).
+place, a failing nested submit leaving it untouched); and the relationship hooks
+by
+[`Integration/Concerns/BelongsToRecordAssociationTest`](../../../packages/schemas/tests/Integration/Concerns/BelongsToRecordAssociationTest.php)
+(against a Doctrine `Post`: a load hook supplying a path `fill()` would
+otherwise skip as an object-valued leaf, a save hook taking the write off
+`setOnRecord()` while the property its path names stays untouched, an *unhooked*
+object collection still meeting the refusal — the pin that keeps the bypass
+opt-in — the `nullWhenBlank()`-plus-save-hook refusal, and a container-built
+component receiving the container's `AssociationReader` rather than the
+`new`-built fallback).
 
 ## Details
 
-### The relationship layer is not ported
+### `fillPartially()`'s object arm waits on partial rendering
 
-Everything in Filament's trait beyond binding and lookup is relationship
-machinery: the root walks (`saveRelationships()`,
-`loadStateFromRelationships()`) and the per-component members they drive
-(`saveRelationshipsUsing`/`saveRelationshipsBeforeChildrenUsing`/
-`loadStateFromRelationshipsUsing`, `saveRelationshipsWhenDisabled`/`WhenHidden`,
-`castStateAfterLoadingFromRelationships`). Every one of them is Eloquent-shaped
-— the guards read `$this->getRecord()?->exists`, and the callbacks save
-`HasMany`/`BelongsToMany` sets. **Blocked** on the Doctrine relationship-state
-epic, which owns both the `exists` equivalent (an identity-map / `UnitOfWork`
-probe) and the association write side; it is the same prerequisite that blocks
-`CanGetStateFromRelationships`, `EntanglesStateWithSingularRelationship`, and
-constant state ([schema.md](schema.md#hasstate-still-lacks-constant-state-relationships-and-partial-rendering)).
+`fillPartially()`/`hydrateStatePartially()` are not ported at all, blocked on a
+UX LiveComponent partial-render equivalent. The object arm — the one this file
+would own, sourcing a partial fill from a record rather than an array — is a
+one-line addition to whichever epic lands them.
 
-`fillPartially()`'s object arm is listed separately because it waits on a
-different prerequisite: `fillPartially()`/`hydrateStatePartially()` are not
-ported at all, blocked on a UX LiveComponent partial-render equivalent. The
-object arm is a one-line addition to whichever epic lands them.
-
-**Next step:** land the relationship members with the Doctrine
-relationship-state epic (Filament's T6), and the partial-fill arm with the
-partial-render decision.
+**Next step:** land it with the partial-render decision.
 
 ## Semantics
+
+### `nullWhenBlank()` cannot compose with a save hook
+
+A component declaring both `nullWhenBlank()` and `saveRelationshipsUsing()`
+throws a `LogicException` from `getNullableBranches()`, naming the component
+class and the two ways out. This is a v1 refusal rather than a rule about what
+is possible, and the grounds are that the two declarations answer the same
+question differently. The branch pass writes `null` at the branch's own record
+path through the property accessor and then skips every path beneath it — but a
+save hook exists precisely because the accessor cannot write that path, so the
+"null the branch" half would either fail or write past the relationship the hook
+owns. Emptiness for a relationship is the hook's own business: a to-many hook
+clearing its collection and a to-one hook writing `null` both express it inside
+the callback, with the entity manager in reach.
+
+Placed before the state-path check in the same loop, so the conflict is reported
+even when the component also carries no state path — the pair of declarations is
+wrong independently of where it sits.
+
+### Every component reaches the association reader through a `#[Required]` setter
+
+[`AssociationReader`](association-reader.md) is injected onto the component tier
+by a `#[Required]` setter with a `new AssociationReader()` fallback, the same
+idiom [`CanBeValidated`](../forms/can-be-validated.md) uses for
+`RecordTypeReader`: a container-built component gets the container's reader, a
+component built with `new` gets an entity-manager-less one that answers
+`hasEntityManager()` false and throws on everything needing an EM.
+
+The blast radius is worth stating because it is wider than it looks. The trait
+sits on the base `Component`, so **every** schemas component — and every
+component of every package built on schemas — now consumes the reader service,
+where before Task 4 nothing did and the container pruned it. The service's
+`EntityManagerInterface` argument is `nullOnInvalid()` for exactly that reason:
+the schemas bundle boots inside forms', actions', notifications' and tables'
+test kernels, none of which registers Doctrine, and the setter has to autowire
+cleanly there. A container-compile failure in one of those suites is the signal
+that the nullability wiring broke.
+
+
 
 ### The built-in blank test asks the branch's own leaves
 
@@ -641,6 +682,90 @@ the same `shouldNullBranch()`.
 
 Dehydration needs no owner arm of its own: it prunes by own path, which is
 already subtree-safe.
+
+### The relationship hooks are consulted by the two mapping edges, not by a schema-level walk
+
+Filament runs relationships as a **third** pass. `Schema::saveRelationships()`
+and `Schema::loadStateFromRelationships()` walk the component tree calling the
+per-component callbacks, driven from `Schema::getState()` and again by the
+create pages once the model row exists. Sylament has no such walk on either tier
+and does not port one. The two mapping edges already walk the record path map —
+`fill()`
+through `readStateFromRecord()`, `getData()` through its leaf loop — so a hooked
+path is simply routed to its component instead of to the property accessor:
+
+- **`fill()`** — a component answering `hasLoadStateFromRelationships()` supplies
+  the value at its path, bypassing the record read *and* the object-leaf skip.
+  That skip is why the hook is needed at all: an association read returns an
+  entity or a collection, which the fill walk drops.
+- **`getData()`** — a component answering `hasSaveRelationships()` is handed the
+  dehydrated state at its path and owns the write, so `setOnRecord()` and its
+  [object-collection refusal](property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused)
+  never run for it. An **unhooked** collection path still meets that refusal
+  unchanged, which is the guard that keeps the hook opt-in.
+
+Three consequences follow from collapsing the third pass into the two edges.
+
+**The ordering member loses its reason to exist.**
+`saveRelationshipsBeforeChildrenUsing()` is the seam that lets a component write
+its own relationship *before* its child schemas write theirs — Eloquent needs
+the parent row inserted before a child row can carry the foreign key, so a
+nested repeater's items cannot save until the item that owns them has an id.
+Doctrine has no such moment: `getData()` mutates an in-memory graph and the
+caller's single `flush()` sorts the INSERTs itself
+(`UnitOfWork`'s `TopologicalSort` over the association graph). A split hook pair
+would let a user write an ordering Doctrine then re-derives anyway. Skipped, not
+deferred — revisit only if a shape turns up where the *graph mutation* is itself
+order-sensitive.
+
+**Hooks fire at map time, once.** Filament runs its walk twice on an insert —
+from `getState()`, where the per-component `exists` guard suppresses every hook
+because the row is not there yet, and again from the create page after
+`handleRecordCreation()`. Sylament's hooks run inside `getData()`, against the
+in-memory graph, and the caller flushes once afterwards: the whole submission —
+leaves and relationships alike — reaches the database as one transaction, and a
+validation failure throws before any of it, since `getData()` validates first.
+That single-flush shape is the epic's central choice, and it is what makes both
+the second walk and the `exists` guard unnecessary.
+
+**`castStateAfterLoadingFromRelationships()` has no seam to hang on.** In
+Filament it re-casts a component's state after the relationship walk mutated it
+mid-request, because that walk is a separate pass that can land after
+hydration. Here the load hook's value enters the ordinary state array
+`readStateFromRecord()` returns, so `fill()`'s existing `hydrateState()` /
+`callAfterStateHydrated()` / `fillStateWithNull()` sequence already casts it —
+the same array arm a hand-written `fill([...])` takes. Skipped as a member with
+nothing left to do.
+
+### The `exists`-guarded members are not ported
+
+Every one of Filament's relationship guards reduces to `$this->getRecord()
+?->exists` — an Eloquent flag meaning "this model has a database row". The
+save-side pair adds `saveRelationshipsWhenDisabled()` / `WhenHidden()` on top of
+it, whose whole job is to re-admit a component the `exists`/disabled/hidden
+matrix would otherwise skip. None of them is ported, and the reason is that the
+predicate has no Doctrine counterpart worth reproducing.
+
+Doctrine's nearest probe is `UnitOfWork::getEntityState()`, which answers
+`STATE_NEW` / `MANAGED` / `DETACHED` / `REMOVED` — but the answer does not carry
+the meaning `exists` carries. A `MANAGED` entity that was `persist()`ed a moment
+ago and not yet flushed has no row; an entity built with `new` and about to be
+persisted in the same request has no row and will have one before the
+transaction ends. Filament needs the guard because its walk runs from
+`getState()` on create and edit alike, and on a create the parent has no primary
+key yet: the guard turns that first run into a no-op, and the create page runs
+the whole walk again once the row exists. Our hooks run at map time against an
+in-memory graph, where a child assigned to an unflushed parent is exactly what
+Doctrine's commit-order sort is for. Ported here, the guard would be a probe
+whose true answer — "no row yet, but there will be one before the transaction
+ends" — it has no way to express, refusing writes that are correct.
+
+The consequence to state plainly: a hook fires whenever its path is present in
+the dehydrated state, on an insert as readily as on an update. Disabled and
+hidden components are handled where they already are — the dehydration walk
+prunes a hidden subtree, so its path never reaches the leaf loop, and that one
+mechanism replaces both `*WhenDisabled`/`*WhenHidden` opt-ins. Revisit if a real
+shape needs "only on update", which today reads as a condition inside the hook.
 
 ### A missing singular intermediate is constructed from its declared type
 

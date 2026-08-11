@@ -601,9 +601,15 @@ Of the search **indicators**, the global one ships —
 term, labelled `Search: <term>` (Filament's
 `filament-tables::table.fields.search.indicator` at its English value,
 [hardcoded like the rest of the copy](table.md#the-empty-state-heading-hardcodes-no-records)),
-and is the [tenth contract method](#the-contract-is-eleven-methods-of-filaments-forty-six)
-— while `getTableColumnSearchIndicators()` waits on per-column search with the
-rest of that half. On the records lane none of this runs:
+and is the [tenth contract method](#the-contract-is-eleven-methods-of-filaments-forty-six).
+[`Table::getFilterIndicators()`](indicator.md#removal-is-structured-not-a-click-handler-string)
+pairs it with the `resetTableSearch` live action and puts it first in
+[the row](table.md#the-chip-is-a-badge-beside-a-button-because-badge-has-no-delete-slot),
+so the chip's X clears the term and resets the page.
+`getTableColumnSearchIndicators()` still waits — on per-column search rather than
+on the indicator class, the same **todo** row above — and that same
+`getFilterIndicators()` is where its half slots in when it lands, second, ahead
+of the filters' own chips. On the records lane none of this runs:
 the `search` injection hands the closure a string and the closure decides what
 matching means.
 
@@ -655,11 +661,11 @@ reads the form off a `getLiveComponent()` typed as this interface, and at level
 max that call cannot compile until the method is declared here — which is why
 the two shipped in the same change, and why the filter-side reader was held back
 a commit rather than guarded. The second reason is the one that found the
-eighth: the filters panel will read the form off `getLiveComponent` in a
-template, which is exactly what `TemplateHostCallsTest` scans for, so a
-contract-only host would fatal in Twig. That half is not shipped yet — no
-template reads it today — but the member it needs is already declared, so the
-panel lands without touching the interface. The two state bags stay off the contract on the
+eighth: the filters panel reads the form off `getLiveComponent` in a template,
+which is exactly what `TemplateHostCallsTest` scans for, so a contract-only host
+would fatal in Twig. That half has since shipped — the partial's dropdown branch
+is the reader — and it landed without touching the interface, because the member
+it needs was already declared. The two state bags stay off the contract on the
 same grounds as `$tableSearch`: a consumer reads a *slice* through
 `getTableFilterState()` / `getTableFilterFormState()`, never the whole bag, and
 [no getter for either exists at all](#the-filter-bags-are-arrays-never-null-and-carry-no-getters).

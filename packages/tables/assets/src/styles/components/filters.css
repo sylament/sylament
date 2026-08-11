@@ -31,3 +31,23 @@
         @apply pointer-events-none absolute -top-1 -end-1;
     }
 }
+
+.sy-ta-filter-indicators {
+    @apply flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 sm:px-6 dark:border-white/10;
+
+    & .sy-ta-filter-indicators-ctn {
+        @apply flex flex-wrap items-center gap-x-3 gap-y-2;
+    }
+
+    & .sy-ta-filter-indicators-label {
+        @apply text-sm font-medium text-gray-700 dark:text-gray-200;
+    }
+
+    & .sy-ta-filter-indicators-badges-ctn {
+        @apply flex flex-wrap items-center gap-1.5;
+    }
+
+    & .sy-ta-filter-indicator {
+        @apply flex items-center gap-x-1 rounded-md bg-gray-50 pe-1 ring-1 ring-gray-950/5 dark:bg-white/5 dark:ring-white/10;
+    }
+}

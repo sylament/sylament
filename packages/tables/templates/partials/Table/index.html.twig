@@ -11,6 +11,8 @@
 {% set isSearchable = component.isSearchable %}
 {% set isFilterable = component.isFilterable %}
 {% set filtersTriggerVisible = isFilterable and component.hasFiltersDropdown %}
+{% set filterIndicators = component.getFilterIndicators %}
+{% set removableIndicatorCount = filterIndicators|filter(carrier => carrier.indicator.isRemovable)|length %}
 
 {% set recordActionsByKey = component.getVisibleRecordActionsByRecordKey %}
 {% set hasRecordActions = recordActionsByKey|filter(actions => actions is not empty)|length > 0 %}
@@ -83,6 +85,53 @@
                         </twig:SylamentSupport:Dropdown>
                     {% endif %}
                 </div>
+            </div>
+        {% endif %}
+
+        {% if filterIndicators is not empty %}
+            {% set removeAllAttributes = stimulus_action('live', 'action', parameters: {action: 'removeTableFilters'}) %}
+
+            <div class="sy-ta-filter-indicators">
+                <div class="sy-ta-filter-indicators-ctn">
+                    <span class="sy-ta-filter-indicators-label">Active filters</span>
+
+                    <div class="sy-ta-filter-indicators-badges-ctn">
+                        {% for carrier in filterIndicators %}
+                            {% set indicator = carrier.indicator %}
+                            <div class="sy-ta-filter-indicator">
+                                <twig:SylamentSupport:Badge :color="indicator.getColor ?? 'primary'" size="sm">{{ indicator.getLabel }}</twig:SylamentSupport:Badge>
+
+                                {% if indicator.isRemovable %}
+                                    {% set removeAttributes = stimulus_action('live', 'action', parameters: {
+                                        action: carrier.removeAction,
+                                        ...carrier.removeArguments,
+                                    }|filter(value => value is not null)) %}
+
+                                    <twig:SylamentSupport:IconButton
+                                        class="sy-ta-filter-indicator-remove-btn"
+                                        icon="heroicons:x-mark"
+                                        size="xs"
+                                        color="gray"
+                                        label="Remove filter"
+                                        {{ ...removeAttributes }}
+                                    />
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if removableIndicatorCount > 0 %}
+                    <twig:SylamentSupport:IconButton
+                        class="sy-ta-filter-indicators-remove-all-btn"
+                        icon="heroicons:x-mark"
+                        :iconAlias="constant('Sylament\\Tables\\Twig\\TablesIconAlias::FILTERS_REMOVE_ALL_BUTTON')"
+                        size="sm"
+                        color="gray"
+                        label="Remove all filters"
+                        {{ ...removeAllAttributes }}
+                    />
+                {% endif %}
             </div>
         {% endif %}
 

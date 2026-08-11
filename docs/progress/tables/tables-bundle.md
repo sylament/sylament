@@ -102,9 +102,8 @@ overridable icon slot in the whole table builder. Sylament ships **seven** —
 `ACTIONS_FILTER` (the toolbar funnel), `EMPTY_STATE`,
 `FILTERS_REMOVE_ALL_BUTTON` (the indicators row's clear-all button), the three
 `HEADER_CELL_SORT_*` (unsorted, ascending, descending — the sortable header's
-chevron picks one by state) and `SEARCH_FIELD`. Six of those have their
-consuming surface ported; `FILTERS_REMOVE_ALL_BUTTON` is the exception recorded
-below. The remaining 16 all belong to features that are not built yet:
+chevron picks one by state) and `SEARCH_FIELD`. All seven have their consuming
+surface ported. The remaining 16 all belong to features that are not built yet:
 reordering (`ACTIONS_ENABLE_REORDERING`, `ACTIONS_DISABLE_REORDERING`,
 `REORDER_HANDLE`), the filters query builder (the six
 `FILTERS_QUERY_BUILDER_CONSTRAINTS_*`), grouping (`ACTIONS_GROUP`,
@@ -117,16 +116,11 @@ it, so each constant lands in the same change as the component or feature that
 renders its icon — the same growth order
 [`SupportIconAlias`](../support/support-icon-alias.md#badge--breadcrumbs--rtl-aliases)
 follows, and the four that arrived with the sort headers and the search toolbar
-are that order in action. Six of the seven are read by
+are that order in action. All seven are read by
 [the table partial](../../../packages/tables/templates/partials/Table/index.html.twig)
-— `ACTIONS_FILTER` by the filters chrome in its toolbar rather than by the
-table's own rows — so those are overridable end to end.
-
-`FILTERS_REMOVE_ALL_BUTTON` is the one exception to the growth order, and
-deliberately so: it landed with the filters trigger while its consumer, the
-indicators row's clear-all button, is still unbuilt in the same epic. Until that
-row ships, registering an override for it does nothing — no icon reads it. It
-is the only constant here in that state, and the rule holds for every other.
+— `ACTIONS_FILTER` and `FILTERS_REMOVE_ALL_BUTTON` by the filters chrome, in its
+toolbar and its indicators row, rather than by the table's own rows — so every
+one of them is overridable end to end.
 
 ### Asset registration
 

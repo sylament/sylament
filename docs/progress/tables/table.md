@@ -83,6 +83,7 @@ Rows never disappear — only their detail sections do.
 | [Morph-stable row and cell keys](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `wire:key` stamps](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-morph-key-is-an-id-attribute-not-wirekey) · [semantics](#the-row-and-cell-morph-keys-disagree-on-record-vs-records) |
 | [The filters trigger — the toolbar dropdown, the funnel icon button and the active-count badge](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `FiltersLayout::Dropdown` branch](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-trigger-badge-is-composed-in-the-table-partial-because-iconbutton-has-no-slot) |
 | [The filters panel — `<twig:SylamentTables:Filters>`](../../../packages/tables/templates/components/Filters/index.html.twig) | [`views/components/filters.blade.php`](../../../vendor/filament/tables/resources/views/components/filters.blade.php) | done | — | [diverges](#the-panel-is-fixed-chrome-with-no-action-objects-behind-it) |
+| [The indicators row — the active-filters label, the chips and the remove-all button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `fi-ta-filter-indicators` block](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-chip-is-a-badge-beside-a-button-because-badge-has-no-delete-slot) |
 | Pivot record identity — `hasPivotRecordKeys()`, `allowDuplicates()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | skipped | — | The `BelongsToMany` pivot arm — it stays unported with the [relation-scoped table surface](#the-relation-scoped-table-arm-travels-with-relation-managers) it belongs to, and a Doctrine association table carrying payload is an entity of its own rather than a pivot |
 | [`columns()` / `getColumns()` / `getColumn()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) |
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
@@ -106,7 +107,7 @@ Rows never disappear — only their detail sections do.
 | `getExtraSearchableColumnRelationship()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | skipped | — | It answers *is this dotted name's head a relationship*, so Filament's caller can switch to `whereRelation`. Here [one resolution](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) answers that inside `SearchConstraint::forColumn()` for every tier at once, so an extra searchable column crosses an association with nothing to ask first — there is no caller left to hold the branch this member exists to decide |
 | Deferred loading and polling — `deferLoading()`, `poll()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | todo | — | [detail](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
 | [`filters()` / `pushFilters()` / `getFilters()` / `getFilter()` / `getFiltersFormSchema()` / `deferFilters()` / `hasDeferredFilters()` / `filtersLayout()` / `getFiltersLayout()` / `hasFiltersDropdown()` / `filtersFormColumns()` / `getFiltersFormColumns()` / `filtersFormMaxHeight()` / `getFiltersFormMaxHeight()` / `filtersFormWidth()` / `getFiltersFormWidth()` / `filtersResetActionPosition()` / `getFiltersResetActionPosition()` / `isFilterable()` / `getActiveFiltersCount()` / `isFiltered()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) + [`FiltersLayout`](../../../packages/tables/src/Enums/FiltersLayout.php), [`FiltersResetActionPosition`](../../../packages/tables/src/Enums/FiltersResetActionPosition.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php), [`Enums/FiltersLayout`](../../../vendor/filament/tables/src/Enums/FiltersLayout.php), [`Enums/FiltersResetActionPosition`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | in progress | — | [detail](#an-unshipped-filters-layout-is-refused-where-the-chrome-reads-it) · [detail](#the-filters-form-columns-default-to-one-without-filaments-responsive-branch) |
-| [`hiddenFilterIndicators()` / `getFilterIndicators()`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php) | [`Table\Concerns\HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | in progress | — | [indicator.md](indicator.md#removal-is-structured-not-a-click-handler-string) |
+| [`hiddenFilterIndicators()` / `getFilterIndicators()`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php) | [`Table\Concerns\HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | done | — | [indicator.md](indicator.md#removal-is-structured-not-a-click-handler-string) · [has-table.md](has-table.md#search-is-the-global-term-only) |
 | The filters form seam and its chrome actions — `getFiltersForm()`, `filtersFormSchema()`, `filtersTriggerAction()`, `filtersApplyAction()`, `filtersRemoveAllAction()` and their getters | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | todo | — | — |
 | `persistFiltersInSession()` | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | todo | — | The session half of filtering, and the [toolkit-wide omission](has-table.md#no-table-state-is-persisted-in-the-session) recorded on the host side — it returns with that decision rather than with filters, the way the `persistSortInSession()` and `persistSearchInSession()` rows above do |
 | `deselectAllRecordsWhenFiltered()` | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | blocked | table bulk actions | It clears the row **selection** when a filter changes, and there is [no selection to clear](#the-flat-action-map-has-no-bulk-half-and-no-removal) |
@@ -1534,8 +1535,41 @@ this markup makes — throws for every other case, refused where consumed on the
 `PaginationMode::Cursor` pattern. `Hidden` renders no trigger and no panel while
 the filtering itself stays applied: the layout is read in that one template
 branch and nowhere in the query or indicator lanes, so a hidden filter still
-constrains the query and still produces its indicators. Rendering those
-indicators waits on the indicators row.
+constrains the query and still produces its indicators — and the
+[indicators row](#the-chip-is-a-badge-beside-a-button-because-badge-has-no-delete-slot)
+renders them, because it is gated on the indicator list alone.
+
+### The chip is a `Badge` beside a button, because `Badge` has no delete slot
+
+Filament's badge takes a `deleteButton` slot and renders the remove affordance
+inside itself. Support's `Badge` has no slot but its content one, so the chip is
+composed in the tables partial: a `.sy-ta-filter-indicator` wrapper holds the
+badge and, when the indicator is removable, an `xs` gray `IconButton`, styled to
+read as one control. Each button's live action and its arguments come off the
+[`FilterIndicator` carrier](indicator.md#removal-is-structured-not-a-click-handler-string)
+rather than an interpolated click-handler string. The remove-all button follows
+Filament exactly — an x-mark icon button under the `FILTERS_REMOVE_ALL_BUTTON`
+alias, rendered only when at least one chip is removable. The row is gated on the
+indicator list being non-empty and on nothing else, so a `Hidden` filters layout
+still shows its chips. Five cases in
+[`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php)
+pin it: the label and its two chips — the second carrying **no**
+`data-live-field-param` attribute at all, which is what
+[dropping the null](indicator.md#removal-is-structured-not-a-click-handler-string)
+buys — a keyed chip carrying both `filterName` and `field`, the search chip on
+`resetTableSearch`, a non-removable chip with neither a delete button nor a
+remove-all beside it, and the remove-all appearing the moment one chip is
+removable.
+
+The chip's own X carries **no** icon alias, and that follows from the same
+composition. Filament's overridable slot for it is
+`SupportIconAlias::BADGE_DELETE_BUTTON`, read by the badge that owns the button —
+a support alias, and one support
+[still tracks as unported](../support/support-icon-alias.md#badge--breadcrumbs--rtl-aliases)
+against a delete button it has not built. Ours is a tables button standing
+*beside* a badge, so claiming that constant now would advertise an override
+support's `Badge` never reads. It returns with the slot, if the slot is ever
+built; until then the remove-all button is the row's one overridable icon.
 
 _See also: the global [rename table](../renames.md) — `BelongsToLivewire` →
 `BelongsToLiveComponent`, `livewire()` → `liveComponent()` and `getLivewire()` →

@@ -43,10 +43,20 @@ Livewire expression — `"removeTableFilter('status', 'value')"` — on the indi
 and echoes it into a `wire:click`. Here the indicator stays dumb and
 `Table\Concerns\HasFilterIndicators::getFilterIndicators()` returns a
 [`FilterIndicator`](../../../packages/tables/src/Filters/FilterIndicator.php)
-pairing it with an action name and an argument map, which the template hands to
-`live_action()`. No string interpolation reaches markup, and the search chip
-reuses the same carrier with a different action.
+pairing it with an action name and an argument map, which the
+[table partial](../../../packages/tables/templates/partials/Table/index.html.twig)
+hands straight to `stimulus_action('live', 'action', parameters: …)` — the house
+form, and the only one that composes here, since `live_action()` returns a
+*rendered attribute string* rather than the map a `<twig:>` tag spreads. No
+string interpolation reaches markup, and the search chip reuses the same carrier
+with a different action, `resetTableSearch`, and an empty map.
 [renames.md row](../renames.md#renames).
+
+A null `field` is filtered out of the map before it reaches `stimulus_action()`,
+because `#[LiveArg] ?string $field = null` can only tell "no field" from "the
+field is null" by the argument being **absent**, and
+`StimulusAttributes::getFormattedValue()` would stringify the null into a present
+parameter.
 
 ### The carrier has no constructor injection, so the service glob excludes it
 

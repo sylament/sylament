@@ -12,6 +12,7 @@ use Sylament\Tables\Enums\FiltersLayout;
 use Sylament\Tables\Enums\FiltersResetActionPosition;
 use Sylament\Tables\Filters\BaseFilter;
 use Sylament\Tables\Filters\Filter;
+use Sylament\Tables\Filters\Indicator;
 use Sylament\Tables\Filters\SelectFilter;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Concerns\SchemaTableHost;
@@ -389,4 +390,87 @@ it('refuses an unshipped filters layout on render', function (): void {
     expect(static fn (): string => filtersTableHtml(
         filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters(), FiltersLayout::AboveContent)),
     ))->toThrow(RuntimeError::class, '[AboveContent] filters layout');
+});
+
+it('renders one removable chip per indicator under the active-filters label', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters())),
+        ['plays' => ['value' => '200'], 'popular' => ['isActive' => true]],
+    ));
+
+    $row = $crawler->filter('.sy-ta-filter-indicators');
+    $chips = $row->filter('.sy-ta-filter-indicator');
+    $unkeyedRemove = $chips->eq(1)->filter('button.sy-ta-filter-indicator-remove-btn');
+
+    expect($row->count())->toBe(1)
+        ->and(mb_trim($row->filter('.sy-ta-filter-indicators-label')->text()))->toBe('Active filters')
+        ->and($chips->count())->toBe(2)
+        ->and(mb_trim($chips->eq(0)->filter('.sy-badge-label')->text()))->toBe('Plays: Two hundred')
+        ->and(mb_trim($chips->eq(1)->filter('.sy-badge-label')->text()))->toBe('Popular')
+        ->and($unkeyedRemove->attr('data-live-filter-name-param'))->toBe('popular')
+        ->and($unkeyedRemove->attr('data-live-field-param'))->toBeNull();
+});
+
+it('carries the filter name and the remove field on the chip delete button', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters([
+            Filter::make('playsRange')->indicateUsing(fn (): array => ['from' => Indicator::make('From: 150')]),
+        ])),
+        ['playsRange' => ['from' => '150']],
+    ));
+
+    $remove = $crawler->filter('.sy-ta-filter-indicator button.sy-ta-filter-indicator-remove-btn');
+
+    expect($remove->count())->toBe(1)
+        ->and($remove->attr('aria-label'))->toBe('Remove filter')
+        ->and($remove->attr('data-action'))->toContain('live#action')
+        ->and($remove->attr('data-live-action-param'))->toBe('removeTableFilter')
+        ->and($remove->attr('data-live-filter-name-param'))->toBe('playsRange')
+        ->and($remove->attr('data-live-field-param'))->toBe('from');
+});
+
+it('renders the global search chip wired to resetTableSearch', function (): void {
+    $component = new SchemaTableHost(filteredSongsTable(fn (Table $table): Table => $table
+        ->columns([TextColumn::make('title')->searchable()])
+        ->filters(songFilters())));
+    $component->tableSearch = 'Airbag';
+
+    $crawler = new Crawler(renderTableHost($component));
+    $chip = $crawler->filter('.sy-ta-filter-indicator')->first();
+    $remove = $chip->filter('button.sy-ta-filter-indicator-remove-btn');
+
+    expect(mb_trim($chip->filter('.sy-badge-label')->text()))->toBe('Search: Airbag')
+        ->and($remove->attr('data-live-action-param'))->toBe('resetTableSearch')
+        ->and($remove->attr('data-live-filter-name-param'))->toBeNull()
+        ->and($remove->attr('data-live-field-param'))->toBeNull();
+});
+
+it('renders no delete button and no remove-all for a chip that is not removable', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters([
+            Filter::make('archived')->indicateUsing(fn (): array => [Indicator::make('Archived')->removable(false)]),
+        ])),
+        ['archived' => ['isActive' => true]],
+    ));
+
+    expect($crawler->filter('.sy-ta-filter-indicator')->count())->toBe(1)
+        ->and($crawler->filter('.sy-ta-filter-indicator-remove-btn')->count())->toBe(0)
+        ->and($crawler->filter('.sy-ta-filter-indicators-remove-all-btn')->count())->toBe(0);
+});
+
+it('renders the remove-all button as soon as one chip is removable', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters([
+            Filter::make('archived')->indicateUsing(fn (): array => [Indicator::make('Archived')->removable(false)]),
+            Filter::make('popular'),
+        ])),
+        ['archived' => ['isActive' => true], 'popular' => ['isActive' => true]],
+    ));
+
+    $removeAll = $crawler->filter('.sy-ta-filter-indicators button.sy-ta-filter-indicators-remove-all-btn');
+
+    expect($crawler->filter('.sy-ta-filter-indicator')->count())->toBe(2)
+        ->and($removeAll->count())->toBe(1)
+        ->and($removeAll->attr('aria-label'))->toBe('Remove all filters')
+        ->and($removeAll->attr('data-live-action-param'))->toBe('removeTableFilters');
 });

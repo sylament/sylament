@@ -30,7 +30,7 @@ triggers, submenus, and `render()` producing the complete dropdown or inline
 row) is complete, as is the per-row layer a table needs (the table binding, the
 root-group walk, and the deep clone), as is serialization through
 `toArray()`/`fromArray()`; the remaining rows are deferred
-(additional trigger kinds, teleport/auto-placement, bulk actions)
+(additional trigger kinds, auto-placement, bulk actions)
 — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -68,7 +68,7 @@ permanent note in [Divergences](#divergences).
 | [`HasIcon`](../../../packages/support/src/Components/Concerns/HasIcon.php) (support) | [`Concerns/HasIcon.php`](../../../vendor/filament/support/src/Concerns/HasIcon.php) | done | — | - |
 | [`HasIconSize`](../../../packages/support/src/Components/Concerns/HasIconSize.php) (support) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — | - |
 | [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) (support) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — | - |
-| `HasDropdown` | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) | done | — | [diverges](#dropdownwidth-is-a-css-string-dropdownteleport-and-dropdownautoplacement-are-deferred) |
+| `HasDropdown` | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) | done | — | [diverges](#dropdownwidth-is-a-css-string-and-dropdownautoplacement-is-deferred) |
 | Visibility composition (`isHidden()` group-iteration) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`isHidden()`/`resolveIsHidden()`) | done | — | [diverges](#no-ishiddeningroup-or-visibility-caching) |
 | Context propagation to children (`liveComponent()`, `getRecord()` fallback, default-template push onto `Action` children) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`liveComponent()`/`getActions()`) | done | — | [diverges](#livecomponent-propagates-eagerly-unlike-filaments-lazy-getgroup-fallback), [diverges](#getrecord-is-duplicated-onto-action-and-actiongroup-to-satisfy-phpstan), [diverges](#getactions-always-pushes-a-concrete-default-template-never-null) |
 | Closure dependency resolution (`resolveDefaultClosureDependencyForEvaluationByName()` / `…ByType()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | in progress | tables (`table`), the Action→schema record hop | By name: `record`, `liveComponent`, `schema`, `schemaComponent`/`component`, `schemaGet`/`get`, `schemaComponentState`/`state`, `schemaState` — Filament's `model`, `mountedActions` and `table` are unported, and it has no `set` arm either (upstream gives the group `get` only). By type: `Get::class`, which [diverges](action.md#getset-resolve-by-type-as-well-as-by-name) — Filament resolves nothing by type here but the record. The record arm waits on the same `getRecord()` schema walk as `Action`'s |
@@ -79,8 +79,9 @@ permanent note in [Divergences](#divergences).
 | Rendering (`toEmbeddedHtml()`) incl. [`getDropdownActionLists()`](../../../packages/actions/src/ActionGroup.php) — flattened sections and embedded submenus | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toEmbeddedHtml()`) | done | — | [diverges](#the-dropdown-plan-is-a-php-method-the-template-loops-not-an-inline-output-buffer), [diverges](#dropdownfalse-wraps-its-inline-row-in-a-bare-divsysy-ac-group-unlike-filaments-unwrapped-concatenation) |
 | Link **trigger** template ([`action-group/LinkTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/LinkTrigger.html.twig)), with `link()` / `isLink()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toLinkTriggerHtml()`, `link()`/`isLink()`) | in progress | badge support | [detail](#the-link-trigger-carries-every-ported-prop-and-drops-the-badge) |
 | Badge/button-group triggers | [`View/Concerns/CanGenerate*Html.php`](../../../vendor/filament/support/src/View/Concerns) | todo | — | [detail](#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup) |
-| Dropdown teleport & auto-placement | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) (`dropdownTeleport()`/`dropdownAutoPlacement()`) | todo | — | - |
-| `toArray()` / `fromArray()` — the 16 ported keys | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toArray()`/`fromArray()`) | done | — | [diverges](#the-groups-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened) · [semantics](#the-groups-serialized-key-list-drops-iconposition-hasdropdownteleport-and-vendors-view) · [semantics](#fromarrays-hasdropdownflip-fallback-is-false-where-the-property-defaults-to-true) · [semantics](#fromarray-restores-only-the-four-built-in-trigger-templates) |
+| Dropdown teleport (`dropdownTeleport()` / `defaultDropdownTeleport()`) | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) (`dropdownTeleport()`/`defaultDropdownTeleport()`/`hasDropdownTeleport()`) | done | — | [semantics](#dropdownteleport-is-a-positioning-strategy-not-a-dom-move-in-either-codebase) |
+| Dropdown auto-placement | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) (`dropdownAutoPlacement()`) | todo | — | [diverges](#dropdownwidth-is-a-css-string-and-dropdownautoplacement-is-deferred) |
+| `toArray()` / `fromArray()` — the 17 ported keys | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toArray()`/`fromArray()`) | done | — | [diverges](#the-groups-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened) · [semantics](#the-groups-serialized-key-list-drops-iconposition-and-vendors-view) · [semantics](#fromarrays-hasdropdownflip-fallback-is-false-where-the-property-defaults-to-true) · [semantics](#fromarray-restores-only-the-four-built-in-trigger-templates) |
 | `hasNonBulkAction()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`hasNonBulkAction()`) | blocked | BulkAction | [detail](#hasnonbulkaction-is-blocked-on-the-bulkaction-port) |
 
 ## Details
@@ -138,7 +139,7 @@ no `HasBadge` concern exists anywhere in the port, the same gap
 [the grouped trigger carries](#the-grouped-trigger-drops-the-badge-and-filaments-default-ellipsis-icon).
 **`iconPosition`**: `ActionGroup` composes no `HasIconPosition`, so there is no
 getter to read — the group's `toArray()`
-[drops the key](#the-groups-serialized-key-list-drops-iconposition-hasdropdownteleport-and-vendors-view)
+[drops the key](#the-groups-serialized-key-list-drops-iconposition-and-vendors-view)
 for the same reason, and the `Link` primitive's own `iconPosition = 'before'`
 default stands.
 
@@ -185,19 +186,61 @@ this row's former blocker is gone: `BelongsToTable` now ships
 Faithful ports whose behaviour a reader would plausibly misread from the source.
 Permanent — these outlive the detail sections above.
 
-### The group's serialized key list drops `iconPosition`, `hasDropdownTeleport` and vendor's `view`
+### `dropdownTeleport()` is a positioning strategy, not a DOM move, in either codebase
 
-[`toArray()`](../../../packages/actions/src/ActionGroup.php) writes 16 keys
-where Filament's writes 19, and each of the three gaps is a getter that does not
+The name says teleport and the Blade side reinforces it — Filament's dropdown view
+spells the flag as an `x-float` modifier, `{{ $teleport ? '.teleport' : '' }}`, and
+Alpine's own `x-teleport` directive moves an element to another parent. The
+`@awcodes/alpine-floating-ui` plugin behind `x-float` does no such thing. Its
+modifier parser reads, in the compiled
+[`support/dist/index.js`](../../../vendor/filament/support/dist/index.js),
+`r.includes("teleport")&&(t.strategy="fixed")` — the whole effect is Floating UI's
+`strategy` option flipping from `absolute` to `fixed`. The panel stays exactly where
+it was in the DOM.
+
+The port carries the name and that mechanism.
+[`dropdownTeleport()`](../../../packages/actions/src/Concerns/HasDropdown.php) threads
+a `teleport` prop to `<twig:SylamentSupport:Dropdown>`, which passes it as a Stimulus
+value to the
+[dropdown controller](../../../packages/support/assets/src/controllers/dropdown_controller.ts);
+the controller asks Floating UI for `strategy: "fixed"` and writes `position: fixed`
+inline over the stylesheet's `absolute`. What that buys is the reason the flag exists:
+a fixed-position element's containing block is the viewport, so an ancestor's
+`overflow: hidden` no longer clips it. That is why the
+[always-`relative` root](../support/dropdown.md#the-root-is-a-positioned-shrink-to-fit-box-where-filaments-carries-no-rule-at-all)
+costs nothing here — the fixed panel ignores its offsetParent entirely. Only the
+notification toast opts in today, through
+[its re-view's default](../notifications/notification.md#the-re-view-defaults-a-group-to-teleport-where-filaments-toast-groups-clip);
+the scrolling table container is the [next candidate](../tables/table.md) and is not
+stamped yet.
+
+The property pair is vendor-exact and the `??` between them is the whole of it:
+`$hasDropdownTeleport` and `$hasDefaultDropdownTeleport` are both **nullable** and
+default to `null`, so `hasDropdownTeleport()` falls through to the default only when
+nothing explicit was set. A `?:` chain in its place would read an explicit
+`dropdownTeleport(false)` as absent and hand the decision back to whichever host
+stamped a default — the one way a caller can be overruled by a *default*, which is
+what a default is not.
+
+The precondition a reader will not think to check is that `fixed` is only viewport-relative
+while **no** ancestor establishes a containing block for fixed descendants — any resting
+`transform`, `filter`, `perspective`, `contain: paint` or `will-change` naming one of them
+re-anchors it to that ancestor and the clipping comes back. Filament inherits the same
+constraint, unstated. The toast is clean today: `.sy-no-notification` transitions
+`scale`/`translate` and gives them `@starting-style` values, but at rest both are `none`,
+so nothing is established once the entry transition has finished.
+
+### The group's serialized key list drops `iconPosition` and vendor's `view`
+
+[`toArray()`](../../../packages/actions/src/ActionGroup.php) writes 17 keys
+where Filament's writes 19, and each of the two gaps is a getter that does not
 exist on this side rather than a value judged not worth carrying.
 **`iconPosition`** — Filament's `ActionGroup` composes `HasIconPosition` and
 this one does not (the trigger templates render the group's icon in a fixed
 position), so there is no `getIconPosition()` to call; the sibling
 [`Action`](action.md#the-serialized-key-list-drops-alpineclickhandler-and-shouldposttourl)
 *does* compose it and *does* serialize it, which is what makes the group's
-omission look like a slip. **`hasDropdownTeleport`** — teleport is
-[deferred](#dropdownwidth-is-a-css-string-dropdownteleport-and-dropdownautoplacement-are-deferred),
-so there is no flag to write. **`view`** — Filament's group serializes its own
+omission look like a slip. **`view`** — Filament's group serializes its own
 custom template as `hasView() ? getView() : null`, the escape hatch for a group
 rendered through a user-supplied view; that surface is not ported, and
 `fromArray()` never reads a `view` key, so there is nothing on the restore side
@@ -315,14 +358,15 @@ cosmetic: support's `ComponentAttributeBag` normalizes `class` to a token
 own classes through `attributes.defaults()` instead of crashing. Filament has
 no such seam because its Blade side renders its own attribute bag directly.
 
-### `dropdownWidth` is a CSS string; `dropdownTeleport` and `dropdownAutoPlacement` are deferred
+### `dropdownWidth` is a CSS string and `dropdownAutoPlacement` is deferred
 
 Filament's `HasDropdown` carries a `Width` enum and types `dropdownWidth(Width|Closure|null)`.
 The port's [`dropdownWidth(string|Closure|null)`](../../../packages/actions/src/Concerns/HasDropdown.php)
 takes a CSS length string directly — `support` has no `Width` enum, and the value flows
-into a `--sy-dropdown-width` CSS variable. `dropdownTeleport()` and `dropdownAutoPlacement()`
-are not ported; they configure template-only features deferred with the dropdown rendering
-tasks (Task 9's template integration and later dropdown UX features).
+into a `--sy-dropdown-width` CSS variable. `dropdownAutoPlacement()` is not ported: it sets
+`dropdownPlacement('auto-placement')` and `dropdownFlip(false)`, and the placement value is a
+[hands-off mode the positioning controller does not have](../support/dropdown.md#auto-placement-when-no-explicit-placement-is-given),
+so the setter would name a placement Floating UI would take literally. It lands with that row.
 
 ### No `isHiddenInGroup()` or visibility caching
 
@@ -584,7 +628,7 @@ keeps a `BackedEnum` implementing
 through `getIconForSize($this->getIconSize() ?? IconSize::Medium)`. Only a plain
 `BackedEnum` flattens to its value. There is no `iconPosition` key to flatten
 here — the group composes no `HasIconPosition`
-([semantics](#the-groups-serialized-key-list-drops-iconposition-hasdropdownteleport-and-vendors-view)) —
+([semantics](#the-groups-serialized-key-list-drops-iconposition-and-vendors-view)) —
 so this is three keys on the group side against `Action`'s four.
 
 The reasoning, the round-trip consequences and the render-size argument are

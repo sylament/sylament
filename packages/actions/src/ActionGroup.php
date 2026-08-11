@@ -370,6 +370,7 @@ class ActionGroup extends ViewComponent
             'extraAttributes' => $this->getExtraAttributes(),
             'hasDropdown' => $this->hasDropdown(),
             'hasDropdownFlip' => $this->hasDropdownFlip(),
+            'hasDropdownTeleport' => $this->hasDropdownTeleport(),
             'icon' => $icon,
             'iconSize' => $iconSize instanceof IconSize ? $iconSize->value : $iconSize,
             'isOutlined' => $this->isOutlined(),
@@ -428,6 +429,7 @@ class ActionGroup extends ViewComponent
 
         $static->dropdown((bool) ($data['hasDropdown'] ?? true));
         $static->dropdownFlip((bool) ($data['hasDropdownFlip'] ?? false));
+        $static->dropdownTeleport((bool) ($data['hasDropdownTeleport'] ?? false));
 
         $dropdownMaxHeight = $data['dropdownMaxHeight'] ?? null;
         $static->dropdownMaxHeight(is_string($dropdownMaxHeight) ? $dropdownMaxHeight : null);

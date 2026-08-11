@@ -6,7 +6,7 @@ Alpine/floating-ui-driven `<x-filament::dropdown>`. It is template-only: there i
 no Sylament PHP `DropdownComponent` class, mirroring Filament itself — the Blade
 view has no matching static-config class either (only its `list`/`header`
 sub-components do, out of scope here). The markup shell — root/trigger/panel
-structure, the `placement`/`offset`/`flip`/`width`/`maxHeight` props — and the
+structure, the `placement`/`offset`/`flip`/`teleport`/`width`/`maxHeight` props — and the
 `sylament--support--dropdown` Stimulus controller/target/action wiring are both
 in place, `actions`' `ActionGroup` composes the shell, and the panel now carries
 divider-separated `.sy-dropdown-list` sections and nests one level down as a
@@ -36,7 +36,7 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | --- | --- | --- | --- | --- |
 | Root/trigger/panel shell + `placement`/`offset`/`flip`/`width`/`maxHeight` props | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) props, `$trigger`, `$slot` | done | — | [diverges](#the-root-is-a-positioned-shrink-to-fit-box-where-filaments-carries-no-rule-at-all) |
 | `sylament--support--dropdown` positioning controller (toggle + floating placement) | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `x-data="filamentDropdown"` / `x-float` | done | — | — |
-| Teleport (render panel outside the stacking context) | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `teleport` prop | todo | — | [detail](#details) |
+| `teleport` prop (escape a clipping ancestor) | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `teleport` prop | done | — | [semantics](../actions/action-group.md#dropdownteleport-is-a-positioning-strategy-not-a-dom-move-in-either-codebase) |
 | Auto-placement when no explicit placement is given | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `placement` default `null` | todo | — | [detail](#details) |
 | Size middleware (`size` / `availableHeight` / `availableWidth` / `sizePadding`) | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `size`, `sizePadding`, `availableHeight`, `availableWidth` | todo | — | [detail](#size-middleware) |
 | Conditional panel scrolling (`fi-scrollable` equivalent) | [`dropdown/index.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/index.blade.php) `fi-scrollable` class, gated on `$maxHeight` | done | — | [diverges](#the-panel-scrolls-only-when-a-max-height-is-set-and-the-gate-is-a-css-variable) |
@@ -49,7 +49,7 @@ exercised by
 — a support-owned primitive render-tested from the `actions` suite, same
 placement as the Button/Modal render tests — asserting the `sy-dropdown` shell,
 the `sylament--support--dropdown` controller/target/action attributes, the
-rendered `placement`/`offset`/`flip` values, the hidden panel, and the
+rendered `placement`/`offset`/`flip`/`teleport` values, the hidden panel, and the
 `width`/`maxHeight` CSS custom properties. The submenu and section rows are
 exercised from the consumer side, in
 [`ActionGroupRenderTest`](../../../packages/actions/tests/Integration/ActionGroupRenderTest.php).
@@ -69,19 +69,14 @@ is reachable from a render test — both are layout. It shipped on the strength 
 Filament's equivalent rules and of reasoning about the UA's `overflow`
 pair-adjustment, unverified at merge; the peer demo has since shown it working,
 a three-level submenu chain on `/showcase/actions` rendering every panel outside
-its parent's box unclipped. The [modal controller](modal.md) is still unseen.
+its parent's box unclipped. `teleport` is layout in the same way and was verified
+the same way, in the one place that needs it: a group inside a toast on
+`/showcase/notifications`, its panel measured 72px past the card's own bottom edge
+with every corner hit-testing to the panel rather than to whatever the card would
+have clipped it with, and the untouched `/showcase/actions` panels still carrying
+no inline `position` at all. The [modal controller](modal.md) is still unseen.
 
 ## Details
-
-### Teleport
-
-Filament's dropdown accepts a `teleport` prop (a `.teleport` modifier on
-`x-float`) that renders the panel through Alpine's `x-teleport`, moving it out
-of the trigger's DOM position — useful inside an `overflow: hidden` / `overflow:
-auto` ancestor (a table cell, a scrolling card) that would otherwise clip the
-panel. Sylament's shell always renders `.sy-dropdown-panel` as a normal child of
-`.sy-dropdown`; nothing teleports it yet. Deferred until a consumer is clipped by
-an ancestor — the tables row-action dropdown is the likely first one.
 
 ### Auto-placement when no explicit placement is given
 
@@ -141,8 +136,10 @@ This is a hold rather than a proof: Floating UI would compute coordinates
 against a different offsetParent perfectly well, so neither declaration has been
 *shown* to be required. Nothing asks for parity here, and reaching it would
 change the layout of every dropdown to fix no observed defect, so the rule
-stays. Revisit alongside [teleport](#teleport), which moves the panel out of the
-wrapper and settles the question.
+stays. The `teleport` prop settles it for the panels that opt in and leaves it
+open for the rest — a fixed-strategy panel resolves against the viewport, so
+`relative` on the wrapper does nothing for it either way
+([semantics](../actions/action-group.md#dropdownteleport-is-a-positioning-strategy-not-a-dom-move-in-either-codebase)).
 
 ### The panel scrolls only when a max-height is set, and the gate is a CSS variable
 
@@ -180,8 +177,10 @@ let a caller style falsely trigger or defeat it.
 
 **Accepted limitation, matching Filament exactly:** when a max-height *is* set,
 the panel is a scroll container again, and a submenu nested inside it will
-still clip. Filament has the same behavior for the same reason; solving it
-needs the [teleport](#teleport) row or a `fixed` positioning strategy.
+still clip. Filament has the same behavior for the same reason, and both offer
+the same way out: the submenu sets
+[`teleport`](../actions/action-group.md#dropdownteleport-is-a-positioning-strategy-not-a-dom-move-in-either-codebase),
+which positions it against the viewport instead of inside the scrolling parent.
 
 ### Submenus are consumer composition, not a shell feature
 

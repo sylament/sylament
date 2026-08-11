@@ -34,6 +34,18 @@ it('renders a group in the slot behind a small link trigger', function (): void 
         ->toContain('sy-link sy-size-sm');
 });
 
+/**
+ * The toast is an `overflow-hidden` card, so its groups teleport by default — the
+ * panel positions against the viewport instead of being clipped.
+ */
+it('teleports a group rendered inside the toast', function (): void {
+    $html = renderActionsToast(Notification::make('n')->title('T')->actions([
+        ActionGroup::make([Action::make('undo')->dispatch('undo')]),
+    ]));
+
+    expect($html)->toContain('data-sylament--support--dropdown-teleport-value="true"');
+});
+
 it('renders no actions slot when there are none', function (): void {
     expect(renderActionsToast(Notification::make('n')->title('T')))
         ->not->toContain('sy-no-notification-actions');

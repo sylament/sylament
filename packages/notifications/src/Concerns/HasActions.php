@@ -36,7 +36,7 @@ trait HasActions
         return array_map(
             fn (Action|ActionGroup $action): Action|ActionGroup => match (true) {
                 $action instanceof Action => $action->defaultTemplate(Action::LINK_TEMPLATE)->defaultSize(Size::Small),
-                $action instanceof ActionGroup => $action->defaultTriggerTemplate(ActionGroup::LINK_TEMPLATE)->defaultSize(Size::Small),
+                $action instanceof ActionGroup => $action->defaultTriggerTemplate(ActionGroup::LINK_TEMPLATE)->defaultSize(Size::Small)->defaultDropdownTeleport(),
             },
             wrap($this->evaluate($this->actions)),
         );

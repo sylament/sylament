@@ -433,12 +433,16 @@ Two things Filament does here are not in. `modifyUngroupedRecordActionsUsing()`
 [`Table::configureUsing()`](../support/component-manager.md) registration to
 restyle every table's ungrouped actions at once — has no consumer in the port
 yet and is **todo** on a row of its own. And the
-`->defaultDropdownTeleport(true)` Filament chains onto the placement stamp is
-simply not callable: the whole teleport family is deferred on the action side,
-tracked by
-[`action-group.md`](../actions/action-group.md#dropdownwidth-is-a-css-string-dropdownteleport-and-dropdownautoplacement-are-deferred),
-so the stamp here is the placement half alone and gains the second call if that
-row ever lands.
+`->defaultDropdownTeleport(true)` Filament chains onto the placement stamp is still
+not made here, though it is now *callable*: the teleport family landed on the action
+side with the toast that needed it
+([semantics](../actions/action-group.md#dropdownteleport-is-a-positioning-strategy-not-a-dom-move-in-either-codebase)),
+so the stamp is one call away rather than blocked. It is a **live gap**, not a
+deferral of convenience — `.sy-ta-ctn` applies `overflow-x-auto`, and a
+non-`visible` overflow on one axis makes the UA adjust the other to `auto` as well,
+so the table container clips a row-action panel exactly the way the toast card did.
+Whoever next touches record actions should add the call and verify it in the demo;
+this file is not that lane.
 
 ### The actions header cell is always the unlabelled arm
 

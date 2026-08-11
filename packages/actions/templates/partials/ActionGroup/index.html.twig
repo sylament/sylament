@@ -3,6 +3,7 @@
         :placement="component.getDropdownPlacement ?? 'bottom-start'"
         :offset="component.getDropdownOffset ?? 8"
         :flip="component.hasDropdownFlip"
+        :teleport="component.hasDropdownTeleport"
         :width="component.getDropdownWidth"
         :maxHeight="component.getDropdownMaxHeight"
         {{ ...component.getExtraDropdownAttributeBag.toScalarAttributes }}

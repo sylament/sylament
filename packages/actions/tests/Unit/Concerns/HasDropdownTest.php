@@ -11,6 +11,7 @@ it('has an unconfigured dropdown by default', function (): void {
 
     expect($fixture->hasDropdown())->toBeTrue()
         ->and($fixture->hasDropdownFlip())->toBeTrue()
+        ->and($fixture->hasDropdownTeleport())->toBeFalse()
         ->and($fixture->getDropdownPlacement())->toBeNull()
         ->and($fixture->getDropdownOffset())->toBeNull()
         ->and($fixture->getDropdownWidth())->toBeNull()
@@ -39,4 +40,24 @@ it('falls back from explicit placement to the default placement', function (): v
 
     expect($fixture->getDropdownPlacement())->toBe('right-start')
         ->and($fixture->dropdownPlacement('left-start')->getDropdownPlacement())->toBe('left-start');
+});
+
+it('turns teleport on explicitly and from a closure', function (): void {
+    expect(new HasDropdownFixture()->dropdownTeleport()->hasDropdownTeleport())->toBeTrue()
+        ->and(new HasDropdownFixture()->dropdownTeleport(fn (): bool => true)->hasDropdownTeleport())->toBeTrue()
+        ->and(new HasDropdownFixture()->dropdownTeleport(fn (): bool => false)->hasDropdownTeleport())->toBeFalse();
+});
+
+/**
+ * The `??` resolution, not a `?:` chain: an explicit `false` is a decision the
+ * default must not overturn, and only a null property falls through to it.
+ */
+it('lets an explicit teleport decision beat the default in both directions', function (): void {
+    expect(new HasDropdownFixture()->defaultDropdownTeleport()->hasDropdownTeleport())->toBeTrue()
+        ->and(new HasDropdownFixture()->defaultDropdownTeleport()->dropdownTeleport(false)->hasDropdownTeleport())
+        ->toBeFalse()
+        ->and(new HasDropdownFixture()->defaultDropdownTeleport(false)->dropdownTeleport()->hasDropdownTeleport())
+        ->toBeTrue()
+        ->and(new HasDropdownFixture()->defaultDropdownTeleport(fn (): bool => true)->hasDropdownTeleport())
+        ->toBeTrue();
 });

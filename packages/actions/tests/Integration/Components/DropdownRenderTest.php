@@ -27,6 +27,7 @@ it('renders a positioned dropdown shell with trigger and hidden panel', function
         ->toContain('data-sylament--support--dropdown-placement-value="bottom-start"')
         ->toContain('data-sylament--support--dropdown-offset-value="8"')
         ->toContain('data-sylament--support--dropdown-flip-value="true"')
+        ->toContain('data-sylament--support--dropdown-teleport-value="false"')
         ->toContain('sy-dropdown-trigger')
         ->toContain('data-action="click->sylament--support--dropdown#toggle"')
         ->toContain('data-sylament--support--dropdown-target="trigger"')
@@ -39,7 +40,7 @@ it('renders a positioned dropdown shell with trigger and hidden panel', function
 
 it('applies placement, width, and max-height configuration', function (): void {
     $html = renderDropdown(<<<'TWIG'
-        <twig:SylamentSupport:Dropdown placement="top-end" width="16rem" maxHeight="20rem" :flip="false">
+        <twig:SylamentSupport:Dropdown placement="top-end" width="16rem" maxHeight="20rem" :flip="false" :teleport="true">
             <twig:block name="trigger"><button type="button">Open</button></twig:block>
             <span>Panel content</span>
         </twig:SylamentSupport:Dropdown>
@@ -47,6 +48,7 @@ it('applies placement, width, and max-height configuration', function (): void {
 
     expect($html)->toContain('data-sylament--support--dropdown-placement-value="top-end"')
         ->toContain('data-sylament--support--dropdown-flip-value="false"')
+        ->toContain('data-sylament--support--dropdown-teleport-value="true"')
         ->toContain('--sy-dropdown-width: 16rem')
         ->toContain('--sy-dropdown-max-height: 20rem')
         ->toContain('--sy-dropdown-overflow: auto');

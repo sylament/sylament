@@ -97,6 +97,53 @@ it('round-trips a group nested in a group beside a flat sibling', function (): v
         ->and($restored->toArray())->toBe($array);
 });
 
+it('writes the seventeen group keys in order', function (): void {
+    expect(array_keys(ActionGroup::make()->actions([Action::make('one')])->toArray()))->toBe([
+        'actions',
+        'color',
+        'dropdownMaxHeight',
+        'dropdownOffset',
+        'dropdownPlacement',
+        'dropdownWidth',
+        'extraAttributes',
+        'hasDropdown',
+        'hasDropdownFlip',
+        'hasDropdownTeleport',
+        'icon',
+        'iconSize',
+        'isOutlined',
+        'label',
+        'size',
+        'tooltip',
+        'triggerTemplate',
+    ]);
+});
+
+/**
+ * The serialized value is the *resolved* one, so a group teleporting only because
+ * a host stamped `defaultDropdownTeleport()` restores explicitly teleported.
+ */
+it('round-trips a teleporting group as an explicit decision', function (): void {
+    $array = ActionGroup::make()->actions([Action::make('one')])->dropdownTeleport()->toArray();
+    $restored = ActionGroup::fromArray($array);
+
+    expect($array['hasDropdownTeleport'])->toBeTrue()
+        ->and($restored->hasDropdownTeleport())->toBeTrue()
+        ->and($restored->toArray())->toBe($array);
+
+    $defaulted = ActionGroup::make()->actions([Action::make('one')])->defaultDropdownTeleport()->toArray();
+
+    expect($defaulted['hasDropdownTeleport'])->toBeTrue()
+        ->and(ActionGroup::fromArray($defaulted)->hasDropdownTeleport())->toBeTrue();
+});
+
+it('restores a group with no teleport key as unteleported', function (): void {
+    $array = ActionGroup::make()->actions([Action::make('one')])->toArray();
+    unset($array['hasDropdownTeleport']);
+
+    expect(ActionGroup::fromArray($array)->hasDropdownTeleport())->toBeFalse();
+});
+
 it('round-trips a link-triggered group', function (): void {
     $array = ActionGroup::make()->actions([Action::make('one')])->link()->toArray();
     $restored = ActionGroup::fromArray($array);

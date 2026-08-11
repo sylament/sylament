@@ -38,6 +38,13 @@ it('feeds dropdown configuration into the primitive', function (): void {
         ->toContain('--sy-dropdown-width: 16rem');
 });
 
+it('threads the teleport decision into the primitive', function (): void {
+    expect(renderGroup(ActionGroup::make([Action::make('edit')])->dropdownTeleport()))
+        ->toContain('data-sylament--support--dropdown-teleport-value="true"')
+        ->and(renderGroup(ActionGroup::make([Action::make('edit')])))
+        ->toContain('data-sylament--support--dropdown-teleport-value="false"');
+});
+
 it('skips hidden items', function (): void {
     $html = renderGroup(ActionGroup::make([Action::make('edit'), Action::make('delete')->hidden()]));
 

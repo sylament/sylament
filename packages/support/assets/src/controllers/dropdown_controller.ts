@@ -15,6 +15,7 @@ export default class extends Controller<HTMLElement> {
     placement: { type: String, default: "bottom-start" },
     offset: { type: Number, default: 8 },
     flip: { type: Boolean, default: true },
+    teleport: { type: Boolean, default: false },
   };
 
   declare readonly triggerTarget: HTMLElement;
@@ -22,6 +23,7 @@ export default class extends Controller<HTMLElement> {
   declare readonly placementValue: string;
   declare readonly offsetValue: number;
   declare readonly flipValue: boolean;
+  declare readonly teleportValue: boolean;
 
   #stopPositioning: (() => void) | null = null;
 
@@ -91,6 +93,7 @@ export default class extends Controller<HTMLElement> {
   async #position(): Promise<void> {
     const { x, y } = await computePosition(this.triggerTarget, this.panelTarget, {
       placement: this.placementValue as Placement,
+      strategy: this.teleportValue ? "fixed" : "absolute",
       middleware: [
         offsetMiddleware(this.offsetValue),
         ...(this.flipValue ? [flipMiddleware()] : []),
@@ -98,6 +101,7 @@ export default class extends Controller<HTMLElement> {
       ],
     });
 
+    this.panelTarget.style.position = this.teleportValue ? "fixed" : "";
     this.panelTarget.style.left = `${x}px`;
     this.panelTarget.style.top = `${y}px`;
   }

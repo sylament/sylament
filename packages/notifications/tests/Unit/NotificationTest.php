@@ -62,6 +62,34 @@ it('round-trips actions and groups, re-viewed as small links', function (): void
         ->and($restored->toArray())->toBe($array);
 });
 
+/**
+ * The re-view defaults a toast group to teleport, so the panel escapes the toast's
+ * `overflow-hidden`; the serialized value is the resolved one, which is what carries
+ * the decision across the flash-bag hop to a group the browser rebuilds.
+ */
+it('teleports a toast group across the hop', function (): void {
+    $notification = Notification::make('n')->actions([ActionGroup::make([Action::make('undo')])]);
+    $array = $notification->toArray();
+
+    expect($notification->getActions()[0]->hasDropdownTeleport())->toBeTrue()
+        ->and($array['actions'][0]['hasDropdownTeleport'])->toBeTrue()
+        ->and(Notification::fromArray($array)->getActions()[0]->hasDropdownTeleport())->toBeTrue()
+        ->and(Notification::fromArray($array)->toArray())->toBe($array);
+});
+
+/**
+ * A default, not a setting: a group that opted out keeps its own decision through
+ * the re-view and across the hop.
+ */
+it('leaves a toast group that opted out of teleport alone', function (): void {
+    $array = Notification::make('n')
+        ->actions([ActionGroup::make([Action::make('undo')])->dropdownTeleport(false)])
+        ->toArray();
+
+    expect($array['actions'][0]['hasDropdownTeleport'])->toBeFalse()
+        ->and(Notification::fromArray($array)->getActions()[0]->hasDropdownTeleport())->toBeFalse();
+});
+
 it('serializes a keyed actions array as a list, so the round trip is idempotent', function (): void {
     $array = Notification::make('n')->actions(['undo' => Action::make('undo')])->toArray();
 

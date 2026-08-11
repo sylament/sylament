@@ -57,7 +57,7 @@ deleted once the row is **done**; **semantics** → the permanent note in
 | [Toast styles (`sy-no-notification*`)](../../../packages/notifications/assets/src/styles/components/notification.css) | [`resources/css/notification.css`](../../../vendor/filament/notifications/resources/css/notification.css) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
 | [Toast controller — auto-dismiss, hover-pause, delegated close clicks](../../../packages/notifications/assets/src/controllers/notification_controller.ts) | [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js) | in progress | the database-notifications panel | [detail](#markasread-and-markasunread-belong-to-the-database-panel) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) · [diverges](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload) |
 | `close-notification` — closing a toast by id from a browser event | [`x-on:close-notification.window`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#closing-a-toast-by-id-needs-the-id-in-the-markup) |
-| [`actions()` (`HasActions`)](../../../packages/notifications/src/Concerns/HasActions.php) | [`Concerns/HasActions.php`](../../../vendor/filament/notifications/src/Concerns/HasActions.php), the `actions` key of `toArray()`/`fromArray()` | done | — | [semantics](#toast-actions-are-re-viewed-as-small-links-and-the-actions-key-restores-them) · [semantics](#toast-actions-cannot-open-modals-at-filament-parity) · [diverges](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload) |
+| [`actions()` (`HasActions`)](../../../packages/notifications/src/Concerns/HasActions.php) | [`Concerns/HasActions.php`](../../../vendor/filament/notifications/src/Concerns/HasActions.php), the `actions` key of `toArray()`/`fromArray()` | done | — | [semantics](#toast-actions-are-re-viewed-as-small-links-and-the-actions-key-restores-them) · [semantics](#toast-actions-cannot-open-modals-at-filament-parity) · [diverges](#the-re-view-defaults-a-group-to-teleport-where-filaments-toast-groups-clip) · [diverges](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload) |
 | `date()` (`HasDate`) | [`Concerns/HasDate.php`](../../../vendor/filament/notifications/src/Concerns/HasDate.php) | todo | — | [detail](#date-and-inline-arrive-with-the-database-notifications-panel) |
 | `inline()` (`CanBeInline`) | [`Concerns/CanBeInline.php`](../../../vendor/filament/notifications/src/Concerns/CanBeInline.php) | todo | — | [detail](#date-and-inline-arrive-with-the-database-notifications-panel) |
 | `view()` / `viewData()` / `safeViews()` | [`safeViews()` / `isViewSafe()`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#custom-views-and-their-safe-view-gate-are-unported) |
@@ -70,8 +70,9 @@ The **done** rows are covered by six suites:
 [`NotificationTest`](../../../packages/notifications/tests/Unit/NotificationTest.php)
 (the minted uuid, the nine-key `toArray()` shape, the `fromArray()` round trip,
 the junk-type and array-shade arms, closure evaluation at read time, and the
-actions arm — the link re-view, the group discriminator, the list re-index and the
-junk entries dropped),
+actions arm — the link re-view, the group discriminator, the list re-index, the
+junk entries dropped, and the teleport default resolving across the hop in both
+directions),
 [`HasDurationTest`](../../../packages/notifications/tests/Unit/Concerns/HasDurationTest.php)
 and
 [`HasStatusTest`](../../../packages/notifications/tests/Unit/Concerns/HasStatusTest.php)
@@ -83,8 +84,8 @@ an explicit icon overriding it, the duration value on the controller, the colour
 policy's classes, the labelled close button),
 [`NotificationActionsRenderTest`](../../../packages/notifications/tests/Integration/NotificationActionsRenderTest.php)
 (the actions slot with its payload attributes and the root's delegated click
-action, a group behind its small link trigger, and the slot's absence when the
-notification carries no actions) and
+action, a group behind its small link trigger carrying the teleport value, and
+the slot's absence when the notification carries no actions) and
 [`SendTest`](../../../packages/notifications/tests/Integration/SendTest.php)
 (`send()` writing the flash, and the fail-fast on an instance built outside the
 container). The unported rows have no coverage because they have no code.
@@ -297,8 +298,10 @@ config — but it is the one thing a reader would get wrong from the template al
 
 [`getActions()`](../../../packages/notifications/src/Concerns/HasActions.php)
 re-views every entry at read time — `defaultTemplate(Action::LINK_TEMPLATE)` on an
-action, `defaultTriggerTemplate(ActionGroup::LINK_TEMPLATE)` on a group, and
-`defaultSize(Size::Small)` on both. They are **defaults**, not settings, so an
+action, `defaultTriggerTemplate(ActionGroup::LINK_TEMPLATE)` on a group,
+`defaultSize(Size::Small)` on both, and a fourth call on the group alone that
+[Filament does not make](#the-re-view-defaults-a-group-to-teleport-where-filaments-toast-groups-clip).
+They are **defaults**, not settings, so an
 action that called `template()` or `size()` itself keeps what it chose; only an
 unconfigured one becomes a small link. That is Filament's
 [`defaultView` / `defaultTriggerView`](../../../vendor/filament/notifications/src/Concerns/HasActions.php)
@@ -523,6 +526,33 @@ between morphs. Here removal is client-owned — the element takes itself out of
 DOM and nothing re-renders behind it — which is the same property that makes the
 [zombie-toast class](notifications.md#a-toast-closes-client-side-and-is-never-re-rendered)
 impossible.
+
+### The re-view defaults a group to teleport, where Filament's toast groups clip
+
+[`getActions()`](../../../packages/notifications/src/Concerns/HasActions.php) adds
+`->defaultDropdownTeleport()` to the group arm of its re-view. Filament's
+[`HasActions`](../../../vendor/filament/notifications/src/Concerns/HasActions.php)
+stamps only the trigger view and the size, so a Filament `ActionGroup` on a toast
+opens its panel into `fi-no-notification`'s `overflow-hidden` and is cut off at the
+card's edge; the user has to know to call `->dropdownTeleport()` themselves. Both
+codebases have the clipping ancestor and both have the escape hatch — the divergence
+is only which way the default points.
+
+It points this way because the toast is the one container whose clipping is
+*certain*: the notification card is `overflow-hidden` unconditionally, in
+[our stylesheet](../../../packages/notifications/assets/src/styles/components/notification.css)
+and in Filament's, so every group placed there is clipped and no reasonable
+composition avoids it. A default that is right in every case it fires is worth more
+than the parity, and it costs nothing to reverse — `defaultDropdownTeleport()` is a
+*default*, so `->dropdownTeleport(false)` on the group still wins, resolved by the
+[`??` precedence](../actions/action-group.md#dropdownteleport-is-a-positioning-strategy-not-a-dom-move-in-either-codebase)
+that keeps an explicit `false` from falling through to it.
+
+The stamp runs before serialization, so what crosses the flash bag is the
+**resolved** flag: `toArray()` writes `hasDropdownTeleport: true` and the rebuilt
+group comes back explicitly teleported rather than relying on the receiving side to
+re-apply the default. That is the same read-time-then-serialize order the template
+and size already take.
 
 ### The toast root owns the click, and the dispatch arm carries only payload
 

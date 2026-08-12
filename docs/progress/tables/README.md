@@ -10,10 +10,11 @@ filters, actions, grouping, summaries.
 These tables map the full `tables/src` surface end to end (plus the rendered
 views, translations and assets), so no table carries an
 [unaudited row](../README.md#an-unaudited-table-says-so). The minimal tables
-vertical (M1 · 5), the record-action lane (M1 · 6) and three pulled-forward epics
+vertical (M1 · 5), the record-action lane (M1 · 6) and four pulled-forward epics
 — table upgrades ([· 11](../roadmap.md#pulled-forward)), the Doctrine `query()`
-lane ([· 12](../roadmap.md#pulled-forward)) and the relation arm
-([· 20](../roadmap.md#pulled-forward)) — are what has landed so far
+lane ([· 12](../roadmap.md#pulled-forward)), the relation arm
+([· 20](../roadmap.md#pulled-forward)) and table filters
+([· 21](../roadmap.md#pulled-forward)) — are what has landed so far
 — a linked first-column name is built and carries a real
 [status](../README.md#statuses), with a detail file wherever a divergence, an
 open gap or real sub-structure earns one; a plain-text name is not built yet and

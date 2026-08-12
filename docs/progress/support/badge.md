@@ -196,6 +196,28 @@ keeps the one contrast decision in the policy instead of re-fixing a shade in th
 stylesheet — [rule 6](../../styling.md#the-rules) of the styling contract, whose
 own example is the `text-color-600` defect this component shipped once already.
 
+The hover and focus states moved with it, from the icon to the button:
+`badge.css` hangs them off `.fi-badge-delete-btn > .fi-icon` as
+`hover:`/`focus-visible:` utilities — pseudo-classes on the **`<svg>`** — where
+ours reads `.sy-badge-delete-btn:hover > .sy-icon` and its `:focus-visible`
+twin. An `svg` is not focusable, so the vendor's `focus-visible` variant can
+never match: keyboard focus lands on the button, and the icon it contains is
+never the `:focus-visible` element. Their uncoloured branch is also missing a
+light-mode `hover:` entirely (it ships `focus-visible:text-gray-700/75` beside
+`dark:hover:` and `dark:focus-visible:`, and no light `hover:`), which the
+selector shift fills as a side effect rather than as a second decision.
+
+One hazard rides along, and it is Filament's too: the delete button renders
+*inside* `<{{ tag }}>`, so a badge built with `tag="button"` or `tag="a"` nests
+interactive content inside interactive content — invalid HTML, with the nested
+control's behaviour left to the browser. Filament's blade has the identical
+shape (`tag` defaults to `span`, the `<button>` sits inside it), so this is
+inherited rather than introduced, and no shipped call site reaches it: the only
+`deletable` caller is tables' [filter indicator chip](../tables/table.md), which
+leaves `tag` at its `span` default, and the only `tag="button"`/`tag="a"` caller
+is actions' badge-variant trigger, which never sets `deletable`. It is recorded
+because the props make the combination reachable in one line of userland Twig.
+
 _See also: the global [rename table](../renames.md) — `fi-*` → `sy-*` classes,
 Blade → Twig (`view()` → `template()`), Alpine → Stimulus and `Htmlable` →
 `Markup` are systematic translations recorded there, not per-component

@@ -113,7 +113,7 @@ epic. The `'-'` placeholder is not part of it: Filament hardcodes that one too.
 Each of Filament's four arms opens with a `queriesRelationships()` check and
 falls into `$query->whereRelation($relationshipName, $titleAttribute, …)`.
 `whereRelation` has no Doctrine counterpart, and the whole relationship surface
-of `SelectFilter` waits on the tables-relations epic
+of `SelectFilter` waits on a future filters-relationship epic
 ([select-filter.md](select-filter.md#the-relationship-arm-is-deferred-with-a-documented-escape-hatch)).
 The same escape hatch applies: `attribute('artist.isFeatured')` over a query
 that already joins `artist` reaches a related boolean today.

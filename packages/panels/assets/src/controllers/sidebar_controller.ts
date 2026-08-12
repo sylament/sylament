@@ -3,6 +3,7 @@ import { Controller } from "@hotwired/stimulus";
 const STORAGE_KEY = "sylament.panels.sidebar.collapsedGroups";
 const OPEN_CLASS = "sy-pa-sidebar-open";
 const COLLAPSED_CLASS = "sy-collapsed";
+const GROUP_BUTTON_SELECTOR = ".sy-pa-sidebar-group-btn[aria-expanded]";
 
 export default class extends Controller<HTMLElement> {
   static targets = ["sidebar", "toggleButton"];
@@ -51,7 +52,7 @@ export default class extends Controller<HTMLElement> {
       return;
     }
 
-    for (const group of this.#groupElements()) {
+    for (const group of this.#collapsibleGroupElements()) {
       const label = group.dataset.groupLabel ?? "";
       const isCollapsed = collapsed.includes(label);
       group.classList.toggle(COLLAPSED_CLASS, isCollapsed);
@@ -60,7 +61,7 @@ export default class extends Controller<HTMLElement> {
   }
 
   #persistCollapsedGroups(): void {
-    const labels = this.#groupElements()
+    const labels = this.#collapsibleGroupElements()
       .filter((group) => group.classList.contains(COLLAPSED_CLASS))
       .map((group) => group.dataset.groupLabel ?? "");
 
@@ -101,18 +102,23 @@ export default class extends Controller<HTMLElement> {
       : null;
   }
 
-  #groupElements(): HTMLElement[] {
-    return Array.from(this.sidebarTarget.querySelectorAll<HTMLElement>("[data-group-label]"));
+  /**
+   * A non-collapsible group renders the same label class on a plain element with no disclosure
+   * wiring, so the button filter is what keeps stored state off it: collapsing one would hide its
+   * items with no affordance to reopen them.
+   */
+  #collapsibleGroupElements(): HTMLElement[] {
+    return Array.from(
+      this.sidebarTarget.querySelectorAll<HTMLElement>("[data-group-label]"),
+    ).filter((group) => this.#groupButton(group) !== null);
   }
 
-  /**
-   * The `[aria-expanded]` filter is what keeps a non-collapsible group out: it renders the same
-   * label class on a plain element with no disclosure wiring, which must not gain the state.
-   */
+  #groupButton(group: HTMLElement): Element | null {
+    return group.querySelector(GROUP_BUTTON_SELECTOR);
+  }
+
   #syncGroupButton(group: HTMLElement, collapsed: boolean): void {
-    group
-      .querySelector(".sy-pa-sidebar-group-btn[aria-expanded]")
-      ?.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    this.#groupButton(group)?.setAttribute("aria-expanded", collapsed ? "false" : "true");
   }
 
   #syncToggleButton(open: boolean): void {

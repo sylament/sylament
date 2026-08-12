@@ -2,6 +2,7 @@ import { Controller } from "@hotwired/stimulus";
 const STORAGE_KEY = "sylament.panels.sidebar.collapsedGroups";
 const OPEN_CLASS = "sy-pa-sidebar-open";
 const COLLAPSED_CLASS = "sy-collapsed";
+const GROUP_BUTTON_SELECTOR = ".sy-pa-sidebar-group-btn[aria-expanded]";
 class sidebar_controller_default extends Controller {
   static targets = ["sidebar", "toggleButton"];
   connect() {
@@ -34,7 +35,7 @@ class sidebar_controller_default extends Controller {
       this.#persistCollapsedGroups();
       return;
     }
-    for (const group of this.#groupElements()) {
+    for (const group of this.#collapsibleGroupElements()) {
       const label = group.dataset.groupLabel ?? "";
       const isCollapsed = collapsed.includes(label);
       group.classList.toggle(COLLAPSED_CLASS, isCollapsed);
@@ -42,7 +43,7 @@ class sidebar_controller_default extends Controller {
     }
   }
   #persistCollapsedGroups() {
-    const labels = this.#groupElements().filter((group) => group.classList.contains(COLLAPSED_CLASS)).map((group) => group.dataset.groupLabel ?? "");
+    const labels = this.#collapsibleGroupElements().filter((group) => group.classList.contains(COLLAPSED_CLASS)).map((group) => group.dataset.groupLabel ?? "");
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(labels));
     } catch {
@@ -70,15 +71,21 @@ class sidebar_controller_default extends Controller {
     }
     return Array.isArray(parsed) ? parsed.filter((label) => typeof label === "string") : null;
   }
-  #groupElements() {
-    return Array.from(this.sidebarTarget.querySelectorAll("[data-group-label]"));
-  }
   /**
-   * The `[aria-expanded]` filter is what keeps a non-collapsible group out: it renders the same
-   * label class on a plain element with no disclosure wiring, which must not gain the state.
+   * A non-collapsible group renders the same label class on a plain element with no disclosure
+   * wiring, so the button filter is what keeps stored state off it: collapsing one would hide its
+   * items with no affordance to reopen them.
    */
+  #collapsibleGroupElements() {
+    return Array.from(
+      this.sidebarTarget.querySelectorAll("[data-group-label]")
+    ).filter((group) => this.#groupButton(group) !== null);
+  }
+  #groupButton(group) {
+    return group.querySelector(GROUP_BUTTON_SELECTOR);
+  }
   #syncGroupButton(group, collapsed) {
-    group.querySelector(".sy-pa-sidebar-group-btn[aria-expanded]")?.setAttribute("aria-expanded", collapsed ? "false" : "true");
+    this.#groupButton(group)?.setAttribute("aria-expanded", collapsed ? "false" : "true");
   }
   #syncToggleButton(open) {
     if (this.hasToggleButtonTarget) {

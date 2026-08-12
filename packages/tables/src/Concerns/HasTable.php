@@ -250,10 +250,8 @@ trait HasTable
     }
 
     /**
-     * What a `records()` closure returned, once it is known to be neither a
-     * `Paginator` nor a non-iterable. Typed `mixed` because that return is
-     * unconstrained: `evaluate()` reports the type of the value handed to it,
-     * which here is statically the closure itself.
+     * The raw return of a `records()` closure — `mixed` because nothing
+     * constrains it.
      *
      * @return array<array-key, object|array<string, mixed>>|Paginator keyed by record key
      */

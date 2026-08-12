@@ -1038,13 +1038,17 @@ binding `T` to `Closure` when the value handed to it is statically a closure.
 
 The durable half is the rule, not the incident: **a host trait carries no
 static-analysis coverage of its own** — it inherits whatever its consumers give
-it. Two consequences when extending this trait or writing another host one. A
-guard written against `mixed` is checked only in the contexts a using class
-supplies, so a fixture host in this package's tests is worth as much to the
-analyser as a shipped page is. And a scoped run over the package that *owns* the
-trait cannot see the errors that exist only in a using class's context, which is
-why the whole set arrived at once in a lane that had touched neither package —
-only the unscoped `composer test:static` sees them.
+it. Two consequences when extending this trait or writing another host one. Only
+a class inside an analysed `src/` path turns a trait on:
+[`phpstan.neon.dist`](../../../phpstan.neon.dist)'s `paths` stop at
+`packages/*/src`, so the test fixture host
+[`TableHost`](../../../packages/tables/tests/Fixtures/Concerns/TableHost.php)
+composed this trait for its whole life and contributed nothing — which is
+exactly why the eleven errors stayed latent until a class landed in `src/`. And
+a scoped run over the package that *owns* the trait cannot see the errors that
+exist only in a using class's context, which is why the whole set arrived at
+once in a lane that had touched neither package — only the unscoped
+`composer test:static` sees them.
 
 ## Divergences
 

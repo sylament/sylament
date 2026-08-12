@@ -16,6 +16,7 @@ it('renders the full shell with stable landmarks', function (): void {
 
     expect($html)
         ->toContain('data-controller="sylament--panels--sidebar"')
+        ->toContain('data-action="keydown@window-&gt;sylament--panels--sidebar#closeOnEscape"')
         ->toContain('href="#sy-pa-main"')
         ->toContain('id="sy-pa-main"')
         ->toContain('id="sy-pa-sidebar"')

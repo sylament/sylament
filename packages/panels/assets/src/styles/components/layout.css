@@ -1,0 +1,18 @@
+.sy-pa-layout {
+    /* Mobile-first: a single column with the sidebar parked off-canvas. From `lg` the
+       shell becomes a two-column grid — the sidebar owns column 1 across both rows,
+       the topbar and the main region stack in column 2. */
+    @apply flex min-h-dvh flex-col bg-gray-50 text-gray-950 lg:grid lg:grid-cols-[18rem_1fr] lg:grid-rows-[auto_1fr] dark:bg-gray-950 dark:text-white;
+}
+
+.sy-pa-main {
+    @apply min-w-0 flex-1 p-4 md:p-6 lg:col-start-2 lg:row-start-2 lg:p-8;
+}
+
+.sy-pa-skip-link {
+    @apply sr-only;
+
+    &:focus {
+        @apply not-sr-only fixed start-4 top-4 z-50 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-950 shadow-lg ring-1 ring-gray-950/5 outline-none dark:bg-gray-900 dark:text-white dark:ring-white/10;
+    }
+}

@@ -9,6 +9,7 @@
     {{ attrs({
         class: 'sy sy-pa-layout',
         'data-controller': 'sylament--panels--sidebar',
+        'data-action': 'keydown@window->sylament--panels--sidebar#closeOnEscape',
     }, attributes.all) }}
 >
     <a href="#sy-pa-main" class="sy-pa-skip-link">Skip to content</a>

@@ -1,0 +1,91 @@
+.sy-pa-sidebar {
+    /* Off-canvas by default, slid in by `.sy-pa-sidebar-open` on the layout root; from
+       `lg` it is the grid's first column and sticks to the viewport as the page scrolls. */
+    @apply fixed inset-y-0 start-0 z-30 flex w-72 -translate-x-full flex-col bg-white shadow-xl ring-1 ring-gray-950/5 transition-transform lg:sticky lg:top-0 lg:z-auto lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:h-dvh lg:translate-x-0 lg:shadow-none lg:ring-0 rtl:translate-x-full lg:rtl:translate-x-0 dark:bg-gray-900 dark:ring-white/10;
+}
+
+.sy-pa-sidebar-open .sy-pa-sidebar {
+    @apply translate-x-0 rtl:translate-x-0;
+}
+
+.sy-pa-sidebar-overlay {
+    @apply fixed inset-0 z-20 hidden bg-gray-950/50 dark:bg-gray-950/75;
+}
+
+.sy-pa-sidebar-open .sy-pa-sidebar-overlay {
+    @apply block lg:hidden;
+}
+
+.sy-pa-sidebar-nav {
+    @apply flex grow flex-col overflow-x-hidden overflow-y-auto px-4 py-6;
+    scrollbar-gutter: stable;
+}
+
+.sy-pa-sidebar-groups {
+    @apply flex flex-col gap-y-6;
+}
+
+.sy-pa-sidebar-group {
+    @apply flex flex-col gap-y-1;
+
+    &.sy-collapsed {
+        & .sy-pa-sidebar-group-items {
+            @apply hidden;
+        }
+
+        & .sy-pa-sidebar-group-chevron {
+            @apply -rotate-90 rtl:rotate-90;
+        }
+    }
+}
+
+.sy-pa-sidebar-group-btn {
+    @apply flex w-full cursor-pointer items-center gap-x-3 rounded-lg p-2 text-start outline-hidden transition duration-75 hover:bg-gray-100 focus-visible:bg-gray-100 disabled:cursor-default disabled:hover:bg-transparent dark:hover:bg-white/5 dark:focus-visible:bg-white/5 dark:disabled:hover:bg-transparent;
+}
+
+.sy-pa-sidebar-group-icon,
+.sy-pa-sidebar-group-chevron {
+    @apply text-gray-400 dark:text-gray-500;
+}
+
+.sy-pa-sidebar-group-chevron {
+    @apply transition-transform duration-75;
+}
+
+.sy-pa-sidebar-group-label {
+    @apply flex-1 truncate text-sm leading-6 font-medium text-gray-500 dark:text-gray-400;
+}
+
+.sy-pa-sidebar-group-items {
+    @apply flex flex-col gap-y-1;
+}
+
+.sy-pa-sidebar-item-btn {
+    @apply flex items-center gap-x-3 rounded-lg p-2 outline-hidden transition duration-75 hover:bg-gray-100 focus-visible:bg-gray-100 dark:hover:bg-white/5 dark:focus-visible:bg-white/5;
+}
+
+.sy-pa-sidebar-item-icon {
+    @apply text-gray-400 dark:text-gray-500;
+}
+
+.sy-pa-sidebar-item-label {
+    @apply flex-1 truncate text-sm font-medium text-gray-700 dark:text-gray-200;
+}
+
+.sy-pa-sidebar-item.sy-active {
+    & .sy-pa-sidebar-item-btn {
+        @apply bg-gray-100 text-primary-600 dark:bg-white/5 dark:text-primary-400;
+    }
+
+    & .sy-pa-sidebar-item-icon,
+    & .sy-pa-sidebar-item-label {
+        @apply text-primary-600 dark:text-primary-400;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sy-pa-sidebar,
+    .sy-pa-sidebar-group-chevron {
+        transition: none;
+    }
+}

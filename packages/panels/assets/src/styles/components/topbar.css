@@ -1,0 +1,15 @@
+.sy-pa-topbar {
+    @apply sticky top-0 z-20 flex min-h-16 items-center gap-x-4 bg-white px-4 shadow-xs ring-1 ring-gray-950/5 lg:col-start-2 lg:row-start-1 lg:px-8 dark:bg-gray-900 dark:ring-white/10;
+}
+
+.sy-pa-topbar-open-sidebar-btn {
+    @apply flex cursor-pointer items-center justify-center rounded-lg p-2 text-gray-500 outline-hidden transition duration-75 hover:bg-gray-100 focus-visible:bg-gray-100 lg:hidden dark:text-gray-400 dark:hover:bg-white/5 dark:focus-visible:bg-white/5;
+}
+
+.sy-pa-topbar-brand {
+    @apply truncate text-base leading-6 font-semibold text-gray-950 dark:text-white;
+}
+
+.sy-pa-topbar-end {
+    @apply ms-auto flex items-center gap-x-4;
+}

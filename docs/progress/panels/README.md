@@ -165,6 +165,7 @@ Enums, contracts, HTTP layer, events, templates —
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | — |
+| [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships one Stimulus controller (`sidebar`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets) |
 | _rest not audited yet_ | | | |
 
 ### Layout templates
@@ -190,3 +191,39 @@ What Filament's sidebar has and this does not, all todo:
 
 The Livewire-shell → static-component divergence these templates sit on is
 recorded with the layout that composes them.
+
+### Assets
+
+`packages/panels/assets` is the `@sylament/panels` pnpm workspace, JS-only in the
+same shape as `@sylament/notifications`: one Stimulus controller builds to its own
+`dist`, while `src/styles/index.css` is imported by support's stylesheet and
+compiles into support's single built CSS. The built `dist` is mapped into
+AssetMapper as `@sylament/panels`. The four style files (`layout`, `sidebar`,
+`topbar`, `header`) carry the `sy-pa-*` rules mobile-first — off-canvas drawer
+below `lg`, two-column grid at `lg` and up — and take their active-item colour
+from the `--sy-text` slot rather than a hardcoded shade.
+
+The `sidebar` controller is declared `fetch: eager`, matching notifications: the
+shell must apply stored collapse state on the first paint rather than after lazy
+loading catches up. It owns the drawer open/close pair (`toggle`, `close`,
+`closeOnEscape`), the per-group collapse toggle, and persistence under the
+localStorage key `sylament.panels.sidebar.collapsedGroups` (a JSON array of group
+labels read from `data-group-label`).
+
+Two behaviours worth knowing. Every storage read and write is guarded, and an
+absent key, unavailable storage or an unparseable value all collapse to the same
+"no usable state" signal — in which case the server-rendered classes stand and
+the key is seeded from them, so a user who has never touched a group gets the
+markup's defaults instead of everything force-expanded. And the controller keeps
+`aria-expanded` on each group button in sync with the class it toggles, since the
+markup is static and nothing else updates it.
+
+What Filament's panel assets have and this does not, all todo:
+
+- Desktop collapse (the icon-only rail) and its width/tooltip state — the
+  controller tracks the mobile drawer only, and the settings behind it arrive
+  with M2 · 2.
+- `scroll-sidebar.js` — restoring sidebar scroll position across navigations.
+- `dark-mode.js`, `unsaved-changes-alert.js`, `error-notifications.js`,
+  `echo.js`, and the resource/page scripts — none of the surfaces they serve
+  exist yet.

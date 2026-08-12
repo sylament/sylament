@@ -1,0 +1,19 @@
+.sy-pa-header {
+    @apply flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between;
+}
+
+.sy-pa-header-headings {
+    @apply min-w-0;
+}
+
+.sy-pa-header-heading {
+    @apply text-2xl font-bold tracking-tight text-gray-950 sm:text-3xl dark:text-white;
+}
+
+.sy-pa-header-subheading {
+    @apply mt-2 max-w-2xl text-lg text-gray-600 dark:text-gray-400;
+}
+
+.sy-pa-header-actions {
+    @apply flex shrink-0 items-center gap-3;
+}

@@ -75,6 +75,7 @@ The panel surface —
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`Navigation\NavigationItem`](../../../packages/panels/src/Navigation/NavigationItem.php) | [`Navigation/NavigationItem.php`](../../../vendor/filament/filament/src/Navigation/NavigationItem.php) | in progress | — |
+| [`Navigation\NavigationGroup`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`Navigation/NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | in progress | — |
 | _rest not audited yet_ | | | |
 
 ### NavigationItem
@@ -93,6 +94,31 @@ Deferred, all todo:
   (`HasExtraAttributes`) — neither trait is ported in `support` yet.
 - `getBadgeColor()` takes no `?string $badge` argument here, and `group()` takes
   no `UnitEnum` arm — both land with the surface that needs them.
+
+### NavigationGroup
+
+Label, icon, items, the collapsible/collapsed pair and `isActive()` are ported.
+`items()` takes `array<NavigationItem> | Closure` where Filament takes
+`array | Arrayable` — the closure arm is the idiom translation of Laravel's
+`Arrayable`, and `getItems()` evaluates it.
+
+Deferred, all todo:
+
+- `HasExtraSidebarAttributes` / `HasExtraTopbarAttributes` — the extra-attribute
+  trait they build on is not ported in `support` yet, same gap `NavigationItem`
+  records for `HasExtraAttributes`.
+- `fromEnum()` — needs the `HasLabel` / `HasIcon` / `Collapsible` enum contracts,
+  and the `UnitEnum` group arm `NavigationItem::group()` also defers.
+- The panel-level collapsible default. Filament falls back to
+  `filament()->hasCollapsibleNavigationGroups()`; there is no panel to ask yet,
+  so `isCollapsible()` is pinned to `true` until M2 · 2 introduces the setting.
+
+Two deliberate deltas beyond that. `collapsed()` does **not** also call
+`collapsible()` the way Filament's does — that hidden coupling makes
+`collapsed(false)` silently turn the group non-collapsible — so the gate lives in
+the reader instead: `isCollapsed()` returns `false` whenever the group is not
+collapsible. And `isActive()` skips hidden items, so a group is active only for
+an item the user can actually see.
 
 ## Features
 

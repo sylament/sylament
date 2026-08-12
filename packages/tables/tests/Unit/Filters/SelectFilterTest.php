@@ -169,7 +169,7 @@ it('refuses a dotted attribute whose head is not an alias', function (): void {
     $query = selectFilterQuery(selectFilterSongs());
 
     SelectFilter::make('publisher')->attribute('publisher.name')->apply($query, ['value' => 'Nova']);
-})->throws(LogicException::class, 'is not an alias on the builder');
+})->throws(LogicException::class, 'is not an alias on the builder, a mapped field path, or an association path');
 
 it('resets the key the state actually uses', function (): void {
     expect(SelectFilter::make('title')->getResetState())->toBe(['value' => null])

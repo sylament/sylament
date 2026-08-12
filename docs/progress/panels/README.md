@@ -187,31 +187,36 @@ collapsible](#collapsed-does-not-also-make-the-group-collapsible),
 
 ### Page
 
-The declarative surface only: the `title` static with `getTitle()`, the
-`heading`/`subheading` pair with `getHeading()` falling back to the title, and
-the four navigation statics (`navigationIcon`, `navigationLabel`,
-`navigationSort`, `navigationGroup`) with their static getters. That is enough
-for navigation to describe a page before anything can render one.
+The declarative surface plus the routing and live-component half. The `title`
+static with `getTitle()` (falling back to the kebab-cased, title-cased class
+basename), the `heading`/`subheading` pair with `getHeading()` falling back to
+the title, the navigation statics (`navigationIcon`, `activeNavigationIcon`,
+`navigationLabel`, `navigationSort`, `navigationGroup`) with their static
+getters, and the `navigationBadge`/`navigationBadgeColor` hooks a subclass
+overrides.
+
+Routing and rendering: `getSlug()` (the `$slug` static, else the kebab-cased
+class basename), `getRoutePath()`, `getRouteName(Panel $panel)` — the
+`sylament.<panel id>.pages.<slug>` convention — `getComponentName()` (the FQCN
+with `\` replaced by `:`, the ux-twig-component tag name), and `getView()` (the
+`$view` static, else `@SylamentPanels/partials/Page/index.html.twig`) as the
+`template_from_method` target. `DefaultActionTrait` makes the page a live
+component. `getNavigationItems(Panel $panel)` builds the one `NavigationItem` a
+page contributes, its `url()` and `isActiveWhen()` closures resolving
+`UrlGeneratorInterface` and `RequestStack` through the `Invoker` at render time
+rather than capturing them.
 
 Deferred, all todo:
 
-- Live-component wiring and routing — a page is a Livewire component in Filament;
-  here it becomes a UX LiveComponent plus a route, owned by M2 · 2.
 - The `BasePage` split — Filament separates `BasePage` (the render/lifecycle
   half) from `Page` (the panel-aware half); the split lands with the half that
   needs it.
 - Breadcrumbs and header actions — both need the panel shell around them.
-- Page discovery. How a page is registered is decided in M2 · 2, alongside the
-  `Resource`-as-a-service decision above; nothing here presumes it.
 - A writer for the `heading`/`subheading` pair. Filament ships none either — its
   `BasePage` declares both as protected properties a subclass assigns or a
-  subclass getter overrides — but there is also no page lifecycle here to set
-  them from, so today the pair is subclass-only. The live-component half in
-  M2 · 2 is where a mounted page would fill them.
+  subclass getter overrides — so today the pair stays subclass-only.
 
-Two deltas against Filament's page, both of which M2 · 2 decides for real:
-[`getNavigationLabel()` has no title or class-name
-fallback](#getnavigationlabel-has-no-title-or-class-name-fallback) and
+One delta against Filament's page remains:
 [`$navigationGroup` is string-only](#navigationgroup-is-string-only-on-page-too).
 
 ### Panel
@@ -456,18 +461,6 @@ translated rather than ported: `items()` takes
 container services — the deferred-collection use Filament's `Arrayable` arm
 serves, plus request-derived items. An `Arrayable` object passed here is simply
 an unsupported type.
-
-### `getNavigationLabel()` has no title or class-name fallback
-
-Filament falls back from `$navigationLabel` to `$title` and then to the
-kebab-cased, space-separated, title-cased class basename, returning a
-non-nullable `string`.
-Ours returns `static::$navigationLabel` and nothing else, so it is `?string`.
-The class-basename half needs a naming convention this port has not settled
-(Filament's `str()->kebab()->replace()->ucwords()` chain assumes Laravel's string
-helper and Filament's page-class naming), and the title half presumes the
-title/heading fallback chain that arrives with the page lifecycle. M2 · 2 decides
-both together; until then a page that wants a navigation label states one.
 
 ### `$navigationGroup` is string-only on `Page` too
 

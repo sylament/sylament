@@ -296,11 +296,12 @@ absent key, unavailable storage or an unparseable value all collapse to the same
 the key is seeded from them, so a user who has never touched a group gets the
 markup's defaults instead of everything force-expanded. And the controller keeps
 `aria-expanded` in sync with the class it toggles, since the markup is static and
-nothing else updates it — but it syncs through a
-`.sy-pa-sidebar-group-btn[aria-expanded]` selector, not the class alone, so a
+nothing else updates it — and the whole restore/persist pass, not just the aria
+sync, walks only groups matching `.sy-pa-sidebar-group-btn[aria-expanded]`, so a
 non-collapsible group (same label class, no disclosure attributes — see
-[Layout templates](#layout-templates)) is deliberately skipped rather than being
-handed a state it has no control for.
+[Layout templates](#layout-templates)) is deliberately skipped everywhere: a
+stale localStorage entry can never collapse a group that has no control to
+reopen it.
 
 What Filament's panel assets have and this does not, all todo:
 

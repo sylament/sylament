@@ -26,13 +26,16 @@ stops mid-M2, M1 still demos on its own.
 
 ## Now
 
-**M2 · 1 — Panel shell.** The next epic to pick up: the layout Twig components
-— sidebar, topbar, content frame — plus the navigation model and the page base
-class the rest of M2 composes its pages from. Three pulled-forward epics landed
-ahead of it, all demo-verified in the browser: the
-[Doctrine relation layer](#pulled-forward) (19) for schemas and forms, the
-[tables relation arm](#pulled-forward) (20) that finished the half it left out,
-and [table filters](#pulled-forward) (21).
+**M2 · 2 — Panel definition + routing.** The next epic to pick up: the `Panel`
+config object (id, path, navigation), a route loader mounting pages under
+`/admin`, and a static Dashboard page composed on the epic-1 shell. Two
+decisions it must settle on the way in, both staged in the trail: how concrete
+pages register as live components (per-page attribute vs a compiler pass —
+attributes don't inherit), and the request-derived current panel
+(never a mutable singleton — see the worker-safety
+[carried decision](panels/README.md#carried-decisions)).
+[M2 · 1](#m2--mini-admin-panel) landed ahead of it, demo-verified in the
+browser under Turbo Drive.
 
 ## Pulled forward
 
@@ -142,7 +145,7 @@ whole UI — Filament's pitch, running on Symfony._
 
 | # | Epic | Packages | Delivers | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Panel shell | [panels](panels/README.md) | Layout Twig components — sidebar, topbar, content frame — the navigation model, and the page base class. | todo |
+| 1 | Panel shell | [panels](panels/README.md) | The shell layer, demo-proven in the browser under Turbo Drive. `NavigationItem`/`NavigationGroup` on the support `Component` base (closure-evaluable; active state is request-derived through `isActiveWhen()` closures, never global state) and the surface-only `Page` base (live-component wiring deferred to epic 2, where routing forces the registration decision). Six anonymous layout components — `Layout`, `Sidebar`, `SidebarGroup`, `SidebarItem`, `Topbar`, `Header` — with skip link, stable landmark ids, `aria-current` on the active item, and disclosure ARIA only where a control exists. The `@sylament/panels` assets workspace: one sidebar Stimulus controller (mobile off-canvas with overlay and Escape, per-group collapse persisted to localStorage and restored in `connect()` so behaviour is identical with and without Turbo, hamburger `aria-expanded` sync), `sy-pa-*` styles compiled into support's stylesheet, and the bundle's AssetMapper `@sylament/panels` registration — the piece no task owned until review caught it. Divergences recorded in the trail: the shell is static Twig components rather than Filament v5's Livewire sidebar/topbar; Alpine's `$store.sidebar` became the one controller. Deferred, named in the trail: desktop collapse variants, collapsed tooltips, sub-navigation, `NavigationBuilder`/`NavigationManager`, breadcrumbs, user menu, theme switcher, DB-notifications trigger. | done |
 | 2 | Panel definition + routing | [panels](panels/README.md) | The `Panel` config object (id, path, navigation), a route loader mounting pages under `/admin`, a static Dashboard page. | todo |
 | 3 | Resource vertical | [panels](panels/README.md) | The `Resource` base — `form()`, `table()`, `getPages()` — List/Create/Edit pages composed from M1 pieces and the pulled-forward table epics (11–12), navigation derived from resources. | todo |
 | 4 | Demo panel assembly | **demo** | Mount the panel, register the Articles resource, seed and polish. | todo |

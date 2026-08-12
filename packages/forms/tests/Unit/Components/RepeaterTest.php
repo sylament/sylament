@@ -202,6 +202,36 @@ it('merges a declared default with the per-field hydration pass', function (): v
     expect($host->data['tags'])->toBe([['name' => 'seeded']]);
 });
 
+/**
+ * Characterization of today's behaviour, not a shape anyone wants: a no-arg
+ * `fill()` over an *already populated* repeater leaves the pre-fill items
+ * standing as all-null ghosts beside the default one. Recorded in
+ * `docs/progress/forms/repeater.md` ("A defaults fill over a populated repeater
+ * resurrects its pre-fill items"), unreachable from every no-arg `fill()` caller
+ * that ships — so changing this assertion means the fix landed, not that the
+ * test drifted.
+ */
+it('characterizes the ghost items a defaults fill leaves over a populated repeater', function (): void {
+    $host = new FieldRenderHost();
+    $host->data = ['tags' => [['name' => 'a'], ['name' => 'b']]];
+
+    $schema = Schema::make($host)->statePath('data');
+    $schema->components([
+        Repeater::make('tags')
+            ->generateUuidUsing(static fn (): string => 'fresh')
+            ->defaultItems(1)
+            ->components([TextInput::make('name')]),
+    ])->getComponents();
+
+    $schema->fill();
+
+    expect($host->data['tags'])->toBe([
+        'fresh' => ['name' => null],
+        0 => ['name' => null],
+        1 => ['name' => null],
+    ]);
+});
+
 it('reads a single item state slice', function (): void {
     Repeater::fake();
 

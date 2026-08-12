@@ -63,7 +63,7 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 | `Repeater::make()` + `components()` item schema definition (the `schema()` alias is [not ported](../renames.md)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#an-item-field-derives-no-requirement-from-the-record) · [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) |
 | `hydrateItems()` / `dehydrateItems()` + `CanGenerateUuids` (`generateUuidUsing()` / `generateUuid()` / `fake()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanGenerateUuids.php`](../../../vendor/filament/forms/src/Components/Concerns/CanGenerateUuids.php) | done | — | [semantics](#items-are-uuid-keyed-in-the-live-bag-and-positional-on-the-record) · [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) · [semantics](#unmanaged-item-keys-round-trip-through-the-client) · [diverges](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid) |
 | `getItems()` / `getDefaultChildSchemas()` / `areCachedDefaultChildSchemasFresh()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](#every-item-schema-is-keyed-as-well-as-re-pathed) · [diverges](#an-item-schema-carries-no-constant-state-or-inline-label-stamp) |
-| `defaultItems()` / `default()` + the hydrated-default merge | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
+| `defaultItems()` / `default()` + the hydrated-default merge | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](#a-defaults-fill-over-a-populated-repeater-resurrects-its-pre-fill-items) |
 | `simple()` / `isSimple()` / `getSimpleField()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-item-pipeline-runs-children-first-and-before-the-null-fill-pass) |
 | Add action (`getAddAction()` / `addAction()` / `addActionLabel()` / `addActionAlignment()` / `addable()` / `isAddable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
 | Delete action (`getDeleteAction()` / `deleteAction()` / `deletable()` / `isDeletable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
@@ -657,6 +657,56 @@ to move past it was the helper leaking value semantics into key mechanics. Key
 matching is strict over `strval()`-normalised keys, the same normalisation the
 record walks use, so a client-sent `'2'` matches a fake-mode integer key
 without the loose comparison Rector rejects.
+
+### A defaults fill over a populated repeater resurrects its pre-fill items
+
+`Schema::fill()` with **no argument** over a repeater that already holds items
+writes the declared default and then rebuilds every pre-fill item beside it as an
+all-null ghost. Measured over
+`Repeater::make('tags')->defaultItems(1)->components([TextInput::make('name')])`,
+with the uuid generator pinned to a fixed key so the shape is readable — the bag
+holds two items, the fill declares one, and three come out:
+
+```
+before  ['tags' => [['name' => 'a'], ['name' => 'b']]]
+after   ['tags' => ['fresh' => ['name' => null], 0 => ['name' => null], 1 => ['name' => null]]]
+```
+
+The mechanism is the flat walk. Schemas' `Schema::hydrateState()` materialises
+`getFlatComponents()` **once**, up front, so the list it walks holds the item
+schemas built from the *pre-fill* map — fields at `tags.0.name` and
+`tags.1.name`. The repeater itself is visited first (parent-first) and writes its
+default, a freshly keyed map, recording it at `tags` in the walk's shared
+`$hydratedDefaultState`. The stale item fields run next, and that record does not
+cover them: the default's keys are new, so `tags.0.name` is not a path any
+default mentioned. Each field is defaultless, so each
+[null-writes](../schemas/component.md#a-defaults-fill-nulls-a-defaultless-component-and-the-shared-record-is-what-protects-a-containers-default),
+and the accessor vivifies the missing intermediates on the way — which is what
+rebuilds `tags.0` and `tags.1` as items. Filament never reaches this: its
+`hydrateState()` recurses, re-reading `getChildSchemas()` at each descent, so the
+item schemas it visits are the ones the default just created.
+
+**Pre-existing shape, escalated by the defaults-fill fix.** Materialise-once is
+older than this; what changed is that a defaultless component now *writes* null
+where it used to be skipped, so a stale item schema went from inert to
+state-producing. Nothing that ships reaches it, caller by caller:
+`HasFilters::mountTableFilters()` and `CanBeMounted`'s default `mountUsing` fill
+a freshly built schema over an empty bag; `Repeater::getAddAction()` fills the
+one item schema it has just created empty; `HasSchemas::fill(null)` is the
+host-facing entry and every host calls it from `mount()`, again over an empty
+bag; and `HasFilters::resetTableFiltersForm()` — the only one that fills a
+**populated** bag, which is how the null-write's absence was caught at all —
+fills a filters form, and no filter that ships puts a repeater in one. It becomes
+reachable the first time a host re-fills a populated form: a "reset to defaults"
+button over a form holding a repeater is the exact shape.
+
+Today's output is pinned as-is by
+[`it characterizes the ghost items a defaults fill leaves over a populated repeater`](../../../packages/forms/tests/Unit/Components/RepeaterTest.php),
+a characterization test rather than a wanted one — the assertion changes when the
+fix lands, and the diff is what states its cost. The fix is on the walk, not on
+the repeater: either recurse the way Filament does (re-reading child schemas per
+descent), or flush a container's cached child schemas the moment its own default
+replaces the state they were derived from.
 
 ### Deprecated Filament members are not ported
 

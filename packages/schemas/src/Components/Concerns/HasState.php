@@ -321,7 +321,9 @@ trait HasState
     /**
      * The defaults pass over one component: write its declared default, or null
      * when it declares none — a defaults fill replaces whatever the bag already
-     * held rather than filling only its gaps.
+     * held rather than filling only its gaps. Only reached for a path-bearing
+     * component, which is why the null-write carries no `hasStatePath()` guard of
+     * its own: `hydrateState()` returns before this for a pathless one.
      *
      * `$hydratedDefaultState` is the walk's shared record of every default
      * already written, keyed by absolute state path. A component whose path the
@@ -332,7 +334,7 @@ trait HasState
      */
     protected function hydrateDefaultState(array &$hydratedDefaultState): void
     {
-        $statePath = $this->getStatePath() ?? '';
+        $statePath = (string) $this->getStatePath();
         $accessor = $this->getPropertyAccessor();
 
         if ($accessor->hasInArray($hydratedDefaultState, $statePath)) {

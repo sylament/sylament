@@ -234,6 +234,13 @@ its sibling `author.surname`, which the parent default never mentioned, is not
 covered and still nulls. Both halves are pinned in
 [Unit/Concerns/HasStateTest](../../../packages/schemas/tests/Unit/Concerns/HasStateTest.php).
 
+What the record cannot protect is a container whose child paths are *derived from
+the state the default replaces* — a repeater, whose item schemas the flat walk
+materialised before the default rewrote their keys: those children sit at paths
+the new default never mentions, so the record waves them through and their
+null-writes rebuild the items the default just dropped
+([the repeater divergence](../forms/repeater.md#a-defaults-fill-over-a-populated-repeater-resurrects-its-pre-fill-items)).
+
 ### Dehydration prunes around shared state paths and pathless components
 
 The dehydration walk looks like "a non-dehydrated component removes its key", and

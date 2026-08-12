@@ -47,4 +47,10 @@ interface InteractsWithActions
     public function isMountedActionModalOpen(int $actionNestingIndex): bool;
 
     public function getAction(string $name): ?Action;
+
+    /**
+     * The URL an action with no `url()` of its own falls through to — null when
+     * the host has no page to send it to.
+     */
+    public function getDefaultActionUrl(Action $action): ?string;
 }

@@ -78,7 +78,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `emit()` / `emitSelf()` / `emitTo()` (deprecated) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | skipped | — | [diverges](#the-deprecated-emit-aliases-are-not-ported) |
 | [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | notifications package | [detail](#cannotify-only-ports-notification-titles-not-sending) |
 | [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
-| [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-drops-the-default-action-url-fallback) |
+| [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
 | POST-to-url support | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | skipped | — | [diverges](#post-to-url-support-is-not-ported) |
 | [`CanRequireConfirmation`](../../../packages/actions/src/Concerns/CanRequireConfirmation.php) | [`Concerns/CanRequireConfirmation.php`](../../../vendor/filament/actions/src/Concerns/CanRequireConfirmation.php) | done | — | [diverges](#confirmation-is-a-flag-not-a-modal-config-layer) |
 | [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) | [`Concerns/HasAction.php`](../../../vendor/filament/actions/src/Concerns/HasAction.php) | in progress | — | [detail](#hasaction-drops-the-livewire-click-gating), [diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
@@ -486,7 +486,7 @@ binding. No longer blocked, now that
 action rendering, which is the first thing that binds a table to an action at
 all.
 
-### getUrl() drops the default-action-url fallback
+### getUrl() carries the host fallback; the new-tab introspection helper is missing
 
 Ported and test-covered: `url()`, `openUrlInNewTab()`, `getUrl()`'s closure
 evaluation, `hasUrl()`, `shouldOpenUrlInNewTab()`, and the modal-precedence
@@ -502,17 +502,25 @@ against the
 supply it — `Action` does via `CanOpenModal`) plus `Action`-level precedence
 cases.
 
-Missing vs Filament: when no explicit `url` closure resolves a value,
-Filament's `getUrl()` falls back to
-`$this->getHasActionsLivewire()?->getDefaultActionUrl($this)`; that hook stays
-with the deferred
-[`getDefaultAction*` host-hook cluster](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported).
-Filament's `Action::render()` also consults a plain introspection helper,
+Also ported, and the reason the prebuilt
+[`CreateAction`](create-action.md) / [`EditAction`](edit-action.md) work at all:
+the host fallback. When no explicit `url` closure resolves a value, `getUrl()`
+asks the host —
+`$this->evaluate($this->url) ?? $this->getLiveComponentOrNull()?->getDefaultActionUrl($this)`,
+Filament's line with its `getHasActionsLivewire()` replaced by the port's
+[null-tolerant accessor](#the-live-component-chain-narrows-inline-instead-of-through-a-second-getter)
+(the throwing `getLiveComponent()` would turn "this action is not on a host" into
+an exception at render time, which is exactly the case that has to answer
+`null`). The hook itself is
+[on the contract with a `null` default on the trait](interacts-with-actions.md#a-host-answering-the-url-hook-must-discriminate-by-action).
+Precedence is Filament's: an explicit `url()` never consults the host, and the
+`hasModal()` guard still wins over both.
+
+Missing vs Filament: `Action::render()` consults a plain introspection helper,
 `hasShouldOpenUrlInNewTab()`, when deciding button vs. link markup; Sylament
 has no equivalent (only the evaluated `shouldOpenUrlInNewTab()` exists).
 
-Next step: restore the `getDefaultActionUrl()` fallback alongside the host-hook
-cluster; add `hasShouldOpenUrlInNewTab()` with the optimized-render pipeline
+Next step: add `hasShouldOpenUrlInNewTab()` with the optimized-render pipeline
 that consumes it.
 
 ### HasAction drops the Livewire-click gating

@@ -1,0 +1,183 @@
+# DeleteAction (actions)
+
+[`Sylament\Actions\DeleteAction`](../../../packages/actions/src/DeleteAction.php)
+— the prebuilt record delete: a danger-coloured trash trigger that opens a
+confirmation modal and, on confirm, removes the record through Doctrine and
+reports `success()`. Unlike [`CreateAction`](create-action.md) and
+[`EditAction`](edit-action.md) it is **complete**: deleting needs no form, so
+there is no modal arm waiting on a schema resolver.
+
+**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+
+Reference — the Filament source this is diffed against:
+
+- [`actions/src/DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php)
+  — the class this ports, whole
+- [`actions/src/Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php)
+  — the trait it composes, ported whole (row in
+  [README](README.md#features))
+
+Covered by
+[`DeleteActionTest`](../../../packages/actions/tests/Unit/DeleteActionTest.php)
+for the chrome and the `using()` / status paths, and end to end by
+[`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php)
+in the **tables** suite — mount a row action, confirm it, and the record is gone
+from the database and from the re-render. It sits there for the reason
+[`RecordActionsResolutionTest`](has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference)
+does: only a table host can bind a row's record to the action, and the actions
+test kernel has neither a table nor a database.
+
+## Surface
+
+Every member Filament's class carries. _Blocked by_ names what has to land
+first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
+**diverges** link to [Divergences](#divergences), or `—`.
+
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [`getDefaultName()`](../../../packages/actions/src/DeleteAction.php) (`'delete'`) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | done | — | — |
+| [`setUp()` label, success-notification title, `defaultColor('danger')`, `requiresConfirmation()`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`icon('heroicons:trash')`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) `tableIcon()` + `groupedIcon()` | done | — | [diverges](#one-plain-icon-replaces-filaments-table-and-grouped-pair) |
+| [The `action()` body — delete then `success()` / `failure()`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | done | — | [diverges](#the-delete-goes-through-a-doctrine-manager-registry-not-through-the-record) |
+| [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
+| [`modalHeading('Delete')`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) (record title interpolated) | in progress | record-title host hook | [detail](#the-modal-heading-is-a-bare-verb-until-a-record-title-exists) |
+| `modalIcon()` / `modalSubmitActionLabel()` | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | skipped | — | [diverges](#the-confirmation-chrome-is-left-to-the-defaults) |
+| `keyBindings(['mod+d'])` | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | todo | `HasKeyBindings` | — |
+| `hidden()` for a soft-deleted record | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | skipped | — | [diverges](#there-is-no-soft-delete-arm-to-hide-behind) |
+| Success redirect after the delete | [`Concerns/CanRedirect.php`](../../../vendor/filament/actions/src/Concerns/CanRedirect.php) | blocked | `getDefaultActionSuccessRedirectUrl` host hook | [detail](#a-delete-on-a-record-page-does-not-redirect-yet) |
+
+## Details
+
+Specifics for rows that are not finished — what is already in, what is left,
+and the next step.
+
+### The modal heading is a bare verb until a record title exists
+
+Filament's heading reads _"Delete Airbag"_ — `__('…delete.single.modal.heading',
+['label' => $this->getRecordTitle()])`. `getRecordTitle()` is part of the
+[unported record-title and model-metadata surface](action.md#the-record-title-and-model-metadata-surface-is-not-ported),
+and the host hook that would supply a default
+(`getDefaultActionRecordTitle()`) is part of the
+[deferred hook cluster](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported).
+So the port sets the bare `'Delete'`. A caller who wants the record in the
+heading passes a closure, exactly as the demo's hand-built delete action does:
+`->modalHeading(fn (Article $record): string => sprintf('Delete "%s"?', $record->getTitle()))`.
+
+**Next step:** interpolate the record title once `getRecordTitle()` and its host
+hook land.
+
+### A delete on a record page does not redirect yet
+
+In Filament, deleting the record you are editing redirects to the resource
+index — `dispatchSuccessRedirect()` reads
+`getDefaultActionSuccessRedirectUrl()` off the host page. Neither
+`CanRedirect` nor the hook is ported ([README](README.md#features) tracks the
+concern), so the port deletes the record and re-renders in place; on a table
+that is exactly right, and on a record page it leaves a page whose record no
+longer exists.
+
+**Next step:** lands with `CanRedirect` and the success-redirect host hook —
+the pair is the one thing a resource `EditRecord` page needs before it can
+carry a `DeleteAction`.
+
+## Divergences
+
+Deliberate deviations from Filament — permanent, and the reason they hold.
+These outlive the detail sections above.
+
+### The delete goes through a Doctrine manager registry, not through the record
+
+Filament's body is `static fn (Model $record): ?bool => $record->delete()` —
+Eloquent's active record deletes itself. Doctrine records are plain objects
+with no persistence behaviour, so the port resolves the record's manager
+instead:
+
+```php
+$manager = $registry->getManagerForClass($record::class)
+    ?? throw new LogicException(sprintf('No Doctrine manager handles %s.', $record::class));
+
+$manager->remove($record);
+$manager->flush();
+
+return true;
+```
+
+Three consequences worth stating. The registry rather than a single
+`EntityManagerInterface` is deliberate: a multi-manager application binds
+entities to different managers, and `getManagerForClass()` is the only lookup
+that respects that. The `true` return replaces Eloquent's `?bool`, so the
+`success()` / `failure()` split still has something to key off — `remove()` +
+`flush()` throw rather than report, which means the failure arm is reachable
+only through a `using()` closure that returns falsy (pinned by
+`DeleteActionTest`). And the record type widens from `Model` to `object`, the
+same widening every record-typed signature in the port carries.
+
+### The manager registry is an optional `#[Required]` injection
+
+`setManagerRegistry(?ManagerRegistry $managerRegistry = null)` is nullable
+**with a default**, which is what lets a Doctrine-less container compile the
+service definition at all: Symfony's autowiring fills an optional argument with
+its default when no service matches the type, and throws only when the
+parameter is required. A Sylament install with no ORM therefore builds the
+`DeleteAction` definition fine, and only a *use* of the default process fails —
+loudly, naming the cause:
+
+> DeleteAction needs the container-built instance — register it as a service so
+> the manager registry is injected.
+
+That message also covers the other way to reach a null registry: an action built
+outside the container. `Action::make()` routes through
+[`ComponentResolver`](../support/component.md), so an instance the container
+built carries the setter injection; a `new DeleteAction()` (or a `make()` in a
+unit test with no kernel) does not. Do not "fix" the nullability — a
+non-nullable parameter moves the failure from the one call site that needs
+Doctrine to every application that boots the bundle without it.
+
+### The confirmation chrome is left to the defaults
+
+Filament sets `modalIcon(…OutlinedTrash)` and
+`modalSubmitActionLabel(__('…delete.label'))` on top of `requiresConfirmation()`.
+The port sets neither, because
+[`CanOpenModal`'s confirmation fallbacks](action.md#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution)
+already answer both: `getModalIcon()` returns `heroicons:exclamation-triangle`
+whenever confirmation is required, and `getModalSubmitActionLabel()` returns
+`Confirm`. Setting the Filament values would trade a working default for a
+literal that has to become a translation key later; the icon in particular is an
+alias lookup (`ActionsIconAlias::DELETE_ACTION_MODAL`) with nothing to resolve
+against yet.
+
+### One plain icon replaces Filament's table-and-grouped pair
+
+`icon('heroicons:trash')` where Filament sets `tableIcon()` + `groupedIcon()`,
+for the reason
+[edit-action.md](edit-action.md#one-plain-icon-replaces-filaments-table-and-grouped-pair)
+records — there is no `HasTableIcon` in the port, and the grouped trigger falls
+back to the plain icon.
+
+### The strings are literals, not translation keys
+
+`label('Delete')`, `modalHeading('Delete')` and
+`successNotificationTitle('Deleted')` are English literals where Filament reads
+`__('filament-actions::delete.single…')` — same call as
+[create-action.md](create-action.md#the-strings-are-literals-not-translation-keys).
+
+### There is no soft-delete arm to hide behind
+
+Filament hides the action for an already-trashed record:
+`hidden(static fn (Model $record): bool => method_exists($record, 'trashed') && $record->trashed())`.
+Doctrine ships no soft-delete concept, and the port has no equivalent (Filament's
+own `ForceDeleteAction` / `RestoreAction` are unported for the same reason), so
+the guard has nothing to test and is dropped rather than translated into a
+`method_exists()` probe for a convention nobody has defined.
+
+### The success notification is titled but not yet sent
+
+`successNotificationTitle('Deleted')` is set, and
+[`HasActions::callMountedAction()`](has-actions.md) calls
+`sendSuccessNotification()` after a successful call — but that method is still
+[a chainable no-op](action.md#cannotify-only-ports-notification-titles-not-sending):
+`CanNotify` ports the titles, not the sending. So a confirmed delete today
+updates the table and shows no toast. Nothing here changes when that is fixed —
+the title is already in place, and wiring `CanNotify` to build and `send()` a
+`Sylament\Notifications\Notification` makes this action's toast appear with no
+edit to this class.

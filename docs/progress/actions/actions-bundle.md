@@ -435,6 +435,23 @@ composer `suggest` and the guard rather than a `require`, the same shape support
 test that keeps the soft reference honest:
 [has-actions.md](has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference).
 
+The prebuilt [`DeleteAction`](delete-action.md) adds two more requires, both by
+the same rule. `symfony/service-contracts` is the plain case: the class imports
+`Symfony\Contracts\Service\Attribute\Required` for its manager-registry setter,
+so the package that ships the import declares it (`schemas` and `notifications`
+already do for the same attribute; `forms` uses it and does **not** declare it —
+an open gap on that package, not a precedent). `doctrine/orm` is the judgment
+call: the symbol actually imported is `Doctrine\Persistence\ManagerRegistry`,
+which lives in `doctrine/persistence`, so a minimal declaration would name that
+package instead. The port declares `doctrine/orm: ^3.6` — the constraint
+`schemas`, `forms`, `tables` and `panels` already carry — because the ORM
+hard-requires `doctrine/persistence` (`^3.3.1 || ^4`), so the interface cannot
+leave the graph, and because a one-package-per-Doctrine-constraint monorepo is
+what the [CLAUDE.md omission list](../../../CLAUDE.md) already reasons from
+(`doctrine/dbal` is undeclared everywhere on exactly this transitive-guarantee
+argument). Revisit if a split `sylament/actions` is ever consumed by an
+application that wants Doctrine's persistence contracts without the ORM.
+
 ### Livewire-specific provider responsibilities are dropped, not ported
 
 `packageBooted()` registers `Testable::mixin(new TestsActions)` — a Livewire

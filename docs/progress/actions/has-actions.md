@@ -95,7 +95,8 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | [Action-schema integration](../../../packages/actions/src/Concerns/HasActions.php) (`getMountedActionSchema()`, `mountedActionHasSchema()`, deprecated `mountedActionHasForm`/`getMountedActionForm`, `getMountedActionSchemaName()`, `getMountedActionSchemaModel()`) | `Concerns/InteractsWithActions.php` (same methods) | in progress | the action→schema record/operation hop | [has-schema.md](has-schema.md) · [detail](#the-per-mount-schema-is-not-seeded-with-a-record-or-an-operation) · [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) · [diverges](#the-has-schema-check-is-memoised-separately-because-the-schema-cache-cannot-hold-null) · [diverges](#set-and-get-are-unavailable-to-an-action-inside-a-mounted-action-schema) |
 | [`$mountedActionsData`](../../../packages/actions/src/Concerns/HasActions.php) + `getMountedActionData()` | `Concerns/InteractsWithActions.php` `mountedActions.{i}.data` | done | — | [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) |
 | `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | [detail](#url-bound-default-action-state-is-not-ported) |
-| `getDefaultAction*` host override hooks (Record/Title/Model/ModelLabel/Url/SuccessRedirectUrl/FailureRedirectUrl/Relationship/SchemaResolver/AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionRecord()` etc. | todo | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
+| [`getDefaultActionUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
+| The other ten `getDefaultAction*` host override hooks (Record/Title/Model/ModelLabel/SuccessRedirectUrl/FailureRedirectUrl/Relationship/SchemaResolver/AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionRecord()` etc. | todo | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
 | `forceRender()` / `partiallyRenderActionParentSchema()` | `Concerns/InteractsWithActions.php` `forceRender()` / `partiallyRenderActionParentSchema()` | blocked | schemas partial-render infrastructure (`PartialsComponentHook`) | [detail](#partial-re-render-is-not-ported) |
 | [`afterActionCalled()`](../../../packages/actions/src/Concerns/HasActions.php) hook (empty protected method; runs after `callAfter()`, before the notification branch, happy path only — Filament-exact) | `Concerns/InteractsWithActions.php` `afterActionCalled()` | done | — | — |
 | `bootedInteractsWithActions()` boot wiring / `WithRateLimiting` | `Concerns/InteractsWithActions.php` `bootedInteractsWithActions()`, `DanHarrin\LivewireRateLimiting\WithRateLimiting` | skipped | — | [diverges](#there-is-no-boot-hook-or-rate-limiting-trait) |
@@ -343,11 +344,21 @@ Filament declares eleven `getDefaultAction*(Action $action)` methods
 `FailureRedirectUrl`, `Relationship`, `SchemaResolver`,
 `AuthorizationResponse`, `IndividualRecordAuthorizationResponseResolver`), all
 returning `null` by default — extension points a host page overrides to supply
-context-free defaults to any action it mounts. None are declared on
-`HasActions`; nothing in the port currently calls for them since the `Action`
-concerns that would consume them (`CanBeAuthorized`, `CanRedirect`, relation
-managers, …) are not ported either. **Next step:** todo, add alongside the
-`Action`-level concerns that read them.
+context-free defaults to any action it mounts.
+
+One is now ported. `getDefaultActionUrl(Action $action): ?string` is declared on
+[the contract](interacts-with-actions.md) and defaulted here to `return null;`,
+exactly as Filament's trait does, because the prebuilt
+[`CreateAction`](create-action.md) and [`EditAction`](edit-action.md) set no
+`url()` of their own and reach their resource page through it. Contract and
+trait moved together, so every host that already uses this trait satisfies the
+wider interface with no edit — the pattern any of the remaining ten should
+follow. A host that overrides it
+[must discriminate by action](interacts-with-actions.md#a-host-answering-the-url-hook-must-discriminate-by-action).
+
+The other ten stay unported: the `Action` concerns that would consume them
+(`CanBeAuthorized`, `CanRedirect`, relation managers, …) are not ported either.
+**Next step:** todo, add alongside the `Action`-level concerns that read them.
 
 ### Partial re-render is not ported
 

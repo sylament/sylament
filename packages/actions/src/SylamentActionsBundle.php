@@ -33,7 +33,10 @@ class SylamentActionsBundle extends SylamentBundle
                 ->autowire()
                 ->autoconfigure()
             ->set(Action::class)
-            ->set(ActionGroup::class);
+            ->set(ActionGroup::class)
+            ->set(CreateAction::class)
+            ->set(DeleteAction::class)
+            ->set(EditAction::class);
     }
 
     private function configureTwigComponents(ContainerConfigurator $configurator): void

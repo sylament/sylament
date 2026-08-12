@@ -36,7 +36,7 @@ trait CanOpenUrl
             return null;
         }
 
-        return $this->evaluate($this->url);
+        return $this->evaluate($this->url) ?? $this->getLiveComponentOrNull()?->getDefaultActionUrl($this);
     }
 
     public function shouldOpenUrlInNewTab(): bool

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Sylament\Actions\Tests\Unit\Concerns;
 
 use Sylament\Actions\Action;
+use Sylament\Actions\EditAction;
 use Sylament\Actions\Tests\Fixtures\Concerns\CanOpenUrlFixture;
+use Sylament\Actions\Tests\Fixtures\Concerns\DefaultActionUrlHostFixture;
 
 it('has no url by default', function (): void {
     expect(new CanOpenUrlFixture()->getUrl())->toBeNull()
@@ -35,6 +37,22 @@ it('keeps the url when only modal content is configured', function (): void {
 
 it('suppresses the url when a modal is forced through modal()', function (): void {
     expect(Action::make('edit')->url('/edit')->modal()->getUrl())->toBeNull();
+});
+
+it('falls through to the host hook when no url of its own resolves', function (): void {
+    expect(EditAction::make()->liveComponent(new DefaultActionUrlHostFixture())->getUrl())->toBe('/hosted/edit');
+});
+
+it('prefers its own url over the host hook', function (): void {
+    expect(EditAction::make()->url('/own')->liveComponent(new DefaultActionUrlHostFixture())->getUrl())->toBe('/own');
+});
+
+it('stays null when the host declines to answer for the action', function (): void {
+    expect(Action::make('publish')->liveComponent(new DefaultActionUrlHostFixture())->getUrl())->toBeNull();
+});
+
+it('suppresses the host hook when a modal is forced', function (): void {
+    expect(EditAction::make()->modal()->liveComponent(new DefaultActionUrlHostFixture())->getUrl())->toBeNull();
 });
 
 it('evaluates the url and new-tab closures', function (): void {

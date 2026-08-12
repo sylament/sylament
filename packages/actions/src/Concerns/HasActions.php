@@ -555,6 +555,11 @@ trait HasActions
         return $this->cacheAction($action);
     }
 
+    public function getDefaultActionUrl(Action $action): ?string
+    {
+        return null;
+    }
+
     public function cacheAction(Action $action): Action
     {
         $action->liveComponent($this);

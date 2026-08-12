@@ -35,9 +35,10 @@ Reference — the Filament source this is diffed against:
 
 Every method the interface declares, plus every method Filament's contract
 declares that Sylament's does not. _Blocked by_ names what has to land first.
-_Detail_ carries only two links, either or both: **detail** → the write-up in
+_Detail_ carries three link types, any of them: **detail** → the write-up in
 [Details](#details), deleted once the row is **done**; **diverges** → the
-permanent note in [Divergences](#divergences).
+permanent note in [Divergences](#divergences); **semantics** → the permanent
+note in [Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -56,7 +57,8 @@ permanent note in [Divergences](#divergences).
 | `replaceMountedAction()` (trait-only here, as in Filament) | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) (trait method — not on the contract) | skipped | — | [diverges](#host-methods-are-promoted-onto-the-interface-when-a-template-calls-them) |
 | `mergeMountedActionArguments()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | todo | — | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
 | `getMountedActionSchemaName()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | skipped | — | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
-| The ten `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `panels` package | [detail](#the-panel-level-default-hooks-are-not-on-the-contract) |
+| [`getDefaultActionUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
+| The other nine `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `panels` package | [detail](#the-panel-level-default-hooks-are-not-on-the-contract) |
 
 ## Details
 
@@ -96,7 +98,12 @@ Filament's contract declares ten `getDefaultAction*` hooks
 `getDefaultActionSuccessRedirectUrl`, `getDefaultActionFailureRedirectUrl`,
 `getDefaultActionRelationship`, `getDefaultActionSchemaResolver`,
 `getDefaultActionAuthorizationResponse`, and
-`getDefaultActionIndividualRecordAuthorizationResponseResolver`). In Filament's
+`getDefaultActionIndividualRecordAuthorizationResponseResolver`). The first of
+them to land is `getDefaultActionUrl(Action $action): ?string`, which the
+[prebuilt `CreateAction`/`EditAction`](create-action.md) need to render as links
+to a resource's pages; it is declared on the interface and defaulted to `null`
+on the trait, so every existing host gains it for free. The remaining nine are
+still dropped. In Filament's
 own trait every one of them is a stub returning `null` — they exist purely as
 override points so a **panel resource or relation-manager page** can supply
 implicit record/model/URL/redirect/relationship/schema-resolver/authorization
@@ -112,6 +119,34 @@ the `panels` package landing. `getDefaultActionRelationship` additionally wanted
 a Doctrine equivalent of Eloquent's `Relation`, and that half is answered:
 [`AssociationTarget`](../schemas/association-reader.md) carries a described
 association, so only the host remains.
+
+**Next step:** each of the nine lands with the `Action`-side concern that reads
+it, the way the URL hook landed with the prebuilt actions —
+`getDefaultActionSuccessRedirectUrl` with `CanRedirect`,
+`getDefaultActionSchemaResolver` with
+[modal-mode `CreateAction`/`EditAction`](create-action.md#modal-mode-is-a-fail-fast-stub-not-a-persistence-body),
+`getDefaultActionRecordTitle` with `getRecordTitle()`.
+
+## Semantics
+
+Faithful ports subtle enough to be misread from the source alone — permanent,
+addressable by anchor.
+
+### A host answering the URL hook must discriminate by action
+
+`getDefaultActionUrl()` is asked for **every** action the host renders that has
+no `url()` of its own, and an action that returns a URL renders as an anchor —
+[`CanOpenUrl::getUrl()`](../../../packages/actions/src/Concerns/CanOpenUrl.php)
+is what the trigger templates branch on, and only an explicit `->modal()` call
+suppresses it. So a host that answers unconditionally turns its
+[`DeleteAction`](delete-action.md) into a link and its confirmation modal never
+opens. Filament's own implementation
+(`Resources\Pages\Page::getDefaultActionUrl()`) is a chain of
+`$action instanceof CreateAction` / `instanceof EditAction` guards for exactly
+this reason; the port's
+[`DefaultActionUrlHostFixture`](../../../packages/actions/tests/Fixtures/Concerns/DefaultActionUrlHostFixture.php)
+mirrors the shape, answering only for an `EditAction`. The default the trait
+ships returns `null`, so the trap is reachable only by a host that overrides it.
 
 ## Divergences
 

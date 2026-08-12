@@ -60,6 +60,55 @@ hang off that choice, and it is expensive to reverse once they exist.
 component classes get their dependencies from the container the moment they are
 registered, whether a static or an instance aggregator created them.
 
+### The shell is Turbo-indifferent and worker-safe
+
+Two constraints the shell is built under. Both are cheap to hold while the shell
+is six templates and one controller, and expensive to retrofit once pages,
+panels and widgets hang off them.
+
+**Turbo-indifferent.** Every behaviour hangs off Stimulus `connect()` — never
+`DOMContentLoaded`, never `turbo:load`, and never an inline `<script>`. A handler
+bound to first paint is dead in a Turbo-driven app from the second navigation on,
+and an inline script is both a CSP liability and unreachable from a re-rendered
+fragment. The landmark ids the shell emits are stable — `sy-pa-sidebar`,
+`sy-pa-topbar`, `sy-pa-main` — so a swapped body reconnects to the same targets
+and the skip link keeps working. Sidebar collapse state is
+restored from `localStorage` on `connect()` rather than preserved with
+`data-turbo-permanent`: the markup can be replaced wholesale and the state still
+survives, which `data-turbo-permanent` would only manage for the exact subtree it
+guards.
+
+**Worker-safe.** No mutable static per-request state anywhere in the shell. A
+long-running worker (FrankenPHP, RoadRunner, Swoole) reuses the PHP process
+across requests, so anything static that remembers *this* request leaks into the
+next one — a class of bug that never shows up under php-fpm and is close to
+undebuggable in production. Request awareness reaches the navigation model
+through evaluated closures instead: `isActiveWhen(fn (RequestStack $requests) =>
+…)`, where the `Invoker` resolves the parameter from the container per call —
+`RequestStack` is a shared service, but everything it hands back belongs to the
+request being served, so nothing has to be remembered. One wiring caveat comes with
+it — FrameworkBundle's `RequestStack::class` alias is **private**, and the
+`Invoker` reads through `ContainerInterface::has()`/`get()`, so an application
+injecting it into a closure has to republish the alias public; the panels test
+kernel does exactly that, and
+[`SylamentPanelsBundleTest`](../../../packages/panels/tests/Integration/SylamentPanelsBundleTest.php)
+pins the injection. M2 · 2's current-panel lookup must be derived the same way,
+from the request, and never held in a stateful singleton.
+
+### The shell is not live
+
+Filament v5's sidebar and topbar are Livewire components. Ours are anonymous Twig
+components rendering a plain PHP navigation model, because nothing in M2 needs a
+server round-trip from the shell: navigation is a set of links, collapse state is
+client-side, and the only interactive parts (the mobile drawer, per-group
+collapse) are markup plus one Stimulus controller. A live shell would buy
+re-rendering on the server and cost a component round-trip on every page.
+
+Revisit when something in the shell must change without a navigation — the
+database-backed notifications trigger is the first candidate, since an unread
+count in the topbar is a server fact that changes between page loads. Until then
+the divergence is a simplification, not a gap.
+
 ## Components
 
 The panel surface —
@@ -74,9 +123,9 @@ The panel surface —
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| [`Navigation\NavigationItem`](../../../packages/panels/src/Navigation/NavigationItem.php) | [`Navigation/NavigationItem.php`](../../../vendor/filament/filament/src/Navigation/NavigationItem.php) | in progress | — |
-| [`Navigation\NavigationGroup`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`Navigation/NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | in progress | — |
-| [`Pages\Page`](../../../packages/panels/src/Pages/Page.php) | [`Pages/Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | in progress | — |
+| [`Navigation\NavigationItem`](../../../packages/panels/src/Navigation/NavigationItem.php) | [`Navigation/NavigationItem.php`](../../../vendor/filament/filament/src/Navigation/NavigationItem.php) | in progress | [NavigationItem](#navigationitem) |
+| [`Navigation\NavigationGroup`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`Navigation/NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | in progress | [NavigationGroup](#navigationgroup) |
+| [`Pages\Page`](../../../packages/panels/src/Pages/Page.php) | [`Pages/Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | in progress | [Page](#page) |
 | _rest not audited yet_ | | | |
 
 ### NavigationItem
@@ -91,35 +140,43 @@ Deferred, all todo:
   earns its keep once items nest.
 - `parentItem()` / `getParentItem()` and `childItems()` / `getChildItems()` /
   `isChildItemsActive()` — the nesting arm, deferred whole with `key`.
-- The badge tooltip (`HasBadgeTooltip`) and extra attributes
-  (`HasExtraAttributes`) — neither trait is ported in `support` yet.
-- `getBadgeColor()` takes no `?string $badge` argument here, and `group()` takes
-  no `UnitEnum` arm — both land with the surface that needs them.
+- The badge tooltip (`HasBadgeTooltip`) — not ported in `support` yet.
+- Extra attributes. `Sylament\Support\Components\Concerns\HasExtraAttributes` is
+  ported, but `NavigationItem` does not compose it: nothing in the sidebar
+  templates renders an item attribute bag yet, so composing it would publish a
+  setter with no effect.
+
+Four deltas against Filament's item, each with its own divergence:
+[`badge()` keeps a colour set earlier](#badge-preserves-a-badge-colour-set-before-it),
+[`group()`/`getGroup()` carry no `UnitEnum` arm](#group-and-getgroup-carry-no-unitenum-arm),
+[`getBadgeColor()` takes no `$badge` argument](#getbadgecolor-takes-no-badge-argument),
+and [the security invariant Filament states in a comment lives
+here](#a-user-derived-navigation-url-must-be-validated-before-it-reaches-href).
+The uninitialised `$label` property is a
+[semantics note](#make-without-a-label-leaves-getlabel-fatal).
 
 ### NavigationGroup
 
 Label, icon, items, the collapsible/collapsed pair and `isActive()` are ported.
-`items()` takes `array<NavigationItem> | Closure` where Filament takes
-`array | Arrayable` — the closure arm is the idiom translation of Laravel's
-`Arrayable`, and `getItems()` evaluates it.
 
 Deferred, all todo:
 
-- `HasExtraSidebarAttributes` / `HasExtraTopbarAttributes` — the extra-attribute
-  trait they build on is not ported in `support` yet, same gap `NavigationItem`
-  records for `HasExtraAttributes`.
+- `HasExtraSidebarAttributes` / `HasExtraTopbarAttributes` — Filament's two
+  per-surface attribute traits (`Filament\Navigation\Concerns`), neither ported;
+  same reason `NavigationItem` records for extra attributes, since no template
+  renders a group attribute bag.
 - `fromEnum()` — needs the `HasLabel` / `HasIcon` / `Collapsible` enum contracts,
   and the `UnitEnum` group arm `NavigationItem::group()` also defers.
 - The panel-level collapsible default. Filament falls back to
   `filament()->hasCollapsibleNavigationGroups()`; there is no panel to ask yet,
   so `isCollapsible()` is pinned to `true` until M2 · 2 introduces the setting.
 
-Two deliberate deltas beyond that. `collapsed()` does **not** also call
-`collapsible()` the way Filament's does — that hidden coupling makes
-`collapsed(false)` silently turn the group non-collapsible — so the gate lives in
-the reader instead: `isCollapsed()` returns `false` whenever the group is not
-collapsible. And `isActive()` skips hidden items, so a group is active only for
-an item the user can actually see.
+Three deliberate deltas beyond that, each with its own divergence:
+[`collapsed()` no longer forces the group
+collapsible](#collapsed-does-not-also-make-the-group-collapsible),
+[`isActive()` skips hidden items](#isactive-skips-hidden-items), and
+[`getItems()` evaluates a `Closure` instead of accepting an
+`Arrayable`](#getitems-evaluates-a-closure-where-filament-accepts-an-arrayable).
 
 ### Page
 
@@ -139,6 +196,16 @@ Deferred, all todo:
 - Breadcrumbs and header actions — both need the panel shell around them.
 - Page discovery. How a page is registered is decided in M2 · 2, alongside the
   `Resource`-as-a-service decision above; nothing here presumes it.
+- A writer for the `heading`/`subheading` pair. Filament ships none either — its
+  `BasePage` declares both as protected properties a subclass assigns or a
+  subclass getter overrides — but there is also no page lifecycle here to set
+  them from, so today the pair is subclass-only. The live-component half in
+  M2 · 2 is where a mounted page would fill them.
+
+Two deltas against Filament's page, both of which M2 · 2 decides for real:
+[`getNavigationLabel()` has no title or class-name
+fallback](#getnavigationlabel-has-no-title-or-class-name-fallback) and
+[`$navigationGroup` is string-only](#navigationgroup-is-string-only-on-page-too).
 
 ## Features
 
@@ -172,12 +239,20 @@ Enums, contracts, HTTP layer, events, templates —
 
 `Sidebar`, `SidebarGroup` and `SidebarItem` render the navigation model as
 static Twig components: the `<aside id="sy-pa-sidebar">` shell, one `<li>` per
-group with its label button carrying `aria-expanded`/`aria-controls` and the
-`sylament--panels--sidebar#toggleGroup` action, and one `<li>` per visible item
-with its icon (the active icon when the item is active), label and badge.
-Hidden items never render, and collapse state is markup only — the
-`sy-collapsed` class plus `data-group-label`, which the Stimulus controller
-reads and writes.
+group, and one `<li>` per visible item with its icon (the active icon when the
+item is active), label and badge — the active item's anchor also carrying
+`aria-current="page"`.
+
+A group's label element is a disclosure **only when the group is collapsible**.
+`SidebarGroup` picks the tag (`{% set labelTag = collapsible ? 'button' : 'div' %}`)
+and nulls `type`, `aria-expanded`, `aria-controls` and the
+`sylament--panels--sidebar#toggleGroup` action on the non-collapsible arm, so a
+static group renders a plain labelled `<div>` with no disclosure semantics and
+no control to operate; only the collapsible arm gets the button, the
+`aria-expanded`/`aria-controls` pair pointing at
+`sy-pa-sidebar-group-items-<index>`, and the chevron icon. Hidden items never
+render, and collapse state is markup only — the `sy-collapsed` class plus
+`data-group-label`, which the Stimulus controller reads and writes.
 
 What Filament's sidebar has and this does not, all todo:
 
@@ -186,11 +261,15 @@ What Filament's sidebar has and this does not, all todo:
 - Sub-navigation: Filament renders `childItems` nested under an active item, and
   the nesting arm of `NavigationItem` is deferred whole (see
   [NavigationItem](#navigationitem)).
-- The rest of `resources/views/components` — topbar, logo, avatar, tenant menu,
-  theme switcher, page and header — none of it ported.
+- The rest of `resources/views/components` — logo, avatar, tenant menu, theme
+  switcher and page — none of it ported. (`Topbar` and `Header` are, as the
+  shell's own two; `Layout` composes them.)
 
 The Livewire-shell → static-component divergence these templates sit on is
-recorded with the layout that composes them.
+[The shell is not live](#the-shell-is-not-live) above. Two more are theirs:
+[sidebar group ids are positional](#sidebar-group-ids-are-positional-not-derived-from-the-label)
+and [the render tests sit under
+`tests/Integration/Twig/`](#the-panels-render-tests-live-under-testsintegrationtwig).
 
 ### Assets
 
@@ -200,8 +279,9 @@ same shape as `@sylament/notifications`: one Stimulus controller builds to its o
 compiles into support's single built CSS. The built `dist` is mapped into
 AssetMapper as `@sylament/panels`. The four style files (`layout`, `sidebar`,
 `topbar`, `header`) carry the `sy-pa-*` rules mobile-first — off-canvas drawer
-below `lg`, two-column grid at `lg` and up — and take their active-item colour
-from the `--sy-text` slot rather than a hardcoded shade.
+below `lg`, two-column grid at `lg` and up — and paint the active sidebar item
+from the [fixed `primary`
+palette](#the-active-sidebar-item-paints-a-fixed-primary-shade).
 
 The `sidebar` controller is declared `fetch: eager`, matching notifications: the
 shell must apply stored collapse state on the first paint rather than after lazy
@@ -215,8 +295,12 @@ absent key, unavailable storage or an unparseable value all collapse to the same
 "no usable state" signal — in which case the server-rendered classes stand and
 the key is seeded from them, so a user who has never touched a group gets the
 markup's defaults instead of everything force-expanded. And the controller keeps
-`aria-expanded` on each group button in sync with the class it toggles, since the
-markup is static and nothing else updates it.
+`aria-expanded` in sync with the class it toggles, since the markup is static and
+nothing else updates it — but it syncs through a
+`.sy-pa-sidebar-group-btn[aria-expanded]` selector, not the class alone, so a
+non-collapsible group (same label class, no disclosure attributes — see
+[Layout templates](#layout-templates)) is deliberately skipped rather than being
+handed a state it has no control for.
 
 What Filament's panel assets have and this does not, all todo:
 
@@ -227,3 +311,159 @@ What Filament's panel assets have and this does not, all todo:
 - `dark-mode.js`, `unsaved-changes-alert.js`, `error-notifications.js`,
   `echo.js`, and the resource/page scripts — none of the surfaces they serve
   exist yet.
+
+## Semantics
+
+Faithful ports subtle enough that re-deriving them from the source would
+plausibly get them wrong.
+
+### `make()` without a label leaves `getLabel()` fatal
+
+`NavigationItem::$label` is typed `string|Closure` with **no** default and no
+constructor assignment, so it is a typed-but-uninitialised property.
+`NavigationItem::make()` only calls `label()` when a label is `filled()`, which
+means `NavigationItem::make()->getLabel()` throws
+`Error: Typed property … must not be accessed before initialization` rather than
+returning `null`. That is Filament's shape exactly — its constructor guards the
+same `label()` call with `filled()` over the same undefaulted property — and it
+is deliberate: a navigation item with no label is not a valid
+item, and the fatal names the missing call. The reason it reads like a bug is the
+nullable parameter on `make()`, which exists so a `Closure` label can be passed
+positionally; nothing else about it says the label is optional. Anything building
+items from data must supply the label at `make()` or call `label()` before
+rendering.
+
+## Divergences
+
+### `badge()` preserves a badge colour set before it
+
+Filament's `badge($badge, $color = null)` assigns `$this->badgeColor = $color`
+unconditionally, so `->badgeColor('danger')->badge('12')` silently clears the
+colour back to `null`. Ours writes the colour only when one is passed, so the
+earlier `badgeColor()` survives and the two setters compose in either order. The
+cost is that `badge()` can no longer *clear* a colour — pass `badgeColor(null)`
+for that, which is the explicit spelling anyway.
+
+### `group()` and `getGroup()` carry no `UnitEnum` arm
+
+Filament types the group `string | UnitEnum | Closure | null` and returns
+`string | UnitEnum | null`, so an enum case can name a group and
+`NavigationGroup::fromEnum()` reads its label and icon off the case. Ours is
+string-only. The enum arm lands with `fromEnum()` and the `HasLabel` / `HasIcon`
+/ `Collapsible` enum contracts it needs, none of which are ported — deferring it
+here keeps the two halves from disagreeing about what a group key is.
+
+### `getBadgeColor()` takes no `$badge` argument
+
+Filament's `getBadgeColor(?string $badge = null)` injects `['badge' => $badge]`
+into the closure evaluation, so a colour closure can branch on the badge value it
+is colouring (`fn ($badge) => $badge > 10 ? 'danger' : 'gray'`). Nothing here
+calls it with an argument — `SidebarItem` reads `item.getBadgeColor` — so the
+parameter would be dead weight that still has to be threaded through every
+caller. It returns with the first surface that passes a badge in.
+
+### A user-derived navigation URL must be validated before it reaches `href`
+
+Filament's `url()` carries a `// Security:` comment saying that a URL derived
+from user input must be validated, or a `javascript:` URL becomes XSS when
+rendered into an `href`. The comment is not ported — a rationale comment whose
+home is this trail — so the invariant lives here, and it holds for us just as
+hard: `SidebarItem` renders `item.getUrl` straight into `href` through `attrs()`,
+which escapes the attribute *value* but does not police its **scheme**, and
+nothing in `NavigationItem` inspects the URL. So an application feeding
+user-supplied strings into `url()` owns the validation. Sylament-generated URLs
+(a route path, a resource URL) are safe by construction; anything read from a
+database, a config file a user can edit, or a request parameter is not.
+
+### `collapsed()` does not also make the group collapsible
+
+Filament's `collapsed()` calls `collapsible()` as a side effect, so
+`collapsed(false)` — the natural way to say *start expanded* — silently turns the
+group non-collapsible and the user loses the toggle. Ours only records the state,
+and the gate lives in the reader instead: `isCollapsed()` returns `false` whenever
+`isCollapsible()` is false, which is the behaviour the coupling was reaching for
+without the surprise on the `false` arm.
+
+### `isActive()` skips hidden items
+
+Filament's group `isActive()` returns true for any item whose `isActive()` is
+true, hidden or not, so a hidden-but-active item lights up a group that shows no
+active child — a group highlighted for a reason the user cannot see. Ours skips
+items that report `isHidden()`, matching what the sidebar actually renders
+(`SidebarGroup` filters on `item.isVisible`).
+
+### `getItems()` evaluates a `Closure` where Filament accepts an `Arrayable`
+
+Filament types `items(array | Arrayable $items)` and returns the value untouched
+from `getItems(): array | Arrayable`, leaving callers to iterate either shape.
+`Arrayable` is a Laravel contract with no Symfony counterpart, so the arm is
+translated rather than ported: `items()` takes
+`array<NavigationItem> | Closure` and `getItems()` evaluates it through the
+`Invoker`, which additionally makes the item list lazy and able to reach
+container services — the deferred-collection use Filament's `Arrayable` arm
+serves, plus request-derived items. An `Arrayable` object passed here is simply
+an unsupported type.
+
+### `getNavigationLabel()` has no title or class-name fallback
+
+Filament falls back from `$navigationLabel` to `$title` and then to the
+kebab-cased, space-separated, title-cased class basename, returning a
+non-nullable `string`.
+Ours returns `static::$navigationLabel` and nothing else, so it is `?string`.
+The class-basename half needs a naming convention this port has not settled
+(Filament's `str()->kebab()->replace()->ucwords()` chain assumes Laravel's string
+helper and Filament's page-class naming), and the title half presumes the
+title/heading fallback chain that arrives with the page lifecycle. M2 · 2 decides
+both together; until then a page that wants a navigation label states one.
+
+### `$navigationGroup` is string-only on `Page` too
+
+Filament types the static `string | UnitEnum | null` so a page can name its group
+with an enum case, matching `NavigationItem::group()`. Ours is `?string`, for the
+same reason and on the same schedule as
+[the item's missing arm](#group-and-getgroup-carry-no-unitenum-arm) — the two
+have to agree about what a group key is, so they move together in M2 · 2.
+
+### Sidebar group ids are positional, not derived from the label
+
+Filament's `group.blade.php` builds `fi-sidebar-group-items-<slug>-<md5 prefix>`
+from the group label, so the `aria-controls` target is stable per label and
+unique across everything on the page. Ours is
+`sy-pa-sidebar-group-items-<loop index>`, assigned by `Sidebar` from the render
+loop. It is stable per render and needs no label at all (a group may have none),
+and it rests on the shell's **single-sidebar-per-page** assumption — the same
+assumption the singleton ids `sy-pa-sidebar`, `sy-pa-topbar` and `sy-pa-main`
+already encode. Revisit the moment two sidebars can render on one page: groups at
+the same index would then collide, pointing one group's button at another's item
+list. The label-hash approach is the fix if that day comes.
+
+### The panels render tests live under `tests/Integration/Twig/`
+
+The repo convention is to mirror `src/` inside each test bucket, but these
+templates have no `src/` counterpart — they live in `packages/panels/templates/`
+and are rendered by name. The other packages settled it differently from each
+other: `actions` puts component render tests in `tests/Integration/Components/`,
+`notifications` in `tests/Integration/Twig/Components/`. Panels uses
+`tests/Integration/Twig/` — the templates are the whole Twig surface of this
+package, and there is no `Twig/Extension/` or class-backed component to sit
+beside them. Panels-local convention, settled here so the next template test does
+not have to re-decide; it moves under a `Components/` subdirectory if panels ever
+grows a class-backed component.
+
+### The active sidebar item paints a fixed `primary` shade
+
+`sidebar.css` writes `text-primary-600 dark:text-primary-400` for
+`.sy-pa-sidebar-item.sy-active` rather than reading a `--sy-text` slot.
+[styling.md](../../styling.md)'s *never hardcode a shade for a colour a user can
+set* rule (rule 6) governs the **per-instance** `color` palette, which is chosen
+by a [contrast policy](../support/color-policies.md) because the palette is not
+known until render. The sidebar has no per-instance colour API — neither
+`NavigationItem` nor `NavigationGroup` composes `HasColor`, and there is nothing
+to build a colour map from — so there is no policy to ask and no slot to read;
+`primary` resolves through the `--sy-primary-*` runtime tokens, so a consumer
+retheming the palette still gets their colour. It becomes a rule-6 case the day
+the sidebar takes a colour, at which point the shade moves into a policy slot and
+the two rules (`sy-pa-sidebar-item-btn` and the icon/label pair) read the slot
+variables instead. The known residual risk until then: a consumer registering an
+unusually light or dark `primary` gets a fixed 600/400 against the fixed
+`gray-100` / `white/5` active background, which no policy is measuring.

@@ -16,8 +16,8 @@ Consumers never need Tailwind installed.
    utility class in a template silently does nothing. Class names follow Filament's
    hook-class convention: `sy-<package code>-<component>`, e.g. `sy-fo-input`,
    `sy-sc-grid`. Package codes: `sy-ac` (actions), `sy-fo` (forms), `sy-in`
-   (infolists), `sy-no` (notifications), `sy-sc` (schemas), `sy-ta` (tables), `sy-wi`
-   (widgets); support-level classes have no code (`sy-color-danger`). Not every
+   (infolists), `sy-no` (notifications), `sy-pa` (panels), `sy-sc` (schemas), `sy-ta`
+   (tables), `sy-wi` (widgets); support-level classes have no code (`sy-color-danger`). Not every
    emitted class has its own CSS rule: templates also emit code-less state/modifier
    classes (`sy-collapsed`, `sy-inline`, `sy-growable`, `sy-size-*`, breakpoint-
    prefixed grid markers) that exist as styling hooks, selectors for variant rules,

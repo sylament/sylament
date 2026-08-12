@@ -85,12 +85,12 @@ abstract class Page
         return static::$navigationLabel ?? static::$title ?? static::getHumanizedClassBasename();
     }
 
-    public static function getNavigationIcon(): string|BackedEnum|Closure|null
+    public static function getNavigationIcon(): string|BackedEnum|Markup|Closure|null
     {
         return static::$navigationIcon;
     }
 
-    public static function getActiveNavigationIcon(): string|BackedEnum|Closure|null
+    public static function getActiveNavigationIcon(): string|BackedEnum|Markup|Closure|null
     {
         return static::$activeNavigationIcon ?? static::getNavigationIcon();
     }

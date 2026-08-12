@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Panels\Tests\Fixtures\Panels;
+namespace Sylament\Panels\Tests\Fixtures;
 
 use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Panel;

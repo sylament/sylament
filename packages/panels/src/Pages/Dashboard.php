@@ -23,7 +23,7 @@ class Dashboard extends Page
         return static::$routePath;
     }
 
-    public static function getNavigationIcon(): string|BackedEnum|Closure|null
+    public static function getNavigationIcon(): string|BackedEnum|Markup|Closure|null
     {
         return static::$navigationIcon
             ?? static fn (IconManager $icons): string|BackedEnum|Markup => $icons->resolve(PanelsIconAlias::PAGES_DASHBOARD_NAVIGATION_ITEM) ?? 'heroicons:home';

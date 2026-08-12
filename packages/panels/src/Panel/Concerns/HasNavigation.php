@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Panel\Concerns;
 
+use LogicException;
 use Sylament\Panels\Navigation\NavigationGroup;
 use Sylament\Panels\Navigation\NavigationItem;
 use Sylament\Panels\Pages\Page;
+use Sylament\Panels\Resources\Resource;
+use Sylament\Panels\Resources\ResourceRegistry;
+use Symfony\Contracts\Service\Attribute\Required;
 
 trait HasNavigation
 {
@@ -19,6 +23,14 @@ trait HasNavigation
      * @var array<NavigationItem>
      */
     protected array $navigationItems = [];
+
+    private ?ResourceRegistry $resourceRegistry = null;
+
+    #[Required]
+    public function setResourceRegistry(ResourceRegistry $resourceRegistry): void
+    {
+        $this->resourceRegistry = $resourceRegistry;
+    }
 
     /**
      * @param array<string|int, NavigationGroup|string> $groups
@@ -65,6 +77,18 @@ trait HasNavigation
 
         foreach ($this->getPages() as $page) {
             foreach ($page::getNavigationItems($this) as $item) {
+                $items[] = clone $item;
+            }
+        }
+
+        foreach ($this->getResources() as $resourceClass) {
+            $resource = $this->getResourceRegistry()->get($resourceClass);
+
+            if (! $resource->shouldRegisterNavigation()) {
+                continue;
+            }
+
+            foreach ($resource->getNavigationItems($this) as $item) {
                 $items[] = clone $item;
             }
         }
@@ -120,5 +144,15 @@ trait HasNavigation
      */
     abstract public function getPages(): array;
 
+    /**
+     * @return array<class-string<Resource>>
+     */
+    abstract public function getResources(): array;
+
     abstract public function hasCollapsibleNavigationGroups(): bool;
+
+    private function getResourceRegistry(): ResourceRegistry
+    {
+        return $this->resourceRegistry ?? throw new LogicException('Resource navigation needs the container-built panel — build panels through a PanelProvider.');
+    }
 }

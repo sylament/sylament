@@ -304,8 +304,9 @@ back to) and `HasBrandName` — with `default()`/`isDefault()` on the class itse
 matching Filament.
 
 `getNavigation()` is the assembly step: it clones every item each registered page
-contributes plus the panel's own `navigationItems()`, drops the hidden ones,
-sorts by `getSort()`, and buckets what is left by `getGroup()`. The ungrouped
+contributes, then every item each registered resource contributes, then the
+panel's own `navigationItems()`, drops the hidden ones, sorts by `getSort()`, and
+buckets what is left by `getGroup()`. The ungrouped
 bucket becomes the leading label-less group; each registered group then claims
 its bucket by key **or** label (a clone, so the registration survives repeated
 calls); buckets no registration matched follow in encounter order. Every group
@@ -313,8 +314,35 @@ that comes out is stamped with `collapsibleFallback($this->hasCollapsibleNavigat
 A group with no items is never built, so a registration nothing matched simply
 does not render. Cloning at both ends is what makes the method idempotent —
 `items()` mutates, and the registered objects are the panel's, not the render's.
+All three sources land in one list before the filter/sort/bucket pass, so a
+resource item sorts and groups against the page items rather than trailing them;
+source order decides ties alone, `usort` being stable.
 `HasComponents` types its page list `class-string<Page>` for this: the assembly
 calls `Page`'s static navigation methods on each entry.
+
+The resource arm is the one source that needs a service. A registered resource is
+a class-string, and turning it into the instance whose
+`getNavigationItems($this)` answers means going through
+[`ResourceRegistry`](#resources) — so `HasNavigation` takes one through a
+`#[Required] setResourceRegistry()` setter, exactly as
+[`NavigationItem`](#the-item-hands-its-own-services-to-evaluated-closures) takes
+its three. `Panel` is a `sylament.component`-tagged, container-built, non-shared
+service, so the setter fires on every `Panel::make()`. A panel built with `new`
+holds no registry, and `getNavigation()` then throws *"Resource navigation needs
+the container-built panel"* the moment it reaches a registered resource — the
+same [fail-fast](#a-new-built-resource-fails-fast-rather-than-degrading) shape
+`Resource`'s own service set uses, rather than silently dropping half the
+navigation. A `new`-built panel that registers no resource still assembles
+normally, because the loop body is what needs the registry.
+`shouldRegisterNavigation()` is consulted here, in the loop, rather than inside
+`getNavigationItems()` — Filament's placement exactly, and the [pulled rather
+than pushed](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource)
+entry covers why the loop exists at all. A resource's items are built fresh on
+every call, so cloning them buys nothing today and is done anyway: it keeps the
+three loops identical to read, and it means a later memoisation inside
+`getNavigationItems()` cannot leak one render's
+[destructive `isActive()`](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager)
+into the next.
 
 `PanelProvider` is the abstract `panel(Panel $panel): Panel` contract; every
 subclass an application registers as a service is tagged
@@ -328,10 +356,9 @@ and [`PageController`](#routing) injects the current-panel lookup.
 
 `resources()` / `getResources()` is the same shape as `pages()`, typed
 `class-string<Resource>` and equally unvalidated at registration time — the
-route loader is where a non-`Resource` entry is caught. It is a declaration only
-so far: nothing reads the list yet, so a registered resource contributes neither
-routes nor navigation until [`PanelRouteLoader`](#routing) and `getNavigation()`
-grow their resource arms.
+route loader is where a non-`Resource` entry is caught. Both readers are live:
+[`PanelRouteLoader`](#routing) mounts every page a registered resource declares,
+and `getNavigation()` above merges the item that resource contributes.
 
 Deferred, all todo: the other 28 `Panel/Concerns` traits (auth, tenancy, colors,
 assets, render hooks, middleware, plugins, …); `discoverResources()` /
@@ -342,16 +369,18 @@ shape replaces for services and which would only return as a convenience over
 `navigation()` / `NavigationBuilder` — the hand-built navigation escape hatch,
 which needs nothing from the assembly above and lands when a consumer wants it;
 the parent-item nesting pass and the `UnitEnum` group arm, both waiting on
-[`NavigationItem`'s deferred `key()`](#navigationitem); and the resource and
-widget contributions to the item list, which arrive with those subsystems.
+[`NavigationItem`'s deferred `key()`](#navigationitem); and the widget
+contribution to the item list, which arrives with that subsystem.
 
-Eight deltas, each with its own divergence:
+Nine deltas, each with its own divergence:
 [panels are collected from tagged providers rather than registered by a service
 provider](#panels-are-collected-from-tagged-providers-not-registered-imperatively),
 [the current panel is derived from the request, never stored](#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager),
 [`PanelRegistry::get()` has no fuzzy arm](#panelregistryget-has-no-fuzzy-arm),
 [navigation is assembled on the panel rather than by a
 `NavigationManager`](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager),
+[resource navigation is pulled through the registry rather than pushed by the
+resource](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource),
 [the panel has no `register()` or `boot()`](#the-panel-has-no-register-or-boot),
 [`make()` configures before the id is set](#make-configures-the-panel-before-its-id-is-set),
 [`getBrandName()` returns `null` rather than an application
@@ -422,6 +451,9 @@ What is ported, by cluster:
   `getNavigationBadge()` / `getNavigationBadgeColor()` override hooks that return
   `null`. Active state is a [route-name prefix match](#active-state-is-a-route-name-prefix-match),
   which is what keeps the item lit on the resource's create and edit pages.
+  [`Panel::getNavigation()`](#panel) is what calls it — the resource never pushes
+  its item anywhere, which is the
+  [pull model](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource).
 
 Deferred, all todo: authorization (`canAccess()` and the whole `HasAuthorization`
 cluster), global search, widgets, breadcrumbs, sub-navigation, clusters, tenancy,
@@ -429,8 +461,8 @@ nested/parent resources, resource configurations, `getRelations()`, and
 `configureTable()`'s seeding of table-level labels. `NavigationItem`'s `key()`,
 `parentItem()` and `badgeTooltip()` are skipped here because
 [they are not ported on the item yet](#navigationitem); `shouldRegisterNavigation()`
-is ported and, as in Filament, is consulted by the panel-side registration loop
-rather than by `getNavigationItems()` itself.
+is ported and, as in Filament, is consulted by the panel-side loop rather than by
+`getNavigationItems()` itself.
 
 Divergences, each with its own entry:
 [the record class is declared, never derived](#the-record-class-is-declared-never-derived-from-an-application-namespace),
@@ -972,6 +1004,35 @@ The escape hatch Filament layers on top — `navigation(Closure | bool)` with
 deferred rather than rejected: it replaces the derived navigation with a
 hand-built one and can land whole, unchanged in shape, whenever a consumer wants
 it.
+
+### Resource navigation is pulled through the registry, not pushed by the resource
+
+Filament's `Resource::registerNavigationItems()` is a `void` static that reaches
+`Filament::getCurrentOrDefaultPanel()` and **pushes** its items onto the panel
+with `->navigationItems(...)`; `NavigationManager::mountNavigation()` calls it
+once per registered page and resource, then reads the accumulated list back off
+itself. Both halves of that are forced by the same thing: a Filament resource is
+a static class with no panel in hand, so it needs the facade to find one, and
+pushing onto the real panel would accumulate items across requests, so it needs
+the manager's per-request clone to push *into*.
+
+Ours pulls. `getNavigation()` resolves each registered class-string through
+[`ResourceRegistry`](#resources) and calls `getNavigationItems($this)` on the
+instance — the panel is handed over, not looked up, the same inversion
+[`Page::getNavigationItems(Panel)`](#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade)
+already uses — and merges the returned array locally. Nothing mutates the panel,
+so there is no accumulation to clone away and no scratch object to own the
+result. The one thing the push model buys that this does not is a third party
+queueing items into a build already under way; that is the plugin seam, deferred
+with the rest of plugins.
+
+So `registerNavigationItems()` has no port, and its four early returns are
+distributed rather than dropped: `shouldRegisterNavigation()` is ported and
+consulted by the panel-side loop, in Filament's own position; `getCluster()` and
+`getParentResourceRegistration()` guard unported subsystems; `canAccess()` waits
+on authorization. Each of those lands in the loop when its subsystem does, not
+back inside the resource — a resource that answers `getNavigationItems()` with an
+array cannot also decide it should not have been asked.
 
 ### The panel collapsible default is stamped on the group, not read from a facade
 

@@ -34,7 +34,7 @@ abstract class Page
 
     protected static ?string $navigationGroup = null;
 
-    protected ?string $view = null;
+    protected ?string $template = null;
 
     protected ?string $heading = null;
 
@@ -55,9 +55,9 @@ abstract class Page
         return $this->subheading;
     }
 
-    public function getView(): string
+    public function getTemplate(): string
     {
-        return $this->view ?? '@SylamentPanels/partials/Page/index.html.twig';
+        return $this->template ?? '@SylamentPanels/partials/Page/index.html.twig';
     }
 
     public static function getSlug(): string

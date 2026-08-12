@@ -65,8 +65,8 @@ it('builds one navigation item wired to the page route', function (): void {
         ->and($items[0]->getGroup())->toBe('Content');
 });
 
-it('defaults the view to the shipped page chrome template', function (): void {
+it('defaults the template to the shipped page chrome template', function (): void {
     $page = new SettingsPage();
 
-    expect($page->getView())->toBe('@SylamentPanels/partials/Page/index.html.twig');
+    expect($page->getTemplate())->toBe('@SylamentPanels/partials/Page/index.html.twig');
 });

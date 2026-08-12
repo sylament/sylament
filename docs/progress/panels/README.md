@@ -198,8 +198,8 @@ overrides.
 Routing and rendering: `getSlug()` (the `$slug` static, else the kebab-cased
 class basename), `getRoutePath()`, `getRouteName(Panel $panel)` — the
 `sylament.<panel id>.pages.<slug>` convention — `getComponentName()` (the FQCN
-with `\` replaced by `:`, the ux-twig-component tag name), and `getView()` (the
-`$view` static, else `@SylamentPanels/partials/Page/index.html.twig`) as the
+with `\` replaced by `:`, the ux-twig-component tag name), and `getTemplate()` (the
+`$template` property, else `@SylamentPanels/partials/Page/index.html.twig`) as the
 `template_from_method` target. `DefaultActionTrait` makes the page a live
 component. `getNavigationItems(Panel $panel)` builds the one `NavigationItem` a
 page contributes, its `url()` and `isActiveWhen()` closures resolving

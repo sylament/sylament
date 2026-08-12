@@ -61,6 +61,13 @@ it('falls back to the record label when the title attribute is unreadable', func
     expect(panelsArticleResource()->getRecordTitle(new stdClass()))->toBe('article');
 });
 
+it('falls back to the record label when the title attribute reads blank', function (): void {
+    $resource = panelsArticleResource();
+
+    expect($resource->getRecordTitle(new Article()->setTitle('')))->toBe('article')
+        ->and($resource->getRecordTitle(new Article()->setTitle('   ')))->toBe('article');
+});
+
 it('reads the record route key off the single identifier', function (): void {
     $resource = panelsArticleResource();
     $entityManager = $resource->getRecordQuery()->getEntityManager();

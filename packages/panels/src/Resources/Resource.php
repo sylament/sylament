@@ -196,7 +196,7 @@ abstract class Resource
             $title = (string) $title;
         }
 
-        if (is_scalar($title)) {
+        if (filled($title) && is_scalar($title)) {
             return (string) $title;
         }
 

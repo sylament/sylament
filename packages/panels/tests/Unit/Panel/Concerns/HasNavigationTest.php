@@ -47,6 +47,26 @@ final class PagelessNavigationResource extends Resource
     protected static ?string $recordClass = Article::class;
 }
 
+/**
+ * Sorts below `NavigationItem`'s -1 default, so it must overtake the page items
+ * the merge otherwise puts first.
+ */
+final class SortedNavigationResource extends Resource
+{
+    protected static ?string $recordClass = Article::class;
+
+    protected static ?string $navigationLabel = 'Stories';
+
+    protected static ?string $navigationGroup = 'Content';
+
+    protected static ?int $navigationSort = -5;
+
+    public function getPages(): array
+    {
+        return ['index' => new PageRegistration(SettingsPage::class, '/')];
+    }
+}
+
 function navigationRegistryWith(Resource ...$resources): ResourceRegistry
 {
     $factories = [];
@@ -124,6 +144,24 @@ it('merges resource navigation items between page items and registered items', f
         ->toBe(['Settings', 'Articles', 'External'])
         ->and($items[1]->getGroup())->toBe('Content')
         ->and($items[1]->getSort())->toBe(-1);
+});
+
+it('sorts a resource item by its navigation sort rather than by merge order', function (): void {
+    $panel = Panel::make()
+        ->id('admin')
+        ->navigationItems([
+            NavigationItem::make('External')->url('#')->group('Content'),
+        ])
+        ->pages([SettingsPage::class])
+        ->resources([SortedNavigationResource::class]);
+
+    $panel->setResourceRegistry(navigationRegistryWith(new SortedNavigationResource()));
+
+    $items = $panel->getNavigation()[0]->getItems();
+
+    expect(array_map(fn (NavigationItem $item): string => $item->getLabel(), $items))
+        ->toBe(['Stories', 'Settings', 'External'])
+        ->and($items[0]->getSort())->toBe(-5);
 });
 
 it('skips a resource that opts out of navigation', function (): void {

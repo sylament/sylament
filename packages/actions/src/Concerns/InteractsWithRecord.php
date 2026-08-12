@@ -53,7 +53,7 @@ trait InteractsWithRecord
     {
         if (is_array($record)) {
             $key = $record[ArrayRecord::getKeyName()]
-                ?? throw new LogicException(sprintf('Record arrays must have a unique [%s] entry for identification.', ArrayRecord::getKeyName()));
+                ?? throw new LogicException(sprintf('Record arrays must have a unique, printable [%s] entry for identification.', ArrayRecord::getKeyName()));
         } elseif (is_object($record)) {
             try {
                 $key = $this->getPropertyAccessor()->getFromRecord($record, 'id');

@@ -58,7 +58,7 @@ final readonly class PanelRouteLoader implements RouteLoaderInterface
                         throw new LogicException(sprintf('The getPages() entry "%s" on resource "%s" is not a %s subclass.', $registration->page, $resourceClass, Page::class));
                     }
 
-                    $path = '/' . mb_trim($resourcePath . $registration->path, '/');
+                    $path = '/' . mb_trim($resourcePath . '/' . mb_ltrim($registration->path, '/'), '/');
 
                     $this->addRoute($routes, $owners, $routeBaseName . '.' . $key, $path, $panel, $registration->page, sprintf('resource page %s (%s)', $registration->page, $resourceClass));
                     $this->trackClassFile($routes, $registration->page);

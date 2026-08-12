@@ -53,11 +53,15 @@ it('serves the list page with the resource table', function (): void {
     $crawler = $client->request('GET', '/admin/articles');
     $html = (string) $client->getResponse()->getContent();
 
+    $rows = $crawler->filter('tbody .sy-ta-row');
+    $rowText = implode(' ', $rows->each(fn (Crawler $row): string => $row->text()));
+
     expect($client->getResponse()->getStatusCode())->toBe(200)
         ->and($crawler->filter('h1.sy-pa-header-heading')->text())->toBe('Articles')
         ->and($crawler->filter('.sy-pa-resource-list-records-page .sy-pa-page-content .sy-ta')->count())->toBe(1)
-        ->and($html)->toContain('Alpha')
-        ->and($html)->toContain('published')
+        ->and($rows->count())->toBe(2)
+        ->and($rowText)->toContain('Alpha')
+        ->and($rowText)->toContain('published')
         ->and($html)->toContain('<title>Articles — Test Admin</title>');
 });
 

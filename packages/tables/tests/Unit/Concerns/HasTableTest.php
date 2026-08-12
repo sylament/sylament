@@ -156,7 +156,7 @@ it('throws when an array record is not keyed by field name', function (): void {
         ->toThrow(LogicException::class, 'keyed by field name');
 });
 
-it('throws when a synthesised __key entry is not printable', function (): void {
+it('throws when an explicit __key entry is not printable', function (): void {
     $host = new TableHost(fn (Table $table): Table => $table->records(fn (): array => [
         ['title' => 'Airbag', '__key' => new stdClass()],
         ['title' => 'Let Down', '__key' => ['nested']],

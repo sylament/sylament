@@ -44,6 +44,24 @@ final class TwinSlugResource extends Resource
 }
 
 /**
+ * Registers its pages without the leading slash `PageRegistration::$path` treats as optional.
+ */
+final class SlashlessPathResource extends Resource
+{
+    protected static ?string $recordClass = Article::class;
+
+    protected static ?string $slug = 'notes';
+
+    public function getPages(): array
+    {
+        return [
+            'index' => new PageRegistration(RecordProbePage::class, ''),
+            'edit' => new PageRegistration(RecordProbePage::class, '{record}/edit'),
+        ];
+    }
+}
+
+/**
  * @param array<class-string<Resource>, Resource> $resources
  */
 function loaderFor(PanelProvider $provider, array $resources = []): PanelRouteLoader
@@ -143,6 +161,20 @@ it('mounts one route per resource page under the resource slug', function (): vo
 
 it('collapses the index registration onto the resource root', function (): void {
     expect(probeResourceLoader()()->get('sylament.probe.resources.articles.index')?->getPath())->toBe('/probe/articles');
+});
+
+it('mounts a registration path that omits its leading slash', function (): void {
+    $provider = new class extends PanelProvider {
+        public function panel(Panel $panel): Panel
+        {
+            return $panel->id('probe')->path('probe')->resources([SlashlessPathResource::class]);
+        }
+    };
+
+    $routes = loaderFor($provider, [SlashlessPathResource::class => new SlashlessPathResource()])();
+
+    expect($routes->get('sylament.probe.resources.notes.edit')?->getPath())->toBe('/probe/notes/{record}/edit')
+        ->and($routes->get('sylament.probe.resources.notes.index')?->getPath())->toBe('/probe/notes');
 });
 
 it('tracks resource and resource page class files as resources', function (): void {

@@ -33,24 +33,36 @@ it('resolves page item urls and active state through container services', functi
     $stack->pop();
 });
 
+/**
+ * The document-wide `aria-current="page"` count is only sound because neither probe page renders a
+ * table: pagination's current-page button carries the same attribute, so a list page must scope the
+ * count to the sidebar instead of counting the whole document.
+ */
 it('renders a registered resource as a sidebar item pointing at its index page', function (): void {
     $client = $this::getContainer()->get('test.client');
     $crawler = $client->request('GET', '/probe');
 
     $articles = $crawler->filter('a.sy-pa-sidebar-item-btn[href="/probe/articles"]');
+    $html = (string) $client->getResponse()->getContent();
 
     expect($client->getResponse()->getStatusCode())->toBe(200)
         ->and($articles->count())->toBe(1)
         ->and($articles->text())->toContain('Articles')
         ->and($crawler->filter('a.sy-pa-sidebar-item-btn[href="/probe/articles"][aria-current]')->count())->toBe(0)
-        ->and($crawler->filter('a.sy-pa-sidebar-item-btn[href="/probe"][aria-current="page"]')->count())->toBe(1);
+        ->and($crawler->filter('a.sy-pa-sidebar-item-btn[href="/probe"][aria-current="page"]')->count())->toBe(1)
+        ->and(mb_substr_count($html, 'aria-current="page"'))->toBe(1);
 });
 
+/**
+ * Same document-wide count, sound for the same reason — see the case above.
+ */
 it('lights the resource item on a resource page the index route only prefixes', function (): void {
     $client = $this::getContainer()->get('test.client');
     $crawler = $client->request('GET', '/probe/articles/41/probe');
+    $html = (string) $client->getResponse()->getContent();
 
     expect($client->getResponse()->getStatusCode())->toBe(200)
         ->and($crawler->filter('a.sy-pa-sidebar-item-btn[href="/probe/articles"][aria-current="page"]')->count())->toBe(1)
-        ->and($crawler->filter('a.sy-pa-sidebar-item-btn[href="/probe"][aria-current]')->count())->toBe(0);
+        ->and($crawler->filter('a.sy-pa-sidebar-item-btn[href="/probe"][aria-current]')->count())->toBe(0)
+        ->and(mb_substr_count($html, 'aria-current="page"'))->toBe(1);
 });

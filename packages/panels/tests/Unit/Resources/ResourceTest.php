@@ -219,6 +219,26 @@ it('contributes one navigation item once an index page exists', function (): voi
         ->and($items[0]->getLabel())->toBe('Articles');
 });
 
+it('carries an explicit navigation sort onto the contributed item', function (): void {
+    $panel = Panel::make()->id('admin');
+
+    $resource = new class extends Resource {
+        protected static ?string $recordClass = Article::class;
+
+        protected static ?string $slug = 'articles';
+
+        protected static ?int $navigationSort = 7;
+
+        public function getPages(): array
+        {
+            return ['index' => new PageRegistration(SettingsPage::class, '/')];
+        }
+    };
+
+    expect($resource->getNavigationSort())->toBe(7)
+        ->and($resource->getNavigationItems($panel)[0]->getSort())->toBe(7);
+});
+
 it('throws when an index url is asked of a resource without an index page', function (): void {
     new PagelessResource()->getIndexUrl();
 })->throws(LogicException::class, 'does not have an [index] page');

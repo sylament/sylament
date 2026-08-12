@@ -22,6 +22,20 @@ it('is collapsible by default and only collapsed when collapsible', function ():
         ->and(NavigationGroup::make('A')->collapsed()->collapsible(false)->isCollapsed())->toBeFalse();
 });
 
+it('evaluates closures passed to every getter', function (): void {
+    $items = [NavigationItem::make('Articles')];
+    $group = NavigationGroup::make(fn (): string => 'Content')
+        ->items(fn (): array => $items)
+        ->collapsed(fn (): bool => true)
+        ->collapsible(fn (): bool => true);
+
+    expect($group->getLabel())->toBe('Content')
+        ->and($group->getItems())->toBe($items)
+        ->and($group->isCollapsed())->toBeTrue()
+        ->and($group->isCollapsible())->toBeTrue()
+        ->and($group->collapsible(fn (): bool => false)->isCollapsed())->toBeFalse();
+});
+
 it('is active when any visible item is active', function (): void {
     $group = NavigationGroup::make('A')->items([
         NavigationItem::make('One'),

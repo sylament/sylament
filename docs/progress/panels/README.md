@@ -126,6 +126,10 @@ The panel surface —
 | [`Navigation\NavigationItem`](../../../packages/panels/src/Navigation/NavigationItem.php) | [`Navigation/NavigationItem.php`](../../../vendor/filament/filament/src/Navigation/NavigationItem.php) | in progress | [NavigationItem](#navigationitem) |
 | [`Navigation\NavigationGroup`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`Navigation/NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | in progress | [NavigationGroup](#navigationgroup) |
 | [`Pages\Page`](../../../packages/panels/src/Pages/Page.php) | [`Pages/Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | in progress | [Page](#page) |
+| [`Panel`](../../../packages/panels/src/Panel.php) | [`Panel.php`](../../../vendor/filament/filament/src/Panel.php) | in progress | [Panel](#panel) |
+| [`PanelProvider`](../../../packages/panels/src/PanelProvider.php) | [`PanelProvider.php`](../../../vendor/filament/filament/src/PanelProvider.php) | in progress | [Panel](#panel) |
+| [`PanelRegistry`](../../../packages/panels/src/PanelRegistry.php) | [`PanelRegistry.php`](../../../vendor/filament/filament/src/PanelRegistry.php) | in progress | [Panel](#panel) |
+| [`CurrentPanel`](../../../packages/panels/src/CurrentPanel.php) | [`FilamentManager.php`](../../../vendor/filament/filament/src/FilamentManager.php) current-panel arm, [`Http/Middleware/SetUpPanel.php`](../../../vendor/filament/filament/src/Http/Middleware/SetUpPanel.php) | in progress | [Panel](#panel) |
 | _rest not audited yet_ | | | |
 
 ### NavigationItem
@@ -168,8 +172,11 @@ Deferred, all todo:
 - `fromEnum()` — needs the `HasLabel` / `HasIcon` / `Collapsible` enum contracts,
   and the `UnitEnum` group arm `NavigationItem::group()` also defers.
 - The panel-level collapsible default. Filament falls back to
-  `filament()->hasCollapsibleNavigationGroups()`; there is no panel to ask yet,
-  so `isCollapsible()` is pinned to `true` until M2 · 2 introduces the setting.
+  `filament()->hasCollapsibleNavigationGroups()`. The setting now exists —
+  [`Panel::collapsibleNavigationGroups()`](#panel) — but nothing hands a group
+  the panel it belongs to, so `isCollapsible()` still resolves to `true` on its
+  own; the fallback wires up with the navigation builder that reads a panel's
+  groups.
 
 Three deliberate deltas beyond that, each with its own divergence:
 [`collapsed()` no longer forces the group
@@ -206,6 +213,40 @@ Two deltas against Filament's page, both of which M2 · 2 decides for real:
 [`getNavigationLabel()` has no title or class-name
 fallback](#getnavigationlabel-has-no-title-or-class-name-fallback) and
 [`$navigationGroup` is string-only](#navigationgroup-is-string-only-on-page-too).
+
+### Panel
+
+The definition surface a panel provider configures, plus the two services that
+collect and locate panels. `Panel` composes six of Filament's `Panel/Concerns`
+traits — `HasId` (write-once id, fatal when read unset), `HasRoutes` (the path
+only), `HasComponents` (`pages()`, accumulating and de-duplicated),
+`HasNavigation` (`navigationGroups()`/`navigationItems()` registration),
+`HasSidebar` (`collapsibleNavigationGroups()` alone — the panel-level default
+[`NavigationGroup::isCollapsible()`](#navigationgroup) falls back to) and
+`HasBrandName` — with `default()`/`isDefault()` on the class itself, matching
+Filament.
+
+`PanelProvider` is the abstract `panel(Panel $panel): Panel` contract; every
+subclass an application registers as a service is tagged
+`sylament.panels.panel_provider` by autoconfiguration. `PanelRegistry` consumes
+that tagged iterator, builds each provider's panel once (memoised), keys them by
+id, rejects a duplicate id, and answers `getDefault()` or throws
+`NoDefaultPanelSetException`. `CurrentPanel` reads the `_sylament_panel` request
+attribute off the `RequestStack` and resolves it through the registry. Both are
+private services with no consumer until the routing layer injects them, and
+Symfony removes a private service nothing references — so the panels test kernel
+holds a public alias to each, standing in for the reference an application makes.
+
+Deferred, all todo: the other 28 `Panel/Concerns` traits (auth, tenancy, colors,
+assets, render hooks, middleware, plugins, …); `Panel::register()`/`boot()` and
+the resource/widget registration arms; `getNavigation()`, whose body arrives with
+the navigation builder.
+
+Three deltas, each with its own divergence:
+[panels are collected from tagged providers rather than registered by a service
+provider](#panels-are-collected-from-tagged-providers-not-registered-imperatively),
+[the current panel is derived from the request, never stored](#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager),
+and [`PanelRegistry::get()` has no fuzzy arm](#panelregistryget-has-no-fuzzy-arm).
 
 ## Features
 
@@ -483,3 +524,44 @@ the two rules (`sy-pa-sidebar-item-btn` and the icon/label pair) read the slot
 variables instead. The known residual risk until then: a consumer registering an
 unusually light or dark `primary` gets a fixed 600/400 against the fixed
 `gray-100` / `white/5` active background, which no policy is measuring.
+
+### Panels are collected from tagged providers, not registered imperatively
+
+Filament's `PanelProvider` extends Laravel's `ServiceProvider` and its
+`register()` calls `Filament::registerPanel(fn () => $this->panel(Panel::make()))`,
+so a panel exists because a provider imperatively pushed it into the manager.
+Symfony has no service-provider tier to hook: ours is a plain abstract class
+carrying `panel()` alone, autoconfigured with `sylament.panels.panel_provider`,
+and `PanelRegistry` receives the tagged iterator and builds each panel lazily on
+first `all()`. The user-facing shape is unchanged — write a `PanelProvider`
+subclass with a `panel()` method — while registration becomes container wiring,
+the same trade `AsController`/`AsEventListener` make.
+
+The tag buys one behaviour Filament's registry has no place for: two providers
+claiming the same id throw naming both classes, where Filament's
+`$this->panels[$panel->getId()] = $panel` silently overwrites the first.
+
+### The current panel is derived from the request, not stored on a manager
+
+Filament holds `?Panel $currentPanel` on the `FilamentManager` singleton and
+`Http\Middleware\SetUpPanel` assigns it per request. That is exactly the mutable
+static per-request state [the shell is worker-safe](#the-shell-is-turbo-indifferent-and-worker-safe)
+forbids: a long-running worker would leak one request's panel into the next.
+`CurrentPanel` stores nothing — it reads the `_sylament_panel` request attribute
+through `RequestStack` on every call, so the answer belongs to the request being
+served and a worker has nothing to reset. An id the registry does not know is a
+`LogicException` rather than a silent null, since only our own routing writes
+that attribute.
+
+Filament's `getCurrentOrDefaultPanel()` fallback is not ported here: `get()`
+returns `null` outside a panel, and a caller that wants the default asks
+`PanelRegistry::getDefault()` for it.
+
+### `PanelRegistry::get()` has no fuzzy arm
+
+Filament's `get(?string $id, bool $isStrict = true)` can lower-case and strip
+dashes/underscores from every registered id to match a sloppy one. Ours takes the
+id alone and matches exactly. Nothing calls the fuzzy arm with `$isStrict: false`
+except Filament's own artisan commands resolving a panel from console input,
+which has no counterpart here; a normalising lookup that silently answers for a
+panel the caller did not name is worth having only once something needs it.

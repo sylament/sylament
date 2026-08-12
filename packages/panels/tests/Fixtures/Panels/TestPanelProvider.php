@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sylament\Panels\Tests\Fixtures\Panels;
+
+use Sylament\Panels\Panel;
+use Sylament\Panels\PanelProvider;
+use Sylament\Panels\Tests\Fixtures\Pages\SettingsPage;
+
+final class TestPanelProvider extends PanelProvider
+{
+    public function panel(Panel $panel): Panel
+    {
+        return $panel
+            ->id('admin')
+            ->path('admin')
+            ->brandName('Test Admin')
+            ->navigationGroups(['Content'])
+            ->pages([SettingsPage::class]);
+    }
+}

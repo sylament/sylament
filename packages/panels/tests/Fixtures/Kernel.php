@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures;
 
+use Sylament\Panels\CurrentPanel;
+use Sylament\Panels\PanelRegistry;
 use Sylament\Panels\SylamentPanelsBundle;
 use Sylament\Support\SylamentSupportBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -91,6 +93,15 @@ class Kernel extends BaseKernel
 
         $container->services()
             ->alias(UrlGeneratorInterface::class, 'router')
+            ->public();
+
+        // Symfony removes a private service nothing references, and no shipped service consumes
+        // the panel registry or the current-panel lookup yet, so the rig references both the way
+        // an application injecting them does — otherwise they are gone before a test can ask.
+        $container->services()
+            ->alias('sylament_panels.test.panel_registry', PanelRegistry::class)
+            ->public()
+            ->alias('sylament_panels.test.current_panel', CurrentPanel::class)
             ->public();
     }
 }

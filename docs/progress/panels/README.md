@@ -305,7 +305,8 @@ they sit per subsystem:
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| _not audited yet_ | | | |
+| [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — `registerLivewireComponents()` / `queueLivewireComponentForRegistration()` | in progress | every `Page` service is autoconfigured `sylament.panels.page` and the pass tags it as a live `twig.component` keyed by `Page::getComponentName()`, rendering through `template_from_method: getTemplate`; it also builds the class-keyed `ServiceLocator` `PageController` reads pages from — prose lands with the M2 · 2 close-out |
+| _rest not audited yet_ | | | |
 
 ## Supporting surface
 

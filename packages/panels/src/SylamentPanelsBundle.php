@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Panels;
 
+use Sylament\Panels\DependencyInjection\Compiler\PageComponentPass;
+use Sylament\Panels\Http\PageController;
+use Sylament\Panels\Pages\Dashboard;
+use Sylament\Panels\Pages\Page;
 use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -18,6 +22,11 @@ class SylamentPanelsBundle extends SylamentBundle
 
         $container->registerForAutoconfiguration(PanelProvider::class)
             ->addTag('sylament.panels.panel_provider');
+
+        $container->registerForAutoconfiguration(Page::class)
+            ->addTag('sylament.panels.page');
+
+        $container->addCompilerPass(new PageComponentPass(), priority: 10);
     }
 
     /**
@@ -35,7 +44,13 @@ class SylamentPanelsBundle extends SylamentBundle
             ->set(PanelRegistry::class)
                 ->args([tagged_iterator('sylament.panels.panel_provider')])
             ->set(CurrentPanel::class)
-                ->autowire();
+                ->autowire()
+            ->set(Dashboard::class)
+                ->autowire()
+                ->autoconfigure()
+            ->set(PageController::class)
+                ->autowire()
+                ->tag('controller.service_arguments');
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void

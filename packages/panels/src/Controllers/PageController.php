@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sylament\Panels\Http;
+namespace Sylament\Panels\Controllers;
 
 use LogicException;
 use Psr\Container\ContainerInterface;

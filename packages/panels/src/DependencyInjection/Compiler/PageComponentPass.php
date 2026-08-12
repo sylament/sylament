@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Panels\DependencyInjection\Compiler;
 
 use LogicException;
-use Sylament\Panels\Http\PageController;
+use Sylament\Panels\Controllers\PageController;
 use Sylament\Panels\Pages\Page;
 use Symfony\Component\DependencyInjection\Compiler\CompilerPassInterface;
 use Symfony\Component\DependencyInjection\Compiler\ServiceLocatorTagPass;

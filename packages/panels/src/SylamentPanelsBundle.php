@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Panels;
 
+use Sylament\Panels\Controllers\PageController;
 use Sylament\Panels\DependencyInjection\Compiler\PageComponentPass;
-use Sylament\Panels\Http\PageController;
 use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Pages\Page;
 use Sylament\Support\SylamentBundle;

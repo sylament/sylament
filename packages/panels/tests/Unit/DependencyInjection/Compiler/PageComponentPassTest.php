@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
+use Sylament\Panels\Controllers\PageController;
 use Sylament\Panels\DependencyInjection\Compiler\PageComponentPass;
-use Sylament\Panels\Http\PageController;
 use Sylament\Panels\Pages\Page;
 use Sylament\Panels\Tests\Fixtures\Pages\SettingsPage;
 use Symfony\Component\DependencyInjection\ContainerBuilder;

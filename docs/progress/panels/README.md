@@ -168,6 +168,18 @@ sylament's shipped url, active-state and icon closures run against a stock
 container:
 [the item hands its own services to evaluated closures](#the-item-hands-its-own-services-to-evaluated-closures).
 
+That set is a **build-time** requirement, not only a render-time one, and it is
+consumer-visible. `setEvaluationServices()` is a plain `#[Required]` setter on an
+autowired service, so all three types must be resolvable when the container
+*compiles*: an application that disables `framework.router` — leaving no
+`UrlGeneratorInterface` to autowire — fails at container build with an unresolved
+argument, not at the first navigation render. The coupling is benign in practice,
+since a panel exists to mount routes and cannot work without the router anyway,
+and it is the price of not publishing three public aliases in every consuming
+application. It is recorded because the failure names `NavigationItem`, which is
+not where a reader would look for a router dependency. A `new`-built item is
+unaffected — the setter only fires through the container.
+
 Four deltas against Filament's item, each with its own divergence:
 [`badge()` keeps a colour set earlier](#badge-preserves-a-badge-colour-set-before-it),
 [`group()`/`getGroup()` carry no `UnitEnum` arm](#group-and-getgroup-carry-no-unitenum-arm),
@@ -213,7 +225,9 @@ basename), the `heading`/`subheading` pair with `getHeading()` falling back to
 the title, the navigation statics (`navigationIcon`, `activeNavigationIcon`,
 `navigationLabel`, `navigationSort`, `navigationGroup`) with their static
 getters, and the `navigationBadge`/`navigationBadgeColor` hooks a subclass
-overrides.
+overrides. `getNavigationLabel()` carries Filament's full fallback chain —
+`$navigationLabel`, then `$title`, then the humanized class basename — so a page
+that sets neither static still names itself in the sidebar.
 
 Routing and rendering: `getSlug()` (the `$slug` static, else the kebab-cased
 class basename), `getRoutePath()`, `getRouteName(Panel $panel)` — the
@@ -236,17 +250,20 @@ Deferred, all todo:
   `BasePage` declares both as protected properties a subclass assigns or a
   subclass getter overrides — so today the pair stays subclass-only.
 
-One delta against Filament's page remains:
-[`$navigationGroup` is string-only](#navigationgroup-is-string-only-on-page-too).
+Three deltas against Filament's page:
+[`$navigationGroup` is string-only](#navigationgroup-is-string-only-on-page-too),
+[`getNavigationItems()` and `getRouteName()` take the panel](#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade),
+and [a page registers as a live component through a compiler pass rather than an
+attribute](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes).
 
 ### Dashboard
 
 The one concrete page the package ships: `$routePath = '/'` (overriding
 `getRoutePath()`, so the page owns the panel root rather than `/dashboard`),
 `$navigationSort = -2` to keep it first, and `$title = 'Dashboard'`, which
-`Page::getTitle()` and `getNavigationLabel()` both read — Filament translates
-that string through `filament-panels::pages/dashboard.title` and we have no
-translation layer yet. `getNavigationIcon()` returns a `Closure` resolving
+`Page::getTitle()` and `getNavigationLabel()` both read —
+[a literal where Filament translates](#the-dashboard-title-is-a-literal-not-a-translation-key).
+`getNavigationIcon()` returns a `Closure` resolving
 [`PanelsIconAlias::PAGES_DASHBOARD_NAVIGATION_ITEM`](../../../packages/panels/src/Twig/PanelsIconAlias.php)
 through the injected `IconManager`, falling back to `heroicons:home`; the closure
 defers the lookup to render time, which is what lets an override registered after
@@ -263,7 +280,8 @@ heroicon cases on `hasTopNavigation()`; ours resolves the single
 The definition surface a panel provider configures, plus the two services that
 collect and locate panels. `Panel` composes six of Filament's `Panel/Concerns`
 traits — `HasId` (write-once id, fatal when read unset), `HasRoutes` (the path
-only), `HasComponents` (`pages()`, accumulating and de-duplicated),
+only), `HasComponents` ([`pages()`, accumulating, de-duplicated and
+re-indexed](#getpages-re-indexes-where-filament-keeps-array_uniques-gapped-keys)),
 `HasNavigation` (`navigationGroups()`/`navigationItems()` registration plus
 `getNavigation()`), `HasSidebar` (`collapsibleNavigationGroups()` alone — the
 panel-level default [`NavigationGroup::isCollapsible()`](#navigationgroup) falls
@@ -294,21 +312,25 @@ ordinary private services: [`PanelRouteLoader`](#routing) injects the registry
 and [`PageController`](#routing) injects the current-panel lookup.
 
 Deferred, all todo: the other 28 `Panel/Concerns` traits (auth, tenancy, colors,
-assets, render hooks, middleware, plugins, …); `Panel::register()`/`boot()` and
-the resource/widget registration arms; `navigation()` / `NavigationBuilder` — the
+assets, render hooks, middleware, plugins, …); the resource and widget
+registration arms; `navigation()` / `NavigationBuilder` — the
 hand-built navigation escape hatch, which needs nothing from the assembly above
 and lands when a consumer wants it; the parent-item nesting pass and the
 `UnitEnum` group arm, both waiting on
 [`NavigationItem`'s deferred `key()`](#navigationitem); and the resource and
 widget contributions to the item list, which arrive with those subsystems.
 
-Four deltas, each with its own divergence:
+Seven deltas, each with its own divergence:
 [panels are collected from tagged providers rather than registered by a service
 provider](#panels-are-collected-from-tagged-providers-not-registered-imperatively),
 [the current panel is derived from the request, never stored](#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager),
 [`PanelRegistry::get()` has no fuzzy arm](#panelregistryget-has-no-fuzzy-arm),
-and [navigation is assembled on the panel rather than by a
-`NavigationManager`](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager).
+[navigation is assembled on the panel rather than by a
+`NavigationManager`](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager),
+[the panel has no `register()` or `boot()`](#the-panel-has-no-register-or-boot),
+[`getBrandName()` returns `null` rather than an application
+name](#getbrandname-returns-null-where-filament-falls-back-to-the-app-name),
+and [`getPages()` re-indexes](#getpages-re-indexes-where-filament-keeps-array_uniques-gapped-keys).
 
 ## Features
 
@@ -321,7 +343,7 @@ they sit per subsystem:
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — `registerLivewireComponents()` / `queueLivewireComponentForRegistration()` | in progress | every `Page` service is autoconfigured `sylament.panels.page` and the pass tags it as a live `twig.component` keyed by `Page::getComponentName()`, rendering through `template_from_method: getTemplate`; it also builds the class-keyed `ServiceLocator` `PageController` reads pages from — prose lands with the M2 · 2 close-out |
+| [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — `registerLivewireComponents()` / `queueLivewireComponentForRegistration()` | in progress | every `Page` service is autoconfigured `sylament.panels.page` and the pass tags it as a live `twig.component` keyed by `Page::getComponentName()`, rendering through `template_from_method: getTemplate`; it also builds the class-keyed `ServiceLocator` `PageController` reads pages from — [why a pass rather than an attribute](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes) |
 | _rest not audited yet_ | | | |
 
 ## Supporting surface
@@ -481,9 +503,11 @@ stays empty until pages carry schemas. Both are `partials/`, not `components/` �
 they are rendered from PHP (a controller and a `template_from_method` getter),
 never as a `<twig:>` tag.
 
-Two divergences are theirs:
-[a page is rendered by a controller rather than routed to directly](#a-panel-page-is-rendered-by-a-controller-not-routed-to-directly)
-and [the document calls `importmap()` unguarded](#the-document-calls-importmap-unguarded).
+Four divergences are theirs:
+[a page is rendered by a controller rather than routed to directly](#a-panel-page-is-rendered-by-a-controller-not-routed-to-directly),
+[the document calls `importmap()` unguarded](#the-document-calls-importmap-unguarded),
+[the route import carries no prefix](#the-route-import-carries-no-prefix-because-the-panel-path-is-authoritative),
+and [the document renders no notifications outlet](#the-document-renders-no-notifications-outlet).
 
 ## Semantics
 
@@ -583,7 +607,16 @@ Filament types the static `string | UnitEnum | null` so a page can name its grou
 with an enum case, matching `NavigationItem::group()`. Ours is `?string`, for the
 same reason and on the same schedule as
 [the item's missing arm](#group-and-getgroup-carry-no-unitenum-arm) — the two
-have to agree about what a group key is, so they move together in M2 · 2.
+have to agree about what a group key is, so they move together.
+
+M2 · 2 looked at it and deferred it again, deliberately. The panel's navigation
+assembly buckets items by `getGroup()` and matches a registered group by key or
+label, all of it string-keyed; widening the page static alone would produce a
+group key nothing matches, and widening the whole path means answering how an
+enum case *names* a group and where its label and icon come from — which is
+`NavigationGroup::fromEnum()` and the `HasLabel` / `HasIcon` / `Collapsible`
+contracts behind it, none of them ported. So the three move as one piece:
+`fromEnum()`, `NavigationItem::group()`'s enum arm, and this static.
 
 ### Sidebar group ids are positional, not derived from the label
 
@@ -700,6 +733,19 @@ served and a worker has nothing to reset. An id the registry does not know is a
 `LogicException` rather than a silent null, since only our own routing writes
 that attribute.
 
+What statelessness buys is visible in Filament's own code. `FilamentManager`
+carries a second piece of remembered state beside the panel —
+`protected bool $isCurrentPanelBooted = false`, guarding `bootCurrentPanel()`
+([`FilamentManager.php:65-74`](../../../vendor/filament/filament/src/FilamentManager.php))
+— and nothing ever sets it back to `false`. Under php-fpm that is invisible,
+because the manager dies with the request. Under a long-running worker the second
+request onwards finds the flag already true and skips booting its panel
+entirely, so the colours, icons and render hooks of whichever panel happened to
+be served first are the ones every later request gets. The port has no flag to
+forget to reset because it has nothing to boot
+([the panel has no `register()` or `boot()`](#the-panel-has-no-register-or-boot))
+and nothing to remember.
+
 Filament's `getCurrentOrDefaultPanel()` fallback is not ported here: `get()`
 returns `null` outside a panel, and a caller that wants the default asks
 `PanelRegistry::getDefault()` for it.
@@ -791,3 +837,160 @@ evaluates a `RequestStack` closure on a group, which passes only because the
 panels test kernel republishes that one alias). A consumer hinting a fourth
 service type still republishes its alias, and that is the case the group test
 stands in for.
+
+### The panel has no `register()` or `boot()`
+
+Filament's `Panel` carries both lifecycle methods and neither is ported.
+`register()` queues the panel's Livewire components, registers persistent
+middleware, sets a tenant route pattern and registers assets when running in
+console; `boot()` installs per-request global state — `FilamentColor::register()`,
+`FilamentIcon::register()`, `FilamentView::spa()`, the render hooks, and an
+`Action::configureUsing()` for database transactions.
+
+Neither has a job here. Component registration is a **container** concern, done
+once at compile time by
+[`PageComponentPass`](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes)
+rather than per request by the panel. And `boot()`'s remaining work is exactly
+the mutable global state
+[the shell is worker-safe](#the-shell-is-turbo-indifferent-and-worker-safe)
+forbids: pushing this request's panel colours and icons into process-wide
+registries is undebuggable the moment two panels are served by one worker. Ours
+are container configuration instead —
+[`sylament.colors` and `sylament.icons`](../support/icon-manager.md) are read
+into `ColorManager`/`IconManager` at container build and never rewritten — so
+there is nothing for a panel to install and nothing to reset. Render hooks,
+middleware and assets are all unported surface that will have to answer the same
+question when it lands; the answer this establishes is *configure at build, do
+not install at boot*.
+
+### Pages register as live components through a compiler pass, not per-class attributes
+
+Filament registers a panel's pages as Livewire components imperatively, from
+`Panel::register()` through `registerLivewireComponents()` and
+`queueLivewireComponentForRegistration()`. The literal Symfony translation is
+`#[AsLiveComponent]` on every concrete `Page` subclass, and it was staged as an
+open decision for this epic. It is not the one taken.
+
+Class attributes do not inherit: `registerAttributeForAutoconfiguration()` reads
+the attribute off the class being registered, so putting `#[AsLiveComponent]` on
+the abstract `Page` base does nothing for its subclasses — every page a consumer
+writes has to repeat it. Forgetting it fails badly. The page is still a service,
+so the route still mounts and the request still reaches
+[`PageController`](#routing); the failure surfaces at the point where the
+document renders `{{ component(componentName) }}` and ux-twig-component has no
+component under that name — a render-time error about a component the user never
+typed, at a name derived from the FQCN, several layers from the missing
+attribute.
+
+So the tag is applied for them.
+[`PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php)
+walks everything autoconfigured `sylament.panels.page` and replicates what the
+attribute would have produced: the **same two tags** the LiveComponent extension
+adds — `twig.component` carrying `AsLiveComponent::serviceConfig()`'s payload
+(`key`, `live`, `route`, `method`, `url_reference_type`, `expose_public_props`,
+`attributes_var` and `template_from_method: 'getTemplate'`, the two nullable
+entries the extension filters away being simply not written) plus
+`controller.service_arguments`. `template_from_method` is the payload the
+attribute's `new FromMethod('getTemplate')` form produces, and it is the arm that
+matters: a literal `template:` string is fixed at compile time, where
+`getTemplate()` lets the base class supply the default and a subclass override
+`$template`.
+
+The pass also owns two things an attribute could not. Two pages deriving the same
+component name throw at compile time naming both services, where a duplicate
+attribute key would silently leave one registration standing. And the pass builds
+the class-keyed `ServiceLocator` `PageController` resolves pages through, so the
+same tag that makes a page renderable makes it reachable.
+
+The cost is the ordinary one for compile-time magic: nothing in a page class says
+it is a live component, so the fact lives here and in the bundle's `build()`.
+
+### `getNavigationItems()` takes the panel rather than reaching a facade
+
+Filament's `Page::getNavigationItems()` is parameterless and reaches the current
+panel through the `Filament` facade — `getRouteName(?Panel $panel = null)`
+defaults to `Filament::getCurrentOrDefaultPanel()` when the argument is omitted.
+A **static** method cannot reach a service in Symfony, which is the same
+constraint the [`Resource` carried decision](#resource-is-a-service-not-a-static-class-string-registry)
+opens with, so the panel travels as a required argument:
+`getNavigationItems(Panel $panel)` and `getRouteName(Panel $panel)`. Both callers
+already hold one — [`Panel::getNavigation()`](#panel) passes `$this`,
+[`PanelRouteLoader`](#routing) passes the panel it is mounting — so nothing has
+to find a panel it did not already have.
+
+The argument moves the other way where nothing reads it. Filament's
+`getRoutePath(Panel $panel)` and `getSlug(?Panel $panel = null)` take a panel
+solely to look up a per-panel `PageConfiguration` (the same page registered twice
+in one panel under different keys); that surface is unported, so both are
+parameterless here and gain the argument if and when configurations land. The
+policy is the same in both directions: the panel is an argument exactly where the
+method reads it, never as a uniform prefix.
+
+### `getBrandName()` returns null where Filament falls back to the app name
+
+Filament's `getBrandName()` ends `?? config('app.name')`, so an unconfigured
+panel still prints *Laravel* in its `<title>` and brand slot. Symfony has no
+framework-owned application name to fall back to — there is no `framework.name`,
+and `kernel.project_dir`'s basename is a directory, not a product — so ours
+returns `null` and the [document template](#routing) drops the title suffix
+entirely rather than printing a placeholder. A consumer who wants one calls
+`brandName()`, which is the call a Filament user makes anyway the first time they
+see the default.
+
+### `getPages()` re-indexes where Filament keeps `array_unique()`'s gapped keys
+
+Filament returns `array_unique($this->pages)` directly, which preserves the
+original keys and therefore leaves gaps wherever a duplicate was removed. Ours
+wraps it in `array_values()`. Order is unchanged and the surviving entry is still
+the first occurrence — the only difference is that the result is a list. It
+matters because the return is a collection every caller iterates or serialises,
+and a gapped integer-keyed array is the shape that silently becomes a JSON object
+instead of an array the first time something encodes it. Nothing here depends on
+the keys, so there is nothing to lose by dropping them.
+
+### The route import carries no prefix because the panel path is authoritative
+
+Filament mounts each panel inside a `Route::prefix($panel->getPath())` group, so
+the path is applied by the router. Ours cannot be: one
+[`routing.route_loader`](#routing) pass covers **every** registered panel, and a
+single `import()` prefix cannot express a different path per panel. So
+`PanelRouteLoader` joins the panel path itself and an application imports the
+loader bare:
+
+```php
+$routes->import('sylament_panels.route_loader', 'service');
+```
+
+Adding `->prefix('/admin')` there double-prefixes — a panel declaring
+`path('admin')` mounts at `/admin/admin` — and it fails as a 404 on every panel
+URL rather than as an error, because the routes exist and are simply somewhere
+else. `Panel::path()` is the one place a panel's mount point is written.
+
+### The document renders no notifications outlet
+
+Filament's `base.blade.php` emits `@livewire(Filament\Livewire\Notifications::class)`
+in every panel document, so a notification sent from any page has a stack to land
+in. Ours does not, and the reason is the dependency rule rather than a view
+decision: `sylament/panels` does not require `sylament/notifications`, and a
+template that unconditionally renders `<twig:SylamentNotifications:Notifications />`
+is an unconditional dependency on a package the manifest does not declare —
+precisely the shape that breaks a split repo. Until panels either declares the
+dependency or gates the outlet on the bundle being registered, an application
+that wants panel-wide notifications renders the tag from its own page template.
+[M2 · 4](../roadmap.md) — the demo panel assembly, the first place a real panel
+is mounted and notified from — is where the gap gets felt and the choice gets
+made.
+
+### The dashboard title is a literal, not a translation key
+
+Filament's `Dashboard` resolves its label through
+`__('filament-panels::pages/dashboard.title')`; ours sets
+`protected static ?string $title = 'Dashboard'` and both `getTitle()` and
+`getNavigationLabel()` read the literal. There is no translation layer anywhere
+in the port yet — no bundle ships a message catalogue, no template calls `trans`,
+and no user-facing string carries a message id — so a key here would be the only one
+in the codebase and would have to invent the catalogue conventions (domain
+naming, where catalogues live, how a consumer overrides one) as a side effect of
+shipping a dashboard. The literal is a placeholder with a known replacement: when
+i18n lands it becomes a translated string with `'Dashboard'` as its English
+default, and a consumer overriding `$title` today is unaffected either way.

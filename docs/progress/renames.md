@@ -131,6 +131,7 @@ the table above.
 | Blade component scope inheritance (`$this` is the Livewire component) | an explicit host — resolved from the Twig component stack, or passed as a prop | `<x-filament-actions::modals />` → `<twig:SylamentActions:Modals />` (see [has-actions.md](actions/has-actions.md#the-modals-renderer-resolves-its-host-from-the-render-stack-not-from-template-scope)) |
 | Alpine.js | Stimulus | `x-data` / `x-on:` → a controller under `packages/*/assets/src/controllers/`, wired with StimulusBundle's Twig helpers |
 | `fi-*` classes | `sy-*` classes | `fi-icon-btn` → `sy-icon-btn`, `fi-disabled` → `sy-disabled` |
+| `filament.*` route names | `sylament.*` route names | `filament.{panel id}.pages.{slug}` → `sylament.{panel id}.pages.{slug}`, so `filament.admin.pages.dashboard` → `sylament.admin.pages.dashboard` ([`Page::getRouteName()`](panels/README.md#page) builds it; the panel id and the page slug are untouched). The vendor prefix travels with the vendor, exactly as `fi-` → `sy-` does above, and for the same reason: a route name is a string a migrating user greps for and types into `path()` calls, so it changes once and wholesale rather than page by page. |
 
 CSS class names are not a flat prefix swap: bundles above support insert a
 package code (`sy-fo-input`, `sy-sc-grid`), support-level classes carry none

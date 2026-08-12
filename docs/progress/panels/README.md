@@ -320,7 +320,7 @@ and lands when a consumer wants it; the parent-item nesting pass and the
 [`NavigationItem`'s deferred `key()`](#navigationitem); and the resource and
 widget contributions to the item list, which arrive with those subsystems.
 
-Seven deltas, each with its own divergence:
+Eight deltas, each with its own divergence:
 [panels are collected from tagged providers rather than registered by a service
 provider](#panels-are-collected-from-tagged-providers-not-registered-imperatively),
 [the current panel is derived from the request, never stored](#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager),
@@ -328,6 +328,7 @@ provider](#panels-are-collected-from-tagged-providers-not-registered-imperativel
 [navigation is assembled on the panel rather than by a
 `NavigationManager`](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager),
 [the panel has no `register()` or `boot()`](#the-panel-has-no-register-or-boot),
+[`make()` configures before the id is set](#make-configures-the-panel-before-its-id-is-set),
 [`getBrandName()` returns `null` rather than an application
 name](#getbrandname-returns-null-where-filament-falls-back-to-the-app-name),
 and [`getPages()` re-indexes](#getpages-re-indexes-where-filament-keeps-array_uniques-gapped-keys).
@@ -775,6 +776,18 @@ piece worth keeping from it is the cloning discipline, which ours has: groups an
 items are cloned on the way out, so repeated calls neither accumulate items on a
 registered group nor let one render's mutation reach the next.
 
+That discipline covers `getNavigation()` and nothing else. `getNavigationItems()`
+and `getNavigationGroups()` hand back the registered objects themselves, and
+`PanelRegistry` builds each panel once and memoises it — so under a long-running
+worker those are the same instances for every request the process serves. Read
+against them, [`NavigationItem::isActive()`](#navigationitem) is destructive: it
+overwrites its `isActiveWhen()` closure with the boolean the first evaluation
+produced, so a raw item asked once whether it is active answers that way for the
+life of the process, on every request, whatever the route. Navigation is read
+through `getNavigation()`, whose clones absorb exactly that; the raw getters are
+registration-time composition surface — what a provider reads to add to what an
+earlier call registered — and are not a render path.
+
 The escape hatch Filament layers on top — `navigation(Closure | bool)` with
 `NavigationBuilder`, plus `hasNavigation()` / `hasNavigationBuilder()` — is
 deferred rather than rejected: it replaces the derived navigation with a
@@ -863,6 +876,28 @@ middleware and assets are all unported surface that will have to answer the same
 question when it lands; the answer this establishes is *configure at build, do
 not install at boot*.
 
+### `make()` configures the panel before its id is set
+
+Filament's `Panel::make()` is `app(static::class)` and configures nothing;
+`configure()` is called from exactly one place, `HasId::id()`, immediately after
+the assignment. So every `Panel::configureUsing()` closure Filament runs sees a
+panel that already knows its id, and a closure keyed on it —
+`fn (Panel $panel) => $panel->getId() === 'admin' ? … : …` — works.
+
+Ours follows the house `make()` shape instead: `Panel::make()` calls
+`newInstance()` then `configure()`, the same two lines every other Sylament
+component's factory has, and `id()` is a plain write-once setter. The ordering
+inverts — configuration runs first, the id arrives after — and the cost is
+narrow but real: a `Panel::configureUsing()` closure that reads `getId()` does
+not see a different id, it **fatals**, because
+[`HasId::getId()` throws when the property is unset](#panel). Nothing in-repo
+does that (the panels suite registers no panel-level `configureUsing()`), so the
+divergence is recorded rather than fixed. Adopting Filament's placement would
+mean `id()` calling `configure()`, which double-configures every panel built
+through `make()` unless `make()` stops doing it — a change to the one factory
+shape the whole toolkit shares, for a closure nobody has written yet. Revisit the
+moment a consumer hits it.
+
 ### Pages register as live components through a compiler pass, not per-class attributes
 
 Filament registers a panel's pages as Livewire components imperatively, from
@@ -901,6 +936,19 @@ component name throw at compile time naming both services, where a duplicate
 attribute key would silently leave one registration standing. And the pass builds
 the class-keyed `ServiceLocator` `PageController` resolves pages through, so the
 same tag that makes a page renderable makes it reachable.
+
+What the pass tags is every `Page` service the application registers, not every
+page a panel lists — `pages()` is read by [`PanelRouteLoader`](#routing), never by
+the pass. So a page class that no panel attaches still becomes a live component
+mounted at `ux_live_component` over POST and still becomes a public controller
+service through `controller.service_arguments`; it has no panel GET route and is
+reachable anyway. It could not be otherwise: the pass runs at container compile
+time and a panel is assembled at runtime, by `PanelRegistry` calling each
+provider's `panel()`, so no `pages()` list exists to filter by when the tags are
+written. Accepted, then, but it fixes the shape of the auth work: **the
+authorization gate belongs on the component mount, not on the panel routes**. A check written against the route defaults (`_sylament_panel`,
+`_sylament_page`) secures exactly the half of the surface the pass did not create,
+and leaves the POST endpoint open under a name derived from the page's own FQCN.
 
 The cost is the ordinary one for compile-time magic: nothing in a page class says
 it is a live component, so the fact lives here and in the bundle's `build()`.

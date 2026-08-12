@@ -4,6 +4,10 @@
     end = markup(block('end') ?? null)
 %}
 
+{% set hasEnd = end is filled %}
+
+{% set sidebarController = 'sylament--panels--sidebar' %}
+
 <header
     {{ attrs({
         id: 'sy-pa-topbar',
@@ -11,11 +15,13 @@
     }, attributes.all) }}
 >
     <button
-        type="button"
-        class="sy-pa-topbar-open-sidebar-btn"
-        aria-controls="sy-pa-sidebar"
-        data-action="sylament--panels--sidebar#toggle"
-        aria-label="Open sidebar"
+        {{ attrs({
+            type: 'button',
+            class: 'sy-pa-topbar-open-sidebar-btn',
+            'aria-controls': 'sy-pa-sidebar',
+            'aria-expanded': 'false',
+            'aria-label': 'Toggle sidebar',
+        }, stimulus_action(sidebarController, 'toggle')|stimulus_target(sidebarController, 'toggleButton')) }}
     >
         <twig:SylamentSupport:Icon icon="heroicons:bars-3" />
     </button>
@@ -24,7 +30,9 @@
         <span class="sy-pa-topbar-brand">{{ brandName }}</span>
     {% endif %}
 
-    <div class="sy-pa-topbar-end">
-        {{ end }}
-    </div>
+    {% if hasEnd %}
+        <div class="sy-pa-topbar-end">
+            {{ end }}
+        </div>
+    {% endif %}
 </header>

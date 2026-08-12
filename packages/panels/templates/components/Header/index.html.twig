@@ -5,18 +5,27 @@
     actions = markup(block('actions') ?? null)
 %}
 
+{% set hasHeading = heading is filled %}
+{% set hasSubheading = subheading is filled %}
+{% set hasHeadings = hasHeading or hasSubheading %}
+{% set hasActions = actions is filled %}
+
 <header {{ attrs({class: 'sy sy-pa-header'}, attributes.all) }}>
-    <div class="sy-pa-header-headings">
-        {% if heading %}
-            <h1 class="sy-pa-header-heading">{{ heading }}</h1>
-        {% endif %}
+    {% if hasHeadings %}
+        <div class="sy-pa-header-headings">
+            {% if hasHeading %}
+                <h1 class="sy-pa-header-heading">{{ heading }}</h1>
+            {% endif %}
 
-        {% if subheading %}
-            <p class="sy-pa-header-subheading">{{ subheading }}</p>
-        {% endif %}
-    </div>
+            {% if hasSubheading %}
+                <p class="sy-pa-header-subheading">{{ subheading }}</p>
+            {% endif %}
+        </div>
+    {% endif %}
 
-    <div class="sy-pa-header-actions">
-        {{ actions }}
-    </div>
+    {% if hasActions %}
+        <div class="sy-pa-header-actions">
+            {{ actions }}
+        </div>
+    {% endif %}
 </header>

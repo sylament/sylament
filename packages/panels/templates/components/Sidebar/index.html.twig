@@ -1,11 +1,12 @@
 {% props navigation = [] %}
 
+{% set sidebarController = 'sylament--panels--sidebar' %}
+
 <aside
     {{ attrs({
         id: 'sy-pa-sidebar',
         class: 'sy sy-pa-sidebar',
-        'data-sylament--panels--sidebar-target': 'sidebar',
-    }, attributes.all) }}
+    }, stimulus_target(sidebarController, 'sidebar'), attributes.all) }}
 >
     <nav class="sy-pa-sidebar-nav">
         <ul class="sy-pa-sidebar-groups">

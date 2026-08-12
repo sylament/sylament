@@ -35,6 +35,7 @@ it('renders groups, items, active state, and badge', function (): void {
         ->toContain('sy-pa-sidebar-item')
         ->toContain('sy-active')
         ->toContain('href="/admin/articles"')
+        ->toContain('aria-current="page"')
         ->toContain('>12<')
         ->not->toContain('Hidden');
 });
@@ -48,5 +49,31 @@ it('renders collapse state and aria wiring on groups', function (): void {
         ->toContain('sy-collapsed')
         ->toContain('data-group-label="System"')
         ->toContain('aria-controls="sy-pa-sidebar-group-items-1"')
-        ->toContain('data-action="sylament--panels--sidebar#toggleGroup"');
+        ->toContain('data-action="sylament--panels--sidebar#toggleGroup"')
+        ->toMatch('/<button\s+class="sy-pa-sidebar-group-btn" type="button" aria-expanded="false"/');
+});
+
+it('marks only the active item with aria-current', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Sidebar', [
+        'navigation' => sidebarFixtureNavigation(),
+    ]);
+
+    expect(substr_count($html, 'aria-current="page"'))->toBe(1);
+});
+
+it('renders a non-collapsible group label as a plain element with no disclosure wiring', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Sidebar', [
+        'navigation' => [
+            NavigationGroup::make('Content')->collapsible(false)->items([
+                NavigationItem::make('Articles')->url('/admin/articles'),
+            ]),
+        ],
+    ]);
+
+    expect($html)
+        ->toMatch('/<div\s+class="sy-pa-sidebar-group-btn"\s*>/')
+        ->not->toContain('aria-expanded')
+        ->not->toContain('aria-controls')
+        ->not->toContain('toggleGroup')
+        ->not->toContain('disabled');
 });

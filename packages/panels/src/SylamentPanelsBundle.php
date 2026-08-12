@@ -20,4 +20,24 @@ class SylamentPanelsBundle extends SylamentBundle
             ->autowire()
             ->autoconfigure();
     }
+
+    public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
+    {
+        $this->prependAssetMapper($container);
+    }
+
+    private function prependAssetMapper(ContainerBuilder $container): void
+    {
+        if (!$this->isAssetMapperAvailable($container)) {
+            return;
+        }
+
+        $container->prependExtensionConfig('framework', [
+            'asset_mapper' => [
+                'paths' => [
+                    __DIR__ . '/../assets/dist' => '@sylament/panels',
+                ],
+            ],
+        ]);
+    }
 }

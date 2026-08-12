@@ -1,7 +1,4 @@
 .sy-pa-layout {
-    /* Mobile-first: a single column with the sidebar parked off-canvas. From `lg` the
-       shell becomes a two-column grid — the sidebar owns column 1 across both rows,
-       the topbar and the main region stack in column 2. */
     @apply flex min-h-dvh flex-col bg-gray-50 text-gray-950 lg:grid lg:grid-cols-[18rem_1fr] lg:grid-rows-[auto_1fr] dark:bg-gray-950 dark:text-white;
 }
 

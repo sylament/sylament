@@ -23,7 +23,7 @@ it('renders the full shell with stable landmarks', function (): void {
         ->toContain('id="sy-pa-topbar"')
         ->toContain('Demo Admin')
         ->toContain('<p>Body</p>')
-        ->toContain('data-sylament--panels--sidebar-target="overlay"');
+        ->toContain('class="sy-pa-sidebar-overlay" data-action="click-&gt;sylament--panels--sidebar#close"');
 });
 
 it('wires the hamburger to the sidebar controller', function (): void {
@@ -31,7 +31,10 @@ it('wires the hamburger to the sidebar controller', function (): void {
 
     expect($html)
         ->toContain('sylament--panels--sidebar#toggle')
-        ->toContain('aria-controls="sy-pa-sidebar"');
+        ->toContain('aria-controls="sy-pa-sidebar"')
+        ->toContain('aria-expanded="false"')
+        ->toContain('aria-label="Toggle sidebar"')
+        ->toContain('data-sylament--panels--sidebar-target="toggleButton"');
 });
 
 it('renders header heading and subheading', function (): void {
@@ -41,4 +44,26 @@ it('renders header heading and subheading', function (): void {
     ]);
 
     expect($html)->toContain('Articles')->toContain('All records')->toContain('sy-pa-header');
+});
+
+it('drops the header wrappers with nothing to put in them', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Header', ['heading' => 'Articles']);
+
+    expect($html)
+        ->toContain('sy-pa-header-headings')
+        ->not->toContain('sy-pa-header-actions');
+});
+
+it('renders the actions block inside the header actions wrapper', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Header', [
+        'heading' => 'Articles',
+    ], blocks: ['actions' => '<button type="button" id="header-action">Create</button>']);
+
+    expect($html)->toMatch('/<div class="sy-pa-header-actions">\s*<button type="button" id="header-action">Create<\/button>\s*<\/div>/');
+});
+
+it('drops the topbar end wrapper with nothing to put in it', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Topbar', ['brandName' => 'X']);
+
+    expect($html)->not->toContain('sy-pa-topbar-end');
 });

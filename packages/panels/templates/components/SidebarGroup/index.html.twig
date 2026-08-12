@@ -3,6 +3,11 @@
 {% set items = group.getItems|filter(item => item.isVisible) %}
 {% set itemsId = 'sy-pa-sidebar-group-items-' ~ groupIndex %}
 
+{% set collapsible = group.isCollapsible %}
+{% set labelTag = collapsible ? 'button' : 'div' %}
+
+{% set sidebarController = 'sylament--panels--sidebar' %}
+
 <li
     {{ attrs({
         class: ['sy sy-pa-sidebar-group', {
@@ -13,15 +18,13 @@
     }, attributes.all) }}
 >
     {% if group.getLabel %}
-        <button
+        <{{ labelTag }}
             {{ attrs({
                 class: 'sy-pa-sidebar-group-btn',
-                type: 'button',
-                'aria-expanded': group.isCollapsed ? 'false' : 'true',
-                'aria-controls': itemsId,
-                'data-action': group.isCollapsible ? 'sylament--panels--sidebar#toggleGroup' : false,
-                disabled: not group.isCollapsible,
-            }) }}
+                type: collapsible ? 'button' : null,
+                'aria-expanded': collapsible ? (group.isCollapsed ? 'false' : 'true') : null,
+                'aria-controls': collapsible ? itemsId : null,
+            }, collapsible ? stimulus_action(sidebarController, 'toggleGroup') : null) }}
         >
             {% if group.getIcon %}
                 <twig:SylamentSupport:Icon :icon="group.getIcon" class="sy-pa-sidebar-group-icon" />
@@ -29,10 +32,10 @@
 
             <span class="sy-pa-sidebar-group-label">{{ group.getLabel }}</span>
 
-            {% if group.isCollapsible %}
+            {% if collapsible %}
                 <twig:SylamentSupport:Icon icon="heroicons:chevron-down" class="sy-pa-sidebar-group-chevron" />
             {% endif %}
-        </button>
+        </{{ labelTag }}>
     {% endif %}
 
     <ul id="{{ itemsId }}" class="sy-pa-sidebar-group-items">

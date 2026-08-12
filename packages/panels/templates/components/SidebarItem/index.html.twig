@@ -8,6 +8,7 @@
             class: 'sy-pa-sidebar-item-btn',
             href: item.getUrl,
             target: item.shouldOpenUrlInNewTab ? '_blank' : null,
+            'aria-current': item.isActive ? 'page' : null,
         }) }}
     >
         {% if icon %}

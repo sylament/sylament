@@ -1,6 +1,4 @@
 .sy-pa-sidebar {
-    /* Off-canvas by default, slid in by `.sy-pa-sidebar-open` on the layout root; from
-       `lg` it is the grid's first column and sticks to the viewport as the page scrolls. */
     @apply fixed inset-y-0 start-0 z-30 flex w-72 -translate-x-full flex-col bg-white shadow-xl ring-1 ring-gray-950/5 transition-transform lg:sticky lg:top-0 lg:z-auto lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:h-dvh lg:translate-x-0 lg:shadow-none lg:ring-0 rtl:translate-x-full lg:rtl:translate-x-0 dark:bg-gray-900 dark:ring-white/10;
 }
 
@@ -40,7 +38,13 @@
 }
 
 .sy-pa-sidebar-group-btn {
-    @apply flex w-full cursor-pointer items-center gap-x-3 rounded-lg p-2 text-start outline-hidden transition duration-75 hover:bg-gray-100 focus-visible:bg-gray-100 disabled:cursor-default disabled:hover:bg-transparent dark:hover:bg-white/5 dark:focus-visible:bg-white/5 dark:disabled:hover:bg-transparent;
+    @apply flex w-full items-center gap-x-3 rounded-lg p-2 text-start;
+}
+
+/* Only the collapsible group renders its label as a button, so the element selector is what
+   keeps the interactive affordances off a non-collapsible group's plain label. */
+button.sy-pa-sidebar-group-btn {
+    @apply cursor-pointer outline-hidden transition duration-75 hover:bg-gray-100 focus-visible:bg-gray-100 dark:hover:bg-white/5 dark:focus-visible:bg-white/5;
 }
 
 .sy-pa-sidebar-group-icon,

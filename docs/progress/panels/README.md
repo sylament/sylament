@@ -21,6 +21,9 @@ start.
 
 ### `Resource` is a service, not a static class-string registry
 
+**Decided — implemented.** The base, its registry and the container wiring ship;
+see [Resources](#resources) for what the class actually holds.
+
 Filament's `Resource` is entirely static — `OrderResource::form($schema)`,
 `::table($table)`, `::getUrl()` — which works because Laravel's `app()` global
 lets a static method reach any service. Symfony has no such global, so a static
@@ -55,6 +58,14 @@ become a locator lookup — 66 call sites across 10 files in
 class-string (recommended — preserves Filament's API and inherits the
 `FormRegistry` precedent) or by name/slug. Pages, routes, and navigation all
 hang off that choice, and it is expensive to reverse once they exist.
+
+**Answered: class-string.** `->resources([ArticleResource::class])` on the panel,
+`ArticleResource::class` wherever one is named, and
+[`ResourceRegistry`](#resources) resolving that class-string to the
+container-built instance through a `ServiceLocator` a compiler pass fills — the
+recommended arm, taken for the reasons above. The slug stays what it always was
+in Filament, a URL segment derived from the class name and overridable per
+resource; it identifies a resource in a *URL*, never in code.
 
 **Why it is safe to defer until now.** Nothing below `Resource` depends on it:
 component classes get their dependencies from the container the moment they are
@@ -141,6 +152,9 @@ The panel surface —
 | [`PanelProvider`](../../../packages/panels/src/PanelProvider.php) | [`PanelProvider.php`](../../../vendor/filament/filament/src/PanelProvider.php) | in progress | [Panel](#panel) |
 | [`PanelRegistry`](../../../packages/panels/src/PanelRegistry.php) | [`PanelRegistry.php`](../../../vendor/filament/filament/src/PanelRegistry.php) | in progress | [Panel](#panel) |
 | [`CurrentPanel`](../../../packages/panels/src/CurrentPanel.php) | [`FilamentManager.php`](../../../vendor/filament/filament/src/FilamentManager.php) current-panel arm, [`Http/Middleware/SetUpPanel.php`](../../../vendor/filament/filament/src/Http/Middleware/SetUpPanel.php) | in progress | [Panel](#panel) |
+| [`Resources\Resource`](../../../packages/panels/src/Resources/Resource.php) | [`Resources/Resource.php`](../../../vendor/filament/filament/src/Resources/Resource.php) and [`Resources/Resource/Concerns`](../../../vendor/filament/filament/src/Resources/Resource/Concerns) — `HasLabels`, `HasPages`, `HasRoutes`, `HasNavigation`, `CanGenerateUrls` | in progress | [Resources](#resources) |
+| [`Resources\ResourceRegistry`](../../../packages/panels/src/Resources/ResourceRegistry.php) | no Filament counterpart — a Filament resource is reached by calling its statics on the class-string | in progress | [Resources](#resources) |
+| [`Resources\Pages\PageRegistration`](../../../packages/panels/src/Resources/Pages/PageRegistration.php) | [`Resources/Pages/PageRegistration.php`](../../../vendor/filament/filament/src/Resources/Pages/PageRegistration.php) | in progress | [Resources](#resources) |
 | _rest not audited yet_ | | | |
 
 ### NavigationItem
@@ -280,7 +294,8 @@ heroicon cases on `hasTopNavigation()`; ours resolves the single
 The definition surface a panel provider configures, plus the two services that
 collect and locate panels. `Panel` composes six of Filament's `Panel/Concerns`
 traits — `HasId` (write-once id, fatal when read unset), `HasRoutes` (the path
-only), `HasComponents` ([`pages()`, accumulating, de-duplicated and
+only), `HasComponents` ([`pages()` and `resources()`, each accumulating,
+de-duplicated and
 re-indexed](#getpages-re-indexes-where-filament-keeps-array_uniques-gapped-keys)),
 `HasNavigation` (`navigationGroups()`/`navigationItems()` registration plus
 `getNavigation()`), `HasSidebar` (`collapsibleNavigationGroups()` alone — the
@@ -311,12 +326,21 @@ attribute off the `RequestStack` and resolves it through the registry. Both are
 ordinary private services: [`PanelRouteLoader`](#routing) injects the registry
 and [`PageController`](#routing) injects the current-panel lookup.
 
+`resources()` / `getResources()` is the same shape as `pages()`, typed
+`class-string<Resource>` and equally unvalidated at registration time — the
+route loader is where a non-`Resource` entry is caught. It is a declaration only
+so far: nothing reads the list yet, so a registered resource contributes neither
+routes nor navigation until [`PanelRouteLoader`](#routing) and `getNavigation()`
+grow their resource arms.
+
 Deferred, all todo: the other 28 `Panel/Concerns` traits (auth, tenancy, colors,
-assets, render hooks, middleware, plugins, …); the resource and widget
-registration arms; `navigation()` / `NavigationBuilder` — the
-hand-built navigation escape hatch, which needs nothing from the assembly above
-and lands when a consumer wants it; the parent-item nesting pass and the
-`UnitEnum` group arm, both waiting on
+assets, render hooks, middleware, plugins, …); `discoverResources()` /
+`discoverPages()`, Filament's filesystem-scanning registration arms, which the
+[tag-collected](#resources) shape replaces for services and which would only
+return as a convenience over `services.yaml`; the widget registration arm;
+`navigation()` / `NavigationBuilder` — the hand-built navigation escape hatch,
+which needs nothing from the assembly above and lands when a consumer wants it;
+the parent-item nesting pass and the `UnitEnum` group arm, both waiting on
 [`NavigationItem`'s deferred `key()`](#navigationitem); and the resource and
 widget contributions to the item list, which arrive with those subsystems.
 
@@ -333,6 +357,93 @@ provider](#panels-are-collected-from-tagged-providers-not-registered-imperativel
 name](#getbrandname-returns-null-where-filament-falls-back-to-the-app-name),
 and [`getPages()` re-indexes](#getpages-re-indexes-where-filament-keeps-array_uniques-gapped-keys).
 
+### Resources
+
+`Resource` is the abstract base a user extends once per record type. It is a
+**service**, not a static class-string registry — the carried decision above,
+now implemented, with the identity question answered the way that decision
+recommended: a resource is identified by its **class-string** everywhere a user
+names one (`->resources([ArticleResource::class])`,
+`protected static string $resource = ArticleResource::class` on the pages to
+come), and `ResourceRegistry` turns that class-string into the container-built
+instance. `ResourcePass` fills the registry's `ServiceLocator` from the
+`sylament.panels.resource` tag `SylamentPanelsBundle::build()` autoconfigures
+onto every `Resource` subclass an application registers, skipping abstract
+definitions and anything tagged that is not a `Resource`. Both throws name the
+fix: an unregistered class-string says so, and a locator answering with a
+non-resource says that.
+
+Because it is a service, the whole surface is instance methods. `form(Schema)`
+and `table(Table)` are Filament's identity defaults verbatim; the five services
+the rest needs — `EntityManagerInterface`, `UrlGeneratorInterface`,
+`CurrentPanel`, `PanelRegistry` and schemas' `PropertyAccessor` — arrive through
+one `#[Required] setResourceServices()` setter, so a subclass declaring its own
+constructor dependencies never has to repeat them. A resource built with `new`
+answers everything that is pure derivation (slugs, labels, pages) and
+[throws on the first method that needs a service](#a-new-built-resource-fails-fast-rather-than-degrading).
+
+What is ported, by cluster:
+
+- **Record class and labels.** `$recordClass` plus `getRecordClass()`;
+  `$recordLabel` / `$pluralRecordLabel` and the four getters, deriving from the
+  record class basename through Filament's exact pipeline (`BlogPost` →
+  `blog post` → `blog posts` → `Blog Post` / `Blog Posts`). Title case is
+  `u($label)->title(allWords: true)`, the house `Str::ucwords` equivalent
+  [`Page`](#page) already uses.
+- **Slug.** `$slug`, else the class basename minus a trailing `Resource`,
+  pluralized and kebab-cased — `ArticleResource` → `articles`,
+  `BlogPostResource` → `blog-posts`. The suffix is stripped only when the name
+  actually ends with it, so a class merely *containing* `Resource` keeps its
+  whole basename rather than being emptied by `beforeLast()`.
+- **Pages.** `getPages(): array<string, PageRegistration>` (empty by default) and
+  `hasPage()`. The keys `'index'` / `'create'` / `'edit'` are load-bearing API,
+  exactly as in Filament: they gate navigation and URL generation and become the
+  route-name suffix. `PageRegistration` is a `readonly` pair of the page
+  class-string and its path, built directly rather than through Filament's
+  `Page::route()` closure factory — the route is built by
+  [`PanelRouteLoader`](#routing), which needs the path as data.
+- **Query and record binding.** `getRecordQuery()` is the
+  [`getEloquentQuery()`](../renames.md#renames) port and the single overridable
+  base query. `resolveRecordRouteBinding()` resolves a URL segment
+  [through that query rather than `EntityManager::find()`](#a-record-is-resolved-through-the-resources-own-query),
+  reading the root alias off the builder so an overridden query still works, and
+  `getRecordRouteKey()` is the generation side of the same key —
+  `$recordRouteKeyName` when set, else the single identifier value off
+  `ClassMetadata`. A composite identifier throws on both sides.
+- **URLs.** `getUrl()` / `getIndexUrl()` over
+  `UrlGeneratorInterface::generate()`, with Filament's `blank($name)` → index
+  fallback and its verbatim "does not have an [index] page" message.
+  `getRouteBaseName(Panel)` composes `sylament.<panel>.resources.<slug>` in
+  [exactly one place](#the-route-base-name-is-composed-in-one-place).
+- **Navigation.** `getNavigationItems(Panel)` contributes at most one item, only
+  when an `index` page exists, matching Filament — including the
+  `$activeNavigationIcon ?? $navigationIcon` fallback and the
+  `getNavigationBadge()` / `getNavigationBadgeColor()` override hooks that return
+  `null`. Active state is a [route-name prefix match](#active-state-is-a-route-name-prefix-match),
+  which is what keeps the item lit on the resource's create and edit pages.
+
+Deferred, all todo: authorization (`canAccess()` and the whole `HasAuthorization`
+cluster), global search, widgets, breadcrumbs, sub-navigation, clusters, tenancy,
+nested/parent resources, resource configurations, `getRelations()`, and
+`configureTable()`'s seeding of table-level labels. `NavigationItem`'s `key()`,
+`parentItem()` and `badgeTooltip()` are skipped here because
+[they are not ported on the item yet](#navigationitem); `shouldRegisterNavigation()`
+is ported and, as in Filament, is consulted by the panel-side registration loop
+rather than by `getNavigationItems()` itself.
+
+Divergences, each with its own entry:
+[the record class is declared, never derived](#the-record-class-is-declared-never-derived-from-an-application-namespace),
+[the slug has no namespace-path arm](#the-slug-has-no-namespace-path-arm),
+[pluralization takes the inflector's last candidate](#pluralization-takes-the-inflectors-last-candidate),
+[there is no locale gate on pluralization](#there-is-no-locale-gate-on-pluralization),
+[the route base name is composed in one place](#the-route-base-name-is-composed-in-one-place),
+[nothing is memoised in a static](#nothing-is-memoised-in-a-static),
+[a record is resolved through the resource's own query](#a-record-is-resolved-through-the-resources-own-query),
+[`getRecordTitle()` returns a plain string](#getrecordtitle-returns-a-plain-string),
+[`getUrl()` drops three parameters and widens a fourth](#geturl-drops-three-parameters-and-widens-a-fourth),
+[active state is a route-name prefix match](#active-state-is-a-route-name-prefix-match),
+and [a `new`-built resource fails fast](#a-new-built-resource-fails-fast-rather-than-degrading).
+
 ## Features
 
 Cross-cutting concerns and traits — this package has no top-level `Concerns/`;
@@ -345,6 +456,7 @@ they sit per subsystem:
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`DependencyInjection\Compiler\PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php) | [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) — `registerLivewireComponents()` / `queueLivewireComponentForRegistration()` | in progress | every `Page` service is autoconfigured `sylament.panels.page` and the pass tags it as a live `twig.component` keyed by `Page::getComponentName()`, rendering through `template_from_method: getTemplate`; it also builds the class-keyed `ServiceLocator` `PageController` reads pages from — [why a pass rather than an attribute](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes) |
+| [`DependencyInjection\Compiler\ResourcePass`](../../../packages/panels/src/DependencyInjection/Compiler/ResourcePass.php) | no Filament counterpart — resource discovery is [`Panel/Concerns/HasComponents.php`](../../../vendor/filament/filament/src/Panel/Concerns/HasComponents.php) `discoverResources()`, a filesystem scan | in progress | every `Resource` service is autoconfigured `sylament.panels.resource` and the pass collects the non-abstract ones into the class-keyed `ServiceLocator` `ResourceRegistry` reads — [Resources](#resources) |
 | _rest not audited yet_ | | | |
 
 ## Supporting surface
@@ -994,7 +1106,8 @@ the first occurrence — the only difference is that the result is a list. It
 matters because the return is a collection every caller iterates or serialises,
 and a gapped integer-keyed array is the shape that silently becomes a JSON object
 instead of an array the first time something encodes it. Nothing here depends on
-the keys, so there is nothing to lose by dropping them.
+the keys, so there is nothing to lose by dropping them. `getResources()` is built
+the same way, for the same reason.
 
 ### The route import carries no prefix because the panel path is authoritative
 
@@ -1025,9 +1138,12 @@ is an unconditional dependency on a package the manifest does not declare —
 precisely the shape that breaks a split repo. Until panels either declares the
 dependency or gates the outlet on the bundle being registered, an application
 that wants panel-wide notifications renders the tag from its own page template.
-[M2 · 4](../roadmap.md) — the demo panel assembly, the first place a real panel
-is mounted and notified from — is where the gap gets felt and the choice gets
-made.
+
+**Half-resolved by the resource vertical.** `sylament/panels` now declares
+`sylament/notifications` (alongside `sylament/actions`, `sylament/schemas`,
+`sylament/tables` and `doctrine/orm`), so the manifest objection is gone; the
+document template still renders no outlet, and that is what the resource pages
+add. Until it does, the workaround above stands.
 
 ### The dashboard title is a literal, not a translation key
 
@@ -1042,3 +1158,165 @@ naming, where catalogues live, how a consumer overrides one) as a side effect of
 shipping a dashboard. The literal is a placeholder with a known replacement: when
 i18n lands it becomes a translated string with `'Dashboard'` as its English
 default, and a consumer overriding `$title` today is unaffected either way.
+
+### The record class is declared, never derived from an application namespace
+
+Filament's `getModel()` falls back to
+`class_basename(static::class)->beforeLast('Resource')->prepend(app()->getNamespace() . 'Models\\')`,
+so `ArticleResource` finds `App\Models\Article` with nothing declared.
+`app()->getNamespace()` reads the application's PSR-4 root out of its
+`composer.json` — a Laravel-container concept with no Symfony equivalent, and one
+that also assumes every entity lives in a single flat namespace, which Doctrine
+applications routinely do not. So the arm is dropped rather than approximated:
+`$recordClass` must be declared, and `getRecordClass()` throws a `LogicException`
+naming the resource and the property when it is not. The cost is one line per
+resource; the gain is that the entity a resource speaks for is stated rather than
+guessed from a naming convention the port cannot enforce.
+
+### The slug has no namespace-path arm
+
+Filament's `resolveDefaultSlug()` has a second branch: when the resource's parent
+namespace segment equals the pluralized basename (`App\Filament\Resources\Articles\ArticleResource`),
+the slug is built from the namespace *path* after `\Resources\`, so nested
+directories become nested URL segments. Ours only ever derives from the class
+basename. The convention it keys on is Filament's own generator layout, which no
+Sylament application has yet, and the nested-slug feature it enables (nested
+resources, clusters) is deferred whole. `str_replace('/', '.')` is still applied
+when composing the route base name, so a `$slug` containing a slash already works
+and the arm can return without disturbing anything downstream.
+
+### Pluralization takes the inflector's last candidate
+
+Laravel's `Str::plural` returns one string; Symfony's
+`EnglishInflector::pluralize()` returns *candidates*, ascending in specificity —
+`pluralize('status')` is `['status', 'statuses']` and `pluralize('person')` is
+`['persons', 'people']`. Taking `[0]`, the obvious reading, would leave
+`StatusResource` un-pluralized and give `persons` where Laravel gives `people`,
+so the port takes the **last** candidate. That matches Laravel on every word
+tested, but the two inflectors are different engines and their candidate sets
+diverge for exotic nouns; `$slug` and `$pluralRecordLabel` are the overrides when
+one does. One wart is inherited from the engine rather than chosen: Symfony's
+inflector pluralizes an already-plural word (`Articles` → `Articless`), so a
+resource class whose basename is already plural and does not end with `Resource`
+needs an explicit `$slug`.
+
+### There is no locale gate on pluralization
+
+Filament wraps `Str::plural` in `locale_has_pluralization()`, which asks
+Symfony's own `MessageSelector` whether the active locale has more than one
+plural form and skips pluralizing when it does not. The gate needs a locale, and
+the port has no i18n layer at all — no catalogues, no `trans` calls, no
+user-facing string carrying a message id ([the dashboard title](#the-dashboard-title-is-a-literal-not-a-translation-key)
+records the same absence). Labels are English-derived literals here exactly as
+they are in Filament, which never translates them either, so the gate would
+guard nothing. It returns with i18n.
+
+### The route base name is composed in one place
+
+Filament prepends the literal `resources.` in `getRouteBaseName()` *and*
+independently in `registerRoutes()`'s `Route::name('resources.')`, so the name a
+URL is generated from and the name a route is registered under are built by two
+pieces of code that must agree. Ours composes
+`sprintf('sylament.%s.resources.%s', …)` once, in `getRouteBaseName(Panel)`, and
+the route loader reads it — one derivation, no lockstep to maintain. The
+`Panel|string|null $panel` parameter is explicit rather than defaulted from a
+facade, matching [`Page::getRouteName()`](#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade).
+
+### Nothing is memoised in a static
+
+Filament caches two pure derivations in `protected static` arrays keyed by
+class-string — `HasRoutes::$cachedDefaultSlugs` and
+`Resources\Pages\Page::$cachedResourcePageNames`. Under PHP-FPM that is a
+per-request cache; under a long-lived worker (FrankenPHP, Swoole, RoadRunner) it
+lives for the worker's whole life, which is safe only because the derivations are
+deterministic and the classes immutable. The port keeps no such state: every
+derivation recomputes, which is a handful of string operations per call and keeps
+the [worker-safe](#the-shell-is-turbo-indifferent-and-worker-safe) constraint the
+shell is built under. The same reasoning rules out Filament's mutating static
+setters (`navigationLabel()`, `navigationSort()`, `navigationGroup()`,
+`navigationIcon()`, …), which write process-global state from panel
+configuration; a resource is a service, so panel-level customisation of a
+third-party resource will be configuration on the `Panel`, not a static write.
+
+### A record is resolved through the resource's own query
+
+`resolveRecordRouteBinding()` clones `getRecordQuery()` and adds the identifier
+constraint, rather than calling `EntityManager::find()`. The clone is there for
+the override: the shipped `getRecordQuery()` mints a fresh builder every call, but
+a subclass is free to return a memoised one, and adding a `WHERE` to a builder
+the list page also reads would poison it. This is the security
+property Filament's `getEloquentQuery()` comment describes: a resource that
+scopes its base query to the current user's rows must yield a **404** for a row
+outside that scope, not the row. Going through `find()` would bypass the scope
+entirely and leak by primary key, and the leak would be invisible — the list page
+would look correctly filtered while the edit URL served anything. The root alias
+is read off the builder (`getRootAliases()[0]`) so an overridden query that names
+its own alias still works, and a composite identifier throws rather than guessing
+which column the URL segment means. `getRecordRouteKey()` is the generation side
+of the same pair, replacing what Laravel got free from `UrlRoutable`; both sides
+read `$recordRouteKeyName`, so they cannot disagree.
+
+### `getRecordTitle()` returns a plain string
+
+Filament types it `string | Htmlable | null`, which under the project's escaping
+contract would be `string|Markup|null`. Ours returns `string`. The null arm is
+already unreachable in Filament — every path falls back to `getModelLabel()` —
+and the `Markup` arm buys nothing here because record titles compose into
+sentences (`sprintf('Edit %s', $title)`, a breadcrumb, a page heading), where a
+raw-HTML title would either be escaped by the surrounding template anyway or
+smuggle markup into a heading. A resource that genuinely wants markup in a title
+overrides the getter and widens its own return type. Note the fallback follows
+Filament exactly and is the *un*-title-cased `getRecordLabel()`, not
+`getTitleCaseRecordLabel()`.
+
+The read itself needs a `catch` Filament does not: `$record?->getAttribute($attr)`
+answers `null` for an attribute an Eloquent model does not have, while schemas'
+`PropertyAccessor::getFromRecord()` propagates Symfony's `AccessException` for a
+property with no accessor or an uninitialized one. Catching it and falling back to
+the label is what reproduces Filament's behaviour — a mis-declared
+`$recordTitleAttribute` degrades to the label rather than fataling a whole list
+page. It is the only swallowed exception on the class; `getRecordRouteKey()`
+deliberately lets the same failure through, because a route key that cannot be
+read is a broken URL, not a cosmetic default.
+
+### `getUrl()` drops three parameters and widens a fourth
+
+Filament's signature carries seven parameters; ours carries four. `$tenant` and
+`$configuration` belong to deferred features (tenancy, resource configurations)
+and `$shouldGuessMissingParameters` fills parent-resource route parameters from
+the original request — the nested-resource arm, deferred with it, and the one
+place Filament reaches `original_request()` inside URL generation. What survives
+is widened: Filament takes `?string $panel` (a panel id) where ours takes
+`Panel|string|null`, because the caller that already holds the panel object —
+`getNavigationItems()`, the route loader, a page — should not have to round-trip
+through the registry by id. A `null` still resolves the current panel, then the
+default one, which is Filament's `getCurrentOrDefaultPanel()` behaviour with the
+facade replaced by the two injected services.
+
+### Active state is a route-name prefix match
+
+Filament matches with `original_request()->routeIs($routeBaseName . '.*')`, a
+route-name glob, so the `Articles` navigation item stays lit on the resource's
+create and edit pages. Symfony's router has no `routeIs()`, so the glob becomes
+`str_starts_with($request->attributes->get('_route'), $routeBaseName . '.')`. The
+trailing dot matters: without it `…resources.articles` would also match
+`…resources.articles-archive`. This is the wildcard arm
+[`Page::getNavigationItems()`](#page) deliberately did not need — a page matches
+its one route by equality — and it is why a resource's `isActiveWhen()` closure
+takes `RequestStack` from [the item's own injected service
+set](#the-item-hands-its-own-services-to-evaluated-closures) rather than a
+matcher helper, of which there is still none.
+
+### A `new`-built resource fails fast rather than degrading
+
+The five services arrive through a `#[Required]` setter, so a resource built with
+`new` — a unit test, a user constructing one by hand — holds none of them. Every
+method that needs one throws a `LogicException` naming the resource and saying it
+was built outside the container, rather than returning null or an empty result.
+The alternative, degrading to a container-less fallback the way
+[`EvaluatesClosures`](../support/component.md) does for its `Invoker`, is wrong
+here: there is no meaningful entity manager or URL generator to fall back to, and
+a silently empty query is exactly the failure a reader will not think to
+question. Pure derivations — slugs, labels, `getPages()`, `hasPage()`,
+`getRouteBaseName()` — need no service and keep working, which is what makes the
+class cheap to unit-test.

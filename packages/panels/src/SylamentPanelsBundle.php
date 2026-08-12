@@ -6,8 +6,11 @@ namespace Sylament\Panels;
 
 use Sylament\Panels\Controllers\PageController;
 use Sylament\Panels\DependencyInjection\Compiler\PageComponentPass;
+use Sylament\Panels\DependencyInjection\Compiler\ResourcePass;
 use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Pages\Page;
+use Sylament\Panels\Resources\Resource;
+use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Panels\Routing\PanelRouteLoader;
 use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -27,7 +30,11 @@ class SylamentPanelsBundle extends SylamentBundle
         $container->registerForAutoconfiguration(Page::class)
             ->addTag('sylament.panels.page');
 
+        $container->registerForAutoconfiguration(Resource::class)
+            ->addTag('sylament.panels.resource');
+
         $container->addCompilerPass(new PageComponentPass(), priority: 10);
+        $container->addCompilerPass(new ResourcePass(), priority: 10);
     }
 
     /**
@@ -44,6 +51,7 @@ class SylamentPanelsBundle extends SylamentBundle
                 ->autoconfigure()
             ->set(PanelRegistry::class)
                 ->args([tagged_iterator('sylament.panels.panel_provider')])
+            ->set(ResourceRegistry::class)
             ->set(CurrentPanel::class)
                 ->autowire()
             ->set(Dashboard::class)

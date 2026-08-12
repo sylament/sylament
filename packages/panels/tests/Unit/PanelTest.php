@@ -31,10 +31,19 @@ it('accumulates pages and navigation registrations across calls', function (): v
     $panel = Panel::make()->pages([stdClass::class])->pages([stdClass::class, SplStack::class]);
 
     expect($panel->getPages())->toBe([stdClass::class, SplStack::class])
+        ->and(Panel::make()->getResources())->toBe([])
         ->and(Panel::make()->hasCollapsibleNavigationGroups())->toBeTrue()
         ->and(Panel::make()->collapsibleNavigationGroups(false)->hasCollapsibleNavigationGroups())->toBeFalse()
         ->and(Panel::make()->getBrandName())->toBeNull()
         ->and(Panel::make()->isDefault())->toBeFalse();
+});
+
+it('accumulates resources across calls, de-duplicated and re-indexed', function (): void {
+    $panel = Panel::make()
+        ->resources([stdClass::class])
+        ->resources([stdClass::class, SplStack::class]);
+
+    expect($panel->getResources())->toBe([stdClass::class, SplStack::class]);
 });
 
 it('evaluates closures for brand, default and collapsible settings', function (): void {

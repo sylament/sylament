@@ -4,8 +4,13 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures;
 
+use Sylament\Actions\SylamentActionsBundle;
+use Sylament\Forms\SylamentFormsBundle;
+use Sylament\Notifications\SylamentNotificationsBundle;
 use Sylament\Panels\SylamentPanelsBundle;
+use Sylament\Schemas\SylamentSchemasBundle;
 use Sylament\Support\SylamentSupportBundle;
+use Sylament\Tables\SylamentTablesBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Bundle\TwigBundle\TwigBundle;
@@ -32,8 +37,13 @@ class Kernel extends BaseKernel
             new StimulusBundle(),
             new LiveComponentBundle(),
 
+            new SylamentActionsBundle(),
+            new SylamentFormsBundle(),
+            new SylamentNotificationsBundle(),
             new SylamentPanelsBundle(),
+            new SylamentSchemasBundle(),
             new SylamentSupportBundle(),
+            new SylamentTablesBundle(),
         ];
     }
 
@@ -50,6 +60,12 @@ class Kernel extends BaseKernel
         $container->extension('framework', [
             'secret' => 'SECRET',
             'test' => true,
+            // `SessionNotifications` drains the flash bag through
+            // `RequestStack::getSession()`, which throws on a sessionless framework, so
+            // the rig configures the session every consuming application already has.
+            'session' => [
+                'storage_factory_id' => 'session.storage.factory.mock_file',
+            ],
             'asset_mapper' => [
                 'paths' => [
                     __DIR__ . '/assets' => '',
@@ -77,12 +93,20 @@ class Kernel extends BaseKernel
         // loads the definitions the check skips so it renders what a real app renders.
         $container->import('@TwigBundle/Resources/config/importmap.php');
 
+        $container->import(__DIR__ . '/services_doctrine.php');
+
         $container->services()
             ->defaults()
                 ->autowire()
                 ->autoconfigure()
             ->load('Sylament\\Panels\\Tests\\Fixtures\\', __DIR__ . '/*')
-                ->exclude([__DIR__ . '/Kernel.php', __DIR__ . '/assets', __DIR__ . '/importmap.php']);
+                ->exclude([
+                    __DIR__ . '/Kernel.php',
+                    __DIR__ . '/assets',
+                    __DIR__ . '/importmap.php',
+                    __DIR__ . '/Doctrine/Entity',
+                    __DIR__ . '/services_doctrine.php',
+                ]);
 
         // The `Invoker` resolves a closure parameter from the real service container by
         // class-string, and FrameworkBundle's `RequestStack` alias is private, so the rig

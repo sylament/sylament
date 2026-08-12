@@ -1586,8 +1586,9 @@ stylesheet can reach — the same shape as the panel's `-header-actions` wrapper
 ([`container.css`](../../../vendor/filament/tables/resources/css/container.css)
 `:98-135` and `:187-205`) rather than copying them: the header gains `gap-x-3`,
 the actions row `flex-wrap items-center`, and the dropdown panel a `20rem` base
-width vendor expresses one level up, through the trigger action's `Width` enum
-(`getFiltersFormWidth()`). The indicators row loosens with it — `px-3 py-1.5` to
+width vendor expresses one level up, as the table's own `getFiltersFormWidth()`
+(a `Width` enum defaulting to `Width::ExtraSmall`) handed to the dropdown's
+`:width`. The indicators row loosens with it — `px-3 py-1.5` to
 `px-4 py-3`, `gap-x-3` to a wrapping `gap-3`, `items-start` to `items-center`,
 and a label without `leading-6 whitespace-nowrap` — and vendor's row tint
 (`bg-gray-50 dark:bg-white/5`) moves off the row onto the composed chip, so the

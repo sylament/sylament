@@ -151,7 +151,7 @@ milestone.
 | [`Filters / BaseFilter`](../../../packages/tables/src/Filters/BaseFilter.php) | [`Filters/BaseFilter.php`](../../../vendor/filament/tables/src/Filters/BaseFilter.php) | in progress | [base-filter.md](base-filter.md) |
 | [`Filters / Filter`](../../../packages/tables/src/Filters/Filter.php) | [`Filters/Filter.php`](../../../vendor/filament/tables/src/Filters/Filter.php) | done | [filter.md](filter.md) |
 | [`Filters / Indicator`](../../../packages/tables/src/Filters/Indicator.php) | [`Filters/Indicator.php`](../../../vendor/filament/tables/src/Filters/Indicator.php) | done | [indicator.md](indicator.md) |
-| Filters / MultiSelectFilter | [`Filters/MultiSelectFilter.php`](../../../vendor/filament/tables/src/Filters/MultiSelectFilter.php) | todo | — |
+| Filters / MultiSelectFilter | [`Filters/MultiSelectFilter.php`](../../../vendor/filament/tables/src/Filters/MultiSelectFilter.php) | skipped | The whole class is a deprecated `isMultiple(): true` override of `SelectFilter`, and the spelling its own deprecation notice names — `SelectFilter` plus `multiple()` — ships; the project has never ported a deprecated Filament surface ([renames.md](../renames.md)) |
 | Filters / QueryBuilder | [`Filters/QueryBuilder.php`](../../../vendor/filament/tables/src/Filters/QueryBuilder.php) | todo | — |
 | Filters / QueryBuilder / Constraints | [`Filters/QueryBuilder/Constraints/`](../../../vendor/filament/tables/src/Filters/QueryBuilder/Constraints) | todo | — |
 | [Filters / SelectFilter](../../../packages/tables/src/Filters/SelectFilter.php) | [`Filters/SelectFilter.php`](../../../vendor/filament/tables/src/Filters/SelectFilter.php) | in progress | [select-filter.md](select-filter.md) |

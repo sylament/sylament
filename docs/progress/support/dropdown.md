@@ -224,11 +224,11 @@ the freshly rendered markup, so an open dropdown snapped shut on every live
 re-render. A `deferFilters(false)` table re-renders on every field change, and
 that is the consumer that made this a defect rather than a footnote
 ([tables' filters chrome](../tables/table.md)) — but a deferred panel is not
-requestless either: its Apply button and each chip's X are requests issued from
-an open panel, and those now leave it open too, so the earlier reading of an
-Apply click closing the panel as correct UX no longer holds. Filament lands in
-the same place for the same reason: its panel's open state is Alpine's, which a
-Livewire morph leaves alone, so applying never closed it there.
+requestless either: its Apply button is a request issued from an open panel, and
+it now leaves the panel open too, so the earlier reading of an Apply click
+closing the panel as correct UX no longer holds. Filament lands in the same
+place for the same reason: its panel's open state is Alpine's, which a Livewire
+morph leaves alone, so applying never closed it there.
 
 The state now lives in a private instance field on the controller, which outlives
 the morph because the controller's root element does, and the panel is re-asserted

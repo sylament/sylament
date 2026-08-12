@@ -1582,6 +1582,18 @@ Only the chip wrapper carries a CSS rule of its own. The two button classes,
 stylesheet can reach — the same shape as the panel's `-header-actions` wrapper
 — and both buttons take their whole appearance from support's `IconButton`.
 
+`filters.css` re-derives the vendor rules it ports
+([`container.css`](../../../vendor/filament/tables/resources/css/container.css)
+`:98-135` and `:187-205`) rather than copying them: the header gains `gap-x-3`,
+the actions row `flex-wrap items-center`, and the dropdown panel a `20rem` base
+width vendor expresses one level up, through the trigger action's `Width` enum
+(`getFiltersFormWidth()`). The indicators row loosens with it — `px-3 py-1.5` to
+`px-4 py-3`, `gap-x-3` to a wrapping `gap-3`, `items-start` to `items-center`,
+and a label without `leading-6 whitespace-nowrap` — and vendor's row tint
+(`bg-gray-50 dark:bg-white/5`) moves off the row onto the composed chip, so the
+wrapper standing in for Filament's delete-button slot reads as one tinted
+control instead of tinting the whole row behind it.
+
 The chip's own X carries **no** icon alias, and that follows from the same
 composition. Filament's overridable slot for it is
 `SupportIconAlias::BADGE_DELETE_BUTTON`, read by the badge that owns the button —

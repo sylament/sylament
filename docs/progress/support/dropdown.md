@@ -221,10 +221,14 @@ panel's visibility is an `x-show` binding over that state, so a re-render simply
 re-runs the binding and the panel stays open. This port's visibility is a
 server-rendered `hidden` attribute on the panel, which idiomorph re-applies from
 the freshly rendered markup, so an open dropdown snapped shut on every live
-re-render. Deferred filter panels never noticed — they issue no request while
-open — but a `deferFilters(false)` table re-renders per change, and that is the
-consumer that made this a defect rather than a footnote
-([tables' filters chrome](../tables/table.md)).
+re-render. A `deferFilters(false)` table re-renders on every field change, and
+that is the consumer that made this a defect rather than a footnote
+([tables' filters chrome](../tables/table.md)) — but a deferred panel is not
+requestless either: its Apply button and each chip's X are requests issued from
+an open panel, and those now leave it open too, so the earlier reading of an
+Apply click closing the panel as correct UX no longer holds. Filament lands in
+the same place for the same reason: its panel's open state is Alpine's, which a
+Livewire morph leaves alone, so applying never closed it there.
 
 The state now lives in a private instance field on the controller, which outlives
 the morph because the controller's root element does, and the panel is re-asserted

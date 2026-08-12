@@ -1004,6 +1004,16 @@ before it; custom chrome that assigns the bag wholesale has to seed them itself.
 and keeps a single whole-prop write, on the live host, purely as the
 `updatedTableFilters()` pin.
 
+The mirror image is a **nested** write straight at
+`tableFilters.<filter>.<field>` while deferring — equally unrejected, and
+equally not a shape the shipped chrome emits, since the panel binds the deferred
+bag there — which reaches the applied bag having fired nothing at all: the
+identity `onUpdated` wants the exact `tableFilters` key, deferred mode attaches
+no `afterStateUpdated` to its fields, and the `-10` walk is watching a form
+rooted at `tableDeferredFilters`. So the page never resets, the draft bag is
+never mirrored back from the write, and the next `applyTableFilters()` overwrites
+it with the stale draft.
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say

@@ -26,7 +26,7 @@ Reference — the Filament source this is diffed against:
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`options()` / `getOptions()`](../../../packages/tables/src/Filters/Concerns/HasOptions.php) | `Concerns\HasOptions` | done | — | [diverges](#options-takes-an-array-or-a-closure-and-nothing-else) |
-| [`placeholder()` / `getPlaceholder()`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | `Concerns\HasPlaceholder` | done | — | — |
+| [`placeholder()` / `getPlaceholder()`](../../../packages/tables/src/Filters/Concerns/HasPlaceholder.php) | `Concerns\HasPlaceholder` | done | — | [diverges](#the-placeholder-copy-is-hardcoded-english) |
 | [`multiple()` / `isMultiple()`](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::multiple()` | done | — | — |
 | [`attribute()` / `getAttribute()`](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::attribute()` | done | — | [semantics](#a-dotted-attribute-is-resolved-not-joined) |
 | `column()` / `getColumn()` | `SelectFilter::column()` | skipped | — | [diverges](#the-deprecated-column-alias-is-not-ported) |
@@ -100,6 +100,25 @@ class-string, unwrapping backed enums and their `HasLabel` contract inside
 actually consults. There is no Laravel `Arrayable` here, and enum support is a
 forms-level feature: it arrives on both traits together or on neither. Keep the
 two in sync when it does.
+
+### The placeholder copy is hardcoded English
+
+`setUp()` seeds the literal `'All'` where Filament branches on `isMultiple()` to
+read `__('filament-tables::table.filters.multi_select.placeholder')` or
+`__('filament-tables::table.filters.select.placeholder')`. Both keys carry
+`'All'` in that catalogue
+([`lang/en/table.php`](../../../vendor/filament/tables/resources/lang/en/table.php)
+`:193` and `:198`), so the branch collapses to one literal and the rendered
+field matches Filament's copy verbatim — a filter's placeholder says *"All"*,
+not the generic form-select *"Select an option"* our own
+[`Select`](../forms/select.md) seeds. What is left is the mechanism rather than
+the copy — the same
+[hardcoded-copy gap](table.md#the-empty-state-heading-hardcodes-no-records) the
+empty state, the search chip and the
+[ternary arm labels](ternary-filter.md#the-arm-labels-are-hardcoded-english)
+carry, lifting with the toolkit-wide i18n epic. The branch returns with it,
+since the two keys stay separately overridable even though their English values
+agree.
 
 ### The deprecated `column()` alias is not ported
 

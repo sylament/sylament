@@ -6,6 +6,7 @@ namespace Sylament\Tables\Filters;
 
 use Closure;
 use Doctrine\ORM\QueryBuilder;
+use LogicException;
 use Sylament\Forms\Components\Select;
 use Sylament\Tables\Filters\Concerns\HasOptions;
 use Sylament\Tables\Filters\Concerns\HasPlaceholder;
@@ -162,9 +163,21 @@ class SelectFilter extends BaseFilter
         return filled($value) ? 1 : 0;
     }
 
+    /**
+     * @throws LogicException when the attribute is a dotted path whose head the
+     *                        builder declares no alias for, which a filter has
+     *                        no join of its own to reach
+     */
     protected function getAttributePath(QueryBuilder $query): string
     {
-        return ColumnPathResolver::resolve($query, $this->getAttribute());
+        $attribute = $this->getAttribute();
+        $alias = str_contains($attribute, '.') ? explode('.', $attribute, 2)[0] : null;
+
+        if ($alias !== null && !in_array($alias, $query->getAllAliases(), true)) {
+            throw new LogicException(sprintf('Cannot resolve [%s] for this filter: [%s] is not an alias on the builder, and a filter joins nothing of its own — where sorting and search resolve a dotted name against the mapping, a filter does not. Join and alias the relation where the table query is declared and name that alias here, or take over the comparison with the filter\'s own query() closure.', $attribute, $alias));
+        }
+
+        return ColumnPathResolver::resolve($query, $attribute);
     }
 
     /**

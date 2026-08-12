@@ -169,7 +169,22 @@ it('refuses a dotted attribute whose head is not an alias', function (): void {
     $query = selectFilterQuery(selectFilterSongs());
 
     SelectFilter::make('publisher')->attribute('publisher.name')->apply($query, ['value' => 'Nova']);
-})->throws(LogicException::class, 'is not an alias on the builder, a mapped field path, or an association path');
+})->throws(LogicException::class, 'Cannot resolve [publisher.name] for this filter: [publisher] is not an alias on the builder, and a filter joins nothing of its own');
+
+it("refuses a mapped association path in its own terms, not the resolver's", function (): void {
+    $query = selectFilterQuery(selectFilterSongs());
+    $message = null;
+
+    try {
+        SelectFilter::make('artist')->attribute('artist.name')->apply($query, ['value' => 'Nova']);
+    } catch (LogicException $logicException) {
+        $message = $logicException->getMessage();
+    }
+
+    expect($message)->toBeString()
+        ->and($message)->toContain('[artist] is not an alias on the builder, and a filter joins nothing of its own')
+        ->and($message)->not->toContain('association path on');
+});
 
 it('resets the key the state actually uses', function (): void {
     expect(SelectFilter::make('title')->getResetState())->toBe(['value' => null])

@@ -38,7 +38,7 @@ Reference — the Filament source this is diffed against:
 | [reset state](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::setUp()` | done | — | [diverges](#the-reset-state-clears-the-key-the-state-actually-uses) |
 | [indicators](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::setUp()` | in progress | — | [semantics](#a-user-supplied-indicator-object-passes-through-unsuffixed) · [diverges](#the-multi-value-label-follows-selection-order-and-a-blank-option-key-still-indicates) · [diverges](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
 | `searchable()`, `native()`, `preload()`, `optionsLimit()`, `getSearchResultsUsing()`, `getOptionLabelUsing()`, `getOptionLabelsUsing()`, `getOptionLabelFromRecordUsing()`, `forceSearchCaseInsensitive()` | `SelectFilter` | blocked | a JS-select epic | [diverges](#the-js-select-surface-is-dropped-from-the-field-chain) |
-| `relationship()`, `emptyRelationshipOptionLabel()`, `hasEmptyRelationshipOption()`, the `getOptions*FromRelationship()` family | `Concerns\HasRelationship` | blocked | the tables-relations epic | [diverges](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
+| `relationship()`, `emptyRelationshipOptionLabel()`, `hasEmptyRelationshipOption()`, the `getOptions*FromRelationship()` family | `Concerns\HasRelationship` | blocked | a future filters-relationship epic | [diverges](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
 
 Every built row is pinned by
 [`SelectFilterTest`](../../../packages/tables/tests/Unit/Filters/SelectFilterTest.php).
@@ -73,6 +73,23 @@ alias, a dotted path whose head is a declared alias passes through, and a dotted
 path whose head is not an alias throws by name. A filter joins nothing of its
 own — that is the epic-12 rule, and it is what makes the relationship escape
 hatch below work.
+
+The refusal itself is the filter's own, thrown from `getAttributePath()` ahead
+of the resolver rather than left to it. The resolver's message is written for
+the lanes that reach it *after* the mapping walk — sorting and search go through
+[`RelationPathResolver`](../../../packages/tables/src/Query/RelationPathResolver.php)
+first, so by the time they refuse a name it genuinely is neither a mapped field
+path nor an association path, and the JSON-column clause is genuinely the
+remaining suspect. A filter runs none of that: it hands the raw attribute
+straight to `resolve()`, so a **mapped** `artist.name` on `Song` was being
+refused with the claim that it is not an association path on `Song` — false, and
+false in the one direction that misleads, since the reader's next move would be
+to check a mapping that is already correct. The filter's own message names the
+rule that actually refused the path: the head is not an alias, a filter joins
+nothing of its own, and the fix is to join and alias the relation where the
+table query is declared and name that alias here. Both halves are pinned —
+the unmapped head keeps its case, and a second asserts the mapped association
+name gets this message and not the resolver's association claim.
 
 ### A user-supplied `indicator()` object passes through unsuffixed
 
@@ -171,8 +188,12 @@ declared option is selected, Filament's says nothing is.
 `Concerns\HasRelationship` is Eloquent through and through —
 `Relation::noConstraints`, `RelationshipJoiner`, `whereHas` /
 `whereDoesntHave` / `whereKey`, `pluck` — and the `apply()` and indicator
-relationship branches ride on it. All of it waits on the tables-relations epic,
-which is where epic 12 sent every tables relationship arm. Until then the
+relationship branches ride on it. All of it waits on a future
+filters-relationship epic. Epic 12 sent every tables relationship arm to the
+relation epic; that epic [has since landed as 20](../roadmap.md#pulled-forward)
+and deliberately did not take this one, routing filters' `HasRelationship` to
+"their own rows" instead — so the destination is the filters' own row, still
+unbuilt, rather than an epic that has already been and gone. Until then the
 supported shape is `options()` plus a `query()` closure over a query that
 already joins: `ColumnPathResolver` is alias-aware, so
 `->attribute('artist.name')` works the moment the declared query carries

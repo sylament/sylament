@@ -33,7 +33,7 @@ class SelectFilter extends BaseFilter
 
         $this->resetState(fn (): array => $this->isMultiple() ? ['values' => []] : ['value' => null]);
 
-        $this->placeholder(fn (): string => $this->isMultiple() ? 'Select options' : 'Select an option');
+        $this->placeholder('All');
 
         $this->indicateUsing(function (array $state): array {
             $labels = $this->getStateLabels(

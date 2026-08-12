@@ -57,16 +57,16 @@ it('builds a single-value select carrying the filter configuration', function ()
         ->and($field->getName())->toBe('value')
         ->and($field->getLabel())->toBe('Title')
         ->and($field->isMultiple())->toBeFalse()
-        ->and($field->getPlaceholder())->toBe('Select an option')
+        ->and($field->getPlaceholder())->toBe('All')
         ->and($field->canSelectPlaceholder())->toBeTrue();
 });
 
-it('names the field values and flips the placeholder when multiple', function (): void {
+it('names the field values when multiple and carries the same placeholder', function (): void {
     $field = SelectFilter::make('title')->multiple()->selectablePlaceholder(false)->getFormField();
 
     expect($field->getName())->toBe('values')
         ->and($field->isMultiple())->toBeTrue()
-        ->and($field->getPlaceholder())->toBe('Select options')
+        ->and($field->getPlaceholder())->toBe('All')
         ->and($field->canSelectPlaceholder())->toBeFalse();
 });
 

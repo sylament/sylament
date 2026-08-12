@@ -126,6 +126,7 @@ The panel surface —
 | [`Navigation\NavigationItem`](../../../packages/panels/src/Navigation/NavigationItem.php) | [`Navigation/NavigationItem.php`](../../../vendor/filament/filament/src/Navigation/NavigationItem.php) | in progress | [NavigationItem](#navigationitem) |
 | [`Navigation\NavigationGroup`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`Navigation/NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | in progress | [NavigationGroup](#navigationgroup) |
 | [`Pages\Page`](../../../packages/panels/src/Pages/Page.php) | [`Pages/Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | in progress | [Page](#page) |
+| [`Pages\Dashboard`](../../../packages/panels/src/Pages/Dashboard.php) | [`Pages/Dashboard.php`](../../../vendor/filament/filament/src/Pages/Dashboard.php) | in progress | [Dashboard](#dashboard) |
 | [`Panel`](../../../packages/panels/src/Panel.php) | [`Panel.php`](../../../vendor/filament/filament/src/Panel.php) | in progress | [Panel](#panel) |
 | [`PanelProvider`](../../../packages/panels/src/PanelProvider.php) | [`PanelProvider.php`](../../../vendor/filament/filament/src/PanelProvider.php) | in progress | [Panel](#panel) |
 | [`PanelRegistry`](../../../packages/panels/src/PanelRegistry.php) | [`PanelRegistry.php`](../../../vendor/filament/filament/src/PanelRegistry.php) | in progress | [Panel](#panel) |
@@ -171,19 +172,21 @@ Deferred, all todo:
   renders a group attribute bag.
 - `fromEnum()` — needs the `HasLabel` / `HasIcon` / `Collapsible` enum contracts,
   and the `UnitEnum` group arm `NavigationItem::group()` also defers.
-- The panel-level collapsible default. Filament falls back to
-  `filament()->hasCollapsibleNavigationGroups()`. The setting now exists —
-  [`Panel::collapsibleNavigationGroups()`](#panel) — but nothing hands a group
-  the panel it belongs to, so `isCollapsible()` still resolves to `true` on its
-  own; the fallback wires up with the navigation builder that reads a panel's
-  groups.
 
-Three deliberate deltas beyond that, each with its own divergence:
+The panel-level collapsible default is wired: `isCollapsible()` falls back to
+`collapsibleFallback()`, a plain `bool` setter
+[`Panel::getNavigation()`](#panel) stamps onto every group it assembles from
+`hasCollapsibleNavigationGroups()`. A group built outside a panel keeps the
+`true` the property initialises to.
+
+Four deliberate deltas beyond that, each with its own divergence:
 [`collapsed()` no longer forces the group
 collapsible](#collapsed-does-not-also-make-the-group-collapsible),
-[`isActive()` skips hidden items](#isactive-skips-hidden-items), and
+[`isActive()` skips hidden items](#isactive-skips-hidden-items),
 [`getItems()` evaluates a `Closure` instead of accepting an
-`Arrayable`](#getitems-evaluates-a-closure-where-filament-accepts-an-arrayable).
+`Arrayable`](#getitems-evaluates-a-closure-where-filament-accepts-an-arrayable),
+and [the panel collapsible default is stamped on the group rather than read from
+a facade](#the-panel-collapsible-default-is-stamped-on-the-group-not-read-from-a-facade).
 
 ### Page
 
@@ -219,17 +222,49 @@ Deferred, all todo:
 One delta against Filament's page remains:
 [`$navigationGroup` is string-only](#navigationgroup-is-string-only-on-page-too).
 
+### Dashboard
+
+The one concrete page the package ships: `$routePath = '/'` (overriding
+`getRoutePath()`, so the page owns the panel root rather than `/dashboard`),
+`$navigationSort = -2` to keep it first, and `$title = 'Dashboard'`, which
+`Page::getTitle()` and `getNavigationLabel()` both read — Filament translates
+that string through `filament-panels::pages/dashboard.title` and we have no
+translation layer yet. `getNavigationIcon()` returns a `Closure` resolving
+[`PanelsIconAlias::PAGES_DASHBOARD_NAVIGATION_ITEM`](../../../packages/panels/src/Twig/PanelsIconAlias.php)
+through the injected `IconManager`, falling back to `heroicons:home`; the closure
+defers the lookup to render time, which is what lets an override registered after
+the page class loads still win.
+
+Deferred, all todo: the widgets half (`getWidgets()`, `getColumns()`,
+`content()`, the widget schema components) — none of it can land before
+`sylament/widgets` exists. Filament's icon fallback also picks between two
+heroicon cases on `hasTopNavigation()`; ours resolves the single
+`heroicons:home` name, until the top-navigation layout arrives.
+
 ### Panel
 
 The definition surface a panel provider configures, plus the two services that
 collect and locate panels. `Panel` composes six of Filament's `Panel/Concerns`
 traits — `HasId` (write-once id, fatal when read unset), `HasRoutes` (the path
 only), `HasComponents` (`pages()`, accumulating and de-duplicated),
-`HasNavigation` (`navigationGroups()`/`navigationItems()` registration),
-`HasSidebar` (`collapsibleNavigationGroups()` alone — the panel-level default
-[`NavigationGroup::isCollapsible()`](#navigationgroup) falls back to) and
-`HasBrandName` — with `default()`/`isDefault()` on the class itself, matching
-Filament.
+`HasNavigation` (`navigationGroups()`/`navigationItems()` registration plus
+`getNavigation()`), `HasSidebar` (`collapsibleNavigationGroups()` alone — the
+panel-level default [`NavigationGroup::isCollapsible()`](#navigationgroup) falls
+back to) and `HasBrandName` — with `default()`/`isDefault()` on the class itself,
+matching Filament.
+
+`getNavigation()` is the assembly step: it clones every item each registered page
+contributes plus the panel's own `navigationItems()`, drops the hidden ones,
+sorts by `getSort()`, and buckets what is left by `getGroup()`. The ungrouped
+bucket becomes the leading label-less group; each registered group then claims
+its bucket by key **or** label (a clone, so the registration survives repeated
+calls); buckets no registration matched follow in encounter order. Every group
+that comes out is stamped with `collapsibleFallback($this->hasCollapsibleNavigationGroups())`.
+A group with no items is never built, so a registration nothing matched simply
+does not render. Cloning at both ends is what makes the method idempotent —
+`items()` mutates, and the registered objects are the panel's, not the render's.
+`HasComponents` types its page list `class-string<Page>` for this: the assembly
+calls `Page`'s static navigation methods on each entry.
 
 `PanelProvider` is the abstract `panel(Panel $panel): Panel` contract; every
 subclass an application registers as a service is tagged
@@ -244,14 +279,20 @@ holds a public alias to each, standing in for the reference an application makes
 
 Deferred, all todo: the other 28 `Panel/Concerns` traits (auth, tenancy, colors,
 assets, render hooks, middleware, plugins, …); `Panel::register()`/`boot()` and
-the resource/widget registration arms; `getNavigation()`, whose body arrives with
-the navigation builder.
+the resource/widget registration arms; `navigation()` / `NavigationBuilder` — the
+hand-built navigation escape hatch, which needs nothing from the assembly above
+and lands when a consumer wants it; the parent-item nesting pass and the
+`UnitEnum` group arm, both waiting on
+[`NavigationItem`'s deferred `key()`](#navigationitem); and the resource and
+widget contributions to the item list, which arrive with those subsystems.
 
-Three deltas, each with its own divergence:
+Four deltas, each with its own divergence:
 [panels are collected from tagged providers rather than registered by a service
 provider](#panels-are-collected-from-tagged-providers-not-registered-imperatively),
 [the current panel is derived from the request, never stored](#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager),
-and [`PanelRegistry::get()` has no fuzzy arm](#panelregistryget-has-no-fuzzy-arm).
+[`PanelRegistry::get()` has no fuzzy arm](#panelregistryget-has-no-fuzzy-arm),
+and [navigation is assembled on the panel rather than by a
+`NavigationManager`](#navigation-is-assembled-on-the-panel-not-by-a-navigationmanager).
 
 ## Features
 
@@ -278,7 +319,7 @@ Enums, contracts, HTTP layer, events, templates —
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | — |
-| [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | the two aliases the shell renders through — [Layout templates](#layout-templates) |
+| [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | three aliases: the shell's two ([Layout templates](#layout-templates)) and the dashboard's navigation icon ([Dashboard](#dashboard)) |
 | [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships one Stimulus controller (`sidebar`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets) |
 | _rest not audited yet_ | | | |
 
@@ -558,3 +599,44 @@ id alone and matches exactly. Nothing calls the fuzzy arm with `$isStrict: false
 except Filament's own artisan commands resolving a panel from console input,
 which has no counterpart here; a normalising lookup that silently answers for a
 panel the caller did not name is worth having only once something needs it.
+
+### Navigation is assembled on the panel, not by a `NavigationManager`
+
+Filament's `Panel::getNavigation()` resolves a `NavigationManager` out of the
+container, hands itself to it via a `$navigationManager` property the
+registration setters then redirect to, and reads the result back — a round trip
+that buys a per-request scratch object (it clones the panel's groups and items in
+its constructor) which `navigationGroups()`/`navigationItems()` can still be
+called on *while* the navigation is being built, the seam plugins register
+through. Ours does the assembly in `HasNavigation::getNavigation()` directly. The
+panel already holds every input (its pages, groups and items), the method needs
+no service, and the
+manager's mid-build registration arm has no caller here until plugins land. The
+piece worth keeping from it is the cloning discipline, which ours has: groups and
+items are cloned on the way out, so repeated calls neither accumulate items on a
+registered group nor let one render's mutation reach the next.
+
+The escape hatch Filament layers on top — `navigation(Closure | bool)` with
+`NavigationBuilder`, plus `hasNavigation()` / `hasNavigationBuilder()` — is
+deferred rather than rejected: it replaces the derived navigation with a
+hand-built one and can land whole, unchanged in shape, whenever a consumer wants
+it.
+
+### The panel collapsible default is stamped on the group, not read from a facade
+
+Filament's `NavigationGroup::isCollapsible()` falls back to
+`filament()->hasCollapsibleNavigationGroups()` — a facade reaching the current
+panel from inside the group. We have no such global, and passing the panel into
+every group would make a group unusable without one. So the direction is
+inverted: `collapsibleFallback(bool)` is a plain setter that
+[`Panel::getNavigation()`](#panel) stamps on each group it assembles, and the
+group reads its own property. A group built by hand keeps the `true` default,
+which is the answer Filament's fallback gives for a panel that never changed the
+setting.
+
+The setter is deliberately not `bool | Closure`: it carries a value the panel has
+already evaluated, so a closure arm would only add a second place for the same
+decision to be made. `collapsibleFallback()` has no Filament counterpart at all —
+it is a new method rather than a rename, so it is not a
+[renames.md](../renames.md) row; a migrating user never types it, because
+`collapsible()` is still the setter they know.

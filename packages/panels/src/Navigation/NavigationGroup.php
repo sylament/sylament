@@ -18,6 +18,8 @@ class NavigationGroup extends Component
 
     protected bool|Closure|null $isCollapsible = null;
 
+    protected bool $collapsibleFallback = true;
+
     /**
      * @var array<NavigationItem> | Closure
      */
@@ -59,6 +61,13 @@ class NavigationGroup extends Component
         return $this;
     }
 
+    public function collapsibleFallback(bool $fallback): static
+    {
+        $this->collapsibleFallback = $fallback;
+
+        return $this;
+    }
+
     /**
      * @param  array<NavigationItem> | Closure  $items
      */
@@ -93,7 +102,7 @@ class NavigationGroup extends Component
 
     public function isCollapsible(): bool
     {
-        return (bool) ($this->evaluate($this->isCollapsible) ?? true);
+        return (bool) ($this->evaluate($this->isCollapsible) ?? $this->collapsibleFallback);
     }
 
     public function isActive(): bool

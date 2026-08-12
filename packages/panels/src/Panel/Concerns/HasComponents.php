@@ -4,15 +4,17 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Panel\Concerns;
 
+use Sylament\Panels\Pages\Page;
+
 trait HasComponents
 {
     /**
-     * @var array<class-string>
+     * @var array<class-string<Page>>
      */
     protected array $pages = [];
 
     /**
-     * @param array<class-string> $pages
+     * @param array<class-string<Page>> $pages
      */
     public function pages(array $pages): static
     {
@@ -22,7 +24,7 @@ trait HasComponents
     }
 
     /**
-     * @return array<class-string>
+     * @return array<class-string<Page>>
      */
     public function getPages(): array
     {

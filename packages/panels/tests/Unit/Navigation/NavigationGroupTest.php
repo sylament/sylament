@@ -45,3 +45,10 @@ it('is active when any visible item is active', function (): void {
     expect($group->isActive())->toBeTrue()
         ->and(NavigationGroup::make('B')->items([NavigationItem::make('One')])->isActive())->toBeFalse();
 });
+
+it('consults the collapsible fallback only when nothing explicit is set', function (): void {
+    expect(NavigationGroup::make('A')->collapsibleFallback(false)->isCollapsible())->toBeFalse()
+        ->and(NavigationGroup::make('A')->collapsibleFallback(false)->collapsible()->isCollapsible())->toBeTrue()
+        ->and(NavigationGroup::make('A')->collapsibleFallback(true)->collapsible(false)->isCollapsible())->toBeFalse()
+        ->and(NavigationGroup::make('A')->isCollapsible())->toBeTrue();
+});

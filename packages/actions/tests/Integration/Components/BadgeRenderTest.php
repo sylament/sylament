@@ -80,6 +80,51 @@ it('renders the icon after the label when the position says so', function (): vo
     expect($html)->toMatch('#</span></span>\s*<svg#');
 });
 
+it('renders no delete button unless the badge is deletable', function (): void {
+    expect(renderBadge('<twig:SylamentSupport:Badge deleteLabel="Remove">New</twig:SylamentSupport:Badge>'))
+        ->not->toContain('sy-badge-delete-btn');
+});
+
+it('renders the delete button inside the badge, after the label', function (): void {
+    $html = renderBadge('<twig:SylamentSupport:Badge :deletable="true" deleteLabel="Remove filter">Overdue</twig:SylamentSupport:Badge>');
+
+    expect($html)->toMatch('#</span></span>\s*<button#')
+        ->toContain('<button type="button" class="sy-badge-delete-btn" aria-label="Remove filter"')
+        ->toContain('class="sy sy-icon sy-size-xs"')
+        ->toContain('aria-hidden="true"')
+        ->toMatch('#</button>\s*</span>#');
+});
+
+it('defaults the delete label and strips markup out of a given one', function (): void {
+    expect(renderBadge('<twig:SylamentSupport:Badge :deletable="true">Overdue</twig:SylamentSupport:Badge>'))
+        ->toContain('aria-label="Remove"')
+        ->and(renderBadge('<twig:SylamentSupport:Badge :deletable="true" :deleteLabel="label">Overdue</twig:SylamentSupport:Badge>', ['label' => ' <b>Remove</b> ']))
+        ->toContain('aria-label="Remove"');
+});
+
+/*
+ * The caller owns the button's behaviour — tables' indicator chip hands it the
+ * `live#action` attributes that remove one filter — so the bag has to land on the
+ * button rather than on the badge around it.
+ */
+it('forwards the caller attributes onto the delete button', function (): void {
+    $html = renderBadge(
+        '<twig:SylamentSupport:Badge :deletable="true" deleteLabel="Remove filter" :deleteAttributes="attributes">Overdue</twig:SylamentSupport:Badge>',
+        ['attributes' => ['data-action' => 'live#action', 'data-live-action-param' => 'removeTableFilter', 'class' => 'custom']],
+    );
+
+    expect($html)->toContain('data-action="live#action"')
+        ->toContain('data-live-action-param="removeTableFilter"')
+        ->toContain('class="sy-badge-delete-btn custom"');
+});
+
+it('renders the delete button in place of an icon positioned after the label', function (): void {
+    $html = renderBadge('<twig:SylamentSupport:Badge :deletable="true" icon="heroicons:exclamation-triangle" iconPosition="after">Overdue</twig:SylamentSupport:Badge>');
+
+    expect(mb_substr_count($html, '<svg'))->toBe(1)
+        ->and($html)->toContain('sy-badge-delete-btn');
+});
+
 it('renders a sr-only label as an aria-label with no label spans', function (): void {
     $html = renderBadge('<twig:SylamentSupport:Badge :labelSrOnly="true" icon="heroicons:x-mark">Delete</twig:SylamentSupport:Badge>');
 

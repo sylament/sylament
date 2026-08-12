@@ -50,7 +50,7 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | [`getPageWindow()` + the `GAP` constant — refuses a paginator with no total](../../../packages/support/src/Pagination/Paginator.php) | `UrlWindow` at `onEachSide(0)` | done | — | [diverges](#the-page-window-is-a-flat-list-of-numbers-and-gaps-not-laravels-nested-elements-array) |
 | [`withRecords()` — the re-keyed clone](../../../packages/support/src/Pagination/Paginator.php) | `setCollection()` | done | — | [semantics](#withrecords-is-how-a-readonly-carrier-gets-re-keyed) |
 | [The `Pagination` component — overview, per-page select, page window, extreme links](../../../packages/support/templates/components/Pagination/index.html.twig) | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | in progress | — | [detail](#the-component-renders-one-of-filaments-two-layouts) · [diverges](#the-page-buttons-are-hardcoded-to-the-tables-gototablepage-action) |
-| [The four `SupportIconAlias` pagination constants](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | [support-icon-alias.md](support-icon-alias.md#badge--breadcrumbs--rtl-aliases) |
+| [The four `SupportIconAlias` pagination constants](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | [support-icon-alias.md](support-icon-alias.md#breadcrumbs--rtl-aliases) |
 | The four `*_RTL` alias constants and the `$isRtl` branch | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | todo | — | [diverges](#the-footer-has-no-rtl-branch) |
 | A `Pagination\Item` component of its own | [`pagination/item.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/item.blade.php) | skipped | — | Filament's item exists to be reused by two call sites in one file; here the item markup is six lines inlined at its three uses, and a component whose only job is to pick between an icon and a label would be indirection without a second consumer |
 | [Simple paging — the null-total branch: an overview with no total, prev/next with no window](../../../packages/support/templates/components/Pagination/index.html.twig) | the `$isSimple` arms of [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | done | — | [diverges](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both) |
@@ -387,7 +387,7 @@ The branch is unreachable rather than dropped: `$isRtl` reads
 layer, and neither [i18n](../tables/table.md#the-empty-state-heading-hardcodes-no-records)
 nor panels exists in the port — there is nothing to ask which direction the page
 runs. The four constants follow the
-[alias growth order](support-icon-alias.md#badge--breadcrumbs--rtl-aliases)
+[alias growth order](support-icon-alias.md#breadcrumbs--rtl-aliases)
 and land with the branch that reads them, not before. Provisional and mechanical:
 whichever of the two prerequisites lands second brings this with it.
 

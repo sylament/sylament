@@ -8,10 +8,9 @@ optional icon before or after it, and a size/color pair that selects the visual
 treatment. The Blade component's behaviour is split across two Filament files:
 the `badge.blade.php` view (markup, props, attribute merge) and the
 `BadgeComponent.php` PHP class (the WCAG-AA contrast color map). Sylament ports
-the structural view faithfully and leaves the whole interactive layer — Livewire
-loading indicator, key bindings, tooltip, SPA-mode href — plus the deletable
-badge and the color-map machinery unbuilt, pending the infrastructure each
-depends on.
+the structural view faithfully — the deletable badge and the color map included —
+and leaves the whole interactive layer unbuilt (Livewire loading indicator, key
+bindings, tooltip, SPA-mode href), pending the infrastructure each depends on.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -41,7 +40,7 @@ once the row is **done**; **diverges** → the permanent note in
 | [`color` → `sy-color*` classes](../../../packages/support/templates/components/Badge/index.html.twig) | [`->color(BadgeComponent::class, $color)`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | done | — | [diverges](#the-color-map-resolves-the-text-shade-not-the-ring-or-the-background) |
 | [Icon + derived `sm` size + `iconPosition`](../../../packages/support/templates/components/Badge/index.html.twig) | [`generate_icon_html(…, size: $iconSize ?? IconSize::Small)`](../../../vendor/filament/support/resources/views/components/badge.blade.php) | done | — | — |
 | [`labelSrOnly` → `aria-label`](../../../packages/support/templates/components/Badge/index.html.twig) | — (no Filament badge equivalent) | done | — | [diverges](#labelsronly-is-a-sylament-addition) |
-| `deleteButton` | [`fi-badge-delete-btn` block](../../../vendor/filament/support/resources/views/components/badge.blade.php) | blocked | [`BADGE_DELETE_BUTTON` icon alias](support-icon-alias.md) + a label translation | [detail](#details) |
+| [`deletable` / `deleteLabel` / `deleteAttributes`](../../../packages/support/templates/components/Badge/index.html.twig) | [`deleteButton` slot → `fi-badge-delete-btn`](../../../vendor/filament/support/resources/views/components/badge.blade.php) | done | — | [diverges](#the-delete-button-is-three-props-not-an-attribute-carrying-slot) |
 | `tooltip` | [`x-tooltip` block + disabled-tooltip filter](../../../vendor/filament/support/resources/views/components/badge.blade.php) | blocked | Stimulus tooltip controller | [detail](#details) |
 | Key bindings | [`x-mousetrap` block](../../../vendor/filament/support/resources/views/components/badge.blade.php) | blocked | Stimulus mousetrap controller | [detail](#details) |
 | Loading indicator | [`generate_loading_indicator_html(…)` + `wire:*`](../../../vendor/filament/support/resources/views/components/badge.blade.php) | blocked | UX LiveComponent state layer | [detail](#details) |
@@ -51,9 +50,9 @@ once the row is **done**; **diverges** → the permanent note in
 ## Details
 
 The ported rows — tag/`href`/`target`, `type`/`form`, `disabled`/`aria-disabled`,
-`size`, `color`, the icon with its derived `sm` size and its position, and
-`labelSrOnly` — are faithful (allowing the systematic `fi-*` → `sy-*`,
-Blade → Twig and `Htmlable` → `Markup` translations, and the three divergences
+`size`, `color`, the icon with its derived `sm` size and its position, the delete
+button, and `labelSrOnly` — are faithful (allowing the systematic `fi-*` → `sy-*`,
+Blade → Twig and `Htmlable` → `Markup` translations, and the four divergences
 below) and every one is exercised by
 [`BadgeRenderTest`](../../../packages/actions/tests/Integration/Components/BadgeRenderTest.php):
 the default `span` with its primary/`md` class list and the two-span label, tag
@@ -62,21 +61,16 @@ switching to `button` (with `type` and an external `form`) and to `a` (with
 `disabled`/`aria-disabled`/`sy-disabled` trio, a gray color dropping the color
 classes, a semantic color, an unknown size emitted as a literal class, the
 `sm`-by-default icon size, an icon rendered after the label, the
-`aria-label`-only hidden label, and extra-attribute forwarding. That suite lives
-in **actions** because only its kernel and schemas' register TwigComponentBundle,
-and actions is where the badge's consumer lives.
+`aria-label`-only hidden label, extra-attribute forwarding, and the five
+delete-button cases (absent unless `deletable`, rendered after the label spans
+and inside the badge, the default and the stripped label, the caller's attribute
+bag landing on the button, and the button taking the place of an `after` icon).
+That suite lives in **actions** because only its kernel and schemas' register
+TwigComponentBundle, and actions is where the badge's consumer lives.
 
-**Deletable badge, tooltip, key bindings, loading indicator, and SPA-mode href**
-are not built at all. Each is blocked on infrastructure that has not been ported:
+**Tooltip, key bindings, loading indicator, and SPA-mode href** are not built at
+all. Each is blocked on infrastructure that has not been ported:
 
-- **`deleteButton`** — the `fi-badge-delete-btn` block needs the
-  `BADGE_DELETE_BUTTON` alias (still unported, see
-  [support-icon-alias.md](support-icon-alias.md)) and the
-  `filament::components/badge.actions.delete.label` translation, and its own
-  loading indicator is Livewire-bound. Its CSS is likewise unported, so
-  [`badge.css`](../../../packages/support/assets/src/styles/components/badge.css)
-  carries no `sy-badge-delete-btn` rules — a rule no shipped markup can trigger
-  is a dead rule.
 - **Tooltip** — the `x-tooltip` block and the coupled disabled-with-tooltip
   behaviour (filtering `href`/`x-on:`/`wire:click` off a disabled-but-tooltipped
   control) need a Stimulus tooltip controller. Because no tooltip can be set,
@@ -165,6 +159,42 @@ primary (4.86:1) — danger measured 4.35:1, info 3.73:1, warning 3.06:1 and
 success 3.03:1. Under the policy, warning resolves to shade 700 at 4.86:1, and
 every palette × slot pairing is held above its declared ratio by
 [`PolicyContrastTest`](../../../packages/support/tests/Unit/Colors/Components/PolicyContrastTest.php).
+
+### The delete button is three props, not an attribute-carrying slot
+
+Filament's remove affordance is a slot whose **attributes** are the payload:
+`<x-slot name="deleteButton" :wire:click="…" wire:target="…">` carries no content
+at all, and `$isDeletable = count($deleteButton?->attributes->getAttributes() ?? []) > 0`
+reads the presence of those attributes as the switch. A Twig `<twig:block>` has
+no attribute bag — it is content and nothing else — so the same payload arrives
+as props instead: `deletable` (the switch Blade infers), `deleteLabel` (the
+accessible name) and `deleteAttributes` (the bag, spread onto the button through
+`attrs({class: 'sy-badge-delete-btn', …}, deleteAttributes)`, so caller classes
+append and caller values win). That is what lets tables' indicator chip hand the
+button its `stimulus_action('live', 'action', parameters: …)` map where Filament
+hands it a `wire:click` string.
+
+Everything downstream of the switch is the port verbatim: the button renders
+**inside** the badge capsule after the label spans, takes the place of an icon
+positioned `after` (Filament's `@elseif`, so a deletable badge with a trailing
+icon shows the X, not the icon), and draws
+`SupportIconAlias::BADGE_DELETE_BUTTON` at the extra-small icon size with
+`aria-hidden="true"`.
+
+Three smaller shifts inside it. The accessible name is an `aria-label` on the
+button rather than Filament's `fi-sr-only` span, matching
+[`IconButton`](icon-button.md) — support ships no sr-only class of its own, and
+the escaped-on-output caveat the `labelSrOnly` divergence records applies here
+too. `deleteLabel` defaults to the literal `'Remove'` where Filament reads
+`__('filament::components/badge.actions.delete.label')`, one more entry for the
+i18n epic. And the icon colour reads `currentColor` at 50 % opacity (75 % on
+hover and focus) where
+[`badge.css`](../../../vendor/filament/support/resources/css/components/badge.css)
+hardcodes `text-color-700/50` and `text-gray-700/50`: the badge's own text colour
+is already the shade `BadgeComponent` resolved for this palette, so inheriting it
+keeps the one contrast decision in the policy instead of re-fixing a shade in the
+stylesheet — [rule 6](../../styling.md#the-rules) of the styling contract, whose
+own example is the `text-color-600` defect this component shipped once already.
 
 _See also: the global [rename table](../renames.md) — `fi-*` → `sy-*` classes,
 Blade → Twig (`view()` → `template()`), Alpine → Stimulus and `Htmlable` →

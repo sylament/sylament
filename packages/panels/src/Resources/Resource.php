@@ -237,6 +237,12 @@ abstract class Resource
 
     public function getRecordRouteKey(object $record): string
     {
+        $recordClass = $this->getRecordClass();
+
+        if (! $record instanceof $recordClass) {
+            throw new LogicException(sprintf('Resource [%s] speaks for [%s]; it cannot key a [%s].', static::class, $recordClass, $record::class));
+        }
+
         $keyName = $this->getRecordRouteKeyName();
 
         if ($keyName !== null) {
@@ -266,7 +272,7 @@ abstract class Resource
      */
     public function getUrl(?string $name = null, array $parameters = [], bool $isAbsolute = true, Panel|string|null $panel = null): string
     {
-        if ($name === null) {
+        if (blank($name)) {
             return $this->getIndexUrl($parameters, $isAbsolute, $panel);
         }
 
@@ -391,11 +397,6 @@ abstract class Resource
         return $this->propertyAccessor ?? throw $this->missingServices();
     }
 
-    /**
-     * Takes the **last** inflector candidate: `EnglishInflector::pluralize()`
-     * returns candidates ascending in specificity, so `status` yields
-     * `['status', 'statuses']` and `person` yields `['persons', 'people']`.
-     */
     private function pluralize(string $word): string
     {
         $candidates = new EnglishInflector()->pluralize($word);

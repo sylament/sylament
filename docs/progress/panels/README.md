@@ -336,8 +336,9 @@ grow their resource arms.
 Deferred, all todo: the other 28 `Panel/Concerns` traits (auth, tenancy, colors,
 assets, render hooks, middleware, plugins, …); `discoverResources()` /
 `discoverPages()`, Filament's filesystem-scanning registration arms, which the
-[tag-collected](#resources) shape replaces for services and which would only
-return as a convenience over `services.yaml`; the widget registration arm;
+[tag-collected](#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem)
+shape replaces for services and which would only return as a convenience over
+`services.yaml`; the widget registration arm;
 `navigation()` / `NavigationBuilder` — the hand-built navigation escape hatch,
 which needs nothing from the assembly above and lands when a consumer wants it;
 the parent-item nesting pass and the `UnitEnum` group arm, both waiting on
@@ -438,6 +439,7 @@ Divergences, each with its own entry:
 [there is no locale gate on pluralization](#there-is-no-locale-gate-on-pluralization),
 [the route base name is composed in one place](#the-route-base-name-is-composed-in-one-place),
 [nothing is memoised in a static](#nothing-is-memoised-in-a-static),
+[resources are collected from a tag, not discovered on the filesystem](#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem),
 [a record is resolved through the resource's own query](#a-record-is-resolved-through-the-resources-own-query),
 [`getRecordTitle()` returns a plain string](#getrecordtitle-returns-a-plain-string),
 [`getUrl()` drops three parameters and widens a fourth](#geturl-drops-three-parameters-and-widens-a-fourth),
@@ -1320,3 +1322,34 @@ a silently empty query is exactly the failure a reader will not think to
 question. Pure derivations — slugs, labels, `getPages()`, `hasPage()`,
 `getRouteBaseName()` — need no service and keep working, which is what makes the
 class cheap to unit-test.
+
+### Resources are collected from a tag, not discovered on the filesystem
+
+Filament finds resources two ways, both imperative: `->resources([X::class])`
+listed on the panel, and `->discoverResources(in: …, for: …)`, which globs a
+directory and reflects every class it finds. The port keeps the first and
+replaces the second with the tag — `SylamentPanelsBundle::build()` autoconfigures
+`sylament.panels.resource` onto every `Resource` service, and
+[`ResourcePass`](../../../packages/panels/src/DependencyInjection/Compiler/ResourcePass.php)
+collects the non-abstract ones into a class-keyed `ServiceLocator` on
+`ResourceRegistry`. This is the same move [pages
+made](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes),
+and for a related reason: a resource must be a **service** to hold dependencies,
+and a Symfony application already declares its services with a PSR-4 glob in
+`services.yaml`. A filesystem scan on top of that would be a second discovery
+mechanism disagreeing with the first — a class the glob excluded would still be
+reflected, and a resource registered by hand with constructor arguments would be
+found twice.
+
+Two consequences worth stating. The locator has **no stable service id** —
+`ServiceLocatorTagPass::register()` mints one, and the only way in is
+`ResourceRegistry`, which is what keeps the collection an implementation detail.
+And what the pass collects is every registered `Resource` **service**, not the
+resources a panel lists in `resources()`: the registry can resolve a class-string
+the panel never mentioned, exactly as `PageComponentPass` tags pages no panel
+routes. The panel list stays authoritative for routing and navigation; the
+registry is only the class-string → instance lookup.
+
+`discoverResources()` itself is deferred rather than rejected. If it ever
+returns it is a convenience over `services.yaml` — a helper that registers the
+services — not a parallel registry.

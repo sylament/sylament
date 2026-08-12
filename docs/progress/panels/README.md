@@ -232,6 +232,7 @@ Enums, contracts, HTTP layer, events, templates —
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | — |
+| [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | the two aliases the shell renders through — [Layout templates](#layout-templates) |
 | [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships one Stimulus controller (`sidebar`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets) |
 | _rest not audited yet_ | | | |
 
@@ -253,6 +254,16 @@ no control to operate; only the collapsible arm gets the button, the
 `sy-pa-sidebar-group-items-<index>`, and the chevron icon. Hidden items never
 render, and collapse state is markup only — the `sy-collapsed` class plus
 `data-group-label`, which the Stimulus controller reads and writes.
+
+The shell's two default icons are overridable defaults, not hardcoded names: the
+group chevron and the topbar hamburger read
+[`PanelsIconAlias::SIDEBAR_GROUP_COLLAPSE_BUTTON` and
+`TOPBAR_OPEN_SIDEBAR_BUTTON`](../../../packages/panels/src/Twig/PanelsIconAlias.php)
+through `constant()` the way
+[Modal's close button](../../../packages/support/templates/components/Modal/index.html.twig)
+does, so an app swaps either one under [`sylament.icons`](../support/icon-manager.md)
+without touching a template. Both values drop Filament's `panels::` prefix
+([rename](../renames.md)); the constant names are Filament's.
 
 What Filament's sidebar has and this does not, all todo:
 
@@ -436,7 +447,11 @@ and it rests on the shell's **single-sidebar-per-page** assumption — the same
 assumption the singleton ids `sy-pa-sidebar`, `sy-pa-topbar` and `sy-pa-main`
 already encode. Revisit the moment two sidebars can render on one page: groups at
 the same index would then collide, pointing one group's button at another's item
-list. The label-hash approach is the fix if that day comes.
+list. The label-hash approach is the fix if that day comes — noting that collapse
+*persistence* is keyed the other way, on `data-group-label`, so two groups sharing
+a label share their stored collapse state and a renamed group loses what it had
+stored, which is inherent to keying on the label and a property Filament's
+label-slug ids carry too.
 
 ### The panels render tests live under `tests/Integration/Twig/`
 

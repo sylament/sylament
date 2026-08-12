@@ -33,7 +33,11 @@
             <span class="sy-pa-sidebar-group-label">{{ group.getLabel }}</span>
 
             {% if collapsible %}
-                <twig:SylamentSupport:Icon icon="heroicons:chevron-down" class="sy-pa-sidebar-group-chevron" />
+                <twig:SylamentSupport:Icon
+                    icon="heroicons:chevron-down"
+                    :alias="constant('Sylament\\Panels\\Twig\\PanelsIconAlias::SIDEBAR_GROUP_COLLAPSE_BUTTON')"
+                    class="sy-pa-sidebar-group-chevron"
+                />
             {% endif %}
         </{{ labelTag }}>
     {% endif %}

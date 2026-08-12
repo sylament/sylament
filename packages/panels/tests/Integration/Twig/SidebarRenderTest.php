@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Sylament\Panels\Navigation\NavigationGroup;
 use Sylament\Panels\Navigation\NavigationItem;
+use Sylament\Panels\Twig\PanelsIconAlias;
+use Sylament\Support\Icons\IconManager;
 use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
 uses(InteractsWithTwigComponents::class);
@@ -51,6 +53,19 @@ it('renders collapse state and aria wiring on groups', function (): void {
         ->toContain('aria-controls="sy-pa-sidebar-group-items-1"')
         ->toContain('data-action="sylament--panels--sidebar#toggleGroup"')
         ->toMatch('/<button\s+class="sy-pa-sidebar-group-btn" type="button" aria-expanded="false"/');
+});
+
+it('draws the group chevron through an overridable icon alias', function (): void {
+    $icons = $this::getContainer()->get(IconManager::class);
+
+    expect($icons)->toBeInstanceOf(IconManager::class);
+    $icons->register([PanelsIconAlias::SIDEBAR_GROUP_COLLAPSE_BUTTON => 'images/chevron.svg']);
+
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Sidebar', [
+        'navigation' => sidebarFixtureNavigation(),
+    ]);
+
+    expect($html)->toContain('<img src="images/chevron.svg" alt="" class="sy sy-icon sy-size-md sy-pa-sidebar-group-chevron" />');
 });
 
 it('marks only the active item with aria-current', function (): void {

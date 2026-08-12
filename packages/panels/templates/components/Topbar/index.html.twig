@@ -23,7 +23,7 @@
             'aria-label': 'Toggle sidebar',
         }, stimulus_action(sidebarController, 'toggle')|stimulus_target(sidebarController, 'toggleButton')) }}
     >
-        <twig:SylamentSupport:Icon icon="heroicons:bars-3" />
+        <twig:SylamentSupport:Icon icon="heroicons:bars-3" :alias="constant('Sylament\\Panels\\Twig\\PanelsIconAlias::TOPBAR_OPEN_SIDEBAR_BUTTON')" />
     </button>
 
     {% if brandName %}

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Sylament\Panels\Navigation\NavigationGroup;
 use Sylament\Panels\Navigation\NavigationItem;
+use Sylament\Panels\Twig\PanelsIconAlias;
+use Sylament\Support\Icons\IconManager;
 use Symfony\UX\TwigComponent\Test\InteractsWithTwigComponents;
 
 uses(InteractsWithTwigComponents::class);
@@ -35,6 +37,17 @@ it('wires the hamburger to the sidebar controller', function (): void {
         ->toContain('aria-expanded="false"')
         ->toContain('aria-label="Toggle sidebar"')
         ->toContain('data-sylament--panels--sidebar-target="toggleButton"');
+});
+
+it('draws the hamburger through an overridable icon alias', function (): void {
+    $icons = $this::getContainer()->get(IconManager::class);
+
+    expect($icons)->toBeInstanceOf(IconManager::class);
+    $icons->register([PanelsIconAlias::TOPBAR_OPEN_SIDEBAR_BUTTON => 'images/menu.svg']);
+
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Topbar', ['brandName' => 'X']);
+
+    expect($html)->toContain('<img src="images/menu.svg" alt="" class="sy sy-icon sy-size-md" />');
 });
 
 it('renders header heading and subheading', function (): void {

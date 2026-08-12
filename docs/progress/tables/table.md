@@ -81,9 +81,9 @@ Rows never disappear — only their detail sections do.
 | Record labels — `modelLabel()`, `pluralModelLabel()`, `recordTitle()`, `recordTitleAttribute()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | todo | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
 | [Record identity — `getRecordKey()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getRecordKey()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#getrecords-delegates-to-the-host-and-fetches-nothing) |
 | [Morph-stable row and cell keys](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `wire:key` stamps](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-morph-key-is-an-id-attribute-not-wirekey) · [semantics](#the-row-and-cell-morph-keys-disagree-on-record-vs-records) |
-| [The filters trigger — the toolbar dropdown, the funnel icon button and the active-count badge](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `FiltersLayout::Dropdown` branch](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-trigger-badge-is-composed-in-the-table-partial-because-iconbutton-has-no-slot) |
+| [The filters trigger — the toolbar dropdown, the funnel icon button and the active-count badge](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `FiltersLayout::Dropdown` branch](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-trigger-badge-is-composed-in-the-table-partial-because-iconbutton-has-no-slot) · [diverges](#the-filters-panel-teleports-because-the-scroll-container-wraps-the-toolbar-too) |
 | [The filters panel — `<twig:SylamentTables:Filters>`](../../../packages/tables/templates/components/Filters/index.html.twig) | [`views/components/filters.blade.php`](../../../vendor/filament/tables/resources/views/components/filters.blade.php) | done | — | [diverges](#the-panel-is-fixed-chrome-with-no-action-objects-behind-it) |
-| [The indicators row — the active-filters label, the chips and the remove-all button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `fi-ta-filter-indicators` block](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-chip-is-a-badge-beside-a-button-because-badge-has-no-delete-slot) |
+| [The indicators row — the active-filters label, the chips and the remove-all button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `fi-ta-filter-indicators` block](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-chip-is-one-badge-and-the-delete-affordance-is-supports) |
 | Pivot record identity — `hasPivotRecordKeys()`, `allowDuplicates()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | skipped | — | The `BelongsToMany` pivot arm — it stays unported with the [relation-scoped table surface](#the-relation-scoped-table-arm-travels-with-relation-managers) it belongs to, and a Doctrine association table carrying payload is an entity of its own rather than a pivot |
 | [`columns()` / `getColumns()` / `getColumn()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) |
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
@@ -1524,8 +1524,60 @@ There is no action object here — the v1 chrome is a fixed template — and
 support's `IconButton` renders exactly one thing, `generateIconHtml()`, with no
 slot and no children. So the count is composed one level out: a
 `.sy-ta-filters-trigger` wrapper holds the icon button and, when the count is
-above zero, a `sm` `Badge` positioned at its top end. A slot on `IconButton` is
-a possible later support enhancement; it is not built for this.
+above zero, a `.sy-ta-filters-trigger-badge-ctn` span holding an `xs` `Badge`.
+A slot on `IconButton` is a possible later support enhancement; it is not built
+for this.
+
+That container is
+[`fi-icon-btn-badge-ctn`](../../../vendor/filament/support/resources/css/components/icon-button.css)
+ported metric for metric — `absolute z-[1] flex w-max -translate-x-1/2
+-translate-y-1/2 rounded-md bg-white dark:bg-gray-900`, and the badge inside it
+at Filament's `badgeSize` default of extra-small, which is what keeps a
+two-digit count off the 1.25rem funnel underneath it. Only the two anchor
+offsets are re-derived, and the composition is why: vendor's container is a
+child of the icon button, so `start-full top-1` measures against the painted
+2.25rem box, while ours is a sibling inside a wrapper that is the button's
+**margin** box — `.sy-icon-btn`'s `-m-2` insets it 0.5rem on every edge — so the
+same two points are `start-full` + `ms-2` and `-top-1`. The wrapper also carries
+`pointer-events-none`, which vendor needs no equivalent of: a click on a badge
+nested *inside* the button is a click on the button already.
+
+### The filters panel teleports, because the scroll container wraps the toolbar too
+
+The mount passes `:teleport="true"`; Filament's does not. The reason is one level
+below the markup, in which element scrolls. Filament's horizontal scroll is on
+`fi-ta-content-ctn` — the wrapper around the table *content*, a sibling **below**
+the toolbar (`content.css:2`, `@apply relative divide-y … overflow-x-auto`) — and
+its outer `fi-ta-ctn` clips only when the table has no header at all
+(`container.css:4`, `&:not(.fi-ta-ctn-with-header) { @apply overflow-hidden; }`),
+which a filtered table never is: `$hasHeader` is computed with `|| $hasFilters`
+(`index.blade.php:124`). So no ancestor of Filament's filters panel clips it, and
+its dropdown needs no escape. Ours puts `overflow-x-auto` on `.sy-ta-ctn`, the
+one container holding toolbar, indicators, table and footer alike — so the panel
+of a short or narrow table was clipped by the box the table itself is scrolled
+in.
+
+The fix is the remedy Filament applies to the dropdowns that *are* inside its
+clipping container: `HasRecordActions` stamps every record `ActionGroup` with
+`->defaultDropdownTeleport(true)`
+([`HasRecordActions.php:107`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php)).
+Teleport is [a positioning strategy, not a DOM move](../actions/action-group.md#dropdownteleport-is-a-positioning-strategy-not-a-dom-move-in-either-codebase)
+in both codebases — the panel stays exactly where it was rendered and switches to
+`position: fixed`, which no `overflow` ancestor can clip — so the open-state
+machinery that survives a live morph (the `hidden` `MutationObserver` and
+`panelTargetConnected`, [dropdown.md](../support/dropdown.md#the-open-state-is-a-controller-field-re-asserted-through-a-mutationobserver))
+is untouched by it, and nothing about the panel's contents or its live wiring
+changes.
+
+Two things bound the claim. A fixed element is still clipped by an ancestor that
+creates a containing block for it — a `transform`, `filter`, `backdrop-filter`,
+`perspective`, `will-change` or `contain` — and of everything Sylament ships only
+`.sy-modal-window` has one, so a filtered table rendered *inside a modal* keeps
+the old behaviour. Filament inherits exactly that caveat, its teleport being the
+same strategy. And the structural alternative stays open: porting
+`fi-ta-content-ctn` would move the scroll off the container and remove the reason
+for teleporting at all, which is the shape to reach for if the table ever grows
+the content wrapper [the partial deliberately omits](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper).
 
 ### The panel is fixed chrome, with no action objects behind it
 
@@ -1543,7 +1595,7 @@ this markup makes — throws for every other case, refused where consumed on the
 the filtering itself stays applied: the layout is read in that one template
 branch and nowhere in the query or indicator lanes, so a hidden filter still
 constrains the query and still produces its indicators — and the
-[indicators row](#the-chip-is-a-badge-beside-a-button-because-badge-has-no-delete-slot)
+[indicators row](#the-chip-is-one-badge-and-the-delete-affordance-is-supports)
 renders them, because it is gated on the indicator list alone.
 
 Two smaller shapes belong to the same panel. `getFiltersFormSchema()` returns its
@@ -1554,33 +1606,44 @@ group a direct read rather than a scan. And the header's
 `.sy-ta-filters-header-actions` wrapper is a named hook carrying no rule of its
 own, matching the bare `<div>` Filament has at that spot.
 
-### The chip is a `Badge` beside a button, because `Badge` has no delete slot
+### The chip is one `Badge`, and the delete affordance is support's
 
-Filament's badge takes a `deleteButton` slot and renders the remove affordance
-inside itself. Support's `Badge` has no slot but its content one, so the chip is
-composed in the tables partial: a `.sy-ta-filter-indicator` wrapper holds the
-badge and, when the indicator is removable, an `xs` gray `IconButton`, styled to
-read as one control. Each button's live action and its arguments come off the
-[`FilterIndicator` carrier](indicator.md#removal-is-structured-not-a-click-handler-string)
-rather than an interpolated click-handler string. The remove-all button follows
-Filament exactly — an x-mark icon button under the `FILTERS_REMOVE_ALL_BUTTON`
-alias, rendered only when at least one chip is removable. The row is gated on the
-indicator list being non-empty and on nothing else, so a `Hidden` filters layout
-still shows its chips. Five cases in
+Each chip is a single `<twig:SylamentSupport:Badge>` carrying the indicator's
+label and colour, with the remove control rendered **inside** it — Filament's
+shape exactly, once support's `Badge` grew the
+[delete button](../support/badge.md#the-delete-button-is-three-props-not-an-attribute-carrying-slot)
+it had been missing. The one translation is where the payload rides: Blade's
+`<x-slot name="deleteButton" :wire:click="…">` carries its attributes on the
+slot, a Twig block carries none, so the chip passes `:deletable`, `deleteLabel`
+and `:deleteAttributes` instead — and what it puts in that bag is
+`stimulus_action('live', 'action', parameters: …)` built from the
+[`FilterIndicator` carrier](indicator.md#removal-is-structured-not-a-click-handler-string),
+where Filament interpolates a `removeLivewireClickHandler()` expression string.
+The X is drawn under `SupportIconAlias::BADGE_DELETE_BUTTON`, so the chip's icon
+is overridable through the same alias a Filament app would use.
+
+The remove-all button follows Filament exactly — an x-mark icon button under the
+`FILTERS_REMOVE_ALL_BUTTON` alias, rendered only when at least one chip is
+removable, and the row's one `IconButton`. The row is gated on the indicator list
+being non-empty and on nothing else, so a `Hidden` filters layout still shows its
+chips. Five cases in
 [`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php)
-pin it: the label and its two chips — the second carrying **no**
-`data-live-field-param` attribute at all, which is what
-[dropping the null](indicator.md#removal-is-structured-not-a-click-handler-string)
+pin it: the label and its two chips — each a badge with no badge nested inside
+it, the second carrying **no** `data-live-field-param` attribute at all, which is
+what [dropping the null](indicator.md#removal-is-structured-not-a-click-handler-string)
 buys — a keyed chip carrying both `filterName` and `field`, the search chip on
 `resetTableSearch`, a non-removable chip with neither a delete button nor a
 remove-all beside it, and the remove-all appearing the moment one chip is
 removable.
 
-Only the chip wrapper carries a CSS rule of its own. The two button classes,
-`.sy-ta-filter-indicator-remove-btn` and
-`.sy-ta-filter-indicators-remove-all-btn`, are named hooks a consuming
-stylesheet can reach — the same shape as the panel's `-header-actions` wrapper
-— and both buttons take their whole appearance from support's `IconButton`.
+No chip class carries a CSS rule any more: `.sy-ta-filter-indicator` rides on the
+badge as a named hook a consuming stylesheet can reach — the same shape as the
+panel's `-header-actions` wrapper — and everything it used to paint (the capsule
+tint, ring and end padding that made a badge-beside-a-button read as one control)
+is the badge's own. `.sy-ta-filter-indicator-remove-btn` is gone with the button
+it named; the delete control is support's `.sy-badge-delete-btn`.
+`.sy-ta-filter-indicators-remove-all-btn` stays, still rule-less, still taking
+its whole appearance from `IconButton`.
 
 `filters.css` re-derives the vendor rules it ports
 ([`container.css`](../../../vendor/filament/tables/resources/css/container.css)
@@ -1588,22 +1651,12 @@ stylesheet can reach — the same shape as the panel's `-header-actions` wrapper
 the actions row `flex-wrap items-center`, and the dropdown panel a `20rem` base
 width vendor expresses one level up, as the table's own `getFiltersFormWidth()`
 (a `Width` enum defaulting to `Width::ExtraSmall`) handed to the dropdown's
-`:width`. The indicators row loosens with it — `px-3 py-1.5` to
-`px-4 py-3`, `gap-x-3` to a wrapping `gap-3`, `items-start` to `items-center`,
-and a label without `leading-6 whitespace-nowrap` — and vendor's row tint
-(`bg-gray-50 dark:bg-white/5`) moves off the row onto the composed chip, so the
-wrapper standing in for Filament's delete-button slot reads as one tinted
-control instead of tinting the whole row behind it.
-
-The chip's own X carries **no** icon alias, and that follows from the same
-composition. Filament's overridable slot for it is
-`SupportIconAlias::BADGE_DELETE_BUTTON`, read by the badge that owns the button —
-a support alias, and one support
-[still tracks as unported](../support/support-icon-alias.md#badge--breadcrumbs--rtl-aliases)
-against a delete button it has not built. Ours is a tables button standing
-*beside* a badge, so claiming that constant now would advertise an override
-support's `Badge` never reads. It returns with the slot, if the slot is ever
-built; until then the remove-all button is the row's one overridable icon.
+`:width`. The indicators row loosens with it — `px-3 py-1.5` to `px-4 py-3`,
+`gap-x-3` to a wrapping `gap-3`, `items-start` to `items-center`, and a label
+without `leading-6 whitespace-nowrap` — but its tint is vendor's again
+(`bg-gray-50 dark:bg-white/5`), which had moved onto the chip only to make the
+composed capsule legible and had no reason to stay off the row once the capsule
+went.
 
 _See also: the global [rename table](../renames.md) — `BelongsToLivewire` →
 `BelongsToLiveComponent`, `livewire()` → `liveComponent()` and `getLivewire()` →

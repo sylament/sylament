@@ -295,11 +295,29 @@ it('renders the filters trigger with a badge counting the active indicators', fu
     ));
 
     $trigger = $crawler->filter('.sy-ta-header-toolbar .sy-ta-header-toolbar-end .sy-ta-filters-trigger');
+    $badge = $trigger->filter('.sy-ta-filters-trigger-badge-ctn > .sy-ta-filters-trigger-badge');
 
     expect($trigger->count())->toBe(1)
         ->and($trigger->filter('button.sy-icon-btn')->attr('aria-label'))->toBe('Filter')
         ->and($trigger->filter('button.sy-icon-btn svg.sy-icon')->count())->toBe(1)
-        ->and(mb_trim($trigger->filter('.sy-ta-filters-trigger-badge')->text()))->toBe('2');
+        ->and(mb_trim($badge->text()))->toBe('2')
+        ->and($badge->attr('class'))->toContain('sy-size-xs');
+});
+
+/*
+ * The panel is a laid-out descendant of `.sy-ta-ctn`, whose `overflow-x-auto`
+ * clips it on a short or narrow table. Filament never hits this — its scroll
+ * container is `fi-ta-content-ctn`, a sibling *below* the toolbar — so the fix is
+ * the remedy Filament does apply where a dropdown is inside the clip
+ * (`HasRecordActions` stamps `defaultDropdownTeleport(true)` on record groups):
+ * the fixed positioning strategy, which no `overflow` ancestor can clip.
+ */
+it('teleports the filters panel so a short table cannot clip it', function (): void {
+    $crawler = new Crawler(filtersTableHtml(
+        filteredSongsTable(fn (Table $table): Table => $table->filters(songFilters())),
+    ));
+
+    expect($crawler->filter('.sy-ta-filters-dropdown')->attr('data-sylament--support--dropdown-teleport-value'))->toBe('true');
 });
 
 it('puts the search field and the filters trigger in one end group', function (): void {
@@ -404,11 +422,13 @@ it('renders one removable chip per indicator under the active-filters label', fu
 
     $row = $crawler->filter('.sy-ta-filter-indicators');
     $chips = $row->filter('.sy-ta-filter-indicator');
-    $unkeyedRemove = $chips->eq(1)->filter('button.sy-ta-filter-indicator-remove-btn');
+    $unkeyedRemove = $chips->eq(1)->filter('button.sy-badge-delete-btn');
 
     expect($row->count())->toBe(1)
         ->and(mb_trim($row->filter('.sy-ta-filter-indicators-label')->text()))->toBe('Active filters')
         ->and($chips->count())->toBe(2)
+        ->and($chips->eq(0)->attr('class'))->toContain('sy-badge')
+        ->and($row->filter('.sy-ta-filter-indicator .sy-badge')->count())->toBe(0)
         ->and(mb_trim($chips->eq(0)->filter('.sy-badge-label')->text()))->toBe('Plays: Two hundred')
         ->and(mb_trim($chips->eq(1)->filter('.sy-badge-label')->text()))->toBe('Popular')
         ->and($unkeyedRemove->attr('data-live-filter-name-param'))->toBe('popular')
@@ -423,7 +443,7 @@ it('carries the filter name and the remove field on the chip delete button', fun
         ['playsRange' => ['from' => '150']],
     ));
 
-    $remove = $crawler->filter('.sy-ta-filter-indicator button.sy-ta-filter-indicator-remove-btn');
+    $remove = $crawler->filter('.sy-ta-filter-indicator button.sy-badge-delete-btn');
 
     expect($remove->count())->toBe(1)
         ->and($remove->attr('aria-label'))->toBe('Remove filter')
@@ -441,7 +461,7 @@ it('renders the global search chip wired to resetTableSearch', function (): void
 
     $crawler = new Crawler(renderTableHost($component));
     $chip = $crawler->filter('.sy-ta-filter-indicator')->first();
-    $remove = $chip->filter('button.sy-ta-filter-indicator-remove-btn');
+    $remove = $chip->filter('button.sy-badge-delete-btn');
 
     expect(mb_trim($chip->filter('.sy-badge-label')->text()))->toBe('Search: Airbag')
         ->and($remove->attr('data-live-action-param'))->toBe('resetTableSearch')
@@ -458,7 +478,7 @@ it('renders no delete button and no remove-all for a chip that is not removable'
     ));
 
     expect($crawler->filter('.sy-ta-filter-indicator')->count())->toBe(1)
-        ->and($crawler->filter('.sy-ta-filter-indicator-remove-btn')->count())->toBe(0)
+        ->and($crawler->filter('.sy-badge-delete-btn')->count())->toBe(0)
         ->and($crawler->filter('.sy-ta-filter-indicators-remove-all-btn')->count())->toBe(0);
 });
 

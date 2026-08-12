@@ -611,7 +611,7 @@ term, labelled `Search: <term>` (Filament's
 and is the [tenth contract method](#the-contract-is-eleven-methods-of-filaments-forty-six).
 [`Table::getFilterIndicators()`](indicator.md#removal-is-structured-not-a-click-handler-string)
 pairs it with the `resetTableSearch` live action and puts it first in
-[the row](table.md#the-chip-is-a-badge-beside-a-button-because-badge-has-no-delete-slot),
+[the row](table.md#the-chip-is-one-badge-and-the-delete-affordance-is-supports),
 so the chip's X clears the term and resets the page.
 `getTableColumnSearchIndicators()` still waits — on per-column search rather than
 on the indicator class, the same **todo** row above — and that same

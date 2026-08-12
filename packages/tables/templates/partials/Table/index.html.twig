@@ -56,6 +56,7 @@
                             class="sy-ta-filters-dropdown"
                             placement="bottom-end"
                             :flip="false"
+                            :teleport="true"
                             :width="component.getFiltersFormWidth"
                             :maxHeight="component.getFiltersFormMaxHeight"
                         >
@@ -69,7 +70,9 @@
                                     />
 
                                     {% if activeFiltersCount > 0 %}
-                                        <twig:SylamentSupport:Badge class="sy-ta-filters-trigger-badge" size="sm">{{ activeFiltersCount }}</twig:SylamentSupport:Badge>
+                                        <span class="sy-ta-filters-trigger-badge-ctn">
+                                            <twig:SylamentSupport:Badge class="sy-ta-filters-trigger-badge" size="xs">{{ activeFiltersCount }}</twig:SylamentSupport:Badge>
+                                        </span>
                                     {% endif %}
                                 </span>
                             </twig:block>
@@ -98,25 +101,20 @@
                     <div class="sy-ta-filter-indicators-badges-ctn">
                         {% for carrier in filterIndicators %}
                             {% set indicator = carrier.indicator %}
-                            <div class="sy-ta-filter-indicator">
-                                <twig:SylamentSupport:Badge :color="indicator.getColor ?? 'primary'" size="sm">{{ indicator.getLabel }}</twig:SylamentSupport:Badge>
+                            {% set removeAttributes = indicator.isRemovable
+                                ? stimulus_action('live', 'action', parameters: {
+                                    action: carrier.removeAction,
+                                    ...carrier.removeArguments,
+                                }|filter(value => value is not null))
+                                : {} %}
 
-                                {% if indicator.isRemovable %}
-                                    {% set removeAttributes = stimulus_action('live', 'action', parameters: {
-                                        action: carrier.removeAction,
-                                        ...carrier.removeArguments,
-                                    }|filter(value => value is not null)) %}
-
-                                    <twig:SylamentSupport:IconButton
-                                        class="sy-ta-filter-indicator-remove-btn"
-                                        icon="heroicons:x-mark"
-                                        size="xs"
-                                        color="gray"
-                                        label="Remove filter"
-                                        {{ ...removeAttributes }}
-                                    />
-                                {% endif %}
-                            </div>
+                            <twig:SylamentSupport:Badge
+                                class="sy-ta-filter-indicator"
+                                :color="indicator.getColor ?? 'primary'"
+                                :deletable="indicator.isRemovable"
+                                deleteLabel="Remove filter"
+                                :deleteAttributes="removeAttributes"
+                            >{{ indicator.getLabel }}</twig:SylamentSupport:Badge>
                         {% endfor %}
                     </div>
                 </div>

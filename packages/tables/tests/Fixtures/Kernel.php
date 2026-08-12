@@ -6,6 +6,7 @@ namespace Sylament\Tables\Tests\Fixtures;
 
 use Sylament\Actions\SylamentActionsBundle;
 use Sylament\Forms\SylamentFormsBundle;
+use Sylament\Notifications\SylamentNotificationsBundle;
 use Sylament\Schemas\SylamentSchemasBundle;
 use Sylament\Support\SylamentSupportBundle;
 use Sylament\Tables\SylamentTablesBundle;
@@ -36,6 +37,7 @@ class Kernel extends BaseKernel
 
             new SylamentActionsBundle(),
             new SylamentFormsBundle(),
+            new SylamentNotificationsBundle(),
             new SylamentSchemasBundle(),
             new SylamentSupportBundle(),
             new SylamentTablesBundle(),
@@ -52,6 +54,9 @@ class Kernel extends BaseKernel
         $container->extension('framework', [
             'secret' => 'SECRET',
             'test' => true,
+            'session' => [
+                'storage_factory_id' => 'session.storage.factory.mock_file',
+            ],
         ]);
 
         $container->extension('ux_icons', [

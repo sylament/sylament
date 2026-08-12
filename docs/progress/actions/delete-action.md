@@ -170,14 +170,22 @@ own `ForceDeleteAction` / `RestoreAction` are unported for the same reason), so
 the guard has nothing to test and is dropped rather than translated into a
 `method_exists()` probe for a convention nobody has defined.
 
-### The success notification is titled but not yet sent
+### The success toast arrives only when the notifications package is installed
 
-`successNotificationTitle('Deleted')` is set, and
+`successNotificationTitle('Deleted')` is set and
 [`HasActions::callMountedAction()`](has-actions.md) calls
-`sendSuccessNotification()` after a successful call — but that method is still
-[a chainable no-op](action.md#cannotify-only-ports-notification-titles-not-sending):
-`CanNotify` ports the titles, not the sending. So a confirmed delete today
-updates the table and shows no toast. Nothing here changes when that is fixed —
-the title is already in place, and wiring `CanNotify` to build and `send()` a
-`Sylament\Notifications\Notification` makes this action's toast appear with no
-edit to this class.
+`sendSuccessNotification()` after a successful call, which builds and sends a
+real `Sylament\Notifications\Notification` — but only behind
+[`CanNotify`'s guarded soft integration](action.md#the-notification-arm-is-a-guarded-soft-integration-not-a-require):
+`sylament/actions` cannot *require* `sylament/notifications` (that package
+requires actions back), so it `suggest`s it and guards every use with
+`class_exists()`. An install without the package deletes the record and shows no
+toast, silently and by design; an install with it gets the success toast with no
+configuration on this class. The whole shape — confirm, delete, toast — is
+pinned by
+[`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php).
+
+What is *not* here is the failure toast's counterpart: `DeleteAction` sets no
+`failureNotificationTitle()`, exactly as Filament sets none, so the
+[failure arm](action.md#the-notification-arm-is-a-guarded-soft-integration-not-a-require)
+stays silent unless a caller titles it.

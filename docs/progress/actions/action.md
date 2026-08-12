@@ -76,7 +76,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanClose`](../../../packages/actions/src/Concerns/CanClose.php) | [`Concerns/CanClose.php`](../../../vendor/filament/actions/src/Concerns/CanClose.php) | done | — | [diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
 | [`CanDispatchEvent`](../../../packages/actions/src/Concerns/CanDispatchEvent.php) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | done | — | Filament-exact port of the whole non-deprecated surface. `dispatch()` / `dispatchSelf()` / `dispatchTo()` store the event and its payload and stamp `$dispatchDirection` — `false` for a plain dispatch, `'self'`, `'to'` — with only `dispatchTo()` recording a target component; both directed setters route through `dispatch()` first, so a re-`dispatch()` after them resets the direction to `false` exactly as upstream. `eventData()` sets the payload alone, and `getEvent()` / `getEventData()` evaluate at read time, so a closure sees the action's state when it is read rather than when it was declared. Composed onto `Action` only — vendor's `ActionGroup` composes it nowhere either. All five trigger templates read the getters, as an arm of their shared click precedence that emits [payload attributes rather than a click binding](#a-dispatch-action-renders-payload-attributes-not-a-click-binding). Covered by [`CanDispatchEventTest`](../../../packages/actions/tests/Unit/Concerns/CanDispatchEventTest.php) and [`ActionDispatchRenderTest`](../../../packages/actions/tests/Integration/ActionDispatchRenderTest.php) |
 | `emit()` / `emitSelf()` / `emitTo()` (deprecated) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | skipped | — | [diverges](#the-deprecated-emit-aliases-are-not-ported) |
-| [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | notifications package | [detail](#cannotify-only-ports-notification-titles-not-sending) |
+| [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | — | [detail](#cannotify-sends-titles-only-the-notification-override-setters-are-missing) |
 | [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
 | [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
 | POST-to-url support | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | skipped | — | [diverges](#post-to-url-support-is-not-ported) |
@@ -286,7 +286,7 @@ So `->markAsRead()` currently changes nothing a user can see.
 database-notifications panel lands, alongside the notification-side surface
 [`notifications/README.md`](../notifications/README.md) tracks.
 
-### CanNotify only ports notification titles, not sending
+### CanNotify sends titles only; the notification override setters are missing
 
 **In:** `successNotificationTitle()` / `failureNotificationTitle()` setters and
 their `getSuccessNotificationTitle()` / `getFailureNotificationTitle()`
@@ -295,18 +295,37 @@ covered by
 [`CanNotifyTest`](../../../packages/actions/tests/Unit/Concerns/CanNotifyTest.php)
 via the
 [`CanNotifyFixture`](../../../packages/actions/tests/Fixtures/Concerns/CanNotifyFixture.php).
-`sendSuccessNotification()` / `sendFailureNotification()` exist and are called
-from
+`sendSuccessNotification()` / `sendFailureNotification()` are called from
 [`HasActions::callMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php)
-exactly where Filament's `callMountedAction()` calls them, and the test confirms
-they are safe, chainable no-ops.
+exactly where Filament's `callMountedAction()` calls them, and they now **send**:
+each resolves its title, and — when the title is filled and
+`class_exists(Sylament\Notifications\Notification::class)` — builds
+`Notification::make()->success()` / `->danger()->persistent()`, titles it and
+`send()`s it onto the session flash. That last condition is a
+[guarded soft integration](#the-notification-arm-is-a-guarded-soft-integration-not-a-require),
+not a `require`. Delivery from the flash to the browser is the notifications
+package's own job
+([`LiveDeliverySubscriber`](../../../packages/notifications/src/Delivery/LiveDeliverySubscriber.php)
+turns each flashed entry into a `sylament:notification` browser event on a live
+request), so nothing here dispatches. The end-to-end pin lives in the
+notifications suite —
+[`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php),
+the only kernel that boots both bundles — with tables'
+[`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php)
+proving the whole confirm→delete→toast shape.
 
-**Missing vs Filament:** the send methods are pure stubs — neither builds nor
-sends a `Notification`; the port has no notifications bundle yet, so there is no
-`Notification::make()` to call. Everything downstream of that construction is
-absent too: the `successNotification()` / `failureNotification()` closure
-overrides (the `Notification|Closure|null` setters that let a user swap the
-whole notification object), `failureNotificationBody()`, and the
+Two shape notes. The title is checked **before** the `Notification` is built,
+where Filament builds first and checks `filled($notification?->getTitle())`
+after; with no override setters to run in between (see below) the two are
+equivalent, and checking first means an untitled action touches the
+notifications package not at all. And `persistent()` on the failure side is
+Filament's (`->persistent()` on its failure notification, so an error toast
+waits to be dismissed) — the port keeps it, while Filament's partial-bulk
+`warning()` arm has no counterpart here, there being no `BulkAction`.
+
+**Missing vs Filament:** the `successNotification()` / `failureNotification()`
+closure overrides (the `Notification|Closure|null` setters that let a user swap
+the whole notification object), `failureNotificationBody()`, and the
 `isSuccessNotificationDisabled` / `isFailureNotificationDisabled` toggle that
 Filament derives from passing `null` to those setters. `unauthorizedNotification()`
 / `unauthorizedNotificationTitle()` / `sendUnauthorizedNotification()` (keyed off
@@ -323,12 +342,10 @@ there is no `BulkAction` in the port yet. The deprecated
 dropped outright — Filament itself deprecates them in favor of the `*Title()`
 setters this trait already carries, so nothing is lost.
 
-**Next step:** once the `notifications` package ships a `Notification` type,
-rewire `sendSuccessNotification()` / `sendFailureNotification()` to build one
-(`success()`/`when(...)->warning()/danger()`, `title()`, `persistent()`) and
-`send()` it when titled, exactly as Filament does for the non-bulk path; add the
-`successNotification()` / `failureNotification()` override setters and
-`failureNotificationBody()` alongside. `unauthorizedNotification*` and
+**Next step:** add the `successNotification()` / `failureNotification()`
+override setters and `failureNotificationBody()`, evaluating the override with
+the built notification injected as `notification` the way Filament does.
+`unauthorizedNotification*` and
 `rateLimitedNotification*` wait on an authorization-response equivalent and a
 rate-limiting concern respectively; the bulk injections wait on `BulkAction`.
 
@@ -1311,6 +1328,42 @@ The state-based `url` closure parameter Filament's **schemas** / **tables**
 deferred) never applied here: Filament's own **actions** `CanOpenUrl` — the
 source this row ports — never had a `$state` argument to begin with, so nothing
 was dropped on that front.
+
+### The notification arm is a guarded soft integration, not a `require`
+
+Filament's `filament/actions` **requires** `filament/notifications`, so its
+`CanNotify` imports `Notification` and calls it unconditionally. The port cannot
+copy that edge: `sylament/notifications` already requires `sylament/actions` (a
+notification carries `Action`s in its body), so a `require` back would be a
+composer cycle. So the send arm takes the shape the repo reserves for exactly
+this case — the one
+[`HasActions`' table branch](has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference)
+already uses, and the one support's `isAssetMapperAvailable()` established:
+
+- **the guard** — `class_exists(Notification::class)` in front of every use.
+  `Notification::class` on an imported name is a compile-time string and
+  autoloads nothing, so in an install without the package the symbol is never
+  resolved and both send methods stay the chainable no-ops they were.
+- **the declaration** — `sylament/notifications` is a composer `suggest` on
+  `sylament/actions`, the strongest declaration an optional integration gets.
+- **the pin** — a soft reference fails *silently* when it rots (a renamed or
+  moved `Notification` leaves `class_exists()` false and every toast quietly
+  disappears), so it is pinned by a test in the suite that has both packages:
+  [`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php)
+  in the **notifications** Integration suite, whose kernel boots both bundles.
+  Tables' [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php)
+  covers the same seam end to end.
+
+The guard's known limit, stated because it is loud rather than silent: it tests
+for the *package*, and sending also needs the *bundle* booted, since
+[`Notification::send()`](../notifications/notifications.md) throws unless the
+instance came from the container. An application that installs
+`sylament/notifications` but never registers `SylamentNotificationsBundle`
+therefore gets a `LogicException` naming that exact fix on the first successful
+action, instead of a missing toast. That is the intended trade — a fallback that
+swallowed it would leave a user with a silently notification-less panel and no
+signal at all — and no guard can detect an unregistered bundle from inside a
+trait.
 
 ### Confirmation is a flag, not a modal-config layer
 

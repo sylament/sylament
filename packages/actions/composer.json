@@ -24,6 +24,7 @@
         "symfony/ux-twig-component": "^3.1"
     },
     "suggest": {
+        "sylament/notifications": "Turns an action's success and failure notification titles into rendered toasts.",
         "sylament/tables": "Resolves mounted actions from a table context and binds their records."
     },
     "autoload": {

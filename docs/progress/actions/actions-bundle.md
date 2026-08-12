@@ -452,6 +452,23 @@ what the [CLAUDE.md omission list](../../../CLAUDE.md) already reasons from
 argument). Revisit if a split `sylament/actions` is ever consumed by an
 application that wants Doctrine's persistence contracts without the ORM.
 
+The notifications seam is the rule's **second** guarded soft integration, and
+the first one forced by a cycle rather than by weight.
+[`CanNotify`](action.md#the-notification-arm-is-a-guarded-soft-integration-not-a-require)
+imports `Sylament\Notifications\Notification` in `src/` and sends a real toast
+from `sendSuccessNotification()` / `sendFailureNotification()` — yet
+`sylament/actions` requires `sylament/notifications` **nowhere**, because
+`sylament/notifications` requires `sylament/actions` (its notifications carry
+`Action`s), and a require back would close a composer cycle. Filament has no
+such problem: `filament/actions` requires `filament/notifications`, and
+`filament/notifications` reaches actions only transitively. So the port takes
+the shape this section already sanctions for tables — a `class_exists()` guard
+in front of every use (the `::class` constant autoloads nothing, so an install
+without the package never resolves the symbol), a composer `suggest` entry, and
+a test in the suite that has both packages to keep the reference honest:
+[`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php)
+in the notifications Integration suite.
+
 ### Livewire-specific provider responsibilities are dropped, not ported
 
 `packageBooted()` registers `Testable::mixin(new TestsActions)` — a Livewire

@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Sylament\Actions\Concerns;
 
 use Closure;
+use Sylament\Notifications\Notification;
+
+use function Sylament\Support\blank;
 
 trait CanNotify
 {
@@ -38,11 +41,34 @@ trait CanNotify
 
     public function sendSuccessNotification(): static
     {
+        $title = $this->getSuccessNotificationTitle();
+
+        if (!class_exists(Notification::class) || blank($title)) {
+            return $this;
+        }
+
+        Notification::make()
+            ->success()
+            ->title($title)
+            ->send();
+
         return $this;
     }
 
     public function sendFailureNotification(): static
     {
+        $title = $this->getFailureNotificationTitle();
+
+        if (!class_exists(Notification::class) || blank($title)) {
+            return $this;
+        }
+
+        Notification::make()
+            ->danger()
+            ->title($title)
+            ->persistent()
+            ->send();
+
         return $this;
     }
 }

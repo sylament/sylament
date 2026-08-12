@@ -22,6 +22,13 @@ uses(InteractsWithLiveComponents::class);
  * in-memory SQLite built by a container service, so a reboot between the two
  * live requests would hand the second one an empty, freshly-migrated database
  * and the delete would prove nothing.
+ *
+ * The fixture kernel registers the notifications bundle (and a session) so this
+ * suite renders the whole M2 delete shape — confirm, delete, toast. That is
+ * also what makes it the end-to-end pin for actions' guarded notification
+ * integration: `sylament/actions` only *suggests* `sylament/notifications`, and
+ * a `DeleteAction`'s `successNotificationTitle('Deleted')` becomes a real
+ * `sylament:notification` browser event only when both bundles are booted.
  */
 
 /**
@@ -75,4 +82,17 @@ it('confirms before deleting, leaving the record until the mounted action is cal
 
     expect((string) $component->render())->toContain('Are you sure you would like to do this?')
         ->and($entityManager->find(Song::class, 2))->not->toBeNull();
+});
+
+it('dispatches the success toast as a browser event', function (): void {
+    [$client] = seededSongsClient();
+
+    $component = $this->createLiveComponent('DeletableSongsTable', client: $client)
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => '2']])
+        ->call('callMountedAction');
+
+    expect((string) $component->render())->toContain('sylament:notification')
+        ->toContain('sy-no-notification')
+        ->toContain('sy-status-success')
+        ->toContain('Deleted');
 });

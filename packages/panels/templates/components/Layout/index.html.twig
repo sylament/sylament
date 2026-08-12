@@ -1,0 +1,29 @@
+{% props
+    navigation = [],
+    brandName = null,
+
+    content = markup(block('content') ?? null)
+%}
+
+<div
+    {{ attrs({
+        class: 'sy sy-pa-layout',
+        'data-controller': 'sylament--panels--sidebar',
+    }, attributes.all) }}
+>
+    <a href="#sy-pa-main" class="sy-pa-skip-link">Skip to content</a>
+
+    <twig:SylamentPanels:Topbar :brandName="brandName" />
+
+    <div
+        class="sy-pa-sidebar-overlay"
+        data-sylament--panels--sidebar-target="overlay"
+        data-action="click->sylament--panels--sidebar#close"
+    ></div>
+
+    <twig:SylamentPanels:Sidebar :navigation="navigation" />
+
+    <main id="sy-pa-main" class="sy-pa-main">
+        {{ content }}
+    </main>
+</div>

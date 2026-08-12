@@ -1,0 +1,7 @@
+.sy-pa-resource-form-errors {
+    @apply mb-6 grid gap-y-1 rounded-lg bg-danger-50 px-4 py-3 text-sm text-danger-600 dark:bg-danger-400/10 dark:text-danger-400;
+}
+
+.sy-pa-resource-form-actions {
+    @apply mt-6 flex flex-wrap items-center gap-3;
+}

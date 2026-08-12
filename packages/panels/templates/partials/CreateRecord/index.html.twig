@@ -1,0 +1,37 @@
+{% set heading = this.getHeading %}
+{% set subheading = this.getSubheading %}
+{% set headerActions = this.getHeaderActions %}
+
+<div {{ attrs({class: 'sy sy-pa-page sy-pa-resource-create-record-page'}, attributes.all) }}>
+    <twig:SylamentPanels:Header :heading="heading" :subheading="subheading">
+        <twig:block name="actions">
+            {% for action in headerActions %}
+                {{ renderComponent(action) }}
+            {% endfor %}
+        </twig:block>
+    </twig:SylamentPanels:Header>
+
+    <div class="sy-pa-page-content">
+        <form {{ live_action('create:prevent', event: 'submit') }}>
+            {% set recordErrors = this.getErrorsForSchemaStatePath('data') %}
+
+            {# The schema's own state path belongs to no input, so a record-level refusal
+               that names no field folds here and would otherwise never reach the page. #}
+            {% if recordErrors is not empty %}
+                <ul class="sy-pa-resource-form-errors" data-record-errors>
+                    {% for message in recordErrors %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            {{ renderSchema('form') }}
+
+            <div class="sy-pa-resource-form-actions">
+                <twig:SylamentSupport:Button type="submit">Create</twig:SylamentSupport:Button>
+            </div>
+        </form>
+    </div>
+
+    <twig:SylamentActions:Modals />
+</div>

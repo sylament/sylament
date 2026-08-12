@@ -7,6 +7,7 @@ use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListArticles;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
@@ -65,7 +66,47 @@ it('renders the header actions the page declares', function (): void {
 
     $crawler = $client->request('GET', '/admin/articles');
 
-    expect($crawler->filter('.sy-pa-header-actions button')->text())->toContain('Purge');
+    $purge = $crawler->filter('.sy-pa-header-actions button');
+    $create = $crawler->filter('.sy-pa-header-actions a');
+
+    // The two arms a header action can render as, and each one's whole binding:
+    // the mounting action posts its own name back through the live controller,
+    // the url-mode one is an anchor and carries no binding at all.
+    expect($purge->text())->toContain('Purge')
+        ->and($purge->attr('data-action'))->toBe('live#action')
+        ->and($purge->attr('data-live-action-param'))->toBe('mountAction')
+        ->and($purge->attr('data-live-name-param'))->toBe('purge')
+        ->and($create->text())->toContain('Create')
+        ->and($create->attr('href'))->toEndWith('/admin/articles/create')
+        ->and($create->attr('data-live-action-param'))->toBeNull();
+});
+
+it('links each row to its own edit page and leaves the other row actions mounting', function (): void {
+    [$client, $entityManager] = seededArticlesClient();
+
+    $crawler = $client->request('GET', '/admin/articles');
+
+    $rows = $crawler->filter('tbody .sy-ta-row');
+
+    expect($rows->count())->toBe(2);
+
+    foreach ($rows as $row) {
+        $rowCrawler = new Crawler($row);
+        // Read the key back off the row's own title rather than assuming a row order.
+        $key = articleKey($entityManager, mb_strtolower($rowCrawler->filter('.sy-ta-cell')->first()->text()));
+        $actions = $rowCrawler->filter('.sy-ta-actions');
+        $edit = $actions->filter('a');
+        $delete = $actions->filter('button');
+
+        // Exactly one anchor per row: the url hook answers for the `EditAction`
+        // and declines for everything else, so the plain delete keeps its
+        // confirmation modal instead of becoming a link that opens nothing.
+        expect($edit->count())->toBe(1)
+            ->and($edit->text())->toContain('Edit')
+            ->and($edit->attr('href'))->toEndWith(sprintf('/admin/articles/%s/edit', $key))
+            ->and($delete->count())->toBe(1)
+            ->and($delete->attr('data-live-name-param'))->toBe('delete');
+    }
 });
 
 it('mounts a header action through actions method discovery', function (): void {

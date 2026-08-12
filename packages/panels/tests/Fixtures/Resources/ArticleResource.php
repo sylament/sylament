@@ -5,10 +5,15 @@ declare(strict_types=1);
 namespace Sylament\Panels\Tests\Fixtures\Resources;
 
 use Sylament\Actions\Action;
+use Sylament\Actions\EditAction;
+use Sylament\Forms\Components\TextInput;
 use Sylament\Notifications\Notification;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateArticle;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditArticle;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListArticles;
+use Sylament\Schemas\Schema;
 use Sylament\Tables\Columns\TextColumn;
 use Sylament\Tables\Table;
 
@@ -20,6 +25,14 @@ final class ArticleResource extends Resource
 
     protected static ?string $navigationGroup = 'Content';
 
+    public function form(Schema $schema): Schema
+    {
+        return $schema->components([
+            TextInput::make('title')->required(),
+            TextInput::make('slug')->required(),
+        ]);
+    }
+
     public function table(Table $table): Table
     {
         return $table
@@ -29,6 +42,7 @@ final class ArticleResource extends Resource
             ])
             ->paginated([5, 10])
             ->recordActions([
+                EditAction::make(),
                 Action::make('delete')
                     ->requiresConfirmation()
                     ->action(function (Article $record): void {
@@ -49,6 +63,8 @@ final class ArticleResource extends Resource
     {
         return [
             'index' => ListArticles::route('/'),
+            'create' => CreateArticle::route('/create'),
+            'edit' => EditArticle::route('/{record}/edit'),
         ];
     }
 }

@@ -7,13 +7,19 @@ namespace Sylament\Panels\Resources\Pages;
 use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
+use Sylament\Actions\Concerns\HasActions;
+use Sylament\Actions\Contracts\InteractsWithActions;
+use Sylament\Actions\CreateAction;
+use Sylament\Actions\EditAction;
 use Sylament\Panels\Pages\Page as BasePage;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Symfony\Contracts\Service\Attribute\Required;
 
-abstract class Page extends BasePage
+abstract class Page extends BasePage implements InteractsWithActions
 {
+    use HasActions;
+
     /**
      * @var class-string<Resource>
      */
@@ -54,5 +60,20 @@ abstract class Page extends BasePage
     public function getHeaderActions(): array
     {
         return [];
+    }
+
+    public function getDefaultActionUrl(Action $action): ?string
+    {
+        $resource = $this->getResourceInstance();
+
+        if ($action instanceof CreateAction && $resource->hasPage('create')) {
+            return $resource->getUrl('create');
+        }
+
+        if ($action instanceof EditAction && $resource->hasPage('edit') && ! $this instanceof EditRecord && $action->getRecord() !== null) {
+            return $resource->getUrl('edit', ['record' => $action->getRecord()]);
+        }
+
+        return null;
     }
 }

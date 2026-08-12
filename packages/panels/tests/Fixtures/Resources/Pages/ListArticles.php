@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Panels\Tests\Fixtures\Resources\Pages;
 
 use Sylament\Actions\Action;
+use Sylament\Actions\CreateAction;
 use Sylament\Notifications\Notification;
 use Sylament\Panels\Resources\Pages\ListRecords;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
@@ -30,9 +31,15 @@ final class ListArticles extends ListRecords
             });
     }
 
+    /**
+     * `cacheAction()` is what stamps `liveComponent($this)` on the action, and
+     * without it the url fallthrough `getDefaultActionUrl()` answers is never
+     * consulted — the create button renders with no href at all.
+     */
     public function getHeaderActions(): array
     {
         return [
+            $this->cacheAction(CreateAction::make()),
             $this->purgeAction(),
         ];
     }

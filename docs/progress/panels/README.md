@@ -157,6 +157,8 @@ The panel surface —
 | [`Resources\Pages\PageRegistration`](../../../packages/panels/src/Resources/Pages/PageRegistration.php) | [`Resources/Pages/PageRegistration.php`](../../../vendor/filament/filament/src/Resources/Pages/PageRegistration.php) | in progress | [Resources](#resources) |
 | [`Resources\Pages\Page`](../../../packages/panels/src/Resources/Pages/Page.php) | [`Resources/Pages/Page.php`](../../../vendor/filament/filament/src/Resources/Pages/Page.php), [`Pages/Concerns/InteractsWithHeaderActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php) | in progress | [Resource pages](#resource-pages) |
 | [`Resources\Pages\ListRecords`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | [`Resources/Pages/ListRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | in progress | [ListRecords](#listrecords) |
+| [`Resources\Pages\CreateRecord`](../../../packages/panels/src/Resources/Pages/CreateRecord.php) | [`Resources/Pages/CreateRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) | in progress | [CreateRecord](#createrecord) |
+| [`Resources\Pages\EditRecord`](../../../packages/panels/src/Resources/Pages/EditRecord.php) | [`Resources/Pages/EditRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php), [`Resources/Pages/Concerns/InteractsWithRecord.php`](../../../vendor/filament/filament/src/Resources/Pages/Concerns/InteractsWithRecord.php) | in progress | [EditRecord](#editrecord) |
 | _rest not audited yet_ | | | |
 
 ### NavigationItem
@@ -491,7 +493,16 @@ Filament's `Resources\Pages\Page`, which likewise extends the panel
 whole page surface (title, heading, template, live-component registration) and
 adds the resource hop.
 
-Four members. `protected static string $resource` is the class-string a subclass
+The base is also **the actions host for every resource page** — it
+`implements InteractsWithActions` and `use`s actions' `HasActions`, so the three
+page types below compose only what they add (`HasSchemas`, and tables' `HasTable`
+on the list page). That is not a tidying choice: PHP inserts a trait's members
+*over* an inherited class's, so a `getDefaultActionUrl()` on this base would be
+silently shadowed by `HasActions`' null-returning default in any subclass that
+re-`use`d the trait —
+[the actions host sits on the base because a trait outranks an inherited method](#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method).
+
+Five members. `protected static string $resource` is the class-string a subclass
 declares and `getResource()` reads — untyped-default exactly as in Filament, so a
 page that forgets it fails on the first read rather than resolving something
 plausible. `route(string $path): PageRegistration` is the registration factory a
@@ -506,7 +517,44 @@ hook a page fills — **public** where Filament's is `protected`, because the pa
 template reads it and Twig only reaches public members. That widening is
 self-enforcing: PHP refuses to narrow visibility in an override, so a user
 copying Filament's `protected function getHeaderActions()` gets a fatal at class
-load rather than a silently empty header.
+load rather than a silently empty header. `getDefaultActionUrl(Action): ?string`
+is the fifth — actions' [url fallthrough hook](../actions/interacts-with-actions.md),
+answering for exactly the two prebuilt actions a resource has a page for:
+
+```php
+public function getDefaultActionUrl(Action $action): ?string
+{
+    $resource = $this->getResourceInstance();
+
+    if ($action instanceof CreateAction && $resource->hasPage('create')) {
+        return $resource->getUrl('create');
+    }
+
+    if ($action instanceof EditAction && $resource->hasPage('edit') && ! $this instanceof EditRecord && $action->getRecord() !== null) {
+        return $resource->getUrl('edit', ['record' => $action->getRecord()]);
+    }
+
+    return null;
+}
+```
+
+Every clause earns its place. The `instanceof` discrimination is what keeps a
+`DeleteAction` mounting its confirmation instead of becoming a link that opens
+nothing — the hook is asked for **every** url-less action the page renders, and
+any non-null answer wins, which is why Filament writes the same chain of guards.
+`! $this instanceof EditRecord` stops an edit page linking a record-bound
+`EditAction` at the page already showing that record. And `getRecord() !== null`
+replaces Filament's `blank($actionModel) || $actionModel === …::getModel()` pair:
+we have no `Action::model()` surface to compare against, and the URL needs a
+record either way. Two arms of Filament's chain are missing with their features —
+the `ViewAction` arm (no view page) and the model guard (no `model()`).
+
+Filament's own three-branch method is `static::getResource()::hasPage(…)` all the
+way down; ours goes through `getResourceInstance()` for the same reason every
+other hop does. An action only reaches the hook when it is **stamped with the
+live component** — see [header actions](#header-actions-are-read-off-the-page-at-render-not-cached-at-boot)
+for the one line that does it, and note that a table record action needs nothing,
+since `BelongsToLiveComponent` already falls through the table to its host.
 
 `getResourceInstance()` is **new API**, with no Filament counterpart to preserve:
 Filament writes `static::getResource()::getModel()` — a static call on a
@@ -530,28 +578,31 @@ The resource's index page: a live component that hosts a table the resource
 configures. The whole class is a composition plus four members.
 
 ```php
-abstract class ListRecords extends Page implements InteractsWithActions, InteractsWithSchemas, InteractsWithTable
+abstract class ListRecords extends Page implements InteractsWithSchemas, InteractsWithTable
 {
-    use HasActions;   // Sylament\Actions\Concerns
     use HasSchemas;   // Sylament\Schemas\Concerns
     use HasTable;     // Sylament\Tables\Concerns
 }
 ```
 
-Three host contracts, three host traits, and **no** `DefaultActionTrait` — the
-panel [`Page`](#page) base already carries it, and re-`use`ing a trait an
-ancestor already uses is legal but would imply the base does not. The three traits
-share no member name (every `HasTable` member is `*Table*`-prefixed, actions' are
-`*Action*`-prefixed, schemas' are `*Schema*`-prefixed plus `fill()`/`oldState`),
-so the composition needs no `insteadof` and no aliasing — the one place Filament
-does alias (`makeTable as makeBaseTable`) exists to let its `makeTable()` override
-call the original, which our resource delegation does not need. The cost is
-twelve public `LiveProp`s on the wire, all inherited: `tableHostId`, `tablePage`,
+Two host contracts declared here, three composed in total: actions'
+`InteractsWithActions`/`HasActions` sit on the [base](#resource-pages) and are
+inherited, and re-`use`ing them here would not merely be redundant — it would
+shadow the base's `getDefaultActionUrl()` with the trait's null default. There is
+no `DefaultActionTrait` either: the panel [`Page`](#page) base already carries it,
+and re-`use`ing a trait an ancestor already uses is legal but would imply the base
+does not. The three host traits share no member name (every `HasTable` member is
+`*Table*`-prefixed, actions' are `*Action*`-prefixed, schemas' are
+`*Schema*`-prefixed plus `fill()`/`oldState`), so the composition needs no
+`insteadof` and no aliasing — the one place Filament does alias
+(`makeTable as makeBaseTable`) exists to let its `makeTable()` override call the
+original, which our resource delegation does not need. The cost is twelve public
+`LiveProp`s on the wire, all inherited: `tableHostId`, `tablePage`,
 `tableRecordsPerPage`, `tableSort`, `tableSearch`, `tableFilters`,
 `tableDeferredFilters`, `mountedActions`, `mountedActionsData`, `actionsHostId`,
 `oldState`, `validatedSchemas`.
 
-`ListRecords` is also the **first shipped class in the repo to use any of those
+`ListRecords` was also the **first shipped class in the repo to use any of those
 three host traits** — every other host is a test fixture or a demo component.
 That matters beyond bookkeeping: PHPStan skips a trait no analysed class uses
 (the globally-ignored `trait.unused`), so all three bodies were unanalysed until
@@ -581,11 +632,13 @@ trait's own package, not here.
   carry the same override for the same reason.
 
 **Header actions.** `getHeaderActions()` returns the actions the template renders
-into the `Header` component's `actions` block. An action that only opens a URL
-needs nothing else, but one that mounts — a modal, a confirmation, an `action()`
-closure — must **also** be declared as a `<name>Action()` method on the page,
-because the way back in is
-[actions' method discovery](#header-actions-are-read-off-the-page-at-render-not-cached-at-boot):
+into the `Header` component's `actions` block — the same contract on all three
+page types, since the member is the [base's](#resource-pages). An action that
+mounts (a modal, a confirmation, an `action()` closure) must **also** be declared
+as a `<name>Action()` method on the page, and an action that opens a URL it does
+not carry itself must be **stamped with the page**; both rules and their failure
+modes are in
+[header actions are read off the page at render](#header-actions-are-read-off-the-page-at-render-not-cached-at-boot):
 
 ```php
 public function purgeAction(): Action
@@ -595,7 +648,7 @@ public function purgeAction(): Action
 
 public function getHeaderActions(): array
 {
-    return [$this->purgeAction()];
+    return [$this->cacheAction(CreateAction::make()), $this->purgeAction()];
 }
 ```
 
@@ -603,7 +656,7 @@ Nothing puts a Create button there by default, and that is parity, not a gap:
 Filament has no framework-level one either — its `make:filament-resource`
 generator writes `CreateAction::make()` into the generated page body. We ship no
 generator, so until one exists the button is something a user (or the demo)
-writes by hand.
+writes by hand — and the line above is what that costs.
 
 **The template.** `partials/ListRecords/index.html.twig` is the page root
 (`sy-pa-page sy-pa-resource-list-records-page`, Filament's `getPageClasses()`
@@ -634,6 +687,201 @@ defaulting (see the divergence), the parent-record scoping arm, the deprecated
 Two divergences are the list page's:
 [the table is stamped query-first and resource-last](#the-list-pages-table-is-stamped-query-first-and-resource-last)
 and [header actions are read off the page at render](#header-actions-are-read-off-the-page-at-render-not-cached-at-boot).
+
+### CreateRecord
+
+The resource's create page: a live component hosting the resource's `form()`
+schema, bound to the record **class** rather than an instance, that persists and
+redirects.
+
+```php
+abstract class CreateRecord extends Page implements InteractsWithSchemas
+{
+    use HasSchemas;   // Sylament\Schemas\Concerns
+}
+```
+
+The actions host comes from the [base](#resource-pages); schemas' is added here.
+Exactly one `LiveProp` of its own — `$data`, writable, the state bag every field
+binds into — and **none** for the record: `protected ?object $record` is a plain
+property, set by `create()` and read by `getRedirectUrl()` a few lines later,
+which is its whole life. `#[Required] setRecordPersistence(EntityManagerInterface)`
+is the persistence hop Filament does not need, because an Eloquent model saves
+itself; it is a setter rather than a constructor argument so a subclass declaring
+its own constructor never repeats it, and `handleRecordCreation()` opens with the
+same container-registration `LogicException`
+[`getResourceInstance()`](#resource-pages) throws. `EditRecord` declares that
+setter again rather than sharing a trait — two classes, and Filament keeps its
+record handlers per page too.
+
+- `mount()` is `$this->getSchema('form')->fill()` — no argument, so
+  `Schema::fill(null)` hydrates with `applyDefaults: true` and every component's
+  `default()` lands.
+- `form(Schema)` stamps `statePath('data')`, `record($resource->getRecordClass())`
+  — the **class-string** arm of `BelongsToRecord`, which defers `new $class()` to
+  `getRecordInstance()` at save time — and `operation(Operation::Create->value)`,
+  then hands the schema to `$resource->form()`. The schema is named `form`, so
+  `HasSchemas::getSchema('form')` resolves this very method and the template says
+  `renderSchema('form')`.
+- `schemas()` returns `['form']`, replacing the trait's `['schema']` default: the
+  de/hydration hooks walk exactly this list, and naming a schema that has no
+  method throws on the first render.
+- `create()` is the `#[LiveAction]` the form's submit posts.
+
+The lifecycle, ours against Filament's:
+
+| Step | Filament `create()` | Ours |
+| --- | --- | --- |
+| re-entry guard | `$this->isCreating` | — (no SPA history restore to guard) |
+| authorization | `authorizeAccess()` | — deferred with the auth cluster |
+| transaction | `beginDatabaseTransaction()` | — deferred |
+| validate | `callHook('beforeValidate')` → `$this->form->getState()` → `callHook('afterValidate')` | `$this->getSchema('form')->getData()` — validation happens **inside** it |
+| mutate | `mutateFormDataBeforeCreate($data)` | — deferred |
+| write | `callHook('beforeCreate')` → `handleRecordCreation($data)` → `saveRelationships()` → `callHook('afterCreate')` | `handleRecordCreation($record)` — `persist()` + `flush()` |
+| events | `RecordCreated`, `RecordSaved` | — no event layer |
+| remember | `rememberData()` | — no unsaved-changes alert |
+| notify | `getCreatedNotification()?->send()` | same |
+| create another | the `$another` branch | — deferred |
+| redirect | `$this->redirect($this->getRedirectUrl())` | `return new RedirectResponse($this->getRedirectUrl())` |
+
+Three things about that table are load-bearing. **Validation is not a step** —
+`Schema::getData()` calls `getState()`, which opens with `validate()`, so a
+failing submit throws `ValidationException` (a 422
+`UnprocessableEntityHttpException`) before anything is written; there is no
+`try`/`catch`, because ux-live-component's `LiveComponentSubscriber` re-renders
+the mutated component for exactly that status and the client morphs the errors
+in. **`handleRecordCreation()` takes the record, not an array** — the Filament
+signature is `(array $data): Model` because Eloquent mass-assigns, while our
+`getData()` already returns the mapped object, so the hook's job shrinks to
+persisting; the name and the override role are kept. And **the notification is
+sent before the redirect**, so it lands in the flash bag and the
+`SylamentNotifications:Notifications` outlet in the [document](#routing) drains it
+on the page the browser lands on.
+
+`getRedirectUrl()` is the `edit` page when the resource has one, else the index —
+Filament's chain with the panel-level `getResourceCreatePageRedirect()` setting,
+the `view` arm and the two `can*()` guards all absent with their features.
+
+**The template.** `partials/CreateRecord/index.html.twig` is the page root
+(`sy-pa-page sy-pa-resource-create-record-page`), the `Header` with the header
+actions, then inside `sy-pa-page-content` a `<form>` bound by
+`live_action('create:prevent', event: 'submit')`, the record-level error outlet,
+`renderSchema('form')`, a `sy-pa-resource-form-actions` footer holding the submit
+button, and `<twig:SylamentActions:Modals />` last. The **record-level error
+outlet is required, not decorative**: a class-level violation that names no field
+(a `UniqueEntity` on the entity) is translated onto the schema's own state path,
+which belongs to no input, so without
+`this.getErrorsForSchemaStatePath('data')` it renders nowhere and the submit
+appears to do nothing. The demo hand-rolled this block for the same reason; this
+is the shipped version of it.
+
+Deferred, all todo: the `callHook()` lifecycle (`beforeFill` … `afterCreate`),
+`mutateFormDataBeforeCreate()`, create-another (`$canCreateAnother`,
+`createAnother()`, `preserveFormDataWhenCreatingAnother()`), database
+transactions (`CanUseDatabaseTransactions`), `previousUrl` and the
+cancel-via-history action, the unsaved-changes alert, the record events, the
+authorization arms, `getFormActions()` as `Action` objects (the submit is a plain
+`<button type="submit">` here), `content()` and its `Form`/`EmbeddedSchema`
+wrapper, and the parent-record association.
+
+Three divergences are shared with the edit page:
+[the notification titles are literals](#the-create-and-save-notification-titles-are-literals-not-translation-keys),
+[the schema is named `form`, not `schema`](#the-record-pages-schema-is-named-form-and-schemas-is-narrowed-to-it),
+and [URL generation inside a live action resolves the default panel](#url-generation-inside-a-live-action-resolves-the-default-panel).
+
+### EditRecord
+
+The resource's edit page: the same form schema bound to a resolved record, saved
+in place.
+
+```php
+abstract class EditRecord extends Page implements InteractsWithSchemas
+{
+    use HasSchemas;   // Sylament\Schemas\Concerns
+}
+```
+
+Two `LiveProp`s: `$data` as on the create page, and `public ?string $record` —
+**the route key, never the record**. Both halves of that are constrained by the
+wire, and each has its own divergence:
+[the record prop carries the key and dehydrates through a bridge](#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge).
+`protected ?object $resolvedRecord` memoises the resolution for the request.
+`#[Required] setRecordPersistence()` is the create page's, verbatim.
+
+- `mount(int|string $record)` assigns `(string) $record`, then fills the form from
+  `getRecord()`. The union is on the **mount parameter**, which is Filament's
+  signature and is legal there; the property underneath it cannot be one. Route
+  parameters arrive as strings ([`componentProps`](#routing)), so the cast is a
+  formality for a hand-mounted component.
+- `getRecord(): object` resolves through
+  `Resource::resolveRecordRouteBinding($key)` and memoises, throwing
+  `NotFoundHttpException` for a missing key and for a key that matches nothing.
+  That is the whole 404 story: `PageController`
+  [unwraps an `HttpExceptionInterface` out of Twig's render error](#a-mount-time-http-exception-is-unwrapped-from-twigs-render-error),
+  so the throw from `mount()` answers 404 rather than 500. Filament's
+  `InteractsWithRecord::getRecord()` does `abort_unless(… instanceof Model, 404)`
+  for the same effect.
+- `form(Schema)` is the create page's with `record($this->getRecord())` — the
+  **instance** arm — and `Operation::Edit`. `schemas()` is `['form']`.
+- `save()` is the `#[LiveAction]`.
+
+The lifecycle, ours against Filament's:
+
+| Step | Filament `save()` | Ours |
+| --- | --- | --- |
+| authorization | `authorizeAccess()` | — deferred |
+| transaction | `beginDatabaseTransaction()` | — deferred |
+| validate | `callHook('beforeValidate')` → `$this->form->getState(afterValidate: …)` | `$this->getSchema('form')->getData()` — validates, then maps onto the managed entity |
+| mutate | `mutateFormDataBeforeSave($data)` | — deferred |
+| write | `handleRecordUpdate($record, $data)` → `callHook('afterSave')` | `handleRecordUpdate($record)` — `persist()` + `flush()` |
+| events | `RecordUpdated`, `RecordSaved` | — no event layer |
+| remember | `rememberData()` | — no unsaved-changes alert |
+| notify | `getSavedNotification()?->send()` when `$shouldSendSavedNotification` | `getSavedNotification()?->send()` |
+| redirect | `redirect($url)` when `$shouldRedirect` and `getRedirectUrl()` is filled | `getRedirectUrl()` is `null`, so `save()` returns `null` and the page stays |
+
+The **`getData()` step mutates before it can refuse**: a record-level violation
+(`UniqueEntity`) is raised after the state has been written onto the managed
+entity, so the unit of work holds a dirty entity that is never flushed. Nothing
+else in the request may flush, which is why `handleRecordUpdate()` is the only
+write and why the demo's `testInvalidEditSubmitLeavesTheRowUntouched` is the
+carried pin for it.
+
+Staying on the page is expressed as
+[a `null` redirect rather than Filament's exception-as-predicate](#staying-on-the-page-after-a-save-is-a-null-redirect-not-a-caught-authorization-exception).
+The toast then arrives on the same round trip: notifications'
+`LiveDeliverySubscriber` drains the flash bag during the live re-render and
+dispatches `sylament:notification` as a browser event, which the document
+outlet's controller shows.
+
+`getRecordTitle()` is `InteractsWithRecord::getRecordTitle()` plus one guard: it
+answers the resource's title-case record label when `$this->record` is null,
+because `getTitle()` is read off an **un-mounted** page for the document
+`<title>`. That guard is not a nicety —
+[without it every edit-page GET 404s](#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title),
+and the visible consequence is that the browser tab says `Edit Article` while the
+page heading says `Edit Alpha`.
+
+**The template.** `partials/EditRecord/index.html.twig` is the create page's with
+`live_action('save:prevent', event: 'submit')` and a `Save` button — same root
+class family (`sy-pa-resource-edit-record-page`), same required record-level error
+outlet, same `Modals` outlet.
+
+Deferred, all todo: the `callHook()` lifecycle, `mutateFormDataBeforeFill()` /
+`mutateFormDataBeforeSave()`, `refreshFormData()`, `saveFormComponentOnly()`,
+database transactions, `previousUrl` and cancel-via-history, the unsaved-changes
+alert, the record events, the authorization arms, relation managers
+(`HasRelationManagers` and the content tabs), `getDefaultActionSchemaResolver()`
+(the modal-mode `CreateAction`/`EditAction`/`ViewAction` schemas),
+`getFormActions()` as `Action` objects, `content()`, and the navigation-icon /
+navigation-label statics Filament's edit page carries for sub-navigation.
+
+Divergences, the three shared with the create page plus three of its own:
+[the notification titles are literals](#the-create-and-save-notification-titles-are-literals-not-translation-keys),
+[the schema is named `form`](#the-record-pages-schema-is-named-form-and-schemas-is-narrowed-to-it),
+[URL generation inside a live action resolves the default panel](#url-generation-inside-a-live-action-resolves-the-default-panel),
+[the record prop carries the route key and needs a dehydration bridge](#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge),
+[staying on the page is a `null` redirect](#staying-on-the-page-after-a-save-is-a-null-redirect-not-a-caught-authorization-exception),
+and [the document title carries the record label](#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title).
 
 ## Features
 
@@ -669,6 +917,8 @@ Enums, contracts, HTTP layer, events, templates —
 | [Document template](../../../packages/panels/templates/partials/Document/index.html.twig) | [`components/layout/base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php) | in progress | [Routing](#routing) |
 | [Page template](../../../packages/panels/templates/partials/Page/index.html.twig) | [`components/page/index.blade.php`](../../../vendor/filament/filament/resources/views/components/page/index.blade.php) | in progress | [Routing](#routing) |
 | [ListRecords template](../../../packages/panels/templates/partials/ListRecords/index.html.twig) | no Filament counterpart — v5's list page has no view of its own; [`ListRecords::content()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) returns a schema holding an [`EmbeddedTable`](../../../vendor/filament/schemas/src/Components/EmbeddedTable.php) | in progress | [ListRecords](#listrecords) |
+| [CreateRecord template](../../../packages/panels/templates/partials/CreateRecord/index.html.twig) | no Filament counterpart — v5's create page has no view either; [`CreateRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) returns a schema holding a `Form` wrapping an `EmbeddedSchema` and the form `Actions` | in progress | [CreateRecord](#createrecord) |
+| [EditRecord template](../../../packages/panels/templates/partials/EditRecord/index.html.twig) | same — [`EditRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) | in progress | [EditRecord](#editrecord) |
 | _rest not audited yet_ | | | |
 
 ### Layout templates
@@ -723,11 +973,15 @@ and [the render tests sit under
 same shape as `@sylament/notifications`: one Stimulus controller builds to its own
 `dist`, while `src/styles/index.css` is imported by support's stylesheet and
 compiles into support's single built CSS. The built `dist` is mapped into
-AssetMapper as `@sylament/panels`. The four style files (`layout`, `sidebar`,
-`topbar`, `header`) carry the `sy-pa-*` rules mobile-first — off-canvas drawer
-below `lg`, two-column grid at `lg` and up — and paint the active sidebar item
-from the [fixed `primary`
-palette](#the-active-sidebar-item-paints-a-fixed-primary-shade).
+AssetMapper as `@sylament/panels`. The five style files (`layout`, `sidebar`,
+`topbar`, `header`, `resources`) carry the `sy-pa-*` rules mobile-first —
+off-canvas drawer below `lg`, two-column grid at `lg` and up — and paint the
+active sidebar item from the [fixed `primary`
+palette](#the-active-sidebar-item-paints-a-fixed-primary-shade). `resources.css`
+is the record pages' two rules: the submit-button row
+(`.sy-pa-resource-form-actions`) and the record-level error list
+(`.sy-pa-resource-form-errors`, reading the `danger` palette the way forms'
+per-field errors do).
 
 The `sidebar` controller is declared `fetch: eager`, matching notifications: the
 shell must apply stored collapse state on the first paint rather than after lazy
@@ -1752,16 +2006,210 @@ template calls `this.getHeaderActions` at render, and the way back in is
 for a `<name>Action()` or `<name>()` method returning an `Action`, calls it, and
 caches the result.
 
-The consequence is a contract on the page rather than on the framework: an
-action that mounts must exist as a method under its own name, and
+The consequence is a contract on the page rather than on the framework, and it
+has **two** clauses, one per kind of action.
+
+An action that **mounts** must exist as a method under its own name, and
 `getHeaderActions()` lists `$this->fooAction()`. An action built inline in
 `getHeaderActions()` renders its trigger fine and then cannot be resolved when
 the browser posts the mount back — `getAction('foo')` finds no method, the
-descriptor drops, and the click does nothing with no error. A url-mode action is
-unaffected, since it never posts.
+descriptor drops, and the click does nothing with no error.
 
-This is the same discovery arm every other actions host already uses (the demo's
-form cards, the actions fixtures), so it is one rule rather than a page-specific one,
-and it is why the port did not grow a `getCachedHeaderActions()`: the cache
-Filament fills at boot would be filled here at render, one call before it is
-read.
+An action that **opens a URL it does not carry itself** must be stamped with the
+page, because `CanOpenUrl::getUrl()` reaches the page through
+`getLiveComponentOrNull()`, and that is null on an action nobody bound:
+
+```php
+return [$this->cacheAction(CreateAction::make()), $this->purgeAction()];
+```
+
+`HasActions::cacheAction()` does both jobs in one call — it stamps
+`liveComponent($this)` *and* fills the action cache, which incidentally makes the
+discovery arm unnecessary for that action. Without it a `CreateAction` renders as
+a `<button>` with **no href and no click binding**: a button that does nothing,
+with no error anywhere, which is why the shipped fixture pins the rendered
+`href`. A table **record** action needs none of this — `BelongsToLiveComponent`
+falls through the action's table to the table's host — so the rule is specifically
+about the header.
+
+The discovery arm is the same one every other actions host already uses (the
+demo's form cards, the actions fixtures), so it is one rule rather than a
+page-specific one, and it is why the port did not grow a
+`getCachedHeaderActions()`: the cache Filament fills at boot would be filled here
+at render, one call before it is read. The stamping clause is the piece Filament's
+boot-time cache hides, and it is the price of not having a hook to run it in.
+
+### The actions host sits on the base because a trait outranks an inherited method
+
+`Resources\Pages\Page` — not `ListRecords`, `CreateRecord` or `EditRecord` —
+`implements InteractsWithActions` and `use`s `HasActions`, and its
+`getDefaultActionUrl()` is written in the class body. That placement is forced,
+not stylistic. PHP's precedence is *current class > inserted trait > inherited
+class*, so a subclass that re-`use`d `HasActions` would insert the trait's
+`getDefaultActionUrl(): ?string { return null; }` **over** the base's override,
+and every `CreateAction` on that page would render with no href — no error, no
+warning, just a dead button. Task 4 shipped `ListRecords` with its own
+`use HasActions`, which is exactly the arrangement that would have swallowed the
+hook; the trait moved up when the override landed.
+
+The move is also the closer parity: Filament's `Resources\Pages\Page` extends
+`Pages\Page`, which composes `InteractsWithActions` at the base, so *every* page
+is an actions host there too. The residual hazard is unchanged and general — a
+user page that writes `use HasActions` on top of a base that already has it
+shadows anything the base overrode — so the rule for this hierarchy is simply:
+**a resource page never re-`use`s a trait its base already carries.** It reads
+like tidiness and is not; `packages/panels/tests/Integration/Resources/Pages/ListRecordsTest.php`
+fails on the rendered `href` the moment it is broken.
+
+### The record prop carries the route key and needs a dehydration bridge
+
+Filament's `InteractsWithRecord` declares `public Model | int | string | null $record`
+and lets Livewire carry the model. Ours is
+`#[LiveProp(dehydrateWith: 'dehydrateRecord')] public ?string $record = null`,
+and both halves of that are forced by ux-live-component.
+
+**Single type.** `LiveComponentMetadataFactory::createLivePropMetadata()` throws
+`LogicException('Union or intersection types are not supported for LiveProps.')`
+for any union-typed prop, so Filament's `int|string` cannot survive on the
+property. It survives on `mount(int|string $record)`, which is not a prop and is
+the signature a migrating user actually writes. A route parameter arrives as a
+string anyway, so the cast in `mount()` is a formality.
+
+**The bridge.** `LiveComponentHydrator::dehydrate()` reads each prop through
+Symfony's `PropertyAccessor`, which prefers a same-named **getter** over the
+property — and `getRecord()` returns the resolved **entity**. Left alone, the
+wire would carry an object where a `?string` is declared, and the hydrator would
+throw on a value it cannot dehydrate. `dehydrateRecord()` returns `$this->record`,
+the raw key, and the prop is a scalar on the wire again. This is the
+[CLAUDE.md dehydration trap](../../../CLAUDE.md) in its second shipped form,
+mirroring tables' [`dehydrateTableSearch`](../tables/has-table.md#the-writable-props-dehydrate-in-their-elements-wire-vocabulary);
+the fix is always the bridge, never renaming the Filament getter.
+
+We could have sidestepped both by typing the prop to the entity and letting
+`DoctrineEntityHydrationExtension` carry the identifier (the demo's `ArticleForm`
+does exactly that, and it works). It was not done because a resource page must
+serve **any** record class, and a `LiveProp`'s type is read off the property at
+compile time, so there is no type to write on a generic base. The key is the one
+thing every resource can put on the wire, and `Resource::resolveRecordRouteBinding()`
+already exists to turn it back into a record through the resource's own query —
+which is also stricter than a `find()`: a record the query scopes out 404s
+instead of loading.
+
+`packages/panels/tests/Integration/Resources/Pages/EditRecordTest.php` reads the
+rendered `data-live-props-value` and asserts `record` is the key string. Removing
+the bridge fails five cases across both record-page suites.
+
+### Staying on the page after a save is a `null` redirect, not a caught authorization exception
+
+Filament's `EditRecord::getRedirectUrl()` is a `try { $this->authorizeAccess(); return null; } catch (AuthorizationException | HttpExceptionInterface) { … }`
+— it stays on the page when the user may still view it, and redirects to the
+index when saving has just revoked their own access. With authorization deferred,
+the predicate has nothing to test, so ours is `return null;` and `save()` reads
+it as "stay":
+
+```php
+$redirectUrl = $this->getRedirectUrl();
+
+return $redirectUrl === null ? null : new RedirectResponse($redirectUrl);
+```
+
+The nullable return type is Filament's, and the override point is unchanged — a
+user returning a URL gets a redirect. What is gone is the exception-as-predicate,
+and it comes back with the auth cluster rather than being emulated now. Note the
+create page's `getRedirectUrl(): string` is **not** nullable, matching Filament:
+a create always goes somewhere.
+
+The visible half of this is that a successful save returns `null` from the
+`#[LiveAction]`, so the response is the re-rendered component rather than a
+redirect — which is what lets notifications' `LiveDeliverySubscriber` dispatch the
+toast as a browser event on the same round trip. The create page's redirect takes
+the other delivery path, the flash bag drained by the document's outlet. Both are
+pinned.
+
+### The create and save notification titles are literals, not translation keys
+
+`getCreatedNotificationTitle()` returns `'Created'` and
+`getSavedNotificationTitle()` returns `'Saved'`, where Filament returns
+`__('filament-panels::resources/pages/create-record.notifications.created.title')`
+and its edit-page twin. Same reason
+[the dashboard title is a literal](#the-dashboard-title-is-a-literal-not-a-translation-key):
+there is no translation layer in the port yet, and a `trans()` call against a
+catalogue nobody ships would render the key. The **override points** are what a
+consumer needs and they are Filament's exactly — `getCreatedNotificationTitle()`
+/ `getSavedNotificationTitle()` for the copy, `getCreatedNotification()` /
+`getSavedNotification()` for the whole notification — and each returns `null` when
+its title is `blank()`, which is Filament's own "no title, no toast" contract.
+Filament's deprecated `get*NotificationMessage()` pair is not ported; it exists
+only to keep pre-v3 overrides working.
+
+When translations land these become `trans()` calls and nothing else changes.
+
+### The record page's schema is named `form`, and `schemas()` is narrowed to it
+
+`HasSchemas` defaults to one schema named `schema`, discovered through a
+`schema()` or `schemaSchema()` method. Both record pages instead declare
+`form(Schema): Schema` and `schemas(): ['form']`, so every read is
+`getSchema('form')` and the template says `renderSchema('form')`.
+
+That is Filament's name — its pages carry a `form` schema and a
+`@property-read Schema $form` — and it is what makes room for the schemas a
+record page will grow (`infolist` on a view page, one per relation manager). The
+narrowing of `schemas()` is not optional: the list is what the de/hydration hooks
+walk, so leaving the default in place would demand a `schema()` method the page
+does not have and throw `RuntimeException` on the first render — the same trap
+[`ListRecords::schemas()` returning `[]`](#listrecords) documents.
+
+The cost is that `HasSchemas::fill()` — the trait's convenience wrapper, hardcoded
+to the default schema — is not usable on these pages; they call
+`$this->getSchema('form')->fill(…)` explicitly, which is what a multi-schema host
+does anyway.
+
+### The document title of an edit page carries the record label, not the record title
+
+Filament's edit page titles the document `Edit {getRecordTitle()}` — `Edit Alpha`.
+Ours shows `Edit Article` in the browser tab while the page's own `<h1>` shows
+`Edit Alpha`, and the split is [`PageController`](#routing)'s doing: it reads
+`$page->getTitle()` off the **locator instance** to build the document, before the
+page component is mounted and therefore before `$this->record` holds anything.
+`getRecordTitle()` guards on exactly that and answers the resource's title-case
+record label instead.
+
+The guard is not cosmetic. Without it, `getTitle()` on an un-mounted page calls
+`getRecord()`, which finds a null key and throws `NotFoundHttpException` — so
+**every** edit-page GET would answer 404. That is what the mutation test shows
+when the guard is removed, and it is why this is recorded as a divergence rather
+than left as an oddity to be tidied later.
+
+Revisit when `PageController` can mount the component before reading its title.
+Today it cannot: mounting happens inside `{{ component(componentName, componentProps) }}`
+during the Twig render, and the title is needed to build the document that
+contains it. A controller that resolved props and called the page's `mount()`
+itself would have both, at the cost of mounting twice or handing ux-twig-component
+a pre-mounted instance.
+
+### URL generation inside a live action resolves the default panel
+
+`Resource::getUrl()` picks the panel through
+`CurrentPanel::get() ?? PanelRegistry::getDefault()`, and `CurrentPanel` reads the
+`_sylament_panel` request attribute — which the [route loader](#routing) puts on
+every panel page route. A live request does not go to a panel route: it goes to
+`ux_live_component`, which carries no such attribute, so `CurrentPanel::get()`
+returns null and the **default panel** answers.
+
+Everything a create/edit page generates runs there — the post-create redirect and
+the `getDefaultActionUrl()` answers all happen inside a `#[LiveAction]` or a live
+re-render. For the overwhelmingly common single-panel application, and for any
+application whose resources live in the default panel, the answer is right. It is
+wrong for a resource mounted **only** in a non-default panel: its create page
+would redirect to a URL under the default panel's path, and the route name would
+not exist, so `UrlGenerator` throws `RouteNotFoundException` — loud, at least,
+rather than a wrong page.
+
+Filament has the same problem and solves it with `original_request()`, a
+Livewire helper that reaches the request that rendered the component rather than
+the one carrying the update. The fix here is the same shape: the panel id is
+already known at render time, so a page can carry it (a `LiveProp`, or the
+component name the [page pass](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes)
+registers) and pass `panel:` explicitly to `getUrl()`. Deferred rather than
+declined — it wants a decision about where panel identity lives on a live
+component, which multi-panel navigation will force anyway.

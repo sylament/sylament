@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Sylament\Panels\Resources\Pages;
 
 use Doctrine\ORM\QueryBuilder;
-use Sylament\Actions\Concerns\HasActions;
-use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Tables\Concerns\HasTable;
@@ -14,9 +12,8 @@ use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
 use Twig\Markup;
 
-abstract class ListRecords extends Page implements InteractsWithActions, InteractsWithSchemas, InteractsWithTable
+abstract class ListRecords extends Page implements InteractsWithSchemas, InteractsWithTable
 {
-    use HasActions;
     use HasSchemas;
     use HasTable;
 

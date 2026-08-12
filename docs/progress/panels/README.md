@@ -76,6 +76,7 @@ The panel surface —
 | --- | --- | --- | --- |
 | [`Navigation\NavigationItem`](../../../packages/panels/src/Navigation/NavigationItem.php) | [`Navigation/NavigationItem.php`](../../../vendor/filament/filament/src/Navigation/NavigationItem.php) | in progress | — |
 | [`Navigation\NavigationGroup`](../../../packages/panels/src/Navigation/NavigationGroup.php) | [`Navigation/NavigationGroup.php`](../../../vendor/filament/filament/src/Navigation/NavigationGroup.php) | in progress | — |
+| [`Pages\Page`](../../../packages/panels/src/Pages/Page.php) | [`Pages/Page.php`](../../../vendor/filament/filament/src/Pages/Page.php) | in progress | — |
 | _rest not audited yet_ | | | |
 
 ### NavigationItem
@@ -119,6 +120,25 @@ Two deliberate deltas beyond that. `collapsed()` does **not** also call
 the reader instead: `isCollapsed()` returns `false` whenever the group is not
 collapsible. And `isActive()` skips hidden items, so a group is active only for
 an item the user can actually see.
+
+### Page
+
+The declarative surface only: the `title` static with `getTitle()`, the
+`heading`/`subheading` pair with `getHeading()` falling back to the title, and
+the four navigation statics (`navigationIcon`, `navigationLabel`,
+`navigationSort`, `navigationGroup`) with their static getters. That is enough
+for navigation to describe a page before anything can render one.
+
+Deferred, all todo:
+
+- Live-component wiring and routing — a page is a Livewire component in Filament;
+  here it becomes a UX LiveComponent plus a route, owned by M2 · 2.
+- The `BasePage` split — Filament separates `BasePage` (the render/lifecycle
+  half) from `Page` (the panel-aware half); the split lands with the half that
+  needs it.
+- Breadcrumbs and header actions — both need the panel shell around them.
+- Page discovery. How a page is registered is decided in M2 · 2, alongside the
+  `Resource`-as-a-service decision above; nothing here presumes it.
 
 ## Features
 

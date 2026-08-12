@@ -155,6 +155,8 @@ The panel surface —
 | [`Resources\Resource`](../../../packages/panels/src/Resources/Resource.php) | [`Resources/Resource.php`](../../../vendor/filament/filament/src/Resources/Resource.php) and [`Resources/Resource/Concerns`](../../../vendor/filament/filament/src/Resources/Resource/Concerns) — `HasLabels`, `HasPages`, `HasRoutes`, `HasNavigation`, `CanGenerateUrls` | in progress | [Resources](#resources) |
 | [`Resources\ResourceRegistry`](../../../packages/panels/src/Resources/ResourceRegistry.php) | no Filament counterpart — a Filament resource is reached by calling its statics on the class-string | in progress | [Resources](#resources) |
 | [`Resources\Pages\PageRegistration`](../../../packages/panels/src/Resources/Pages/PageRegistration.php) | [`Resources/Pages/PageRegistration.php`](../../../vendor/filament/filament/src/Resources/Pages/PageRegistration.php) | in progress | [Resources](#resources) |
+| [`Resources\Pages\Page`](../../../packages/panels/src/Resources/Pages/Page.php) | [`Resources/Pages/Page.php`](../../../vendor/filament/filament/src/Resources/Pages/Page.php), [`Pages/Concerns/InteractsWithHeaderActions.php`](../../../vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php) | in progress | [Resource pages](#resource-pages) |
+| [`Resources\Pages\ListRecords`](../../../packages/panels/src/Resources/Pages/ListRecords.php) | [`Resources/Pages/ListRecords.php`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) | in progress | [ListRecords](#listrecords) |
 | _rest not audited yet_ | | | |
 
 ### NavigationItem
@@ -429,9 +431,12 @@ What is ported, by cluster:
   `hasPage()`. The keys `'index'` / `'create'` / `'edit'` are load-bearing API,
   exactly as in Filament: they gate navigation and URL generation and become the
   route-name suffix. `PageRegistration` is a `readonly` pair of the page
-  class-string and its path, built directly rather than through Filament's
-  `Page::route()` closure factory — the route is built by
-  [`PanelRouteLoader`](#routing), which needs the path as data.
+  class-string and its path, which
+  [`Resources\Pages\Page::route()`](#resource-pages) mints —
+  `ListArticles::route('/')`, Filament's call shape, returning
+  [a value rather than registering a route](#route-returns-a-registration-rather-than-registering-a-route).
+  The route itself is built by [`PanelRouteLoader`](#routing), which needs the
+  path as data.
 - **Query and record binding.** `getRecordQuery()` is the
   [`getEloquentQuery()`](../renames.md#renames) port and the single overridable
   base query. `resolveRecordRouteBinding()` resolves a URL segment
@@ -478,6 +483,158 @@ Divergences, each with its own entry:
 [active state is a route-name prefix match](#active-state-is-a-route-name-prefix-match),
 and [a `new`-built resource fails fast](#a-new-built-resource-fails-fast-rather-than-degrading).
 
+### Resource pages
+
+`Resources\Pages\Page` is the base every page a resource registers extends —
+Filament's `Resources\Pages\Page`, which likewise extends the panel
+[`Page`](#page) rather than standing beside it, so a resource page keeps the
+whole page surface (title, heading, template, live-component registration) and
+adds the resource hop.
+
+Four members. `protected static string $resource` is the class-string a subclass
+declares and `getResource()` reads — untyped-default exactly as in Filament, so a
+page that forgets it fails on the first read rather than resolving something
+plausible. `route(string $path): PageRegistration` is the registration factory a
+resource's `getPages()` calls. `getResourceInstance(): Resource` is the hop
+itself: an `#[Required] setResourceRegistry()` setter takes
+[`ResourceRegistry`](#resources) and the getter resolves `static::getResource()`
+through it, throwing a `LogicException` naming container registration when the
+setter never fired — the same fail-fast shape
+[a `new`-built resource](#a-new-built-resource-fails-fast-rather-than-degrading)
+has, for the same reason. `getHeaderActions(): array` returns `[]`, the override
+hook a page fills — **public** where Filament's is `protected`, because the page
+template reads it and Twig only reaches public members. That widening is
+self-enforcing: PHP refuses to narrow visibility in an override, so a user
+copying Filament's `protected function getHeaderActions()` gets a fatal at class
+load rather than a silently empty header.
+
+`getResourceInstance()` is **new API**, with no Filament counterpart to preserve:
+Filament writes `static::getResource()::getModel()` — a static call on a
+class-string — at every one of the ~30 hop sites in `Resources/Pages/`, and a
+service-backed resource cannot be reached that way. The name follows schemas'
+`getRecordInstance()` precedent (class-string in, instance out) rather than
+inventing a third convention. `getResource()` keeps Filament's name and return
+type, so a migrating user's `static::getResource()` still answers the
+class-string.
+
+One inherited surface answers for the wrong route:
+[the page-route statics](#a-resource-page-inherits-page-route-statics-that-answer-for-the-wrong-route).
+
+Deferred, all todo: `getResourcePageName()` (Filament's reverse lookup of a
+page's own `getPages()` key), breadcrumbs, sub-navigation, the parent-record and
+authorization concerns, and `ViewRecord` / `ManageRecords` / `ManageRelatedRecords`.
+
+### ListRecords
+
+The resource's index page: a live component that hosts a table the resource
+configures. The whole class is a composition plus four members.
+
+```php
+abstract class ListRecords extends Page implements InteractsWithActions, InteractsWithSchemas, InteractsWithTable
+{
+    use HasActions;   // Sylament\Actions\Concerns
+    use HasSchemas;   // Sylament\Schemas\Concerns
+    use HasTable;     // Sylament\Tables\Concerns
+}
+```
+
+Three host contracts, three host traits, and **no** `DefaultActionTrait` — the
+panel [`Page`](#page) base already carries it, and re-`use`ing a trait an
+ancestor already uses is legal but would imply the base does not. The three traits
+share no member name (every `HasTable` member is `*Table*`-prefixed, actions' are
+`*Action*`-prefixed, schemas' are `*Schema*`-prefixed plus `fill()`/`oldState`),
+so the composition needs no `insteadof` and no aliasing — the one place Filament
+does alias (`makeTable as makeBaseTable`) exists to let its `makeTable()` override
+call the original, which our resource delegation does not need. The cost is
+twelve public `LiveProp`s on the wire, all inherited: `tableHostId`, `tablePage`,
+`tableRecordsPerPage`, `tableSort`, `tableSearch`, `tableFilters`,
+`tableDeferredFilters`, `mountedActions`, `mountedActionsData`, `actionsHostId`,
+`oldState`, `validatedSchemas`.
+
+`ListRecords` is also the **first shipped class in the repo to use any of those
+three host traits** — every other host is a test fixture or a demo component.
+That matters beyond bookkeeping: PHPStan skips a trait no analysed class uses
+(the globally-ignored `trait.unused`), so all three bodies were unanalysed until
+this class existed, and giving them a user turns on both their standalone and
+their per-using-class analysis at once. Whatever that surfaces belongs to the
+trait's own package, not here.
+
+- `$template` points at `@SylamentPanels/partials/ListRecords/index.html.twig`
+  and is **required**: `Page::getTemplate()` otherwise falls back to the generic
+  page partial, whose `sy-pa-page-content` is empty, and the page would render a
+  heading with no table and no error anywhere.
+- `table(Table $table): Table` stamps the resource's query and then hands the
+  table to the resource —
+  [query first, resource last](#the-list-pages-table-is-stamped-query-first-and-resource-last).
+- `getTitle()` is `static::$title ?? $resource->getTitleCasePluralRecordLabel()`,
+  Filament verbatim with the static hop replaced by the instance one. It runs
+  **before** the component mounts as well: [`PageController`](#routing) reads it
+  off the locator instance for the document `<title>`, so it must not depend on
+  mounted state — the plural label does not.
+- `schemas(): array` returns `[]`, and the empty list is load-bearing.
+  `HasSchemas::schemas()` defaults to `['schema']` and `getCachedSchemas()` then
+  demands a `schema()` / `schemaSchema()` method on the host — which a list page
+  does not have, so the first `#[PreDehydrate] persistOldState()` throws
+  `RuntimeException` and the page 500s on its very first render. The schema host
+  is here only so [`getTableFiltersForm()`](../tables/has-table.md) has somewhere
+  to live; the tables fixture `SchemaTableHost` and the demo's `FiltersTableCard`
+  carry the same override for the same reason.
+
+**Header actions.** `getHeaderActions()` returns the actions the template renders
+into the `Header` component's `actions` block. An action that only opens a URL
+needs nothing else, but one that mounts — a modal, a confirmation, an `action()`
+closure — must **also** be declared as a `<name>Action()` method on the page,
+because the way back in is
+[actions' method discovery](#header-actions-are-read-off-the-page-at-render-not-cached-at-boot):
+
+```php
+public function purgeAction(): Action
+{
+    return Action::make('purge')->requiresConfirmation()->action(…);
+}
+
+public function getHeaderActions(): array
+{
+    return [$this->purgeAction()];
+}
+```
+
+Nothing puts a Create button there by default, and that is parity, not a gap:
+Filament has no framework-level one either — its `make:filament-resource`
+generator writes `CreateAction::make()` into the generated page body. We ship no
+generator, so until one exists the button is something a user (or the demo)
+writes by hand.
+
+**The template.** `partials/ListRecords/index.html.twig` is the page root
+(`sy-pa-page sy-pa-resource-list-records-page`, Filament's `getPageClasses()`
+pair minus its slug-derived `fi-resource-<slug>` half, which waits for a reason
+to style one resource's list differently from another's), the `Header` with the
+header actions in its `actions` block, `{{ renderTable() }}` inside
+`sy-pa-page-content`, and `<twig:SylamentActions:Modals />` last. Two placement
+rules, both invisible until they break. `renderTable()` takes no arguments and
+reads `this` out of the Twig context, requiring it to be an `InteractsWithTable` —
+a page template has `this`, but a `<twig:>` component nested inside one has its
+*own*, so a table wrapped in another component must be captured with
+`{% set table %}…{% endset %}` where `this` is still the page (the demo's
+`TableLiveCard` carries that note). And the `Modals` outlet must sit inside the
+page's own template, because it resolves its host by walking
+ux-twig-component's `ComponentStack` — this is exactly why
+[the document does not carry one](#routing). It is `partials/`, not
+`components/`: it is rendered from PHP through `template_from_method`, and a
+`<twig:>` invocation would find no `this`.
+
+Deferred, all todo: tabs (`HasTabs`, `$activeTab`, `modifyQueryWithActiveTab()`),
+`#[Url]` query-string binding of the browsing state — Filament url-binds six
+props and none of our tables props are url-bound either, so this is a tables-wide
+gap rather than a list-page one — `recordUrl` / `recordAction` row-click
+defaulting (see the divergence), the parent-record scoping arm, the deprecated
+`getTableQuery()` / `modelLabel()` seeding, `getDefaultActionSchemaResolver()`,
+`content()` and its `EmbeddedTable`, and the `ManageRecords` subclass.
+
+Two divergences are the list page's:
+[the table is stamped query-first and resource-last](#the-list-pages-table-is-stamped-query-first-and-resource-last)
+and [header actions are read off the page at render](#header-actions-are-read-off-the-page-at-render-not-cached-at-boot).
+
 ## Features
 
 Cross-cutting concerns and traits — this package has no top-level `Concerns/`;
@@ -511,6 +668,7 @@ Enums, contracts, HTTP layer, events, templates —
 | [`Controllers\PageController`](../../../packages/panels/src/Controllers/PageController.php) | no Filament counterpart — a Filament page **is** its own route action | in progress | [Routing](#routing) |
 | [Document template](../../../packages/panels/templates/partials/Document/index.html.twig) | [`components/layout/base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php) | in progress | [Routing](#routing) |
 | [Page template](../../../packages/panels/templates/partials/Page/index.html.twig) | [`components/page/index.blade.php`](../../../vendor/filament/filament/resources/views/components/page/index.blade.php) | in progress | [Routing](#routing) |
+| [ListRecords template](../../../packages/panels/templates/partials/ListRecords/index.html.twig) | no Filament counterpart — v5's list page has no view of its own; [`ListRecords::content()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) returns a schema holding an [`EmbeddedTable`](../../../vendor/filament/schemas/src/Components/EmbeddedTable.php) | in progress | [ListRecords](#listrecords) |
 | _rest not audited yet_ | | | |
 
 ### Layout templates
@@ -1487,3 +1645,123 @@ registry is only the class-string → instance lookup.
 `discoverResources()` itself is deferred rather than rejected. If it ever
 returns it is a convenience over `services.yaml` — a helper that registers the
 services — not a parallel registry.
+
+### `route()` returns a registration rather than registering a route
+
+The call shape is Filament's — `ListArticles::route('/')` inside a resource's
+`getPages()` — and everything behind it differs. Filament's builds a
+`PageRegistration` around a `Closure(Panel): ?Route` that, when the resource's
+`registerRoutes()` finally invokes it, calls Laravel's `Route::get()` facade: the
+closure **registers** the route as a side effect and hands back the `Route`
+object so the caller can keep mutating it (`$route?->name($name)`, middleware).
+Ours returns [`PageRegistration`](#resources), a `readonly` pair of the page
+class-string and the path, and nothing happens until
+[`PanelRouteLoader`](#routing) reads it.
+
+The reason is where routes come from. A Symfony route loader must **return** a
+`RouteCollection`; there is no ambient router to push into mid-call, and a value
+that quietly mutated global state during `getPages()` would be unreachable to the
+loader anyway. So the name — which Filament applies after the fact from the
+`getPages()` key — is composed by the loader from `getRouteBaseName()` plus that
+key, and the middleware arguments Filament's closure carries have no
+counterpart yet (route middleware is a Laravel concept; the Symfony equivalents,
+firewall and access control, land with authorization).
+
+What it costs: a registration cannot express a per-page route option Filament
+would set on the returned `Route`. Nothing needs one today. When something does,
+the option belongs on `PageRegistration` as data the loader reads, not as a
+closure that reaches the collection.
+
+### A resource page inherits page-route statics that answer for the wrong route
+
+`Resources\Pages\Page` extends the panel [`Page`](#page), so it inherits
+`getSlug()`, `getRoutePath()`, `getRouteName(Panel)`, `getNavigationItems(Panel)`
+and the navigation getters — every one of which describes a page mounted
+**directly on a panel**. A resource page is not: its path comes from the
+`PageRegistration` its resource declares and its route name is
+`getRouteBaseName($panel) . '.' . $key`. So `ListArticles::getRouteName($panel)`
+answers `sylament.admin.pages.list-articles`, a route that does not exist, and
+`getNavigationItems()` would build an item pointing at it.
+
+Filament has the same inheritance and closes it by **overriding**
+`getRouteName()` on `Resources\Pages\Page` to read
+`static::getResource()::getRouteBaseName($panel) . '.' . static::getResourcePageName()`.
+We cannot: both hops are instance methods on a service here, and these are static
+methods with no `$this` to reach the registry from — the same wall
+[the carried decision](#resource-is-a-service-not-a-static-class-string-registry)
+predicted for the `can*()` statics. Fixing it means either dropping the statics
+to instance methods (which changes a Filament API shape) or carrying the page's
+registration key on the instance, and both are worth deciding once rather than
+twice, so it waits for the task that needs a resource page to name its own route.
+
+Until then this is a **known wrong-answer surface**, and it is narrow: nothing in
+the framework calls those statics on a resource page. `Panel::getNavigation()`
+loops over `pages()`, which lists panel pages only, and the route loader takes a
+resource page's path from the registration. The wrong answers are reachable only
+by a user who calls them directly, or who also lists a resource page in
+`pages()` — which mounts it a **second** time under the panel's page family
+(`/admin/list-articles` beside `/admin/articles`, two names, no collision for the
+[duplicate guard](#routing) to catch) and is the one arrangement in which the
+inherited statics answer truthfully.
+
+### The list page's table is stamped query-first and resource-last
+
+Filament's `ListRecords::makeTable()` is an eight-step chain (base table, query,
+parent scoping, active tab, labels, `recordAction`, `recordUrl`, then
+`static::getResource()::configureTable($table)`), and its own `table()` is a
+no-op passthrough that `makeTable()` never calls. Ours is two lines in `table()`:
+
+```php
+$resource = $this->getResourceInstance();
+
+return $resource->table($table->query(fn (): QueryBuilder => $resource->getRecordQuery()));
+```
+
+The **ordering** is what carries over: the query is stamped before the resource
+sees the table, so `Resource::table()` can override it (`->query()` again,
+`->modifyQueryUsing()`), and the resource's configuration is applied last so it
+wins. What is gone is the middle of the chain, each piece with its own reason —
+the deprecated `getTableQuery()` / `modelLabel()` / `pluralModelLabel()` seeding
+has nothing to seed (our `Table` carries no label surface), tabs and parent
+records are deferred features, and `configureTable()`'s five-value stamp is
+Filament routing resource metadata into table properties we have not ported.
+
+The one that will be missed is **row-click defaulting**. Filament's `recordUrl`
+and `recordAction` closures make a table row clickable — falling through the
+table's own `view`/`edit` actions, then the resource's `view`/`edit` pages — and
+our `Table` has no `recordUrl()` / `recordAction()` surface at all, so there is
+nothing to stamp. It is deferred at the tables layer, not declined here; when
+those land, this method is where the fallthrough goes, still before the resource
+hop so a resource can override it.
+
+The query closure is worth one note: `->query()` takes a `Closure` rather than
+the builder, so `getRecordQuery()` runs at the table's first
+`getBaseQuery()` — after configuration, memoised for the request — instead of at
+page construction.
+
+### Header actions are read off the page at render, not cached at boot
+
+Filament caches header actions into the page's action registry at boot:
+`cacheInteractsWithHeaderActions()` is a Livewire trait hook that walks
+`getHeaderActions()`, stamps `->livewire($this)` on each group, sets a dropdown
+placement, and registers every action through `cacheAction()` — so the mounted
+name resolves out of that cache on the way back in. UX LiveComponent has no
+`booted*()`/`cache*()` trait hook to hang that on, so nothing caches: the
+template calls `this.getHeaderActions` at render, and the way back in is
+[actions' method discovery](../actions/has-actions.md) — `getAction($name)` looks
+for a `<name>Action()` or `<name>()` method returning an `Action`, calls it, and
+caches the result.
+
+The consequence is a contract on the page rather than on the framework: an
+action that mounts must exist as a method under its own name, and
+`getHeaderActions()` lists `$this->fooAction()`. An action built inline in
+`getHeaderActions()` renders its trigger fine and then cannot be resolved when
+the browser posts the mount back — `getAction('foo')` finds no method, the
+descriptor drops, and the click does nothing with no error. A url-mode action is
+unaffected, since it never posts.
+
+This is the same discovery arm every other actions host already uses (the demo's
+form cards, the actions fixtures), so it is one rule rather than a page-specific one,
+and it is why the port did not grow a `getCachedHeaderActions()`: the cache
+Filament fills at boot would be filled here at render, one call before it is
+read.

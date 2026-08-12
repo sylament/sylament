@@ -1,0 +1,19 @@
+{% set heading = this.getHeading %}
+{% set subheading = this.getSubheading %}
+{% set headerActions = this.getHeaderActions %}
+
+<div {{ attrs({class: 'sy sy-pa-page sy-pa-resource-list-records-page'}, attributes.all) }}>
+    <twig:SylamentPanels:Header :heading="heading" :subheading="subheading">
+        <twig:block name="actions">
+            {% for action in headerActions %}
+                {{ renderComponent(action) }}
+            {% endfor %}
+        </twig:block>
+    </twig:SylamentPanels:Header>
+
+    <div class="sy-pa-page-content">
+        {{ renderTable() }}
+    </div>
+
+    <twig:SylamentActions:Modals />
+</div>

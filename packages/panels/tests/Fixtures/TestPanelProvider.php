@@ -8,6 +8,7 @@ use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelProvider;
 use Sylament\Panels\Tests\Fixtures\Pages\SettingsPage;
+use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
 
 final class TestPanelProvider extends PanelProvider
 {
@@ -16,8 +17,10 @@ final class TestPanelProvider extends PanelProvider
         return $panel
             ->id('admin')
             ->path('admin')
+            ->default()
             ->brandName('Test Admin')
             ->navigationGroups(['Content'])
-            ->pages([Dashboard::class, SettingsPage::class]);
+            ->pages([Dashboard::class, SettingsPage::class])
+            ->resources([ArticleResource::class]);
     }
 }

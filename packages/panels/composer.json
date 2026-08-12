@@ -15,6 +15,10 @@
     "require": {
         "php": "^8.5",
         "sylament/support": "self.version",
+        "symfony/http-foundation": "^8.1",
+        "symfony/routing": "^8.1",
+        "symfony/string": "^8.1",
+        "symfony/ux-live-component": "^3.1",
         "symfony/ux-twig-component": "^3.1"
     },
     "autoload": {

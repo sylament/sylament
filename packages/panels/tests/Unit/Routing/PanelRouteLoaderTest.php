@@ -36,6 +36,20 @@ it('mounts one GET route per page under the panel path', function (): void {
         ->and($settings?->getPath())->toBe('/admin/settings-page');
 });
 
+it('mounts a root-mounted panel without a double slash', function (): void {
+    $provider = new class extends PanelProvider {
+        public function panel(Panel $panel): Panel
+        {
+            return $panel->id('app')->pages([Dashboard::class, SettingsPage::class]);
+        }
+    };
+
+    $routes = loaderFor($provider)();
+
+    expect($routes->get('sylament.app.pages.dashboard')?->getPath())->toBe('/')
+        ->and($routes->get('sylament.app.pages.settings-page')?->getPath())->toBe('/settings-page');
+});
+
 it('tracks provider and page class files as resources', function (): void {
     $provider = new class extends PanelProvider {
         public function panel(Panel $panel): Panel

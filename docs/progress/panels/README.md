@@ -426,8 +426,14 @@ route at the panel path plus the page's route path, named
 (always `PageController`), `_sylament_panel` (the id
 [`CurrentPanel`](#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager)
 reads back) and `_sylament_page` (the page class the controller resolves).
+The two halves are joined by trimming the concatenation on both sides and
+re-prefixing a single `/`, which is what makes the two degenerate cases work:
 `Dashboard`'s `/` route path collapses onto the panel root rather than leaving a
-trailing slash, so `path('admin')` puts the dashboard at `/admin`.
+trailing slash (`path('admin')` puts the dashboard at `/admin`), and a panel left
+at the default empty path mounts at the site root — `''` joined with
+`/settings-page` is `/settings-page`, not `//settings-page`, and its dashboard is
+`/`. Trimming only the trailing slash would leave that leading pair in place, and
+a `//`-pathed route matches nothing.
 
 Two things beyond mounting. Every page class file and every provider class file
 is added to the collection as a `FileResource`: the routes are derived from

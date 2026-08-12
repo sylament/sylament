@@ -33,7 +33,7 @@ final readonly class PanelRouteLoader implements RouteLoaderInterface
                     throw new LogicException(sprintf('The pages() entry "%s" on panel "%s" is not a %s subclass.', $pageClass, $panel->getId(), Page::class));
                 }
 
-                $path = mb_rtrim($panelPath . $pageClass::getRoutePath(), '/') ?: '/';
+                $path = '/' . mb_trim($panelPath . $pageClass::getRoutePath(), '/');
 
                 $routes->add($pageClass::getRouteName($panel), new Route($path, [
                     '_controller' => PageController::class,

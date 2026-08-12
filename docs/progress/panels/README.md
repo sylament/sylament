@@ -16,8 +16,10 @@ follows.
 ## Carried decisions
 
 Settled while porting other packages, recorded here because they constrain how
-this one gets built and would otherwise be re-litigated when the panel epics
-start.
+this one gets built and would otherwise be re-litigated once the panel epics
+reached them. All three have now been reached: the `Resource` decision was spent
+by M2 · 3 and is marked implemented, and the two shell constraints held through
+M2 · 1 to M2 · 3.
 
 ### `Resource` is a service, not a static class-string registry
 
@@ -113,8 +115,9 @@ has to republish that alias public. The panels test kernel republishes
 `RequestStack` for precisely that path, and
 [`SylamentPanelsBundleTest`](../../../packages/panels/tests/Integration/SylamentPanelsBundleTest.php)
 pins the arm through a `NavigationGroup`, which carries no override.
-M2 · 2's current-panel lookup must be derived the same way,
-from the request, and never held in a stateful singleton.
+M2 · 2's current-panel lookup had to be derived the same way, from the request
+and never held in a stateful singleton, and
+[it is](#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager).
 
 ### The shell is not live
 
@@ -485,6 +488,19 @@ Divergences, each with its own entry:
 [active state is a route-name prefix match](#active-state-is-a-route-name-prefix-match),
 and [a `new`-built resource fails fast](#a-new-built-resource-fails-fast-rather-than-degrading).
 
+**One structural decision is deferred, not settled.** Filament splits its
+`Resource` across five traits in
+[`Resources/Resource/Concerns`](../../../vendor/filament/filament/src/Resources/Resource/Concerns)
+— `HasLabels`, `HasPages`, `HasRoutes`, `HasNavigation`, `CanGenerateUrls` — and
+ours is one file. That is deliberate for now rather than a miss: the class is the
+largest new file the resource epic added, but the deferred list above is longer
+than what shipped, so splitting now would file each trait against a guess at
+where the unported members land — and a trait whose contents are guessed is
+harder to move later than a method is. The names are Filament's and stay
+available; revisit when the authorization and pages clusters land, since those
+are what would push the file past one screenful per concern, and the categories
+can then be read off the finished set instead of predicted.
+
 ### Resource pages
 
 `Resources\Pages\Page` is the base every page a resource registers extends —
@@ -558,15 +574,21 @@ since `BelongsToLiveComponent` already falls through the table to its host.
 
 `getResourceInstance()` is **new API**, with no Filament counterpart to preserve:
 Filament writes `static::getResource()::getModel()` — a static call on a
-class-string — at every one of the ~30 hop sites in `Resources/Pages/`, and a
-service-backed resource cannot be reached that way. The name follows schemas'
+class-string — at 32 sites in `Resources/Pages/Page.php` alone and 61 across
+`Resources/Pages/`, and a service-backed resource cannot be reached that way. The
+name follows schemas'
 `getRecordInstance()` precedent (class-string in, instance out) rather than
 inventing a third convention. `getResource()` keeps Filament's name and return
 type, so a migrating user's `static::getResource()` still answers the
 class-string.
 
-One inherited surface answers for the wrong route:
-[the page-route statics](#a-resource-page-inherits-page-route-statics-that-answer-for-the-wrong-route).
+Two divergences hang off this base:
+
+- [`route()` returns a registration rather than registering a route](#route-returns-a-registration-rather-than-registering-a-route)
+  — the call shape is Filament's, but a Symfony loader must *return* a
+  `RouteCollection`, so nothing is registered until the loader reads the pair.
+- [A resource page inherits page-route statics that answer for the wrong route](#a-resource-page-inherits-page-route-statics-that-answer-for-the-wrong-route)
+  — every static describing a panel-mounted page is inherited and wrong here.
 
 Deferred, all todo: `getResourcePageName()` (Filament's reverse lookup of a
 page's own `getPages()` key), breadcrumbs, sub-navigation, the parent-record and
@@ -909,7 +931,7 @@ Enums, contracts, HTTP layer, events, templates —
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | — |
+| [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | [Layout templates](#layout-templates) |
 | [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | three aliases: the shell's two ([Layout templates](#layout-templates)) and the dashboard's navigation icon ([Dashboard](#dashboard)) |
 | [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships one Stimulus controller (`sidebar`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets) |
 | [`Routing\PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php) | [`routes/web.php`](../../../vendor/filament/filament/routes/web.php) — the per-panel route group and its `$page::registerRoutes($panel)` / `$resource::registerRoutes($panel)` loops, [`Pages/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasRoutes.php) `routes()`, [`Resources/Resource/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) `registerRoutes()` | in progress | [Routing](#routing) |
@@ -919,6 +941,7 @@ Enums, contracts, HTTP layer, events, templates —
 | [ListRecords template](../../../packages/panels/templates/partials/ListRecords/index.html.twig) | no Filament counterpart — v5's list page has no view of its own; [`ListRecords::content()`](../../../vendor/filament/filament/src/Resources/Pages/ListRecords.php) returns a schema holding an [`EmbeddedTable`](../../../vendor/filament/schemas/src/Components/EmbeddedTable.php) | in progress | [ListRecords](#listrecords) |
 | [CreateRecord template](../../../packages/panels/templates/partials/CreateRecord/index.html.twig) | no Filament counterpart — v5's create page has no view either; [`CreateRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/CreateRecord.php) returns a schema holding a `Form` wrapping an `EmbeddedSchema` and the form `Actions` | in progress | [CreateRecord](#createrecord) |
 | [EditRecord template](../../../packages/panels/templates/partials/EditRecord/index.html.twig) | same — [`EditRecord::content()`](../../../vendor/filament/filament/src/Resources/Pages/EditRecord.php) | in progress | [EditRecord](#editrecord) |
+| [`SylamentPanelsBundle`](../../../packages/panels/src/SylamentPanelsBundle.php) | [`FilamentServiceProvider.php`](../../../vendor/filament/filament/src/FilamentServiceProvider.php) | in progress | autoconfigures the three tags (`sylament.panels.panel_provider` / `.page` / `.resource`), registers `PageComponentPass` and `ResourcePass`, wires `Panel`, the two registries, `CurrentPanel`, `PageController` and the `routing.route_loader`, and prepends `@sylament/panels` into AssetMapper — [providers are collected by tag](#panels-are-collected-from-tagged-providers-not-registered-imperatively), [pages register through a pass](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes), [resources from a tag](#resources-are-collected-from-a-tag-not-discovered-on-the-filesystem) |
 | _rest not audited yet_ | | | |
 
 ### Layout templates
@@ -953,7 +976,8 @@ without touching a template. Both values drop Filament's `panels::` prefix
 What Filament's sidebar has and this does not, all todo:
 
 - Desktop collapse (the narrow icon-only rail) and the collapsed-state tooltips
-  on items — both need the panel-level sidebar settings M2 · 2 introduces.
+  on items — both need panel-level sidebar settings. M2 · 2 introduced the only
+  one a panel carries (`collapsibleNavigationGroups()`), which is not these.
 - Sub-navigation: Filament renders `childItems` nested under an active item, and
   the nesting arm of `NavigationItem` is deferred whole (see
   [NavigationItem](#navigationitem)).
@@ -1006,12 +1030,17 @@ reopen it.
 What Filament's panel assets have and this does not, all todo:
 
 - Desktop collapse (the icon-only rail) and its width/tooltip state — the
-  controller tracks the mobile drawer only, and the settings behind it arrive
-  with M2 · 2.
+  controller tracks the mobile drawer only. M2 · 2 shipped the one sidebar
+  setting a panel carries (`collapsibleNavigationGroups()`); the desktop-rail
+  settings behind this are still unported.
 - `scroll-sidebar.js` — restoring sidebar scroll position across navigations.
-- `dark-mode.js`, `unsaved-changes-alert.js`, `error-notifications.js`,
-  `echo.js`, and the resource/page scripts — none of the surfaces they serve
-  exist yet.
+- `unsaved-changes-alert.js` and `error-notifications.js` — the surface they
+  serve now exists (M2 · 3's [`CreateRecord`](#createrecord) /
+  [`EditRecord`](#editrecord) forms, error outlet included), but neither script
+  is ported, so a user still navigates away from unsaved edits without a prompt
+  and a validation failure below the fold is silent.
+- `dark-mode.js`, `echo.js`, and the resource/page scripts — none of the
+  surfaces they serve exist yet.
 
 ### Routing
 
@@ -1072,6 +1101,26 @@ naming both mounts when a second claims it. The compile-time
 does not cover this and cannot: it keys on the FQCN, which is exactly what
 differs when two classes derive one slug.
 
+The guard covers **names**, not **paths**. Two mounts that derive one path under
+two different names both reach the collection, and the router answers one of them
+— first-wins, silently, exactly the way the name collision used to behave. That
+stays unguarded on purpose. A path collision is at least *visible*: both routes
+are listed in `debug:router`, with their paths, where a name collision showed up
+nowhere at all. And a useful path guard would have to reason about placeholder
+equivalence (`/{record}/edit` and `/{id}/edit` are the same path) and about
+matcher precedence between a static and a dynamic segment — router work, not
+loader work, and duplicating it would only add a second opinion that can disagree
+with the real matcher. Revisit if a real panel hits it.
+
+Of the three name-collision *kinds* the guard covers, two are pinned
+([`PanelRouteLoaderTest`](../../../packages/panels/tests/Unit/Routing/PanelRouteLoaderTest.php)
+covers two pages sharing a slug and two resources sharing one). The third — a
+resource page landing on a panel page's name — is deliberately left unpinned:
+`addRoute()` is one method with one `$owners` map and no per-kind branch, so a
+third case would exercise the same three lines a third time and pin nothing the
+other two do not. It would only earn its keep if the owner tracking ever split
+per kind.
+
 [`PageController`](../../../packages/panels/src/Controllers/PageController.php)
 is the single action every panel route points at. It resolves the panel through
 `CurrentPanel`, resolves the page **service** from the class-keyed
@@ -1114,7 +1163,11 @@ notifications outlet. That outlet is
 the layout — the position Filament's
 `@livewire(Filament\Livewire\Notifications::class)` holds in `base.blade.php` —
 and it is the document's job rather than the application's now that panels
-declares `sylament/notifications`. The **actions** outlet deliberately is not
+declares `sylament/notifications`. It is also why a panel application needs
+`framework.session` enabled: the outlet drains the flash bag on **every** page
+render, and `RequestStack::getSession()` throws `SessionNotFoundException` on a
+request that carries none — so a session-less panel fails on its first page, not
+on its first toast. The **actions** outlet deliberately is not
 here, and Filament agrees: `<x-filament-actions::modals />` sits in its *page*
 view, not its layout. Ours has a second, harder reason —
 [`Modals`](../actions/has-actions.md) resolves its host live component by walking
@@ -1426,7 +1479,9 @@ once per registered page and resource, then reads the accumulated list back off
 itself. Both halves of that are forced by the same thing: a Filament resource is
 a static class with no panel in hand, so it needs the facade to find one, and
 pushing onto the real panel would accumulate items across requests, so it needs
-the manager's per-request clone to push *into*.
+the manager's per-request scratch lists to push *into* — two arrays seeded by
+cloning the panel's own, which `Panel::navigationItems()` redirects into for as
+long as a manager is set.
 
 Ours pulls. `getNavigation()` resolves each registered class-string through
 [`ResourceRegistry`](#resources) and calls `getNavigationItems($this)` on the
@@ -1827,6 +1882,15 @@ page. It is the only swallowed exception on the class; `getRecordRouteKey()`
 deliberately lets the same failure through, because a route key that cannot be
 read is a broken URL, not a cosmetic default.
 
+One deliberate improvement over Filament sits in the same guard: the fallback
+tests `filled($title) && is_scalar($title)`, not `is_scalar()` alone. Filament
+returns whatever the attribute holds, so a record whose title column is `''` — or
+`false`, or whitespace — titles its page with an empty string, and the heading
+that reads `Edit ` looks like a rendering bug rather than missing data. The extra
+term routes exactly those to the record label, which is the value the method
+already answers for a null record and an unreadable attribute; the same hole
+exists upstream, and closing it costs nothing a caller could want.
+
 ### `getUrl()` drops three parameters and widens a fourth
 
 Filament's signature carries seven parameters; ours carries four. `$tenant` and
@@ -1910,7 +1974,12 @@ closure **registers** the route as a side effect and hands back the `Route`
 object so the caller can keep mutating it (`$route?->name($name)`, middleware).
 Ours returns [`PageRegistration`](#resources), a `readonly` pair of the page
 class-string and the path, and nothing happens until
-[`PanelRouteLoader`](#routing) reads it.
+[`PanelRouteLoader`](#routing) reads it. The path's leading slash is **optional**:
+the loader joins the resource prefix and the registration path with exactly one
+separator, so `'/{record}/edit'` and `'{record}/edit'` mount identically and both
+`'/'` and `''` collapse onto the resource root. Filament's own examples all carry
+the slash, so the docblock states the relaxation rather than leaving a
+migrating user to discover that one form silently produced `/articles{record}`.
 
 The reason is where routes come from. A Symfony route loader must **return** a
 `RouteCollection`; there is no ambient router to push into mid-call, and a value
@@ -1992,6 +2061,16 @@ The query closure is worth one note: `->query()` takes a `Closure` rather than
 the builder, so `getRecordQuery()` runs at the table's first
 `getBaseQuery()` — after configuration, memoised for the request — instead of at
 page construction.
+
+The consequence for a subclass: a `ListRecords` that overrides `table()` **must**
+call `parent::table($table)`, because those two lines are the only place the
+query stamp and the resource's own `table()` are applied. Filament's `table()` is
+a passthrough its `makeTable()` ignores, so overriding it there costs nothing;
+overriding it here without the `parent::` call yields a table with no data source
+and none of the resource's columns or actions. It fails loudly rather than
+subtly — tables refuses a configured table with neither `records()` nor
+`query()` — so this is a note about *where* the failure comes from, not a trap
+that ships a broken page.
 
 ### Header actions are read off the page at render, not cached at boot
 

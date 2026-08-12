@@ -1365,6 +1365,15 @@ swallowed it would leave a user with a silently notification-less panel and no
 signal at all — and no guard can detect an unregistered bundle from inside a
 trait.
 
+The second limit is the same shape one layer down: with the package installed
+*and* the bundle registered, `send()` still writes to the flash bag, and
+`RequestStack::getSession()` throws `SessionNotFoundException` on a request that
+carries none. So a successful action on a session-less request — a console
+command, a stateless API route, an application that never enabled
+`framework.session` — fails there rather than silently dropping the toast. Same
+trade, same reason: a panel application needs a session anyway, and the throw
+names the missing piece.
+
 ### Confirmation is a flag, not a modal-config layer
 
 `CanRequireConfirmation` itself is a verbatim, line-for-line port — same

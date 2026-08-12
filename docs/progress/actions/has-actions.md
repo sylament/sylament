@@ -428,6 +428,16 @@ nothing to crash on — the same posture
 [`tableFilters`](../tables/has-table.md#the-filter-bags-are-arrays-never-null-and-carry-no-getters)
 takes for its own client-writable bag.
 
+The two are not equally cheap, though, and the difference is worth naming. A
+filter slice *is* indexed by field name once it reaches `apply()` —
+`$data['isActive']`, and `$data['value']` / `$data['values']` on
+[`SelectFilter`](../../../packages/tables/src/Filters/SelectFilter.php) — so a
+posted list reads as filter state that is silently absent, and the query comes
+back unfiltered. `arguments` is only ever **merged** (`mergeArguments()`) and
+handed whole to an evaluated closure; nothing in the port indexes it by a name
+the client did not supply. So the same wrong shape costs a filter a wrong result
+set and costs an action nothing.
+
 `name` is not a claim but a guarantee, which is why `resolveActions()` may index
 it without a `??` fallback: it is a native `string` parameter of `mountAction()`,
 the only other writer is `replaceMountedAction()`, and the prop is **not**

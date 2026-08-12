@@ -154,6 +154,32 @@ filled by an entity-type check.
 _See also:_ the `Htmlable → Twig\Markup` and `Eloquent → Doctrine` translations
 in the global [rename table](../renames.md).
 
+### The `@phpstan-assert` tags model these as null-checks only
+
+`blank()` and `filled()` carry `@phpstan-assert-if-false !null $value` and
+`@phpstan-assert-if-true !null $value`, which Laravel's originals do not — the
+tags are what let a caller narrow a `mixed` past `null` without a second check.
+The cost is that PHPStan reads the tag as the **whole** contract: to the
+analyser `blank()` answers true for `null` and nothing else, though the body
+also answers true for `''`, `'   '`, `[]` and an empty `Countable`. So a call on
+a value already narrowed past `null` is *impossible* — `Call to function
+Sylament\Support\blank() with bool|float|int|string will always evaluate to
+false`, identifier `function.impossibleType` — and at level max that is an
+error, not a hint.
+
+The rule that follows: **test `blank()` before any other narrowing, never
+after.** `!is_scalar($key) || blank($key)` is red where
+`blank($key) || !is_scalar($key)` is green, and the two agree at runtime because
+`blank()` already accepts any type. The incident that named this is
+[Task 9's unmasking](../tables/has-table.md#a-host-trait-is-analysed-only-through-a-class-that-composes-it):
+panels' `ListRecords` became the first analysed class to compose `HasTable`,
+`HasFilters` and `HasActions`, and among the nineteen errors that surfaced were
+both shapes of this one — two guards written in the wrong order, and two calls
+on a value an over-defensive `?? null` was the only reason to think nullable.
+A helper call PHPStan has proved constant is a signal to reorder the guard (or
+to delete the defensiveness that made the call look necessary), not to reach for
+a suppression.
+
 ### `wrap()` and the Laravel globals are reimplemented, not forwarded
 
 `blank()`, `filled()`, and `wrap()` are **not** Filament `helpers.php` functions

@@ -65,9 +65,15 @@ outside a request;
 [`SendTest`](../../../packages/notifications/tests/Integration/SendTest.php) and
 [`NotificationsTest`](../../../packages/notifications/tests/Integration/Twig/Components/NotificationsTest.php)
 reach `Notification` and the stack **through the container**, so a missing service
-registration or a missing template namespace fails them. The manifest is a
-declaration with no runtime to assert; what would catch it is a consumer install
-and the CI split. The AssetMapper prepend is untested too, but unlike the manifest
+registration or a missing template namespace fails them. One further Integration
+case lives in this suite for a *foreign* package's benefit —
+[`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php)
+pins actions' guarded soft reference to `Notification`
+([action.md](../actions/action.md#the-notification-arm-is-a-guarded-soft-integration-not-a-require)),
+since `sylament/actions` only *suggests* this package and its own kernel cannot
+boot it — the same cross-suite placement tables' `RecordActionsResolutionTest`
+uses. The manifest is a declaration with no runtime to assert; what would catch
+it is a consumer install and the CI split. The AssetMapper prepend is untested too, but unlike the manifest
 it *is* assertable against the compiled container — which is why its row is **in
 progress** rather than done, on the same terms support's
 [identical row](../support/support-bundle.md#asset-registration) holds.

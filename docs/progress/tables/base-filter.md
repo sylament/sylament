@@ -140,9 +140,10 @@ canonicalises a numeric string key straight back to an integer, so a bag that
 arrives keyed `0` stays keyed `0`. Against the shipped host that case no longer
 arises — [`getTableFilterState()`](has-table.md#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk)
 reads a slice that is not field-keyed as `null`, so the normalizer sees `[]` —
-leaving the cast live only for a host that answers these methods by hand. Nothing downstream reads a filter slice
-positionally — every key is a field name a schema wrote — so the declared shape
-is the one every consumer needs and the residue is unreachable in practice.
+leaving the cast live only for a host that answers these methods by hand.
+Nothing downstream reads a filter slice positionally — every key is a field name
+a schema wrote — so the declared shape is the one every consumer needs and the
+residue is unreachable in practice.
 
 ### There is no closure-where group around `apply()`
 

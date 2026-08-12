@@ -108,6 +108,13 @@ redundant today, since
 already derives `Create` from the name; it is written anyway so the string has
 one place to become a translation key.
 
+The label also loses a *word*, not just a catalogue lookup: Filament's
+`create.single.label` is `New :label` interpolated with `getModelLabel()`, so
+its button reads **New article** where the port's reads a bare **Create**. The
+missing half is the `getDefaultActionModelLabel()` host hook the modal heading
+waits on too, so it is tracked with the modal arm rather than as a translation
+gap.
+
 ### Icons are literal heroicon names with no alias indirection
 
 Filament resolves every prebuilt action's icon through

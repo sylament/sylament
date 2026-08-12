@@ -6,25 +6,17 @@ use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Panels\CurrentPanel;
 use Sylament\Panels\PanelRegistry;
 use Sylament\Panels\Resources\Resource;
+use Sylament\Panels\Resources\ResourceRegistry;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
-use Sylament\Panels\Tests\Fixtures\Resources\ResourceRegistryHost;
 use Sylament\Schemas\State\PropertyAccessor;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 function panelsArticleResource(): ArticleResource
 {
-    $host = test()->getContainer()->get(ResourceRegistryHost::class);
+    $registry = test()->getContainer()->get(ResourceRegistry::class);
 
-    expect($host)->toBeInstanceOf(ResourceRegistryHost::class);
-
-    /** @var ResourceRegistryHost $host */
-    $resource = $host->registry->get(ArticleResource::class);
-
-    expect($resource)->toBeInstanceOf(ArticleResource::class);
-
-    /** @var ArticleResource $resource */
-    return $resource;
+    return $registry->get(ArticleResource::class);
 }
 
 /**

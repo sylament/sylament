@@ -53,6 +53,37 @@ it('serves a second page with its own navigation state', function (): void {
         ->and(mb_substr_count($html, 'aria-current="page"'))->toBe(1);
 });
 
+it('passes route parameters to the page component as props', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $crawler = $client->request('GET', '/probe/articles/41/probe');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('[data-probe-record="41"]')->count())->toBe(1);
+});
+
+it('leaves a resource index page without a record prop', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $crawler = $client->request('GET', '/probe/articles');
+
+    expect($client->getResponse()->getStatusCode())->toBe(200)
+        ->and($crawler->filter('[data-probe-record=""]')->count())->toBe(1);
+});
+
+it('turns a mount-time NotFoundHttpException into a 404 response', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $client->catchExceptions(true);
+    $client->request('GET', '/probe/articles/missing/probe');
+
+    expect($client->getResponse()->getStatusCode())->toBe(404);
+});
+
+it('renders the notifications outlet in the document', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $crawler = $client->request('GET', '/admin');
+
+    expect($crawler->filter('body > [data-controller~="sylament--notifications--notifications"]')->count())->toBe(1);
+});
+
 it('refuses a request that names no panel', function (): void {
     $request = Request::create('/admin');
     $request->attributes->set('_sylament_page', UnregisteredPage::class);

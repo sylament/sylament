@@ -475,7 +475,7 @@ Enums, contracts, HTTP layer, events, templates —
 | [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | — |
 | [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | three aliases: the shell's two ([Layout templates](#layout-templates)) and the dashboard's navigation icon ([Dashboard](#dashboard)) |
 | [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships one Stimulus controller (`sidebar`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets) |
-| [`Routing\PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php) | [`routes/web.php`](../../../vendor/filament/filament/routes/web.php) — the per-panel route group and its `$page::registerRoutes($panel)` loop, [`Pages/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasRoutes.php) `routes()` | in progress | [Routing](#routing) |
+| [`Routing\PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php) | [`routes/web.php`](../../../vendor/filament/filament/routes/web.php) — the per-panel route group and its `$page::registerRoutes($panel)` / `$resource::registerRoutes($panel)` loops, [`Pages/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasRoutes.php) `routes()`, [`Resources/Resource/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) `registerRoutes()` | in progress | [Routing](#routing) |
 | [`Controllers\PageController`](../../../packages/panels/src/Controllers/PageController.php) | no Filament counterpart — a Filament page **is** its own route action | in progress | [Routing](#routing) |
 | [Document template](../../../packages/panels/templates/partials/Document/index.html.twig) | [`components/layout/base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php) | in progress | [Routing](#routing) |
 | [Page template](../../../packages/panels/templates/partials/Page/index.html.twig) | [`components/page/index.blade.php`](../../../vendor/filament/filament/resources/views/components/page/index.blade.php) | in progress | [Routing](#routing) |
@@ -589,29 +589,94 @@ at the default empty path mounts at the site root — `''` joined with
 `/`. Trimming only the trailing slash would leave that leading pair in place, and
 a `//`-pathed route matches nothing.
 
-Two things beyond mounting. Every page class file and every provider class file
-is added to the collection as a `FileResource`: the routes are derived from
-method bodies (`getSlug()`, `$routePath`, `panel()`) that Symfony's
-`ObjectLoader` cannot see — it tracks only the loader class and its parents — so
-without them a dev-mode route cache would survive a renamed slug. And a
-`pages()` entry that is not a `Page` subclass throws a `LogicException` naming
-the class, at route-build time rather than at the request that finally hits it.
+Every resource a panel registers mounts a second family in the same pass, one
+`GET` route per [`getPages()`](#resources) entry. The name is
+`Resource::getRouteBaseName($panel)` plus the registration **key** —
+`sylament.<panel>.resources.<slug>.index`, `….create`, `….edit` — and the path
+joins three pieces through the same trim-and-re-prefix, so an `index` registered
+at `/` collapses onto the resource root (`/admin/articles`) while
+`/{record}/edit` keeps its placeholder (`/admin/articles/{record}/edit`). The
+defaults are the page family's three verbatim: `_sylament_page` names the **page**
+class, never the resource, which is what lets one `PageController` serve both
+families — a resource page finds its resource through its own `$resource` static,
+not off the route. Building these routes resolves each resource **out of the
+container**, the loader holding [`ResourceRegistry`](#resources) beside the panel
+one, because a slug and a page map are instance methods here where Filament's are
+statics: route loading is therefore the first thing in a request that
+instantiates a resource service, and `getPages()` runs once at route-build time
+rather than per request.
+
+Two things beyond mounting. Every page class file, every resource class file and
+every provider class file is added to the collection as a `FileResource`: the
+routes are derived from method bodies (`getSlug()`, `$routePath`, `getPages()`,
+`panel()`) that Symfony's `ObjectLoader` cannot see — it tracks only the loader
+class and its parents — so without them a dev-mode route cache would survive a
+renamed slug. And an entry that is not the subclass it claims to be throws a
+`LogicException` naming the class, at route-build time rather than at the request
+that finally hits it: `pages()` entries against `Page`, `resources()` entries
+against `Resource`, and a resource's own `getPages()` entries against `Page`.
+
+Nothing is silently overwritten, either. `RouteCollection::add()` unsets a name
+before assigning it and checks nothing, so two mounts deriving one route name
+used to leave the later one standing and the earlier one unreachable — with no
+error at route-build time, at request time or in `debug:router` — and resources
+multiply the ways to collide (two pages sharing a `$slug`, two resources sharing
+a slug, a resource page landing on a page's name). Every mount now goes through
+one `addRoute()` that records the name's owner and throws a `LogicException`
+naming both mounts when a second claims it. The compile-time
+[component-name check](#pages-register-as-live-components-through-a-compiler-pass-not-per-class-attributes)
+does not cover this and cannot: it keys on the FQCN, which is exactly what
+differs when two classes derive one slug.
 
 [`PageController`](../../../packages/panels/src/Controllers/PageController.php)
 is the single action every panel route points at. It resolves the panel through
 `CurrentPanel`, resolves the page **service** from the class-keyed
 `ServiceLocator`
 [`PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php)
-builds, and renders the Document template with `panel`, `pageTitle` and
-`componentName`. Each failure mode is its own `LogicException` naming the missing
-piece — a page that is not a registered service names the registration to add,
-since a page reached through `new` would have no dependencies injected.
+builds, and renders the Document template with `panel`, `pageTitle`,
+`componentName` and `componentProps`. Each failure mode is its own
+`LogicException` naming the missing piece — a page that is not a registered
+service names the registration to add, since a page reached through `new` would
+have no dependencies injected.
+
+`componentProps` is the route → component bridge, and the whole rule is one
+line: every matched route parameter (`_route_params`) whose name does not start
+with `_`. That drops the two `_sylament_*` defaults the loader writes and keeps
+the user's own placeholders, so `/admin/articles/{record}/edit` hands the page
+`{record: '12'}`. The document spreads it into `component()`, where
+ux-twig-component matches each entry against the page's `mount()` parameters **by
+name**, then against writable properties, and turns whatever is left into an HTML
+attribute on the page's root element — so a placeholder no page mounts paints
+itself into the markup rather than erroring, which is the one shape to watch for.
+A prop must be a `#[LiveProp]` to survive past the first render: only live props
+are dehydrated into `data-live-props-value`, and a plain public property is gone
+by the time the component posts back.
+
+A page can 404 from its `mount()`, and the controller is what lets that reach the
+kernel. The mount runs **inside** `Twig::render()` — the document is what invokes
+the component — and Twig wraps any non-`Twig\Error` thrown during a render in a
+`RuntimeError`, so a `NotFoundHttpException` would arrive at the kernel as a
+template error and be answered 500. The controller catches `RuntimeError` and
+rethrows its previous exception when that is an `HttpExceptionInterface`,
+[unwrapping the wrapper and nothing else](#a-mount-time-http-exception-is-unwrapped-from-twigs-render-error).
 
 The two templates split the document from the page. `Document/index.html.twig`
 is the `<html>` shell — title (the page title, then the brand name when the panel
-has one), `sylamentStyles()`, the importmap, and the `Layout` component with the
-page's live component in its content block, invoked by the tag name
-`Page::getComponentName()` returns. `Page/index.html.twig` is what
+has one), `sylamentStyles()`, the importmap, the `Layout` component with the
+page's live component in its content block (invoked by the tag name
+`Page::getComponentName()` returns, and given `componentProps`), and the
+notifications outlet. That outlet is
+`<twig:SylamentNotifications:Notifications />` as a direct `<body>` child outside
+the layout — the position Filament's
+`@livewire(Filament\Livewire\Notifications::class)` holds in `base.blade.php` —
+and it is the document's job rather than the application's now that panels
+declares `sylament/notifications`. The **actions** outlet deliberately is not
+here, and Filament agrees: `<x-filament-actions::modals />` sits in its *page*
+view, not its layout. Ours has a second, harder reason —
+[`Modals`](../actions/has-actions.md) resolves its host live component by walking
+ux-twig-component's `ComponentStack`, so it only works rendered inside the
+component whose actions it shows, which a document-level outlet is not.
+`Page/index.html.twig` is what
 `Page::getTemplate()` falls back to: the `Header` (rendered only when the page
 has a heading or subheading) above an empty `sy-pa-page-content` container that
 stays empty until pages carry schemas. Both are `partials/`, not `components/` —
@@ -622,7 +687,7 @@ Four divergences are theirs:
 [a page is rendered by a controller rather than routed to directly](#a-panel-page-is-rendered-by-a-controller-not-routed-to-directly),
 [the document calls `importmap()` unguarded](#the-document-calls-importmap-unguarded),
 [the route import carries no prefix](#the-route-import-carries-no-prefix-because-the-panel-path-is-authoritative),
-and [the document renders no notifications outlet](#the-document-renders-no-notifications-outlet).
+and [a mount-time HTTP exception is unwrapped from Twig's render error](#a-mount-time-http-exception-is-unwrapped-from-twigs-render-error).
 
 ## Semantics
 
@@ -1129,23 +1194,31 @@ Adding `->prefix('/admin')` there double-prefixes — a panel declaring
 URL rather than as an error, because the routes exist and are simply somewhere
 else. `Panel::path()` is the one place a panel's mount point is written.
 
-### The document renders no notifications outlet
+### A mount-time HTTP exception is unwrapped from Twig's render error
 
-Filament's `base.blade.php` emits `@livewire(Filament\Livewire\Notifications::class)`
-in every panel document, so a notification sent from any page has a stack to land
-in. Ours does not, and the reason is the dependency rule rather than a view
-decision: `sylament/panels` does not require `sylament/notifications`, and a
-template that unconditionally renders `<twig:SylamentNotifications:Notifications />`
-is an unconditional dependency on a package the manifest does not declare —
-precisely the shape that breaks a split repo. Until panels either declares the
-dependency or gates the outlet on the bundle being registered, an application
-that wants panel-wide notifications renders the tag from its own page template.
+An edit page whose `{record}` matches nothing 404s from `mount()`, and in
+Filament that needs no machinery: the page **is** the route action, so the
+exception its mount throws is already the one the framework answers. Here it is
+not. [A page is rendered by a controller](#a-panel-page-is-rendered-by-a-controller-not-routed-to-directly),
+the controller renders the document, and the document is what invokes the page's
+component — so the mount runs inside `Twig::render()`, and `Twig\Template` wraps
+every non-`Twig\Error` thrown during a render in a `RuntimeError` carrying the
+original as its previous. Left alone, every mount-time `NotFoundHttpException`
+is answered **500**, with the real exception two frames down in a stack trace.
 
-**Half-resolved by the resource vertical.** `sylament/panels` now declares
-`sylament/notifications` (alongside `sylament/actions`, `sylament/schemas`,
-`sylament/tables` and `doctrine/orm`), so the manifest objection is gone; the
-document template still renders no outlet, and that is what the resource pages
-add. Until it does, the workaround above stands.
+So [`PageController`](../../../packages/panels/src/Controllers/PageController.php)
+catches `RuntimeError`, and rethrows `getPrevious()` when it is an
+`HttpExceptionInterface` — otherwise it rethrows the `RuntimeError` untouched, so
+a genuine template bug still reads as one. One level is exactly enough and no
+loop is wanted: Twig re-throws a `Twig\Error` from an enclosing template or block
+as-is (only a *non*-`Error` gets wrapped), so however deep the component sits,
+there is one wrapper. The unwrap is deliberately narrow — an `HttpExceptionInterface`
+is a value the kernel knows how to answer, and nothing else qualifies.
+
+The general shape is worth naming, because it is not only about 404s: anything a
+page's `mount()` throws to the *framework* rather than to the user has to survive
+this trip, and a redirect-by-exception or an `AccessDeniedException` will want the
+same unwrap when authorization lands.
 
 ### The dashboard title is a literal, not a translation key
 

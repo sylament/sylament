@@ -10,7 +10,9 @@ use Sylament\Panels\CurrentPanel;
 use Sylament\Panels\Pages\Page;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Twig\Environment;
+use Twig\Error\RuntimeError;
 
 final readonly class PageController
 {
@@ -42,10 +44,37 @@ final readonly class PageController
             throw new LogicException(sprintf('The page locator returned a non-page service for %s.', $pageClass));
         }
 
-        return new Response($this->twig->render('@SylamentPanels/partials/Document/index.html.twig', [
-            'panel' => $panel,
-            'pageTitle' => $page->getTitle(),
-            'componentName' => $pageClass::getComponentName(),
-        ]));
+        try {
+            $document = $this->twig->render('@SylamentPanels/partials/Document/index.html.twig', [
+                'panel' => $panel,
+                'pageTitle' => $page->getTitle(),
+                'componentName' => $pageClass::getComponentName(),
+                'componentProps' => $this->getComponentProps($request),
+            ]);
+        } catch (RuntimeError $runtimeError) {
+            $previous = $runtimeError->getPrevious();
+
+            throw $previous instanceof HttpExceptionInterface ? $previous : $runtimeError;
+        }
+
+        return new Response($document);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function getComponentProps(Request $request): array
+    {
+        $parameters = $request->attributes->get('_route_params');
+
+        if (! is_array($parameters)) {
+            return [];
+        }
+
+        return array_filter(
+            $parameters,
+            static fn (int|string $name): bool => is_string($name) && ! str_starts_with($name, '_'),
+            ARRAY_FILTER_USE_KEY,
+        );
     }
 }

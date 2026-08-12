@@ -5,10 +5,11 @@ Ports [`filament/filament`](../../../vendor/filament/filament) into
 the `filament/filament` package. The admin shell: panel config, routing, auth,
 resources, pages, navigation.
 
-**Status:** todo — see the [status vocabulary](../README.md#statuses) and
+**Status:** in progress — see the [status vocabulary](../README.md#statuses) and
 [what goes where](../README.md#one-row-per-file-one-file-per-thing).
 
-The tables below are structure only; nothing has been audited yet.
+The tables below are structure plus the first ported rows; nothing has been
+audited end to end yet.
 [`support/component.md`](../support/component.md) is the shape each detail file
 follows.
 
@@ -73,7 +74,25 @@ The panel surface —
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| _not audited yet_ | | | |
+| [`Navigation\NavigationItem`](../../../packages/panels/src/Navigation/NavigationItem.php) | [`Navigation/NavigationItem.php`](../../../vendor/filament/filament/src/Navigation/NavigationItem.php) | in progress | — |
+| _rest not audited yet_ | | | |
+
+### NavigationItem
+
+The item's own surface is ported — label, icon and active icon, url with the
+new-tab flag, badge and badge colour, sort, group, the visible/hidden pair with
+hidden winning, and the memoising `isActiveWhen()`/`isActive()`.
+
+Deferred, all todo:
+
+- `key()` / `getKey()` — the identity a nested item is addressed by; it only
+  earns its keep once items nest.
+- `parentItem()` / `getParentItem()` and `childItems()` / `getChildItems()` /
+  `isChildItemsActive()` — the nesting arm, deferred whole with `key`.
+- The badge tooltip (`HasBadgeTooltip`) and extra attributes
+  (`HasExtraAttributes`) — neither trait is ported in `support` yet.
+- `getBadgeColor()` takes no `?string $badge` argument here, and `group()` takes
+  no `UnitEnum` arm — both land with the surface that needs them.
 
 ## Features
 

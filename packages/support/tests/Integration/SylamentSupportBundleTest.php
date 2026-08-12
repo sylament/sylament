@@ -72,6 +72,14 @@ it('provides the icon manager as a service', function (): void {
     expect($this::getContainer()->get(IconManager::class))->toBeInstanceOf(IconManager::class);
 });
 
+it('exposes the icon manager on the public container', function (): void {
+    // Shipped closures type-hint the manager and the `Invoker` resolves them from the service
+    // container by class-string, so a private definition answers no lookup at render time.
+    $container = $this::bootKernel()->getContainer();
+
+    expect($container->get(IconManager::class))->toBeInstanceOf(IconManager::class);
+});
+
 it('injects the icon manager into the icon extension', function (): void {
     $extension = $this::getContainer()->get('sylament_support.icon_extension');
 

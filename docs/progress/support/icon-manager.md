@@ -74,6 +74,16 @@ registering alias overrides injects the manager or fetches it from the
 container; it cannot reach it statically, which is the Symfony answer to what a
 facade was doing.
 
+The FQCN alias is **public**, for the same reason
+[the colour policies are](color-policies.md): shipped closures type-hint the
+manager — [`Dashboard::getNavigationIcon()`](../panels/README.md#dashboard) is
+the first — and the
+[`Invoker`](../../../packages/support/src/Evaluation/Invoker.php) resolves a
+closure parameter through
+`ContainerInterface::has()`/`get()`, which no private service answers. Making it
+private again turns every such closure into *"[$icons] was unresolvable"* at
+render time, with nothing at container-build time to catch it.
+
 ### Alias overrides are declarable from bundle configuration
 
 Filament has one way to override an alias: call `FilamentIcon::register([...])`

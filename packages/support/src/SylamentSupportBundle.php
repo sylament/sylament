@@ -178,13 +178,17 @@ class SylamentSupportBundle extends SylamentBundle
             ->factory(ComponentManager::resolve(...))
             ->alias(ComponentManager::class, 'sylament_support.component_manager');
 
+        // Shipped closures type-hint the manager (`Dashboard::getNavigationIcon()`), and the
+        // `Invoker` resolves a closure parameter through `Container::get()`, which no private
+        // service answers — so the FQCN alias is public.
         $services
             ->set('sylament_support.icon_manager', IconManager::class)
             ->args([
                 '$renderer' => service(IconRendererInterface::class)->nullOnInvalid(),
             ])
             ->call('register', [$icons])
-            ->alias(IconManager::class, 'sylament_support.icon_manager');
+            ->alias(IconManager::class, 'sylament_support.icon_manager')
+            ->public();
 
         $services
             ->set('sylament_support.component_resolver', ComponentResolver::class)

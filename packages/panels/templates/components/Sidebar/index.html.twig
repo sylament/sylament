@@ -1,0 +1,17 @@
+{% props navigation = [] %}
+
+<aside
+    {{ attrs({
+        id: 'sy-pa-sidebar',
+        class: 'sy sy-pa-sidebar',
+        'data-sylament--panels--sidebar-target': 'sidebar',
+    }, attributes.all) }}
+>
+    <nav class="sy-pa-sidebar-nav">
+        <ul class="sy-pa-sidebar-groups">
+            {% for group in navigation %}
+                <twig:SylamentPanels:SidebarGroup :group="group" :groupIndex="loop.index0" />
+            {% endfor %}
+        </ul>
+    </nav>
+</aside>

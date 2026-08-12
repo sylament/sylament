@@ -164,4 +164,29 @@ Enums, contracts, HTTP layer, events, templates —
 
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
-| _not audited yet_ | | | |
+| [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | — |
+| _rest not audited yet_ | | | |
+
+### Layout templates
+
+`Sidebar`, `SidebarGroup` and `SidebarItem` render the navigation model as
+static Twig components: the `<aside id="sy-pa-sidebar">` shell, one `<li>` per
+group with its label button carrying `aria-expanded`/`aria-controls` and the
+`sylament--panels--sidebar#toggleGroup` action, and one `<li>` per visible item
+with its icon (the active icon when the item is active), label and badge.
+Hidden items never render, and collapse state is markup only — the
+`sy-collapsed` class plus `data-group-label`, which the Stimulus controller
+reads and writes.
+
+What Filament's sidebar has and this does not, all todo:
+
+- Desktop collapse (the narrow icon-only rail) and the collapsed-state tooltips
+  on items — both need the panel-level sidebar settings M2 · 2 introduces.
+- Sub-navigation: Filament renders `childItems` nested under an active item, and
+  the nesting arm of `NavigationItem` is deferred whole (see
+  [NavigationItem](#navigationitem)).
+- The rest of `resources/views/components` — topbar, logo, avatar, tenant menu,
+  theme switcher, page and header — none of it ported.
+
+The Livewire-shell → static-component divergence these templates sit on is
+recorded with the layout that composes them.

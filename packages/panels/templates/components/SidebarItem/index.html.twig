@@ -1,0 +1,23 @@
+{% props item %}
+
+{% set icon = item.isActive ? (item.getActiveIcon ?? item.getIcon) : item.getIcon %}
+
+<li {{ attrs({class: ['sy sy-pa-sidebar-item', {'sy-active': item.isActive}]}, attributes.all) }}>
+    <a
+        {{ attrs({
+            class: 'sy-pa-sidebar-item-btn',
+            href: item.getUrl,
+            target: item.shouldOpenUrlInNewTab ? '_blank' : null,
+        }) }}
+    >
+        {% if icon %}
+            <twig:SylamentSupport:Icon :icon="icon" class="sy-pa-sidebar-item-icon" />
+        {% endif %}
+
+        <span class="sy-pa-sidebar-item-label">{{ item.getLabel }}</span>
+
+        {% if item.getBadge is not null %}
+            <twig:SylamentSupport:Badge :color="item.getBadgeColor ?? 'primary'" class="sy-pa-sidebar-item-badge">{{ item.getBadge }}</twig:SylamentSupport:Badge>
+        {% endif %}
+    </a>
+</li>

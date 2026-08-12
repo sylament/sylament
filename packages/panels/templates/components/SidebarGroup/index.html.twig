@@ -1,0 +1,43 @@
+{% props group, groupIndex = 0 %}
+
+{% set items = group.getItems|filter(item => item.isVisible) %}
+{% set itemsId = 'sy-pa-sidebar-group-items-' ~ groupIndex %}
+
+<li
+    {{ attrs({
+        class: ['sy sy-pa-sidebar-group', {
+            'sy-collapsed': group.isCollapsed,
+            'sy-active': group.isActive,
+        }],
+        'data-group-label': group.getLabel,
+    }, attributes.all) }}
+>
+    {% if group.getLabel %}
+        <button
+            {{ attrs({
+                class: 'sy-pa-sidebar-group-btn',
+                type: 'button',
+                'aria-expanded': group.isCollapsed ? 'false' : 'true',
+                'aria-controls': itemsId,
+                'data-action': group.isCollapsible ? 'sylament--panels--sidebar#toggleGroup' : false,
+                disabled: not group.isCollapsible,
+            }) }}
+        >
+            {% if group.getIcon %}
+                <twig:SylamentSupport:Icon :icon="group.getIcon" class="sy-pa-sidebar-group-icon" />
+            {% endif %}
+
+            <span class="sy-pa-sidebar-group-label">{{ group.getLabel }}</span>
+
+            {% if group.isCollapsible %}
+                <twig:SylamentSupport:Icon icon="heroicons:chevron-down" class="sy-pa-sidebar-group-chevron" />
+            {% endif %}
+        </button>
+    {% endif %}
+
+    <ul id="{{ itemsId }}" class="sy-pa-sidebar-group-items">
+        {% for item in items %}
+            <twig:SylamentPanels:SidebarItem :item="item" />
+        {% endfor %}
+    </ul>
+</li>

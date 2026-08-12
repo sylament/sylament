@@ -58,7 +58,7 @@ it('marks only the active item with aria-current', function (): void {
         'navigation' => sidebarFixtureNavigation(),
     ]);
 
-    expect(substr_count($html, 'aria-current="page"'))->toBe(1);
+    expect(mb_substr_count($html, 'aria-current="page"'))->toBe(1);
 });
 
 it('renders a non-collapsible group label as a plain element with no disclosure wiring', function (): void {

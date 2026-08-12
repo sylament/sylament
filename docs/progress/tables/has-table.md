@@ -1019,6 +1019,33 @@ rooted at `tableDeferredFilters`. So the page never resets, the draft bag is
 never mirrored back from the write, and the next `applyTableFilters()` overwrites
 it with the stale draft.
 
+### A host trait is analysed only through a class that composes it
+
+PHPStan skips a trait no analysed class uses, and the repo ignores
+`trait.unused` globally, so the skip is silent. This trait sat in exactly that
+position from the day it landed until panels' `ListRecords` became the first
+shipped class to `use` it; composing it turned on both the standalone and the
+per-using-class analysis at once and surfaced **eleven** latent level-max errors
+here, plus eight in [`HasActions`](../actions/has-actions.md#a-host-trait-is-analysed-only-through-a-class-that-composes-it).
+Four were real runtime gaps rather than narrowing noise, and all four are fixed:
+the two unguarded `(string)` casts on a record key, the unchecked row type
+behind an `is_iterable()` PHPStan had proved unreachable, and the
+half-implemented shape check on a
+[filter slice](#one-filter-slice-is-a-plain-array-read-not-a-propertyaccessor-walk).
+The rest were type-flow noise — a `blank()` call ordered after the narrowing
+that makes its `@phpstan-assert-if-false` vacuous, and `evaluate()`'s generic
+binding `T` to `Closure` when the value handed to it is statically a closure.
+
+The durable half is the rule, not the incident: **a host trait carries no
+static-analysis coverage of its own** — it inherits whatever its consumers give
+it. Two consequences when extending this trait or writing another host one. A
+guard written against `mixed` is checked only in the contexts a using class
+supplies, so a fixture host in this package's tests is worth as much to the
+analyser as a shipped page is. And a scoped run over the package that *owns* the
+trait cannot see the errors that exist only in a using class's context, which is
+why the whole set arrived at once in a lane that had touched neither package —
+only the unscoped `composer test:static` sees them.
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
@@ -1460,7 +1487,8 @@ support's [own carrier](../support/pagination.md) rather than Laravel's.
 
 The **keying** is Filament's whole: `mapWithKeys()`'s contract is ported — each
 entry re-keyed by the record key, an array record's `__key` entry synthesised
-from the source array's own key when absent and cast to `string` either way — so
+from the source array's own key when absent and put through the same
+printable-key rule the object arm uses either way — so
 `$records[$key]` is the bare lookup a row-scoped action needs. It applies to both
 arms: a returned `Paginator` is re-keyed too, through `withRecords()`, so the
 carrier that comes back is a **clone** of the one the closure returned and the
@@ -1481,6 +1509,22 @@ Anything else the closure returns is a `LogicException` naming both accepted
 shapes. Filament has no such guard, because Eloquent's builder cannot return
 garbage; a userland closure can, and a table that silently renders empty for a
 `null` return is the failure worth stopping on.
+
+**The rows inside it are checked the same way**, and that half arrived late —
+the `is_iterable()` guard above made the keying loop statically unreachable, so
+[nothing analysed it](#a-host-trait-is-analysed-only-through-a-class-that-composes-it)
+until a class composed the trait. A row that is neither an object nor an array
+used to reach `getTableRecordKey(object|array $record)` and die there on a
+`TypeError` naming a parameter the caller never wrote; it now throws a
+`LogicException` naming the table and the type that arrived. Two more refusals
+sit beside it, both on array rows. An array whose keys are not all strings is
+refused: every column read and the `__key` entry address a record by field name,
+so a list is not a record, and it used to be accepted and keyed by its position.
+And a `__key` entry that is not printable — an array, a non-`Stringable` object,
+or blank — is refused where the bare `(string)` cast used to turn it into
+`"Array"` plus a PHP warning, or into a fatal `Error`. All three are
+garbage-in cases with no green test between them; the failure they replace was
+either silent or unattributable.
 
 Permanent for the `Collection` arm; the `Paginator` arm is now shipped rather
 than pending.
@@ -1540,9 +1584,11 @@ The action side has the same-shaped twin,
 [`InteractsWithRecord::resolveRecordKey()`](../actions/action.md#record-key-resolution-is-hoisted-to-hasactions)
 — same `id`-through-the-accessor read, same `Stringable` unwrap, same
 `LogicException` for an array record missing its key entry — differing in what
-an *unkeyable* record means: it returns `null` where this throws, and it
-returns `null` for a blank key in the array arm where this returns the blank
-string. The asymmetry is deliberate and matches Filament's own pair. A table
+an *unkeyable* record means: it returns `null` where this throws, in both arms.
+(The array arm used to disagree in a third way, returning the blank string for a
+blank `__key` where the object arm threw; both arms now run one printable-key
+rule, so a blank or unprintable key throws wherever it appears.) The asymmetry
+is deliberate and matches Filament's own pair. A table
 building its row index cannot proceed without a key, so an unkeyable record is
 a configuration error worth stopping on; an action assembling a mount context
 can simply omit `recordKey` and stay mountable. Keep them in step if the read
@@ -1837,13 +1883,21 @@ schema state paths resolved against the host object, which is a different job
 done by a different layer. What the plain read costs is the `null` a missing key
 would have produced anyway, so the arms match.
 
-The `is_array()` check is the part that is not just a simplification. Both bags
+The shape check is the part that is not just a simplification. Both bags
 are **writable** `LiveProp`s, which ux-live-component exempts from the prop
 checksum by design — the client can put anything under any key, and a forged or
 merely stale payload can leave a string where a filter's state map should be.
 Validating on read means the filter layer receives either a state map or
 `null`, never a scalar it will index into; the same posture the per-page getter
-takes, for the same reason. `parseTableFilterName()` carries a smaller version of
+takes, for the same reason. The check is **field-keyed**, not merely
+`is_array()`: a slice whose keys are not all strings is a list the client put
+where a map belongs, which is not a state map either, so it reads as `null` too.
+That is what the declared `array<string, mixed>|null` return has always claimed
+and what the prose above it has always said; the `is_array()` half of the check
+went unchallenged for as long as
+[nothing composed the trait](#a-host-trait-is-analysed-only-through-a-class-that-composes-it).
+A slice that reads as `null` reaches a filter as `[]`, through the same `?? []`
+a missing key already took. `parseTableFilterName()` carries a smaller version of
 it: Filament's returns `$name::getDefaultName()` unguarded against a `string`
 return type, so a `BaseFilter` subclass that never declared a default name is a
 `TypeError` there, where ours falls back to the class-string with `?? $name`.

@@ -37,6 +37,16 @@ it('reads one filter slice out of the applied bag and tolerates junk shapes', fu
         ->and($host->getTableFilterState('absent'))->toBeNull();
 });
 
+it('reads a filter slice that is not a field-keyed map as no state at all', function (): void {
+    $host = new TableHost(static fn (Table $table): Table => $table->filters([Filter::make('isPublished')]));
+
+    $host->tableFilters = ['isPublished' => ['one', 'two']];
+    $host->tableDeferredFilters = ['isPublished' => ['one', 'two']];
+
+    expect($host->getTableFilterState('isPublished'))->toBeNull()
+        ->and($host->getTableFilterFormState('isPublished'))->toBeNull();
+});
+
 it('reads the form state out of the deferred bag while filters are deferred, and the applied bag otherwise', function (): void {
     $host = new TableHost(static fn (Table $table): Table => $table->filters([Filter::make('isPublished')]));
 

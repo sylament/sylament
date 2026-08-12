@@ -34,7 +34,7 @@ trait HasActions
     use ComponentToolsTrait;
 
     /**
-     * @var array<int, array{name: string, arguments: array<mixed>, context: array<mixed>}>
+     * @var array<int, array{name: string, arguments: array<string, mixed>, context: array<string, mixed>}>
      */
     #[LiveProp(dehydrateWith: 'dehydrateMountedActions')]
     public array $mountedActions = [];
@@ -96,8 +96,8 @@ trait HasActions
     }
 
     /**
-     * @param array<mixed> $arguments
-     * @param array<mixed> $context
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed> $context
      */
     #[LiveAction]
     public function mountAction(
@@ -162,7 +162,7 @@ trait HasActions
     }
 
     /**
-     * @param array<mixed> $arguments
+     * @param array<string, mixed> $arguments
      */
     #[LiveAction]
     public function callMountedAction(#[LiveArg] array $arguments = []): mixed
@@ -192,11 +192,15 @@ trait HasActions
             if ($this->mountedActionHasSchema($action)) {
                 $action->callBeforeFormValidated();
 
-                $this->getMountedActionSchema(mountedAction: $action)?->getState(afterValidate: function (array $state) use ($action): void {
+                $schema = $this->getMountedActionSchema(mountedAction: $action);
+
+                if ($schema instanceof Schema) {
+                    $state = $schema->getState();
+
                     $action->callAfterFormValidated();
                     $action->data($state);
                     $action->callBefore();
-                });
+                }
             } else {
                 $action->callBefore();
             }
@@ -227,15 +231,7 @@ trait HasActions
 
         $action->arguments($originalArguments);
 
-        $onlyNamesAndContexts = static fn (array $mountedActions): array => array_map(
-            static fn (array $mountedAction): array => [
-                'name' => $mountedAction['name'],
-                'context' => $mountedAction['context'],
-            ],
-            $mountedActions,
-        );
-
-        if ($onlyNamesAndContexts($originallyMountedActions) !== $onlyNamesAndContexts($this->mountedActions)) {
+        if (self::onlyActionNamesAndContexts($originallyMountedActions) !== self::onlyActionNamesAndContexts($this->mountedActions)) {
             return null;
         }
 
@@ -249,8 +245,28 @@ trait HasActions
     }
 
     /**
-     * @param array<mixed> $arguments
-     * @param array<mixed> $context
+     * The identity a mounted stack is compared by while an action runs: an
+     * action that replaced itself changed a name or a context, where one that
+     * merely re-read its arguments did not.
+     *
+     * @param array<int, array{name: string, arguments: array<string, mixed>, context: array<string, mixed>}> $mountedActions
+     *
+     * @return array<int, array{name: string, context: array<string, mixed>}>
+     */
+    private static function onlyActionNamesAndContexts(array $mountedActions): array
+    {
+        return array_map(
+            static fn (array $mountedAction): array => [
+                'name' => $mountedAction['name'],
+                'context' => $mountedAction['context'],
+            ],
+            $mountedActions,
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $arguments
+     * @param array<string, mixed> $context
      */
     public function replaceMountedAction(string $name, array $arguments = [], array $context = []): void
     {
@@ -441,7 +457,7 @@ trait HasActions
     }
 
     /**
-     * @return array<int, array{name: string, arguments: array<mixed>, context: array<mixed>}>
+     * @return array<int, array{name: string, arguments: array<string, mixed>, context: array<string, mixed>}>
      */
     public function dehydrateMountedActions(): array
     {
@@ -449,7 +465,7 @@ trait HasActions
     }
 
     /**
-     * @param array<int, array{name: string, arguments: array<mixed>, context: array<mixed>}> $mountedActions
+     * @param array<int, array{name: string, arguments: array<string, mixed>, context: array<string, mixed>}> $mountedActions
      * @return array<Action>
      */
     protected function cacheMountedActions(array $mountedActions): array
@@ -462,7 +478,7 @@ trait HasActions
     }
 
     /**
-     * @param array<int, array{name: string, arguments: array<mixed>, context: array<mixed>}> $actions
+     * @param array<int, array{name: string, arguments: array<string, mixed>, context: array<string, mixed>}> $actions
      * @return array<Action>
      */
     protected function resolveActions(array $actions): array
@@ -470,7 +486,7 @@ trait HasActions
         $resolvedActions = [];
 
         foreach ($actions as $actionNestingIndex => $descriptor) {
-            if (blank($descriptor['name'] ?? null)) {
+            if (mb_trim($descriptor['name']) === '') {
                 throw new ActionNotResolvableException('An action tried to resolve without a name.');
             }
 
@@ -486,7 +502,7 @@ trait HasActions
                 break;
             }
 
-            if (filled($descriptor['arguments'] ?? [])) {
+            if ($descriptor['arguments'] !== []) {
                 $resolvedAction->mergeArguments($descriptor['arguments']);
             }
 
@@ -607,7 +623,7 @@ trait HasActions
     }
 
     /**
-     * @param array{name: string, arguments: array<mixed>, context: array<mixed>} $descriptor
+     * @param array{name: string, arguments: array<string, mixed>, context: array<string, mixed>} $descriptor
      * @param array<Action> $parentActions
      */
     protected function resolveAction(array $descriptor, array $parentActions): ?Action
@@ -623,7 +639,7 @@ trait HasActions
     }
 
     /**
-     * @param array{name: string, arguments: array<mixed>, context: array<mixed>} $descriptor
+     * @param array{name: string, arguments: array<string, mixed>, context: array<string, mixed>} $descriptor
      * @param array<Action> $parentActions
      */
     protected function resolveTableAction(array $descriptor, array $parentActions): ?Action
@@ -662,7 +678,7 @@ trait HasActions
     }
 
     /**
-     * @param array{name: string, arguments: array<mixed>, context: array<mixed>} $descriptor
+     * @param array{name: string, arguments: array<string, mixed>, context: array<string, mixed>} $descriptor
      * @param array<Action> $parentActions
      */
     protected function resolveSchemaComponentAction(array $descriptor, array $parentActions): ?Action

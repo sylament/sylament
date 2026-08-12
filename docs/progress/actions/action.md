@@ -582,8 +582,8 @@ no-op (return `null`) when unset. `Action`
 `*FormValidated` pair fires is the host's business —
 [`HasActions::callMountedAction()`](has-actions.md#callmountedaction-drops-rate-limiting-authorization-transactions-and-redirects)
 runs `callBeforeFormValidated()` before the mounted schema's `getState()` and
-`callAfterFormValidated()` inside its `afterValidate` callback, so a failed
-validation never reaches the second one.
+`callAfterFormValidated()` immediately after it returns, so a failed validation —
+which throws out of `getState()` — never reaches the second one.
 
 **Missing vs Filament:** Filament's `callBefore()` / `callAfter()`
 dispatch `ActionCalling` / `ActionCalled` events (`Event::dispatch(...)`, the

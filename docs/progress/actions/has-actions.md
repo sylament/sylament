@@ -65,13 +65,14 @@ Reference — the Filament source this is diffed against:
 ## Surface
 
 _Blocked by_ names what has to land first. _Detail_ carries **detail** → the
-write-up in [Details](#details), and/or **diverges** → the note in
-[Divergences](#divergences).
+write-up in [Details](#details), **diverges** → the note in
+[Divergences](#divergences), and/or **semantics** → the permanent note in
+[Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`resolveRecordUsing()`](../../../packages/actions/src/Concerns/HasActions.php) / `getMountedActionRecord()` | — (new; replaces Filament's per-source record resolution) | done | — | [diverges](#record-resolution-is-a-single-host-callback-not-per-source) |
-| [`$mountedActions`](../../../packages/actions/src/Concerns/HasActions.php) stack + `dehydrateMountedActions()` | `Concerns/InteractsWithActions.php` `$mountedActions` | done | — | [diverges](#the-mounted-action-stack-is-a-server-controlled-liveprop-not-a-client-writable-array) · [diverges](#the-mountedactions-liveprop-dehydrates-through-a-bridge-method) |
+| [`$mountedActions`](../../../packages/actions/src/Concerns/HasActions.php) stack + `dehydrateMountedActions()` | `Concerns/InteractsWithActions.php` `$mountedActions` | done | — | [diverges](#the-mounted-action-stack-is-a-server-controlled-liveprop-not-a-client-writable-array) · [diverges](#the-mountedactions-liveprop-dehydrates-through-a-bridge-method) · [semantics](#the-mounted-action-descriptor-is-typed-string-keyed-and-the-client-fills-two-thirds-of-it) |
 | [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountAction()` | in progress | `CanBeAuthorized` | [detail](#mountaction-drops-authorization) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) |
 | [`callMountedAction(array $arguments = [])`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `callMountedAction()` | in progress | `CanBeRateLimited`, `CanBeAuthorized`, `CanUseDatabaseTransactions`, `CanRedirect` | [detail](#callmountedaction-drops-rate-limiting-authorization-transactions-and-redirects) |
 | [`unmountAction(bool\|string\|null $cancelParentActions = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | `#[Url]` default-action state | [detail](#unmountaction-drops-the-default-action-reset) · [diverges](#the-stack-is-choreographed-declaratively-not-by-client-events) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) |
@@ -177,11 +178,22 @@ the current one — names and contexts only, arguments ignored, Filament-exact �
 and returns without unmounting if a `replaceMountedAction()` swapped it
 mid-call. The schema arm is now Filament's own submit shape rather than a bare
 state lift: guarded by `mountedActionHasSchema()`, it calls
-`callBeforeFormValidated()`, then `$schema->getState(afterValidate: …)` — the
-callback running `callAfterFormValidated()`, `data($state)` and `callBefore()`
-in that order, so **nothing** downstream of validation runs when the state does
-not validate — and a schema-less action takes an `else` branch that calls
-`callBefore()` alone. A raised
+`callBeforeFormValidated()`, then `$schema->getState()`, then
+`callAfterFormValidated()`, `data($state)` and `callBefore()` in that order, so
+**nothing** downstream of validation runs when the state does not validate — and
+a schema-less action takes an `else` branch that calls `callBefore()` alone.
+Filament runs those three inside
+[`getState(afterValidate: …)`](../schemas/schema.md); the port ran them there
+too until the sequence was straightened out, which is behaviour-identical
+because the callback is `getState()`'s last statement before its `return` —
+a throw from validation skips it either way, and nothing runs between it and
+the state landing in `$state`. The reason to straighten it is static: PHPStan
+reads no PHPDoc above a closure, so a closure parameter can carry no key type,
+and `Action::data()` takes `array<string, mixed>`. Writing the state into a
+local is the only shape that keeps the type honest without a signature spec on
+`getState()`'s callback, which the [house rules](../../../CLAUDE.md) do not
+write anywhere. `getState(afterValidate: …)` stays on `Schema` — it is Filament
+API and the resource pages use it. A raised
 [`ValidationException`](../schemas/can-be-validated.md) propagates out of the
 method untouched when the action has a modal to keep open (the stack, the data
 bag and the error bag are all already correct, so the re-render *is* the
@@ -370,6 +382,57 @@ no `PartialsComponentHook` equivalent anywhere in the codebase — LiveComponent
 own re-render model is used unmodified, i.e. every action call re-renders
 however LiveComponent normally would. **Blocked** on schemas ever building a
 partial-render mechanism; low priority until render cost becomes a concern.
+
+## Semantics
+
+Faithful behaviour subtle enough that the next reader would misread the code.
+Permanent, and outliving the detail sections above.
+
+### A host trait is analysed only through a class that composes it
+
+PHPStan skips a trait no analysed class uses, and the repo ignores
+`trait.unused` globally, so this trait went unanalysed from the day it landed
+until panels' `ListRecords` became the first shipped class to `use` it: eight
+latent level-max errors here, and eleven more in
+[`HasTable`](../tables/has-table.md#a-host-trait-is-analysed-only-through-a-class-that-composes-it),
+where the rule itself is written down. **None of the eight was a runtime gap.**
+They were an over-defensive `?? null` / `?? []` against an array shape the trait
+guarantees by construction, `blank()` / `filled()` called on values already
+narrowed past `null` — which makes their `@phpstan-assert-if-*` vacuous and the
+call itself constant — and an `array_map()` callback typed narrower than the
+untyped local closure feeding it, since a closure can carry no PHPDoc PHPStan
+reads.
+
+What replaced the two helper calls is exact rather than approximate.
+`$descriptor['arguments'] !== []` **is** `filled()` for an array, and
+`mb_trim($descriptor['name']) === ''` **is** `blank()` for a string; neither
+value can be `null`, so neither can go through the helper without tripping the
+analyser, and
+[`PresenceGate`](../../../packages/schemas/src/Validation/PresenceGate.php)
+already reads a string's blankness the same way for the same reason. The
+`array_map()` closure became a private method with the descriptor shape on it —
+`onlyActionNamesAndContexts()`, keeping Filament's own name for the local.
+
+### The mounted-action descriptor is typed string-keyed, and the client fills two thirds of it
+
+The stack is
+`array<int, array{name: string, arguments: array<string, mixed>, context: array<string, mixed>}>`,
+and `arguments` / `context` arrive as `#[LiveArg]` values — the client controls
+those two completely, so their key type is a **claim**, not a guarantee: a
+hand-written client can post a JSON array where a map belongs and leave a list
+in the descriptor. It is the right claim, because it is what everything
+downstream declares (`Action::$arguments`, `mergeArguments()` and
+`getArguments()` are all `array<string, mixed>`), and it needs no guard: a list
+merges by position and reads back as arguments no action asked for, with
+nothing to crash on — the same posture
+[`tableFilters`](../tables/has-table.md#the-filter-bags-are-arrays-never-null-and-carry-no-getters)
+takes for its own client-writable bag.
+
+`name` is not a claim but a guarantee, which is why `resolveActions()` may index
+it without a `??` fallback: it is a native `string` parameter of `mountAction()`,
+the only other writer is `replaceMountedAction()`, and the prop is **not**
+writable — so a hydrated stack that reshaped it would fail ux-live-component's
+checksum before this trait ever saw it.
 
 ## Divergences
 

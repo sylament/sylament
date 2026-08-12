@@ -142,6 +142,30 @@ it('throws when the data source returns a non-iterable', function (): void {
         ->toThrow(LogicException::class, 'must return an iterable');
 });
 
+it('throws when the data source yields a row that is not a record', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table->records(fn (): array => ['Airbag', 'Let Down']));
+
+    expect(fn (): array|Paginator => $host->getTableRecords())
+        ->toThrow(LogicException::class, 'must be objects or field-keyed arrays, got string');
+});
+
+it('throws when an array record is not keyed by field name', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table->records(fn (): array => [['Airbag', 'OK Computer']]));
+
+    expect(fn (): array|Paginator => $host->getTableRecords())
+        ->toThrow(LogicException::class, 'keyed by field name');
+});
+
+it('throws when a synthesised __key entry is not printable', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table->records(fn (): array => [
+        ['title' => 'Airbag', '__key' => new stdClass()],
+        ['title' => 'Let Down', '__key' => ['nested']],
+    ]));
+
+    expect(fn (): array|Paginator => $host->getTableRecords())
+        ->toThrow(LogicException::class, '[__key] entry');
+});
+
 it('throws for an object record with no readable id', function (): void {
     $host = new TableHost(fn (Table $table): Table => $table->records(fn (): array => [new Song('Airbag', 'OK Computer')]));
 
@@ -159,6 +183,17 @@ it('throws when getTableRecordKey meets an array without the key entry', functio
 
     $host->getTableRecordKey(['title' => 'Airbag']);
 })->throws(LogicException::class, '[__key] entry');
+
+it('throws when getTableRecordKey meets a key entry it cannot print', function (): void {
+    $host = new TableHost(fn (Table $table): Table => $table);
+
+    expect(fn (): string => $host->getTableRecordKey(['title' => 'Airbag', '__key' => ['nested']]))
+        ->toThrow(LogicException::class, '[__key] entry')
+        ->and(fn (): string => $host->getTableRecordKey(['title' => 'Airbag', '__key' => new stdClass()]))
+        ->toThrow(LogicException::class, '[__key] entry')
+        ->and(fn (): string => $host->getTableRecordKey(['title' => 'Airbag', '__key' => ' ']))
+        ->toThrow(LogicException::class, '[__key] entry');
+});
 
 it('resolves the query lane into entities keyed by their identifier', function (): void {
     $entityManager = EntityManagerFactory::create();

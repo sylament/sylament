@@ -47,7 +47,7 @@ trait HasFilters
     {
         $state = $this->tableFilters[$this->parseTableFilterName($name)] ?? null;
 
-        return is_array($state) ? $state : null;
+        return self::isFilterStateMap($state) ? $state : null;
     }
 
     /**
@@ -62,7 +62,22 @@ trait HasFilters
 
         $state = $bag[$this->parseTableFilterName($name)] ?? null;
 
-        return is_array($state) ? $state : null;
+        return self::isFilterStateMap($state) ? $state : null;
+    }
+
+    /**
+     * A filter's slice is a field-keyed map — the bags are writable props, so
+     * anything else the client puts there (a scalar, or a list) is not one.
+     *
+     * @phpstan-assert-if-true array<string, mixed> $state
+     */
+    private static function isFilterStateMap(mixed $state): bool
+    {
+        if (!is_array($state)) {
+            return false;
+        }
+
+        return array_all(array_keys($state), static fn (int|string $field): bool => is_string($field));
     }
 
     public function parseTableFilterName(string $name): string

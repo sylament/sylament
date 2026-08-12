@@ -144,10 +144,8 @@ trait HasTable
     public function getTableRecordKey(object|array $record): string
     {
         if (is_array($record)) {
-            $key = $record[ArrayRecord::getKeyName()]
-                ?? throw new LogicException(sprintf('Record arrays must have a unique [%s] entry for identification.', ArrayRecord::getKeyName()));
-
-            return (string) $key;
+            return self::toRecordKey($record[ArrayRecord::getKeyName()] ?? null)
+                ?? throw new LogicException(sprintf('Record arrays must have a unique, printable [%s] entry for identification.', ArrayRecord::getKeyName()));
         }
 
         $queryRecordKey = $this->resolveQueryRecordKey($record);
@@ -162,12 +160,22 @@ trait HasTable
             $key = null;
         }
 
+        return self::toRecordKey($key)
+            ?? throw new LogicException(sprintf('Object records must expose a readable non-blank [id] for identification; [%s] does not. Give it one, or use array records with a [%s] entry.', get_debug_type($record), ArrayRecord::getKeyName()));
+    }
+
+    /**
+     * The printable form of a record key, or null when the value cannot
+     * identify a row — blank, or neither scalar nor `Stringable`.
+     */
+    private static function toRecordKey(mixed $key): ?string
+    {
         if ($key instanceof Stringable) {
             $key = (string) $key;
         }
 
-        if (!is_scalar($key) || blank($key)) {
-            throw new LogicException(sprintf('Object records must expose a readable non-blank [id] for identification; [%s] does not. Give it one, or use array records with a [%s] entry.', get_debug_type($record), ArrayRecord::getKeyName()));
+        if (blank($key) || !is_scalar($key)) {
+            return null;
         }
 
         return (string) $key;
@@ -210,7 +218,7 @@ trait HasTable
         $dataSource = $table->getDataSource();
 
         if ($dataSource instanceof Closure) {
-            $records = $table->evaluate($dataSource, [
+            return $this->keyDataSourceRecords($table->evaluate($dataSource, [
                 'filters' => fn (): array => $this->tableFilters,
                 'page' => fn (): int => $this->getTablePage(),
                 'recordsPerPage' => fn (): int|string|null => $this->getTableRecordsPerPage(),
@@ -218,17 +226,7 @@ trait HasTable
                 'sort' => fn (): array => [$this->getTableSortColumn(), $this->getTableSortDirection()],
                 'sortColumn' => fn (): ?string => $this->getTableSortColumn(),
                 'sortDirection' => fn (): ?string => $this->getTableSortDirection(),
-            ]);
-
-            if ($records instanceof Paginator) {
-                return $records->withRecords($this->keyTableRecords($records->getRecords()));
-            }
-
-            if (!is_iterable($records)) {
-                throw new LogicException(sprintf('The [records()] closure of table [%s] must return an iterable or a [%s], got %s.', static::class, Paginator::class, get_debug_type($records)));
-            }
-
-            return $this->keyTableRecords($records);
+            ]));
         }
 
         $query = $this->getFilteredSortedTableQuery();
@@ -252,7 +250,29 @@ trait HasTable
     }
 
     /**
-     * @param iterable<array-key, object|array<string, mixed>> $records
+     * What a `records()` closure returned, once it is known to be neither a
+     * `Paginator` nor a non-iterable. Typed `mixed` because that return is
+     * unconstrained: `evaluate()` reports the type of the value handed to it,
+     * which here is statically the closure itself.
+     *
+     * @return array<array-key, object|array<string, mixed>>|Paginator keyed by record key
+     */
+    private function keyDataSourceRecords(mixed $records): array|Paginator
+    {
+        if ($records instanceof Paginator) {
+            return $records->withRecords($this->keyTableRecords($records->getRecords()));
+        }
+
+        if (!is_iterable($records)) {
+            throw new LogicException(sprintf('The [records()] closure of table [%s] must return an iterable or a [%s], got %s.', static::class, Paginator::class, get_debug_type($records)));
+        }
+
+        return $this->keyTableRecords($records);
+    }
+
+    /**
+     * @param iterable<mixed, mixed> $records rows a records() closure, a paginator
+     *                                        or the query lane produced
      *
      * @return array<array-key, object|array<string, mixed>> keyed by record key
      */
@@ -262,12 +282,22 @@ trait HasTable
 
         foreach ($records as $sourceKey => $record) {
             if (is_array($record)) {
-                $record[ArrayRecord::getKeyName()] ??= $sourceKey;
-                $record[ArrayRecord::getKeyName()] = (string) $record[ArrayRecord::getKeyName()];
+                if (!self::isFieldKeyedRecord($record)) {
+                    throw new LogicException(sprintf('Array records of table [%s] must be keyed by field name; one arrived carrying a non-string key.', static::class));
+                }
 
-                $keyedRecords[$record[ArrayRecord::getKeyName()]] = $record;
+                $key = self::toRecordKey($record[ArrayRecord::getKeyName()] ?? $sourceKey)
+                    ?? throw new LogicException(sprintf('Record arrays must have a unique, printable [%s] entry for identification.', ArrayRecord::getKeyName()));
+
+                $record[ArrayRecord::getKeyName()] = $key;
+
+                $keyedRecords[$key] = $record;
 
                 continue;
+            }
+
+            if (!is_object($record)) {
+                throw new LogicException(sprintf('Records of table [%s] must be objects or field-keyed arrays, got %s.', static::class, get_debug_type($record)));
             }
 
             $keyedRecords[$this->getTableRecordKey($record)] = $record;
@@ -276,6 +306,19 @@ trait HasTable
         $this->fillTableAggregateValues(array_map(static fn (int|string $key): string => (string) $key, array_keys($keyedRecords)));
 
         return $keyedRecords;
+    }
+
+    /**
+     * An array record is a field-keyed map — that is what every column read and
+     * the `__key` entry rely on, so an array carrying any other key is not one.
+     *
+     * @param array<mixed, mixed> $record
+     *
+     * @phpstan-assert-if-true array<string, mixed> $record
+     */
+    private static function isFieldKeyedRecord(array $record): bool
+    {
+        return array_all(array_keys($record), static fn (int|string $field): bool => is_string($field));
     }
 
     /**
@@ -394,16 +437,7 @@ trait HasTable
             throw new LogicException(sprintf('Object records must expose a readable non-blank identifier; [%s] has none set.', $record::class));
         }
 
-        $key = array_first($identifierValues);
-
-        if ($key instanceof Stringable) {
-            $key = (string) $key;
-        }
-
-        if (!is_scalar($key) || blank($key)) {
-            throw new LogicException(sprintf('The identifier of [%s] is not a printable value.', $record::class));
-        }
-
-        return (string) $key;
+        return self::toRecordKey(array_first($identifierValues))
+            ?? throw new LogicException(sprintf('The identifier of [%s] is not a printable value.', $record::class));
     }
 }

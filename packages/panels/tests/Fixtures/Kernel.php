@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures;
 
-use Sylament\Panels\CurrentPanel;
-use Sylament\Panels\PanelRegistry;
 use Sylament\Panels\SylamentPanelsBundle;
 use Sylament\Support\SylamentSupportBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -42,7 +40,10 @@ class Kernel extends BaseKernel
 
     private function configureRoutes(RoutingConfigurator $routes): void
     {
-        $routes->import('@LiveComponentBundle/config/routes.php');
+        // `ux_live_component`'s path is `/{_live_component}/{_live_action}`, so mounted at the
+        // root it matches `/admin` before any panel page — hence the prefix the recipe uses.
+        $routes->import('@LiveComponentBundle/config/routes.php')->prefix('/_components');
+        $routes->import('sylament_panels.route_loader', 'service');
     }
 
     private function configureContainer(ContainerConfigurator $container): void
@@ -93,15 +94,6 @@ class Kernel extends BaseKernel
 
         $container->services()
             ->alias(UrlGeneratorInterface::class, 'router')
-            ->public();
-
-        // Symfony removes a private service nothing references, and no shipped service consumes
-        // the panel registry or the current-panel lookup yet, so the rig references both the way
-        // an application injecting them does — otherwise they are gone before a test can ask.
-        $container->services()
-            ->alias('sylament_panels.test.panel_registry', PanelRegistry::class)
-            ->public()
-            ->alias('sylament_panels.test.current_panel', CurrentPanel::class)
             ->public();
     }
 }

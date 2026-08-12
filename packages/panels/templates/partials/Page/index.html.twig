@@ -1,0 +1,10 @@
+{% set heading = this.getHeading %}
+{% set subheading = this.getSubheading %}
+
+<div {{ attrs({class: 'sy sy-pa-page'}, attributes.all) }}>
+    {% if heading is filled or subheading is filled %}
+        <twig:SylamentPanels:Header :heading="heading" :subheading="subheading" />
+    {% endif %}
+
+    <div class="sy-pa-page-content"></div>
+</div>

@@ -273,9 +273,8 @@ that tagged iterator, builds each provider's panel once (memoised), keys them by
 id, rejects a duplicate id, and answers `getDefault()` or throws
 `NoDefaultPanelSetException`. `CurrentPanel` reads the `_sylament_panel` request
 attribute off the `RequestStack` and resolves it through the registry. Both are
-private services with no consumer until the routing layer injects them, and
-Symfony removes a private service nothing references — so the panels test kernel
-holds a public alias to each, standing in for the reference an application makes.
+ordinary private services: [`PanelRouteLoader`](#routing) injects the registry
+and [`PageController`](#routing) injects the current-panel lookup.
 
 Deferred, all todo: the other 28 `Panel/Concerns` traits (auth, tenancy, colors,
 assets, render hooks, middleware, plugins, …); `Panel::register()`/`boot()` and
@@ -322,6 +321,10 @@ Enums, contracts, HTTP layer, events, templates —
 | [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | — |
 | [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | three aliases: the shell's two ([Layout templates](#layout-templates)) and the dashboard's navigation icon ([Dashboard](#dashboard)) |
 | [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships one Stimulus controller (`sidebar`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets) |
+| [`Routing\PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php) | [`routes/web.php`](../../../vendor/filament/filament/routes/web.php) — the per-panel route group and its `$page::registerRoutes($panel)` loop, [`Pages/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasRoutes.php) `routes()` | in progress | [Routing](#routing) |
+| [`Controllers\PageController`](../../../packages/panels/src/Controllers/PageController.php) | no Filament counterpart — a Filament page **is** its own route action | in progress | [Routing](#routing) |
+| [Document template](../../../packages/panels/templates/partials/Document/index.html.twig) | [`components/layout/base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php) | in progress | [Routing](#routing) |
+| [Page template](../../../packages/panels/templates/partials/Page/index.html.twig) | [`components/page/index.blade.php`](../../../vendor/filament/filament/resources/views/components/page/index.blade.php) | in progress | [Routing](#routing) |
 | _rest not audited yet_ | | | |
 
 ### Layout templates
@@ -411,6 +414,53 @@ What Filament's panel assets have and this does not, all todo:
 - `dark-mode.js`, `unsaved-changes-alert.js`, `error-notifications.js`,
   `echo.js`, and the resource/page scripts — none of the surfaces they serve
   exist yet.
+
+### Routing
+
+[`PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php)
+is a service route loader — tagged `routing.route_loader`, imported with the
+`service` type — so the whole panel surface reaches the router in one pass over
+`PanelRegistry::all()`. For every page a panel registers it mounts one `GET`
+route at the panel path plus the page's route path, named
+[`Page::getRouteName($panel)`](#page), carrying three defaults: `_controller`
+(always `PageController`), `_sylament_panel` (the id
+[`CurrentPanel`](#the-current-panel-is-derived-from-the-request-not-stored-on-a-manager)
+reads back) and `_sylament_page` (the page class the controller resolves).
+`Dashboard`'s `/` route path collapses onto the panel root rather than leaving a
+trailing slash, so `path('admin')` puts the dashboard at `/admin`.
+
+Two things beyond mounting. Every page class file and every provider class file
+is added to the collection as a `FileResource`: the routes are derived from
+method bodies (`getSlug()`, `$routePath`, `panel()`) that Symfony's
+`ObjectLoader` cannot see — it tracks only the loader class and its parents — so
+without them a dev-mode route cache would survive a renamed slug. And a
+`pages()` entry that is not a `Page` subclass throws a `LogicException` naming
+the class, at route-build time rather than at the request that finally hits it.
+
+[`PageController`](../../../packages/panels/src/Controllers/PageController.php)
+is the single action every panel route points at. It resolves the panel through
+`CurrentPanel`, resolves the page **service** from the class-keyed
+`ServiceLocator`
+[`PageComponentPass`](../../../packages/panels/src/DependencyInjection/Compiler/PageComponentPass.php)
+builds, and renders the Document template with `panel`, `pageTitle` and
+`componentName`. Each failure mode is its own `LogicException` naming the missing
+piece — a page that is not a registered service names the registration to add,
+since a page reached through `new` would have no dependencies injected.
+
+The two templates split the document from the page. `Document/index.html.twig`
+is the `<html>` shell — title (the page title, then the brand name when the panel
+has one), `sylamentStyles()`, the importmap, and the `Layout` component with the
+page's live component in its content block, invoked by the tag name
+`Page::getComponentName()` returns. `Page/index.html.twig` is what
+`Page::getTemplate()` falls back to: the `Header` (rendered only when the page
+has a heading or subheading) above an empty `sy-pa-page-content` container that
+stays empty until pages carry schemas. Both are `partials/`, not `components/` —
+they are rendered from PHP (a controller and a `template_from_method` getter),
+never as a `<twig:>` tag.
+
+Two divergences are theirs:
+[a page is rendered by a controller rather than routed to directly](#a-panel-page-is-rendered-by-a-controller-not-routed-to-directly)
+and [the document calls `importmap()` unguarded](#the-document-calls-importmap-unguarded).
 
 ## Semantics
 
@@ -541,6 +591,45 @@ package, and there is no `Twig/Extension/` or class-backed component to sit
 beside them. Panels-local convention, settled here so the next template test does
 not have to re-decide; it moves under a `Components/` subdirectory if panels ever
 grows a class-backed component.
+
+### A panel page is rendered by a controller, not routed to directly
+
+Filament mounts a page with `Route::get($routePath, static::class)` — the
+Livewire component class *is* the route action, and Livewire's own request
+handling turns it into a full page render. `symfony/ux-live-component` has no
+such arm: its single route (`ux_live_component`) serves component **actions**
+against an already-rendered component, never a page load. So the route action is
+[`PageController`](#routing) for every page, the page class travels as the
+`_sylament_page` route default, and the page is reached as a service through the
+class-keyed locator rather than instantiated by the router. What a user writes is
+unchanged — a `Page` subclass listed in `pages()` — and the page is still a live
+component once rendered, so its actions round-trip through `ux_live_component`
+exactly as Filament's do through Livewire's.
+
+One wiring consequence falls out of it, and it is invisible until a panel is
+mounted near the root: `ux_live_component`'s path is
+`/{_live_component}/{_live_action}`, so an application importing that route
+without the recipe's `/_components` prefix has it match `/admin` first and every
+panel page 404s with *Component "admin" not found*. The panels test kernel mounts
+it under the prefix for that reason.
+
+### The document calls `importmap()` unguarded
+
+`Document/index.html.twig` calls `importmap('app')` with no check that
+AssetMapper is installed, so a consumer without `symfony/asset-mapper` gets an
+`Unknown "importmap" function` error on the first panel request. That is the
+intended behaviour, not an oversight. A guard cannot be written cheaply anyway —
+Twig resolves a function at **compile** time, so a call inside a dead `{% if %}`
+branch still has to exist — and, more decisively, the shell's JS (the sidebar
+Stimulus controller, live components) has no supported delivery path outside
+AssetMapper today. Rendering a silently script-less shell would hand the user a
+drawer that never opens and a page whose actions do nothing, with nothing in the
+output saying why; a hard error naming the missing function is the better
+failure. `asset-mapper` therefore stays out of the package's composer `require`
+(it is the application's dependency, and the bundle's own
+[`prependExtension()` hook](../../../packages/panels/src/SylamentPanelsBundle.php)
+is guarded on it), and the entrypoint name is the Symfony-conventional `app`
+until panels grow asset settings of their own.
 
 ### The active sidebar item paints a fixed `primary` shade
 

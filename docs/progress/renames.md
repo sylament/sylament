@@ -156,12 +156,13 @@ prefix, and the reasoning:
 Segments carry over from Filament **verbatim** — `Components\`, `Enums\`,
 `Exceptions\`, `Concerns\`, `Contracts\`, `Icons\` and the rest all keep
 Filament's spelling, so `Filament\Support\Components\Concerns\` is
-`Sylament\Support\Components\Concerns\`. Exactly one segment is translated, and
-only because the thing it names was replaced:
+`Sylament\Support\Components\Concerns\`. Exactly two segments change, each only
+because the thing it named was replaced or has no Symfony counterpart at all:
 
 | Filament | Sylament | Why |
 | --- | --- | --- |
 | `View\` | `Twig\` | The Blade → Twig idiom — the template engine itself changed. Laravel's `ComponentAttributeBag` and Filament's `SupportIconAlias` both live in `Sylament\Support\Twig\`. |
+| `Http\Controllers\` | `Controllers\` | Only the Laravel `Http\` tier drops — Symfony has no `Http/` application layer (middleware became event listeners, and a response is Symfony's own object), so the segment names nothing here. The plural `Controllers` is Filament's spelling kept verbatim, matching the repo's plural object directories (`Pages\`, `Components\`, `Exceptions\`). Symfony's own bundles use singular `Controller\` (FrameworkBundle, WebProfilerBundle); the plural is a deliberate in-repo-consistency choice, the same trade the `Exception\` note below records. |
 
 No segment is renamed for style. Symfony's own habit of singular `Exception\`
 (its components and bundles both use it) is **not** followed here: matching

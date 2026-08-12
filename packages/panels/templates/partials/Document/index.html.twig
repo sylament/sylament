@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>{% block title %}{{ pageTitle }}{% if panel.getBrandName %} — {{ panel.getBrandName }}{% endif %}{% endblock title %}</title>
+
+        {% block stylesheets %}
+            {{ sylamentStyles() }}
+        {% endblock stylesheets %}
+
+        {% block javascripts %}
+            {% block importmap %}{{ importmap('app') }}{% endblock importmap %}
+        {% endblock javascripts %}
+    </head>
+    <body>
+        <twig:SylamentPanels:Layout :navigation="panel.getNavigation" :brandName="panel.getBrandName">
+            <twig:block name="content">
+                {{ component(componentName) }}
+            </twig:block>
+        </twig:SylamentPanels:Layout>
+    </body>
+</html>

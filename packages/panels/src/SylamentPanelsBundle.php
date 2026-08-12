@@ -8,6 +8,7 @@ use Sylament\Panels\Controllers\PageController;
 use Sylament\Panels\DependencyInjection\Compiler\PageComponentPass;
 use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Pages\Page;
+use Sylament\Panels\Routing\PanelRouteLoader;
 use Sylament\Support\SylamentBundle;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
@@ -50,7 +51,10 @@ class SylamentPanelsBundle extends SylamentBundle
                 ->autoconfigure()
             ->set(PageController::class)
                 ->autowire()
-                ->tag('controller.service_arguments');
+                ->tag('controller.service_arguments')
+            ->set('sylament_panels.route_loader', PanelRouteLoader::class)
+                ->autowire()
+                ->tag('routing.route_loader');
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void

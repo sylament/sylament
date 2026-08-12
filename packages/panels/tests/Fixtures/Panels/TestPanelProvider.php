@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures\Panels;
 
+use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Panel;
 use Sylament\Panels\PanelProvider;
 use Sylament\Panels\Tests\Fixtures\Pages\SettingsPage;
@@ -17,6 +18,6 @@ final class TestPanelProvider extends PanelProvider
             ->path('admin')
             ->brandName('Test Admin')
             ->navigationGroups(['Content'])
-            ->pages([SettingsPage::class]);
+            ->pages([Dashboard::class, SettingsPage::class]);
     }
 }

@@ -133,9 +133,10 @@ trait HasState
     public function hydrateState(bool $applyDefaults = true): void
     {
         $appliedStateCastPaths = [];
+        $hydratedDefaultState = [];
 
         foreach ($this->getFlatComponents(withActions: false) as $component) {
-            $component->hydrateState($applyDefaults, $appliedStateCastPaths);
+            $component->hydrateState($applyDefaults, $appliedStateCastPaths, $hydratedDefaultState);
         }
     }
 

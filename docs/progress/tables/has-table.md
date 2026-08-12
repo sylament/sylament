@@ -792,7 +792,12 @@ run from the reset path.
 `resetTableFiltersForm()` fills the form with **defaults**, not reset state:
 `Schema::fill()` with no argument runs `hydrateState(applyDefaults: true)`, so
 a `Filter::make('featured')->default()` comes back checked where a chip removal
-would have unchecked it. The two are deliberately different operations.
+would have unchecked it. The two are deliberately different operations. Every
+other field clears to null, including one whose filter declares no `default()` —
+a `SelectFilter`'s `value` is the live case, and the browser pass that found it
+standing after a reset is what
+[restored the defaults-fill null-write](../schemas/component.md#a-defaults-fill-nulls-a-defaultless-component-and-the-shared-record-is-what-protects-a-containers-default)
+in the schemas state layer.
 
 ## Semantics
 
@@ -1852,13 +1857,13 @@ schema's own defaults are skipped. Ours is `fill()` with no argument, which runs
 `hydrateState(applyDefaults: true)`, and that arm writes the declared default
 **over** whatever is already at the path rather than only into a blank one.
 
-So a bag handed to `mountTableFilters()` survives exactly where the field
-declares no default, and the split is not the one a caller would guess: a plain
-`Filter` is a `Checkbox`, which declares `default(false)` in its own `setUp()`,
-so a mount-passed `['featured' => ['isActive' => true]]` comes back `false`,
-while a `SelectFilter` with no `default()` keeps its passed `value`. Both bags
-lose it under deferral, since the mount pass then copies the draft over the
-applied one.
+So a bag handed to `mountTableFilters()` does not survive the mount at all: a
+plain `Filter` is a `Checkbox`, which declares `default(false)` in its own
+`setUp()`, so a mount-passed `['featured' => ['isActive' => true]]` comes back
+`false`, and a `SelectFilter` with no `default()` has its passed `value` nulled
+by [the defaults-fill null-write](../schemas/component.md#a-defaults-fill-nulls-a-defaultless-component-and-the-shared-record-is-what-protects-a-containers-default).
+Both bags lose it either way under deferral, since the mount pass then copies
+the draft over the applied one.
 
 Nothing is lost today, because the two lanes Filament's argument exists to serve
 are both unported — [the session](#no-table-state-is-persisted-in-the-session)

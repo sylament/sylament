@@ -158,10 +158,11 @@ class Repeater extends Field implements HasKeyedItems
      * reads the items.
      *
      * @param array<string, true> $appliedStateCastPaths
+     * @param array<string, mixed> $hydratedDefaultState
      */
-    public function hydrateState(bool $applyDefaults = true, array &$appliedStateCastPaths = []): void
+    public function hydrateState(bool $applyDefaults = true, array &$appliedStateCastPaths = [], array &$hydratedDefaultState = []): void
     {
-        parent::hydrateState($applyDefaults, $appliedStateCastPaths);
+        parent::hydrateState($applyDefaults, $appliedStateCastPaths, $hydratedDefaultState);
 
         $cast = $this->getItemCast();
 

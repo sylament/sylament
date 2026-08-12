@@ -276,15 +276,16 @@ trait HasState
 
     /**
      * @param array<string, true> $appliedStateCastPaths
+     * @param array<string, mixed> $hydratedDefaultState
      */
-    public function hydrateState(bool $applyDefaults = true, array &$appliedStateCastPaths = []): void
+    public function hydrateState(bool $applyDefaults = true, array &$appliedStateCastPaths = [], array &$hydratedDefaultState = []): void
     {
         if (! $this->hasStatePath()) {
             return;
         }
 
-        if ($applyDefaults && $this->hasDefaultState) {
-            $this->rawState($this->getDefaultState());
+        if ($applyDefaults) {
+            $this->hydrateDefaultState($hydratedDefaultState);
         }
 
         $stateCasts = $this->getStateCasts();
@@ -315,6 +316,40 @@ trait HasState
         }
 
         $appliedStateCastPaths[$statePath] = true;
+    }
+
+    /**
+     * The defaults pass over one component: write its declared default, or null
+     * when it declares none — a defaults fill replaces whatever the bag already
+     * held rather than filling only its gaps.
+     *
+     * `$hydratedDefaultState` is the walk's shared record of every default
+     * already written, keyed by absolute state path. A component whose path the
+     * record already covers returns untouched, so a container's default survives
+     * the pass its own defaultless descendants make over the paths inside it.
+     *
+     * @param array<string, mixed> $hydratedDefaultState
+     */
+    protected function hydrateDefaultState(array &$hydratedDefaultState): void
+    {
+        $statePath = $this->getStatePath() ?? '';
+        $accessor = $this->getPropertyAccessor();
+
+        if ($accessor->hasInArray($hydratedDefaultState, $statePath)) {
+            return;
+        }
+
+        if (! $this->hasDefaultState) {
+            $this->rawState(null);
+
+            return;
+        }
+
+        $defaultState = $this->getDefaultState();
+
+        $this->rawState($defaultState);
+
+        $accessor->setInArray($hydratedDefaultState, $statePath, $defaultState);
     }
 
     public function fillStateWithNull(): void

@@ -51,7 +51,7 @@ only their detail sections do.
 | [`BelongsToContainer`](../../../packages/schemas/src/Components/Concerns/BelongsToContainer.php) | [`Concerns/BelongsToContainer.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToContainer.php) | in progress | a consumer — the subtree-owner fold ([entangles](entangles-state-with-singular-relationship.md#two-components-entangling-one-relationship-throw-rather-than-merge)) | [detail](#belongstocontainer-getmodelrootcontainer-awaits-its-consumer), [diverges](#belongstocontainer-gains-a-sylament-only-getlivecomponentornull-peek) |
 | [`HasChildComponents`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | [`Concerns/HasChildComponents.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php) | in progress | — | [detail](#haschildcomponents-only-the-materialization-core-is-ported) · [semantics](#childcomponents-replaces-a-keys-contents-instead-of-appending) |
 | [`HasId`](../../../packages/schemas/src/Components/Concerns/HasId.php) | [`Concerns/HasId.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasId.php) | done | — | — |
-| [`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | in progress | — | [detail](#hasstate-the-getset-core-and-validation-flags-are-in-relationship-and-partial-render-state-are-out) · [semantics](#dehydration-prunes-around-shared-state-paths-and-pathless-components) |
+| [`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | in progress | — | [detail](#hasstate-the-getset-core-and-validation-flags-are-in-relationship-and-partial-render-state-are-out) · [semantics](#a-defaults-fill-nulls-a-defaultless-component-and-the-shared-record-is-what-protects-a-containers-default) · [semantics](#dehydration-prunes-around-shared-state-paths-and-pathless-components) |
 | [`HasKey`](../../../packages/schemas/src/Components/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasKey.php) | in progress | — | [detail](#getlivewirekey-is-deferred-to-the-live-component-layer) |
 | [`HasHeadings`](../../../packages/schemas/src/Components/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeadings.php) | done | — | — |
 
@@ -201,6 +201,38 @@ change that wires `getLiveComponent()->getId()`, with a render/id test.
 
 Faithful ports whose behaviour a reader would plausibly misread from the source.
 Permanent — these outlive the detail sections above.
+
+### A defaults fill nulls a defaultless component, and the shared record is what protects a container's default
+
+`Schema::fill()` with no argument runs `hydrateState(applyDefaults: true)`, and
+that pass is a **replacement**, not a gap-filler: a component declaring a default
+gets it written over whatever the bag held, and a component declaring **none**
+gets `rawState(null)`. Both arms are Filament's
+([`hydrateDefaultState`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php)),
+and the second is the one that reads like a bug — a defaults fill wiping state
+where no default was ever declared — so it is the one that gets "fixed" back into
+a skip.
+
+It was, here, until a browser pass on the table-filters epic caught it: a
+`SelectFilter` builds a `Select` that takes a `default()` only when the *filter*
+declares one, so `resetTableFiltersForm()` left an applied `status` value
+standing in both bags while the sibling `Filter` — a `Checkbox`, which declares
+`default(false)` in its own `setUp()` — cleared correctly. The asymmetry is only
+reachable when the bag already holds state at fill time, which is why every
+mount-time fill looked right ([the epic side](../tables/has-table.md#filter-mutations-reset-the-page-and-flush-the-record-cache)).
+
+The null-write cannot stand alone, and that is what `$hydratedDefaultState` is
+for. It is a by-ref record, threaded through the whole walk by the
+[`Schema`](schema.md)-level `hydrateState()`, of every default already written,
+keyed by absolute state path; a component whose path the record already covers
+returns untouched. Without it, a container's default is destroyed by its own
+children: `Group::make([...])->statePath('author')->default(['name' => 'Ada'])`
+writes the whole map, and then the defaultless `author.name` inside it — visited
+next, because `getFlatComponents()` is parent-first — nulls the very key the
+parent just filled. With the record, `author.name` is already covered and skips;
+its sibling `author.surname`, which the parent default never mentioned, is not
+covered and still nulls. Both halves are pinned in
+[Unit/Concerns/HasStateTest](../../../packages/schemas/tests/Unit/Concerns/HasStateTest.php).
 
 ### Dehydration prunes around shared state paths and pathless components
 
@@ -368,13 +400,18 @@ the [validation collection walk](can-be-validated.md) skips on.
 
 Filament's component-level `hydrateState` and `fillStateWithNull` recurse into
 `getChildSchemas()` to walk the tree. Sylament's leaf variants handle only their
-own component (`hydrateState`: default + one cast-set pass keyed by
+own component (`hydrateState`: the defaults pass plus one cast-set pass keyed by
 `appliedStateCastPaths`; `fillStateWithNull`: `state(null)` when the raw slot is
 null); the whole-tree walk is driven by the [`Schema`](schema.md)-level state
 trait via `getFlatComponents()`. This is why the leaf `hydrateState` signature
-shrank to `(bool $applyDefaults, array &$appliedStateCastPaths)` — no
-`$hydratedDefaultState` tracking, no `$shouldCallHydrationHooks`, no
-`Arrayable`→array normalization, no separate `hydrateDefaultState`.
+reads `(bool $applyDefaults, array &$appliedStateCastPaths, array
+&$hydratedDefaultState)` — no `$shouldCallHydrationHooks` and no
+`Arrayable`→array normalization, and the defaults flag is an explicit `bool`
+where Filament encodes it in the nullability of `$hydratedDefaultState`. The
+shared record itself is ported, along with the `hydrateDefaultState` it feeds
+([why it has to be](#a-defaults-fill-nulls-a-defaultless-component-and-the-shared-record-is-what-protects-a-containers-default)),
+one visibility down: Filament's is public, ours is `protected`, since the walk
+that calls it now lives on the component itself.
 
 ### afterStateUpdated firing, de-dup, and bubbling move out of the trait to the LiveComponent host
 

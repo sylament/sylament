@@ -236,6 +236,21 @@ it('restores field defaults rather than reset state when the form is reset', fun
         ->and($host->tableFilters)->toBe(['featured' => ['isActive' => true]]);
 });
 
+it('clears a defaultless field in both bags when the form is reset', function (): void {
+    $host = filtersHost(fn (Table $table): Table => $table->filters([
+        SelectFilter::make('status')->options(['draft' => 'Draft', 'published' => 'Published']),
+    ]));
+
+    $host->getTableFiltersForm();
+    $host->tableDeferredFilters = ['status' => ['value' => 'draft']];
+    $host->tableFilters = $host->tableDeferredFilters;
+
+    $host->resetTableFiltersForm();
+
+    expect($host->tableDeferredFilters)->toBe(['status' => ['value' => null]])
+        ->and($host->tableFilters)->toBe(['status' => ['value' => null]]);
+});
+
 it('mirrors a direct applied write back into the deferred bag', function (): void {
     $host = filtersHost(fn (Table $table): Table => $table->filters([Filter::make('featured')]));
 
@@ -272,7 +287,7 @@ it('clears the search term and the page through resetTableSearch', function (): 
         ->and($host->tablePage)->toBe(1);
 });
 
-it('overwrites a mount-passed bag wherever the field declares a default', function (): void {
+it('overwrites a mount-passed bag with the schema defaults', function (): void {
     $host = filtersHost(fn (Table $table): Table => $table->filters([
         Filter::make('featured'),
         SelectFilter::make('status')->options(['draft' => 'Draft', 'published' => 'Published']),
@@ -283,7 +298,7 @@ it('overwrites a mount-passed bag wherever the field declares a default', functi
 
     $host->mountTableFilters([]);
 
-    expect($host->tableDeferredFilters)->toBe(['featured' => ['isActive' => false], 'status' => ['value' => 'draft']])
+    expect($host->tableDeferredFilters)->toBe(['featured' => ['isActive' => false], 'status' => ['value' => null]])
         ->and($host->tableFilters)->toBe($host->tableDeferredFilters);
 });
 

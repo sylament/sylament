@@ -172,6 +172,37 @@ it('refills a path-bearing group over an already-populated bag', function (): vo
     expect($host->data)->toBe(['author' => ['name' => null, 'surname' => null]]);
 });
 
+it('nulls a defaultless leaf and applies a defaulted sibling on a defaults fill', function (): void {
+    $host = new StateHostFixture();
+    $host->data = ['author' => ['name' => 'Ada', 'surname' => 'Lovelace']];
+
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('author')->components([
+            StateField::make('name')->default('Anonymous'),
+            StateField::make('surname'),
+        ]),
+    ]);
+
+    $schema->fill();
+
+    expect($host->data)->toBe(['author' => ['name' => 'Anonymous', 'surname' => null]]);
+});
+
+it('keeps a group default a defaultless child would otherwise clobber', function (): void {
+    $host = new StateHostFixture();
+
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateGroup::make()->statePath('author')->default(['name' => 'Ada'])->components([
+            StateField::make('name'),
+            StateField::make('surname'),
+        ]),
+    ]);
+
+    $schema->fill();
+
+    expect($host->data)->toBe(['author' => ['name' => 'Ada', 'surname' => null]]);
+});
+
 it('reads a leaf under a group path the host holds as null', function (): void {
     $host = new StateHostFixture();
     $host->data = ['author' => null];

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Sylament\Panels\Navigation\NavigationGroup;
 use Sylament\Panels\Navigation\NavigationItem;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -27,12 +28,19 @@ it('builds navigation items through the container, non-shared', function (): voi
 });
 
 it('injects container services into evaluated closures', function (): void {
+    // The group is the subject on purpose: it overrides no resolver hook, so the public
+    // container arm is the only thing that can answer the `RequestStack` hint.
     $container = $this::getContainer();
-    $container->get(RequestStack::class)->push(Request::create('/admin/articles'));
+    $stack = $container->get(RequestStack::class);
+    $stack->push(Request::create('/admin/articles'));
 
-    $item = NavigationItem::make('Articles')->isActiveWhen(
-        fn (RequestStack $requestStack): bool => str_starts_with((string) $requestStack->getCurrentRequest()?->getPathInfo(), '/admin/articles'),
-    );
+    try {
+        $group = NavigationGroup::make()->label(
+            fn (RequestStack $requestStack): string => (string) $requestStack->getCurrentRequest()?->getPathInfo(),
+        );
 
-    expect($item->isActive())->toBeTrue();
+        expect($group->getLabel())->toBe('/admin/articles');
+    } finally {
+        $stack->pop();
+    }
 });

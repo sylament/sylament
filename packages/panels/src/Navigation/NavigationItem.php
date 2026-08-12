@@ -8,6 +8,11 @@ use BackedEnum;
 use Closure;
 use Sylament\Support\Components\Component;
 use Sylament\Support\Components\Concerns\HasIcon;
+use Sylament\Support\Evaluation\ClosureParameter;
+use Sylament\Support\Icons\IconManager;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\Service\Attribute\Required;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
@@ -41,6 +46,12 @@ class NavigationItem extends Component
 
     protected string|Closure|null $url = null;
 
+    private ?UrlGeneratorInterface $urlGenerator = null;
+
+    private ?RequestStack $requestStack = null;
+
+    private ?IconManager $iconManager = null;
+
     public static function make(string|Closure|null $label = null): static
     {
         $item = static::newInstance();
@@ -52,6 +63,14 @@ class NavigationItem extends Component
         $item->configure();
 
         return $item;
+    }
+
+    #[Required]
+    public function setEvaluationServices(UrlGeneratorInterface $urlGenerator, RequestStack $requestStack, IconManager $iconManager): void
+    {
+        $this->urlGenerator = $urlGenerator;
+        $this->requestStack = $requestStack;
+        $this->iconManager = $iconManager;
     }
 
     public function label(string|Closure $label): static
@@ -209,5 +228,15 @@ class NavigationItem extends Component
     public function isVisible(): bool
     {
         return ! $this->isHidden();
+    }
+
+    protected function resolveDefaultClosureDependencyForEvaluationByType(string $parameterType): ?ClosureParameter
+    {
+        return match ($parameterType) {
+            UrlGeneratorInterface::class => $this->urlGenerator instanceof UrlGeneratorInterface ? ClosureParameter::make($this->urlGenerator) : null,
+            RequestStack::class => $this->requestStack instanceof RequestStack ? ClosureParameter::make($this->requestStack) : null,
+            IconManager::class => $this->iconManager instanceof IconManager ? ClosureParameter::make($this->iconManager) : null,
+            default => null,
+        };
     }
 }

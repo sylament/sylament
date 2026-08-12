@@ -74,15 +74,18 @@ registering alias overrides injects the manager or fetches it from the
 container; it cannot reach it statically, which is the Symfony answer to what a
 facade was doing.
 
-The FQCN alias is **public**, for the same reason
-[the colour policies are](color-policies.md): shipped closures type-hint the
-manager — [`Dashboard::getNavigationIcon()`](../panels/README.md#dashboard) is
-the first — and the
-[`Invoker`](../../../packages/support/src/Evaluation/Invoker.php) resolves a
-closure parameter through
-`ContainerInterface::has()`/`get()`, which no private service answers. Making it
-private again turns every such closure into *"[$icons] was unresolvable"* at
-render time, with nothing at container-build time to catch it.
+The alias stays **private**, unlike [the colour policies](color-policies.md),
+even though shipped closures type-hint the manager —
+[`Dashboard::getNavigationIcon()`](../panels/README.md#dashboard) is the first.
+The [`Invoker`](../../../packages/support/src/Evaluation/Invoker.php) resolving
+that parameter through `ContainerInterface::has()`/`get()` would need a public
+alias, but it consults the evaluating object's
+`resolveDefaultClosureDependencyForEvaluationByType()` hook first, and
+`NavigationItem` — the object that evaluates every navigation closure — takes the
+manager through a `#[Required]` setter and hands it over from there
+([the item hands its own services to evaluated closures](../panels/README.md#the-item-hands-its-own-services-to-evaluated-closures)).
+Closure access to the manager rides that injected set, so nothing has to be
+published to make sylament's own icons resolve.
 
 ### Alias overrides are declarable from bundle configuration
 

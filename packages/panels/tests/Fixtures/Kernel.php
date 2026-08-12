@@ -12,7 +12,6 @@ use Symfony\Bundle\TwigBundle\TwigBundle;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Kernel as BaseKernel;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\Loader\Configurator\RoutingConfigurator;
 use Symfony\UX\Icons\UXIconsBundle;
 use Symfony\UX\LiveComponent\LiveComponentBundle;
@@ -90,10 +89,6 @@ class Kernel extends BaseKernel
         // republishes it the way an application injecting it into a closure has to.
         $container->services()
             ->alias(RequestStack::class, 'request_stack')
-            ->public();
-
-        $container->services()
-            ->alias(UrlGeneratorInterface::class, 'router')
             ->public();
     }
 }

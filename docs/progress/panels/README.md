@@ -86,13 +86,23 @@ undebuggable in production. Request awareness reaches the navigation model
 through evaluated closures instead: `isActiveWhen(fn (RequestStack $requests) =>
 …)`, where the `Invoker` resolves the parameter from the container per call —
 `RequestStack` is a shared service, but everything it hands back belongs to the
-request being served, so nothing has to be remembered. One wiring caveat comes with
-it — FrameworkBundle's `RequestStack::class` alias is **private**, and the
-`Invoker` reads through `ContainerInterface::has()`/`get()`, so an application
-injecting it into a closure has to republish the alias public; the panels test
-kernel does exactly that, and
+request being served, so nothing has to be remembered. One wiring caveat comes
+with it, and `NavigationItem` absorbs the part of it sylament's own closures hit:
+the `Invoker`'s container arm reads through `ContainerInterface::has()`/`get()`,
+which no **private** service answers — and FrameworkBundle's `RequestStack::class`
+and `UrlGeneratorInterface::class` aliases and support's `IconManager::class`
+alias are all private. Those three are exactly the types sylament's shipped
+closures hint ([`Page::getNavigationItems()`](#page) builds the url and
+active-state ones, [`Dashboard`](#dashboard) the icon one), so a container-built
+item carries them itself
+([the injected set](#the-item-hands-its-own-services-to-evaluated-closures)) and
+no application publishes an alias for them. A consumer hinting any **other**
+service type in a navigation closure still lands on the container arm and still
+has to republish that alias public. The panels test kernel republishes
+`RequestStack` for precisely that path, and
 [`SylamentPanelsBundleTest`](../../../packages/panels/tests/Integration/SylamentPanelsBundleTest.php)
-pins the injection. M2 · 2's current-panel lookup must be derived the same way,
+pins the arm through a `NavigationGroup`, which carries no override.
+M2 · 2's current-panel lookup must be derived the same way,
 from the request, and never held in a stateful singleton.
 
 ### The shell is not live
@@ -150,6 +160,13 @@ Deferred, all todo:
   ported, but `NavigationItem` does not compose it: nothing in the sidebar
   templates renders an item attribute bag yet, so composing it would publish a
   setter with no effect.
+
+A container-built item also carries an injected service set —
+`UrlGeneratorInterface`, `RequestStack`, `IconManager` — that it hands to its own
+evaluated closures ahead of the `Invoker`'s container arm, which is what lets
+sylament's shipped url, active-state and icon closures run against a stock
+container:
+[the item hands its own services to evaluated closures](#the-item-hands-its-own-services-to-evaluated-closures).
 
 Four deltas against Filament's item, each with its own divergence:
 [`badge()` keeps a colour set earlier](#badge-preserves-a-badge-colour-set-before-it),
@@ -736,3 +753,41 @@ decision to be made. `collapsibleFallback()` has no Filament counterpart at all 
 it is a new method rather than a rename, so it is not a
 [renames.md](../renames.md) row; a migrating user never types it, because
 `collapsible()` is still the setter they know.
+
+### The item hands its own services to evaluated closures
+
+Filament resolves an unbound class hint in an evaluated closure through
+`app()->make()`, so any service is reachable from any closure with no wiring at
+all. Symfony's container cannot do that: the
+[`Invoker`](../../../packages/support/src/Evaluation/Invoker.php) reads through
+`ContainerInterface::has()`/`get()`, and every alias worth hinting here —
+FrameworkBundle's `RequestStack::class` and `UrlGeneratorInterface::class`,
+support's `IconManager::class` — is private, so the lookup answers nothing and
+the closure dies at render time on *"[$icons] was unresolvable"*, with nothing at
+container-build time to catch it. Publishing those aliases would fix the symptom
+by making three services public in every consuming application, for the benefit
+of closures **we** ship.
+
+So the item carries them instead. `NavigationItem` takes
+`UrlGeneratorInterface`, `RequestStack` and `IconManager` through one
+`#[Required]` setter — it is a `sylament.component`-tagged, container-built,
+non-shared service, so the setter fires on every `make()` — and hands them to
+closures from
+`resolveDefaultClosureDependencyForEvaluationByType()`, the
+[`EvaluatesClosures`](../../../packages/support/src/Concerns/EvaluatesClosures.php)
+seam the `Invoker` consults **before** the container arm. Those are exactly the
+three types sylament's own closures hint ([`Page::getNavigationItems()`](#page)
+builds the url and active-state ones, [`Dashboard`](#dashboard) the icon one), so
+the shipped navigation works against a stock container.
+
+Two things the design deliberately leaves alone. A `new`-built item behaves
+exactly as before — the properties stay `null`, the hook returns `null`, and the
+container arm is consulted — so nothing that worked outside the container stops
+working. And `NavigationGroup` gets **no** override: its closures have no shipped
+service-hinting examples, and leaving it bare is what keeps the container arm
+under test
+([`SylamentPanelsBundleTest`](../../../packages/panels/tests/Integration/SylamentPanelsBundleTest.php)
+evaluates a `RequestStack` closure on a group, which passes only because the
+panels test kernel republishes that one alias). A consumer hinting a fourth
+service type still republishes its alias, and that is the case the group test
+stands in for.

@@ -64,8 +64,15 @@ it('falls back to the record label when the title attribute is unreadable', func
 it('falls back to the record label when the title attribute reads blank', function (): void {
     $resource = panelsArticleResource();
 
+    // A boolean is filled to `blank()`, so only the cast the guard applies first
+    // turns `false` into the empty string that routes to the label.
+    $falseTitled = new class {
+        public bool $title = false;
+    };
+
     expect($resource->getRecordTitle(new Article()->setTitle('')))->toBe('article')
-        ->and($resource->getRecordTitle(new Article()->setTitle('   ')))->toBe('article');
+        ->and($resource->getRecordTitle(new Article()->setTitle('   ')))->toBe('article')
+        ->and($resource->getRecordTitle($falseTitled))->toBe('article');
 });
 
 it('reads the record route key off the single identifier', function (): void {

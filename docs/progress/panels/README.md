@@ -468,11 +468,15 @@ What is ported, by cluster:
 Deferred, all todo: authorization (`canAccess()` and the whole `HasAuthorization`
 cluster), global search, widgets, breadcrumbs, sub-navigation, clusters, tenancy,
 nested/parent resources, resource configurations, `getRelations()`, and
-`configureTable()`'s seeding of table-level labels. `NavigationItem`'s `key()`,
-`parentItem()` and `badgeTooltip()` are skipped here because
-[they are not ported on the item yet](#navigationitem); `shouldRegisterNavigation()`
-is ported and, as in Filament, is consulted by the panel-side loop rather than by
-`getNavigationItems()` itself.
+`configureTable()`'s seeding of table-level labels. The title-case **toggle** is
+unported with them — Filament's `$hasTitleCaseModelLabel` (default `true`) with
+`hasTitleCaseModelLabel()` and `titleCaseModelLabel(bool)` — so
+`getTitleCaseRecordLabel()` title-cases unconditionally and a subclass declaring
+the static silently no-ops; the two getters themselves are ported.
+`NavigationItem`'s `key()`, `parentItem()` and `badgeTooltip()` are skipped here
+because [they are not ported on the item yet](#navigationitem);
+`shouldRegisterNavigation()` is ported and, as in Filament, is consulted by the
+panel-side loop rather than by `getNavigationItems()` itself.
 
 Divergences, each with its own entry:
 [the record class is declared, never derived](#the-record-class-is-declared-never-derived-from-an-application-namespace),
@@ -1822,8 +1826,10 @@ URL is generated from and the name a route is registered under are built by two
 pieces of code that must agree. Ours composes
 `sprintf('sylament.%s.resources.%s', …)` once, in `getRouteBaseName(Panel)`, and
 the route loader reads it — one derivation, no lockstep to maintain. The
-`Panel|string|null $panel` parameter is explicit rather than defaulted from a
-facade, matching [`Page::getRouteName()`](#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade).
+`Panel $panel` parameter is explicit rather than defaulted from a facade,
+matching [`Page::getRouteName()`](#getnavigationitems-takes-the-panel-rather-than-reaching-a-facade)
+(the `Panel|string|null` widening is [`getUrl()`'s](#geturl-drops-three-parameters-and-widens-a-fourth),
+where a caller may hold only an id).
 
 ### Nothing is memoised in a static
 
@@ -1857,7 +1863,20 @@ is read off the builder (`getRootAliases()[0]`) so an overridden query that name
 its own alias still works, and a composite identifier throws rather than guessing
 which column the URL segment means. `getRecordRouteKey()` is the generation side
 of the same pair, replacing what Laravel got free from `UrlRoutable`; both sides
-read `$recordRouteKeyName`, so they cannot disagree.
+read `$recordRouteKeyName`, so they cannot disagree. It reads `getRecordClass()`
+first, for the "speaks for" guard, so a resource declaring `$recordRouteKeyName`
+without `$recordClass` throws the record-class `LogicException` rather than a key
+one — fail-fast ordering, and deliberate: the missing declaration is the fix.
+
+Filament's second parameter is dropped with the cluster it belongs to.
+`resolveRecordRouteBinding(int | string $key, ?Closure $modifyQuery = null)`
+takes a query modifier, and the only closure Filament ever passes it is the
+parent-record scope (`InteractsWithRecord::resolveRecord()` builds
+`scopeEloquentQueryToParent`), so it returns with
+[nested/parent resources](#resources) rather than being ported ahead of them.
+Until then a caller migrating that call gets an argument-count error, which is
+the one failure the trail has to name for it: the parameter is absent by
+decision, not by oversight.
 
 ### `getRecordTitle()` returns a plain string
 
@@ -1882,14 +1901,25 @@ page. It is the only swallowed exception on the class; `getRecordRouteKey()`
 deliberately lets the same failure through, because a route key that cannot be
 read is a broken URL, not a cosmetic default.
 
-One deliberate improvement over Filament sits in the same guard: the fallback
-tests `filled($title) && is_scalar($title)`, not `is_scalar()` alone. Filament
-returns whatever the attribute holds, so a record whose title column is `''` — or
-`false`, or whitespace — titles its page with an empty string, and the heading
-that reads `Edit ` looks like a rendering bug rather than missing data. The extra
-term routes exactly those to the record label, which is the value the method
-already answers for a null record and an unreadable attribute; the same hole
-exists upstream, and closing it costs nothing a caller could want.
+One deliberate improvement over Filament sits in the same guard: a scalar is
+narrowed to `is_scalar($title) ? (string) $title : null` and then tested with
+`filled()`, where Filament tests nothing. Filament returns whatever the attribute
+holds, so a record whose title column is `''` — or `false`, or whitespace —
+titles its page with an empty string, and the heading that reads `Edit ` looks
+like a rendering bug rather than missing data. The extra test routes exactly
+those to the record label, which is the value the method already answers for a
+null record and an unreadable attribute; the same hole exists upstream, and
+closing it costs nothing a caller could want. Casting **before** the test is what
+reaches `false`: `blank()` mirrors Laravel in calling a bool filled, so testing
+the raw value would let `false` through to stringify as `''`, while the cast
+collapses it to the empty string and leaves `0` and `'0'` filled. The narrowing
+carries the non-scalar arm too — an array or an object with no `__toString()`
+falls to `null` and takes the same fallback — and it is what keeps the helper
+call legal: `is_scalar($title) && filled((string) $title)`, the shape that reads
+most directly, hands `filled()` a value PHPStan has already proved non-null and
+is a level-max error, the
+[`?string`-first order](../schemas/association-reader.md#the-record-key-is-tables-semantics-moved-onto-the-mapping)
+the association reader settled on for the same reason.
 
 ### `getUrl()` drops three parameters and widens a fourth
 

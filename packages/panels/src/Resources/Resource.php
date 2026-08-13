@@ -196,8 +196,10 @@ abstract class Resource
             $title = (string) $title;
         }
 
-        if (filled($title) && is_scalar($title)) {
-            return (string) $title;
+        $title = is_scalar($title) ? (string) $title : null;
+
+        if (filled($title)) {
+            return $title;
         }
 
         return $this->getRecordLabel();

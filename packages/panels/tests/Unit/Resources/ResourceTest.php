@@ -9,6 +9,8 @@ use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Pages\SettingsPage;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Routing\RequestContext;
 
 final class BlogPost
 {
@@ -242,3 +244,43 @@ it('carries an explicit navigation sort onto the contributed item', function ():
 it('throws when an index url is asked of a resource without an index page', function (): void {
     new PagelessResource()->getIndexUrl();
 })->throws(LogicException::class, 'does not have an [index] page');
+
+it('routes a blank url name to the index page', function (): void {
+    $panel = Panel::make()->id('admin');
+
+    $resource = new class extends Resource {
+        protected static ?string $recordClass = Article::class;
+
+        protected static ?string $slug = 'articles';
+
+        public function getPages(): array
+        {
+            return ['index' => new PageRegistration(SettingsPage::class, '/')];
+        }
+
+        protected function getUrlGenerator(): UrlGeneratorInterface
+        {
+            // Echoes the route name back, so each assertion reads the route the
+            // arm resolved rather than a path a router would have to be fed.
+            return new class implements UrlGeneratorInterface {
+                public function generate(string $name, array $parameters = [], int $referenceType = self::ABSOLUTE_PATH): string
+                {
+                    return $name;
+                }
+
+                public function setContext(RequestContext $context): void
+                {
+                }
+
+                public function getContext(): RequestContext
+                {
+                    return new RequestContext();
+                }
+            };
+        }
+    };
+
+    expect($resource->getUrl(panel: $panel))->toBe('sylament.admin.resources.articles.index')
+        ->and($resource->getUrl('', panel: $panel))->toBe('sylament.admin.resources.articles.index')
+        ->and($resource->getUrl('  ', panel: $panel))->toBe('sylament.admin.resources.articles.index');
+});

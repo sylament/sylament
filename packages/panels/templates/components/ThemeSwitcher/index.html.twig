@@ -1,5 +1,8 @@
 {% set themeController = 'sylament--panels--theme' %}
-{% set buttonStimulus = stimulus_target(themeController, 'button')|stimulus_action(themeController, 'select') %}
+{% set dropdownController = 'sylament--support--dropdown' %}
+{% set buttonStimulus = stimulus_target(themeController, 'button')
+    |stimulus_action(themeController, 'select')
+    |stimulus_action(dropdownController, 'close') %}
 
 <div
     {{ attrs({

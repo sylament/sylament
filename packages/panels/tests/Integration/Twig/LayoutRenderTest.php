@@ -141,6 +141,12 @@ it('wires each theme switcher button to the theme controller', function (): void
         ->and(mb_substr_count($html, 'aria-pressed="false"'))->toBe(3);
 });
 
+it('closes the enclosing dropdown when a theme is picked', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:ThemeSwitcher');
+
+    expect(mb_substr_count($html, 'data-action="sylament--panels--theme#select sylament--support--dropdown#close"'))->toBe(3);
+});
+
 it('draws each theme switcher icon through an overridable alias', function (): void {
     $icons = $this::getContainer()->get(IconManager::class);
 

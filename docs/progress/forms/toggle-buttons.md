@@ -39,13 +39,13 @@ Reference — the Filament source this is diffed against:
 
 Every point this field adds over `Field`. `Field`'s own surface is tracked in
 [`field.md`](field.md), not here. _Blocked by_ names what has to land first.
-_Detail_ links the write-up in [Details](#details) or a permanent note in
-[Semantics](#semantics) / [Divergences](#divergences).
+_Detail_ links a permanent note in [Semantics](#semantics) /
+[Divergences](#divergences), or the write-up in another file.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Construction &amp; rendering — the hidden input, the button label, the icon and the option colour | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#the-dead-disabled-on-a-label-is-not-ported) · [diverges](#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
-| `grouped()` / `isGrouped()` and the grouped tree | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | in progress | support's `.sy-btn-group` rule | [semantics](#the-grouped-variant-is-a-second-template-picked-by-gettemplate) · [detail](#the-grouped-buttons-are-not-joined-until-support-ships-sy-btn-group) · [diverges](#the-two-vendor-asymmetries-between-the-variants-are-preserved-and-one-is-dropped) |
+| `grouped()` / `isGrouped()` and the grouped tree | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-grouped-variant-is-a-second-template-picked-by-gettemplate) · [semantics](#the-grouped-labels-must-stay-direct-children-of-the-group) · [diverges](#the-two-vendor-asymmetries-between-the-variants-are-preserved-and-one-is-dropped) |
 | `multiple()` / `isMultiple()` — `role`, `type` and the dropped `name` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-multiple-arm-needs-a-model-that-rests-at-an-array) |
 | `boolean()` — the `1`/`0` pair, its colours, its icons and the int-backed cast | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time) · [semantics](radio.md#the-cast-chain-collapses-to-whatever-boolean-installs) · [diverges](#the-boolean-labels-are-untranslated-literals) |
 | `inline()` / `isInline()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#inline-is-this-fields-own-property-not-the-canbeinline-trait) |
@@ -72,8 +72,10 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 
 Coverage: the default tree (container role, per-option `div`, hidden input, the
 `for`→`id` wiring the other option fields do implicitly, the button classes) and
-the grouped tree (flat `sy-btn-group`, `sy-btn-group-btn` labels, no wrapping
-`div`, no grid and no `style`); the template selection in all four states
+the grouped tree (flat `sy-btn-group`, `sy-btn-group-btn` on every label, each a
+direct child of the container so
+[support's rules reach it](#the-grouped-labels-must-stay-direct-children-of-the-group),
+no wrapping `div`, no grid and no `style`); the template selection in all four states
 (default, grouped, and each of `template()` and `defaultTemplate()` outranking
 the grouped choice); the shared
 `data-model`; `checked` from a scalar state and from an array one, and on nothing
@@ -100,33 +102,6 @@ Both bindings need a live host, so they are driven through real round-trips by
 against the
 [`ToggleButtonsForm`](../../../packages/forms/tests/Fixtures/Twig/Components/ToggleButtonsForm.php)
 fixture, which carries one field of each multiplicity.
-
-## Details
-
-Specifics for rows that are not finished. Delete a subsection when its row flips
-to **done**.
-
-### The grouped buttons are not joined until support ships `.sy-btn-group`
-
-The grouped variant emits the tree vendor emits — `div.sy-fo-toggle-buttons.sy-btn-group`
-with `label.sy-btn.sy-btn-group-btn` children — and
-[`toggle-buttons.css`](../../../packages/forms/assets/src/styles/components/toggle-buttons.css)
-carries the `&.sy-btn-group { @apply w-max }` arm that vendor's stylesheet does.
-What is missing is the rule the arm sits beside: Filament's
-[`button.css`](../../../vendor/filament/support/resources/css/components/button.css)
-defines `.fi-btn-group` — the `grid grid-flow-col`, the shared ring, the
-first/last corner rounding and the `me-px` seam — and support's
-[`button.css`](../../../packages/support/assets/src/styles/components/button.css)
-has no counterpart, because nothing in the toolkit rendered a button group until
-now.
-
-So the grouped buttons render as a row of separate buttons rather than a joined
-control. The gap is support's, not this field's, and it is the same one
-[`ActionGroup`](../actions/action-group.md#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup)
-already tracks from the other side: its `BUTTON_GROUP_VIEW` has no port for
-exactly the same reason. **Next step:** port `.fi-btn-group` into support's
-`button.css` with a `button.md` row; both consumers unblock together, and no
-forms-side change is needed when it lands.
 
 ## Semantics
 
@@ -226,6 +201,27 @@ exactly this seam. `TEMPLATE` has no vendor constant behind it — Filament inli
 but a lone constant would read as an accident beside its partner, and both
 [`Repeater`](repeater.md) and [`Action`](../actions/action.md) already declare one
 per variant.
+
+### The grouped labels must stay direct children of the group
+
+The joined look is support's rule, not this field's. This template emits the tree
+vendor emits — `div.sy-fo-toggle-buttons.sy-btn-group` with
+`label.sy-btn.sy-btn-group-btn` children — and everything that makes it read as
+one control (the `grid grid-flow-col`, the shared ring, the first/last corner
+rounding and the `me-px` seam) comes from
+[`.sy-btn-group` in support's `button.css`](../support/button.md), which this
+field's [`toggle-buttons.css`](../../../packages/forms/assets/src/styles/components/toggle-buttons.css)
+only adds `w-max` to.
+
+That rule keys off `& > .sy-btn` and off `:nth-child(1 of .sy-btn)` /
+`:nth-last-child(1 of .sy-btn)` for the end caps, so **both** halves of the tree
+are load-bearing: the labels carry `sy-btn`, and they are direct children of the
+container with only the option `<input>`s between them (which the `of .sy-btn`
+argument skips). Wrapping each option in a `div` the way the default variant does
+would leave every corner square and every seam missing, with nothing failing
+anywhere — so `ToggleButtonsTest` asserts the direct-child relation, not just the
+classes. The unstyled `sy-btn-group-btn` is vendor's own hook and carries no rule
+in either codebase.
 
 ### The `multiple()` arm needs a model that rests at an array
 

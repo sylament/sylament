@@ -165,10 +165,17 @@ badge and **button-group** have none, which is why
 `isButtonGroup()` has nothing to be ported as and
 [`hasDropdown()` stands in for it](#the-child-template-split-keys-off-hasdropdown-where-filament-keys-off-isbuttongroup).
 The port's inline-row shape is `dropdown(false)`, which Filament also supports
-and which is the closer analogue to `fi-btn-group` in practice. **Next step:**
-port the remaining `CanGenerate*Html` trigger shapes; adding
-`BUTTON_GROUP_TEMPLATE` is the point at which the `isButtonGroup()` predicate
-becomes portable and the stand-in can be retired.
+and which is the closer analogue to `fi-btn-group` in practice.
+
+What is left is the trigger alone: the CSS half landed at M3 · 1, when
+[`ToggleButtons::grouped()`](../forms/toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group)
+became the toolkit's first button group and support's
+[`button.css`](../support/button.md) gained the `.sy-btn-group` rule this trigger
+would have needed too. So a `BUTTON_GROUP_TEMPLATE` now has a stylesheet waiting
+for it and adds no CSS of its own. **Next step:** port the remaining
+`CanGenerate*Html` trigger shapes; adding `BUTTON_GROUP_TEMPLATE` is the point at
+which the `isButtonGroup()` predicate becomes portable and the stand-in can be
+retired.
 
 ### `hasNonBulkAction()` is blocked on the BulkAction port
 

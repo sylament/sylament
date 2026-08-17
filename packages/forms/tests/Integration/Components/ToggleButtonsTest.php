@@ -196,8 +196,10 @@ it('renders the grouped variant as a flat button group with no grid', function (
     $labels = $group->filter('label.sy-btn');
     expect($labels->count())->toBe(2)
         ->and($labels->eq(0)->attr('class'))->toContain('sy-btn-group-btn')
+        ->and($labels->eq(1)->attr('class'))->toContain('sy-btn-group-btn')
         ->and($labels->eq(0)->attr('for'))->toBe('status-draft')
-        ->and($group->filter('input.sy-fo-toggle-buttons-input')->count())->toBe(2);
+        ->and($group->filter('input.sy-fo-toggle-buttons-input')->count())->toBe(2)
+        ->and($crawler->filter('div.sy-btn-group > label.sy-btn')->count())->toBe(2);
 });
 
 it('lays the default variant out as a single-column grid, and drops the grid when inline', function (): void {

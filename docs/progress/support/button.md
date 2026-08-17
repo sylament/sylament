@@ -3,7 +3,9 @@
 The `<twig:SylamentSupport:Button>` anonymous template — the shared text-button
 widget. It has no Sylament PHP class: it ports Filament's Blade
 `button/index.blade.php` (the rendered markup) together with the
-`ButtonComponent.php` whose sole job is the runtime color map. The current Twig
+`ButtonComponent.php` whose sole job is the runtime color map, and it tracks the
+`button.css` chrome beside them — including the `.sy-btn-group` arm, which joins
+a row of buttons into one control and has no template of its own. The current Twig
 is a thin subset — it renders a `<button>`/`<a>` with a size, a leading icon, a
 disabled state, and a color class, and leaves Filament's badge, tooltip,
 key-binding, loading-indicator, form-processing, and `labeledFrom` behavior
@@ -21,6 +23,10 @@ Reference — the Filament source this is diffed against:
   — the rendered markup this Twig ports
 - [`support/src/View/Components/ButtonComponent.php`](../../../vendor/filament/support/src/View/Components/ButtonComponent.php)
   — the color-map class applied via `->color(ButtonComponent::make($outlined), $color)`
+- [`support/resources/css/components/button.css`](../../../vendor/filament/support/resources/css/components/button.css)
+  — the `.fi-btn` chrome and the `.fi-btn-group` arm that
+  [`button.css`](../../../packages/support/assets/src/styles/components/button.css)
+  ports
 
 ## Surface
 
@@ -47,6 +53,7 @@ permanent note in [Divergences](#divergences).
 | `labelSrOnly` / `aria-label` | [`'aria-label' => …`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#details) |
 | `spaMode` SPA navigation | [`generate_href_html($href, …, $spaMode)`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#details) |
 | `form` / `formId` | [`'form' => $formId`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#details) |
+| [`.sy-btn-group` — the joined row of buttons](../../../packages/support/assets/src/styles/components/button.css) | [`.fi-btn-group`](../../../vendor/filament/support/resources/css/components/button.css) | done | — | [diverges](#the-button-group-arm-ships-without-its-processing-sub-rule) |
 
 ## Details
 
@@ -90,6 +97,31 @@ and body. They split into two groups:
   blocked on a single named, tracked row today, so none is marked **blocked**.
 
 ## Divergences
+
+### The button-group arm ships without its processing sub-rule
+
+`.sy-btn-group` is a rule-for-rule port of vendor's `.fi-btn-group` — the
+`grid grid-flow-col`, the shared ring its uncoloured children and its labels give
+up for it, the first/last corner rounding read through `:nth-child(1 of .sy-btn)`
+(which steps over the `<input>`s an option set interleaves), the `me-px` seam and
+its `rtl` and dark variants. It
+landed at M3 · 1 for
+[`ToggleButtons::grouped()`](../forms/toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group),
+the toolkit's first button group and today its only one;
+[`ActionGroup`'s button-group trigger](../actions/action-group.md#the-button-group-trigger-is-unported-which-is-why-hasdropdown-stands-in-for-isbuttongroup)
+is the other consumer waiting on it, and needs no CSS of its own when it lands.
+The v5.7.6 CSS parity audit (commit `bc79d51`) left the arm out deliberately —
+"an unported component, not a delta" — because nothing rendered a group yet;
+that is what changed.
+
+One sub-rule is not ported: `&.fi-processing:enabled { cursor-wait opacity-70 }`.
+It is the only `fi-processing` rule in vendor's stylesheet, and the class is set
+by Alpine on the button Blade
+(`x-bind:class="{ 'fi-processing': isProcessing }"`) — the form-processing
+behaviour the `Loading indicator / wire:target / form processing` row above marks
+**todo**. Nothing in the port emits `sy-processing`, so the rule would ship a
+selector with no element. **Reversible**, and its reverse is bookkeeping: the
+sub-rule lands with that row, in the same change that first emits the class.
 
 ### The outlined variant is selected by a prop, and by a second policy class
 

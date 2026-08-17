@@ -89,14 +89,26 @@ foreach ($this->enum::cases() as $case) {
 ```
 
 It is total — no `int`/`string` input can raise against any backing type — and
-it agrees with weak-mode `tryFrom()` on every value either one resolves, so a
-migrating user sees no behavioural difference. Two smaller consequences follow.
-A digit string with a leading zero (`'01'`) no longer matches int-backed case
-`1`, where weak-mode coercion would have; that is the same leading-zero
-rejection [`OptionStateCast`](option-state-cast.md) already applies, and a
-padded spelling was never the option value. And the scan is linear in the number
-of cases rather than a hash lookup, which is not worth optimising for enums of
-realistic size.
+it is strictly conservative rather than equivalent: **it resolves a subset of
+what weak-mode `tryFrom()` resolves, never a superset**. Nothing the scan
+accepts is a value weak mode would have rejected, so no payload becomes valid
+here that was invalid in Filament. The subset is where the two part company, and
+it is worth naming because it is not obvious.
+
+For an **int-backed** enum, weak mode coerces any numeric string to the case,
+while the scan matches only the canonical decimal spelling. So `'01'`, `' 1'`,
+`'1 '`, `'+1'`, `'1.0'` and `'1e0'` all resolve to case `1` under weak-mode
+`tryFrom()` and all resolve to `null` here. None is a spelling a browser or a
+column produces for an option value — a padded, signed or exponent-notation
+integer was never the value — and the leading-zero arm in particular is the same
+rejection [`OptionStateCast`](option-state-cast.md) already applies. A
+**string-backed** enum has no such gap: weak mode only ever stringifies the
+incoming value, which is what the scan compares. The gap also runs the other way
+in our favour for a non-numeric string against an int-backed enum (`'draft'`,
+`''`), where weak mode raises a `TypeError` and the scan returns `null`.
+
+One smaller consequence: the scan is linear in the number of cases rather than a
+hash lookup, which is not worth optimising for enums of realistic size.
 
 Reverses only if PHP grows a total, backing-type-agnostic lookup.
 

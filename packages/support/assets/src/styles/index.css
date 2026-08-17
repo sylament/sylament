@@ -3,6 +3,7 @@
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities) source(none);
 
+@import './fonts.css' layer(base);
 @import './preflight.generated.css' layer(base);
 @import './base.css' layer(base);
 @import './utilities.css' layer(utilities);
@@ -110,9 +111,12 @@
     --color-warning-950: var(--sy-warning-950);
 }
 
-/* Default token values (Tailwind's amber / zinc / red / indigo / green / amber). */
+/* Default token values: the font stack (Inter Variable, declared in fonts.css), then
+   the palettes (Tailwind's amber / zinc / red / indigo / green / amber). */
 @layer theme {
     :root {
+        --sy-font: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+
         --sy-primary-50: oklch(98.7% 0.022 95.277);
         --sy-primary-100: oklch(96.2% 0.059 95.617);
         --sy-primary-200: oklch(92.4% 0.12 95.746);

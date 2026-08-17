@@ -34,12 +34,28 @@ it('renders groups, items, active state, and badge', function (): void {
     expect($html)
         ->toContain('id="sy-pa-sidebar"')
         ->toContain('data-sylament--panels--sidebar-target="sidebar"')
+        ->toContain('<nav class="sy-pa-sidebar-nav" aria-label="Navigation">')
+        ->toContain('<ul class="sy-pa-sidebar-nav-groups">')
         ->toContain('sy-pa-sidebar-item')
         ->toContain('sy-active')
         ->toContain('href="/admin/articles"')
         ->toContain('aria-current="page"')
         ->toContain('>12<')
         ->not->toContain('Hidden');
+});
+
+it('renders the mobile brand header above the navigation', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Sidebar', [
+        'navigation' => sidebarFixtureNavigation(),
+        'brandName' => 'Demo Panel',
+    ]);
+
+    expect($html)
+        ->toMatch('/<div class="sy-pa-sidebar-header-ctn">\s*<header class="sy-pa-sidebar-header">\s*<div class="sy-pa-sidebar-header-logo-ctn">/')
+        ->toContain('<span class="sy sy-pa-logo">Demo Panel</span>')
+        ->toMatch('/sy-pa-sidebar-header-ctn.+sy-pa-sidebar-nav/s')
+        ->not->toContain('brandname=')
+        ->not->toContain('brandName=');
 });
 
 it('renders collapse state and aria wiring on groups', function (): void {

@@ -1,26 +1,38 @@
 .sy-pa-sidebar {
-    @apply fixed inset-y-0 start-0 z-30 flex w-72 -translate-x-full flex-col bg-white shadow-xl ring-1 ring-gray-950/5 transition-transform lg:sticky lg:top-0 lg:z-auto lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:h-dvh lg:translate-x-0 lg:shadow-none lg:ring-0 rtl:translate-x-full lg:rtl:translate-x-0 dark:bg-gray-900 dark:ring-white/10;
+    @apply fixed inset-y-0 start-0 z-30 flex h-dvh w-(--sy-sidebar-width) -translate-x-full flex-col content-start bg-white transition-all lg:sticky lg:top-16 lg:z-20 lg:h-[calc(100dvh-4rem)] lg:translate-x-0 lg:bg-transparent lg:transition-none rtl:translate-x-full lg:rtl:-translate-x-0 dark:bg-gray-900 dark:lg:bg-transparent;
 }
 
 .sy-pa-sidebar-open .sy-pa-sidebar {
-    @apply translate-x-0 rtl:translate-x-0;
+    @apply translate-x-0 shadow-xl ring-1 ring-gray-950/5 lg:shadow-none lg:ring-0 rtl:-translate-x-0 dark:ring-white/10;
 }
 
 .sy-pa-sidebar-overlay {
-    @apply fixed inset-0 z-20 hidden bg-gray-950/50 dark:bg-gray-950/75;
+    @apply fixed inset-0 z-30 hidden bg-gray-950/50 dark:bg-gray-950/75;
 }
 
 .sy-pa-sidebar-open .sy-pa-sidebar-overlay {
     @apply block lg:hidden;
 }
 
+.sy-pa-sidebar-header-ctn {
+    @apply overflow-x-clip;
+}
+
+.sy-pa-sidebar-header {
+    @apply flex h-16 items-center justify-center bg-white px-6 ring-1 ring-gray-950/5 lg:hidden dark:bg-gray-900 dark:ring-white/10;
+}
+
+.sy-pa-sidebar-header-logo-ctn {
+    @apply flex-1;
+}
+
 .sy-pa-sidebar-nav {
-    @apply flex grow flex-col overflow-x-hidden overflow-y-auto px-4 py-6;
+    @apply flex grow flex-col gap-y-7 overflow-x-hidden overflow-y-auto px-6 py-8;
     scrollbar-gutter: stable;
 }
 
-.sy-pa-sidebar-groups {
-    @apply flex flex-col gap-y-6;
+.sy-pa-sidebar-nav-groups {
+    @apply -mx-2 flex flex-col gap-y-7;
 }
 
 .sy-pa-sidebar-group {
@@ -78,12 +90,12 @@ button.sy-pa-sidebar-group-btn {
 
 .sy-pa-sidebar-item.sy-active {
     & .sy-pa-sidebar-item-btn {
-        @apply bg-gray-100 text-primary-600 dark:bg-white/5 dark:text-primary-400;
+        @apply bg-gray-100 dark:bg-white/5;
     }
 
     & .sy-pa-sidebar-item-icon,
     & .sy-pa-sidebar-item-label {
-        @apply text-primary-600 dark:text-primary-400;
+        @apply text-primary-700 dark:text-primary-400;
     }
 }
 

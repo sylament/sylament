@@ -11,8 +11,16 @@
         class: 'sy sy-pa-sidebar',
     }, stimulus_target(sidebarController, 'sidebar'), attributes.all) }}
 >
-    <nav class="sy-pa-sidebar-nav">
-        <ul class="sy-pa-sidebar-groups">
+    <div class="sy-pa-sidebar-header-ctn">
+        <header class="sy-pa-sidebar-header">
+            <div class="sy-pa-sidebar-header-logo-ctn">
+                <twig:SylamentPanels:Logo :brandName="brandName" />
+            </div>
+        </header>
+    </div>
+
+    <nav class="sy-pa-sidebar-nav" aria-label="Navigation">
+        <ul class="sy-pa-sidebar-nav-groups">
             {% for group in navigation %}
                 <twig:SylamentPanels:SidebarGroup :group="group" :groupIndex="loop.index0" />
             {% endfor %}

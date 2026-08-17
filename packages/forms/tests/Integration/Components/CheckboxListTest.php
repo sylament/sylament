@@ -356,8 +356,8 @@ it('renders both bulk-toggle actions inert inside targeted spans', function (): 
     expect($links->count())->toBe(2)
         ->and($links->eq(0)->attr('data-action'))->toBeNull()
         ->and($links->eq(1)->attr('data-action'))->toBeNull()
-        ->and($crawler->filter('div.sy-fo-checkbox-list-actions [data-live-action-param-action]')->count())->toBe(0)
-        ->and($crawler->filter('div.sy-fo-checkbox-list-actions [data-live-action-param-name]')->count())->toBe(0);
+        ->and($crawler->filter('div.sy-fo-checkbox-list-actions [data-live-action-param]')->count())->toBe(0)
+        ->and($crawler->filter('div.sy-fo-checkbox-list-actions [data-live-name-param]')->count())->toBe(0);
 });
 
 it('drops the bulk-toggle row when there are no options', function (): void {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests\Unit\Components\Concerns;
 
 use Sylament\Forms\Components\Checkbox;
+use Sylament\Forms\Components\CheckboxList;
 use Sylament\Forms\Components\Radio;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Components\Textarea;
@@ -55,4 +56,5 @@ it('is composed on every field that renders a control, one or one per option', f
     Toggle::class,
     Radio::class,
     ToggleButtons::class,
+    CheckboxList::class,
 ]);

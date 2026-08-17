@@ -480,9 +480,15 @@ The click then lives on the markup, as vendor's does: each action sits inside a
 `<span>` carrying `data-sylament--forms--checkbox-list-target="selectAllWrap"`
 (or `deselectAllWrap`, which starts `hidden`) and
 `data-action="click->sylament--forms--checkbox-list#toggleAll"`. The assertion
-that guards this is the **absence** of `data-action="live#action"` and its
-`data-live-action-param-*` on the rendered links — the dispatch attributes live
-on a different branch of the partial and would pass whatever the wiring did.
+that guards this is the **absence** of `data-action="live#action"` and of the
+parameters it would carry on the rendered links — `data-live-action-param`
+(`mountAction`) and `data-live-name-param` (the action's name), the spellings
+StimulusBundle actually emits (`data-{controller}-{param}-param`) and the ones
+[tables](../../../packages/tables/tests/Integration/TableRenderingTest.php) and
+[panels](../../../packages/panels/tests/Integration/Resources/Pages/ListRecordsTest.php)
+assert against real live wiring. The dispatch attributes are **not** the thing to
+assert here: they live on a different branch of the partial and would be absent
+whatever the click wiring did.
 
 `IconButton`'s partial has a differently shaped guard and never had the inline
 expression; its live-click gate takes the same getter so the new setter is not a

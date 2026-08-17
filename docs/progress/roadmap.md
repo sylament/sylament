@@ -36,8 +36,8 @@ line** in its _Done when_ — the parity tables, not the demo script, say when i
 closes. Start with M3 · 1; M3 · 2, 4 and 5 are file-disjoint lanes beside it,
 and M3 · 3 no longer waits on the panel visual-parity epic, whose CSS truing
 owned the input stylesheet — it closed on 2026-08-17, shipped as
-[22](#pulled-forward). Three decisions are due at the top of M3 and one is
-open — [carried decisions](#m3--forms-widening).
+[22](#pulled-forward). All four carried decisions were made 2026-08-17 — see
+[carried decisions](#m3--forms-widening).
 
 ## Pulled forward
 
@@ -200,19 +200,29 @@ on the shared decisions below; 8 and 9 sweep.
 | 8 | Validation completeness | [forms](forms/README.md), [schemas](schemas/README.md), **demo** | Every deferred family in [can-be-validated.md](forms/can-be-validated.md), each on the constraint vocabulary M1 · 1 set: the comparison family (`after`/`afterOrEqual`/`before`/`beforeOrEqual`, `gt`/`gte`/`lt`/`lte`, `same`/`different`, `confirmed`), the conditional-required family (`requiredIf*`/`requiredUnless`/`requiredWith*`/`requiredWithout*`, `prohibited*`), the data-layer family (`unique()`/`exists()`/`scopedUnique()`/`scopedExists()` with `ignoreRecord:`, over the record's Doctrine query — its row names the blocker), the format sugar (`alpha*`, `ascii`, `hexColor`, `json`, `ip*`, `uuid`, `ulid`, …), `regex()`/`notRegex()`, `startsWith()`/`endsWith()` and their negations, `filled()`/`multipleOf()`, `distinct()` once its cross-path context exists, and `mutateStateForValidation()`. | todo |
 | 9 | Small fields and the shipped-field sweep | [forms](forms/README.md), [support](support/README.md), **demo** | `TagsInput` (chips over a small Stimulus controller, `suggestions()` as a datalist, `separator()`, `splitKeys()`), `KeyValue` (add/delete/reorder rows through mounted actions — the no-JS shape Repeater already uses), and the sweep that settles every remaining **in progress** row on the seven shipped fields: `TextInput` (`revealable()`, `copyable()`, the numeric/tel/url families, `mask()` ported over a masking controller or recorded as a gap), `Textarea` (`autosize()`), the `Checkbox`/`Toggle` leftovers, `Select::pivotData()` where a join entity makes it meaningful, and whatever epics 1–8 leave behind. Closes the milestone against its stop line. | todo |
 
-**Carried decisions — three due at the top of M3, one open; each is recorded
-in the trail when made.**
+**Carried decisions — all four made 2026-08-17; each lands in the package
+trail with the epic that consumes it.**
 (1) **Drag-and-drop control** (epic 6): SortableJS vs a first-party HTML5 drag
 controller — one control for repeater items, table rows and upload previews.
+**Decided 2026-08-17:** SortableJS, **bundled** into support's `dist` through
+the `BUNDLED_ENTRIES` mechanism that already inlines `@floating-ui/dom` —
+sign-off granted; epic 6 is its first consumer.
 (2) **File-upload seams** (epic 7): the storage contract and the drop-zone JS.
+**Decided 2026-08-17:** `league/flysystem-bundle` for storage and a **scoped
+FilePond** for the drop zone — core plus file-validate-size, file-validate-type
+and image-preview, with crop, edit and exif deferred alongside the image
+editor — sign-off granted; epic 7 consumes it.
 (3) **Searchable-select control** (epic 4): `symfony/ux-autocomplete` vs
-first-party.
-(4) **Strings — open.** Every field adds user-facing literals ("Select an
-option", the search prompts, "Add to …"), and the trail already records several
-"literal, not a translation key" divergences. Either literals start going
-through `symfony/translation` from epic 1, or i18n stays a dedicated pass
-([Beyond](#beyond)); either way the choice is made before epic 1 grows the
-count.
+first-party. **Decided 2026-08-17:** Tom Select behind a **thin integration** —
+our own live-component search endpoint emitting ux-autocomplete's
+`{results:[{value,text}]}` JSON shape, reusing that bundle's Stimulus controller
+if it binds cleanly to a live-component route and otherwise a thin first-party
+controller around bare Tom Select — sign-off granted; epic 4 consumes it.
+(4) **Strings.** Every field adds user-facing literals ("Select an option", the
+search prompts, "Add to …"), and the trail already records several "literal,
+not a translation key" divergences. **Decided 2026-08-17:** deferred entirely —
+i18n stays a dedicated [Beyond](#beyond) pass, and new literals keep landing
+with their "literal, not a translation key" trail notes.
 
 **Out of scope:** the editors (`RichEditor`, `MarkdownEditor`, `CodeEditor`)
 and `Builder` — ruled non-standard for this milestone (2026-08-17); the

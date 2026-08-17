@@ -4,14 +4,15 @@
 for attributes on a field's **control element**, the sibling of `Field`'s
 [`HasExtraFieldWrapperAttributes`](field.md), which reaches the wrapper `<div>`
 instead. Every field that renders a control composes it — one control or one per
-option: `TextInput`, `Textarea`, `Select`, `Checkbox`, `Radio` and
-`ToggleButtons` — Filament's own set among the ported fields — plus `Toggle`,
-which Filament pointedly leaves out and the port composes anyway
+option: `TextInput`, `Textarea`, `Select`, `Checkbox`, `Radio`,
+`ToggleButtons` and `CheckboxList` — Filament's own set among the ported fields
+— plus `Toggle`, which Filament pointedly leaves out and the port composes anyway
 ([divergence](toggle.md#the-toggle-carries-extra-input-attributes-filaments-does-not)).
 [`Radio`](radio.md) is the first composer whose control is not singular, and it
 reaches **every** radio in the group rather than picking one; the trait itself is
-unchanged by that, since where the bag lands is each template's business, and
-[`ToggleButtons`](toggle-buttons.md) is the second, across both of its templates.
+unchanged by that, since where the bag lands is each template's business,
+[`ToggleButtons`](toggle-buttons.md) is the second, across both of its templates,
+and [`CheckboxList`](checkbox-list.md) the third.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -24,11 +25,12 @@ Reference — the Filament source this is diffed against:
   [`Select.php`](../../../vendor/filament/forms/src/Components/Select.php),
   [`Checkbox.php`](../../../vendor/filament/forms/src/Components/Checkbox.php),
   [`Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php),
-  [`ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php)
-  — the six composers the port shares with Filament, whose embedded views carry
+  [`ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php),
+  [`CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php)
+  — the seven composers the port shares with Filament, whose embedded views carry
   the merge order
 - [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php)
-  — the field Filament withholds the trait from, against the port's sixth composer
+  — the field Filament withholds the trait from, against the port's eighth composer
   ([divergence](toggle.md#the-toggle-carries-extra-input-attributes-filaments-does-not))
 
 ## Surface
@@ -45,7 +47,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 Coverage: the empty default, the replace and merge arms, closure resolution
 through `evaluate()`, and the bag getter, by
 [`HasExtraInputAttributesTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasExtraInputAttributesTest.php),
-which also pins that all seven fields compose it. That each template merges the
+which also pins that all eight fields compose it. That each template merges the
 extras onto the right element, and that they outrank what the field computes, is
 pinned per field by the `merges extra input attributes` case in
 [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php),
@@ -57,10 +59,12 @@ and
 [`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php)
 and
 [`ToggleButtonsTest`](../../../packages/forms/tests/Integration/Components/ToggleButtonsTest.php)
+and
+[`CheckboxListTest`](../../../packages/forms/tests/Integration/Components/CheckboxListTest.php)
 — `CheckboxTest` and `ToggleTest` also asserting the extras land on the `<input>`
 rather than on the element wrapping it, `SelectTest` that no `<option>` picks them
-up, and `RadioTest` and `ToggleButtonsTest` that **every** control gets them while
-the group element gets none.
+up, and `RadioTest`, `ToggleButtonsTest` and `CheckboxListTest` that **every**
+control gets them while the group element gets none.
 
 ## Semantics
 
@@ -69,8 +73,8 @@ the group element gets none.
 `extraInputAttributes(['inputmode' => 'email'])` wins over the `inputmode` a
 `numeric()` text input derives, and `['disabled' => false]` un-disables a
 `disabled()` control. That is Filament's precedence rather than an addition on
-four of the six fields it also composes the trait on: `TextInput`, `Textarea`,
-`Select` and `Radio` each build the control's attributes
+five of the seven fields it also composes the trait on: `TextInput`, `Textarea`,
+`Select`, `Radio` and `CheckboxList` each build the control's attributes
 as `$this->getExtraInputAttributeBag()->merge([…the field's own…])`, and a bag's
 `merge()` treats its argument as **defaults** — so the extras are what survives.
 

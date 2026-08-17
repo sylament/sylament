@@ -15,8 +15,9 @@ Three fields compose it — `Radio`, `CheckboxList` and `ToggleButtons` — whic
 why it is filed here rather than folded into one of them. [`Radio`](radio.md) is
 the first built, and the first template to pass the direction to `grid()`;
 [`ToggleButtons`](toggle-buttons.md) is the second, spelling the same `Column`
-default at the one of its two templates that lays out a grid at all;
-`CheckboxList` follows.
+default at the one of its two templates that lays out a grid at all; and
+[`CheckboxList`](checkbox-list.md) is the third, the only one with no `inline()`
+escape from the grid at all.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -53,7 +54,9 @@ altogether — by
 [`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php),
 with the column default and the `inline()` suppression re-run against the second
 composer — plus `grouped()`, which suppresses the grid a second way — by
-[`ToggleButtonsTest`](../../../packages/forms/tests/Integration/Components/ToggleButtonsTest.php).
+[`ToggleButtonsTest`](../../../packages/forms/tests/Integration/Components/ToggleButtonsTest.php),
+and the column default re-run once more against a field that always grids, by
+[`CheckboxListTest`](../../../packages/forms/tests/Integration/Components/CheckboxListTest.php).
 
 ## Semantics
 

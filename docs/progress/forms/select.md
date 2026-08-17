@@ -5,9 +5,13 @@ option map, an enum, or a Doctrine association. It composes the shared option
 pair ([`HasOptions`](has-options.md),
 [`CanDisableOptions`](can-disable-options.md) and its
 [contract](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php)),
-which have files of their own, plus two single-use concerns folded here
-([`CanSelectPlaceholder`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php),
-[`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php)).
+which have files of their own, plus
+[`CanSelectPlaceholder`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php),
+its one single-use concern, folded here, and
+[`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php),
+which it now shares with
+[`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged)
+and whose write-up stays here as the arm's home.
 It casts its state through schemas'
 [`OptionStateCast`](../schemas/option-state-cast.md) — or, under `multiple()`,
 [`OptionsArrayStateCast`](../schemas/options-array-state-cast.md), or, under an
@@ -126,7 +130,12 @@ honest answer for a value that is not an option.
 
 [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php)
 stores the title attribute and the optional query scope, then wires three
-closures and nothing else. The association *name* and the target resolution
+closures and nothing else. Each takes its component as `self`, which resolves to
+whichever class composed the trait, so
+[`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged)
+takes the same three unchanged; the option query the first of them runs is a
+`getRecordsFromRelationship()` seam both fields read, so it is built and scoped
+in one place. The association *name* and the target resolution
 below moved one level down into
 [`BelongsToRelationship`](../../../packages/forms/src/Components/Concerns/BelongsToRelationship.php)
 when [`Repeater::relationship()`](repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)

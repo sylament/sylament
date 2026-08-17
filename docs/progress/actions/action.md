@@ -81,7 +81,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
 | POST-to-url support | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | skipped | — | [diverges](#post-to-url-support-is-not-ported) |
 | [`CanRequireConfirmation`](../../../packages/actions/src/Concerns/CanRequireConfirmation.php) | [`Concerns/CanRequireConfirmation.php`](../../../vendor/filament/actions/src/Concerns/CanRequireConfirmation.php) | done | — | [diverges](#confirmation-is-a-flag-not-a-modal-config-layer) |
-| [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) | [`Concerns/HasAction.php`](../../../vendor/filament/actions/src/Concerns/HasAction.php) | in progress | — | [detail](#hasaction-drops-the-livewire-click-gating), [diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
+| [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) | [`Concerns/HasAction.php`](../../../vendor/filament/actions/src/Concerns/HasAction.php) | in progress | — | [detail](#hasaction-carries-the-click-gate-hasaction-is-the-one-gap-left), [diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
 | [`HasArguments`](../../../packages/actions/src/Concerns/HasArguments.php) | [`Concerns/HasArguments.php`](../../../vendor/filament/actions/src/Concerns/HasArguments.php) | done | — | — |
 | [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | [diverges](#hasgroupedicon-narrows-its-icon-type-to-string) |
 | [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`label()` / `getLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | The name-derived default takes the segment **before the first dot** (`u($name)->before('.')`), which is Filament's own actions-side choice and differs from `Field`'s `afterLast('.')` — matched deliberately, not a slip to "fix" |
@@ -540,7 +540,7 @@ has no equivalent (only the evaluated `shouldOpenUrlInNewTab()` exists).
 Next step: add `hasShouldOpenUrlInNewTab()` with the optimized-render pipeline
 that consumes it.
 
-### HasAction drops the Livewire-click gating
+### HasAction carries the click gate; `hasAction()` is the one gap left
 
 Ported: both value shapes. `action(Closure|string|null $action): static` /
 `getAction(): Closure|string|null` round-trip a closure or a string, and
@@ -559,10 +559,33 @@ recorded as a
 [divergence](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side).
 
 Missing vs Filament's `HasAction`:
-- **`livewireClickHandlerEnabled()` / `isLivewireClickHandlerEnabled()` as a method.** Filament's gate has three arms: an explicit `livewireClickHandlerEnabled()` override, `filled($this->getUrl())`, and `canSubmitForm()`. Both **default** arms are now implemented — but in the five trigger templates rather than on the trait. The `getUrl()` arm always was (`{% if not component.getUrl %}` around the whole click cascade); the forms-in-modals epic added the second as a `hasLiveClickBinding = not component.getUrl and not component.canSubmitForm` guard in [`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig) and its `link`/`badge`/`grouped` siblings, and as an extra term in [`Action/IconButton.html.twig`](../../../packages/actions/templates/partials/Action/IconButton.html.twig)'s `mountAttributes`. It is load-bearing, not tidiness: [`getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php) gives a form-wrapped action `->submit(name)->action(null)`, so without the guard the trigger falls through its click cascade to the `mountAction` default and every confirm click fires a **second**, unrelated live request — `mountAction('submit')`, naming an action that does not exist — alongside the form's own `callMountedAction`. What is still absent is only the **explicit override**: there is no `livewireClickHandlerEnabled()` setter, so a caller cannot force-enable or force-disable the binding against the two defaults. The close arm is unaffected in both codebases — Filament keeps it on a separate `x-on:click`, the port on a separate `data-action`.
 - **`hasAction(): bool`.** Helper predicate not ported; trivially derivable from `getAction() !== null` at call sites today, but no equivalent method or test exists.
 
-Next step: promote the template-side guard into a real `isLiveComponentClickHandlerEnabled()` on `HasAction` the moment a caller needs the explicit override — the two default arms already agree with Filament's, so that change is additive and moves logic rather than adding behaviour.
+The click gate itself is now **ported**, under the `Livewire` → `LiveComponent`
+[idiom translation](../renames.md#idiom): `liveComponentClickHandlerEnabled(bool|Closure|null $condition = true)`
+and `isLiveComponentClickHandlerEnabled(): bool` on the trait, with Filament's
+three arms in Filament's order — an explicit override wins, then `filled(getUrl())`
+and `canSubmitForm()` each turn it off, otherwise it is on. The two default arms
+had lived in the templates since the forms-in-modals epic
+(`hasLiveClickBinding = not component.getUrl and not component.canSubmitForm` in
+[`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig)
+and its `link`/`badge`/`grouped` siblings, and an extra term in
+[`Action/IconButton.html.twig`](../../../packages/actions/templates/partials/Action/IconButton.html.twig)'s
+`mountAttributes`); all five now read the getter instead, which moves the logic
+without changing a single rendered attribute. That guard is load-bearing rather
+than tidiness: [`getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php)
+gives a form-wrapped action `->submit(name)->action(null)`, so without it the
+trigger falls through its click cascade to the `mountAction` default and every
+confirm click fires a **second**, unrelated live request — `mountAction('submit')`,
+naming an action that does not exist — alongside the form's own
+`callMountedAction`. The close arm is unaffected in both codebases: Filament keeps
+it on a separate `x-on:click`, the port on a separate `data-action`.
+
+What promoted it was the first caller needing the explicit override:
+[`CheckboxList`](../forms/checkbox-list.md#the-bulk-toggle-actions-render-but-never-dispatch)
+builds two bulk-toggle actions that must render as links and dispatch nothing,
+the click living on the `<span>` around each — Filament's own
+`livewireClickHandlerEnabled(false)` shape.
 
 ### The lifecycle hooks are ported; ActionCalling/ActionCalled events are not
 

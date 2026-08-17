@@ -8,8 +8,8 @@ use Closure;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Stringable;
-use Sylament\Forms\Components\Select;
 use Sylament\Schemas\State\AssociationTarget;
+use Twig\Markup;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
@@ -24,7 +24,7 @@ trait HasRelationship
     protected ?Closure $modifyRelationshipQueryUsing = null;
 
     /**
-     * @var array<string|int, string>|null
+     * @var array<string|int, string|Markup>|null
      */
     protected ?array $cachedRelationshipOptions = null;
 
@@ -44,11 +44,11 @@ trait HasRelationship
         $this->modifyRelationshipQueryUsing = $modifyQueryUsing;
         $this->cachedRelationshipOptions = null;
 
-        $this->options(static fn (Select $component): array => $component->getOptionsFromRelationship());
+        $this->options(static fn (self $component): array => $component->getOptionsFromRelationship());
 
-        $this->loadStateFromRelationshipsUsing(static fn (Select $component, object $record): mixed => $component->getStateFromRelationship($record));
+        $this->loadStateFromRelationshipsUsing(static fn (self $component, object $record): mixed => $component->getStateFromRelationship($record));
 
-        $this->saveRelationshipsUsing(static function (Select $component, object $record, mixed $state): void {
+        $this->saveRelationshipsUsing(static function (self $component, object $record, mixed $state): void {
             $component->saveStateToRelationship($record, $state);
         });
 
@@ -67,9 +67,11 @@ trait HasRelationship
      * empty array, because an empty enumeration would silently reject every
      * submitted value. The map is memoized for the field's lifetime unless a
      * query scope is declared, whose closure may read state that changes within
-     * the request.
+     * the request. The title attribute only ever produces text, but the memo is
+     * shared with whatever a composing field builds instead — `CheckboxList`'s
+     * record-shaped labels may be `Markup` — so the map is typed for both.
      *
-     * @return array<string|int, string>
+     * @return array<string|int, string|Markup>
      */
     public function getOptionsFromRelationship(): array
     {
@@ -77,23 +79,13 @@ trait HasRelationship
             return $this->cachedRelationshipOptions;
         }
 
-        $target = $this->getMultiplicityMatchedRelationshipTarget();
         $titleAttribute = $this->getRelationshipTitleAttributeOrFail();
         $reader = $this->getAssociationReader();
         $accessor = $this->getPropertyAccessor();
 
-        $query = $reader->createOptionQuery($target->targetClass);
-
-        if ($this->modifyRelationshipQueryUsing instanceof Closure) {
-            $query = $this->scopeOptionQuery($query);
-        }
-
-        /** @var list<object> $records */
-        $records = $query->getQuery()->getResult();
-
         $options = [];
 
-        foreach ($records as $related) {
+        foreach ($this->getRecordsFromRelationship() as $related) {
             $title = $accessor->getFromRecord($related, $titleAttribute);
 
             $options[$reader->getRecordKey($related)] = (is_scalar($title) || $title instanceof Stringable) ? (string) $title : '';
@@ -104,6 +96,27 @@ trait HasRelationship
         }
 
         return $options;
+    }
+
+    /**
+     * Every row an option could be built from: the association's target table,
+     * scoped by the declared query modifier. Unmemoized — the rows are a step, and
+     * each caller memoizes the option map it derives from them instead.
+     *
+     * @return list<object>
+     */
+    protected function getRecordsFromRelationship(): array
+    {
+        $target = $this->getMultiplicityMatchedRelationshipTarget();
+
+        $query = $this->getAssociationReader()->createOptionQuery($target->targetClass);
+
+        if ($this->modifyRelationshipQueryUsing instanceof Closure) {
+            $query = $this->scopeOptionQuery($query);
+        }
+
+        /** @var list<object> */
+        return $query->getQuery()->getResult();
     }
 
     protected function getMissingEntityManagerConsequence(): string

@@ -118,7 +118,8 @@ it('flattens extra attributes onto the icon-button root, merging class tokens', 
  * so without this suppression the trigger falls through its click cascade to the
  * `mountAction` default and every click fires a second live request — for the
  * modal submit button, `mountAction('submit')`, naming an action that does not
- * exist. Filament suppresses the same binding in `isLivewireClickHandlerEnabled()`.
+ * exist. Both codebases suppress it in the same gate — Filament's
+ * `isLivewireClickHandlerEnabled()`, the port's `isLiveComponentClickHandlerEnabled()`.
  */
 it('renders type="submit" and the wired form id for a submit-capable action, with no click binding', function (string $template): void {
     $html = renderVariant(

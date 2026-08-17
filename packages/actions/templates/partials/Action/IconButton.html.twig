@@ -39,7 +39,7 @@
                     ...(component.getInvokedArguments ? {arguments: component.getInvokedArguments} : {}),
                     ...(component.getContext ? {context: component.getContext} : {}),
                 }))) %}
-{% set mountAttributes = clickWiringSuppressed or component.canSubmitForm or clickParameters is null
+{% set mountAttributes = clickWiringSuppressed or not component.isLiveComponentClickHandlerEnabled or clickParameters is null
     ? {}
     : stimulus_action('live', 'action', parameters: clickParameters) %}
 

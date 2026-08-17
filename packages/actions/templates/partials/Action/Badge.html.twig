@@ -1,4 +1,4 @@
-{% set hasLiveClickBinding = not component.getUrl and not component.canSubmitForm %}
+{% set hasLiveClickBinding = component.isLiveComponentClickHandlerEnabled %}
 {% set clickParameters = null %}
 {% set closeAttributes = {} %}
 {% set dispatchAttributes = {} %}

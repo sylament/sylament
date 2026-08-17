@@ -10,9 +10,10 @@ clears it.
 
 Two fields compose it, `Radio` and `CheckboxList` — `ToggleButtons` does not, in
 Filament or here, since a button's extra text is its
-tooltip. [`Radio`](radio.md) is built and renders the map; `CheckboxList` is not
-yet, which is why this file describes the concern alone and each field's
-rendering is described in its own.
+tooltip. Both are built and both render the map — [`Radio`](radio.md) under each
+option's label, [`CheckboxList`](checkbox-list.md) under each option's — so this
+file describes the concern alone and each field's rendering is described in its
+own.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -51,7 +52,12 @@ fixture enums, the first of which describes one of its two cases with `null`.
 The rendered half — the description `<p>` under a described option and its
 absence under an undescribed one, from both a literal map and the enum fallback —
 is covered by
-[`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php).
+[`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php)
+and
+[`CheckboxListTest`](../../../packages/forms/tests/Integration/Components/CheckboxListTest.php),
+the second of which also covers the map being **written** by a component rather
+than a caller, from
+[`CheckboxList`'s record-shaped description closure](checkbox-list.md#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query).
 
 ## Semantics
 

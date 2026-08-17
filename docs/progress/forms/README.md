@@ -40,17 +40,11 @@ opposite reason: `Field` composes it, but its consumers are the option fields an
 [cross-component](has-enum.md) rather than under any one of them. The same fold
 applies
 to every other concern only one built component uses:
-`CanSelectPlaceholder` and `HasRelationship` are `Select`'s
-alone in the port and live in [`select.md`](select.md) — the last of those ports
-no Filament concern at all, being the relationship half of `Select` itself, kept
-as a trait here because a fourteen-method relation surface on a field class is
-what `Concerns/` exists to prevent, and its association-resolution core split off
-again as `BelongsToRelationship` once `Repeater` grew a `relationship()` of its
-own — and moved down to
-[schemas](../schemas/entangles-state-with-singular-relationship.md#the-association-core-is-shared-with-forms-relation-backed-fields)
-once the entangled layout components needed the same lookup, leaving forms'
-same-named trait as the field-flavoured adapter over it, which still keeps a
-row — `HasToggleIcons` and `HasToggleColors` are
+`CanSelectPlaceholder` is `Select`'s
+alone in the port and lives in [`select.md`](select.md), `CanAllowHtml` is
+`CheckboxList`'s and lives in
+[`checkbox-list.md`](checkbox-list.md#canallowhtml-opens-exactly-one-hole),
+`HasToggleIcons` and `HasToggleColors` are
 `Toggle`'s alone and live in [`toggle.md`](toggle.md), `HasStep`,
 `HasDatalistOptions` and `CanBeAutocapitalized` are `TextInput`'s alone and live
 in [`text-input.md`](text-input.md), and `CanBeCloned` and `CanGenerateUuids` are
@@ -59,6 +53,15 @@ in [`text-input.md`](text-input.md), and `CanBeCloned` and `CanGenerateUuids` ar
 reorder functions no other component calls — while `CanBeInline` and
 `CanBeAccepted` are shared by `Checkbox` and `Toggle`,
 `CanLimitItemsLength` by `Repeater` and `CheckboxList`,
+`HasRelationship` by `Select` and `CheckboxList` — which ports no Filament
+concern at all, being the relationship half of `Select` itself, kept as a trait
+here because a fourteen-method relation surface on a field class is what
+`Concerns/` exists to prevent, and whose association-resolution core split off
+again as `BelongsToRelationship` once `Repeater` grew a `relationship()` of its
+own, then
+[moved down to schemas](../schemas/entangles-state-with-singular-relationship.md#the-association-core-is-shared-with-forms-relation-backed-fields)
+once the entangled layout components needed the same lookup, leaving forms'
+same-named trait as the field-flavoured adapter over it —
 `HasOptions` and `CanDisableOptions` by every option field, and
 `HasExtraInputAttributes` by every field that renders a control, so those keep
 rows of their own. The fold reads the port, not Filament — Filament composes
@@ -92,7 +95,7 @@ table, the rest follow alphabetically.
 | Builder | [`Components/Builder.php`](../../../vendor/filament/forms/src/Components/Builder.php) | todo | — |
 | Builder / Block | [`Components/Builder/Block.php`](../../../vendor/filament/forms/src/Components/Builder/Block.php) | todo | — |
 | [`Checkbox`](../../../packages/forms/src/Components/Checkbox.php) | [`Components/Checkbox.php`](../../../vendor/filament/forms/src/Components/Checkbox.php) | in progress | [checkbox.md](checkbox.md) |
-| CheckboxList | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | todo | — |
+| [`CheckboxList`](../../../packages/forms/src/Components/CheckboxList.php) | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | in progress | [checkbox-list.md](checkbox-list.md) |
 | CodeEditor | [`Components/CodeEditor.php`](../../../vendor/filament/forms/src/Components/CodeEditor.php) | todo | — |
 | ColorPicker | [`Components/ColorPicker.php`](../../../vendor/filament/forms/src/Components/ColorPicker.php) | todo | — |
 | DatePicker | [`Components/DatePicker.php`](../../../vendor/filament/forms/src/Components/DatePicker.php) | todo | — |
@@ -138,8 +141,9 @@ single component is tracked in that component's detail file, not here: the base
 [`field.md`](field.md) — a sixth, `CanBeMarkedAsRequired`, relocated to schemas
 and is tracked in
 [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md)
-— `Select`'s two remaining single-use concerns (`CanSelectPlaceholder`,
-`HasRelationship`) into [`select.md`](select.md), `Toggle`'s
+— `Select`'s one remaining single-use concern (`CanSelectPlaceholder`) into
+[`select.md`](select.md), `CheckboxList`'s `CanAllowHtml` into
+[`checkbox-list.md`](checkbox-list.md), `Toggle`'s
 `HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md),
 `TextInput`'s `HasStep`, `HasDatalistOptions` and `CanBeAutocapitalized` into
 [`text-input.md`](text-input.md), and
@@ -149,33 +153,34 @@ into [`repeater.md`](repeater.md), per
 ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and
 `CanBeAutocompleted` are used by `TextInput` and `Textarea`, `CanBeInline` and
 `CanBeAccepted` by `Checkbox` and `Toggle`, `BelongsToRelationship` by `Select`
-and `Repeater`, `CanLimitItemsLength` by `Repeater` and `CheckboxList`,
+and `Repeater`, `HasRelationship` and `CanLimitItemsLength` by `Select` /
+`Repeater` and `CheckboxList`,
 `HasOptions` and `CanDisableOptions` by every option field, and
 `HasExtraInputAttributes` by
-`TextInput`, `Textarea`, `Select`, `Checkbox`, `Toggle`, `Radio` and
-`ToggleButtons`. `HasEnum` stays below
+`TextInput`, `Textarea`, `Select`, `Checkbox`, `Toggle`, `Radio`,
+`ToggleButtons` and `CheckboxList`. `HasEnum` stays below
 too, on the other test: `Field` composes it, so every field has it.
 
-Four concerns are below **ahead of** the fields that compose them, which land
-later in the same epic: [`HasDescriptions`](has-descriptions.md) is `Radio`'s and
-`CheckboxList`'s, [`HasGridDirection`](has-grid-direction.md) theirs and
-`ToggleButtons`' — both clear the shared bar already, so each has a file — while
-`CanAllowHtml` and `CanBeSearchable` keep bare rows only because the file each
-folds into does not exist yet, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing): both are
-`CheckboxList`'s and fold into `checkbox-list.md`, `CanBeSearchable` promoting
-back to a file of its own when `Select`'s search lands. `HasColors`, `HasIcons`
+Every concern that was listed here **ahead of** the field composing it now has
+that field. [`HasDescriptions`](has-descriptions.md) is `Radio`'s and
+`CheckboxList`'s and [`HasGridDirection`](has-grid-direction.md) theirs and
+`ToggleButtons`', both clearing the shared bar so each keeps a file;
+`CanAllowHtml` and `CanBeSearchable` held bare rows only until the file they fold
+into existed, and both now point into
+[`checkbox-list.md`](checkbox-list.md) — `CanBeSearchable` as **in progress**,
+since the search behaviour is its Stimulus controller's, and promoting back to a
+file of its own when `Select`'s search lands. `HasColors`, `HasIcons`
 and `HasTooltips` were three more until
 [`ToggleButtons`](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone)
-landed as their sole consumer and took their detail.
-[`CanLimitItemsLength`](can-limit-items-length.md) is not one of the four:
-`Repeater` composes it today, and `CheckboxList` being its second consumer is what
+landed as their sole consumer and took their detail, and
+[`CanLimitItemsLength`](can-limit-items-length.md) was never one of them:
+`Repeater` composes it too, and `CheckboxList` being its second consumer is what
 promoted it out of [`repeater.md`](repeater.md) ahead of that field landing.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`BelongsToRelationship`](../../../packages/forms/src/Components/Concerns/BelongsToRelationship.php) — no Filament concern of its own; the field-flavoured adapter over [schemas' association-resolution core](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php), which `Select` and `Repeater` share with the entangled layout components | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) · [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | [select.md](select.md#relationship-is-three-lazy-closures-over-the-association-reader) · [schemas](../schemas/entangles-state-with-singular-relationship.md#the-association-core-is-shared-with-forms-relation-backed-fields) |
-| [`CanAllowHtml`](../../../packages/forms/src/Components/Concerns/CanAllowHtml.php) | [`Components/Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | — |
+| [`CanAllowHtml`](../../../packages/forms/src/Components/Concerns/CanAllowHtml.php) | [`Components/Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | [checkbox-list.md](checkbox-list.md#canallowhtml-opens-exactly-one-hole) |
 | [`CanBeAccepted`](../../../packages/forms/src/Components/Concerns/CanBeAccepted.php) | [`Components/Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | [can-be-accepted.md](can-be-accepted.md) |
 | [`CanBeAutocompleted`](../../../packages/forms/src/Components/Concerns/CanBeAutocompleted.php) | [`Components/Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | done | [can-be-autocompleted.md](can-be-autocompleted.md) |
 | [`CanBeInline`](../../../packages/forms/src/Components/Concerns/CanBeInline.php) | [`Components/Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) | done | [can-be-inline.md](can-be-inline.md) |
@@ -183,7 +188,7 @@ promoted it out of [`repeater.md`](repeater.md) ahead of that field landing.
 | CanBeNative | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | todo | — |
 | CanBePreloaded | [`Components/Concerns/CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php) | todo | — |
 | [`CanBeReadOnly`](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Components/Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | [can-be-read-only.md](can-be-read-only.md) |
-| [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — |
+| [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | in progress | [checkbox-list.md](checkbox-list.md#canbesearchable-is-client-side-only-and-mostly-select-only) |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | [can-be-validated.md](can-be-validated.md) |
 | CanDisableGrammarly | [`Components/Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | todo | — |
 | [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) | [`Components/Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | [can-disable-options.md](can-disable-options.md) |
@@ -207,7 +212,7 @@ promoted it out of [`repeater.md`](repeater.md) ahead of that field landing.
 | [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Components/Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | [has-options.md](has-options.md) |
 | HasPivotData | [`Components/Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | [select.md](select.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | HasPreview | [`Components/Concerns/HasPreview.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPreview.php) | todo | — |
-| [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — no Filament concern of its own; `Select`'s relation surface, split off the class | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | [select.md](select.md#relationship-is-three-lazy-closures-over-the-association-reader) |
+| [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — no Filament concern of its own; the relation surface `Select` and `CheckboxList` share, split off the class | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) · [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | [select.md](select.md#relationship-is-three-lazy-closures-over-the-association-reader) · [checkbox-list.md](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged) |
 | [`HasTooltips`](../../../packages/forms/src/Components/Concerns/HasTooltips.php) | [`Components/Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | done | [toggle-buttons.md](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone) |
 | HasUploadingMessage | [`Components/Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | todo | — |
 | InteractsWithForms | [`Concerns/InteractsWithForms.php`](../../../vendor/filament/forms/src/Concerns/InteractsWithForms.php) | todo | — |

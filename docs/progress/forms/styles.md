@@ -2,7 +2,7 @@
 
 The forms bundle's component CSS —
 [`packages/forms/assets/src/styles/`](../../../packages/forms/assets/src/styles/)
-— is eight stylesheets, and only four of them draw on
+— is nine stylesheets, and only five of them draw on
 [`forms/resources/css/`](../../../vendor/filament/forms/resources/css/) at all.
 **The rest port from
 [`support/resources/css/`](../../../vendor/filament/support/resources/css/)**:
@@ -10,9 +10,10 @@ Filament files the raw control chrome — checkbox, input, radio, select, toggle
 in its *support* package and keeps only the field-and-wrapper layer in forms, so
 `checkbox.css`, `input.css`, `select.css` and `toggle.css` have no counterpart in
 the forms tree at all, `radio.css` has one for its option set only, and
-`toggle-buttons.css` is the exception that proves the split — it is wholly forms'
-because its controls borrow support's button chrome by class rather than
-restyling it. Diffed
+`toggle-buttons.css` and `checkbox-list.css` are the exceptions that prove the
+split — both are wholly forms', because their controls borrow support's button
+chrome (`toggle-buttons.css`) or forms' own already-ported checkbox
+(`checkbox-list.css`) by class rather than restyling either. Diffed
 against the wrong directory each of them reads as drift from beginning to end,
 which is the single most useful thing to know before reading this file. Every row
 below names the vendor file it was actually written against.
@@ -33,10 +34,10 @@ translated to the forms component code `sy-fo-*` (see the
 Reference — the Filament source this is diffed against:
 
 - [`forms/resources/css/components/`](../../../vendor/filament/forms/resources/css/components/)
-  — the twenty per-component stylesheets: `field.css`, `radio.css`,
-  `repeater.css` and `toggle-buttons.css` ported directly, `textarea.css` folded
-  into `input.css`, `text-input.css` and `select.css` partly, the other thirteen
-  unported
+  — the twenty per-component stylesheets: `checkbox-list.css`, `field.css`,
+  `radio.css`, `repeater.css` and `toggle-buttons.css` ported directly,
+  `textarea.css` folded into `input.css`, `text-input.css` and `select.css`
+  partly, the other twelve unported
 - [`support/resources/css/components/input/`](../../../vendor/filament/support/resources/css/components/input/)
   — `checkbox.css`, `index.css`, `radio.css` and `select.css`, the four control
   sources, plus the `wrapper.css` chrome the port collapses into its controls
@@ -63,6 +64,7 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
+| [`checkbox-list.css` — the `.sy-fo-checkbox-list` option set, its search row and its no-results line](../../../packages/forms/assets/src/styles/components/checkbox-list.css) | [`components/checkbox-list.css`](../../../vendor/filament/forms/resources/css/components/checkbox-list.css) | in progress | [the input affix wrapper](field.md#the-input-affix-wrapper-is-not-ported) | [detail](checkbox-list.md#the-search-box-borrows-sy-fo-input-instead-of-the-unbuilt-wrapper) · [diverges](checkbox-list.md#the-control-class-is-the-existing-sy-fo-checkbox) |
 | [`checkbox.css` — `.sy-fo-checkbox` box, tick and invalid arms](../../../packages/forms/assets/src/styles/components/checkbox.css) | [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](#the-indeterminate-checkbox-arm-has-no-port) |
 | [`field.css` — the `.sy-fo-field` wrapper grid, label column, content column and error list](../../../packages/forms/assets/src/styles/components/field.css) | [`components/field.css`](../../../vendor/filament/forms/resources/css/components/field.css) | in progress | schemas' `HasInlineLabel` · support's `HasVerticalAlignment` | [detail](#the-field-stylesheet-omits-the-leading-schema-un-grow) · [diverges](#field-css-is-flat-where-filament-nests) · [diverges](#sy-fo-sr-only-is-a-support-utility-authored-as-a-forms-component-class) |
 | [`input.css` — `.sy-fo-input`, the text control for `TextInput` and `Textarea`](../../../packages/forms/assets/src/styles/components/input.css) | [`support/…/input/index.css`](../../../vendor/filament/support/resources/css/components/input/index.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) + [`components/textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css) | in progress | [the input affix wrapper](field.md#the-input-affix-wrapper-is-not-ported) | [detail](#the-input-and-select-stylesheets-wait-on-the-affix-wrapper) · [diverges](#the-two-text-controls-invent-a-hover-ring) · [diverges](#the-textarea-rule-is-the-ports-own-because-nothing-autosizes) |
@@ -72,7 +74,7 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 | [`toggle-buttons.css` — the `.sy-fo-toggle-buttons` option set and its hidden inputs](../../../packages/forms/assets/src/styles/components/toggle-buttons.css) | [`components/toggle-buttons.css`](../../../vendor/filament/forms/resources/css/components/toggle-buttons.css) | in progress | schemas' `HasInlineLabel` | [semantics](toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group) · [diverges](toggle-buttons.md#extraattributes-stays-on-the-field-wrapper) |
 | [`toggle.css` — the `.sy-fo-toggle` root, track, thumb and icon pair](../../../packages/forms/assets/src/styles/components/toggle.css) | [`support/…/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css) | done | — | [diverges](toggle.md#the-toggle-is-a-styled-checkbox-not-a-button) · [diverges](toggle.md#the-icon-rules-select-by-name-where-filament-selects-by-position) · [diverges](toggle.md#the-two-colours-ride-on-two-elements) |
 | `text-input.css` / `select.css` — the rules no port carries | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | `revealable()` · schemas' `HasInlineLabel` | [detail](#two-vendor-stylesheets-are-partly-rather-than-wholly-unported) |
-| `builder.css` / `checkbox-list.css` / `code-editor.css` / `color-picker.css` / `date-time-picker.css` / `file-upload.css` (+ `file-upload/filepond-plugin-media-preview.css`) / `key-value.css` / `markdown-editor.css` / `modal-table-select.css` / `rich-editor.css` / `slider.css` / `tags-input.css` | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | Builder, CheckboxList, CodeEditor, ColorPicker, DateTimePicker, FileUpload, KeyValue, MarkdownEditor, ModalTableSelect, RichEditor, Slider, TagsInput | [detail](#the-thirteen-unported-forms-stylesheets) |
+| `builder.css` / `code-editor.css` / `color-picker.css` / `date-time-picker.css` / `file-upload.css` (+ `file-upload/filepond-plugin-media-preview.css`) / `key-value.css` / `markdown-editor.css` / `modal-table-select.css` / `rich-editor.css` / `slider.css` / `tags-input.css` | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | Builder, CodeEditor, ColorPicker, DateTimePicker, FileUpload, KeyValue, MarkdownEditor, ModalTableSelect, RichEditor, Slider, TagsInput | [detail](#the-twelve-unported-forms-stylesheets) |
 
 This table carries no [unaudited row](../README.md#an-unaudited-table-says-so):
 every one of the twenty stylesheets in
@@ -185,9 +187,9 @@ can never match, for the hidden-placeholder reason above; and
 needs both the select wrapper element and schemas' `HasInlineLabel`, so it waits
 on the later of the two.
 
-### The thirteen unported forms stylesheets
+### The twelve unported forms stylesheets
 
-`builder.css`, `checkbox-list.css`, `code-editor.css`, `color-picker.css`,
+`builder.css`, `code-editor.css`, `color-picker.css`,
 `date-time-picker.css`, `file-upload.css` (with its nested
 `file-upload/filepond-plugin-media-preview.css`), `key-value.css`,
 `markdown-editor.css`, `modal-table-select.css`, `rich-editor.css`,

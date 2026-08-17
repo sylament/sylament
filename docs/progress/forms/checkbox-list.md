@@ -1,0 +1,558 @@
+# CheckboxList (forms)
+
+`Sylament\Forms\Components\CheckboxList` — the multi-choice option field,
+rendering one native `<input type="checkbox">` per option inside an
+`aria-labelledby`-pointed `role="group"` container. Extends
+[`Field`](../../../packages/forms/src/Components/Field.php), casts state through
+schemas'
+[`OptionsArrayStateCast`](../../../packages/schemas/src/State/Casts/OptionsArrayStateCast.php),
+and composes eight concerns: the four option-field ones
+[`Radio`](radio.md) already carries ([`HasOptions`](has-options.md),
+[`CanDisableOptions`](can-disable-options.md),
+[`HasDescriptions`](has-descriptions.md),
+[`HasGridDirection`](has-grid-direction.md)) plus
+[`HasExtraInputAttributes`](has-extra-input-attributes.md), and four that reach
+this field first or exclusively —
+[`CanAllowHtml`](#canallowhtml-opens-exactly-one-hole),
+[`CanBeSearchable`](#canbesearchable-is-client-side-only-and-mostly-select-only),
+[`CanLimitItemsLength`](can-limit-items-length.md) and
+[`HasRelationship`](#the-to-many-relationship-arm-serves-this-field-unchanged).
+
+It is the field where three port-wide seams meet for the first time. It is the
+only option field that is **inherently multiple**, so it is the second consumer
+of the to-many relationship arm `Select::multiple()` built and the first to take
+it without declaring anything. It is the first field to
+[register component-level actions](#the-bulk-toggle-actions-render-but-never-dispatch)
+that are deliberately inert — the click lives on the markup around them. And it
+is the first field to declare a Stimulus controller, whose behaviour lands in
+the epic's next task; the template ships every target that controller consumes,
+so search and bulk-toggle render fully and do nothing until it does.
+
+**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+
+Reference — the Filament source this is diffed against:
+
+- [`forms/src/Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php)
+  — the field class and its embedded view
+- [`forms/resources/js/components/checkbox-list.js`](../../../vendor/filament/forms/resources/js/components/checkbox-list.js)
+  — the Alpine component the search and bulk toggle run on
+- [`forms/resources/css/components/checkbox-list.css`](../../../vendor/filament/forms/resources/css/components/checkbox-list.css)
+  — the option-set chrome
+- [`support/resources/css/components/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css)
+  — the control chrome, which vendor files a package down and the port already
+  ships as `.sy-fo-checkbox`
+
+## Surface
+
+Every point this field adds over `Field`. `Field`'s own surface is tracked in
+[`field.md`](field.md), not here. _Blocked by_ names what has to land first.
+_Detail_ links the write-up in [Details](#details) or a permanent note in
+[Semantics](#semantics) / [Divergences](#divergences).
+
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| Construction &amp; rendering — the group, the implicit option labels, the description line | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#every-checkbox-carries-the-same-data-model) · [diverges](#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) · [diverges](#the-control-class-is-the-existing-sy-fo-checkbox) |
+| The grid, and its `Column` default — applied unconditionally, no `inline()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](has-grid-direction.md#the-column-default-belongs-to-the-field-not-to-this-getter) |
+| `getEnumDefaultStateCast()` — `EnumArrayStateCast` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-list-rests-at-an-array-and-that-is-load-bearing) |
+| `getDefaultStateCasts()` — `[OptionsArrayStateCast]` unless custom casts or an enum | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-list-rests-at-an-array-and-that-is-load-bearing) |
+| `getInValidationRuleValues()` / `hasInValidationOnMultipleValues()` → `buildValidationConstraints()`, a `Choice(multiple: true)` over the enabled options | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-three-server-side-guards-are-ordered-so-they-never-collide) |
+| `required()` — the standard `NotBlank` | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-rejects-the-empty-list-with-notblank-alone) |
+| `bulkToggleable()` / `isBulkToggleable()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) |
+| `getSelectAllAction()` / `selectAllAction()` / `getSelectAllActionName()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) · [diverges](#the-bulk-toggle-labels-are-untranslated-literals) |
+| `getDeselectAllAction()` / `deselectAllAction()` / `getDeselectAllActionName()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) · [diverges](#the-bulk-toggle-labels-are-untranslated-literals) |
+| `relationship()` / `getRelationshipName()` / `getRelationshipTitleAttribute()` — via [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-to-many-relationship-arm-serves-this-field-unchanged) · [diverges](#the-relationship-state-is-not-pruned-from-the-dehydrated-bag) |
+| `getRelationship()` — the association the mapping declares | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-to-many-relationship-arm-serves-this-field-unchanged) |
+| `fillStateFromRelationship()` / `saveStateToRelationship()` — the load and save hooks | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](select.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
+| `getOptionLabelFromRecordUsing()` / `hasOptionLabelFromRecordUsingCallback()` / `getOptionLabelFromRecord()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query) |
+| `getOptionDescriptionFromRecordUsing()` / `hasOptionDescriptionFromRecordUsingCallback()` / `getOptionDescriptionFromRecord()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [detail](#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query) |
+| `getLabel()` — derived from the relationship name when unset | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-relationship-label-is-a-getdefaultlabel-override) |
+| `isMultiple()` — port plumbing, no Filament source | — | done | — | [diverges](#ismultiple-is-port-plumbing-with-no-filament-counterpart) · [renames](../renames.md#names-with-no-filament-source) |
+| [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
+| [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) + [contract](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [detail](can-disable-options.md) |
+| [`HasDescriptions`](../../../packages/forms/src/Components/Concerns/HasDescriptions.php) | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [detail](has-descriptions.md) |
+| [`HasGridDirection`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php) | [`Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | — | [detail](has-grid-direction.md) |
+| [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
+| [`CanAllowHtml`](../../../packages/forms/src/Components/Concerns/CanAllowHtml.php) | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | — | [detail](#canallowhtml-opens-exactly-one-hole) |
+| [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) — the markup and the debounce override | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | in progress | the Stimulus controller (M3 · 1, next task) | [detail](#canbesearchable-is-client-side-only-and-mostly-select-only) |
+| [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) — `minItems()` / `maxItems()` as a `Count` | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [detail](can-limit-items-length.md) · [semantics](#the-three-server-side-guards-are-ordered-so-they-never-collide) |
+| The search field's magnifying-glass icon and its `fi-input-wrp` prefix slot | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | blocked | the input wrapper (M3 · 3) | [detail](#the-search-box-borrows-sy-fo-input-instead-of-the-unbuilt-wrapper) |
+| `HasPivotData` — `pivotData()` on the save arm | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity mapping (M3 · 9) | [detail](#haspivotdata-has-no-join-row-to-write-to) |
+| `HasNestedRecursiveValidationRules` + its contract — the `{statePath}.*` error path | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | blocked | the validation families (M3 · 8) | [detail](#the-nested-recursive-rules-are-real-here-and-deferred-with-the-rest-of-validation) |
+| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `distinct()` (M3 · 8) · repeater-item context (M3 · 6) | [detail](radio.md#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
+| `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | blocked | repeater-item context (M3 · 6) | [detail](radio.md#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
+| `getPublishedViewOverrideCheckPath()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | skipped | — | [semantics](toggle-buttons.md#there-is-nothing-to-publish-a-view-override-against) |
+
+Coverage: one checkbox per option with per-option ids and values and no shared
+`name`; the `data-model` every input shares; `checked` on every member of the
+array state and on no other, including the loose `'1'`-against-`1` case and an
+unset state against a `0`-keyed option; the enum arms (labels from `HasLabel`,
+descriptions from `HasDescription`); explicit descriptions; `allowHtml()`
+rendering a `<b>` label raw while the same markup in a description stays
+escaped, and both escaped without it; per-option and whole-field `disabled`; the
+default column grid and `columns(2)`; `aria-invalid` in both arms; extra input
+attributes reaching every input and outranking the field's own; the searchable
+branch (controller, debounce value, search input with no `name`/`data-model`,
+per-option targets, the hidden `role="status"` node, custom prompt and message)
+and its absence by default and when disabled; the bulk-toggle branch (both
+actions rendered as small links inside targeted spans carrying the click, the
+`hidden` deselect span, **no** `data-action="live#action"` and no live-action
+parameters on either link, the empty-options and disabled short-circuits, and
+the two `…Action()` modifiers); `getSearchDebounce()` forced to `0` and still
+overridable; the cast chain in both arms and the resting `[]`; the
+`Choice(multiple: true)` including the disabled filter, the non-array `Type`
+arm, the blank short-circuit and the no-options `LogicException`; the `Count`
+from `minItems()`/`maxItems()` including the empty-selection case; and
+`required()` rejecting `[]` — by
+[`CheckboxListTest`](../../../packages/forms/tests/Integration/Components/CheckboxListTest.php).
+The relationship arm runs against the real Doctrine rig — option enumeration,
+`fill()` from the association, the desired-list write through `getData()`, the
+empty submission, `modifyQueryUsing`, the to-one refusal, the missing
+`titleAttribute` refusal, the derived label, the two record-shaped closures, a
+`Markup` record label reaching the markup unflattened, and the un-pruned
+dehydration — in
+[`CheckboxListRelationshipTest`](../../../packages/forms/tests/Integration/Components/CheckboxListRelationshipTest.php).
+The binding mechanism itself needs a live host, so it is driven through a real
+round-trip by
+[`LiveCheckboxListTest`](../../../packages/forms/tests/Integration/LiveCheckboxListTest.php)
+against the
+[`CheckboxListForm`](../../../packages/forms/tests/Fixtures/Twig/Components/CheckboxListForm.php)
+fixture, which asserts the resting `[]` on the wire before it asserts anything
+about checking.
+
+## Details
+
+Specifics for rows that are not finished. Delete a subsection when its row flips
+to **done**.
+
+### `CanBeSearchable` is client-side only, and mostly Select-only
+
+The trait ships whole and is exercised by this field's markup, but its behaviour
+is the Stimulus controller's, which lands in the next task of this epic — hence
+**in progress** rather than done. The template renders **every** option server
+side and gives the controller the targets to hide them with; nothing about
+search reaches the server.
+
+Four things are worth stating, because three of them read as omissions:
+
+1. **`setUp()` forces `searchDebounce(0)`**, overriding the trait's `1000`
+   default, vendor-exact — a client-side filter has no request to debounce. A
+   caller can still raise it, and the value travels to the controller as the
+   Stimulus `debounce` value.
+2. **`searchLabels()` / `searchValues()` / `getSearchableOptionFields()` are
+   dead surface here.** Vendor's Alpine component matches the rendered
+   `innerText` of the option label **and** the option description, and never the
+   option value; the three members exist for `Select`'s server-side search and
+   `CheckboxList` consults none of them. They are deliberately absent from the
+   template's and the controller's contract rather than wired to something
+   plausible.
+3. **`getNoOptionsMessage()` and `getSearchingMessage()` are not rendered.** An
+   empty option list renders an empty options grid (vendor renders an empty
+   `wire:key`ed `<div>` as a morph anchor and nothing else), and there is no
+   searching state to message because there is no request.
+4. **The four message literals are untranslated**, matching
+   [`Select`'s placeholder](select.md#the-default-placeholder-is-an-untranslated-literal)
+   and [`Radio`'s boolean labels](radio.md#the-boolean-labels-are-untranslated-literals).
+   Their Filament keys are recorded here so the strings can be found when a
+   translation layer lands, and the family is worth noting because it is
+   **`select`, not `checkbox_list`**: `filament-forms::components.select.search_prompt`
+   (`Start typing to search...`),
+   `filament-forms::components.select.no_search_results_message`
+   (`No options match your search.`),
+   `filament-forms::components.select.no_options_message`
+   (`No options available.`) and
+   `filament-forms::components.select.searching_message` (`Searching...`) — all
+   four owned by the trait, so a `CheckboxList` reads `Select`'s strings. Only
+   the two bulk-toggle labels have keys of this field's own
+   ([below](#the-bulk-toggle-labels-are-untranslated-literals)).
+
+The two properties the port had to widen — `$shouldSearchLabels` and
+`$shouldSearchValues`, nullable so the setters' own declared `null` arm assigns
+instead of throwing a `TypeError` as it does in Filament — carry that contract
+as a docblock on
+[the trait](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php)
+and belong to this file only because the trait folds here; they are `Select`'s
+question, not this field's.
+
+### The search box borrows `sy-fo-input` instead of the unbuilt wrapper
+
+Vendor hand-builds `div.fi-input-wrp.fi-fo-checkbox-list-search-input-wrp` with
+a `fi-input-wrp-prefix` holding a magnifying-glass icon, then puts
+`input.fi-input.fi-input-has-inline-prefix` inside it — the same wrapper the
+port's other inputs will get from support at
+[M3 · 3](../roadmap.md#m3--forms-widening). Building a one-off copy of it here
+would have to be unbuilt again then.
+
+So the port keeps the outer `sy-fo-checkbox-list-search-input-wrp` div (the
+class carries the `mb-4` vendor gives it, and nothing else) and puts
+`class="sy-fo-input"` on the `<input>` directly. The consequence is the
+**icon**: with no prefix slot to hang it in, none renders, which is why
+[`FormsIconAlias::COMPONENTS_CHECKBOX_LIST_SEARCH_FIELD`](../../../packages/forms/src/Twig/FormsIconAlias.php)
+already ships as a constant with no call site. That row is **blocked**, not
+skipped — M3 · 3 lands the wrapper, and the icon goes in with it.
+
+### `HasPivotData` has no join row to write to
+
+The concern declares extra columns to write onto a `BelongsToMany` pivot table
+when the selection is saved. The port's save arm
+[writes a desired list of managed references](select.md#the-save-arm-writes-a-desired-list-not-attachdetach)
+and lets Doctrine reconcile the join table, which for a plain `ManyToMany` is a
+table the mapping owns and the application never names — there is no row object
+to set a column on. Making `pivotData()` mean anything needs the join modelled
+as its own entity, which is
+[M3 · 9](../roadmap.md#m3--forms-widening)'s call for `Select` too; the row is
+**blocked** on the same decision rather than skipped, and the concern stays
+`blocked` in the [feature table](README.md#features) pointing at `Select`.
+
+### The nested-recursive rules are real here, and deferred with the rest of validation
+
+Unlike [`ToggleButtons`](toggle-buttons.md#the-nested-recursive-rules-trait-is-dead-api-in-filaments-own-class),
+`CheckboxList` **implements** `Contracts\HasNestedRecursiveValidationRules`, so
+Filament's `{$statePath}.*` error path and per-item rule registration genuinely
+fire for it. That is a real capability gap, not an inert API being skipped.
+
+It is deferred to [M3 · 8](../roadmap.md#m3--forms-widening) with the rest of
+the validation families because it is not a checkbox-list feature: it is a
+schemas-level question about whether a component can register constraints
+against a wildcard child path at all, which the port's
+[error bag](field.md#error-display-shows-every-message-for-the-path) and
+`Schema`'s validation walk both have to answer. The item-level guard this field
+needs today — that every submitted value is a known option — is already the
+`Choice(multiple: true)`, which validates element by element.
+
+## Semantics
+
+Behaviour that is faithful to Filament but easy to misread here.
+
+### `CanAllowHtml` opens exactly one hole
+
+The trait is `CheckboxList`'s only consumer in the port, so it folds here per
+[one row per file](../README.md#one-row-per-file-one-file-per-thing) and keeps a
+bare row in the [feature table](README.md#features) until a second field takes
+it (Filament composes it on `Select`, `ToggleButtons`, `Radio`'s infolist twin
+and several columns).
+
+`allowHtml()` makes the **option label** render raw and nothing else. The
+description beside it keeps the template's escaping in both states, which is
+vendor's own escaping map (`CheckboxList.php:606-615`) and the assertion that
+would catch a template widening the raw site by one element. The hole is stated
+at the sink, in a `{# Security: … #}` comment on the template's label `<span>`,
+matching the same comment on
+[the trait](../../../packages/forms/src/Components/Concerns/CanAllowHtml.php).
+
+One port-specific clause: a `Markup` label renders raw **whether or not**
+`allowHtml()` is on, because that is what `Markup` means everywhere in this
+codebase — the Twig-side translation of Filament's `Htmlable`, which their
+`e($label)` would have escaped. `allowHtml()` is therefore the switch for a
+plain **string**, and a caller who wants one label raw can reach for `Markup`
+instead of opening the whole field.
+
+### The to-many relationship arm serves this field unchanged
+
+`relationship()` is not reimplemented: this field composes the same
+[`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php)
+`Select` does, and gets the whole three-closure arm
+([how it works](select.md#relationship-is-three-lazy-closures-over-the-association-reader))
+unchanged — the option query, the memo, the query scope, the `fill()` read and
+the desired-list write.
+
+Two things made that possible, and both are recorded rather than assumed:
+
+- The trait's three injected-component closures were typed `Select`. They are
+  now typed **`self`**, which inside a trait resolves to the composing class, so
+  a `CheckboxList` closure receives a `CheckboxList`. The
+  [`Invoker`](../support/component.md#closure-resolution-lives-in-a-service)
+  normalizes a `self` hint against the declaring class when it resolves the
+  injection, so nothing else changed —
+  `Select`'s whole relationship suite is untouched and green, which is what pins
+  the widening.
+- The multiplicity match the trait runs on every read asks the field
+  [`isMultiple()`](#ismultiple-is-port-plumbing-with-no-filament-counterpart).
+  A `CheckboxList` answers a constant `true`, so pointing it at a to-one
+  association fails with the trait's existing refusal ("holds a single …") and
+  the to-many arm is the only one it can take.
+
+`getOptionsFromRelationship()` is the one method this field overrides, and only
+for [the record-shaped closures](#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query);
+with neither declared it delegates straight back to the trait's title-attribute
+build, aliased in as `getTitleAttributeOptionsFromRelationship()`. The query
+itself is shared: the trait grew a `getRecordsFromRelationship()` seam that both
+paths read, so there is one place the option query is built and scoped.
+
+### The two record-shaped closures build labels and descriptions off one query
+
+`getOptionLabelFromRecordUsing()` replaces the title attribute as the source of
+each option's label, and `getOptionDescriptionFromRecordUsing()` adds a
+description per option. Declaring **either** switches the option build onto the
+record path, and the descriptions are installed as a **side effect** of it — the
+component calls its own `descriptions()` while building the map, exactly as
+vendor does (`CheckboxList.php:169-177`), because both maps come off the one
+query and running it twice to keep them separate would be worse.
+
+Both closures receive the record as `$record` by name and by its concrete class,
+so `fn (Tag $record) => …` and `fn (object $record) => …` both work.  Filament
+types the parameter `Model` and injects `Model::class` too; the port has no such
+base type — a Doctrine entity is a plain object — so the
+[record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record)
+applies and the signatures take `object`.
+
+Two small deltas from vendor, both in the direction of less surprise: a
+description closure returning `null` (or `''`) leaves that option **without** a
+description rather than with an empty `<p>`, matching how
+[`HasDescriptions`](has-descriptions.md) already treats an enum case that
+describes itself as null; and a label closure returning nothing yields `''`, the
+same coercion the title-attribute arm makes for an unreadable title. Declaring
+either closure clears the option memo, so the two setters compose in any order.
+
+### The list rests at an array, and that is load-bearing
+
+`getDefaultStateCasts()` answers `[OptionsArrayStateCast()]` — the constructor
+default, `isNullable: false` — unless the field has custom casts or an
+[enum](has-enum.md), in which case `Field`'s chain contributes
+`EnumArrayStateCast` instead. `Select::multiple()` spells the same argument out
+explicitly and `ToggleButtons`' multiple arm leaves it defaulted; this field
+follows `ToggleButtons`, and the value is pinned by a test rather than by the
+call site.
+
+It is worth pinning because the resting shape is what makes the binding work at
+all. `live_controller`'s `getValueFromElement()` reads the model's **current**
+value first and only treats a checkbox as add-or-remove-against-a-list when it
+finds an array there; a path resting at `null` would take the clicked option's
+bare `value` and collapse the whole list to a scalar. `isNullable: false` writes
+`[]` rather than null, so the first case in
+[`LiveCheckboxListTest`](../../../packages/forms/tests/Integration/LiveCheckboxListTest.php)
+asserts that resting shape on the wire before it asserts anything about
+checking — the same discipline `LiveToggleButtonsTest` pins for its multiple
+arm.
+
+### The three server-side guards are ordered so they never collide
+
+`buildValidationConstraints()` appends three things in one order, and the order
+is the whole content of the method:
+
+1. **A non-array raw state is failed by `Type('array')` alone**, and the method
+   returns. `Choice(multiple: true)` is undefined over anything else — its
+   validator throws rather than failing — and
+   [`CountValidator`](../../../vendor/symfony/validator/Constraints/CountValidator.php)
+   throws an `UnexpectedValueException` on a non-countable value, so neither may
+   be allowed to meet a tampered scalar. A `null` raw state is not "not an
+   array" for this purpose: it is an unset field, which both validators skip on
+   their own.
+2. **The `Count` from `minItems()` / `maxItems()`** — before the blank
+   short-circuit, deliberately, because `minItems(2)` has to fail an empty
+   selection and `blank([])` is true. `Select` and `ToggleButtons` have no such
+   constraint, so this is the one place the port's shared multiple-arm shape
+   grows a step.
+3. **The `Choice(multiple: true)`** over
+   [`getEnabledOptionValues()`](can-disable-options.md), reached only once there
+   is a selection to check — the same
+   [membership guard](select.md#the-choice-constraint-is-the-fields-only-server-side-guard)
+   every option field builds, and the same
+   [no-options `LogicException`](select.md#a-relationship-select-is-always-enumerable-or-it-throws)
+   when the field can enumerate nothing.
+
+Filament reaches the same three answers through a different mechanism —
+`hasInValidationOnMultipleValues(): true` moves its `In` rule onto
+`"{$statePath}.*"`, and `minItems`/`maxItems` become `array|min:|max:` rules —
+which the port has no wildcard path for
+([above](#the-nested-recursive-rules-are-real-here-and-deferred-with-the-rest-of-validation));
+`Choice(multiple: true)` validates element by element natively, so the
+per-element check lands on the one path without one.
+
+### required() rejects the empty list with `NotBlank` alone
+
+`required()` builds the default `NotBlank`
+([`CanBeValidated`](can-be-validated.md)) and this field overrides
+`getRequiredConstraint()` nowhere. That is enough:
+[`NotBlankValidator`](../../../vendor/symfony/validator/Constraints/NotBlankValidator.php)
+reads `false === $value || (! $value && '0' != $value)`, and an empty array is
+falsy, so `[]` fails and any non-empty selection passes.
+
+`Count(min: 1)` would say the same thing with a worse message and a second way
+to spell one rule, so it is not what `required()` builds — the split
+[`Checkbox`](checkbox.md#required-on-a-checkbox-means-must-be-checked) and
+[`Toggle`](toggle.md#required-means-presence-not-truth) argued over does not
+reach this field, because a list has no truthiness question: "blank" and
+"nothing selected" are already the same value. `minItems()` remains the way to
+require *more than one*, and it composes with `required()` rather than replacing
+it.
+
+## Divergences
+
+Deliberate deviations from Filament, and the reason each holds. Provisional ones
+say what would reverse them.
+
+### The `checked` attribute is rendered server-side
+
+Filament emits only `wire:model` on each input and lets Livewire set the checked
+property client-side once it boots. The port renders `checked` from
+[`getOptionComparisonState()`](has-options.md#the-option-vocabulary-is-normalized-once-rather-than-per-template),
+so a server-rendered edit page shows the stored selection before any JavaScript
+runs. Same addition [`Radio`](radio.md#the-checked-attribute-is-rendered-server-side),
+[`ToggleButtons`](toggle-buttons.md) and
+[`Select`](select.md#the-template-renders-the-selected-state-itself) make.
+
+The comparison is `state is iterable and value in state` — Twig's `in` is loose
+for scalars, deliberately, because an option key may be an `int` where the state
+holds the `'1'` a browser submitted. The `is iterable` guard is what a
+non-array state falls into: a tampered scalar checks nothing rather than
+matching an option by accident, and the strict
+[`Choice`](#the-three-server-side-guards-are-ordered-so-they-never-collide) is
+what admits or rejects it.
+
+It also means the bulk-toggle's "are they all checked?" question is answerable
+from the DOM on the controller's first frame. Vendor defers that read to
+`$nextTick` precisely because Livewire has not hydrated the checkboxes yet when
+the Alpine component initialises; here they are already correct in the HTML.
+
+### Every checkbox carries the same `data-model`
+
+One `data-model` per input, all naming the field's one state path — the
+translation of Filament's one `wire:model` per input, and the same shape
+[`Radio`](radio.md#every-radio-carries-the-same-data-model) and
+`ToggleButtons`' multiple arm use. It reads like a multi-binding and is not:
+`live_controller`'s `getValueFromElement()` has a checkbox branch that
+adds-or-removes the clicked input's `value` against the list already at that
+path, so the shared path receives the whole selection and the client sends a
+list rather than a delta.
+
+Unlike `Radio`, the inputs carry **no `name`** — a checkbox group is not grouped
+by `name` in the browser, and a shared one would submit a scalar on a native
+form post. They do carry per-option `id`s, as `Radio`'s do, which is what
+idiomorph matches on when a re-render replaces the list.
+
+### The option inputs carry `aria-invalid` instead of a `fi-valid` / `fi-invalid` class pair
+
+Filament puts `fi-valid` or `fi-invalid` on every checkbox input. The port emits
+neither and writes `aria-invalid` on each input instead, with
+[`checkbox.css`](../../../packages/forms/assets/src/styles/components/checkbox.css)
+keying its danger arm off `[aria-invalid='true']`.
+
+This is not a CheckboxList decision — it is the translation
+[`Radio`](radio.md#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair)
+already records, applied to the field that shares `Checkbox`'s control, and it
+holds for the same reasons.
+
+### The control class is the existing `.sy-fo-checkbox`
+
+Vendor splits this field's chrome across two packages: `fi-fo-checkbox-list*`
+for the option set in `forms/resources/css/components/checkbox-list.css`, and a
+package-code-less `fi-checkbox-input` for the control itself in
+`support/resources/css/components/input/checkbox.css`. The port already ships
+that control as **`.sy-fo-checkbox`** — [`Checkbox`](checkbox.md) emits it and
+[`checkbox.css`](../../../packages/forms/assets/src/styles/components/checkbox.css)
+styles it — so this field reuses it rather than minting a second name for the
+identical control, and
+[`checkbox-list.css`](../../../packages/forms/assets/src/styles/components/checkbox-list.css)
+ports only vendor's own `fi-fo-checkbox-list*` rules, spacing included.
+
+That is the rule
+[`styles.md`](styles.md#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes)
+records for the five controls that already carry forms-coded names, and the case
+[`Radio`](radio.md#the-control-class-is-sy-fo-radio-input-one-tier-up-from-vendors)
+anticipated one task earlier. It reverses the same way: the moment a second
+package renders a checkbox, the rule moves down to support and loses the code.
+
+### The bulk-toggle actions render but never dispatch
+
+Filament builds both actions with `->livewireClickHandlerEnabled(false)` and
+wraps each in `<span x-on:click="toggleAllCheckboxes()">`, so the rendered
+`<a class="fi-link">` carries no handler of its own and the span supplies the
+only behaviour. The `Action` objects exist so `label()`, `size()`, `icon()`,
+`color()` and the user's `selectAllAction(fn (Action $action) => …)` all work.
+
+The port reproduces that mode exactly, and reproducing it needed the switch
+itself. Our action partials computed the equivalent guard inline
+(`{% set hasLiveClickBinding = not component.getUrl and not component.canSubmitForm %}`),
+which is precisely the fallback chain of Filament's
+`isLivewireClickHandlerEnabled()` — with no way to override it, a plain `Action`
+always reached the partial's final branch and emitted
+`stimulus_action('live', 'action', parameters: {action: 'mountAction', …})`, a
+server round-trip per click. So the guard moved into PHP where Filament keeps
+it: [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) grew
+`liveComponentClickHandlerEnabled()` / `isLiveComponentClickHandlerEnabled()` — the `Livewire` →
+`Live` [idiom translation](../renames.md#idiom), not a rename — with Filament's
+own precedence (an explicit value wins; otherwise a URL or a form submission
+turns it off; otherwise on), and the four partials that had the inline
+expression now read the getter. Behaviour is identical for every existing
+action, which the actions, tables and panels suites pin.
+
+The click then lives on the markup, as vendor's does: each action sits inside a
+`<span>` carrying `data-sylament--forms--checkbox-list-target="selectAllWrap"`
+(or `deselectAllWrap`, which starts `hidden`) and
+`data-action="click->sylament--forms--checkbox-list#toggleAll"`. The assertion
+that guards this is the **absence** of `data-action="live#action"` and its
+`data-live-action-param-*` on the rendered links — the dispatch attributes live
+on a different branch of the partial and would pass whatever the wiring did.
+
+`IconButton`'s partial has a differently shaped guard and never had the inline
+expression; its live-click gate takes the same getter so the new setter is not a
+silent no-op there, but its event-dispatch and close branches are untouched.
+
+### The bulk-toggle labels are untranslated literals
+
+`'Select all'` and `'Deselect all'` are literals where Filament reads
+`filament-forms::components.checkbox_list.actions.select_all.label` and
+`…deselect_all.label`. Same call as
+[`Radio`'s boolean labels](radio.md#the-boolean-labels-are-untranslated-literals);
+the keys are recorded so the strings can be found when a translation layer
+lands, and Filament's own English values are these two. These are the only keys
+in this field's own `checkbox_list` family — everything the search box says
+comes from
+[`select.*`](#canbesearchable-is-client-side-only-and-mostly-select-only).
+
+### `isMultiple()` is port plumbing with no Filament counterpart
+
+Filament reads this field's multiplicity off a type: `getRelationship(): ?BelongsToMany`
+says "to-many" in the signature, and nothing has to ask. The port's shared
+relationship arm asks the field instead — one trait serving a `Select` that may
+be either — so `CheckboxList` answers a constant `true` from an `isMultiple()`
+of its own.
+
+It is **internal**: no `multiple()` setter exists, because there is nothing to
+choose. Listed in
+[renames.md](../renames.md#names-with-no-filament-source) so a migrating user who
+greps Filament for it and finds nothing knows the absence is real.
+
+### The relationship label is a `getDefaultLabel()` override
+
+Vendor overrides `getLabel()` itself, branching on `$this->label === null` and
+falling through to `parent::getLabel()`. The port's
+[`Field`](field.md) already splits that decision in two — `getLabel()` takes an
+explicit label when one is `filled()` and otherwise calls `getDefaultLabel()` —
+so the relationship derivation belongs in the second half, and the field
+overrides `getDefaultLabel()` rather than the getter above it.
+
+Same layering, same precedence (`label('…')` wins, then the relationship name,
+then the field name), one fewer place that has to remember to call its parent.
+The derivation itself is vendor's, spelled in Symfony's `u()`:
+`->before('.')->kebab()->replace('-', ' ')->title()`, which is why
+`CheckboxList::make('tagIds')->relationship('tags')` reads as "Tags" while the
+same field without a relationship reads as "Tag ids".
+
+### The relationship state is not pruned from the dehydrated bag
+
+Filament's `relationship()` ends with `dehydrated(false)`. This field's does
+not, and neither does `Select`'s or `Repeater`'s: the port's dehydration walk is
+what **routes** a value to its save hook, so pruning the path would switch the
+feature off rather than protect it. The state stays in the bag and the hook
+takes it — the port-wide reading already recorded in
+[renames.md](../renames.md#renames) and
+[repeater.md](repeater.md#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope),
+verified for this field rather than assumed and pinned by a case in
+[`CheckboxListRelationshipTest`](../../../packages/forms/tests/Integration/Components/CheckboxListRelationshipTest.php).
+
+### The options grid is always applied, and the option containers are unkeyed
+
+Vendor grids the options unconditionally — `CheckboxList` has no `inline()`
+where [`Radio`](radio.md#inline-is-radios-own-property-not-the-canbeinline-trait)
+and `ToggleButtons` do — and the port keeps that: the `Column` default and
+`columns()` work, `inline()` does not exist to be called.
+
+Vendor also keys every option container with
+`wire:key="{livewireKey}.options.{value}"` and the empty branch with a
+`.empty` anchor. The port emits neither. Livewire's `wire:key` is a morph hint
+for a list whose *members can move*; this list is regenerated wholesale from one
+options map, in map order, on every render — nothing reorders — and idiomorph
+matches on the per-option input `id`s the template already emits, which is the
+same anchor `Radio` relies on. The empty-branch anchor has nothing to anchor
+once the keys are gone, so an empty list renders an empty grid.

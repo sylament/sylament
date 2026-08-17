@@ -49,6 +49,25 @@ it('has no client click handler for closure actions', function (): void {
         ->and(Action::make('delete')->getClientClickHandler())->toBeNull();
 });
 
+/*
+ * The gate the five trigger templates read before wiring any click of their own.
+ * Its two default arms are what keep a url-carrying or form-submitting trigger
+ * from also firing `mountAction`; the explicit override is what lets a caller
+ * render an action with no click at all and supply the behaviour from the markup
+ * around it, as `CheckboxList`'s bulk-toggle links do.
+ */
+it('gates the live-component click on the url, the form submission and an explicit override', function (): void {
+    expect(Action::make('delete')->isLiveComponentClickHandlerEnabled())->toBeTrue()
+        ->and(Action::make('delete')->url('/somewhere')->isLiveComponentClickHandlerEnabled())->toBeFalse()
+        ->and(Action::make('save')->submit('callMountedAction')->isLiveComponentClickHandlerEnabled())->toBeFalse()
+        ->and(Action::make('delete')->liveComponentClickHandlerEnabled(false)->isLiveComponentClickHandlerEnabled())
+        ->toBeFalse()
+        ->and(Action::make('delete')->liveComponentClickHandlerEnabled(fn (): bool => false)->isLiveComponentClickHandlerEnabled())
+        ->toBeFalse()
+        ->and(Action::make('delete')->url('/somewhere')->liveComponentClickHandlerEnabled()->isLiveComponentClickHandlerEnabled())
+        ->toBeTrue();
+});
+
 it('names callMountedAction as the live-component call target', function (): void {
     expect(Action::make('submit')->getLiveComponentCallMountedActionName())->toBe('callMountedAction');
 });

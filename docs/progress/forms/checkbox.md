@@ -144,21 +144,26 @@ rather than an omission: `live_controller` binds a valueless checkbox as
 
 ### The checkbox's extra input attributes win where Filament's lose
 
-`extraInputAttributes()` outranks the attributes the field computes on all five
-fields that compose
+`extraInputAttributes()` outranks the attributes the field computes on **every**
+field that composes
 [the concern](has-extra-input-attributes.md#the-extras-beat-the-attributes-the-field-computes).
-That is Filament's own order on `TextInput`, `Textarea` and `Select`, each of
-which starts the control's attributes *from* the extras bag and merges its own in
-as defaults — but not on
-[`Checkbox`](../../../vendor/filament/forms/src/Components/Checkbox.php), whose
-`toEmbeddedHtml()` builds the declared attributes first and then
+That is Filament's own order on five of the seven it composes the trait on —
+`TextInput`, `Textarea`, `Select`, `Radio` and `CheckboxList` each start the
+control's attributes *from* the extras bag and merge their own in as defaults —
+but not on the two exceptions.
+[`Checkbox`](../../../vendor/filament/forms/src/Components/Checkbox.php) is the
+first: its `toEmbeddedHtml()` builds the declared attributes first and then
 `->merge($this->getExtraInputAttributes())`. A Laravel bag's `merge()` takes its
 **argument** as the defaults, so there the extras lose every key the field
 already set: `extraInputAttributes(['disabled' => false])` cannot un-disable a
 Filament checkbox, though it can un-disable a Filament text input.
+[`ToggleButtons`](toggle-buttons.md#the-extra-input-attributes-win-where-filaments-lose-by-going-last)
+is the second, by a different route — it never merges at all, printing its own
+attributes as raw HTML and appending the extras bag after them, which a browser
+resolves first-wins.
 
-The port applies one precedence to all five rather than reproducing the odd one
-out. Nothing in Filament's checkbox reads as intent: the same chain demotes
+The port applies one precedence to all of them rather than reproducing either odd
+one out. Nothing in Filament's checkbox reads as intent: the same chain demotes
 `extraAttributes()` too, while the three fields that own a wrapper element start
 that element's bag from `getExtraAttributeBag()` — so the split tracks which
 `merge()` happens to come first in each embedded view, not a decision about who

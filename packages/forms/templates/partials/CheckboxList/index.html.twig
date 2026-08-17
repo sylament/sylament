@@ -1,0 +1,88 @@
+{% set controller = 'sylament--forms--checkbox-list' %}
+
+{% set state = component.getOptionComparisonState %}
+{% set options = component.getOptions %}
+{% set isDisabled = component.isDisabled %}
+{% set isHtmlAllowed = component.isHtmlAllowed %}
+{% set hasErrors = component.getErrorMessages is not empty %}
+
+{% set hasSearch = component.isSearchable and not isDisabled %}
+{% set hasBulkToggle = component.isBulkToggleable and not isDisabled and options is not empty %}
+{% set hasController = hasSearch or hasBulkToggle %}
+
+{% set gridAttributes = grid(component.getColumns, component.getGridDirection ?? constant('Sylament\\Support\\Enums\\GridDirection::Column')) %}
+{% set toggleAllAttributes = stimulus_action(controller, 'toggleAll', 'click') %}
+
+<twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
+    <div
+            {{ attrs({
+                class: ['sy', 'sy-fo-checkbox-list'],
+                role: 'group',
+                'aria-labelledby': component.getId ~ '-label',
+            }, hasController ? stimulus_controller(controller, {debounce: component.getSearchDebounce}) : null) }}
+    >
+        {% if hasSearch %}
+            <div class="sy-fo-checkbox-list-search-input-wrp">
+                <input {{ attrs({
+                    type: 'search',
+                    class: 'sy-fo-input',
+                    placeholder: component.getSearchPrompt,
+                    'aria-label': component.getSearchPrompt,
+                }, stimulus_target(controller, 'search')) }}>
+            </div>
+        {% endif %}
+
+        {% if hasBulkToggle %}
+            <div class="sy-fo-checkbox-list-actions">
+                <span {{ attrs(stimulus_target(controller, 'selectAllWrap'), toggleAllAttributes) }}>
+                    {{- renderComponent(component.getAction(component.getSelectAllActionName)) -}}
+                </span>
+
+                <span {{ attrs({hidden: true}, stimulus_target(controller, 'deselectAllWrap'), toggleAllAttributes) }}>
+                    {{- renderComponent(component.getAction(component.getDeselectAllActionName)) -}}
+                </span>
+            </div>
+        {% endif %}
+
+        <div {{ attrs({class: 'sy-fo-checkbox-list-options'}, gridAttributes) }}>
+            {% for value, label in options %}
+                <div {{ attrs({
+                    class: 'sy-fo-checkbox-list-option-ctn',
+                }, hasController ? stimulus_target(controller, 'option') : null) }}>
+                    <label class="sy-fo-checkbox-list-option">
+                        <input {{ attrs({
+                            type: 'checkbox',
+                            class: 'sy-fo-checkbox',
+                            id: component.getId ~ '-' ~ value,
+                            value: value,
+                            checked: state is iterable and value in state,
+                            'data-model': component.getDataModel,
+                            'aria-invalid': hasErrors,
+                            disabled: isDisabled or component.isOptionDisabled(value, label),
+                            autofocus: loop.first and component.isAutofocused,
+                        }, component.getExtraInputAttributes) }}>
+
+                        <div class="sy-fo-checkbox-list-option-text">
+                            {# Security: allowHtml() renders the option label unescaped, and only the
+                               label — a description keeps the template's escaping either way. #}
+                            <span class="sy-fo-checkbox-list-option-label">{{ isHtmlAllowed ? markup(label) : label }}</span>
+
+                            {% if component.hasDescription(value) %}
+                                <p class="sy-fo-checkbox-list-option-description">{{ component.getDescription(value) }}</p>
+                            {% endif %}
+                        </div>
+                    </label>
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if hasSearch %}
+            <div {{ attrs({
+                class: 'sy-fo-checkbox-list-no-search-results-message',
+                role: 'status',
+                'aria-live': 'polite',
+                hidden: true,
+            }, stimulus_target(controller, 'noResults')) }}>{{ component.getNoSearchResultsMessage }}</div>
+        {% endif %}
+    </div>
+</twig:SylamentForms:FieldWrapper>

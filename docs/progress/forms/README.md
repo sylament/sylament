@@ -167,9 +167,9 @@ that field. [`HasDescriptions`](has-descriptions.md) is `Radio`'s and
 `ToggleButtons`', both clearing the shared bar so each keeps a file;
 `CanAllowHtml` and `CanBeSearchable` held bare rows only until the file they fold
 into existed, and both now point into
-[`checkbox-list.md`](checkbox-list.md) — `CanBeSearchable` as **in progress**,
-since the search behaviour is its Stimulus controller's, and promoting back to a
-file of its own when `Select`'s search lands. `HasColors`, `HasIcons`
+[`checkbox-list.md`](checkbox-list.md) — `CanBeSearchable` promoting back to a
+file of its own when `Select`'s search lands and gives it a second consumer with
+a server-side arm. `HasColors`, `HasIcons`
 and `HasTooltips` were three more until
 [`ToggleButtons`](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone)
 landed as their sole consumer and took their detail, and
@@ -188,7 +188,7 @@ promoted it out of [`repeater.md`](repeater.md) ahead of that field landing.
 | CanBeNative | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | todo | — |
 | CanBePreloaded | [`Components/Concerns/CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php) | todo | — |
 | [`CanBeReadOnly`](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Components/Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | [can-be-read-only.md](can-be-read-only.md) |
-| [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | in progress | [checkbox-list.md](checkbox-list.md#canbesearchable-is-client-side-only-and-mostly-select-only) |
+| [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | [checkbox-list.md](checkbox-list.md#canbesearchable-is-client-side-only-and-mostly-select-only) |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | [can-be-validated.md](can-be-validated.md) |
 | CanDisableGrammarly | [`Components/Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | todo | — |
 | [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) | [`Components/Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | [can-disable-options.md](can-disable-options.md) |
@@ -260,3 +260,4 @@ directory collapses that whole subtree into one navigational entry.
 | [`SylamentFormsBundle`](../../../packages/forms/src/SylamentFormsBundle.php) | [`FormsServiceProvider.php`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | in progress | [forms-bundle.md](forms-bundle.md) |
 | [`helpers.php`](../../../packages/forms/src/helpers.php) | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | [repeater.md](repeater.md) |
 | [Styles](../../../packages/forms/assets/src/styles) | [`resources/css/`](../../../vendor/filament/forms/resources/css) | in progress | [styles.md](styles.md) |
+| [Scripts](../../../packages/forms/assets/src/controllers) | [`resources/js/`](../../../vendor/filament/forms/resources/js) | in progress | the `@sylament/forms` workspace ships one Stimulus controller, `checkbox-list`, of vendor's fourteen — [checkbox-list.md](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) |

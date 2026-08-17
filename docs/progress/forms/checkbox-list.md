@@ -24,9 +24,12 @@ of the to-many relationship arm `Select::multiple()` built and the first to take
 it without declaring anything. It is the first field to
 [register component-level actions](#the-bulk-toggle-actions-render-but-never-dispatch)
 that are deliberately inert — the click lives on the markup around them. And it
-is the first field to declare a Stimulus controller, whose behaviour lands in
-the epic's next task; the template ships every target that controller consumes,
-so search and bulk-toggle render fully and do nothing until it does.
+is the first field to ship a Stimulus controller, which is what
+[`@sylament/forms`](#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it)
+joined the JS workspace to carry: the template renders every option and every
+target server side, and
+[`checkbox_list_controller`](../../../packages/forms/assets/src/controllers/checkbox_list_controller.ts)
+supplies the search filtering and the bulk toggle on top of it.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -73,7 +76,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`HasGridDirection`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php) | [`Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | — | [detail](has-grid-direction.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
 | [`CanAllowHtml`](../../../packages/forms/src/Components/Concerns/CanAllowHtml.php) | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | — | [detail](#canallowhtml-opens-exactly-one-hole) |
-| [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) — the markup and the debounce override | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | in progress | the Stimulus controller (M3 · 1, next task) | [detail](#canbesearchable-is-client-side-only-and-mostly-select-only) |
+| [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) — the markup, the debounce override and the client-side filter | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [semantics](#canbesearchable-is-client-side-only-and-mostly-select-only) · [diverges](#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) |
 | [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) — `minItems()` / `maxItems()` as a `Count` | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [detail](can-limit-items-length.md) · [semantics](#the-three-server-side-guards-are-ordered-so-they-never-collide) |
 | The search field's magnifying-glass icon and its `fi-input-wrp` prefix slot | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | blocked | the input wrapper (M3 · 3) | [detail](#the-search-box-borrows-sy-fo-input-instead-of-the-unbuilt-wrapper) |
 | `HasPivotData` — `pivotData()` on the save arm | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity mapping (M3 · 9) | [detail](#haspivotdata-has-no-join-row-to-write-to) |
@@ -124,55 +127,6 @@ about checking.
 Specifics for rows that are not finished. Delete a subsection when its row flips
 to **done**.
 
-### `CanBeSearchable` is client-side only, and mostly Select-only
-
-The trait ships whole and is exercised by this field's markup, but its behaviour
-is the Stimulus controller's, which lands in the next task of this epic — hence
-**in progress** rather than done. The template renders **every** option server
-side and gives the controller the targets to hide them with; nothing about
-search reaches the server.
-
-Four things are worth stating, because three of them read as omissions:
-
-1. **`setUp()` forces `searchDebounce(0)`**, overriding the trait's `1000`
-   default, vendor-exact — a client-side filter has no request to debounce. A
-   caller can still raise it, and the value travels to the controller as the
-   Stimulus `debounce` value.
-2. **`searchLabels()` / `searchValues()` / `getSearchableOptionFields()` are
-   dead surface here.** Vendor's Alpine component matches the rendered
-   `innerText` of the option label **and** the option description, and never the
-   option value; the three members exist for `Select`'s server-side search and
-   `CheckboxList` consults none of them. They are deliberately absent from the
-   template's and the controller's contract rather than wired to something
-   plausible.
-3. **`getNoOptionsMessage()` and `getSearchingMessage()` are not rendered.** An
-   empty option list renders an empty options grid (vendor renders an empty
-   `wire:key`ed `<div>` as a morph anchor and nothing else), and there is no
-   searching state to message because there is no request.
-4. **The four message literals are untranslated**, matching
-   [`Select`'s placeholder](select.md#the-default-placeholder-is-an-untranslated-literal)
-   and [`Radio`'s boolean labels](radio.md#the-boolean-labels-are-untranslated-literals).
-   Their Filament keys are recorded here so the strings can be found when a
-   translation layer lands, and the family is worth noting because it is
-   **`select`, not `checkbox_list`**: `filament-forms::components.select.search_prompt`
-   (`Start typing to search...`),
-   `filament-forms::components.select.no_search_results_message`
-   (`No options match your search.`),
-   `filament-forms::components.select.no_options_message`
-   (`No options available.`) and
-   `filament-forms::components.select.searching_message` (`Searching...`) — all
-   four owned by the trait, so a `CheckboxList` reads `Select`'s strings. Only
-   the two bulk-toggle labels have keys of this field's own
-   ([below](#the-bulk-toggle-labels-are-untranslated-literals)).
-
-The two properties the port had to widen — `$shouldSearchLabels` and
-`$shouldSearchValues`, nullable so the setters' own declared `null` arm assigns
-instead of throwing a `TypeError` as it does in Filament — carry that contract
-as a docblock on
-[the trait](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php)
-and belong to this file only because the trait folds here; they are `Select`'s
-question, not this field's.
-
 ### The search box borrows `sy-fo-input` instead of the unbuilt wrapper
 
 Vendor hand-builds `div.fi-input-wrp.fi-fo-checkbox-list-search-input-wrp` with
@@ -222,6 +176,54 @@ needs today — that every submitted value is a known option — is already the
 ## Semantics
 
 Behaviour that is faithful to Filament but easy to misread here.
+
+### `CanBeSearchable` is client-side only, and mostly Select-only
+
+The trait ships whole, and the search it configures never reaches the server:
+the template renders **every** option server side and the controller hides the
+non-matching ones with the `hidden` attribute. There is no request to make, so
+there is nothing to debounce for latency and no loading state to show.
+
+Four things are worth stating, because three of them read as omissions:
+
+1. **`setUp()` forces `searchDebounce(0)`**, overriding the trait's `1000`
+   default, vendor-exact — a client-side filter has no request to debounce. A
+   caller can still raise it, and the value travels to the controller as the
+   Stimulus `debounce` value, which gates the filter's `setTimeout`.
+2. **`searchLabels()` / `searchValues()` / `getSearchableOptionFields()` are
+   dead surface here.** Vendor's Alpine component matches the rendered
+   `innerText` of the option label **and** the option description, and never the
+   option value; the three members exist for `Select`'s server-side search and
+   `CheckboxList` consults none of them. They are deliberately absent from the
+   template's and the controller's contract rather than wired to something
+   plausible.
+3. **`getNoOptionsMessage()` and `getSearchingMessage()` are not rendered.** An
+   empty option list renders an empty options grid (vendor renders an empty
+   `wire:key`ed `<div>` as a morph anchor and nothing else), and there is no
+   searching state to message because there is no request.
+4. **The four message literals are untranslated**, matching
+   [`Select`'s placeholder](select.md#the-default-placeholder-is-an-untranslated-literal)
+   and [`Radio`'s boolean labels](radio.md#the-boolean-labels-are-untranslated-literals).
+   Their Filament keys are recorded here so the strings can be found when a
+   translation layer lands, and the family is worth noting because it is
+   **`select`, not `checkbox_list`**: `filament-forms::components.select.search_prompt`
+   (`Start typing to search...`),
+   `filament-forms::components.select.no_search_results_message`
+   (`No options match your search.`),
+   `filament-forms::components.select.no_options_message`
+   (`No options available.`) and
+   `filament-forms::components.select.searching_message` (`Searching...`) — all
+   four owned by the trait, so a `CheckboxList` reads `Select`'s strings. Only
+   the two bulk-toggle labels have keys of this field's own
+   ([below](#the-bulk-toggle-labels-are-untranslated-literals)).
+
+The two properties the port had to widen — `$shouldSearchLabels` and
+`$shouldSearchValues`, nullable so the setters' own declared `null` arm assigns
+instead of throwing a `TypeError` as it does in Filament — carry that contract
+as a docblock on
+[the trait](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php)
+and belong to this file only because the trait folds here; they are `Select`'s
+question, not this field's.
 
 ### `CanAllowHtml` opens exactly one hole
 
@@ -403,6 +405,11 @@ It also means the bulk-toggle's "are they all checked?" question is answerable
 from the DOM on the controller's first frame. Vendor defers that read to
 `$nextTick` precisely because Livewire has not hydrated the checkboxes yet when
 the Alpine component initialises; here they are already correct in the HTML.
+The template spends that immediacy: it hardcodes the two action spans' initial
+visibility (select-all shown, deselect-all `hidden`), so a list rendered fully
+selected paints the wrong link for one frame, and the controller's
+`connect()`-time refresh — the same pass that runs on every search keystroke and
+every option change — is what reconciles it against the real state.
 
 ### Every checkbox carries the same `data-model`
 
@@ -493,6 +500,69 @@ whatever the click wiring did.
 `IconButton`'s partial has a differently shaped guard and never had the inline
 expression; its live-click gate takes the same getter so the new setter is not a
 silent no-op there, but its event-dispatch and close branches are untouched.
+
+### The controller is the only behaviour, and no test in this repo runs it
+
+[`checkbox_list_controller`](../../../packages/forms/assets/src/controllers/checkbox_list_controller.ts)
+ports vendor's Alpine component, which
+[`@sylament/forms`](../../../packages/forms/assets/package.json) joined the JS
+workspace to ship. Its filter is vendor's exactly — an empty query shows
+everything, a non-empty one is a case-insensitive substring of the option's
+rendered label **or** description `innerText`, never its value — and so is the
+all-satisfied predicate that flips the two action spans, disabled boxes counting
+as satisfied. Four of its wiring points had no direct translation:
+
+1. **Livewire's `interceptMessage` hook becomes a `MutationObserver`.** Vendor
+   re-collects the options after every round-trip belonging to its own component
+   id; we have no per-component success hook, so the controller observes its own
+   element for `childList` changes and re-runs the same pass. `childList` **only**
+   is load-bearing: the pass writes `hidden` attributes on the options, so
+   observing attributes would feed the observer its own output. The residual gap
+   is a morph that rewrites `checked` on the *same* option elements and touches
+   no child list — the label would keep the state it had. It is narrow because a
+   server round-trip on this field is a response to a client change, which the
+   delegated listener below already refreshed on, and it is the reason to reach
+   for a render event rather than a widened observer if it ever bites.
+2. **The per-option `x-on:change` hook becomes one delegated listener.** Vendor
+   puts a change handler on every input so an individual click re-flips the
+   select/deselect label; the template emits no action on the inputs, so the
+   controller attaches a single `change` listener to its root in `connect()` and
+   filters to checkbox targets — the same imperative shape the search input's
+   `input` listener takes, and for the same reason (the template supplies the
+   target, not the binding). It also fixes vendor's O(N) re-check during a bulk
+   toggle: the write sets a flag the listener skips on, and the toggle ends with
+   one refresh.
+3. **The synthetic `change` event has to bubble.** Vendor's `new Event('change')`
+   does not, and Livewire's model listener sits on the element itself.
+   `live_controller` registers its `change` listener on the **component root**
+   and reads `event.target` (`elementEventListeners` →
+   `handleChangeEvent()` → `updateModelFromElementEvent()`), so a non-bubbling
+   event would flip the box and never reach the state. Ours passes
+   `{ bubbles: true }`.
+4. **Vendor's `$nextTick` on the first read is dropped**, because
+   [the `checked` attribute is rendered server-side](#the-checked-attribute-is-rendered-server-side) —
+   the DOM is already correct when `connect()` runs, which is also what lets that
+   first pass reconcile the template's hardcoded span visibility.
+
+One behavioural divergence, in the empty-filtered-set corner. Vendor compares
+`visible.length === satisfied.length`, which is vacuously true for an empty set,
+so a search matching nothing shows **"Deselect all"** over an empty list. Ours
+requires a non-empty set, resting on "Select all" instead. Both links are inert
+there — there is nothing visible to write — so this is a label choice, and the
+one that does not offer to deselect nothing wins.
+
+**What no test in this repo can reach.** There is no JS test rig — no jsdom, no
+browser driver, nothing that instantiates a Stimulus controller — so the
+[render tests](../../../packages/forms/tests/Integration/Components/CheckboxListTest.php)
+assert the controller's *contract* (identifier, targets, the debounce value, the
+click actions) and nothing asserts its *behaviour*. The filter, the bulk toggle,
+the observer and the delegated listener are verified by reasoning against the
+installed vendor sources and by driving the demo in a browser, never by
+execution here. The
+[bundle test](../../../packages/forms/tests/Integration/SylamentFormsBundleTest.php)
+covers the other half of the shipping path: that the built controller resolves
+through AssetMapper under `@sylament/forms`, which is what StimulusBundle needs
+to wire the `symfony.controllers` entry at all.
 
 ### The bulk-toggle labels are untranslated literals
 

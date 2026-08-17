@@ -4,14 +4,16 @@
 — the forms bundle class. It ports Filament's
 [`FormsServiceProvider`](../../../vendor/filament/forms/src/FormsServiceProvider.php)
 (Spatie's `PackageServiceProvider` lifecycle becomes a Symfony `AbstractBundle`
-via [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php)). Today
-the class is a bare `extends SylamentBundle` stub with an empty body: it registers
-the bundle and inherits the `@SylamentForms` Twig namespace by
-AbstractBundle/TwigBundle convention, which is all the shipped field surface
-needs — the fields render through schemas'/support's Twig extensions, and
-`FormsServiceProvider` binds no container services, so there is nothing to wire in
-a `loadExtension()`. Asset registration, `Make*` commands, translations, the
-`table-select` Livewire component, and the `Testable` mixins are not ported yet.
+via [`SylamentBundle`](../../../packages/support/src/SylamentBundle.php)). It
+does two things and inherits a third. `loadExtension()` PSR-4-loads the
+`Components/` directory so every field is a container-built, non-shared service —
+the toolkit-wide [component model](../../../CLAUDE.md), not anything
+`FormsServiceProvider` does, which binds no container services of its own.
+`prependExtension()` registers the built assets under `@sylament/forms`, the
+translation of Filament's asset registration. And the `@SylamentForms` Twig
+namespace arrives by AbstractBundle/TwigBundle convention with no call at all.
+`Make*` commands, translations, the `table-select` Livewire component and the
+`Testable` mixins are not ported yet.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -29,7 +31,7 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [Bundle registration + `@SylamentForms` view namespace](../../../packages/forms/src/SylamentFormsBundle.php) | [`->hasViews()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | done | — | [diverges](#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
-| Asset registration (12 field AlpineComponents) | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#asset-registration) |
+| Asset registration (12 field AlpineComponents) | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | in progress | — | [detail](#asset-registration) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#translations) |
 | `Livewire::component('table-select', …)` | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | blocked | TableSelect field feature | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
@@ -43,8 +45,13 @@ a live component, and
 [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php)
 / [`TextareaTest`](../../../packages/forms/tests/Integration/Components/TextareaTest.php)
 render the field templates — proving the bundle loads and its
-`@SylamentForms/components/...` templates resolve. The unported responsibilities
-have no coverage because they have no code.
+`@SylamentForms/components/...` templates resolve. The asset-mapper prepend has a
+test of its own,
+[`SylamentFormsBundleTest`](../../../packages/forms/tests/Integration/SylamentFormsBundleTest.php),
+which resolves the built `checkbox_list_controller.js` through
+`AssetMapperInterface` and asserts its `@sylament/forms/...` logical path — the
+same shape the actions, panels and support bundle tests use. The unported
+responsibilities have no coverage because they have no code.
 
 ## Details
 
@@ -54,13 +61,23 @@ Filament's `packageBooted()` calls `FilamentAsset::register([...],
 'filament/forms')` with 12 field `AlpineComponent`s (`checkbox-list`,
 `code-editor`, `color-picker`, `date-time-picker`, `file-upload`, `key-value`,
 `markdown-editor`, `rich-editor`, `select`, `slider`, `tags-input`, `textarea`).
-Sylament's translation is a `prependExtension()` that registers
-`packages/forms/assets/dist` as `@sylament/forms` (mirroring
-[`SylamentSupportBundle::prependAssetMapper()`](../../../packages/support/src/SylamentSupportBundle.php)).
-Nothing is wired: the bundle has no `prependExtension()` override and
-`packages/forms/assets/dist` does not exist (only `assets/src/styles`).
-**Next step:** add the `prependExtension()` registration as each field's JS
-component is ported — deferred until those components land.
+Sylament's translation is a `prependExtension()` registering
+`packages/forms/assets/dist` as `@sylament/forms`, mirroring
+[`SylamentNotificationsBundle`](../../../packages/notifications/src/SylamentNotificationsBundle.php)
+and guarded by
+[`isAssetMapperAvailable()`](../../../packages/support/src/SylamentBundle.php) so
+a consumer without AssetMapper is not forced to install it.
+
+That registration now exists, which is what moves the row to **in progress**: it
+is the whole path for the package's built JS, and
+[`SylamentFormsBundleTest`](../../../packages/forms/tests/Integration/SylamentFormsBundleTest.php)
+pins it by resolving the built controller through `AssetMapperInterface`. What is
+still partial is the **inventory** — one of the twelve is ported
+([`checkbox-list`](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it),
+now the package's only Stimulus controller) and the other eleven belong to fields
+that do not exist here yet. **Next step:** nothing bundle-side — each remaining
+controller ships with its field and needs no further wiring, since the path is
+registered once for the directory.
 
 ### Make* commands + stub publishing
 

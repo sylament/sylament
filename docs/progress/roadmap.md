@@ -26,11 +26,19 @@ stops mid-M2, M1 still demos on its own.
 
 ## Now
 
-**Choose the next milestone.** M2 closed with [M2 · 4](#m2--mini-admin-panel)
-(2026-08-17): the demo panel is assembled, seeded and browser-proven, and the
-duplicated article form is defined once. Nothing is queued — the
-[Beyond](#beyond) list is the menu; promote one into a milestone. That
-promotion is a product call, so this cursor stays parked until it is made.
+**M3 · 1 — Option fields + enum options.** M2 closed with
+[M2 · 4](#m2--mini-admin-panel) (2026-08-17), and the next four milestones were
+planned the same day — breadth by layer, in dependency order:
+[M3 forms widening](#m3--forms-widening), [M4 tables widening](#m4--tables-widening),
+[M5 view page + infolists](#m5--view-page--infolists), [M6 panel depth](#m6--panel-depth).
+Each is horizontal where M1 and M2 were vertical, so each carries a **stop
+line** in its _Done when_ — the parity tables, not the demo script, say when it
+closes. Start with M3 · 1; M3 · 2, 4 and 5 are file-disjoint lanes beside it,
+and M3 · 3 waits for the panel visual-parity epic in flight (branch
+`panel-visual-parity`; its row lands under [Pulled forward](#pulled-forward)
+when it closes), whose CSS truing owns the input stylesheet until then. Three
+decisions are due at the top of M3 and one is open —
+[carried decisions](#m3--forms-widening).
 
 ## Pulled forward
 
@@ -67,7 +75,11 @@ story stays honest.
 | --- | --- | --- | --- |
 | M1 | [Entity CRUD slice](#m1--entity-crud-slice) | A plain Symfony app doing full CRUD on one entity through Sylament components alone. | done |
 | M2 | [Mini admin panel](#m2--mini-admin-panel) | The same CRUD delivered as a Filament-style panel: navigation, a resource, generated pages. | done |
-| — | [Beyond](#beyond) | Unordered candidates; the next milestone is promoted from here. | — |
+| M3 | [Forms widening](#m3--forms-widening) | The standard field catalog at Filament depth: option, date/time, searchable-select and upload fields, affixes, tabs and wizard, repeater chrome, the full validation family. | todo |
+| M4 | [Tables widening](#m4--tables-widening) | The table at Filament depth: bulk and header actions, row behaviour and query-string state, the column catalog, column manager, per-column search, grouping and summaries, relation-scoped tables. | todo |
+| M5 | [View page + infolists](#m5--view-page--infolists) | `sylament/infolists` from placeholder to entries, and `ViewRecord` as the third resource page. | todo |
+| M6 | [Panel depth](#m6--panel-depth) | Relation managers, custom pages, nested resources and sub-navigation, global search, widgets and the dashboard, shell completeness. | todo |
+| — | [Beyond](#beyond) | Unordered candidates; the milestone after M6 is promoted from here. | — |
 
 ## M1 — Entity CRUD slice
 
@@ -159,21 +171,166 @@ and the one open question are in
 resource with a paginated, sorted list, create, edit, and confirmed delete
 with notifications — end to end.
 
+## M3 — Forms widening
+
+The demo script: _on the article form and the forms showcase, every standard
+field a CRUD needs, each as rich as Filament's: an enum-backed status as radio
+buttons or toggle buttons, topics as a checkbox list over the relation, a
+native published-at picker bound to a `DateTimeImmutable`, inputs with
+prefixes, suffixes and affix actions, a searchable relationship select that
+creates its option in a modal, tabs and a wizard around the sections, a
+repeater that collapses and reorders, a cover-image upload — all defined in
+PHP the way Filament defines it, and validated by the full rule family._
+
+Planned 2026-08-17 as the first of four horizontal milestones — "make the
+basic fields as rich as we can" — with the editors and the builder ruled out
+by decision (see _Out of scope_). Epics 1, 2, 4 and 5 are file-disjoint and
+can run as parallel lanes; 3 follows the visual-parity CSS work; 6 and 7 close
+on the shared decisions below; 8 and 9 sweep.
+
+| # | Epic | Packages | Delivers | Status |
+| --- | --- | --- | --- | --- |
+| 1 | Option fields + enum options | [forms](forms/README.md), [schemas](schemas/README.md), [support](support/README.md), **demo** | `Radio`, `CheckboxList` and `ToggleButtons`, plus `Hidden` and `ViewField` as freebies, on the `HasOptions`/`CanDisableOptions` pair `Select` already carries; the new shared concerns `HasDescriptions`, `HasGridDirection` and `CanFixIndistinctState`, and `HasColors`/`HasIcons`/`HasTooltips` for toggle buttons; `boolean()` on Radio and ToggleButtons, `grouped()`/`inline()`, `columns()`, `CheckboxList::relationship()` over the existing to-many arm, `bulkToggleable()` as one small Stimulus controller. The load-bearing piece is **`HasEnum`** with support's missing `Contracts\HasDescription` (beside the shipped `HasLabel`/`HasColor`/`HasIcon`) and schemas' `EnumStateCast`/`EnumArrayStateCast`: an enum class-string becomes options on every option field including `Select` ([the dropped arm](forms/select.md#hasoptions-drops-the-enum-class-string-arm)), and Field's blocked [state-casts row](forms/field.md#state-casts-and-enum-defaults-are-not-ported) flips. Demo: Article `status` (a bare `'draft'` string today) becomes an enum-backed radio/toggle-button pair; topics as a checkbox-list relationship card. | todo |
+| 2 | Date and time fields, native | [forms](forms/README.md), [schemas](schemas/README.md), **demo** | `DatePicker`, `DateTimePicker` and `TimePicker` at `native(true)` — Filament's own default (`CanBeNative`), so the control is the browser's `date`/`datetime-local`/`time` input and no JS ships. The real work is a schemas **date state cast**: the input's string form on the wire, `DateTimeImmutable`/`DateTime` on the record — chosen from the write-side type the [type reader](schemas/record-type-reader.md) already resolves — with `timezone()` applied at the boundary; then `format()`, `minDate()`/`maxDate()`, `seconds()`, `HasStep`, `HasDatalistOptions`, `CanBeReadOnly`, and the comparison rules from epic 8 (`after`/`before`/`…OrEqual`) wired to date state. `native(false)` — the JS calendar with `displayFormat()`, `firstDayOfWeek()`, `disabledDates()`, `closeOnDateSelection()` — is recorded as the one gap, a JS vertical of its own. Demo: `publishedAt` on Article (entity, migration, seed) with a list column. | todo |
+| 3 | Input wrapper and affixes | [support](support/README.md), [forms](forms/README.md), [schemas](schemas/README.md), **demo** | Support's `InputWrapper` component — Filament's `fi-input-wrp`, the element that carries prefixes and suffixes and that [the port does not render yet](forms/field.md#the-input-affix-wrapper-is-not-ported) — and `HasAffixes` on `TextInput`, `Select` and the date fields: `prefix()`/`suffix()`, `prefixIcon()`/`suffixIcon()` with their colours, `inlinePrefix()`/`inlineSuffix()`, and `prefixAction()`/`suffixAction()` (+ the plural forms), which brings the prebuilt affix actions the trail already carries to life — [13](#pulled-forward) is where the wrapper, not the actions, was named as what they wait on. `HasDatalistOptions` (`datalist()`) on `TextInput` rides along, and schemas' `FusedGroup` — fields fused on that wrapper — is the layout side of the same surface. Sequenced after the panel visual-parity epic in flight, whose CSS truing owns `input.css` until it lands. | todo |
+| 4 | Searchable select | [forms](forms/README.md), [schemas](schemas/README.md), [support](support/README.md), **demo** | The JS select control, and with it Select's [blocked `CanBeNative`](forms/select.md#canbenative-is-not-ported) and [`getOptionLabelUsing`](forms/select.md#getoptionlabel-omits-the-getoptionlabelusing-arm) rows: `searchable()`, `getSearchResultsUsing()`, `getOptionLabelUsing()`/`getOptionLabelsUsing()`, `CanBePreloaded` (`preload()`), `optionsLimit()`, `searchDebounce()`, the prompt/searching/no-results/loading messages, `multiple()` as chips, `native(false)`; `relationship()` searching the title attribute through the association reader; and the option actions the trail deferred — `createOptionForm()`/`createOptionUsing()`/`editOptionForm()` — over the mounted-action form pipeline. Design decision first, recorded in the trail: `symfony/ux-autocomplete` (Tom Select; a `symfony/*` dep, pre-approved) against a first-party controller — either way the search endpoint has to resolve the field's closures on the live host (the label-probe the relation layer named). `allowHtml()` lands with it. | todo |
+| 5 | Tabs, Wizard and Flex | [schemas](schemas/README.md), [support](support/README.md), **demo** | The form-side layout components still missing: `Tabs`/`Tab` (`persistTab()`, `persistTabInQueryString()`, `contained()`, `vertical()`, `activeTab()`, tab icons and badges), `Wizard`/`Step` (per-step validation on next, `skippable()`, `startOnStep()`, `submitAction()`/`nextAction()`/`previousAction()`, `persistStepInQueryString()`), and `Flex`; support ships the tab chrome and its Stimulus controller. `Tabs` is also M6 · 1's prerequisite — relation managers render as tabs. Demo: article sections behind tabs, and the create flow as a wizard card. | todo |
+| 6 | Repeater chrome and the drag-and-drop control | [forms](forms/README.md), [support](support/README.md), **demo** | The [four deferred chrome clusters](forms/repeater.md#four-chrome-clusters-are-deferred-not-dropped) — the collapse family (`CanBeCollapsed`/`CanBeCompact`, collapse-all/expand-all, a repeater-item Stimulus controller), `addBetween`/`labelBetweenItems`, `extraItemActions()`, and the items grid over `HasContainerGridLayout` — plus `table()` mode with `TableColumn`, and [drag-and-drop reorder](forms/repeater.md#drag-and-drop-reorder-is-deferred-and-filaments-defaults-are-kept). That last one is **the shared decision**: one drag-and-drop Stimulus control also serves tables' `reorderable()` (M4 · 3), upload reordering (epic 7) and, later, `Builder`; SortableJS is not `symfony/*` and needs sign-off, a first-party HTML5 drag controller does not — decided at design time and recorded once. | todo |
+| 7 | File upload | [forms](forms/README.md), [support](support/README.md), **demo** | `FileUpload` over `BaseFileUpload` — the milestone's last and riskiest epic, because it needs two seams the port does not have: a **storage seam** (Filament writes to Laravel disks; Flysystem is not `symfony/*` — a minimal storage contract with a local adapter, or `league/flysystem-bundle` with sign-off, decided pre-epic) and an **upload lifecycle** on the live component (Livewire's temporary uploads have no UX Live Component twin — upload on action, preview, persist on save). Surface at parity where the seams allow: `multiple()`, `directory()`, `disk()`, `visibility()`, `acceptedFileTypes()`, `maxSize()`/`minSize()`, `maxFiles()`/`minFiles()`, `downloadable()`/`openable()`/`previewable()`, `preserveFilenames()`/`getUploadedFileNameForStorageUsing()`, `storeFileNamesIn()`, `moveFiles()`, `reorderable()` over epic 6's control, `image()`, `avatar()`, `imagePreviewHeight()`, `panelLayout()`; the image editor (`imageEditor()`, crop ratios) is recorded as a gap. JS: `symfony/ux-dropzone` (pre-approved) as the drop zone against FilePond (not `symfony/*`) — same decision, same time. Demo: a cover image on Article. | todo |
+| 8 | Validation completeness | [forms](forms/README.md), [schemas](schemas/README.md), **demo** | Every deferred family in [can-be-validated.md](forms/can-be-validated.md), each on the constraint vocabulary M1 · 1 set: the comparison family (`after`/`afterOrEqual`/`before`/`beforeOrEqual`, `gt`/`gte`/`lt`/`lte`, `same`/`different`, `confirmed`), the conditional-required family (`requiredIf*`/`requiredUnless`/`requiredWith*`/`requiredWithout*`, `prohibited*`), the data-layer family (`unique()`/`exists()`/`scopedUnique()`/`scopedExists()` with `ignoreRecord:`, over the record's Doctrine query — its row names the blocker), the format sugar (`alpha*`, `ascii`, `hexColor`, `json`, `ip*`, `uuid`, `ulid`, …), `regex()`/`notRegex()`, `startsWith()`/`endsWith()` and their negations, `filled()`/`multipleOf()`, `distinct()` once its cross-path context exists, and `mutateStateForValidation()`. | todo |
+| 9 | Small fields and the shipped-field sweep | [forms](forms/README.md), [support](support/README.md), **demo** | `TagsInput` (chips over a small Stimulus controller, `suggestions()` as a datalist, `separator()`, `splitKeys()`), `KeyValue` (add/delete/reorder rows through mounted actions — the no-JS shape Repeater already uses), and the sweep that settles every remaining **in progress** row on the seven shipped fields: `TextInput` (`revealable()`, `copyable()`, the numeric/tel/url families, `mask()` ported over a masking controller or recorded as a gap), `Textarea` (`autosize()`), the `Checkbox`/`Toggle` leftovers, `Select::pivotData()` where a join entity makes it meaningful, and whatever epics 1–8 leave behind. Closes the milestone against its stop line. | todo |
+
+**Carried decisions — three due at the top of M3, one open; each is recorded
+in the trail when made.**
+(1) **Drag-and-drop control** (epic 6): SortableJS vs a first-party HTML5 drag
+controller — one control for repeater items, table rows and upload previews.
+(2) **File-upload seams** (epic 7): the storage contract and the drop-zone JS.
+(3) **Searchable-select control** (epic 4): `symfony/ux-autocomplete` vs
+first-party.
+(4) **Strings — open.** Every field adds user-facing literals ("Select an
+option", the search prompts, "Add to …"), and the trail already records several
+"literal, not a translation key" divergences. Either literals start going
+through `symfony/translation` from epic 1, or i18n stays a dedicated pass
+([Beyond](#beyond)); either way the choice is made before epic 1 grows the
+count.
+
+**Out of scope:** the editors (`RichEditor`, `MarkdownEditor`, `CodeEditor`)
+and `Builder` — ruled non-standard for this milestone (2026-08-17); the
+JS-dependent `Slider`, `ColorPicker` and `OneTimeCodeInput`;
+`TableSelect`/`ModalTableSelect` (a table in a modal — after M4); the
+deprecated `Placeholder` (upstream: use `TextEntry`, which is M5's),
+`MultiSelect` and `RelationshipRepeater` — the port ships no deprecated
+surface, so those are skipped rows; `MorphToSelect` (a divergence, not a gap —
+Doctrine has no morph); the non-native date calendar; the image editor.
+
+**Done when:** every row on the seven shipped fields' tables and on the new
+fields' tables is settled — done, skipped, or blocked on a prerequisite named
+outside this milestone; each new field has a showcase card and its dark
+variant; the demo script runs on the article form; `composer test` and the
+demo suite are green.
+
+## M4 — Tables widening
+
+The demo script: _the articles list with everything an admin expects: tick
+rows and bulk-delete them, header actions, click a row to edit, flip
+`featured` inline, deep-link a sorted, searched, filtered page, hide columns,
+search a single column, group by author with per-group counts, the rest of the
+column catalog — and a sections table scoped to one article._
+
+| # | Epic | Packages | Delivers | Status |
+| --- | --- | --- | --- | --- |
+| 1 | Header, toolbar and bulk actions | [tables](tables/README.md), [actions](actions/README.md), [support](support/README.md), **demo** | `headerActions()` in the toolbar; record selection — the checkbox column, select-all/deselect-all, `selectCurrentPageOnly()`, `checkIfRecordIsSelectableUsing()`, `deselectAllRecordsWhenFiltered()`, the selection state on the host; `bulkActions()` with `BulkAction`/`BulkActionGroup` and `DeleteBulkAction`; and the actions-core leftovers the actions showcase footnote carries — `CanRedirect` (`successRedirectUrl()`), the `ActionCalling`/`ActionCalled` events on Symfony's dispatcher, transactions around the record actions. Demo: bulk delete on `/admin/articles`. | todo |
+| 2 | Modal-mode record actions | [actions](actions/README.md), [panels](panels/README.md), **demo** | The arms M2 · 3 deferred: `CreateAction`/`EditAction`/`ViewAction` opening a modal instead of a page, `getDefaultActionSchemaResolver()` on the resource pages, `mutateFormDataUsing`, the success notification and redirect hooks, `ReplicateAction`; `ViewAction` in list rows as a modal until M5's page exists. Consumed by M6 · 1's relation managers. | todo |
+| 3 | Row behaviour and query-string state | [tables](tables/README.md), **demo** | `recordUrl()`/`recordAction()`/`openRecordUrlInNewTab()`, `recordClasses()`, `striped()`, `poll()`, `deferLoading()`, `heading()`/`description()`, the empty-state completeness; sort, search, filter and page state in the query string (Live Component `url:` props — the `#[Url]` sweep item), `persistSortInSession()`/`persistSearchInSession()`/`persistFiltersInSession()` as gaps or a session-attribute port; `reorderable()` over M3 · 6's drag-and-drop control; the filters-layout leftovers (`filtersLayout()`, `filtersFormColumns()`, `deferFilters()`, `filtersTriggerAction()`). | todo |
+| 4 | Column catalog | [tables](tables/README.md), [support](support/README.md), **demo** | `IconColumn` (with `boolean()`), `ImageColumn` (circular, stacked; over M3 · 7's storage seam for uploads, plain URLs without it), `ColorColumn`, `ViewColumn`, and the **editable columns** — `ToggleColumn`, `CheckboxColumn`, `SelectColumn`, `TextInputColumn` — writing back to the record from the cell; plus the `TextColumn` remainder [15](#pulled-forward) left: `copyable()`, `tooltip()`, `html()`/`markdown()` behind [the sanitizer decision](tables/text-column.md#html--markdown-need-a-sanitizer-decision), the date family (`date()`/`dateTime()`/`since()`) and `money()`/`numeric()` over `intl`, `rowIndex()`, `url()`, `placeholder()`, `listWithLineBreaks()`/`bulleted()`/`limitList()`/`expandableLimitedList()`, and `Column`'s base surface (`verticalAlignment`, header attributes, `grow`, `wrapHeader`). `BadgeColumn`/`BooleanColumn`/`TagsColumn` are deprecated upstream — skipped rows. Demo: `featured` as a `ToggleColumn`, the author as an `ImageColumn`. | todo |
+| 5 | Column manager and per-column search | [tables](tables/README.md), **demo** | `toggleable()`/`toggledHiddenByDefault()` with the column-manager dropdown (`columnManagerColumns()`), and `searchable(isIndividual: true)` — the per-column search Beyond has carried since [11](#pulled-forward) — with its own indicator and the query-string state from epic 3. | todo |
+| 6 | Grouping and summaries | [tables](tables/README.md), **demo** | `groups()`/`defaultGroup()`/`Group` (collapsible groups, titles and descriptions, `date()` groups, `orderQueryUsing`), the grouping selector in the toolbar, and `summarize()` with `Sum`/`Average`/`Count`/`Range`/`Values` over the aggregate query lane [20](#pulled-forward) built, rendered in the footer per page and per group. | todo |
+| 7 | Layout columns | [tables](tables/README.md), **demo** | `Split`/`Stack`/`Panel`/`Grid` under `Columns\Layout` and `contentGrid()` — the card-style record layouts — with `collapsible()` panels. | todo |
+| 8 | Relation-scoped tables and relationship actions | [tables](tables/README.md), [actions](actions/README.md), [schemas](schemas/README.md), **demo** | `Table::relationship()` — the whole query is one owner record's association, built from Doctrine metadata through the association reader (Filament's `InteractsWithRelationshipTable`; the tables showcase footnote has pointed here since M2), with `AttachAction`/`DetachAction`/`DetachBulkAction` for a many-to-many and `AssociateAction`/`DissociateAction`/`DissociateBulkAction` for a one-to-many inverse; `AttachAction`'s record select rides on M3 · 4. Consumed by M6 · 1's relation managers; demoable now as an article-sections card. | todo |
+
+**Out of scope:** import/export (`ImportAction`/`ExportAction` — Messenger-backed
+jobs, [Beyond](#beyond)); the soft-delete actions (`RestoreAction`/
+`ForceDeleteAction`, `TrashedFilter` — Doctrine has no soft deletes; a
+divergence); the `QueryBuilder` filter (a JS-heavy filter builder,
+[Beyond](#beyond)); `TableWidget` (M6 · 5).
+
+**Done when:** every row on the tables package's tables is settled; the demo
+script runs on `/admin/articles` and the tables showcase; the relation-scoped
+card exists.
+
+## M5 — View page + infolists
+
+The demo script: _open an article read-only at `/admin/articles/{id}`: an
+infolist — text entries with badges and dates, an icon entry for `featured`, a
+key-value entry for tags, a repeatable entry for sections — the same entries
+inside a modal `ViewAction` from the list, and an infolists showcase page._
+
+| # | Epic | Packages | Delivers | Status |
+| --- | --- | --- | --- | --- |
+| 1 | Infolists package | [infolists](infolists/README.md), [schemas](schemas/README.md), [support](support/README.md), **demo** | `sylament/infolists` from its placeholder: `Entry` on the schemas `Component` (the entries are schema components reading schema state, the way v5's unification has them — not a second tree), `TextEntry` sharing the `TextColumn` formatting catalog (badge, colours, icons, size/weight/font, copyable, date/money, lists, `html()`/`markdown()`), `IconEntry`, `ImageEntry`, `ColorEntry`, `KeyValueEntry`, `RepeatableEntry`, `ViewEntry`; `CodeEntry` recorded as a gap (needs highlighting). Bundle wiring, styles through support's stylesheet the way notifications' are, and the showcase page (`isBuilt()` flips). | todo |
+| 2 | `ViewRecord` and the view arms | [panels](panels/README.md), [actions](actions/README.md), **demo** | `ViewRecord` as the third resource page — `Resource::infolist()`, falling back to the disabled `form()` the way Filament does — with `ViewAction` linking to it from list rows and `getRecordSubNavigation()` (View ↔ Edit) as the first sub-navigation consumer; the modal `ViewAction` from M4 · 2 gets the infolist. Demo: `/admin/articles/{id}`. | todo |
+
+**Out of scope:** relation managers on the view page (M6 · 1);
+`ManageRecords`.
+
+**Done when:** every row on the infolists package's tables is settled;
+`/admin/articles/{id}` renders the demo infolist; the view action works in
+both modes.
+
+## M6 — Panel depth
+
+The demo script: _the article edit page grows Sections and Topics relation
+managers in tabs — create and edit sections in modals, attach and detach
+topics, bulk-detach; sections also as a nested resource at
+`/admin/articles/{id}/sections/{section}/edit` with a breadcrumb chain; a
+Settings page with a form and header actions; global search in the topbar; a
+dashboard with stats, a chart and a latest-articles table._
+
+| # | Epic | Packages | Delivers | Status |
+| --- | --- | --- | --- | --- |
+| 1 | Relation managers | [panels](panels/README.md), [schemas](schemas/README.md), **demo** | `RelationManager` as a live component (table + actions + schemas host; `ownerRecord`, `$relationship`, `table()`/`form()`, `RelationManagerConfiguration`, `RelationGroup`, labels/icons/badges), `Resource::getRelations()`, `HasRelationManagers` on the edit and view pages over a **`content()` schema** on the record pages (deferred at M2 · 3), and a schemas embed component for a live component — Filament's `Livewire` schema component under the systematic Livewire → LiveComponent translation — inside M3 · 5's `Tabs`. Composes M4 · 1, 2 and 8. Demo: `SectionsRelationManager` and `TopicsRelationManager`. | todo |
+| 2 | Custom pages | [panels](panels/README.md), **demo** | Header actions on the plain `Page` (`InteractsWithHeaderActions` moves up from the resource-page base — [deferred there](panels/README.md#page)), the form-hosting page (`InteractsWithFormActions` + a schemas host on `Page` — the settings-page shape), `SimplePage`, `HasMaxWidth`, `HasUnsavedDataChangesAlert`, custom resource pages with a `{record}` through `getPages()`. Panels-only, so it can run beside the M3/M4 lanes. Demo: `/admin/settings`. | todo |
+| 3 | Nested resources and sub-navigation | [panels](panels/README.md), **demo** | `BelongsToParent` (`$parentResource`, `asParent()`, `ParentResourceRegistration` — the inverse relationship discovered from Doctrine metadata rather than Eloquent's relation objects), parent-scoped routes and `getUrl()` with parent parameters (`shouldGuessMissingParameters`), sidebar suppression for nested resources, breadcrumb chains over the visual-parity Breadcrumbs, `RelationManager::$relatedResource`, `ManageRelatedRecords`, `HasSubNavigation` with `SubNavigationPosition` over the support tabs. Demo: `SectionResource` nested under articles. | todo |
+| 4 | Global search | [panels](panels/README.md), **demo** | `HasGlobalSearch` on `Resource` (`getGloballySearchableAttributes()`, `getGlobalSearchResults()`, result title/details/url/actions, `GlobalSearchResult`/`GlobalSearchResults`, `DefaultGlobalSearchProvider` behind a contract), the topbar `GlobalSearch` live component, `globalSearchKeyBindings()`/`globalSearchDebounce()`/`globalSearchFieldSuffix()` on the panel. Demo: articles, authors and topics from the topbar. | todo |
+| 5 | Widgets and the dashboard | [widgets](widgets/README.md), [panels](panels/README.md), **demo** | `sylament/widgets` from its placeholder: `Widget`, `StatsOverviewWidget` + `Stat` (with its sparkline), `ChartWidget` and the typed chart subclasses over `symfony/ux-chartjs` (pre-approved), `TableWidget`, `WidgetConfiguration`, polling; `Dashboard::getWidgets()`/`getColumns()` and the page header/footer widget slots (`getHeaderWidgets()`/`getFooterWidgets()`, `ExposesTableToWidgets`). Demo: article counts, an articles-per-month chart, a latest-articles table. | todo |
+| 6 | Shell completeness | [panels](panels/README.md), **demo** | Desktop sidebar collapse (`sidebarCollapsibleOnDesktop()`/`sidebarFullyCollapsibleOnDesktop()`), `topNavigation()`, `Panel::favicon()`, `brandLogo()`/`darkModeBrandLogo()`, `maxContentWidth()`, `unsavedChangesAlerts()`, `renderHook()` (a Twig-side design — the trail decides between blocks and an event), and the multi-panel URL defect the M2 · 3 sweep recorded (a live action resolves the default panel). | todo |
+
+**Out of scope:** auth — parked by decision (2026-08-17); still the gate for a
+pilot and a tagged release, and the component-mount exposure the trail records
+grows with every page; database and broadcast notifications (Symfony has no
+notifications table — a design of its own); clusters; tenancy; testing helpers.
+
+**Done when:** the demo script runs end to end at `/admin`; every panels row
+the milestone touched is settled.
+
 ## Beyond
 
-Unordered and uncommitted; M2 is closed, so the next milestone is promoted
-from here.
+Unordered and uncommitted; M3–M6 are planned, so the milestone after M6 is
+promoted from here.
 
 - Breadth parity per package — working down the [progress tables](README.md).
-- Auth: login page, user menu, panel access control.
+  M3–M6 take forms, tables, infolists, widgets and panels; support, schemas,
+  actions and notifications remain.
+- Auth: login page, user menu, panel access control — parked by decision
+  (2026-08-17); still the gate for the pilot and the tagged release below.
 - Relation-backed fields (`Select` from Doctrine relations, repeaters) —
   pulled forward as [19](#pulled-forward).
-- Infolists and the resource view page.
-- Widgets and dashboard stats.
-- Per-column table search (`columnSearches`) — the global term shipped with
-  [11](#pulled-forward) and the filters with [21](#pulled-forward).
 - Theming and dark-mode polish.
 - Testing-helper ports (`TestsForms`, `TestsActions`, `TestsSchemas`).
 - A docs site.
 - First tagged release through the split repos.
 - Pilot on a real internal tool.
+- Import/export actions (`ImportAction`/`ExportAction`) — Messenger-backed
+  jobs.
+- Database and broadcast notifications — the panel bell and real-time
+  delivery; Symfony has no notifications table, so a design of its own.
+- Clusters — resources and pages grouped under one sub-navigation.
+- The `QueryBuilder` table filter.
+- The fields ruled out of M3: the editors (`RichEditor`, `MarkdownEditor`,
+  `CodeEditor`) and `Builder`; the JS-dependent `Slider`, `ColorPicker` and
+  `OneTimeCodeInput`; `TableSelect`/`ModalTableSelect`; the non-native date
+  calendar; the image editor.
+- i18n — a translation pass over the user-facing literals (M1's out-of-scope
+  item; the [M3 carried decision](#m3--forms-widening) says whether it starts
+  earlier).
+- Tenancy and multi-panel completeness.

@@ -5,8 +5,8 @@
         {% for url, label in breadcrumbs %}
             <li class="sy-breadcrumbs-item">
                 {% if not loop.first %}
-                    <twig:SylamentSupport:Icon icon="heroicons:chevron-right" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::BREADCRUMBS_SEPARATOR')" class="sy-breadcrumbs-item-separator sy-ltr" aria-hidden="true" />
-                    <twig:SylamentSupport:Icon icon="heroicons:chevron-left" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::BREADCRUMBS_SEPARATOR_RTL')" class="sy-breadcrumbs-item-separator sy-rtl" aria-hidden="true" />
+                    <twig:SylamentSupport:Icon icon="heroicons:chevron-right-20-solid" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::BREADCRUMBS_SEPARATOR')" class="sy-breadcrumbs-item-separator sy-ltr" aria-hidden="true" />
+                    <twig:SylamentSupport:Icon icon="heroicons:chevron-left-20-solid" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::BREADCRUMBS_SEPARATOR_RTL')" class="sy-breadcrumbs-item-separator sy-rtl" aria-hidden="true" />
                 {% endif %}
 
                 {% if url matches '/^\\d+$/' %}

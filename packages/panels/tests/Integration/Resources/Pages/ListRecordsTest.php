@@ -92,7 +92,11 @@ it('trails the resource above the list heading', function (): void {
         // The separator pair rides every item but the first, one arm per writing
         // direction, and the stylesheet hides the one that does not apply.
         ->and($page->filter('.sy-breadcrumbs-item-separator.sy-ltr')->count())->toBe(1)
-        ->and($page->filter('.sy-breadcrumbs-item-separator.sy-rtl')->count())->toBe(1);
+        ->and($page->filter('.sy-breadcrumbs-item-separator.sy-rtl')->count())->toBe(1)
+        // Filament reaches for the mini (20px solid) chevrons here, not the 24px
+        // outline set, and the viewBox is the only thing that tells them apart.
+        ->and($page->filter('.sy-breadcrumbs-item-separator.sy-ltr')->outerHtml())->toContain('0 0 20 20')
+        ->and($page->filter('.sy-breadcrumbs-item-separator.sy-rtl')->outerHtml())->toContain('0 0 20 20');
 });
 
 it('renders the header actions the page declares', function (): void {

@@ -125,7 +125,7 @@ Consumers never need Tailwind installed.
    unlayered consumer CSS overrides Sylament without `!important`.
 9. **Dark mode is class-based**: `@variant dark (&:where(.dark, .dark *))`.
    The class lands on `<html>`, so a page opting in sets it there; panels ship a
-   switcher and a head script that do it for a panel. Two rules follow the
+   switcher and a head script that do it for a panel. One rule follows the
    variant rather than a component: `:root.dark { color-scheme: dark }` in
    `support`'s `base.css`, which is what makes the UA paint form-control
    internals, scrollbars and the canvas dark from the class rather than from the

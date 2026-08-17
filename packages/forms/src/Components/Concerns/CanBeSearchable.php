@@ -21,8 +21,18 @@ trait CanBeSearchable
 
     protected string|Markup|Closure|null $searchPrompt = null;
 
+    /**
+     * Nullable so `searchLabels(null)` — the setter's own declared arm — assigns
+     * instead of throwing a `TypeError` against a `bool|Closure` property, as it
+     * does in Filament. Null means off, through {@see shouldSearchLabels()}'s cast.
+     */
     protected bool|Closure|null $shouldSearchLabels = true;
 
+    /**
+     * Nullable so `searchValues(null)` — the setter's own declared arm — assigns
+     * instead of throwing a `TypeError` against a `bool|Closure` property, as it
+     * does in Filament. Null means off, through {@see shouldSearchValues()}'s cast.
+     */
     protected bool|Closure|null $shouldSearchValues = false;
 
     public function searchable(bool|Closure|null $condition = true): static

@@ -111,8 +111,11 @@ Neither is composed or ported. **Blocked** on the `HasEnum` port and the schemas
 ### `hasNullableBooleanState()` is not ported
 
 Filament's Field declares `hasNullableBooleanState(): bool` (default `false`),
-overridden by boolean fields to control tri-state casting. Not ported; no
-consumer exists until the boolean fields (Checkbox, Toggle) land.
+overridden by boolean fields to control tri-state casting. Not ported. Both
+boolean fields have landed — [Checkbox](checkbox.md) and [Toggle](toggle.md) —
+and neither needs it, because tri-state casting is a `StateCast` behaviour and
+that surface is the one the row above is blocked on; it lands with the casts, not
+with the fields.
 
 ## Divergences
 
@@ -211,6 +214,15 @@ accessibility addition of this port, not a translation, and it renders with a
 [`ComponentAttributeBag`](../support/component-attribute-bag.md) maps a boolean
 on an `aria-*` name to the strings `"true"` / `"false"` instead of dropping a
 false one.
+
+The two classes the list renders under drop Filament's `-wrp-` segment —
+`.sy-fo-field-error-list` / `.sy-fo-field-error-message` for
+`fi-fo-field-wrp-error-list` / `fi-fo-field-wrp-error-message` — which is a
+[recorded rename](../renames.md), not the systematic `fi-` → `sy-` swap: the
+segment is vestigial on Filament's side too, `fi-fo-field-wrp` existing in v5.7.6
+only inside these two names. The rule bodies are Filament's
+(`list-inside list-disc space-y-0.5` on the `<ul>`,
+`text-sm text-danger-600 dark:text-danger-400` on each `<li>`).
 
 ### `setUpHint()` narrows its parameter to Field
 

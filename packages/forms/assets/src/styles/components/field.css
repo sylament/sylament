@@ -36,7 +36,7 @@
 }
 
 .sy-fo-field-error-list {
-    @apply grid gap-y-1;
+    @apply list-inside list-disc space-y-0.5;
 }
 
 .sy-fo-field-error-message {

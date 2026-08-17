@@ -57,7 +57,7 @@ deleted once the row is **done**; **semantics** → the permanent note in
 | [Toast styles (`sy-no-notification*`)](../../../packages/notifications/assets/src/styles/components/notification.css) | [`resources/css/notification.css`](../../../vendor/filament/notifications/resources/css/notification.css) | in progress | — | [detail](#the-toast-markup-is-missing-the-date-and-inline-arms) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) |
 | [Toast controller — auto-dismiss, hover-pause, delegated close clicks](../../../packages/notifications/assets/src/controllers/notification_controller.ts) | [`resources/js/components/notification.js`](../../../vendor/filament/notifications/resources/js/components/notification.js) | in progress | the database-notifications panel | [detail](#markasread-and-markasunread-belong-to-the-database-panel) · [diverges](#the-toast-trades-alpines-transition-classes-for-css-and-a-stimulus-controller) · [diverges](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload) |
 | `close-notification` — closing a toast by id from a browser event | [`x-on:close-notification.window`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#closing-a-toast-by-id-needs-the-id-in-the-markup) |
-| [`actions()` (`HasActions`)](../../../packages/notifications/src/Concerns/HasActions.php) | [`Concerns/HasActions.php`](../../../vendor/filament/notifications/src/Concerns/HasActions.php), the `actions` key of `toArray()`/`fromArray()` | done | — | [semantics](#toast-actions-are-re-viewed-as-small-links-and-the-actions-key-restores-them) · [semantics](#toast-actions-cannot-open-modals-at-filament-parity) · [diverges](#the-re-view-defaults-a-group-to-teleport-where-filaments-toast-groups-clip) · [diverges](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload) |
+| [`actions()` (`HasActions`)](../../../packages/notifications/src/Concerns/HasActions.php) | [`Concerns/HasActions.php`](../../../vendor/filament/notifications/src/Concerns/HasActions.php), the `actions` key of `toArray()`/`fromArray()` | done | — | [semantics](#toast-actions-are-re-viewed-as-small-links-and-the-actions-key-restores-them) · [semantics](#toast-actions-cannot-open-modals-at-filament-parity) · [diverges](#the-actions-row-is-styled-by-its-own-class-where-filament-reuses-the-cross-package-fi-ac) · [diverges](#the-re-view-defaults-a-group-to-teleport-where-filaments-toast-groups-clip) · [diverges](#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload) |
 | `date()` (`HasDate`) | [`Concerns/HasDate.php`](../../../vendor/filament/notifications/src/Concerns/HasDate.php) | todo | — | [detail](#date-and-inline-arrive-with-the-database-notifications-panel) |
 | `inline()` (`CanBeInline`) | [`Concerns/CanBeInline.php`](../../../vendor/filament/notifications/src/Concerns/CanBeInline.php) | todo | — | [detail](#date-and-inline-arrive-with-the-database-notifications-panel) |
 | `view()` / `viewData()` / `safeViews()` | [`safeViews()` / `isViewSafe()`](../../../vendor/filament/notifications/src/Notification.php) | todo | — | [detail](#custom-views-and-their-safe-view-gate-are-unported) |
@@ -121,7 +121,13 @@ base rule, because [`inline()` is unported](#date-and-inline-arrive-with-the-dat
 and a two-arm split with one arm is just the base; and the base rule drops
 `invisible` and spells its `transition` out per property, because nothing here
 toggles visibility from JS and the enter/leave animation is the CSS below rather
-than Alpine's. The leading `.sy-no` container block in the same file ports no part
+than Alpine's. The fold has one consequence the merged declaration set does not
+show: the card chrome drops from `(0,2,0)` (`.fi-no-notification:not(.fi-inline)`)
+to `(0,1,0)` (`.sy-no-notification`), so a host override written at single-class
+specificity now wins against declarations it would have lost to in Filament. The
+`:not(.sy-inline)` wrapper — and with it the original specificity — comes back
+with [`inline()`](#date-and-inline-arrive-with-the-database-notifications-panel).
+The leading `.sy-no` container block in the same file ports no part
 of `notification.css` — it ports `notifications.css` and is
 [the stack's row](notifications.md), **done** there. And the `.sy-closing` rule,
 the `@starting-style` blocks and the `prefers-reduced-motion` query port no vendor
@@ -518,7 +524,11 @@ animating its own height to zero before removing itself, so siblings reflow thro
 the same CSS transition; `prefers-reduced-motion` is one media query. The
 [controller](../../../packages/notifications/assets/src/controllers/notification_controller.ts)
 adds a `transitionend` listener plus a 400 ms `setTimeout` fallback so a toast is
-removed even when the transition never fires (a hidden tab).
+removed even when the transition never fires. Two cases reach it, not one: a
+hidden tab, and `prefers-reduced-motion`, where the media query sets
+`transition: none` so the exit transition never starts and therefore never ends.
+Under reduced motion the toast still leaves — 400 ms after the click, without
+animating.
 
 The FLIP is not reproducible here and does not need to be: it exists because
 Filament's stack is re-rendered by the server, so a removed toast's siblings jump
@@ -526,6 +536,35 @@ between morphs. Here removal is client-owned — the element takes itself out of
 DOM and nothing re-renders behind it — which is the same property that makes the
 [zombie-toast class](notifications.md#a-toast-closes-client-side-and-is-never-re-rendered)
 impossible.
+
+### The actions row is styled by its own class, where Filament reuses the cross-package `fi-ac`
+
+Filament writes one row-layout rule — `.fi-ac` in
+[`actions/…/actions.css`](../../../vendor/filament/actions/resources/css/actions.css)
+— and reuses the class for **every** actions row it renders, the toast's
+(`<div class="fi-ac fi-no-notification-actions">`) included. That reuse is not
+available here, because the `fi-ac` → `sy-ac` translation was already spent on a
+different thing: bare `sy-ac` is the *action trigger* marker every
+`templates/partials/Action/*` root carries, and the row container took the
+schemas-namespaced `sy-sc-actions-ctn` beside the component that emits it
+([schemas/actions.md](../schemas/actions.md#the-actions-row-container-class-is-sy-sc-actions-ctn-not-a-fi-ac-translation),
+[schemas/styles.md](../schemas/styles.md)).
+
+The toast's row was ported class-for-class from Filament and kept `sy-ac`, which
+after that rename painted nothing at all: the buttons fell back to inline flow
+with no `gap-3`, no `flex-wrap` and no `items-center`. The fix keeps `sy-ac`'s
+single documented meaning and gives the row its own rule —
+`.sy-no-notification-actions { @apply flex flex-wrap items-center gap-3; }` in
+[`notification.css`](../../../packages/notifications/assets/src/styles/components/notification.css),
+the same declarations vendor's `.fi-ac:not(.fi-width-full)` resolves to for this
+element — and drops the now-inert `sy-ac` from the template, since the container
+is not a trigger. Reusing `sy-sc-actions-ctn` was the alternative and is worse: it
+would make a notifications template depend on a schemas class for its layout.
+
+The same applies to any future port of Filament's
+`database-notifications.blade.php` row, which is `<div class="fi-ac">` with no
+second class to hang a rule on — that one needs a class of its own before it can
+be styled.
 
 ### The re-view defaults a group to teleport, where Filament's toast groups clip
 

@@ -99,7 +99,11 @@ Filament renders `<button role="switch" type="button">` with an Alpine
 element to avoid a flash before Alpine boots. The port renders a real
 `<input type="checkbox" role="switch">` that CSS visually replaces with a track
 and a thumb; every state transition is a sibling selector
-(`:checked ~`, `:focus-visible ~`, `:disabled ~`).
+(`:checked ~`, `:focus-visible ~`, `:disabled ~`). The on/off icon cross-fade is
+Filament's own CSS unchanged: Alpine only toggles the `fi-toggle-on` /
+`fi-toggle-off` class there, and `:checked ~` replaces that class one for one, so
+the stacked `absolute inset-0` icons and their opacity/duration pairs port
+verbatim.
 
 Three things this buys, and they are why it holds:
 

@@ -83,6 +83,10 @@
         }
     }
 
+    & .sy-no-notification-actions {
+        @apply flex flex-wrap items-center gap-3;
+    }
+
     &.sy-closing {
         @apply opacity-0;
         scale: 0.95;

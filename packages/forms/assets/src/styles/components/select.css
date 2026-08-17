@@ -1,9 +1,18 @@
 .sy-fo-select {
-    @apply block w-full appearance-none rounded-lg bg-white bg-no-repeat py-1.5 pe-8 ps-3 text-sm text-gray-950 shadow-xs ring-1 ring-gray-950/10 transition duration-75 outline-none hover:ring-gray-950/20 focus:ring-2 focus:ring-primary-600 disabled:bg-gray-50 disabled:text-gray-500 dark:bg-white/5 dark:text-white dark:ring-white/10 dark:hover:ring-white/20 dark:focus:ring-primary-500;
+    @apply block w-full appearance-none rounded-lg bg-white bg-no-repeat py-1.5 pe-8 ps-3 text-sm leading-6 text-gray-950 shadow-sm ring-1 ring-gray-950/10 transition duration-75 outline-none hover:ring-gray-950/20 focus:ring-2 focus:ring-primary-600 disabled:bg-gray-50 disabled:text-gray-500 disabled:[-webkit-text-fill-color:var(--color-gray-500)] dark:bg-white/5 dark:text-white dark:ring-white/20 dark:hover:ring-white/20 dark:focus:ring-primary-500 dark:disabled:bg-transparent dark:disabled:text-gray-400 dark:disabled:ring-white/10 dark:disabled:[-webkit-text-fill-color:var(--color-gray-400)] [&_optgroup]:bg-white [&_optgroup]:dark:bg-gray-900 [&_option]:bg-white [&_option]:dark:bg-gray-900;
+
+    /* https://defensivecss.dev/tip/input-zoom-safari */
+    @supports (-webkit-touch-callout: none) {
+        @apply text-base;
+    }
 
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
     background-position: right 0.5rem center;
-    background-size: 1.25rem 1.25rem;
+    background-size: 1.5em 1.5em;
+
+    @variant rtl {
+        background-position: left 0.5rem center;
+    }
 }
 
 .sy-fo-select[aria-invalid='true'] {

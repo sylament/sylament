@@ -1415,6 +1415,46 @@ no second reversal when reordering and grouping land. The toolbar is pinned in
 all four states — search only, filters only, both, neither — by
 [`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php).
 
+### The search field flattens support's input wrapper into two classes
+
+`fi-ta-search-field` carries no rule in Filament at all — it is a bare hook on a
+`<div>`, and everything visible comes from the `x-filament::input.wrapper`
+component it contains: `.fi-input-wrp` paints the chrome, an inner
+`.fi-input-wrp-prefix.fi-inline` holds the icon, and
+`input.fi-input.fi-input-has-inline-prefix` sits in a
+`.fi-input-wrp-content-ctn` beside it. Support ships no input-wrapper component
+to compose (its port is [blocked](../forms/field.md#the-input-affix-wrapper-is-not-ported))
+and the field itself is [ported inline into the partial](README.md) rather than
+as a component, so four vendor elements collapse to two — `<label
+class="sy-ta-search-field">` holding the icon and the input directly — and three
+vendor rules collapse into `header-toolbar.css`'s two.
+
+The metrics carry over unchanged, which is worth spelling out because one of them
+reads like a drift and is not. Ours puts `gap-x-2` between the icon and the
+input; vendor's `gap-x-3` separates *multiple* prefix children and never shows
+here, because the search field's prefix holds one visible child — the icon, with
+a `wire:loading` indicator beside it that is `display: none` at rest and so
+creates no gap (and which this port does not render at all, loading affordances
+being [deferred](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them)).
+The icon-to-input distance vendor actually computes is the inline prefix's `pe-2`
+plus the input's `ps-0` — 0.5rem, which is what `gap-x-2` is. The leading `ps-3`
+is the prefix's, the trailing `pe-3` is the `pe` half of the input's `px-3`,
+`min-w-0` is lifted off `.fi-input-wrp-content-ctn`, and the `@supports
+(-webkit-touch-callout: none)` Safari-zoom block is vendor-verbatim, comment
+included. The input's six `disabled:` / `dark:disabled:` arms — including the
+`[-webkit-text-fill-color:…]` pair iOS needs — are carried too: the element is a
+real `<input>`, so they are expressible on the flat DOM whether or not this call
+site ever disables it.
+
+Two vendor rules cannot come across, and they are the remainder rather than a
+choice. `.fi-input-wrp`'s disabled chrome (`&.fi-disabled { bg-gray-50
+dark:bg-transparent }`) and its focus guard
+(`&:not(.fi-disabled):not(:has(.fi-ac-action:focus))`, which suppresses the
+wrapper ring while a prefix action holds focus) both key off DOM this partial
+does not emit — no `sy-disabled` on the field, and no action mounted inside it.
+Both return with the input-wrapper component, along with the two-layer structure
+that would make the flattening unnecessary.
+
 ### The visible action map is a `Table` method, and is not short-circuited
 
 Filament builds its per-record action map **in the Blade template**: a

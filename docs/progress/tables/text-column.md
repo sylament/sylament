@@ -395,6 +395,14 @@ still honours `sy-wrapped` exactly as Filament does. Overflow is the worse of th
 two failure modes, so this is not treated as a regression to fix — but it is the
 reason `wrap()` looks inert on that one combination.
 
+`white-space` is a separate axis and follows Filament exactly: `.sy-wrapped` sets
+`whitespace-normal` on the cell whatever else it carries, with `& .sy-badge {
+whitespace-nowrap }` pinning the pills so only the descriptions around them wrap.
+Vendor guards that arm with a **compound** `:not(.fi-ta-text-has-badges.fi-ta-text-has-line-breaks)`,
+and [`listWithLineBreaks()` is unported](#an-iterable-state-renders-as-one-comma-joined-line-and-nothing-else),
+so the second half can never be present and the faithful collapse is no guard at
+all.
+
 ### A badged icon goes through the `Badge`'s own props, and loses `iconColor()` doing it
 
 Filament builds the badge span by hand inside `toEmbeddedHtml()` and encloses

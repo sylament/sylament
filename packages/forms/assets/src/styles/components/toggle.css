@@ -7,7 +7,7 @@
 }
 
 .sy-fo-toggle-track {
-    @apply flex h-6 w-11 cursor-pointer items-center rounded-full bg-gray-200 p-0.5 transition duration-75 dark:bg-white/10;
+    @apply flex h-6 w-11 cursor-pointer items-center rounded-full bg-gray-200 p-0.5 transition-colors duration-200 ease-in-out dark:bg-gray-700;
 
     /* Clearing the three slots the checked rules below read stops an off colour set on
        `.sy-fo-toggle` reaching them by inheritance: a colour name the registry does not know still
@@ -37,11 +37,11 @@
 }
 
 .sy-fo-toggle-input:focus-visible ~ .sy-fo-toggle-track {
-    @apply ring-2 ring-primary-600 ring-offset-2 dark:ring-primary-500 dark:ring-offset-gray-900;
+    @apply ring-2 ring-primary-600 ring-offset-1 dark:ring-primary-500 dark:ring-offset-gray-900;
 }
 
 .sy-fo-toggle-input:disabled ~ .sy-fo-toggle-track {
-    @apply cursor-not-allowed opacity-50;
+    @apply pointer-events-none opacity-70;
 }
 
 .sy-fo-toggle-input[aria-invalid='true'] ~ .sy-fo-toggle-track {
@@ -49,11 +49,11 @@
 }
 
 .sy-fo-toggle-thumb {
-    @apply flex size-5 items-center justify-center rounded-full bg-white text-gray-400 shadow-sm transition duration-75;
+    @apply relative flex size-5 items-center justify-center rounded-full bg-white text-gray-400 shadow ring-0 transition duration-200 ease-in-out dark:text-gray-700;
 }
 
 .sy-fo-toggle-input:checked ~ .sy-fo-toggle-track .sy-fo-toggle-thumb {
-    @apply translate-x-5;
+    @apply translate-x-5 rtl:-translate-x-5;
 }
 
 .sy-fo-toggle.sy-color .sy-fo-toggle-input:not(:checked) ~ .sy-fo-toggle-track .sy-fo-toggle-thumb {
@@ -64,14 +64,22 @@
     @apply text-(--sy-text);
 }
 
-.sy-fo-toggle-icon-on {
-    @apply hidden;
+.sy-fo-toggle-thumb > * {
+    @apply absolute inset-0 flex h-full w-full items-center justify-center transition-opacity;
 }
 
-.sy-fo-toggle-input:checked ~ .sy-fo-toggle-track .sy-fo-toggle-icon-on {
-    @apply block;
+.sy-fo-toggle-icon-off {
+    @apply opacity-100 duration-200 ease-in;
+}
+
+.sy-fo-toggle-icon-on {
+    @apply opacity-0 duration-100 ease-out;
 }
 
 .sy-fo-toggle-input:checked ~ .sy-fo-toggle-track .sy-fo-toggle-icon-off {
-    @apply hidden;
+    @apply opacity-0 duration-100 ease-out;
+}
+
+.sy-fo-toggle-input:checked ~ .sy-fo-toggle-track .sy-fo-toggle-icon-on {
+    @apply opacity-100 duration-200 ease-in;
 }

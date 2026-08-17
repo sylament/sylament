@@ -1,5 +1,15 @@
 .sy-pa-header {
     @apply flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between;
+
+    & .sy-breadcrumbs {
+        @apply mb-2 hidden sm:block;
+    }
+
+    &.sy-pa-header-has-breadcrumbs {
+        & .sy-pa-header-actions {
+            @apply sm:mt-7;
+        }
+    }
 }
 
 .sy-pa-header-headings {

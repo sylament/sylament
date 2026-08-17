@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Sylament\Panels\Navigation\NavigationItem;
+use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Pages\Page;
 use Sylament\Panels\Panel;
 use Sylament\Panels\Tests\Fixtures\Pages\SettingsPage;
@@ -32,6 +33,14 @@ it('defaults the optional navigation statics to null', function (): void {
         ->and($page::getNavigationIcon())->toBeNull()
         ->and($page::getNavigationGroup())->toBeNull()
         ->and($page::getNavigationSort())->toBeNull();
+});
+
+it('carries no breadcrumb trail by default', function (): void {
+    $page = new class extends Page {};
+
+    expect($page->getBreadcrumbs())->toBe([])
+        ->and(new SettingsPage()->getBreadcrumbs())->toBe([])
+        ->and(new Dashboard()->getBreadcrumbs())->toBe([]);
 });
 
 it('derives slug, route path, route name and component name from the class', function (): void {

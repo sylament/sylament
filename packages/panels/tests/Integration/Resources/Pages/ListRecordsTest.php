@@ -68,6 +68,33 @@ it('serves the list page with the resource table', function (): void {
         ->and($html)->toContain('<title>Articles — Test Admin</title>');
 });
 
+it('trails the resource above the list heading', function (): void {
+    [$client] = seededArticlesClient();
+
+    $crawler = $client->request('GET', '/admin/articles');
+
+    $items = $crawler->filter('header.sy-pa-header.sy-pa-header-has-breadcrumbs > .sy-pa-header-headings > nav.sy.sy-breadcrumbs[aria-label="Breadcrumbs"] .sy-breadcrumbs-item');
+    $resource = $items->eq(0);
+    $page = $items->eq(1);
+
+    // Both key kinds of the trail map, and each one's whole rendering: the
+    // resource crumb is keyed by its URL so it links, the page crumb is keyed by
+    // position so it is plain text, and only the last one is the current page.
+    expect($items->count())->toBe(2)
+        ->and($resource->filter('a.sy-breadcrumbs-item-label')->attr('href'))->toEndWith('/admin/articles')
+        ->and($resource->filter('a.sy-breadcrumbs-item-label')->text())->toBe('Articles')
+        ->and($resource->filter('[aria-current]')->count())->toBe(0)
+        ->and($resource->filter('.sy-breadcrumbs-item-separator')->count())->toBe(0)
+        ->and($page->filter('a')->count())->toBe(0)
+        ->and($page->filter('span.sy-breadcrumbs-item-label')->text())->toBe('List')
+        ->and($page->filter('span.sy-breadcrumbs-item-label')->attr('aria-current'))->toBe('page')
+        ->and($crawler->filter('.sy-breadcrumbs [aria-current="page"]')->count())->toBe(1)
+        // The separator pair rides every item but the first, one arm per writing
+        // direction, and the stylesheet hides the one that does not apply.
+        ->and($page->filter('.sy-breadcrumbs-item-separator.sy-ltr')->count())->toBe(1)
+        ->and($page->filter('.sy-breadcrumbs-item-separator.sy-rtl')->count())->toBe(1);
+});
+
 it('renders the header actions the page declares', function (): void {
     [$client] = seededArticlesClient();
 

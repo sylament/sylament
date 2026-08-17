@@ -55,6 +55,17 @@ abstract class Page
         return $this->subheading;
     }
 
+    /**
+     * A string key is the crumb's URL and renders as a link; an int key renders
+     * as plain text.
+     *
+     * @return array<int|string, string|Markup>
+     */
+    public function getBreadcrumbs(): array
+    {
+        return [];
+    }
+
     public function getTemplate(): string
     {
         return $this->template ?? '@SylamentPanels/partials/Page/index.html.twig';

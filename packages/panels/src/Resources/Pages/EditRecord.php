@@ -147,6 +147,11 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
         return static::$title ?? sprintf('Edit %s', $this->getRecordTitle());
     }
 
+    public function getBreadcrumb(): string
+    {
+        return static::$breadcrumb ?? 'Edit';
+    }
+
     protected function handleRecordUpdate(object $record): object
     {
         $entityManager = $this->entityManager

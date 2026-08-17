@@ -45,6 +45,20 @@ it('serves the create page with the resource form', function (): void {
         ->and($html)->toContain('<title>Create Article — Test Admin</title>');
 });
 
+it('trails the resource above the create heading', function (): void {
+    [$client] = createRecordClient();
+
+    $crawler = $client->request('GET', '/admin/articles/create');
+
+    $items = $crawler->filter('.sy-pa-header-has-breadcrumbs .sy-breadcrumbs-item');
+
+    expect($items->count())->toBe(2)
+        ->and($items->eq(0)->filter('a.sy-breadcrumbs-item-label')->attr('href'))->toEndWith('/admin/articles')
+        ->and($items->eq(0)->filter('a.sy-breadcrumbs-item-label')->text())->toBe('Articles')
+        ->and($items->eq(1)->filter('span.sy-breadcrumbs-item-label')->text())->toBe('Create')
+        ->and($items->eq(1)->filter('span.sy-breadcrumbs-item-label')->attr('aria-current'))->toBe('page');
+});
+
 it('creates a record, flashes the toast and redirects to the edit page', function (): void {
     [$client, $entityManager] = createRecordClient();
 

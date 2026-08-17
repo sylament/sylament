@@ -95,6 +95,11 @@ abstract class CreateRecord extends Page implements InteractsWithSchemas
         return static::$title ?? sprintf('Create %s', $this->getResourceInstance()->getTitleCaseRecordLabel());
     }
 
+    public function getBreadcrumb(): string
+    {
+        return static::$breadcrumb ?? 'Create';
+    }
+
     protected function handleRecordCreation(object $record): object
     {
         $entityManager = $this->entityManager

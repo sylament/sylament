@@ -1,10 +1,11 @@
+{% set breadcrumbs = this.getBreadcrumbs %}
 {% set heading = this.getHeading %}
 {% set subheading = this.getSubheading %}
 {% set headerActions = this.getHeaderActions %}
 
 <div {{ attrs({class: 'sy sy-pa-page sy-pa-resource-list-records-page'}, attributes.all) }}>
     <div class="sy-pa-page-header-main-ctn">
-        <twig:SylamentPanels:Header :heading="heading" :subheading="subheading">
+        <twig:SylamentPanels:Header :breadcrumbs="breadcrumbs" :heading="heading" :subheading="subheading">
             <twig:block name="actions">
                 {% for action in headerActions %}
                     {{ renderComponent(action) }}

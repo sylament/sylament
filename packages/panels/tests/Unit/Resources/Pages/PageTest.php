@@ -8,6 +8,9 @@ use Sylament\Panels\Resources\Pages\ListRecords;
 use Sylament\Panels\Resources\Pages\Page as ResourcePage;
 use Sylament\Panels\Resources\Pages\PageRegistration;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateArticle;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditArticle;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListArticles;
 
 final class UnwiredResourcePage extends ResourcePage
 {
@@ -32,6 +35,25 @@ it('fails fast when the resource registry setter never fired', function (): void
 
 it('defaults the header actions to none', function (): void {
     expect(new UnwiredResourcePage()->getHeaderActions())->toBe([]);
+});
+
+it('names the trail crumb of each shipped resource page', function (string $page, string $breadcrumb): void {
+    expect(new $page()->getBreadcrumb())->toBe($breadcrumb);
+})->with([
+    [ListArticles::class, 'List'],
+    [CreateArticle::class, 'Create'],
+    [EditArticle::class, 'Edit'],
+]);
+
+it('falls back to the page title for a resource page naming no crumb of its own', function (): void {
+    $named = new class extends ResourcePage {
+        protected static string $resource = ArticleResource::class;
+
+        protected static ?string $breadcrumb = 'Archive';
+    };
+
+    expect(new UnwiredResourcePage()->getBreadcrumb())->toBe('Unwired Resource Page')
+        ->and($named->getBreadcrumb())->toBe('Archive');
 });
 
 /*

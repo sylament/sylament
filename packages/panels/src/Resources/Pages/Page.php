@@ -15,6 +15,7 @@ use Sylament\Panels\Pages\Page as BasePage;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
 use Symfony\Contracts\Service\Attribute\Required;
+use Twig\Markup;
 
 abstract class Page extends BasePage implements InteractsWithActions
 {
@@ -24,6 +25,8 @@ abstract class Page extends BasePage implements InteractsWithActions
      * @var class-string<Resource>
      */
     protected static string $resource;
+
+    protected static ?string $breadcrumb = null;
 
     private ?ResourceRegistry $resourceRegistry = null;
 
@@ -52,6 +55,24 @@ abstract class Page extends BasePage implements InteractsWithActions
             ?? throw new LogicException(sprintf('The resource page [%s] was built outside the container, so it holds no resource registry; register it as an autowired service.', static::class));
 
         return $registry->get(static::getResource());
+    }
+
+    public function getBreadcrumb(): string|Markup
+    {
+        return static::$breadcrumb ?? $this->getTitle();
+    }
+
+    /**
+     * @return array<int|string, string|Markup>
+     */
+    public function getBreadcrumbs(): array
+    {
+        $resource = $this->getResourceInstance();
+
+        return [
+            $resource->getIndexUrl() => $resource->getTitleCasePluralRecordLabel(),
+            $this->getBreadcrumb(),
+        ];
     }
 
     /**

@@ -31,6 +31,11 @@ abstract class ListRecords extends Page implements InteractsWithSchemas, Interac
         return static::$title ?? $this->getResourceInstance()->getTitleCasePluralRecordLabel();
     }
 
+    public function getBreadcrumb(): string
+    {
+        return static::$breadcrumb ?? 'List';
+    }
+
     /**
      * The filters form is cache-only and a list page declares no form of its
      * own — so the discovery list is empty rather than the default `schema`,

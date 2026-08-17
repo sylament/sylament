@@ -39,6 +39,9 @@ it('serves the dashboard inside the shell', function (): void {
         ->and($html)->toContain('<title>Dashboard — Test Admin</title>')
         ->and($html)->toContain('sy-pa-page')
         ->and($crawler->filter('.sy-pa-page > .sy-pa-page-header-main-ctn > .sy-pa-page-main > .sy-pa-page-content')->count())->toBe(1)
+        // A page outside a resource names no trail, so the header carries no
+        // breadcrumbs at all rather than a single self-referring crumb.
+        ->and($crawler->filter('.sy-breadcrumbs')->count())->toBe(0)
         ->and($html)->toContain('aria-current="page"')
         ->and($html)->toContain('data-live-name-value="Sylament:Panels:Pages:Dashboard"');
 });

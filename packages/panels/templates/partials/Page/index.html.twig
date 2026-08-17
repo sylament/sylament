@@ -1,10 +1,11 @@
+{% set breadcrumbs = this.getBreadcrumbs %}
 {% set heading = this.getHeading %}
 {% set subheading = this.getSubheading %}
 
 <div {{ attrs({class: 'sy sy-pa-page'}, attributes.all) }}>
     <div class="sy-pa-page-header-main-ctn">
-        {% if heading is filled or subheading is filled %}
-            <twig:SylamentPanels:Header :heading="heading" :subheading="subheading" />
+        {% if breadcrumbs is not empty or heading is filled or subheading is filled %}
+            <twig:SylamentPanels:Header :breadcrumbs="breadcrumbs" :heading="heading" :subheading="subheading" />
         {% endif %}
 
         <div class="sy-pa-page-main">

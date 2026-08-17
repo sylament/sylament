@@ -41,7 +41,11 @@ disabled-option and int-keyed cases plus both stored forms of a `boolean()`
 option, all run through the container's real validator — by
 [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php)
 and its
-[multi-value twin](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php).
+[multi-value twin](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php),
+with the tampered-value, disabled-option and both-stored-forms cases re-run over
+an option **set** — plus the per-option `disabled` attribute its template renders
+— by
+[`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php).
 
 ## Semantics
 
@@ -94,9 +98,10 @@ declares the *read* side instead: `isOptionDisabled()`, which
 calls per option to render `disabled`, and `getEnabledOptions()`, which
 [`getEnabledOptionValues()`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php)
 walks to build the `Choice` choices. Neither is reached through an `instanceof`
-yet — `Select` is the only implementor — so the interface names what a second
-implementor would have to honour rather than what Filament's absent consumer
-needed. `disableOptionWhen()` still ships on the
+yet — [`Select`](select.md) and [`Radio`](radio.md) are the implementors, and
+both call the two methods directly — so the interface names what an implementor
+has to honour rather than what Filament's absent consumer needed.
+`disableOptionWhen()` still ships on the
 [trait](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php),
 so the public API is unchanged, and widening the interface once the repeater arm
 lands is additive. Same narrowing and same reasoning as

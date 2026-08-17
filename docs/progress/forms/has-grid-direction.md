@@ -12,8 +12,9 @@ properties its stylesheet reads, from the column map schemas'
 [`HasColumns`](../schemas/has-columns.md) supplies.
 
 Three fields compose it — `Radio`, `CheckboxList` and `ToggleButtons` — which is
-why it is filed here rather than folded into one of them. None is built yet, so
-today the direction is set and read but no template passes it to `grid()`.
+why it is filed here rather than folded into one of them. [`Radio`](radio.md) is
+the first built, and the first template to pass the direction to `grid()`; the
+other two follow.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -44,7 +45,10 @@ both answering null, and a direction unset again — by
 [`HasGridDirectionTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasGridDirectionTest.php).
 What the direction then emits is covered a package down, by
 [`GridExtensionTest`](../../../packages/support/tests/Unit/Twig/Extension/GridExtensionTest.php),
-whose first case pins the column arm's class and styles.
+whose first case pins the column arm's class and styles, and end to end — the
+default column grid, an explicit `'row'`, and `inline()` suppressing the call
+altogether — by
+[`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php).
 
 ## Semantics
 
@@ -56,7 +60,9 @@ on, and every one of Filament's three composers opens its render with
 field actually has is **Column**, stated once per field rather than once in the
 getter. Reading the trait alone suggests options default to no direction at all,
 or to the `Row` that support's `grid()` helper defaults to; neither is what a
-`Radio` renders.
+[`Radio`](radio.md) renders — its template spells the default as
+`component.getGridDirection ?? constant('…GridDirection::Column')` at the one
+place the grid is built.
 
 Keeping the null is what makes that possible: a getter defaulting to `Column`
 could not tell an author's explicit `Column` from silence, so nothing downstream

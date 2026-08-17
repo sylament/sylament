@@ -2,17 +2,17 @@
 
 The forms bundle's component CSS —
 [`packages/forms/assets/src/styles/`](../../../packages/forms/assets/src/styles/)
-— is six stylesheets, and only two of them port from
-[`forms/resources/css/`](../../../vendor/filament/forms/resources/css/). **The
-other four port from
+— is seven stylesheets, and only three of them draw on
+[`forms/resources/css/`](../../../vendor/filament/forms/resources/css/) at all.
+**The rest port from
 [`support/resources/css/`](../../../vendor/filament/support/resources/css/)**:
-Filament files the raw control chrome — checkbox, input, select, toggle — in its
-*support* package and keeps only the field-and-wrapper layer in forms, so
+Filament files the raw control chrome — checkbox, input, radio, select, toggle —
+in its *support* package and keeps only the field-and-wrapper layer in forms, so
 `checkbox.css`, `input.css`, `select.css` and `toggle.css` have no counterpart in
-the forms tree at all. Diffed against the wrong directory each of them reads as
-drift from beginning to end, which is the single most useful thing to know before
-reading this file. Every row below names the vendor file it was actually written
-against.
+the forms tree at all, and `radio.css` has one for its option set only. Diffed
+against the wrong directory each of them reads as drift from beginning to end,
+which is the single most useful thing to know before reading this file. Every row
+below names the vendor file it was actually written against.
 
 Each stylesheet is `@apply`-authored into `components/<name>.css` and `@import`ed
 into [`index.css`](../../../packages/forms/assets/src/styles/index.css) under
@@ -22,20 +22,20 @@ into [`index.css`](../../../packages/forms/assets/src/styles/index.css) under
 aggregator, so these rules compile into support's single built stylesheet and
 reach a consumer through `@sylament/support`. The `fi-*` class prefix is
 translated to the forms component code `sy-fo-*` (see the
-[CSS contract](../../styling.md)) — which for the four support-tier ports is
-[more than a prefix swap](#the-four-control-stylesheets-carry-forms-coded-names-for-support-tier-classes).
+[CSS contract](../../styling.md)) — which for the support-tier ports is
+[more than a prefix swap](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes).
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
 - [`forms/resources/css/components/`](../../../vendor/filament/forms/resources/css/components/)
-  — the twenty per-component stylesheets: `field.css` and `repeater.css` ported
-  directly, `textarea.css` folded into `input.css`, `text-input.css` and
-  `select.css` partly, the other fifteen unported
+  — the twenty per-component stylesheets: `field.css`, `radio.css` and
+  `repeater.css` ported directly, `textarea.css` folded into `input.css`,
+  `text-input.css` and `select.css` partly, the other fourteen unported
 - [`support/resources/css/components/input/`](../../../vendor/filament/support/resources/css/components/input/)
-  — `checkbox.css`, `index.css` and `select.css`, the three control sources, plus
-  the `wrapper.css` chrome the port collapses into its controls
+  — `checkbox.css`, `index.css`, `radio.css` and `select.css`, the four control
+  sources, plus the `wrapper.css` chrome the port collapses into its controls
 - [`support/resources/css/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css)
   — the switch chrome `toggle.css` re-architects onto a checkbox
 - [`support/resources/css/utilities.css`](../../../vendor/filament/support/resources/css/utilities.css)
@@ -59,24 +59,25 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`checkbox.css` — `.sy-fo-checkbox` box, tick and invalid arms](../../../packages/forms/assets/src/styles/components/checkbox.css) | [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | done | — | [diverges](#the-four-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](#the-indeterminate-checkbox-arm-has-no-port) |
+| [`checkbox.css` — `.sy-fo-checkbox` box, tick and invalid arms](../../../packages/forms/assets/src/styles/components/checkbox.css) | [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](#the-indeterminate-checkbox-arm-has-no-port) |
 | [`field.css` — the `.sy-fo-field` wrapper grid, label column, content column and error list](../../../packages/forms/assets/src/styles/components/field.css) | [`components/field.css`](../../../vendor/filament/forms/resources/css/components/field.css) | in progress | schemas' `HasInlineLabel` · support's `HasVerticalAlignment` | [detail](#the-field-stylesheet-omits-the-leading-schema-un-grow) · [diverges](#field-css-is-flat-where-filament-nests) · [diverges](#sy-fo-sr-only-is-a-support-utility-authored-as-a-forms-component-class) |
 | [`input.css` — `.sy-fo-input`, the text control for `TextInput` and `Textarea`](../../../packages/forms/assets/src/styles/components/input.css) | [`support/…/input/index.css`](../../../vendor/filament/support/resources/css/components/input/index.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) + [`components/textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css) | in progress | [the input affix wrapper](field.md#the-input-affix-wrapper-is-not-ported) | [detail](#the-input-and-select-stylesheets-wait-on-the-affix-wrapper) · [diverges](#the-two-text-controls-invent-a-hover-ring) · [diverges](#the-textarea-rule-is-the-ports-own-because-nothing-autosizes) |
+| [`radio.css` — the `.sy-fo-radio` option set and the `.sy-fo-radio-input` control](../../../packages/forms/assets/src/styles/components/radio.css) | [`components/radio.css`](../../../vendor/filament/forms/resources/css/components/radio.css) + [`support/…/input/radio.css`](../../../vendor/filament/support/resources/css/components/input/radio.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](radio.md#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) |
 | [`repeater.css` — `.sy-fo-repeater` and `.sy-fo-simple-repeater` item chrome](../../../packages/forms/assets/src/styles/components/repeater.css) | [`components/repeater.css`](../../../vendor/filament/forms/resources/css/components/repeater.css) | in progress | the four deferred chrome clusters | [detail](repeater.md#four-chrome-clusters-are-deferred-not-dropped) · [diverges](#the-repeater-item-lists-declare-their-own-grid) |
 | [`select.css` — `.sy-fo-select`, the native control and its chevron](../../../packages/forms/assets/src/styles/components/select.css) | [`support/…/input/select.css`](../../../vendor/filament/support/resources/css/components/input/select.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) | in progress | [`CanBeNative`](select.md#canbenative-is-not-ported) · [the input affix wrapper](field.md#the-input-affix-wrapper-is-not-ported) | [detail](#the-input-and-select-stylesheets-wait-on-the-affix-wrapper) · [diverges](#the-two-text-controls-invent-a-hover-ring) |
 | [`toggle.css` — the `.sy-fo-toggle` root, track, thumb and icon pair](../../../packages/forms/assets/src/styles/components/toggle.css) | [`support/…/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css) | done | — | [diverges](toggle.md#the-toggle-is-a-styled-checkbox-not-a-button) · [diverges](toggle.md#the-icon-rules-select-by-name-where-filament-selects-by-position) · [diverges](toggle.md#the-two-colours-ride-on-two-elements) |
 | `text-input.css` / `select.css` — the rules no port carries | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | `revealable()` · schemas' `HasInlineLabel` | [detail](#two-vendor-stylesheets-are-partly-rather-than-wholly-unported) |
-| `builder.css` / `checkbox-list.css` / `code-editor.css` / `color-picker.css` / `date-time-picker.css` / `file-upload.css` (+ `file-upload/filepond-plugin-media-preview.css`) / `key-value.css` / `markdown-editor.css` / `modal-table-select.css` / `radio.css` / `rich-editor.css` / `slider.css` / `tags-input.css` / `toggle-buttons.css` | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | Builder, CheckboxList, CodeEditor, ColorPicker, DateTimePicker, FileUpload, KeyValue, MarkdownEditor, ModalTableSelect, Radio, RichEditor, Slider, TagsInput, ToggleButtons | [detail](#the-fifteen-unported-forms-stylesheets) |
+| `builder.css` / `checkbox-list.css` / `code-editor.css` / `color-picker.css` / `date-time-picker.css` / `file-upload.css` (+ `file-upload/filepond-plugin-media-preview.css`) / `key-value.css` / `markdown-editor.css` / `modal-table-select.css` / `rich-editor.css` / `slider.css` / `tags-input.css` / `toggle-buttons.css` | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | Builder, CheckboxList, CodeEditor, ColorPicker, DateTimePicker, FileUpload, KeyValue, MarkdownEditor, ModalTableSelect, RichEditor, Slider, TagsInput, ToggleButtons | [detail](#the-fourteen-unported-forms-stylesheets) |
 
 This table carries no [unaudited row](../README.md#an-unaudited-table-says-so):
 every one of the twenty stylesheets in
 [`forms/resources/css/components/`](../../../vendor/filament/forms/resources/css/components/)
 has a row above. The claim is scoped to that directory on purpose. The
-support-tier sources the four cross-package ports draw from are named per row
+support-tier sources the five cross-package ports draw from are named per row
 rather than enumerated, and support's own `resources/css/` is not this table's
-subject — `input/radio.css` and `input/one-time-code.css` sit beside the three
-control sources with no forms-side port, their components unported, and the rest
-of that directory belongs to support's audit.
+subject — `input/one-time-code.css` sits beside the four control sources with no
+forms-side port, its component unported, and the rest of that directory belongs
+to support's audit.
 
 No test exercises CSS. The render tests assert that the class hooks these rules
 attach to (`sy-fo-field` and its label/content/error descendants,
@@ -176,46 +177,55 @@ can never match, for the hidden-placeholder reason above; and
 needs both the select wrapper element and schemas' `HasInlineLabel`, so it waits
 on the later of the two.
 
-### The fifteen unported forms stylesheets
+### The fourteen unported forms stylesheets
 
 `builder.css`, `checkbox-list.css`, `code-editor.css`, `color-picker.css`,
 `date-time-picker.css`, `file-upload.css` (with its nested
 `file-upload/filepond-plugin-media-preview.css`), `key-value.css`,
-`markdown-editor.css`, `modal-table-select.css`, `radio.css`, `rich-editor.css`,
+`markdown-editor.css`, `modal-table-select.css`, `rich-editor.css`,
 `slider.css`, `tags-input.css` and `toggle-buttons.css` have no `sy-fo-*`
 counterpart. Each is **blocked** on its field — every one of those fields is
 **todo** in the [package README](README.md#components) — because the styling
 lands in the same change as the Twig template it targets and there is nothing to
 author against until then. Next step for each: port when its field does.
 
-Two support-tier stylesheets sit in the same position one package over:
-`input/radio.css` and `input/one-time-code.css`, blocked on `Radio` and
-`OneTimeCodeInput`. They are listed here rather than in a support trail because
-the four cross-package ports above establish that a control's chrome arrives on
-the forms side.
+One support-tier stylesheet sits in the same position one package over:
+`input/one-time-code.css`, blocked on `OneTimeCodeInput`. It is listed here
+rather than in a support trail because the cross-package ports above establish
+that a control's chrome arrives on the forms side — `input/radio.css` was the
+most recent of them, landing inside forms'
+[`radio.css`](../../../packages/forms/assets/src/styles/components/radio.css)
+with [`Radio`](radio.md).
 
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold. These
 outlive the detail sections above.
 
-### The four control stylesheets carry forms-coded names for support-tier classes
+### The control stylesheets carry forms-coded names for support-tier classes
 
-`checkbox.css`, `input.css`, `select.css` and `toggle.css` port
+`checkbox.css`, `input.css`, `radio.css`, `select.css` and `toggle.css` port
 `input[type='checkbox'].fi-checkbox-input`, `input.fi-input`,
-`select.fi-select-input` and `.fi-toggle` — support-package classes, which
-[carry no package code](../renames.md) by the port's own naming rule
-(`fi-icon-btn` → `sy-icon-btn`). The port names them `.sy-fo-checkbox`,
-`.sy-fo-input`, `.sy-fo-select` and `.sy-fo-toggle` instead, so a support-tier
-class arrives under the forms code and in a forms stylesheet. It is the same
+`input[type='radio'].fi-radio-input`, `select.fi-select-input` and `.fi-toggle` —
+support-package classes, which [carry no package code](../renames.md) by the
+port's own naming rule (`fi-icon-btn` → `sy-icon-btn`). The port names them
+`.sy-fo-checkbox`, `.sy-fo-input`, `.sy-fo-radio-input`, `.sy-fo-select` and
+`.sy-fo-toggle` instead, so a support-tier class arrives under the forms code and
+in a forms stylesheet. It is the same
 tracks-its-emitter call schemas records in the other direction for
 [`text.css`](../schemas/styles.md#text-css-was-ported-into-the-support-package):
-forms is the only consumer of all four today, and filing a rule beside the one
+forms is the only consumer of all five today, and filing a rule beside the one
 template that emits it beats filing it beside the vendor that happened to author
 it. The re-coding reverses the moment a second package renders one of these
 controls — an infolists or tables cell reusing the input chrome would have to
 either import a forms-coded class or duplicate the rule, and moving the file down
 to support is the cheaper answer at that point.
+
+The radio keeps its `-input` suffix where the checkbox drops one, and that is not
+an inconsistency to tidy: `.sy-fo-radio` is already taken by the option-set
+container the field renders around the controls, which the checkbox — a single
+element with no container — has no equivalent of. Vendor draws the same line for
+the same reason, `fi-fo-radio` beside `fi-radio-input`.
 
 The checkbox changes shape as well as tier: vendor qualifies its base rule with
 the element and the type attribute (`input[type='checkbox'].fi-checkbox-input`,
@@ -258,7 +268,8 @@ It is also **one stylesheet, not a package habit**: forms'
 [`repeater.css`](../../../packages/forms/assets/src/styles/components/repeater.css)
 keeps vendor's nesting rule for rule, as does schemas'
 [`section.css`](../../../packages/schemas/assets/src/styles/components/section.css).
-The three same-element stylesheets (`checkbox.css`, `input.css`, `select.css`)
+The same-element stylesheets (`checkbox.css`, `input.css`, `select.css`, and
+`radio.css`'s three control rules — its option-set half keeps vendor's nesting)
 are flat too, but there the flattening is free: every one of their rules is a
 compound on the control itself, and a `&:checked` nested under the base rule
 compiles to the same selector as the `.sy-fo-checkbox:checked` written out. And

@@ -10,9 +10,9 @@ clears it.
 
 Two fields compose it, `Radio` and `CheckboxList` — `ToggleButtons` does not, in
 Filament or here, since a button's extra text is its
-tooltip. Neither is built yet: until they land the map is
-configured and read but nothing renders it, which is why this file describes the
-concern alone and each field's rendering will be described in its own.
+tooltip. [`Radio`](radio.md) is built and renders the map; `CheckboxList` is not
+yet, which is why this file describes the concern alone and each field's
+rendering is described in its own.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -48,6 +48,10 @@ against the
 and
 [`OptionStage`](../../../packages/forms/tests/Fixtures/Components/Concerns/OptionStage.php)
 fixture enums, the first of which describes one of its two cases with `null`.
+The rendered half — the description `<p>` under a described option and its
+absence under an undescribed one, from both a literal map and the enum fallback —
+is covered by
+[`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php).
 
 ## Semantics
 
@@ -90,6 +94,33 @@ so an `Htmlable` description is raw there too.
 The escaping rule for a description is therefore carried by its **type**, in both
 frameworks: a plain string is always escaped, and markup is always rendered, with
 no setter in between. `allowHtml()` governs the label only.
+
+### The enum fallback tests the array, not `blank()`
+
+The fallback gate reads `$descriptions === []` where Filament reads
+`blank($descriptions)`. The two are the same test for the only type that can
+reach it — `blank()`'s last line *is* `$value === []`, an array being neither
+`Countable` nor `Stringable` — and the port's property is `array|Closure` with
+[the `Arrayable` arm dropped](#the-arrayable-arm-is-dropped), so after
+`evaluate()` an array is all there is.
+
+The reason it is written out is static analysis, and it is worth knowing before
+"restoring" the helper. Support's
+[`blank()`](../support/helpers.md) carries `@phpstan-assert-if-false !null $value`,
+which PHPStan applies in **both** directions: the false branch narrows to
+`!null`, and the true branch to `null`. That is sound for a nullable argument and
+wrong for the rest of `blank()`'s domain — a plain `string`, an array, a `Markup`
+— so passing a non-nullable type makes PHPStan call the invocation always-false
+(`function.impossibleType`) and narrow the true branch to `never`. Nothing here
+caught it until [`Radio`](radio.md) composed the trait and gave PHPStan a
+concrete `$this` to resolve `evaluate()` through.
+
+The helper's docblock is the real defect, and fixing it is a support-level change
+rather than this file's: deleting the two assertions on `blank()` and `filled()`
+raises 47 errors across six packages that rely on the sound half of the
+narrowing. So the helper is left alone and this one gate states its own test
+directly. Nothing else in the port passes a provably non-nullable value to either
+helper today.
 
 ## Divergences
 

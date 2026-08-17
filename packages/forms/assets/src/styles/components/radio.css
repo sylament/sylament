@@ -1,0 +1,55 @@
+.sy-fo-radio {
+    @apply gap-4;
+
+    &.sy-inline {
+        @apply flex flex-wrap;
+    }
+
+    &:not(.sy-inline).sy-grid-direction-col {
+        @apply -mt-4;
+
+        & > .sy-fo-radio-label {
+            @apply break-inside-avoid pt-4;
+        }
+    }
+
+    & > .sy-fo-radio-label {
+        @apply flex gap-x-3 self-start;
+
+        & > .sy-fo-radio-input {
+            @apply mt-1 shrink-0;
+        }
+
+        & > .sy-fo-radio-label-text {
+            @apply grid text-sm leading-6 font-medium text-gray-950 dark:text-white;
+        }
+
+        & .sy-fo-radio-label-description {
+            @apply font-normal text-gray-500 dark:text-gray-400;
+        }
+
+        &:has(.sy-fo-radio-input:disabled) {
+            & > .sy-fo-radio-label-text {
+                @apply text-gray-400 dark:text-gray-500;
+            }
+
+            & .sy-fo-radio-label-description {
+                @apply text-gray-300 dark:text-gray-600;
+            }
+        }
+    }
+}
+
+.sy-fo-radio-input {
+    @apply text-primary-600 checked:bg-primary-600 focus:ring-primary-600 checked:focus:ring-primary-500/50 dark:text-primary-500 dark:checked:bg-primary-500 dark:focus:ring-primary-500 dark:checked:focus:ring-primary-400/50 size-4 appearance-none rounded-full border-none bg-white bg-center bg-no-repeat shadow-sm ring-1 ring-gray-950/10 checked:ring-0 focus:ring-2 focus:ring-offset-0 focus:outline-none disabled:bg-gray-50 disabled:text-gray-50 disabled:checked:bg-gray-400 disabled:checked:text-gray-400 dark:bg-white/5 dark:ring-white/20 dark:disabled:bg-transparent dark:disabled:ring-white/10 dark:disabled:checked:bg-gray-600;
+
+    background-size: 1rem 1rem;
+}
+
+.sy-fo-radio-input:checked {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='white'%3E%3Ccircle cx='8' cy='8' r='3'/%3E%3C/svg%3E");
+}
+
+.sy-fo-radio-input[aria-invalid='true'] {
+    @apply text-danger-600 checked:bg-danger-600 ring-danger-600 focus:ring-danger-600 checked:focus:ring-danger-500/50 dark:text-danger-500 dark:checked:bg-danger-500 dark:ring-danger-500 dark:focus:ring-danger-500 dark:checked:focus:ring-danger-400/50;
+}

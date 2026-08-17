@@ -9,7 +9,6 @@ use Closure;
 use Sylament\Support\Contracts\HasDescription;
 use Twig\Markup;
 
-use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 
 trait HasDescriptions
@@ -60,7 +59,7 @@ trait HasDescriptions
 
         $descriptions = $this->evaluate($this->descriptions);
 
-        if (blank($descriptions) && ($enum = $this->getEnum()) !== null && is_a($enum, HasDescription::class, allow_string: true)) {
+        if ($descriptions === [] && ($enum = $this->getEnum()) !== null && is_a($enum, HasDescription::class, allow_string: true)) {
             $descriptions = [];
 
             foreach ($enum::cases() as $case) {

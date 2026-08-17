@@ -1,0 +1,42 @@
+{% set state = component.getOptionComparisonState %}
+{% set isInline = component.isInline %}
+{% set hasErrors = component.getErrorMessages is not empty %}
+
+{% set gridAttributes = isInline
+    ? null
+    : grid(component.getColumns, component.getGridDirection ?? constant('Sylament\\Support\\Enums\\GridDirection::Column')) %}
+
+<twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
+    <div
+            {{ attrs({
+                class: ['sy', 'sy-fo-radio', {'sy-inline': isInline}],
+                role: 'radiogroup',
+                'aria-labelledby': component.getId ~ '-label',
+            }, gridAttributes) }}
+    >
+        {% for value, label in component.getOptions %}
+            <label class="sy-fo-radio-label">
+                <input {{ attrs({
+                    type: 'radio',
+                    class: 'sy-fo-radio-input',
+                    id: component.getId ~ '-' ~ value,
+                    name: component.getId,
+                    value: value,
+                    checked: state is not null and value == state,
+                    'data-model': component.getDataModel,
+                    'aria-invalid': hasErrors,
+                    disabled: component.isDisabled or component.isOptionDisabled(value, label),
+                    autofocus: loop.first and component.isAutofocused,
+                }, component.getExtraInputAttributes) }}>
+
+                <div class="sy-fo-radio-label-text">
+                    <p>{{ label }}</p>
+
+                    {% if component.hasDescription(value) %}
+                        <p class="sy-fo-radio-label-description">{{ component.getDescription(value) }}</p>
+                    {% endif %}
+                </div>
+            </label>
+        {% endfor %}
+    </div>
+</twig:SylamentForms:FieldWrapper>

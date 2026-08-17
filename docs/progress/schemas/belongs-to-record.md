@@ -161,7 +161,9 @@ non-mapped parameter names, which is what proves the by-type arm rather than the
 pre-existing by-name one); the fill walk by
 [`Unit/Concerns/HasStateTest`](../../../packages/schemas/tests/Unit/Concerns/HasStateTest.php)
 (scoped read, null-fill of what the record cannot supply, uninitialized-property
-and object-value skips with the `BackedEnum` exemption beside them, array reads,
+and object-value skips with both arms of the `BackedEnum` exemption beside them —
+a cast-bearing component reading the backing value, a cast-less one skipping and
+null-filling so no object reaches the bag — array reads,
 the unchanged null/array arms, and the
 nested reads: a nested object path filled through the graph, null filled past a
 null intermediate, a leaf decorated with a path-less child schema staying a
@@ -632,25 +634,51 @@ skips the path. Symfony's `AccessException` is the common parent of
 (a typed property never assigned), so the single catch covers both without an
 `isReadable()` pre-check, which would only be a second copy of the same walk. It
 additionally skips object-valued reads — only scalars, arrays, null and a
-`BackedEnum` enter the bag. So a read has exactly two skip reasons:
+`BackedEnum` **the reading component's own state casts scalarize** enter the bag.
+So a read has exactly two skip reasons:
 the object cannot supply the value, or the value is not bag-representable, and
 the null-fill pass then supplies the key. A null or scalar *intermediate*
 supplies null for the leaf rather than skipping it — the same bag either way,
 since the null-fill pass would supply the key.
 
 The `BackedEnum` exemption is the widening this paragraph used to say a
-state-cast epic would bring, and it is deliberately the *narrowest* one: a case
-is a value rather than a branch of the record graph, and
-[`EnumStateCast`](enum-state-cast.md) is exactly the cast that makes it
-bag-representable — the hydration pass immediately behind the read turns it into
-the scalar backing value the browser will send back. Every other object-valued
-leaf still skips, because nothing casts it yet: a `DateTimeImmutable` or an
-associated entity has no bag spelling, and an association that wants one declares
+state-cast epic would bring, and it is gated on the cast rather than on the type,
+because the cast is the whole reason a case is representable at all. A leaf
+declaring [`EnumStateCast`](enum-state-cast.md) — or any cast that unwraps a
+case, which `OptionStateCast` and `OptionsArrayStateCast` also do — passes,
+because the hydration pass immediately behind the read turns the instance into
+the scalar backing value the browser will send back. A leaf with **no** cast, or
+one whose casts leave the value an object, does not: it skips and null-fills
+exactly as it did before the exemption existed.
+
+That gate is not fastidiousness about types. The state bag is a writable `array`
+LiveProp, and
+[`LiveComponentHydrator::isValueValidDehydratedValue()`](../../../vendor/symfony/ux-live-component/src/LiveComponentHydrator.php)
+accepts only bool, null, numeric and string — recursing into arrays — so an
+object anywhere inside the bag makes `dehydrateValue()` throw a `LogicException`
+naming the **LiveProp**, not the field that put it there. A type-only exemption
+would therefore have turned a `TextInput` bound to an enum-typed property from
+"renders empty" into a 500 on its first dehydration, which is why the read walk
+asks the component instead of asking the value. Running the chain twice — once
+here to ask, once behind the read to convert — costs a pure transform, since
+`StateCast::set()` is side-effect-free by contract.
+
+Every other object-valued leaf still skips, because nothing casts it yet: a
+`DateTimeImmutable` or an associated entity has no bag spelling, and an
+association that wants one declares
 [`loadStateFromRelationshipsUsing()`](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk),
-which is checked before this skip. Without it, `Select::options(MyEnum::class)`
+which is checked before this skip. Without the exemption,
+`Select::options(MyEnum::class)`
 over an enum-typed property filled to `null` on every mount — the write side
 worked, the read side dropped it — which is why the widening ships with the enum
 seam rather than after it.
+
+One hole is inherited rather than introduced, and is worth naming because the
+gate does not cover it: an **array** leaf is not object-valued, so a
+`list<MyEnum>` property enters the bag whole and relies on the component's cast
+(`EnumArrayStateCast`) to scalarize its elements. A cast-less component bound to
+one has always been able to leave instances nested in the bag; the exemption
+neither widens nor narrows that.
 
 `getData()` is the opposite. It writes **every** leaf path of the validated
 state and lets `NoSuchPropertyException` surface when the target cannot take one:

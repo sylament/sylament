@@ -284,8 +284,9 @@ trait BelongsToRecord
     /**
      * Read this schema's declared leaf paths off a record, traversing its
      * object graph. Unreadable and uninitialized properties are skipped, as
-     * are object-valued leaves other than a `BackedEnum`, which a state cast
-     * carries into the bag — the null-fill pass supplies the skipped keys; a
+     * are object-valued leaves other than a `BackedEnum` whose component casts
+     * it to a scalar ({@see self::isEnumCarriedByStateCasts()}) — the null-fill
+     * pass supplies the skipped keys; a
      * null or scalar intermediate supplies null. A component declaring
      * {@see Component::loadStateFromRelationshipsUsing()} supplies its own
      * value instead, so neither skip applies to its path.
@@ -312,7 +313,7 @@ trait BelongsToRecord
                 continue;
             }
 
-            if (is_object($value) && ! $value instanceof BackedEnum) {
+            if (is_object($value) && ! $this->isEnumCarriedByStateCasts($component, $value)) {
                 continue;
             }
 
@@ -320,6 +321,34 @@ trait BelongsToRecord
         }
 
         return $state;
+    }
+
+    /**
+     * Whether this leaf is a `BackedEnum` the component's own state casts turn
+     * into a scalar. The state bag is a writable `array` LiveProp and the
+     * hydrator refuses an object anywhere inside one, so the exemption from the
+     * object-value skip is exactly as wide as the cast that earns it: the chain
+     * is run here to ask, and the hydration pass behind the read runs it again
+     * to convert. A component with no cast, or one whose casts leave the value
+     * an object, is skipped and null-filled as any other object leaf is.
+     */
+    private function isEnumCarriedByStateCasts(Component $component, mixed $value): bool
+    {
+        if (! $value instanceof BackedEnum) {
+            return false;
+        }
+
+        $stateCasts = $component->getStateCasts();
+
+        if ($stateCasts === []) {
+            return false;
+        }
+
+        foreach ($stateCasts as $stateCast) {
+            $value = $stateCast->set($value);
+        }
+
+        return ! is_object($value);
     }
 
     /**

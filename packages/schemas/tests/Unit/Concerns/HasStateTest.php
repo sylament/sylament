@@ -8,6 +8,7 @@ use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Components\Text;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
+use Sylament\Schemas\State\Casts\EnumStateCast;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Concerns\MultiSchemaHostFixture;
@@ -318,7 +319,28 @@ it('skips object-valued reads', function (): void {
     expect($schema->getRawState())->toBe(['title' => 'Hello', 'author' => null]);
 });
 
-it('exempts a backed enum from the object-value skip', function (): void {
+/*
+ * The object-value skip exempts a backed enum only where a state cast carries it
+ * into the bag. The bag is a writable `array` LiveProp and
+ * `LiveComponentHydrator::isValueValidDehydratedValue()` refuses an object
+ * anywhere inside one, so a leaf whose casts leave the instance in place must
+ * skip and null-fill rather than reach dehydration.
+ */
+
+it('reads a backed enum whose component casts it to a scalar', function (): void {
+    $record = new RecordFixture();
+    $record->setStatus(CastStatus::Published);
+
+    $field = StateField::make('status')->stateCast(new EnumStateCast(CastStatus::class));
+    $schema = Schema::make(new StateHostFixture())->statePath('data')->components([$field]);
+
+    $schema->fill($record);
+
+    expect($schema->getRawState())->toBe(['status' => 'published'])
+        ->and($field->getState())->toBe(CastStatus::Published);
+});
+
+it('skips a backed enum no state cast can carry, leaving no object in the bag', function (): void {
     $record = new RecordFixture();
     $record->setTitle('Hello');
     $record->setStatus(CastStatus::Published);
@@ -329,7 +351,7 @@ it('exempts a backed enum from the object-value skip', function (): void {
 
     $schema->fill($record);
 
-    expect($schema->getRawState())->toBe(['status' => CastStatus::Published, 'author' => null]);
+    expect($schema->getRawState())->toBe(['status' => null, 'author' => null]);
 });
 
 it('reads array values from the record', function (): void {

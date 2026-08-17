@@ -8,6 +8,10 @@ class SupportIconAlias
 {
     public const string BADGE_DELETE_BUTTON = 'badge.delete-button';
 
+    public const string BREADCRUMBS_SEPARATOR = 'breadcrumbs.separator';
+
+    public const string BREADCRUMBS_SEPARATOR_RTL = 'breadcrumbs.separator.rtl';
+
     public const string MODAL_CLOSE_BUTTON = 'modal.close-button';
 
     public const string PAGINATION_FIRST_BUTTON = 'pagination.first-button';

@@ -11,3 +11,4 @@
 @import './components/link.css' layer(components);
 @import './components/fieldset.css' layer(components);
 @import './components/pagination.css' layer(components);
+@import './components/breadcrumbs.css' layer(components);

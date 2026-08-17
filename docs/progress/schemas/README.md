@@ -183,8 +183,8 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | [`StateCast`](../../../packages/schemas/src/State/Casts/Contracts/StateCast.php) | [`Components/StateCasts/Contracts/StateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/Contracts/StateCast.php) | done | — |
 | [`BooleanStateCast`](../../../packages/schemas/src/State/Casts/BooleanStateCast.php) | [`Components/StateCasts/BooleanStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/BooleanStateCast.php) | done | — |
 | `DateTimeStateCast` | [`Components/StateCasts/DateTimeStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/DateTimeStateCast.php) | todo | — |
-| `EnumArrayStateCast` | [`Components/StateCasts/EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | todo | — |
-| `EnumStateCast` | [`Components/StateCasts/EnumStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumStateCast.php) | todo | — |
+| [`EnumArrayStateCast`](../../../packages/schemas/src/State/Casts/EnumArrayStateCast.php) | [`Components/StateCasts/EnumArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumArrayStateCast.php) | done | [enum-array-state-cast.md](enum-array-state-cast.md) |
+| [`EnumStateCast`](../../../packages/schemas/src/State/Casts/EnumStateCast.php) | [`Components/StateCasts/EnumStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/EnumStateCast.php) | done | [enum-state-cast.md](enum-state-cast.md) |
 | `FileUploadStateCast` | [`Components/StateCasts/FileUploadStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/FileUploadStateCast.php) | todo | — |
 | `KeyValueStateCast` | [`Components/StateCasts/KeyValueStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/KeyValueStateCast.php) | todo | — |
 | `NumberStateCast` | [`Components/StateCasts/NumberStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/NumberStateCast.php) | todo | — |

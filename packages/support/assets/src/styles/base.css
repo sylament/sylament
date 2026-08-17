@@ -11,6 +11,15 @@
 }
 
 /*
+  Filament base.css addition: the UA paints its own surfaces — form-control
+  internals, scrollbars, the canvas behind the document — from the class the
+  theme switcher toggles, not from the OS preference alone.
+*/
+:root.dark {
+    color-scheme: dark;
+}
+
+/*
   Hide-before-init for Stimulus-managed markup (Alpine x-cloak equivalent):
   rendered by the server, removed by the controller on connect. Gated on
   scripting so the content stays reachable with JS off, where x-cloak would

@@ -5,6 +5,16 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{% block title %}{{ pageTitle }}{% if panel.getBrandName %} — {{ panel.getBrandName }}{% endif %}{% endblock title %}</title>
 
+        <script>
+            (() => {
+                let theme = null;
+                try { theme = window.localStorage.getItem('sylament.theme'); } catch {}
+                if (theme === 'dark' || (theme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                }
+            })();
+        </script>
+
         {% block stylesheets %}
             {{ sylamentStyles() }}
         {% endblock stylesheets %}

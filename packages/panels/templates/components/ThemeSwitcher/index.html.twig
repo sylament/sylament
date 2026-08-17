@@ -1,0 +1,46 @@
+{% set themeController = 'sylament--panels--theme' %}
+{% set buttonStimulus = stimulus_target(themeController, 'button')|stimulus_action(themeController, 'select') %}
+
+<div
+    {{ attrs({
+        class: 'sy sy-pa-theme-switcher',
+        role: 'group',
+        'aria-label': 'Theme',
+    }, stimulus_controller(themeController), attributes.all) }}
+>
+    <button
+        {{ attrs({
+            type: 'button',
+            class: 'sy-pa-theme-switcher-btn',
+            'data-theme': 'light',
+            'aria-label': 'Enable light theme',
+            'aria-pressed': 'false',
+        }, buttonStimulus) }}
+    >
+        <twig:SylamentSupport:Icon icon="heroicons:sun" :alias="constant('Sylament\\Panels\\Twig\\PanelsIconAlias::THEME_SWITCHER_LIGHT_BUTTON')" />
+    </button>
+
+    <button
+        {{ attrs({
+            type: 'button',
+            class: 'sy-pa-theme-switcher-btn',
+            'data-theme': 'dark',
+            'aria-label': 'Enable dark theme',
+            'aria-pressed': 'false',
+        }, buttonStimulus) }}
+    >
+        <twig:SylamentSupport:Icon icon="heroicons:moon" :alias="constant('Sylament\\Panels\\Twig\\PanelsIconAlias::THEME_SWITCHER_DARK_BUTTON')" />
+    </button>
+
+    <button
+        {{ attrs({
+            type: 'button',
+            class: 'sy-pa-theme-switcher-btn',
+            'data-theme': 'system',
+            'aria-label': 'Enable system theme',
+            'aria-pressed': 'false',
+        }, buttonStimulus) }}
+    >
+        <twig:SylamentSupport:Icon icon="heroicons:computer-desktop" :alias="constant('Sylament\\Panels\\Twig\\PanelsIconAlias::THEME_SWITCHER_SYSTEM_BUTTON')" />
+    </button>
+</div>

@@ -95,8 +95,68 @@ it('renders the actions block inside the header actions wrapper', function (): v
     expect($html)->toMatch('/<div class="sy-pa-header-actions">\s*<button type="button" id="header-action">Create<\/button>\s*<\/div>/');
 });
 
-it('drops the topbar end wrapper with nothing to put in it', function (): void {
+it('carries the user menu in the topbar end with no end block given', function (): void {
     $html = (string) $this->renderTwigComponent('SylamentPanels:Topbar', ['brandName' => 'X']);
 
-    expect($html)->not->toContain('sy-pa-topbar-end');
+    expect($html)
+        ->toContain('sy-pa-topbar-end')
+        ->toContain('sy-pa-user-menu')
+        ->toContain('sy-pa-theme-switcher');
+});
+
+it('keeps the end block above the user menu', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Topbar', [
+        'brandName' => 'X',
+    ], blocks: ['end' => '<span id="topbar-end-slot">Slot</span>']);
+
+    expect($html)->toMatch('/<div class="sy-pa-topbar-end">\s*<span id="topbar-end-slot">Slot<\/span>\s*<div\s+class="sy sy-dropdown sy-pa-user-menu"/');
+});
+
+it('hangs the theme switcher inside the user menu dropdown panel', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:UserMenu');
+
+    expect($html)
+        ->toContain('class="sy sy-dropdown sy-pa-user-menu"')
+        ->toContain('aria-label="Open user menu"')
+        ->toContain('sy-pa-user-menu-trigger')
+        ->toMatch('/class="sy-dropdown-panel".*?<div class="sy-dropdown-list">\s*<div\s+class="sy sy-pa-theme-switcher"/s');
+});
+
+it('wires each theme switcher button to the theme controller', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:ThemeSwitcher');
+
+    expect($html)
+        ->toContain('data-controller="sylament--panels--theme"')
+        ->toContain('role="group"')
+        ->toContain('aria-label="Theme"');
+
+    foreach (['light', 'dark', 'system'] as $theme) {
+        expect($html)
+            ->toContain('data-theme="' . $theme . '"')
+            ->toContain('aria-label="Enable ' . $theme . ' theme"');
+    }
+
+    expect(mb_substr_count($html, 'data-sylament--panels--theme-target="button"'))->toBe(3)
+        ->and(mb_substr_count($html, 'sylament--panels--theme#select'))->toBe(3)
+        ->and(mb_substr_count($html, 'aria-pressed="false"'))->toBe(3);
+});
+
+it('draws each theme switcher icon through an overridable alias', function (): void {
+    $icons = $this::getContainer()->get(IconManager::class);
+
+    expect($icons)->toBeInstanceOf(IconManager::class);
+    $icons->register([
+        PanelsIconAlias::THEME_SWITCHER_LIGHT_BUTTON => 'images/light.svg',
+        PanelsIconAlias::THEME_SWITCHER_DARK_BUTTON => 'images/dark.svg',
+        PanelsIconAlias::THEME_SWITCHER_SYSTEM_BUTTON => 'images/system.svg',
+        PanelsIconAlias::USER_MENU_TRIGGER => 'images/user.svg',
+    ]);
+
+    $html = (string) $this->renderTwigComponent('SylamentPanels:UserMenu');
+
+    expect($html)
+        ->toContain('src="images/light.svg"')
+        ->toContain('src="images/dark.svg"')
+        ->toContain('src="images/system.svg"')
+        ->toContain('src="images/user.svg"');
 });

@@ -26,10 +26,12 @@
             <twig:SylamentPanels:Logo :brandName="brandName" />
         </div>
 
-        {% if hasEnd %}
-            <div class="sy-pa-topbar-end">
+        <div class="sy-pa-topbar-end">
+            {% if hasEnd %}
                 {{ end }}
-            </div>
-        {% endif %}
+            {% endif %}
+
+            <twig:SylamentPanels:UserMenu />
+        </div>
     </nav>
 </div>

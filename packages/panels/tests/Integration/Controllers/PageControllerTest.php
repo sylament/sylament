@@ -81,6 +81,20 @@ it('turns a mount-time NotFoundHttpException into a 404 response', function (): 
     expect($client->getResponse()->getStatusCode())->toBe(404);
 });
 
+it('applies the stored theme from the document head, before the stylesheets', function (): void {
+    $client = $this::getContainer()->get('test.client');
+    $client->request('GET', '/admin');
+
+    $html = (string) $client->getResponse()->getContent();
+
+    expect($html)
+        ->toContain("localStorage.getItem('sylament.theme')")
+        ->toContain("document.documentElement.classList.add('dark')")
+        // Ahead of every stylesheet and script the head goes on to load, so the class
+        // lands before the first paint rather than flashing the light theme.
+        ->toMatch('#</title>\s*<script>[^<]*sylament\.theme[^<]*</script>#');
+});
+
 it('renders the notifications outlet in the document', function (): void {
     $client = $this::getContainer()->get('test.client');
     $crawler = $client->request('GET', '/admin');

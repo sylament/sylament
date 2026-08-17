@@ -1,0 +1,17 @@
+<twig:SylamentSupport:Dropdown placement="bottom-end" class="sy-pa-user-menu">
+    <twig:block name="trigger">
+        <twig:SylamentSupport:IconButton
+            class="sy-pa-user-menu-trigger"
+            color="gray"
+            icon="heroicons:user-circle"
+            :iconAlias="constant('Sylament\\Panels\\Twig\\PanelsIconAlias::USER_MENU_TRIGGER')"
+            label="Open user menu"
+        />
+    </twig:block>
+
+    <twig:block name="content">
+        <div class="sy-dropdown-list">
+            <twig:SylamentPanels:ThemeSwitcher />
+        </div>
+    </twig:block>
+</twig:SylamentSupport:Dropdown>

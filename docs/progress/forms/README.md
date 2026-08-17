@@ -183,7 +183,8 @@ and `Repeater`, and `HasExtraInputAttributes` by
 Everything with no field class of its own: the field contracts, the nested
 enums, the RichEditor infrastructure subtree, the prebuilt affix/toolbar
 actions, the Livewire table-select component, the icon-alias registry, the test
-helpers, the `make:` commands and their file generators, and the bundle wiring —
+helpers, the `make:` commands and their file generators, the component
+stylesheets, and the bundle wiring —
 [`src/Contracts`](../../../vendor/filament/forms/src/Contracts),
 [`src/Components/Contracts`](../../../vendor/filament/forms/src/Components/Contracts),
 [`src/Testing`](../../../vendor/filament/forms/src/Testing),
@@ -218,3 +219,4 @@ directory collapses that whole subtree into one navigational entry.
 | FormsComponent | [`FormsComponent.php`](../../../vendor/filament/forms/src/FormsComponent.php) | todo | — |
 | [`SylamentFormsBundle`](../../../packages/forms/src/SylamentFormsBundle.php) | [`FormsServiceProvider.php`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | in progress | [forms-bundle.md](forms-bundle.md) |
 | [`helpers.php`](../../../packages/forms/src/helpers.php) | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | [repeater.md](repeater.md) |
+| [Styles](../../../packages/forms/assets/src/styles) | [`resources/css/`](../../../vendor/filament/forms/resources/css) | in progress | [styles.md](styles.md) |

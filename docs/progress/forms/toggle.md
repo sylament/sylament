@@ -31,7 +31,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | `boolean` validation | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | done | — | [diverges](#the-boolean-rule-becomes-a-type-constraint) |
 | Inline layout (`CanBeInline`) | [`Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) | done | — | [detail](can-be-inline.md) |
 | Acceptance (`CanBeAccepted`) | [`Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | — | [detail](can-be-accepted.md) |
-| [`HasToggleIcons`](../../../packages/forms/src/Components/Concerns/HasToggleIcons.php) | [`Concerns/HasToggleIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleIcons.php) | done | — | [diverges](#hastoggleicons-tests-for-null-not-truthiness) |
+| [`HasToggleIcons`](../../../packages/forms/src/Components/Concerns/HasToggleIcons.php) | [`Concerns/HasToggleIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleIcons.php) | done | — | [diverges](#hastoggleicons-tests-for-null-not-truthiness) · [diverges](#the-icon-rules-select-by-name-where-filament-selects-by-position) |
 | Error display (`aria-invalid` on the input) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](field.md#error-display-shows-every-message-for-the-path) |
 | `required()` — no attribute, and a `NotNull` constraint | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | done | — | [diverges](#required-means-presence-not-truth) |
 | [`isBlankStateValue()`](../../../packages/forms/src/Components/Toggle.php) — an untouched switch reads blank | — | done | — | [semantics](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves) |
@@ -103,7 +103,8 @@ and a thumb; every state transition is a sibling selector
 Filament's own CSS unchanged: Alpine only toggles the `fi-toggle-on` /
 `fi-toggle-off` class there, and `:checked ~` replaces that class one for one, so
 the stacked `absolute inset-0` icons and their opacity/duration pairs port
-verbatim.
+verbatim. Only the two selectors that pick the icons out change, and
+[that substitution is load-bearing](#the-icon-rules-select-by-name-where-filament-selects-by-position).
 
 Three things this buys, and they are why it holds:
 
@@ -143,6 +144,42 @@ One implementation constraint the template must respect: Twig hoists
 its content regardless of the condition. The template therefore declares **both**
 the `labelPrefix` and `content` blocks unconditionally and puts the
 `component.isInline` test *inside* each; the "renders exactly once" tests pin it.
+
+### The icon rules select by name where Filament selects by position
+
+Filament reaches the two glyphs positionally. Inside
+[`toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css)
+the thumb is `& > :first-child`, and the `&.fi-toggle-on` / `&.fi-toggle-off`
+arms drive the icons under it as `& > :first-child` (off) and `& > :last-child`
+(on), each carrying the opacity/duration/easing pair for its state. The port's
+[`toggle.css`](../../../packages/forms/assets/src/styles/components/toggle.css)
+names them instead — `.sy-fo-toggle-icon-off` and `.sy-fo-toggle-icon-on`,
+classes the template puts on the two `<span>`s.
+
+That substitution is what keeps a **single-icon** toggle correct, not a
+readability preference. Filament's
+[`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Toggle.php)
+emits both `<div aria-hidden="true">` wrappers unconditionally and lets the icon
+HTML inside either one be empty, so its thumb always has exactly two children and
+the two positional selectors always pick different elements. The port's
+[template](../../../packages/forms/templates/partials/Toggle/index.html.twig)
+gates each `<span>` on `hasOffIcon` / `hasOnIcon`, so a toggle given one icon
+renders one child — and a lone child is both `:first-child` and `:last-child`.
+Ported positionally, both rules would match it at the same specificity and the
+later one, `:last-child`, would win in each state: an `offIcon()`-only switch
+would then hide its icon while off and reveal it while on, exactly inverted, and
+an `onIcon()`-only one would be right by accident. A named class cannot pick the
+wrong element whichever of the two is present, and
+[`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php)
+renders each icon alone for that reason.
+
+The other way to keep vendor's selectors would be to emit both spans always, as
+Filament does. That buys nothing back: it puts an empty element in every toggle's
+DOM and gives up two names [`docs/styling.md`](../../styling.md) counts as public
+hook surface, in exchange for a selector that has to be reasoned about each time
+it is read. So this is settled rather than provisional — recorded because a
+future audit against the vendor stylesheet will find the selectors differ and
+should not "correct" them.
 
 ### The toggle carries extra input attributes, Filament's does not
 

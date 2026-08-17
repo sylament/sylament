@@ -26,33 +26,33 @@ the permanent note in [Divergences](#divergences).
 | [`MODAL_CLOSE_BUTTON`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias::MODAL_CLOSE_BUTTON`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | exercised by the close-button case in [`ModalRenderTest`](../../../packages/actions/tests/Integration/Components/ModalRenderTest.php), which renders the constant through the template; it needs no pinned-literal test because the [Modal template](../../../packages/support/templates/components/Modal/index.html.twig) references the constant itself rather than a copy of its value |
 | [`PAGINATION_FIRST_BUTTON`, `PAGINATION_LAST_BUTTON`, `PAGINATION_NEXT_BUTTON`, `PAGINATION_PREVIOUS_BUTTON`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | all four referenced through `constant()` from the [Pagination component](../../../packages/support/templates/components/Pagination/index.html.twig), the way Modal's close button is, so no pinned-literal test is needed; the rendered footer is asserted from tables' [`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php) |
 | [`BADGE_DELETE_BUTTON`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias::BADGE_DELETE_BUTTON`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | referenced through `constant()` from the [Badge template](../../../packages/support/templates/components/Badge/index.html.twig), so no pinned-literal test is needed; the icon it draws is asserted by the delete-button cases in [`BadgeRenderTest`](../../../packages/actions/tests/Integration/Components/BadgeRenderTest.php) and, through the chip, by tables' [`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php) |
-| Breadcrumbs / RTL aliases (the other 6) | [`SupportIconAlias.php`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | blocked | Breadcrumbs, [the pagination RTL branch](pagination.md#the-footer-has-no-rtl-branch) | [detail](#details) |
+| [`BREADCRUMBS_SEPARATOR`, `BREADCRUMBS_SEPARATOR_RTL`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | both referenced through `constant()` from the [Breadcrumbs component](../../../packages/support/templates/components/Breadcrumbs/index.html.twig), the way Modal's close button is, so neither needs a pinned-literal test; the pair is asserted from panels' [`ListRecordsTest`](../../../packages/panels/tests/Integration/Resources/Pages/ListRecordsTest.php), which counts one `sy-ltr` and one `sy-rtl` separator on the second crumb — [breadcrumbs.md](breadcrumbs.md) |
+| Pagination RTL aliases (the other 4) | [`SupportIconAlias.php`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | blocked | [the pagination RTL branch](pagination.md#the-footer-has-no-rtl-branch) | [detail](#details) |
 
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is.
 
-### Breadcrumbs / RTL aliases
+### Pagination RTL aliases
 
 Filament defines 13 alias constants up front — every overridable icon slot in
-the whole support kit. Sylament ships **seven**: `BADGE_DELETE_BUTTON`,
-`SECTION_COLLAPSE_BUTTON`, `MODAL_CLOSE_BUTTON` and the four
-`PAGINATION_*_BUTTON`s the [Pagination component](pagination.md) reads. The
-remaining six all belong to components or branches that have not been built yet:
-
-- `BREADCRUMBS_SEPARATOR`, `BREADCRUMBS_SEPARATOR_RTL` — Breadcrumbs (todo)
-- `PAGINATION_FIRST_BUTTON_RTL`, `PAGINATION_LAST_BUTTON_RTL`,
-  `PAGINATION_NEXT_BUTTON_RTL`, `PAGINATION_PREVIOUS_BUTTON_RTL` — the mirrored
-  chevrons of the [RTL branch](pagination.md#the-footer-has-no-rtl-branch), which
-  needs both i18n and panels before it can ask which direction the page runs
+the whole support kit. Sylament ships **nine**: `BADGE_DELETE_BUTTON`,
+`SECTION_COLLAPSE_BUTTON`, `MODAL_CLOSE_BUTTON`, the four
+`PAGINATION_*_BUTTON`s the [Pagination component](pagination.md) reads, and the
+[Breadcrumbs](breadcrumbs.md) separator pair. The remaining four —
+`PAGINATION_FIRST_BUTTON_RTL`, `PAGINATION_LAST_BUTTON_RTL`,
+`PAGINATION_NEXT_BUTTON_RTL`, `PAGINATION_PREVIOUS_BUTTON_RTL` — are the
+mirrored chevrons of the [RTL branch](pagination.md#the-footer-has-no-rtl-branch),
+which needs both i18n and panels before it can ask which direction the page
+runs.
 
 An alias constant is meaningful only when a template renders through it, so each
 missing constant lands in the same change as its consuming component rather than
 being copied wholesale now — which is exactly how the four pagination aliases
-arrived, with the component that reads them, and how `BADGE_DELETE_BUTTON`
-arrived with the delete button. Next step: add each remaining
-literal as Breadcrumbs and the RTL branch are ported, referencing the
+arrived, with the component that reads them, how `BADGE_DELETE_BUTTON` arrived
+with the delete button, and how the breadcrumbs pair arrived with Breadcrumbs.
+Next step: add the four RTL literals as that branch is ported, referencing the
 constant from the template the way
 [Modal's close button](../../../packages/support/templates/components/Modal/index.html.twig)
 does rather than hardcoding the string (see the divergence). The class flips to

@@ -124,6 +124,28 @@ Consumers never need Tailwind installed.
    `utilities` — the last carrying the `.sy-color-<palette>` swap classes), so any
    unlayered consumer CSS overrides Sylament without `!important`.
 9. **Dark mode is class-based**: `@variant dark (&:where(.dark, .dark *))`.
+   The class lands on `<html>`, so a page opting in sets it there; panels ship a
+   switcher and a head script that do it for a panel. Two rules follow the
+   variant rather than a component: `:root.dark { color-scheme: dark }` in
+   `support`'s `base.css`, which is what makes the UA paint form-control
+   internals, scrollbars and the canvas dark from the class rather than from the
+   OS preference alone.
+10. **One `@font-face` ships, in `support/assets/src/styles/fonts.css`.** Inter
+    Variable, latin subset, imported into `index.css` at the front of the base
+    group and reachable as the `--sy-font` token — which nothing outside a panel
+    consumes, so a host page's typography is untouched. Three things about it are
+    easy to break. The file **must stay a sibling of `index.css`**: its
+    `url('./fonts/…')` survives the Tailwind build verbatim, and it resolves only
+    because source and output sit at the same depth — Tailwind rebases a relative
+    url against the entry, so the no-op is a coincidence of layout, not a
+    guarantee. Its `format('woff2-variations')` is the **legacy** keyword and is
+    copied verbatim from the installed `@fontsource-variable/inter`; the modern
+    spelling is `format('woff2') tech('variations')`, and "modernising" it drops
+    support in older engines the vendor still targets. And
+    `dist/styles/fonts/inter-LICENSE.txt` is a **deliberately served artifact**,
+    copied beside the woff2 by `assets/scripts/copy-fonts.mjs`: the SIL Open Font
+    License requires the notice to travel with a redistributed font file, and the
+    split `sylament/support` publishes only `dist`.
 
 ## How consumers customize
 

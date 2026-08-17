@@ -146,6 +146,15 @@ literal that has to become a translation key later; the icon in particular is an
 alias lookup (`ActionsIconAlias::DELETE_ACTION_MODAL`) with nothing to resolve
 against yet.
 
+The visible cost, stated so it is not rediscovered as a defect: our delete
+confirmation is headed by the generic warning triangle every confirming action
+shows, where Filament's is headed by an outlined trash that says *what* is being
+confirmed. That is a missing feature rather than an icon-variant slip — the two
+cases are `Heroicon::OutlinedExclamationTriangle` and `Heroicon::OutlinedTrash`,
+both outline, so [the mini/outline rule](../support/icon-manager.md#an-unprefixed-heroicon-case-is-the-mini-20px-set-and-our-literals-must-spell-it)
+has nothing to say about it. It closes with the alias registry, which is what
+the row above is skipped on.
+
 ### One plain icon replaces Filament's table-and-grouped pair
 
 `icon('heroicons:trash-20-solid')` where Filament sets `tableIcon()` + `groupedIcon()`,

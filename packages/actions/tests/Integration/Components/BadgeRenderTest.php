@@ -92,9 +92,6 @@ it('renders the delete button inside the badge, after the label', function (): v
         ->toContain('<button type="button" class="sy-badge-delete-btn" aria-label="Remove filter"')
         ->toContain('class="sy sy-icon sy-size-xs"')
         ->toContain('aria-hidden="true"')
-        // Filament renders this one at `IconSize::ExtraSmall`, which `Heroicon::getIconForSize()`
-        // resolves to `heroicon-c-x-mark` — the 16px micro solid, not the 20px mini every other
-        // unprefixed case lands on. The viewBox is the only thing that tells the two apart.
         ->toContain('0 0 16 16')
         ->toMatch('#</button>\s*</span>#');
 });

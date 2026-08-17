@@ -27,9 +27,10 @@ Reference — the Filament source this is diffed against:
 ## Surface
 
 Every point of this component. _Blocked by_ names what has to land first. _Detail_
-carries either or both: **detail** → the write-up in [Details](#details), deleted
-once the row is **done**; **diverges** → the permanent note in
-[Divergences](#divergences).
+carries up to three links: **detail** → the write-up in [Details](#details),
+deleted once the row is **done**; **diverges** → the permanent note in
+[Divergences](#divergences); **semantics** → the permanent note in
+[Semantics](#semantics).
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -39,6 +40,7 @@ once the row is **done**; **diverges** → the permanent note in
 | [`size` → `sy-size-*` classes](../../../packages/support/templates/components/Badge/index.html.twig) | [`->class(['fi-size-…'])`](../../../vendor/filament/support/resources/views/components/badge.blade.php) | done | — | — |
 | [`color` → `sy-color*` classes](../../../packages/support/templates/components/Badge/index.html.twig) | [`->color(BadgeComponent::class, $color)`](../../../vendor/filament/support/src/View/Components/BadgeComponent.php) | done | — | [diverges](#the-color-map-resolves-the-text-shade-not-the-ring-or-the-background) |
 | [Icon + derived `sm` size + `iconPosition`](../../../packages/support/templates/components/Badge/index.html.twig) | [`generate_icon_html(…, size: $iconSize ?? IconSize::Small)`](../../../vendor/filament/support/resources/views/components/badge.blade.php) | done | — | — |
+| [The label's two spans](../../../packages/support/templates/components/Badge/index.html.twig) | [`fi-badge-label-ctn` wrapping `fi-badge-label`](../../../vendor/filament/support/resources/views/components/badge.blade.php) | done | — | [semantics](#the-outer-label-span-is-what-pins-the-badges-baseline) |
 | [`labelSrOnly` → `aria-label`](../../../packages/support/templates/components/Badge/index.html.twig) | — (no Filament badge equivalent) | done | — | [diverges](#labelsronly-is-a-sylament-addition) |
 | [`deletable` / `deleteLabel` / `deleteAttributes`](../../../packages/support/templates/components/Badge/index.html.twig) | [`deleteButton` slot → `fi-badge-delete-btn`](../../../vendor/filament/support/resources/views/components/badge.blade.php) | done | — | [diverges](#the-delete-button-is-three-props-not-an-attribute-carrying-slot) |
 | `tooltip` | [`x-tooltip` block + disabled-tooltip filter](../../../vendor/filament/support/resources/views/components/badge.blade.php) | blocked | Stimulus tooltip controller | [detail](#details) |
@@ -50,10 +52,10 @@ once the row is **done**; **diverges** → the permanent note in
 ## Details
 
 The ported rows — tag/`href`/`target`, `type`/`form`, `disabled`/`aria-disabled`,
-`size`, `color`, the icon with its derived `sm` size and its position, the delete
-button, and `labelSrOnly` — are faithful (allowing the systematic `fi-*` → `sy-*`,
-Blade → Twig and `Htmlable` → `Markup` translations, and the four divergences
-below) and every one is exercised by
+`size`, `color`, the icon with its derived `sm` size and its position, the
+label's two spans, the delete button, and `labelSrOnly` — are faithful (allowing
+the systematic `fi-*` → `sy-*`, Blade → Twig and `Htmlable` → `Markup`
+translations, and the four divergences below) and every one is exercised by
 [`BadgeRenderTest`](../../../packages/actions/tests/Integration/Components/BadgeRenderTest.php):
 the default `span` with its primary/`md` class list and the two-span label, tag
 switching to `button` (with `type` and an external `form`) and to `a` (with
@@ -94,6 +96,39 @@ has no `postToUrl()` / `shouldPostToUrl()` on `Action`, so no caller can pass th
 tag. The template already interpolates `tag` freely, so the work is the missing
 `action`/`method` attributes and the `type` derivation Filament's tag `match`
 does — reachable the moment `postToUrl()` is ported.
+
+## Semantics
+
+Faithful ports subtle enough that the next reader would misread the code.
+Permanent, and addressable by anchor.
+
+### The outer label span is what pins the badge's baseline
+
+The label is two spans — `sy-badge-label-ctn` wrapping `sy-badge-label` — and the
+pair is not one span written twice. The outer one is the badge's flex item, so it
+is the box `align-self` applies to, and
+[`badge.css`](../../../packages/support/assets/src/styles/components/badge.css)
+gives it `grid self-baseline`: that rule is what makes an `inline-flex` badge sit
+on the surrounding text's baseline by its **label** rather than by whichever flex
+item comes first. The inner span is the text box, and it is what the wrap and
+truncate arms target. Filament splits them the same way, on the same two class
+names, and states the purpose in a comment above the same rule in
+[`badge.css`](../../../vendor/filament/support/resources/css/components/badge.css)
+— a comment this port drops, because the reasoning lives here.
+
+The pin is load-bearing before the loading indicator Filament's comment names
+([blocked](#details)) ever lands: an icon positioned `before` is already a flex
+sibling ahead of the label, and the badge is `inline-flex items-center`, so
+without the rule the badge offers the surrounding line whatever baseline the icon
+has. Support's [`Link`](link.md) reaches the same alignment with one span —
+`sy-link-label` carries `self-baseline` and nothing else — which is why the badge
+reads as one span too many until the wrap arms on the inner span are noticed.
+
+Folding the pair into one span costs the alignment and nothing names it.
+[`BadgeRenderTest`](../../../packages/actions/tests/Integration/Components/BadgeRenderTest.php)
+asserts the two spans as a literal markup string, so the change surfaces as a
+failed string comparison that reads like a stale assertion and invites updating —
+no test anywhere asserts the baseline.
 
 ## Divergences
 

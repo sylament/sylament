@@ -261,12 +261,24 @@ page contributes, its `url()` and `isActiveWhen()` closures resolving
 `UrlGeneratorInterface` and `RequestStack` through the `Invoker` at render time
 rather than capturing them.
 
+`getBreadcrumbs(): array` is here too, returning `[]`, and its contract is the
+map [support's `Breadcrumbs`](../support/breadcrumbs.md) consumes: a **string**
+key is a URL and its crumb links, an **int** key is plain text. The base returns
+nothing, so a plain panel page — the [`Dashboard`](#dashboard) included — heads
+no trail, and [`Page/index.html.twig`](#routing) renders no `Header` at all
+unless something else fills it.
+
 Deferred, all todo:
 
 - The `BasePage` split — Filament separates `BasePage` (the render/lifecycle
   half) from `Page` (the panel-aware half); the split lands with the half that
   needs it.
-- Breadcrumbs and header actions — both need the panel shell around them.
+- Header actions — they need `InteractsWithHeaderActions` to move up from the
+  [resource-page base](#resource-pages), where they live today.
+- The panel-level breadcrumb toggle. Filament's `Panel::breadcrumbs(bool)` /
+  `hasBreadcrumbs()` switches the trail off for a whole panel and its
+  `hasResourceBreadcrumbs()` does the same for resource pages alone; neither is
+  ported, so a page that returns crumbs always renders them.
 - A writer for the `heading`/`subheading` pair. Filament ships none either — its
   `BasePage` declares both as protected properties a subclass assigns or a
   subclass getter overrides — so today the pair stays subclass-only.
@@ -468,7 +480,7 @@ What is ported, by cluster:
   [pull model](#resource-navigation-is-pulled-through-the-registry-not-pushed-by-the-resource).
 
 Deferred, all todo: authorization (`canAccess()` and the whole `HasAuthorization`
-cluster), global search, widgets, breadcrumbs, sub-navigation, clusters, tenancy,
+cluster), global search, widgets, sub-navigation, clusters, tenancy,
 nested/parent resources, resource configurations, `getRelations()`, and
 `configureTable()`'s seeding of table-level labels. The title-case **toggle** is
 unported with them — Filament's `$hasTitleCaseModelLabel` (default `true`) with
@@ -478,7 +490,22 @@ the static silently no-ops; the two getters themselves are ported.
 `NavigationItem`'s `key()`, `parentItem()` and `badgeTooltip()` are skipped here
 because [they are not ported on the item yet](#navigationitem);
 `shouldRegisterNavigation()` is ported and, as in Filament, is consulted by the
-panel-side loop rather than by `getNavigationItems()` itself.
+panel-side loop rather than by `getNavigationItems()` itself. So is
+`Resource\Concerns\HasBreadcrumbs` — Filament reaches the resource crumb's label
+through `static::$breadcrumb ?? static::getTitleCasePluralModelLabel()`, where
+ours calls `getTitleCasePluralRecordLabel()` directly from
+[the page base](#resource-pages), leaving the resource-level override hook a
+missing API rather than a divergence.
+
+One consequence of the breadcrumb trail lands here rather than on the page: a
+resource with no `index` page now **throws** the moment any of its pages
+renders, where before it merely contributed no navigation item. The trail's
+first crumb is `getIndexUrl()`, and that is Filament's verbatim *"does not have
+an [index] page. Define [getIndexUrl()] for alternative routing"* `LogicException`
+([`CanGenerateUrls.php:122-123`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/CanGenerateUrls.php)) —
+not a `RouteNotFoundException`, which is what Filament's own unconditional
+`getResourceUrl()` call would raise a layer further down. Parity, and the
+message names the fix.
 
 Divergences, each with its own entry:
 [the record class is declared, never derived](#the-record-class-is-declared-never-derived-from-an-application-namespace),
@@ -524,7 +551,7 @@ silently shadowed by `HasActions`' null-returning default in any subclass that
 re-`use`d the trait —
 [the actions host sits on the base because a trait outranks an inherited method](#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method).
 
-Five members. `protected static string $resource` is the class-string a subclass
+Seven members. `protected static string $resource` is the class-string a subclass
 declares and `getResource()` reads — untyped-default exactly as in Filament, so a
 page that forgets it fails on the first read rather than resolving something
 plausible. `route(string $path): PageRegistration` is the registration factory a
@@ -588,6 +615,30 @@ inventing a third convention. `getResource()` keeps Filament's name and return
 type, so a migrating user's `static::getResource()` still answers the
 class-string.
 
+The last two are the breadcrumb pair, and they are what puts a trail above every
+resource page. `protected static ?string $breadcrumb` with
+`getBreadcrumb(): string|Markup` is Filament's default verbatim
+(`static::$breadcrumb ?? $this->getTitle()`), and `getBreadcrumbs()` overrides
+the [base page's](#page) empty map with the two-crumb trail Filament builds:
+the resource's index URL keyed to its title-case plural label, then this page's
+own crumb as an **int**-keyed entry, which is what makes the last crumb plain
+text rather than a link to the page you are on. The three concrete pages narrow
+`getBreadcrumb()` to `string` and answer `List` / `Create` / `Edit` — v5's
+`list-records.breadcrumb`, `create-record.breadcrumb` and
+`edit-record.breadcrumb` lang values as literals, the same call
+[the notification titles](#the-create-and-save-notification-titles-are-literals-not-translation-keys)
+made.
+
+The return type is **widened** to `string|Markup` where Filament types the same
+method `?string`, and the widening is a fix rather than a preference:
+`getTitle()` already returns `string|Markup`, so Filament's own default chain
+can hand a `Htmlable` title into a `?string` return — which only survives there
+because its code is not under `strict_types`, and which would stringify the
+markup and then let the template escape it, breaking the
+`Htmlable` → `Markup` escaping contract this port holds throughout. The
+narrowed overrides on the three concrete pages keep the common case a plain
+`string`.
+
 Two divergences hang off this base:
 
 - [`route()` returns a registration rather than registering a route](#route-returns-a-registration-rather-than-registering-a-route)
@@ -597,7 +648,7 @@ Two divergences hang off this base:
   — every static describing a panel-mounted page is inherited and wrong here.
 
 Deferred, all todo: `getResourcePageName()` (Filament's reverse lookup of a
-page's own `getPages()` key), breadcrumbs, sub-navigation, the parent-record and
+page's own `getPages()` key), sub-navigation, the parent-record and
 authorization concerns, and `ViewRecord` / `ManageRecords` / `ManageRelatedRecords`.
 
 ### ListRecords
@@ -641,7 +692,9 @@ trait's own package, not here.
 - `$template` points at `@SylamentPanels/partials/ListRecords/index.html.twig`
   and is **required**: `Page::getTemplate()` otherwise falls back to the generic
   page partial, whose `sy-pa-page-content` is empty, and the page would render a
-  heading with no table and no error anywhere.
+  heading with no table and no error anywhere. It repeats the generic partial's
+  [three-element page skeleton](#routing) rather than extending it, so the
+  rhythm rules land on the same three classes here.
 - `table(Table $table): Table` stamps the resource's query and then hands the
   table to the resource —
   [query first, resource last](#the-list-pages-table-is-stamped-query-first-and-resource-last).
@@ -689,11 +742,15 @@ writes by hand — and the line above is what that costs.
 **The template.** `partials/ListRecords/index.html.twig` is the page root
 (`sy-pa-page sy-pa-resource-list-records-page`, Filament's `getPageClasses()`
 pair minus its slug-derived `fi-resource-<slug>` half, which waits for a reason
-to style one resource's list differently from another's), the `Header` with the
-header actions in its `actions` block, `{{ renderTable() }}` inside
-`sy-pa-page-content`, and `<twig:SylamentActions:Modals />` last. Two placement
-rules, both invisible until they break. `renderTable()` takes no arguments and
-reads `this` out of the Twig context, requiring it to be an `InteractsWithTable` —
+to style one resource's list differently from another's), then the
+`sy-pa-page-header-main-ctn` wrapper holding the `Header` with the header
+actions in its `actions` block above `sy-pa-page-main` > `sy-pa-page-content`,
+where `{{ renderTable() }}` goes, and `<twig:SylamentActions:Modals />` last,
+outside the wrapper. The three-class nesting is the
+[page skeleton](#routing) every panel page repeats — it is what carries the
+vertical rhythm, so a page that flattens it loses its spacing silently. Two
+placement rules, both invisible until they break. `renderTable()` takes no
+arguments and reads `this` out of the Twig context, requiring it to be an `InteractsWithTable` —
 a page template has `this`, but a `<twig:>` component nested inside one has its
 *own*, so a table wrapped in another component must be captured with
 `{% set table %}…{% endset %}` where `this` is still the page (the demo's
@@ -791,7 +848,8 @@ Filament's chain with the panel-level `getResourceCreatePageRedirect()` setting,
 the `view` arm and the two `can*()` guards all absent with their features.
 
 **The template.** `partials/CreateRecord/index.html.twig` is the page root
-(`sy-pa-page sy-pa-resource-create-record-page`), the `Header` with the header
+(`sy-pa-page sy-pa-resource-create-record-page`), the same
+[three-class page skeleton](#routing) carrying the `Header` with the header
 actions, then inside `sy-pa-page-content` a `<form>` bound by
 `live_action('create:prevent', event: 'submit')`, the record-level error outlet,
 `renderSchema('form')`, a `sy-pa-resource-form-actions` footer holding the submit
@@ -938,8 +996,8 @@ Enums, contracts, HTTP layer, events, templates —
 | Item | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [Layout templates](../../../packages/panels/templates/components) | [`resources/views/components`](../../../vendor/filament/filament/resources/views/components) | in progress | [Layout templates](#layout-templates) |
-| [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | three aliases: the shell's two ([Layout templates](#layout-templates)) and the dashboard's navigation icon ([Dashboard](#dashboard)) |
-| [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships one Stimulus controller (`sidebar`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets) |
+| [`Twig\PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | [`View/PanelsIconAlias.php`](../../../vendor/filament/filament/src/View/PanelsIconAlias.php) | in progress | seven constants: six of Filament's 32 — the sidebar group chevron, the topbar hamburger, the three theme-switcher glyphs ([Layout templates](#layout-templates)) and the dashboard's navigation icon ([Dashboard](#dashboard)) — plus [the user-menu trigger, which is an invention](#user_menu_trigger-is-an-addition-not-a-rename) |
+| [Assets (JS/CSS)](../../../packages/panels/assets) | [`resources/js/`](../../../vendor/filament/filament/resources/js), [`resources/css/`](../../../vendor/filament/filament/resources/css) | in progress | the `@sylament/panels` workspace ships two Stimulus controllers (`sidebar`, `theme`) and the `sy-pa-*` rules, which compile into support's stylesheet — [Assets](#assets) |
 | [`Routing\PanelRouteLoader`](../../../packages/panels/src/Routing/PanelRouteLoader.php) | [`routes/web.php`](../../../vendor/filament/filament/routes/web.php) — the per-panel route group and its `$page::registerRoutes($panel)` / `$resource::registerRoutes($panel)` loops, [`Pages/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Pages/Concerns/HasRoutes.php) `routes()`, [`Resources/Resource/Concerns/HasRoutes.php`](../../../vendor/filament/filament/src/Resources/Resource/Concerns/HasRoutes.php) `registerRoutes()` | in progress | [Routing](#routing) |
 | [`Controllers\PageController`](../../../packages/panels/src/Controllers/PageController.php) | no Filament counterpart — a Filament page **is** its own route action | in progress | [Routing](#routing) |
 | [Document template](../../../packages/panels/templates/partials/Document/index.html.twig) | [`components/layout/base.blade.php`](../../../vendor/filament/filament/resources/views/components/layout/base.blade.php) | in progress | [Routing](#routing) |
@@ -976,17 +1034,57 @@ direction-symmetric, so the rule carries no `rtl:` arm — the `-rotate-90` it
 replaced needed one, and drawing a down chevron rotated a quarter turn pointed
 the closed state sideways where Filament points it down.
 
-The shell's two default icons are overridable defaults, not hardcoded names: the
-group chevron and the topbar hamburger read
-[`PanelsIconAlias::SIDEBAR_GROUP_COLLAPSE_BUTTON` and
-`TOPBAR_OPEN_SIDEBAR_BUTTON`](../../../packages/panels/src/Twig/PanelsIconAlias.php)
-through `constant()` the way
-[Modal's close button](../../../packages/support/templates/components/Modal/index.html.twig)
-does, so an app swaps either one under [`sylament.icons`](../support/icon-manager.md)
-without touching a template. Both values drop Filament's `panels::` prefix
-([rename](../renames.md)); the constant names are Filament's.
+`Topbar` is the full-width bar above the layout — v5's DOM, where the topbar is
+a sibling of `.fi-layout` rather than a child of the main column, so the sidebar
+sits *under* it and the bar spans the viewport. It holds the drawer toggle, a
+`sy-pa-topbar-start` carrying the `Logo`, and a `sy-pa-topbar-end` carrying an
+`end` block a caller may fill and then the `UserMenu`. The end wrapper is
+unconditional: it is where the shell's own chrome goes, so it renders whether or
+not a caller fills the block.
 
-What Filament's sidebar has and this does not, all todo:
+`Logo` is the brand name as a `<span class="sy-pa-logo">`, rendered twice — once
+in the topbar start (hidden below `lg`) and once in the sidebar's own mobile
+header, which is where the brand appears while the drawer is open. It renders
+**nothing at all** when the panel has no brand name, which is what leaves a
+brandless mobile header an empty strip rather than a gap with a heading in it.
+Filament's `logo.blade.php` also carries the `brandLogo()` / `darkModeBrandLogo()`
+image arms; neither is ported, since [`Panel`](#panel) has no such setting.
+
+`ThemeSwitcher` and `UserMenu` are the topbar-end pair. The switcher is a
+`role="group"` of three buttons — light, dark, system — each carrying its
+`data-theme` value, an `aria-pressed` the controller keeps in sync, and its own
+overridable icon alias; the buttons are written out rather than looped, because
+a computed `constant('…THEME_SWITCHER_' ~ theme|upper ~ '_BUTTON')` would be
+invisible to Twig-CS-Fixer's `ValidConstantFunctionRule`, the one check in the
+toolchain that validates a hardcoded FQCN string, and Filament unrolls the same
+three too. Each button also fires `sylament--support--dropdown#close` beside the
+theme action, so picking a theme dismisses the menu it sits in — Filament's
+`(theme = …) && close()` in one attribute. Rendered outside a dropdown the extra
+action is inert, Stimulus ignoring an action whose controller is on no ancestor.
+
+`UserMenu` is a support `Dropdown` whose trigger is an `IconButton` and whose
+panel today holds only the theme switcher, rendered
+[in place rather than teleported](#the-theme-switchers-dropdown-is-not-teleported).
+It is **a stub for the auth epic**, and every part of that is visible in the
+markup: there is no user name, no
+avatar, no menu items, no `getUserMenuItems()`, and none of Filament's four
+gates — `auth()->check()`, `hasThemeSwitcher()`, `hasDarkModeForced()`,
+`getDefaultThemeMode()` — so the menu renders unconditionally for an anonymous
+visitor. Its trigger icon is [an alias with no Filament
+counterpart](#user_menu_trigger-is-an-addition-not-a-rename).
+
+The shell's default icons are overridable defaults, not hardcoded names: the
+group chevron, the topbar hamburger, the three theme-switcher glyphs and the
+user-menu trigger all read
+[`PanelsIconAlias`](../../../packages/panels/src/Twig/PanelsIconAlias.php)
+constants through `constant()` the way
+[Modal's close button](../../../packages/support/templates/components/Modal/index.html.twig)
+does, so an app swaps any of them under [`sylament.icons`](../support/icon-manager.md)
+without touching a template. Every value drops Filament's `panels::` prefix
+([rename](../renames.md)); the constant names are Filament's, except the
+user-menu one, which Filament has no equivalent for.
+
+What Filament's shell has and this does not, all todo:
 
 - Desktop collapse (the narrow icon-only rail) and the collapsed-state tooltips
   on items — both need panel-level sidebar settings. M2 · 2 introduced the only
@@ -994,31 +1092,62 @@ What Filament's sidebar has and this does not, all todo:
 - Sub-navigation: Filament renders `childItems` nested under an active item, and
   the nesting arm of `NavigationItem` is deferred whole (see
   [NavigationItem](#navigationitem)).
-- The rest of `resources/views/components` — logo, avatar, tenant menu, theme
-  switcher and page — none of it ported. (`Topbar` and `Header` are, as the
-  shell's own two; `Layout` composes them.)
+- The whole account half of the user menu, and the panel toggles that gate the
+  topbar chrome — all of it lands with auth.
+- `avatar` and `tenant-menu` from `resources/views/components`, neither ported.
 
 The Livewire-shell → static-component divergence these templates sit on is
-[The shell is not live](#the-shell-is-not-live) above. Two more are theirs:
-[sidebar group ids are positional](#sidebar-group-ids-are-positional-not-derived-from-the-label)
+[The shell is not live](#the-shell-is-not-live) above. Five more are theirs:
+[sidebar group ids are positional](#sidebar-group-ids-are-positional-not-derived-from-the-label),
+[the drawer state class sits on the shell root](#the-drawer-state-class-sits-on-the-shell-root-not-on-the-sidebar),
+[one toggle button replaces v5's shown/hidden pair](#one-toggle-button-replaces-v5s-shownhidden-pair),
+[`USER_MENU_TRIGGER` is an addition](#user_menu_trigger-is-an-addition-not-a-rename),
 and [the render tests sit under
 `tests/Integration/Twig/`](#the-panels-render-tests-live-under-testsintegrationtwig).
 
 ### Assets
 
 `packages/panels/assets` is the `@sylament/panels` pnpm workspace, JS-only in the
-same shape as `@sylament/notifications`: one Stimulus controller builds to its own
+same shape as `@sylament/notifications`: two Stimulus controllers build to its own
 `dist`, while `src/styles/index.css` is imported by support's stylesheet and
 compiles into support's single built CSS. The built `dist` is mapped into
-AssetMapper as `@sylament/panels`. The five style files (`layout`, `sidebar`,
-`topbar`, `header`, `resources`) carry the `sy-pa-*` rules mobile-first —
-off-canvas drawer below `lg`, two-column grid at `lg` and up — and paint the
-active sidebar item from the [fixed `primary`
-palette](#the-active-sidebar-item-paints-a-fixed-primary-shade). `resources.css`
-is the record pages' two rules: the submit-button row
-(`.sy-pa-resource-form-actions`) and the record-level error list
-(`.sy-pa-resource-form-errors`, reading the `danger` palette the way forms'
-per-field errors do).
+AssetMapper as `@sylament/panels`. The nine style files carry the `sy-pa-*` rules
+mobile-first — off-canvas drawer below `lg`, two-column grid at `lg` and up — and
+they are imported in **shell-nesting** order rather than alphabetically
+(`layout`, `logo`, `sidebar`, `topbar`, `user-menu`, `theme-switcher`, `header`,
+`page`, `resources`), so the file reads outside-in the way the DOM nests.
+Three of them are worth naming:
+
+- `layout.css` owns `.sy-pa-body`, the shell root, and the two custom properties
+  the shell reads off it: `--sy-sidebar-width` (the drawer's width, a
+  [runtime token](../../styling.md) like every other `--sy-*` name — not one of
+  the deliberately unprefixed emission-set variables the grid system uses, which
+  are unprefixed only because they are Filament's verbatim) and `--font-sans`.
+- `page.css` is the [page skeleton's](#routing) three rules: `py-8 gap-y-8` on
+  the wrapper, a flex column on `sy-pa-page-main`
+  ([a divergence](#the-pages-main-container-is-a-flex-column-where-v5-gates-that-on-a-full-height-page)),
+  and `grid flex-1 auto-cols-fr gap-y-8` on `sy-pa-page-content`.
+- `resources.css` is the record pages' two rules: the submit-button row
+  (`.sy-pa-resource-form-actions`) and the record-level error list
+  (`.sy-pa-resource-form-errors`, reading the `danger` palette the way forms'
+  per-field errors do).
+
+The active sidebar item paints from the
+[fixed `primary` palette](#the-active-sidebar-item-paints-a-fixed-primary-shade).
+
+**The panel's font is Inter, and it is scoped.** `.sy-pa-body` sets
+`font-(family-name:--sy-font)`, where `--sy-font` is a support-level token
+defaulting to `'Inter Variable', ui-sans-serif, system-ui, sans-serif` — so the
+face reaches every component inside the panel through inheritance, the scoped
+preflight having dropped `font-*` from its `html` rule for exactly that reason
+([styling.md](../../styling.md) rule 7), and nothing outside a panel is
+touched. The same rule also redefines Tailwind's own **`--font-sans`** to
+`var(--sy-font)` on that element: `sy-font-sans` compiles to `font-sans`, which
+reads `--font-sans`, so without the scoped override a component asking for the
+sans family inside a panel would opt *out* of the panel's face and back onto the
+system stack. Filament closes the same gap by folding the panel font into
+`--font-sans` in its theme; ours is that fold, scoped to the shell root instead
+of the document.
 
 The `sidebar` controller is declared `fetch: eager`, matching notifications: the
 shell must apply stored collapse state on the first paint rather than after lazy
@@ -1026,6 +1155,26 @@ loading catches up. It owns the drawer open/close pair (`toggle`, `close`,
 `closeOnEscape`), the per-group collapse toggle, and persistence under the
 localStorage key `sylament.panels.sidebar.collapsedGroups` (a JSON array of group
 labels read from `data-group-label`).
+
+Opening the drawer dims the topbar along with the page. The overlay is `z-30`,
+Filament's own value, and it comes after the topbar container in the DOM, so it
+paints over it and the hamburger underneath stops being clickable — which is
+also what v5 does, and what makes the close-on-click and close-on-Escape arms the
+only ways out.
+
+The `theme` controller is the second, also `fetch: eager`. It reads a stored
+choice of `light` / `dark` / `system` under
+[a namespaced key](#the-stored-theme-key-is-namespaced), toggles the `dark` class on
+`document.documentElement`, keeps each switcher button's `aria-pressed` and
+`sy-active` in sync, and — only while the stored choice is `system` — re-renders
+when the OS preference changes. Two things it does not own. The `dark` **variant**
+is support's (`@variant dark (&:where(.dark, .dark *))`), and so is
+`:root.dark { color-scheme: dark }`, filed in support's `base.css` rather than
+here: panels ships no base-layer stylesheet, the whole toolkit compiles into one
+bundle either way, and the rule is correct on a non-panel page too. And the
+**first paint** is the document's, not the controller's — see the head script in
+[Routing](#routing), which has to run before the stylesheet or the page flashes
+light before Stimulus boots.
 
 Two behaviours worth knowing. Every storage read and write is guarded, and an
 absent key, unavailable storage or an unparseable value all collapse to the same
@@ -1052,8 +1201,22 @@ What Filament's panel assets have and this does not, all todo:
   [`EditRecord`](#editrecord) forms, error outlet included), but neither script
   is ported, so a user still navigates away from unsaved edits without a prompt
   and a validation failure below the fold is silent.
-- `dark-mode.js`, `echo.js`, and the resource/page scripts — none of the
-  surfaces they serve exist yet.
+- `echo.js` and the resource/page scripts — none of the surfaces they serve
+  exist yet. `dark-mode.js` is the one that now has a counterpart: ours is the
+  `theme` controller plus the document head script, and what is still missing is
+  the panel-level configuration around it (`hasThemeSwitcher()`,
+  `hasDarkModeForced()`, `getDefaultThemeMode()`), so the switcher is
+  unconditional.
+
+One fixture trap the mobile-drawer work left behind, recorded so the error is
+recognisable rather than mysterious: panels' test fixture icon set carries the
+single `chevron-left-20-solid` / `chevron-right-20-solid` pair (added with the
+breadcrumb separators) but **not** the `chevron-double-*-20-solid` pair, and the
+`ux_icons` `ignore_not_found` default is `false`. A panels test that ever renders
+a **multi-page** table therefore throws `IconNotFoundException` on
+[`Pagination`](../support/pagination.md)'s first/last buttons. The fix is one
+`cp` from tables' fixture directory; the resource list page paginates to a single
+page today, which is why nothing hits it.
 
 ### Routing
 
@@ -1168,10 +1331,35 @@ rethrows its previous exception when that is an `HttpExceptionInterface`,
 
 The two templates split the document from the page. `Document/index.html.twig`
 is the `<html>` shell — title (the page title, then the brand name when the panel
-has one), `sylamentStyles()`, the importmap, the `Layout` component with the
-page's live component in its content block (invoked by the tag name
-`Page::getComponentName()` returns, and given `componentProps`), and the
-notifications outlet. That outlet is
+has one), the theme head script, `sylamentStyles()`, the importmap, the `Layout`
+component with the page's live component in its content block (invoked by the
+tag name `Page::getComponentName()` returns, and given `componentProps`), and the
+notifications outlet.
+
+**The head script is the one inline `<script>` in the whole port**, and it is
+there because nothing else can be. It reads `localStorage['sylament.theme']` and
+stamps `dark` on `<html>` **before the stylesheet is requested**, which is the
+only placement that avoids a light flash on every dark-mode page load; a
+Stimulus controller connects far too late, and
+[the shell is otherwise Turbo-indifferent](#the-shell-is-turbo-indifferent-and-worker-safe)
+precisely to avoid inline scripts. It is not a second implementation of the
+controller's rule but the same one, written twice and required to agree on all
+six arms — explicit `dark` wins, explicit `light` wins, and *everything else* —
+absent key, unreadable storage, unrecognised value — means system:
+
+```js
+theme === 'dark' || (theme !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches)
+```
+
+Spelled as `(theme === null || theme === 'system') && matches` it would silently
+disagree with the controller for an unrecognised stored value, leaving the page
+light until Stimulus booted and then flipping it. The storage read is `try`-
+guarded, so a browser refusing storage falls to the same system arm rather than
+throwing before the stylesheet loads.
+[`PageControllerTest`](../../../packages/panels/tests/Integration/Controllers/PageControllerTest.php)
+pins both the body and its position ahead of the stylesheet block.
+
+The notifications outlet is
 `<twig:SylamentNotifications:Notifications />` as a direct `<body>` child outside
 the layout — the position Filament's
 `@livewire(Filament\Livewire\Notifications::class)` holds in `base.blade.php` —
@@ -1187,11 +1375,19 @@ view, not its layout. Ours has a second, harder reason —
 ux-twig-component's `ComponentStack`, so it only works rendered inside the
 component whose actions it shows, which a document-level outlet is not.
 `Page/index.html.twig` is what
-`Page::getTemplate()` falls back to: the `Header` (rendered only when the page
-has a heading or subheading) above an empty `sy-pa-page-content` container that
-stays empty until pages carry schemas. Both are `partials/`, not `components/` —
-they are rendered from PHP (a controller and a `template_from_method` getter),
-never as a `<twig:>` tag.
+`Page::getTemplate()` falls back to, and it is also **the page skeleton every
+other page partial repeats**: a `sy-pa-page` root, then three nested elements —
+`sy-pa-page-header-main-ctn` wrapping the `Header` (rendered only when the page
+has breadcrumbs, a heading or a subheading) above `sy-pa-page-main`, which holds
+`sy-pa-page-content`. The generic partial leaves that innermost container empty;
+[`ListRecords`](#listrecords) puts the table in it and the two record pages put
+the form. The three classes are not decoration: they carry the whole vertical
+rhythm, the wrapper supplying `py-8 gap-y-8` and `sy-pa-page-content` the
+`gap-y-8` between whatever a page stacks inside it, so a page that renders its
+own root and skips the layers loses its spacing with nothing to see in the
+markup. `sy-pa-page-main` is a [divergence](#the-pages-main-container-is-a-flex-column-where-v5-gates-that-on-a-full-height-page).
+Both templates are `partials/`, not `components/` — they are rendered from PHP
+(a controller and a `template_from_method` getter), never as a `<twig:>` tag.
 
 Four divergences are theirs:
 [a page is rendered by a controller rather than routed to directly](#a-panel-page-is-rendered-by-a-controller-not-routed-to-directly),
@@ -1219,6 +1415,27 @@ nullable parameter on `make()`, which exists so a `Closure` label can be passed
 positionally; nothing else about it says the label is optional. Anything building
 items from data must supply the label at `make()` or call `label()` before
 rendering.
+
+### The theme switcher's pressed state is client-only, and survives only because the shell is outside the live root
+
+`ThemeSwitcher` renders all three buttons with `aria-pressed="false"` and no
+`sy-active`; the controller stamps the real state on `connect()` and on every
+pick. The server never learns the choice — it is a `localStorage` value the
+document head script and the controller both read — so the markup Twig produces
+is deliberately *wrong* until JS runs, which is fine on a page load and would not
+be fine inside a re-rendering fragment: ux-live-component morphs a component's
+subtree from freshly rendered HTML, so a switcher inside a live root would have
+its `aria-pressed` and `sy-active` reset on every round trip while the actual
+theme, living on `<html>`, stayed put.
+
+Panel pages are safe by construction and not by care: [the shell is not
+live](#the-shell-is-not-live), and the [document](#routing) puts the page's live
+component *inside* `Layout`'s content block, so the topbar — switcher included —
+sits outside every live root on the page. The arrangement that would break it is
+the mirror image: embedding `Layout` **inside** a live component, which is what
+the demo's `PanelShellCard` does to show the shell as a showcase card. It works
+there today because the card does not re-render; a card that did would watch its
+switcher's aria state go stale.
 
 ## Divergences
 
@@ -1379,8 +1596,12 @@ until panels grow asset settings of their own.
 
 ### The active sidebar item paints a fixed `primary` shade
 
-`sidebar.css` writes `text-primary-600 dark:text-primary-400` for
-`.sy-pa-sidebar-item.sy-active` rather than reading a `--sy-text` slot.
+`sidebar.css` writes `text-primary-700 dark:text-primary-400` on the active
+item's icon and label rather than reading a `--sy-text` slot; the button itself
+carries no colour at all, only the `bg-gray-100 dark:bg-white/5` highlight. Both
+halves are v5's own values
+([`sidebar.css:157-179`](../../../vendor/filament/filament/resources/css/components/sidebar.css)),
+so the divergence is not the shade but the *mechanism*.
 [styling.md](../../styling.md)'s *never hardcode a shade for a colour a user can
 set* rule (rule 6) governs the **per-instance** `color` palette, which is chosen
 by a [contrast policy](../support/color-policies.md) because the palette is not
@@ -1390,10 +1611,97 @@ to build a colour map from — so there is no policy to ask and no slot to read;
 `primary` resolves through the `--sy-primary-*` runtime tokens, so a consumer
 retheming the palette still gets their colour. It becomes a rule-6 case the day
 the sidebar takes a colour, at which point the shade moves into a policy slot and
-the two rules (`sy-pa-sidebar-item-btn` and the icon/label pair) read the slot
-variables instead. The known residual risk until then: a consumer registering an
-unusually light or dark `primary` gets a fixed 600/400 against the fixed
-`gray-100` / `white/5` active background, which no policy is measuring.
+the icon/label pair reads the slot variables instead. The known residual risk
+until then: a consumer registering an unusually light or dark `primary` gets a
+fixed 700/400 against the fixed `gray-100` / `white/5` active background, which
+no policy is measuring.
+
+### The page's main container is a flex column where v5 gates that on a full-height page
+
+`page.css` gives `.sy-pa-page-main` an unconditional `flex flex-col`. Filament
+gives `.fi-page-main` **no base rule at all**: it becomes a flex column only
+under `.fi-page-has-sub-navigation`, and gains `h-full` only under
+`.fi-height-full`
+([`page.css`](../../../vendor/filament/filament/resources/css/components/page.css)).
+The consequence is one declaration further in, and it is the reason to record
+this rather than treat it as a formatting difference: `.fi-page-content` carries
+`flex-1`, which is **inert** in vendor's default page because its parent is not a
+flex container — where ours is live, so a short page's content container grows to
+fill the wrapper instead of hugging its rows. Nothing visible differs today,
+because every page we ship fills its content anyway.
+
+It is a deliberate simplification, not a mistake: the port has neither
+sub-navigation nor `fullHeight`, and gating a rule on two classes nothing emits
+would be dead CSS. Revisit **at the `fullHeight` port**, which is where vendor's
+own `h-full` cascade lands on the same three elements and where the difference
+between "always a column" and "a column when asked" starts to matter.
+
+### The drawer state class sits on the shell root, not on the sidebar
+
+Filament toggles `fi-sidebar-open` on the `<aside>` itself, from Alpine's
+`$store.sidebar`, and the closed arm is a `&:not(.fi-sidebar-open)` on the same
+element. Ours toggles `sy-pa-sidebar-open` on `.sy-pa-body` — the shell root —
+and both the drawer and its overlay read it as a descendant selector. The
+substitution is what lets **one** class drive two elements that are not nested in
+each other: the overlay is a sibling of the sidebar, so v5 shows and hides it
+with `x-show` and a transition directive on the element instead, which a static
+template has no equivalent for. The cost is that the open state is only readable
+from the root, so anything asking "is the drawer open?" from inside the sidebar
+has to walk up; the Stimulus controller does exactly that by holding the root as
+its controller element.
+
+### One toggle button replaces v5's shown/hidden pair
+
+Filament's topbar renders **two** icon buttons — a bars-3 opener under
+`x-show="! $store.sidebar.isOpen"` and an x-mark closer under
+`x-show="$store.sidebar.isOpen"`, each with its own icon alias
+([`livewire/topbar.blade.php:17-46`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)).
+Ours renders one `sy-pa-topbar-open-sidebar-btn` whose `toggle` action flips the
+state and whose `aria-expanded` the controller keeps in sync. Two buttons swapped
+by a reactive expression is an Alpine shape; a static template would have to ship
+both and hide one with CSS, which buys a second glyph and a second alias for a
+control that already announces its state to assistive technology. The visible
+delta is that the open drawer's control still shows a hamburger rather than an
+×, and that `TOPBAR_CLOSE_SIDEBAR_BUTTON` has no port — it returns if the pair
+ever does.
+
+### The stored theme key is namespaced
+
+Filament persists the choice under the bare `localStorage['theme']`; ours uses
+`sylament.theme`, the same namespacing the sidebar controller already applies to
+`sylament.panels.sidebar.collapsedGroups`. A bare `theme` key is a collision
+waiting to happen in a host application that has its own dark mode — and unlike
+most collisions this one is invisible, since both sides would read a value that
+parses. The cost is that a consumer migrating from Filament loses a visitor's
+stored preference once, at the switch.
+
+### The theme switcher's dropdown is not teleported
+
+Filament's user-menu dropdown is teleported to the end of `<body>`; ours renders
+in place, inside `.sy-pa-topbar-end`. That is [the same decision the dropdown
+primitive already carries](../support/dropdown.md), and the topbar is the one
+place it could plausibly clip, because `.sy-pa-topbar-ctn` sets
+`overflow-x-clip`. It does not, and the distinction is
+exactly why that property was chosen over `hidden`: `overflow-x: hidden` beside a
+`visible` block axis promotes the block axis to `auto`, making the bar a scroll
+container that clips downward, where `clip` leaves the other axis alone. So the
+menu hangs below the bar untouched and only sideways overflow is trimmed —
+verified on the rendered menu rather than inferred. Revisit if the topbar ever
+gains a vertical clip of its own.
+
+### `USER_MENU_TRIGGER` is an addition, not a rename
+
+Every other value in [`PanelsIconAlias`](#layout-templates) is a Filament
+constant with its `panels::` prefix dropped ([rename](../renames.md)). This one
+has no Filament counterpart at all: v5's user-menu trigger is an
+`<x-filament::avatar>`, an image, so there is no icon slot to alias and its
+`USER_MENU_TOGGLE_BUTTON` names the *sidebar* variant's chevron instead. Ours
+renders an `IconButton` holding `heroicons:user-circle` as a stand-in for the
+unported Avatar, sized to the avatar's 32px by a `user-menu.css` rule rather than
+the icon-button default's 20px, and the alias exists so an application can swap
+that stand-in without waiting for the avatar. It is therefore surface a migrating
+user cannot have been using, and it goes away — or becomes an avatar setting —
+when [the auth epic](../roadmap.md) brings a real user to render.
 
 ### Panels are collected from tagged providers, not registered imperatively
 

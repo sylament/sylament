@@ -118,7 +118,7 @@ column manager (`ACTIONS_COLUMN_MANAGER`) and the column catalog
 **Next step:** none on its own. An alias is only overridable once something reads
 it, so each constant lands in the same change as the component or feature that
 renders its icon — the same growth order
-[`SupportIconAlias`](../support/support-icon-alias.md#breadcrumbs--rtl-aliases)
+[`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases)
 follows, and the four that arrived with the sort headers and the search toolbar
 are that order in action. All seven are read by
 [the table partial](../../../packages/tables/templates/partials/Table/index.html.twig)

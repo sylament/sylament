@@ -146,12 +146,19 @@ Not ported — and that call site **is**, with the branch flattened. Ours
 ([`HasFilters.php:340`](../../../packages/tables/src/Concerns/HasFilters.php))
 hardcodes `is_bool($state) => false`, so a boolean field reset through a filter
 lands on "no" where Filament would land on "unset". Scope of the difference,
-since it is narrower than it looks: the two shipped filter classes never reach
-the branch, because [`SelectFilter`](../../../packages/tables/src/Filters/SelectFilter.php)
-declares `resetState(['value' => null])` (and `TernaryFilter` inherits it), and
-the `array_key_exists($fieldName, $resetState)` arm above the `match` fires
-first. `Checkbox` and `Toggle` reach it and agree with Filament, since neither
-overrides the method. What differs is a custom
+since it is narrower than it looks: none of the three shipped filter classes
+reaches the branch, because each names its own field in its reset state and the
+`array_key_exists($fieldName, $resetState)` arm above the `match` fires first.
+[`SelectFilter`](../../../packages/tables/src/Filters/SelectFilter.php) declares
+`resetState(fn () => $this->isMultiple() ? ['values' => []] : ['value' => null])`
+against the `value` / `values` field it builds, and `TernaryFilter` inherits
+both; plain [`Filter`](../../../packages/tables/src/Filters/Filter.php) returns
+`['isActive' => false]` against the `isActive` checkbox or toggle it builds — but
+only while it has no schema, and that is the door the rest of this walks through.
+A filter given a schema of its own falls back to an empty reset state, so the
+`match` does fire, and even there a `Checkbox` or `Toggle` agrees with Filament,
+since neither overrides the method and `false` is what both sides land on. What
+differs is a custom
 `Filter::make(…)->schema([Select::make(…)->boolean()])` that declares no
 `resetState()` of its own: Filament resets it to the placeholder, ours to
 `false`.

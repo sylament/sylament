@@ -38,7 +38,8 @@ Every point of both pieces. _Blocked by_ names what has to land first. _Detail_
 carries up to three links: **detail** → the write-up in [Details](#details),
 deleted once the row is **done**; **diverges** → the permanent note in
 [Divergences](#divergences); **semantics** → the permanent note in
-[Semantics](#semantics). A **skipped** row states its reason inline instead.
+[Semantics](#semantics). A **skipped** row states its reason inline, or links the
+divergence carrying it.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -50,13 +51,15 @@ deleted once the row is **done**; **diverges** → the permanent note in
 | [`getPageWindow()` + the `GAP` constant — refuses a paginator with no total](../../../packages/support/src/Pagination/Paginator.php) | `UrlWindow` at `onEachSide(0)` | done | — | [diverges](#the-page-window-is-a-flat-list-of-numbers-and-gaps-not-laravels-nested-elements-array) |
 | [`withRecords()` — the re-keyed clone](../../../packages/support/src/Pagination/Paginator.php) | `setCollection()` | done | — | [semantics](#withrecords-is-how-a-readonly-carrier-gets-re-keyed) |
 | [The `Pagination` component — overview, per-page select, page window, extreme links](../../../packages/support/templates/components/Pagination/index.html.twig) | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | in progress | — | [detail](#the-component-renders-one-of-filaments-two-layouts) · [diverges](#the-page-buttons-are-hardcoded-to-the-tables-gototablepage-action) |
-| [The four `SupportIconAlias` pagination constants](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | [support-icon-alias.md](support-icon-alias.md#breadcrumbs--rtl-aliases) |
+| [The four `SupportIconAlias` pagination constants](../../../packages/support/src/Twig/SupportIconAlias.php) | [`SupportIconAlias`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | done | — | [support-icon-alias.md](support-icon-alias.md#pagination-rtl-aliases) |
 | The four `*_RTL` alias constants and the `$isRtl` branch | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | todo | — | [diverges](#the-footer-has-no-rtl-branch) |
 | A `Pagination\Item` component of its own | [`pagination/item.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/item.blade.php) | skipped | — | Filament's item exists to be reused by two call sites in one file; here the item markup is six lines inlined at its three uses, and a component whose only job is to pick between an icon and a label would be indirection without a second consumer |
 | [Simple paging — the null-total branch: an overview with no total, prev/next with no window](../../../packages/support/templates/components/Pagination/index.html.twig) | the `$isSimple` arms of [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | done | — | [diverges](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both) |
 | Cursor paging — the `CursorPaginator` arm, whose clicks carry an encoded cursor rather than a page number | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | blocked | a keyset carrier ([table.md](../tables/table.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features)) | — |
 | Number formatting and translated copy | `Number::format()`, `trans_choice()` in the same view | blocked | i18n ([table.md](../tables/table.md#the-empty-state-heading-hardcodes-no-records)) | — |
-| Styles — `sy-pagination*` | [`resources/css/`](../../../vendor/filament/support/resources/css) | in progress | — | [detail](#three-corrections-to-the-stylesheets-port-accounting) |
+| [Styles — the footer, the overview, the item list and its items](../../../packages/support/assets/src/styles/components/pagination.css) | [`.fi-pagination`, `.fi-pagination-overview`, `.fi-pagination-items`, `.fi-pagination-item*`](../../../vendor/filament/support/resources/css/components/pagination.css) | done | — | [diverges](#the-item-styles-collapse-filaments-three-elements-onto-one) |
+| [Styles — the per-page select and its label](../../../packages/support/assets/src/styles/components/pagination.css) | [`.fi-pagination-records-per-page-select*`](../../../vendor/filament/support/resources/css/components/pagination.css) with [`input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) and [`input/select.css`](../../../vendor/filament/support/resources/css/components/input/select.css) | in progress | — | [detail](#the-selects-compact-twin-is-the-last-unported-arm) · [diverges](#the-per-page-select-carries-the-input-wrappers-chrome-because-it-has-no-wrapper) |
+| Vendor's responsive layout arms — the `hidden` bases on the overview and the item list, their `@4xl:`/`md:` swaps, the `@container` declaration and both `@supports` blocks | [`pagination.css`](../../../vendor/filament/support/resources/css/components/pagination.css) | skipped | — | [diverges](#the-responsive-arms-are-dropped-with-the-mobile-layout-they-serve) |
 
 The `Paginator` rows are covered by
 [`PaginatorTest`](../../../packages/support/tests/Unit/Pagination/PaginatorTest.php),
@@ -127,38 +130,22 @@ serves simple mode from the item list's own prev/next
 — so what is left of the pair is the mobile layout, a stylesheet question the
 `sy-pagination-items` list can answer on its own.
 
-### Three corrections to the stylesheet's port accounting
+### The select's compact twin is the last unported arm
 
-The stylesheet's commit (`a1680ed`) enumerates the vendor selectors it skipped,
-and three lines of that accounting are wrong. A commit body cannot be corrected
-after the fact, so the accurate tracing lives here — it matters because the
-`:not(.fi-compact)` and responsive arms are exactly what this **in progress**
-row still owes, and a reader reconciling
-[`pagination.css`](../../../vendor/filament/support/resources/css/components/pagination.css)
-against ours needs to know which side of the line each one is on.
+Filament renders the per-page control **twice** inside its container — a
+`fi-compact` label and a prefixed one — and `pagination.css` swaps them at a
+breakpoint: `:not(.fi-compact)` is `hidden` at the top level and `@md:inline` /
+`sm:inline` inside the two `@supports` blocks, against `.fi-compact`'s
+`@md:hidden` / `sm:hidden`. This port renders one labelled `<select>`, so all
+five arms are unported.
 
-**`.fi-pagination-records-per-page-select-ctn` was ported, not skipped.** Both
-of its declarations — `col-start-2` and `justify-self-center` — sit on
-`.sy-pagination-per-page`. Filament needs a container element because its select
-is wrapped by the `input.wrapper` component; ours is a bare `<select>` inside
-the `<label>`, so the container's *positioning* merged onto the label the way
-the wrapper's inline-label treatment did. The element is gone; its behaviour is
-not.
-
-**The dropped select arms are the `:not(.fi-compact)` ones, and they are
-responsive states.** `.fi-pagination-records-per-page-select` carries
-`&:not(.fi-compact) { hidden }` at the top level and `@md:inline` / `sm:inline`
-inside the two `@supports` blocks — the non-compact select is hidden until the
-container is wide enough, then swapped in for the compact one. All three arms go
-with the rest of the responsive trade, since we render one always-visible
-select; naming only "both `.fi-compact` arms" as skipped describes half of it.
-
-**`.sy-pagination-items`' `col-start-3` is carried over from the skipped
-`.fi-pagination-next-btn`.** Vendor's `.fi-pagination-items` declares
-`justify-self-end` and no column at all — `col-start-3` belongs to the
-standalone next button, which we do not render. Dropping the selector without
-its declaration would have left the item list unplaced in the three-column grid,
-so it moved onto the element that now occupies that column.
+What is missing is the markup, not the rules. The prefixed label is an
+`input.wrapper` carrying a `prefix` around an `input.select`, and neither
+component is built ([both **todo**](README.md#components)) — so this row flips
+with [the component's own layout row](#the-component-renders-one-of-filaments-two-layouts),
+which owns that second label, and not before. Everything else in
+`pagination.css` that reaches an element this footer renders is ported, with the
+collapses and the drops accounted for in the divergences below.
 
 ## Semantics
 
@@ -387,9 +374,120 @@ The branch is unreachable rather than dropped: `$isRtl` reads
 layer, and neither [i18n](../tables/table.md#the-empty-state-heading-hardcodes-no-records)
 nor panels exists in the port — there is nothing to ask which direction the page
 runs. The four constants follow the
-[alias growth order](support-icon-alias.md#breadcrumbs--rtl-aliases)
+[alias growth order](support-icon-alias.md#pagination-rtl-aliases)
 and land with the branch that reads them, not before. Provisional and mechanical:
 whichever of the two prerequisites lands second brings this with it.
+
+### The item styles collapse Filament's three elements onto one
+
+Filament's item is three nested elements — `<li class="fi-pagination-item">`
+wrapping `<button class="fi-pagination-item-btn">` wrapping
+`<span class="fi-pagination-item-label">` — and `pagination.css` styles each of
+them. Ours is a bare `<li>` around a single `<button class="sy-pagination-item">`
+(a `<span>` for the gap) holding the page number as its own text, so three
+selectors' declarations land on one: the `li`'s `border-x-[0.5px]
+border-gray-200 dark:border-white/10`, the button's `relative flex
+overflow-hidden p-2 transition duration-75 outline-none` with its `:enabled` and
+`:hover` arms, and the label's `text-sm font-semibold text-gray-700
+dark:text-gray-200`. `items-center` is the one declaration added rather than
+carried. The active pair collapses the same way — Filament's `fi-active` puts a
+background on the button and a colour on the label, ours puts both on
+`.sy-pagination-item-active` — and so does `fi-disabled`, which Filament sets for
+exactly one item, the ellipsis, so its `text-gray-500 dark:text-gray-400` arm is
+`.sy-pagination-gap`. One behavioural delta rides in the markup rather than the
+stylesheet: the active page button is emitted `disabled`, which drops it out of
+the `:enabled` hover and focus arms Filament's active item stays in.
+
+The edge arms cannot collapse with the rest, because they are the one thing the
+`li` is still needed for. They reach through the list —
+`.sy-pagination-items > li:first-of-type .sy-pagination-item` and its
+`:last-of-type` twin — since `.sy-pagination-item` is its `<li>`'s only child and
+`:first-of-type` on it would therefore match **every** item. Filament can write
+`&:first-of-type` because its class is on the `li`. Both of its edge rules meet
+on that one selector: the border removal (`first:border-s-0` / `last:border-e-0`)
+and the rounding (`:first-of-type .fi-pagination-item-btn { rounded-s-lg }`).
+
+The label's `px-1.5` cannot ride along either. On Filament's button it is padding
+*inside* `p-2`, so a numbered item ends up with `0.875rem` of inline padding
+where an icon item keeps `0.5rem`. With one element that difference has to be
+asked for: `&:not(:has(.sy-icon)) { px-3.5 }` restores the same `0.875rem` to
+anything without an icon — the gap included — and leaves `p-2` square for the
+chevrons.
+
+One declaration comes from a selector we do not port at all.
+`.sy-pagination-items` carries `col-start-3`, which vendor's item list does not
+have (it declares `justify-self-end` and no column); the column belongs to
+`.fi-pagination-next-btn`, the standalone button that occupied the grid's third
+track. The button is not rendered
+([the component emits one of the two layouts](#the-component-renders-one-of-filaments-two-layouts)),
+so the list took the column with it rather than sitting unplaced.
+
+### The per-page select carries the input wrapper's chrome because it has no wrapper
+
+Filament's select is an `input.select` inside an `input.wrapper`, and the two
+split the work: the wrapper paints the surface — `rounded-lg bg-white shadow-sm
+ring-1 ring-gray-950/10 dark:bg-white/5 dark:ring-white/20` — and owns the focus
+ring through `focus-within:ring-2`, while `select.fi-select-input` is
+`border-none bg-transparent w-full` with `focus:ring-0 focus:outline-none` so it
+defers to it. Neither component is ported
+([both **todo**](README.md#components)), so the footer renders a bare
+`<select class="sy-pagination-per-page-select">` and that one element carries
+both halves: the wrapper's surface, the select's own `block appearance-none
+py-1.5 ps-3 pe-8 text-sm leading-6 text-gray-950 dark:text-white` with the
+chevron data URI and the `[&_option]` colours, and the wrapper's focus ring
+re-expressed as `focus:ring-2 focus:ring-primary-600 dark:focus:ring-primary-500`
+— `focus-within` on an ancestor becomes plain `focus` once the styled element is
+itself the focus target.
+
+What does not come across is what only made sense inside a wrapper: `w-full`,
+`border-none bg-transparent`, the `focus:ring-0` that existed to leave the ring
+to the wrapper, and `fi-select-input-has-inline-prefix`'s `ps-0`, which zeroes
+the start padding only when a wrapper prefix already supplies it. Two more arms
+are dropped because the footer's select never
+reaches them — it is never disabled and renders no groups — so the `disabled:`
+colours and `[&_optgroup]` go with them, and the `@variant rtl`
+background-position goes with [the rest of the RTL work](#the-footer-has-no-rtl-branch).
+
+The `<label>` around it and its text have no Filament counterpart to port,
+because Filament's inline label is the wrapper's `prefix` — rendered as
+`.fi-input-wrp-prefix` with `.fi-input-wrp-label` inside it — rather than an
+element of the pagination footer. `.sy-pagination-per-page` is that label and
+takes the two positioning declarations of `.fi-pagination-records-per-page-select-ctn`
+(`col-start-2` and `justify-self-center`, which is all that container has, so the
+element is gone but nothing it did is) plus `flex items-center gap-x-2`, standing
+in for the wrapper's flex row and its prefix's spacing rather than reproducing
+them declaration for declaration. `.sy-pagination-per-page-label` is
+`.fi-input-wrp-label`'s four — `text-sm whitespace-nowrap text-gray-500
+dark:text-gray-400` — plus `font-medium`, which that label does not carry and the
+overview beside it does.
+
+### The responsive arms are dropped with the mobile layout they serve
+
+Filament's footer hides the overview and the item list outright (`hidden` on
+both) and shows them again at `@4xl:`/`md:`, hiding the standalone previous and
+next buttons at the same breakpoint: below it the footer is two buttons, above it
+a range and a page list. Both `@supports` blocks exist for that swap — the
+`@container` version and the media-query fallback — as does the `@container`
+declaration on the root.
+
+None of it is ported, because the elements the small end trades *to* are not
+rendered ([the component emits one of the two layouts](#the-component-renders-one-of-filaments-two-layouts)).
+Keeping the `hidden` bases without the arms that undo them would leave the
+overview and the list hidden at every width, so the bases go too, and the `flex`
+the item list only ever gets from `@4xl:flex`/`md:flex` is applied
+unconditionally instead: both elements are always shown. The compact select's
+arms sit inside the same two blocks and are dropped for
+[a different reason](#the-selects-compact-twin-is-the-last-unported-arm), which
+empties the blocks entirely — the one `@supports` block our stylesheet does carry,
+`(-webkit-touch-callout: none)` around the select's `text-base`, comes from
+[`input/select.css`](../../../vendor/filament/support/resources/css/components/input/select.css)
+rather than from here.
+
+It reverses with the standalone pair, and only with it. A mobile breakpoint that
+wants a different treatment of the list we *do* render is a rule of our own on
+`.sy-pagination-items`, not Filament's trade — the same reversal the
+[simple footer](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both)
+names, arriving with it.
 
 _See also: the global [rename table](../renames.md) —
 `Sylament\Support\Pagination\Paginator` and its count getters are listed there as

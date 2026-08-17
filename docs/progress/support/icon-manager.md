@@ -19,14 +19,15 @@ Reference — the Filament source this is diffed against:
 
 ## Surface
 
-Every capability of the manager. _Detail_ carries **diverges** → the permanent
-note in [Divergences](#divergences), or `—`.
+Every capability of the manager. _Detail_ carries **semantics** → the permanent
+note in [Semantics](#semantics), **diverges** → the permanent note in
+[Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`register()`](../../../packages/support/src/Icons/IconManager.php) | [`IconManager::register()`](../../../vendor/filament/support/src/Icons/IconManager.php) | done | — | [diverges](#the-manager-is-a-process-lifetime-singleton-not-request-scoped) |
 | [`resolve()`](../../../packages/support/src/Icons/IconManager.php) | [`IconManager::resolve()`](../../../vendor/filament/support/src/Icons/IconManager.php) | done | — | — |
-| [`renderIcon()`](../../../packages/support/src/Icons/IconManager.php) | no Filament equivalent | done | — | [diverges](#icon-rendering-is-delegated-to-symfony-ux-icons) |
+| [`renderIcon()`](../../../packages/support/src/Icons/IconManager.php) | no Filament equivalent | done | — | [diverges](#icon-rendering-is-delegated-to-symfony-ux-icons) · [semantics](#an-unprefixed-heroicon-case-is-the-mini-20px-set-and-our-literals-must-spell-it) · [semantics](#the-painted-size-is-resolved-by-the-generator-not-by-the-callers-size) |
 | Global reachability | [`FilamentIcon`](../../../vendor/filament/support/src/Facades/FilamentIcon.php) facade | done | — | [diverges](#the-facade-is-replaced-by-plain-injection) |
 | [`sylament.icons` config](../../../packages/support/src/SylamentSupportBundle.php) | no Filament equivalent | done | — | [diverges](#alias-overrides-are-declarable-from-bundle-configuration) |
 
@@ -37,6 +38,101 @@ Every row above is **done** — the surface is fully ported and tested by
 (alias resolution, unknown-alias `null`, last-registration-wins merge,
 first-match-from-a-list, `renderIcon` delegation, and the missing-renderer
 throw) — so none carries a write-up here.
+
+## Semantics
+
+Faithful ports subtle enough that re-deriving them from the source would
+plausibly get them wrong. Both notes below are about the **icon name a template
+or a PHP default writes**, which is what every icon in the toolkit hands
+`renderIcon()`, so they govern all nine packages rather than this class alone.
+
+### An unprefixed Heroicon case is the mini 20px set, and our literals must spell it
+
+Filament never writes an icon name; it writes a case of
+[`Filament\Support\Icons\Heroicon`](../../../vendor/filament/support/src/Icons/Heroicon.php),
+which implements [`ScalableIcon`](../../../packages/support/src/Contracts/ScalableIcon.php)
+and resolves to a *set* at render time. `getIconForSize()` is the whole contract:
+
+```php
+if (str_starts_with($this->value, 'o-')) {
+    return "heroicon-{$this->value}";               // 24px outline, size-independent
+}
+
+return match ($size) {
+    IconSize::ExtraSmall, IconSize::Small       => "heroicon-c-{$this->value}",  // 16px micro solid
+    IconSize::Medium                            => "heroicon-m-{$this->value}",  // 20px mini solid
+    IconSize::Large, ExtraLarge, TwoExtraLarge  => "heroicon-s-{$this->value}",  // 24px solid
+};
+```
+
+`generate_icon_html()` defaults `$size ??= IconSize::Medium`, so an
+**unprefixed** case rendered without an explicit size is the **mini 20px solid**
+set, and an `Outlined*` case (the `o-` values) is the 24px outline set at every
+size. The enum carries that choice; a literal cannot, which is the whole point
+of this note. Our port speaks Iconify names through `symfony/ux-icons`, and the
+Iconify vocabulary spells the variant in the name:
+
+| Filament resolves to | Ours |
+| --- | --- |
+| `heroicon-o-<n>` | `heroicons:<n>` |
+| `heroicon-m-<n>` | `heroicons:<n>-20-solid` |
+| `heroicon-c-<n>` | `heroicons:<n>-16-solid` |
+
+So porting `Heroicon::ChevronRight` as `heroicons:chevron-right` is **wrong** —
+that is the outline set, which Filament reaches only for `OutlinedChevronRight`.
+The bare name is correct exactly when the vendor case is an `Outlined*` one.
+Read the vendor case before writing the literal: the two look identical at the
+call site and differ by 4px and a stroke.
+
+The rule reaches PHP defaults as well as templates — `ActionGroup`'s
+`ellipsis-vertical`, `CreateAction`'s `plus`, the four `Repeater` action icons —
+because those are `icon()` defaults Filament sets from the same enum. Nothing in
+the toolchain checks a name against its vendor case, so the only standing guard
+is the fixture set: each package's test kernel disables Iconify's on-demand
+fetch and `ux_icons`' `ignore_not_found` defaults to `false`, so a rendered icon
+with no fixture file throws. That catches a name reverted to one nobody vendored
+and misses a name whose old spelling is still on disk — which is why the two
+places both spellings coexist carry an explicit `viewBox` pin
+([`BadgeRenderTest`](../../../packages/actions/tests/Integration/Components/BadgeRenderTest.php),
+[`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php))
+and why the sidebar chevron, whose two candidates share a `0 0 20 20` viewBox,
+is pinned on path data instead
+([`SidebarRenderTest`](../../../packages/panels/tests/Integration/Twig/SidebarRenderTest.php)).
+
+**One shipped site is micro rather than mini**, and it is the exception that
+proves the size argument matters: Filament renders the badge's delete button at
+an explicit `IconSize::ExtraSmall`
+([`badge.blade.php`](../../../vendor/filament/support/resources/views/components/badge.blade.php)),
+which resolves to `heroicon-c-x-mark`, so ours is `heroicons:x-mark-16-solid`.
+
+### The painted size is resolved by the generator, not by the caller's `Size`
+
+The second half of the same trap, and the reason "Medium" can never be assumed.
+`Size` (the *control's* size) and `IconSize` (the *glyph's*) are different
+enums, and every HTML generator maps between them differently — a control at
+`Size::Small` does not imply an icon at `IconSize::Small`:
+
+| Generator | `Size::Small` resolves the icon to | Set |
+| --- | --- | --- |
+| [`CanGenerateIconButtonHtml`](../../../vendor/filament/support/src/View/Concerns/CanGenerateIconButtonHtml.php) | `null` → the `generate_icon_html()` default, Medium | mini |
+| [`CanGenerateButtonHtml`](../../../vendor/filament/support/src/View/Concerns/CanGenerateButtonHtml.php) | `IconSize::Small` | micro |
+| [`CanGenerateLinkHtml`](../../../vendor/filament/support/src/View/Concerns/CanGenerateLinkHtml.php) | `IconSize::Small` | micro |
+| [`CanGenerateDropdownItemHtml`](../../../vendor/filament/support/src/View/Concerns/CanGenerateDropdownItemHtml.php) | no map at all → Medium | mini |
+| [`CanGenerateBadgeHtml`](../../../vendor/filament/support/src/View/Concerns/CanGenerateBadgeHtml.php) | `?? IconSize::Small` whatever the control size | micro |
+
+The icon-button row is the one that misleads: its `match` names only
+`ExtraSmall`, `Large` and `ExtraLarge`, so `Size::Small` falls to `default =>
+null` and the glyph stays medium while the **button** carries `fi-size-sm`. A
+port reading the button's class as the icon's shrinks the glyph.
+
+The mirror image is a control with **no** size class at all. `.fi-icon-btn`'s
+base rule is `size-9` and its `&.fi-size-md` block adds only negative-margin
+arms, no box change
+([`icon-button.css`](../../../vendor/filament/support/resources/css/components/icon-button.css)),
+so a bare `fi-icon-btn` **is** the medium button — which is why our
+notification close button, our tables sort chevron and our tables search prefix
+all render at `md` rather than the `sm` that reads like the smaller, tidier
+choice.
 
 ## Divergences
 

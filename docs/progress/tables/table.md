@@ -75,7 +75,7 @@ Rows never disappear — only their detail sections do.
 | [`emptyStateDescription()` / `getEmptyStateDescription()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | in progress | — | [detail](#the-create-action-default-description-waits-on-the-model-label) |
 | [`emptyStateIcon()` / `getEmptyStateIcon()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | done | — | [diverges](#the-empty-state-icon-getter-returns-null-and-the-fallback-lives-in-the-template) |
 | [`$evaluationIdentifier = 'table'` + the `$liveComponent` name injection](../../../packages/tables/src/Table.php) | [`Table::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Table.php) | done | — | — |
-| [`$template`](../../../packages/tables/src/Table.php) + [the partial it names](../../../packages/tables/templates/partials/Table/index.html.twig) | [`$view = 'filament-tables::index'`](../../../vendor/filament/tables/src/Table.php), [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) · [diverges](#a-markup-header-label-does-not-switch-the-sortable-header-to-a-span) · [semantics](#aria-sort-is-dropped-with-null-because-false-would-render-as-a-string) |
+| [`$template`](../../../packages/tables/src/Table.php) + [the partial it names](../../../packages/tables/templates/partials/Table/index.html.twig) | [`$view = 'filament-tables::index'`](../../../vendor/filament/tables/src/Table.php), [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) · [diverges](#every-rule-in-tablecss-is-scoped-under-the-sy-ta-root-one-class-above-vendors) · [diverges](#a-markup-header-label-does-not-switch-the-sortable-header-to-a-span) · [semantics](#aria-sort-is-dropped-with-null-because-false-would-render-as-a-string) |
 | `emptyState()` (a whole replacement view) | [`HasEmptyState::emptyState()`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | todo | — | — |
 | `emptyStateActions()` / `pushEmptyStateActions()` | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | todo | — | — |
 | Record labels — `modelLabel()`, `pluralModelLabel()`, `recordTitle()`, `recordTitleAttribute()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | todo | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
@@ -100,7 +100,7 @@ Rows never disappear — only their detail sections do.
 | `defaultSortOptionLabel()` / `getDefaultSortOptionLabel()` | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | skipped | — | It labels the "unsorted" entry of the mobile sort **dropdown**, which the port does not render and nothing else reads; it belongs to that layout rather than to sorting, and lands only if the layout does |
 | `persistSortInSession()` / `persistsSortInSession()` | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | todo | — | The session half of sorting, and the [toolkit-wide omission](has-table.md#no-table-state-is-persisted-in-the-session) recorded on the host side — it returns with that decision rather than with sorting, the way the `persistSearchInSession()` row below does |
 | [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
-| [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) · [diverges](#searchonblur-renders-onchange-because-ux-live-component-has-no-blur-event) |
+| [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) · [diverges](#searchonblur-renders-onchange-because-ux-live-component-has-no-blur-event) · [diverges](#the-search-field-flattens-supports-input-wrapper-into-two-classes) · [diverges](#items-center-is-lifted-onto-the-search-field-because-the-prefix-that-carried-it-is-gone) · [diverges](#the-search-input-adds-an-outline-none-vendor-does-not-have) |
 | [`splitSearchTerms()` / `shouldSplitSearchTerms()`, `searchUsing()` / `hasSearchUsingCallback()` / `callSearchUsing()`, `applyExtraSearchConstraints()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#search-is-the-global-term-only) · [semantics](#extra-searchable-columns-take-closures-that-return-their-expression) · [diverges](#the-default-search-comparison-assumes-a-string-typed-field) · [diverges](#a-search-term-is-not-escaped-for-like) |
 | [`getSearchIndicator()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-contract-is-eleven-methods-of-filaments-forty-six) · [detail](#the-unported-search-surface-splits-three-ways) |
 | `persistSearchInSession()`, `persistColumnSearchesInSession()`, `isSearchableByColumn()`, `hasSearch()`, `getColumnSearchIndicators()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
@@ -1415,6 +1415,43 @@ no second reversal when reordering and grouping land. The toolbar is pinned in
 all four states — search only, filters only, both, neither — by
 [`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php).
 
+### Every rule in `table.css` is scoped under the `.sy-ta` root, one class above vendor's
+
+Filament ships no `.fi-ta` rule at all — `.fi-ta-ctn`, `.fi-ta-table`,
+`.fi-ta-header-cell`, `.fi-ta-cell`, `.fi-ta-row`, `.fi-ta-actions` and
+`.fi-ta-empty-state` are each a top-level selector in a file of its own.
+[`table.css`](../../../packages/tables/assets/src/styles/components/table.css)
+wraps all seven in one `.sy-ta { … }` block. That is what lets the seven collapse
+into a single stylesheet — six of them absorbed into the file whose basename
+already matched — and it is what matches the `div.sy.sy-ta` root the partial
+always emits: deliberate scoping, not a nesting habit.
+
+It costs exactly one class of specificity on every rule the file ships, and the
+shift is uniform: `.fi-ta-cell` at (0,1,0) becomes `.sy-ta .sy-ta-cell` at
+(0,2,0), `.fi-ta-ctn` becomes `.sy-ta > .sy-ta-ctn`, and each nested arm moves
+with its parent — `.fi-ta-cell .fi-ta-col` at (0,2,0) becomes
+`.sy-ta .sy-ta-cell .sy-ta-col` at (0,3,0). Nothing *inside* the file changes,
+because every rule gains the same class; what changes is what an outside rule has
+to beat.
+
+So a consuming app overriding a table rule with a single class —
+`.sy-ta-cell { … }`, (0,1,0) — loses to the shipped rule wherever its stylesheet
+sits in source order, where the same override against Filament would win on order
+alone. It has to match or beat (0,2,0): re-scope it under `.sy-ta`, or double the
+class (`.sy-ta-cell.sy-ta-cell`).
+
+This is `table.css` alone. The package's other three stylesheets —
+`header-toolbar.css`, `filters.css` and `text-column.css` — declare every one of
+their roots at top level exactly as vendor does, so a consumer overriding a
+toolbar, a filter or a column rule pays nothing extra and only the table chrome
+carries the surcharge. The other failure mode the extra class could
+introduce — a rule that silently never applies because the scope is absent — is
+closed at the render: the partial emits `sy sy-ta` unconditionally, and the
+Integration [`TableTest`](../../../packages/tables/tests/Integration/TableTest.php)
+selects `div.sy.sy-ta > div.sy-ta-ctn > table.sy-ta-table` with the child
+combinator, so a flattened or renamed root fails there rather than as an
+unstyled table.
+
 ### The search field flattens support's input wrapper into two classes
 
 `fi-ta-search-field` carries no rule in Filament at all — it is a bare hook on a
@@ -1454,6 +1491,65 @@ wrapper ring while a prefix action holds focus) both key off DOM this partial
 does not emit — no `sy-disabled` on the field, and no action mounted inside it.
 Both return with the input-wrapper component, along with the two-layer structure
 that would make the flattening unnecessary.
+
+### `items-center` is lifted onto the search field, because the prefix that carried it is gone
+
+Vendor's `.fi-input-wrp` is a bare `flex`, so its `align-items` stays `stretch`;
+the `items-center` sits one level in, on
+[`.fi-input-wrp-prefix`](../../../vendor/filament/support/resources/css/components/input/wrapper.css)
+(`hidden items-center gap-x-3 ps-3`), the box holding the icon.
+[`header-toolbar.css`](../../../packages/tables/assets/src/styles/components/header-toolbar.css)'s
+`.sy-ta-search-field` is `flex items-center`: the class that ports the *wrapper*
+gained it, and the class that declared it has no port at all, because the element
+it styles is not emitted.
+
+The lift is what keeps the icon where Filament draws it, not a restyle. Vendor
+centres the icon *inside* a prefix box that stretches to the field's full height.
+Flatten the prefix away and the icon becomes a direct child of the wrapper, where
+`stretch` degrades to `flex-start` for any item with a definite cross size — and
+the icon has one, `.sy-icon`'s `size-5`, 1.25rem against a field 2.25rem tall
+(the input's `leading-6` plus its `py-1.5`). Without the lift the magnifying
+glass renders 0.5rem above vendor's.
+
+The one element the two arrangements can disagree about is the input, and today
+they cannot. Vendor's stretches inside `.fi-input-wrp-content-ctn`; ours is
+centred as a direct child. Both are no-ops while the input is the tallest thing
+in the field — it is what sets the height — so they part only if the field is
+ever given a height of its own or a taller sibling, at which point vendor's input
+would grow and ours would stay at its natural height, centred. Nothing sets
+either, and the divergence closes with the same input-wrapper component the rest
+of the flattening waits on.
+
+### The search input adds an `outline-none` vendor does not have
+
+`input.fi-input` suppresses the UA outline in the focused state only —
+`focus:ring-0 focus:outline-none`. `.sy-ta-search-input` carries both of those
+**and** a bare `outline-none`, which Tailwind v4 compiles to a resting
+`outline-style: none`. No vendor declaration is behind it; the arm is ours.
+
+It buys nothing visible. A UA draws an input's outline while the element is
+focused, and `:focus-visible` is a subset of `:focus`, so vendor's `focus:` arm
+already reaches every state the resting one could.
+
+The suppression **is** paired, and the replacement is vendor's own rather than
+something added to compensate for the extra arm: focus lands on the input and
+`.sy-ta-search-field:focus-within` paints `ring-2 ring-primary-600`
+(`dark:ring-primary-500`) around the whole field, exactly as `.fi-input-wrp`'s
+`focus-within:ring-2` does over there. The field keeps a visible keyboard-focus
+indicator, so this is not the accessibility regression an unpaired
+`outline-none` would be — in neither codebase was the indicator ever the input's
+own outline.
+
+What it does change is the *reach* of the suppression. Vendor leaves every
+non-focused state alone, so an outline an application draws there — a
+`:user-invalid` ring, a forced-colors affordance — lands unopposed; here it has
+to beat `.sy-ta-header-toolbar .sy-ta-search-field .sy-ta-search-input`, (0,3,0).
+Nothing in the toolkit draws one, so the arm is inert in both directions today:
+it removes no outline anyone renders and blocks no rule anyone writes.
+
+Recorded rather than reverted, and provisional on exactly that inertness — it is
+an addition with no vendor counterpart and no reader, so it goes in the change
+that first wants a resting outline on this input, with nothing to migrate.
 
 ### The visible action map is a `Table` method, and is not short-circuited
 

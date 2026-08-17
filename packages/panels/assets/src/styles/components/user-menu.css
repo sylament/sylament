@@ -1,8 +1,6 @@
 .sy-pa-topbar .sy-pa-user-menu-trigger {
     @apply shrink-0;
 
-    /* The icon stands in for the unported Avatar, so it takes the avatar's 32px
-       rather than the icon-button default. */
     & .sy-icon {
         @apply size-8;
     }

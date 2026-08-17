@@ -122,10 +122,7 @@ it('annotates the actively sorted header with its direction and sorted class', f
     expect($sortedHeader->attr('aria-sort'))->toBe('ascending')
         ->and($sortedHeader->attr('class'))->toContain('sy-ta-header-cell-sorted')
         ->and($sortedHeader->filter('button.sy-ta-header-cell-sort-btn svg.sy-icon')->count())->toBe(1)
-        // Filament reaches for the mini (20px solid) chevrons here, not the 24px outline set,
-        // and the viewBox is the only thing that tells them apart.
         ->and($sortedHeader->filter('button.sy-ta-header-cell-sort-btn svg.sy-icon')->outerHtml())->toContain('0 0 20 20')
-        // Filament passes no size to `generate_icon_html()` here, so the icon paints medium.
         ->and($sortedHeader->filter('button.sy-ta-header-cell-sort-btn svg.sy-icon')->attr('class'))->toContain('sy-size-md');
 });
 
@@ -144,7 +141,6 @@ it('renders the search field bound to tableSearch with the debounce', function (
         ->and($input->attr('data-model'))->toBe('debounce(500)|tableSearch')
         ->and($input->attr('type'))->toBe('search')
         ->and($input->attr('placeholder'))->toBe('Search')
-        // Filament's input wrapper renders the prefix icon with no size, so it paints medium.
         ->and($crawler->filter('.sy-ta-search-field > svg.sy-icon')->attr('class'))->toContain('sy-size-md');
 });
 

@@ -8,8 +8,9 @@ into [`index.css`](../../../packages/schemas/assets/src/styles/index.css) under
 `layer(components)`, mirroring Filament's `index.css` structure. The `fi-*` class
 prefix is translated to the schemas component code `sy-sc-*` (see the
 [CSS contract](../../styling.md)). Four of Filament's stylesheets are ported so
-far (schema, section, icon, actions) — `icon.css` rule-for-rule, the other three
-dropping variants from their source; the rest wait on the components they style.
+far (schema, section, icon, actions) — `icon.css` rule-for-rule, `schema.css` and
+`actions.css` dropping variants from their source and `section.css` adding one;
+the rest wait on the components they style.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 

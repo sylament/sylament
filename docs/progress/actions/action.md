@@ -1301,7 +1301,8 @@ string `'heroicons:exclamation-triangle'` because Sylament's `ActionsIconAlias`
 equivalent doesn't exist yet (`actions/README.md` lists `ActionsIconAlias` as
 `todo`); the icon-string format itself (`heroicons:name`) matches the
 convention `IconManager` and other components already use (e.g.
-`support/templates/components/Section/index.html.twig`'s `heroicons:chevron-up`),
+`support/templates/components/Section/index.html.twig`'s
+`heroicons:chevron-up-20-solid`),
 so only the alias indirection is missing, not the icon convention. Reversed once
 an `ActionsIconAlias`-equivalent registry lands in `actions` and `getModalIcon()`
 is rewired to resolve through it with the literal as its ultimate fallback.

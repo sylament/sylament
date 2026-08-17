@@ -36,7 +36,7 @@ first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | [URL mode — the host-hook fallthrough](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) `getUrl()` | done | — | [detail](action.md#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
 | Modal mode — the `action()` body that persists a new record | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | blocked | host schema-resolver hook | [diverges](#modal-mode-is-a-fail-fast-stub-not-a-persistence-body) |
 | `modalHeading()` / `modalSubmitActionLabel()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | blocked | model-label host hooks | [diverges](#modal-mode-is-a-fail-fast-stub-not-a-persistence-body) |
-| [`groupedIcon('heroicons:plus')`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#icons-are-literal-heroicon-names-with-no-alias-indirection) |
+| [`groupedIcon('heroicons:plus-20-solid')`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#icons-are-literal-heroicon-names-with-no-alias-indirection) |
 | Create-another (`createAnother()`, `getCreateAnotherAction()`, `preserveFormDataWhenCreatingAnother()`, `forceRenderAfterCreateAnother()`) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | todo | modal mode | [detail](#the-create-another-family-waits-on-modal-mode) |
 | `relationship()` / `getRelationship()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | todo | relation managers | [detail](#the-create-another-family-waits-on-modal-mode) |
 | `record(null)` (Filament clears the inherited record in `setUp()`) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#recordnull-has-nothing-to-clear-here) |
@@ -124,7 +124,17 @@ unported (see [README](README.md#supporting-surface)) and support's
 `IconManager` is not reachable from inside an action's evaluated closures — the
 [Invoker's injected set](../support/component.md) carries no icon manager and
 the container alias is private — so the port sets the literal name the alias
-falls back to: `groupedIcon('heroicons:plus')`.
+falls back to: `groupedIcon('heroicons:plus-20-solid')`.
+
+The `-20-solid` suffix is not an embellishment — it is what the enum case
+resolves to. `Heroicon` is a `ScalableIcon`, so an **unprefixed** case picks its
+set from the render size (`getIconForSize()`), and every prebuilt action's icon
+lands at the `generate_icon_html()` default of `IconSize::Medium`, i.e. the mini
+20px solid set (`heroicon-m-plus` → Iconify `heroicons:plus-20-solid`). A
+literal name carries no such adaptivity, so the port has to spell the resolved
+set. An `Outlined*` case stays outline at every size and keeps the bare name —
+which is why `getModalIcon()`'s confirmation fallback is
+`heroicons:exclamation-triangle`, matching `Heroicon::OutlinedExclamationTriangle`.
 
 The *placement* is Filament's and worth not "fixing": a create action carries a
 **grouped** icon only, so it shows a plus inside a dropdown and none as a header

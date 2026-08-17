@@ -293,8 +293,10 @@ the page class loads still win.
 Deferred, all todo: the widgets half (`getWidgets()`, `getColumns()`,
 `content()`, the widget schema components) — none of it can land before
 `sylament/widgets` exists. Filament's icon fallback also picks between two
-heroicon cases on `hasTopNavigation()`; ours resolves the single
-`heroicons:home` name, until the top-navigation layout arrives.
+heroicon cases on `hasTopNavigation()` — `Heroicon::Home` for top navigation and
+`Heroicon::OutlinedHome` otherwise; ours resolves the single `heroicons:home`
+name, which *is* the outline arm, since the port has no top-navigation layout to
+pick the mini one for.
 
 ### Panel
 
@@ -966,6 +968,13 @@ no control to operate; only the collapsible arm gets the button, the
 `sy-pa-sidebar-group-items-<index>`, and the chevron icon. Hidden items never
 render, and collapse state is markup only — the `sy-collapsed` class plus
 `data-group-label`, which the Stimulus controller reads and writes.
+
+The chevron points **up** when the group is open and flips through `-rotate-180`
+when it collapses, which is Filament's pairing (`Heroicon::ChevronUp` plus
+`.fi-collapsed .fi-sidebar-group-collapse-btn { -rotate-180 }`). A 180° turn is
+direction-symmetric, so the rule carries no `rtl:` arm — the `-rotate-90` it
+replaced needed one, and drawing a down chevron rotated a quarter turn pointed
+the closed state sideways where Filament points it down.
 
 The shell's two default icons are overridable defaults, not hardcoded names: the
 group chevron and the topbar hamburger read

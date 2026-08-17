@@ -816,7 +816,7 @@ class Repeater extends Field implements HasKeyedItems
     {
         $action = Action::make($this->getDeleteActionName())
             ->label('Delete')
-            ->icon('heroicons:trash')
+            ->icon('heroicons:trash-20-solid')
             ->color('danger')
             ->action(function (array $arguments, Repeater $component): void {
                 $items = $component->getRawState();
@@ -851,7 +851,7 @@ class Repeater extends Field implements HasKeyedItems
     {
         $action = Action::make($this->getCloneActionName())
             ->label('Clone')
-            ->icon('heroicons:square-2-stack')
+            ->icon('heroicons:square-2-stack-20-solid')
             ->color('gray')
             ->action(function (array $arguments, Repeater $component): void {
                 $items = $component->getRawState();
@@ -898,7 +898,7 @@ class Repeater extends Field implements HasKeyedItems
     {
         $action = Action::make($this->getMoveUpActionName())
             ->label('Move up')
-            ->icon('heroicons:arrow-up')
+            ->icon('heroicons:arrow-up-20-solid')
             ->color('gray')
             ->action(function (array $arguments, Repeater $component): void {
                 $items = $component->getRawState();
@@ -930,7 +930,7 @@ class Repeater extends Field implements HasKeyedItems
     {
         $action = Action::make($this->getMoveDownActionName())
             ->label('Move down')
-            ->icon('heroicons:arrow-down')
+            ->icon('heroicons:arrow-down-20-solid')
             ->color('gray')
             ->action(function (array $arguments, Repeater $component): void {
                 $items = $component->getRawState();

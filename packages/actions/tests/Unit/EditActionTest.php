@@ -22,7 +22,7 @@ it('carries the edit chrome', function (): void {
 
     expect($action->getLabel())->toBe('Edit')
         ->and($action->getColor())->toBe('primary')
-        ->and($action->getIcon())->toBe('heroicons:pencil-square')
+        ->and($action->getIcon())->toBe('heroicons:pencil-square-20-solid')
         ->and($action->getSuccessNotificationTitle())->toBe('Saved');
 });
 

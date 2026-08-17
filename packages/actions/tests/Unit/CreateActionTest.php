@@ -26,7 +26,7 @@ it('carries the create chrome', function (): void {
 it('carries a grouped icon only, leaving the plain trigger iconless', function (): void {
     $action = CreateAction::make();
 
-    expect($action->getGroupedIcon())->toBe('heroicons:plus')
+    expect($action->getGroupedIcon())->toBe('heroicons:plus-20-solid')
         ->and($action->getIcon())->toBeNull();
 });
 

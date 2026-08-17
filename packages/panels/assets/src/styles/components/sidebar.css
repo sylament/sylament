@@ -44,7 +44,7 @@
         }
 
         & .sy-pa-sidebar-group-chevron {
-            @apply -rotate-90 rtl:rotate-90;
+            @apply -rotate-180;
         }
     }
 }

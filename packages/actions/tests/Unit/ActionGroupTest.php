@@ -81,7 +81,7 @@ it('defaults its label to Actions and accepts an override', function (): void {
 });
 
 it('falls back to an ellipsis icon that an explicit icon overrides', function (): void {
-    expect(ActionGroup::make([])->getIcon(ActionGroup::DEFAULT_ICON))->toBe('heroicons:ellipsis-vertical')
+    expect(ActionGroup::make([])->getIcon(ActionGroup::DEFAULT_ICON))->toBe('heroicons:ellipsis-vertical-20-solid')
         ->and(ActionGroup::make([])->icon('heroicons:x-mark')->getIcon(ActionGroup::DEFAULT_ICON))->toBe('heroicons:x-mark');
 });
 

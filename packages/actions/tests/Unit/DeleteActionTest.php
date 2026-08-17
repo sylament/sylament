@@ -23,7 +23,7 @@ it('carries the delete chrome', function (): void {
 
     expect($action->getLabel())->toBe('Delete')
         ->and($action->getColor())->toBe('danger')
-        ->and($action->getIcon())->toBe('heroicons:trash')
+        ->and($action->getIcon())->toBe('heroicons:trash-20-solid')
         ->and($action->isConfirmationRequired())->toBeTrue()
         ->and($action->getModalHeading())->toBe('Delete')
         ->and($action->getSuccessNotificationTitle())->toBe('Deleted');

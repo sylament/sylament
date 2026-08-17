@@ -37,7 +37,7 @@ first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/DeleteAction.php) (`'delete'`) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | done | — | — |
 | [`setUp()` label, success-notification title, `defaultColor('danger')`, `requiresConfirmation()`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
-| [`icon('heroicons:trash')`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) `tableIcon()` + `groupedIcon()` | done | — | [diverges](#one-plain-icon-replaces-filaments-table-and-grouped-pair) |
+| [`icon('heroicons:trash-20-solid')`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) `tableIcon()` + `groupedIcon()` | done | — | [diverges](#one-plain-icon-replaces-filaments-table-and-grouped-pair) |
 | [The `action()` body — delete then `success()` / `failure()`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | done | — | [diverges](#the-delete-goes-through-a-doctrine-manager-registry-not-through-the-record) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
 | [`modalHeading('Delete')`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) (record title interpolated) | in progress | record-title host hook | [detail](#the-modal-heading-is-a-bare-verb-until-a-record-title-exists) |
@@ -148,7 +148,7 @@ against yet.
 
 ### One plain icon replaces Filament's table-and-grouped pair
 
-`icon('heroicons:trash')` where Filament sets `tableIcon()` + `groupedIcon()`,
+`icon('heroicons:trash-20-solid')` where Filament sets `tableIcon()` + `groupedIcon()`,
 for the reason
 [edit-action.md](edit-action.md#one-plain-icon-replaces-filaments-table-and-grouped-pair)
 records — there is no `HasTableIcon` in the port, and the grouped trigger falls

@@ -26,6 +26,19 @@ function sidebarFixtureNavigation(): array
     ];
 }
 
+/**
+ * The `d` attribute of a fixture icon. Both mini chevrons carry the same `0 0 20 20` viewBox,
+ * so the path data is the only thing separating up from down in rendered markup.
+ */
+function sidebarChevronPathData(string $icon): string
+{
+    $svg = (string) file_get_contents(dirname(__DIR__, 2) . '/Fixtures/assets/icons/heroicons/' . $icon . '.svg');
+
+    expect(preg_match('/ d="([^"]+)"/', $svg, $matches))->toBe(1);
+
+    return $matches[1];
+}
+
 it('renders groups, items, active state, and badge', function (): void {
     $html = (string) $this->renderTwigComponent('SylamentPanels:Sidebar', [
         'navigation' => sidebarFixtureNavigation(),
@@ -82,6 +95,16 @@ it('draws the group chevron through an overridable icon alias', function (): voi
     ]);
 
     expect($html)->toContain('<img src="images/chevron.svg" alt="" class="sy sy-icon sy-size-md sy-pa-sidebar-group-chevron" />');
+});
+
+it('draws the group chevron pointing up, the way Filament does', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Sidebar', [
+        'navigation' => sidebarFixtureNavigation(),
+    ]);
+
+    expect($html)
+        ->toContain(sidebarChevronPathData('chevron-up-20-solid'))
+        ->not->toContain(sidebarChevronPathData('chevron-down-20-solid'));
 });
 
 it('marks only the active item with aria-current', function (): void {

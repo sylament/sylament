@@ -24,7 +24,7 @@ class CreateAction extends Action
 
         $this->successNotificationTitle('Created');
 
-        $this->groupedIcon('heroicons:plus');
+        $this->groupedIcon('heroicons:plus-20-solid');
 
         $this->action(function (): never {
             throw new LogicException('CreateAction has no URL to open — give it url() or host it on a resource page with a create page; the modal arm is not ported yet.');

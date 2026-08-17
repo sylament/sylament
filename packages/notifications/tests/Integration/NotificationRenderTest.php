@@ -65,5 +65,9 @@ it('renders a labelled close button wired to the toast controller', function ():
 
     expect($html)->toContain('sy-no-notification-close-btn')
         ->toContain('aria-label="Close notification"')
-        ->toContain('sylament--notifications--notification#close');
+        ->toContain('sylament--notifications--notification#close')
+        // Filament emits the close button with no size class at all, and a bare `fi-icon-btn`
+        // is the medium box — so the default size is the parity-true one here.
+        ->toContain('sy-size-md')
+        ->not->toContain('sy-size-sm');
 });

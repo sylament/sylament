@@ -57,7 +57,7 @@ class ActionGroup extends ViewComponent
     use HasTooltip;
     use InteractsWithRecord;
 
-    public const string DEFAULT_ICON = 'heroicons:ellipsis-vertical';
+    public const string DEFAULT_ICON = 'heroicons:ellipsis-vertical-20-solid';
 
     public const string ICON_BUTTON_TEMPLATE = '@SylamentActions/partials/ActionGroup/IconButtonTrigger.html.twig';
 

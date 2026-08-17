@@ -35,7 +35,7 @@ first. _Detail_ carries a **diverges** link to [Divergences](#divergences), a
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/EditAction.php) (`'edit'`) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | — |
 | [`setUp()` label, success-notification title, `defaultColor('primary')`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
-| [`icon('heroicons:pencil-square')`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) `tableIcon()` + `groupedIcon()` | done | — | [diverges](#one-plain-icon-replaces-filaments-table-and-grouped-pair) |
+| [`icon('heroicons:pencil-square-20-solid')`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) `tableIcon()` + `groupedIcon()` | done | — | [diverges](#one-plain-icon-replaces-filaments-table-and-grouped-pair) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
 | [URL mode — the host-hook fallthrough](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) `getUrl()` | done | — | [detail](action.md#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
 | Modal mode — `fillForm()` from the record and the `action()` body that updates it | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | blocked | host schema-resolver hook | [diverges](#modal-mode-is-a-fail-fast-stub-not-an-update-body) |
@@ -79,7 +79,7 @@ the grouped trigger picks up as its fallback
 directly. The visible delta is a pencil on a header-mounted edit action where
 Filament shows none — accepted until `HasTableIcon` lands, since the port's
 `Action` has no table/non-table rendering split to key off yet. The name is the
-literal `heroicons:pencil-square` rather than Filament's
+literal `heroicons:pencil-square-20-solid` rather than Filament's
 `ActionsIconAlias::EDIT_ACTION` indirection, for the reason
 [create-action.md](create-action.md#icons-are-literal-heroicon-names-with-no-alias-indirection)
 records.

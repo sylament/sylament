@@ -72,7 +72,7 @@ trait HasDescriptions
             }
         }
 
-        $this->cachedDescriptions = $descriptions ?: [];
+        $this->cachedDescriptions = $descriptions;
         $this->hasCachedDescriptions = true;
 
         return $this->cachedDescriptions;

@@ -28,7 +28,7 @@ function invokePageController(ContainerInterface $container, Request $request): 
 
 it('serves the dashboard inside the shell', function (): void {
     $client = $this::getContainer()->get('test.client');
-    $client->request('GET', '/admin');
+    $crawler = $client->request('GET', '/admin');
 
     $response = $client->getResponse();
     $html = (string) $response->getContent();
@@ -38,6 +38,7 @@ it('serves the dashboard inside the shell', function (): void {
         ->and($html)->toContain('Test Admin')
         ->and($html)->toContain('<title>Dashboard — Test Admin</title>')
         ->and($html)->toContain('sy-pa-page')
+        ->and($crawler->filter('.sy-pa-page > .sy-pa-page-header-main-ctn > .sy-pa-page-main > .sy-pa-page-content')->count())->toBe(1)
         ->and($html)->toContain('aria-current="page"')
         ->and($html)->toContain('data-live-name-value="Sylament:Panels:Pages:Dashboard"');
 });

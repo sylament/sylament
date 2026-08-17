@@ -58,6 +58,7 @@ it('serves the edit page with the record filled in', function (): void {
 
     expect($client->getResponse()->getStatusCode())->toBe(200)
         ->and($crawler->filter('h1.sy-pa-header-heading')->text())->toBe('Edit Alpha')
+        ->and($crawler->filter('.sy-pa-resource-edit-record-page > .sy-pa-page-header-main-ctn > .sy-pa-page-main > .sy-pa-page-content > form')->count())->toBe(1)
         ->and($crawler->filter('.sy-pa-resource-edit-record-page input[data-model$="data.title"]')->attr('value'))->toBe('Alpha')
         ->and($crawler->filter('.sy-pa-resource-form-actions button[type="submit"]')->text())->toContain('Save')
         // The document title is read off the un-mounted page, where the record key

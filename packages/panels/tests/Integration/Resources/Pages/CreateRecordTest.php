@@ -39,6 +39,7 @@ it('serves the create page with the resource form', function (): void {
 
     expect($client->getResponse()->getStatusCode())->toBe(200)
         ->and($crawler->filter('h1.sy-pa-header-heading')->text())->toBe('Create Article')
+        ->and($crawler->filter('.sy-pa-resource-create-record-page > .sy-pa-page-header-main-ctn > .sy-pa-page-main > .sy-pa-page-content > form')->count())->toBe(1)
         ->and($crawler->filter('.sy-pa-resource-create-record-page input[data-model$="data.title"]')->count())->toBe(1)
         ->and($crawler->filter('.sy-pa-resource-form-actions button[type="submit"]')->text())->toContain('Create')
         ->and($html)->toContain('<title>Create Article — Test Admin</title>');

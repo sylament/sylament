@@ -3,16 +3,20 @@
 {% set headerActions = this.getHeaderActions %}
 
 <div {{ attrs({class: 'sy sy-pa-page sy-pa-resource-list-records-page'}, attributes.all) }}>
-    <twig:SylamentPanels:Header :heading="heading" :subheading="subheading">
-        <twig:block name="actions">
-            {% for action in headerActions %}
-                {{ renderComponent(action) }}
-            {% endfor %}
-        </twig:block>
-    </twig:SylamentPanels:Header>
+    <div class="sy-pa-page-header-main-ctn">
+        <twig:SylamentPanels:Header :heading="heading" :subheading="subheading">
+            <twig:block name="actions">
+                {% for action in headerActions %}
+                    {{ renderComponent(action) }}
+                {% endfor %}
+            </twig:block>
+        </twig:SylamentPanels:Header>
 
-    <div class="sy-pa-page-content">
-        {{ renderTable() }}
+        <div class="sy-pa-page-main">
+            <div class="sy-pa-page-content">
+                {{ renderTable() }}
+            </div>
+        </div>
     </div>
 
     <twig:SylamentActions:Modals />

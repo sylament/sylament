@@ -1,0 +1,11 @@
+.sy-pa-page-header-main-ctn {
+    @apply flex flex-col gap-y-8 py-8;
+}
+
+.sy-pa-page-main {
+    @apply flex flex-col;
+}
+
+.sy-pa-page-content {
+    @apply grid flex-1 auto-cols-fr gap-y-8;
+}

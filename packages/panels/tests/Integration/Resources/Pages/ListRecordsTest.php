@@ -58,7 +58,10 @@ it('serves the list page with the resource table', function (): void {
 
     expect($client->getResponse()->getStatusCode())->toBe(200)
         ->and($crawler->filter('h1.sy-pa-header-heading')->text())->toBe('Articles')
-        ->and($crawler->filter('.sy-pa-resource-list-records-page .sy-pa-page-content .sy-ta')->count())->toBe(1)
+        // The rhythm wrapper is what spaces the header off the content, so the
+        // whole chain is pinned as direct children rather than as descendants.
+        ->and($crawler->filter('.sy-pa-resource-list-records-page > .sy-pa-page-header-main-ctn > header.sy-pa-header')->count())->toBe(1)
+        ->and($crawler->filter('.sy-pa-resource-list-records-page > .sy-pa-page-header-main-ctn > .sy-pa-page-main > .sy-pa-page-content > .sy-ta')->count())->toBe(1)
         ->and($rows->count())->toBe(2)
         ->and($rowText)->toContain('Alpha')
         ->and($rowText)->toContain('published')

@@ -121,7 +121,10 @@ it('annotates the actively sorted header with its direction and sorted class', f
 
     expect($sortedHeader->attr('aria-sort'))->toBe('ascending')
         ->and($sortedHeader->attr('class'))->toContain('sy-ta-header-cell-sorted')
-        ->and($sortedHeader->filter('button.sy-ta-header-cell-sort-btn svg.sy-icon')->count())->toBe(1);
+        ->and($sortedHeader->filter('button.sy-ta-header-cell-sort-btn svg.sy-icon')->count())->toBe(1)
+        // Filament reaches for the mini (20px solid) chevrons here, not the 24px outline set,
+        // and the viewBox is the only thing that tells them apart.
+        ->and($sortedHeader->filter('button.sy-ta-header-cell-sort-btn svg.sy-icon')->outerHtml())->toContain('0 0 20 20');
 });
 
 it('renders an unsortable header without a button', function (): void {

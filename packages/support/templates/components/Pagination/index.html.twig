@@ -57,13 +57,13 @@
                 {% if extremeLinks %}
                     <li>
                         <button type="button" class="sy-pagination-item" rel="first" aria-label="Go to the first page" {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: 1}) }}>
-                            <twig:SylamentSupport:Icon icon="heroicons:chevron-double-left" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::PAGINATION_FIRST_BUTTON')" />
+                            <twig:SylamentSupport:Icon icon="heroicons:chevron-double-left-20-solid" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::PAGINATION_FIRST_BUTTON')" />
                         </button>
                     </li>
                 {% endif %}
                 <li>
                     <button type="button" class="sy-pagination-item" rel="prev" aria-label="Previous page" {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: page - 1}) }}>
-                        <twig:SylamentSupport:Icon icon="heroicons:chevron-left" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::PAGINATION_PREVIOUS_BUTTON')" />
+                        <twig:SylamentSupport:Icon icon="heroicons:chevron-left-20-solid" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::PAGINATION_PREVIOUS_BUTTON')" />
                     </button>
                 </li>
             {% endif %}
@@ -94,13 +94,13 @@
             {% if paginator.hasMorePages %}
                 <li>
                     <button type="button" class="sy-pagination-item" rel="next" aria-label="Next page" {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: page + 1}) }}>
-                        <twig:SylamentSupport:Icon icon="heroicons:chevron-right" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::PAGINATION_NEXT_BUTTON')" />
+                        <twig:SylamentSupport:Icon icon="heroicons:chevron-right-20-solid" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::PAGINATION_NEXT_BUTTON')" />
                     </button>
                 </li>
                 {% if extremeLinks and lastPage is not null %}
                     <li>
                         <button type="button" class="sy-pagination-item" rel="last" aria-label="Go to the last page" {{ stimulus_action('live', 'action', parameters: {action: 'gotoTablePage', page: lastPage}) }}>
-                            <twig:SylamentSupport:Icon icon="heroicons:chevron-double-right" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::PAGINATION_LAST_BUTTON')" />
+                            <twig:SylamentSupport:Icon icon="heroicons:chevron-double-right-20-solid" :alias="constant('Sylament\\Support\\Twig\\SupportIconAlias::PAGINATION_LAST_BUTTON')" />
                         </button>
                     </li>
                 {% endif %}

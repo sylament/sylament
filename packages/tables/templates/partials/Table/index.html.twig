@@ -30,7 +30,7 @@
                     {% if isSearchable %}
                         <label class="sy-ta-search-field">
                             <twig:SylamentSupport:Icon
-                                icon="heroicons:magnifying-glass"
+                                icon="heroicons:magnifying-glass-20-solid"
                                 :alias="constant('Sylament\\Tables\\Twig\\TablesIconAlias::SEARCH_FIELD')"
                                 size="sm"
                             />
@@ -63,7 +63,7 @@
                             <twig:block name="trigger">
                                 <span class="sy-ta-filters-trigger">
                                     <twig:SylamentSupport:IconButton
-                                        icon="heroicons:funnel"
+                                        icon="heroicons:funnel-20-solid"
                                         :iconAlias="constant('Sylament\\Tables\\Twig\\TablesIconAlias::ACTIONS_FILTER')"
                                         color="gray"
                                         label="Filter"
@@ -122,7 +122,7 @@
                 {% if removableIndicatorCount > 0 %}
                     <twig:SylamentSupport:IconButton
                         class="sy-ta-filter-indicators-remove-all-btn"
-                        icon="heroicons:x-mark"
+                        icon="heroicons:x-mark-20-solid"
                         :iconAlias="constant('Sylament\\Tables\\Twig\\TablesIconAlias::FILTERS_REMOVE_ALL_BUTTON')"
                         size="sm"
                         color="gray"
@@ -175,7 +175,7 @@
                                     >
                                         {{ column.getLabel }}
                                         <twig:SylamentSupport:Icon
-                                            :icon="isColumnSorted and sortDirection == 'asc' ? 'heroicons:chevron-up' : 'heroicons:chevron-down'"
+                                            :icon="isColumnSorted and sortDirection == 'asc' ? 'heroicons:chevron-up-20-solid' : 'heroicons:chevron-down-20-solid'"
                                             :alias="isColumnSorted
                                                 ? (sortDirection == 'asc'
                                                     ? constant('Sylament\\Tables\\Twig\\TablesIconAlias::HEADER_CELL_SORT_ASC_BUTTON')

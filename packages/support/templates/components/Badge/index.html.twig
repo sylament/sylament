@@ -58,7 +58,7 @@
             class: 'sy-badge-delete-btn',
             'aria-label': deleteAriaLabel ?: false,
         }, deleteAttributes) }}>
-            {{- generateIconHtml('heroicons:x-mark', constant('Sylament\\Support\\Twig\\SupportIconAlias::BADGE_DELETE_BUTTON'), {'aria-hidden': 'true'}, 'xs') -}}
+            {{- generateIconHtml('heroicons:x-mark-16-solid', constant('Sylament\\Support\\Twig\\SupportIconAlias::BADGE_DELETE_BUTTON'), {'aria-hidden': 'true'}, 'xs') -}}
         </button>
     {%- elseif iconHtml and iconPositionValue == 'after' -%}
         {{ iconHtml }}

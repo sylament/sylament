@@ -1,0 +1,5 @@
+{% props brandName = null %}
+
+{% if brandName %}
+    <span {{ attrs({class: 'sy sy-pa-logo'}, attributes.all) }}>{{ brandName }}</span>
+{% endif %}

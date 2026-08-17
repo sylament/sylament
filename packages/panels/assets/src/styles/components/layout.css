@@ -1,9 +1,18 @@
+.sy-pa-body {
+    @apply flex min-h-dvh flex-col bg-gray-50 font-normal text-gray-950 antialiased dark:bg-gray-950 dark:text-white;
+    --sy-sidebar-width: 18rem;
+}
+
 .sy-pa-layout {
-    @apply flex min-h-dvh flex-col bg-gray-50 text-gray-950 lg:grid lg:grid-cols-[18rem_1fr] lg:grid-rows-[auto_1fr] dark:bg-gray-950 dark:text-white;
+    @apply flex h-full w-full flex-1 overflow-x-clip;
+}
+
+.sy-pa-main-ctn {
+    @apply flex min-w-0 flex-1 flex-col;
 }
 
 .sy-pa-main {
-    @apply min-w-0 flex-1 p-4 md:p-6 lg:col-start-2 lg:row-start-2 lg:p-8;
+    @apply mx-auto h-full w-full max-w-7xl px-4 md:px-6 lg:px-8;
 }
 
 .sy-pa-skip-link {

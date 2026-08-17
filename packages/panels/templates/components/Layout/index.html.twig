@@ -9,16 +9,20 @@
 {% set sidebarStimulus = stimulus_controller(sidebarController)
     |stimulus_action(sidebarController, 'closeOnEscape', 'keydown@window') %}
 
-<div {{ attrs({class: 'sy sy-pa-layout'}, sidebarStimulus, attributes.all) }}>
+<div {{ attrs({class: 'sy sy-pa-body'}, sidebarStimulus, attributes.all) }}>
     <a href="#sy-pa-main" class="sy-pa-skip-link">Skip to content</a>
 
     <twig:SylamentPanels:Topbar :brandName="brandName" />
 
-    <div {{ attrs({class: 'sy-pa-sidebar-overlay'}, stimulus_action(sidebarController, 'close', 'click')) }}></div>
+    <div class="sy-pa-layout">
+        <div {{ attrs({class: 'sy-pa-sidebar-overlay'}, stimulus_action(sidebarController, 'close', 'click')) }}></div>
 
-    <twig:SylamentPanels:Sidebar :navigation="navigation" />
+        <twig:SylamentPanels:Sidebar :navigation="navigation" :brandName="brandName" />
 
-    <main id="sy-pa-main" class="sy-pa-main">
-        {{ content }}
-    </main>
+        <div class="sy-pa-main-ctn">
+            <main id="sy-pa-main" class="sy-pa-main">
+                {{ content }}
+            </main>
+        </div>
+    </div>
 </div>

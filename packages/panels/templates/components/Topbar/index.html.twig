@@ -8,31 +8,28 @@
 
 {% set sidebarController = 'sylament--panels--sidebar' %}
 
-<header
-    {{ attrs({
-        id: 'sy-pa-topbar',
-        class: 'sy sy-pa-topbar',
-    }, attributes.all) }}
->
-    <button
-        {{ attrs({
-            type: 'button',
-            class: 'sy-pa-topbar-open-sidebar-btn',
-            'aria-controls': 'sy-pa-sidebar',
-            'aria-expanded': 'false',
-            'aria-label': 'Toggle sidebar',
-        }, stimulus_action(sidebarController, 'toggle')|stimulus_target(sidebarController, 'toggleButton')) }}
-    >
-        <twig:SylamentSupport:Icon icon="heroicons:bars-3" :alias="constant('Sylament\\Panels\\Twig\\PanelsIconAlias::TOPBAR_OPEN_SIDEBAR_BUTTON')" />
-    </button>
+<div {{ attrs({class: 'sy sy-pa-topbar-ctn'}, attributes.all) }}>
+    <nav id="sy-pa-topbar" class="sy-pa-topbar" aria-label="Topbar">
+        <button
+            {{ attrs({
+                type: 'button',
+                class: 'sy-pa-topbar-open-sidebar-btn',
+                'aria-controls': 'sy-pa-sidebar',
+                'aria-expanded': 'false',
+                'aria-label': 'Toggle sidebar',
+            }, stimulus_action(sidebarController, 'toggle')|stimulus_target(sidebarController, 'toggleButton')) }}
+        >
+            <twig:SylamentSupport:Icon icon="heroicons:bars-3" :alias="constant('Sylament\\Panels\\Twig\\PanelsIconAlias::TOPBAR_OPEN_SIDEBAR_BUTTON')" />
+        </button>
 
-    {% if brandName %}
-        <span class="sy-pa-topbar-brand">{{ brandName }}</span>
-    {% endif %}
-
-    {% if hasEnd %}
-        <div class="sy-pa-topbar-end">
-            {{ end }}
+        <div class="sy-pa-topbar-start">
+            <twig:SylamentPanels:Logo :brandName="brandName" />
         </div>
-    {% endif %}
-</header>
+
+        {% if hasEnd %}
+            <div class="sy-pa-topbar-end">
+                {{ end }}
+            </div>
+        {% endif %}
+    </nav>
+</div>

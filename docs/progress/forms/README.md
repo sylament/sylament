@@ -34,9 +34,13 @@ so its `Fieldset` could reach it, and is tracked in
 `TextInput` and `Textarea`, so they keep their own rows, and `CanBeValidated`
 keeps one despite sitting on `Field` alone, because its Filament surface is some
 eighty methods and it is the field half of a validation vertical spanning three
-packages — folding it would swamp [`field.md`](field.md). The same fold applies
-to every other concern only one built component uses: `HasOptions`,
-`CanSelectPlaceholder`, `CanDisableOptions` and `HasRelationship` are `Select`'s
+packages — folding it would swamp [`field.md`](field.md). `HasEnum` keeps one for the
+opposite reason: `Field` composes it, but its consumers are the option fields and
+`Select`'s multiplicity-aware cast override, so it is filed
+[cross-component](has-enum.md) rather than under any one of them. The same fold
+applies
+to every other concern only one built component uses:
+`CanSelectPlaceholder` and `HasRelationship` are `Select`'s
 alone in the port and live in [`select.md`](select.md) — the last of those ports
 no Filament concern at all, being the relationship half of `Select` itself, kept
 as a trait here because a fourteen-method relation surface on a field class is
@@ -53,13 +57,17 @@ in [`text-input.md`](text-input.md), and `CanBeCloned`, `CanGenerateUuids` and
 `CanLimitItemsLength` are `Repeater`'s alone and live in
 [`repeater.md`](repeater.md) — which also carries `helpers.php`, whose two
 reorder functions no other component calls — while `CanBeInline` and
-`CanBeAccepted` are shared by `Checkbox` and `Toggle`, and
+`CanBeAccepted` are shared by `Checkbox` and `Toggle`,
+`HasOptions` and `CanDisableOptions` by every option field, and
 `HasExtraInputAttributes` by all five fields that render a control, so those keep
 rows of their own. The fold reads the port, not Filament — Filament composes
-`HasOptions` and `CanDisableOptions` onto `Radio`, `CheckboxList` and
-`ToggleButtons` as well, `HasStep` onto `DateTimePicker` and `Slider` (and
+`HasStep` onto `DateTimePicker` and `Slider` (and
 tables' `TextInputColumn`), and `HasDatalistOptions` onto `DateTimePicker`, so
 each is promoted back to a row of its own the moment the second consumer lands.
+`HasOptions` and `CanDisableOptions` are that promotion already: `Select` folded
+them until the option fields arrived, and they now carry
+[`has-options.md`](has-options.md) and
+[`can-disable-options.md`](can-disable-options.md).
 `CanBeAutocapitalized` is the one fold Filament agrees with — it composes that
 trait on `TextInput` and nothing else, so no unported consumer is queued to
 promote it. [`support/component.md`](../support/component.md) is the shape each
@@ -126,8 +134,8 @@ single component is tracked in that component's detail file, not here: the base
 [`field.md`](field.md) — a sixth, `CanBeMarkedAsRequired`, relocated to schemas
 and is tracked in
 [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md)
-— `Select`'s four (`HasOptions`, `CanSelectPlaceholder`,
-`CanDisableOptions`, `HasRelationship`) into [`select.md`](select.md), `Toggle`'s
+— `Select`'s two remaining single-use concerns (`CanSelectPlaceholder`,
+`HasRelationship`) into [`select.md`](select.md), `Toggle`'s
 `HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md),
 `TextInput`'s `HasStep`, `HasDatalistOptions` and `CanBeAutocapitalized` into
 [`text-input.md`](text-input.md), and
@@ -137,8 +145,10 @@ into [`repeater.md`](repeater.md), per
 ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and
 `CanBeAutocompleted` are used by `TextInput` and `Textarea`, `CanBeInline` and
 `CanBeAccepted` by `Checkbox` and `Toggle`, `BelongsToRelationship` by `Select`
-and `Repeater`, and `HasExtraInputAttributes` by
-`TextInput`, `Textarea`, `Select`, `Checkbox` and `Toggle`.
+and `Repeater`, `HasOptions` and `CanDisableOptions` by every option field, and
+`HasExtraInputAttributes` by
+`TextInput`, `Textarea`, `Select`, `Checkbox` and `Toggle`. `HasEnum` stays below
+too, on the other test: `Field` composes it, so every field has it.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -154,12 +164,13 @@ and `Repeater`, and `HasExtraInputAttributes` by
 | CanBeSearchable | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | todo | — |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | [can-be-validated.md](can-be-validated.md) |
 | CanDisableGrammarly | [`Components/Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | todo | — |
+| [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) | [`Components/Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | [can-disable-options.md](can-disable-options.md) |
 | CanDisableOptionsWhenSelectedInSiblingRepeaterItems | [`Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | todo | — |
 | CanFixIndistinctState | [`Components/Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — |
 | HasAffixes | [`Components/Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | todo | — |
 | HasColors | [`Components/Concerns/HasColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasColors.php) | todo | — |
 | HasDescriptions | [`Components/Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | todo | — |
-| HasEnum | [`Components/Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | todo | — |
+| [`HasEnum`](../../../packages/forms/src/Components/Concerns/HasEnum.php) | [`Components/Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | done | [has-enum.md](has-enum.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Components/Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | [has-extra-input-attributes.md](has-extra-input-attributes.md) |
 | HasExtraItemActions | [`Components/Concerns/HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | todo | — |
 | HasFileAttachments | [`Components/Concerns/HasFileAttachments.php`](../../../vendor/filament/forms/src/Components/Concerns/HasFileAttachments.php) | todo | — |
@@ -170,6 +181,7 @@ and `Repeater`, and `HasExtraInputAttributes` by
 | HasMaxHeight | [`Components/Concerns/HasMaxHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMaxHeight.php) | todo | — |
 | HasMinHeight | [`Components/Concerns/HasMinHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMinHeight.php) | todo | — |
 | HasNestedRecursiveValidationRules | [`Components/Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | todo | — |
+| [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Components/Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | [has-options.md](has-options.md) |
 | HasPivotData | [`Components/Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | [select.md](select.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | HasPreview | [`Components/Concerns/HasPreview.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPreview.php) | todo | — |
 | [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — no Filament concern of its own; `Select`'s relation surface, split off the class | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | [select.md](select.md#relationship-is-three-lazy-closures-over-the-association-reader) |
@@ -196,7 +208,7 @@ directory collapses that whole subtree into one navigational entry.
 | --- | --- | --- | --- |
 | HasForms | [`Contracts/HasForms.php`](../../../vendor/filament/forms/src/Contracts/HasForms.php) | todo | — |
 | [`CanBeLengthConstrained` (contract)](../../../packages/forms/src/Components/Contracts/CanBeLengthConstrained.php) | [`Components/Contracts/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Contracts/CanBeLengthConstrained.php) | done | [can-be-length-constrained.md](can-be-length-constrained.md) |
-| [`CanDisableOptions` (contract)](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Components/Contracts/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Contracts/CanDisableOptions.php) | done | [select.md](select.md) |
+| [`CanDisableOptions` (contract)](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Components/Contracts/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Contracts/CanDisableOptions.php) | done | [can-disable-options.md](can-disable-options.md) |
 | CanHaveNumericState (contract) | [`Components/Contracts/CanHaveNumericState.php`](../../../vendor/filament/forms/src/Components/Contracts/CanHaveNumericState.php) | todo | — |
 | HasAffixes (contract) | [`Components/Contracts/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Contracts/HasAffixes.php) | todo | — |
 | HasNestedRecursiveValidationRules (contract) | [`Components/Contracts/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Contracts/HasNestedRecursiveValidationRules.php) | todo | — |

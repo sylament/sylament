@@ -337,7 +337,7 @@ it('clears a ternary chip to null rather than to its false arm', function (): vo
         ->and($query->getDQL())->not->toContain('WHERE');
 });
 
-it('falls back to false, stored as 0, for a nullable boolean field whose filter declares no reset state', function (): void {
+it('clears a nullable boolean field to null when its filter declares no reset state', function (): void {
     $host = filtersHost(fn (Table $table): Table => $table->filters([
         Filter::make('custom')->schema([Select::make('flag')->boolean()]),
     ]));
@@ -348,7 +348,20 @@ it('falls back to false, stored as 0, for a nullable boolean field whose filter 
     $host->removeTableFilter('custom');
 
     expect($host->getTable()->getFilter('custom')?->getResetState())->toBe([])
-        ->and($host->tableDeferredFilters)->toBe(['custom' => ['flag' => 0]]);
+        ->and($host->tableDeferredFilters)->toBe(['custom' => ['flag' => null]]);
+});
+
+it('keeps resetting a non-nullable boolean field to false', function (): void {
+    $host = filtersHost(fn (Table $table): Table => $table->filters([
+        Filter::make('custom')->schema([Checkbox::make('flag')]),
+    ]));
+
+    $host->getTableFiltersForm();
+    $host->tableDeferredFilters = ['custom' => ['flag' => true]];
+
+    $host->removeTableFilter('custom');
+
+    expect($host->tableDeferredFilters)->toBe(['custom' => ['flag' => false]]);
 });
 
 it('writes a non-deferred removal straight into the applied bag', function (): void {

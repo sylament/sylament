@@ -13,13 +13,17 @@ use Sylament\Forms\Components\Concerns\HasOptions;
 use Sylament\Forms\Components\Concerns\HasRelationship;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
+use Sylament\Schemas\State\Casts\EnumArrayStateCast;
+use Sylament\Schemas\State\Casts\EnumStateCast;
 use Sylament\Schemas\State\Casts\OptionsArrayStateCast;
 use Sylament\Schemas\State\Casts\OptionStateCast;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Type;
+use Twig\Markup;
 
 use function Sylament\Support\blank;
+use function Sylament\Support\filled;
 
 class Select extends Field implements Contracts\CanDisableOptions
 {
@@ -66,13 +70,9 @@ class Select extends Field implements Contracts\CanDisableOptions
         return (bool) $this->evaluate($this->isMultiple);
     }
 
-    public function getOptionLabel(): ?string
+    public function getOptionLabel(): string|Markup|null
     {
-        $state = $this->getState();
-
-        if (is_bool($state)) {
-            $state = (int) $state;
-        }
+        $state = $this->getOptionComparisonState();
 
         if (! is_string($state) && ! is_int($state)) {
             return null;
@@ -94,7 +94,7 @@ class Select extends Field implements Contracts\CanDisableOptions
      */
     public function getDefaultStateCasts(): array
     {
-        if ($this->hasCustomStateCasts()) {
+        if ($this->hasCustomStateCasts() || filled($this->getEnum())) {
             return parent::getDefaultStateCasts();
         }
 
@@ -103,6 +103,26 @@ class Select extends Field implements Contracts\CanDisableOptions
         }
 
         return [new OptionStateCast(isNullable: true)];
+    }
+
+    public function getEnumDefaultStateCast(): ?StateCast
+    {
+        $enum = $this->getEnum();
+
+        if ($enum === null) {
+            return null;
+        }
+
+        $this->assertBackedEnum($enum);
+
+        return $this->isMultiple()
+            ? new EnumArrayStateCast($enum)
+            : new EnumStateCast($enum);
+    }
+
+    public function hasNullableBooleanState(): bool
+    {
+        return true;
     }
 
     /**
@@ -121,7 +141,7 @@ class Select extends Field implements Contracts\CanDisableOptions
             return $constraints;
         }
 
-        if ($this->options === null) {
+        if ($this->options === null && $this->getEnum() === null) {
             throw new LogicException(
                 "Sylament failed to validate the [{$this->getStatePath()}] select because it has no options() configuration. Call options() so Sylament knows which values are valid.",
             );
@@ -142,45 +162,5 @@ class Select extends Field implements Contracts\CanDisableOptions
         );
 
         return $constraints;
-    }
-
-    /**
-     * Every enabled option value, in both forms a request can legitimately leave in
-     * the host's state: the form the field's state casts store — what `fill()` and
-     * `state()` write — and the string the browser submits, which is always the
-     * option's array key as the template renders it into the `value` attribute.
-     * Validation runs against the raw state, and those two forms part company
-     * whenever a cast leaves the array-key vocabulary. A multi-value cast casts
-     * one option key to a whole selection, so the list it returns is spread:
-     * `Choice(multiple: true)` compares element by element, and an option value
-     * wrapped in an array would match nothing.
-     *
-     * @return list<mixed>
-     */
-    protected function getEnabledOptionValues(): array
-    {
-        $stateCasts = array_reverse($this->getStateCasts());
-
-        $values = [];
-
-        foreach (array_keys($this->getEnabledOptions()) as $value) {
-            $castValue = $value;
-
-            foreach ($stateCasts as $stateCast) {
-                $castValue = $stateCast->set($castValue);
-            }
-
-            $castValues = is_array($castValue) ? array_values($castValue) : [$castValue];
-
-            $submittedValue = (string) $value;
-
-            if (! in_array($submittedValue, $castValues, true)) {
-                $castValues[] = $submittedValue;
-            }
-
-            $values = [...$values, ...$castValues];
-        }
-
-        return $values;
     }
 }

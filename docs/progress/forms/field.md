@@ -3,14 +3,19 @@
 `Sylament\Forms\Components\Field` — the abstract base every user-instantiable
 form field extends. It adds field identity (name + state-path seeding), the
 humanized-label fallback, the ten field-wrapper slots, the field-wrapper
-rendering and the error-message read on top of the schemas `Component`, and
-composes six field concerns. Five of them are **folded here**: each is a row in
+rendering, the error-message read and the enum state cast on top of the schemas
+`Component`, and
+composes seven field concerns. Five of them are **folded here**: each is a row in
 the Surface table below (its detail and any divergence spliced in from its own
 audit) and no longer carries a row in the [package README](README.md) Features
 table. The sixth, [`CanBeValidated`](can-be-validated.md), keeps its own file —
 its Filament surface is some eighty methods against the handful each folded
 concern carries, and it is the field half of a vertical spanning three
-packages. The schemas-level `HasName` / `HasLabel` / `HasState` it inherits stay
+packages. The seventh, [`HasEnum`](has-enum.md), keeps one too: it is composed
+here but consumed across the option fields, and its own file carries the
+`Field`-tier cast plumbing (`getDefaultStateCasts()` /
+`getEnumDefaultStateCast()`) that the Surface table below rows for.
+The schemas-level `HasName` / `HasLabel` / `HasState` it inherits stay
 tracked in schemas, and so does
 [`CanBeMarkedAsRequired`](../schemas/can-be-marked-as-required.md), which moved
 down to schemas so its `Fieldset` could reach it.
@@ -47,8 +52,8 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | — | [detail](can-be-validated.md) |
 | Error display (`getErrorMessages()` ⟵ `hasErrorForPath` / `ViewErrorBag`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#error-display-shows-every-message-for-the-path) |
 | Input affix wrapper (`wrapInputHtml`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | — | [detail](#the-input-affix-wrapper-is-not-ported) |
-| State casts &amp; enum defaults (`getDefaultStateCasts` / `getEnumDefaultStateCast`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | blocked | HasEnum | [detail](#state-casts-and-enum-defaults-are-not-ported) |
-| `hasNullableBooleanState()` | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | — | [detail](#hasnullablebooleanstate-is-not-ported) |
+| State casts &amp; enum defaults (`getDefaultStateCasts` / `getEnumDefaultStateCast`), and the [`HasEnum`](../../../packages/forms/src/Components/Concerns/HasEnum.php) concern behind them | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) · [`Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | done | — | [detail](has-enum.md) |
+| [`hasNullableBooleanState()`](../../../packages/forms/src/Components/Field.php) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [semantics](#hasnullablebooleanstate-has-exactly-one-consumer) |
 | [`HasExtraFieldWrapperAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | [`Components/Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | done | — | [diverges](#extra-attribute-precedence-is-fixed-by-source-order) |
 | [`CanBeAutofocused`](../../../packages/forms/src/Components/Concerns/CanBeAutofocused.php) | [`Components/Concerns/CanBeAutofocused.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutofocused.php) | done | — | — |
 | [`HasHelperText`](../../../packages/forms/src/Components/Concerns/HasHelperText.php) | [`Components/Concerns/HasHelperText.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHelperText.php) | done | — | — |
@@ -123,50 +128,34 @@ schemas' `prepareAction()`, every one of which the port already has
 The three prebuilt actions are reached only from `TextInput::revealable()` and
 `copyable()`, which is where [text-input.md](text-input.md) names them.
 
-### State casts and enum defaults are not ported
+## Semantics
 
-Filament's Field overrides `getDefaultStateCasts()` to append an `EnumStateCast`
-and exposes `getEnumDefaultStateCast()`, both driven by the `HasEnum` concern.
-Neither is composed or ported. **Blocked** on the `HasEnum` port and the schemas
-`StateCast` surface.
+Behaviour worth stating that is not a divergence — the port and Filament agree,
+but the reason is not obvious from the code.
 
-### `hasNullableBooleanState()` is not ported
+### `hasNullableBooleanState()` has exactly one consumer
 
-Filament's Field declares `hasNullableBooleanState(): bool` (default `false`)
-at [`Field.php:719`](../../../vendor/filament/forms/src/Components/Field.php),
-overridden to `true` by exactly three fields — [`Select`](../../../vendor/filament/forms/src/Components/Select.php)
-(1819), `Radio` (157) and `ToggleButtons` (360). Not `Checkbox` or `Toggle`,
-which is the natural guess and is wrong; and it drives no state cast, which is
-the other one. Its **only** consumer in the whole vendor tree is the filter
-reset in tables'
-[`HasFilters.php:105`](../../../vendor/filament/tables/src/Concerns/HasFilters.php):
-`is_bool($state) => $field->hasNullableBooleanState() ? null : false`.
+The predicate declares whether a boolean-valued state has an "unset" resting
+value beside `true` and `false`. `Field` answers `false`; exactly three fields
+override it to `true` — [`Select`](select.md), `Radio` and `ToggleButtons`, each
+because its placeholder or unselected state is a real third value. Not `Checkbox`
+or `Toggle`, which is the natural guess and is wrong: both cast through a
+non-nullable `BooleanStateCast`, where `false` genuinely is the resting value.
+It drives no state cast, which is the other natural guess.
 
-Not ported — and that call site **is**, with the branch flattened. Ours
-([`HasFilters.php:340`](../../../packages/tables/src/Concerns/HasFilters.php))
-hardcodes `is_bool($state) => false`, so a boolean field reset through a filter
-lands on "no" where Filament would land on "unset". Scope of the difference,
-since it is narrower than it looks: none of the three shipped filter classes
-reaches the branch, because each names its own field in its reset state and the
-`array_key_exists($fieldName, $resetState)` arm above the `match` fires first.
-[`SelectFilter`](../../../packages/tables/src/Filters/SelectFilter.php) declares
-`resetState(fn () => $this->isMultiple() ? ['values' => []] : ['value' => null])`
-against the `value` / `values` field it builds, and `TernaryFilter` inherits
-both; plain [`Filter`](../../../packages/tables/src/Filters/Filter.php) returns
-`['isActive' => false]` against the `isActive` checkbox or toggle it builds — but
-only while it has no schema, and that is the door the rest of this walks through.
-A filter given a schema of its own falls back to an empty reset state, so the
-`match` does fire, and even there a `Checkbox` or `Toggle` agrees with Filament,
-since neither overrides the method and `false` is what both sides land on. What
-differs is a custom
+Its **only** consumer, here as in Filament, is the filter reset in tables'
+[`HasFilters`](../../../packages/tables/src/Concerns/HasFilters.php):
+`is_bool($state) => $field->hasNullableBooleanState() ? null : false`. The port
+carried that call site with the branch flattened to a hardcoded `false` for as
+long as the predicate was unported; the branch is
+[restored](../tables/has-table.md#filter-mutations-reset-the-page-and-flush-the-record-cache),
+so a custom
 `Filter::make(…)->schema([Select::make(…)->boolean()])` that declares no
-`resetState()` of its own: Filament resets it to the placeholder, ours to
-`false`.
-
-Porting the method is out of this row's reach — it is a Field surface with a
-tables consumer — but the flattening is now recorded rather than silent, and
-closing it is one `hasNullableBooleanState()` override on `Select` plus the
-branch restored at that call site.
+`resetState()` of its own now clears to the placeholder rather than flipping to
+its false arm. Both tiers of the predicate are pinned by
+[`HasEnumTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasEnumTest.php),
+and both arms of the branch it drives by tables'
+[`HasFiltersTest`](../../../packages/tables/tests/Unit/Concerns/HasFiltersTest.php).
 
 ## Divergences
 

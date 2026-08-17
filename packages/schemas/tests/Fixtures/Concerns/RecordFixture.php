@@ -5,15 +5,19 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Fixtures\Concerns;
 
 use stdClass;
+use Sylament\Schemas\Tests\Fixtures\State\Casts\CastStatus;
 
 /**
  * A plain record object standing in for a Doctrine entity. `$title` is
  * deliberately left uninitialized so the fill walk's uninitialized-property skip
  * can be exercised; `getAuthor()` is deliberately setter-less and object-valued
- * so the object-value skip can be too.
+ * so the object-value skip can be too, and `$status` is the enum-typed leaf the
+ * skip exempts.
  */
 final class RecordFixture
 {
+    private ?CastStatus $status = null;
+
     private string $title;
 
     private ?string $perex = null;
@@ -56,5 +60,15 @@ final class RecordFixture
     public function getAuthor(): stdClass
     {
         return new stdClass();
+    }
+
+    public function getStatus(): ?CastStatus
+    {
+        return $this->status;
+    }
+
+    public function setStatus(?CastStatus $status): void
+    {
+        $this->status = $status;
     }
 }

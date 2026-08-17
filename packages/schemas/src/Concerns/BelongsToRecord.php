@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Concerns;
 
+use BackedEnum;
 use Closure;
 use LogicException;
 use Sylament\Schemas\Components\Component;
@@ -283,7 +284,8 @@ trait BelongsToRecord
     /**
      * Read this schema's declared leaf paths off a record, traversing its
      * object graph. Unreadable and uninitialized properties are skipped, as
-     * are object-valued leaves — the null-fill pass supplies those keys; a
+     * are object-valued leaves other than a `BackedEnum`, which a state cast
+     * carries into the bag — the null-fill pass supplies the skipped keys; a
      * null or scalar intermediate supplies null. A component declaring
      * {@see Component::loadStateFromRelationshipsUsing()} supplies its own
      * value instead, so neither skip applies to its path.
@@ -310,7 +312,7 @@ trait BelongsToRecord
                 continue;
             }
 
-            if (is_object($value)) {
+            if (is_object($value) && ! $value instanceof BackedEnum) {
                 continue;
             }
 

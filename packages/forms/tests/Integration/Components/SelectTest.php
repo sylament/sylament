@@ -6,9 +6,12 @@ namespace Sylament\Forms\Tests\Integration\Components;
 
 use LogicException;
 use Sylament\Forms\Components\Select;
+use Sylament\Forms\Tests\Fixtures\Components\Concerns\OptionStatus;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Records\Article;
+use Sylament\Forms\Tests\Fixtures\Records\EnumArticle;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Casts\EnumArrayStateCast;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -295,6 +298,95 @@ it('still derives required for a boolean() select on a non-nullable bool column'
 
     expect($field->isRequired())->toBeTrue()
         ->and($crawler->filter('select.sy-fo-select')->attr('required'))->not->toBeNull();
+});
+
+it('renders one option per enum case, labelled by the enum', function (): void {
+    $crawler = new Crawler(renderField(Select::make('status')->options(OptionStatus::class)));
+
+    $options = $crawler->filter('select.sy-fo-select option');
+
+    expect($options->count())->toBe(3)
+        ->and($options->eq(1)->attr('value'))->toBe('draft')
+        ->and($options->eq(1)->text())->toBe('Draft')
+        ->and($options->eq(2)->attr('value'))->toBe('published')
+        ->and($options->eq(2)->text())->toBe('Published');
+});
+
+it('marks the option matching an enum-valued state as selected', function (): void {
+    $host = new FieldRenderHost();
+    $host->data['status'] = OptionStatus::Published;
+
+    $crawler = new Crawler(renderToHtml(
+        Schema::make($host)->statePath('data')->components([Select::make('status')->options(OptionStatus::class)]),
+    ));
+
+    $options = $crawler->filter('select.sy-fo-select option');
+
+    expect($options->eq(1)->attr('selected'))->toBeNull()
+        ->and($options->eq(2)->attr('selected'))->not->toBeNull();
+});
+
+it('round-trips an enum through an enum-typed record property', function (): void {
+    $record = new EnumArticle();
+    $record->status = OptionStatus::Draft;
+
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $select = Select::make('status')->options(OptionStatus::class);
+    $schema = Schema::make($host)->statePath('data')->record($record)->components([$select]);
+
+    $host->cacheSchema('schema', $schema);
+    $schema->getComponents();
+    $schema->fill($record);
+
+    expect($host->data['status'])->toBe('draft')
+        ->and($select->getState())->toBe(OptionStatus::Draft);
+
+    $host->data['status'] = 'published';
+
+    expect($schema->getData())->toBe($record)
+        ->and($record->status)->toBe(OptionStatus::Published);
+});
+
+it('round-trips an enum list through a multiple select', function (): void {
+    $record = new EnumArticle();
+    $record->tags = [OptionStatus::Draft];
+
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $select = Select::make('tags')->multiple()->options(OptionStatus::class);
+    $schema = Schema::make($host)->statePath('data')->record($record)->components([$select]);
+
+    $host->cacheSchema('schema', $schema);
+    $schema->getComponents();
+
+    expect($select->getStateCasts())->toHaveCount(1)
+        ->and($select->getStateCasts()[0])->toBeInstanceOf(EnumArrayStateCast::class);
+
+    $schema->fill($record);
+
+    expect($host->data['tags'])->toBe(['draft']);
+
+    $host->data['tags'] = ['draft', 'published'];
+
+    expect($schema->getData())->toBe($record)
+        ->and($record->tags)->toBe([OptionStatus::Draft, OptionStatus::Published]);
+});
+
+it('validates an enum-only select instead of throwing for missing options', function (): void {
+    $field = wireSelect(Select::make('status')->enum(OptionStatus::class));
+    $field->state(OptionStatus::Draft);
+
+    $validator = $this::getContainer()->get(ValidatorInterface::class);
+    $constraints = $field->getValidationConstraints();
+    $choice = array_values(array_filter($constraints, fn (object $c): bool => $c instanceof Choice));
+
+    expect($choice)->toHaveCount(1)
+        ->and($choice[0]->choices)->toBe(['draft', 'published'])
+        ->and($validator->validate($field->getRawState(), $constraints))->toHaveCount(0)
+        ->and($validator->validate('tampered', $constraints))->toHaveCount(1);
 });
 
 it('merges extra input attributes onto the select and lets them win', function (): void {

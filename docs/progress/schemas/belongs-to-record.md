@@ -161,7 +161,8 @@ non-mapped parameter names, which is what proves the by-type arm rather than the
 pre-existing by-name one); the fill walk by
 [`Unit/Concerns/HasStateTest`](../../../packages/schemas/tests/Unit/Concerns/HasStateTest.php)
 (scoped read, null-fill of what the record cannot supply, uninitialized-property
-and object-value skips, array reads, the unchanged null/array arms, and the
+and object-value skips with the `BackedEnum` exemption beside them, array reads,
+the unchanged null/array arms, and the
 nested reads: a nested object path filled through the graph, null filled past a
 null intermediate, a leaf decorated with a path-less child schema staying a
 leaf, an array-backed branch read by declared leaves only, and a numeric-string
@@ -630,12 +631,26 @@ skips the path. Symfony's `AccessException` is the common parent of
 `NoSuchPropertyException` (no accessor at all) and `UninitializedPropertyException`
 (a typed property never assigned), so the single catch covers both without an
 `isReadable()` pre-check, which would only be a second copy of the same walk. It
-additionally skips object-valued reads — only scalars, arrays, and null enter the
-bag until a state-cast epic widens it. So a read has exactly two skip reasons:
+additionally skips object-valued reads — only scalars, arrays, null and a
+`BackedEnum` enter the bag. So a read has exactly two skip reasons:
 the object cannot supply the value, or the value is not bag-representable, and
 the null-fill pass then supplies the key. A null or scalar *intermediate*
 supplies null for the leaf rather than skipping it — the same bag either way,
 since the null-fill pass would supply the key.
+
+The `BackedEnum` exemption is the widening this paragraph used to say a
+state-cast epic would bring, and it is deliberately the *narrowest* one: a case
+is a value rather than a branch of the record graph, and
+[`EnumStateCast`](enum-state-cast.md) is exactly the cast that makes it
+bag-representable — the hydration pass immediately behind the read turns it into
+the scalar backing value the browser will send back. Every other object-valued
+leaf still skips, because nothing casts it yet: a `DateTimeImmutable` or an
+associated entity has no bag spelling, and an association that wants one declares
+[`loadStateFromRelationshipsUsing()`](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk),
+which is checked before this skip. Without it, `Select::options(MyEnum::class)`
+over an enum-typed property filled to `null` on every mount — the write side
+worked, the read side dropped it — which is why the widening ships with the enum
+seam rather than after it.
 
 `getData()` is the opposite. It writes **every** leaf path of the validated
 state and lets `NoSuchPropertyException` surface when the target cannot take one:

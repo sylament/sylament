@@ -1,16 +1,18 @@
 # Select (forms)
 
 `Sylament\Forms\Components\Select` — the native `<select>` field, over a static
-option map or a Doctrine association. It composes four single-use concerns
-([`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php),
-[`CanSelectPlaceholder`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php),
-[`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php),
-[`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php))
-plus the
-[`Contracts\CanDisableOptions`](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php)
-interface, casts its state through schemas'
+option map, an enum, or a Doctrine association. It composes the shared option
+pair ([`HasOptions`](has-options.md),
+[`CanDisableOptions`](can-disable-options.md) and its
+[contract](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php)),
+which have files of their own, plus two single-use concerns folded here
+([`CanSelectPlaceholder`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php),
+[`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php)).
+It casts its state through schemas'
 [`OptionStateCast`](../schemas/option-state-cast.md) — or, under `multiple()`,
-[`OptionsArrayStateCast`](../schemas/options-array-state-cast.md) — and appends a
+[`OptionsArrayStateCast`](../schemas/options-array-state-cast.md), or, under an
+[enum](has-enum.md), [`EnumStateCast`](../schemas/enum-state-cast.md) /
+[`EnumArrayStateCast`](../schemas/enum-array-state-cast.md) — and appends a
 Symfony `Choice` constraint over its enabled options so a tampered payload is
 rejected server-side.
 
@@ -36,10 +38,11 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Native `<select>` rendering | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-template-renders-the-selected-state-itself) · [diverges](#canbenative-is-not-ported) · [diverges](#the-default-placeholder-is-an-untranslated-literal) |
-| [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | in progress | HasEnum | [diverges](#hasoptions-drops-the-enum-class-string-arm) |
+| [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
+| [`HasEnum`](../../../packages/forms/src/Components/Concerns/HasEnum.php) — inherited from `Field`; `Select` overrides `getEnumDefaultStateCast()` for the `multiple()` arm | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](has-enum.md) |
 | [`CanSelectPlaceholder`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php) | [`Concerns/CanSelectPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/CanSelectPlaceholder.php) | done | — | [diverges](#disableplaceholderselection-is-not-ported) |
-| [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) | [`Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [diverges](#a-null-callback-merges-to-nothing) |
-| [`Contracts\CanDisableOptions`](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Components/Contracts/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Contracts/CanDisableOptions.php) | done | — | [diverges](#the-contract-declares-the-read-surface-not-the-setter) |
+| [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) + [contract](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [detail](can-disable-options.md) |
+| [`hasNullableBooleanState()`](../../../packages/forms/src/Components/Select.php) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [field.md](field.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
 | `boolean()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | — |
 | `getOptionLabel()` | [`resolveOptionLabel()`](../../../vendor/filament/forms/src/Components/Select.php) | in progress | the JS select control | [detail](#getoptionlabel-omits-the-getoptionlabelusing-arm) |
@@ -62,7 +65,10 @@ the rendered markup (including a disabled option in both the flat and the groupe
 shape), the state round-trip, `boolean()`, `getOptionLabel()` over flat, grouped
 and boolean options, the no-options `LogicException` and the `Choice` guard — the
 tampered-value, disabled-option and int-keyed cases plus both stored forms of a
-`boolean()` option, all run through the container's real validator — and the
+`boolean()` option, all run through the container's real validator — the enum
+arm (its options rendered, the enum-valued state's option marked `selected`, the
+single and `multiple()` round trips against an enum-typed record property, and an
+enum-only select validating rather than throwing) — and the
 extra input attributes reaching the `<select>` rather than its `<option>`s — by
 [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php);
 the multi-value arm — `multiple()` as literal, `false` and closure, the cast
@@ -256,13 +262,22 @@ sit there, and a strict `Choice` has to admit both:
   re-normalizes it afterwards: `hydrateState()` is reached from `Schema::fill()`
   only, i.e. at mount.
 
-`getEnabledOptionValues()` therefore emits the cast value and, when it differs,
+[`getEnabledOptionValues()`](can-disable-options.md#the-choice-choice-list-lives-here-not-on-the-field)
+therefore emits the cast value and, when it differs,
 the submitted string. For string options the two coincide and the list is the
 plain key list; for `boolean()`, whose `BooleanStateCast(isStoredAsInt: true)`
 stores `int 1`, the choices are `[1, '1', 0, '0']` — without the string arm a
 `boolean()` select rejects its own value the moment it round-trips through the
-browser. Nothing is loosened by the extra arm: `Choice` stays strict and a
-tampered or disabled value is still absent from the list.
+browser. An enum'd field is the coinciding case again, since
+[`EnumStateCast::set()`](../schemas/enum-state-cast.md) stores
+`(string) $case->value`, which is the option key the template rendered. Nothing
+is loosened by the extra arm: `Choice` stays strict and a tampered or disabled
+value is still absent from the list.
+
+The method itself lives on
+[`CanDisableOptions`](can-disable-options.md#the-choice-choice-list-lives-here-not-on-the-field)
+rather than on `Select`, so every option field builds its choice list the same
+way; the reasoning above is what it implements.
 
 ### A multiple select validates element by element
 
@@ -334,7 +349,8 @@ not the primary defence.
 ### The template renders the selected state itself
 
 The template emits `selected` per option, comparing the option's key against
-`getState()` — `in` when the state is a list, a loose `==` otherwise. For a
+[`getOptionComparisonState()`](has-options.md#the-option-vocabulary-is-normalized-once-rather-than-per-template)
+— `in` when the state is a list, a loose `==` otherwise. For a
 single select this is redundant with the live binding on a first render and
 becomes load-bearing on any server-rendered non-live one; for a multiple select
 there is no alternative, since a multi-select's value cannot be expressed as an
@@ -344,6 +360,12 @@ the `'1'` a browser submitted — the same mismatch
 [`getEnabledOptionValues()`](#the-choice-choices-cover-both-forms-the-raw-state-can-take)
 answers on the validation side. Nothing is loosened security-wise: `selected` is
 presentation, and the strict `Choice` is what admits or rejects a value.
+
+What the comparison never sees is a raw `getState()`: the normalization is one
+method on [`HasOptions`](has-options.md), so an enum-valued or boolean state
+reaches the template already spelled in the option vocabulary, and
+`getOptionLabel()` resolves through the same method rather than repeating the
+bool-to-int coercion it used to carry.
 
 ## Divergences
 
@@ -411,15 +433,6 @@ natively anyway) or throw at runtime. A method that does not exist is the signal
 PHPStan and the IDE can both see, so the row is **blocked** rather than skipped —
 it lands with the JS control.
 
-### `HasOptions` drops the enum class-string arm
-
-Filament's `options()` calls `enum()` when handed an enum class-string, and
-`getOptions()` expands the cases through `Support\Contracts\HasLabel`. `HasEnum`,
-`EnumStateCast` and that contract are all unported, so the setter union narrows
-from `array|Arrayable|string|Closure|null` to `array|Closure|null` — the
-`Arrayable` arm goes the same way, being a Laravel contract with no port.
-Reverses with the `HasEnum` port.
-
 ### The default placeholder is an untranslated literal
 
 `setUp()` sets the placeholder to the literal `'Select an option'`, and
@@ -427,42 +440,6 @@ Reverses with the `HasEnum` port.
 `__('filament-forms::components.select.placeholder')`; the translation surface is
 unported, matching
 [`getDefaultLabel`](field.md#getdefaultlabel-drops-label-translation).
-
-### A null callback merges to nothing
-
-`disableOptionWhen(null)` clears the callback list, in both Filament and the port
-— `Arr::wrap(null)` and [`wrap(null)`](../support/helpers.md) are both `[]`.
-Filament's *merge* arm appends the argument unconditionally, so
-`disableOptionWhen(null, merge: true)` pushes a `null` that
-`hasDisabledOptions()` then counts as disabling (`null !== false`), even though
-`evaluate(null)` disables no option — the field claims to have disabled options
-and filters none. The port skips a null on merge instead, which is also what
-keeps the `array<bool|Closure>` property type honest at level max.
-
-### The contract declares the read surface, not the setter
-
-Filament's `Contracts\CanDisableOptions` declares exactly one member,
-`disableOptionWhen(bool | Closure): static` — the *write* side. Its only consumer
-is
-[`CanDisableOptionsWhenSelectedInSiblingRepeaterItems`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php),
-which intersects `Component & CanDisableOptions` so a closure can call the setter
-on whatever field it is handed. That concern is unported — it needs the
-`Repeater` — so the setter has nothing here to type-check it.
-
-The port's
-[interface](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php)
-declares the *read* side instead: `isOptionDisabled()`, which
-[the template](../../../packages/forms/templates/partials/Select/index.html.twig)
-calls per option to render `disabled`, and `getEnabledOptions()`, which
-[`getEnabledOptionValues()`](../../../packages/forms/src/Components/Select.php)
-walks to build the `Choice` choices. Neither is reached through an `instanceof`
-yet — `Select` is the only implementor — so the interface names what a second
-implementor would have to honour rather than what Filament's absent consumer
-needed. `disableOptionWhen()` still ships on the
-[trait](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php),
-so the public API is unchanged, and widening the interface once the repeater arm
-lands is additive. Same narrowing and same reasoning as
-[`CanBeLengthConstrained`](can-be-length-constrained.md#the-contract-declares-only-the-constraint-builder).
 
 ### `disablePlaceholderSelection()` is not ported
 

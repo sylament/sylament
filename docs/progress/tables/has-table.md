@@ -739,30 +739,30 @@ reset state that names a field **with a null value** is honoured here and falls
 through to the type-derived arm there — a fix rather than a mirror, and the one
 that makes `SelectFilter`'s `['value' => null]` do what it says.
 
-Filament's bool arm consults `hasNullableBooleanState()` first and writes `null`
-instead of `false` when it answers true — which `Radio`, `ToggleButtons` **and
-`Select`** all do. That predicate is not ported, and the resulting one-arm
-difference is out of reach of the fields the shipped filters build for
-themselves: the fallback runs only for a field the filter's
-`getResetState()` does not name, and `SelectFilter` seeds `['value' => null]`
-in `setUp()` — as Filament's does, at `SelectFilter.php:148` — so every
-`SelectFilter` and every `TernaryFilter` takes the explicit-null left side and
-clears rather than flipping to its false arm. Our `Checkbox`/`Toggle` are the
-other side of it: both cast through a non-nullable `BooleanStateCast`, where
-`false` genuinely is the resting value.
+The bool arm consults
+[`hasNullableBooleanState()`](../forms/field.md#hasnullablebooleanstate-has-exactly-one-consumer)
+first and writes `null` instead of `false` when it answers true — which `Select`
+does, and `Radio` and `ToggleButtons` will. This is the predicate's only consumer
+in either tree, so restoring the branch is what porting it was *for*.
 
-What is left is a hand-built nullable boolean inside a custom filter schema —
-`Filter::make('x')->schema([Select::make('f')->boolean()])` — which declares no
-reset state, so Filament clears it to `null` where we write `false`. A
-**shipped** filter given the same schema is exposed identically: `SelectFilter`'s
-seeded `['value' => null]` does not name `f` either, so it is the custom schema
-rather than the filter class that reaches the arm. Its cast stores that as `0`
-(`false` is not `blank()`, so the nullable arm does not catch it), and a
-ternary-shaped query arm reads `0` as an active *false* filter
-rather than as cleared. Pinned as characterization rather than fixed, since the
-line that closes it is a `resetState(['f' => null])` on that filter. Port the
-predicate onto `Field`/`Select` the moment a shipped filter can reach this
-fallback with a nullable boolean.
+The arm is narrower than it looks either way, because the fallback runs only for
+a field the filter's `getResetState()` does not name, and `SelectFilter` seeds
+`['value' => null]` in `setUp()` — as Filament's does, at `SelectFilter.php:148`
+— so every `SelectFilter` and every `TernaryFilter` takes the explicit-null left
+side and clears before the `match` is reached. `Checkbox`/`Toggle` are the other
+side of it: both cast through a non-nullable `BooleanStateCast`, where `false`
+genuinely is the resting value, and neither overrides the predicate, so both
+still reset to `false`.
+
+What the branch actually decides is a hand-built nullable boolean inside a custom
+filter schema — `Filter::make('x')->schema([Select::make('f')->boolean()])` —
+which declares no reset state. That now clears to `null` rather than to `0`; the
+`0` it used to write was a *false* filter to any ternary-shaped query arm, not a
+cleared one, so the flattening had been a real behaviour difference and not only
+a typing one. Both arms are pinned in
+[`HasFiltersTest`](../../../packages/tables/tests/Unit/Concerns/HasFiltersTest.php)
+— the nullable field clearing to `null`, the `Checkbox` beside it still clearing
+to `false`.
 
 A named `$field` narrows the reset to that one field only when the group
 actually carries it — an unknown name resets the whole group, which is

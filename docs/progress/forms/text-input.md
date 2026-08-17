@@ -362,8 +362,8 @@ an `Illuminate\Contracts\Support\Arrayable` with `->toArray()`. That interface i
 Laravel's, with no Symfony counterpart and no port here, so the type is
 `array<string>|Closure|null` and the getter has no `instanceof` branch. A caller
 holding a collection-like object passes `$collection->toArray()` — or a closure
-returning it — which is what the `Closure` arm is for. `Select`'s `options()`
-[drops the same arm](select.md#hasoptions-drops-the-enum-class-string-arm) for
+returning it — which is what the `Closure` arm is for. `HasOptions`
+[drops the same arm](has-options.md#the-arrayable-arm-is-dropped) for
 the same reason.
 
 Everything else is Filament's: the `<datalist>` is keyed `<field id>-list`, and a

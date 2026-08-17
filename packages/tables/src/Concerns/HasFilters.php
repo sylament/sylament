@@ -339,7 +339,7 @@ trait HasFilters
 
             $fieldComponent->state(match (true) {
                 is_array($state) => [],
-                is_bool($state) => false,
+                is_bool($state) => $fieldComponent->hasNullableBooleanState() ? null : false,
                 default => null,
             });
         }

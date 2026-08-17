@@ -14,6 +14,7 @@ use Sylament\Schemas\Tests\Fixtures\Concerns\MultiSchemaHostFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\RecordFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
 use Sylament\Schemas\Tests\Fixtures\State\Author;
+use Sylament\Schemas\Tests\Fixtures\State\Casts\CastStatus;
 use Sylament\Schemas\Tests\Fixtures\State\Post;
 
 it('fills the bag and null-fills unset leaves', function (): void {
@@ -315,6 +316,20 @@ it('skips object-valued reads', function (): void {
     $schema->fill($record);
 
     expect($schema->getRawState())->toBe(['title' => 'Hello', 'author' => null]);
+});
+
+it('exempts a backed enum from the object-value skip', function (): void {
+    $record = new RecordFixture();
+    $record->setTitle('Hello');
+    $record->setStatus(CastStatus::Published);
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('status'), StateField::make('author')]);
+
+    $schema->fill($record);
+
+    expect($schema->getRawState())->toBe(['status' => CastStatus::Published, 'author' => null]);
 });
 
 it('reads array values from the record', function (): void {

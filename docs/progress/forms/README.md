@@ -53,11 +53,12 @@ same-named trait as the field-flavoured adapter over it, which still keeps a
 row — `HasToggleIcons` and `HasToggleColors` are
 `Toggle`'s alone and live in [`toggle.md`](toggle.md), `HasStep`,
 `HasDatalistOptions` and `CanBeAutocapitalized` are `TextInput`'s alone and live
-in [`text-input.md`](text-input.md), and `CanBeCloned`, `CanGenerateUuids` and
-`CanLimitItemsLength` are `Repeater`'s alone and live in
+in [`text-input.md`](text-input.md), and `CanBeCloned` and `CanGenerateUuids` are
+`Repeater`'s alone and live in
 [`repeater.md`](repeater.md) — which also carries `helpers.php`, whose two
 reorder functions no other component calls — while `CanBeInline` and
 `CanBeAccepted` are shared by `Checkbox` and `Toggle`,
+`CanLimitItemsLength` by `Repeater` and `CheckboxList`,
 `HasOptions` and `CanDisableOptions` by every option field, and
 `HasExtraInputAttributes` by all five fields that render a control, so those keep
 rows of their own. The fold reads the port, not Filament — Filament composes
@@ -68,6 +69,9 @@ each is promoted back to a row of its own the moment the second consumer lands.
 them until the option fields arrived, and they now carry
 [`has-options.md`](has-options.md) and
 [`can-disable-options.md`](can-disable-options.md).
+`CanLimitItemsLength` is the same move one epic later — `Repeater`'s alone until
+`CheckboxList` composed the identical trait — now carrying
+[`can-limit-items-length.md`](can-limit-items-length.md) and a row below.
 `CanBeAutocapitalized` is the one fold Filament agrees with — it composes that
 trait on `TextInput` and nothing else, so no unported consumer is queued to
 promote it. [`support/component.md`](../support/component.md) is the shape each
@@ -139,24 +143,32 @@ and is tracked in
 `HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md),
 `TextInput`'s `HasStep`, `HasDatalistOptions` and `CanBeAutocapitalized` into
 [`text-input.md`](text-input.md), and
-`Repeater`'s three (`CanBeCloned`, `CanGenerateUuids`, `CanLimitItemsLength`)
+`Repeater`'s two (`CanBeCloned`, `CanGenerateUuids`)
 into [`repeater.md`](repeater.md), per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). The shared
 ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and
 `CanBeAutocompleted` are used by `TextInput` and `Textarea`, `CanBeInline` and
 `CanBeAccepted` by `Checkbox` and `Toggle`, `BelongsToRelationship` by `Select`
-and `Repeater`, `HasOptions` and `CanDisableOptions` by every option field, and
+and `Repeater`, `CanLimitItemsLength` by `Repeater` and `CheckboxList`,
+`HasOptions` and `CanDisableOptions` by every option field, and
 `HasExtraInputAttributes` by
 `TextInput`, `Textarea`, `Select`, `Checkbox` and `Toggle`. `HasEnum` stays below
 too, on the other test: `Field` composes it, so every field has it.
 
-Three concerns are below **ahead of** the fields that compose them, which land
+Seven concerns are below **ahead of** the fields that compose them, which land
 later in the same epic: [`HasDescriptions`](has-descriptions.md) is `Radio`'s and
 `CheckboxList`'s, [`HasGridDirection`](has-grid-direction.md) theirs and
 `ToggleButtons`' — both clear the shared bar already, so each has a file — while
-`CanAllowHtml` is `CheckboxList`'s alone and keeps a bare row only because
-`checkbox-list.md` does not exist yet to fold it into, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing).
+the other five keep bare rows only because the file each folds into does not
+exist yet, per
+[one row per file](../README.md#one-row-per-file-one-file-per-thing):
+`CanAllowHtml` and `CanBeSearchable` are `CheckboxList`'s and fold into
+`checkbox-list.md` — `CanBeSearchable` promoting back to a file of its own when
+`Select`'s search lands — while `HasColors`, `HasIcons` and `HasTooltips` are
+`ToggleButtons`' and fold into `toggle-buttons.md`.
+[`CanLimitItemsLength`](can-limit-items-length.md) is not one of the seven:
+`Repeater` composes it today, and `CheckboxList` being its second consumer is what
+promoted it out of [`repeater.md`](repeater.md) ahead of that field landing.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -169,21 +181,22 @@ later in the same epic: [`HasDescriptions`](has-descriptions.md) is `Radio`'s an
 | CanBeNative | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | todo | — |
 | CanBePreloaded | [`Components/Concerns/CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php) | todo | — |
 | [`CanBeReadOnly`](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Components/Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | [can-be-read-only.md](can-be-read-only.md) |
-| CanBeSearchable | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | todo | — |
+| [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | [can-be-validated.md](can-be-validated.md) |
 | CanDisableGrammarly | [`Components/Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | todo | — |
 | [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) | [`Components/Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | [can-disable-options.md](can-disable-options.md) |
 | CanDisableOptionsWhenSelectedInSiblingRepeaterItems | [`Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | todo | — |
 | CanFixIndistinctState | [`Components/Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — |
+| [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) | [`Components/Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | [can-limit-items-length.md](can-limit-items-length.md) |
 | HasAffixes | [`Components/Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | todo | — |
-| HasColors | [`Components/Concerns/HasColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasColors.php) | todo | — |
+| [`HasColors`](../../../packages/forms/src/Components/Concerns/HasColors.php) | [`Components/Concerns/HasColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasColors.php) | done | — |
 | [`HasDescriptions`](../../../packages/forms/src/Components/Concerns/HasDescriptions.php) | [`Components/Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | [has-descriptions.md](has-descriptions.md) |
 | [`HasEnum`](../../../packages/forms/src/Components/Concerns/HasEnum.php) | [`Components/Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | done | [has-enum.md](has-enum.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Components/Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | [has-extra-input-attributes.md](has-extra-input-attributes.md) |
 | HasExtraItemActions | [`Components/Concerns/HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | todo | — |
 | HasFileAttachments | [`Components/Concerns/HasFileAttachments.php`](../../../vendor/filament/forms/src/Components/Concerns/HasFileAttachments.php) | todo | — |
 | [`HasGridDirection`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php) | [`Components/Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | [has-grid-direction.md](has-grid-direction.md) |
-| HasIcons | [`Components/Concerns/HasIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasIcons.php) | todo | — |
+| [`HasIcons`](../../../packages/forms/src/Components/Concerns/HasIcons.php) | [`Components/Concerns/HasIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasIcons.php) | done | — |
 | HasInputMode | [`Components/Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | skipped | [text-input.md](text-input.md#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
 | HasLoadingMessage | [`Components/Concerns/HasLoadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php) | todo | — |
 | HasMaxHeight | [`Components/Concerns/HasMaxHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMaxHeight.php) | todo | — |
@@ -193,7 +206,7 @@ later in the same epic: [`HasDescriptions`](has-descriptions.md) is `Radio`'s an
 | HasPivotData | [`Components/Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | [select.md](select.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | HasPreview | [`Components/Concerns/HasPreview.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPreview.php) | todo | — |
 | [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — no Filament concern of its own; `Select`'s relation surface, split off the class | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | [select.md](select.md#relationship-is-three-lazy-closures-over-the-association-reader) |
-| HasTooltips | [`Components/Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | todo | — |
+| [`HasTooltips`](../../../packages/forms/src/Components/Concerns/HasTooltips.php) | [`Components/Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | done | — |
 | HasUploadingMessage | [`Components/Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | todo | — |
 | InteractsWithForms | [`Concerns/InteractsWithForms.php`](../../../vendor/filament/forms/src/Concerns/InteractsWithForms.php) | todo | — |
 | InteractsWithToolbarButtons | [`Components/Concerns/InteractsWithToolbarButtons.php`](../../../vendor/filament/forms/src/Components/Concerns/InteractsWithToolbarButtons.php) | todo | — |
@@ -231,7 +244,7 @@ directory collapses that whole subtree into one navigational entry.
 | RichEditor / Models | [`Components/RichEditor/Models/`](../../../vendor/filament/forms/src/Components/RichEditor/Models) | todo | — |
 | RichEditor / rich content services | [`Components/RichEditor/`](../../../vendor/filament/forms/src/Components/RichEditor) | todo | — |
 | TableSelectLivewireComponent | [`Components/TableSelect/Livewire/TableSelectLivewireComponent.php`](../../../vendor/filament/forms/src/Components/TableSelect/Livewire/TableSelectLivewireComponent.php) | todo | — |
-| FormsIconAlias | [`View/FormsIconAlias.php`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | todo | — |
+| [`FormsIconAlias`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`View/FormsIconAlias.php`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | in progress | [forms-icon-alias.md](forms-icon-alias.md) |
 | TestsForms | [`Testing/TestsForms.php`](../../../vendor/filament/forms/src/Testing/TestsForms.php) | todo | — |
 | TestsFormComponentActions | [`Testing/TestsFormComponentActions.php`](../../../vendor/filament/forms/src/Testing/TestsFormComponentActions.php) | todo | — |
 | Commands / Make* | [`Commands/`](../../../vendor/filament/forms/src/Commands) | todo | — |

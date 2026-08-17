@@ -68,11 +68,14 @@ function textShadeClasses(array $palette): array
 }
 
 /**
+ * The rule carries Filament's `:not(.sy-color-neutral)` guard, whose neutral arm paints fixed
+ * grays and reads no slot, so the pattern tolerates the guard without reading that arm.
+ *
  * @return list<string> the `--sy-` slot variables the coloured-text rule reads
  */
 function textSlotVariablesRead(): array
 {
-    if (preg_match('/&\.sy-color\s*\{(?<declarations>[^}]*)\}/', supportStylesheet('components/text.css'), $rule) !== 1) {
+    if (preg_match('/&\.sy-color(?::not\(\.[a-z-]+\))?\s*\{(?<declarations>[^}]*)\}/', supportStylesheet('components/text.css'), $rule) !== 1) {
         throw new UnexpectedValueException('No `&.sy-color` rule in components/text.css — the coloured-text branch has moved or gone.');
     }
 

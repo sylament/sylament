@@ -187,26 +187,25 @@
                 @apply leading-6;
             }
 
-            & .sy-btn:not(.sy-section-header-after-ctn .sy-dropdown-panel *) {
-                &.sy-size-xs {
-                    @apply -my-0.5;
-                }
+            /* The negative margins let the buttons overhang the header's vertical padding, so a header with actions matches the height of one without them. They are applied to the container instead of the buttons so wrapped rows of actions keep their gap, laddered so the largest button size present wins. */
+            &:has(.sy-btn.sy-size-xs:not(.sy-dropdown-panel *)) {
+                @apply -my-0.5;
+            }
 
-                &.sy-size-sm {
-                    @apply -my-1;
-                }
+            &:has(.sy-btn.sy-size-sm:not(.sy-dropdown-panel *)) {
+                @apply -my-1;
+            }
 
-                &.sy-size-md {
-                    @apply -my-1.5;
-                }
+            &:has(.sy-btn.sy-size-md:not(.sy-dropdown-panel *)) {
+                @apply -my-1.5;
+            }
 
-                &.sy-size-lg {
-                    @apply -my-2;
-                }
+            &:has(.sy-btn.sy-size-lg:not(.sy-dropdown-panel *)) {
+                @apply -my-2;
+            }
 
-                &.sy-size-xl {
-                    @apply -my-2.5;
-                }
+            &:has(.sy-btn.sy-size-xl:not(.sy-dropdown-panel *)) {
+                @apply -my-2.5;
             }
         }
 

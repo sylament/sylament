@@ -1,5 +1,6 @@
 .sy-btn {
-    @apply relative inline-grid grid-flow-col items-center justify-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition duration-75 outline-none;
+    /* `align-middle` keeps the button's placement in inline flow independent of its internal baseline, which shifts when the loading indicator is the first grid item. */
+    @apply relative inline-grid grid-flow-col items-center justify-center gap-1.5 rounded-lg px-3 py-2 align-middle text-sm font-medium transition duration-75 outline-none;
 
     &.sy-force-enabled,
     &:not(.sy-disabled):not([disabled]) {
@@ -41,7 +42,7 @@
     }
 
     &:not(.sy-outlined).sy-color {
-        @apply bg-(--sy-bg) text-(--sy-text) shadow-sm dark:bg-(--sy-dark-bg) dark:text-(--sy-dark-text);
+        @apply bg-(--sy-bg) text-(--sy-text) dark:bg-(--sy-dark-bg) dark:text-(--sy-dark-text);
 
         &.sy-force-enabled,
         &:not(.sy-disabled):not([disabled]) {
@@ -54,18 +55,23 @@
     }
 
     &.sy-outlined {
-        @apply bg-transparent shadow-none ring-1;
+        @apply bg-transparent shadow-sm ring-1;
+
+        &.sy-force-enabled,
+        &:not(.sy-disabled):not([disabled]) {
+            @apply hover:bg-gray-400/10 focus-visible:ring-gray-400/40;
+        }
 
         &:not(.sy-color) {
             @apply text-gray-950 ring-gray-950/10 dark:bg-transparent dark:text-white dark:ring-white/20;
         }
 
         &.sy-color {
-            @apply text-(--sy-text) ring-color-600/50 dark:bg-transparent dark:text-(--sy-dark-text) dark:ring-color-400/50;
+            @apply text-(--sy-text) ring-color-600 dark:bg-transparent dark:text-(--sy-dark-text) dark:ring-color-500;
 
             &.sy-force-enabled,
             &:not(.sy-disabled):not([disabled]) {
-                @apply hover:bg-color-50 dark:hover:bg-color-400/10;
+                @apply focus-visible:ring-color-500/40 dark:focus-visible:ring-color-400/40 hover:bg-color-500/10 dark:hover:bg-color-600/10;
             }
 
             & > .sy-icon {

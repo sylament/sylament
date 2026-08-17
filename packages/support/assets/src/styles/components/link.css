@@ -1,5 +1,5 @@
 .sy-link {
-    @apply relative inline-flex items-center justify-center gap-1.5 font-medium transition duration-75 outline-none;
+    @apply relative inline-flex items-center justify-center gap-1.5 font-medium outline-none;
 
     & > .sy-link-label {
         @apply self-baseline;

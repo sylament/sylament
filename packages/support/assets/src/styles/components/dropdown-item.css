@@ -1,8 +1,13 @@
 .sy-dropdown-item {
-    @apply flex w-full items-center gap-2 rounded-md px-3 py-2 text-start text-sm text-gray-700 outline-none hover:bg-gray-950/5 focus-visible:bg-gray-950/5 dark:text-gray-200 dark:hover:bg-white/5 dark:focus-visible:bg-white/5;
+    @apply flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-start text-sm whitespace-nowrap text-gray-700 transition-colors duration-75 outline-none select-none dark:text-gray-200;
 
-    &.sy-disabled {
-        @apply pointer-events-none opacity-70;
+    &:not(.sy-disabled):not([disabled]) {
+        @apply hover:bg-gray-50 focus-visible:bg-gray-50 dark:hover:bg-white/5 dark:focus-visible:bg-white/5;
+    }
+
+    &.sy-disabled,
+    &[disabled] {
+        @apply pointer-events-none cursor-default opacity-70;
     }
 
     &.sy-color {
@@ -17,5 +22,5 @@
 }
 
 .sy-dropdown-item-label {
-    @apply grow truncate;
+    @apply flex-1 truncate;
 }

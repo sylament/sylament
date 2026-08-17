@@ -8,8 +8,8 @@ into [`index.css`](../../../packages/schemas/assets/src/styles/index.css) under
 `layer(components)`, mirroring Filament's `index.css` structure. The `fi-*` class
 prefix is translated to the schemas component code `sy-sc-*` (see the
 [CSS contract](../../styling.md)). Four of Filament's stylesheets are ported so
-far (schema, section, icon, actions), each dropping variants from its source; the
-rest wait on the components they style.
+far (schema, section, icon, actions) — `icon.css` rule-for-rule, the other three
+dropping variants from their source; the rest wait on the components they style.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -31,7 +31,7 @@ CSS. _Detail_ carries a **diverges** link to a permanent note in
 | --- | --- | --- | --- | --- |
 | [`schema.css` — `.sy-sc` grid/inline/gap/dense/alignment/action](../../../packages/schemas/assets/src/styles/components/schema.css) | [`schema.css`](../../../vendor/filament/schemas/resources/css/schema.css) | in progress | — | [diverges](#schema-css-drops-the-fi-width-max-width-variants-and-the-hidden-rule) |
 | [`section.css` — `.sy-sc-section` label container](../../../packages/schemas/assets/src/styles/components/section.css) | [`components/section.css`](../../../vendor/filament/schemas/resources/css/components/section.css) | done | — | [diverges](#section-css-adds-the-sr-only-hidden-label-rule) · [diverges](#section-css-adds-a-dark-mode-text-color-to-the-content-container) |
-| [`icon.css` — `.sy-sc-icon` color override](../../../packages/schemas/assets/src/styles/components/icon.css) | [`components/icon.css`](../../../vendor/filament/schemas/resources/css/components/icon.css) | in progress | — | [diverges](#icon-css-drops-the-default-gray-base-color) |
+| [`icon.css` — `.sy-sc-icon` gray base + color override](../../../packages/schemas/assets/src/styles/components/icon.css) | [`components/icon.css`](../../../vendor/filament/schemas/resources/css/components/icon.css) | done | — | — |
 | [`actions.css` — `.sy-sc-actions` column + `.sy-sc-actions-ctn` row](../../../packages/schemas/assets/src/styles/components/actions.css) | [`components/actions.css`](../../../vendor/filament/schemas/resources/css/components/actions.css) | in progress | — | [diverges](#actions-css-folds-in-the-actions-package-row-stylesheet-and-drops-the-sticky-and-vertical-alignment-variants) |
 | [`text.css` — `.sy-sc-text` (lives in the support package)](../../../packages/support/assets/src/styles/components/text.css) | [`components/text.css`](../../../vendor/filament/schemas/resources/css/components/text.css) | done | — | [diverges](#text-css-was-ported-into-the-support-package) |
 | `flex.css` / `form.css` / `fused-group.css` / `image.css` / `tabs.css` / `unordered-list.css` / `wizard.css` | [`components/`](../../../vendor/filament/schemas/resources/css/components/) | blocked | Flex, Form, FusedGroup, Image, Tabs, UnorderedList, Wizard | [detail](#the-seven-remaining-stylesheets-are-unported) |
@@ -83,20 +83,13 @@ Filament's `schema.css` defines fifteen `.fi-grid-col.fi-width-*` max-width vari
 `schema.css` keeps `text-sm`, inline/growable, gap/dense, the alignment set, the
 action-wrapper rule (`.sy-inline > .sy-sc-action { contents }` — without Filament's
 `:not(.fi-hidden)` guard, because hidden children are never emitted into the DOM),
-and adds `& > .sy-grid-col > .sy-sc-component { h-full }` — but omits all width
+and keeps `& > .sy-grid-col > .sy-sc-component { h-full }` (vendor's
+`schema.css:108`, inside the same `& > .fi-grid-col`) — but omits all width
 variants (`HasMaxWidth` on grid columns is unported) and the `fi-hidden` rule
 (no hidden placeholders are rendered — see the
 [schema.md divergence](schema.md#the-schema-renders-visible-children-only-without-hidden-placeholders)).
 Reverses as `HasMaxWidth` lands and if hidden placeholders arrive with the
 live-component morphing strategy.
-
-### Icon CSS drops the default gray base color
-
-Filament's `components/icon.css` sets `.fi-sc-icon { text-gray-400 dark:text-gray-500 }`
-as the default and lets `.fi-color` override it. Sylament's `icon.css` keeps only
-the `&.sy-color { text-color-500 dark:text-color-400 }` override and omits the
-default-gray base, so a gray schema Icon inherits color rather than getting the
-explicit gray token. Small fidelity gap to close.
 
 ### Section CSS adds the sr-only hidden-label rule
 

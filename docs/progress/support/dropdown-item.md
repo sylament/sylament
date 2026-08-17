@@ -23,8 +23,12 @@ and
 — and this file is where that markup gets an owner. Both rules moved
 byte-for-byte into
 [`dropdown-item.css`](../../../packages/support/assets/src/styles/components/dropdown-item.css),
-so the extraction changes nothing on the page; the `.sy-color` rules are the only
-addition, and they are reachable only because `color` is a new prop.
+so the extraction changed nothing on the page; the `.sy-color` rules were the only
+addition, and they are reachable only because `color` is a new prop. They have
+since been trued up to
+[`item.css`](../../../vendor/filament/support/resources/css/components/dropdown/list/item.css)
+— `p-2` padding, the four dropped box declarations, the `gray-50` hover surface,
+the disabled-gated hover/focus arm and the label's `flex-1`.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).

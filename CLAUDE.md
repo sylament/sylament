@@ -57,9 +57,12 @@ there. Milestones prove out here (see `docs/progress/roadmap.md`).
   `/articles/{id}/edit` (M1 · 2) are real CRUD pages sharing the
   `Articles:ArticleForm` live component — the entity round-trip rig, backed by
   the `Article` entity and Doctrine persistence rather than a card's `$data`
-  scratch state. Beside both, `/admin` (M2 · 2) is a real panel — the shell,
-  its navigation and the dashboard page, mounted by
-  `src/Panels/AdminPanelProvider.php` with
+  scratch state; since M2 · 4 the form's ten components are defined once in
+  `App\Schemas\ArticleForm::configure()` (Filament's `make:filament-form`
+  shape), shared with `ArticleResource::form()`. Beside both, `/admin`
+  (M2 · 2–3) is a real panel — the shell, its navigation, the dashboard page
+  and the Articles resource (list, create and edit at `/admin/articles`),
+  mounted by `src/Panels/AdminPanelProvider.php` with
   `config/routes/sylament_panels.yaml` importing the panels route loader; the
   panel owns its own routes, so nothing under it is a showcase card.
 - **Keep the showcase current — treat it like the docs trail.** The showcase
@@ -73,17 +76,22 @@ there. Milestones prove out here (see `docs/progress/roadmap.md`).
   real browser (the forms-in-modals and M1 · 1 epics set the precedent). Run it
   with `task up` (Taskfile: docker-compose Postgres + `symfony server:start -d`
   + proxy → `https://localhost:8000`); `task css:watch` rebuilds Tailwind
-  (`symfony console tailwind:build`); `task test` is the demo gate — it
-  creates/migrates the test database, runs the demo's own PHPStan (level max
-  over `src/`, with a frozen baseline holding six pre-M1 · 2 errors), and
-  PHPUnit. DB-touching tools must run through the Symfony CLI (`symfony php
-  vendor/bin/phpunit`) — the docker Postgres publishes a random host port and
-  only the CLI injects the matching `DATABASE_URL`. The functional suite lives
-  under `tests/Functional/` — `Showcase/` (routes + per-page smoke),
+  (`symfony console tailwind:build`); `task seed` migrates the dev DB and fills
+  the demo seed (idempotent per table; `app:demo:seed --fresh` truncates and
+  reseeds); `task test` is the demo gate — it creates/migrates the test
+  database, runs the demo's own PHPStan (level max over `src/`, with a frozen
+  baseline holding nine errors and `reportUnmatchedIgnoredErrors` off, unlike
+  the monorepo), and PHPUnit. DB-touching tools must run through the Symfony
+  CLI (`symfony php vendor/bin/phpunit`) — the docker Postgres publishes a
+  random host port and only the CLI injects the matching `DATABASE_URL`. The
+  functional suite lives under `tests/Functional/` — `Showcase/` (routes +
+  per-page smoke),
   `Articles/` (the DB-writing entity round-trip, isolated per test by
-  `dama/doctrine-test-bundle`, a dev dep registered for the test env only) and
-  `Admin/` (the `/admin` panel: its routes, shell and dashboard) — keep it
-  green when touching showcase, article or panel pages.
+  `dama/doctrine-test-bundle`, a dev dep registered for the test env only),
+  `Admin/` (the `/admin` panel: its routes, shell, dashboard and the Articles
+  resource vertical), `Mapping/` (the record-mapping capability table) and the
+  root `SeedDemoCommandTest` (the seed's shape contract) — keep it green when
+  touching showcase, article or panel pages.
 
 ## Commands
 

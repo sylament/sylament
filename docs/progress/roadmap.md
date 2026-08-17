@@ -26,17 +26,11 @@ stops mid-M2, M1 still demos on its own.
 
 ## Now
 
-**M2 · 4 — Demo panel assembly.** The next epic to pick up, and the smallest in
-the milestone, because most of it landed inside M2 · 3's own verification: the
-panel was mounted at `/admin` by M2 · 2 and the Articles resource registered
-while proving M2 · 3 in the browser. What is left is demo-side finish — repoint
-the demo's Composer path lock at `main` after the monorepo merge, seed data, and
-polish — plus one product decision that comes with it: `ArticleForm` (the M1 · 2
-entity round-trip rig behind `/articles/new` and `/articles/{id}/edit`) and
-`ArticleResource::form()` now define the same ten components twice, so either the
-`/articles/*` pages retire or the duplication is kept on purpose.
-[M2 · 3](#m2--mini-admin-panel) landed ahead of it, demo-proven at
-`/admin/articles` in the browser.
+**Choose the next milestone.** M2 closed with [M2 · 4](#m2--mini-admin-panel)
+(2026-08-17): the demo panel is assembled, seeded and browser-proven, and the
+duplicated article form is defined once. Nothing is queued — the
+[Beyond](#beyond) list is the menu; promote one into a milestone. That
+promotion is a product call, so this cursor stays parked until it is made.
 
 ## Pulled forward
 
@@ -72,8 +66,8 @@ story stays honest.
 | # | Milestone | Outcome | Status |
 | --- | --- | --- | --- |
 | M1 | [Entity CRUD slice](#m1--entity-crud-slice) | A plain Symfony app doing full CRUD on one entity through Sylament components alone. | done |
-| M2 | [Mini admin panel](#m2--mini-admin-panel) | The same CRUD delivered as a Filament-style panel: navigation, a resource, generated pages. | todo |
-| — | [Beyond](#beyond) | Unordered candidates, promoted into milestones as M2 closes. | — |
+| M2 | [Mini admin panel](#m2--mini-admin-panel) | The same CRUD delivered as a Filament-style panel: navigation, a resource, generated pages. | done |
+| — | [Beyond](#beyond) | Unordered candidates; the next milestone is promoted from here. | — |
 
 ## M1 — Entity CRUD slice
 
@@ -149,7 +143,7 @@ whole UI — Filament's pitch, running on Symfony._
 | 1 | Panel shell | [panels](panels/README.md) | The shell layer, demo-proven in the browser under Turbo Drive. `NavigationItem`/`NavigationGroup` on the support `Component` base (closure-evaluable; active state is request-derived through `isActiveWhen()` closures, never global state) and the surface-only `Page` base (live-component wiring deferred to epic 2, where routing forces the registration decision). Six anonymous layout components — `Layout`, `Sidebar`, `SidebarGroup`, `SidebarItem`, `Topbar`, `Header` — with skip link, stable landmark ids, `aria-current` on the active item, and disclosure ARIA only where a control exists. The `@sylament/panels` assets workspace: one sidebar Stimulus controller (mobile off-canvas with overlay and Escape, per-group collapse persisted to localStorage and restored in `connect()` so behaviour is identical with and without Turbo, hamburger `aria-expanded` sync), `sy-pa-*` styles compiled into support's stylesheet, and the bundle's AssetMapper `@sylament/panels` registration — the piece no task owned until review caught it. Divergences recorded in the trail: the shell is static Twig components rather than Filament v5's Livewire sidebar/topbar; Alpine's `$store.sidebar` became the one controller. Deferred, named in the trail: desktop collapse variants, collapsed tooltips, sub-navigation, `NavigationBuilder`/`NavigationManager`, breadcrumbs, user menu, theme switcher, DB-notifications trigger. | done |
 | 2 | Panel definition + routing | [panels](panels/README.md) | The panel definition layer, demo-proven at `/admin`. `Panel` (id, path, pages, navigation registration, brand name, collapsible-groups default) built from tagged `PanelProvider` services into a lazily-built, immutable `PanelRegistry`; the worker-safe `CurrentPanel` reads the `_sylament_panel` route default per call — no `SetUpPanel` port, no per-request `boot()`. A `routing.route_loader` service mounts one GET route per page (`sylament.{id}.pages.{slug}`, class-file freshness resources, fail-fast validation); `PageComponentPass` registers every `Page` subclass as a UX Live Component with zero per-class attributes (`template_from_method: getTemplate`), which `PageController` embeds through the bundle's document template around the static shell. `Page` grew slug/route-name/component-name derivation, the title and navigation-label basename fallbacks, and `getNavigationItems(Panel)` whose url/active closures resolve from the item's `#[Required]`-injected service set — no public aliases anywhere, the mid-epic container-arm workaround reverted. `Dashboard` ships at the panel root; `NavigationGroup::isCollapsible()` unpinned via the panel-stamped fallback. Settled: compiler pass over per-page attributes; heading/subheading writers deliberately absent (matches Filament); the `UnitEnum` group arm stays deferred with `fromEnum()`. Multi-lens final review clean. | done |
 | 3 | Resource vertical | [panels](panels/README.md), [actions](actions/README.md) | The resource layer, demo-proven at `/admin/articles` in the browser. `Resource` lands as a **service collected by tag** — `form()` / `table()` / `getPages()` as instance methods, autowired and reached through `ResourcePass`' class-keyed locator (ordinary shared services — a resource holds no per-request state), with the class-string kept as the user-facing identifier (`->resources([ArticleResource::class])`) — deriving slug, labels and plurals from the record class, resolving and generating a record's route key against Doctrine metadata rather than Laravel's `UrlRoutable`, and contributing at most one navigation item. Three page bases sit on a shared `Resources\Pages\Page` that carries the resource hop (`getResourceInstance()`), the actions host, and the `getDefaultActionUrl()` discrimination that keeps a `DeleteAction` mounting its confirmation while `Create`/`Edit` linkify: `ListRecords` (a table stamped query-first, resource-last), `CreateRecord` and `EditRecord` (a `form` schema over the record, save plus notification, the `record` prop bridged through `dehydrateWith:`). `PanelRouteLoader` mounts every resource page beside the panel pages behind one `PageController`, with a fail-fast duplicate **route-name** guard and route parameters carried into the page component as props. Navigation is derived from the registered resources and stays lit by a route-name **prefix** match, so a create or edit page keeps its index item active. `actions` gained the prebuilt `CreateAction` / `EditAction` / `DeleteAction` trio and real success/failure toasts through a **guarded soft dependency** on `sylament/notifications` (composer `suggest` + `class_exists`, pinned from the notifications suite because the cycle forbids a `require`), rendered by the panel document's notifications outlet. Deferred, named in the trail: authorization, `ViewRecord` / `ManageRecords`, breadcrumbs and sub-navigation, clusters, tenancy, relation managers, row-click defaulting, and `Resource.php`'s split into Filament's five concerns. | done |
-| 4 | Demo panel assembly | **demo** | Mount the panel and register the Articles resource — both already landed, the mount with M2 · 2 and the resource with M2 · 3's browser verification. What remains: repoint the demo's Composer path lock at `main` after the monorepo merge, seed data, polish, and decide whether the M1 · 2 `/articles/*` round-trip rig retires now that `ArticleResource::form()` defines the same ten components. | todo |
+| 4 | Demo panel assembly | **demo** | Demo-side finish, browser-proven at `/admin/articles`. The Composer repoint was already clean — the lock referenced monorepo `main` at `55d8f3f` and `install --dry-run` was a no-op — so it is recorded, not redone. Seed: `app:demo:seed` enriched so every article carries `perex`/`body` and its sections carry bodies, three-plus rows `featured`, half tagged — the 14 / 2-unattributed / 1–3-topics / 0–4-sections shape contract held — plus a `--fresh` truncate-and-reseed arm and a `task seed` rung that migrates the dev DB first. Polish: a favicon for both document shells (`public/favicon.ico` for the panel document's fallback request, a matching inline SVG in `base.html.twig`) and list page sizes `[5, 10, 25]` replacing the test-era `[2, 5, 10]`. The product decision: `/articles/*` **stays** — milestones remain independently demoable and the M1 rig is the only standalone, no-panel surface demo — with the ten-component duplication dissolved into `App\Schemas\ArticleForm::configure()`, Filament's `make:filament-form` shape, consumed by both `ArticleResource::form()` and the live component's enveloped `schema()`. Deferred, recorded: table filters on the demo resource; `Panel::favicon()`. | done |
 
 **Out of scope:** login/auth (the demo runs open); widgets and dashboard
 stats; global search; relation managers; infolists and the view page;
@@ -167,7 +161,8 @@ with notifications — end to end.
 
 ## Beyond
 
-Unordered and uncommitted; promote one into a milestone when M2 closes.
+Unordered and uncommitted; M2 is closed, so the next milestone is promoted
+from here.
 
 - Breadth parity per package — working down the [progress tables](README.md).
 - Auth: login page, user menu, panel access control.

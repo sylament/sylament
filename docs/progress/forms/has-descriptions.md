@@ -104,23 +104,17 @@ reach it — `blank()`'s last line *is* `$value === []`, an array being neither
 [the `Arrayable` arm dropped](#the-arrayable-arm-is-dropped), so after
 `evaluate()` an array is all there is.
 
-The reason it is written out is static analysis, and it is worth knowing before
-"restoring" the helper. Support's
-[`blank()`](../support/helpers.md) carries `@phpstan-assert-if-false !null $value`,
-which PHPStan applies in **both** directions: the false branch narrows to
-`!null`, and the true branch to `null`. That is sound for a nullable argument and
-wrong for the rest of `blank()`'s domain — a plain `string`, an array, a `Markup`
-— so passing a non-nullable type makes PHPStan call the invocation always-false
-(`function.impossibleType`) and narrow the true branch to `never`. Nothing here
-caught it until [`Radio`](radio.md) composed the trait and gave PHPStan a
-concrete `$this` to resolve `evaluate()` through.
+Writing it out is what support's
+[`@phpstan-assert` decision](../support/helpers.md#the-phpstan-assert-tags-model-these-as-null-checks-only)
+prescribes: the tags model both helpers as **null-checks only**, so a call on a
+value already narrowed past `null` is `function.impossibleType` at level max, and
+the prescribed response is to remove the call rather than suppress it. The gate
+here was defending against a `null` the property type cannot hold.
 
-The helper's docblock is the real defect, and fixing it is a support-level change
-rather than this file's: deleting the two assertions on `blank()` and `filled()`
-raises 47 errors across six packages that rely on the sound half of the
-narrowing. So the helper is left alone and this one gate states its own test
-directly. Nothing else in the port passes a provably non-nullable value to either
-helper today.
+Nothing surfaced it until [`Radio`](radio.md) composed the trait and gave PHPStan
+a concrete `$this` to resolve `evaluate()` through — the same
+[analysed-only-through-a-composer](../tables/has-table.md#a-host-trait-is-analysed-only-through-a-class-that-composes-it)
+effect that named the rule, one package over.
 
 ## Divergences
 

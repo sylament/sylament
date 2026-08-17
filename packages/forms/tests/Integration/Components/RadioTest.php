@@ -47,6 +47,27 @@ function renderRadioWithState(Radio $field, array $data): string
     return renderToHtml(Schema::make($host)->statePath('data')->components([$field]));
 }
 
+/**
+ * Wire a radio into a keyed, validator-backed schema and run the host's real
+ * validation over it, so the field reports the messages a failed submit leaves in
+ * the host error bag. `renderField()` builds no host validator, so an
+ * `aria-invalid="true"` assertion needs this instead — the same rig
+ * `validatedToggleSchema()` builds one file over.
+ */
+function validatedRadioSchema(Radio $field): Schema
+{
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator(test()->getContainer()->get(ValidatorInterface::class));
+
+    $schema = Schema::make($host)->statePath('data')->components([$field]);
+    $host->cacheSchema('schema', $schema);
+    $schema->hydrateState();
+
+    $host->validateSchema($schema, shouldThrow: false);
+
+    return $schema;
+}
+
 it('renders one radio per option, grouped by a shared name', function (): void {
     $crawler = new Crawler(renderField(
         Radio::make('status')->label('Status')->options(['draft' => 'Draft', 'published' => 'Published']),
@@ -244,12 +265,24 @@ it('keeps aria-labelledby resolvable when the label is hidden', function (): voi
 });
 
 it('marks every input invalid when the field has errors, and valid otherwise', function (): void {
-    $inputs = new Crawler(renderField(
+    $valid = new Crawler(renderField(
         Radio::make('status')->options(['draft' => 'Draft', 'published' => 'Published']),
     ))->filter('input.sy-fo-radio-input');
 
-    expect($inputs->eq(0)->attr('aria-invalid'))->toBe('false')
-        ->and($inputs->eq(1)->attr('aria-invalid'))->toBe('false');
+    expect($valid->eq(0)->attr('aria-invalid'))->toBe('false')
+        ->and($valid->eq(1)->attr('aria-invalid'))->toBe('false');
+
+    // The true arm is what `radio.css`'s `[aria-invalid='true']` danger ring keys
+    // off, and it has to reach every option: a radiogroup is invalid as a whole.
+    $crawler = new Crawler(renderToHtml(validatedRadioSchema(
+        Radio::make('status')->options(['draft' => 'Draft', 'published' => 'Published'])->required(),
+    )));
+    $invalid = $crawler->filter('input.sy-fo-radio-input');
+
+    expect($invalid->count())->toBe(2)
+        ->and($invalid->eq(0)->attr('aria-invalid'))->toBe('true')
+        ->and($invalid->eq(1)->attr('aria-invalid'))->toBe('true')
+        ->and($crawler->filter('.sy-fo-field-error-message')->count())->toBe(1);
 });
 
 it('merges extra input attributes onto every radio and lets them win', function (): void {

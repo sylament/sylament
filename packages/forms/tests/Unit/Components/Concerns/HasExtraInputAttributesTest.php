@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests\Unit\Components\Concerns;
 
 use Sylament\Forms\Components\Checkbox;
+use Sylament\Forms\Components\Radio;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Components\Textarea;
 use Sylament\Forms\Components\TextInput;
@@ -43,7 +44,7 @@ it('exposes the extra input attributes as a bag', function (): void {
         ->and($bag->getAttributes())->toBe(['class' => ['custom']]);
 });
 
-it('is composed on every field that renders a single control', function (string $class): void {
+it('is composed on every field that renders a control, one or one per option', function (string $class): void {
     expect(method_exists($class, 'extraInputAttributes'))->toBeTrue();
 })->with([
     TextInput::class,
@@ -51,4 +52,5 @@ it('is composed on every field that renders a single control', function (string 
     Select::class,
     Checkbox::class,
     Toggle::class,
+    Radio::class,
 ]);

@@ -68,17 +68,23 @@ the group element gets none.
 
 `extraInputAttributes(['inputmode' => 'email'])` wins over the `inputmode` a
 `numeric()` text input derives, and `['disabled' => false]` un-disables a
-`disabled()` control. That is Filament's precedence rather than an addition:
-`TextInput`, `Textarea`, `Select`, `Radio` and `ToggleButtons` each build the
-control's attributes
+`disabled()` control. That is Filament's precedence rather than an addition on
+four of the six fields it also composes the trait on: `TextInput`, `Textarea`,
+`Select` and `Radio` each build the control's attributes
 as `$this->getExtraInputAttributeBag()->merge([…the field's own…])`, and a bag's
 `merge()` treats its argument as **defaults** — so the extras are what survives.
-([`Checkbox`](checkbox.md#the-checkboxs-extra-input-attributes-win-where-filaments-lose)
-is the one exception among the five Filament also composes, and the port does not
-follow it there;
-[`Toggle`](toggle.md#the-toggle-carries-extra-input-attributes-filaments-does-not)
-has no Filament order to inherit at all, since Filament composes no such trait on
-it.)
+
+The other two invert it, and the port overrides both to the order above.
+[`Checkbox`](checkbox.md#the-checkboxs-extra-input-attributes-win-where-filaments-lose)
+merges the extras in **last**, so Filament's field attributes win;
+[`ToggleButtons`](toggle-buttons.md#the-extra-input-attributes-win-where-filaments-lose-by-going-last)
+never merges at all — it prints its own attributes as raw HTML and appends the
+extras bag after them, which a browser resolves **first**-wins, so the field's own
+`id`/`type`/`value` beat the extras there too. One port-wide order beats copying a
+split vendor never explains.
+([`Toggle`](toggle.md#the-toggle-carries-extra-input-attributes-filaments-does-not)
+is outside the question entirely: Filament composes no such trait on it, so there
+is no order to inherit.)
 
 The port spells the same thing as `attrs()` source order, which is
 later-source-wins, so the extras are the **last** argument:

@@ -61,7 +61,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
 | [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) + [contract](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php) | [`Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | — | [detail](can-disable-options.md) |
 | [`HasGridDirection`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php) | [`Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | — | [detail](has-grid-direction.md) |
-| [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
+| [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#the-extra-input-attributes-win-where-filaments-lose-by-going-last) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
 | [`HasColors`](../../../packages/forms/src/Components/Concerns/HasColors.php) | [`Concerns/HasColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasColors.php) | done | — | [semantics](#hascolors-hasicons-and-hastooltips-are-this-fields-alone) · [diverges](#the-arrayable-arm-is-dropped-from-all-three-maps) |
 | [`HasIcons`](../../../packages/forms/src/Components/Concerns/HasIcons.php) | [`Concerns/HasIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasIcons.php) | done | — | [semantics](#hascolors-hasicons-and-hastooltips-are-this-fields-alone) · [diverges](#the-arrayable-arm-is-dropped-from-all-three-maps) |
 | [`HasTooltips`](../../../packages/forms/src/Components/Concerns/HasTooltips.php) | [`Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | done | — | [semantics](#hascolors-hasicons-and-hastooltips-are-this-fields-alone) · [diverges](#the-arrayable-arm-is-dropped-from-all-three-maps) · [diverges](#gettooltips-return-is-narrowed) |
@@ -437,6 +437,36 @@ buttons carry a colour, not a ring), so the attribute here is for assistive
 technology only and no stylesheet keys off it. It is emitted anyway because a
 radiogroup is invalid as a whole and a screen reader should say so on every
 control in it.
+
+### The extra input attributes win where Filament's lose by going last
+
+Vendor's `ToggleButtons` is the one field composing this trait that never merges
+the two attribute sets. It prints its own attributes as literal markup and appends
+`$extraInputAttributeBag->toHtml()` after them
+([`:130-141`](../../../vendor/filament/forms/src/Components/ToggleButtons.php)),
+and HTML duplicate-attribute parsing is **first**-wins — so in Filament the
+field's own `id`, `type` and `value` beat anything
+`extraInputAttributes()` sets, and an author trying to override one is silently
+ignored. Its four `merge()`-based siblings (`TextInput`, `Textarea`, `Select`,
+`Radio`) give the extras the win instead;
+[`Checkbox`](checkbox.md#the-checkboxs-extra-input-attributes-win-where-filaments-lose)
+inverts it a third way, merging the extras in last.
+
+The port's templates put `component.getExtraInputAttributes` as the final
+`attrs()` source, which is later-source-wins, so the **extras win** here as they
+do on every other field. That is the same override
+[`Checkbox`](checkbox.md#the-checkboxs-extra-input-attributes-win-where-filaments-lose)
+already makes, for the same reason: `extraInputAttributes()` is an escape hatch,
+and an escape hatch a field can silently outrank is not one. The order is the
+port-wide contract recorded in
+[`has-extra-input-attributes.md`](has-extra-input-attributes.md#the-extras-beat-the-attributes-the-field-computes),
+pinned here by `ToggleButtonsTest`'s extra-attributes case, whose
+`['disabled' => false]` un-disables a `disabled()` field — the assertion that
+would fail against vendor's order.
+
+Nothing about the *rendered* markup differs otherwise: an extra attribute the
+field does not compute lands identically either way. Only a **collision** parts
+the two, on the ten the input computes for itself.
 
 ### `extraAttributes()` stays on the field wrapper
 

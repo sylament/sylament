@@ -45,7 +45,10 @@ and its
 with the tampered-value, disabled-option and both-stored-forms cases re-run over
 an option **set** — plus the per-option `disabled` attribute its template renders
 — by
-[`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php).
+[`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php),
+and the disabled option re-run once more against a control that carries the state
+on a hidden input and the disabled styling on the label beside it, by
+[`ToggleButtonsTest`](../../../packages/forms/tests/Integration/Components/ToggleButtonsTest.php).
 
 ## Semantics
 
@@ -98,9 +101,10 @@ declares the *read* side instead: `isOptionDisabled()`, which
 calls per option to render `disabled`, and `getEnabledOptions()`, which
 [`getEnabledOptionValues()`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php)
 walks to build the `Choice` choices. Neither is reached through an `instanceof`
-yet — [`Select`](select.md) and [`Radio`](radio.md) are the implementors, and
-both call the two methods directly — so the interface names what an implementor
-has to honour rather than what Filament's absent consumer needed.
+yet — [`Select`](select.md), [`Radio`](radio.md) and
+[`ToggleButtons`](toggle-buttons.md) are the implementors, and all three call the
+two methods directly — so the interface names what an implementor has to honour
+rather than what Filament's absent consumer needed.
 `disableOptionWhen()` still ships on the
 [trait](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php),
 so the public API is unchanged, and widening the interface once the repeater arm

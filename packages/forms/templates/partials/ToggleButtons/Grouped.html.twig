@@ -1,0 +1,53 @@
+{% set state = component.getOptionComparisonState %}
+{% set isMultiple = component.isMultiple %}
+{% set areButtonLabelsHidden = component.areButtonLabelsHidden %}
+{% set hasErrors = component.getErrorMessages is not empty %}
+
+<twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
+    <div
+            {{ attrs({
+                class: ['sy', 'sy-fo-toggle-buttons', 'sy-btn-group'],
+                role: isMultiple ? 'group' : 'radiogroup',
+                'aria-labelledby': component.getId ~ '-label',
+            }) }}
+    >
+        {% for value, label in component.getOptions %}
+            {% set inputId = component.getId ~ '-' ~ value %}
+            {% set isOptionDisabled = component.isDisabled or component.isOptionDisabled(value, label) %}
+            {% set icon = component.getIcon(value) %}
+            {% set colorAttrs = colorAttributes(
+                'Sylament\\Support\\Colors\\Components\\ButtonComponent',
+                component.getColor(value) ?? 'primary',
+            ) %}
+
+            <input {{ attrs({
+                type: isMultiple ? 'checkbox' : 'radio',
+                class: 'sy-fo-toggle-buttons-input',
+                id: inputId,
+                name: isMultiple ? null : component.getId,
+                value: value,
+                checked: state is iterable ? value in state : (state is not null and value == state),
+                'data-model': component.getDataModel,
+                'aria-invalid': hasErrors,
+                disabled: isOptionDisabled,
+            }, component.getExtraInputAttributes) }}>
+
+            <label {{ attrs({
+                class: ['sy-btn', 'sy-btn-group-btn', 'sy-size-md', {'sy-disabled': isOptionDisabled}, colorAttrs.class],
+                style: colorAttrs.style,
+                for: inputId,
+                title: component.getTooltip(value),
+                'aria-disabled': isOptionDisabled ? 'true' : null,
+                'aria-label': areButtonLabelsHidden ? label|striptags|trim : null,
+            }) }}>
+                {%- if icon -%}
+                    <twig:SylamentSupport:Icon :icon="icon" :alias="component.getIconAlias(value)" />
+                {%- endif -%}
+
+                {%- if not areButtonLabelsHidden -%}
+                    {{ label }}
+                {%- endif -%}
+            </label>
+        {% endfor %}
+    </div>
+</twig:SylamentForms:FieldWrapper>

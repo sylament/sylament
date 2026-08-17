@@ -4,4 +4,5 @@
 @import './components/radio.css' layer(components);
 @import './components/repeater.css' layer(components);
 @import './components/select.css' layer(components);
+@import './components/toggle-buttons.css' layer(components);
 @import './components/toggle.css' layer(components);

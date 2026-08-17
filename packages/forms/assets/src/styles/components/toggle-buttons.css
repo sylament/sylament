@@ -1,0 +1,25 @@
+.sy-fo-toggle-buttons {
+    &.sy-btn-group {
+        @apply w-max;
+    }
+
+    &:not(.sy-btn-group) {
+        @apply gap-3;
+
+        &.sy-inline {
+            @apply flex flex-wrap;
+        }
+
+        &:not(.sy-inline).sy-grid-direction-col {
+            @apply -mt-3;
+
+            & .sy-fo-toggle-buttons-btn-ctn {
+                @apply break-inside-avoid pt-3;
+            }
+        }
+    }
+
+    & .sy-fo-toggle-buttons-input {
+        @apply pointer-events-none absolute opacity-0;
+    }
+}

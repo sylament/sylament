@@ -10,6 +10,7 @@ use Sylament\Forms\Components\Select;
 use Sylament\Forms\Components\Textarea;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Components\Toggle;
+use Sylament\Forms\Components\ToggleButtons;
 use Sylament\Support\Twig\ComponentAttributeBag;
 
 it('has no extra input attributes by default', function (): void {
@@ -53,4 +54,5 @@ it('is composed on every field that renders a control, one or one per option', f
     Checkbox::class,
     Toggle::class,
     Radio::class,
+    ToggleButtons::class,
 ]);

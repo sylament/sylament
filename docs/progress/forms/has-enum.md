@@ -34,15 +34,18 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | [`Field::getDefaultStateCasts()`](../../../packages/forms/src/Components/Field.php) appending the enum cast | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [semantics](#a-custom-cast-suppresses-the-option-casts-not-the-enum-one) |
 | [`Field::getEnumDefaultStateCast()`](../../../packages/forms/src/Components/Field.php) → [`EnumStateCast`](../schemas/enum-state-cast.md) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#a-pure-unitenum-is-refused-at-the-field-not-deep-in-the-cast) |
 | [`Select::getEnumDefaultStateCast()`](../../../packages/forms/src/Components/Select.php) → `EnumArrayStateCast` under `multiple()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | — |
+| [`ToggleButtons::getEnumDefaultStateCast()`](../../../packages/forms/src/Components/ToggleButtons.php) → the same swap under its own `multiple()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | — |
 | Enum-derived options (`options(MyEnum::class)`, `enum()` alone) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
 | `Rule::enum()` as the implicit validation rule ([`CanBeValidated::getInValidationRule()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php)) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#the-enum-validates-through-the-option-choice-not-a-rule-of-its-own) |
 
 Filament reads `getEnum()` from four map concerns, not one:
-[`HasOptions`](has-options.md) is ported here, and `HasDescriptions`,
-`HasColors` and `HasIcons` each derive their own per-case map through
-support's `HasDescription` / `HasColor` / `HasIcon` contracts. Those three
-concerns are unported and keep their **todo** rows in the
-[package README](README.md); their enum fallbacks land with them, not here.
+[`HasOptions`](has-options.md) is ported here, and
+[`HasDescriptions`](has-descriptions.md), `HasColors` and `HasIcons` each derive
+their own per-case map through support's `HasDescription` / `HasColor` /
+`HasIcon` contracts. All three have since landed with the fields that read them,
+so each enum fallback is written up there rather than here —
+descriptions in [has-descriptions.md](has-descriptions.md), colours and icons in
+[toggle-buttons.md](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone).
 
 Coverage: storage and evaluation, `options()` seeding the enum, a non-enum
 literal string staying a value, the cast appended to a plain field's defaults,
@@ -52,7 +55,9 @@ the multiplicity swap on `Select`, an enum surviving a custom cast, the pure
 the round trip through a record whose properties are typed as the enum itself,
 single and `multiple()`, plus the enum-only select validating rather than
 throwing — by
-[`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php).
+[`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php),
+with the multiplicity swap re-run on the second field that overrides the getter by
+[`ToggleButtonsTest`](../../../packages/forms/tests/Integration/Components/ToggleButtonsTest.php).
 
 ## Semantics
 

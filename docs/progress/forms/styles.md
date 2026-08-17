@@ -2,14 +2,17 @@
 
 The forms bundle's component CSS —
 [`packages/forms/assets/src/styles/`](../../../packages/forms/assets/src/styles/)
-— is seven stylesheets, and only three of them draw on
+— is eight stylesheets, and only four of them draw on
 [`forms/resources/css/`](../../../vendor/filament/forms/resources/css/) at all.
 **The rest port from
 [`support/resources/css/`](../../../vendor/filament/support/resources/css/)**:
 Filament files the raw control chrome — checkbox, input, radio, select, toggle —
 in its *support* package and keeps only the field-and-wrapper layer in forms, so
 `checkbox.css`, `input.css`, `select.css` and `toggle.css` have no counterpart in
-the forms tree at all, and `radio.css` has one for its option set only. Diffed
+the forms tree at all, `radio.css` has one for its option set only, and
+`toggle-buttons.css` is the exception that proves the split — it is wholly forms'
+because its controls borrow support's button chrome by class rather than
+restyling it. Diffed
 against the wrong directory each of them reads as drift from beginning to end,
 which is the single most useful thing to know before reading this file. Every row
 below names the vendor file it was actually written against.
@@ -30,9 +33,10 @@ translated to the forms component code `sy-fo-*` (see the
 Reference — the Filament source this is diffed against:
 
 - [`forms/resources/css/components/`](../../../vendor/filament/forms/resources/css/components/)
-  — the twenty per-component stylesheets: `field.css`, `radio.css` and
-  `repeater.css` ported directly, `textarea.css` folded into `input.css`,
-  `text-input.css` and `select.css` partly, the other fourteen unported
+  — the twenty per-component stylesheets: `field.css`, `radio.css`,
+  `repeater.css` and `toggle-buttons.css` ported directly, `textarea.css` folded
+  into `input.css`, `text-input.css` and `select.css` partly, the other thirteen
+  unported
 - [`support/resources/css/components/input/`](../../../vendor/filament/support/resources/css/components/input/)
   — `checkbox.css`, `index.css`, `radio.css` and `select.css`, the four control
   sources, plus the `wrapper.css` chrome the port collapses into its controls
@@ -65,9 +69,10 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 | [`radio.css` — the `.sy-fo-radio` option set and the `.sy-fo-radio-input` control](../../../packages/forms/assets/src/styles/components/radio.css) | [`components/radio.css`](../../../vendor/filament/forms/resources/css/components/radio.css) + [`support/…/input/radio.css`](../../../vendor/filament/support/resources/css/components/input/radio.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](radio.md#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) |
 | [`repeater.css` — `.sy-fo-repeater` and `.sy-fo-simple-repeater` item chrome](../../../packages/forms/assets/src/styles/components/repeater.css) | [`components/repeater.css`](../../../vendor/filament/forms/resources/css/components/repeater.css) | in progress | the four deferred chrome clusters | [detail](repeater.md#four-chrome-clusters-are-deferred-not-dropped) · [diverges](#the-repeater-item-lists-declare-their-own-grid) |
 | [`select.css` — `.sy-fo-select`, the native control and its chevron](../../../packages/forms/assets/src/styles/components/select.css) | [`support/…/input/select.css`](../../../vendor/filament/support/resources/css/components/input/select.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) | in progress | [`CanBeNative`](select.md#canbenative-is-not-ported) · [the input affix wrapper](field.md#the-input-affix-wrapper-is-not-ported) | [detail](#the-input-and-select-stylesheets-wait-on-the-affix-wrapper) · [diverges](#the-two-text-controls-invent-a-hover-ring) |
+| [`toggle-buttons.css` — the `.sy-fo-toggle-buttons` option set and its hidden inputs](../../../packages/forms/assets/src/styles/components/toggle-buttons.css) | [`components/toggle-buttons.css`](../../../vendor/filament/forms/resources/css/components/toggle-buttons.css) | in progress | schemas' `HasInlineLabel` · support's `.sy-btn-group` rule | [detail](toggle-buttons.md#the-grouped-buttons-are-not-joined-until-support-ships-sy-btn-group) · [diverges](toggle-buttons.md#extraattributes-stays-on-the-field-wrapper) |
 | [`toggle.css` — the `.sy-fo-toggle` root, track, thumb and icon pair](../../../packages/forms/assets/src/styles/components/toggle.css) | [`support/…/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css) | done | — | [diverges](toggle.md#the-toggle-is-a-styled-checkbox-not-a-button) · [diverges](toggle.md#the-icon-rules-select-by-name-where-filament-selects-by-position) · [diverges](toggle.md#the-two-colours-ride-on-two-elements) |
 | `text-input.css` / `select.css` — the rules no port carries | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | `revealable()` · schemas' `HasInlineLabel` | [detail](#two-vendor-stylesheets-are-partly-rather-than-wholly-unported) |
-| `builder.css` / `checkbox-list.css` / `code-editor.css` / `color-picker.css` / `date-time-picker.css` / `file-upload.css` (+ `file-upload/filepond-plugin-media-preview.css`) / `key-value.css` / `markdown-editor.css` / `modal-table-select.css` / `rich-editor.css` / `slider.css` / `tags-input.css` / `toggle-buttons.css` | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | Builder, CheckboxList, CodeEditor, ColorPicker, DateTimePicker, FileUpload, KeyValue, MarkdownEditor, ModalTableSelect, RichEditor, Slider, TagsInput, ToggleButtons | [detail](#the-fourteen-unported-forms-stylesheets) |
+| `builder.css` / `checkbox-list.css` / `code-editor.css` / `color-picker.css` / `date-time-picker.css` / `file-upload.css` (+ `file-upload/filepond-plugin-media-preview.css`) / `key-value.css` / `markdown-editor.css` / `modal-table-select.css` / `rich-editor.css` / `slider.css` / `tags-input.css` | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | Builder, CheckboxList, CodeEditor, ColorPicker, DateTimePicker, FileUpload, KeyValue, MarkdownEditor, ModalTableSelect, RichEditor, Slider, TagsInput | [detail](#the-thirteen-unported-forms-stylesheets) |
 
 This table carries no [unaudited row](../README.md#an-unaudited-table-says-so):
 every one of the twenty stylesheets in
@@ -82,10 +87,13 @@ to support's audit.
 No test exercises CSS. The render tests assert that the class hooks these rules
 attach to (`sy-fo-field` and its label/content/error descendants,
 `sy-fo-field-label-inline-control`, `sy-fo-sr-only`, `sy-fo-input`,
-`sy-fo-select`, `sy-fo-checkbox`, the six `sy-fo-toggle-*` classes, and the
+`sy-fo-select`, `sy-fo-checkbox`, the six `sy-fo-toggle-*` classes, the
+`sy-fo-radio*` family, the `sy-fo-toggle-buttons*` trio with the `sy-btn-group`
+arm beside it, and the
 `sy-fo-repeater` / `sy-fo-simple-repeater` families) are emitted into the HTML —
 `FieldWrapperTest`, `FieldErrorsTest`, `TextInputTest`, `TextareaTest`,
-`SelectTest`, `CheckboxTest`, `ToggleTest` and `RepeaterRenderTest` — but the
+`SelectTest`, `CheckboxTest`, `ToggleTest`, `RadioTest`, `ToggleButtonsTest` and
+`RepeaterRenderTest` — but the
 styling itself never runs, so CSS cannot reach **done** through a behaviour test
 and a row's status rests on faithfulness of the port. One stylesheet is under an
 automated check, and it checks a variable contract rather than a rendered pixel:
@@ -177,14 +185,13 @@ can never match, for the hidden-placeholder reason above; and
 needs both the select wrapper element and schemas' `HasInlineLabel`, so it waits
 on the later of the two.
 
-### The fourteen unported forms stylesheets
+### The thirteen unported forms stylesheets
 
 `builder.css`, `checkbox-list.css`, `code-editor.css`, `color-picker.css`,
 `date-time-picker.css`, `file-upload.css` (with its nested
 `file-upload/filepond-plugin-media-preview.css`), `key-value.css`,
 `markdown-editor.css`, `modal-table-select.css`, `rich-editor.css`,
-`slider.css`, `tags-input.css` and `toggle-buttons.css` have no `sy-fo-*`
-counterpart. Each is **blocked** on its field — every one of those fields is
+`slider.css` and `tags-input.css` have no `sy-fo-*` counterpart. Each is **blocked** on its field — every one of those fields is
 **todo** in the [package README](README.md#components) — because the styling
 lands in the same change as the Twig template it targets and there is nothing to
 author against until then. Next step for each: port when its field does.

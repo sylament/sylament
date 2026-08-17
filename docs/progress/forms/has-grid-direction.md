@@ -13,8 +13,10 @@ properties its stylesheet reads, from the column map schemas'
 
 Three fields compose it — `Radio`, `CheckboxList` and `ToggleButtons` — which is
 why it is filed here rather than folded into one of them. [`Radio`](radio.md) is
-the first built, and the first template to pass the direction to `grid()`; the
-other two follow.
+the first built, and the first template to pass the direction to `grid()`;
+[`ToggleButtons`](toggle-buttons.md) is the second, spelling the same `Column`
+default at the one of its two templates that lays out a grid at all;
+`CheckboxList` follows.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 
@@ -48,7 +50,10 @@ What the direction then emits is covered a package down, by
 whose first case pins the column arm's class and styles, and end to end — the
 default column grid, an explicit `'row'`, and `inline()` suppressing the call
 altogether — by
-[`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php).
+[`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php),
+with the column default and the `inline()` suppression re-run against the second
+composer — plus `grouped()`, which suppresses the grid a second way — by
+[`ToggleButtonsTest`](../../../packages/forms/tests/Integration/Components/ToggleButtonsTest.php).
 
 ## Semantics
 
@@ -60,7 +65,8 @@ on, and every one of Filament's three composers opens its render with
 field actually has is **Column**, stated once per field rather than once in the
 getter. Reading the trait alone suggests options default to no direction at all,
 or to the `Row` that support's `grid()` helper defaults to; neither is what a
-[`Radio`](radio.md) renders — its template spells the default as
+[`Radio`](radio.md) or [`ToggleButtons`](toggle-buttons.md) renders — each
+template spells the default as
 `component.getGridDirection ?? constant('…GridDirection::Column')` at the one
 place the grid is built.
 

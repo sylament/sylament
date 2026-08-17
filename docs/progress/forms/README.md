@@ -60,7 +60,7 @@ reorder functions no other component calls — while `CanBeInline` and
 `CanBeAccepted` are shared by `Checkbox` and `Toggle`,
 `CanLimitItemsLength` by `Repeater` and `CheckboxList`,
 `HasOptions` and `CanDisableOptions` by every option field, and
-`HasExtraInputAttributes` by all five fields that render a control, so those keep
+`HasExtraInputAttributes` by every field that renders a control, so those keep
 rows of their own. The fold reads the port, not Filament — Filament composes
 `HasStep` onto `DateTimePicker` and `Slider` (and
 tables' `TextInputColumn`), and `HasDatalistOptions` onto `DateTimePicker`, so
@@ -121,7 +121,7 @@ table, the rest follow alphabetically.
 | [`Textarea`](../../../packages/forms/src/Components/Textarea.php) | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | in progress | [textarea.md](textarea.md) |
 | TimePicker | [`Components/TimePicker.php`](../../../vendor/filament/forms/src/Components/TimePicker.php) | todo | — |
 | [`Toggle`](../../../packages/forms/src/Components/Toggle.php) | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | in progress | [toggle.md](toggle.md) |
-| ToggleButtons | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | todo | — |
+| [`ToggleButtons`](../../../packages/forms/src/Components/ToggleButtons.php) | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | in progress | [toggle-buttons.md](toggle-buttons.md) |
 | ViewField | [`Components/ViewField.php`](../../../vendor/filament/forms/src/Components/ViewField.php) | todo | — |
 
 ## Features
@@ -152,21 +152,23 @@ ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and
 and `Repeater`, `CanLimitItemsLength` by `Repeater` and `CheckboxList`,
 `HasOptions` and `CanDisableOptions` by every option field, and
 `HasExtraInputAttributes` by
-`TextInput`, `Textarea`, `Select`, `Checkbox` and `Toggle`. `HasEnum` stays below
+`TextInput`, `Textarea`, `Select`, `Checkbox`, `Toggle`, `Radio` and
+`ToggleButtons`. `HasEnum` stays below
 too, on the other test: `Field` composes it, so every field has it.
 
-Seven concerns are below **ahead of** the fields that compose them, which land
+Four concerns are below **ahead of** the fields that compose them, which land
 later in the same epic: [`HasDescriptions`](has-descriptions.md) is `Radio`'s and
 `CheckboxList`'s, [`HasGridDirection`](has-grid-direction.md) theirs and
 `ToggleButtons`' — both clear the shared bar already, so each has a file — while
-the other five keep bare rows only because the file each folds into does not
-exist yet, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing):
-`CanAllowHtml` and `CanBeSearchable` are `CheckboxList`'s and fold into
-`checkbox-list.md` — `CanBeSearchable` promoting back to a file of its own when
-`Select`'s search lands — while `HasColors`, `HasIcons` and `HasTooltips` are
-`ToggleButtons`' and fold into `toggle-buttons.md`.
-[`CanLimitItemsLength`](can-limit-items-length.md) is not one of the seven:
+`CanAllowHtml` and `CanBeSearchable` keep bare rows only because the file each
+folds into does not exist yet, per
+[one row per file](../README.md#one-row-per-file-one-file-per-thing): both are
+`CheckboxList`'s and fold into `checkbox-list.md`, `CanBeSearchable` promoting
+back to a file of its own when `Select`'s search lands. `HasColors`, `HasIcons`
+and `HasTooltips` were three more until
+[`ToggleButtons`](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone)
+landed as their sole consumer and took their detail.
+[`CanLimitItemsLength`](can-limit-items-length.md) is not one of the four:
 `Repeater` composes it today, and `CheckboxList` being its second consumer is what
 promoted it out of [`repeater.md`](repeater.md) ahead of that field landing.
 
@@ -189,14 +191,14 @@ promoted it out of [`repeater.md`](repeater.md) ahead of that field landing.
 | CanFixIndistinctState | [`Components/Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — |
 | [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) | [`Components/Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | [can-limit-items-length.md](can-limit-items-length.md) |
 | HasAffixes | [`Components/Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | todo | — |
-| [`HasColors`](../../../packages/forms/src/Components/Concerns/HasColors.php) | [`Components/Concerns/HasColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasColors.php) | done | — |
+| [`HasColors`](../../../packages/forms/src/Components/Concerns/HasColors.php) | [`Components/Concerns/HasColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasColors.php) | done | [toggle-buttons.md](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone) |
 | [`HasDescriptions`](../../../packages/forms/src/Components/Concerns/HasDescriptions.php) | [`Components/Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | [has-descriptions.md](has-descriptions.md) |
 | [`HasEnum`](../../../packages/forms/src/Components/Concerns/HasEnum.php) | [`Components/Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | done | [has-enum.md](has-enum.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Components/Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | [has-extra-input-attributes.md](has-extra-input-attributes.md) |
 | HasExtraItemActions | [`Components/Concerns/HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | todo | — |
 | HasFileAttachments | [`Components/Concerns/HasFileAttachments.php`](../../../vendor/filament/forms/src/Components/Concerns/HasFileAttachments.php) | todo | — |
 | [`HasGridDirection`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php) | [`Components/Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | [has-grid-direction.md](has-grid-direction.md) |
-| [`HasIcons`](../../../packages/forms/src/Components/Concerns/HasIcons.php) | [`Components/Concerns/HasIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasIcons.php) | done | — |
+| [`HasIcons`](../../../packages/forms/src/Components/Concerns/HasIcons.php) | [`Components/Concerns/HasIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasIcons.php) | done | [toggle-buttons.md](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone) |
 | HasInputMode | [`Components/Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | skipped | [text-input.md](text-input.md#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
 | HasLoadingMessage | [`Components/Concerns/HasLoadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php) | todo | — |
 | HasMaxHeight | [`Components/Concerns/HasMaxHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMaxHeight.php) | todo | — |
@@ -206,7 +208,7 @@ promoted it out of [`repeater.md`](repeater.md) ahead of that field landing.
 | HasPivotData | [`Components/Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | [select.md](select.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | HasPreview | [`Components/Concerns/HasPreview.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPreview.php) | todo | — |
 | [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — no Filament concern of its own; `Select`'s relation surface, split off the class | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | [select.md](select.md#relationship-is-three-lazy-closures-over-the-association-reader) |
-| [`HasTooltips`](../../../packages/forms/src/Components/Concerns/HasTooltips.php) | [`Components/Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | done | — |
+| [`HasTooltips`](../../../packages/forms/src/Components/Concerns/HasTooltips.php) | [`Components/Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | done | [toggle-buttons.md](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone) |
 | HasUploadingMessage | [`Components/Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | todo | — |
 | InteractsWithForms | [`Concerns/InteractsWithForms.php`](../../../vendor/filament/forms/src/Concerns/InteractsWithForms.php) | todo | — |
 | InteractsWithToolbarButtons | [`Components/Concerns/InteractsWithToolbarButtons.php`](../../../vendor/filament/forms/src/Components/Concerns/InteractsWithToolbarButtons.php) | todo | — |

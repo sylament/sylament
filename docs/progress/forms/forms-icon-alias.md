@@ -33,10 +33,15 @@ the write-up in [Details](#details), deleted once the row is **done**, or
 
 The three values are pinned by
 [`FormsIconAliasTest`](../../../packages/forms/tests/Unit/Twig/FormsIconAliasTest.php),
-which is what makes the de-prefixing below a decision rather than a typo. Their
-render sites land later in the same epic — the checkbox list's search field and the
-toggle buttons' two boolean glyphs — so the constants ship one task ahead of the
-markup that resolves them.
+which is what makes the de-prefixing below a decision rather than a typo. Two of
+them now have a render site: `ToggleButtons`' two templates pass the boolean pair
+to the `Icon` tag's `alias` prop, resolving
+[at render rather than at `boolean()` call time](toggle-buttons.md#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time),
+and an override registered under `sylament.icons` is pinned replacing one of them
+by
+[`ToggleButtonsTest`](../../../packages/forms/tests/Integration/Components/ToggleButtonsTest.php).
+The checkbox list's search field lands later in the same epic, so that constant
+still ships ahead of the markup that resolves it.
 
 ## Details
 

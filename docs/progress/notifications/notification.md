@@ -105,23 +105,29 @@ an `fi-inline` class that switches the whole toast from a floating card to a lis
 row (the database-notifications modal renders its stored notifications inline).
 Both are the markup half of the `date()` and `inline()` rows below and land with
 them; the stylesheet mirrors the same two gaps, carrying no
-`.sy-no-notification-date` rule and no `&:not(.sy-inline)` split. The actions
-container is the third gap and is tracked by its own **blocked** row, and the
+`.sy-no-notification-date` rule and no `&:not(.sy-inline)` split. The
 notification **id** — which Filament's root carries three times over, in
 `wire:key`, in the `close-notification` listener and in the Alpine data object —
-is the fourth, tracked by
-[its own **todo** row](#closing-a-toast-by-id-needs-the-id-in-the-markup).
+is the third, tracked by
+[its own **todo** row](#closing-a-toast-by-id-needs-the-id-in-the-markup). The
+actions container is **not** one of them: it renders, its `actions()` row is
+**done**, and it now carries a rule of its own —
+[why it is not the `sy-ac` Filament would reuse](#the-actions-row-is-styled-by-its-own-class-where-filament-reuses-the-cross-package-fi-ac).
 
 Scoping the stylesheet claim, since one file carries three things. The
 `.sy-no-notification*` rules port `notification.css` selector for selector and
 declaration for declaration, under the `fi-*` → `sy-*` class rename and the
-`--color-*` / `--gray-*` → `--sy-*` custom-property rename, with two edits the
+`--color-*` / `--gray-*` → `--sy-*` custom-property rename, with three edits the
 port's own shape forces: Filament's `&:not(.fi-inline)` block is folded into the
 base rule, because [`inline()` is unported](#date-and-inline-arrive-with-the-database-notifications-panel)
-and a two-arm split with one arm is just the base; and the base rule drops
+and a two-arm split with one arm is just the base; the base rule drops
 `invisible` and spells its `transition` out per property, because nothing here
 toggles visibility from JS and the enter/leave animation is the CSS below rather
-than Alpine's. The fold has one consequence the merged declaration set does not
+than Alpine's; and `.sy-no-notification-actions` is a rule `notification.css` has
+no counterpart for at all, its declarations coming from the **actions** package's
+[`actions.css`](../../../vendor/filament/actions/resources/css/actions.css)
+because [the cross-package class reuse Filament leans on is unavailable
+here](#the-actions-row-is-styled-by-its-own-class-where-filament-reuses-the-cross-package-fi-ac). The fold has one consequence the merged declaration set does not
 show: the card chrome drops from `(0,2,0)` (`.fi-no-notification:not(.fi-inline)`)
 to `(0,1,0)` (`.sy-no-notification`), so a host override written at single-class
 specificity now wins against declarations it would have lost to in Filament. The

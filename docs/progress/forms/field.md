@@ -88,6 +88,28 @@ carries all three itself. So porting affixes is not additive — it moves that
 styling onto a new `sy-fo-input-wrp` and touches every text-like field's
 template.
 
+The collapse also decides which of the vendor input rules can be ported at all,
+because it moves the background onto the element the type-specific selectors
+target. Two are affected, and the trap is that both *look* portable:
+
+- **`input[type='date'|'datetime-local'|'time'].fi-input { bg-white/[1%] }` is
+  refused.** Over there the 1 % white is the whole point — the element is
+  `bg-transparent`, Safari colours a fully transparent date field's placeholder
+  too dark ([#7087](https://github.com/filamentphp/filament/issues/7087),
+  [#18570](https://github.com/filamentphp/filament/issues/18570)), and a hair of
+  opacity fixes it without disturbing the opaque wrapper behind it. Here there is
+  no wrapper behind it: `.sy-fo-input` *is* the painted surface. The selector
+  weighs (0,2,1) against the base rule's (0,1,0), the dark arm's (0,1,0) and
+  `:disabled`'s (0,2,0), so porting it would beat all three — a date field would
+  render near-transparent in light mode, at 1 % instead of 5 % white in dark, and
+  would lose `bg-gray-50` when disabled. The Safari bug it fixes cannot occur
+  here anyway, since the trigger is a transparent background. It returns with the
+  wrapper, on the transparent `.sy-fo-input` the wrapper restores.
+- **`input[type='range'].sy-fo-input`'s `appearance-auto` is vestigial**, kept
+  because the rule's `mx-auto` and `width: calc(100% - 1.5rem)` are not. Vendor
+  needs it to undo the `appearance-none` on its own base rule; ours never sets
+  `appearance-none`, so there is nothing to undo.
+
 That, and not the prebuilt affix actions, is what the affix surface waits on:
 [`HasAffixes`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php)
 never references `TextInput\Actions\CopyAction` / `ShowPasswordAction` /
@@ -110,12 +132,34 @@ Neither is composed or ported. **Blocked** on the `HasEnum` port and the schemas
 
 ### `hasNullableBooleanState()` is not ported
 
-Filament's Field declares `hasNullableBooleanState(): bool` (default `false`),
-overridden by boolean fields to control tri-state casting. Not ported. Both
-boolean fields have landed — [Checkbox](checkbox.md) and [Toggle](toggle.md) —
-and neither needs it, because tri-state casting is a `StateCast` behaviour and
-that surface is the one the row above is blocked on; it lands with the casts, not
-with the fields.
+Filament's Field declares `hasNullableBooleanState(): bool` (default `false`)
+at [`Field.php:719`](../../../vendor/filament/forms/src/Components/Field.php),
+overridden to `true` by exactly three fields — [`Select`](../../../vendor/filament/forms/src/Components/Select.php)
+(1819), `Radio` (157) and `ToggleButtons` (360). Not `Checkbox` or `Toggle`,
+which is the natural guess and is wrong; and it drives no state cast, which is
+the other one. Its **only** consumer in the whole vendor tree is the filter
+reset in tables'
+[`HasFilters.php:105`](../../../vendor/filament/tables/src/Concerns/HasFilters.php):
+`is_bool($state) => $field->hasNullableBooleanState() ? null : false`.
+
+Not ported — and that call site **is**, with the branch flattened. Ours
+([`HasFilters.php:340`](../../../packages/tables/src/Concerns/HasFilters.php))
+hardcodes `is_bool($state) => false`, so a boolean field reset through a filter
+lands on "no" where Filament would land on "unset". Scope of the difference,
+since it is narrower than it looks: the two shipped filter classes never reach
+the branch, because [`SelectFilter`](../../../packages/tables/src/Filters/SelectFilter.php)
+declares `resetState(['value' => null])` (and `TernaryFilter` inherits it), and
+the `array_key_exists($fieldName, $resetState)` arm above the `match` fires
+first. `Checkbox` and `Toggle` reach it and agree with Filament, since neither
+overrides the method. What differs is a custom
+`Filter::make(…)->schema([Select::make(…)->boolean()])` that declares no
+`resetState()` of its own: Filament resets it to the placeholder, ours to
+`false`.
+
+Porting the method is out of this row's reach — it is a Field surface with a
+tables consumer — but the flattening is now recorded rather than silent, and
+closing it is one `hasNullableBooleanState()` override on `Select` plus the
+branch restored at that call site.
 
 ## Divergences
 

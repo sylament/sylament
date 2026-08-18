@@ -119,8 +119,12 @@ it('persists the created row, selects it and re-enumerates the options', functio
 
     $host = $component->component();
     $key = (string) $carol?->getId();
+    $refresh = $component->getDispatchedBrowserEvent($component->render(), 'sylament:select-refresh-selected-option-label');
 
     expect($host->data['author'])->toBe($key)
+        // The JS control holds the label of what was selected, so the write asks
+        // it to re-read the one it now has.
+        ->and($refresh['payload'] ?? null)->toBe(['statePath' => 'data.author'])
         ->and($host->mountedActions)->toBe([])
         // The outer schema's own read validates the select against its `Choice`,
         // so a stale option memo would fail the key the action just created.
@@ -202,10 +206,14 @@ it('fills the edit modal from the selected record and flushes the update', funct
 
     $component->set('mountedActionsData.0.name', 'Adele')->call('callMountedAction');
 
+    $refresh = $component->getDispatchedBrowserEvent($component->render(), 'sylament:select-refresh-selected-option-label');
+
     $entityManager->clear();
 
     expect($entityManager->find(Author::class, $ada->getId())?->getName())->toBe('Adele')
-        ->and($component->component()->data['author'])->toBe($key);
+        ->and($component->component()->data['author'])->toBe($key)
+        // The selection did not change, but its label did.
+        ->and($refresh['payload'] ?? null)->toBe(['statePath' => 'data.author']);
 });
 
 it('throws when a non-relationship select creates an option without a createOptionUsing closure', function (): void {

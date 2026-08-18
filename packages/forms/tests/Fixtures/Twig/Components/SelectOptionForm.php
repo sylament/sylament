@@ -22,8 +22,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * `context['schemaComponent']`, the modal schema lands on
  * `mountedActionsData.0`, and the created or edited row reaches the fixture
  * database. The props pick the arm under test — which association the select is
- * bound to, whether it speaks a list, and whether it is a relationship select at
- * all — so one fixture covers every gate rather than one host per case.
+ * bound to, whether it speaks a list, whether it searches, and whether it is a
+ * relationship select at all — so one fixture covers every gate rather than one
+ * host per case.
  */
 #[AsLiveComponent(name: 'SelectOptionForm', template: '@FormsFixtures/components/SelectOptionForm.html.twig')]
 class SelectOptionForm implements InteractsWithActions, InteractsWithSchemas
@@ -50,6 +51,14 @@ class SelectOptionForm implements InteractsWithActions, InteractsWithSchemas
     #[LiveProp]
     public bool $hasRelationship = true;
 
+    /**
+     * False forces the native branch even for the multiple cases — `Select`'s
+     * `isSearchable()` reads `false ?? isMultiple()`, so an explicit false wins —
+     * which is what keeps every case that does not opt in unchanged.
+     */
+    #[LiveProp]
+    public bool $isSearchable = false;
+
     public function mount(): void
     {
         $this->fill();
@@ -59,6 +68,8 @@ class SelectOptionForm implements InteractsWithActions, InteractsWithSchemas
     {
         $select = Select::make($this->relationship)
             ->multiple($this->isMultiple)
+            ->searchable($this->isSearchable)
+            ->preload(false)
             ->disabled($this->isDisabled)
             ->manageOptionForm([TextInput::make('name')]);
 

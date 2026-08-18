@@ -183,6 +183,7 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | [`PropertyAccessor`](../../../packages/schemas/src/State/PropertyAccessor.php) | — | done | [property-accessor.md](property-accessor.md) |
 | [`RecordTypeReader`](../../../packages/schemas/src/State/RecordTypeReader.php) | — | done | [record-type-reader.md](record-type-reader.md) |
 | [`AssociationReader`](../../../packages/schemas/src/State/AssociationReader.php) + [`AssociationTarget`](../../../packages/schemas/src/State/AssociationTarget.php) | — | done | [association-reader.md](association-reader.md) |
+| [`SearchConstraint`](../../../packages/schemas/src/Query/SearchConstraint.php) | — | done | [search-constraint.md](search-constraint.md) |
 | [`StateCast`](../../../packages/schemas/src/State/Casts/Contracts/StateCast.php) | [`Components/StateCasts/Contracts/StateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/Contracts/StateCast.php) | done | — |
 | [`BooleanStateCast`](../../../packages/schemas/src/State/Casts/BooleanStateCast.php) | [`Components/StateCasts/BooleanStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/BooleanStateCast.php) | done | — |
 | [`DateTimeStateCast`](../../../packages/schemas/src/State/Casts/DateTimeStateCast.php) | [`Components/StateCasts/DateTimeStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/DateTimeStateCast.php) | done | [date-time-state-cast.md](date-time-state-cast.md) |

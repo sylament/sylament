@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\State;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use ReflectionClass;
@@ -100,6 +101,23 @@ class AssociationReader
         }
 
         return $key;
+    }
+
+    /**
+     * The field name a single-identifier entity's identifier is mapped under —
+     * for a caller that needs the property name rather than its value.
+     *
+     * @param class-string $class
+     */
+    public function getIdentifierFieldName(string $class): string
+    {
+        $metadata = $this->requireEntityManager()->getClassMetadata($class);
+
+        try {
+            return $metadata->getSingleIdentifierFieldName();
+        } catch (MappingException) {
+            throw new LogicException(sprintf('Records of [%s] carry a composite identifier, which a relation-backed field cannot key; use single-identifier entities.', $class));
+        }
     }
 
     /**

@@ -603,6 +603,10 @@ Two members of Filament's do not port. The `generate_search_term_expression()` /
 assembly, replaced by
 [`SearchConstraint::like()`](../../../packages/tables/src/Query/SearchConstraint.php)
 and its [narrower reach](table.md#the-default-search-comparison-assumes-a-string-typed-field).
+As of M3·4, `like()` itself lives in
+[`Sylament\Schemas\Query\SearchConstraint`](../schemas/search-constraint.md)
+— tables' class delegates — so forms' relationship search reuses it without
+depending on `sylament/tables`.
 Of the search **indicators**, the global one ships —
 `getTableSearchIndicator()` mints the `Filters\Indicator` chip for the current
 term, labelled `Search: <term>` (Filament's

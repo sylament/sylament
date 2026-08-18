@@ -162,6 +162,26 @@ it('removes an entity through the entity manager', function (): void {
     expect($entityManager->find(Author::class, $author->getId()))->toBeNull();
 });
 
+it('resolves the identifier field name of a single-identifier entity', function (): void {
+    $reader = new AssociationReader(EntityManagerFactory::create());
+
+    expect($reader->getIdentifierFieldName(Author::class))->toBe('id');
+});
+
+it('refuses the identifier field name of a composite identifier', function (): void {
+    $reader = new AssociationReader(EntityManagerFactory::create());
+
+    expect(fn (): string => $reader->getIdentifierFieldName(CompositePair::class))
+        ->toThrow(LogicException::class, 'composite identifier');
+});
+
+it('refuses the identifier field name without an entity manager', function (): void {
+    $reader = new AssociationReader();
+
+    expect(fn (): string => $reader->getIdentifierFieldName(Author::class))
+        ->toThrow(LogicException::class, 'no Doctrine EntityManager');
+});
+
 it('persists an entity through the entity manager and flushes it', function (): void {
     $entityManager = EntityManagerFactory::create();
     $reader = new AssociationReader($entityManager);

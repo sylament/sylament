@@ -1102,7 +1102,9 @@ today would only re-render what the morph already preserves.
 
 [`SearchConstraint::like()`](../../../packages/tables/src/Query/SearchConstraint.php)
 emits `path LIKE :param` — or `LOWER(path) LIKE :param` on the case-insensitive
-arm — and nothing else. Filament's `generate_search_column_expression()` does
+arm — and nothing else. As of M3·4 the implementation itself lives in
+[`Sylament\Schemas\Query\SearchConstraint`](../schemas/search-constraint.md),
+with tables' class delegating; the reach described below is unchanged. Filament's `generate_search_column_expression()` does
 more on Postgres: it double-quotes each segment of the name and appends `::text`,
 because Postgres refuses `integer LIKE text` outright where MySQL and SQLite
 coerce silently. So a `searchable()` integer column is portable in Filament and

@@ -38,7 +38,7 @@ function licenseBanner(packageName) {
     const packageJsonPath = require.resolve(`${packageName}/package.json`);
     const { version, license, homepage } = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
     const licenseText = fs.readFileSync(path.join(path.dirname(packageJsonPath), 'LICENSE'), 'utf8');
-    const copyright = licenseText.split('\n').find((line) => line.startsWith('Copyright'));
+    const copyright = licenseText.split('\n').map((line) => line.trim()).find((line) => /^Copyright\s+(\(c\)\s*)?\d{4}/.test(line));
     if (!version || !license || !copyright) {
         throw new Error(`Cannot compose the license banner for ${packageName}: missing version, license, or a "Copyright" line in LICENSE.`);
     }

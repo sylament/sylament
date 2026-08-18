@@ -20,7 +20,12 @@ import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
 
 /** src-relative entry → { external: bare specifiers left to the importmap, license: package whose notice heads the bundle }. */
-const BUNDLED_ENTRIES = {};
+const BUNDLED_ENTRIES = {
+    'controllers/select_controller.ts': {
+        external: ['@hotwired/stimulus', '@symfony/ux-live-component'],
+        license: 'tom-select',
+    },
+};
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const srcDir = path.join(here, '../src');
@@ -38,7 +43,7 @@ function licenseBanner(packageName) {
     const packageJsonPath = require.resolve(`${packageName}/package.json`);
     const { version, license, homepage } = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
     const licenseText = fs.readFileSync(path.join(path.dirname(packageJsonPath), 'LICENSE'), 'utf8');
-    const copyright = licenseText.split('\n').find((line) => line.startsWith('Copyright'));
+    const copyright = licenseText.split('\n').map((line) => line.trim()).find((line) => /^Copyright\s+(\(c\)\s*)?\d{4}/.test(line));
     if (!version || !license || !copyright) {
         throw new Error(`Cannot compose the license banner for ${packageName}: missing version, license, or a "Copyright" line in LICENSE.`);
     }

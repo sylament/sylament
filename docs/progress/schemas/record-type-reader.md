@@ -53,8 +53,8 @@ Every row is **done** or **skipped** — the unit suite
 covers both nullability arms, the getter/setter asymmetry, the array,
 `Traversable` and adder-derived `list<Tag>` collection arms and the two flags
 separating them, the enum arm that `class_exists()` alone would have waved
-through, the dotted-path walk, and both null answers (an unreadable property, a
-path traversing a non-object segment). The walk is pinned through the **leaf's
+through, the `DateTimeInterface` carve-out, the dotted-path walk, and both null
+answers (an unreadable property, a path traversing a non-object segment). The walk is pinned through the **leaf's
 own** answers rather than through provenance: `Post::$author` reports an
 `objectClass` and `TypedRecord::$money` is nullable, so
 `describe(…, 'author.name')` reporting no `objectClass` and
@@ -124,9 +124,9 @@ there is no record at all.
 Two consequences fall straight out of the
 [instantiability gate](#objectclass-is-gated-on-instantiability-so-it-is-a-promise-not-a-hint)
 and are recorded there rather than worked around here. A property typed to the
-**interface** `DateTimeInterface` never reaches the gate, so the reader answers
-`null` and the field falls back to its string form — an explicit
-`->stateCast(new DateTimeStateCast(...))` is the escape. And the reader's `null`
+**interface** `DateTimeInterface` is the gate's one carve-out and reads as
+`DateTimeImmutable`, so that spelling round-trips like the concrete one rather
+than falling back to a string the property would reject. And the reader's `null`
 keeps meaning "do what you did before types were consulted", which for a cast
 choice is Filament's own string-in-`$format` behaviour, so a schema with no
 record behind it needs no special case.
@@ -208,6 +208,19 @@ mapping failure. Gating here means no consumer needs
 its own "can I construct this?" guard, and the docblock's promise is enforced at
 the one place that can enforce it. Interfaces never reach the gate; `class_exists()`
 already excludes them.
+
+`DateTimeInterface` is the **one carve-out**, resolved ahead of the gate and
+reported as `DateTimeImmutable`. Every other interface still reads as "no
+object", and the asymmetry is the gate's own logic rather than an exception to
+it: what the reader reports is what
+[`constructIntermediate()`](property-accessor.md) hands to `new`, so an
+interface name is only ever a fatal — except this one, where the language ships
+exactly two implementors, a `?DateTimeInterface` property accepts either, and
+the immutable half is what every date field already writes. Reporting `null`
+instead is what the carve-out replaces, and it was not a graceful degrade: it
+made [`DateTimePicker`](../forms/date-time-picker.md) fall back to its string
+form and write a string onto a property whose setter rejects one, a 500 out of
+`PropertyAccessor` on save.
 
 Constructible is deliberately not the same as *buildable*: a class with required
 constructor arguments still reports its `objectClass`, and the mapper throws a

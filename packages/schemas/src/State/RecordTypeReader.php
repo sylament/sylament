@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\State;
 
+use DateTimeImmutable;
+use DateTimeInterface;
 use ReflectionClass;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
@@ -79,6 +81,10 @@ final readonly class RecordTypeReader
         }
 
         $className = $type->getClassName();
+
+        if ($className === DateTimeInterface::class) {
+            return DateTimeImmutable::class;
+        }
 
         if (! class_exists($className)) {
             return null;

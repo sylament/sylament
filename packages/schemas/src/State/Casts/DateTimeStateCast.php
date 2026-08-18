@@ -85,7 +85,7 @@ class DateTimeStateCast implements StateCast
         $parsed = DateTimeImmutable::createFromFormat('!' . $format, $value, $timezone);
 
         if ($parsed instanceof DateTimeImmutable) {
-            return $parsed;
+            return $this->hasDateFields($format) ? $parsed : $this->anchorToToday($parsed, $timezone);
         }
 
         try {
@@ -93,5 +93,27 @@ class DateTimeStateCast implements StateCast
         } catch (Exception) {
             return null;
         }
+    }
+
+    /**
+     * Whether the format names any date field, characters it escapes ignored —
+     * `\Y` is a literal letter rather than a year.
+     */
+    private function hasDateFields(string $format): bool
+    {
+        $fields = preg_replace('/\\\\./', '', $format) ?? $format;
+
+        return preg_match('/[dDjlNSwzWFmMntLoYy]/', $fields) === 1;
+    }
+
+    private function anchorToToday(DateTimeImmutable $value, DateTimeZone $timezone): DateTimeImmutable
+    {
+        $today = new DateTimeImmutable('today', $timezone);
+
+        return $value->setDate(
+            (int) $today->format('Y'),
+            (int) $today->format('n'),
+            (int) $today->format('j'),
+        );
     }
 }

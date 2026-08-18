@@ -89,6 +89,22 @@ it('gets a time-only value carrying that wall time', function (): void {
         ->and($state->format('H:i'))->toBe('14:30');
 });
 
+it('gets a time-only value at the offset in force today, not at the epoch', function (): void {
+    $zone = new DateTimeZone('America/New_York');
+    $expected = new DateTimeImmutable('today 14:30:00', $zone)->setTimezone(new DateTimeZone('UTC'));
+
+    $state = dateTimeCast(
+        format: 'H:i:s',
+        internalFormat: 'H:i:s',
+        timezone: 'America/New_York',
+        objectClass: DateTimeImmutable::class,
+    )->get('14:30:00');
+
+    expect($state)->toBeInstanceOf(DateTimeImmutable::class)
+        ->and($state->setTimezone(new DateTimeZone('UTC'))->format('Y-m-d H:i:s'))
+        ->toBe($expected->format('Y-m-d H:i:s'));
+});
+
 it('gets a mutable instance when the record wants one', function (): void {
     $state = dateTimeCast(objectClass: DateTime::class)->get('2026-08-18T14:30');
 

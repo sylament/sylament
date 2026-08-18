@@ -76,6 +76,14 @@ it('reports an adder-shaped collection as an object collection', function (): vo
         ->and($target->objectClass)->toBeNull();
 });
 
+it('reports the immutable implementor for a DateTimeInterface property', function (): void {
+    $target = new RecordTypeReader()->describeProperty(TypedRecord::class, 'happenedAt');
+
+    expect($target->objectClass)->toBe(DateTimeImmutable::class)
+        ->and($target->isNullable)->toBeTrue()
+        ->and($target->isCollection)->toBeFalse();
+});
+
 it('offers no class to construct for an enum property', function (): void {
     $target = new RecordTypeReader()->describeProperty(TypedRecord::class, 'status');
 

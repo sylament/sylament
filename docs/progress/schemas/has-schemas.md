@@ -53,8 +53,11 @@ file, a link to that file.
 | [`cacheSchema()` — register/unset a schema instance by name](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::cacheSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#cacheschema-has-no-discovery-arm-and-requires-its-second-argument) |
 | [`hasCachedSchema()` — raw-cache membership test](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::hasCachedSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#hascachedschema-checks-the-raw-cache-not-getcachedschemas) |
 | Reflection schema auto-discovery (`default<Name>` hooks, `discoveredSchemaNames`, return-type detection) | [`InteractsWithSchemas::cacheSchema()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [diverges](#schema-discovery-is-explicit-via-schemas-not-reflection-based) |
-| `getSchemaComponent()` absolute-key addressing | [`InteractsWithSchemas::getSchemaComponent()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#component-addressing-and-the-exposedlivewiremethod-dispatch-are-not-ported) |
-| `callSchemaComponentMethod()` / `partiallyRenderSchemaComponent()` | [`InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#component-addressing-and-the-exposedlivewiremethod-dispatch-are-not-ported) |
+| [`resolveSchemaByName()` — the shared reflection gate](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [interacts-with-schemas.md](interacts-with-schemas.md#resolveschemabyname-is-a-sylament-only-extraction-with-no-filament-source) |
+| [`getSchemaComponent()` absolute-key addressing](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::getSchemaComponent()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [interacts-with-schemas.md](interacts-with-schemas.md#getschemacomponent-drops-the-child-container-skip-list) |
+| [`callSchemaComponentMethod()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [interacts-with-schemas.md](interacts-with-schemas.md#callschemacomponentmethod-answers-through-a-browser-event-with-no-partial-render) |
+| `partiallyRenderSchemaComponent()` | [`InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#partiallyrenderschemacomponent-has-no-livecomponent-twin) |
+| [`ComponentToolsTrait` composition (`dispatchBrowserEvent()` and siblings)](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](#hasschemas-composes-componenttoolstrait-alongside-hasactions) |
 | [Validation integration (`validateSchema`, error bag, sticky re-validation)](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | in progress | — | [can-be-validated.md](can-be-validated.md) |
 | File-upload integration (`componentFileAttachments`, `isFileUploadForSchemaComponent`, …) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `RestrictsFileUploadsToSchemaComponents` + forms `BaseFileUpload` | [detail](#the-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
 | `ResolvesDynamicLivewireProperties` (used trait) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `ResolvesDynamicLivewireProperties` port | [detail](#the-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
@@ -84,22 +87,20 @@ touched the signature and nothing else; and the snapshot-and-diff loop end-to-en
 [`LiveStateTest`](../../../packages/schemas/tests/Integration/LiveStateTest.php)
 via the `LiveStateHost` fixture — it asserts `afterStateUpdated` fires with the
 old value on a changed field and does not fire when unchanged.
+`resolveSchemaByName()` and `getSchemaComponent()` are covered directly by
+[`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php);
+`callSchemaComponentMethod()`, its `ComponentToolsTrait`-supplied
+`dispatchBrowserEvent()`, and the browser-callable seam end-to-end (the
+attribute gate, the argument-shape hardening, the hidden-component and
+unknown-key/unknown-method arms) are covered by
+[`HasSchemasComponentMethodTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasComponentMethodTest.php)
+against the `LiveStateHost`/`LiveField` fixtures.
 
 ## Details
 
 Specifics for the rows that are not finished — what is left and what the next
 step is. Delete a subsection when its row flips to **done**; the row and any
 divergence stay behind.
-
-### Component addressing and the ExposedLivewireMethod dispatch are not ported
-
-`getSchemaComponent()` (resolve a component by its absolute state-path key),
-`callSchemaComponentMethod()` (dispatch an `ExposedLivewireMethod` at a keyed
-component), and `partiallyRenderSchemaComponent()` (re-render a subtree) are all
-absent — the trait today can build, fill, and diff schemas but cannot reach an
-individual component by key. This is the foundational next step: port
-`getSchemaComponent()` first, since both the method dispatch and the partial
-render build on component addressing.
 
 ### The file-upload, dynamic-property, and testing integrations arrive with their own concerns
 
@@ -216,6 +217,30 @@ lookup (`HasActions::mountedActionHasSchema()`) and the schema-component action
 resolver, neither of which should force-build unrelated declared schemas just to
 check whether one specific name is cached.
 
+### `partiallyRenderSchemaComponent()` has no LiveComponent twin
+
+Filament's `callSchemaComponentMethod()` restricts Livewire's response to a
+re-render of the affected schema's own container when the called method
+carries no `#[Renderless]` attribute — a partial render, cheaper than
+re-rendering the whole component. UX LiveComponent has no partial-render
+mechanism at all: an action response is always a full re-render of the host.
+`partiallyRenderSchemaComponent()` is therefore **skipped**, not deferred —
+there is nothing to port it onto. See
+[interacts-with-schemas.md](interacts-with-schemas.md#callschemacomponentmethod-answers-through-a-browser-event-with-no-partial-render)
+for the full cost accounting (every call re-renders the host; bounded by the
+caller's debounce, same as any other `live()` field).
+
+### `HasSchemas` composes `ComponentToolsTrait` alongside `HasActions`
+
+`Symfony\UX\LiveComponent\ComponentToolsTrait` supplies `dispatchBrowserEvent()`
+(and its `emit*()` siblings) that both `HasActions` and, from this change,
+`HasSchemas` need. PHP's trait flattening dedupes a trait pulled in through two
+different composing traits without an `insteadof` — verified against
+[`BothContractsHostFixture`](../../../packages/actions/tests/Fixtures/Concerns/BothContractsHostFixture.php),
+the existing fixture composing both `HasActions` and `HasSchemas` on one host,
+which is exercised (and stays green) by actions' own suite. No conflict
+resolution was added because none is needed.
+
 ### The host-level afterStateUpdated hook is renamed to `callAfterSchemaStateUpdated`
 
 Filament names the host method `updatedInteractsWithSchemas` (mirroring the
@@ -226,5 +251,6 @@ Livewire `updated<Trait>` convention). Sylament names it
 names. The rename is deliberate and permanent.
 
 _See also: the global [rename table](../renames.md) — the interface⇄trait label
-swap (`InteractsWithSchemas` trait → `HasSchemas` trait) and the Livewire → UX
-LiveComponent hook translation are recorded there._
+swap (`InteractsWithSchemas` trait → `HasSchemas` trait), the Livewire → UX
+LiveComponent hook translation, `resolveSchemaByName()`, and the
+`sylament:schema-component-method-result` browser event are recorded there._

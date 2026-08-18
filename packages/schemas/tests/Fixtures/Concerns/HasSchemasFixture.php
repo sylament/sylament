@@ -16,7 +16,7 @@ class HasSchemasFixture implements InteractsWithSchemas
     public function schema(Schema $schema): Schema
     {
         return $schema->components([
-            new Component(),
+            new Component()->statePath('title'),
         ]);
     }
 

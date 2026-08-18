@@ -5,18 +5,31 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Concerns;
 
 use LogicException;
+use ReflectionMethod;
+use ReflectionNamedType;
+use ReflectionParameter;
 use RuntimeException;
+use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
+use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Validation\PresenceGate;
+use Sylament\Support\Components\Attributes\ExposedLiveComponentMethod;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Service\Attribute\Required;
+use Symfony\UX\LiveComponent\Attribute\LiveAction;
+use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Symfony\UX\LiveComponent\Attribute\PreDehydrate;
+use Symfony\UX\LiveComponent\ComponentToolsTrait;
+use TypeError;
 
 trait HasSchemas
 {
+    use ComponentToolsTrait;
+
     /**
      * @var array<string, mixed>
      */
@@ -89,6 +102,123 @@ trait HasSchemas
     public function hasCachedSchema(string $name): bool
     {
         return array_key_exists($name, $this->cachedSchemas);
+    }
+
+    public function resolveSchemaByName(string $name): ?Schema
+    {
+        if ($this->hasCachedSchema($name)) {
+            return $this->getSchema($name);
+        }
+
+        $methodName = match (true) {
+            method_exists($this, $name) => $name,
+            method_exists($this, "{$name}Schema") => "{$name}Schema",
+            default => null,
+        };
+
+        if ($methodName === null) {
+            return null;
+        }
+
+        $methodReflection = new ReflectionMethod($this, $methodName);
+        $firstParameter = $methodReflection->getParameters()[0] ?? null;
+
+        if ($firstParameter === null) {
+            $returnType = $methodReflection->getReturnType();
+
+            if (!$returnType instanceof ReflectionNamedType || !is_a($returnType->getName(), Schema::class, allow_string: true)) {
+                return null;
+            }
+        } else {
+            $parameterType = $firstParameter->getType();
+
+            if (!$parameterType instanceof ReflectionNamedType) {
+                return null;
+            }
+
+            $parameterTypeName = $parameterType->getName();
+
+            if (!class_exists($parameterTypeName) || !is_a($parameterTypeName, Schema::class, allow_string: true)) {
+                return null;
+            }
+        }
+
+        return $this->getSchema($name);
+    }
+
+    public function getSchemaComponent(string $key, bool $withHidden = false): Component|Action|ActionGroup|null
+    {
+        $dotPosition = mb_strpos($key, '.');
+
+        if ($dotPosition === false) {
+            return null;
+        }
+
+        $schemaName = mb_substr($key, 0, $dotPosition);
+
+        return $this->resolveSchemaByName($schemaName)?->getComponent($key, withHidden: $withHidden, isAbsoluteKey: true);
+    }
+
+    /**
+     * @param array<mixed> $arguments
+     */
+    #[LiveAction]
+    public function callSchemaComponentMethod(
+        #[LiveArg] string $componentKey,
+        #[LiveArg] string $method,
+        #[LiveArg] array $arguments = [],
+    ): void {
+        // Security: callable from the browser. The schema name is resolved through
+        // resolveSchemaByName()'s reflection gate (never getSchema()), and only
+        // #[ExposedLiveComponentMethod] methods on the resolved component are called.
+        $result = null;
+        $component = $this->getSchemaComponent($componentKey);
+        if ($component !== null && method_exists($component, $method)) {
+            $reflection = new ReflectionMethod($component, $method);
+            if (
+                $reflection->getAttributes(ExposedLiveComponentMethod::class) !== []
+                && $this->argumentsMatchSignature($reflection, $arguments)
+            ) {
+                try {
+                    $result = $component->{$method}(...$arguments);
+                } catch (TypeError) {
+                    $result = null;
+                }
+            }
+        }
+
+        $this->dispatchBrowserEvent('sylament:schema-component-method-result', [
+            'componentKey' => $componentKey, 'method' => $method, 'result' => $result,
+        ]);
+    }
+
+    /**
+     * @param array<mixed> $arguments
+     */
+    private function argumentsMatchSignature(ReflectionMethod $reflection, array $arguments): bool
+    {
+        $parameterNames = array_map(
+            static fn (ReflectionParameter $parameter): string => $parameter->getName(),
+            $reflection->getParameters(),
+        );
+
+        foreach (array_keys($arguments) as $key) {
+            if (!is_string($key) || !in_array($key, $parameterNames, true)) {
+                return false;
+            }
+        }
+
+        foreach ($reflection->getParameters() as $parameter) {
+            if ($parameter->isDefaultValueAvailable() || $parameter->isVariadic()) {
+                continue;
+            }
+
+            if (!array_key_exists($parameter->getName(), $arguments)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

@@ -40,7 +40,10 @@ _Detail_ carries a **detail** link to the write-up in [Details](#details)
 | [`validateSchemaRecord(Schema $schema, object $record): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) |
 | [`getErrorsForSchemaStatePath(?string $path): list<string>`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](#the-contract-declares-a-schema-scoped-validation-surface-livewire-owns-in-filament) |
 | [`clearSchemaValidation(?string $schemaKey = null): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](#clearschemavalidation-is-scoped-where-filament-resets-the-whole-livewire-error-bag) |
-| `getSchemaComponent($key, $withHidden, $skip…)` — absolute-key component addressing | [`Contracts\HasSchemas::getSchemaComponent()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | todo | — | [detail](#getschemacomponent-absolute-key-addressing-is-not-declared) |
+| [`resolveSchemaByName(string $name): ?Schema`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](#resolveschemabyname-is-a-sylament-only-extraction-with-no-filament-source) |
+| [`getSchemaComponent(string $key, bool $withHidden = false): Component\|Action\|ActionGroup\|null`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Contracts\HasSchemas::getSchemaComponent()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | done | — | [diverges](#getschemacomponent-drops-the-child-container-skip-list) |
+| [`dispatchBrowserEvent(string $eventName, array $payload = []): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](#dispatchbrowserevent-is-a-sylament-only-contract-member) |
+| [`callSchemaComponentMethod(string $componentKey, string $method, array $arguments = []): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#callschemacomponentmethod-answers-through-a-browser-event-with-no-partial-render) |
 | `makeFilamentTranslatableContentDriver()` | [`Contracts\HasSchemas::makeFilamentTranslatableContentDriver()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | todo | — | [detail](#the-translatable-content-driver-method-is-not-declared) |
 | `currentlyValidatingSchema(?Schema)` | [`Contracts\HasSchemas::currentlyValidatingSchema()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | skipped | — | [diverges](#currentlyvalidatingschema-is-not-ported) |
 | `getDefaultTestingSchemaName()` | [`Contracts\HasSchemas::getDefaultTestingSchemaName()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | blocked | TestsSchemas (testing helper) | [detail](#the-testing-contract-method-is-not-declared) |
@@ -57,18 +60,17 @@ calls them on a `$this` narrowed to this interface. The three validation
 methods are covered end-to-end by
 [`HasSchemasValidationTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasValidationTest.php);
 their machinery and semantics are tracked in
-[`can-be-validated.md`](can-be-validated.md).
+[`can-be-validated.md`](can-be-validated.md). `resolveSchemaByName()` and
+`getSchemaComponent()` are covered directly by
+[`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php);
+`callSchemaComponentMethod()` (and, through it, `dispatchBrowserEvent()`) is
+covered end-to-end by
+[`HasSchemasComponentMethodTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasComponentMethodTest.php).
+`resolveSchemaByName()` is also exercised through actions'
+[`resolveSchemaComponentAction()`](../actions/has-actions.md), which now calls
+it instead of carrying its own copy of the same reflection gate.
 
 ## Details
-
-### `getSchemaComponent()` absolute-key addressing is not declared
-
-Filament's `getSchemaComponent(string $key, bool $withHidden = false, array
-$skip = [])` walks the host's schemas by absolute component key and returns the
-matched `Component | Action | ActionGroup | null`. Nothing in the port addresses
-a component by key yet, so the method is not declared on the interface. **Next
-step:** declare it when the first component-addressing consumer lands (action
-resolution or partial render), returning the ported component/action union.
 
 ### The translatable-content-driver method is not declared
 
@@ -170,6 +172,82 @@ and no table self-validation, and `validateSchema()` is already scoped by its
 `Schema` argument. Reverses only if a `prepareForValidation`-like mutation pass
 returns.
 
+### `resolveSchemaByName()` is a Sylament-only extraction with no Filament source
+
+Filament's `getSchemaComponent()` resolves the schema name by calling
+`$this->getSchema($schemaName)` directly — its own `getSchema()` has no
+reflection gate, because Livewire's `getSchema()`-by-name is already just
+"call this public method", the same trust boundary every other Livewire
+action lives inside. Sylament's `getSchema()` additionally accepts a
+`<name>Schema()` suffix and, more importantly, would invoke *any* same-named
+single-argument host method if called with an unvalidated name — from a
+`#[LiveArg]`-supplied `$componentKey`, that is arbitrary method invocation.
+`resolveSchemaByName(string $name): ?Schema` is the reflection gate that
+stands between a browser-supplied name and `getSchema()`: a cached schema
+wins outright; otherwise a `<name>()`/`<name>Schema()` method is accepted
+only when its first parameter (or, with none, its return type) is declared
+`Schema` — anything else answers `null`, never a throw. It is an extraction,
+not a new mechanism: `HasActions::resolveSchemaComponentAction()`
+(`packages/actions/src/Concerns/HasActions.php:688-745` before this change)
+carried the identical gate inline; it now calls this method instead, so the
+gate exists once. See the "Names with no Filament source" table in
+[renames.md](../renames.md).
+
+### `getSchemaComponent()` drops the child-container skip list
+
+Filament declares `getSchemaComponent(string $key, bool $withHidden = false,
+array $skipComponentsChildContainersWhileSearching = [])`. Sylament's
+[`HasComponents::getComponent()`](schema.md) does not port that third
+parameter (schema.md records why — the arm exists for the repeater sibling
+context, which `getComponentByStatePath()` already covers here), so
+`getSchemaComponent()` carries only `$key` and `$withHidden`. The schema name
+is resolved through [`resolveSchemaByName()`](#resolveschemabyname-is-a-sylament-only-extraction-with-no-filament-source)
+rather than Filament's direct `getSchema()` call, for the same reason. Beyond
+that, the body is Filament-exact: split on the first `.` (no `.` answers
+`null`), then hand the **whole, unsplit** `$key` to `Schema::getComponent()`
+with `isAbsoluteKey: true` — a component's own absolute key already carries
+its owning schema's name as the leading path segment, so passing the
+dot-stripped remainder instead would never match.
+
+### `dispatchBrowserEvent()` is a Sylament-only contract member
+
+Filament's Livewire component type carries `dispatch()` implicitly — every
+Livewire component has it, so nothing declares it on `Contracts\HasSchemas`.
+UX LiveComponent has no such ambient method; `Symfony\UX\LiveComponent\ComponentToolsTrait::dispatchBrowserEvent(string $eventName, array $payload = []): void`
+is the closest equivalent, and [`HasSchemas`](has-schemas.md) composes that
+trait so the contract can declare the method schemas' own
+`callSchemaComponentMethod()` and forms' `Select` (through `getLiveComponent()`)
+both call. A host built with `new` rather than resolved from the container has
+no injected `LiveResponder` and throws (an uninitialized-typed-property error)
+the moment it calls this — every real, container-built host has one via the
+trait's `#[Required]` setter.
+
+### `callSchemaComponentMethod()` answers through a browser event, with no partial render
+
+Filament's `callSchemaComponentMethod()` *returns* the exposed method's
+result to Livewire, which either restricts the response to a partial render
+of the affected schema container or, for a `#[Renderless]` method, skips the
+render entirely and ships the return value alone. UX LiveComponent's
+`#[LiveAction]` has no return channel and no partial-render mechanism, so
+neither branch ports: the action always re-renders the whole host normally
+and hands the result back as the browser event
+`sylament:schema-component-method-result` with payload `{componentKey,
+method, result}` — exactly the channel `HasActions::mountAction()` and
+notifications already dispatch through. Cost, paid on every call: a search
+round-trip through this seam re-renders the host where Filament's method
+would not (bounded by the caller's own debounce, and the same cost every
+`live()` field already pays per keystroke). A second, Sylament-only cost sits
+beside it: the browser-supplied `$arguments` are checked against the target
+method's signature (`argumentsMatchSignature()` — every key names a real
+parameter, every parameter without a default is present) before the call, and
+the call itself is wrapped in `catch (TypeError)`, both because a bare
+`$component->{$method}(...$arguments)` spread from an unvalidated payload
+would otherwise 500 the request — the price is that a `TypeError` genuinely
+raised *inside* the called method's own body (not from the argument bind) is
+indistinguishable from a mistyped argument and is masked the same way, as a
+plain `null` result with no way for the caller to tell the two apart.
+
 _See also: the global [rename table](../renames.md) — the interface ⇄ trait name
-swap and the `Filament\Schemas\Contracts` → `Sylament\Schemas\Contracts`
-namespace prefix are recorded there._
+swap, the `Filament\Schemas\Contracts` → `Sylament\Schemas\Contracts`
+namespace prefix, `resolveSchemaByName()` and the
+`sylament:schema-component-method-result` browser event are recorded there._

@@ -522,10 +522,13 @@ method (`unmountAction`, `callMountedAction` — which recurses — or a consume
 parameterless `save()`); Filament no-ops all of these, and the guard makes the
 port miss exactly where Filament's `cacheSchema()` misses. A crash inside a
 real schema-builder method still propagates loud instead of being swallowed by
-a catch. The guard duplicates discovery knowledge actions-side because
-`getSchema()` deliberately stays permissive for host-side callers (an untyped
-builder parameter works when the host calls it directly); if the trait's
-resolution rules ever change, both sites must move together. The
+a catch. The guard used to duplicate discovery knowledge actions-side by
+inlining the reflection check; schemas'
+[`resolveSchemaByName()`](../schemas/interacts-with-schemas.md#resolveschemabyname-is-a-sylament-only-extraction-with-no-filament-source)
+extracted it onto `HasSchemas` once `getSchemaComponent()` needed the identical
+gate, and `resolveSchemaComponentAction()` now calls that shared method instead
+of carrying its own copy — so the two sites cannot drift apart the way the
+"both sites must move together" caution used to warn about. The
 `$parentActions` parameter is not part of this divergence either way: Filament
 accepts and ignores it on the schema branch, while the port's signature is
 `resolveSchemaComponentAction(array $descriptor, array $parentActions)` and

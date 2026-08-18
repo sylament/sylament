@@ -701,48 +701,17 @@ trait HasActions
         $schemaName = ($dotPosition === false) ? $key : mb_substr($key, 0, $dotPosition);
         $nestedContainerKey = ($dotPosition === false) ? null : mb_substr($key, $dotPosition + 1);
 
-        $isCachedSchema = $this->hasCachedSchema($schemaName);
-
-        if (($parentActions !== []) && (! $isCachedSchema)) {
+        if (($parentActions !== []) && (! $this->hasCachedSchema($schemaName))) {
             return null;
         }
 
-        if (! $isCachedSchema) {
-            $methodName = match (true) {
-                method_exists($this, $schemaName) => $schemaName,
-                method_exists($this, "{$schemaName}Schema") => "{$schemaName}Schema",
-                default => null,
-            };
+        $schema = $this->resolveSchemaByName($schemaName);
 
-            if ($methodName === null) {
-                return null;
-            }
-
-            $methodReflection = new ReflectionMethod($this, $methodName);
-            $firstParameter = $methodReflection->getParameters()[0] ?? null;
-
-            if ($firstParameter === null) {
-                $returnType = $methodReflection->getReturnType();
-
-                if (! $returnType instanceof ReflectionNamedType || ! is_a($returnType->getName(), Schema::class, allow_string: true)) {
-                    return null;
-                }
-            } else {
-                $parameterType = $firstParameter->getType();
-
-                if (! $parameterType instanceof ReflectionNamedType) {
-                    return null;
-                }
-
-                $parameterTypeName = $parameterType->getName();
-
-                if (! class_exists($parameterTypeName) || ! is_a($parameterTypeName, Schema::class, allow_string: true)) {
-                    return null;
-                }
-            }
+        if (!$schema instanceof Schema) {
+            return null;
         }
 
-        $action = $this->getSchema($schemaName)->getAction($descriptor['name'], $nestedContainerKey);
+        $action = $schema->getAction($descriptor['name'], $nestedContainerKey);
 
         return $action?->liveComponent($this);
     }

@@ -15,8 +15,10 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * A live host exercising T2 end-to-end: a writable `$data` bag, four fields
- * spanning the binding-modifier matrix (live / default / lazy / debounce), and a
- * `title` whose `afterStateUpdated` mirrors its previous value into `slug`.
+ * spanning the binding-modifier matrix (live / default / lazy / debounce), a
+ * `title` whose `afterStateUpdated` mirrors its previous value into `slug`,
+ * and a hidden `secret` field the `callSchemaComponentMethod()` seam uses to
+ * prove a hidden component never resolves.
  */
 #[AsLiveComponent(name: 'LiveStateHost', template: '@SchemasFixtures/components/LiveStateHost.html.twig')]
 class LiveStateHost implements InteractsWithSchemas
@@ -56,6 +58,8 @@ class LiveStateHost implements InteractsWithSchemas
                     ->lazy(),
                 LiveField::make('excerpt')
                     ->debounce(250),
+                LiveField::make('secret')
+                    ->hidden(),
             ]);
     }
 

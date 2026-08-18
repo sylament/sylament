@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Tests\Unit\Concerns;
 
 use RuntimeException;
+use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Concerns\DiscoveryThrowingSchemaHostFixture;
 use Sylament\Schemas\Tests\Fixtures\Concerns\HasSchemasFixture;
@@ -128,4 +129,52 @@ it('checks membership against the raw cache without discovering the schema', fun
     $fixture = new DiscoveryThrowingSchemaHostFixture();
 
     expect($fixture->hasCachedSchema('schema'))->toBeFalse();
+});
+
+it('resolves a schema by name from the cache', function (): void {
+    $fixture = new HasSchemasFixture();
+    $schema = $fixture->makeSchema();
+    $fixture->cacheSchema('extra', $schema);
+
+    expect($fixture->resolveSchemaByName('extra'))->toBe($schema);
+});
+
+it('resolves a schema by name through a matching method', function (): void {
+    $fixture = new HasSchemasFixture();
+
+    expect($fixture->resolveSchemaByName('schema'))->toBe($fixture->getSchema());
+});
+
+it('resolves a suffix-declared schema by name', function (): void {
+    $fixture = new SuffixedSchemaHostFixture();
+
+    expect($fixture->resolveSchemaByName('article'))->toBe($fixture->getSchema('article'));
+});
+
+it('never throws resolving an unknown schema name', function (): void {
+    expect(new HasSchemasFixture()->resolveSchemaByName('unknown'))->toBeNull();
+});
+
+it('resolves a schema component through a cached schema', function (): void {
+    $fixture = new HasSchemasFixture();
+    $component = new Component()->statePath('name');
+    $schema = Schema::make($fixture)->components([$component]);
+    $fixture->cacheSchema('extra', $schema);
+
+    expect($fixture->getSchemaComponent('extra.name'))->toBe($component);
+});
+
+it('resolves a schema component through a method-declared schema', function (): void {
+    $fixture = new HasSchemasFixture();
+
+    expect($fixture->getSchemaComponent('schema.title'))
+        ->toBe($fixture->getSchema()->getComponents()[0]);
+});
+
+it('returns null for a schema component key with no dot', function (): void {
+    expect(new HasSchemasFixture()->getSchemaComponent('title'))->toBeNull();
+});
+
+it('returns null for a schema component key naming an unknown schema', function (): void {
+    expect(new HasSchemasFixture()->getSchemaComponent('unknown.title'))->toBeNull();
 });

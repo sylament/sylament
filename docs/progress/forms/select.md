@@ -1,37 +1,58 @@
 # Select (forms)
 
-`Sylament\Forms\Components\Select` — the native `<select>` field, over a static
-option map, an enum, or a Doctrine association. It composes the shared option
-pair ([`HasOptions`](has-options.md),
+`Sylament\Forms\Components\Select` — the select field, over a static option map,
+an enum, or a Doctrine association, rendered as the native `<select>` or — once
+it is searchable, multiple, renders HTML labels or declares `native(false)` — as
+the JS control forms' `select` Stimulus controller builds over Tom Select. It
+composes the shared option pair ([`HasOptions`](has-options.md),
 [`CanDisableOptions`](can-disable-options.md) and its
 [contract](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php)),
-which have files of their own, plus
+the searchable trio it shares with [`CheckboxList`](checkbox-list.md)
+([`CanBeSearchable`](can-be-searchable.md), [`CanAllowHtml`](can-allow-html.md),
+[`CanLimitItemsLength`](can-limit-items-length.md)), the native switch it shares
+with the date pickers ([`CanBeNative`](can-be-native.md)), three single-use
+concerns folded here —
 [`CanSelectPlaceholder`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php),
-its one single-use concern, folded here, and
+[`CanBePreloaded`](../../../packages/forms/src/Components/Concerns/CanBePreloaded.php),
+[`HasLoadingMessage`](../../../packages/forms/src/Components/Concerns/HasLoadingMessage.php)
+— and
 [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php),
-which it now shares with
+which it shares with
 [`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged)
 and whose write-up stays here as the arm's home.
 It casts its state through schemas'
 [`OptionStateCast`](../schemas/option-state-cast.md) — or, under `multiple()`,
 [`OptionsArrayStateCast`](../schemas/options-array-state-cast.md), or, under an
 [enum](has-enum.md), [`EnumStateCast`](../schemas/enum-state-cast.md) /
-[`EnumArrayStateCast`](../schemas/enum-array-state-cast.md) — and appends a
-Symfony `Choice` constraint over its enabled options so a tampered payload is
-rejected server-side.
+[`EnumArrayStateCast`](../schemas/enum-array-state-cast.md) — and guards a
+submitted value server-side by a Symfony `Choice` over its enabled options where
+the option map is the whole truth, and by
+[probing the value's label](#the-choice-constraint-is-the-fields-only-server-side-guard)
+where it is not.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
 - [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php)
-  — the field
+  — the field, its `toEmbeddedHtml()` two-branch render, and the four
+  `#[ExposedLivewireMethod]` members its Alpine control calls
 - [`Components/Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php),
   [`CanSelectPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/CanSelectPlaceholder.php),
-  [`CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php)
-  — the concerns
-- [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php)
-  — the native/JS renderer switch (unported)
+  [`CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php),
+  [`CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php),
+  [`CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php),
+  [`HasLoadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php),
+  [`CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php),
+  [`CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php),
+  [`CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php)
+  — the concerns (the last four each have a file of their own, linked above)
+- [`support/resources/js/utilities/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js)
+  and [`forms/resources/js/components/select.js`](../../../vendor/filament/forms/resources/js/components/select.js)
+  — Filament's own first-party JS control, the port's is
+  [Tom Select behind a first-party controller](#nativefalse-switches-to-the-js-control)
+- [`forms/resources/lang/en/components.php`](../../../vendor/filament/forms/resources/lang/en/components.php)
+  — the `select.*` strings the literals stand in for
 
 ## Surface
 
@@ -41,7 +62,8 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Native `<select>` rendering | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-template-renders-the-selected-state-itself) · [diverges](#canbenative-is-not-ported) · [diverges](#the-default-placeholder-is-an-untranslated-literal) |
+| Native `<select>` rendering | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-template-renders-the-selected-state-itself) · [diverges](#the-default-placeholder-is-an-untranslated-literal) |
+| The JS control — [`CanBeNative`](can-be-native.md) and the `native(false)` / searchable / multiple / HTML branch | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) · [`support/…/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js) | done | — | [semantics](#getextratemplatedata-makes-the-one-getoptions-read-both-branches-share) · [diverges](#nativefalse-switches-to-the-js-control) |
 | [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
 | [`HasEnum`](../../../packages/forms/src/Components/Concerns/HasEnum.php) — inherited from `Field`; `Select` overrides `getEnumDefaultStateCast()` for the `multiple()` arm | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](has-enum.md) |
 | [`CanSelectPlaceholder`](../../../packages/forms/src/Components/Concerns/CanSelectPlaceholder.php) | [`Concerns/CanSelectPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/CanSelectPlaceholder.php) | done | — | [diverges](#disableplaceholderselection-is-not-ported) |
@@ -49,19 +71,31 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | [`hasNullableBooleanState()`](../../../packages/forms/src/Components/Select.php) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [field.md](field.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
 | `boolean()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | — |
-| `getOptionLabel()` | [`resolveOptionLabel()`](../../../vendor/filament/forms/src/Components/Select.php) | in progress | the JS select control | [detail](#getoptionlabel-omits-the-getoptionlabelusing-arm) |
-| Option validation (`Choice`) | [`getInValidationRuleValues()`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-choice-constraint-is-the-fields-only-server-side-guard) |
-| `CanBeNative` | [`Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | blocked | the JS select control | [diverges](#canbenative-is-not-ported) |
-| `multiple()` / [`OptionsArrayStateCast`](../schemas/options-array-state-cast.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#a-multiple-select-validates-element-by-element) · [diverges](#multiple-renders-a-native-multi-select-and-nothing-else) |
-| `searchable()` / `preload()` / `HasLoadingMessage` | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | todo | the JS select control | — |
-| [`relationship()`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — to-one and to-many, over the [association reader](../schemas/association-reader.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](#relationship-is-three-lazy-closures-over-the-association-reader) · [semantics](#a-relationship-select-is-always-enumerable-or-it-throws) · [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
-| `createOptionForm()` / `createOptionUsing()` / `createOptionAction()` / `getCreateOptionAction()` and the create modal chain | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#refreshselectedoptionlabel-is-not-ported) · [diverges](#the-non-relationship-schema-record-is-read-off-the-field-not-off-a-getactionschemamodel) |
-| `editOptionForm()` / `updateOptionUsing()` / `fillEditOptionActionFormUsing()` / `editOptionAction()` / `getEditOptionAction()` / `getSelectedRecord()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#geteditoptionactionformdata-also-answers-an-object) |
-| `getSelectedRecordUsing()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | the JS select control (M3 · 4) | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) |
+| `getOptionLabel(withDefault)` / `resolveOptionLabel()` / `getOptionLabelUsing()` | [`resolveOptionLabel()`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#getoptionlabel-resolves-off-the-map-or-through-getoptionlabelusing) |
+| `getOptionLabels(withDefaults)` / `getOptionLabelsUsing()` | [`getOptionLabels()`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#getoptionlabel-resolves-off-the-map-or-through-getoptionlabelusing) |
+| Option validation (`Choice`, and the label probe where the map is partial) | [`getInValidationRuleValues()`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-choice-constraint-is-the-fields-only-server-side-guard) |
+| [`CanBeNative`](can-be-native.md) | [`Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | done | — | [detail](can-be-native.md) · [diverges](#nativefalse-switches-to-the-js-control) |
+| `multiple()` / [`OptionsArrayStateCast`](../schemas/options-array-state-cast.md) — the chips control | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#a-multiple-select-validates-element-by-element) · [semantics](#multiple-forces-the-js-control-and-is-searchable-by-default) |
+| [`CanBeSearchable`](can-be-searchable.md) — `searchable(bool\|array\|Closure\|null)`, `isSearchable()` `?? isMultiple()`, `getSearchColumns()`, the four messages, `searchDebounce()`, the label/value switches | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) · [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](can-be-searchable.md) |
+| `getSearchResultsUsing()` / `getSearchResults()` — `query` / `search` / `searchQuery` injections | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-search-round-trip-is-a-live-action-that-re-renders-the-host) |
+| [`CanBePreloaded`](../../../packages/forms/src/Components/Concerns/CanBePreloaded.php) — `preload()` / `isPreloaded()` | [`Concerns/CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php) | done | — | [semantics](#preload-enumerates-the-limited-map-up-front) |
+| `optionsLimit()` / `getOptionsLimit()` — 50 | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) |
+| [`HasLoadingMessage`](../../../packages/forms/src/Components/Concerns/HasLoadingMessage.php) — `loadingMessage()` / `getLoadingMessage()` | [`Concerns/HasLoadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php) | done | — | [diverges](#loadingmessage-has-no-render-site) · [diverges](#the-two-new-strings-are-untranslated-literals) |
+| [`CanLimitItemsLength`](can-limit-items-length.md) — `maxItems()` as a `Count` and the control's cap, `maxItemsMessage()` / `getMaxItemsMessage()` | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) · [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#a-multiple-select-validates-element-by-element) · [diverges](#the-two-new-strings-are-untranslated-literals) |
+| [`CanAllowHtml`](can-allow-html.md) — `allowHtml()` | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | — | [detail](can-allow-html.md) · [semantics](#transformoptionsforjs-casts-a-markup-label-to-text) |
+| `transformOptionsForJsUsing()` / `transformOptionsForJs()` and the four exposed methods — `getSearchResultsForJs()`, `getOptionsForJs()`, `getOptionLabelsForJs()`, `getOptionLabel()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#transformoptionsforjs-casts-a-markup-label-to-text) · [semantics](#the-search-round-trip-is-a-live-action-that-re-renders-the-host) |
+| `dynamicOptions()` / `hasDynamicOptions()` / `hasDynamicSearchResults()` / `hasInitialNoOptionsMessage()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-search-round-trip-is-a-live-action-that-re-renders-the-host) |
+| `position()` / `getPosition()`, `wrapOptionLabels()` / `canOptionLabelsWrap()`, `forceSearchCaseInsensitive()` / `isSearchForcedCaseInsensitive()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [diverges](#the-dropdown-does-not-flip-and-the-modal-clips-it) |
+| `reorderable()` / `isReorderable()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | blocked | the SortableJS control (M3 · 6) | [diverges](#the-dropdown-does-not-flip-and-the-modal-clips-it) |
+| `getSelectedRecordUsing()` / `getSelectedRecord()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) |
+| [`relationship()`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — to-one and to-many, over the [association reader](../schemas/association-reader.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](#relationship-is-three-lazy-closures-over-the-association-reader) · [semantics](#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) · [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
+| The relationship search and label arms — `getSearchResultsFromRelationship()`, `getOptionsFromRelationship()` (searchable / preload / limit / ordering), `getOptionLabelFromRelationship()`, `getOptionLabelsFromRelationship()`, and the shared `getOptionLabelFromRecordUsing()` trio | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) · [diverges](#a-search-column-is-a-mapped-field-and-the-title-ordering-skips-what-it-cannot-order) |
+| `createOptionForm()` / `createOptionUsing()` / `createOptionAction()` / `getCreateOptionAction()` and the create modal chain | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-non-relationship-schema-record-is-read-off-the-field-not-off-a-getactionschemamodel) |
+| `editOptionForm()` / `updateOptionUsing()` / `fillEditOptionActionFormUsing()` / `editOptionAction()` / `getEditOptionAction()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#geteditoptionactionformdata-also-answers-an-object) |
+| `refreshSelectedOptionLabel()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [diverges](#refreshselectedoptionlabel-dispatches-a-browser-event-the-control-answers-by-re-syncing) · [renames](../renames.md#names-with-no-filament-source) |
 | `manageOptionForm()` / `manageOptionActions()` / the two modal headings | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-option-action-strings-are-untranslated-literals) |
 | `relationship()` `ignoreRecord:` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | the `unique`/`exists` constraint family | — |
 | `pivotData()` | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity recipe | [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
-| `allowHtml()` | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | todo | — | — |
 | `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` | — |
 | Affixes ([`HasAffixes`](../../../packages/forms/src/Components/Concerns/HasAffixes.php), `wrapInputHtml`) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [detail](has-affixes.md) · [semantics](#the-inline-prefix-class-counts-visible-actions-where-the-text-inputs-counts-all-of-them) |
 
@@ -79,13 +113,28 @@ enum-only select validating rather than throwing, and — driven end to end thro
 a host, so the tampered string is the field's *own* raw state — the
 [filled gate](#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
 rejecting a value the enum cast nulls out, in both multiplicities) — and the
-extra input attributes reaching the `<select>` rather than its `<option>`s — by
+extra input attributes reaching the `<select>` rather than its `<option>`s, and
+the searchable surface — `searchable()`'s five arms and the column array,
+`isSearchable()` reading `isMultiple()`, the fifty-option limit, the position /
+wrap / case switches, `getMaxItemsMessage()`'s substitution, the default and a
+replaced `transformOptionsForJs()` (flat, grouped, disabled, `strval`'d values,
+a `Markup` label cast to text), the three search-term injections,
+`getOptionLabel(withDefault)` off the map and through the lazy `$value`
+closure, `getOptionLabels()` in both arms, the three predicates' truth tables,
+`getSelectedRecordUsing()` and its memo, the effective-native table read off
+`getExtraTemplateData()['isNative']`, the four extra-template-data keys off one
+`getOptions()` read, the refresh event on a `LiveResponder`, and the label probe
+(the widened `LogicException`, a labelled value accepted, an unlabelled and a
+disabled one rejected by an empty `Choice`) — by
 [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php);
 the multi-value arm — `multiple()` as literal, `false` and closure, the cast
 swap (and a custom cast still winning), the state round-trip, the
 `Choice(multiple: true)` guard against a tampered element, the empty-selection
-and no-options cases, and the rendered `multiple` attribute with its selected
-options in both the flat and the grouped shape — by
+and no-options cases, the rendered `multiple` attribute with its selected
+options in both the flat and the grouped shape, the `Count` from
+`minItems()` / `maxItems()` built ahead of the blank return so `[]` fails a
+minimum, the widened `LogicException` naming `getOptionLabelsUsing()`, and the
+multiple probe (count, diff, disabled) — by
 [`SelectMultipleTest`](../../../packages/forms/tests/Integration/Components/SelectMultipleTest.php);
 the relationship arm — the to-one fill/option-map/`getOptionLabel` trio, the
 selected-id write, the empty-submission null, the `Choice` rejection of an id
@@ -99,17 +148,35 @@ surviving, `multiple()` declared on either side of `relationship()`), empty
 submission, a round-trip against a reloaded post whose collection is still
 lazy, and both multiplicity refusals (a to-many association without `multiple()`,
 a to-one association with it, each asserted from the option map and from
-`fill()`) — by
+`fill()`), and the search arm — the `LIKE` over the title attribute and its
+parameter, `searchable(['name', 'id'])` `OR`ing a column each, an untitled
+relationship answering `[]`, a search column that hops an association refused
+with a `LogicException`, `optionsLimit()` and a scope's own `setMaxResults()`
+winning and written back, `modifyQueryUsing` receiving the term (and `null`
+elsewhere), `forceSearchCaseInsensitive()` in all three arms asserted on the DQL
+and the parameter (SQLite's `LIKE` being case-insensitive anyway, the results
+prove nothing there), the searchable select enumerating nothing and the
+preloaded one the limited ordered map, the record-label callback labelling in
+database order beside the title path's title order, both label arms' two
+branches, the selected record fetched (identity-map instance), `null` on a miss
+and outside the scope, the probe accepting the real key and rejecting a missing
+and an out-of-scope one through `getData()`, and the non-searchable select
+keeping its full-map `Choice` — by
 [`SelectRelationshipTest`](../../../packages/forms/tests/Integration/Components/SelectRelationshipTest.php),
 against the in-memory SQLite rig
 ([`EntityManagerFactory`](../../../packages/forms/tests/Fixtures/Doctrine/EntityManagerFactory.php),
 smoke-tested by
 [`DoctrineRigTest`](../../../packages/forms/tests/Integration/Fixtures/DoctrineRigTest.php));
 the wiring that needs no database — `hasRelationship()`, the name fallback, the
-title attribute, the no-entity-manager throw, and the unconditional install
-order of the three option defaults (a closure declared before `relationship()`
-overwritten, one declared after kept) — by
+title attribute, the no-entity-manager throw, the unconditional install
+order of the three option defaults and of the search and label arms (a closure
+declared before `relationship()` overwritten, one declared after kept), and
+`getSearchColumns()` defaulting to the title attribute — by
 [`HasRelationshipTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasRelationshipTest.php);
+the two new concerns — `preload()` and `loadingMessage()` in every arm — by
+[`CanBePreloadedTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBePreloadedTest.php)
+and
+[`HasLoadingMessageTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasLoadingMessageTest.php);
 and the two option actions — the dotted-key mount rendering the modal with its
 form, the create round-trip (row persisted, key selected, the outer schema's own
 `getState()` clearing the `Choice` against the re-enumerated map, the new option
@@ -129,26 +196,8 @@ live host.
 
 ## Details
 
-### `getOptionLabel()` omits the `getOptionLabelUsing` arm
-
-The port resolves the label from the static option map only, walking both the
-flat and the grouped shape. The match is an array-key lookup rather than a
-comparison, which is what Filament's `$options[$state]` is: PHP canonicalizes a
-numeric-string key to an int, so a state of `'1'` finds the `1` option however
-the field's casts spell it. A `bool` state is normalized to `int` first — the
-coercion PHP would apply to an array offset anyway, and the one `boolean()`
-depends on to resolve `true` to its `1 => 'Yes'` option.
-
-Filament's `getOptionLabelUsing` closure arm exists for the case where the
-selected record is *not* in the option map — a searchable, non-preloaded select
-fetches one record's label by id. The port's
-[`relationship()`](#relationship-is-three-lazy-closures-over-the-association-reader)
-always builds the full map, so a relationship-backed label resolves off it like
-any other and needs no second lookup; the closure arm therefore lands with the JS
-select control that makes partial option maps possible, not with the relation
-layer. Filament's `$withDefault` parameter — falling back to the raw state when
-no option matches — is also unported: the port returns `null`, which is the
-honest answer for a value that is not an option.
+Specifics for rows that are not finished, and the standing write-up of the
+relationship arm.
 
 ### `relationship()` is three lazy closures over the association reader
 
@@ -157,9 +206,19 @@ stores the title attribute and the optional query scope, then wires three
 closures and nothing else. Each takes its component as `self`, which resolves to
 whichever class composed the trait, so
 [`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged)
-takes the same three unchanged; the option query the first of them runs is a
-`getRecordsFromRelationship()` seam both fields read, so it is built and scoped
-in one place. The association *name* and the target resolution
+takes the same three unchanged; the option query the first of them runs is built
+and scoped in one place — `createScopedOptionQuery()`, the builder *before* it
+runs, which `getRecordsFromRelationship()` executes for the trait's own map and
+which this field's [search, label and selected-record arms](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query)
+constrain, limit and order first. Those four arms are `Select`'s, installed by
+its own `relationship()` override on top of the trait's three; the trait keeps
+what both fields use, which since the searchable-select epic also includes the
+record-label trio (`getOptionLabelFromRecordUsing()` /
+`hasOptionLabelFromRecordUsingCallback()` / `getOptionLabelFromRecord()`, moved
+here from `CheckboxList` — Filament duplicates it on both fields because it has
+no shared trait) and the one record→label mapping both maps are built from,
+`resolveOptionLabelFromRecord()`: the callback when declared, the title
+attribute read through the accessor otherwise. The association *name* and the target resolution
 below moved one level down into
 [`BelongsToRelationship`](../../../packages/forms/src/Components/Concerns/BelongsToRelationship.php)
 when [`Repeater::relationship()`](repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
@@ -223,13 +282,15 @@ observable.
 lives in the assignment, not in the getter.
 
 The option map is memoized on the component, and reset by `relationship()`
-itself — again Filament-exact, and load-bearing here because the v1 map is the
-*whole* target table: `getOptions()` runs at least twice per request (once
-through `getEnabledOptionValues()` during validation, once from the template)
-plus once per `getOptionLabel()`, and without the memo each is another unbounded
-`SELECT`. A field declaring `modifyQueryUsing` neither reads nor writes the
-memo, because a scoping closure may read state that changes within the request
-and a cached first answer would freeze it.
+itself — again Filament-exact, and load-bearing here because a non-searchable
+select's map is the *whole* target table: `getOptions()` runs at least twice per
+request (once through `getEnabledOptionValues()` during validation, once from
+the template) and without the memo each is another unbounded `SELECT`. A field
+declaring `modifyQueryUsing` neither reads nor writes the memo, because a
+scoping closure may read state that changes within the request and a cached
+first answer would freeze it. The map is read exactly once per render, in
+[`getExtraTemplateData()`](#getextratemplatedata-makes-the-one-getoptions-read-both-branches-share),
+for the same reason.
 
 The concern imports `Doctrine\ORM\QueryBuilder` directly, so `forms` declares
 `doctrine/orm` in its own `require` rather than inheriting it through `schemas` —
@@ -241,15 +302,51 @@ the split-repo rule, since each package is published standalone.
 
 A native `<select>` gives no server-side guarantee at all: the submitted value is
 an ordinary string a client can set to anything, and `disabled` on an `<option>`
-is a browser-side courtesy.
+is a browser-side courtesy — and the JS control gives less still, since its
+value never touches a form control the browser validates.
 [`buildValidationConstraints()`](../../../packages/forms/src/Components/Select.php)
-therefore appends a `Choice` over
-[`getEnabledOptions()`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php)
-whenever the [raw state is filled](#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
-— that one constraint is what rejects both a tampered
-value and a value whose option is disabled. Symfony's `Choice` is always strict
-(`ChoiceValidator` throws on any other setting), so the comparison is identity,
-which is why the choices are built in the field's *stored* form (see below).
+therefore guards the [filled raw state](#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
+one of two ways, and the split is `hasFullOptionMap()`: whether `getOptions()`
+enumerates every value the field accepts.
+
+**The enumerable arm** — a static `options()` map, an enum, or a relationship
+select that is not searchable — appends a `Choice` over
+[`getEnabledOptions()`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php);
+that one constraint is what rejects both a tampered value and a value whose
+option is disabled. Symfony's `Choice` is always strict (`ChoiceValidator`
+throws on any other setting), so the comparison is identity, which is why the
+choices are built in the field's *stored* form (see below). This is exactly the
+guard the relation layer shipped, and it is untouched: a static map is the whole
+truth even when a `getOptionLabelUsing()` is declared beside it — the closure
+customizes the *label*, the map still says which values exist — where Filament
+would probe the closure and never consult the map. The stricter reading is kept
+because it is tamper-proof without asking anything of a user closure.
+
+**The partial arm** — a searchable relationship select, preloaded or not, whose
+map is empty or limited by design; or a select with no `options()` at all but a
+`getOptionLabelUsing()` (single) / `getOptionLabelsUsing()` (multiple) — ports
+Filament's `getInValidationRuleValues()`: the submitted value is legal when it
+**resolves a label** and that option is not disabled. Single ⇒
+[`getOptionLabel(withDefault: false)`](#getoptionlabel-resolves-off-the-map-or-through-getoptionlabelusing),
+blank ⇒ invalid; multiple ⇒ `getOptionLabels(withDefaults: false)`, then
+Filament's three checks in order — more values than labels, a value the labels
+do not key, any label whose option is disabled — each ⇒ invalid. An invalid
+probe appends `Choice(choices: [])` (Filament's `[]` in-rule), so the value
+fails closed with the ordinary "not a valid choice" violation rather than being
+waved through; a valid probe appends nothing. For a relationship select the
+probe's record source is
+[`getSelectedRecordUsing()`'s query](#the-option-actions-are-suffix-actions-with-doctrine-defaults),
+so a key outside `modifyQueryUsing`'s scope is as invalid as a missing one —
+Filament's semantics. The probe resolves state at constraint-build time, the
+precedent [`DateComparison`](can-be-validated.md) set.
+
+The `LogicException` raised when a filled select has nothing to validate with
+exists so that "validates nothing" can never be the silent default, and it
+widens per arm exactly as Filament's does: single ⇒ no `options()`, no enum
+**and** no `getOptionLabelUsing()`; multiple ⇒ … and no `getOptionLabelsUsing()`
+— so a `multiple()` select carrying only the single-arm closure throws, as
+upstream. `hasFullOptionMap()` is `protected` and Sylament-only; Filament's
+`null` map return plays that role.
 
 One shape is guarded by a different constraint, because `Choice` cannot express
 it: a `multiple` select whose raw state is not an array
@@ -261,11 +358,6 @@ keyed `validationMessages([Choice::class => …])` where Filament keyed the `in`
 rule. `Choice` declares four message options (`message`, `multipleMessage`,
 `minMessage`, `maxMessage`), so the string shorthand sets `message` — the one a
 single-value select violates — and an option map reaches the others.
-
-The `LogicException` raised when a filled select has no `options()` exists so
-that "validates nothing" can never be the silent default: a select whose options
-come from somewhere the port cannot see must say so loudly rather than wave every
-payload through.
 
 The *whenever state is filled* half of that has an upstream twin now, and the two
 do not stack. `Choice` is not implicit, so the
@@ -379,12 +471,16 @@ validate each submitted element against the choices instead of the array as a
 whole. Three consequences worth stating, because each looks like an omission in
 the code:
 
-- **An empty selection builds no constraint.** The builder's existing
+- **An empty selection builds no membership constraint.** The builder's existing
   [`blank($this->getRawState())`](#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
   early return already covers it —
   [`blank([])`](../support/helpers.md) is true — so the empty-selection case
   needs no branch of its own, and validation of "must this field be filled?"
-  stays with the presence/required layer where it belongs.
+  stays with the presence/required layer where it belongs. The one constraint
+  built *ahead* of that return is the item-count `Count` from `minItems()` /
+  `maxItems()` ([`CanLimitItemsLength`](can-limit-items-length.md)), exactly as
+  `CheckboxList` orders it, so a `minItems(1)` select fails `[]` — the empty
+  list is a count question, not a membership one.
 - **The choices stay scalar.** `getEnabledOptionValues()` runs each option key
   through the cast chain, and a multi-value cast turns one key into a
   *one-element list*; the builder spreads that list rather than pushing it, since
@@ -410,44 +506,25 @@ a 500 instead of a rejection.
 The builder therefore branches before it appends the `Choice`: when the field is
 `multiple` and the raw state is not an array, it appends a `Type('array')` and
 returns. The payload is failed, with a violation on the field, and every
-array-shaped state takes the `Choice` path unchanged. The no-`options()`
-`LogicException` still comes first, so a tampered payload cannot mask a
-misconfiguration.
-
-### A relationship select is always enumerable, or it throws
-
-The `Choice` guard enumerates `getOptions()`, so an option map that comes back
-empty does not fail open — it fails *closed*, rejecting every value the user can
-pick, with a violation that names nothing wrong with the submission. That is the
-one outcome a relationship select must never produce, and it is exactly what a
-silently-degrading options closure would produce: no entity manager, no record
-class, or a property Doctrine maps nothing at, each yielding `[]`.
-
-So the closure throws instead. Each arm names which of the three it hit and what
-would fix it, and the reader's own
-[`getReference()`](../schemas/association-reader.md) and `createOptionQuery()`
-throw on the same missing entity manager from the write side. There is no
-fallback option map and no empty-map arm anywhere in the concern; a select whose
-options the port cannot enumerate is a configuration error, not a runtime state.
-Validation then stays exactly as it was — the `Choice` is built over a full map,
-which is what makes the epic's "never a partial enumeration" rule mechanical
-rather than a convention.
-
-One consequence worth stating: because the map is full and the constraint strict,
-the save hook receives an identifier that has already been checked against the
-target table by the time it runs. Its own "not an identifier" throw is therefore
-a belt-and-braces guard for a state that reached `getData()` without validation,
-not the primary defence.
+array-shaped state takes the `Choice` (or [probe](#the-choice-constraint-is-the-fields-only-server-side-guard))
+path unchanged. The `Type` check comes first, ahead of the item-count `Count`
+and the no-`options()` `LogicException` — the order
+[`CheckboxList`](checkbox-list.md#the-three-server-side-guards-are-ordered-so-they-never-collide)
+already had, since `Count` throws on a non-array too.
 
 ### The template renders the selected state itself
 
-The template emits `selected` per option, comparing the option's key against
+The **native** branch's template emits `selected` per option, comparing the
+option's key against
 [`getOptionComparisonState()`](has-options.md#the-option-vocabulary-is-normalized-once-rather-than-per-template)
 — `in` when the state is a list, a loose `==` otherwise. For a
 single select this is redundant with the live binding on a first render and
-becomes load-bearing on any server-rendered non-live one; for a multiple select
-there is no alternative, since a multi-select's value cannot be expressed as an
-attribute at all. The comparison is deliberately loose because the two sides
+becomes load-bearing on any server-rendered non-live one. The JS branch's hidden
+`<select>` renders the same option loop and, beside it, every `selectedOptions`
+entry the map does not carry as a `selected` option — so a non-preloaded
+searchable select's DOM holds its selection with a label and degrades to a
+readable value without JS — while the control itself paints from the
+`selectedOptions` value; the comparison below is the native branch's. The comparison is deliberately loose because the two sides
 speak different vocabularies — an option key is an `int` where the state may hold
 the `'1'` a browser submitted — the same mismatch
 [`getEnabledOptionValues()`](#the-choice-choices-cover-both-forms-the-raw-state-can-take)
@@ -459,6 +536,208 @@ method on [`HasOptions`](has-options.md), so an enum-valued or boolean state
 reaches the template already spelled in the option vocabulary, and
 `getOptionLabel()` resolves through the same method rather than repeating the
 bool-to-int coercion it used to carry.
+
+### `getOptionLabel()` resolves off the map or through `getOptionLabelUsing()`
+
+`getOptionLabel(bool $withDefault = true)` is a thin
+`#[ExposedLiveComponentMethod]` wrapper over `resolveOptionLabel($withDefault,
+?array $options)`, Filament's shape, and the two arms are Filament's too.
+
+**The map arm** — no `getOptionLabelUsing()` — looks the selected value up in the
+option map (the one given, else `getOptions()`), walking both the flat and the
+grouped shape. The match is an array-key lookup rather than a comparison, which
+is what Filament's `$options[$state]` is: PHP canonicalizes a numeric-string key
+to an int, so a state of `'1'` finds the `1` option however the field's casts
+spell it. The state is read through
+[`getOptionComparisonState()`](has-options.md#the-option-vocabulary-is-normalized-once-rather-than-per-template),
+so an enum unwraps and a `bool` normalizes to `int` first — the coercion PHP
+would apply to an array offset anyway, and the one `boolean()` depends on to
+resolve `true` to its `1 => 'Yes'` option. Without a match, `$withDefault`
+answers the state itself as text (Filament's `return $state`, made a string
+because the return type is `string|Markup|null`) and `false` answers `null` —
+the reading validation probes.
+
+**The closure arm** — `getOptionLabelUsing()` declared — evaluates it with
+`'value'` injected as a **closure** returning `getState()`, so a
+`fn ($value) => …` reads the state lazily and a closure that never asks for it
+never triggers the read; the by-reference capture is Filament's, so the
+`$withDefault` fallback reuses the state the closure read rather than reading it
+twice. What the closure answers is coerced the one way an option label can be:
+`Markup` as-is, a scalar or an enum's backing value as a string, anything else
+`null`. `relationship()` installs this arm, so a relationship select resolves
+its label from the **record**
+([the selected-record query, then the callback or the title attribute](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query))
+even when its map would have held it — Filament-exact, and one extra query per
+render on a preloaded select that the memo on `getSelectedRecord()` bounds to
+one.
+
+`getOptionLabels(bool $withDefaults = true, ?array $options = null)` is the
+plural twin: the map arm walks the comparison state's list and defaults an
+unlabelled value to itself when asked, and the closure arm evaluates
+`getOptionLabelsUsing()` with `'values'` injected lazily, then defaults a
+**blank** label to its value or drops the key. A value the closure did not
+return at all is absent either way — Filament's shape, and the reason a
+relationship select's `selectedOptions` carries only the rows the scope admits.
+`getOptionLabelsForJs()` takes no argument for the same reason Filament's does
+not: it reads the state itself.
+
+### `getExtraTemplateData()` makes the one `getOptions()` read both branches share
+
+The class hook — CLAUDE.md's Twig-side port of the `toEmbeddedHtml()`
+local-variable preamble — performs the render's single `getOptions()` read (a
+`modifyQueryUsing` relationship map is not memoized, so three reads would be
+three queries and three maps that could disagree) and exposes four values both
+template branches read as plain variables: `options` (the raw map, which the
+`<option>` loop of **both** branches iterates — never `component.getOptions`),
+`optionsForJs` (`transformOptionsForJs($options)`), `selectedOptions` (the
+current selection as a `{value, label}` list — Filament's `initialOptionLabel` /
+`initialOptionLabels`, resolved through `resolveOptionLabel(options: $options)`
+for a single select and `getOptionLabels(options: $options)` for a multiple one,
+so the JS control paints its closed state with zero round-trips), and `isNative`
+— `! (isSearchable() || isMultiple() || isHtmlAllowed()) && isNative()`,
+[the exact `Select.php:1838` rule](can-be-native.md#a-select-is-native-only-when-nothing-forces-the-js-control).
+Two of the four are computed only for the JS branch: a native select gets
+`optionsForJs` and `selectedOptions` as `[]`, because Filament computes both
+inside its JS branch too and a native relationship select would otherwise pay
+the selected-record query for a value nothing renders. None of the four is a
+public method, so there are no rename rows.
+
+### `transformOptionsForJs()` casts a `Markup` label to text
+
+`setUp()` installs the default `transformOptionsForJsUsing` closure Filament's
+does — a flat option becomes `{label, value: (string) $value, isDisabled}` and a
+group `{label: <group key>, options: […]}` — and it is what the four exposed
+methods and `optionsForJs` map through. One port clause: a `Markup` label is cast
+to a plain string here, so raw HTML travels to the control only under
+`allowHtml()`, whose controller-side switch decides whether to escape it. That
+bends the codebase's [`Markup`-renders-raw contract](can-allow-html.md#the-switch-opens-exactly-one-hole-per-field)
+in one place, deliberately: the JS payload is data, not a Twig sink, and the
+control has exactly one switch for whether it treats a label as markup.
+`transformOptionsForJsUsing(null)` un-installs the default and makes
+`transformOptionsForJs()` throw, naming the setter — Filament's would `TypeError`
+on the null return; either way there is no shape to send.
+
+### `preload()` enumerates the limited map up front
+
+Under the port's [server-rendered options](#nativefalse-switches-to-the-js-control),
+`preload()` means *the server enumerates the (limited) option map into the
+markup*: `getOptionsFromRelationship()` returns `[]` for a searchable select that
+is not preloaded and the limited, title-ordered map for one that is; a
+non-searchable relationship select enumerates as before, and a static
+`options()` map is always in the markup regardless. `hasDynamicOptions()` and
+`hasInitialNoOptionsMessage()` are ported verbatim and read `isPreloaded()` the
+same way Filament's do, though the first buys nothing here — see the
+[divergence](#the-search-round-trip-is-a-live-action-that-re-renders-the-host).
+
+### `multiple()` forces the JS control, and is searchable by default
+
+Filament couples `multiple()` to its JS control — chips, a remove affordance per
+value, `maxItems()` — and the port now does the same:
+[`isNative`](can-be-native.md#a-select-is-native-only-when-nothing-forces-the-js-control)
+is false for every multiple select, and
+[`Select::isSearchable()`](can-be-searchable.md#select-widens-searchable-to-a-column-array-and-defaults-it-to-multiple)
+defaults to `isMultiple()`. The native `<select multiple>` the relation layer
+shipped is gone from the shipped surface, its parts — the cast swap, the
+`multiple` attribute, the multi-value `Choice`, the selected state — carried by
+the JS branch's hidden `<select>` instead. Filament's `dehydrated(false)` arm is
+still not among them and never will be: it exists for the relationship-saving
+path rather than for multi-value state, and that path works the other way round
+here ([below](#the-save-arm-writes-a-desired-list-not-attachdetach)). The one
+consequence worth saying out loud is the relationship one
+([below](#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design)):
+a `multiple()` relationship select that calls neither `searchable()` nor
+`preload()` enumerates no options until the user types.
+
+### A relationship map is full or an exception, except where search makes it partial by design
+
+The `Choice` guard enumerates `getOptions()`, so an option map that comes back
+empty does not fail open — it fails *closed*, rejecting every value the user can
+pick, with a violation that names nothing wrong with the submission. That is the
+one outcome a relationship select must never produce **by accident**, and it is
+exactly what a silently-degrading options closure would produce: no entity
+manager, no record class, or a property Doctrine maps nothing at, each yielding
+`[]`. So the trait's closure throws instead. Each arm names which of the three
+it hit and what would fix it, and the reader's own
+[`getReference()`](../schemas/association-reader.md) and `createOptionQuery()`
+throw on the same missing entity manager from the write side. There is no
+fallback option map anywhere in the concern; a select whose options the port
+cannot enumerate is a configuration error, not a runtime state.
+
+What the searchable-select epic added is the one empty-map arm that is **not**
+an accident: `Select::getOptionsFromRelationship()` answers `[]` for a searchable
+select that is not preloaded (Filament returns `null` there; ours keeps the
+`array` type and the validation builder distinguishes the two by predicate), and
+a limited map for one that is. Neither is the truth about a submitted value, and
+neither reaches the `Choice`: `hasFullOptionMap()` is false for every searchable
+relationship select, and the
+[label probe](#the-choice-constraint-is-the-fields-only-server-side-guard) —
+which fetches the submitted key through the same scoped query — guards it
+instead. So the invariant is unchanged where it matters: a full map is validated
+as a full map, and a partial one is never validated as if it were full. Because
+`isSearchable()` [defaults to `isMultiple()`](#multiple-forces-the-js-control-and-is-searchable-by-default),
+a `multiple()` relationship select is on this arm unless it says `preload()` —
+the three shipped tests that build one gained the call, and the trait's "always
+a full map" docblock became this paragraph.
+
+One consequence worth stating: on either arm the save hook receives an
+identifier that has already been checked against the target table — through the
+map or through the probe — by the time it runs. Its own "not an identifier"
+throw is therefore a belt-and-braces guard for a state that reached `getData()`
+without validation, not the primary defence.
+
+### The relationship search arm runs a `LIKE` per column over the scoped option query
+
+Every searchable, preload, limit and label arm lives on `Select`, not in the
+shared trait — as in Filament, where every one of these members sits on
+`Select` — because [`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged)
+composes the same trait and has none of `isPreloaded()`, `getSearchColumns()`,
+`getOptionsLimit()` or the closures. The trait keeps what both use: the
+cardinality guard, `createScopedOptionQuery(?string $search)` (create + scope,
+with `modifyQueryUsing` now receiving the term as `$search` — `null` outside a
+search — beside `$query`), and the record→label mapping. `Select::relationship()`
+calls the trait's, then installs four arms unconditionally on top of the three
+option-action defaults:
+
+- **`getSearchResultsUsing` ⇒ `getSearchResultsFromRelationship(?string $search)`.**
+  Blank `getSearchColumns()` ⇒ `[]` (an untitled relationship has nothing to
+  search; Filament's empty nested `where` is a no-op, and an empty `orX()` would
+  be malformed DQL). Otherwise the scoped query gains
+  `andWhere(orX(SearchConstraint::like(...) per column))` — schemas'
+  [`SearchConstraint::like()`](../schemas/search-constraint.md), the engine
+  tables' filter chain moved down for this, which lowers both sides on Postgres
+  or when `forceSearchCaseInsensitive()` says so — then a limit
+  **unconditionally**: a `setMaxResults()` the scope set wins and is written back
+  through `optionsLimit()` (so the control's own cap agrees), else
+  `getOptionsLimit()` (50); then the title ordering; then execute and map. Search
+  columns are DQL field paths on the target (`name`, or `address.city` into an
+  embeddable), and `getSearchColumns()` defaults to `[$titleAttribute]` when
+  `searchable()` named none.
+- **`getOptionLabelUsing` ⇒ `getOptionLabelFromRelationship()`.**
+  `getSelectedRecord()` first, `null` when it answers none, else the record's
+  label — the record-label callback when declared, the title attribute through
+  the accessor otherwise, the same two branches Filament's install has.
+- **`getSelectedRecordUsing` ⇒ the scoped query on the identifier**, `null` on a
+  miss ([above](#the-option-actions-are-suffix-actions-with-doctrine-defaults)).
+- **`getOptionLabelsUsing` ⇒ `getOptionLabelsFromRelationship(array $values)`.**
+  The scoped query with `IN (:sylament_values)` on the identifier, mapped the
+  same two ways; `[]` in ⇒ `[]` out, since `IN ()` is not DQL. No ordering, as
+  Filament's has none.
+
+`getOptionsFromRelationship()` is overridden on `Select` too, composing gates →
+query → limit → ordering → execute → map so the limit and the ordering are on
+the query before it runs: the searchable-and-not-preloaded gate, the memo, then
+the limit under Filament's narrower condition (`isSearchable() &&
+filled(getSearchColumns())`, the scope's own limit still winning and writing
+back), then the title ordering, then the trait's mapping. Two Filament-parity
+details ride along. Both relationship option arms **order by the title
+attribute** when the scoped query carries no `orderBy` — on the title-attribute
+path only, exactly where Filament puts it; the record-label-callback branch
+orders nothing, so a `CheckboxList` with a callback and no title attribute is
+untouched, and the trait's own map is unordered as before (that field's ordering
+is its own epic's). And the callback branch is what the moved
+`getOptionLabelFromRecordUsing()` trio makes reachable on `Select`: with it, both
+the map and the search results label rows through the callback, in the order the
+database returns them.
 
 ### The option actions are suffix actions with Doctrine defaults
 
@@ -501,7 +780,9 @@ Filament's `?? $action` guards could not simply be kept as they were written.
 [`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged)
 composes the same trait and has no option actions, so the override aliases the
 trait body in (`use HasRelationship { relationship as traitRelationship; }`),
-calls it, then installs three Doctrine defaults:
+calls it, installs the
+[four search and label arms](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query),
+then three Doctrine defaults:
 
 - **`createOptionUsing`** — `Schema::getData()` builds the target entity from the
   modal schema's class-string record (`new $class()`, so the target needs a
@@ -518,7 +799,11 @@ All three are installed **unconditionally**, exactly as Filament does it, so a
 `createOptionUsing()` of your own has to be declared **after** `relationship()`
 to survive. That is a real ordering trap and it is pinned in both directions
 rather than smoothed over — a conditional install would silently change which
-closure wins for anyone carrying the Filament habit.
+closure wins for anyone carrying the Filament habit. The four search and label
+installs — `getSearchResultsUsing`, `getOptionLabelUsing`,
+`getSelectedRecordUsing`, `getOptionLabelsUsing` — follow the same rule and the
+same precedent, and are pinned the same way: a `getOptionLabelUsing()` declared
+before `relationship()` is overwritten, one declared after wins.
 
 Both write arms end by calling `forgetCachedRelationshipOptions()`, which only
 clears the [memoized option map](#relationship-is-three-lazy-closures-over-the-association-reader).
@@ -529,40 +814,29 @@ created key is validated against the map built before the insert and rejected by
 the `Choice`. The one on the relationship default is belt and braces for a
 `createOptionUsing` that is replaced wholesale later in the chain.
 
-`getSelectedRecord()` resolves through
-[`AssociationReader::getReference()`](../schemas/association-reader.md) rather
-than a query: the edit modal reads state off the instance, which is what
-initializes the proxy, so a mount that never opens costs nothing. It is memoized
-on the field, answers `null` for a blank selection, and answers `null` for a
-select bound to no association at all — Filament's equivalent is a
-`getSelectedRecordUsing` closure that `relationship()` installs, and with a single
-resolution strategy there is nothing for that closure to switch between.
-
-Two consequences of hardcoding that strategy, both worth knowing before the
-setter is ported.
-
-**A reference is not a row, so a missing row surfaces late and loudly.**
-`getReference()` hands back an uninitialised proxy without touching the
-database, so nothing has checked that the key still names a row. The check
-happens when the edit modal's `fill()` reads state off the instance and Doctrine
-initialises it, and a key whose row was deleted concurrently — or tampered with
-on the wire — raises `EntityNotFoundException` there, where Filament's `first()`
-degrades to `null` and the modal simply mounts empty. The fix if that ever
-matters is not a `try`: it is resolving the record through the same
-[`createOptionQuery()`](#relationship-is-three-lazy-closures-over-the-association-reader)
-path the options come from, which fetches and answers `null` on a miss.
-
-**`getSelectedRecordUsing()` is the seam the whole thing is missing.** It is
-public API on Filament's `Select`
-([`Select.php`](../../../vendor/filament/forms/src/Components/Select.php)),
-`getSelectedRecord()` is nothing but `evaluate()` over it, and `relationship()`
-merely installs one default among several. Ours has no setter, so a
-**non-relationship** select carrying an `editOptionForm()` has no way to bind a
-record to the edit modal at all — the method returns `null` on the
-`hasRelationship()` gate and the modal fills from nothing. It is deferred to
-M3 · 4 rather than added now because in Filament the same closure is the
-label-resolution path the searchable JS control drives, and porting it against
-the native renderer alone would fix its shape to half the job.
+`getSelectedRecord()` is nothing but `evaluate()` over `getSelectedRecordUsing()`
+— Filament's shape, and the seam this epic ports — memoized on the field for as
+long as the selection stays the same, null for a blank selection or when no
+resolver is declared, so a **non-relationship** select with an
+`editOptionForm()` binds a record to its modal by declaring the resolver. The
+default `relationship()` installs is a **query**, not a reference: the
+[scoped option query](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query)
+with `andWhere("record.{$idField} = :sylament_selected")` on the identifier
+[`AssociationReader::getIdentifierFieldName()`](../schemas/association-reader.md)
+names, executed with `getOneOrNullResult()`. That replaces the
+[`getReference()`](../schemas/association-reader.md) proxy the relation layer
+shipped, and both consequences the trail recorded against the proxy go with it:
+a key whose row was deleted concurrently — or tampered with on the wire — now
+answers `null` where the proxy raised `EntityNotFoundException` late, so the
+edit modal mounts empty as Filament's does; and a key outside `modifyQueryUsing`'s
+scope answers `null` too, which is what makes the same closure the
+[validation probe's](#the-choice-constraint-is-the-fields-only-server-side-guard)
+record source — a selection the scope does not admit is not a legal option. A
+non-scalar state (a `multiple()` list) answers `null` from the default rather
+than binding an array to the identifier. The memo is keyed on the selection
+because it is consulted at two points in a request where the state may differ —
+the render before an option action and the validation after it — and Filament's
+unconditional memo would answer the first selection's record for the second.
 
 ### The inline-prefix class counts visible actions where the text input's counts all of them
 
@@ -584,19 +858,126 @@ whatever the suffix side holds, so suffix actions (which is where
 Deliberate deviations from Filament, and the reason each holds. Provisional ones
 say what would reverse them.
 
-### `multiple()` renders a native multi-select and nothing else
+### `native(false)` switches to the JS control
 
-In Filament `multiple()` is coupled to the Choices.js control: it forces
-`native(false)` territory, drives tag-style rendering, and switches
-`dehydrated()` off for the relationship arm. The port carries only the parts that
-are meaningful for a native `<select multiple>` — the state cast swap, the
-`multiple` attribute, the multi-value `Choice`, and the selected state — because
-[`CanBeNative` is not ported](#canbenative-is-not-ported). The affordances that
-belong to the JS control (searchable, `maxItems`, option reordering) land with
-it. Filament's `dehydrated(false)` arm is not among them and never will be: it
-exists for the relationship-saving path rather than for multi-value state, and
-that path works the other way round here
-([below](#the-save-arm-writes-a-desired-list-not-attachdetach)).
+Filament's `native(false)` switches `Select` from a real `<select>` to its own
+first-party JavaScript control — `support/resources/js/utilities/select.js`, some
+2 400 lines on `@floating-ui/dom` + `sortablejs` (the trail once said Choices.js;
+v5 dropped it, and the premise was stale). The port switches to **Tom Select**
+behind a thin first-party Stimulus controller, `sylament--forms--select`, bundled
+into forms' `dist` — the roadmap's carried decision (3), a "thin integration
+around Tom Select" over writing our own control. Porting Filament's own control
+was weighed as the alternative and set aside: exact DOM/CSS parity and no new
+dependency, but a hand-port of that size ships with no JS test rig, and the
+decision explicitly chose the library. Recorded so the choice can be revisited if
+Tom Select's semantics prove too foreign; the controller, its values and its CSS
+are the template's and the stylesheet's trail
+([styles.md](styles.md)), this file carries what the PHP side promised it and
+where that differs from Filament:
+
+- **The server render is the option and selection truth.** Filament's control
+  fetches `getOptionsForJs` on every open when `hasDynamicOptions()` and probes
+  labels lazily. Ours renders `optionsForJs` and `selectedOptions` into the
+  markup on every render, and every live round-trip re-renders, so a "fresh
+  options at open" round-trip buys nothing; the JS asks the server for search
+  results only. Dependent options (`options(fn (Get $get) => …)`) therefore
+  follow the last render, so the dependency must be `live()` — which Filament's
+  own dependent-select docs require anyway. The four exposed methods are still
+  ported for API parity; only `getSearchResultsForJs()` is called by our JS.
+- **In the JS branch the hidden `<select>` carries no `data-model`.** UX Live's
+  `SetValueOntoModelFieldsPlugin` writes a single `<select data-model>`'s DOM
+  value back into the value store after every render, so an option the user just
+  searched in — which the in-flight render did not know about — would reset the
+  model to `""` silently. The controller owns the binding instead, calling
+  `component.set()` itself from the `statePath` and `modelBinding` values the
+  template hands it; the native branch keeps `data-model` unchanged.
+- **The dropdown does not flip, and `reorderable()` waits**
+  ([below](#the-dropdown-does-not-flip-and-the-modal-clips-it)).
+
+### The search round-trip is a live action that re-renders the host
+
+Filament's control reaches `getSearchResultsForJs()` through Livewire's
+`callSchemaComponentMethod`, which *returns* the value and is `#[Renderless]`.
+UX LiveComponent has no return channel, so the port's
+[`callSchemaComponentMethod()`](../schemas/interacts-with-schemas.md) is a live
+action that re-renders normally and hands the result back through
+`dispatchBrowserEvent()` — the same channel actions' `mountAction()` and
+notifications use. Every search round-trip therefore re-renders the host; the
+search debounce (`searchDebounce()`, Filament's default 1000 ms) bounds it, and
+it is the same cost every `live()` field already pays per keystroke. The three
+predicates — `hasDynamicOptions()`, `hasDynamicSearchResults()`,
+`hasInitialNoOptionsMessage()` — are ported verbatim for the control's contract;
+`hasDynamicSearchResults()` is the one that decides whether typing asks the
+server at all, and it is false for a relationship select with no search columns.
+
+### `loadingMessage()` has no render site
+
+The API is ported whole (`HasLoadingMessage`, `'Loading...'`), but under the
+server-rendered-options rule the only load the control ever performs is a
+search, which shows `getSearchingMessage()`; the dynamic-options open fetch that
+`loadingMessage()` accompanies in Filament does not exist here. The setter and
+getter stand, the string reaches the controller as a value, and nothing renders
+it — recorded rather than smoothed over, so the gap is visible from the API.
+
+### `refreshSelectedOptionLabel()` dispatches a browser event the control answers by re-syncing
+
+Filament's two option-action closures end by dispatching a **Livewire** event,
+`filament-forms::select.refreshSelectedOptionLabel`, carrying `livewireId` +
+`statePath` so the one Alpine control among many can match itself and re-fetch
+its selected label. The port's closures call the same method at the same two
+points — the create action right after the state write and its hooks, before the
+create-another branch (`Select.php:272`), the edit action after
+`updateOptionUsing` (`:417`) — and it dispatches a **browser** event on the
+host's own root, `sylament:select-refresh-selected-option-label`, payload
+`{statePath}` alone (the id is unnecessary on the host's element). The controller
+matches on `event.target === component.element` and
+`detail.statePath === statePathValue`, and answers by re-syncing from the values
+the same response re-rendered — no second label round-trip. A channel change and
+a name change together, so it has a
+["no Filament source" row](../renames.md#names-with-no-filament-source). What
+sat in its place before the JS control was the
+[option-map bust](#the-option-actions-are-suffix-actions-with-doctrine-defaults),
+which still runs and is still what makes a re-render show a new row.
+
+### A search column is a mapped field, and the title ordering skips what it cannot order
+
+Filament's `applySearchConstraint()` qualifies whatever column string it is
+given and lets the database reject a bad one. Here a search column has to be a
+field the target entity **maps** — read off the class metadata's field names,
+which spell an embeddable's as `address.city` — and one that is not (an
+association hop such as `author.name`, or a virtual property the accessor could
+read but DQL cannot) is refused up front with a `LogicException` naming the
+column and the limitation, because a Doctrine `QueryException` from inside a
+search request is a 500 with no name in it. Searching through an association is
+the recorded gap; a `modifyQueryUsing` that joins can still constrain by hand.
+The title ordering both option arms add applies the same test the other way: a
+title attribute that is not a mapped field — one read through an association or
+a getter — leaves the database's order alone rather than throwing, since the
+label read still works and the ordering was never part of the shipped contract
+(the relation layer ordered nothing).
+
+### The dropdown does not flip, and the modal clips it
+
+Filament positions its dropdown with Floating UI, flipping above the control
+when there is no room below and — like the port — clipping inside modal windows.
+Tom Select positions with CSS below the control; `position()` / `getPosition()`
+are ported and honoured as `'top'` / `'bottom'` arms, auto-flip is not. Recorded
+gaps: the flip, and the modal clipping Filament shares. `reorderable()` /
+`isReorderable()` stay blocked: Tom Select's `drag_drop` plugin is not the
+sanctioned SortableJS control, so the row waits on M3 · 6.
+
+### The two new strings are untranslated literals
+
+`Loading...` (`filament-forms::components.select.loading_message`) and
+`Only :count can be selected.` (`…select.max_items_message`, rendered by a
+plain `:count` substitution — Filament's `trans_choice()` has plural forms, the
+literal has none) are hardcoded English read verbatim from
+[`en/components.php`](../../../vendor/filament/forms/resources/lang/en/components.php),
+literals and not translation keys, the same call as
+[the option-action strings](#the-option-action-strings-are-untranslated-literals)
+and [`CanBeSearchable`'s four](can-be-searchable.md#the-four-message-literals-are-untranslated).
+The three strings Filament's JS hardcodes (`Search`, `Remove <label>`, `Clear
+selection`) stay JS literals in the controller.
 
 ### The save arm writes a desired list, not attach/detach
 
@@ -634,35 +1015,6 @@ here the save hook fires *from* the dehydrated bag
 ([`getData()`](../schemas/belongs-to-record.md)), so switching dehydration off
 would silence the hook instead of protecting it — the multiple relationship
 select stays dehydrated, deliberately.
-
-### `CanBeNative` is not ported
-
-Filament's `native(false)` switches `Select` from a real `<select>` to its
-JavaScript Choices.js control, and every searchable/multiple affordance hangs off
-that renderer. The port ships the native renderer only, so `native()` has no
-second branch to switch to: it could only lie (accept the call and render
-natively anyway) or throw at runtime. A method that does not exist is the signal
-PHPStan and the IDE can both see, so the row is **blocked** rather than skipped —
-it lands with the JS control.
-
-The trait itself now ships, composed by the
-[date pickers](date-time-picker.md#nativefalse-throws-rather-than-falling-back-to-the-native-control),
-which chose the other horn: they compose it and **throw** on `native(false)`,
-because a picker has a second renderer in Filament that a user can reasonably
-expect. This field's row stays blocked all the same — composing the trait here
-would add a setter whose only outcome is that throw, where not composing it keeps
-the absence visible at the call site.
-
-### `refreshSelectedOptionLabel()` is not ported
-
-Filament's two option-action closures end by dispatching a browser event that
-tells the Choices.js control to re-read the selected option's label. The native
-`<select>` re-renders its whole option list server-side on the same round-trip,
-so there is no client-held label to refresh and nothing to dispatch to; the
-method lands with the JS select control, alongside
-[`CanBeNative`](#canbenative-is-not-ported). What sits in its place is the
-[option-map bust](#the-option-actions-are-suffix-actions-with-doctrine-defaults),
-which is what makes the re-render show the new row.
 
 ### The non-relationship schema record is read off the field, not off a `getActionSchemaModel()`
 

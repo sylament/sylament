@@ -13,7 +13,7 @@ The JS calendar behind `native(false)` — the Alpine panel, `displayFormat()`,
 `disabledDates()`, `firstDayOfWeek()` and the rest of its family — is not ported;
 it is a JS vertical of its own, [recorded as this epic's one
 gap](../roadmap.md#m3--forms-widening). Declaring `native(false)` is therefore a
-[fail-fast throw](#nativefalse-throws-rather-than-falling-back-to-the-native-control)
+[fail-fast throw](can-be-native.md#nativefalse-throws-rather-than-falling-back-to-the-native-control)
 rather than a silent fallback.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
@@ -46,7 +46,7 @@ another file.
 | [`date()` / `hasDate()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | — |
 | [`time()` / `hasTime()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | — |
 | [`seconds()` / `hasSeconds()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | — |
-| [`getType()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [diverges](#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
+| [`getType()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [diverges](can-be-native.md#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
 | [`minDate()` / `getMinDate()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [diverges](#the-bounds-are-date-comparison-constraints-not-laravel-rule-strings) · [semantics](#a-bound-no-date-parse-accepts-throws-where-a-sibling-reference-is-skipped) |
 | [`maxDate()` / `getMaxDate()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [diverges](#the-bounds-are-date-comparison-constraints-not-laravel-rule-strings) · [semantics](#a-bound-no-date-parse-accepts-throws-where-a-sibling-reference-is-skipped) |
 | The native `min` / `max` attributes | [`DateTimePicker::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [semantics](#a-date-only-control-truncates-its-bounds-for-the-attribute-but-not-for-the-constraint) · [semantics](#a-bound-no-date-parse-accepts-throws-where-a-sibling-reference-is-skipped) |
@@ -56,8 +56,8 @@ another file.
 | [`getDefaultStateCasts()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [diverges](#the-cast-writes-an-object-when-the-record-declares-one) |
 | [`getDateTimeObjectClass()`](../../../packages/forms/src/Components/DateTimePicker.php) — no Filament counterpart | — | done | — | [diverges](#the-cast-writes-an-object-when-the-record-declares-one) |
 | Date validity (`setUp()`'s always-on [`ValidDate`](can-be-validated.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings)) | [`DateTimePicker::setUp()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) — `rule('date', hasDate())` | done | — | [diverges](#every-variant-validates-as-a-date-including-the-time-only-one) |
-| [`CanBeNative`](../../../packages/forms/src/Components/Concerns/CanBeNative.php) | [`Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | done | — | [diverges](#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
-| `native(false)` — the JS calendar control | [`DateTimePicker::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | blocked | the JS calendar vertical ([roadmap](../roadmap.md#m3--forms-widening)) | [diverges](#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
+| [`CanBeNative`](can-be-native.md) | [`Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | done | — | [detail](can-be-native.md) |
+| `native(false)` — the JS calendar control | [`DateTimePicker::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | blocked | the JS calendar vertical ([roadmap](../roadmap.md#m3--forms-widening)) | [diverges](can-be-native.md#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
 | [`CanBeReadOnly`](can-be-read-only.md) | [`Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | — | [detail](can-be-read-only.md) |
 | [`HasStep`](has-step.md) | [`Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | done | — | [detail](has-step.md) |
 | [`HasDatalistOptions`](has-datalist-options.md) | [`Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | done | — | [detail](has-datalist-options.md) |
@@ -110,7 +110,7 @@ initially focused date, the close-on-selection flag, and the extra attributes fo
 the panel's trigger button. None of them changes a native control — the browser
 owns the panel, its formatting and its locale — so porting the setters ahead of
 the panel would ship API that silently does nothing, which is
-[what the throw exists to prevent](#nativefalse-throws-rather-than-falling-back-to-the-native-control).
+[what the throw exists to prevent](can-be-native.md#nativefalse-throws-rather-than-falling-back-to-the-native-control).
 
 **Next step:** the calendar itself — a Stimulus controller and a panel template
 under `packages/forms/assets/` plus `templates/partials/DateTimePicker/`, with
@@ -226,28 +226,10 @@ the idiomorph rule every input template follows: an unset field must render
 ## Divergences
 
 Deliberate deviations from Filament, and the reason each holds. Provisional ones
-say what would reverse them.
-
-### `native(false)` throws rather than falling back to the native control
-
-[`CanBeNative`](../../../packages/forms/src/Components/Concerns/CanBeNative.php)
-is ported verbatim — the flag, the setter, the reader — and Filament's default
-(`true`) is the port's only working value. `getType()` throws a `LogicException`
-naming this file when the flag is false.
-
-The alternative was to ignore the flag and render the native control anyway. That
-is worse in the way silent fallbacks are always worse: `native(false)` is the one
-call whose *entire meaning* is "do not render the native control", so honouring
-the signature while ignoring the intent hands the user a form that looks
-configured and is not. The throw is reached the moment the field renders, names
-the flag and points at the row above it, so the failure is a five-second read
-rather than a hunt.
-
-`getType()` is the throw site because it is the one member of the native branch
-that has no meaning at all for the JS control — the panel renders a button and a
-hidden model, not a typed input. Reverses when the
-[calendar lands](#the-js-calendar-family-waits-on-a-js-vertical-of-its-own): the
-guard becomes the branch that picks the other template.
+say what would reverse them. The `native(false)` throw is recorded with the
+concern it belongs to, in
+[can-be-native.md](can-be-native.md#nativefalse-throws-rather-than-falling-back-to-the-native-control),
+since `Select` composes the same trait and takes the other branch.
 
 ### The cast writes an object when the record declares one
 

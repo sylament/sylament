@@ -12,6 +12,7 @@ use Sylament\Schemas\State\Casts\OptionsArrayStateCast;
 use Sylament\Schemas\State\Casts\OptionStateCast;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Choice;
+use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -181,4 +182,63 @@ it('marks a selected option inside a group', function (): void {
 
     expect($groups->eq(0)->filter('option')->attr('selected'))->toBeNull()
         ->and($groups->eq(1)->filter('option')->attr('selected'))->not->toBeNull();
+});
+
+it('bounds the item count with a Count constraint, including the empty selection', function (): void {
+    $field = wireMultiSelect(Select::make('tags')->multiple()->options(['a' => 'A', 'b' => 'B', 'c' => 'C'])->minItems(1)->maxItems(2));
+    $validator = $this::getContainer()->get(ValidatorInterface::class);
+
+    $field->state([]);
+    $empty = $field->getValidationConstraints();
+
+    expect($empty)->toHaveCount(1)
+        ->and($empty[0])->toBeInstanceOf(Count::class)
+        ->and($empty[0]->min)->toBe(1)
+        ->and($empty[0]->max)->toBe(2)
+        ->and($validator->validate($field->getRawState(), $empty))->toHaveCount(1);
+
+    $field->state(['a', 'b', 'c']);
+    $full = $field->getValidationConstraints();
+
+    expect(array_map(fn (object $c): string => $c::class, $full))->toBe([Count::class, Choice::class])
+        ->and($validator->validate($field->getRawState(), $full))->toHaveCount(1);
+
+    $field->state(['a', 'b']);
+
+    expect($validator->validate($field->getRawState(), $field->getValidationConstraints()))->toHaveCount(0)
+        ->and(wireMultiSelect(Select::make('tags')->multiple()->options(['a' => 'A']))->getValidationConstraints())->toBe([]);
+});
+
+it('throws when validating a multiple select with neither options nor a labels closure', function (): void {
+    $field = wireMultiSelect(Select::make('tags')->multiple()->getOptionLabelUsing(fn (): string => 'Only the single arm'));
+    $field->state(['draft']);
+
+    expect(fn (): array => $field->getValidationConstraints())
+        ->toThrow(LogicException::class, 'getOptionLabelsUsing()');
+});
+
+it('probes every value of a multiple selection through the labels closure', function (): void {
+    $field = wireMultiSelect(
+        Select::make('tags')
+            ->multiple()
+            ->getOptionLabelsUsing(fn (array $values): array => array_filter(
+                array_combine($values, array_map(fn (string $value): ?string => in_array($value, ['a', 'b'], true) ? mb_strtoupper($value) : null, $values)),
+            ))
+            ->disableOptionWhen(fn (string|int $value): bool => $value === 'b'),
+    );
+    $validator = $this::getContainer()->get(ValidatorInterface::class);
+
+    $isRejected = function (array $state) use ($field, $validator): bool {
+        $field->state($state);
+        $constraints = $field->getValidationConstraints();
+        $choice = array_values(array_filter($constraints, fn (object $c): bool => $c instanceof Choice));
+
+        expect($validator->validate($field->getRawState(), $constraints))->toHaveCount($choice === [] ? 0 : 1);
+
+        return $choice !== [] && $choice[0]->choices === [] && $choice[0]->multiple;
+    };
+
+    expect($isRejected(['a']))->toBeFalse()
+        ->and($isRejected(['a', 'gone']))->toBeTrue()
+        ->and($isRejected(['b']))->toBeTrue();
 });

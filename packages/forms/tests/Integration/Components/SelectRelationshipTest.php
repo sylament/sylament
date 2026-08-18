@@ -12,9 +12,11 @@ use Sylament\Forms\Components\Select;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Author;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Post;
+use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostSection;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
+use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /*
@@ -266,7 +268,9 @@ it('refuses a to-one association the field declared multiple() for', function ()
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post] = seedAuthoredPost($entityManager);
 
-    $select = Select::make('author')->relationship(titleAttribute: 'name')->multiple();
+    // multiple() makes the select searchable, and a searchable select enumerates
+    // no map without preload() — the guard the test wants lives on the map build.
+    $select = Select::make('author')->relationship(titleAttribute: 'name')->multiple()->preload();
     [$schema] = wireRecordSelect($select, $post);
 
     expect(fn (): array => $select->getOptions())
@@ -279,7 +283,8 @@ it('fills stored tag ids and syncs the collection on getData', function (): void
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post, $a, $b, $c] = seedTaggedPost($entityManager);
 
-    $select = Select::make('tags')->multiple()->relationship(titleAttribute: 'name');
+    // multiple() makes the select searchable, so the map below needs preload().
+    $select = Select::make('tags')->multiple()->preload()->relationship(titleAttribute: 'name');
     [$schema, $host] = wireRecordSelect($select, $post);
 
     $schema->fill($post);
@@ -311,7 +316,9 @@ it('empties the collection on an empty multi submission', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post] = seedTaggedPost($entityManager);
 
-    $select = Select::make('tags')->relationship(titleAttribute: 'name')->multiple();
+    // multiple() makes the select searchable; preload() keeps it a full-map select,
+    // so the case stays about the collection write rather than the label probe.
+    $select = Select::make('tags')->relationship(titleAttribute: 'name')->multiple()->preload();
     [$schema, $host] = wireRecordSelect($select, $post);
 
     $schema->fill($post);
@@ -340,7 +347,9 @@ it('round-trips a reloaded post whose collection is still lazy', function (): vo
     $post = $entityManager->find(Post::class, $postId);
     assert($post instanceof Post);
 
-    $select = Select::make('tags')->multiple()->relationship(titleAttribute: 'name');
+    // multiple() makes the select searchable; preload() keeps it a full-map select,
+    // so the case stays about the collection write rather than the label probe.
+    $select = Select::make('tags')->multiple()->preload()->relationship(titleAttribute: 'name');
     [$schema, $host] = wireRecordSelect($select, $post);
 
     $schema->fill($post);
@@ -361,4 +370,329 @@ it('round-trips a reloaded post whose collection is still lazy', function (): vo
     sort($names);
 
     expect($names)->toBe(['a', 'c']);
+});
+
+/*
+ * The searchable arm: a searchable relationship select enumerates nothing until
+ * the user types (or preload() asks for the limited map), searches the title
+ * attribute — or the declared columns — through a LIKE per column, labels a
+ * selection by fetching its rows, and validates by probing those labels rather
+ * than by a full-map Choice.
+ */
+
+/**
+ * Three authors flushed in an order the title ordering has to undo: Bob, Ada,
+ * then Cy.
+ *
+ * @return array{Post, Author, Author, Author}
+ */
+function seedUnorderedAuthors(EntityManagerInterface $entityManager): array
+{
+    $bob = new Author();
+    $bob->setName('Bob');
+
+    $ada = new Author();
+    $ada->setName('Ada');
+
+    $cy = new Author();
+    $cy->setName('Cy');
+
+    $post = new Post();
+    $post->setTitle('t');
+
+    $entityManager->persist($bob);
+    $entityManager->persist($ada);
+    $entityManager->persist($cy);
+    $entityManager->persist($post);
+    $entityManager->flush();
+
+    return [$post, $bob, $ada, $cy];
+}
+
+it('searches the title attribute with a LIKE and orders the results by it', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $bob, $ada, $cy] = seedUnorderedAuthors($entityManager);
+
+    $captured = null;
+
+    $select = Select::make('author')->searchable()->relationship(
+        titleAttribute: 'name',
+        modifyQueryUsing: function (QueryBuilder $query) use (&$captured): QueryBuilder {
+            return $captured = $query;
+        },
+    );
+    wireRecordSelect($select, $post);
+
+    expect($select->getSearchResults('b'))->toBe([$bob->getId() => 'Bob'])
+        ->and($captured?->getDQL())->toContain('record.name LIKE :sylament_search_0')
+        ->toContain('ORDER BY record.name ASC')
+        ->and($captured?->getParameter('sylament_search_0')?->getValue())->toBe('%b%')
+        ->and($captured?->getMaxResults())->toBe(50)
+        ->and($select->getSearchResults(''))->toBe([$ada->getId() => 'Ada', $bob->getId() => 'Bob', $cy->getId() => 'Cy'])
+        ->and($select->getSearchResults('zzz'))->toBe([]);
+});
+
+it('searches every declared column, ORed', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $bob, $ada] = seedUnorderedAuthors($entityManager);
+
+    $captured = null;
+
+    $select = Select::make('author')->searchable(['name', 'id'])->relationship(
+        titleAttribute: 'name',
+        modifyQueryUsing: function (QueryBuilder $query) use (&$captured): QueryBuilder {
+            return $captured = $query;
+        },
+    );
+    wireRecordSelect($select, $post);
+
+    expect($select->getSearchResults((string) $bob->getId()))->toBe([$bob->getId() => 'Bob'])
+        ->and($captured?->getDQL())->toContain('WHERE record.name LIKE :sylament_search_0 OR record.id LIKE :sylament_search_1')
+        ->and($select->getSearchResults('Ada'))->toBe([$ada->getId() => 'Ada']);
+});
+
+it('answers no search results when the relationship names no column to search', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = seedUnorderedAuthors($entityManager);
+
+    $select = Select::make('author')->searchable()->relationship();
+    wireRecordSelect($select, $post);
+
+    expect($select->getSearchColumns())->toBeNull()
+        ->and($select->getSearchResults('a'))->toBe([])
+        ->and($select->hasDynamicSearchResults())->toBeFalse();
+});
+
+it('refuses a search column that hops an association rather than failing inside Doctrine', function (): void {
+    $this::getContainer()->get(EntityManagerInterface::class);
+
+    $select = Select::make('post')->relationship(titleAttribute: 'title')->searchable(['author.name']);
+    wireRecordSelect($select, new PostSection());
+
+    expect(fn (): array => $select->getSearchResults('a'))
+        ->toThrow(LogicException::class, 'not a mapped field');
+});
+
+it('limits the search results to optionsLimit, unless the query scope set a limit of its own', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $bob, $ada] = seedUnorderedAuthors($entityManager);
+
+    $limited = Select::make('author')->searchable()->optionsLimit(2)->relationship(titleAttribute: 'name');
+    wireRecordSelect($limited, $post);
+
+    $scoped = Select::make('author')->searchable()->optionsLimit(2)->relationship(
+        titleAttribute: 'name',
+        modifyQueryUsing: fn (QueryBuilder $query): QueryBuilder => $query->setMaxResults(1),
+    );
+    wireRecordSelect($scoped, $post);
+
+    expect($limited->getSearchResults(''))->toBe([$ada->getId() => 'Ada', $bob->getId() => 'Bob'])
+        ->and($scoped->getSearchResults(''))->toBe([$ada->getId() => 'Ada'])
+        ->and($scoped->getOptionsLimit())->toBe(1);
+});
+
+it('hands the search term to modifyQueryUsing, and null outside a search', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, , $ada] = seedUnorderedAuthors($entityManager);
+
+    $terms = [];
+
+    $select = Select::make('author')->searchable()->preload()->relationship(
+        titleAttribute: 'name',
+        modifyQueryUsing: function (QueryBuilder $query, ?string $search) use (&$terms): QueryBuilder {
+            $terms[] = $search;
+
+            return $query->andWhere("record.name = 'Ada'");
+        },
+    );
+    wireRecordSelect($select, $post);
+
+    expect($select->getSearchResults('A'))->toBe([$ada->getId() => 'Ada'])
+        ->and($select->getOptions())->toBe([$ada->getId() => 'Ada'])
+        ->and($terms)->toBe(['A', null]);
+});
+
+it('lowers both sides of the LIKE only when told to, since SQLite is not Postgres', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, , $ada] = seedUnorderedAuthors($entityManager);
+
+    $shape = function (?bool $forced) use ($post): array {
+        $captured = null;
+
+        $select = Select::make('author')->searchable()->forceSearchCaseInsensitive($forced)->relationship(
+            titleAttribute: 'name',
+            modifyQueryUsing: function (QueryBuilder $query) use (&$captured): QueryBuilder {
+                return $captured = $query;
+            },
+        );
+        wireRecordSelect($select, $post);
+
+        $results = $select->getSearchResults('ADA');
+
+        return [$results, $captured?->getDQL(), $captured?->getParameter('sylament_search_0')?->getValue()];
+    };
+
+    [$results, $dql, $parameter] = $shape(true);
+
+    expect($results)->toBe([$ada->getId() => 'Ada'])
+        ->and($dql)->toContain('LOWER(record.name) LIKE :sylament_search_0')
+        ->and($parameter)->toBe('%ada%');
+
+    [, $dql, $parameter] = $shape(false);
+
+    expect($dql)->toContain('record.name LIKE :sylament_search_0')
+        ->not->toContain('LOWER(')
+        ->and($parameter)->toBe('%ADA%');
+
+    [, $dql] = $shape(null);
+
+    expect($dql)->not->toContain('LOWER(');
+});
+
+it('enumerates nothing when searchable, and the limited ordered map when preloaded', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $bob, $ada] = seedUnorderedAuthors($entityManager);
+
+    $searchable = Select::make('author')->searchable()->relationship(titleAttribute: 'name');
+    wireRecordSelect($searchable, $post);
+
+    $preloaded = Select::make('author')->searchable()->preload()->optionsLimit(2)->relationship(titleAttribute: 'name');
+    wireRecordSelect($preloaded, $post);
+
+    $plain = Select::make('author')->optionsLimit(2)->relationship(titleAttribute: 'name');
+    wireRecordSelect($plain, $post);
+
+    expect($searchable->getOptions())->toBe([])
+        ->and($preloaded->getOptions())->toBe([$ada->getId() => 'Ada', $bob->getId() => 'Bob'])
+        ->and($plain->getOptions())->toHaveCount(3)
+        ->and(array_keys($plain->getOptions()))->toBe([$ada->getId(), $bob->getId(), array_key_last($plain->getOptions())]);
+});
+
+it('labels rows by the record-label callback in database order, or by the title attribute in title order', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $bob, $ada, $cy] = seedUnorderedAuthors($entityManager);
+
+    $select = Select::make('author')
+        ->searchable()
+        ->preload()
+        ->relationship(titleAttribute: 'name')
+        ->getOptionLabelFromRecordUsing(fn (Author $record): string => mb_strtoupper($record->getName()));
+    wireRecordSelect($select, $post);
+
+    expect($select->getOptions())->toBe([$bob->getId() => 'BOB', $ada->getId() => 'ADA', $cy->getId() => 'CY'])
+        ->and($select->getSearchResults('b'))->toBe([$bob->getId() => 'BOB']);
+});
+
+it('resolves the selected label through the record, by title attribute or by callback', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, , $ada] = seedUnorderedAuthors($entityManager);
+
+    $select = Select::make('author')->searchable()->relationship(titleAttribute: 'name');
+    wireRecordSelect($select, $post);
+    $select->state((string) $ada->getId());
+
+    $callback = Select::make('author')
+        ->searchable()
+        ->relationship(titleAttribute: 'name')
+        ->getOptionLabelFromRecordUsing(fn (Author $record): string => mb_strtoupper($record->getName()));
+    wireRecordSelect($callback, $post);
+    $callback->state((string) $ada->getId());
+
+    $missing = Select::make('author')->searchable()->relationship(titleAttribute: 'name');
+    wireRecordSelect($missing, $post);
+    $missing->state('999');
+
+    expect($select->getOptions())->toBe([])
+        ->and($select->getOptionLabel())->toBe('Ada')
+        ->and($callback->getOptionLabel())->toBe('ADA')
+        ->and($missing->getOptionLabel(withDefault: false))->toBeNull()
+        ->and($missing->getOptionLabel())->toBe('999');
+});
+
+it('resolves the selected labels of a multiple selection through the rows, ignoring an id outside the scope', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $a, $b, $c] = seedTaggedPost($entityManager);
+
+    $select = Select::make('tags')->multiple()->relationship(
+        titleAttribute: 'name',
+        modifyQueryUsing: fn (QueryBuilder $query): QueryBuilder => $query->andWhere("record.name <> 'c'"),
+    );
+    wireRecordSelect($select, $post);
+    $select->state([(string) $b->getId(), (string) $c->getId(), (string) $a->getId(), '999']);
+
+    $callback = Select::make('tags')->multiple()->relationship(titleAttribute: 'name')
+        ->getOptionLabelFromRecordUsing(fn (Tag $record): string => mb_strtoupper($record->getName()));
+    wireRecordSelect($callback, $post);
+    $callback->state([(string) $a->getId()]);
+
+    // The rows the query admits are the labels; a value it does not admit is
+    // absent rather than defaulted, as Filament's closure arm leaves it.
+    expect($select->getOptionLabels(withDefaults: false))->toBe([$a->getId() => 'a', $b->getId() => 'b'])
+        ->and($select->getOptionLabels())->toBe([$a->getId() => 'a', $b->getId() => 'b'])
+        ->and($callback->getOptionLabels())->toBe([$a->getId() => 'A']);
+});
+
+it('fetches the selected record through the scoped option query, answering null on a miss or outside the scope', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $bob, $ada] = seedUnorderedAuthors($entityManager);
+
+    $select = Select::make('author')->relationship(titleAttribute: 'name');
+    wireRecordSelect($select, $post);
+    $select->state((string) $ada->getId());
+
+    $missing = Select::make('author')->relationship(titleAttribute: 'name');
+    wireRecordSelect($missing, $post);
+    $missing->state('999');
+
+    $scoped = Select::make('author')->relationship(
+        titleAttribute: 'name',
+        modifyQueryUsing: fn (QueryBuilder $query): QueryBuilder => $query->andWhere("record.name = 'Ada'"),
+    );
+    wireRecordSelect($scoped, $post);
+    $scoped->state((string) $bob->getId());
+
+    expect($select->getSelectedRecord())->toBe($ada)
+        ->and($missing->getSelectedRecord())->toBeNull()
+        ->and($scoped->getSelectedRecord())->toBeNull();
+});
+
+it('validates a searchable relationship select by probing the label, so a missing or out-of-scope id is rejected', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $ada, $bob] = seedAuthoredPost($entityManager);
+
+    $select = Select::make('author')->searchable()->relationship(
+        titleAttribute: 'name',
+        modifyQueryUsing: fn (QueryBuilder $query): QueryBuilder => $query->andWhere("record.name <> 'Bob'"),
+    );
+    [$schema, $host] = wireRecordSelect($select, $post);
+
+    $schema->fill($post);
+
+    expect($select->getOptions())->toBe([])
+        ->and($schema->getData())->toBe($post)
+        ->and($post->getAuthor())->toBe($ada);
+
+    foreach (['999', (string) $bob->getId()] as $rejected) {
+        $host->data['author'] = $rejected;
+        $host->clearSchemaValidation();
+
+        expect(fn (): object => $schema->getData())->toThrow(ValidationException::class)
+            ->and($host->getErrorsForSchemaStatePath('data.author'))->not->toBe([])
+            ->and($post->getAuthor())->toBe($ada);
+    }
+});
+
+it('keeps the full-map Choice on a relationship select that is not searchable', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $ada, $bob] = seedAuthoredPost($entityManager);
+
+    $select = Select::make('author')->relationship(titleAttribute: 'name');
+    [$schema] = wireRecordSelect($select, $post);
+
+    $schema->fill($post);
+
+    $choice = array_values(array_filter($select->getValidationConstraints(), fn (object $c): bool => $c instanceof Choice));
+
+    expect($choice)->toHaveCount(1)
+        ->and($choice[0]->choices)->toBe([(string) $ada->getId(), (string) $bob->getId()]);
 });

@@ -13,10 +13,12 @@ and composes eight concerns: the four option-field ones
 [`HasGridDirection`](has-grid-direction.md)) plus
 [`HasExtraInputAttributes`](has-extra-input-attributes.md), and four that reach
 this field first or exclusively —
-[`CanAllowHtml`](#canallowhtml-opens-exactly-one-hole),
-[`CanBeSearchable`](#canbesearchable-is-client-side-only-and-mostly-select-only),
+[`CanAllowHtml`](can-allow-html.md),
+[`CanBeSearchable`](can-be-searchable.md),
 [`CanLimitItemsLength`](can-limit-items-length.md) and
-[`HasRelationship`](#the-to-many-relationship-arm-serves-this-field-unchanged).
+[`HasRelationship`](#the-to-many-relationship-arm-serves-this-field-unchanged) —
+the first two shared with [`Select`](select.md) since the searchable-select epic,
+each with a file of its own.
 
 It is the field where three port-wide seams meet for the first time. It is the
 only option field that is **inherently multiple**, so it is the second consumer
@@ -75,8 +77,8 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`HasDescriptions`](../../../packages/forms/src/Components/Concerns/HasDescriptions.php) | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [detail](has-descriptions.md) |
 | [`HasGridDirection`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php) | [`Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | — | [detail](has-grid-direction.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
-| [`CanAllowHtml`](../../../packages/forms/src/Components/Concerns/CanAllowHtml.php) | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | — | [detail](#canallowhtml-opens-exactly-one-hole) |
-| [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) — the markup, the debounce override and the client-side filter | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [semantics](#canbesearchable-is-client-side-only-and-mostly-select-only) · [diverges](#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) |
+| [`CanAllowHtml`](can-allow-html.md) | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | — | [detail](can-allow-html.md#the-switch-opens-exactly-one-hole-per-field) |
+| [`CanBeSearchable`](can-be-searchable.md) — the markup, the debounce override and the client-side filter | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [detail](can-be-searchable.md#the-checkbox-list-search-is-client-side-only-and-mostly-select-only) · [diverges](#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) |
 | [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) — `minItems()` / `maxItems()` as a `Count` | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [detail](can-limit-items-length.md) · [semantics](#the-three-server-side-guards-are-ordered-so-they-never-collide) |
 | The search field's magnifying-glass icon and its [input wrapper](../support/input-wrapper.md) prefix slot | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-search-box-is-the-one-wrapper-a-template-opens-by-hand) |
 | `HasPivotData` — `pivotData()` on the save arm | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity mapping (M3 · 9) | [detail](#haspivotdata-has-no-join-row-to-write-to) |
@@ -181,76 +183,17 @@ to life — the constant shipped before its call site did, so an application cou
 already override an icon nothing rendered. Tables' search field is the same
 shape one package over.
 
-### `CanBeSearchable` is client-side only, and mostly Select-only
+### The search box and the HTML switch are shared concerns now
 
-The trait ships whole, and the search it configures never reaches the server:
-the template renders **every** option server side and the controller hides the
-non-matching ones with the `hidden` attribute. There is no request to make, so
-there is nothing to debounce for latency and no loading state to show.
-
-Four things are worth stating, because three of them read as omissions:
-
-1. **`setUp()` forces `searchDebounce(0)`**, overriding the trait's `1000`
-   default, vendor-exact — a client-side filter has no request to debounce. A
-   caller can still raise it, and the value travels to the controller as the
-   Stimulus `debounce` value, which gates the filter's `setTimeout`.
-2. **`searchLabels()` / `searchValues()` / `getSearchableOptionFields()` are
-   dead surface here.** Vendor's Alpine component matches the rendered
-   `innerText` of the option label **and** the option description, and never the
-   option value; the three members exist for `Select`'s server-side search and
-   `CheckboxList` consults none of them. They are deliberately absent from the
-   template's and the controller's contract rather than wired to something
-   plausible.
-3. **`getNoOptionsMessage()` and `getSearchingMessage()` are not rendered.** An
-   empty option list renders an empty options grid (vendor renders an empty
-   `wire:key`ed `<div>` as a morph anchor and nothing else), and there is no
-   searching state to message because there is no request.
-4. **The four message literals are untranslated**, matching
-   [`Select`'s placeholder](select.md#the-default-placeholder-is-an-untranslated-literal)
-   and [`Radio`'s boolean labels](radio.md#the-boolean-labels-are-untranslated-literals).
-   Their Filament keys are recorded here so the strings can be found when a
-   translation layer lands, and the family is worth noting because it is
-   **`select`, not `checkbox_list`**: `filament-forms::components.select.search_prompt`
-   (`Start typing to search...`),
-   `filament-forms::components.select.no_search_results_message`
-   (`No options match your search.`),
-   `filament-forms::components.select.no_options_message`
-   (`No options available.`) and
-   `filament-forms::components.select.searching_message` (`Searching...`) — all
-   four owned by the trait, so a `CheckboxList` reads `Select`'s strings. Only
-   the two bulk-toggle labels have keys of this field's own
-   ([below](#the-bulk-toggle-labels-are-untranslated-literals)).
-
-The two properties the port had to widen — `$shouldSearchLabels` and
-`$shouldSearchValues`, nullable so the setters' own declared `null` arm assigns
-instead of throwing a `TypeError` as it does in Filament — carry that contract
-as a docblock on
-[the trait](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php)
-and belong to this file only because the trait folds here; they are `Select`'s
-question, not this field's.
-
-### `CanAllowHtml` opens exactly one hole
-
-The trait is `CheckboxList`'s only consumer in the port, so it folds here per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing) and keeps a
-bare row in the [feature table](README.md#features) until a second field takes
-it (Filament composes it on `Select`, `ToggleButtons`, `Radio`'s infolist twin
-and several columns).
-
-`allowHtml()` makes the **option label** render raw and nothing else. The
-description beside it keeps the template's escaping in both states, which is
-vendor's own escaping map (`CheckboxList.php:606-615`) and the assertion that
-would catch a template widening the raw site by one element. The hole is stated
-at the sink, in a `{# Security: … #}` comment on the template's label `<span>`,
-matching the same comment on
-[the trait](../../../packages/forms/src/Components/Concerns/CanAllowHtml.php).
-
-One port-specific clause: a `Markup` label renders raw **whether or not**
-`allowHtml()` is on, because that is what `Markup` means everywhere in this
-codebase — the Twig-side translation of Filament's `Htmlable`, which their
-`e($label)` would have escaped. `allowHtml()` is therefore the switch for a
-plain **string**, and a caller who wants one label raw can reach for `Markup`
-instead of opening the whole field.
+What this field does with `CanBeSearchable` — a client-side filter over the
+options it already rendered, `searchDebounce(0)` forced in `setUp()`, the
+label/value switches and two of the four messages left unread — moved to
+[can-be-searchable.md](can-be-searchable.md#the-checkbox-list-search-is-client-side-only-and-mostly-select-only)
+when `Select` became the trait's second consumer, and what `allowHtml()` opens
+here — the option label and nothing else, the description beside it still
+escaped — to
+[can-allow-html.md](can-allow-html.md#the-switch-opens-exactly-one-hole-per-field).
+Both files keep this field's clauses word for word; only the fold moved.
 
 ### The to-many relationship arm serves this field unchanged
 
@@ -293,6 +236,19 @@ record path, and the descriptions are installed as a **side effect** of it — t
 component calls its own `descriptions()` while building the map, exactly as
 vendor does (`CheckboxList.php:169-177`), because both maps come off the one
 query and running it twice to keep them separate would be worse.
+
+The label trio — `getOptionLabelFromRecordUsing()`,
+`hasOptionLabelFromRecordUsingCallback()`, `getOptionLabelFromRecord()` — no
+longer lives on this class: it moved into the shared
+[`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php)
+trait unchanged when [`Select`](select.md#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query)
+grew the same callback for its search and label arms. Filament duplicates the
+three on both fields because it has no shared trait; the port has one, so both
+fields carry one copy, and the trait's own option build reads the callback too
+(`resolveOptionLabelFromRecord()`, callback first, title attribute otherwise).
+This field's override is untouched — it still branches ahead of the query for
+the description side effect. The description trio stays here: `Select` has no
+descriptions.
 
 Both closures receive the record as `$record` by name and by its concrete class,
 so `fn (Tag $record) => …` and `fn (object $record) => …` both work.  Filament
@@ -357,7 +313,7 @@ is the whole content of the method:
    the check that rejects it. The same
    [membership guard](select.md#the-choice-constraint-is-the-fields-only-server-side-guard)
    every option field builds, and the same
-   [no-options `LogicException`](select.md#a-relationship-select-is-always-enumerable-or-it-throws)
+   [no-options `LogicException`](select.md#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design)
    when the field can enumerate nothing.
 
 Filament reaches the same three answers through a different mechanism —
@@ -609,7 +565,7 @@ the keys are recorded so the strings can be found when a translation layer
 lands, and Filament's own English values are these two. These are the only keys
 in this field's own `checkbox_list` family — everything the search box says
 comes from
-[`select.*`](#canbesearchable-is-client-side-only-and-mostly-select-only).
+[`select.*`](can-be-searchable.md#the-four-message-literals-are-untranslated).
 
 ### `isMultiple()` is port plumbing with no Filament counterpart
 

@@ -41,12 +41,8 @@ opposite reason: `Field` composes it, but its consumers are the option fields an
 [cross-component](has-enum.md) rather than under any one of them. The same fold
 applies
 to every other concern only one built component uses:
-`CanSelectPlaceholder` is `Select`'s
-alone in the port and lives in [`select.md`](select.md), `CanAllowHtml` is
-`CheckboxList`'s and lives in
-[`checkbox-list.md`](checkbox-list.md#canallowhtml-opens-exactly-one-hole) —
-which folds its detail without folding its row, for the reason the
-[Features](#features) note gives — `HasToggleIcons` and `HasToggleColors` are
+`CanSelectPlaceholder`, `CanBePreloaded` and `HasLoadingMessage` are `Select`'s
+alone in the port and live in [`select.md`](select.md), `HasToggleIcons` and `HasToggleColors` are
 `Toggle`'s alone and live in [`toggle.md`](toggle.md), `CanBeAutocapitalized`
 is `TextInput`'s alone and lives
 in [`text-input.md`](text-input.md), `HasColors`, `HasIcons` and `HasTooltips`
@@ -57,7 +53,7 @@ and `CanBeCloned` and `CanGenerateUuids` are
 [`repeater.md`](repeater.md) — which also carries `helpers.php`, whose two
 reorder functions no other component calls — while `CanBeInline` and
 `CanBeAccepted` are shared by `Checkbox` and `Toggle`,
-`CanLimitItemsLength` by `Repeater` and `CheckboxList`,
+`CanLimitItemsLength` by `Repeater`, `CheckboxList` and `Select`,
 `HasRelationship` by `Select` and `CheckboxList` — which ports no Filament
 concern at all, being the relationship half of `Select` itself, kept as a trait
 here because a fourteen-method relation surface on a field class is what
@@ -159,9 +155,9 @@ single component is tracked in that component's detail file, not here: the base
 [`field.md`](field.md) — a sixth, `CanBeMarkedAsRequired`, relocated to schemas
 and is tracked in
 [`../schemas/can-be-marked-as-required.md`](../schemas/can-be-marked-as-required.md)
-— `Select`'s one remaining single-use concern (`CanSelectPlaceholder`) into
-[`select.md`](select.md), `CheckboxList`'s `CanAllowHtml` into
-[`checkbox-list.md`](checkbox-list.md), `Toggle`'s
+— `Select`'s three single-use concerns (`CanSelectPlaceholder`,
+`CanBePreloaded`, `HasLoadingMessage`) into
+[`select.md`](select.md), `Toggle`'s
 `HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md),
 `TextInput`'s `CanBeAutocapitalized` into
 [`text-input.md`](text-input.md), `ToggleButtons`' `HasColors`, `HasIcons` and
@@ -172,8 +168,11 @@ into [`repeater.md`](repeater.md), per
 ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and
 `CanBeAutocompleted` are used by `TextInput` and `Textarea`, `CanBeInline` and
 `CanBeAccepted` by `Checkbox` and `Toggle`, `BelongsToRelationship` by `Select`
-and `Repeater`, `HasRelationship` and `CanLimitItemsLength` by `Select` /
-`Repeater` and `CheckboxList`, `HasOptions` and `CanDisableOptions` by every
+and `Repeater`, `HasRelationship` by `Select` and `CheckboxList`,
+`CanLimitItemsLength` by `Repeater`, `CheckboxList` and `Select`,
+`CanAllowHtml` and `CanBeSearchable` by `CheckboxList` and `Select`,
+`CanBeNative` by the [date pickers](date-time-picker.md) and `Select`,
+`HasOptions` and `CanDisableOptions` by every
 option field, and `HasExtraInputAttributes` by `TextInput`, `Textarea`,
 `Select`, `Checkbox`, `Toggle`, `Radio`, `ToggleButtons` and `CheckboxList`,
 and `HasStep` and `HasDatalistOptions` by `TextInput` and the
@@ -189,30 +188,35 @@ clearing the shared bar so each keeps a row and a file of its own, while
 `HasColors`, `HasIcons` and `HasTooltips` landed on
 [`ToggleButtons`](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone)
 as their sole consumer and folded out of the table entirely, exactly as the
-single-use concerns above did. `CanAllowHtml` and `CanBeSearchable` are the two
-that keep a row while folding their detail into
-[`checkbox-list.md`](checkbox-list.md), because for both the second consumer is
-one epic away rather than hypothetical: the
-[searchable-select epic](../roadmap.md#m3--forms-widening) gives `Select` both —
-`searchable()` with the server-side arm a checkbox list has no use for, and
-`allowHtml()` — at which point each is a shared concern with a file of its own
-and the row is already there to repoint. [`CanLimitItemsLength`](can-limit-items-length.md)
+single-use concerns above did. `CanAllowHtml` and `CanBeSearchable` kept a row
+while folding their detail into [`checkbox-list.md`](checkbox-list.md) for one
+epic, because their second consumer was one epic away rather than hypothetical;
+the [searchable-select epic](../roadmap.md#m3--forms-widening) gave `Select`
+both — `searchable()` with the server-side arm a checkbox list has no use for,
+and `allowHtml()` — and each is now a shared concern with a file of its own
+([can-be-searchable.md](can-be-searchable.md),
+[can-allow-html.md](can-allow-html.md)), the row repointed. `CanBeNative` went
+the same way one epic later than its file was written: the date pickers held it
+in [`date-time-picker.md`](date-time-picker.md) until `Select` composed it, and
+[can-be-native.md](can-be-native.md) now carries both the pickers' throw and the
+select's branch. [`CanLimitItemsLength`](can-limit-items-length.md)
 was never one of either group: `Repeater` composes it too, and `CheckboxList`
 being its second consumer is what promoted it out of
-[`repeater.md`](repeater.md) ahead of that field landing.
+[`repeater.md`](repeater.md) ahead of that field landing; `Select` is its
+third.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
 | [`BelongsToRelationship`](../../../packages/forms/src/Components/Concerns/BelongsToRelationship.php) — no Filament concern of its own; the field-flavoured adapter over [schemas' association-resolution core](../../../packages/schemas/src/Components/Concerns/BelongsToRelationship.php), which `Select` and `Repeater` share with the entangled layout components | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) · [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | [select.md](select.md#relationship-is-three-lazy-closures-over-the-association-reader) · [schemas](../schemas/entangles-state-with-singular-relationship.md#the-association-core-is-shared-with-forms-relation-backed-fields) |
-| [`CanAllowHtml`](../../../packages/forms/src/Components/Concerns/CanAllowHtml.php) | [`Components/Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | [checkbox-list.md](checkbox-list.md#canallowhtml-opens-exactly-one-hole) |
+| [`CanAllowHtml`](../../../packages/forms/src/Components/Concerns/CanAllowHtml.php) | [`Components/Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | [can-allow-html.md](can-allow-html.md) |
 | [`CanBeAccepted`](../../../packages/forms/src/Components/Concerns/CanBeAccepted.php) | [`Components/Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | [can-be-accepted.md](can-be-accepted.md) |
 | [`CanBeAutocompleted`](../../../packages/forms/src/Components/Concerns/CanBeAutocompleted.php) | [`Components/Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | done | [can-be-autocompleted.md](can-be-autocompleted.md) |
 | [`CanBeInline`](../../../packages/forms/src/Components/Concerns/CanBeInline.php) | [`Components/Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) | done | [can-be-inline.md](can-be-inline.md) |
 | [`CanBeLengthConstrained`](../../../packages/forms/src/Components/Concerns/CanBeLengthConstrained.php) | [`Components/Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) | done | [can-be-length-constrained.md](can-be-length-constrained.md) |
-| [`CanBeNative`](../../../packages/forms/src/Components/Concerns/CanBeNative.php) | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | done | [date-time-picker.md](date-time-picker.md#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
-| CanBePreloaded | [`Components/Concerns/CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php) | todo | — |
+| [`CanBeNative`](../../../packages/forms/src/Components/Concerns/CanBeNative.php) | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | done | [can-be-native.md](can-be-native.md) |
+| [`CanBePreloaded`](../../../packages/forms/src/Components/Concerns/CanBePreloaded.php) | [`Components/Concerns/CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php) | done | [select.md](select.md#preload-enumerates-the-limited-map-up-front) |
 | [`CanBeReadOnly`](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Components/Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | [can-be-read-only.md](can-be-read-only.md) |
-| [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | [checkbox-list.md](checkbox-list.md#canbesearchable-is-client-side-only-and-mostly-select-only) |
+| [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | [can-be-searchable.md](can-be-searchable.md) |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | [can-be-validated.md](can-be-validated.md) |
 | CanDisableGrammarly | [`Components/Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | todo | — |
 | [`CanDisableOptions`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php) | [`Components/Concerns/CanDisableOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptions.php) | done | [can-disable-options.md](can-disable-options.md) |
@@ -228,7 +232,7 @@ being its second consumer is what promoted it out of
 | HasFileAttachments | [`Components/Concerns/HasFileAttachments.php`](../../../vendor/filament/forms/src/Components/Concerns/HasFileAttachments.php) | todo | — |
 | [`HasGridDirection`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php) | [`Components/Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | [has-grid-direction.md](has-grid-direction.md) |
 | HasInputMode | [`Components/Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | skipped | [text-input.md](text-input.md#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
-| HasLoadingMessage | [`Components/Concerns/HasLoadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php) | todo | — |
+| [`HasLoadingMessage`](../../../packages/forms/src/Components/Concerns/HasLoadingMessage.php) | [`Components/Concerns/HasLoadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php) | done | [select.md](select.md#loadingmessage-has-no-render-site) |
 | HasMaxHeight | [`Components/Concerns/HasMaxHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMaxHeight.php) | todo | — |
 | HasMinHeight | [`Components/Concerns/HasMinHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMinHeight.php) | todo | — |
 | HasNestedRecursiveValidationRules | [`Components/Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | todo | — |

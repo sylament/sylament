@@ -15,6 +15,8 @@ use Sylament\Schemas\State\Casts\EnumArrayStateCast;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\UX\LiveComponent\LiveResponder;
+use Twig\Markup;
 
 use function Sylament\Forms\Tests\renderField;
 use function Sylament\Forms\Tests\renderToHtml;
@@ -451,4 +453,331 @@ it('merges extra input attributes onto the select and lets them win', function (
     expect($select->attr('data-extra'))->toBe('yes')
         ->and($select->attr('disabled'))->toBeNull()
         ->and($crawler->filter('option[data-extra]')->count())->toBe(0);
+});
+
+/*
+ * The searchable surface — every member Filament's JS control reads off the field,
+ * exercised on the PHP side; the JS branch's rendered contract has cases of its
+ * own further down.
+ */
+
+it('is not searchable by default and takes the literal, closure and null arms', function (): void {
+    expect(Select::make('status')->isSearchable())->toBeFalse()
+        ->and(Select::make('status')->searchable()->isSearchable())->toBeTrue()
+        ->and(Select::make('status')->searchable(false)->isSearchable())->toBeFalse()
+        ->and(Select::make('status')->searchable(fn (): bool => true)->isSearchable())->toBeTrue()
+        ->and(Select::make('status')->searchable(null)->isSearchable())->toBeFalse();
+});
+
+it('reads searchable(array) as searchable over the named columns', function (): void {
+    $field = Select::make('status')->searchable(['name', 'email']);
+
+    expect($field->isSearchable())->toBeTrue()
+        ->and($field->getSearchColumns())->toBe(['name', 'email']);
+});
+
+it('is searchable by default when multiple, unless told otherwise', function (): void {
+    expect(Select::make('tags')->multiple()->isSearchable())->toBeTrue()
+        ->and(Select::make('tags')->multiple()->searchable(false)->isSearchable())->toBeFalse()
+        ->and(Select::make('tags')->multiple()->searchable(null)->isSearchable())->toBeTrue();
+});
+
+it('limits options to fifty by default', function (): void {
+    expect(Select::make('status')->getOptionsLimit())->toBe(50)
+        ->and(Select::make('status')->optionsLimit(10)->getOptionsLimit())->toBe(10)
+        ->and(Select::make('status')->optionsLimit(fn (): int => 5)->getOptionsLimit())->toBe(5);
+});
+
+it('carries the position, label-wrap and case-insensitivity switches', function (): void {
+    expect(Select::make('status')->getPosition())->toBeNull()
+        ->and(Select::make('status')->position('top')->getPosition())->toBe('top')
+        ->and(Select::make('status')->canOptionLabelsWrap())->toBeTrue()
+        ->and(Select::make('status')->wrapOptionLabels(false)->canOptionLabelsWrap())->toBeFalse()
+        ->and(Select::make('status')->isSearchForcedCaseInsensitive())->toBeNull()
+        ->and(Select::make('status')->forceSearchCaseInsensitive()->isSearchForcedCaseInsensitive())->toBeTrue()
+        ->and(Select::make('status')->forceSearchCaseInsensitive(false)->isSearchForcedCaseInsensitive())->toBeFalse();
+});
+
+it('substitutes the count into the max items message', function (): void {
+    expect(Select::make('tags')->multiple()->maxItems(2)->getMaxItemsMessage())->toBe('Only 2 can be selected.')
+        ->and(Select::make('tags')->multiple()->maxItems(2)->maxItemsMessage('Two, tops')->getMaxItemsMessage())->toBe('Two, tops');
+});
+
+it('transforms flat and grouped options into the JS option shape', function (): void {
+    $field = wireSelect(
+        Select::make('status')
+            ->options([
+                1 => 'One',
+                'Live' => ['published' => new Markup('<b>Published</b>', 'UTF-8')],
+                'draft' => 'Draft',
+            ])
+            ->disableOptionWhen(fn (string|int $value): bool => $value === 'draft'),
+    );
+
+    expect($field->getOptionsForJs())->toBe([
+        ['label' => 'One', 'value' => '1', 'isDisabled' => false],
+        ['label' => 'Live', 'options' => [
+            ['label' => '<b>Published</b>', 'value' => 'published', 'isDisabled' => false],
+        ]],
+        ['label' => 'Draft', 'value' => 'draft', 'isDisabled' => true],
+    ]);
+});
+
+it('lets transformOptionsForJsUsing replace the JS option shape', function (): void {
+    $field = wireSelect(
+        Select::make('status')
+            ->options(['draft' => 'Draft'])
+            ->transformOptionsForJsUsing(fn (array $options): array => array_keys($options)),
+    );
+
+    expect($field->getOptionsForJs())->toBe(['draft'])
+        ->and(wireSelect(Select::make('status'))->getOptionsForJs())->toBe([]);
+});
+
+it('hands the search term to getSearchResultsUsing under all three names', function (): void {
+    $field = wireSelect(
+        Select::make('status')->getSearchResultsUsing(
+            fn (string $query, string $search, string $searchQuery): array => [$query => "{$search}/{$searchQuery}"],
+        ),
+    );
+
+    expect($field->getSearchResults('ab'))->toBe(['ab' => 'ab/ab'])
+        ->and($field->getSearchResultsForJs('ab'))->toBe([['label' => 'ab/ab', 'value' => 'ab', 'isDisabled' => false]])
+        ->and(wireSelect(Select::make('status'))->getSearchResults('ab'))->toBe([]);
+});
+
+it('resolves the option label off the map, falling back to the state only when asked', function (): void {
+    $field = wireSelect(Select::make('status')->options(['draft' => 'Draft']));
+    $field->state('gone');
+
+    expect($field->getOptionLabel())->toBe('gone')
+        ->and($field->getOptionLabel(withDefault: false))->toBeNull();
+
+    $field->state('draft');
+
+    expect($field->getOptionLabel(withDefault: false))->toBe('Draft');
+});
+
+it('resolves the option label through getOptionLabelUsing, handing it the state lazily', function (): void {
+    $reads = 0;
+
+    $field = wireSelect(
+        Select::make('status')->getOptionLabelUsing(function (mixed $value) use (&$reads): ?string {
+            $reads++;
+
+            return $value === 'draft' ? 'Draft' : null;
+        }),
+    );
+    $field->state('draft');
+
+    expect($field->getOptionLabel())->toBe('Draft')
+        ->and($reads)->toBe(1);
+
+    $field->state('gone');
+
+    expect($field->getOptionLabel(withDefault: false))->toBeNull()
+        ->and($field->getOptionLabel())->toBe('gone');
+
+    $untouched = wireSelect(Select::make('status')->options(['draft' => 'Draft'])->getOptionLabelUsing(fn (): string => 'Closure'));
+    $untouched->state('draft');
+
+    expect($untouched->getOptionLabel())->toBe('Closure');
+});
+
+it('resolves the option labels of a multiple selection off the map or through getOptionLabelsUsing', function (): void {
+    $field = wireSelect(Select::make('tags')->multiple()->options([
+        'draft' => 'Draft',
+        'Live' => ['published' => 'Published'],
+    ]));
+    $field->state(['draft', 'published', 'gone']);
+
+    expect($field->getOptionLabels())->toBe(['draft' => 'Draft', 'published' => 'Published', 'gone' => 'gone'])
+        ->and($field->getOptionLabels(withDefaults: false))->toBe(['draft' => 'Draft', 'published' => 'Published'])
+        ->and($field->getOptionLabelsForJs())->toBe([
+            ['label' => 'Draft', 'value' => 'draft', 'isDisabled' => false],
+            ['label' => 'Published', 'value' => 'published', 'isDisabled' => false],
+            ['label' => 'gone', 'value' => 'gone', 'isDisabled' => false],
+        ]);
+
+    $closure = wireSelect(
+        Select::make('tags')->multiple()->getOptionLabelsUsing(
+            fn (array $values): array => array_combine($values, array_map(fn (string $value): ?string => $value === 'gone' ? null : mb_strtoupper($value), $values)),
+        ),
+    );
+    $closure->state(['draft', 'gone']);
+
+    expect($closure->getOptionLabels())->toBe(['draft' => 'DRAFT', 'gone' => 'gone'])
+        ->and($closure->getOptionLabels(withDefaults: false))->toBe(['draft' => 'DRAFT']);
+});
+
+it('answers the dynamic-options, dynamic-search-results and initial-no-options predicates as Filament does', function (): void {
+    $static = Select::make('status')->options(['a' => 'A']);
+    $closure = Select::make('status')->options(fn (): array => ['a' => 'A']);
+    $searched = Select::make('status')->getSearchResultsUsing(fn (): array => []);
+    $preloaded = Select::make('status')->preload()->options(['a' => 'A']);
+    $disabling = Select::make('status')->options(['a' => 'A'])->disableOptionWhen(fn (): bool => false);
+    $relationship = Select::make('author')->relationship(titleAttribute: 'name');
+    $searchableRelationship = Select::make('author')->relationship(titleAttribute: 'name')->searchable();
+    $preloadedRelationship = Select::make('author')->relationship(titleAttribute: 'name')->searchable()->preload();
+    $columnlessRelationship = Select::make('author')->relationship()->searchable();
+
+    expect($static->hasDynamicOptions())->toBeFalse()
+        ->and($closure->hasDynamicOptions())->toBeTrue()
+        ->and($preloaded->hasDynamicOptions())->toBeTrue()
+        ->and($disabling->hasDynamicOptions())->toBeTrue()
+        ->and($relationship->hasDynamicOptions())->toBeTrue()
+        ->and($searchableRelationship->hasDynamicOptions())->toBeFalse()
+        ->and($preloadedRelationship->hasDynamicOptions())->toBeTrue()
+        ->and($static->dynamicOptions()->hasDynamicOptions())->toBeTrue()
+        ->and($closure->dynamicOptions(false)->hasDynamicOptions())->toBeFalse()
+        ->and($static->hasDynamicSearchResults())->toBeFalse()
+        ->and($searched->hasDynamicSearchResults())->toBeTrue()
+        ->and($searchableRelationship->hasDynamicSearchResults())->toBeTrue()
+        ->and($columnlessRelationship->hasDynamicSearchResults())->toBeFalse()
+        ->and($static->hasInitialNoOptionsMessage())->toBeTrue()
+        ->and($searched->hasInitialNoOptionsMessage())->toBeFalse()
+        ->and($preloaded->hasInitialNoOptionsMessage())->toBeTrue()
+        ->and($relationship->hasInitialNoOptionsMessage())->toBeTrue()
+        ->and($searchableRelationship->hasInitialNoOptionsMessage())->toBeFalse()
+        ->and($preloadedRelationship->hasInitialNoOptionsMessage())->toBeTrue();
+});
+
+it('resolves the selected record through getSelectedRecordUsing and memoizes it', function (): void {
+    $record = new Article();
+    $reads = 0;
+
+    $field = wireSelect(Select::make('status')->getSelectedRecordUsing(function (mixed $state) use ($record, &$reads): ?object {
+        $reads++;
+
+        return $state === 'a' ? $record : null;
+    }));
+
+    expect($field->getSelectedRecord())->toBeNull()
+        ->and($reads)->toBe(0);
+
+    $field->state('a');
+
+    expect($field->getSelectedRecord())->toBe($record)
+        ->and($field->getSelectedRecord())->toBe($record)
+        ->and($reads)->toBe(1)
+        ->and(wireSelect(Select::make('status'))->getSelectedRecord())->toBeNull();
+});
+
+it('is native only when nothing forces the JS control', function (): void {
+    $isNative = fn (Select $field): bool => wireSelect($field)->getExtraTemplateData()['isNative'];
+
+    expect($isNative(Select::make('status')->options(['a' => 'A'])))->toBeTrue()
+        ->and($isNative(Select::make('status')->options(['a' => 'A'])->native(false)))->toBeFalse()
+        ->and($isNative(Select::make('status')->options(['a' => 'A'])->searchable()))->toBeFalse()
+        ->and($isNative(Select::make('status')->options(['a' => 'A'])->multiple()))->toBeFalse()
+        ->and($isNative(Select::make('status')->options(['a' => 'A'])->multiple()->searchable(false)))->toBeFalse()
+        ->and($isNative(Select::make('status')->options(['a' => 'A'])->allowHtml()))->toBeFalse()
+        ->and($isNative(Select::make('status')->options(['a' => 'A'])->native(true)))->toBeTrue();
+});
+
+it('exposes the option map, its JS shape and the selected options to the template in one read', function (): void {
+    $reads = 0;
+
+    $field = wireSelect(
+        Select::make('status')
+            ->searchable()
+            ->options(function () use (&$reads): array {
+                $reads++;
+
+                return ['draft' => 'Draft', 'published' => 'Published'];
+            }),
+    );
+    $field->state('published');
+
+    $data = $field->getExtraTemplateData();
+
+    expect($reads)->toBe(1)
+        ->and($data['options'])->toBe(['draft' => 'Draft', 'published' => 'Published'])
+        ->and($data['optionsForJs'])->toBe([
+            ['label' => 'Draft', 'value' => 'draft', 'isDisabled' => false],
+            ['label' => 'Published', 'value' => 'published', 'isDisabled' => false],
+        ])
+        ->and($data['selectedOptions'])->toBe([['value' => 'published', 'label' => 'Published']])
+        ->and($data['isNative'])->toBeFalse();
+
+    $multiple = wireSelect(Select::make('tags')->multiple()->options(['a' => 'A', 'b' => 'B']));
+    $multiple->state(['b', 'gone']);
+
+    expect($multiple->getExtraTemplateData()['selectedOptions'])->toBe([
+        ['value' => 'b', 'label' => 'B'],
+        ['value' => 'gone', 'label' => 'gone'],
+    ]);
+
+    $blank = wireSelect(Select::make('status')->searchable()->options(['a' => 'A']));
+
+    expect($blank->getExtraTemplateData()['selectedOptions'])->toBe([]);
+});
+
+it('dispatches the refresh-selected-option-label event on its host', function (): void {
+    $host = new FieldRenderHost();
+    $responder = new LiveResponder();
+    $host->setLiveResponder($responder);
+
+    $field = Select::make('status')->options(['a' => 'A']);
+    Schema::make($host)->statePath('data')->components([$field])->getComponents();
+
+    $field->refreshSelectedOptionLabel();
+
+    expect($responder->getBrowserEventsToDispatch())->toBe([
+        ['event' => 'sylament:select-refresh-selected-option-label', 'payload' => ['statePath' => 'data.status']],
+    ]);
+});
+
+/*
+ * Validation's second arm: a select whose option map is not the whole truth —
+ * no `options()` but a `getOptionLabelUsing()` — is validated by probing the
+ * label of the submitted value, Filament's `getInValidationRuleValues()`, and a
+ * failed probe is a `Choice` over nothing, so the value is rejected rather than
+ * waved through.
+ */
+
+it('throws when validating a select with neither options nor a label closure', function (): void {
+    $field = wireSelect(Select::make('status')->getSearchResultsUsing(fn (): array => []));
+    $field->state('draft');
+
+    expect(fn (): array => $field->getValidationConstraints())
+        ->toThrow(LogicException::class, 'getOptionLabelUsing()');
+});
+
+it('accepts a value the label closure resolves and rejects one it does not', function (): void {
+    $field = wireSelect(
+        Select::make('status')
+            ->getSearchResultsUsing(fn (): array => ['draft' => 'Draft'])
+            ->getOptionLabelUsing(fn (mixed $value): ?string => $value === 'draft' ? 'Draft' : null),
+    );
+    $validator = $this::getContainer()->get(ValidatorInterface::class);
+
+    $field->state('draft');
+    $accepted = $field->getValidationConstraints();
+
+    expect(array_filter($accepted, fn (object $c): bool => $c instanceof Choice))->toBe([])
+        ->and($validator->validate($field->getRawState(), $accepted))->toHaveCount(0);
+
+    $field->state('tampered');
+    $rejected = $field->getValidationConstraints();
+    $choice = array_values(array_filter($rejected, fn (object $c): bool => $c instanceof Choice));
+
+    expect($choice)->toHaveCount(1)
+        ->and($choice[0]->choices)->toBe([])
+        ->and($choice[0]->strict)->toBeTrue()
+        ->and($validator->validate($field->getRawState(), $rejected))->toHaveCount(1);
+});
+
+it('rejects a probed value whose option is disabled', function (): void {
+    $field = wireSelect(
+        Select::make('status')
+            ->getOptionLabelUsing(fn (): string => 'Draft')
+            ->disableOptionWhen(fn (string|int $value): bool => $value === 'draft'),
+    );
+    $field->state('draft');
+
+    $choice = array_values(array_filter($field->getValidationConstraints(), fn (object $c): bool => $c instanceof Choice));
+
+    expect($choice)->toHaveCount(1)
+        ->and($choice[0]->choices)->toBe([]);
 });

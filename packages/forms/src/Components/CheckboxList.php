@@ -52,8 +52,6 @@ class CheckboxList extends Field implements Contracts\CanDisableOptions
 
     protected Action|Closure|null $modifyDeselectAllActionUsing = null;
 
-    protected string|Markup|Closure|null $getOptionLabelFromRecordUsing = null;
-
     protected string|Markup|Closure|null $getOptionDescriptionFromRecordUsing = null;
 
     protected function setUp(): void
@@ -135,32 +133,6 @@ class CheckboxList extends Field implements Contracts\CanDisableOptions
     public function getDeselectAllActionName(): string
     {
         return 'deselectAll';
-    }
-
-    public function getOptionLabelFromRecordUsing(?Closure $callback): static
-    {
-        $this->getOptionLabelFromRecordUsing = $callback;
-        $this->cachedRelationshipOptions = null;
-
-        return $this;
-    }
-
-    public function hasOptionLabelFromRecordUsingCallback(): bool
-    {
-        return $this->getOptionLabelFromRecordUsing !== null;
-    }
-
-    /**
-     * The option label a record carries, empty where no callback answers — the
-     * same coercion the title-attribute arm makes for an unreadable title.
-     */
-    public function getOptionLabelFromRecord(object $record): string|Markup
-    {
-        return $this->evaluate($this->getOptionLabelFromRecordUsing, [
-            'record' => $record,
-        ], [
-            $record::class => $record,
-        ]) ?? '';
     }
 
     public function getOptionDescriptionFromRecordUsing(?Closure $callback): static

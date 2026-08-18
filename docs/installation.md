@@ -157,10 +157,11 @@ controllers drive the toast stack and each toast's auto-dismiss, hover-pause and
 close. Forms' two are per-field: `checkbox-list` supplies a checkbox list's
 search filter and bulk toggle, and `select` is the searchable select control. That
 second one is not optional for the fields that use it: a `searchable()`,
-`multiple()` or `native(false)` select renders a plain `<select>` whose binding
-belongs to the controller rather than to a `data-model` attribute, so omitting the
-block leaves a box that neither searches nor sends what the user picked. A select
-that is none of those three is a native `<select>` and needs no JavaScript at all.
+`multiple()`, `native(false)` or `allowHtml()` select renders a plain `<select>`
+whose binding belongs to the controller rather than to a `data-model` attribute,
+so omitting the block leaves a box that neither searches nor sends what the user
+picked. A select that is none of those four is a native `<select>` and needs no
+JavaScript at all.
 
 **`@sylament/actions` is easy to leave out and fails silently.** Its single
 `dispatch` controller binds to no element of its own — it registers one

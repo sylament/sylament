@@ -68,10 +68,11 @@ their detail sections do.
 | [`HasKey`](../../../packages/schemas/src/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Concerns/HasKey.php) | in progress | live-component id | [detail](#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) |
 | [`HasHeadings`](../../../packages/schemas/src/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Concerns/HasHeadings.php) | done | — | — |
 | [`CanModifyActions`](../../../packages/schemas/src/Concerns/CanModifyActions.php) | [`Concerns/CanModifyActions.php`](../../../vendor/filament/schemas/src/Concerns/CanModifyActions.php) | done | — | [diverges](#modifyaction-and-modifyactiongroup-guard-a-callbacks-return-type-at-runtime) |
+| [`HasFieldWrapper`](../../../packages/schemas/src/Concerns/HasFieldWrapper.php) | [`Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasFieldWrapper.php) | done | — | [diverges](#the-field-wrapper-view-is-opaque-data-with-no-closure-arm-and-no-parent-walk) |
 
-Beyond the folded concerns, five of Filament's composed traits are not yet
+Beyond the folded concerns, four of Filament's composed traits are not yet
 ported at all — `CanBeHidden`, `HasEntryWrapper`,
-`HasFieldWrapper`, `HasInlineLabels`, and support's
+`HasInlineLabels`, and support's
 `HasDefaultDataFormattingSettings` — and earn their own README rows as they
 land. (`CanBeDisabled`, `CanBeValidated`, `BelongsToRecord`, and `HasOperation`
 are composed and tracked in their own files:
@@ -427,6 +428,23 @@ callback or a `null` return works exactly as Filament's; a non-conforming one st
 throws `TypeError`, just raised explicitly rather than by implicit return-type
 coercion. `modifyActionGroup()` carries the identical guard. Reverses only if
 PHPStan gains inference for arbitrary closure invocations.
+
+### The field-wrapper view is opaque data, with no closure arm and no parent walk
+
+`fieldWrapperView(?string)` takes a plain string here where Filament's takes
+`string|Closure|null`, and `getFieldWrapperView()` returns what was set where
+Filament's `getCustomFieldWrapperView()` falls back to the parent component's.
+Both narrowings follow from what schemas does with the value, which is nothing:
+it stores an opaque token that only forms' `FieldWrapper` interprets
+([fused-group.md](../forms/fused-group.md#only-the-plain-wrapper-view-is-honored)),
+so there is no render-time moment for a closure to be evaluated in and no
+resolution order for the walk to feed. The getter carries Filament's
+component-tier name rather than its container-tier `getCustomFieldWrapperView()`,
+because "custom" only distinguishes anything once a default and a walk exist —
+neither of which ships. Widen the property and reinstate the walk in the same
+change as the [Component-tier
+twin](../forms/fused-group.md#the-component-tier-hasfieldwrapper-twin-is-not-ported),
+which is where the resolution order belongs.
 
 _See also: the global [rename table](../renames.md) — the Livewire → UX
 LiveComponent renames (`BelongsToLivewire`→`BelongsToLiveComponent`,

@@ -8,103 +8,123 @@
     content = markup(block('content') ?? '')
 %}
 
-{% set aboveLabelSchema = field.getChildSchema('above_label') %}
-{% set belowLabelSchema = field.getChildSchema('below_label') %}
-{% set beforeLabelSchema = field.getChildSchema('before_label') %}
-{% set afterLabelSchema = field.getChildSchema('after_label') %}
-{% set aboveContentSchema = field.getChildSchema('above_content') %}
-{% set belowContentSchema = field.getChildSchema('below_content') %}
-{% set beforeContentSchema = field.getChildSchema('before_content') %}
-{% set afterContentSchema = field.getChildSchema('after_content') %}
-{% set aboveErrorMessageSchema = field.getChildSchema('above_error_message') %}
-{% set belowErrorMessageSchema = field.getChildSchema('below_error_message') %}
-
-{% set showVisibleLabel = field.getLabel is not null and not field.isLabelHidden %}
-{% set hasLabelAffix = labelPrefix is not empty or labelSuffix is not empty %}
-{% set hasErrors = field.getErrorMessages is not empty %}
+{% set isPlain = field.getContainer.getFieldWrapperView == constant('Sylament\\Forms\\Components\\FusedGroup::PLAIN_FIELD_WRAPPER_VIEW') %}
 
 {% set labelId = labelAsHeading ? field.getId ~ '-label' : null %}
 
-<div
-        {{ attrs({
-            class: ['sy', 'sy-fo-field'],
-        }, field.getExtraFieldWrapperAttributes, field.getExtraAttributes) }}
->
-    {% if field.getLabel is not null and field.isLabelHidden %}
-        {% if labelAsHeading %}
-            <div id="{{ labelId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</div>
-        {% else %}
-            <label for="{{ field.getId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</label>
+{% if isPlain %}
+    <div
+            {{ attrs({
+                class: ['sy', 'sy-fo-field'],
+            }, field.getExtraFieldWrapperAttributes, field.getExtraAttributes) }}
+    >
+        {% if field.getLabel is not null %}
+            {% if labelAsHeading %}
+                <div id="{{ labelId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</div>
+            {% else %}
+                <label for="{{ field.getId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</label>
+            {% endif %}
         {% endif %}
-    {% endif %}
 
-    {% if showVisibleLabel or hasLabelAffix or aboveLabelSchema or belowLabelSchema or beforeLabelSchema or afterLabelSchema %}
-        <div class="sy-fo-field-label-col">
-            {{ renderComponent(aboveLabelSchema) }}
+        {{ content }}
+    </div>
+{% else %}
+    {% set aboveLabelSchema = field.getChildSchema('above_label') %}
+    {% set belowLabelSchema = field.getChildSchema('below_label') %}
+    {% set beforeLabelSchema = field.getChildSchema('before_label') %}
+    {% set afterLabelSchema = field.getChildSchema('after_label') %}
+    {% set aboveContentSchema = field.getChildSchema('above_content') %}
+    {% set belowContentSchema = field.getChildSchema('below_content') %}
+    {% set beforeContentSchema = field.getChildSchema('before_content') %}
+    {% set afterContentSchema = field.getChildSchema('after_content') %}
+    {% set aboveErrorMessageSchema = field.getChildSchema('above_error_message') %}
+    {% set belowErrorMessageSchema = field.getChildSchema('below_error_message') %}
 
-            <div class="sy-fo-field-label-ctn">
-                {{ renderComponent(beforeLabelSchema) }}
+    {% set showVisibleLabel = field.getLabel is not null and not field.isLabelHidden %}
+    {% set hasLabelAffix = labelPrefix is not empty or labelSuffix is not empty %}
+    {% set hasErrors = field.getErrorMessages is not empty %}
 
-                {% if showVisibleLabel or hasLabelAffix %}
-                    {% set labelBody %}
-                        {{ labelPrefix }}
+    <div
+            {{ attrs({
+                class: ['sy', 'sy-fo-field'],
+            }, field.getExtraFieldWrapperAttributes, field.getExtraAttributes) }}
+    >
+        {% if field.getLabel is not null and field.isLabelHidden %}
+            {% if labelAsHeading %}
+                <div id="{{ labelId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</div>
+            {% else %}
+                <label for="{{ field.getId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</label>
+            {% endif %}
+        {% endif %}
 
-                        {% if showVisibleLabel %}
-                            <span class="sy-fo-field-label-content">{{ field.getLabel }}{% if field.isMarkedAsRequired %}<sup class="sy-fo-field-label-required-mark">*</sup>{% endif %}</span>
+        {% if showVisibleLabel or hasLabelAffix or aboveLabelSchema or belowLabelSchema or beforeLabelSchema or afterLabelSchema %}
+            <div class="sy-fo-field-label-col">
+                {{ renderComponent(aboveLabelSchema) }}
+
+                <div class="sy-fo-field-label-ctn">
+                    {{ renderComponent(beforeLabelSchema) }}
+
+                    {% if showVisibleLabel or hasLabelAffix %}
+                        {% set labelBody %}
+                            {{ labelPrefix }}
+
+                            {% if showVisibleLabel %}
+                                <span class="sy-fo-field-label-content">{{ field.getLabel }}{% if field.isMarkedAsRequired %}<sup class="sy-fo-field-label-required-mark">*</sup>{% endif %}</span>
+                            {% endif %}
+
+                            {{ labelSuffix }}
+                        {% endset %}
+
+                        {% if labelAsHeading %}
+                            <div {{ attrs({
+                                id: showVisibleLabel ? labelId : null,
+                                class: ['sy-fo-field-label', {'sy-fo-field-label-inline-control': hasLabelAffix}],
+                            }) }}>{{ labelBody }}</div>
+                        {% else %}
+                            <label {{ attrs({
+                                for: field.getId,
+                                class: ['sy-fo-field-label', {'sy-fo-field-label-inline-control': hasLabelAffix}],
+                            }) }}>{{ labelBody }}</label>
                         {% endif %}
-
-                        {{ labelSuffix }}
-                    {% endset %}
-
-                    {% if labelAsHeading %}
-                        <div {{ attrs({
-                            id: showVisibleLabel ? labelId : null,
-                            class: ['sy-fo-field-label', {'sy-fo-field-label-inline-control': hasLabelAffix}],
-                        }) }}>{{ labelBody }}</div>
-                    {% else %}
-                        <label {{ attrs({
-                            for: field.getId,
-                            class: ['sy-fo-field-label', {'sy-fo-field-label-inline-control': hasLabelAffix}],
-                        }) }}>{{ labelBody }}</label>
                     {% endif %}
+
+                    {{ renderComponent(afterLabelSchema) }}
+                </div>
+
+                {{ renderComponent(belowLabelSchema) }}
+            </div>
+        {% endif %}
+
+        {% if content is not empty or hasErrors or aboveContentSchema or belowContentSchema or beforeContentSchema or afterContentSchema or aboveErrorMessageSchema or belowErrorMessageSchema %}
+            <div class="sy-fo-field-content-col">
+                {{ renderComponent(aboveContentSchema) }}
+
+                {% if beforeContentSchema or afterContentSchema %}
+                    <div class="sy-fo-field-content-ctn">
+                        {{ renderComponent(beforeContentSchema) }}
+
+                        <div class="sy-fo-field-content">{{ content }}</div>
+
+                        {{ renderComponent(afterContentSchema) }}
+                    </div>
+                {% else %}
+                    {{ content }}
                 {% endif %}
 
-                {{ renderComponent(afterLabelSchema) }}
+                {{ renderComponent(belowContentSchema) }}
+
+                {% if hasErrors %}
+                    {{ renderComponent(aboveErrorMessageSchema) }}
+
+                    <ul data-validation-error class="sy-fo-field-error-list">
+                        {% for message in field.getErrorMessages %}
+                            <li class="sy-fo-field-error-message">{{ message }}</li>
+                        {% endfor %}
+                    </ul>
+
+                    {{ renderComponent(belowErrorMessageSchema) }}
+                {% endif %}
             </div>
-
-            {{ renderComponent(belowLabelSchema) }}
-        </div>
-    {% endif %}
-
-    {% if content is not empty or hasErrors or aboveContentSchema or belowContentSchema or beforeContentSchema or afterContentSchema or aboveErrorMessageSchema or belowErrorMessageSchema %}
-        <div class="sy-fo-field-content-col">
-            {{ renderComponent(aboveContentSchema) }}
-
-            {% if beforeContentSchema or afterContentSchema %}
-                <div class="sy-fo-field-content-ctn">
-                    {{ renderComponent(beforeContentSchema) }}
-
-                    <div class="sy-fo-field-content">{{ content }}</div>
-
-                    {{ renderComponent(afterContentSchema) }}
-                </div>
-            {% else %}
-                {{ content }}
-            {% endif %}
-
-            {{ renderComponent(belowContentSchema) }}
-
-            {% if hasErrors %}
-                {{ renderComponent(aboveErrorMessageSchema) }}
-
-                <ul data-validation-error class="sy-fo-field-error-list">
-                    {% for message in field.getErrorMessages %}
-                        <li class="sy-fo-field-error-message">{{ message }}</li>
-                    {% endfor %}
-                </ul>
-
-                {{ renderComponent(belowErrorMessageSchema) }}
-            {% endif %}
-        </div>
-    {% endif %}
-</div>
+        {% endif %}
+    </div>
+{% endif %}

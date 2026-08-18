@@ -1,0 +1,14 @@
+{% set groupId = component.getId %}
+{% set hasErrors = component.getErrorMessages is not empty %}
+
+<twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
+    <div
+            {{ attrs({
+                class: ['sy', 'sy-fo-fused-group'],
+                id: groupId,
+                role: 'group',
+                'aria-labelledby': (groupId is not empty and component.getLabel is not null) ? groupId ~ '-label' : null,
+                'aria-invalid': hasErrors ? true : null,
+            }) }}
+    >{{ renderComponent(component.getChildSchema()) }}</div>
+</twig:SylamentForms:FieldWrapper>

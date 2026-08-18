@@ -37,7 +37,10 @@ the layout/content components in
 [`src/Components`](../../../vendor/filament/schemas/src/Components). The
 `Components/Concerns` traits are [Features](#features); `Components/StateCasts`,
 `Components/Utilities`, and `Components/Contracts` are the
-[Supporting surface](#supporting-surface).
+[Supporting surface](#supporting-surface). One row's code lives one package up:
+`FusedGroup` renders forms' field-wrapper chrome and composes three forms
+concerns, so it ships in `sylament/forms` and its row here points there —
+[why](../renames.md#namespace-segments).
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -48,7 +51,7 @@ the layout/content components in
 | [`Section`](../../../packages/schemas/src/Components/Section.php) | [`Components/Section.php`](../../../vendor/filament/schemas/src/Components/Section.php) | done | [section.md](section.md) |
 | [`Fieldset`](../../../packages/schemas/src/Components/Fieldset.php) | [`Components/Fieldset.php`](../../../vendor/filament/schemas/src/Components/Fieldset.php) | done | [fieldset.md](fieldset.md) |
 | `Flex` | [`Components/Flex.php`](../../../vendor/filament/schemas/src/Components/Flex.php) | todo | — |
-| `FusedGroup` | [`Components/FusedGroup.php`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | todo | — |
+| [`FusedGroup`](../../../packages/forms/src/Components/FusedGroup.php) (ships in **forms**) | [`Components/FusedGroup.php`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | in progress | [../forms/fused-group.md](../forms/fused-group.md) |
 | `Tabs` | [`Components/Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php) | todo | — |
 | `Tabs\Tab` | [`Components/Tabs/Tab.php`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | todo | — |
 | `Wizard` | [`Components/Wizard.php`](../../../vendor/filament/schemas/src/Components/Wizard.php) | todo | — |
@@ -121,7 +124,7 @@ own single-use concerns folded into [`component.md`](component.md).
 | [`HasActions`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`Components/Concerns/HasActions.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | in progress | [has-actions.md](has-actions.md) |
 | `HasContainerGridLayout` | [`Components/Concerns/HasContainerGridLayout.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php) | todo | — |
 | `HasEntryWrapper` | [`Components/Concerns/HasEntryWrapper.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasEntryWrapper.php) | todo | — |
-| `HasFieldWrapper` | [`Components/Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasFieldWrapper.php) | todo | — |
+| `HasFieldWrapper` | [`Components/Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasFieldWrapper.php) | todo | [../forms/fused-group.md](../forms/fused-group.md#the-component-tier-hasfieldwrapper-twin-is-not-ported) |
 | `HasInlineLabel` | [`Components/Concerns/HasInlineLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasInlineLabel.php) | todo | — |
 | [`HasLabel`](../../../packages/schemas/src/Components/Concerns/HasLabel.php) | [`Components/Concerns/HasLabel.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasLabel.php) | done | [has-label.md](has-label.md) |
 | `HasMaxWidth` | [`Components/Concerns/HasMaxWidth.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasMaxWidth.php) | todo | — |
@@ -146,7 +149,7 @@ shared with the base `Component` or not yet started.
 | [`HasColumns`](../../../packages/schemas/src/Components/Concerns/HasColumns.php) | [`Concerns/HasColumns.php`](../../../vendor/filament/schemas/src/Concerns/HasColumns.php) | done | [has-columns.md](has-columns.md) |
 | [`HasGap`](../../../packages/schemas/src/Components/Concerns/HasGap.php) | [`Concerns/HasGap.php`](../../../vendor/filament/schemas/src/Concerns/HasGap.php) | done | [has-gap.md](has-gap.md) |
 | `HasEntryWrapper` | [`Concerns/HasEntryWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasEntryWrapper.php) | todo | — |
-| `HasFieldWrapper` | [`Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasFieldWrapper.php) | todo | — |
+| [`HasFieldWrapper`](../../../packages/schemas/src/Concerns/HasFieldWrapper.php) | [`Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasFieldWrapper.php) | done | [schema.md](schema.md#the-field-wrapper-view-is-opaque-data-with-no-closure-arm-and-no-parent-walk) |
 | `HasInlineLabels` | [`Concerns/HasInlineLabels.php`](../../../vendor/filament/schemas/src/Concerns/HasInlineLabels.php) | todo | — |
 | [`HasOperation`](../../../packages/schemas/src/Concerns/HasOperation.php) | [`Concerns/HasOperation.php`](../../../vendor/filament/schemas/src/Concerns/HasOperation.php) | done | [has-operation.md](has-operation.md) |
 | [`HasStateBindingModifiers`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`Concerns/HasStateBindingModifiers.php`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | in progress | [has-state-binding-modifiers.md](has-state-binding-modifiers.md) |

@@ -22,6 +22,7 @@ use Sylament\Schemas\Concerns\CanBeValidated;
 use Sylament\Schemas\Concerns\CanModifyActions;
 use Sylament\Schemas\Concerns\Cloneable;
 use Sylament\Schemas\Concerns\HasComponents;
+use Sylament\Schemas\Concerns\HasFieldWrapper;
 use Sylament\Schemas\Concerns\HasHeadings;
 use Sylament\Schemas\Concerns\HasKey;
 use Sylament\Schemas\Concerns\HasOperation;
@@ -54,6 +55,7 @@ class Schema extends ViewComponent
     }
     use HasComponents;
     use HasExtraAttributes;
+    use HasFieldWrapper;
     use HasGap;
     use HasHeadings;
     use HasKey;

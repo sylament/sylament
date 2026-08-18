@@ -1,6 +1,7 @@
 @import './components/checkbox-list.css' layer(components);
 @import './components/checkbox.css' layer(components);
 @import './components/field.css' layer(components);
+@import './components/fused-group.css' layer(components);
 @import './components/input.css' layer(components);
 @import './components/radio.css' layer(components);
 @import './components/repeater.css' layer(components);

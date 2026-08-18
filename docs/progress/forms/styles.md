@@ -2,7 +2,7 @@
 
 The forms bundle's component CSS —
 [`packages/forms/assets/src/styles/`](../../../packages/forms/assets/src/styles/)
-— is nine stylesheets, and only six of them draw on
+— is ten stylesheets, and only six of them draw on
 [`forms/resources/css/`](../../../vendor/filament/forms/resources/css/) at all.
 **The rest port from
 [`support/resources/css/`](../../../vendor/filament/support/resources/css/)**:
@@ -17,8 +17,11 @@ split — both are wholly forms', because their controls borrow support's button
 chrome (`toggle-buttons.css`) or forms' own already-ported checkbox
 (`checkbox-list.css`) by class rather than restyling either. Diffed
 against the wrong directory each of them reads as drift from beginning to end,
-which is the single most useful thing to know before reading this file. Every row
-below names the vendor file it was actually written against.
+which is the single most useful thing to know before reading this file. The tenth
+reads from neither package: `fused-group.css` ports **schemas**'
+`components/fused-group.css`, because
+[the component it styles ships here rather than there](fused-group.md#fusedgroup-lives-in-forms-not-schemas).
+Every row below names the vendor file it was actually written against.
 
 Each stylesheet is `@apply`-authored into `components/<name>.css` and `@import`ed
 into [`index.css`](../../../packages/forms/assets/src/styles/index.css) under
@@ -43,6 +46,8 @@ Reference — the Filament source this is diffed against:
 - [`support/resources/css/components/input/`](../../../vendor/filament/support/resources/css/components/input/)
   — `checkbox.css`, `index.css`, `radio.css` and `select.css`, the four control
   sources, plus the `wrapper.css` chrome the port collapses into its controls
+- [`schemas/resources/css/components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css)
+  — the fused box, ported whole with the component that emits its class
 - [`support/resources/css/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css)
   — the switch chrome `toggle.css` re-architects onto a checkbox
 - [`support/resources/css/utilities.css`](../../../vendor/filament/support/resources/css/utilities.css)
@@ -70,6 +75,7 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 | [`checkbox.css` — `.sy-fo-checkbox` box, tick and invalid arms](../../../packages/forms/assets/src/styles/components/checkbox.css) | [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](#the-indeterminate-checkbox-arm-has-no-port) |
 | [`date-time-picker.css` — its one native-control rule, ported into `input.css` as `.sy-fo-input::-webkit-datetime-edit`](../../../packages/forms/assets/src/styles/components/input.css) | [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | the JS calendar vertical ([date-time-picker.md](date-time-picker.md#the-js-calendar-family-waits-on-a-js-vertical-of-its-own)) | [detail](#the-date-time-picker-stylesheet-is-one-native-rule-and-a-calendar-panel) |
 | [`field.css` — the `.sy-fo-field` wrapper grid, label column, content column and error list](../../../packages/forms/assets/src/styles/components/field.css) | [`components/field.css`](../../../vendor/filament/forms/resources/css/components/field.css) | in progress | schemas' `HasInlineLabel` · support's `HasVerticalAlignment` | [detail](#the-field-stylesheet-omits-the-leading-schema-un-grow) · [diverges](#field-css-is-flat-where-filament-nests) · [diverges](#sy-fo-sr-only-is-a-support-utility-authored-as-a-forms-component-class) |
+| [`fused-group.css` — the `.sy-fo-fused-group` ring, dividers and corner rules](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`schemas/…/components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) | done | — | [diverges](../schemas/styles.md#fused-group-css-was-ported-into-the-forms-package) · [semantics](fused-group.md#the-corner-rules-reach-through-two-elements-the-schema-partial-nests) |
 | [`input.css` — `.sy-fo-input`, the text control for `TextInput`, `Textarea` and the three pickers](../../../packages/forms/assets/src/styles/components/input.css) | [`support/…/input/index.css`](../../../vendor/filament/support/resources/css/components/input/index.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) + [`components/textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css) + [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | an alignment setter | [detail](#the-input-and-select-stylesheets-stop-at-the-alignment-arms) · [diverges](#the-input-wrapper-invents-a-hover-ring) · [diverges](#the-textarea-rule-is-the-ports-own-because-nothing-autosizes) |
 | [`radio.css` — the `.sy-fo-radio` option set and the `.sy-fo-radio-input` control](../../../packages/forms/assets/src/styles/components/radio.css) | [`components/radio.css`](../../../vendor/filament/forms/resources/css/components/radio.css) + [`support/…/input/radio.css`](../../../vendor/filament/support/resources/css/components/input/radio.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](radio.md#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) |
 | [`repeater.css` — `.sy-fo-repeater` and `.sy-fo-simple-repeater` item chrome](../../../packages/forms/assets/src/styles/components/repeater.css) | [`components/repeater.css`](../../../vendor/filament/forms/resources/css/components/repeater.css) | in progress | the four deferred chrome clusters | [detail](repeater.md#four-chrome-clusters-are-deferred-not-dropped) · [diverges](#the-repeater-item-lists-declare-their-own-grid) |

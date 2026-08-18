@@ -102,11 +102,12 @@ opens neither wrapper on purpose: a custom field that wants no chrome at all is 
 valid thing to want, and it is the case that proves nothing is inherited.
 
 The tag names the wrapper directly where Filament's example resolves it through
-`$getFieldWrapperView()` — schemas' `HasFieldWrapper`, which the port does not
-ship (it is **todo** in [schemas' table](../schemas/README.md)) and which nothing
-needs until a second wrapper template exists to point at. Swapping a wrapper today
-means writing a different tag in the template, which is what the indirection buys
-anyway.
+`$getFieldWrapperView()`. Schemas' [`HasFieldWrapper`](../schemas/schema.md) does
+ship now, but as an opaque marker forms reads for exactly one value — the plain
+branch a [`FusedGroup`](fused-group.md#only-the-plain-wrapper-view-is-honored)
+puts on its children — not as a template name a custom field could point
+anywhere. Swapping a wrapper today still means writing a different tag in the
+template, which is what the indirection buys anyway.
 
 Both halves matter. `:field="component"` is how the wrapper reaches the label,
 the hint, the error messages and the ten slots — the field is in scope as

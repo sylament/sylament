@@ -263,6 +263,29 @@ sibling declares breaks the moment it is installed on its own. See
 The class name, methods and body are unchanged, which is why this is a
 relocation rather than a rename.
 
+One **component** moves the other way for the same reason, and it is the same
+Filament file that forced the trait down:
+
+| Filament | Sylament | Which class |
+| --- | --- | --- |
+| `Filament\Schemas\Components\FusedGroup` | `Sylament\Forms\Components\FusedGroup` | `FusedGroup` alone |
+
+The criterion in both directions is **the lowest package that reaches every
+symbol the thing needs**. For a trait two tiers compose, that is the lower
+package, so `CanBeMarkedAsRequired` went down. `FusedGroup` imports three forms
+concerns — `CanBeMarkedAsRequired`, `HasExtraFieldWrapperAttributes`,
+`HasHelperText` — plus `Forms\Components\Field` for its error walk, and what it
+renders is forms' field-wrapper chrome; nothing it needs can move down with it,
+so the lowest package reaching all of it is `forms` and the class goes up.
+Filament can host it in schemas because Laravel ships every Filament package
+together; the CI split here publishes each one standalone, so a
+`sylament/schemas` importing a forms symbol breaks on install. Class name,
+factory, methods and behaviour are unchanged; only the namespace moves, taking
+the CSS class code with it — `fi-sc-fused-group` becomes `sy-fo-fused-group`,
+the [component code](../styling.md) naming the package that ships the component
+rather than the vendor directory the rules were copied from. See
+[forms/fused-group.md](forms/fused-group.md#fusedgroup-lives-in-forms-not-schemas).
+
 Two traits move **up** out of `support`, and the same layering argument runs the
 other way for them — they are two of the traits Filament's
 `Column` composes from `Support\Concerns\`. Both reach Doctrine, and `support`

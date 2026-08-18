@@ -100,7 +100,10 @@ The `Field` base and every field a user instantiates —
 [`src/Components`](../../../vendor/filament/forms/src/Components). The nested rows
 (`Builder / Block`, `MorphToSelect / Type`, `Repeater / TableColumn`) are the
 user-instantiable building blocks a parent field composes; `Field` heads the
-table, the rest follow alphabetically.
+table, the rest follow alphabetically. One row ports a class Filament files in
+**schemas**: `FusedGroup` composes three forms concerns and renders forms'
+field-wrapper chrome, so it lands here instead —
+[why](../renames.md#namespace-segments).
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -115,6 +118,7 @@ table, the rest follow alphabetically.
 | [`DatePicker`](../../../packages/forms/src/Components/DatePicker.php) | [`Components/DatePicker.php`](../../../vendor/filament/forms/src/Components/DatePicker.php) | in progress | [date-picker.md](date-picker.md) |
 | [`DateTimePicker`](../../../packages/forms/src/Components/DateTimePicker.php) | [`Components/DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | in progress | [date-time-picker.md](date-time-picker.md) |
 | FileUpload | [`Components/FileUpload.php`](../../../vendor/filament/forms/src/Components/FileUpload.php) | todo | — |
+| [`FusedGroup`](../../../packages/forms/src/Components/FusedGroup.php) (Filament ships it in **schemas**) | [`schemas/…/Components/FusedGroup.php`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | in progress | [fused-group.md](fused-group.md) |
 | [`Hidden`](../../../packages/forms/src/Components/Hidden.php) | [`Components/Hidden.php`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | [hidden.md](hidden.md) |
 | KeyValue | [`Components/KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | todo | — |
 | LivewireField | [`Components/LivewireField.php`](../../../vendor/filament/forms/src/Components/LivewireField.php) | todo | — |

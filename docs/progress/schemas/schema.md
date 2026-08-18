@@ -62,6 +62,8 @@ their detail sections do.
 | [`CanBeEmbeddedInParentComponent`](../../../packages/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | [`Concerns/CanBeEmbeddedInParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | done | — | — |
 | [`CanBeInline`](../../../packages/schemas/src/Concerns/CanBeInline.php) | [`Concerns/CanBeInline.php`](../../../vendor/filament/schemas/src/Concerns/CanBeInline.php) | done | — | — |
 | [`HasComponents`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | in progress | — | [detail](#hascomponents-still-lacks-the-lookup-layer) · [diverges](#getcomponents-preserves-the-callers-array-keys-instead-of-reindexing) |
+| [`getComponent(string\|Closure $findComponentUsing, bool $withActions = true, bool $withHidden = false, bool $isAbsoluteKey = false)`](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | done | — | [detail](#hascomponents-still-lacks-the-lookup-layer) |
+| [`getFlatComponents(bool $withActions = true, bool $withHidden = true)` — the `withHidden` arm](../../../packages/schemas/src/Concerns/HasComponents.php) | [`Concerns/HasComponents.php`](../../../vendor/filament/schemas/src/Concerns/HasComponents.php) | done | — | [diverges](#the-component-collection-keeps-a-single-cache-and-drops-the-flag-keyed-memoization) |
 | [`HasState`](../../../packages/schemas/src/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Concerns/HasState.php) | in progress | — | [detail](#hasstate-still-lacks-constant-state-relationships-and-partial-rendering) · [diverges](#getstate-validates-without-a-prepareforvalidation-mutation-layer) |
 | [`fill(object\|array\|null $state = null)` — the object arm](../../../packages/schemas/src/Concerns/HasState.php) | — | done | — | [belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares) |
 | [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [belongs-to-record.md](belongs-to-record.md#reads-are-lenient-writes-are-strict) |
@@ -102,20 +104,36 @@ inherited `isLive`/`getAllColumns` result.
 ### `HasComponents` still lacks the lookup layer
 
 `components()`/`getComponents()`/`getFlatComponents()`/`getComponentByStatePath()`/
-`getAction()` are ported and covered (35 unit cases plus the `SchemaRenderTest`
-coercion and hidden-filtering paths). **In:** lazy closure resolution, container
-assignment, `string`→`Text` and other→`Html` child coercion, visibility
-filtering, top-level/nested/skip-container state-path lookup, and — matching
-Filament's unions — `Action`/`ActionGroup` children: each is passed through the
-container's `modifyAction()`/`modifyActionGroup()` hook, stamped
-`schemaContainer($this)`, and left uncoerced;
+`getAction()`/`getComponent()` are ported and covered (43 unit cases plus the
+`SchemaRenderTest` coercion and hidden-filtering paths). **In:** lazy closure
+resolution, container assignment, `string`→`Text` and other→`Html` child
+coercion, visibility filtering, top-level/nested/skip-container state-path
+lookup, and — matching Filament's unions — `Action`/`ActionGroup` children:
+each is passed through the container's `modifyAction()`/`modifyActionGroup()`
+hook, stamped `schemaContainer($this)`, and left uncoerced;
 `getComponents(bool $withActions = true, bool $withHidden = true)`
-and `getFlatComponents(bool $withActions = true)` drop them when `$withActions`
-is false (the state walks in `HasState`/`HasSchemas` and
-`getComponentByStatePath()` all pass `withActions: false`; `getFlatComponents()`
-appends actions but never descends into them). Both accessors declare PHPStan
-conditional return types, so `withActions: false` call sites keep
-`array<Component>` inference. The container-wide
+and `getFlatComponents(bool $withActions = true, bool $withHidden = true)`
+drop them when `$withActions` is false (the state walks in `HasState`/
+`HasSchemas` and `getComponentByStatePath()` all pass `withActions: false`;
+`getFlatComponents()` appends actions but never descends into them). Both
+accessors declare PHPStan conditional return types, so `withActions: false`
+call sites keep `array<Component>` inference.
+`getComponent(string|Closure $findComponentUsing, bool $withActions = true,
+bool $withHidden = false, bool $isAbsoluteKey = false)` is the single-lookup
+port — Filament's flat arms only (vendor
+`Concerns/HasComponents.php:152-212`): a string key relative to this
+container (`!$isAbsoluteKey` and a filled own `getKey()`) is prefixed with
+that key before it is looked up; a `Closure` runs as a `first()`-style
+predicate over `getFlatComponents($withActions, $withHidden)` instead. The
+string arm builds its own key→component map from that flat list rather than
+threading Filament's `withAbsoluteKeys` flag through `getFlatComponents()`
+(components with a `null` key, and every `Action`/`ActionGroup` — neither
+carries a key at all — are skipped when the map is built). **Gap:**
+Filament's `$skipComponentsChildContainersWhileSearching` arm — the
+nested-traversal branch that lets a component's own `$get`/`$set` avoid
+recursing into itself — is not ported here; `getComponentByStatePath()`
+already carries that parameter for the repeater case, and `getComponent()`
+would grow it there if a caller needs it. The container-wide
 `getAction(string $actionName, ?string $nestedContainerKey = null)` walks the
 visible components: a direct `Action` child matches by name, a direct
 `ActionGroup` child by its flat-actions map, a component-registered action only
@@ -128,7 +146,7 @@ first match wins; hidden components are skipped. `cloneComponents()` is ported
 and pinned by
 [`CloneableTest`](../../../packages/schemas/tests/Unit/Concerns/CloneableTest.php)
 ([diverges](#clonecomponents-never-stamps-the-original-and-always-resets-the-cache)).
-**Left:** `getComponent()`, `getFlatFields()` (depend on Fields),
+**Left:** `getFlatFields()` (depend on Fields),
 `clearCachedChildSchemas()` (depends on child-schema caching, landing with the
 Repeater epic's schemas lane — [repeater.md](../forms/repeater.md)); the
 `schema()` alias is deliberately not ported
@@ -307,11 +325,18 @@ flipped `withHidden = true` default (Filament `false`; the render pipeline —
 `Schema::render()`'s empty guard and `getExtraTemplateData()` — passes
 `withHidden: false` explicitly), drops `withOriginalKeys` (see the
 key-preservation divergence below), and filters on `isVisible()` rather than
-`isHidden()`. `getFlatComponents(bool $withActions = true)` keeps only that one
-flag — Filament's `withHidden`/`withAbsoluteKeys`/`containerKey` parameters and
-its key-indexed carry are dropped: the flat list stays hidden-inclusive, ordered,
-and unkeyed. Correct but not memoized; revisit if flat/state-path lookups become
-hot.
+`isHidden()`. `getFlatComponents(bool $withActions = true, bool $withHidden = true)`
+now threads `$withHidden` through as well — Filament's own parameter, kept with
+the same flipped default as `getComponents()` (Filament defaults it `false`;
+every existing caller here relied on the hidden-inclusive shape before this
+parameter existed, so the port keeps that shape rather than silently changing
+it). `getComponent()`/`getSchemaComponent()` keep Filament's `withHidden: false`
+default and pass it down explicitly, matching Filament's own call sites.
+Filament's `withAbsoluteKeys`/`containerKey` parameters and their key-indexed
+carry are still dropped: the flat list itself stays ordered and unkeyed, and
+`getComponent()` builds its own key→component map from that list on each call
+rather than threading a flag through the flattening. Correct but not memoized;
+revisit if flat/state-path lookups become hot.
 
 ### `cloneComponents()` never stamps the original and always resets the cache
 

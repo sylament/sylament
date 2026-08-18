@@ -211,6 +211,68 @@ it('excludes direct and nested actions from the flat components when withActions
     expect($schema->getFlatComponents(withActions: false))->toBe([$group]);
 });
 
+it('includes hidden components in the flat components by default', function (): void {
+    $visible = new Component();
+    $hidden = new Component()->hidden();
+    $schema = Schema::make(new StateHostFixture())->components([$visible, $hidden]);
+
+    expect($schema->getFlatComponents())->toBe([$visible, $hidden]);
+});
+
+it('excludes hidden components from the flat components when withHidden is false', function (): void {
+    $visible = new Component();
+    $hidden = new Component()->hidden();
+    $schema = Schema::make(new StateHostFixture())->components([$visible, $hidden]);
+
+    expect($schema->getFlatComponents(withHidden: false))->toBe([$visible]);
+});
+
+it('finds a nested component by its absolute key', function (): void {
+    $section = Section::make()->key('author');
+    $schema = Schema::make(new StateHostFixture())->key('schema')->components([$section]);
+
+    expect($schema->getComponent('schema.author', isAbsoluteKey: true))->toBe($section);
+});
+
+it('resolves a relative key by prefixing it with the container key', function (): void {
+    $section = Section::make()->key('author');
+    $schema = Schema::make(new StateHostFixture())->key('schema')->components([$section]);
+
+    expect($schema->getComponent('author'))->toBe($section);
+});
+
+it('does not find a hidden component by key unless withHidden is true', function (): void {
+    $hidden = Section::make()->key('secret')->hidden();
+    $schema = Schema::make(new StateHostFixture())->components([$hidden]);
+
+    expect($schema->getComponent('secret'))->toBeNull()
+        ->and($schema->getComponent('secret', withHidden: true))->toBe($hidden);
+});
+
+it('finds an Action child through a closure predicate only when withActions is true', function (): void {
+    $action = Action::make('save');
+    $schema = Schema::make()->components([$action]);
+
+    $predicate = fn (Component|Action|ActionGroup $component): bool => $component instanceof Action;
+
+    expect($schema->getComponent($predicate))->toBe($action)
+        ->and($schema->getComponent($predicate, withActions: false))->toBeNull();
+});
+
+it('finds a component through a closure predicate', function (): void {
+    $target = new Component();
+    $other = new Component();
+    $schema = Schema::make(new StateHostFixture())->components([$other, $target]);
+
+    expect($schema->getComponent(fn (Component|Action|ActionGroup $component): bool => $component === $target))->toBe($target);
+});
+
+it('returns null for an unknown key', function (): void {
+    $schema = Schema::make()->components([new Component()]);
+
+    expect($schema->getComponent('missing'))->toBeNull();
+});
+
 it('resolves a top-level component by its absolute state path', function (): void {
     $schema = Schema::make(new StateHostFixture())->statePath('data')->components([
         StateField::make('title'),

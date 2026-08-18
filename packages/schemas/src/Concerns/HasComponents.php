@@ -218,15 +218,16 @@ trait HasComponents
      * Every component in this container flattened depth-first, descending through
      * each component's child schemas. Actions and action groups are appended but
      * never descended into. Degrades to {@see getComponents()} for a flat schema
-     * whose components have no child schemas.
+     * whose components have no child schemas. `$withHidden` threads through both
+     * this level's {@see getComponents()} call and every recursive call.
      *
      * @return ($withActions is true ? array<Component|Action|ActionGroup> : array<Component>)
      */
-    public function getFlatComponents(bool $withActions = true): array
+    public function getFlatComponents(bool $withActions = true, bool $withHidden = true): array
     {
         $flatComponents = [];
 
-        foreach ($this->getComponents($withActions) as $component) {
+        foreach ($this->getComponents($withActions, $withHidden) as $component) {
             $flatComponents[] = $component;
 
             if (!$component instanceof Component) {
@@ -236,12 +237,57 @@ trait HasComponents
             foreach ($component->getChildSchemas() as $childSchema) {
                 $flatComponents = [
                     ...$flatComponents,
-                    ...$childSchema->getFlatComponents($withActions),
+                    ...$childSchema->getFlatComponents($withActions, $withHidden),
                 ];
             }
         }
 
         return $flatComponents;
+    }
+
+    /**
+     * Resolve a single component, action or action group anywhere in this
+     * container by key. A string key is relative to this container's own key
+     * unless `$isAbsoluteKey` is true — a filled container key is prefixed onto
+     * it, then it is matched against each flattened component's absolute
+     * {@see Component::getKey()} (a component with no key can never match, and
+     * neither can an action or action group, which carry no key at all). A
+     * `Closure` instead runs as a `first()`-style predicate over the flattened
+     * list, testable against actions and action groups directly.
+     */
+    public function getComponent(string|Closure $findComponentUsing, bool $withActions = true, bool $withHidden = false, bool $isAbsoluteKey = false): Component|Action|ActionGroup|null
+    {
+        if (is_string($findComponentUsing) && !$isAbsoluteKey && filled($key = $this->getKey())) {
+            $findComponentUsing = "{$key}.{$findComponentUsing}";
+        }
+
+        $flatComponents = $this->getFlatComponents($withActions, $withHidden);
+
+        if (!is_string($findComponentUsing)) {
+            foreach ($flatComponents as $component) {
+                if ($findComponentUsing($component)) {
+                    return $component;
+                }
+            }
+
+            return null;
+        }
+
+        $componentsByKey = [];
+
+        foreach ($flatComponents as $component) {
+            if (!$component instanceof Component) {
+                continue;
+            }
+
+            $componentKey = $component->getKey();
+
+            if (filled($componentKey)) {
+                $componentsByKey[$componentKey] = $component;
+            }
+        }
+
+        return $componentsByKey[$findComponentUsing] ?? null;
     }
 
     /**

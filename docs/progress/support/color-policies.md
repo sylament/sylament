@@ -34,6 +34,7 @@ template call, the CSS branch — stays in that element's own file
 ([`badge.md`](badge.md), [`button.md`](button.md), [`link.md`](link.md),
 [`icon-button.md`](icon-button.md), [`dropdown-item.md`](dropdown-item.md),
 [`modal.md`](modal.md), [`section.md`](section.md),
+[`input-wrapper.md`](input-wrapper.md),
 [`forms/toggle.md`](../forms/toggle.md)), so no element's colour status is
 recorded twice.
 
@@ -61,10 +62,10 @@ permanent note in [Semantics](#semantics); **diverges** → the permanent note i
 | [`DropdownComponent\ItemComponent`](../../../packages/support/src/Colors/Components/DropdownComponent/ItemComponent.php) | [`DropdownComponent/ItemComponent.php`](../../../vendor/filament/support/src/View/Components/DropdownComponent/ItemComponent.php) | done | — | — |
 | [`ModalComponent\IconComponent`](../../../packages/support/src/Colors/Components/ModalComponent/IconComponent.php) | [`ModalComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/ModalComponent/IconComponent.php) | done | — | [semantics](#an-empty-map-is-a-real-answer-not-a-missing-one) |
 | [`SectionComponent\IconComponent`](../../../packages/support/src/Colors/Components/SectionComponent/IconComponent.php) | [`SectionComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/SectionComponent/IconComponent.php) | done | — | [semantics](#an-empty-map-is-a-real-answer-not-a-missing-one) |
-| `DropdownComponent\HeaderComponent` | [`DropdownComponent/HeaderComponent.php`](../../../vendor/filament/support/src/View/Components/DropdownComponent/HeaderComponent.php) | blocked | the dropdown header, unbuilt — [dropdown.md](dropdown.md) | [detail](#four-policies-wait-on-the-elements-they-would-colour) |
-| `DropdownComponent\ItemComponent\IconComponent` | [`DropdownComponent/ItemComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/DropdownComponent/ItemComponent/IconComponent.php) | blocked | the item's `iconColor` row — [dropdown-item.md](dropdown-item.md#iconcolor) | [detail](#four-policies-wait-on-the-elements-they-would-colour) |
-| `CalloutComponent` + `CalloutComponent\IconComponent` | [`CalloutComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent.php), [`CalloutComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent/IconComponent.php) | blocked | `Callout`, unbuilt in both support and schemas | [detail](#four-policies-wait-on-the-elements-they-would-colour) |
-| `InputComponent\WrapperComponent\IconComponent` | [`InputComponent/WrapperComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/InputComponent/WrapperComponent/IconComponent.php) | blocked | input affixes, unbuilt in forms | [detail](#four-policies-wait-on-the-elements-they-would-colour) |
+| [`InputComponent\WrapperComponent\IconComponent`](../../../packages/support/src/Colors/Components/InputComponent/WrapperComponent/IconComponent.php) | [`InputComponent/WrapperComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/InputComponent/WrapperComponent/IconComponent.php) | done | — | [semantics](#an-empty-map-is-a-real-answer-not-a-missing-one) |
+| `DropdownComponent\HeaderComponent` | [`DropdownComponent/HeaderComponent.php`](../../../vendor/filament/support/src/View/Components/DropdownComponent/HeaderComponent.php) | blocked | the dropdown header, unbuilt — [dropdown.md](dropdown.md) | [detail](#three-policies-wait-on-the-elements-they-would-colour) |
+| `DropdownComponent\ItemComponent\IconComponent` | [`DropdownComponent/ItemComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/DropdownComponent/ItemComponent/IconComponent.php) | blocked | the item's `iconColor` row — [dropdown-item.md](dropdown-item.md#iconcolor) | [detail](#three-policies-wait-on-the-elements-they-would-colour) |
+| `CalloutComponent` + `CalloutComponent\IconComponent` | [`CalloutComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent.php), [`CalloutComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/CalloutComponent/IconComponent.php) | blocked | `Callout`, unbuilt in both support and schemas | [detail](#three-policies-wait-on-the-elements-they-would-colour) |
 
 Two more policies exist one package up and are tracked there, because the tier is
 per package: schemas'
@@ -78,20 +79,18 @@ Specifics for rows that are not finished — what is already in, what is left, a
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
 
-### Four policies wait on the elements they would colour
+### Three policies wait on the elements they would colour
 
-`DropdownComponent\HeaderComponent`, `DropdownComponent\ItemComponent\IconComponent`,
-the two `CalloutComponent` policies and
-`InputComponent\WrapperComponent\IconComponent` are all **blocked**, not skipped:
-each is wanted at parity and each is a handful of lines, but none has an element
-to paint yet. Porting one now would register a service nothing resolves and add
-a row to the contrast regression suite for markup that does not exist.
+`DropdownComponent\HeaderComponent`, `DropdownComponent\ItemComponent\IconComponent`
+and the two `CalloutComponent` policies are all **blocked**, not skipped: each is
+wanted at parity and each is a handful of lines, but none has an element to paint
+yet. Porting one now would register a service nothing resolves and add a row to
+the contrast regression suite for markup that does not exist.
 
-Two of the four are near: the dropdown item's `iconColor` prop is already a
+One of the three is near: the dropdown item's `iconColor` prop is already a
 tracked **todo** row in [`dropdown-item.md`](dropdown-item.md#iconcolor), and
 its icon policy is an empty map, so it lands in the same change as the prop. The
-callout pair waits on a `Callout` component in both support and schemas, and the
-input-wrapper icon on forms' affix surface.
+callout pair waits on a `Callout` component in both support and schemas.
 
 ## Semantics
 
@@ -100,9 +99,9 @@ plausibly get wrong. Permanent, and true once the row is **done**.
 
 ### An empty map is a real answer, not a missing one
 
-Three shipped policies return `[]` from `getColorMap()` — both `IconComponent`s
-here and schemas' — and that is the whole implementation, not a stub. It means
-*"swap the palette for me; I pick the shades in CSS."*
+Four shipped policies return `[]` from `getColorMap()` — the three
+`IconComponent`s here and schemas' — and that is the whole implementation, not a
+stub. It means *"swap the palette for me; I pick the shades in CSS."*
 
 It works because `ColorManager::getComponentClasses()` builds the two base
 classes (`sy-color`, `sy-color-<name>`) **before** it consults the map, so an
@@ -224,12 +223,13 @@ Filament resolves a class-string policy with `app($component)`. Sylament's
 naming the class if what comes back does not implement `HasColor`.
 
 That forces one wiring detail worth stating, because it is the single exception
-to the repo's private-by-default service rule: both policy globs in
-`SylamentSupportBundle::loadExtension()` (and the one in
-`SylamentSchemasBundle`) are `->public()`. A private service is not reachable
-through `Container::get()` at all, and the call site has only a class-string —
-there is no tag or locator to route it through, because the class-string comes
-from a Twig template, not from a compiled dependency.
+to the repo's private-by-default service rule: every policy glob is `->public()`
+— three in `SylamentSupportBundle::loadExtension()`, one per directory level
+because a glob matches a single depth, and one in `SylamentSchemasBundle`. A
+private service is not reachable through `Container::get()` at all, and the call
+site has only a class-string — there is no tag or locator to route it through,
+because the class-string comes from a Twig template, not from a compiled
+dependency.
 
 Resolving by service id makes **replacing a policy** an application-level
 extension point, and that is now a supported one rather than an accident of the

@@ -1,0 +1,100 @@
+{% props
+    disabled = false,
+    valid = true,
+
+    inlinePrefix = false,
+    inlineSuffix = false,
+    prefix = null,
+    prefixActions = [],
+    prefixIcon = null,
+    prefixIconAlias = null,
+    prefixIconColor = 'gray',
+    suffix = null,
+    suffixActions = [],
+    suffixIcon = null,
+    suffixIconAlias = null,
+    suffixIconColor = 'gray',
+
+    content = markup(block('content') ?? null)
+%}
+
+{% set visiblePrefixActions = prefixActions|filter(action => action.isVisible) %}
+{% set visibleSuffixActions = suffixActions|filter(action => action.isVisible) %}
+
+{% set iconColorPolicy = 'Sylament\\Support\\Colors\\Components\\InputComponent\\WrapperComponent\\IconComponent' %}
+{% set prefixIconColorAttrs = colorAttributes(iconColorPolicy, prefixIconColor) %}
+{% set prefixIconHtml = generateIconHtml(prefixIcon, prefixIconAlias, {
+    class: prefixIconColorAttrs.class,
+    style: prefixIconColorAttrs.style,
+}) %}
+{% set suffixIconColorAttrs = colorAttributes(iconColorPolicy, suffixIconColor) %}
+{% set suffixIconHtml = generateIconHtml(suffixIcon, suffixIconAlias, {
+    class: suffixIconColorAttrs.class,
+    style: suffixIconColorAttrs.style,
+}) %}
+
+{% set hasPrefixLabel = prefix is filled %}
+{% set hasSuffixLabel = suffix is filled %}
+{% set hasPrefix = visiblePrefixActions|length > 0 or prefixIconHtml is not empty or hasPrefixLabel %}
+{% set hasSuffix = visibleSuffixActions|length > 0 or suffixIconHtml is not empty or hasSuffixLabel %}
+
+<div
+    {{ attributes.defaults({
+        class: classes('sy sy-input-wrp', {
+            'sy-disabled': disabled,
+            'sy-invalid': not valid,
+        }),
+    }) }}
+>
+    {% if hasPrefix %}
+        <div
+            {{ attrs({
+                class: ['sy-input-wrp-prefix', {
+                    'sy-inline': inlinePrefix,
+                    'sy-input-wrp-prefix-has-label': hasPrefixLabel,
+                }],
+            }) }}
+        >
+            {% if visiblePrefixActions|length > 0 %}
+                <div class="sy-input-wrp-actions">
+                    {% for action in visiblePrefixActions %}
+                        {{ renderComponent(action) }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {{ prefixIconHtml }}
+
+            {% if hasPrefixLabel %}
+                <span class="sy-input-wrp-label">{{ prefix }}</span>
+            {% endif %}
+        </div>
+    {% endif %}
+
+    <div class="sy-input-wrp-content-ctn">{{ content }}</div>
+
+    {% if hasSuffix %}
+        <div
+            {{ attrs({
+                class: ['sy-input-wrp-suffix', {
+                    'sy-inline': inlineSuffix,
+                    'sy-input-wrp-suffix-has-label': hasSuffixLabel,
+                }],
+            }) }}
+        >
+            {% if hasSuffixLabel %}
+                <span class="sy-input-wrp-label">{{ suffix }}</span>
+            {% endif %}
+
+            {{ suffixIconHtml }}
+
+            {% if visibleSuffixActions|length > 0 %}
+                <div class="sy-input-wrp-actions">
+                    {% for action in visibleSuffixActions %}
+                        {{ renderComponent(action) }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>

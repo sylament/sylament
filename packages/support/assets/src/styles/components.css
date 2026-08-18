@@ -12,3 +12,4 @@
 @import './components/fieldset.css' layer(components);
 @import './components/pagination.css' layer(components);
 @import './components/breadcrumbs.css' layer(components);
+@import './components/input-wrapper.css' layer(components);

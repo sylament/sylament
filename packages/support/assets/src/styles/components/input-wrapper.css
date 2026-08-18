@@ -1,0 +1,78 @@
+.sy-input-wrp {
+    @apply flex rounded-lg bg-white shadow-sm ring-1 ring-gray-950/10 transition duration-75 hover:ring-gray-950/20 dark:bg-white/5 dark:ring-white/20 dark:hover:ring-white/20;
+
+    &:not(.sy-disabled):not(:has(.sy-ac:focus)) {
+        @apply focus-within:ring-2 focus-within:ring-primary-600 dark:focus-within:ring-primary-500;
+
+        &.sy-invalid {
+            @apply focus-within:ring-danger-600 dark:focus-within:ring-danger-500;
+        }
+    }
+
+    &.sy-disabled {
+        @apply bg-gray-50 dark:bg-transparent;
+
+        &:not(.sy-invalid) {
+            @apply dark:ring-white/10;
+        }
+    }
+
+    &.sy-invalid {
+        @apply ring-danger-600 dark:ring-danger-500;
+    }
+
+    & .sy-input-wrp-prefix {
+        @apply flex items-center gap-x-3 ps-3;
+
+        &.sy-inline {
+            @apply pe-2;
+
+            &.sy-input-wrp-prefix-has-label {
+                @apply pe-1;
+            }
+        }
+
+        &:not(.sy-inline) {
+            @apply border-e border-gray-200 pe-3 dark:border-white/10;
+        }
+    }
+
+    & .sy-input-wrp-content-ctn {
+        @apply min-w-0 flex-1;
+    }
+
+    & .sy-input-wrp-suffix {
+        @apply flex items-center gap-x-3 pe-3;
+
+        &.sy-inline {
+            @apply ps-2;
+
+            &.sy-input-wrp-suffix-has-label {
+                @apply ps-1;
+            }
+        }
+
+        &:not(.sy-inline) {
+            @apply border-s border-gray-200 ps-3 dark:border-white/10;
+        }
+    }
+
+    & .sy-input-wrp-actions {
+        @apply flex items-center gap-3;
+    }
+
+    & .sy-input-wrp-label {
+        @apply text-sm whitespace-nowrap text-gray-500 dark:text-gray-400;
+    }
+
+    & .sy-input-wrp-prefix,
+    & .sy-input-wrp-suffix {
+        & > .sy-icon {
+            @apply text-gray-400 dark:text-gray-500;
+
+            &.sy-color {
+                @apply text-color-500;
+            }
+        }
+    }
+}

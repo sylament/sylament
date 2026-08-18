@@ -49,6 +49,7 @@ widget at all — is the `Color policies` row in the
 | [`Icon`](../../../packages/support/templates/components/Icon/index.html.twig) | [`views/components/icon.blade.php`](../../../vendor/filament/support/resources/views/components/icon.blade.php) | done | — |
 | [`Icon button`](../../../packages/support/templates/components/IconButton/index.html.twig) | [`View/Components/IconButtonComponent.php`](../../../vendor/filament/support/src/View/Components/IconButtonComponent.php) | in progress | [icon-button.md](icon-button.md) |
 | Input | [`views/components/input/index.blade.php`](../../../vendor/filament/support/resources/views/components/input/index.blade.php) | todo | — |
+| [`Input wrapper`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`views/components/input/wrapper.blade.php`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | in progress | [input-wrapper.md](input-wrapper.md) |
 | [`Link`](../../../packages/support/templates/components/Link/index.html.twig) | [`View/Components/LinkComponent.php`](../../../vendor/filament/support/src/View/Components/LinkComponent.php) | in progress | [link.md](link.md) |
 | Loading indicator | [`views/components/loading-indicator.blade.php`](../../../vendor/filament/support/resources/views/components/loading-indicator.blade.php) | todo | — |
 | Loading section | [`views/components/loading-section.blade.php`](../../../vendor/filament/support/resources/views/components/loading-section.blade.php) | todo | — |

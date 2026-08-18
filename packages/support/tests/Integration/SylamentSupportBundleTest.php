@@ -7,6 +7,7 @@ namespace Sylament\Support\Tests\Integration;
 use Sylament\Support\Colors\Color;
 use Sylament\Support\Colors\ColorManager;
 use Sylament\Support\Colors\Components\BadgeComponent;
+use Sylament\Support\Colors\Components\InputComponent\WrapperComponent\IconComponent as InputWrapperIconComponent;
 use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
@@ -55,6 +56,14 @@ it('exposes a colour policy on the public container', function (): void {
     $container = $this::bootKernel()->getContainer();
 
     expect($container->get(BadgeComponent::class))->toBeInstanceOf(BadgeComponent::class);
+});
+
+it('exposes a colour policy nested two directories deep on the public container', function (): void {
+    // The wrapper icon policy sits one level below every other nested policy, so only the
+    // third `Colors/Components/*/*/*.php` glob reaches it.
+    $container = $this::bootKernel()->getContainer();
+
+    expect($container->get(InputWrapperIconComponent::class))->toBeInstanceOf(InputWrapperIconComponent::class);
 });
 
 it('keeps a dashed colour key that config normalization would otherwise rewrite', function (): void {

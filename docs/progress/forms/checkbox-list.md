@@ -485,7 +485,7 @@ always reached the partial's final branch and emitted
 server round-trip per click. So the guard moved into PHP where Filament keeps
 it: [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) grew
 `liveComponentClickHandlerEnabled()` / `isLiveComponentClickHandlerEnabled()` — the `Livewire` →
-`Live` [idiom translation](../renames.md#idiom), not a rename — with Filament's
+`LiveComponent` [idiom translation](../renames.md#idiom), not a rename — with Filament's
 own precedence (an explicit value wins; otherwise a URL or a form submission
 turns it off; otherwise on), and the four partials that had the inline
 expression now read the getter. Behaviour is identical for every existing
@@ -514,11 +514,19 @@ silent no-op there, but its event-dispatch and close branches are untouched.
 [`checkbox_list_controller`](../../../packages/forms/assets/src/controllers/checkbox_list_controller.ts)
 ports vendor's Alpine component, which
 [`@sylament/forms`](../../../packages/forms/assets/package.json) joined the JS
-workspace to ship. Its filter is vendor's exactly — an empty query shows
+workspace to ship. Its filter is vendor's in shape — an empty query shows
 everything, a non-empty one is a case-insensitive substring of the option's
 rendered label **or** description `innerText`, never its value — and so is the
 all-satisfied predicate that flips the two action spans, disabled boxes counting
-as satisfied. Four of its wiring points had no direct translation:
+as satisfied. One filter detail is ours rather than vendor's: the query is
+`trim()`ed before it is lowered, so a whitespace-only search shows everything
+here where vendor — whose only empty test is `['', null, undefined].includes()` —
+substring-matches those spaces and hides nearly every option. Worth knowing
+either way is that both sides re-read `innerText` on options the previous pass
+already hid, ours behind the `hidden` attribute and vendor's behind `x-show`'s
+`display: none`; an unrendered element's `innerText` falls back to `textContent`,
+which is what lets a widened query find an option it had just filtered out.
+Four wiring points had no direct translation:
 
 1. **Livewire's `interceptMessage` hook becomes a `MutationObserver`.** Vendor
    re-collects the options after every round-trip belonging to its own component
@@ -551,6 +559,25 @@ as satisfied. Four of its wiring points had no direct translation:
    [the `checked` attribute is rendered server-side](#the-checked-attribute-is-rendered-server-side) —
    the DOM is already correct when `connect()` runs, which is also what lets that
    first pass reconcile the template's hardcoded span visibility.
+
+One mechanism the filter rests on is not the controller's at all: **its `hidden`
+attributes survive a morph**. Every option the filter hides is an attribute write
+the server never made, so a re-render's HTML carries none of them and a plain
+morph would unhide the lot on the next round trip. ux-live-component prevents
+exactly that. Its `ExternalMutationTracker`
+([`live_controller.js:1064`](../../../vendor/symfony/ux-live-component/assets/dist/live_controller.js))
+runs a `MutationObserver` with `attributes: true` over the component root the
+whole time no render is in flight, filing every outside attribute write against
+the element that took it; `executeMorphdom` then reads that file back in
+idiomorph's `beforeNodeMorphed` callback — `:917` looks the element up and calls
+`applyToElement()` on the **incoming** node, which at `:1043` replays the recorded
+`setAttribute` / `removeAttribute` pairs — so the new markup arrives already
+carrying the filter's decisions. Nothing in the port asks for this and nothing
+would report it missing: without it a search would silently reset itself on every
+`live()` update, which is why it is recorded here rather than left as the reason
+a bug never happened. It is also the division of labour behind point 1 above — the
+observer is for the options a morph **adds or removes**, not for the attributes it
+would otherwise erase.
 
 One behavioural divergence, in the empty-filtered-set corner. Vendor compares
 `visible.length === satisfied.length`, which is vacuously true for an empty set,

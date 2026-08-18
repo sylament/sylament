@@ -326,6 +326,24 @@ ships no JavaScript to set it. The selector cannot match, so the rules would be
 dead weight in the built stylesheet. They come back only if a tri-state checkbox
 ever lands with a controller behind it.
 
+### The checkbox and radio pin their checked glyph's size and placement
+
+Both control rules add three declarations vendor's do not carry — `bg-center`
+and `bg-no-repeat` in the `@apply` list, and a literal
+`background-size: 1rem 1rem` beside it — in
+[`checkbox.css`](../../../packages/forms/assets/src/styles/components/checkbox.css)
+and
+[`radio.css`](../../../packages/forms/assets/src/styles/components/radio.css)
+alike. The glyph is a `background-image` data URI on an `appearance-none` box,
+and the SVG declares a `viewBox` and no intrinsic width or height, so with
+nothing said a browser sizes it from the background positioning area and the
+mark tracks the box. Vendor leaves it there; the port states the intended
+result, which is the same 1rem mark at the shipped `size-4` and a mark that
+stays 1rem if a host ever resizes the control. Recorded because it is an
+addition to a rule otherwise ported line for line — the checkbox's landed first
+and went unrecorded, and the radio copied it — and it reverses by deleting all
+three from both files, which renders identically today.
+
 ### The two text controls invent a hover ring
 
 `.sy-fo-input` and `.sy-fo-select` both carry

@@ -118,9 +118,8 @@ port here, so the union is `array|string|Closure|null` and the getter has no
 [drops the same arm](text-input.md#the-datalist-drops-the-arrayable-arm) for the
 same reason.
 
-The enum class-string arm this divergence used to sit beside is **no longer**
-dropped: `options(MyEnum::class)` seeds `enum()` and expands the cases exactly as
-Filament does. Only the Laravel contract stays out.
+Only the Laravel contract stays out; the enum class-string arm this divergence
+used to sit beside is [restored below](#the-enum-class-string-arm-is-no-longer-dropped).
 
 One consequence of the string arm existing at all: a string that names no enum —
 `options('date')` — is a value, not a callable and not an enum, so `getOptions()`
@@ -129,3 +128,14 @@ returning the string out of an `array` return type as Filament's would. It does
 not fail open: an option field over an empty map builds a `Choice` with no
 choices, so every submitted value is rejected. Filament fatals on the same input
 instead, which is the only place the port is softer here.
+
+### The enum class-string arm is no longer dropped
+
+**A retired divergence, kept as its own record.** `options(MyEnum::class)` seeds
+[`enum()`](has-enum.md) and expands the cases
+exactly as Filament does. The arm was dropped alongside the `Arrayable` one while
+nothing consumed it — an enum class-string reaching a port with no `HasEnum` had
+nowhere to go — and it came back with that concern, on every option field at once.
+Recorded here rather than deleted because the trail carried it as a divergence for
+several epics, so a reader meeting the old note elsewhere needs the reversal to be
+findable.

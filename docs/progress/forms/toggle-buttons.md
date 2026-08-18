@@ -53,6 +53,7 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 | `getDefaultState()` — a `bool` default coerced to `1`/`0` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | — |
 | `getDefaultStateCasts()` — the option cast, or its array form when multiple | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](radio.md#the-cast-chain-collapses-to-whatever-boolean-installs) |
 | `getEnumDefaultStateCast()` — `EnumStateCast`, or `EnumArrayStateCast` when multiple | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [detail](has-enum.md) |
+| `getIconAlias()` — no Filament source; which of the `boolean()` icons is an overridable default | — | done | — | [semantics](#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time) |
 | `hasNullableBooleanState()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](field.md#hasnullablebooleanstate-has-exactly-one-consumer) |
 | `getInValidationRuleValues()` / `hasInValidationOnMultipleValues()` → `buildValidationConstraints()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) · [semantics](select.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) |
 | `required()` — the standard `NotBlank`, in both multiplicities | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-means-at-least-one-answer-in-both-multiplicities) |
@@ -500,7 +501,11 @@ would fail against vendor's order.
 
 Nothing about the *rendered* markup differs otherwise: an extra attribute the
 field does not compute lands identically either way. Only a **collision** parts
-the two, on the ten the input computes for itself.
+the two, on what each input computes for itself — ten attributes in the default
+variant, nine in the grouped one, which has no `autofocus` to emit. One of those
+cannot collide at all: `attrs()` merges `class` as a token list rather than
+letting a later source replace it, so an extra class joins the control's own
+instead of displacing them, and the precedence question never arises.
 
 ### `extraAttributes()` stays on the field wrapper
 

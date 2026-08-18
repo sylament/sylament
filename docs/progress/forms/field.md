@@ -209,7 +209,9 @@ branch. A tag name would otherwise be interpolated into markup — a sink the
 template would have to sanitize for no gain, since no field wants a third tag.
 [`Repeater`](repeater.md)'s two partials are the first callers
 (`:labelAsHeading="true"`, with `aria-labelledby` pointed at the `-label` id);
-`Radio` / `CheckboxList` and the rest opt in the same way when they land.
+[`Radio`](radio.md), [`CheckboxList`](checkbox-list.md) and
+[`ToggleButtons`](toggle-buttons.md) — both its variants — opted in the same way
+when they landed, and the rest will.
 Recorded in the [rename table](../renames.md). Reversible into a tag-name prop if
 a field ever needs an element these two arms cannot spell.
 

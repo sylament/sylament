@@ -54,10 +54,12 @@ absence under an undescribed one, from both a literal map and the enum fallback 
 is covered by
 [`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php)
 and
-[`CheckboxListTest`](../../../packages/forms/tests/Integration/Components/CheckboxListTest.php),
-the second of which also covers the map being **written** by a component rather
-than a caller, from
-[`CheckboxList`'s record-shaped description closure](checkbox-list.md#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query).
+[`CheckboxListTest`](../../../packages/forms/tests/Integration/Components/CheckboxListTest.php).
+The map being **written** by a component rather than a caller — from
+[`CheckboxList`'s record-shaped description closure](checkbox-list.md#the-two-record-shaped-closures-build-labels-and-descriptions-off-one-query) —
+is covered a file over, in
+[`CheckboxListRelationshipTest`](../../../packages/forms/tests/Integration/Components/CheckboxListRelationshipTest.php),
+which is where the relationship arm's Doctrine rig lives.
 
 ## Semantics
 

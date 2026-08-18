@@ -43,11 +43,15 @@ to every other concern only one built component uses:
 `CanSelectPlaceholder` is `Select`'s
 alone in the port and lives in [`select.md`](select.md), `CanAllowHtml` is
 `CheckboxList`'s and lives in
-[`checkbox-list.md`](checkbox-list.md#canallowhtml-opens-exactly-one-hole),
-`HasToggleIcons` and `HasToggleColors` are
+[`checkbox-list.md`](checkbox-list.md#canallowhtml-opens-exactly-one-hole) —
+which folds its detail without folding its row, for the reason the
+[Features](#features) note gives — `HasToggleIcons` and `HasToggleColors` are
 `Toggle`'s alone and live in [`toggle.md`](toggle.md), `HasStep`,
 `HasDatalistOptions` and `CanBeAutocapitalized` are `TextInput`'s alone and live
-in [`text-input.md`](text-input.md), and `CanBeCloned` and `CanGenerateUuids` are
+in [`text-input.md`](text-input.md), `HasColors`, `HasIcons` and `HasTooltips`
+are `ToggleButtons`' alone and live in
+[`toggle-buttons.md`](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone),
+and `CanBeCloned` and `CanGenerateUuids` are
 `Repeater`'s alone and live in
 [`repeater.md`](repeater.md) — which also carries `helpers.php`, whose two
 reorder functions no other component calls — while `CanBeInline` and
@@ -75,10 +79,13 @@ them until the option fields arrived, and they now carry
 `CanLimitItemsLength` is the same move one epic later — `Repeater`'s alone until
 `CheckboxList` composed the identical trait — now carrying
 [`can-limit-items-length.md`](can-limit-items-length.md) and a row below.
-`CanBeAutocapitalized` is the one fold Filament agrees with — it composes that
-trait on `TextInput` and nothing else, so no unported consumer is queued to
-promote it. [`support/component.md`](../support/component.md) is the shape each
-detail file follows.
+`CanBeAutocapitalized` and the three
+`ToggleButtons` concerns are the four folds Filament agrees with — it composes
+`CanBeAutocapitalized` on `TextInput` and `HasColors` / `HasIcons` /
+`HasTooltips` on `ToggleButtons`, each on that class and nothing else, so no
+unported consumer is queued to promote any of them.
+[`support/component.md`](../support/component.md) is the shape each detail file
+follows.
 
 ## Components
 
@@ -146,7 +153,8 @@ and is tracked in
 [`checkbox-list.md`](checkbox-list.md), `Toggle`'s
 `HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md),
 `TextInput`'s `HasStep`, `HasDatalistOptions` and `CanBeAutocapitalized` into
-[`text-input.md`](text-input.md), and
+[`text-input.md`](text-input.md), `ToggleButtons`' `HasColors`, `HasIcons` and
+`HasTooltips` into [`toggle-buttons.md`](toggle-buttons.md), and
 `Repeater`'s two (`CanBeCloned`, `CanGenerateUuids`)
 into [`repeater.md`](repeater.md), per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). The shared
@@ -154,28 +162,31 @@ ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and
 `CanBeAutocompleted` are used by `TextInput` and `Textarea`, `CanBeInline` and
 `CanBeAccepted` by `Checkbox` and `Toggle`, `BelongsToRelationship` by `Select`
 and `Repeater`, `HasRelationship` and `CanLimitItemsLength` by `Select` /
-`Repeater` and `CheckboxList`,
-`HasOptions` and `CanDisableOptions` by every option field, and
-`HasExtraInputAttributes` by
-`TextInput`, `Textarea`, `Select`, `Checkbox`, `Toggle`, `Radio`,
-`ToggleButtons` and `CheckboxList`. `HasEnum` stays below
-too, on the other test: `Field` composes it, so every field has it.
+`Repeater` and `CheckboxList`, `HasOptions` and `CanDisableOptions` by every
+option field, and `HasExtraInputAttributes` by `TextInput`, `Textarea`,
+`Select`, `Checkbox`, `Toggle`, `Radio`, `ToggleButtons` and `CheckboxList`.
+`HasEnum` stays below too, on the other test: `Field` composes it, so every
+field has it.
 
 Every concern that was listed here **ahead of** the field composing it now has
-that field. [`HasDescriptions`](has-descriptions.md) is `Radio`'s and
-`CheckboxList`'s and [`HasGridDirection`](has-grid-direction.md) theirs and
-`ToggleButtons`', both clearing the shared bar so each keeps a file;
-`CanAllowHtml` and `CanBeSearchable` held bare rows only until the file they fold
-into existed, and both now point into
-[`checkbox-list.md`](checkbox-list.md) — `CanBeSearchable` promoting back to a
-file of its own when `Select`'s search lands and gives it a second consumer with
-a server-side arm. `HasColors`, `HasIcons`
-and `HasTooltips` were three more until
+that field, and each then went one of two ways.
+[`HasDescriptions`](has-descriptions.md) is `Radio`'s and `CheckboxList`'s and
+[`HasGridDirection`](has-grid-direction.md) theirs and `ToggleButtons`', both
+clearing the shared bar so each keeps a row and a file of its own, while
+`HasColors`, `HasIcons` and `HasTooltips` landed on
 [`ToggleButtons`](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone)
-landed as their sole consumer and took their detail, and
-[`CanLimitItemsLength`](can-limit-items-length.md) was never one of them:
-`Repeater` composes it too, and `CheckboxList` being its second consumer is what
-promoted it out of [`repeater.md`](repeater.md) ahead of that field landing.
+as their sole consumer and folded out of the table entirely, exactly as the
+single-use concerns above did. `CanAllowHtml` and `CanBeSearchable` are the two
+that keep a row while folding their detail into
+[`checkbox-list.md`](checkbox-list.md), because for both the second consumer is
+one epic away rather than hypothetical: the
+[searchable-select epic](../roadmap.md#m3--forms-widening) gives `Select` both —
+`searchable()` with the server-side arm a checkbox list has no use for, and
+`allowHtml()` — at which point each is a shared concern with a file of its own
+and the row is already there to repoint. [`CanLimitItemsLength`](can-limit-items-length.md)
+was never one of either group: `Repeater` composes it too, and `CheckboxList`
+being its second consumer is what promoted it out of
+[`repeater.md`](repeater.md) ahead of that field landing.
 
 | Feature | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -196,14 +207,12 @@ promoted it out of [`repeater.md`](repeater.md) ahead of that field landing.
 | CanFixIndistinctState | [`Components/Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — |
 | [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) | [`Components/Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | [can-limit-items-length.md](can-limit-items-length.md) |
 | HasAffixes | [`Components/Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | todo | — |
-| [`HasColors`](../../../packages/forms/src/Components/Concerns/HasColors.php) | [`Components/Concerns/HasColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasColors.php) | done | [toggle-buttons.md](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone) |
 | [`HasDescriptions`](../../../packages/forms/src/Components/Concerns/HasDescriptions.php) | [`Components/Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | [has-descriptions.md](has-descriptions.md) |
 | [`HasEnum`](../../../packages/forms/src/Components/Concerns/HasEnum.php) | [`Components/Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | done | [has-enum.md](has-enum.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Components/Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | [has-extra-input-attributes.md](has-extra-input-attributes.md) |
 | HasExtraItemActions | [`Components/Concerns/HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | todo | — |
 | HasFileAttachments | [`Components/Concerns/HasFileAttachments.php`](../../../vendor/filament/forms/src/Components/Concerns/HasFileAttachments.php) | todo | — |
 | [`HasGridDirection`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php) | [`Components/Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | [has-grid-direction.md](has-grid-direction.md) |
-| [`HasIcons`](../../../packages/forms/src/Components/Concerns/HasIcons.php) | [`Components/Concerns/HasIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasIcons.php) | done | [toggle-buttons.md](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone) |
 | HasInputMode | [`Components/Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | skipped | [text-input.md](text-input.md#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
 | HasLoadingMessage | [`Components/Concerns/HasLoadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasLoadingMessage.php) | todo | — |
 | HasMaxHeight | [`Components/Concerns/HasMaxHeight.php`](../../../vendor/filament/forms/src/Components/Concerns/HasMaxHeight.php) | todo | — |
@@ -213,7 +222,6 @@ promoted it out of [`repeater.md`](repeater.md) ahead of that field landing.
 | HasPivotData | [`Components/Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | [select.md](select.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | HasPreview | [`Components/Concerns/HasPreview.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPreview.php) | todo | — |
 | [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — no Filament concern of its own; the relation surface `Select` and `CheckboxList` share, split off the class | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) · [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | [select.md](select.md#relationship-is-three-lazy-closures-over-the-association-reader) · [checkbox-list.md](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged) |
-| [`HasTooltips`](../../../packages/forms/src/Components/Concerns/HasTooltips.php) | [`Components/Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | done | [toggle-buttons.md](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone) |
 | HasUploadingMessage | [`Components/Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | todo | — |
 | InteractsWithForms | [`Concerns/InteractsWithForms.php`](../../../vendor/filament/forms/src/Concerns/InteractsWithForms.php) | todo | — |
 | InteractsWithToolbarButtons | [`Components/Concerns/InteractsWithToolbarButtons.php`](../../../vendor/filament/forms/src/Components/Concerns/InteractsWithToolbarButtons.php) | todo | — |
@@ -260,4 +268,4 @@ directory collapses that whole subtree into one navigational entry.
 | [`SylamentFormsBundle`](../../../packages/forms/src/SylamentFormsBundle.php) | [`FormsServiceProvider.php`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | in progress | [forms-bundle.md](forms-bundle.md) |
 | [`helpers.php`](../../../packages/forms/src/helpers.php) | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | [repeater.md](repeater.md) |
 | [Styles](../../../packages/forms/assets/src/styles) | [`resources/css/`](../../../vendor/filament/forms/resources/css) | in progress | [styles.md](styles.md) |
-| [Scripts](../../../packages/forms/assets/src/controllers) | [`resources/js/`](../../../vendor/filament/forms/resources/js) | in progress | the `@sylament/forms` workspace ships one Stimulus controller, `checkbox-list`, of vendor's fourteen — [checkbox-list.md](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) |
+| [Scripts](../../../packages/forms/assets/src/controllers) | [`resources/js/`](../../../vendor/filament/forms/resources/js) | in progress | the `@sylament/forms` workspace ships one Stimulus controller, `checkbox-list`, of vendor's twelve — [checkbox-list.md](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) |

@@ -271,7 +271,12 @@ whose vendor sources key off `.fi-invalid` in exactly the same way, and it holds
 for the same two reasons: the attribute is the part a screen reader reads, and one
 emission serves both jobs where the vendor pair serves only styling. The `valid`
 half has nothing to key at all — the base rule *is* the valid state — so it is
-dropped rather than emitted as a class no stylesheet mentions. Reversible by
+dropped rather than emitted as a class no stylesheet mentions. It is passed as a
+bare boolean rather than the plan's `'true'`-or-`null` ternary, so a valid field
+renders `aria-invalid="false"` instead of dropping the attribute: that is what
+`Checkbox`, `Toggle`, `Select`, `Textarea` and `TextInput` already emit — the bag
+[stringifies booleans for `aria-` names](../../../CLAUDE.md) — and one spelling
+across every control beats a per-field ternary. Reversible by
 adding the pair back if a consumer's CSS ever needs a class hook the attribute
 selector cannot give it; nothing in the toolkit styles either name today.
 

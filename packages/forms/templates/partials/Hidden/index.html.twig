@@ -1,0 +1,7 @@
+<input {{ attrs({
+    class: ['sy', 'sy-fo-hidden'],
+    type: 'hidden',
+    id: component.getId,
+    'data-model': component.getDataModel,
+    value: component.getState ?? '',
+}, component.getExtraAttributes) }}>

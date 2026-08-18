@@ -1,0 +1,12 @@
+{# A custom view field owns its own chrome: the wrapper is opened here, by the user's template, never by the field. #}
+<twig:SylamentForms:FieldWrapper :field="component">
+    <input {{ attrs({
+        class: 'sy-fo-input',
+        type: 'text',
+        id: component.getId,
+        'data-model': component.getDataModel,
+        value: component.getState ?? '',
+        'data-note': note ?? null,
+        'data-hint': hint ?? null,
+    }) }}>
+</twig:SylamentForms:FieldWrapper>

@@ -1,0 +1,8 @@
+{# The same field with no wrapper: nothing adds one, so this renders a naked control. #}
+<input {{ attrs({
+    class: ['sy', 'sy-fo-input'],
+    type: 'text',
+    id: component.getId,
+    'data-model': component.getDataModel,
+    value: component.getState ?? '',
+}) }}>

@@ -429,9 +429,11 @@ split the work: the wrapper paints the surface — `rounded-lg bg-white shadow-s
 ring-1 ring-gray-950/10 dark:bg-white/5 dark:ring-white/20` — and owns the focus
 ring through `focus-within:ring-2`, while `select.fi-select-input` is
 `border-none bg-transparent w-full` with `focus:ring-0 focus:outline-none` so it
-defers to it. Neither component is ported
-([both **todo**](README.md#components)), so the footer renders a bare
-`<select class="sy-pagination-per-page-select">` and that one element carries
+defers to it. Support ships the wrapper now
+([input-wrapper.md](input-wrapper.md)), but the select itself is still
+[**todo**](README.md#components) and this footer has not been migrated onto
+the wrapper in this epic — a follow-up, not done here — so the footer renders a
+bare `<select class="sy-pagination-per-page-select">` and that one element carries
 both halves: the wrapper's surface, the select's own `block appearance-none
 py-1.5 ps-3 pe-8 text-sm leading-6 text-gray-950 dark:text-white` with the
 chevron data URI and the `[&_option]` colours, and the wrapper's focus ring

@@ -1459,8 +1459,9 @@ unstyled table.
 component it contains: `.fi-input-wrp` paints the chrome, an inner
 `.fi-input-wrp-prefix.fi-inline` holds the icon, and
 `input.fi-input.fi-input-has-inline-prefix` sits in a
-`.fi-input-wrp-content-ctn` beside it. Support ships no input-wrapper component
-to compose (its port is [blocked](../forms/field.md#the-input-affix-wrapper-is-not-ported))
+`.fi-input-wrp-content-ctn` beside it. Support ships that component now
+([input-wrapper.md](../support/input-wrapper.md)), but this field predates it
+and has not been migrated onto it in this epic — a follow-up, not done here —
 and the field itself is [ported inline into the partial](README.md) rather than
 as a component, so four vendor elements collapse to two — `<label
 class="sy-ta-search-field">` holding the icon and the input directly — and three
@@ -1489,8 +1490,8 @@ dark:bg-transparent }`) and its focus guard
 (`&:not(.fi-disabled):not(:has(.fi-ac-action:focus))`, which suppresses the
 wrapper ring while a prefix action holds focus) both key off DOM this partial
 does not emit — no `sy-disabled` on the field, and no action mounted inside it.
-Both return with the input-wrapper component, along with the two-layer structure
-that would make the flattening unnecessary.
+Both return once this field migrates onto the input-wrapper component, along
+with the two-layer structure that migration would restore.
 
 ### `items-center` is lifted onto the search field, because the prefix that carried it is gone
 
@@ -1517,8 +1518,8 @@ centred as a direct child. Both are no-ops while the input is the tallest thing
 in the field — it is what sets the height — so they part only if the field is
 ever given a height of its own or a taller sibling, at which point vendor's input
 would grow and ours would stay at its natural height, centred. Nothing sets
-either, and the divergence closes with the same input-wrapper component the rest
-of the flattening waits on.
+either, and the divergence closes with the same migration onto the
+input-wrapper component the rest of the flattening waits on.
 
 ### The search input adds an `outline-none` vendor does not have
 

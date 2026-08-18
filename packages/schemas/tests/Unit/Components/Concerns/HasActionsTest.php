@@ -6,6 +6,7 @@ namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
 
 use Sylament\Actions\Action;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Tests\Fixtures\Components\AffixActionField;
 
 it('keys registered actions by name', function (): void {
     $component = new Component();
@@ -152,6 +153,49 @@ it('walks every dotted segment through getModalAction()', function (): void {
     ]);
 
     expect($component->getAction('save.confirm.really')?->getName())->toBe('really');
+});
+
+it('splices affix actions between the default and registered actions', function (): void {
+    $component = new class extends AffixActionField {
+        public function getDefaultActions(): array
+        {
+            return [Action::make('defaultOne')];
+        }
+    };
+    $component
+        ->prefixActions(['prefixOne' => Action::make('prefixOne')])
+        ->suffixActions(['suffixOne' => Action::make('suffixOne')])
+        ->registerActions([Action::make('registered')]);
+
+    expect(array_keys($component->getActions()))
+        ->toBe(['defaultOne', 'prefixOne', 'suffixOne', 'registered']);
+});
+
+it('lets a registered action override a same-named affix action', function (): void {
+    $component = new AffixActionField();
+    $component
+        ->prefixActions(['save' => Action::make('save')->label('Prefix')])
+        ->registerActions([Action::make('save')->label('Registered')]);
+
+    expect($component->getActions()['save']->getLabel())->toBe('Registered');
+});
+
+it('lets a suffix action override a same-named prefix action', function (): void {
+    $component = new AffixActionField();
+    $component
+        ->prefixActions(['save' => Action::make('save')->label('Prefix')])
+        ->suffixActions(['save' => Action::make('save')->label('Suffix')]);
+
+    expect($component->getActions()['save']->getLabel())->toBe('Suffix');
+});
+
+it('resolves an affix action by name through getAction()', function (): void {
+    $component = new AffixActionField();
+    $createOption = Action::make('createOption');
+    $component->suffixActions(['createOption' => $createOption]);
+
+    expect($component->getAction('createOption'))->toBe($createOption)
+        ->and($component->hasAction('createOption'))->toBeTrue();
 });
 
 it('returns null when a dotted tail does not resolve', function (): void {

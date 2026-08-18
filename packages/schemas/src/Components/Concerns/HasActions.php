@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Components\Concerns;
 use Closure;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
+use Sylament\Schemas\Components\Contracts\HasAffixActions;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\wrap;
@@ -111,6 +112,14 @@ trait HasActions
             foreach (wrap($this->evaluate($defaultAction)) as $action) {
                 $this->cachedActions[$action->getName()] = $this->prepareAction($action);
             }
+        }
+
+        if ($this instanceof HasAffixActions) {
+            $this->cachedActions = [
+                ...$this->cachedActions,
+                ...$this->getPrefixActions(),
+                ...$this->getSuffixActions(),
+            ];
         }
 
         foreach ($this->actions as $registeredAction) {

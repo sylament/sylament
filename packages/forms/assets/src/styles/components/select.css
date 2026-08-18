@@ -77,7 +77,9 @@ select.sy-fo-select-has-inline-prefix {
 }
 
 .sy-fo-select-control {
-    @apply relative flex min-h-9 w-full flex-wrap items-center gap-1.5 overflow-hidden bg-no-repeat py-1.5 pe-8 ps-3 text-start text-sm leading-6 text-gray-950 dark:text-white;
+    /* `dropdown_input` makes this element the focus node and gives it a real tab stop, so
+       the only visible focus ring must stay `.sy-input-wrp`'s `focus-within` one. */
+    @apply relative flex min-h-9 w-full flex-wrap items-center gap-1.5 overflow-hidden bg-no-repeat py-1.5 pe-8 ps-3 text-start text-sm leading-6 text-gray-950 focus:outline-none dark:text-white;
 
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
     background-position: right 0.5rem center;

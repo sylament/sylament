@@ -481,7 +481,7 @@ are one contract with the
 [controller](forms-bundle.md#the-select-controller-is-a-thin-binding-over-a-bundled-tom-select-not-a-port-of-filaments-select-utility): a class renamed on either side breaks the paint in
 silence, and no test in this repo renders the control.
 
-Four consequences worth stating.
+Five consequences worth stating.
 
 **The native rules are element-qualified now.** Tom Select copies the source
 `<select>`'s class list onto its wrapper (`tom-select.ts:168-174`), so
@@ -510,6 +510,24 @@ the children of a flex control — both declarations are — except for the one 
 it would do here, blockifying the multi chip from the `.sy-badge`'s `inline-flex`
 to `block` and taking the label/delete-button row with it. It is dropped rather
 than excepted.
+
+**The control suppresses its own focus outline; the wrapper's `focus` class needs no
+rule.** Vendor's `.fi-select-input-btn` carries `focus:ring-0 focus:outline-none`
+because the visible ring belongs to the input wrapper, and the same split holds
+here — except that here the outline half is load-bearing rather than defensive.
+`dropdown_input`'s before-setup hook points Tom Select's `focus_node` at the
+control `<div>` (`plugins/dropdown_input/plugin.ts`), and `enable()` gives that
+node `tabIndex = this.tabIndex` (`tom-select.ts:2624`), so a searchable select's
+control is a real tab stop: the UA paints its own outline there on top of
+`.sy-input-wrp`'s `focus-within:ring-2` — a double ring under keyboard focus in
+Chrome and under any focus in Firefox, since the scoped preflight resets no
+outline and adds `:-moz-focusring { outline: auto }`. `focus:outline-none` on
+`.sy-fo-select-control` is the whole fix. The `ring-0` half is not ported: no rule
+of ours puts a ring on the control, so it would only emit a `box-shadow` chain
+nothing reads. Tom Select's `focus` class on the wrapper (`tom-select.ts:2194`)
+likewise gets no rule — the ring is already painted one element out. A
+non-searchable select keeps `focus_node` on the control's text box, which the
+control's `> input` reset already covers.
 
 **Two Filament effects are deliberately not reproduced.** The in-dropdown search
 row is not `sticky top-0 z-10 bg-white`: `dropdown_input` inserts it as a sibling

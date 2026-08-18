@@ -146,6 +146,28 @@ Consumers never need Tailwind installed.
     copied beside the woff2 by `assets/scripts/copy-fonts.mjs`: the SIL Open Font
     License requires the notice to travel with a redistributed font file, and the
     split `sylament/support` publishes only `dist`.
+11. **A class a bundled JS library emits is styled under a `sy-` wrapper class
+    supplied through the library's own class settings, or — where the library
+    hardcodes the class onto an element we render — qualified by that element's
+    own `sy-` class. Never a bare vendor class at the top level, and never
+    re-emitted from Twig.** Rule 1 governs templates, and these classes are
+    JS-generated, so the question rule 1 does not answer is what a *stylesheet*
+    may select. The stylesheet is page-wide and unscoped by nesting, so a
+    top-level `.ts-dropdown` would silently style a host app's own widget of the
+    same name. Both halves of the answer are in
+    [`forms/select.css`](../packages/forms/assets/src/styles/components/select.css),
+    the toolkit's first bundled-library skin: the settings Tom Select does expose
+    carry ours alongside its own (`dropdownClass: 'sy-dropdown-panel
+    sy-fo-select-dropdown ts-dropdown'`), and the state classes it hardcodes are
+    reached through them (`.sy-fo-select-ctn.has-items`,
+    `.sy-fo-select-dropdown .highlight`, and
+    `select.sy-fo-select.ts-hidden-accessible`, where the library stamps its class
+    onto our own `<select>`). Nothing changes for a consumer: the `sy-` half is
+    the public hook, and the vendor half is an implementation detail of whichever
+    version we bundle. The cost is a two-sided contract with the controller that
+    supplies those settings — record it on both sides
+    ([forms styles.md](progress/forms/styles.md#the-js-select-skin-styles-tom-selects-dom-not-filaments)),
+    because a rename on either side breaks the paint in silence.
 
 ## How consumers customize
 

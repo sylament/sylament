@@ -781,3 +781,198 @@ it('rejects a probed value whose option is disabled', function (): void {
     expect($choice)->toHaveCount(1)
         ->and($choice[0]->choices)->toBe([]);
 });
+
+/*
+ * The JS branch's rendered contract. The `<select>` stays — same id, name and
+ * `sy-fo-select` class, its options the no-JS fallback — but drops `data-model`,
+ * because the controller owns the write-back, and gains `data-skip-morph` plus
+ * the Stimulus values `sylament--forms--select` reads at connect.
+ */
+
+/**
+ * The `data-sylament--forms--select-<name>-value` attribute a Stimulus value renders
+ * as, or null when the value was skipped for being unset.
+ */
+function selectValue(Crawler $select, string $name): ?string
+{
+    return $select->attr('data-sylament--forms--select-' . $name . '-value');
+}
+
+it('binds the JS branch to the select controller and carries every value it reads', function (): void {
+    $host = new FieldRenderHost();
+    $host->data['status'] = 'published';
+
+    $crawler = new Crawler(renderToHtml(
+        Schema::make($host)->statePath('data')->components([
+            Select::make('status')
+                ->label('Status')
+                ->searchable()
+                ->searchValues()
+                ->options(['draft' => 'Draft', 'published' => 'Published'])
+                ->placeholder('Pick a status')
+                ->searchDebounce(250)
+                ->optionsLimit(10)
+                ->searchPrompt('Type a status...')
+                ->searchingMessage('Looking...')
+                ->noSearchResultsMessage('Nothing matches.')
+                ->noOptionsMessage('Nothing to pick.')
+                ->loadingMessage('Hold on...')
+                ->maxItemsMessage('Only three, please.')
+                ->wrapOptionLabels(false),
+        ]),
+    ));
+
+    $select = $crawler->filter('select.sy-fo-select');
+
+    expect($select->count())->toBe(1)
+        ->and($select->attr('data-controller'))->toBe('sylament--forms--select')
+        ->and($select->attr('data-model'))->toBeNull()
+        ->and($select->attr('data-skip-morph'))->toBe('true')
+        ->and($select->attr('id'))->toBe('status')
+        ->and($select->attr('name'))->toBe('status');
+
+    expect(selectValue($select, 'key'))->toBe('status')
+        ->and(selectValue($select, 'state-path'))->toBe('data.status')
+        ->and(selectValue($select, 'model-binding'))->toBe('norender|data.status')
+        ->and(selectValue($select, 'options'))->toBe('[{"label":"Draft","value":"draft","isDisabled":false},{"label":"Published","value":"published","isDisabled":false}]')
+        ->and(selectValue($select, 'selected-options'))->toBe('[{"value":"published","label":"Published"}]')
+        ->and(selectValue($select, 'can-select-placeholder'))->toBe('true')
+        ->and(selectValue($select, 'searchable'))->toBe('true')
+        ->and(selectValue($select, 'dynamic-search-results'))->toBe('false')
+        ->and(selectValue($select, 'initial-no-options-message'))->toBe('true')
+        ->and(selectValue($select, 'search-debounce'))->toBe('250')
+        ->and(selectValue($select, 'options-limit'))->toBe('10')
+        ->and(selectValue($select, 'max-items-message'))->toBe('Only three, please.')
+        ->and(selectValue($select, 'html-allowed'))->toBe('false')
+        ->and(selectValue($select, 'labels-wrap'))->toBe('false')
+        ->and(selectValue($select, 'search-fields'))->toBe('["label","value"]')
+        ->and(selectValue($select, 'placeholder'))->toBe('Pick a status')
+        ->and(selectValue($select, 'search-prompt'))->toBe('Type a status...')
+        ->and(selectValue($select, 'searching-message'))->toBe('Looking...')
+        ->and(selectValue($select, 'no-search-results-message'))->toBe('Nothing matches.')
+        ->and(selectValue($select, 'no-options-message'))->toBe('Nothing to pick.')
+        ->and(selectValue($select, 'loading-message'))->toBe('Hold on...')
+        ->and(selectValue($select, 'badge-class'))->toStartWith('sy-badge sy-size-md sy-color sy-color-primary ')
+        ->and(selectValue($select, 'badge-class'))->toContain('sy-text-color-');
+
+    expect(selectValue($select, 'max-items'))->toBeNull()
+        ->and(selectValue($select, 'position'))->toBeNull();
+});
+
+it('carries the max-items pair and the position of a multiple select', function (): void {
+    $select = new Crawler(renderField(
+        Select::make('tags')
+            ->multiple()
+            ->options(['a' => 'A', 'b' => 'B'])
+            ->maxItems(2)
+            ->position('top'),
+    ))->filter('select.sy-fo-select');
+
+    expect($select->attr('multiple'))->not->toBeNull()
+        ->and(selectValue($select, 'max-items'))->toBe('2')
+        ->and(selectValue($select, 'max-items-message'))->toBe('Only 2 can be selected.')
+        ->and(selectValue($select, 'position'))->toBe('top')
+        ->and(selectValue($select, 'searchable'))->toBe('true');
+});
+
+it('renders the current selection as an option the map does not carry', function (): void {
+    $host = new FieldRenderHost();
+    $host->data['author'] = '7';
+
+    $options = new Crawler(renderToHtml(
+        Schema::make($host)->statePath('data')->components([
+            Select::make('author')->searchable()->getOptionLabelUsing(fn (): string => 'Ada Lovelace'),
+        ]),
+    ))->filter('select.sy-fo-select option');
+
+    expect($options->count())->toBe(2)
+        ->and($options->eq(1)->attr('value'))->toBe('7')
+        ->and($options->eq(1)->attr('selected'))->not->toBeNull()
+        ->and($options->eq(1)->text())->toBe('Ada Lovelace');
+});
+
+it('appends only the selected values the option map is missing', function (): void {
+    $host = new FieldRenderHost();
+    $host->data['tags'] = ['b', 'gone'];
+
+    $options = new Crawler(renderToHtml(
+        Schema::make($host)->statePath('data')->components([
+            Select::make('tags')->multiple()->options(['a' => 'A', 'b' => 'B']),
+        ]),
+    ))->filter('select.sy-fo-select option');
+
+    expect($options->count())->toBe(4)
+        ->and($options->eq(2)->attr('value'))->toBe('b')
+        ->and($options->eq(2)->attr('selected'))->not->toBeNull()
+        ->and($options->eq(3)->attr('value'))->toBe('gone')
+        ->and($options->eq(3)->attr('selected'))->not->toBeNull()
+        ->and($options->eq(3)->text())->toBe('gone');
+
+    // A selected option's value is stringified while an int-keyed map is not, so the
+    // membership test has to compare across the two.
+    $intKeyed = new FieldRenderHost();
+    $intKeyed->data['status'] = '1';
+
+    expect(new Crawler(renderToHtml(
+        Schema::make($intKeyed)->statePath('data')->components([
+            Select::make('status')->searchable()->options([1 => 'One', 2 => 'Two']),
+        ]),
+    ))->filter('select.sy-fo-select option')->count())->toBe(3);
+});
+
+it('strips the HTML of an allowHtml() option out of the fallback markup, never out of the JS payload', function (): void {
+    $select = new Crawler(renderField(
+        Select::make('status')->allowHtml()->options(['draft' => '<b>Draft</b>']),
+    ))->filter('select.sy-fo-select');
+
+    $options = $select->filter('option');
+
+    expect($options->eq(1)->text())->toBe('Draft')
+        ->and($options->eq(1)->filter('b')->count())->toBe(0)
+        ->and(selectValue($select, 'html-allowed'))->toBe('true')
+        ->and(selectValue($select, 'options'))->toBe('[{"label":"<b>Draft<\\/b>","value":"draft","isDisabled":false}]');
+});
+
+it('renders the native control only while nothing forces the JS one', function (): void {
+    $branch = function (Select $field): array {
+        $select = new Crawler(renderField($field))->filter('select.sy-fo-select');
+
+        return [
+            $select->attr('data-controller'),
+            $select->attr('data-model'),
+            $select->attr('data-skip-morph'),
+        ];
+    };
+
+    $js = ['sylament--forms--select', null, 'true'];
+
+    expect($branch(Select::make('status')->options(['a' => 'A'])))->toBe([null, 'norender|data.status', null])
+        ->and($branch(Select::make('status')->options(['a' => 'A'])->searchable()))->toBe($js)
+        ->and($branch(Select::make('status')->options(['a' => 'A'])->multiple()))->toBe($js)
+        ->and($branch(Select::make('status')->options(['a' => 'A'])->allowHtml()))->toBe($js)
+        ->and($branch(Select::make('status')->options(['a' => 'A'])->native(false)))->toBe($js)
+        ->and(renderField(Select::make('status')->options(['a' => 'A'])))->not->toContain('data-sylament--forms--select');
+});
+
+it('escapes a Markup message into its value attribute instead of letting it break out', function (): void {
+    $html = renderField(
+        Select::make('status')
+            ->options(['a' => 'A'])
+            ->searchable()
+            ->noOptionsMessage(new Markup('<b>None</b> "yet"', 'UTF-8')),
+    );
+
+    expect($html)->toContain('data-sylament--forms--select-no-options-message-value="&lt;b&gt;None&lt;/b&gt; &quot;yet&quot;"')
+        ->and(selectValue(new Crawler($html)->filter('select.sy-fo-select'), 'no-options-message'))->toBe('<b>None</b> "yet"');
+});
+
+it('keeps the field and input-wrapper shell around the JS branch', function (): void {
+    $crawler = new Crawler(renderField(
+        Select::make('status')->label('Status')->searchable()->options(['a' => 'A'])->prefix('Who'),
+    ));
+
+    expect($crawler->filter('div.sy.sy-fo-field')->count())->toBe(1)
+        ->and($crawler->filter('label[for="status"]')->text())->toContain('Status')
+        ->and($crawler->filter('div.sy-input-wrp > div.sy-input-wrp-content-ctn > select.sy-fo-select')->count())->toBe(1)
+        ->and($crawler->filter('div.sy-input-wrp-prefix span.sy-input-wrp-label')->text())->toBe('Who');
+});

@@ -1,8 +1,40 @@
+{% set controller = 'sylament--forms--select' %}
+
 {% set state = component.getOptionComparisonState %}
+{% set isHtmlAllowed = component.isHtmlAllowed %}
 
 {% set prefixActions = component.getPrefixActions %}
 {% set suffixActions = component.getSuffixActions %}
 {% set hasInlinePrefix = component.isPrefixInline and (prefixActions|filter(action => action.isVisible)|length > 0 or component.getPrefixIcon or component.getPrefixLabel is filled) %}
+
+{% set optionValues = isNative ? [] : options|reduce((values, label, value) => values|merge(label is iterable ? label|keys : [value]), []) %}
+{% set badgeClass = isNative ? null : ('sy-badge sy-size-md ' ~ colorAttributes('Sylament\\Support\\Colors\\Components\\BadgeComponent', 'primary').class|join(' ')) %}
+{% set controllerAttributes = isNative ? null : stimulus_controller(controller, {
+    key: component.getKey,
+    statePath: component.getStatePath,
+    modelBinding: component.getDataModel,
+    options: optionsForJs,
+    selectedOptions: selectedOptions,
+    canSelectPlaceholder: component.canSelectPlaceholder,
+    searchable: component.isSearchable,
+    dynamicSearchResults: component.hasDynamicSearchResults,
+    initialNoOptionsMessage: component.hasInitialNoOptionsMessage,
+    searchDebounce: component.getSearchDebounce,
+    optionsLimit: component.getOptionsLimit,
+    maxItems: component.getMaxItems,
+    maxItemsMessage: component.getMaxItemsMessage,
+    htmlAllowed: isHtmlAllowed,
+    labelsWrap: component.canOptionLabelsWrap,
+    position: component.getPosition,
+    searchFields: component.getSearchableOptionFields,
+    placeholder: component.getPlaceholder,
+    searchPrompt: component.getSearchPrompt,
+    searchingMessage: component.getSearchingMessage,
+    noSearchResultsMessage: component.getNoSearchResultsMessage,
+    noOptionsMessage: component.getNoOptionsMessage,
+    loadingMessage: component.getLoadingMessage,
+    badgeClass: badgeClass,
+}) %}
 
 <twig:SylamentForms:FieldWrapper :field="component">
     <twig:SylamentSupport:InputWrapper
@@ -23,18 +55,19 @@
             class: ['sy-fo-select', {'sy-fo-select-has-inline-prefix': hasInlinePrefix}],
             id: component.getId,
             name: component.getName,
-            'data-model': component.getDataModel,
+            'data-model': isNative ? component.getDataModel : null,
+            'data-skip-morph': isNative ? null : true,
             multiple: component.isMultiple,
             required: component.isMarkedAsRequired,
             'aria-invalid': component.getErrorMessages is not empty,
             disabled: component.isDisabled,
             autofocus: component.isAutofocused,
-        }, component.getExtraInputAttributes) }}>
+        }, component.getExtraInputAttributes, controllerAttributes) }}>
             {% if component.canSelectPlaceholder %}
                 <option value="">{{ component.isDisabled ? '' : component.getPlaceholder }}</option>
             {% endif %}
 
-            {% for value, label in component.getOptions %}
+            {% for value, label in options %}
                 {% if label is iterable %}
                     <optgroup label="{{ value }}">
                         {% for groupedValue, groupedLabel in label %}
@@ -42,7 +75,7 @@
                                 value: groupedValue,
                                 selected: state is iterable ? groupedValue in state : (state is not null and groupedValue == state),
                                 disabled: component.isOptionDisabled(groupedValue, groupedLabel),
-                            }) }}>{{ groupedLabel }}</option>
+                            }) }}>{{ isHtmlAllowed ? groupedLabel|striptags : groupedLabel }}</option>
                         {% endfor %}
                     </optgroup>
                 {% else %}
@@ -50,9 +83,13 @@
                         value: value,
                         selected: state is iterable ? value in state : (state is not null and value == state),
                         disabled: component.isOptionDisabled(value, label),
-                    }) }}>{{ label }}</option>
+                    }) }}>{{ isHtmlAllowed ? label|striptags : label }}</option>
                 {% endif %}
             {% endfor %}
+
+            {%- for selected in selectedOptions|filter(option => option.value not in optionValues) %}
+                <option value="{{ selected.value }}" selected>{{ isHtmlAllowed ? selected.label|striptags : selected.label }}</option>
+            {%- endfor %}
         </select>
     </twig:SylamentSupport:InputWrapper>
 </twig:SylamentForms:FieldWrapper>

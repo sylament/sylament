@@ -1,4 +1,4 @@
-.sy-fo-select {
+select.sy-fo-select {
     @apply block w-full appearance-none border-none bg-transparent bg-no-repeat py-1.5 pe-8 ps-3 text-sm leading-6 text-gray-950 transition duration-75 focus:ring-0 focus:outline-none disabled:text-gray-500 disabled:[-webkit-text-fill-color:var(--color-gray-500)] dark:text-white dark:disabled:text-gray-400 dark:disabled:[-webkit-text-fill-color:var(--color-gray-400)] [&_optgroup]:bg-white [&_optgroup]:dark:bg-gray-900 [&_option]:bg-white [&_option]:dark:bg-gray-900;
 
     /* https://defensivecss.dev/tip/input-zoom-safari */
@@ -13,8 +13,166 @@
     @variant rtl {
         background-position: left 0.5rem center;
     }
+
+    /* Tom Select hides the original control by stamping this class onto it, and the
+       vendor stylesheet that would carry the rule is not imported. */
+    &.ts-hidden-accessible {
+        @apply sr-only;
+    }
 }
 
-.sy-fo-select-has-inline-prefix {
+select.sy-fo-select-has-inline-prefix {
     @apply ps-0;
+}
+
+.sy-fo-select-ctn {
+    @apply relative;
+
+    /* Tom Select copies the `<select>`'s class list onto this wrapper, which is why the
+       rules above are element-qualified and why the affix flag is readable here. */
+    &.sy-fo-select-has-inline-prefix .sy-fo-select-control {
+        @apply ps-0;
+    }
+
+    &.single .sy-fo-select-control,
+    &.single .sy-fo-select-control > input {
+        @apply cursor-pointer;
+    }
+
+    &.single .sy-fo-select-item {
+        @apply flex-1;
+    }
+
+    &.input-hidden .sy-fo-select-control > input {
+        @apply absolute opacity-0;
+        left: -10000px;
+    }
+
+    &.has-items .sy-fo-select-control > input {
+        @apply mx-1;
+    }
+
+    &.plugin-clear_button.has-items .sy-fo-select-control {
+        @apply pe-14;
+    }
+
+    &.disabled {
+        @apply cursor-not-allowed opacity-70;
+
+        & .sy-fo-select-control,
+        & .sy-fo-select-control > input {
+            @apply cursor-not-allowed;
+        }
+    }
+
+    &.sy-fo-select-ctn-labels-not-wrapped {
+        & .sy-fo-select-item-label {
+            @apply truncate break-normal text-nowrap;
+        }
+
+        & .sy-fo-select-option-label {
+            @apply truncate;
+        }
+    }
+}
+
+.sy-fo-select-control {
+    @apply relative flex min-h-9 w-full flex-wrap items-center gap-1.5 overflow-hidden bg-no-repeat py-1.5 pe-8 ps-3 text-start text-sm leading-6 text-gray-950 dark:text-white;
+
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.5rem center;
+    background-size: 1.5em 1.5em;
+
+    @variant rtl {
+        background-position: left 0.5rem center;
+    }
+
+    /* Tom Select's own reset of the text box, minus its `!important`s: those exist to beat
+       host stylesheets it cannot see, and this rule already outranks the scoped preflight. */
+    & > input {
+        @apply m-0 max-h-none min-h-0 max-w-full flex-auto border-none bg-transparent bg-none p-0 text-current placeholder:text-gray-400 focus:outline-none dark:placeholder:text-gray-500;
+
+        min-width: 7rem;
+        text-indent: 0;
+        line-height: inherit;
+        box-shadow: none;
+        user-select: auto;
+    }
+
+    /* `dropdown_input` parks a placeholder box in the control and moves the search box
+       into the dropdown. */
+    & .items-placeholder {
+        @apply w-full;
+    }
+
+    & .sy-fo-select-clear-btn {
+        @apply absolute end-8 top-1/2 -translate-y-1/2 text-gray-500 outline-none hover:text-gray-600 focus-visible:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300 dark:focus-visible:text-gray-300;
+    }
+}
+
+.sy-fo-select-dropdown {
+    @apply inset-x-0 top-full mt-1;
+
+    /* `.sy-dropdown-panel` reads its width from this; the scroll container is the content
+       element below rather than the panel, so its max-height variable stays unset. */
+    --sy-dropdown-width: 100%;
+
+    &.sy-position-top {
+        @apply bottom-full top-auto mt-0 mb-1;
+    }
+
+    & [data-selectable] {
+        @apply cursor-pointer overflow-hidden;
+    }
+
+    & .highlight {
+        @apply rounded-sm bg-primary-500/20;
+    }
+
+    & .dropdown-input-wrap {
+        @apply mb-1 border-b border-gray-100 pb-1 dark:border-white/5;
+    }
+
+    & .dropdown-input {
+        @apply block w-full appearance-none border-none bg-transparent px-3 py-1.5 text-sm leading-6 text-gray-950 placeholder:text-gray-400 focus:ring-0 focus:outline-none dark:text-white dark:placeholder:text-gray-500;
+    }
+}
+
+.sy-fo-select-options {
+    @apply max-h-60 overflow-x-hidden overflow-y-auto;
+}
+
+.sy-fo-select-option {
+    &.active:not([aria-disabled]),
+    &.selected:not([aria-disabled]) {
+        @apply bg-gray-50 dark:bg-white/5;
+    }
+
+    &[aria-disabled] {
+        @apply cursor-default opacity-70;
+    }
+}
+
+.sy-fo-select-option-label,
+.sy-fo-select-item-label {
+    @apply min-w-px text-wrap;
+    word-break: break-word;
+}
+
+.sy-fo-select-option-group {
+    & + & {
+        @apply mt-1 border-t border-gray-100 pt-1 dark:border-white/5;
+    }
+}
+
+.sy-fo-select-option-group-label {
+    @apply p-2 text-sm font-medium text-gray-500 dark:text-gray-400;
+}
+
+.sy-fo-select-message {
+    @apply px-3 py-2 text-sm text-gray-500 dark:text-gray-400;
+}
+
+.sy-fo-select-max-items-message {
+    @apply px-3 py-2 text-sm text-danger-600 dark:text-danger-400;
 }

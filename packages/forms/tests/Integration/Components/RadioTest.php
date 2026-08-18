@@ -432,6 +432,33 @@ it('validates an enum-only radio instead of throwing for missing options', funct
         ->and($validator->validate('tampered', $constraints))->toHaveCount(1);
 });
 
+/*
+ * The enum arm of the tamper case, driven end to end rather than by handing the
+ * validator a value the field never held: the tampered string *is* the raw state,
+ * so the builder sees exactly what a payload leaves behind. `EnumStateCast` fails
+ * closed to null for a value matching no case, so a guard reading the cast state
+ * would read "nothing selected" and skip the `Choice` that rejects it.
+ */
+it('rejects a tampered value the enum cast nulls out', function (): void {
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $field = Radio::make('status')->options(OptionStatus::class)->required();
+    $schema = Schema::make($host)->statePath('data')->components([$field]);
+    $host->cacheSchema('schema', $schema);
+
+    $host->data['status'] = 'deleted-by-hand';
+    $schema->getComponents();
+
+    expect($field->getRawState())->toBe('deleted-by-hand')
+        ->and($field->getState())->toBeNull();
+
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.status'))
+        ->toBe(['The value you selected is not a valid choice.']);
+});
+
 it('builds no Choice constraint for blank state', function (): void {
     $field = wireRadio(Radio::make('status')->options(['draft' => 'Draft']));
 

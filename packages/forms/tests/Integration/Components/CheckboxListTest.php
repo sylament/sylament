@@ -469,6 +469,33 @@ it('fails a list whose raw state is not an array', function (): void {
         ->and($this::getContainer()->get(ValidatorInterface::class)->validate('php', $constraints))->toHaveCount(1);
 });
 
+/*
+ * The enum arm of the tamper case, driven end to end rather than by handing the
+ * validator a value the field never held: the tampered element *is* the raw state,
+ * so the builder sees exactly what a payload leaves behind. `EnumArrayStateCast`
+ * drops every element matching no case, so a guard reading the cast state would
+ * read an empty selection and skip the `Choice` that rejects it.
+ */
+it('rejects a tampered element the enum cast drops', function (): void {
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $field = CheckboxList::make('topics')->options(OptionStatus::class)->required();
+    $schema = Schema::make($host)->statePath('data')->components([$field]);
+    $host->cacheSchema('schema', $schema);
+
+    $host->data['topics'] = ['deleted-by-hand'];
+    $schema->getComponents();
+
+    expect($field->getRawState())->toBe(['deleted-by-hand'])
+        ->and($field->getState())->toBe([]);
+
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.topics'))
+        ->toBe(['One or more of the given values is invalid.']);
+});
+
 it('builds no Choice constraint for an empty selection', function (): void {
     expect(wireCheckboxList(CheckboxList::make('topics')->options(['php' => 'PHP']))->getValidationConstraints())->toBe([]);
 });

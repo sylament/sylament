@@ -103,7 +103,11 @@ parameters on either link, the empty-options and disabled short-circuits, and
 the two `…Action()` modifiers); `getSearchDebounce()` forced to `0` and still
 overridable; the cast chain in both arms and the resting `[]`; the
 `Choice(multiple: true)` including the disabled filter, the non-array `Type`
-arm, the blank short-circuit and the no-options `LogicException`; the `Count`
+arm, the blank short-circuit, the
+[filled gate](select.md#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
+rejecting an element the enum cast drops (driven end to end through a host, so
+the tampered element is the field's *own* raw state) and the no-options
+`LogicException`; the `Count`
 from `minItems()`/`maxItems()` including the empty-selection case; and
 `required()` rejecting `[]` — by
 [`CheckboxListTest`](../../../packages/forms/tests/Integration/Components/CheckboxListTest.php).
@@ -345,8 +349,12 @@ is the whole content of the method:
    constraint, so this is the one place the port's shared multiple-arm shape
    grows a step.
 3. **The `Choice(multiple: true)`** over
-   [`getEnabledOptionValues()`](can-disable-options.md), reached only once there
-   is a selection to check — the same
+   [`getEnabledOptionValues()`](can-disable-options.md), reached only once the
+   payload left something there — which is a question about the
+   [raw state](select.md#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out),
+   since `EnumArrayStateCast` drops every element matching no case and a cast
+   reading would hand a wholly tampered list back as an empty selection and skip
+   the check that rejects it. The same
    [membership guard](select.md#the-choice-constraint-is-the-fields-only-server-side-guard)
    every option field builds, and the same
    [no-options `LogicException`](select.md#a-relationship-select-is-always-enumerable-or-it-throws)

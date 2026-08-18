@@ -94,7 +94,11 @@ colours, its two mini icons, its alias pair and an alias override replacing one 
 them at render; the cast collapse and the coerced `bool` default; the cast choice
 per multiplicity, enum arms included; the `Choice` constraint single and multiple,
 the `Type('array')` arm for a multiple field whose raw state is not one, the
-disabled filter, the blank short-circuit and the no-options `LogicException`; and
+disabled filter, the blank short-circuit, the
+[filled gate](select.md#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
+rejecting a value the enum cast nulls out in both multiplicities (driven end to
+end through a host, so the tampered value is the field's *own* raw state) and the
+no-options `LogicException`; and
 `required()` failing on `null` and on `[]` — by
 [`ToggleButtonsTest`](../../../packages/forms/tests/Integration/Components/ToggleButtonsTest.php).
 Both bindings need a live host, so they are driven through real round-trips by
@@ -331,9 +335,13 @@ assuming:
   needed and none is added.
 
 The interaction with `buildValidationConstraints()` is what makes both work
-without a special case: the method short-circuits on a blank state before it adds
-any `Choice`, so an empty required field is failed by `NotBlank` alone rather than
-by a `Choice` that would have had to admit emptiness.
+without a special case: the method short-circuits on a
+[blank *raw* state](select.md#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
+before it adds any `Choice`, so an empty required field is failed by `NotBlank`
+alone rather than by a `Choice` that would have had to admit emptiness. Reading
+the raw state is what keeps that carve-out to genuinely empty fields: a payload
+that wrote something the enum cast cannot resolve is not empty, and meets the
+`Choice`.
 
 ## Divergences
 

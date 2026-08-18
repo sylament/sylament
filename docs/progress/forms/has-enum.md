@@ -120,6 +120,16 @@ every case, and the `Choice` constraint each option field builds runs over
 exactly that list — so the enum is validated, strictly, by the same constraint
 that guards a literal option map, with one code path instead of two.
 
+Sharing that path has one precondition, and missing it was a real bypass: the
+gate deciding whether to build the `Choice` must read the
+[raw state, not the cast one](select.md#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out).
+[`EnumStateCast`](../schemas/enum-state-cast.md) fails closed to `null` for a
+value matching no case, so an enum'd field is the one place where a filled
+payload has a *blank* cast state — and a cast reading of the gate skipped the
+`Choice` for precisely the values it exists to reject. A literal option map never
+showed it, because [`OptionStateCast`](../schemas/option-state-cast.md) hands a
+tampered scalar back unchanged.
+
 The one place the absence showed was `Select`'s no-options `LogicException`,
 which fired whenever `options()` had never been called. It now asks
 `$this->options === null && $this->getEnum() === null`, so an enum-only field

@@ -285,7 +285,8 @@ class CheckboxList extends Field implements Contracts\CanDisableOptions
      * `Choice(multiple: true)` is undefined over anything else and `Count` throws
      * on it; the item bounds apply to every array including the empty one, which
      * the blank short-circuit below would otherwise skip; and the membership check
-     * runs only once there is a selection to check.
+     * runs once the payload left anything there, which is a question about the raw
+     * state — a cast that drops every element still leaves a selection to reject.
      *
      * @return list<Constraint>
      */
@@ -311,7 +312,7 @@ class CheckboxList extends Field implements Contracts\CanDisableOptions
             );
         }
 
-        if (blank($this->getState())) {
+        if (blank($rawState)) {
             return $constraints;
         }
 

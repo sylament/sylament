@@ -91,7 +91,7 @@ class Radio extends Field implements Contracts\CanDisableOptions
     {
         $constraints = parent::buildValidationConstraints();
 
-        if (blank($this->getState())) {
+        if (blank($this->getRawState())) {
             return $constraints;
         }
 

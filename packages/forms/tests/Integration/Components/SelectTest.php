@@ -389,6 +389,52 @@ it('validates an enum-only select instead of throwing for missing options', func
         ->and($validator->validate('tampered', $constraints))->toHaveCount(1);
 });
 
+/*
+ * The enum arm of the tamper case, driven end to end rather than by handing the
+ * validator a value the field never held: the tampered string *is* the raw state,
+ * so the builder sees exactly what a payload leaves behind. `EnumStateCast` fails
+ * closed to null for a value matching no case, so a guard reading the cast state
+ * would read "nothing selected" and skip the `Choice` that rejects it.
+ */
+it('rejects a tampered value the enum cast nulls out', function (): void {
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $field = Select::make('status')->options(OptionStatus::class)->required();
+    $schema = Schema::make($host)->statePath('data')->components([$field]);
+    $host->cacheSchema('schema', $schema);
+
+    $host->data['status'] = 'deleted-by-hand';
+    $schema->getComponents();
+
+    expect($field->getRawState())->toBe('deleted-by-hand')
+        ->and($field->getState())->toBeNull();
+
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.status'))
+        ->toBe(['The value you selected is not a valid choice.']);
+});
+
+it('rejects a tampered element of a multiple enum select', function (): void {
+    $host = new FieldRenderHost();
+    $host->setSchemaStateValidator($this::getContainer()->get(ValidatorInterface::class));
+
+    $field = Select::make('tags')->multiple()->options(OptionStatus::class);
+    $schema = Schema::make($host)->statePath('data')->components([$field]);
+    $host->cacheSchema('schema', $schema);
+
+    $host->data['tags'] = ['deleted-by-hand'];
+    $schema->getComponents();
+
+    expect($field->getState())->toBe([]);
+
+    $host->validateSchema($schema, shouldThrow: false);
+
+    expect($host->getErrorsForSchemaStatePath('data.tags'))
+        ->toBe(['One or more of the given values is invalid.']);
+});
+
 it('merges extra input attributes onto the select and lets them win', function (): void {
     $crawler = new Crawler(renderField(
         Select::make('status')

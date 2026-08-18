@@ -70,7 +70,11 @@ on the wrapper rather than the group; the `OptionStateCast` round-trip; the
 `boolean()` collapse to a single `BooleanStateCast`, its rendered `1`/`0` options
 and its coerced `bool` default; the `Choice` constraint including the disabled
 filter, both stored forms of a `boolean()` option, the enum-only arm, the blank
-short-circuit and the no-options `LogicException`; and a required radio failing
+short-circuit, the
+[filled gate](select.md#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
+rejecting a value the enum cast nulls out (driven end to end through a host, so
+the tampered string is the field's *own* raw state) and the no-options
+`LogicException`; and a required radio failing
 with nothing selected, passing once selected, and passing on the `0`-keyed false
 option in both stored forms — by
 [`RadioTest`](../../../packages/forms/tests/Integration/Components/RadioTest.php).

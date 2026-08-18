@@ -71,8 +71,11 @@ and boolean options, the no-options `LogicException` and the `Choice` guard — 
 tampered-value, disabled-option and int-keyed cases plus both stored forms of a
 `boolean()` option, all run through the container's real validator — the enum
 arm (its options rendered, the enum-valued state's option marked `selected`, the
-single and `multiple()` round trips against an enum-typed record property, and an
-enum-only select validating rather than throwing) — and the
+single and `multiple()` round trips against an enum-typed record property, an
+enum-only select validating rather than throwing, and — driven end to end through
+a host, so the tampered string is the field's *own* raw state — the
+[filled gate](#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
+rejecting a value the enum cast nulls out, in both multiplicities) — and the
 extra input attributes reaching the `<select>` rather than its `<option>`s — by
 [`SelectTest`](../../../packages/forms/tests/Integration/Components/SelectTest.php);
 the multi-value arm — `multiple()` as literal, `false` and closure, the cast
@@ -221,7 +224,8 @@ is a browser-side courtesy.
 [`buildValidationConstraints()`](../../../packages/forms/src/Components/Select.php)
 therefore appends a `Choice` over
 [`getEnabledOptions()`](../../../packages/forms/src/Components/Concerns/CanDisableOptions.php)
-whenever state is filled — that one constraint is what rejects both a tampered
+whenever the [raw state is filled](#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
+— that one constraint is what rejects both a tampered
 value and a value whose option is disabled. Symfony's `Choice` is always strict
 (`ChoiceValidator` throws on any other setting), so the comparison is identity,
 which is why the choices are built in the field's *stored* form (see below).
@@ -251,6 +255,63 @@ filter and select validation is unchanged in both directions. The guard here is
 not redundant with it either: it exists because there are no choices to enumerate
 for a value that is not there, which is a different question from whether a
 constraint should run.
+
+### The *filled* gate reads the raw state, because a cast can null a tampered value out
+
+All four option fields open `buildValidationConstraints()` with the same
+short-circuit — there are no choices to enumerate for a value that is not there —
+and the state it asks about has to be the **raw** one,
+`blank($this->getRawState())`. Reading `getState()` there was a validation bypass.
+
+The two readings differ for exactly one input, and it is the one that matters. A
+state cast may find nothing it can represent in what a payload wrote:
+[`EnumStateCast`](../schemas/enum-state-cast.md) fails closed to `null` for a
+value matching no case, and
+[`EnumArrayStateCast`](../schemas/enum-array-state-cast.md) drops every such
+element. So a tampered `'deleted-by-hand'` on an enum-backed field casts to
+`null`, a *cast* gate reads "nothing selected", the `Choice` is never appended,
+and the field is left holding `NotBlank` alone — which a non-blank string passes.
+[`HasSchemas::validateSchema()`](../../../packages/schemas/src/Concerns/HasSchemas.php)
+then validates the **raw** bag entry against that empty guard, so the tampered
+value clears validation and reaches the record write, where a typed setter throws
+a `TypeError` — a 500 where a rejection belonged.
+
+The raw gate splits the two cases the cast gate had conflated:
+
+- **Nothing was submitted** — the raw state is `null`, `''` or `[]` — and the
+  `Choice` is still skipped, so an unanswered required field is failed by
+  `NotBlank` alone and an optional one passes untouched. Unchanged, and pinned by
+  the required and blank-state cases in all four suites.
+- **Something was submitted that resolves to nothing** — the raw state is filled,
+  so the `Choice` runs and
+  [`getEnabledOptionValues()`](#the-choice-choices-cover-both-forms-the-raw-state-can-take),
+  which enumerates both stored forms of every enabled option, rejects it.
+
+Reading raw is the only reading consistent with what is validated: the constraint
+list guards the raw bag entry, so the gate deciding whether to build it must ask
+about that same value. The non-enum arms never showed the hole —
+[`OptionStateCast`](../schemas/option-state-cast.md) passes a tampered scalar
+straight through, so its cast state was filled and the `Choice` was built — which
+is why the defect surfaced only once an enum reached a field.
+
+The widening adds rejections without removing any. Every cast these fields
+install — the option, options-array, enum, enum-array and `boolean()` casts —
+maps a blank raw state to a blank cast state, so nothing that used to reach the
+`Choice` stops reaching it. What it newly catches is the fail-closed arm of each
+cast: besides the enum case above, a raw `false` on a single field
+(`OptionStateCast` stringifies it to `''`) and a raw array on a single field (no
+scalar to read, so `null`). The array one lands on `Choice(multiple: false)`,
+whose validator does an `in_array()` and fails it rather than throwing, so it is
+a violation and not a 500.
+
+The gate is four one-line reads rather than a shared helper, deliberately.
+`getRawState()` is already the shared accessor ([schemas'
+component-level `HasState`](../schemas/component.md)); each builder puts its gate
+at a different point in a different sequence —
+[`CheckboxList`](checkbox-list.md#the-three-server-side-guards-are-ordered-so-they-never-collide)
+runs two constraints ahead of it — and a name like `hasBlankState()` would hide
+the one thing a reader of this method has to see, which state is being asked
+about.
 
 ### The `Choice` choices cover both forms the raw state can take
 
@@ -298,7 +359,8 @@ whole. Three consequences worth stating, because each looks like an omission in
 the code:
 
 - **An empty selection builds no constraint.** The builder's existing
-  `blank($this->getState())` early return already covers it —
+  [`blank($this->getRawState())`](#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
+  early return already covers it —
   [`blank([])`](../support/helpers.md) is true — so the empty-selection case
   needs no branch of its own, and validation of "must this field be filled?"
   stays with the presence/required layer where it belongs.
@@ -318,10 +380,11 @@ the code:
 [`ChoiceValidator::validate()`](../../../vendor/symfony/validator/Constraints/ChoiceValidator.php)
 throws `UnexpectedValueException` for any other value rather than building a
 violation. Validation runs against the **raw** state, which a tampered payload
-controls, and the field's `blank($this->getState())` gate does not stop a scalar
-from reaching the builder — `getState()` wraps it into a one-element list, so the
-state reads as filled while the raw value is still a string. Handing that to the
-`Choice` would end the request in a 500 instead of a rejection.
+controls, and the field's
+[filled gate](#the-filled-gate-reads-the-raw-state-because-a-cast-can-null-a-tampered-value-out)
+does not stop a scalar from reaching the builder — a non-blank string is exactly
+what that gate lets through. Handing it to the `Choice` would end the request in
+a 500 instead of a rejection.
 
 The builder therefore branches before it appends the `Choice`: when the field is
 `multiple` and the raw state is not an array, it appends a `Type('array')` and

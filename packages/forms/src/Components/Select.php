@@ -137,7 +137,9 @@ class Select extends Field implements Contracts\CanDisableOptions
     {
         $constraints = parent::buildValidationConstraints();
 
-        if (blank($this->getState())) {
+        $rawState = $this->getRawState();
+
+        if (blank($rawState)) {
             return $constraints;
         }
 
@@ -149,7 +151,7 @@ class Select extends Field implements Contracts\CanDisableOptions
 
         $isMultiple = $this->isMultiple();
 
-        if ($isMultiple && ! is_array($this->getRawState())) {
+        if ($isMultiple && ! is_array($rawState)) {
             $constraints[] = new Type('array');
 
             return $constraints;

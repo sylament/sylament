@@ -37,7 +37,7 @@ Reference — the Filament source this is diffed against:
 | [`getActiveCount()`](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::getActiveCount()` | done | — | [semantics](#the-active-count-is-a-filled-test-not-an-indicator-count) |
 | [reset state](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::setUp()` | done | — | [diverges](#the-reset-state-clears-the-key-the-state-actually-uses) |
 | [indicators](../../../packages/tables/src/Filters/SelectFilter.php) | `SelectFilter::setUp()` | in progress | — | [semantics](#a-user-supplied-indicator-object-passes-through-unsuffixed) · [diverges](#the-multi-value-label-follows-selection-order-and-a-blank-option-key-still-indicates) · [diverges](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
-| `searchable()`, `native()`, `preload()`, `optionsLimit()`, `getSearchResultsUsing()`, `getOptionLabelUsing()`, `getOptionLabelsUsing()`, `getOptionLabelFromRecordUsing()`, `forceSearchCaseInsensitive()` | `SelectFilter` | blocked | a JS-select epic | [diverges](#the-js-select-surface-is-dropped-from-the-field-chain) |
+| `searchable()`, `native()`, `preload()`, `optionsLimit()`, `getSearchResultsUsing()`, `getOptionLabelUsing()`, `getOptionLabelsUsing()`, `getOptionLabelFromRecordUsing()`, `forceSearchCaseInsensitive()` | `SelectFilter` | blocked | a tables filters epic | [diverges](#the-js-select-surface-is-dropped-from-the-field-chain) |
 | `relationship()`, `emptyRelationshipOptionLabel()`, `hasEmptyRelationshipOption()`, the `getOptions*FromRelationship()` family | `Concerns\HasRelationship` | blocked | a future filters-relationship epic | [diverges](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch) |
 
 Every built row is pinned by
@@ -158,10 +158,30 @@ otherwise. A fix, not a mirror; pinned by test and recorded in the
 
 Filament's `getFormField()` also calls `searchable()`, `native()`, `preload()`
 and `optionsLimit()`, plus the four `getOption*Using()` seams and
-`forceSearchCaseInsensitive()`. None exists on our `Select`, which is a native
-`<select>`; calling them would mean building an entire JS select first. They
-wait on a future JS-select epic, and the filter's field chain is the six methods
-that do exist.
+`forceSearchCaseInsensitive()`. All nine exist on
+[forms' `Select`](../forms/select.md) now — the searchable-select epic shipped the
+JS control, so the premise this section was written on, *none exists on our
+`Select`, which is a native `<select>`*, is gone. What has **not** happened is
+the filter calling them, and the reason is no longer a missing dependency.
+
+Two things are left, and neither belonged to the epic that built the control. The
+first is a tables decision about what the words mean here: `searchable()` on a
+filter means the *filter form's* select, not the table's own search box, and the
+two would sit a few pixels apart in the same toolbar — the mechanism is ready
+either way, because the
+filters form is cached on the host under the name `tableFiltersForm`
+([`HasFilters`](../../../packages/tables/src/Concerns/HasFilters.php)) and a
+cached schema is exactly what
+[`resolveSchemaByName()`](../schemas/interacts-with-schemas.md#resolveschemabyname-is-a-sylament-only-extraction-with-no-filament-source)
+accepts, so a filter select is already addressable through the host seam the
+control searches over. The second is that the relationship-backed half of the
+list — `getOptionLabelFromRecordUsing()`, and the `forceSearchCaseInsensitive()`
+that only means something over a relation query — belongs with the
+[deferred relationship arm](#the-relationship-arm-is-deferred-with-a-documented-escape-hatch)
+rather than with searchability, so those two cannot land ahead of it either way.
+Until a tables filters epic settles both, the field chain stays the six methods
+it calls today, and the row's _Blocked by_ names that epic instead of the
+JS-select one it used to wait on.
 
 ### The multi-value label follows selection order, and a blank option key still indicates
 

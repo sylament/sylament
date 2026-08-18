@@ -229,14 +229,24 @@ against the raw config array.
 `packages/actions/assets` joins the pnpm workspace through
 [`pnpm-workspace.yaml`](../../../pnpm-workspace.yaml)'s `packages/*/assets` glob
 the moment it gains a `package.json`; its `tsconfig.json` and
-`scripts/build-js.mjs` are byte-copies of notifications', `BUNDLED_ENTRIES` empty,
-so every entry ships per-file and unbundled with its import specifiers verbatim.
-`@symfony/ux-live-component` is declared dev **and** peer at `^3.2.0` — the npm
-version the installed PHP package v3.4.0 ships, the two halves versioning
-independently — and stays a bare specifier in the built file, resolved by the
-consuming app's importmap. This workspace is the toolkit's only npm consumer of
-it: notifications' dropped both declarations when its toast controller
-[handed the emit over](#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it).
+`scripts/build-js.mjs` are copies of notifications', identical **modulo each
+copy's own `BUNDLED_ENTRIES` table** — empty here, where support's bundles
+`@floating-ui/dom` into the dropdown controller and forms' bundles `tom-select`
+into the select one — so every entry ships per-file and unbundled with its import
+specifiers verbatim. Keeping the copies in lockstep is manual, and the
+searchable-select epic is what that costs in practice: `licenseBanner()` had to
+change in all five at once, learning to trim each `LICENSE` line before matching
+the copyright so tom-select's indented notice is found instead of throwing the
+build. `@symfony/ux-live-component` is declared dev **and** peer at `^3.2.0` —
+the npm version the installed PHP package v3.4.0 ships, the two halves
+versioning independently — and stays a bare specifier in the built file, resolved by the
+consuming app's importmap. This workspace was the toolkit's only npm consumer of
+it — notifications' dropped both declarations when its toast controller
+[handed the emit over](#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it)
+— until forms declared the same pair at the same version for its
+[select controller](../forms/forms-bundle.md#the-select-controller-is-a-thin-binding-over-a-bundled-tom-select-not-a-port-of-filaments-select-utility),
+which resolves its host through the same `getComponent()` seam this one does;
+the two are the toolkit's two consumers now, on identical terms.
 
 No `symfony.importmap` entry is declared for it, and that is a decision rather
 than an omission — the same one notifications' workspace

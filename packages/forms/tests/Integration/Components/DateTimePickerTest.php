@@ -287,6 +287,24 @@ it('round-trips a date through an immutable record property', function (): void 
         ->and($record->publishedAt->format('Y-m-d H:i:s'))->toBe('2026-08-19 09:15:00');
 });
 
+it('round-trips a date through an interface-typed record property', function (): void {
+    $record = new DateArticle();
+    $record->promotedAt = new DateTimeImmutable('2026-08-18 14:30:00');
+
+    $picker = DateTimePicker::make('promotedAt')->seconds(false);
+    $schema = recordPickerSchema($picker, $record);
+    $cast = pickerDateCast($picker);
+
+    expect(new ReflectionProperty($cast, 'objectClass')->getValue($cast))->toBe(DateTimeImmutable::class)
+        ->and($picker->getRawState())->toBe('2026-08-18 14:30');
+
+    $schema->rawState(['promotedAt' => '2026-08-19T09:15']);
+
+    expect($schema->getData())->toBe($record)
+        ->and($record->promotedAt)->toBeInstanceOf(DateTimeImmutable::class)
+        ->and($record->promotedAt->format('Y-m-d H:i:s'))->toBe('2026-08-19 09:15:00');
+});
+
 it('round-trips a date through a mutable record property', function (): void {
     $record = new DateArticle();
     $record->reviewedAt = new DateTime('2026-08-18 14:30:00');

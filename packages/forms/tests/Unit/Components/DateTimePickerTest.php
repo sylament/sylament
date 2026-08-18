@@ -146,6 +146,11 @@ it('truncates a date-only bound for the native attribute', function (): void {
         ->and($data['maxAttribute'])->toBe('2026-12-31');
 });
 
+it('refuses a bound no date parse accepts', function (): void {
+    expect(fn (): array => DatePicker::make('day')->minDate('2026-13-45')->getExtraTemplateData())
+        ->toThrow(LogicException::class, "The [day] picker's bound [2026-13-45] is not a parseable date.");
+});
+
 it('passes a bound through whole when the control carries time', function (): void {
     $data = DateTimePicker::make('publishedAt')
         ->minDate(new DateTimeImmutable('2026-01-01 08:00:00'))

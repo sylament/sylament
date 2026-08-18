@@ -47,9 +47,9 @@ another file.
 | [`time()` / `hasTime()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | — |
 | [`seconds()` / `hasSeconds()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | — |
 | [`getType()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [diverges](#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
-| [`minDate()` / `getMinDate()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [diverges](#the-bounds-are-date-comparison-constraints-not-laravel-rule-strings) |
-| [`maxDate()` / `getMaxDate()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [diverges](#the-bounds-are-date-comparison-constraints-not-laravel-rule-strings) |
-| The native `min` / `max` attributes | [`DateTimePicker::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [semantics](#a-date-only-control-truncates-its-bounds-for-the-attribute-but-not-for-the-constraint) |
+| [`minDate()` / `getMinDate()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [diverges](#the-bounds-are-date-comparison-constraints-not-laravel-rule-strings) · [semantics](#a-bound-no-date-parse-accepts-throws-where-a-sibling-reference-is-skipped) |
+| [`maxDate()` / `getMaxDate()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [diverges](#the-bounds-are-date-comparison-constraints-not-laravel-rule-strings) · [semantics](#a-bound-no-date-parse-accepts-throws-where-a-sibling-reference-is-skipped) |
+| The native `min` / `max` attributes | [`DateTimePicker::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [semantics](#a-date-only-control-truncates-its-bounds-for-the-attribute-but-not-for-the-constraint) · [semantics](#a-bound-no-date-parse-accepts-throws-where-a-sibling-reference-is-skipped) |
 | [`timezone()` / `getTimezone()`](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [diverges](#the-timezone-default-is-phps-own-there-is-no-filamenttimezone-facade) |
 | [`hoursStep()` / `minutesStep()` / `secondsStep()` + getters](../../../packages/forms/src/Components/DateTimePicker.php) | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [semantics](#the-time-steps-compose-into-one-native-step-in-seconds) |
 | [`getStep()`](../../../packages/forms/src/Components/DateTimePicker.php) — the [`HasStep`](has-step.md) override | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [semantics](#the-time-steps-compose-into-one-native-step-in-seconds) |
@@ -77,7 +77,7 @@ another file.
 | `icon()` | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | skipped | — | [diverges](#the-deprecated-surface-is-not-ported) |
 | `withoutDate()` / `withoutSeconds()` / `withoutTime()` | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | skipped | — | [diverges](#the-deprecated-surface-is-not-ported) |
 | [The template](../../../packages/forms/templates/partials/DateTimePicker/index.html.twig) | [`DateTimePicker::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) — the `$isNative` branch | done | — | [semantics](#the-value-attribute-reads-the-raw-state-not-the-cast-one) |
-| [The WebKit height rule](../../../packages/forms/assets/src/styles/components/input.css) | [`date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | done | — | [detail](styles.md) |
+| [The WebKit height rule](../../../packages/forms/assets/src/styles/components/input.css) | [`date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | done | — | [detail](styles.md#the-date-time-picker-stylesheet-is-one-native-rule-and-a-calendar-panel) |
 
 Coverage: the field's own logic — the three variants' `getType()`, the type
 derived from `date(false)` / `time(false)`, the `native(false)` throw, both
@@ -86,13 +86,14 @@ formats across every variant plus an explicit `format()`, the step composition
 timezone default and override, both bounds in their string and
 `DateTimeInterface` spellings, the appended state cast and the formats it carries,
 the always-on `ValidDate` on all three variants, the bounds as `DateComparison`
-constraints, and the truncated-versus-verbatim `min` attribute — by
+constraints, the truncated-versus-verbatim `min` attribute and the throw an
+unparseable bound raises — by
 [`DateTimePickerTest`](../../../packages/forms/tests/Unit/Components/DateTimePickerTest.php),
 with the `native()` switch itself by
 [`CanBeNativeTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeNativeTest.php).
 The rendered control, the validation run through a live host and the record
-round-trip against `DateTimeImmutable`, `DateTime` and `string` properties are
-covered by
+round-trip against `DateTimeImmutable`, `DateTime`, `DateTimeInterface` and
+`string` properties are covered by
 [`Integration/DateTimePickerTest`](../../../packages/forms/tests/Integration/Components/DateTimePickerTest.php).
 
 ## Details
@@ -188,6 +189,29 @@ server. Filament has the identical split (its rule reads `getMinDate()` too), an
 the resolution is the same there and here: give a date-only control a date-only
 bound.
 
+### A bound no date parse accepts throws where a sibling reference is skipped
+
+`minDate('2026-13-45')` on a date-only control raises a `LogicException` naming
+the field and the bound, out of `getBoundaryAttribute()` — the same parse that
+truncates the bound above. Filament raises there too: its native branch reads
+`Carbon::parse($minDate)->toDateString()` with nothing catching it. The
+alternative is to swallow the parse failure to a `null`, and it is worse than it
+looks — that renders no `min` attribute, and the constraint half is silent too
+(below), so a typo in a bound produces a picker with no bound, no error and no
+log entry, invisible until someone compares the rendered form against the code.
+
+Two limits on the throw's reach, both deliberate. It fires only on a control
+**without a time part**, because only that branch parses — a `datetime-local`
+bound is passed to the attribute verbatim and the browser ignores what it cannot
+read. And the constraint half stays silent whatever the bound: `minDate()`
+registers an `afterOrEqual()` boundary, whose builder tests the string with
+`strtotime()` and routes anything it cannot read to
+[the field-name arm](can-be-validated.md#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings),
+which resolves nothing and
+[drops the constraint](can-be-validated.md#a-blank-sibling-skips-the-comparison-where-laravel-fails-the-field).
+That skip is the designed behaviour for a sibling reference and is not narrowed
+here; the attribute path is where a bad literal now surfaces.
+
 ### The `value` attribute reads the raw state, not the cast one
 
 Every other field template renders `component.getState`; this one renders
@@ -246,12 +270,13 @@ record at all, leaves it null and the cast writes Filament's string in
 This is the first cast in the port whose *shape* is chosen from a record type
 rather than declared by the caller.
 
-Two limits ride along, both accepted. A property typed with the **interface**
-`DateTimeInterface` resolves to no instantiable class, so it reads as "no object"
-and receives a string; the escape is an explicit `->stateCast(...)`. And a field
-that is never wired into a schema — a bare `make()` in a test, or a showcase card
-with no record — has no chain to walk, which is deliberate: the value on the wire
-of a record-less form is the string its `$data` bag can hold.
+A property typed with the **interface** `DateTimeInterface` is covered: the
+reader [carves it out](../schemas/record-type-reader.md#objectclass-is-gated-on-instantiability-so-it-is-a-promise-not-a-hint)
+and reports `DateTimeImmutable`, so that spelling writes an object like the
+concrete one. One limit rides along and is accepted: a field that is never wired
+into a schema — a bare `make()` in a test, or a showcase card with no record —
+has no chain to walk, which is deliberate: the value on the wire of a
+record-less form is the string its `$data` bag can hold.
 
 ### Every variant validates as a date, including the time-only one
 

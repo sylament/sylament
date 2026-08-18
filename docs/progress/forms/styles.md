@@ -2,14 +2,16 @@
 
 The forms bundle's component CSS —
 [`packages/forms/assets/src/styles/`](../../../packages/forms/assets/src/styles/)
-— is nine stylesheets, and only five of them draw on
+— is nine stylesheets, and only six of them draw on
 [`forms/resources/css/`](../../../vendor/filament/forms/resources/css/) at all.
 **The rest port from
 [`support/resources/css/`](../../../vendor/filament/support/resources/css/)**:
 Filament files the raw control chrome — checkbox, input, radio, select, toggle —
 in its *support* package and keeps only the field-and-wrapper layer in forms, so
-`checkbox.css`, `input.css`, `select.css` and `toggle.css` have no counterpart in
-the forms tree at all, `radio.css` has one for its option set only, and
+`checkbox.css`, `select.css` and `toggle.css` have no counterpart in the forms
+tree at all, `input.css` is support-chrome plus two forms-tree pulls (vendor's
+`textarea.css` folded in whole, `date-time-picker.css` for its one native rule),
+`radio.css` has one for its option set only, and
 `toggle-buttons.css` and `checkbox-list.css` are the exceptions that prove the
 split — both are wholly forms', because their controls borrow support's button
 chrome (`toggle-buttons.css`) or forms' own already-ported checkbox
@@ -36,8 +38,8 @@ Reference — the Filament source this is diffed against:
 - [`forms/resources/css/components/`](../../../vendor/filament/forms/resources/css/components/)
   — the twenty per-component stylesheets: `checkbox-list.css`, `field.css`,
   `radio.css`, `repeater.css` and `toggle-buttons.css` ported directly,
-  `textarea.css` folded into `input.css`, `text-input.css` and `select.css`
-  partly, the other twelve unported
+  `textarea.css` folded into `input.css`, `text-input.css`, `select.css` and
+  `date-time-picker.css` partly, the other eleven unported
 - [`support/resources/css/components/input/`](../../../vendor/filament/support/resources/css/components/input/)
   — `checkbox.css`, `index.css`, `radio.css` and `select.css`, the four control
   sources, plus the `wrapper.css` chrome the port collapses into its controls
@@ -66,15 +68,16 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 | --- | --- | --- | --- | --- |
 | [`checkbox-list.css` — the `.sy-fo-checkbox-list` option set, its search row and its no-results line](../../../packages/forms/assets/src/styles/components/checkbox-list.css) | [`components/checkbox-list.css`](../../../vendor/filament/forms/resources/css/components/checkbox-list.css) | in progress | [the input affix wrapper](field.md#the-input-affix-wrapper-is-not-ported) | [detail](checkbox-list.md#the-search-box-borrows-sy-fo-input-instead-of-the-unbuilt-wrapper) · [diverges](checkbox-list.md#the-control-class-is-the-existing-sy-fo-checkbox) |
 | [`checkbox.css` — `.sy-fo-checkbox` box, tick and invalid arms](../../../packages/forms/assets/src/styles/components/checkbox.css) | [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](#the-indeterminate-checkbox-arm-has-no-port) |
+| [`date-time-picker.css` — its one native-control rule, ported into `input.css` as `.sy-fo-input::-webkit-datetime-edit`](../../../packages/forms/assets/src/styles/components/input.css) | [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | the JS calendar vertical ([date-time-picker.md](date-time-picker.md#the-js-calendar-family-waits-on-a-js-vertical-of-its-own)) | [detail](#the-date-time-picker-stylesheet-is-one-native-rule-and-a-calendar-panel) |
 | [`field.css` — the `.sy-fo-field` wrapper grid, label column, content column and error list](../../../packages/forms/assets/src/styles/components/field.css) | [`components/field.css`](../../../vendor/filament/forms/resources/css/components/field.css) | in progress | schemas' `HasInlineLabel` · support's `HasVerticalAlignment` | [detail](#the-field-stylesheet-omits-the-leading-schema-un-grow) · [diverges](#field-css-is-flat-where-filament-nests) · [diverges](#sy-fo-sr-only-is-a-support-utility-authored-as-a-forms-component-class) |
-| [`input.css` — `.sy-fo-input`, the text control for `TextInput` and `Textarea`](../../../packages/forms/assets/src/styles/components/input.css) | [`support/…/input/index.css`](../../../vendor/filament/support/resources/css/components/input/index.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) + [`components/textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css) | in progress | [the input affix wrapper](field.md#the-input-affix-wrapper-is-not-ported) | [detail](#the-input-and-select-stylesheets-wait-on-the-affix-wrapper) · [diverges](#the-two-text-controls-invent-a-hover-ring) · [diverges](#the-textarea-rule-is-the-ports-own-because-nothing-autosizes) |
+| [`input.css` — `.sy-fo-input`, the text control for `TextInput`, `Textarea` and the three pickers](../../../packages/forms/assets/src/styles/components/input.css) | [`support/…/input/index.css`](../../../vendor/filament/support/resources/css/components/input/index.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) + [`components/textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css) + [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | [the input affix wrapper](field.md#the-input-affix-wrapper-is-not-ported) | [detail](#the-input-and-select-stylesheets-wait-on-the-affix-wrapper) · [diverges](#the-two-text-controls-invent-a-hover-ring) · [diverges](#the-textarea-rule-is-the-ports-own-because-nothing-autosizes) |
 | [`radio.css` — the `.sy-fo-radio` option set and the `.sy-fo-radio-input` control](../../../packages/forms/assets/src/styles/components/radio.css) | [`components/radio.css`](../../../vendor/filament/forms/resources/css/components/radio.css) + [`support/…/input/radio.css`](../../../vendor/filament/support/resources/css/components/input/radio.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](radio.md#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) |
 | [`repeater.css` — `.sy-fo-repeater` and `.sy-fo-simple-repeater` item chrome](../../../packages/forms/assets/src/styles/components/repeater.css) | [`components/repeater.css`](../../../vendor/filament/forms/resources/css/components/repeater.css) | in progress | the four deferred chrome clusters | [detail](repeater.md#four-chrome-clusters-are-deferred-not-dropped) · [diverges](#the-repeater-item-lists-declare-their-own-grid) |
 | [`select.css` — `.sy-fo-select`, the native control and its chevron](../../../packages/forms/assets/src/styles/components/select.css) | [`support/…/input/select.css`](../../../vendor/filament/support/resources/css/components/input/select.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) | in progress | [`CanBeNative`](select.md#canbenative-is-not-ported) · [the input affix wrapper](field.md#the-input-affix-wrapper-is-not-ported) | [detail](#the-input-and-select-stylesheets-wait-on-the-affix-wrapper) · [diverges](#the-two-text-controls-invent-a-hover-ring) |
 | [`toggle-buttons.css` — the `.sy-fo-toggle-buttons` option set and its hidden inputs](../../../packages/forms/assets/src/styles/components/toggle-buttons.css) | [`components/toggle-buttons.css`](../../../vendor/filament/forms/resources/css/components/toggle-buttons.css) | in progress | schemas' `HasInlineLabel` | [semantics](toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group) · [semantics](toggle-buttons.md#the-selected-state-is-painted-from-the-sibling-input-in-both-variants) · [diverges](toggle-buttons.md#extraattributes-stays-on-the-field-wrapper) |
 | [`toggle.css` — the `.sy-fo-toggle` root, track, thumb and icon pair](../../../packages/forms/assets/src/styles/components/toggle.css) | [`support/…/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css) | done | — | [diverges](toggle.md#the-toggle-is-a-styled-checkbox-not-a-button) · [diverges](toggle.md#the-icon-rules-select-by-name-where-filament-selects-by-position) · [diverges](toggle.md#the-two-colours-ride-on-two-elements) |
 | `text-input.css` / `select.css` — the rules no port carries | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | `revealable()` · schemas' `HasInlineLabel` | [detail](#two-vendor-stylesheets-are-partly-rather-than-wholly-unported) |
-| `builder.css` / `code-editor.css` / `color-picker.css` / `date-time-picker.css` / `file-upload.css` (+ `file-upload/filepond-plugin-media-preview.css`) / `key-value.css` / `markdown-editor.css` / `modal-table-select.css` / `rich-editor.css` / `slider.css` / `tags-input.css` | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | Builder, CodeEditor, ColorPicker, DateTimePicker, FileUpload, KeyValue, MarkdownEditor, ModalTableSelect, RichEditor, Slider, TagsInput | [detail](#the-twelve-unported-forms-stylesheets) |
+| `builder.css` / `code-editor.css` / `color-picker.css` / `file-upload.css` (+ `file-upload/filepond-plugin-media-preview.css`) / `key-value.css` / `markdown-editor.css` / `modal-table-select.css` / `rich-editor.css` / `slider.css` / `tags-input.css` | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | Builder, CodeEditor, ColorPicker, FileUpload, KeyValue, MarkdownEditor, ModalTableSelect, RichEditor, Slider, TagsInput | [detail](#the-eleven-unported-forms-stylesheets) |
 
 This table carries no [unaudited row](../README.md#an-unaudited-table-says-so):
 every one of the twenty stylesheets in
@@ -187,16 +190,38 @@ can never match, for the hidden-placeholder reason above; and
 needs both the select wrapper element and schemas' `HasInlineLabel`, so it waits
 on the later of the two.
 
-### The twelve unported forms stylesheets
+### The date-time picker stylesheet is one native rule and a calendar panel
 
-`builder.css`, `code-editor.css`, `color-picker.css`,
-`date-time-picker.css`, `file-upload.css` (with its nested
-`file-upload/filepond-plugin-media-preview.css`), `key-value.css`,
+Vendor's `date-time-picker.css` is a single `.fi-fo-date-time-picker` block, and
+everything nested inside it except one rule styles the **JS calendar** — the
+trigger button, the display text input, the panel, its month select and year
+input, the calendar grid and its day states, and the time inputs. All of it is
+[blocked on the calendar vertical](date-time-picker.md#the-js-calendar-family-waits-on-a-js-vertical-of-its-own),
+which is a JS build before it is a stylesheet.
+
+The exception is `& input::-webkit-datetime-edit { display: block; padding: 0 }`,
+which fixes an excessive height WebKit gives a **native** date control. That one
+is ported, and it is ported into
+[`input.css`](../../../packages/forms/assets/src/styles/components/input.css)
+rather than into a `date-time-picker.css` of its own: the port's three pickers
+render a bare `<input class="sy-fo-input">` with no per-field wrapper element
+around it, so there is no `.sy-fo-date-time-picker` for the rule to nest under
+and no second rule that would share a file with it. It is written flat as
+`.sy-fo-input::-webkit-datetime-edit`, which is harmless on the other controls —
+the pseudo-element exists only on date and time inputs. Next step: the file
+appears when the calendar does, and this rule moves into it if the calendar
+brings a wrapper element with it.
+
+### The eleven unported forms stylesheets
+
+`builder.css`, `code-editor.css`, `color-picker.css`, `file-upload.css` (with
+its nested `file-upload/filepond-plugin-media-preview.css`), `key-value.css`,
 `markdown-editor.css`, `modal-table-select.css`, `rich-editor.css`,
-`slider.css` and `tags-input.css` have no `sy-fo-*` counterpart. Each is **blocked** on its field — every one of those fields is
-**todo** in the [package README](README.md#components) — because the styling
-lands in the same change as the Twig template it targets and there is nothing to
-author against until then. Next step for each: port when its field does.
+`slider.css` and `tags-input.css` have no `sy-fo-*` counterpart. Each is
+**blocked** on its field — every one of those fields is **todo** in the
+[package README](README.md#components) — because the styling lands in the same
+change as the Twig template it targets and there is nothing to author against
+until then. Next step for each: port when its field does.
 
 One support-tier stylesheet sits in the same position one package over:
 `input/one-time-code.css`, blocked on `OneTimeCodeInput`. It is listed here

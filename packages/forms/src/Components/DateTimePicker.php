@@ -351,9 +351,12 @@ class DateTimePicker extends Field
 
         try {
             return new DateTimeImmutable($date)->format('Y-m-d');
-        } catch (Exception) {
-            // A bound the browser could not read either renders no attribute.
-            return null;
+        } catch (Exception $exception) {
+            throw new LogicException(sprintf(
+                "The [%s] picker's bound [%s] is not a parseable date.",
+                $this->getName() ?? static::class,
+                $date,
+            ), $exception->getCode(), previous: $exception);
         }
     }
 }

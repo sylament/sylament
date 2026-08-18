@@ -590,8 +590,14 @@ path resolved through
 [`resolveRelativeStatePath()`](../schemas/component.md), the same resolver
 [`Get`](../schemas/get.md) uses. It carries Filament's
 wrinkle with it — a field actually named `may` or `tomorrow` parses as a date and
-is never treated as a path — and the escape is Filament's too, an absolute path
-(`'/data.startsAt'`, or `isStatePathAbsolute: true`).
+is never treated as a path — and the escape is Filament's too: the leading-slash
+spelling, `'/data.startsAt'`, which `strtotime()` rejects, so the name reaches
+the state-path arm and `resolveRelativeStatePath()` strips the slash and reads
+the rest as absolute. `isStatePathAbsolute: true` is **not** a second escape. The
+`strtotime()` test runs first whatever the flag says, and the flag is only read
+inside the arm that test already routed to — it chooses absolute over
+container-relative resolution for a name that failed `strtotime()`, and it
+suppresses nothing.
 
 ### A blank sibling skips the comparison where Laravel fails the field
 

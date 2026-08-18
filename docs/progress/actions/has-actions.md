@@ -182,6 +182,14 @@ state lift: guarded by `mountedActionHasSchema()`, it calls
 `callAfterFormValidated()`, `data($state)` and `callBefore()` in that order, so
 **nothing** downstream of validation runs when the state does not validate — and
 a schema-less action takes an `else` branch that calls `callBefore()` alone.
+`call()` then receives the mounted modal schema as both `form` and `schema`,
+Filament-exact — so an `action()` closure can ask for `Schema $schema` the same
+way a `mount()` closure already could. It went bare until M3 · 3 needed it,
+which is a silent gap rather than a loud one: the named resolver falls back to
+`getSchemaContainer()`, null for an action registered on a schema component, so
+a typed `Schema $schema` parameter took a `TypeError` instead of a miss. A
+schema-less action still passes `[]` rather than a pair of nulls, since there
+is no schema to name.
 Filament runs those three inside
 [`getState(afterValidate: …)`](../schemas/schema.md); the port ran them there
 too until the sequence was straightened out, which is behaviour-identical

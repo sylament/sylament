@@ -187,6 +187,7 @@ trait HasActions
         $originallyMountedActions = $this->mountedActions;
 
         $result = null;
+        $schema = null;
 
         try {
             if ($this->mountedActionHasSchema($action)) {
@@ -205,7 +206,10 @@ trait HasActions
                 $action->callBefore();
             }
 
-            $result = $action->call();
+            $result = $action->call($schema instanceof Schema ? [
+                'form' => $schema,
+                'schema' => $schema,
+            ] : []);
             $result = $action->callAfter() ?? $result;
 
             $this->afterActionCalled($action);

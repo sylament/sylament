@@ -62,6 +62,16 @@ it('lands a client write on the data frame in the called action data', function 
         ->and($component->component()->mountedActions)->toBe([]);
 });
 
+it('hands the mounted modal schema to the called action closure', function (): void {
+    $component = $this->createLiveComponent('ActionSchemaHost')
+        ->call('mountAction', ['name' => 'inject', 'arguments' => [], 'context' => []])
+        ->set('mountedActionsData.0.title', 'Ada')
+        ->call('callMountedAction');
+
+    expect($component->component()->injectedSchemaKey)->toBe('mountedActionSchema0')
+        ->and($component->component()->savedData)->toBe(['title' => 'Ada']);
+});
+
 it('fires the form-filled hooks around the fill', function (): void {
     $host = $this->createLiveComponent('ActionSchemaHost')->component();
     $host->mountAction('edit');

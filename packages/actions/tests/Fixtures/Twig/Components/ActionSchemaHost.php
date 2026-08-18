@@ -11,6 +11,7 @@ use Sylament\Actions\Tests\Fixtures\Components\RequiredField;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Exceptions\ValidationException;
+use Sylament\Schemas\Schema;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -44,6 +45,13 @@ class ActionSchemaHost implements InteractsWithActions, InteractsWithSchemas
     public array $hookLog = [];
 
     /**
+     * The key of the schema the called action closure received, or null when
+     * no closure asking for one has run.
+     */
+    #[LiveProp]
+    public ?string $injectedSchemaKey = null;
+
+    /**
      * @return array<string>
      */
     public function schemas(): array
@@ -75,6 +83,22 @@ class ActionSchemaHost implements InteractsWithActions, InteractsWithSchemas
                     ActionSchemaField::make('reason'),
                 ]),
             ]);
+    }
+
+    /**
+     * Its `action()` closure asks for the mounted modal schema by name, so it
+     * only runs if `callMountedAction()` hands the schema to `call()`.
+     */
+    public function injectAction(): Action
+    {
+        return Action::make('inject')
+            ->schema([
+                ActionSchemaField::make('title'),
+            ])
+            ->action(function (Schema $schema, array $data): void {
+                $this->injectedSchemaKey = $schema->getKey();
+                $this->savedData = $data;
+            });
     }
 
     /**

@@ -9,6 +9,6 @@ use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigura
 return static function (ContainerConfigurator $container): void {
     $container->services()
         ->set(EntityManagerInterface::class)
-        ->factory([EntityManagerFactory::class, 'create'])
+        ->factory(EntityManagerFactory::create(...))
         ->public();
 };

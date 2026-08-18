@@ -15,7 +15,7 @@ return static function (ContainerConfigurator $container): void {
     // schemas wires `sylament_schemas.association_reader` with `nullOnInvalid()`, so this
     // registration is what makes that reader live here instead of null.
     $services->set(EntityManagerInterface::class)
-        ->factory([EntityManagerFactory::class, 'create'])
+        ->factory(EntityManagerFactory::create(...))
         ->public();
 
     $services->alias(ManagerRegistry::class, FixtureManagerRegistry::class);

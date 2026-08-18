@@ -115,6 +115,16 @@ class AssociationReader
         $this->requireEntityManager()->remove($entity);
     }
 
+    public function persist(object $entity): void
+    {
+        $this->requireEntityManager()->persist($entity);
+    }
+
+    public function flush(): void
+    {
+        $this->requireEntityManager()->flush();
+    }
+
     private function requireEntityManager(): EntityManagerInterface
     {
         return $this->entityManager ?? throw new LogicException(

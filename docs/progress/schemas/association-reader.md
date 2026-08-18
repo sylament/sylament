@@ -53,6 +53,7 @@ a _Ports_ link.
 | [`getRecordKey(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — the string key an entity is spoken by | done | — | [semantics](#the-record-key-is-tables-semantics-moved-onto-the-mapping) |
 | [`createOptionQuery(string $targetClass, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — the base query an option list narrows | done | — | [semantics](#the-option-query-is-a-starting-point-not-a-result) |
 | [`remove(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — delete an orphan through the unit of work | done | — | [semantics](#remove-is-here-so-orphan-deletion-does-not-grow-a-second-seam) |
+| [`persist(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) + [`flush()`](../../../packages/schemas/src/State/AssociationReader.php) — write a newly created related record | done | — | [semantics](#persist-and-flush-are-the-write-half-of-the-same-seam) |
 | [`AssociationTarget::$targetClass` / `$isToMany`](../../../packages/schemas/src/State/AssociationTarget.php) — what to load and in what shape | done | — | — |
 | [`AssociationTarget::$isOwningSide`](../../../packages/schemas/src/State/AssociationTarget.php) — whether writing this side writes the database | done | — | [semantics](#the-owning-side-and-orphan-removal-flags-are-what-a-writer-needs-not-trivia) |
 | [`AssociationTarget::$isOrphanRemoval`](../../../packages/schemas/src/State/AssociationTarget.php) — whether detaching an item deletes it | done | — | [diverges](#orphanremoval-is-a-plain-bool-on-the-orm-3-mapping-object) |
@@ -191,6 +192,21 @@ that this related record must not exist, which is a different statement from an
 end user dropping an item out of a list. Nulling alone would not even reach the
 database on an inverse side, so the explicit call is what makes the outcome
 independent of which side of the association the component is declared on.
+
+### `persist()` and `flush()` are the write half of the same seam
+
+`remove()` alone covers the case where a component deletes a record it did not
+create. The mirror case is a component that *creates* one: a relation-backed
+field offered a value the option list does not carry has to make the related
+entity before it can key it, and keying it needs an identifier, which only exists
+after the insert. So the pair is `persist()` then `flush()` then
+`getRecordKey()`, and `persist()` deliberately does not flush — the caller
+decides where the write boundary sits, and a component creating several records
+in one pass should pay for one flush rather than one per record.
+
+`flush()` takes no entity because ORM 3's `EntityManager::flush(): void` takes
+none either — the single-entity flush ORM 2 offered is gone, so the reader has no
+narrower boundary to expose even if a caller wanted one.
 
 ### The owning-side and orphan-removal flags are what a writer needs, not trivia
 

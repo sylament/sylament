@@ -80,6 +80,10 @@ it('answers null without an entity manager and throws on the operations that nee
         ->toThrow(LogicException::class, 'no Doctrine EntityManager')
         ->and(fn () => $reader->remove(new Author()))
         ->toThrow(LogicException::class, 'no Doctrine EntityManager')
+        ->and(fn () => $reader->persist(new Author()))
+        ->toThrow(LogicException::class, 'no Doctrine EntityManager')
+        ->and(fn () => $reader->flush())
+        ->toThrow(LogicException::class, 'no Doctrine EntityManager')
         ->and(fn (): string => $reader->getRecordKey(new Author()))
         ->toThrow(LogicException::class, 'no Doctrine EntityManager');
 });
@@ -156,4 +160,23 @@ it('removes an entity through the entity manager', function (): void {
     $entityManager->clear();
 
     expect($entityManager->find(Author::class, $author->getId()))->toBeNull();
+});
+
+it('persists an entity through the entity manager and flushes it', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $reader = new AssociationReader($entityManager);
+
+    $author = new Author();
+    $author->setName('Ada');
+
+    $reader->persist($author);
+
+    expect($entityManager->contains($author))->toBeTrue()
+        ->and($author->getId())->toBeNull();
+
+    $reader->flush();
+    $id = $author->getId();
+    $entityManager->clear();
+
+    expect($entityManager->find(Author::class, $id))->toBeInstanceOf(Author::class);
 });

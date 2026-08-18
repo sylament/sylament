@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Unit\Concerns;
 
+use DateTimeImmutable;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Components\Text;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
+use Sylament\Schemas\State\Casts\DateTimeStateCast;
 use Sylament\Schemas\State\Casts\EnumStateCast;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
@@ -320,9 +322,9 @@ it('skips object-valued reads', function (): void {
 });
 
 /*
- * The object-value skip exempts a backed enum only where a state cast carries it
- * into the bag. The bag is a writable `array` LiveProp and
- * `LiveComponentHydrator::isValueValidDehydratedValue()` refuses an object
+ * The object-value skip exempts an object leaf only where the component's own
+ * state casts flatten it out of the bag. The bag is a writable `array` LiveProp
+ * and `LiveComponentHydrator::isValueValidDehydratedValue()` refuses an object
  * anywhere inside one, so a leaf whose casts leave the instance in place must
  * skip and null-fill rather than reach dehydration.
  */
@@ -352,6 +354,37 @@ it('skips a backed enum no state cast can carry, leaving no object in the bag', 
     $schema->fill($record);
 
     expect($schema->getRawState())->toBe(['status' => null, 'author' => null]);
+});
+
+it('reads a date-time leaf whose component casts it to a string', function (): void {
+    $record = new RecordFixture();
+    $record->setPublishedAt(new DateTimeImmutable('2026-08-18 14:30:00'));
+
+    $field = StateField::make('publishedAt')->stateCast(new DateTimeStateCast(
+        format: 'Y-m-d H:i:s',
+        internalFormat: 'Y-m-d\TH:i',
+        timezone: date_default_timezone_get(),
+        objectClass: DateTimeImmutable::class,
+    ));
+    $schema = Schema::make(new StateHostFixture())->statePath('data')->components([$field]);
+
+    $schema->fill($record);
+
+    expect($schema->getRawState())->toBe(['publishedAt' => '2026-08-18T14:30'])
+        ->and($field->getState())->toEqual(new DateTimeImmutable('2026-08-18 14:30:00'));
+});
+
+it('skips a date-time leaf no state cast can carry', function (): void {
+    $record = new RecordFixture();
+    $record->setPublishedAt(new DateTimeImmutable('2026-08-18 14:30:00'));
+
+    $schema = Schema::make(new StateHostFixture())
+        ->statePath('data')
+        ->components([StateField::make('publishedAt')]);
+
+    $schema->fill($record);
+
+    expect($schema->getRawState())->toBe(['publishedAt' => null]);
 });
 
 it('reads array values from the record', function (): void {

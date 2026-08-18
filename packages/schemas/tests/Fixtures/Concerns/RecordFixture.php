@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Fixtures\Concerns;
 
+use DateTimeImmutable;
 use stdClass;
 use Sylament\Schemas\Tests\Fixtures\State\Casts\CastStatus;
 
@@ -11,12 +12,14 @@ use Sylament\Schemas\Tests\Fixtures\State\Casts\CastStatus;
  * A plain record object standing in for a Doctrine entity. `$title` is
  * deliberately left uninitialized so the fill walk's uninitialized-property skip
  * can be exercised; `getAuthor()` is deliberately setter-less and object-valued
- * so the object-value skip can be too, and `$status` is the enum-typed leaf the
- * skip exempts.
+ * so the object-value skip can be too, and `$status` and `$publishedAt` are the
+ * enum-typed and date-typed leaves a state cast carries through the skip.
  */
 final class RecordFixture
 {
     private ?CastStatus $status = null;
+
+    private ?DateTimeImmutable $publishedAt = null;
 
     private string $title;
 
@@ -70,5 +73,15 @@ final class RecordFixture
     public function setStatus(?CastStatus $status): void
     {
         $this->status = $status;
+    }
+
+    public function getPublishedAt(): ?DateTimeImmutable
+    {
+        return $this->publishedAt;
+    }
+
+    public function setPublishedAt(?DateTimeImmutable $publishedAt): void
+    {
+        $this->publishedAt = $publishedAt;
     }
 }

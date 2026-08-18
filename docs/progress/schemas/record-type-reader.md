@@ -109,6 +109,28 @@ a segment whose `objectClass` is null and so could not continue, or the class do
 not exist. Distinguishing them would only move the "do what you did before"
 decision from one place into three.
 
+### A consumer may read the type to choose a *cast*, not only a write
+
+Every consumer above reads the reader at write time. M3·2 added the first that
+reads it at *configure* time:
+[`DateTimePicker::getDateTimeObjectClass()`](../forms/date-time-picker.md) walks
+the same guard chain forms' `isRequiredByRecord()` does — root container →
+record class → `getRecordStatePath()` → `describe()` — and hands the target's
+`objectClass` to [`DateTimeStateCast`](date-time-state-cast.md), so one
+`DateTimePicker::make('publishedAt')` writes a `DateTimeImmutable` to an
+immutable property, a `DateTime` to a mutable one, and a formatted string when
+there is no record at all.
+
+Two consequences fall straight out of the
+[instantiability gate](#objectclass-is-gated-on-instantiability-so-it-is-a-promise-not-a-hint)
+and are recorded there rather than worked around here. A property typed to the
+**interface** `DateTimeInterface` never reaches the gate, so the reader answers
+`null` and the field falls back to its string form — an explicit
+`->stateCast(new DateTimeStateCast(...))` is the escape. And the reader's `null`
+keeps meaning "do what you did before types were consulted", which for a cast
+choice is Filament's own string-in-`$format` behaviour, so a schema with no
+record behind it needs no special case.
+
 ## Divergences
 
 Design decisions with no Filament source to deviate from — permanent, and the

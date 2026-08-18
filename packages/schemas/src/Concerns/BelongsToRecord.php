@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Concerns;
 
-use BackedEnum;
 use Closure;
 use LogicException;
 use Sylament\Schemas\Components\Component;
@@ -284,9 +283,9 @@ trait BelongsToRecord
     /**
      * Read this schema's declared leaf paths off a record, traversing its
      * object graph. Unreadable and uninitialized properties are skipped, as
-     * are object-valued leaves other than a `BackedEnum` whose component casts
-     * it to a scalar ({@see self::isEnumCarriedByStateCasts()}) — the null-fill
-     * pass supplies the skipped keys; a
+     * are object-valued leaves other than one the component's state casts
+     * flatten to a non-object ({@see self::isObjectCarriedByStateCasts()}) —
+     * the null-fill pass supplies the skipped keys; a
      * null or scalar intermediate supplies null. A component declaring
      * {@see Component::loadStateFromRelationshipsUsing()} supplies its own
      * value instead, so neither skip applies to its path.
@@ -313,7 +312,7 @@ trait BelongsToRecord
                 continue;
             }
 
-            if (is_object($value) && ! $this->isEnumCarriedByStateCasts($component, $value)) {
+            if (is_object($value) && ! $this->isObjectCarriedByStateCasts($component, $value)) {
                 continue;
             }
 
@@ -324,20 +323,16 @@ trait BelongsToRecord
     }
 
     /**
-     * Whether this leaf is a `BackedEnum` the component's own state casts turn
-     * into a scalar. The state bag is a writable `array` LiveProp and the
+     * Whether this object leaf is one the component's own state casts flatten
+     * into a non-object. The state bag is a writable `array` LiveProp and the
      * hydrator refuses an object anywhere inside one, so the exemption from the
      * object-value skip is exactly as wide as the cast that earns it: the chain
      * is run here to ask, and the hydration pass behind the read runs it again
      * to convert. A component with no cast, or one whose casts leave the value
      * an object, is skipped and null-filled as any other object leaf is.
      */
-    private function isEnumCarriedByStateCasts(Component $component, mixed $value): bool
+    private function isObjectCarriedByStateCasts(Component $component, object $value): bool
     {
-        if (! $value instanceof BackedEnum) {
-            return false;
-        }
-
         $stateCasts = $component->getStateCasts();
 
         if ($stateCasts === []) {

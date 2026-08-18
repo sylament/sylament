@@ -167,6 +167,13 @@ it('refuses a name naming a member of the host contract itself', function (strin
     'resolved through the "<name>Schema" suffix' => ['make'],
 ]);
 
+it('refuses a schema-shaped method that needs a second argument', function (): void {
+    $fixture = new HasSchemasFixture();
+
+    expect($fixture->resolveSchemaByName('secondRequiredParameter'))->toBeNull()
+        ->and($fixture->hasCachedSchema('secondRequiredParameter'))->toBeFalse();
+});
+
 it('resolves a schema component through a cached schema', function (): void {
     $fixture = new HasSchemasFixture();
     $component = new Component()->statePath('name');

@@ -202,12 +202,13 @@ and, through the suffix arm, `make`), and a first-parameter match may not
 have more than one **required** parameter, since `getSchema()` passes exactly
 one argument. Without the first, `validateSchemaRecord.x` from a hostile
 client was an unhandled `ArgumentCountError` — a 500 on every live host —
-and `makeSchema`/`make` minted an empty schema keyed under a bogus name; the
+and `makeSchema`/`make` minted an empty schema keyed under a bogus name. The
 Unit cases in
 [`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php)
-and the Integration case in
+pin both refusals — the four contract names, and a host's own schema-shaped
+method needing a second argument — and the Integration case in
 [`HasSchemasComponentMethodTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasComponentMethodTest.php)
-pin all four. What the gate still admits, exactly as Filament's does: a
+pins the browser-facing half. What the gate still admits, exactly as Filament's does: a
 host's **own** parameterless `Schema`-returning getter — tables'
 `getTableFiltersForm(): Schema` is the live example — is invoked and, by
 `getSchema()`, keyed under the browser's name (`Schema::key()` on the schema

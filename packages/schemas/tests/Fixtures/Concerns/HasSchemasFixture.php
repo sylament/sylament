@@ -24,4 +24,14 @@ class HasSchemasFixture implements InteractsWithSchemas
     {
         return 'not a schema';
     }
+
+    /**
+     * Schema-shaped on its first parameter and unreachable all the same:
+     * `getSchema()` passes one argument, so calling this would be an
+     * `ArgumentCountError`.
+     */
+    public function secondRequiredParameter(Schema $schema, object $record): Schema
+    {
+        return $schema;
+    }
 }

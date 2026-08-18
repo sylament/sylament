@@ -30,6 +30,7 @@ use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Contracts\Service\Attribute\Required;
 use Twig\Markup;
+use TypeError;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
@@ -550,13 +551,30 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
      * action only when it returns one, so a modifier that mutates in place and
      * returns nothing still applies.
      */
-    private function applyOptionActionModifiers(Action $action, Action|Closure|null $modifyActionUsing): Action
+    private function applyOptionActionModifiers(Action $action, ?Closure $modifyActionUsing): Action
     {
         foreach ([$this->modifyManageOptionActionsUsing, $modifyActionUsing] as $callback) {
-            $action = $this->evaluate($callback, ['action' => $action]) ?? $action;
+            if (!$callback instanceof Closure) {
+                continue;
+            }
+
+            $action = $this->modifiedOptionAction($this->evaluate($callback, ['action' => $action]), $action);
         }
 
         return $action;
+    }
+
+    private function modifiedOptionAction(mixed $modifiedAction, Action $action): Action
+    {
+        if ($modifiedAction === null) {
+            return $action;
+        }
+
+        if (! $modifiedAction instanceof Action) {
+            throw new TypeError(sprintf('An option action modifier on %s must return an %s instance or null.', static::class, Action::class));
+        }
+
+        return $modifiedAction;
     }
 
     private function resolveOptionActionIcon(string $alias, string $fallback): string|BackedEnum|Markup

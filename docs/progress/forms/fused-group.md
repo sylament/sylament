@@ -52,7 +52,7 @@ _Detail_ carries either or both: **semantics** → the permanent note in
 | [`configureChildSchema()` — inline + embedded + small actions on the six inline slots](../../../packages/forms/src/Components/FusedGroup.php) | [`FusedGroup::configureChildSchema()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | — |
 | [`isRequired()` — any default-slot child field is required-marked](../../../packages/forms/src/Components/FusedGroup.php) | [`FusedGroup::isRequired()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | — |
 | [`getErrorMessages()` — the first path-bearing child field carrying any](../../../packages/forms/src/Components/FusedGroup.php) | [the collection loop in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | [diverges](#the-error-collection-keeps-the-first-failing-field-and-nothing-else) |
-| [`FusedGroup/index.html.twig` — the group root inside `FieldWrapper`](../../../packages/forms/templates/partials/FusedGroup/index.html.twig) | [the wrapper rendering in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | [diverges](#the-group-renders-through-fieldwrapper-instead-of-a-second-copy-of-it) · [diverges](#the-group-root-carries-no-aria-describedby) |
+| [`FusedGroup/index.html.twig` — the group root inside `FieldWrapper`](../../../packages/forms/templates/partials/FusedGroup/index.html.twig) | [the wrapper rendering in `toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | done | — | [semantics](#the-plain-branch-drops-the-label-affixes-so-an-inline-checkbox-fuses-to-nothing) · [diverges](#the-group-renders-through-fieldwrapper-instead-of-a-second-copy-of-it) · [diverges](#extraattributes-lands-on-the-field-wrapper-not-on-the-group-root) · [diverges](#the-group-root-carries-no-aria-describedby) |
 | [`fused-group.css` — the ring, the dividers and the corner rules](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) | done | — | [semantics](#the-corner-rules-reach-through-two-elements-the-schema-partial-nests) |
 | [`Schema::fieldWrapperView()` (the seam) + `PLAIN_FIELD_WRAPPER_VIEW`](../../../packages/schemas/src/Concerns/HasFieldWrapper.php) | [`Concerns\HasFieldWrapper`](../../../vendor/filament/schemas/src/Concerns/HasFieldWrapper.php) | done | — | [diverges](#only-the-plain-wrapper-view-is-honored) |
 | Component-tier `HasFieldWrapper` (own → container → default) | [`Components\Concerns\HasFieldWrapper`](../../../vendor/filament/schemas/src/Components/Concerns/HasFieldWrapper.php) | todo | — | [diverges](#the-component-tier-hasfieldwrapper-twin-is-not-ported) |
@@ -68,8 +68,11 @@ intact), the gap drop, the required mark from a required child, a child
 violation surfacing once at group level with `aria-invalid`, the plain view on
 the default **and** slot schemas, `alignEnd()` on the after-label slot, the six
 inline slots against the four that stay block, and a slot component and helper
-text rendering. The regression pin that a field **outside** a group still gets
-the full wrapper lives in the same file.
+text rendering. A keyless group is pinned emitting neither `id="-label"` nor an
+`aria-labelledby` pointing at it — `FieldWrapper` guards the concatenation on
+`field.getId is not empty`, as Filament guards its own on `filled($id)`. The
+regression pin that a field **outside** a group still gets the full wrapper lives
+in the same file.
 [`HasFieldWrapperTest`](../../../packages/schemas/tests/Unit/Concerns/HasFieldWrapperTest.php)
 pins the seam itself.
 
@@ -89,6 +92,24 @@ full chrome inside the box. Filament behaves identically — its
 `makeChildSchema()` sits in the same position — so this is faithful rather than a
 gap, and the fix if it ever bites is the same in both codebases: pass components,
 not a `Schema`.
+
+### The plain branch drops the label affixes, so an inline checkbox fuses to nothing
+
+`Checkbox` and `Toggle` are inline by default
+([`CanBeInline`](../../../packages/forms/src/Components/Concerns/CanBeInline.php)
+starts `true` in forms) and an inline one puts its control into `FieldWrapper`'s
+`labelPrefix` block, leaving `content` empty. The plain branch renders `content`
+and the screen-reader label and nothing else, so either field dropped into a
+`FusedGroup` renders **no control at all** — no error, no empty box, just a
+label.
+
+That is parity, not a gap opened here. Filament's
+[`plain-field-wrapper.blade.php`](../../../vendor/filament/forms/resources/views/components/plain-field-wrapper.blade.php)
+declares four props — `field`, `id`, `label`, `labelTag` — so the `label-prefix`
+`Field::wrapEmbeddedHtml()` passes it lands in `$attributes` and is never
+emitted, and vendor's inline checkbox disappears the same way. Fusing a checkbox
+is unsupported on both sides; supporting it means rendering the affixes in the
+plain branch, which would be an invention rather than a port.
 
 ### The corner rules reach through two elements the schema partial nests
 
@@ -150,6 +171,23 @@ unported. So `getErrorMessages()` walks the default-slot child fields in order
 and returns the first non-empty message list it finds — Filament's `break`
 semantics, minus the shapes our wrapper has no use for. The group therefore
 shows one field's errors at a time, exactly as Filament's does.
+
+### `extraAttributes()` lands on the field wrapper, not on the group root
+
+Vendor merges `getExtraAttributes()` into the **inner** `.fi-sc-fused-group`
+bag, beside `id`, `role` and the two aria attributes; the outer field wrapper
+takes `getExtraFieldWrapperAttributes()` alone. Ours hands both bags to
+`FieldWrapper`, which merges them onto the outer `.sy-fo-field` div, so an
+`extraAttributes(['data-x' => '1'])` on a group lands one element higher than
+Filament puts it and the group root carries only what the template computes.
+It falls out of
+[rendering through `FieldWrapper`](#the-group-renders-through-fieldwrapper-instead-of-a-second-copy-of-it)
+rather than being chosen: the wrapper reads every attribute source off the
+`field` it is handed, and a component-tier bag it did not consume would simply
+be dropped. Splitting them means passing the group's own bag through the
+template's `attrs()` call on the group root and teaching `FieldWrapper` to skip
+`getExtraAttributes` for a plain-view container — a divergence from our own
+one-wrapper rule, so it waits for a caller that needs it.
 
 ### The group root carries no `aria-describedby`
 

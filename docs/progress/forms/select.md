@@ -57,6 +57,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | [`relationship()`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — to-one and to-many, over the [association reader](../schemas/association-reader.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](#relationship-is-three-lazy-closures-over-the-association-reader) · [semantics](#a-relationship-select-is-always-enumerable-or-it-throws) · [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | `createOptionForm()` / `createOptionUsing()` / `createOptionAction()` / `getCreateOptionAction()` and the create modal chain | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#refreshselectedoptionlabel-is-not-ported) · [diverges](#the-non-relationship-schema-record-is-read-off-the-field-not-off-a-getactionschemamodel) |
 | `editOptionForm()` / `updateOptionUsing()` / `fillEditOptionActionFormUsing()` / `editOptionAction()` / `getEditOptionAction()` / `getSelectedRecord()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#geteditoptionactionformdata-also-answers-an-object) |
+| `getSelectedRecordUsing()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | the JS select control (M3 · 4) | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) |
 | `manageOptionForm()` / `manageOptionActions()` / the two modal headings | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-option-action-strings-are-untranslated-literals) |
 | `relationship()` `ignoreRecord:` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | the `unique`/`exists` constraint family | — |
 | `pivotData()` | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity recipe | [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
@@ -481,6 +482,21 @@ set explicitly that the cache does not supply: `color('gray')` and
 are the small size and the icon-button *template*, and neither is a colour — an
 affix action that wants gray says so.
 
+Both getters close through `applyOptionActionModifiers()`, which runs the
+manage-level modifier and then the action's own, each replacing the action only
+when it returns one — Filament's two `?? $action` guards folded into one loop.
+The modifiers still go through
+[`evaluate()`](../../../packages/support/src/Concerns/EvaluatesClosures.php), so
+a closure can ask for `Select $component` alongside `Action $action` exactly as
+Filament's can, and a modifier returning something that is neither an `Action`
+nor `null` raises a named `TypeError` the way schemas'
+[`CanModifyActions`](../../../packages/schemas/src/Concerns/CanModifyActions.php)
+does, rather than surfacing as a return-type failure one frame out. The
+callback parameter is typed `?Closure` and the narrowing happens on the
+**result**, because `evaluate()`'s generic reads T off the value union — a
+`Closure`-only argument would make it infer `Closure`, which is why the pair of
+Filament's `?? $action` guards could not simply be kept as they were written.
+
 `relationship()` is overridden here rather than widened in the shared trait:
 [`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged)
 composes the same trait and has no option actions, so the override aliases the
@@ -521,6 +537,32 @@ on the field, answers `null` for a blank selection, and answers `null` for a
 select bound to no association at all — Filament's equivalent is a
 `getSelectedRecordUsing` closure that `relationship()` installs, and with a single
 resolution strategy there is nothing for that closure to switch between.
+
+Two consequences of hardcoding that strategy, both worth knowing before the
+setter is ported.
+
+**A reference is not a row, so a missing row surfaces late and loudly.**
+`getReference()` hands back an uninitialised proxy without touching the
+database, so nothing has checked that the key still names a row. The check
+happens when the edit modal's `fill()` reads state off the instance and Doctrine
+initialises it, and a key whose row was deleted concurrently — or tampered with
+on the wire — raises `EntityNotFoundException` there, where Filament's `first()`
+degrades to `null` and the modal simply mounts empty. The fix if that ever
+matters is not a `try`: it is resolving the record through the same
+[`createOptionQuery()`](#relationship-is-three-lazy-closures-over-the-association-reader)
+path the options come from, which fetches and answers `null` on a miss.
+
+**`getSelectedRecordUsing()` is the seam the whole thing is missing.** It is
+public API on Filament's `Select`
+([`Select.php`](../../../vendor/filament/forms/src/Components/Select.php)),
+`getSelectedRecord()` is nothing but `evaluate()` over it, and `relationship()`
+merely installs one default among several. Ours has no setter, so a
+**non-relationship** select carrying an `editOptionForm()` has no way to bind a
+record to the edit modal at all — the method returns `null` on the
+`hasRelationship()` gate and the modal fills from nothing. It is deferred to
+M3 · 4 rather than added now because in Filament the same closure is the
+label-resolution path the searchable JS control drives, and porting it against
+the native renderer alone would fix its shape to half the job.
 
 ### The inline-prefix class counts visible actions where the text input's counts all of them
 

@@ -56,6 +56,21 @@ it('marks the group root as a labelled group', function (): void {
         ->and($crawler->filter('#range-label')->text())->toBe('Price range');
 });
 
+it('emits no label id for a keyless group', function (): void {
+    $keyless = renderToHtml(
+        Schema::make(new FieldRenderHost())->statePath('data')->components([priceRange()]),
+    );
+
+    expect($keyless)->not->toContain('id="-label"')
+        ->and($keyless)->not->toContain('aria-labelledby');
+
+    $keyed = renderToHtml(
+        Schema::make(new FieldRenderHost())->statePath('data')->components([priceRange()->key('range')]),
+    );
+
+    expect($keyed)->toContain('id="range-label"');
+});
+
 it('renders the child fields through the plain wrapper branch', function (): void {
     $crawler = renderFusedGroup(priceRange());
 

@@ -18,6 +18,7 @@
         "sylament/actions": "self.version",
         "sylament/schemas": "self.version",
         "sylament/support": "self.version",
+        "symfony/service-contracts": "^3.6",
         "symfony/stimulus-bundle": "^3.1",
         "symfony/string": "^8.1",
         "symfony/uid": "^8.1",

@@ -113,10 +113,16 @@ div at all rather than an empty bordered one.
 
 `.sy-input-wrp:not(.sy-disabled):not(:has(.sy-ac:focus))` is Filament's
 `:not(.fi-disabled):not(:has(.fi-ac-action:focus))` with our marker class
-substituted: every action trigger variant in `actions` renders `sy-ac` on its
-root ([action.md](../actions/action.md)), which is the class `fi-ac-action`
-translates to here. Without the arm, clicking an affix action would ring the
-whole wrapper as though the control itself had focus.
+substituted: every `Action` variant in `actions` — `Badge`, `Button`, `Grouped`,
+`IconButton`, `Link` — renders `sy-ac` on its root
+([action.md](../actions/action.md)), which is the class `fi-ac-action` translates
+to here. Without the arm, clicking an affix action would ring the whole wrapper
+as though the control itself had focus. `ActionGroup`'s own triggers are the
+exception: only `GroupedTrigger` carries `sy-ac`, while `ButtonTrigger`,
+`IconButtonTrigger` and `LinkTrigger` delegate to a bare support component and
+emit none — a group dropped into an affix slot would therefore keep the ring.
+Nothing puts one there today (the affix setters take `Action`), so it is a gap
+rather than a defect.
 
 It is a class-name coupling across packages that no test holds: support's
 stylesheet names a class `actions`' templates emit, and support cannot depend on

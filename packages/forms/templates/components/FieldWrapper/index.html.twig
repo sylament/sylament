@@ -10,7 +10,7 @@
 
 {% set isPlain = field.getContainer.getFieldWrapperView == constant('Sylament\\Forms\\Components\\FusedGroup::PLAIN_FIELD_WRAPPER_VIEW') %}
 
-{% set labelId = labelAsHeading ? field.getId ~ '-label' : null %}
+{% set labelId = (labelAsHeading and field.getId is not empty) ? field.getId ~ '-label' : null %}
 
 {% if isPlain %}
     <div
@@ -20,7 +20,10 @@
     >
         {% if field.getLabel is not null %}
             {% if labelAsHeading %}
-                <div id="{{ labelId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</div>
+                <div {{ attrs({
+                    id: labelId,
+                    class: ['sy-fo-field-label', 'sy-fo-sr-only'],
+                }) }}>{{ field.getLabel }}</div>
             {% else %}
                 <label for="{{ field.getId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</label>
             {% endif %}
@@ -51,7 +54,10 @@
     >
         {% if field.getLabel is not null and field.isLabelHidden %}
             {% if labelAsHeading %}
-                <div id="{{ labelId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</div>
+                <div {{ attrs({
+                    id: labelId,
+                    class: ['sy-fo-field-label', 'sy-fo-sr-only'],
+                }) }}>{{ field.getLabel }}</div>
             {% else %}
                 <label for="{{ field.getId }}" class="sy-fo-field-label sy-fo-sr-only">{{ field.getLabel }}</label>
             {% endif %}

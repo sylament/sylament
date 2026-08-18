@@ -7,9 +7,10 @@
 in [renames.md](../renames.md#namespace-segments)).
 
 An alias is a name an application can register an icon override for under
-[`sylament.icons`](../support/icon-manager.md); it does nothing until a template
-passes it to `generateIconHtml()`, which is why the constant set grows with the
-surface that renders the icons rather than up front.
+[`sylament.icons`](../support/icon-manager.md); it does nothing until something
+resolves it — usually a template passing it to `generateIconHtml()`, sometimes
+PHP calling `IconManager::resolve()` — which is why the constant set grows with
+the surface that renders the icons rather than up front.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -47,12 +48,20 @@ box passes it to the wrapper's `prefixIconAlias` prop
 ([the one wrapper a template opens by hand](checkbox-list.md#the-search-box-is-the-one-wrapper-a-template-opens-by-hand)),
 so all three constants now resolve against real markup.
 
-The two select constants resolve differently, and it is the first time an alias
-is read in PHP rather than handed to a template: an `Action`'s icon has no alias
-prop to pass one through, so
+The two select constants resolve differently — they are the first **forms**
+aliases read in PHP rather than handed to a template, a shape panels reached
+first with
+[`Dashboard::getNavigationIcon()`](../panels/README.md#dashboard), which resolves
+`PanelsIconAlias::PAGES_DASHBOARD_NAVIGATION_ITEM` through an injected
+`IconManager` of its own. Here an `Action`'s icon has no alias prop to pass one
+through, so
 [`Select` resolves them itself](select.md#the-option-action-strings-are-untranslated-literals)
 through an `IconManager` taken by a `#[Required]` setter, at the moment it builds
-each option action.
+each option action. An override registered for the create-option alias is pinned
+replacing the rendered icon by
+[`SelectCreateOptionTest`](../../../packages/forms/tests/Integration/Components/SelectCreateOptionTest.php),
+which is the second of the five constants to have its override exercised against
+real markup rather than only its value asserted.
 
 ## Details
 

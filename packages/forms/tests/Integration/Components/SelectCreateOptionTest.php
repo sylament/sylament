@@ -13,9 +13,14 @@ use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Author;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Tag;
+use Sylament\Forms\Twig\FormsIconAlias;
 use Sylament\Schemas\Schema;
+use Sylament\Support\Icons\IconManager;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
+
+use function Sylament\Forms\Tests\renderField;
 
 uses(InteractsWithLiveComponents::class);
 
@@ -352,4 +357,18 @@ it("renders both option actions as icon buttons in the select's suffix slot", fu
         ->toContain('data-live-name-param="createOption"')
         ->toContain('data-live-name-param="editOption"')
         ->toContain('data-live-context-param="{&quot;schemaComponent&quot;:&quot;schema.author&quot;}"');
+});
+
+it('lets a registered alias replace the create-option icon at render time', function (): void {
+    $this::getContainer()->get(IconManager::class)->register([
+        FormsIconAlias::COMPONENTS_SELECT_ACTIONS_CREATE_OPTION => 'heroicons:star',
+    ]);
+
+    $icon = new Crawler(renderField(
+        Select::make('author')->options(['a' => 'A'])->manageOptionForm([TextInput::make('name')]),
+    ))->filter('.sy-input-wrp-suffix button.sy-ac svg');
+
+    // The star fixture is a 24-unit icon; the ported `heroicons:plus-20-solid` default is 20.
+    expect($icon->count())->toBe(1)
+        ->and($icon->attr('viewBox'))->toBe('0 0 24 24');
 });

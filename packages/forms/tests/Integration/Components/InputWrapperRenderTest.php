@@ -80,6 +80,22 @@ it('renders the suffix affixes in label, icon, action order', function (): void 
         ->and($children->eq(2)->filter('button.sy-ac')->count())->toBe(1);
 });
 
+it('paints an affix icon through the wrapper icon colour policy', function (): void {
+    $icon = new Crawler(renderField(
+        TextInput::make('title')->prefixIcon('heroicons:star')->prefixIconColor('danger'),
+    ))->filter('.sy-input-wrp-prefix svg');
+
+    expect($icon->attr('class'))->toBe('sy sy-icon sy-size-md sy-color sy-color-danger');
+
+    // The policy's shade map is empty and gray is its default, so the default colour
+    // emits nothing and the stylesheet's `:not(.sy-color)` branch paints the icon.
+    $gray = new Crawler(renderField(
+        TextInput::make('title')->prefixIcon('heroicons:star'),
+    ))->filter('.sy-input-wrp-prefix svg');
+
+    expect($gray->attr('class'))->toBe('sy sy-icon sy-size-md');
+});
+
 it('strips the control padding on the side an inline affix occupies', function (): void {
     $inline = new Crawler(renderField(
         TextInput::make('title')->prefix('kg', isInline: true)->suffix('EUR', isInline: true),

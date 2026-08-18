@@ -189,7 +189,8 @@ which is a silent gap rather than a loud one: the named resolver falls back to
 `getSchemaContainer()`, null for an action registered on a schema component, so
 a typed `Schema $schema` parameter took a `TypeError` instead of a miss. A
 schema-less action still passes `[]` rather than a pair of nulls, since there
-is no schema to name.
+is no schema to name —
+[a divergence with its own note](#a-schema-less-action-is-called-with-no-arguments-not-with-a-pair-of-nulls).
 Filament runs those three inside
 [`getState(afterValidate: …)`](../schemas/schema.md); the port ran them there
 too until the sequence was straightened out, which is behaviour-identical
@@ -533,6 +534,28 @@ accepts and ignores it on the schema branch, while the port's signature is
 is stated in terms of it. Reverses if a frame ever needs a
 typed failure signal the null return cannot carry; the schema path would adopt the
 now-existing exception class then.
+
+### A schema-less action is called with no arguments, not with a pair of nulls
+
+Filament computes `$schema` once, before the try block, and passes
+`['form' => $schema, 'schema' => $schema]` into `Action::call()` on **every**
+branch
+([`InteractsWithActions::callMountedAction()`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php)),
+so an action with no modal schema still binds both names — to `null`. The port
+computes `$schema` inside the schema branch and passes `[]` on the other, since
+there is no schema to name.
+
+What that changes is only which mechanism answers a closure asking for one.
+`form` reaches no resolver here, so a `$form` parameter is filled from its own
+default or `null` when it is optional and raises the Invoker's named error
+otherwise, where Filament binds it to `null`. `schema` is answered anyway, by
+`Action`'s own [name resolver](../../../packages/actions/src/Action.php), which
+returns `getSchemaContainer()` — the container the action was **registered** on,
+not the modal schema — so a `?Schema $schema` parameter still lands and a
+non-nullable one still takes a `TypeError` when that container is null, exactly
+as it would under Filament's explicit `null`. Reverses by passing the pair
+unconditionally the moment a caller wants `form` bound on the schema-less
+branch.
 
 ### `getMountedAction()` never guards its own read with a `catch`
 

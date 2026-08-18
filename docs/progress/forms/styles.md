@@ -166,15 +166,17 @@ affix hooks landed with it (`.sy-fo-input-has-inline-prefix`, its suffix twin an
   [the port also appends to the class list](has-extra-input-attributes.md). So the
   hook is reachable here and the rules behind it are not, which is the one arm of
   this list a consumer can trip over today.
-- **Two of the three per-field wrapper rules still have no element.**
+- **One of the three per-field wrapper rules still has no element.** Vendor puts
+  two of them on the input wrapper itself and the third on a `<div>` outside it.
   `.fi-fo-textarea { overflow-hidden }` ported with the flip, onto the textarea's
   own wrapper as
-  [`.sy-fo-textarea`](textarea.md#the-control-keeps-the-sy-fo-input-class-filaments-textarea-carries-none);
-  its two siblings did not. `.fi-fo-text-input { overflow-hidden }` is the same
-  rule on the text input's wrapper and is portable now that the element exists —
-  it stays with the rest of `text-input.css` below. `.fi-fo-select-wrp` styles a
-  second `<div>`, outside the input wrapper rather than inside it, and waits on
-  schemas' `HasInlineLabel` with the rules that use it.
+  [`.sy-fo-textarea`](textarea.md#the-control-keeps-the-sy-fo-input-class-filaments-textarea-carries-none).
+  `.fi-fo-text-input { overflow-hidden }` is the same rule one control over and
+  its element exists too — the text input's `.sy-input-wrp` — so it is a one-line
+  class away rather than blocked; it stays with the rest of `text-input.css`
+  below. Only `.fi-fo-select-wrp` has nothing to attach to: it styles a second
+  `<div>`, outside the input wrapper rather than inside it, and waits on schemas'
+  `HasInlineLabel` with the rules that use it.
 
 `select.css`'s second vendor block — the ninety-odd rules styling the
 Choices.js/Alpine custom select, `div[x-ref='select']` included — is not part of
@@ -213,9 +215,10 @@ which fixes an excessive height WebKit gives a **native** date control. That one
 is ported, and it is ported into
 [`input.css`](../../../packages/forms/assets/src/styles/components/input.css)
 rather than into a `date-time-picker.css` of its own: the port's three pickers
-render a bare `<input class="sy-fo-input">` with no per-field wrapper element
-around it, so there is no `.sy-fo-date-time-picker` for the rule to nest under
-and no second rule that would share a file with it. It is written flat as
+render their `<input class="sy-fo-input">` inside support's `.sy-input-wrp` like
+every other control and add no picker-specific class of their own, so there is no
+`.sy-fo-date-time-picker` for the rule to nest under and no second rule that
+would share a file with it. It is written flat as
 `.sy-fo-input::-webkit-datetime-edit`, which is harmless on the other controls —
 the pseudo-element exists only on date and time inputs. Next step: the file
 appears when the calendar does, and this rule moves into it if the calendar
@@ -391,6 +394,14 @@ them. It is cheap to keep: it paints only the ring colour, so it cannot collide
 with the invalid arm, which restates the danger ring for exactly that reason.
 Reverses by deleting two declarations if Filament parity on hover is ever
 wanted.
+
+Only the light half does anything. `dark:hover:ring-white/20` is the same value
+as the resting `dark:ring-white/20`, so the dark hover is inert — it was carried
+over verbatim from the two controls that owned the ring before the wrapper did,
+and it is kept rather than deleted so both halves of the pair stay visible at the
+one place a reviewer reads them. Deepening the shade is not a fix; it would
+invent a dark hover Filament has no counterpart for on top of a light one it
+already has none for.
 
 ### The textarea rule is the port's own, because nothing autosizes
 

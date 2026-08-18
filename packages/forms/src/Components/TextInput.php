@@ -9,6 +9,7 @@ use Sylament\Forms\Components\Concerns\CanBeAutocapitalized;
 use Sylament\Forms\Components\Concerns\CanBeAutocompleted;
 use Sylament\Forms\Components\Concerns\CanBeLengthConstrained;
 use Sylament\Forms\Components\Concerns\CanBeReadOnly;
+use Sylament\Forms\Components\Concerns\HasAffixes;
 use Sylament\Forms\Components\Concerns\HasDatalistOptions;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasStep;
@@ -22,12 +23,13 @@ use Symfony\Component\Validator\Constraints\Url;
 
 use function Sylament\Support\filled;
 
-class TextInput extends Field implements Contracts\CanBeLengthConstrained
+class TextInput extends Field implements Contracts\CanBeLengthConstrained, Contracts\HasAffixes
 {
     use CanBeAutocapitalized;
     use CanBeAutocompleted;
     use CanBeLengthConstrained;
     use CanBeReadOnly;
+    use HasAffixes;
     use HasDatalistOptions;
     use HasExtraInputAttributes;
     use HasStep;

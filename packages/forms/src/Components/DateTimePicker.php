@@ -12,6 +12,7 @@ use Exception;
 use LogicException;
 use Sylament\Forms\Components\Concerns\CanBeNative;
 use Sylament\Forms\Components\Concerns\CanBeReadOnly;
+use Sylament\Forms\Components\Concerns\HasAffixes;
 use Sylament\Forms\Components\Concerns\HasDatalistOptions;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasStep;
@@ -22,10 +23,11 @@ use Sylament\Schemas\State\RecordTarget;
 
 use function Sylament\Support\filled;
 
-class DateTimePicker extends Field
+class DateTimePicker extends Field implements Contracts\HasAffixes
 {
     use CanBeNative;
     use CanBeReadOnly;
+    use HasAffixes;
     use HasDatalistOptions;
     use HasExtraInputAttributes;
     use HasStep;

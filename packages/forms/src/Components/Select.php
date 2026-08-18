@@ -8,6 +8,7 @@ use Closure;
 use LogicException;
 use Sylament\Forms\Components\Concerns\CanDisableOptions;
 use Sylament\Forms\Components\Concerns\CanSelectPlaceholder;
+use Sylament\Forms\Components\Concerns\HasAffixes;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasOptions;
 use Sylament\Forms\Components\Concerns\HasRelationship;
@@ -25,10 +26,11 @@ use Twig\Markup;
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 
-class Select extends Field implements Contracts\CanDisableOptions
+class Select extends Field implements Contracts\CanDisableOptions, Contracts\HasAffixes
 {
     use CanDisableOptions;
     use CanSelectPlaceholder;
+    use HasAffixes;
     use HasExtraInputAttributes;
     use HasOptions;
     use HasRelationship;

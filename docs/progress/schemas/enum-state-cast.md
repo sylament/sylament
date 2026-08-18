@@ -5,10 +5,12 @@ whose value is a single backed enum case. `get()` turns whatever a request
 delivers into an instance of the configured enum, or `null`; `set()` writes an
 instance back as the string spelling of its backing value.
 
-Nothing applies it yet. `Field::enum()` and the option fields that select it
-(`Radio`, `ToggleButtons`, `Select`) reach it once they land — the cast is the
-piece each of them composes, and
-[`EnumArrayStateCast`](enum-array-state-cast.md) is its plural.
+`Field::getEnumDefaultStateCast()` builds it for any field that calls `enum()`.
+`Radio` reaches it through that base implementation unchanged; `ToggleButtons`
+and `Select` each override the method but still return this cast outside
+`multiple()`, falling back to
+[`EnumArrayStateCast`](enum-array-state-cast.md) — its plural — once
+`multiple()` is on.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 

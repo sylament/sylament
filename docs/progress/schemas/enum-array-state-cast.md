@@ -8,10 +8,10 @@ that element cast cannot resolve — an unknown spelling, a blank, a tampered
 non-scalar — is dropped rather than kept as a null hole. `get()` returns a
 `list<BackedEnum>`, `set()` a `list<string>`, so a drop reindexes on both sides.
 
-Nothing applies it yet. `CheckboxList` and a `multiple()` `ToggleButtons` or
-`Select` reach it once they land — Filament's option fields override
-`getEnumDefaultStateCast()` to select this cast over the scalar one exactly when
-the field takes more than one value.
+`CheckboxList` and a `multiple()` `ToggleButtons` or `Select` all apply it —
+each overrides `getEnumDefaultStateCast()` to select this cast over the scalar
+one exactly when the field takes more than one value, which for `CheckboxList`
+is every time.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 

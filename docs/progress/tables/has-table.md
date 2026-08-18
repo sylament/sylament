@@ -741,9 +741,9 @@ that makes `SelectFilter`'s `['value' => null]` do what it says.
 
 The bool arm consults
 [`hasNullableBooleanState()`](../forms/field.md#hasnullablebooleanstate-has-exactly-one-consumer)
-first and writes `null` instead of `false` when it answers true — which `Select`
-does, and `Radio` and `ToggleButtons` will. This is the predicate's only consumer
-in either tree, so restoring the branch is what porting it was *for*.
+first and writes `null` instead of `false` when it answers true — which
+`Select`, `Radio` and `ToggleButtons` all do. This is the predicate's only
+consumer in either tree, so restoring the branch is what porting it was *for*.
 
 The arm is narrower than it looks either way, because the fallback runs only for
 a field the filter's `getResetState()` does not name, and `SelectFilter` seeds

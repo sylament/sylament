@@ -120,6 +120,10 @@ and the Stimulus controllers through `assets/controllers.json`:
         "@sylament/actions": {
             "dispatch": { "enabled": true, "fetch": "eager" }
         },
+        "@sylament/forms": {
+            "checkbox-list": { "enabled": true, "fetch": "eager" },
+            "select":        { "enabled": true, "fetch": "eager" }
+        },
         "@sylament/notifications": {
             "notifications": { "enabled": true, "fetch": "eager" },
             "notification":  { "enabled": true, "fetch": "eager" }
@@ -144,13 +148,19 @@ and the Stimulus controllers through `assets/controllers.json`:
 List a block for each Sylament package you installed. In a Flex app you do not
 write this by hand — `composer` runs the package-json synchronizer, which copies
 each package's declared `enabled`/`fetch` in for you; the block above is what it
-produces for `support`, `notifications` and `actions` together.
+produces for `support`, `forms`, `notifications` and `actions` together.
 
 Support's `core` controller carries the `autoimport` that pulls in the
 stylesheet; the other three power collapsible sections, modals and dropdown
 positioning, and you can disable one you do not use. Notifications' two
 controllers drive the toast stack and each toast's auto-dismiss, hover-pause and
-close.
+close. Forms' two are per-field: `checkbox-list` supplies a checkbox list's
+search filter and bulk toggle, and `select` is the searchable select control. That
+second one is not optional for the fields that use it: a `searchable()`,
+`multiple()` or `native(false)` select renders a plain `<select>` whose binding
+belongs to the controller rather than to a `data-model` attribute, so omitting the
+block leaves a box that neither searches nor sends what the user picked. A select
+that is none of those three is a native `<select>` and needs no JavaScript at all.
 
 **`@sylament/actions` is easy to leave out and fails silently.** Its single
 `dispatch` controller binds to no element of its own — it registers one
@@ -174,9 +184,13 @@ yourself from `vendor/sylament/support/assets/dist/`:
   components
 
 The stylesheet is support's alone, but the controllers are not: serve
-`vendor/sylament/notifications/assets/dist/controllers/*.js` and
-`vendor/sylament/actions/assets/dist/controllers/*.js` too if you installed those
-packages and want toasts or action event dispatch.
+`vendor/sylament/notifications/assets/dist/controllers/*.js`,
+`vendor/sylament/actions/assets/dist/controllers/*.js` and
+`vendor/sylament/forms/assets/dist/controllers/*.js` too if you installed those
+packages and want toasts, action event dispatch, or the checkbox-list and
+searchable-select controls. Forms' `dist` also carries
+`tom-select-LICENSE.txt` — the notice for the library bundled into its select
+controller, which the Apache-2.0 licence requires you to keep beside it.
 
 Copy them into your public directory, or point your own build at them.
 </details>

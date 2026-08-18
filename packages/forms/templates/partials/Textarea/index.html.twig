@@ -1,19 +1,25 @@
 <twig:SylamentForms:FieldWrapper :field="component">
-    <textarea {{ attrs({
-        class: 'sy-fo-input',
-        id: component.getId,
-        name: component.getName,
-        'data-model': component.getDataModel,
-        rows: component.getRows,
-        cols: component.getCols,
-        autocomplete: component.getAutocomplete,
-        placeholder: component.getPlaceholder ?: false,
-        maxlength: component.getMaxLength,
-        minlength: component.getMinLength,
-        required: component.isMarkedAsRequired,
-        'aria-invalid': component.getErrorMessages is not empty,
-        readonly: component.isReadOnly,
-        disabled: component.isDisabled,
-        autofocus: component.isAutofocused,
-    }, component.getExtraInputAttributes) }}>{{- component.getState -}}</textarea>
+    <twig:SylamentSupport:InputWrapper
+        class="sy-fo-textarea"
+        :disabled="component.isDisabled"
+        :valid="component.getErrorMessages is empty"
+    >
+        <textarea {{ attrs({
+            class: 'sy-fo-input',
+            id: component.getId,
+            name: component.getName,
+            'data-model': component.getDataModel,
+            rows: component.getRows,
+            cols: component.getCols,
+            autocomplete: component.getAutocomplete,
+            placeholder: component.getPlaceholder ?: false,
+            maxlength: component.getMaxLength,
+            minlength: component.getMinLength,
+            required: component.isMarkedAsRequired,
+            'aria-invalid': component.getErrorMessages is not empty,
+            readonly: component.isReadOnly,
+            disabled: component.isDisabled,
+            autofocus: component.isAutofocused,
+        }, component.getExtraInputAttributes) }}>{{- component.getState -}}</textarea>
+    </twig:SylamentSupport:InputWrapper>
 </twig:SylamentForms:FieldWrapper>

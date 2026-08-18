@@ -81,15 +81,25 @@ The fixture is the shape to copy:
 
 ```twig
 <twig:SylamentForms:FieldWrapper :field="component">
-    <input {{ attrs({
-        class: 'sy-fo-input',
-        type: 'text',
-        id: component.getId,
-        'data-model': component.getDataModel,
-        value: component.getState ?? '',
-    }) }}>
+    <twig:SylamentSupport:InputWrapper :disabled="component.isDisabled" :valid="component.getErrorMessages is empty">
+        <input {{ attrs({
+            class: 'sy-fo-input',
+            type: 'text',
+            id: component.getId,
+            'data-model': component.getDataModel,
+            value: component.getState ?? '',
+        }) }}>
+    </twig:SylamentSupport:InputWrapper>
 </twig:SylamentForms:FieldWrapper>
 ```
+
+The [input wrapper](../support/input-wrapper.md) is the template's to open too,
+and for the same reason — it is what paints the ring, background and focus state
+a text control no longer carries itself, so a `sy-fo-input` outside one renders
+as bare text on the page background. The second fixture,
+[`Unwrapped`](../../../packages/forms/tests/Fixtures/Twig/templates/partials/ViewFieldFixture/Unwrapped.html.twig),
+opens neither wrapper on purpose: a custom field that wants no chrome at all is a
+valid thing to want, and it is the case that proves nothing is inherited.
 
 The tag names the wrapper directly where Filament's example resolves it through
 `$getFieldWrapperView()` — schemas' `HasFieldWrapper`, which the port does not

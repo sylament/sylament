@@ -1,5 +1,5 @@
 .sy-fo-input {
-    @apply block w-full rounded-lg bg-white px-3 py-1.5 text-start text-sm leading-6 text-gray-950 shadow-sm ring-1 ring-gray-950/10 transition duration-75 outline-none placeholder:text-gray-400 hover:ring-gray-950/20 focus:ring-2 focus:ring-primary-600 disabled:bg-gray-50 disabled:text-gray-500 disabled:[-webkit-text-fill-color:var(--color-gray-500)] disabled:placeholder:[-webkit-text-fill-color:var(--color-gray-400)] dark:bg-white/5 dark:text-white dark:ring-white/20 dark:placeholder:text-gray-500 dark:hover:ring-white/20 dark:focus:ring-primary-500 dark:disabled:bg-transparent dark:disabled:text-gray-400 dark:disabled:ring-white/10 dark:disabled:[-webkit-text-fill-color:var(--color-gray-400)] dark:disabled:placeholder:[-webkit-text-fill-color:var(--color-gray-500)];
+    @apply block w-full appearance-none border-none bg-transparent px-3 py-1.5 text-start text-sm leading-6 text-gray-950 transition duration-75 placeholder:text-gray-400 focus:ring-0 focus:outline-none disabled:text-gray-500 disabled:[-webkit-text-fill-color:var(--color-gray-500)] disabled:placeholder:[-webkit-text-fill-color:var(--color-gray-400)] dark:text-white dark:placeholder:text-gray-500 dark:disabled:text-gray-400 dark:disabled:[-webkit-text-fill-color:var(--color-gray-400)] dark:disabled:placeholder:[-webkit-text-fill-color:var(--color-gray-500)];
 
     /* https://defensivecss.dev/tip/input-zoom-safari */
     @supports (-webkit-touch-callout: none) {
@@ -7,13 +7,34 @@
     }
 }
 
-.sy-fo-input[aria-invalid='true'] {
-    @apply ring-danger-600 hover:ring-danger-600 focus:ring-danger-600 dark:ring-danger-500 dark:hover:ring-danger-500 dark:focus:ring-danger-500;
+.sy-fo-input-has-inline-prefix {
+    @apply ps-0;
+}
+
+.sy-fo-input-has-inline-suffix {
+    @apply pe-0;
+}
+
+input[type='date'].sy-fo-input,
+input[type='datetime-local'].sy-fo-input,
+input[type='time'].sy-fo-input {
+    /* An almost transparent white background color is used
+     instead of fully transparent to fix a Safari bug
+     where the date/time input "placeholder" colors too dark.
+
+     https://github.com/filamentphp/filament/issues/7087
+     https://github.com/filamentphp/filament/issues/18570 */
+
+    @apply bg-white/[1%];
 }
 
 input[type='range'].sy-fo-input {
     @apply mx-auto appearance-auto;
     width: calc(100% - 1.5rem);
+}
+
+.sy-fo-textarea {
+    @apply overflow-hidden;
 }
 
 textarea.sy-fo-input {

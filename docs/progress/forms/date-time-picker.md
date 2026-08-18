@@ -63,7 +63,7 @@ another file.
 | [`HasDatalistOptions`](has-datalist-options.md) | [`Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | done | — | [detail](has-datalist-options.md) |
 | [`HasExtraInputAttributes`](has-extra-input-attributes.md) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
 | [`HasPlaceholder`](field.md) — already on `Field` here | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [detail](field.md) |
-| `HasAffixes` (+ its contract) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | blocked | the input wrapper ([field.md](field.md#the-input-affix-wrapper-is-not-ported)) | — |
+| [`HasAffixes`](../../../packages/forms/src/Components/Concerns/HasAffixes.php) (+ its contract) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [detail](has-affixes.md) |
 | `HasExtraAlpineAttributes` | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | skipped | — | [diverges](#the-alpine-and-published-view-surface-has-no-counterpart) |
 | `$publishedViewOverrideCheckPath` | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | skipped | — | [diverges](#the-alpine-and-published-view-surface-has-no-counterpart) |
 | `displayFormat()` / `getDisplayFormat()` | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | blocked | the JS calendar vertical | [detail](#the-js-calendar-family-waits-on-a-js-vertical-of-its-own) |
@@ -334,8 +334,8 @@ support ports `TimezoneManager`: the split returns as written above, and the
 are all marked `@deprecated` in Filament. No deprecated surface ships here —
 a port that starts with the previous generation's aliases starts with a
 migration debt it never earned. `date(false)` / `seconds(false)` / `time(false)`
-are the spellings, and the icon arrives with
-[`HasAffixes`](field.md#the-input-affix-wrapper-is-not-ported).
+are the spellings, and the icon is spelled `suffixIcon()` through
+[`HasAffixes`](has-affixes.md).
 
 ### The Alpine and published-view surface has no counterpart
 

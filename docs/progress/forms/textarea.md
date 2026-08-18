@@ -27,6 +27,7 @@ _Detail_ links the write-up in [Details](#details), deleted once the row is
 | Length constraints (`length` / `maxLength` / `minLength` + `Contracts\CanBeLengthConstrained`) | [`Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) | done | — | [detail](can-be-length-constrained.md) |
 | Error display (`aria-invalid` on the `<textarea>`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](field.md#error-display-shows-every-message-for-the-path) |
 | Embedded view → Twig template | [`Textarea::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | — |
+| Input wrapper (`wrapInputHtml`) — no affix API, Filament-exact | [`Textarea::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | [semantics](field.md#the-wrapper-owns-the-chrome-and-the-control-is-transparent) · [diverges](#the-control-keeps-the-sy-fo-input-class-filaments-textarea-carries-none) |
 | `autosize()` / `shouldAutosize()` | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | todo | — | [detail](#autosize-is-not-ported) |
 | [Autocomplete (`CanBeAutocompleted`)](../../../packages/forms/src/Components/Concerns/CanBeAutocompleted.php) | [`Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | done | — | [detail](can-be-autocompleted.md) |
 | [Read-only (`CanBeReadOnly`)](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | — | [detail](can-be-read-only.md) |
@@ -85,9 +86,28 @@ the same change, together with the field-side
 
 ## Divergences
 
-None. The ported subset (`rows`, `cols`, length constraints, the field-wrapper
-chrome, and the Twig template) is a faithful port; the `wire:model` →
-`data-model` binding, the `Htmlable` / `toEmbeddedHtml` → Twig template
+### The control keeps the `sy-fo-input` class, Filament's textarea carries none
+
+Filament's `<textarea>` is the one text control with **no** `fi-input` class on
+it: its typography, padding and placeholder colours come from a
+`.fi-fo-textarea textarea` descendant rule in
+[`textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css),
+which restates most of `input.fi-input` a second time. Ours keeps
+`class="sy-fo-input"` on the control and lets the shared rule paint it, so the
+declarations exist once. What the wrapper class carries here is only what is
+genuinely the wrapper's: `.sy-fo-textarea { overflow-hidden }`, vendor's own
+first declaration, without which the control's square corners spill past the
+wrapper's `rounded-lg`.
+
+The placement is what diverges, not the result — a shipped `<textarea>` renders
+the same box either way. It reverses by moving the declarations into a
+`.sy-fo-textarea textarea` rule and dropping the class from the template, which
+is worth doing only if the two rules ever need to disagree; autosize is the
+candidate, and it is [not ported](#autosize-is-not-ported).
+
+The rest of the ported subset (`rows`, `cols`, length constraints, the
+field-wrapper chrome, and the Twig template) is a faithful port; the `wire:model`
+→ `data-model` binding, the `Htmlable` / `toEmbeddedHtml` → Twig template
 translation, and placeholder escaping via Twig are systematic idiom translations
 recorded in the [rename table](../renames.md), not divergences. The `required`
 and `aria-invalid` attributes the template emits are `Field`-level concerns

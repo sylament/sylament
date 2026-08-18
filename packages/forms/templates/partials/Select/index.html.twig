@@ -1,39 +1,58 @@
 {% set state = component.getOptionComparisonState %}
 
-<twig:SylamentForms:FieldWrapper :field="component">
-    <select {{ attrs({
-        class: 'sy-fo-select',
-        id: component.getId,
-        name: component.getName,
-        'data-model': component.getDataModel,
-        multiple: component.isMultiple,
-        required: component.isMarkedAsRequired,
-        'aria-invalid': component.getErrorMessages is not empty,
-        disabled: component.isDisabled,
-        autofocus: component.isAutofocused,
-    }, component.getExtraInputAttributes) }}>
-        {% if component.canSelectPlaceholder %}
-            <option value="">{{ component.isDisabled ? '' : component.getPlaceholder }}</option>
-        {% endif %}
+{% set prefixActions = component.getPrefixActions %}
+{% set suffixActions = component.getSuffixActions %}
+{% set hasInlinePrefix = component.isPrefixInline and (prefixActions|filter(action => action.isVisible)|length > 0 or component.getPrefixIcon or component.getPrefixLabel is filled) %}
 
-        {% for value, label in component.getOptions %}
-            {% if label is iterable %}
-                <optgroup label="{{ value }}">
-                    {% for groupedValue, groupedLabel in label %}
-                        <option {{ attrs({
-                            value: groupedValue,
-                            selected: state is iterable ? groupedValue in state : (state is not null and groupedValue == state),
-                            disabled: component.isOptionDisabled(groupedValue, groupedLabel),
-                        }) }}>{{ groupedLabel }}</option>
-                    {% endfor %}
-                </optgroup>
-            {% else %}
-                <option {{ attrs({
-                    value: value,
-                    selected: state is iterable ? value in state : (state is not null and value == state),
-                    disabled: component.isOptionDisabled(value, label),
-                }) }}>{{ label }}</option>
+<twig:SylamentForms:FieldWrapper :field="component">
+    <twig:SylamentSupport:InputWrapper
+        :disabled="component.isDisabled"
+        :valid="component.getErrorMessages is empty"
+        :inlinePrefix="component.isPrefixInline"
+        :inlineSuffix="component.isSuffixInline"
+        :prefix="component.getPrefixLabel"
+        :prefixActions="prefixActions"
+        :prefixIcon="component.getPrefixIcon"
+        :prefixIconColor="component.getPrefixIconColor ?? 'gray'"
+        :suffix="component.getSuffixLabel"
+        :suffixActions="suffixActions"
+        :suffixIcon="component.getSuffixIcon"
+        :suffixIconColor="component.getSuffixIconColor ?? 'gray'"
+    >
+        <select {{ attrs({
+            class: ['sy-fo-select', {'sy-fo-select-has-inline-prefix': hasInlinePrefix}],
+            id: component.getId,
+            name: component.getName,
+            'data-model': component.getDataModel,
+            multiple: component.isMultiple,
+            required: component.isMarkedAsRequired,
+            'aria-invalid': component.getErrorMessages is not empty,
+            disabled: component.isDisabled,
+            autofocus: component.isAutofocused,
+        }, component.getExtraInputAttributes) }}>
+            {% if component.canSelectPlaceholder %}
+                <option value="">{{ component.isDisabled ? '' : component.getPlaceholder }}</option>
             {% endif %}
-        {% endfor %}
-    </select>
+
+            {% for value, label in component.getOptions %}
+                {% if label is iterable %}
+                    <optgroup label="{{ value }}">
+                        {% for groupedValue, groupedLabel in label %}
+                            <option {{ attrs({
+                                value: groupedValue,
+                                selected: state is iterable ? groupedValue in state : (state is not null and groupedValue == state),
+                                disabled: component.isOptionDisabled(groupedValue, groupedLabel),
+                            }) }}>{{ groupedLabel }}</option>
+                        {% endfor %}
+                    </optgroup>
+                {% else %}
+                    <option {{ attrs({
+                        value: value,
+                        selected: state is iterable ? value in state : (state is not null and value == state),
+                        disabled: component.isOptionDisabled(value, label),
+                    }) }}>{{ label }}</option>
+                {% endif %}
+            {% endfor %}
+        </select>
+    </twig:SylamentSupport:InputWrapper>
 </twig:SylamentForms:FieldWrapper>

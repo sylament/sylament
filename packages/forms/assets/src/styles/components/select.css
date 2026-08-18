@@ -1,5 +1,5 @@
 .sy-fo-select {
-    @apply block w-full appearance-none rounded-lg bg-white bg-no-repeat py-1.5 pe-8 ps-3 text-sm leading-6 text-gray-950 shadow-sm ring-1 ring-gray-950/10 transition duration-75 outline-none hover:ring-gray-950/20 focus:ring-2 focus:ring-primary-600 disabled:bg-gray-50 disabled:text-gray-500 disabled:[-webkit-text-fill-color:var(--color-gray-500)] dark:bg-white/5 dark:text-white dark:ring-white/20 dark:hover:ring-white/20 dark:focus:ring-primary-500 dark:disabled:bg-transparent dark:disabled:text-gray-400 dark:disabled:ring-white/10 dark:disabled:[-webkit-text-fill-color:var(--color-gray-400)] [&_optgroup]:bg-white [&_optgroup]:dark:bg-gray-900 [&_option]:bg-white [&_option]:dark:bg-gray-900;
+    @apply block w-full appearance-none border-none bg-transparent bg-no-repeat py-1.5 pe-8 ps-3 text-sm leading-6 text-gray-950 transition duration-75 focus:ring-0 focus:outline-none disabled:text-gray-500 disabled:[-webkit-text-fill-color:var(--color-gray-500)] dark:text-white dark:disabled:text-gray-400 dark:disabled:[-webkit-text-fill-color:var(--color-gray-400)] [&_optgroup]:bg-white [&_optgroup]:dark:bg-gray-900 [&_option]:bg-white [&_option]:dark:bg-gray-900;
 
     /* https://defensivecss.dev/tip/input-zoom-safari */
     @supports (-webkit-touch-callout: none) {
@@ -15,6 +15,6 @@
     }
 }
 
-.sy-fo-select[aria-invalid='true'] {
-    @apply ring-danger-600 hover:ring-danger-600 focus:ring-danger-600 dark:ring-danger-500 dark:hover:ring-danger-500 dark:focus:ring-danger-500;
+.sy-fo-select-has-inline-prefix {
+    @apply ps-0;
 }

@@ -147,7 +147,7 @@ it('wraps the input in a content container when before/after content is present'
 
     $ctn = $crawler->filter('.sy-fo-field-content-ctn');
     expect($ctn->count())->toBe(1)
-        ->and($ctn->filter('.sy-fo-field-content > input.sy-fo-input')->count())->toBe(1)
+        ->and($ctn->filter('.sy-fo-field-content > .sy-input-wrp > .sy-input-wrp-content-ctn > input.sy-fo-input')->count())->toBe(1)
         ->and($ctn->text())->toContain('Before')
         ->and($ctn->text())->toContain('After');
 });

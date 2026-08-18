@@ -66,14 +66,14 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [`checkbox-list.css` — the `.sy-fo-checkbox-list` option set, its search row and its no-results line](../../../packages/forms/assets/src/styles/components/checkbox-list.css) | [`components/checkbox-list.css`](../../../vendor/filament/forms/resources/css/components/checkbox-list.css) | in progress | [the input affix wrapper](field.md#the-input-affix-wrapper-is-not-ported) | [detail](checkbox-list.md#the-search-box-borrows-sy-fo-input-instead-of-the-unbuilt-wrapper) · [diverges](checkbox-list.md#the-control-class-is-the-existing-sy-fo-checkbox) |
+| [`checkbox-list.css` — the `.sy-fo-checkbox-list` option set, its search row and its no-results line](../../../packages/forms/assets/src/styles/components/checkbox-list.css) | [`components/checkbox-list.css`](../../../vendor/filament/forms/resources/css/components/checkbox-list.css) | done | — | [diverges](checkbox-list.md#the-control-class-is-the-existing-sy-fo-checkbox) |
 | [`checkbox.css` — `.sy-fo-checkbox` box, tick and invalid arms](../../../packages/forms/assets/src/styles/components/checkbox.css) | [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](#the-indeterminate-checkbox-arm-has-no-port) |
 | [`date-time-picker.css` — its one native-control rule, ported into `input.css` as `.sy-fo-input::-webkit-datetime-edit`](../../../packages/forms/assets/src/styles/components/input.css) | [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | the JS calendar vertical ([date-time-picker.md](date-time-picker.md#the-js-calendar-family-waits-on-a-js-vertical-of-its-own)) | [detail](#the-date-time-picker-stylesheet-is-one-native-rule-and-a-calendar-panel) |
 | [`field.css` — the `.sy-fo-field` wrapper grid, label column, content column and error list](../../../packages/forms/assets/src/styles/components/field.css) | [`components/field.css`](../../../vendor/filament/forms/resources/css/components/field.css) | in progress | schemas' `HasInlineLabel` · support's `HasVerticalAlignment` | [detail](#the-field-stylesheet-omits-the-leading-schema-un-grow) · [diverges](#field-css-is-flat-where-filament-nests) · [diverges](#sy-fo-sr-only-is-a-support-utility-authored-as-a-forms-component-class) |
-| [`input.css` — `.sy-fo-input`, the text control for `TextInput`, `Textarea` and the three pickers](../../../packages/forms/assets/src/styles/components/input.css) | [`support/…/input/index.css`](../../../vendor/filament/support/resources/css/components/input/index.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) + [`components/textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css) + [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | [the input affix wrapper](field.md#the-input-affix-wrapper-is-not-ported) | [detail](#the-input-and-select-stylesheets-wait-on-the-affix-wrapper) · [diverges](#the-two-text-controls-invent-a-hover-ring) · [diverges](#the-textarea-rule-is-the-ports-own-because-nothing-autosizes) |
+| [`input.css` — `.sy-fo-input`, the text control for `TextInput`, `Textarea` and the three pickers](../../../packages/forms/assets/src/styles/components/input.css) | [`support/…/input/index.css`](../../../vendor/filament/support/resources/css/components/input/index.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) + [`components/textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css) + [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | an alignment setter | [detail](#the-input-and-select-stylesheets-stop-at-the-alignment-arms) · [diverges](#the-input-wrapper-invents-a-hover-ring) · [diverges](#the-textarea-rule-is-the-ports-own-because-nothing-autosizes) |
 | [`radio.css` — the `.sy-fo-radio` option set and the `.sy-fo-radio-input` control](../../../packages/forms/assets/src/styles/components/radio.css) | [`components/radio.css`](../../../vendor/filament/forms/resources/css/components/radio.css) + [`support/…/input/radio.css`](../../../vendor/filament/support/resources/css/components/input/radio.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](radio.md#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) |
 | [`repeater.css` — `.sy-fo-repeater` and `.sy-fo-simple-repeater` item chrome](../../../packages/forms/assets/src/styles/components/repeater.css) | [`components/repeater.css`](../../../vendor/filament/forms/resources/css/components/repeater.css) | in progress | the four deferred chrome clusters | [detail](repeater.md#four-chrome-clusters-are-deferred-not-dropped) · [diverges](#the-repeater-item-lists-declare-their-own-grid) |
-| [`select.css` — `.sy-fo-select`, the native control and its chevron](../../../packages/forms/assets/src/styles/components/select.css) | [`support/…/input/select.css`](../../../vendor/filament/support/resources/css/components/input/select.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) | in progress | [`CanBeNative`](select.md#canbenative-is-not-ported) · [the input affix wrapper](field.md#the-input-affix-wrapper-is-not-ported) | [detail](#the-input-and-select-stylesheets-wait-on-the-affix-wrapper) · [diverges](#the-two-text-controls-invent-a-hover-ring) |
+| [`select.css` — `.sy-fo-select`, the native control and its chevron](../../../packages/forms/assets/src/styles/components/select.css) | [`support/…/input/select.css`](../../../vendor/filament/support/resources/css/components/input/select.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) | in progress | [`CanBeNative`](select.md#canbenative-is-not-ported) | [detail](#the-input-and-select-stylesheets-stop-at-the-alignment-arms) · [diverges](#the-input-wrapper-invents-a-hover-ring) |
 | [`toggle-buttons.css` — the `.sy-fo-toggle-buttons` option set and its hidden inputs](../../../packages/forms/assets/src/styles/components/toggle-buttons.css) | [`components/toggle-buttons.css`](../../../vendor/filament/forms/resources/css/components/toggle-buttons.css) | in progress | schemas' `HasInlineLabel` | [semantics](toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group) · [semantics](toggle-buttons.md#the-selected-state-is-painted-from-the-sibling-input-in-both-variants) · [diverges](toggle-buttons.md#extraattributes-stays-on-the-field-wrapper) |
 | [`toggle.css` — the `.sy-fo-toggle` root, track, thumb and icon pair](../../../packages/forms/assets/src/styles/components/toggle.css) | [`support/…/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css) | done | — | [diverges](toggle.md#the-toggle-is-a-styled-checkbox-not-a-button) · [diverges](toggle.md#the-icon-rules-select-by-name-where-filament-selects-by-position) · [diverges](toggle.md#the-two-colours-ride-on-two-elements) |
 | `text-input.css` / `select.css` — the rules no port carries | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | `revealable()` · schemas' `HasInlineLabel` | [detail](#two-vendor-stylesheets-are-partly-rather-than-wholly-unported) |
@@ -143,24 +143,16 @@ one: no hidden placeholder is rendered anywhere in the port, so the selector can
 never match — the same DOM fact schemas records for the
 [whole schema render](../schemas/schema.md#the-schema-renders-visible-children-only-without-hidden-placeholders).
 
-### The input and select stylesheets wait on the affix wrapper
+### The input and select stylesheets stop at the alignment arms
 
-Both controls collapse vendor's `.fi-input-wrp` chrome onto the control element,
-which [field.md](field.md#the-input-affix-wrapper-is-not-ported) records as the
-port's shape and which is also where the two type-specific `input[type=…]` rules
-are ruled on. What remains unported follows from that collapse and from the
-missing per-field wrapper element:
+Both controls are now transparent, with the ring, background and `focus-within`
+state on support's
+[`.sy-input-wrp`](../support/input-wrapper.md) — the shape
+[field.md](field.md#the-wrapper-owns-the-chrome-and-the-control-is-transparent)
+records, and where the two type-specific `input[type=…]` rules are ruled on. The
+affix hooks landed with it (`.sy-fo-input-has-inline-prefix`, its suffix twin and
+`.sy-fo-select-has-inline-prefix`), so what is left unported is:
 
-- **The affix hooks have no element.** `&.fi-input-has-inline-prefix { ps-0 }`,
-  its suffix twin and `&.fi-select-input-has-inline-prefix { ps-0 }` address the
-  prefix/suffix layer nothing emits.
-- **The per-field wrapper rules have no element either.**
-  `.fi-fo-text-input { overflow-hidden }`, `.fi-fo-select-wrp` and
-  `.fi-fo-textarea-wrp` all style a `<div>` between the field wrapper and the
-  control; the port's templates render the `<input>`, `<select>` and `<textarea>`
-  as direct children of `.sy-fo-field-content`. Those wrappers arrive with the
-  `sy-fo-*-wrp` hooks [field.md](field.md#extra-attribute-precedence-is-fixed-by-source-order)
-  already anticipates for all five affected fields.
 - **`input.fi-input`'s six `.fi-align-*` arms** (`center`, `end`, `left`,
   `right`, `justify`, `between`) have no port. No field exposes an alignment
   setter, so nothing emits the class — but Filament's own fields do not emit it
@@ -168,6 +160,15 @@ missing per-field wrapper element:
   [the port also appends to the class list](has-extra-input-attributes.md). So the
   hook is reachable here and the rules behind it are not, which is the one arm of
   this list a consumer can trip over today.
+- **Two of the three per-field wrapper rules still have no element.**
+  `.fi-fo-textarea { overflow-hidden }` ported with the flip, onto the textarea's
+  own wrapper as
+  [`.sy-fo-textarea`](textarea.md#the-control-keeps-the-sy-fo-input-class-filaments-textarea-carries-none);
+  its two siblings did not. `.fi-fo-text-input { overflow-hidden }` is the same
+  rule on the text input's wrapper and is portable now that the element exists —
+  it stays with the rest of `text-input.css` below. `.fi-fo-select-wrp` styles a
+  second `<div>`, outside the input wrapper rather than inside it, and waits on
+  schemas' `HasInlineLabel` with the rules that use it.
 
 `select.css`'s second vendor block — the ninety-odd rules styling the
 Choices.js/Alpine custom select, `div[x-ref='select']` included — is not part of
@@ -178,8 +179,10 @@ favour of the native renderer.
 ### Two vendor stylesheets are partly rather than wholly unported
 
 `text-input.css` holds two rules. `.fi-fo-text-input { @apply overflow-hidden }`
-styles the wrapper `<div>` named above, and
-`& input.fi-revealable { @apply [&::-ms-reveal]:hidden }` suppresses Edge's
+is the text input's half of the pair named above — the element exists now, so it
+is a one-line class away rather than blocked, and it is unported only because
+nothing has clipped past the wrapper's corners here yet. The other,
+`& input.fi-revealable { @apply [&::-ms-reveal]:hidden }`, suppresses Edge's
 native password-reveal glyph for a field that ships its own reveal button —
 [`revealable()`](text-input.md) is **todo** there, blocked on the prebuilt
 `TextInput/Actions`, and the rule lands with it.
@@ -369,16 +372,19 @@ addition to a rule otherwise ported line for line — the checkbox's landed firs
 and went unrecorded, and the radio copied it — and it reverses by deleting all
 three from both files, which renders identically today.
 
-### The two text controls invent a hover ring
+### The input wrapper invents a hover ring
 
-`.sy-fo-input` and `.sy-fo-select` both carry
+[`.sy-input-wrp`](../support/input-wrapper.md) carries
 `hover:ring-gray-950/20 dark:hover:ring-white/20`. Vendor's `.fi-input-wrp` has no
 `:hover` rule anywhere — it goes straight from the resting ring to
-`focus-within`. The affordance is the port's own, added on both controls together
-so a text field and a select behave alike, and it is cheap to keep: it paints only
-the ring colour, so it cannot collide with the invalid arm, which restates
-`hover:ring-danger-*` for exactly that reason. Reverses by deleting four
-declarations if Filament parity on hover is ever wanted.
+`focus-within`. The affordance is the port's own. It was invented on
+`.sy-fo-input` and `.sy-fo-select` together, back when each control painted its
+own ring, and it moved onto the wrapper unchanged when the ring did, so a text
+field and a select still behave alike and every other wrapped control now joins
+them. It is cheap to keep: it paints only the ring colour, so it cannot collide
+with the invalid arm, which restates the danger ring for exactly that reason.
+Reverses by deleting two declarations if Filament parity on hover is ever
+wanted.
 
 ### The textarea rule is the port's own, because nothing autosizes
 

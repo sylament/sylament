@@ -40,10 +40,10 @@ to the `Icon` tag's `alias` prop, resolving
 and an override registered under `sylament.icons` is pinned replacing one of them
 by
 [`ToggleButtonsTest`](../../../packages/forms/tests/Integration/Components/ToggleButtonsTest.php).
-The checkbox list's search field has landed in this same epic without the icon:
-[there is no prefix slot to hang it in](checkbox-list.md#the-search-box-borrows-sy-fo-input-instead-of-the-unbuilt-wrapper)
-until the input wrapper lands at M3 · 3, so that constant still ships ahead of
-the markup that resolves it.
+The third has one too, since the input wrapper landed: the checkbox list's search
+box passes it to the wrapper's `prefixIconAlias` prop
+([the one wrapper a template opens by hand](checkbox-list.md#the-search-box-is-the-one-wrapper-a-template-opens-by-hand)),
+so all three constants now resolve against real markup.
 
 ## Details
 

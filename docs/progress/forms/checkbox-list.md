@@ -78,7 +78,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`CanAllowHtml`](../../../packages/forms/src/Components/Concerns/CanAllowHtml.php) | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | — | [detail](#canallowhtml-opens-exactly-one-hole) |
 | [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) — the markup, the debounce override and the client-side filter | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | — | [semantics](#canbesearchable-is-client-side-only-and-mostly-select-only) · [diverges](#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it) |
 | [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) — `minItems()` / `maxItems()` as a `Count` | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [detail](can-limit-items-length.md) · [semantics](#the-three-server-side-guards-are-ordered-so-they-never-collide) |
-| The search field's magnifying-glass icon and its `fi-input-wrp` prefix slot | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | blocked | the input wrapper (M3 · 3) | [detail](#the-search-box-borrows-sy-fo-input-instead-of-the-unbuilt-wrapper) |
+| The search field's magnifying-glass icon and its [input wrapper](../support/input-wrapper.md) prefix slot | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-search-box-is-the-one-wrapper-a-template-opens-by-hand) |
 | `HasPivotData` — `pivotData()` on the save arm | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity mapping (M3 · 9) | [detail](#haspivotdata-has-no-join-row-to-write-to) |
 | `HasNestedRecursiveValidationRules` + its contract — the `{statePath}.*` error path | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | blocked | the validation families (M3 · 8) | [detail](#the-nested-recursive-rules-are-real-here-and-deferred-with-the-rest-of-validation) |
 | `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `distinct()` (M3 · 8) · repeater-item context (M3 · 6) | [detail](radio.md#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
@@ -131,23 +131,6 @@ about checking.
 Specifics for rows that are not finished. Delete a subsection when its row flips
 to **done**.
 
-### The search box borrows `sy-fo-input` instead of the unbuilt wrapper
-
-Vendor hand-builds `div.fi-input-wrp.fi-fo-checkbox-list-search-input-wrp` with
-a `fi-input-wrp-prefix` holding a magnifying-glass icon, then puts
-`input.fi-input.fi-input-has-inline-prefix` inside it — the same wrapper the
-port's other inputs will get from support at
-[M3 · 3](../roadmap.md#m3--forms-widening). Building a one-off copy of it here
-would have to be unbuilt again then.
-
-So the port keeps the outer `sy-fo-checkbox-list-search-input-wrp` div (the
-class carries the `mb-4` vendor gives it, and nothing else) and puts
-`class="sy-fo-input"` on the `<input>` directly. The consequence is the
-**icon**: with no prefix slot to hang it in, none renders, which is why
-[`FormsIconAlias::COMPONENTS_CHECKBOX_LIST_SEARCH_FIELD`](../../../packages/forms/src/Twig/FormsIconAlias.php)
-already ships as a constant with no call site. That row is **blocked**, not
-skipped — M3 · 3 lands the wrapper, and the icon goes in with it.
-
 ### `HasPivotData` has no join row to write to
 
 The concern declares extra columns to write onto a `BelongsToMany` pivot table
@@ -180,6 +163,23 @@ needs today — that every submitted value is a known option — is already the
 ## Semantics
 
 Behaviour that is faithful to Filament but easy to misread here.
+
+### The search box is the one wrapper a template opens by hand
+
+Every other control gets its [input wrapper](../support/input-wrapper.md) from
+its own field template, driven by [`HasAffixes`](has-affixes.md). This one is not
+a field: it is a search box **inside** a field, so the template opens
+`<twig:SylamentSupport:InputWrapper>` itself with a literal
+`heroicons:magnifying-glass-20-solid` prefix icon and `inlinePrefix` — vendor
+hand-builds exactly the same thing, and the class
+`sy-fo-checkbox-list-search-input-wrp` (which carries the `mb-4` and nothing
+else) rides through as a passthrough attribute the wrapper's root appends.
+
+That is what brings
+[`FormsIconAlias::COMPONENTS_CHECKBOX_LIST_SEARCH_FIELD`](../../../packages/forms/src/Twig/FormsIconAlias.php)
+to life — the constant shipped before its call site did, so an application could
+already override an icon nothing rendered. Tables' search field is the same
+shape one package over.
 
 ### `CanBeSearchable` is client-side only, and mostly Select-only
 

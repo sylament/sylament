@@ -1,30 +1,53 @@
 {% set datalistOptions = component.getDatalistOptions %}
 
-<twig:SylamentForms:FieldWrapper :field="component">
-    <input {{ attrs({
-        class: 'sy-fo-input',
-        type: component.getType,
-        id: component.getId,
-        name: component.getName,
-        'data-model': component.getDataModel,
-        value: component.getRawState ?? '',
-        placeholder: component.getPlaceholder ?: false,
-        min: minAttribute,
-        max: maxAttribute,
-        step: component.getStep,
-        list: datalistOptions ? component.getId ~ '-list' : null,
-        required: component.isMarkedAsRequired,
-        'aria-invalid': component.getErrorMessages is not empty,
-        readonly: component.isReadOnly,
-        disabled: component.isDisabled,
-        autofocus: component.isAutofocused,
-    }, component.getExtraInputAttributes) }}>
+{% set prefixActions = component.getPrefixActions %}
+{% set suffixActions = component.getSuffixActions %}
+{% set hasInlinePrefix = component.isPrefixInline and (prefixActions|length > 0 or component.getPrefixIcon or component.getPrefixLabel is filled) %}
+{% set hasInlineSuffix = component.isSuffixInline and (suffixActions|length > 0 or component.getSuffixIcon or component.getSuffixLabel is filled) %}
 
-    {% if datalistOptions %}
-        <datalist id="{{ component.getId }}-list">
-            {% for option in datalistOptions %}
-                <option value="{{ option }}"></option>
-            {% endfor %}
-        </datalist>
-    {% endif %}
+<twig:SylamentForms:FieldWrapper :field="component">
+    <twig:SylamentSupport:InputWrapper
+        :disabled="component.isDisabled"
+        :valid="component.getErrorMessages is empty"
+        :inlinePrefix="component.isPrefixInline"
+        :inlineSuffix="component.isSuffixInline"
+        :prefix="component.getPrefixLabel"
+        :prefixActions="prefixActions"
+        :prefixIcon="component.getPrefixIcon"
+        :prefixIconColor="component.getPrefixIconColor ?? 'gray'"
+        :suffix="component.getSuffixLabel"
+        :suffixActions="suffixActions"
+        :suffixIcon="component.getSuffixIcon"
+        :suffixIconColor="component.getSuffixIconColor ?? 'gray'"
+    >
+        <input {{ attrs({
+            class: ['sy-fo-input', {
+                'sy-fo-input-has-inline-prefix': hasInlinePrefix,
+                'sy-fo-input-has-inline-suffix': hasInlineSuffix,
+            }],
+            type: component.getType,
+            id: component.getId,
+            name: component.getName,
+            'data-model': component.getDataModel,
+            value: component.getRawState ?? '',
+            placeholder: component.getPlaceholder ?: false,
+            min: minAttribute,
+            max: maxAttribute,
+            step: component.getStep,
+            list: datalistOptions ? component.getId ~ '-list' : null,
+            required: component.isMarkedAsRequired,
+            'aria-invalid': component.getErrorMessages is not empty,
+            readonly: component.isReadOnly,
+            disabled: component.isDisabled,
+            autofocus: component.isAutofocused,
+        }, component.getExtraInputAttributes) }}>
+
+        {% if datalistOptions %}
+            <datalist id="{{ component.getId }}-list">
+                {% for option in datalistOptions %}
+                    <option value="{{ option }}"></option>
+                {% endfor %}
+            </datalist>
+        {% endif %}
+    </twig:SylamentSupport:InputWrapper>
 </twig:SylamentForms:FieldWrapper>

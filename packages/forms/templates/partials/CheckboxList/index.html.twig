@@ -22,14 +22,19 @@
             }, hasController ? stimulus_controller(controller, {debounce: component.getSearchDebounce}) : null) }}
     >
         {% if hasSearch %}
-            <div class="sy-fo-checkbox-list-search-input-wrp">
+            <twig:SylamentSupport:InputWrapper
+                class="sy-fo-checkbox-list-search-input-wrp"
+                :inlinePrefix="true"
+                prefixIcon="heroicons:magnifying-glass-20-solid"
+                :prefixIconAlias="constant('Sylament\\Forms\\Twig\\FormsIconAlias::COMPONENTS_CHECKBOX_LIST_SEARCH_FIELD')"
+            >
                 <input {{ attrs({
                     type: 'search',
-                    class: 'sy-fo-input',
+                    class: ['sy-fo-input', 'sy-fo-input-has-inline-prefix'],
                     placeholder: component.getSearchPrompt,
                     'aria-label': component.getSearchPrompt,
                 }, stimulus_target(controller, 'search')) }}>
-            </div>
+            </twig:SylamentSupport:InputWrapper>
         {% endif %}
 
         {% if hasBulkToggle %}

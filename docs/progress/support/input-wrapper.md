@@ -15,13 +15,14 @@ on forms. The classes are `sy-input-wrp*` — no package code in the name, the
 same choice `sy-btn` makes, because support is the package everything else
 builds on.
 
-Nothing consumes it yet. Forms' `HasAffixes` and the transparency flip that
-moves the chrome off `.sy-fo-input` / `.sy-fo-select` land later in the same
-epic ([roadmap M3 · 3](../roadmap.md#m3--forms-widening)), and the render
-coverage arrives with them — support's own fixture Kernel registers no
-TwigComponentBundle, so a shipped component's render tests live wherever its
-first consumer does, the split [pagination.md](pagination.md) and
-[badge.md](badge.md) record.
+Forms consumes it: every text-like control renders inside it, and
+`.sy-fo-input` / `.sy-fo-select` went transparent in the same epic
+([field.md](../forms/field.md#the-wrapper-owns-the-chrome-and-the-control-is-transparent)).
+Its render coverage lives over there too —
+[`InputWrapperRenderTest`](../../../packages/forms/tests/Integration/Components/InputWrapperRenderTest.php)
+— because support's own fixture Kernel registers no TwigComponentBundle, so a
+shipped component's render tests live wherever its first consumer does, the
+split [pagination.md](pagination.md) and [badge.md](badge.md) record.
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -39,50 +40,39 @@ Reference — the Filament source this is diffed against:
 ## Surface
 
 Every point of this component. _Blocked by_ names what has to land first.
-_Detail_ carries three links, any of them: **detail** → the write-up in
-[Details](#details), deleted once the row is **done**; **semantics** → the
-permanent note in [Semantics](#semantics); **diverges** → the permanent note in
+_Detail_ carries two links, either of them: **semantics** → the permanent note
+in [Semantics](#semantics); **diverges** → the permanent note in
 [Divergences](#divergences) — or a pointer to the file that owns the row.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [Root `<div class="sy sy-input-wrp">` + passthrough merge](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`$attributes->except(...)->class([...])`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | in progress | — | [detail](#the-markup-ships-before-its-first-consumer-so-no-test-renders-it) · [diverges](#nothing-is-stripped-from-the-passthrough-attributes) |
-| [`disabled` → `sy-disabled`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`'fi-disabled' => …`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | in progress | — | [detail](#the-markup-ships-before-its-first-consumer-so-no-test-renders-it) |
-| [`valid` → `sy-invalid`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`'fi-invalid' => …`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | in progress | — | [detail](#the-markup-ships-before-its-first-consumer-so-no-test-renders-it) |
-| [`prefix` / `suffix` labels](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`fi-input-wrp-label`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | in progress | — | [detail](#the-markup-ships-before-its-first-consumer-so-no-test-renders-it) |
-| [`prefixIcon` / `suffixIcon` (+ `…IconAlias`)](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`generate_icon_html($prefixIcon, $prefixIconAlias, …)`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | in progress | — | [detail](#the-markup-ships-before-its-first-consumer-so-no-test-renders-it) · [semantics](#an-affixs-presence-is-decided-by-the-rendered-icon-not-by-the-icon-prop) |
-| [`prefixIconColor` / `suffixIconColor`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`->color(IconComponent::class, $prefixIconColor)`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | in progress | — | [color-policies.md](color-policies.md) |
+| [Root `<div class="sy sy-input-wrp">` + passthrough merge](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`$attributes->except(...)->class([...])`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | [diverges](#nothing-is-stripped-from-the-passthrough-attributes) |
+| [`disabled` → `sy-disabled`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`'fi-disabled' => …`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | — |
+| [`valid` → `sy-invalid`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`'fi-invalid' => …`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | — |
+| [`prefix` / `suffix` labels](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`fi-input-wrp-label`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | — |
+| [`prefixIcon` / `suffixIcon` (+ `…IconAlias`)](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`generate_icon_html($prefixIcon, $prefixIconAlias, …)`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | [semantics](#an-affixs-presence-is-decided-by-the-rendered-icon-not-by-the-icon-prop) |
+| [`prefixIconColor` / `suffixIconColor`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`->color(IconComponent::class, $prefixIconColor)`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | [color-policies.md](color-policies.md) |
 | [`Colors\Components\InputComponent\WrapperComponent\IconComponent`](../../../packages/support/src/Colors/Components/InputComponent/WrapperComponent/IconComponent.php) | [`InputComponent/WrapperComponent/IconComponent.php`](../../../vendor/filament/support/src/View/Components/InputComponent/WrapperComponent/IconComponent.php) | done | — | [color-policies.md](color-policies.md#an-empty-map-is-a-real-answer-not-a-missing-one) |
-| [`prefixActions` / `suffixActions`, filtered on `isVisible()`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`array_filter(…, fn (Action $a) => $a->isVisible())`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | in progress | — | [detail](#the-markup-ships-before-its-first-consumer-so-no-test-renders-it) · [semantics](#the-wrapper-filters-visibility-so-a-caller-passes-its-prepared-array-whole) |
-| [`inlinePrefix` / `inlineSuffix` → `sy-inline`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`'fi-inline' => $inlinePrefix`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | in progress | — | [detail](#the-markup-ships-before-its-first-consumer-so-no-test-renders-it) |
-| [`content` block → `sy-input-wrp-content-ctn`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`{{ $slot }}`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | in progress | — | [detail](#the-markup-ships-before-its-first-consumer-so-no-test-renders-it) |
+| [`prefixActions` / `suffixActions`, filtered on `isVisible()`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`array_filter(…, fn (Action $a) => $a->isVisible())`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | [semantics](#the-wrapper-filters-visibility-so-a-caller-passes-its-prepared-array-whole) |
+| [`inlinePrefix` / `inlineSuffix` → `sy-inline`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`'fi-inline' => $inlinePrefix`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | — |
+| [`content` block → `sy-input-wrp-content-ctn`](../../../packages/support/templates/components/InputWrapper/index.html.twig) | [`{{ $slot }}`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | done | — | — |
 | [`input-wrapper.css`](../../../packages/support/assets/src/styles/components/input-wrapper.css) | [`components/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) | done | — | [semantics](#the-focus-ring-stands-down-while-an-affix-action-has-focus) · [diverges](#the-hover-ring-the-text-controls-carried-moves-onto-the-wrapper) · [diverges](#the-prefixs-non-inline-arm-drops-a-padding-it-already-has) |
 | Livewire loading indicator (`wire:loading` branch, `fi-input-wrp-prefix-has-content`, `fi-input-wrp-content-ctn-ps`) | [the `$hasLoadingIndicator` arms](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | blocked | a loading-indicator component and a live-request signal, neither ported — [README](README.md#components) | [diverges](#no-loading-indicator-and-three-css-hooks-go-with-it) |
 | Click-to-focus relay (`x-on:click="$dispatch('focus-input')"`) | [`$canClickPrefixAffix` / `$canClickSuffixAffix`](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | todo | — | [diverges](#the-click-to-focus-relay-is-not-ported) |
 | `alpineDisabled` / `alpineValid` | [the `x-bind:class` pair](../../../vendor/filament/support/resources/views/components/input/wrapper.blade.php) | skipped | — | [diverges](#alpinedisabled-and-alpinevalid-are-not-ported) |
 
-## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and
-what the next step is. Delete a subsection when its row flips to **done**; the
-table row and any divergence it earned stay behind.
-
-### The markup ships before its first consumer, so no test renders it
-
-Every markup row above is ported whole and none of them is asserted anywhere:
-support's fixture Kernel registers no TwigComponentBundle, so nothing in
-`composer test:support` can render a Twig component, and the packages that
-*can* render one have no reason to reach for this wrapper until forms' affix
-surface lands. The colour policy is the exception — it is a container service,
-so [`SylamentSupportBundleTest`](../../../packages/support/tests/Integration/SylamentSupportBundleTest.php)
-pins that it resolves by class-string, which is the whole of what a policy this
-shallow can get wrong.
-
-What that leaves untested until forms consumes it: the presence tests (an
-affix div opening only for content), the render order inside each affix, the
-class toggles, and the passthrough merge on the root. The rows flip to **done**
-in the same change that adds a forms Integration test rendering a field with
-each affix shape.
+Coverage:
+[`InputWrapperRenderTest`](../../../packages/forms/tests/Integration/Components/InputWrapperRenderTest.php)
+in forms — the content-only render, each affix's presence test and render order,
+the `sy-inline` / `-has-label` / `sy-disabled` / `sy-invalid` toggles, the
+visibility filter, and the empty-`Markup` affix that opens nothing. The
+passthrough merge on the root is pinned one file over, by the checkbox list's
+search box carrying its own class onto the wrapper
+([`CheckboxListTest`](../../../packages/forms/tests/Integration/Components/CheckboxListTest.php)).
+The colour policy is pinned separately by
+[`SylamentSupportBundleTest`](../../../packages/support/tests/Integration/SylamentSupportBundleTest.php),
+which resolves it by class-string — the whole of what a policy this shallow can
+get wrong.
 
 ## Semantics
 
@@ -192,11 +182,10 @@ Filament's wrapper has no `hover:` ring; ours does —
 `hover:ring-gray-950/20 dark:hover:ring-white/20` — because our `.sy-fo-input`
 and `.sy-fo-select` shipped exactly that pair as a recorded divergence from
 Filament's controls
-([forms/styles.md](../forms/styles.md#the-two-text-controls-invent-a-hover-ring)).
-Once the controls go transparent and the chrome lives here, leaving it behind on
-the control would paint nothing and dropping it would be a visual regression
-nobody decided, so the divergence moves across unchanged. `forms/styles.md` is
-rewritten to name the wrapper in the change that flips the controls.
+([forms/styles.md](../forms/styles.md#the-input-wrapper-invents-a-hover-ring),
+which owns the note now that the ring lives here). Leaving it behind on the
+transparent controls would have painted nothing and dropping it would have been
+a visual regression nobody decided, so the divergence moved across unchanged.
 
 ### Nothing is stripped from the passthrough attributes
 

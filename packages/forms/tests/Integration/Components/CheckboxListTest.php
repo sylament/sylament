@@ -280,9 +280,14 @@ it('renders the search box, its targets and the hidden no-results node when sear
     expect($root->attr('data-controller'))->toBe('sylament--forms--checkbox-list')
         ->and($root->attr('data-sylament--forms--checkbox-list-debounce-value'))->toBe('0');
 
+    // The search box is a real input wrapper carrying an inline magnifying-glass prefix.
+    $searchWrapper = $crawler->filter('div.sy-input-wrp.sy-fo-checkbox-list-search-input-wrp');
+    expect($searchWrapper->count())->toBe(1)
+        ->and($searchWrapper->filter('.sy-input-wrp-prefix.sy-inline > svg.sy-icon')->count())->toBe(1);
+
     $search = $crawler->filter('input[type="search"]');
     expect($search->count())->toBe(1)
-        ->and($search->attr('class'))->toBe('sy-fo-input')
+        ->and($search->attr('class'))->toBe('sy-fo-input sy-fo-input-has-inline-prefix')
         ->and($search->attr('name'))->toBeNull()
         ->and($search->attr('data-model'))->toBeNull()
         ->and($search->attr('placeholder'))->toBe('Start typing to search...')

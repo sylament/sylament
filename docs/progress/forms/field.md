@@ -35,9 +35,9 @@ Reference — the Filament source this is diffed against:
 ## Surface
 
 Every point of this component and its five folded concerns. _Blocked by_ names
-what has to land first. _Detail_ links the write-up in [Details](#details)
-(deleted once the row is **done**), the permanent note in
-[Divergences](#divergences), and/or a note carried by a concern's own file.
+what has to land first. _Detail_ links a permanent note in
+[Semantics](#semantics) or [Divergences](#divergences), and/or a note carried by
+a concern's own file.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -51,7 +51,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `labelTag` (`label` vs `div`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#labeltag-is-a-boolean-labelasheading) |
 | [`CanBeValidated`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`Components/Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | in progress | — | [detail](can-be-validated.md) |
 | Error display (`getErrorMessages()` ⟵ `hasErrorForPath` / `ViewErrorBag`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [diverges](#error-display-shows-every-message-for-the-path) |
-| Input affix wrapper (`wrapInputHtml`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | todo | — | [detail](#the-input-affix-wrapper-is-not-ported) |
+| Input affix wrapper (`wrapInputHtml`) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [semantics](#the-wrapper-owns-the-chrome-and-the-control-is-transparent) |
 | State casts &amp; enum defaults (`getDefaultStateCasts` / `getEnumDefaultStateCast`), and the [`HasEnum`](../../../packages/forms/src/Components/Concerns/HasEnum.php) concern behind them | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) · [`Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | done | — | [detail](has-enum.md) |
 | [`hasNullableBooleanState()`](../../../packages/forms/src/Components/Field.php) | [`Components/Field.php`](../../../vendor/filament/forms/src/Components/Field.php) | done | — | [semantics](#hasnullablebooleanstate-has-exactly-one-consumer) |
 | [`HasExtraFieldWrapperAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | [`Components/Concerns/HasExtraFieldWrapperAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraFieldWrapperAttributes.php) | done | — | [diverges](#extra-attribute-precedence-is-fixed-by-source-order) |
@@ -60,78 +60,39 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`HasHint`](../../../packages/forms/src/Components/Concerns/HasHint.php) | [`Components/Concerns/HasHint.php`](../../../vendor/filament/forms/src/Components/Concerns/HasHint.php) | done | — | [diverges](#setuphint-narrows-its-parameter-to-field), [diverges](#gethintactions-returns-a-list-not-a-gapped-array) |
 | [`HasPlaceholder`](../../../packages/forms/src/Components/Concerns/HasPlaceholder.php) | [`Components/Concerns/HasPlaceholder.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPlaceholder.php) | done | — | [diverges](#hasplaceholder-is-composed-on-the-base-field) |
 
-## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and
-the next step. Delete a subsection when its row flips to **done**; the table row
-and any divergence it earned stay behind.
-
-### The input affix wrapper is not ported
-
-Filament's `wrapInputHtml` renders the `fi-input-wrp` prefix/suffix chrome (affix
-labels, icons, prefix/suffix actions, loading indicator, Alpine disabled/invalid
-class binding). None of it is ported — the port has no `HasAffixes`, no
-prefix/suffix API, and no input-wrapper template, so fields render their raw
-control inside the field wrapper with no affix layer.
-
-This row is the **root** of that surface: the wrapper is the prerequisite and
-`HasAffixes` follows it, which is why
-[text-input.md](text-input.md) and [select.md](select.md) both file their affix
-rows as blocked *by this one*, and why this row names no blocker of its own.
-Ordering it that way round is not arbitrary — a prefix setter with nowhere to
-render is unusable and untestable, while the wrapper is a real improvement on its
-own (it is where a field's focus ring belongs). What it waits on is markup and
-styling rather than a dependency.
-[`fi-input-wrp`](../../../vendor/filament/support/resources/css/components/input/wrapper.css)
-is where the ring, background and `focus-within` state live
-(`rounded-lg bg-white shadow-sm ring-1 ring-gray-950/10`, plus
-`focus-within:ring-2`), with a deliberately
-[transparent `.fi-input`](../../../vendor/filament/support/resources/css/components/input/index.css)
-inside it (`bg-transparent border-none focus:ring-0`); the port's
-[`.sy-fo-input`](../../../packages/forms/assets/src/styles/components/input.css)
-carries all three itself. So porting affixes is not additive — it moves that
-styling onto a new `sy-fo-input-wrp` and touches every text-like field's
-template.
-
-The collapse also decides which of the vendor input rules can be ported at all,
-because it moves the background onto the element the type-specific selectors
-target. Two are affected, and the trap is that both *look* portable:
-
-- **`input[type='date'|'datetime-local'|'time'].fi-input { bg-white/[1%] }` is
-  refused.** Over there the 1 % white is the whole point — the element is
-  `bg-transparent`, Safari colours a fully transparent date field's placeholder
-  too dark ([#7087](https://github.com/filamentphp/filament/issues/7087),
-  [#18570](https://github.com/filamentphp/filament/issues/18570)), and a hair of
-  opacity fixes it without disturbing the opaque wrapper behind it. Here there is
-  no wrapper behind it: `.sy-fo-input` *is* the painted surface. The selector
-  weighs (0,2,1) against the base rule's (0,1,0), the dark arm's (0,1,0) and
-  `:disabled`'s (0,2,0), so porting it would beat all three — a date field would
-  render near-transparent in light mode, at 1 % instead of 5 % white in dark, and
-  would lose `bg-gray-50` when disabled. The Safari bug it fixes cannot occur
-  here anyway, since the trigger is a transparent background. It returns with the
-  wrapper, on the transparent `.sy-fo-input` the wrapper restores.
-- **`input[type='range'].sy-fo-input`'s `appearance-auto` is vestigial**, kept
-  because the rule's `mx-auto` and `width: calc(100% - 1.5rem)` are not. Vendor
-  needs it to undo the `appearance-none` on its own base rule; ours never sets
-  `appearance-none`, so there is nothing to undo.
-
-That, and not the prebuilt affix actions, is what the affix surface waits on:
-[`HasAffixes`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php)
-never references `TextInput\Actions\CopyAction` / `ShowPasswordAction` /
-`HidePasswordAction` — it takes any `Action` through `prefixAction()` /
-`suffixAction()` and prepares it with `defaultSize()`, `defaultView()` and
-schemas' `prepareAction()`, every one of which the port already has
-([`defaultSize()`](../../../packages/actions/src/Concerns/HasSize.php),
-`defaultView()` as
-[`defaultTemplate()`](../../../packages/actions/src/Action.php),
-[`prepareAction()`](../../../packages/schemas/src/Components/Concerns/HasActions.php)).
-The three prebuilt actions are reached only from `TextInput::revealable()` and
-`copyable()`, which is where [text-input.md](text-input.md) names them.
-
 ## Semantics
 
 Behaviour worth stating that is not a divergence — the port and Filament agree,
 but the reason is not obvious from the code.
+
+### The wrapper owns the chrome and the control is transparent
+
+`wrapInputHtml` is support's
+[`InputWrapper`](../support/input-wrapper.md), and every text-like control
+renders inside it: [`TextInput`](text-input.md), [`Textarea`](textarea.md),
+[`Select`](select.md), the [`DateTimePicker`](date-time-picker.md) family and
+[`CheckboxList`](checkbox-list.md)'s search box. The ring, background, shadow,
+hover and `focus-within` state moved onto `.sy-input-wrp` with it, leaving
+`.sy-fo-input` and `.sy-fo-select` `appearance-none border-none bg-transparent
+focus:ring-0` — Filament's own split, which the port had collapsed onto the
+control until the wrapper existed to hold it.
+
+The collapse is also what had ruled on the two type-specific `input[type=…]`
+rules, and both were re-decided against the transparent control:
+
+- **`input[type='date'|'datetime-local'|'time'].sy-fo-input { bg-white/[1%] }`
+  ships.** The 1 % white exists because Safari colours a fully transparent
+  date field's "placeholder" too dark
+  ([#7087](https://github.com/filamentphp/filament/issues/7087),
+  [#18570](https://github.com/filamentphp/filament/issues/18570)) — a bug whose
+  trigger is the transparent background the flip introduced, and a hair of
+  opacity fixes it without disturbing the opaque wrapper now behind it. Refused
+  while `.sy-fo-input` was the painted surface, where the same selector would
+  have beaten the base rule, the dark arm and `:disabled` alike.
+- **`input[type='range'].sy-fo-input`'s `appearance-auto` is live**, not
+  vestigial. It undoes the base rule's `appearance-none`, which the port did not
+  set before the flip and does now; the rule's `mx-auto` and
+  `width: calc(100% - 1.5rem)` were always load-bearing.
 
 ### `hasNullableBooleanState()` has exactly one consumer
 
@@ -246,9 +207,12 @@ if a first-message-only default is wanted, which would make the flag meaningful
 again.
 
 The same list also drives the control's invalid state: `TextInput` /
-`Textarea` render `aria-invalid` from `component.getErrorMessages is not empty`
-and `.sy-fo-input[aria-invalid='true']` swaps the focus ring to the danger
-token. Filament emits no `aria-invalid` anywhere — it toggles an `fi-invalid`
+`Textarea` render `aria-invalid` from `component.getErrorMessages is not empty`,
+and the same expression inverted reaches the input wrapper's `valid` prop, whose
+`sy-invalid` class swaps the ring to the danger token. The attribute is left on
+the control for accessibility rather than for styling — the ring moved off it
+with [the rest of the chrome](#the-wrapper-owns-the-chrome-and-the-control-is-transparent).
+Filament emits no `aria-invalid` anywhere — it toggles an `fi-invalid`
 class, statically or through an Alpine binding
 (`vendor/filament/forms/src/Components/Field.php:573`) — so the attribute is an
 accessibility addition of this port, not a translation, and it renders with a
@@ -382,10 +346,11 @@ wrapper, never a route for a user-supplied value — so each of those five carri
 a `sy-fo-*-wrp` hook of its own into the port as it lands, and reading the
 parameter as a `ToggleButtons` quirk would silently cost the other four theirs.
 
-The port has no inner element to put `extraAttributes()` on, because the
-[input affix wrapper is not ported](#the-input-affix-wrapper-is-not-ported) — the
-field wrapper `<div>` is the only element either setter can reach, so one has to
-win. The port spells that as `attrs()` source order, which is later-source-wins:
+The port puts neither setter on an inner element: the
+[input wrapper now renders](#the-wrapper-owns-the-chrome-and-the-control-is-transparent)
+but takes no `extraAttributes()`, so the field wrapper `<div>` is still the only
+element either setter reaches and one has to win. The port spells that as
+`attrs()` source order, which is later-source-wins:
 `attrs({class: [...]}, field.getExtraFieldWrapperAttributes, field.getExtraAttributes)`.
 `extraAttributes()` wins, for two reasons. It already rendered on that `<div>`
 before this trait existed, so composing the trait cannot silently override an
@@ -393,9 +358,9 @@ attribute a consumer had already set. And it keeps the per-component setter
 authoritative over the wrapper one, which is the relationship Filament expresses
 by putting it on the inner element.
 
-Revisit when `HasAffixes` lands: `extraAttributes()` moves onto the input wrapper
-where Filament has it, the two setters stop sharing an element, and the ordering
-stops mattering.
+Revisit by routing `extraAttributes()` onto the input wrapper, where Filament has
+it: the element exists now, so the two setters can stop sharing one and the
+ordering stops mattering.
 
 _See also: the global [rename table](../renames.md) — the field-wrapper
 rendering leans on the systematic `toEmbeddedHtml()`/Blade → Twig template,

@@ -60,7 +60,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | `pivotData()` | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity recipe | [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | `allowHtml()` | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | todo | — | — |
 | `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` | — |
-| Affixes (`HasAffixes`, `wrapInputHtml`) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | blocked | the input wrapper ([field.md](field.md#the-input-affix-wrapper-is-not-ported)) | — |
+| Affixes ([`HasAffixes`](../../../packages/forms/src/Components/Concerns/HasAffixes.php), `wrapInputHtml`) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [detail](has-affixes.md) · [semantics](#the-inline-prefix-class-counts-visible-actions-where-the-text-inputs-counts-all-of-them) |
 
 Coverage: the concern surface — flattening, per-option disabling, merge/replace,
 placeholder selectability and dynamic options — by
@@ -438,6 +438,21 @@ method on [`HasOptions`](has-options.md), so an enum-valued or boolean state
 reaches the template already spelled in the option vocabulary, and
 `getOptionLabel()` resolves through the same method rather than repeating the
 bool-to-int coercion it used to carry.
+
+### The inline-prefix class counts visible actions where the text input's counts all of them
+
+`sy-fo-select-has-inline-prefix` strips the `<select>`'s left padding so an
+inline prefix can occupy it, and the template computes it from the
+**visibility-filtered** prefix actions
+([`Select::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Select.php)
+filters before deriving `$hasPrefix`). The text input and the picker family
+compute their `sy-fo-input-has-inline-prefix` from the **unfiltered** arrays
+instead, which is Filament's own asymmetry and is kept: a select whose only
+prefix action is hidden keeps its padding and renders no gap, while a text input
+in the same state keeps `ps-0` and the wrapper's own padding carries the space.
+There is no suffix twin here — the `<select>` keeps its `pe-8` for the chevron
+whatever the suffix side holds, so suffix actions (which is where
+`createOption` / `editOption` live) never touch the control's padding.
 
 ## Divergences
 

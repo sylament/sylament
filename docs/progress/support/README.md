@@ -160,7 +160,7 @@ name.
 | TranslatableContentDriver | [`Contracts/TranslatableContentDriver.php`](../../../vendor/filament/support/src/Contracts/TranslatableContentDriver.php) | todo | — |
 | HasEmbeddedView | [`Components/Contracts/HasEmbeddedView.php`](../../../vendor/filament/support/src/Components/Contracts/HasEmbeddedView.php) | todo | — |
 | ScopedComponentManager | [`Components/Contracts/ScopedComponentManager.php`](../../../vendor/filament/support/src/Components/Contracts/ScopedComponentManager.php) | todo | — |
-| ExposedLivewireMethod | [`Components/Attributes/ExposedLivewireMethod.php`](../../../vendor/filament/support/src/Components/Attributes/ExposedLivewireMethod.php) | todo | — |
+| [`ExposedLiveComponentMethod`](../../../packages/support/src/Components/Attributes/ExposedLiveComponentMethod.php) | [`Components/Attributes/ExposedLivewireMethod.php`](../../../vendor/filament/support/src/Components/Attributes/ExposedLivewireMethod.php) | done | — |
 | [`Color`](../../../packages/support/src/Colors/Color.php) | [`Colors/Color.php`](../../../vendor/filament/support/src/Colors/Color.php) | in progress | [color.md](color.md) |
 | [`ColorManager`](../../../packages/support/src/Colors/ColorManager.php) | [`Colors/ColorManager.php`](../../../vendor/filament/support/src/Colors/ColorManager.php) | in progress | [color-manager.md](color-manager.md) |
 | Heroicon | [`Icons/Heroicon.php`](../../../vendor/filament/support/src/Icons/Heroicon.php) | todo | — |

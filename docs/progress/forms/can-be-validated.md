@@ -21,6 +21,12 @@ takes any Symfony `Constraint`, so nothing in the remainder is *unreachable* —
 is only unsugared. That is why the rows below are mostly **todo** rather than
 **skipped**: each is a constraint arm someone can add without new machinery.
 
+The [date comparison family](#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings)
+is the first of them to land, with the date fields it serves. It brings the
+package's own `Validation/` directory — `ValidDate` and `DateComparison`, the two
+constraints Symfony has no stock counterpart for — mirroring
+[schemas' `Validation/`](../schemas/presence-gate.md) one package down.
+
 The rule → constraint vocabulary is a rename, recorded in the
 [rename table](../renames.md): `rule()` / `rules()` → `constraint()` /
 `constraints()`, `getValidationRules()` → `getValidationConstraints()`,
@@ -65,13 +71,17 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | `validationAttribute()` / `getValidationAttribute()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#validationattribute-is-not-ported) |
 | `showAllValidationMessages()` / `shouldShowAllValidationMessages()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](field.md#error-display-shows-every-message-for-the-path) |
 | `allowHtmlValidationMessages()` / `areHtmlValidationMessagesAllowed()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#html-validation-messages-are-not-ported) |
-| `dateComparisonRule()` / `fieldComparisonRule()` / `multiFieldComparisonRule()` / `multiFieldValueComparisonRule()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#the-comparison-rule-string-builders-have-no-port) |
+| [`dateComparisonRule()`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings) |
+| `fieldComparisonRule()` / `multiFieldComparisonRule()` / `multiFieldValueComparisonRule()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#the-remaining-comparison-rule-string-builders-have-no-port) |
+| [`ValidDate`](../../../packages/forms/src/Validation/ValidDate.php) + its validator — no Filament source | [`DateTimePicker::setUp()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) — `rule('date')` | done | — | [diverges](#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings) · [diverges](date-time-picker.md#every-variant-validates-as-a-date-including-the-time-only-one) |
+| [`DateComparison`](../../../packages/forms/src/Validation/DateComparison.php) + its validator — no Filament source | [`CanBeValidated::dateComparisonRule()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings) |
 | Format sugar (`alpha`, `alphaDash`, `alphaNum`, `ascii`, `string`, `hexColor`, `json`, `macAddress`, `ip` / `ipv4` / `ipv6`, `uuid`, `ulid`, `activeUrl`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | — | [detail](#the-unsugared-rule-families-are-reachable-through-constraint) |
 | `regex()` / `notRegex()` / `getRegexPattern()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | — | [detail](#the-unsugared-rule-families-are-reachable-through-constraint) |
 | `in()` / `notIn()` / `getInValidationRule()` / `getInValidationRuleValues()` / `hasInValidationOnMultipleValues()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | `HasOptions` / `HasEnum` | [detail](#the-unsugared-rule-families-are-reachable-through-constraint) |
 | `startsWith()` / `endsWith()` / `doesntStartWith()` / `doesntEndWith()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | — | [detail](#the-unsugared-rule-families-are-reachable-through-constraint) |
 | `filled()` / `multipleOf()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | — | [detail](#the-unsugared-rule-families-are-reachable-through-constraint) |
-| Comparison family (`after` / `afterOrEqual` / `before` / `beforeOrEqual`, `gt` / `gte` / `lt` / `lte`, `same` / `different`, `confirmed`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | cross-path validation context | [detail](#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build) |
+| [Date comparison family (`after` / `afterOrEqual` / `before` / `beforeOrEqual`)](../../../packages/forms/src/Components/Concerns/CanBeValidated.php) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings) · [diverges](#a-blank-sibling-skips-the-comparison-where-laravel-fails-the-field) |
+| Value comparison family (`gt` / `gte` / `lt` / `lte`, `same` / `different`, `confirmed`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | cross-path validation context | [detail](#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build) |
 | Conditional-required family (`requiredIf*` / `requiredUnless` / `requiredWith*` / `requiredWithout*`, `prohibited` / `prohibitedIf` / `prohibitedUnless` / `prohibits`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | cross-path validation context | [detail](#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build) |
 | Data-layer family (`unique` / `exists` / `scopedUnique` / `scopedExists` / `uniqueValidationIgnoresRecordByDefault`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | blocked | Doctrine query layer | [detail](#the-data-layer-rules-wait-on-a-doctrine-query-layer) |
 | `distinct()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | blocked | cross-path validation context | [detail](#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build) |
@@ -87,8 +97,12 @@ derived value — the escape hatch behind true and
 false conditions, closure constraints returning a single constraint or an array,
 the message post-pass — string and option-map forms, closure leaves, blank
 fallback, exact-class matching, clone-on-write, the ignored-key arm and all three
-throw arms — the length hand-off, and every `dehydrateValidationConstraints()`
-branch) by
+throw arms — the length hand-off, every `dehydrateValidationConstraints()`
+branch, and the date comparison family — each of the four operators, a literal
+boundary, a closure one, a relative one (`'tomorrow'`), the skip arms for a blank
+declaration, an unwired field, a blank sibling and an unparseable sibling, the
+sibling read in its relative and absolute spellings, and the re-read that lets a
+changed sibling move the boundary) by
 [`CanBeValidatedTest`](../../../packages/forms/tests/Unit/Components/Concerns/CanBeValidatedTest.php);
 the `getRequiredConstraint()` override and the boolean derivation opt-out by
 [`ToggleTest`](../../../packages/forms/tests/Integration/Components/ToggleTest.php)
@@ -106,6 +120,13 @@ the `isMarkedAsRequired()` fallback by
 [`FieldTest`](../../../packages/forms/tests/Unit/Components/FieldTest.php); the
 `TextInput` arms and their ordering by
 [`TextInputTest`](../../../packages/forms/tests/Integration/Components/TextInputTest.php);
+the two date constraints against a real Symfony validator — every operator's
+pass, fail and equal case, the interpolated boundary, the per-operator default
+messages, the blank/unparseable/non-string skips, and the unknown-operator throw —
+by
+[`DateComparisonValidatorTest`](../../../packages/forms/tests/Unit/Validation/DateComparisonValidatorTest.php)
+and
+[`ValidDateValidatorTest`](../../../packages/forms/tests/Unit/Validation/ValidDateValidatorTest.php);
 the end-to-end path — a live host, a real validator, error messages read back per
 field and rendered into the shipped templates — by
 [`FieldErrorsTest`](../../../packages/forms/tests/Integration/Components/FieldErrorsTest.php).
@@ -137,8 +158,18 @@ which is why they name a blocker while staying **todo**.
 
 ### Cross-field rules need a validation context the per-path runner does not build
 
-The comparison and conditional-required families all validate one path *against
-another* (`gt:other`, `requiredIf:status,published`, `confirmed`). The host runs
+The value-comparison and conditional-required families all validate one path
+*against another* (`gt:other`, `requiredIf:status,published`, `confirmed`). The
+**date** comparison family no longer waits on this and is
+[**done**](#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings):
+it dodges the missing context by resolving the other path at *constraint-build*
+time — reading the sibling's live raw state through the root container's property
+accessor, the same read the runner itself performs — and baking the resolved
+instant into the constraint. That works because a date boundary is a **value**
+once resolved, so nothing has to be resolved during the validation pass. It does
+not generalise to `gt:other`: the runner would still be comparing two raw strings
+whose meaning depends on the other field's type, which is exactly what a context
+is for. The host runs
 [`ValidatorInterface::validate($value, $constraints)`](../schemas/can-be-validated.md#validateschema-runs-symfonys-validator-per-state-path-instead-of-livewires-whole-component-validate)
 per path over a bare value, so Symfony's `AbstractComparison`-family constraints
 — which resolve `propertyPath` against the *object under validation* — have
@@ -515,13 +546,85 @@ class-keyed messages are less forgiving than Filament's `required` key was — a
 that is the rule with no exception rather than a special case: key the constraint
 your field emits.
 
-### The comparison rule-string builders have no port
+### The date comparison family builds constraints where Filament builds rule strings
 
-The four `*ComparisonRule()` builders exist to *assemble Laravel rule strings* —
-`"gt:{$statePath}"`, `"after:{$date}"`. They are string plumbing for an engine
-this port does not use; the behaviour they enable is tracked on the comparison
-and conditional-required rows above, which will build `Constraint` objects
-directly. **Skipped** as API surface, permanently.
+`after()` / `afterOrEqual()` / `before()` / `beforeOrEqual()` keep Filament's
+signatures verbatim, including the `bool $isStatePathAbsolute = false` tail, and
+still delegate to a shared
+[`dateComparisonRule(string $rule, …)`](../../../packages/forms/src/Components/Concerns/CanBeValidated.php)
+whose `$rule` argument carries Filament's own rule spellings — `'after'`,
+`'after_or_equal'`, `'before'`, `'before_or_equal'`, which are the four
+[`DateComparison`](../../../packages/forms/src/Validation/DateComparison.php)
+operator constants. A migrating `->dateComparisonRule('after', …)` call therefore
+still compiles and still means what it meant.
+
+What changes is what the method *produces*. Filament returns the string
+`"after:{$date}"` for Laravel to parse; here the method registers a closure
+through the existing [`constraint()`](#rule-and-rules-become-constraint-and-constraints-over-symfony-constraint-objects)
+pair mechanism, and the closure returns a `DateComparison` object — or `null`,
+which the builder's walk already skips. Two constraints ship with it, because
+neither has a stock counterpart:
+
+- **`DateComparison`** carries an operator, a resolved `DateTimeImmutable`
+  boundary and a per-operator default message. Symfony's own comparison
+  validators cannot do this job: `AbstractComparisonValidator` converts a string
+  `comparedValue` only when the **validated value** is already a
+  `DateTimeInterface`, and the runner validates raw wire strings, so
+  `GreaterThan(value: $date)` would compare a string against an object.
+- **`ValidDate`** is the port of the `rule('date')` that
+  [`DateTimePicker::setUp()`](date-time-picker.md#every-variant-validates-as-a-date-including-the-time-only-one)
+  registers, with no stock equivalent either — `Type('string')` says nothing
+  about parseability and `DateTime` (the constraint) demands an exact format,
+  where the field's wire format is deliberately
+  [loose about the `T` and the seconds](date-time-picker.md#the-wire-format-uses-a-space-and-the-browser-answers-with-a-t).
+
+Both are listed in the [rename table](../renames.md#names-with-no-filament-source)
+as names with no Filament source. The boundary is resolved **per validation run**,
+not at declaration: `after('2026-01-01')` re-parses the literal each time, and
+`after('startsAt')` re-reads the sibling each time, which is what lets a
+comparison against another field track that field as the user types.
+
+The literal-versus-field-name discrimination is Filament's, `strtotime()` and
+all: a value `strtotime()` reads is the boundary itself, anything else is a state
+path resolved through
+[`resolveRelativeStatePath()`](../schemas/component.md), the same resolver
+[`Get`](../schemas/get.md) uses. It carries Filament's
+wrinkle with it — a field actually named `may` or `tomorrow` parses as a date and
+is never treated as a path — and the escape is Filament's too, an absolute path
+(`'/data.startsAt'`, or `isStatePathAbsolute: true`).
+
+### A blank sibling skips the comparison where Laravel fails the field
+
+`after('startsAt')` with `startsAt` empty builds **no constraint at all** here,
+so the dependent field validates clean. Laravel's `after:start` fails the
+dependent field instead, because an unresolvable comparison value is a failed
+comparison over there.
+
+The port's reading is that presence is the *other* field's business: `startsAt`
+declares its own `required()` (or derives one from the record), and duplicating
+that decision onto every field that compares against it produces two errors for
+one empty input, on the field the user did not touch. The same rule covers a
+sibling whose value cannot be parsed and a sibling with no live component to read
+at all — an unresolvable boundary is no comparison, never a violation.
+
+The cost is stated because it is a real hole: a form whose `startsAt` is optional
+accepts any `endsAt`, and nothing warns. A caller who wants the pair enforced
+says so on the sibling — `required()` on `startsAt` — or writes the dependency as
+a closure constraint of its own.
+
+### The remaining comparison rule-string builders have no port
+
+`fieldComparisonRule()`, `multiFieldComparisonRule()` and
+`multiFieldValueComparisonRule()` exist to *assemble Laravel rule strings* —
+`"gt:{$statePath}"`, `"required_with:{$paths}"`. They are string plumbing for an
+engine this port does not use; the behaviour they enable is tracked on the
+value-comparison and conditional-required rows above, which will build
+`Constraint` objects directly. **Skipped** as API surface, permanently. Their
+sibling `dateComparisonRule()` is the exception and is
+[**ported**](#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings)
+— not as a string builder, but as the shared registration point its four public
+callers already routed through, which is worth keeping because a user's own
+`dateComparisonRule()` call is part of the migrating surface.
 
 ### The subclass seam is a protected builder, not the public getter
 

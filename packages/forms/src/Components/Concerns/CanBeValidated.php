@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Sylament\Forms\Components\Concerns;
 
 use Closure;
+use DateTimeImmutable;
+use Exception;
 use LogicException;
 use ReflectionObject;
 use ReflectionProperty;
 use Sylament\Forms\Components\Contracts\CanBeLengthConstrained;
 use Sylament\Forms\Components\Field;
+use Sylament\Forms\Validation\DateComparison;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\State\RecordTarget;
@@ -77,6 +80,79 @@ trait CanBeValidated
         }
 
         return $this;
+    }
+
+    public function after(string|Closure $date, bool $isStatePathAbsolute = false): static
+    {
+        return $this->dateComparisonRule(DateComparison::AFTER, $date, $isStatePathAbsolute);
+    }
+
+    public function afterOrEqual(string|Closure $date, bool $isStatePathAbsolute = false): static
+    {
+        return $this->dateComparisonRule(DateComparison::AFTER_OR_EQUAL, $date, $isStatePathAbsolute);
+    }
+
+    public function before(string|Closure $date, bool $isStatePathAbsolute = false): static
+    {
+        return $this->dateComparisonRule(DateComparison::BEFORE, $date, $isStatePathAbsolute);
+    }
+
+    public function beforeOrEqual(string|Closure $date, bool $isStatePathAbsolute = false): static
+    {
+        return $this->dateComparisonRule(DateComparison::BEFORE_OR_EQUAL, $date, $isStatePathAbsolute);
+    }
+
+    /**
+     * @param string $rule one of the {@see DateComparison} operator constants,
+     *        which carry Filament's rule-string spellings
+     */
+    public function dateComparisonRule(string $rule, string|Closure $date, bool $isStatePathAbsolute = false): static
+    {
+        $this->constraint(
+            fn (): ?DateComparison => $this->buildDateComparisonConstraint($rule, $date, $isStatePathAbsolute),
+            fn (): bool => (bool) $this->evaluate($date),
+        );
+
+        return $this;
+    }
+
+    /**
+     * The boundary is resolved per validation run: a value `strtotime()` reads is
+     * the literal itself, anything else names another field, whose live raw state
+     * the root container reads exactly as the runner does. A boundary that cannot
+     * be resolved or parsed drops the constraint rather than failing the field —
+     * the named field's own `required()` owns its presence. A blank declaration
+     * never reaches here at all: the pair's condition drops it first.
+     */
+    protected function buildDateComparisonConstraint(string $operator, string|Closure $date, bool $isStatePathAbsolute): ?DateComparison
+    {
+        $date = $this->evaluate($date);
+
+        if (! strtotime($date)) {
+            $liveComponent = $this->getLiveComponentOrNull();
+
+            if (! $liveComponent instanceof InteractsWithSchemas) {
+                return null;
+            }
+
+            $date = $this->getRootContainer()->getPropertyAccessor()->get(
+                $liveComponent,
+                $this->resolveRelativeStatePath($date, $isStatePathAbsolute),
+            );
+
+            if (! is_string($date) || mb_trim($date) === '') {
+                return null;
+            }
+        }
+
+        try {
+            $boundary = new DateTimeImmutable($date);
+        } catch (Exception) {
+            // An unresolvable boundary is no comparison at all.
+            return null;
+        }
+
+        return new DateComparison($operator, $boundary);
     }
 
     /**

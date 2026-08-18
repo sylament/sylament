@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Unit\Components\Concerns;
 
+use DateTimeImmutable;
 use LogicException;
 use Sylament\Forms\Components\Field;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureField;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureLengthField;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Records\Article;
+use Sylament\Forms\Validation\DateComparison;
 use Sylament\Schemas\Schema;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\GreaterThan;
@@ -30,6 +32,36 @@ function wireFieldToRecord(Field $field): Field
     Schema::make(new FieldRenderHost())->record(Article::class)->components([$field])->getComponents();
 
     return $field;
+}
+
+/**
+ * Wire a field beside a sibling under a `data`-bag host holding the sibling's
+ * raw state, which is the frame a date comparison against a field name reads.
+ *
+ * @param array<string, mixed> $data
+ */
+function wireFieldToSibling(Field $field, array $data): Field
+{
+    $host = new FieldRenderHost();
+    $host->data = $data;
+
+    Schema::make($host)
+        ->statePath('data')
+        ->components([FixtureField::make('startsAt'), $field])
+        ->getComponents();
+
+    return $field;
+}
+
+/**
+ * @return list<DateComparison>
+ */
+function dateComparisons(Field $field): array
+{
+    return array_values(array_filter(
+        $field->getValidationConstraints(),
+        static fn (object $constraint): bool => $constraint instanceof DateComparison,
+    ));
 }
 
 it('is not required by default and builds no constraints', function (): void {
@@ -334,4 +366,99 @@ it('is not required when no record is bound', function (): void {
 
 it('derives nothing for a field no schema contains', function (): void {
     expect(FixtureField::make('title')->record(Article::class)->isRequired())->toBeFalse();
+});
+
+it('builds a date comparison from a literal boundary', function (): void {
+    $constraints = dateComparisons(FixtureField::make('endsAt')->after('2026-01-01'));
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0]->operator)->toBe(DateComparison::AFTER)
+        ->and($constraints[0]->boundary->format('Y-m-d H:i:s'))->toBe('2026-01-01 00:00:00');
+});
+
+it('evaluates a closure boundary', function (): void {
+    $constraints = dateComparisons(FixtureField::make('endsAt')->after(fn (): string => '2026-01-01'));
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0]->boundary->format('Y-m-d H:i:s'))->toBe('2026-01-01 00:00:00');
+});
+
+it('builds each operator of the date comparison family', function (): void {
+    expect(dateComparisons(FixtureField::make('endsAt')->afterOrEqual('2026-01-01'))[0]->operator)
+        ->toBe(DateComparison::AFTER_OR_EQUAL)
+        ->and(dateComparisons(FixtureField::make('endsAt')->before('2026-01-01'))[0]->operator)
+        ->toBe(DateComparison::BEFORE)
+        ->and(dateComparisons(FixtureField::make('endsAt')->beforeOrEqual('2026-01-01'))[0]->operator)
+        ->toBe(DateComparison::BEFORE_OR_EQUAL);
+});
+
+it('takes a relative literal boundary', function (): void {
+    $constraints = dateComparisons(FixtureField::make('endsAt')->before('tomorrow'));
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0]->boundary)->toBeGreaterThan(new DateTimeImmutable('today'));
+});
+
+it('skips a blank boundary', function (): void {
+    expect(dateComparisons(FixtureField::make('endsAt')->after('')))->toBe([])
+        ->and(dateComparisons(FixtureField::make('endsAt')->after(fn (): ?string => null)))->toBe([]);
+});
+
+it('skips a field-name boundary with no live component to read it from', function (): void {
+    expect(dateComparisons(FixtureField::make('endsAt')->after('startsAt')))->toBe([]);
+});
+
+it('reads a field-name boundary out of the sibling live state', function (): void {
+    $field = wireFieldToSibling(
+        FixtureField::make('endsAt')->after('startsAt'),
+        ['startsAt' => '2026-08-18T10:00'],
+    );
+
+    $constraints = dateComparisons($field);
+
+    expect($constraints)->toHaveCount(1)
+        ->and($constraints[0]->boundary->format('Y-m-d H:i:s'))->toBe('2026-08-18 10:00:00');
+});
+
+it('reads an absolute state path verbatim', function (): void {
+    $field = wireFieldToSibling(
+        FixtureField::make('endsAt')->after('data.startsAt', isStatePathAbsolute: true),
+        ['startsAt' => '2026-08-18T10:00'],
+    );
+
+    expect(dateComparisons($field)[0]->boundary->format('Y-m-d H:i:s'))->toBe('2026-08-18 10:00:00');
+});
+
+it('skips a field-name boundary whose sibling is blank', function (): void {
+    $field = wireFieldToSibling(
+        FixtureField::make('endsAt')->after('startsAt'),
+        ['startsAt' => ''],
+    );
+
+    expect(dateComparisons($field))->toBe([]);
+});
+
+it('skips a field-name boundary the sibling state cannot parse', function (): void {
+    $field = wireFieldToSibling(
+        FixtureField::make('endsAt')->after('startsAt'),
+        ['startsAt' => 'banana'],
+    );
+
+    expect(dateComparisons($field))->toBe([]);
+});
+
+it('rebuilds the boundary on every run, so the sibling can change', function (): void {
+    $host = new FieldRenderHost();
+    $host->data = ['startsAt' => '2026-08-18T10:00'];
+
+    $field = FixtureField::make('endsAt')->after('startsAt');
+
+    Schema::make($host)
+        ->statePath('data')
+        ->components([FixtureField::make('startsAt'), $field])
+        ->getComponents();
+
+    $host->data = ['startsAt' => '2026-09-01T08:00'];
+
+    expect(dateComparisons($field)[0]->boundary->format('Y-m-d H:i:s'))->toBe('2026-09-01 08:00:00');
 });

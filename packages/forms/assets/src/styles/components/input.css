@@ -19,3 +19,10 @@ input[type='range'].sy-fo-input {
 textarea.sy-fo-input {
     @apply min-h-20 resize-y;
 }
+
+/* Prevent excessive date input height in WebKit */
+/* https://github.com/twbs/bootstrap/issues/34433 */
+.sy-fo-input::-webkit-datetime-edit {
+    display: block;
+    padding: 0;
+}

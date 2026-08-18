@@ -138,6 +138,6 @@ and no port here, so the union is `array|Closure` and the getter has no
 `instanceof` branch. A caller holding a collection-like object passes
 `$collection->toArray()`, or a closure returning it.
 
-[`HasOptions`](has-options.md#the-arrayable-arm-is-dropped) and `TextInput`'s
-[`datalist()`](text-input.md#the-datalist-drops-the-arrayable-arm) drop the same
-arm for the same reason.
+[`HasOptions`](has-options.md#the-arrayable-arm-is-dropped) and
+[`datalist()`](has-datalist-options.md#the-datalist-drops-the-arrayable-arm) drop
+the same arm for the same reason.

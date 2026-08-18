@@ -3,9 +3,10 @@
 `Sylament\Forms\Components\Concerns\CanBeReadOnly` — the shared concern behind
 the native `readonly` attribute: the `readOnly()` setter, the `readOnlyOn()`
 operation gate, and the `isReadOnly()` reader the field templates emit from. The
-port's two text fields compose it, `TextInput` and `Textarea`, so it keeps a row
-of its own rather than folding into either. Filament composes it on two more —
-`DateTimePicker` and `OneTimeCodeInput` — neither of them ported; each picks the
+port's two text fields compose it, `TextInput` and `Textarea`, as does
+[`DateTimePicker`](date-time-picker.md) and through it the two picker variants,
+so it keeps a row of its own rather than folding into any of them. Filament
+composes it on one more — `OneTimeCodeInput` — which is not ported; it picks the
 concern up unchanged when it lands.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).

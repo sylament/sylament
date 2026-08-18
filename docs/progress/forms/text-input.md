@@ -12,6 +12,12 @@ contributes to [`CanBeValidated`](can-be-validated.md), and the `step` interval
 `numeric()` and `integer()` seed. The affix/mask/copy/reveal/state-cast surface
 is not ported yet.
 
+Two concerns this file used to fold have left it: `HasStep` and
+`HasDatalistOptions` are [`DateTimePicker`](date-time-picker.md)'s too now, so
+each carries its own file — [has-step.md](has-step.md),
+[has-datalist-options.md](has-datalist-options.md) — and what stays here is what
+is this field's alone, the step seed the type sugar writes.
+
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -46,9 +52,9 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 | `mask()` / `getMask()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | `RawJs` | — |
 | `revealable()` / `isPasswordRevealable()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | `TextInput/Actions` | — |
 | `copyable()` / `isCopyable()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | `HasAffixes`, `TextInput/Actions` | — |
-| [`HasStep`](../../../packages/forms/src/Components/Concerns/HasStep.php) | [`Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | done | — | — |
+| [`HasStep`](../../../packages/forms/src/Components/Concerns/HasStep.php) | [`Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | done | — | [detail](has-step.md) |
 | `HasAffixes` (concern) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | blocked | the input wrapper ([field.md](field.md#the-input-affix-wrapper-is-not-ported)) | — |
-| [`HasDatalistOptions`](../../../packages/forms/src/Components/Concerns/HasDatalistOptions.php) | [`Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | done | — | [diverges](#the-datalist-drops-the-arrayable-arm) |
+| [`HasDatalistOptions`](../../../packages/forms/src/Components/Concerns/HasDatalistOptions.php) | [`Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | done | — | [detail](has-datalist-options.md) |
 | [`CanBeAutocapitalized`](../../../packages/forms/src/Components/Concerns/CanBeAutocapitalized.php) | [`Concerns/CanBeAutocapitalized.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocapitalized.php) | done | — | — |
 | `disableAutocapitalize()` | [`Concerns/CanBeAutocapitalized.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocapitalized.php) | skipped | — | [diverges](can-be-autocompleted.md#the-deprecated-disable-aliases-are-not-ported) |
 | [`CanBeAutocompleted`](../../../packages/forms/src/Components/Concerns/CanBeAutocompleted.php) | [`Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | done | — | [detail](can-be-autocompleted.md) |
@@ -353,21 +359,3 @@ stays regardless: the
 [step seed](#integer-delegates-to-numeric-so-both-arms-ship-and-the-step-order-matters)
 and the [validation arm](#integer-validates-with-a-regex-not-a-type-constraint)
 both read it.
-
-### The datalist drops the `Arrayable` arm
-
-Filament types `datalist()` as
-`array<string> | Arrayable | Closure | null` and `getDatalistOptions()` unwraps
-an `Illuminate\Contracts\Support\Arrayable` with `->toArray()`. That interface is
-Laravel's, with no Symfony counterpart and no port here, so the type is
-`array<string>|Closure|null` and the getter has no `instanceof` branch. A caller
-holding a collection-like object passes `$collection->toArray()` — or a closure
-returning it — which is what the `Closure` arm is for. `HasOptions`
-[drops the same arm](has-options.md#the-arrayable-arm-is-dropped) for
-the same reason.
-
-Everything else is Filament's: the `<datalist>` is keyed `<field id>-list`, and a
-single truthiness check gates both the element and the input's `list` attribute,
-so a field with no options renders neither. Pinned by `TextInputTest`'s `renders
-no datalist by default`, `renders a datalist and points the input at it` and
-`resolves closure datalist options through evaluate`.

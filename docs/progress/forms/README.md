@@ -15,8 +15,9 @@ with a detail file wherever a divergence, an open gap, or real sub-structure ear
 one. A plain-text name is not built yet and stays **todo** here even where a
 component's detail file marks that concern **blocked** for itself — these tables
 carry no _Blocked by_ column, and a prerequisite only means anything against the
-component waiting on it, so `CanBeNative` is **todo** below and **blocked** in
-[`select.md`](select.md). That escape covers **blocked** only: a concern we have
+component waiting on it, so `HasAffixes` is **todo** below and **blocked** in
+[`text-input.md`](text-input.md) and
+[`date-time-picker.md`](date-time-picker.md). That escape covers **blocked** only: a concern we have
 decided against is **skipped** in both places, since a non-goal is not relative to
 the component that reached the decision — so `HasInputMode` is **skipped** below
 and in
@@ -46,8 +47,8 @@ alone in the port and lives in [`select.md`](select.md), `CanAllowHtml` is
 [`checkbox-list.md`](checkbox-list.md#canallowhtml-opens-exactly-one-hole) —
 which folds its detail without folding its row, for the reason the
 [Features](#features) note gives — `HasToggleIcons` and `HasToggleColors` are
-`Toggle`'s alone and live in [`toggle.md`](toggle.md), `HasStep`,
-`HasDatalistOptions` and `CanBeAutocapitalized` are `TextInput`'s alone and live
+`Toggle`'s alone and live in [`toggle.md`](toggle.md), `CanBeAutocapitalized`
+is `TextInput`'s alone and lives
 in [`text-input.md`](text-input.md), `HasColors`, `HasIcons` and `HasTooltips`
 are `ToggleButtons`' alone and live in
 [`toggle-buttons.md`](toggle-buttons.md#hascolors-hasicons-and-hastooltips-are-this-fields-alone),
@@ -72,7 +73,13 @@ rows of their own. The fold reads the port, not Filament — Filament composes
 `HasStep` onto `DateTimePicker` and `Slider` (and
 tables' `TextInputColumn`), and `HasDatalistOptions` onto `DateTimePicker`, so
 each is promoted back to a row of its own the moment the second consumer lands.
-`HasOptions` and `CanDisableOptions` are that promotion already: `Select` folded
+Both are that promotion now: the [date pickers](date-time-picker.md) are the
+second consumer of each, so `HasStep` and `HasDatalistOptions` left
+[`text-input.md`](text-input.md)'s fold and carry
+[`has-step.md`](has-step.md) and
+[`has-datalist-options.md`](has-datalist-options.md).
+`HasOptions` and `CanDisableOptions` are the same move one milestone earlier:
+`Select` folded
 them until the option fields arrived, and they now carry
 [`has-options.md`](has-options.md) and
 [`can-disable-options.md`](can-disable-options.md).
@@ -105,8 +112,8 @@ table, the rest follow alphabetically.
 | [`CheckboxList`](../../../packages/forms/src/Components/CheckboxList.php) | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | in progress | [checkbox-list.md](checkbox-list.md) |
 | CodeEditor | [`Components/CodeEditor.php`](../../../vendor/filament/forms/src/Components/CodeEditor.php) | todo | — |
 | ColorPicker | [`Components/ColorPicker.php`](../../../vendor/filament/forms/src/Components/ColorPicker.php) | todo | — |
-| DatePicker | [`Components/DatePicker.php`](../../../vendor/filament/forms/src/Components/DatePicker.php) | todo | — |
-| DateTimePicker | [`Components/DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | todo | — |
+| [`DatePicker`](../../../packages/forms/src/Components/DatePicker.php) | [`Components/DatePicker.php`](../../../vendor/filament/forms/src/Components/DatePicker.php) | in progress | [date-picker.md](date-picker.md) |
+| [`DateTimePicker`](../../../packages/forms/src/Components/DateTimePicker.php) | [`Components/DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | in progress | [date-time-picker.md](date-time-picker.md) |
 | FileUpload | [`Components/FileUpload.php`](../../../vendor/filament/forms/src/Components/FileUpload.php) | todo | — |
 | [`Hidden`](../../../packages/forms/src/Components/Hidden.php) | [`Components/Hidden.php`](../../../vendor/filament/forms/src/Components/Hidden.php) | done | [hidden.md](hidden.md) |
 | KeyValue | [`Components/KeyValue.php`](../../../vendor/filament/forms/src/Components/KeyValue.php) | todo | — |
@@ -129,7 +136,7 @@ table, the rest follow alphabetically.
 | TagsInput | [`Components/TagsInput.php`](../../../vendor/filament/forms/src/Components/TagsInput.php) | todo | — |
 | [`TextInput`](../../../packages/forms/src/Components/TextInput.php) | [`Components/TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | in progress | [text-input.md](text-input.md) |
 | [`Textarea`](../../../packages/forms/src/Components/Textarea.php) | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | in progress | [textarea.md](textarea.md) |
-| TimePicker | [`Components/TimePicker.php`](../../../vendor/filament/forms/src/Components/TimePicker.php) | todo | — |
+| [`TimePicker`](../../../packages/forms/src/Components/TimePicker.php) | [`Components/TimePicker.php`](../../../vendor/filament/forms/src/Components/TimePicker.php) | in progress | [time-picker.md](time-picker.md) |
 | [`Toggle`](../../../packages/forms/src/Components/Toggle.php) | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | in progress | [toggle.md](toggle.md) |
 | [`ToggleButtons`](../../../packages/forms/src/Components/ToggleButtons.php) | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | in progress | [toggle-buttons.md](toggle-buttons.md) |
 | [`ViewField`](../../../packages/forms/src/Components/ViewField.php) | [`Components/ViewField.php`](../../../vendor/filament/forms/src/Components/ViewField.php) | done | [view-field.md](view-field.md) |
@@ -152,7 +159,7 @@ and is tracked in
 [`select.md`](select.md), `CheckboxList`'s `CanAllowHtml` into
 [`checkbox-list.md`](checkbox-list.md), `Toggle`'s
 `HasToggleIcons` and `HasToggleColors` into [`toggle.md`](toggle.md),
-`TextInput`'s `HasStep`, `HasDatalistOptions` and `CanBeAutocapitalized` into
+`TextInput`'s `CanBeAutocapitalized` into
 [`text-input.md`](text-input.md), `ToggleButtons`' `HasColors`, `HasIcons` and
 `HasTooltips` into [`toggle-buttons.md`](toggle-buttons.md), and
 `Repeater`'s two (`CanBeCloned`, `CanGenerateUuids`)
@@ -164,7 +171,9 @@ ones stay below — `CanBeLengthConstrained`, `CanBeReadOnly` and
 and `Repeater`, `HasRelationship` and `CanLimitItemsLength` by `Select` /
 `Repeater` and `CheckboxList`, `HasOptions` and `CanDisableOptions` by every
 option field, and `HasExtraInputAttributes` by `TextInput`, `Textarea`,
-`Select`, `Checkbox`, `Toggle`, `Radio`, `ToggleButtons` and `CheckboxList`.
+`Select`, `Checkbox`, `Toggle`, `Radio`, `ToggleButtons` and `CheckboxList`,
+and `HasStep` and `HasDatalistOptions` by `TextInput` and the
+[date pickers](date-time-picker.md).
 `HasEnum` stays below too, on the other test: `Field` composes it, so every
 field has it.
 
@@ -196,7 +205,7 @@ being its second consumer is what promoted it out of
 | [`CanBeAutocompleted`](../../../packages/forms/src/Components/Concerns/CanBeAutocompleted.php) | [`Components/Concerns/CanBeAutocompleted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAutocompleted.php) | done | [can-be-autocompleted.md](can-be-autocompleted.md) |
 | [`CanBeInline`](../../../packages/forms/src/Components/Concerns/CanBeInline.php) | [`Components/Concerns/CanBeInline.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeInline.php) | done | [can-be-inline.md](can-be-inline.md) |
 | [`CanBeLengthConstrained`](../../../packages/forms/src/Components/Concerns/CanBeLengthConstrained.php) | [`Components/Concerns/CanBeLengthConstrained.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeLengthConstrained.php) | done | [can-be-length-constrained.md](can-be-length-constrained.md) |
-| CanBeNative | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | todo | — |
+| [`CanBeNative`](../../../packages/forms/src/Components/Concerns/CanBeNative.php) | [`Components/Concerns/CanBeNative.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeNative.php) | done | [date-time-picker.md](date-time-picker.md#nativefalse-throws-rather-than-falling-back-to-the-native-control) |
 | CanBePreloaded | [`Components/Concerns/CanBePreloaded.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBePreloaded.php) | todo | — |
 | [`CanBeReadOnly`](../../../packages/forms/src/Components/Concerns/CanBeReadOnly.php) | [`Components/Concerns/CanBeReadOnly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeReadOnly.php) | done | [can-be-read-only.md](can-be-read-only.md) |
 | [`CanBeSearchable`](../../../packages/forms/src/Components/Concerns/CanBeSearchable.php) | [`Components/Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | done | [checkbox-list.md](checkbox-list.md#canbesearchable-is-client-side-only-and-mostly-select-only) |
@@ -207,6 +216,7 @@ being its second consumer is what promoted it out of
 | CanFixIndistinctState | [`Components/Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — |
 | [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) | [`Components/Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | [can-limit-items-length.md](can-limit-items-length.md) |
 | HasAffixes | [`Components/Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | todo | — |
+| [`HasDatalistOptions`](../../../packages/forms/src/Components/Concerns/HasDatalistOptions.php) | [`Components/Concerns/HasDatalistOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDatalistOptions.php) | done | [has-datalist-options.md](has-datalist-options.md) |
 | [`HasDescriptions`](../../../packages/forms/src/Components/Concerns/HasDescriptions.php) | [`Components/Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | [has-descriptions.md](has-descriptions.md) |
 | [`HasEnum`](../../../packages/forms/src/Components/Concerns/HasEnum.php) | [`Components/Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | done | [has-enum.md](has-enum.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Components/Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | [has-extra-input-attributes.md](has-extra-input-attributes.md) |
@@ -222,6 +232,7 @@ being its second consumer is what promoted it out of
 | HasPivotData | [`Components/Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | [select.md](select.md#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | HasPreview | [`Components/Concerns/HasPreview.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPreview.php) | todo | — |
 | [`HasRelationship`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — no Filament concern of its own; the relation surface `Select` and `CheckboxList` share, split off the class | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) · [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | [select.md](select.md#relationship-is-three-lazy-closures-over-the-association-reader) · [checkbox-list.md](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged) |
+| [`HasStep`](../../../packages/forms/src/Components/Concerns/HasStep.php) | [`Components/Concerns/HasStep.php`](../../../vendor/filament/forms/src/Components/Concerns/HasStep.php) | done | [has-step.md](has-step.md) |
 | HasUploadingMessage | [`Components/Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | todo | — |
 | InteractsWithForms | [`Concerns/InteractsWithForms.php`](../../../vendor/filament/forms/src/Concerns/InteractsWithForms.php) | todo | — |
 | InteractsWithToolbarButtons | [`Components/Concerns/InteractsWithToolbarButtons.php`](../../../vendor/filament/forms/src/Components/Concerns/InteractsWithToolbarButtons.php) | todo | — |

@@ -505,6 +505,14 @@ natively anyway) or throw at runtime. A method that does not exist is the signal
 PHPStan and the IDE can both see, so the row is **blocked** rather than skipped —
 it lands with the JS control.
 
+The trait itself now ships, composed by the
+[date pickers](date-time-picker.md#nativefalse-throws-rather-than-falling-back-to-the-native-control),
+which chose the other horn: they compose it and **throw** on `native(false)`,
+because a picker has a second renderer in Filament that a user can reasonably
+expect. This field's row stays blocked all the same — composing the trait here
+would add a setter whose only outcome is that throw, where not composing it keeps
+the absence visible at the call site.
+
 ### The default placeholder is an untranslated literal
 
 `setUp()` sets the placeholder to the literal `'Select an option'`, and

@@ -114,9 +114,9 @@ Filament types `options()` as
 port here, so the union is `array|string|Closure|null` and the getter has no
 `instanceof` branch. A caller holding a collection-like object passes
 `$collection->toArray()` — or a closure returning it — which is what the
-`Closure` arm is for. `TextInput`'s `datalist()`
-[drops the same arm](text-input.md#the-datalist-drops-the-arrayable-arm) for the
-same reason.
+`Closure` arm is for. [`datalist()`](has-datalist-options.md)
+[drops the same arm](has-datalist-options.md#the-datalist-drops-the-arrayable-arm)
+for the same reason.
 
 Only the Laravel contract stays out; the enum class-string arm this divergence
 used to sit beside is [restored below](#the-enum-class-string-arm-is-no-longer-dropped).

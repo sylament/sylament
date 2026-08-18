@@ -12,6 +12,7 @@ use RuntimeException;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Validation\PresenceGate;
@@ -116,7 +117,7 @@ trait HasSchemas
             default => null,
         };
 
-        if ($methodName === null) {
+        if ($methodName === null || method_exists(InteractsWithSchemas::class, $methodName)) {
             return null;
         }
 
@@ -130,6 +131,10 @@ trait HasSchemas
                 return null;
             }
         } else {
+            if ($methodReflection->getNumberOfRequiredParameters() > 1) {
+                return null;
+            }
+
             $parameterType = $firstParameter->getType();
 
             if (!$parameterType instanceof ReflectionNamedType) {

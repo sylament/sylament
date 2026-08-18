@@ -155,6 +155,18 @@ it('never throws resolving an unknown schema name', function (): void {
     expect(new HasSchemasFixture()->resolveSchemaByName('unknown'))->toBeNull();
 });
 
+it('refuses a name naming a member of the host contract itself', function (string $name): void {
+    $fixture = new HasSchemasFixture();
+
+    expect($fixture->resolveSchemaByName($name))->toBeNull()
+        ->and($fixture->hasCachedSchema($name))->toBeFalse();
+})->with([
+    'two Schema-shaped parameters' => ['validateSchemaRecord'],
+    'a Schema first parameter' => ['validateSchema'],
+    'a Schema return type' => ['makeSchema'],
+    'resolved through the "<name>Schema" suffix' => ['make'],
+]);
+
 it('resolves a schema component through a cached schema', function (): void {
     $fixture = new HasSchemasFixture();
     $component = new Component()->statePath('name');

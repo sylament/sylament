@@ -74,6 +74,42 @@ it('answers null for an unknown component key', function (): void {
     expect($event['payload']['result'])->toBeNull();
 });
 
+it('answers null for a key naming a member of the host contract, and still re-renders', function (): void {
+    $component = test()->createLiveComponent('LiveStateHost');
+    $component->call('callSchemaComponentMethod', [
+        'componentKey' => 'validateSchemaRecord.x',
+        'method' => 'echoForJs',
+        'arguments' => [],
+    ]);
+
+    $render = $component->render();
+    $event = $component->getDispatchedBrowserEvent($render, 'sylament:schema-component-method-result');
+
+    expect($event)->not->toBeNull()
+        ->and($event['payload']['result'])->toBeNull()
+        ->and((string) $render)->toContain('data-model="data.title"');
+});
+
+it('answers null for a key naming an unknown schema', function (): void {
+    $event = callLiveStateHostSchemaComponentMethod([
+        'componentKey' => 'unknown.title',
+        'method' => 'echoForJs',
+        'arguments' => ['value' => 'x'],
+    ]);
+
+    expect($event['payload']['result'])->toBeNull();
+});
+
+it('answers null for a key carrying no schema name at all', function (): void {
+    $event = callLiveStateHostSchemaComponentMethod([
+        'componentKey' => 'title',
+        'method' => 'echoForJs',
+        'arguments' => ['value' => 'x'],
+    ]);
+
+    expect($event['payload']['result'])->toBeNull();
+});
+
 it('answers null for a hidden component', function (): void {
     $event = callLiveStateHostSchemaComponentMethod([
         'componentKey' => 'schema.secret',

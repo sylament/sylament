@@ -21,13 +21,17 @@ interface InteractsWithSchemas
     /**
      * Resolve a schema by name the way a browser-supplied `schemaComponent`
      * key must: a cached schema wins; otherwise a `<name>()` / `<name>Schema()`
-     * method is accepted only after a reflection gate — its first parameter,
-     * or failing that its return type, must be a {@see Schema} — and anything
-     * else answers `null`, never throws. **Never resolve a browser-supplied
-     * name through {@see getSchema()} instead**: it invokes any same-named
-     * single-argument host method, which from a `#[LiveArg]` would be
-     * arbitrary method invocation — this reflection gate is what stands
-     * between the two.
+     * method is accepted only after a reflection gate — it may not be a member
+     * this interface declares, and its first parameter (its only required one),
+     * or failing that its return type, must be a {@see Schema} — and a name
+     * the gate refuses answers `null` rather than throwing. **Never resolve a
+     * browser-supplied name through {@see getSchema()} instead**: it invokes
+     * any same-named single-argument host method, which from a `#[LiveArg]`
+     * would be arbitrary method invocation — this reflection gate is what
+     * stands between the two. What the gate admits beyond real schema
+     * builders, exactly as Filament's does: a host's own parameterless
+     * `Schema`-returning getter, invoked and keyed under the browser's name
+     * for that request.
      */
     public function resolveSchemaByName(string $name): ?Schema;
 

@@ -175,22 +175,49 @@ returns.
 ### `resolveSchemaByName()` is a Sylament-only extraction with no Filament source
 
 Filament's `getSchemaComponent()` resolves the schema name by calling
-`$this->getSchema($schemaName)` directly — its own `getSchema()` has no
-reflection gate, because Livewire's `getSchema()`-by-name is already just
-"call this public method", the same trust boundary every other Livewire
-action lives inside. Sylament's `getSchema()` additionally accepts a
-`<name>Schema()` suffix and, more importantly, would invoke *any* same-named
-single-argument host method if called with an unvalidated name — from a
-`#[LiveArg]`-supplied `$componentKey`, that is arbitrary method invocation.
-`resolveSchemaByName(string $name): ?Schema` is the reflection gate that
-stands between a browser-supplied name and `getSchema()`: a cached schema
-wins outright; otherwise a `<name>()`/`<name>Schema()` method is accepted
-only when its first parameter (or, with none, its return type) is declared
-`Schema` — anything else answers `null`, never a throw. It is an extraction,
-not a new mechanism: `HasActions::resolveSchemaComponentAction()`
+`$this->getSchema($schemaName)` directly, and that is safe there because
+Filament's `getSchema()` **does** gate: it delegates to `cacheSchema()`
+(`vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php:221-310`),
+which tries the bare name then the `<name>Schema` suffix and accepts the
+method only when its first parameter — or, with none, its return type — is
+declared `Schema`, answering `null` for everything else. Sylament's
+`getSchema()` throws instead of gating (the fail-fast house rule for a
+missing schema, [above](#getschema-returns-a-non-null-schema-and-throws-on-a-missing-name)),
+so it would invoke *any* same-named single-argument host method if called
+with an unvalidated name — from a `#[LiveArg]`-supplied `$componentKey`, that
+is arbitrary method invocation. `resolveSchemaByName(string $name): ?Schema`
+is where Filament's `cacheSchema()` gate is hoisted to, standing between a
+browser-supplied name and `getSchema()`: a cached schema wins outright;
+otherwise a `<name>()`/`<name>Schema()` method is accepted only when its
+first parameter (or, with none, its return type) is declared `Schema` — a
+name it refuses answers `null` rather than throwing. What is genuinely
+Sylament-only is the **name**: Filament has no member to rename from,
+because its gate is a private step inside `cacheSchema()` rather than a
+callable host method. Two hardenings sit on top of Filament's gate, both
+because *our* trait declares `Schema`-shaped methods Filament's does not:
+the candidate may not be a member `InteractsWithSchemas` itself declares
+(`validateSchema(Schema $schema, bool $shouldThrow = true)`,
+`validateSchemaRecord(Schema $schema, object $record)`, `makeSchema(): Schema`
+and, through the suffix arm, `make`), and a first-parameter match may not
+have more than one **required** parameter, since `getSchema()` passes exactly
+one argument. Without the first, `validateSchemaRecord.x` from a hostile
+client was an unhandled `ArgumentCountError` — a 500 on every live host —
+and `makeSchema`/`make` minted an empty schema keyed under a bogus name; the
+Unit cases in
+[`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php)
+and the Integration case in
+[`HasSchemasComponentMethodTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasComponentMethodTest.php)
+pin all four. What the gate still admits, exactly as Filament's does: a
+host's **own** parameterless `Schema`-returning getter — tables'
+`getTableFiltersForm(): Schema` is the live example — is invoked and, by
+`getSchema()`, keyed under the browser's name (`Schema::key()` on the schema
+the host already holds) for that request. Nothing is written beyond that
+request-scoped key, and narrowing it further would mean refusing a shape
+Filament accepts, so it stays. It is also an extraction, not a new
+mechanism: `HasActions::resolveSchemaComponentAction()`
 (`packages/actions/src/Concerns/HasActions.php:688-745` before this change)
-carried the identical gate inline; it now calls this method instead, so the
-gate exists once. See the "Names with no Filament source" table in
+carried the same gate inline; it now calls this method instead, so the gate
+exists once. See the "Names with no Filament source" table in
 [renames.md](../renames.md).
 
 ### `getSchemaComponent()` drops the child-container skip list
@@ -202,7 +229,8 @@ parameter (schema.md records why — the arm exists for the repeater sibling
 context, which `getComponentByStatePath()` already covers here), so
 `getSchemaComponent()` carries only `$key` and `$withHidden`. The schema name
 is resolved through [`resolveSchemaByName()`](#resolveschemabyname-is-a-sylament-only-extraction-with-no-filament-source)
-rather than Filament's direct `getSchema()` call, for the same reason. Beyond
+rather than Filament's direct `getSchema()` call, because ours throws where
+Filament's gates. Beyond
 that, the body is Filament-exact: split on the first `.` (no `.` answers
 `null`), then hand the **whole, unsplit** `$key` to `Schema::getComponent()`
 with `isAbsoluteKey: true` — a component's own absolute key already carries

@@ -61,6 +61,16 @@ trait HasRelationship
     }
 
     /**
+     * Drop the memoized option map, so the next enumeration goes back to the
+     * database. A write that adds or renames a target row has to call this, or
+     * the field validates the new key against the map it built before the write.
+     */
+    public function forgetCachedRelationshipOptions(): void
+    {
+        $this->cachedRelationshipOptions = null;
+    }
+
+    /**
      * Every row of the association's target entity, keyed by the identifier the
      * client speaks and labelled by the declared title attribute. Always a full
      * map: an option list this field cannot build is an exception rather than an

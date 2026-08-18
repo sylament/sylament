@@ -29,9 +29,11 @@ the write-up in [Details](#details), deleted once the row is **done**, or
 | [`COMPONENTS_CHECKBOX_LIST_SEARCH_FIELD`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
 | [`COMPONENTS_TOGGLE_BUTTONS_BOOLEAN_FALSE`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
 | [`COMPONENTS_TOGGLE_BUTTONS_BOOLEAN_TRUE`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
-| The other 38 constants | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | todo | — | [detail](#the-alias-set-is-three-constants-of-filaments-41) |
+| [`COMPONENTS_SELECT_ACTIONS_CREATE_OPTION`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_SELECT_ACTIONS_EDIT_OPTION`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| The other 36 constants | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | todo | — | [detail](#the-alias-set-is-five-constants-of-filaments-41) |
 
-The three values are pinned by
+The five values are pinned by
 [`FormsIconAliasTest`](../../../packages/forms/tests/Unit/Twig/FormsIconAliasTest.php),
 which is what makes the de-prefixing below a decision rather than a typo. Two of
 them now have a render site: `ToggleButtons`' two templates pass the boolean pair
@@ -45,19 +47,26 @@ box passes it to the wrapper's `prefixIconAlias` prop
 ([the one wrapper a template opens by hand](checkbox-list.md#the-search-box-is-the-one-wrapper-a-template-opens-by-hand)),
 so all three constants now resolve against real markup.
 
+The two select constants resolve differently, and it is the first time an alias
+is read in PHP rather than handed to a template: an `Action`'s icon has no alias
+prop to pass one through, so
+[`Select` resolves them itself](select.md#the-option-action-strings-are-untranslated-literals)
+through an `IconManager` taken by a `#[Required]` setter, at the moment it builds
+each option action.
+
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its rows flip to **done**.
 
-### The alias set is three constants of Filament's 41
+### The alias set is five constants of Filament's 41
 
 Filament declares every overridable icon slot in the whole field catalog up front.
-Sylament declares the three belonging to the two option fields this epic builds.
-The remaining 38 all name icons of fields that are not built here — the builder's
-seven item actions, the file-upload editor's twelve toolbar buttons, the key-value
-and repeater action pairs, the rich editor's panel buttons, the select's two option
-actions and the text input's three affix actions.
+Sylament declares the three belonging to the two option fields, plus the select's
+two option actions. The remaining 36 all name icons of fields that are not built
+here — the builder's seven item actions, the file-upload editor's twelve toolbar
+buttons, the key-value and repeater action pairs, the rich editor's panel buttons,
+and the text input's three affix actions.
 
 **Next step:** none on its own. An alias is only overridable once something reads
 it, so each constant lands in the same change as the field or feature that renders
@@ -79,7 +88,9 @@ Filament's values are namespaced by package —
 `forms::components.toggle-buttons.boolean.true`, and so on. Sylament's drop the
 `forms::` segment: `components.checkbox-list.search-field`,
 `components.toggle-buttons.boolean.true`,
-`components.toggle-buttons.boolean.false`.
+`components.toggle-buttons.boolean.false`,
+`components.select.actions.create-option`,
+`components.select.actions.edit-option`.
 
 Filament is inconsistent about this — `SupportIconAlias`'s values are bare
 (`modal.close-button`, `section.collapse-button`) while every other package

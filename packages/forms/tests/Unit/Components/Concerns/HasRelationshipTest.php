@@ -17,6 +17,27 @@ it('carries the declared title attribute', function (): void {
         ->and(Select::make('author')->relationship()->getRelationshipTitleAttribute())->toBeNull();
 });
 
+it('installs the Doctrine option defaults unconditionally, so declaration order decides', function (): void {
+    $before = static fn (): string => 'before';
+    $after = static fn (): string => 'after';
+
+    $overwritten = Select::make('author')
+        ->createOptionUsing($before)
+        ->updateOptionUsing($before)
+        ->relationship(titleAttribute: 'name');
+
+    $wins = Select::make('author')
+        ->relationship(titleAttribute: 'name')
+        ->createOptionUsing($after)
+        ->updateOptionUsing($after);
+
+    expect($overwritten->getCreateOptionUsing())->not->toBe($before)
+        ->and($overwritten->getCreateOptionUsing())->toBeInstanceOf(Closure::class)
+        ->and($overwritten->getUpdateOptionUsing())->not->toBe($before)
+        ->and($wins->getCreateOptionUsing())->toBe($after)
+        ->and($wins->getUpdateOptionUsing())->toBe($after);
+});
+
 it('throws loudly when no entity manager backs a relationship select', function (): void {
     $select = Select::make('author')->record(Post::class)->relationship(titleAttribute: 'name');
 

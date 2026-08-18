@@ -55,7 +55,9 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | `multiple()` / [`OptionsArrayStateCast`](../schemas/options-array-state-cast.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#a-multiple-select-validates-element-by-element) · [diverges](#multiple-renders-a-native-multi-select-and-nothing-else) |
 | `searchable()` / `preload()` / `HasLoadingMessage` | [`Concerns/CanBeSearchable.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeSearchable.php) | todo | the JS select control | — |
 | [`relationship()`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — to-one and to-many, over the [association reader](../schemas/association-reader.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](#relationship-is-three-lazy-closures-over-the-association-reader) · [semantics](#a-relationship-select-is-always-enumerable-or-it-throws) · [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
-| `relationship()` create + edit option actions (`createOptionUsing`, `editOptionForm`, …) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | — | — |
+| `createOptionForm()` / `createOptionUsing()` / `createOptionAction()` / `getCreateOptionAction()` and the create modal chain | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#refreshselectedoptionlabel-is-not-ported) · [diverges](#the-non-relationship-schema-record-is-read-off-the-field-not-off-a-getactionschemamodel) |
+| `editOptionForm()` / `updateOptionUsing()` / `fillEditOptionActionFormUsing()` / `editOptionAction()` / `getEditOptionAction()` / `getSelectedRecord()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#geteditoptionactionformdata-also-answers-an-object) |
+| `manageOptionForm()` / `manageOptionActions()` / the two modal headings | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) · [diverges](#the-option-action-strings-are-untranslated-literals) |
 | `relationship()` `ignoreRecord:` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | todo | the `unique`/`exists` constraint family | — |
 | `pivotData()` | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity recipe | [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | `allowHtml()` | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | todo | — | — |
@@ -103,8 +105,26 @@ against the in-memory SQLite rig
 smoke-tested by
 [`DoctrineRigTest`](../../../packages/forms/tests/Integration/Fixtures/DoctrineRigTest.php));
 the wiring that needs no database — `hasRelationship()`, the name fallback, the
-title attribute, and the no-entity-manager throw — by
-[`HasRelationshipTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasRelationshipTest.php).
+title attribute, the no-entity-manager throw, and the unconditional install
+order of the three option defaults (a closure declared before `relationship()`
+overwritten, one declared after kept) — by
+[`HasRelationshipTest`](../../../packages/forms/tests/Unit/Components/Concerns/HasRelationshipTest.php);
+and the two option actions — the dotted-key mount rendering the modal with its
+form, the create round-trip (row persisted, key selected, the outer schema's own
+`getState()` clearing the `Choice` against the re-enumerated map, the new option
+rendered), the `multiple()` append with its create-another footer action (present
+only there, and submitting with `another: true` keeping the modal mounted with a
+reset form), the edit round-trip (modal pre-filled from the selected record, the
+update flushed), the missing-`createOptionUsing` throw driven through a
+non-relationship select, `forgetCachedRelationshipOptions()` itself, and the
+gates (no form, `disabled()`, `multiple()` closing the edit action, the blank-state
+hide, `editOptionForm()` making the field live, the manage-level modifier running
+before the per-action one, the ported strings and chrome, and both triggers
+rendered in the suffix slot with the field's mount context) — by
+[`SelectCreateOptionTest`](../../../packages/forms/tests/Integration/Components/SelectCreateOptionTest.php),
+against the same SQLite rig through the
+[`SelectOptionForm`](../../../packages/forms/tests/Fixtures/Twig/Components/SelectOptionForm.php)
+live host.
 
 ## Details
 
@@ -439,6 +459,69 @@ reaches the template already spelled in the option vocabulary, and
 `getOptionLabel()` resolves through the same method rather than repeating the
 bool-to-int coercion it used to carry.
 
+### The option actions are suffix actions with Doctrine defaults
+
+`setUp()` registers two closures on the field's own suffix slot —
+`suffixActions([fn ($c) => $c->getCreateOptionAction(), fn ($c) => $c->getEditOptionAction()])`
+— and each getter answers `null` until its form is declared, which
+[`wrap(null)`](../support/helpers.md) drops on the floor. So every select carries
+the registration and none of the chrome: no form, no action; `disabled()`, no
+action either way; `multiple()`, no edit action, because a list has no single
+record to edit. Because the suffix cache
+[splices into the component's action map](../schemas/has-actions.md#the-affix-contract-is-typed-as-a-name-keyed-map),
+a trigger reaches them by the field's own dotted key
+(`context.schemaComponent = 'schema.author'`) with no pipeline of its own, and
+the modal schema lands on `mountedActionsData.<n>` like any other mounted
+action's. That composition — a component-registered action *with a modal*,
+mounted by dotted key — had no test anywhere until this field needed it.
+
+The chain each getter builds is Filament's, in Filament's order, with two things
+set explicitly that the cache does not supply: `color('gray')` and
+`iconButton()`. The [cache's two defaults](has-affixes.md#the-cache-contributes-two-defaults-and-nothing-else)
+are the small size and the icon-button *template*, and neither is a colour — an
+affix action that wants gray says so.
+
+`relationship()` is overridden here rather than widened in the shared trait:
+[`CheckboxList`](checkbox-list.md#the-to-many-relationship-arm-serves-this-field-unchanged)
+composes the same trait and has no option actions, so the override aliases the
+trait body in (`use HasRelationship { relationship as traitRelationship; }`),
+calls it, then installs three Doctrine defaults:
+
+- **`createOptionUsing`** — `Schema::getData()` builds the target entity from the
+  modal schema's class-string record (`new $class()`, so the target needs a
+  no-argument constructor), the reader `persist()`s and `flush()`es it, and the
+  key it returns is `getRecordKey()`. The modal schema validates itself and
+  nothing else: its state path scopes the map, so the outer form is untouched.
+- **`fillEditOptionActionFormUsing`** — the selected record itself, as an object.
+  `Schema::fill(object)` runs `readStateFromRecord()`, so the modal's fields
+  arrive filled without a hand-built array.
+- **`updateOptionUsing`** — `Schema::getData()` maps the submitted state back onto
+  the bound instance and the reader `flush()`es it.
+
+All three are installed **unconditionally**, exactly as Filament does it, so a
+`createOptionUsing()` of your own has to be declared **after** `relationship()`
+to survive. That is a real ordering trap and it is pinned in both directions
+rather than smoothed over — a conditional install would silently change which
+closure wins for anyone carrying the Filament habit.
+
+Both write arms end by calling `forgetCachedRelationshipOptions()`, which only
+clears the [memoized option map](#relationship-is-three-lazy-closures-over-the-association-reader).
+The create action's own closure calls it too, one line after the state write, and
+that call is the load-bearing one: a user-supplied `createOptionUsing` that
+inserts a row knows nothing about the memo, and without the bust the freshly
+created key is validated against the map built before the insert and rejected by
+the `Choice`. The one on the relationship default is belt and braces for a
+`createOptionUsing` that is replaced wholesale later in the chain.
+
+`getSelectedRecord()` resolves through
+[`AssociationReader::getReference()`](../schemas/association-reader.md) rather
+than a query: the edit modal reads state off the instance, which is what
+initializes the proxy, so a mount that never opens costs nothing. It is memoized
+on the field, answers `null` for a blank selection, and answers `null` for a
+select bound to no association at all — Filament's equivalent is a
+`getSelectedRecordUsing` closure that `relationship()` installs, and with a single
+resolution strategy there is nothing for that closure to switch between.
+
 ### The inline-prefix class counts visible actions where the text input's counts all of them
 
 `sy-fo-select-has-inline-prefix` strips the `<select>`'s left padding so an
@@ -527,6 +610,68 @@ because a picker has a second renderer in Filament that a user can reasonably
 expect. This field's row stays blocked all the same — composing the trait here
 would add a setter whose only outcome is that throw, where not composing it keeps
 the absence visible at the call site.
+
+### `refreshSelectedOptionLabel()` is not ported
+
+Filament's two option-action closures end by dispatching a browser event that
+tells the Choices.js control to re-read the selected option's label. The native
+`<select>` re-renders its whole option list server-side on the same round-trip,
+so there is no client-held label to refresh and nothing to dispatch to; the
+method lands with the JS select control, alongside
+[`CanBeNative`](#canbenative-is-not-ported). What sits in its place is the
+[option-map bust](#the-option-actions-are-suffix-actions-with-doctrine-defaults),
+which is what makes the re-render show the new row.
+
+### The non-relationship schema record is read off the field, not off a `getActionSchemaModel()`
+
+Filament's create modal binds `$schema->model($component->getActionSchemaModel())`
+for a select with no relationship, where `getActionSchemaModel()` is a schemas
+concern method resolving `actionSchemaModel() ?? getRecord() ?? getModel()`.
+Neither the setter nor the getter is ported — schemas' component
+[`HasActions`](../schemas/has-actions.md) has no such surface — so the arm reads
+what our components do expose:
+`$component->getRecord() ?? $component->getRecordClass()`, which is the same
+"the field's own record, or the class it declares" answer minus the per-action
+override. A select with no relationship needs `createOptionUsing()` anyway, and
+that closure receives the modal schema, so a form wanting a different record
+binds it there. The setter lands if and when schemas grows the concern.
+
+### `getEditOptionActionFormData()` also answers an object
+
+Filament types it `?array`, because Eloquent fills a form from
+`$record->attributesToArray()`. The Doctrine default hands back the **record**
+instead — `Schema::fill(object)` runs `readStateFromRecord()`, which is the only
+reading that goes through the same mapped-state path `getData()` writes back
+through, association hooks included. The return type is therefore
+`object|array<string, mixed>|null`; an array still works and is still what a
+hand-written `fillEditOptionActionFormUsing()` will usually return.
+
+### The option-action strings are untranslated literals
+
+The seven strings — create label, modal heading and submit label all `Create`,
+create-another `Create & create another`, edit label and modal heading `Edit`,
+edit submit `Save` — are hardcoded English, read verbatim from
+[`en/components.php`](../../../vendor/filament/forms/resources/lang/en/components.php).
+Same call as [the placeholder below](#the-default-placeholder-is-an-untranslated-literal)
+and [`getDefaultLabel`](field.md#getdefaultlabel-drops-label-translation): the
+translation surface is unported toolkit-wide, so a literal is the honest form
+rather than a half-built lookup. The two icons are overridable, though — they
+resolve through
+[`FormsIconAlias`](forms-icon-alias.md)'s `COMPONENTS_SELECT_ACTIONS_CREATE_OPTION`
+and `COMPONENTS_SELECT_ACTIONS_EDIT_OPTION`, falling back to
+`heroicons:plus-20-solid` and `heroicons:pencil-square-20-solid`.
+
+Resolving them needs an `IconManager`, and Filament reaches its `FilamentIcon`
+facade. A component cannot: the manager is a private service the container's
+`has()` does not answer for, so the closure form
+(`fn (IconManager $icons) => …`, which
+[`NavigationItem`](../panels/README.md) can use because it injects the manager
+itself) resolves nothing here. `Select` therefore takes the manager through a
+`#[Required]` setter and falls back to a bare `new IconManager()` when it was
+built with `new` rather than through the container — the same shape
+[`CanAccessProperties`](../schemas/property-accessor.md#the-accessor-is-injected-not-reached-for)
+uses, and the same trade: a hand-built field resolves no registered overrides and
+renders the default icon.
 
 ### The default placeholder is an untranslated literal
 

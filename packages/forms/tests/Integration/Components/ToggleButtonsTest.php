@@ -102,7 +102,8 @@ it('renders one button per option, each wired to its own hidden input', function
         ->and($labels->eq(1)->attr('for'))->toBe('status-published')
         ->and($labels->eq(0)->text())->toBe('Draft')
         ->and($labels->eq(1)->text())->toBe('Published')
-        ->and($labels->eq(0)->attr('class'))->toContain('sy-size-md');
+        ->and($labels->eq(0)->attr('class'))->toContain('sy-size-md')
+        ->and($crawler->filter('input.sy-fo-toggle-buttons-input + label.sy-btn')->count())->toBe(2);
 });
 
 it('binds every input to the one state path', function (): void {
@@ -199,7 +200,8 @@ it('renders the grouped variant as a flat button group with no grid', function (
         ->and($labels->eq(1)->attr('class'))->toContain('sy-btn-group-btn')
         ->and($labels->eq(0)->attr('for'))->toBe('status-draft')
         ->and($group->filter('input.sy-fo-toggle-buttons-input')->count())->toBe(2)
-        ->and($crawler->filter('div.sy-btn-group > label.sy-btn')->count())->toBe(2);
+        ->and($crawler->filter('div.sy-btn-group > label.sy-btn')->count())->toBe(2)
+        ->and($crawler->filter('input.sy-fo-toggle-buttons-input + label.sy-btn')->count())->toBe(2);
 });
 
 it('lays the default variant out as a single-column grid, and drops the grid when inline', function (): void {

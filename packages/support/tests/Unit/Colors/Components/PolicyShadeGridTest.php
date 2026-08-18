@@ -43,21 +43,25 @@ dataset('adversarial palettes', function (): iterable {
 });
 
 /**
- * The coloured rule each policy paints, as the selector that introduces it. `ToggleComponent` is
+ * The coloured rule each policy paints, as the nested selector path that reaches it: every step is
+ * searched inside the block the step before it opened, so a selector spelled the same under two
+ * parents still resolves to one rule. `button.css` needs that — `&.sy-color` introduces both the
+ * outlined arm and the checked label arm — and its filled rule carries `:not(label)` because a
+ * label button paints those same slots only while its input is checked. `ToggleComponent` is
  * absent because its stylesheet ships from forms, which pins it from its own suite; schemas'
  * `TextComponent` pins itself the same way, against a `components/text.css` that ships from here.
  *
- * @return array<string, array{class-string<HasColor>, string, string}>
+ * @return array<string, array{class-string<HasColor>, string, list<string>}>
  */
 function coloredRules(): array
 {
     return [
-        'badge' => [BadgeComponent::class, 'components/badge.css', '&.sy-color'],
-        'filled button' => [ButtonComponent::class, 'components/button.css', '&:not(.sy-outlined).sy-color'],
-        'outlined button' => [OutlinedButtonComponent::class, 'components/button.css', '&.sy-color'],
-        'icon button' => [IconButtonComponent::class, 'components/icon-button.css', '&.sy-color'],
-        'link' => [LinkComponent::class, 'components/link.css', '&.sy-color'],
-        'dropdown item' => [ItemComponent::class, 'components/dropdown-item.css', '&.sy-color'],
+        'badge' => [BadgeComponent::class, 'components/badge.css', ['&.sy-color']],
+        'filled button' => [ButtonComponent::class, 'components/button.css', ['&:not(.sy-outlined).sy-color:not(label)']],
+        'outlined button' => [OutlinedButtonComponent::class, 'components/button.css', ['&.sy-outlined', '&.sy-color']],
+        'icon button' => [IconButtonComponent::class, 'components/icon-button.css', ['&.sy-color']],
+        'link' => [LinkComponent::class, 'components/link.css', ['&.sy-color']],
+        'dropdown item' => [ItemComponent::class, 'components/dropdown-item.css', ['&.sy-color']],
     ];
 }
 
@@ -92,52 +96,68 @@ function shadeClasses(string $policy, array $palette): array
 }
 
 /**
- * The declarations `$selector` introduces, nested rules included — the filled button reads two of
- * its slots from a rule for the icon it contains, and the dropdown item reads all four of its own
- * from a rule for the label.
+ * The declarations the last selector of `$path` introduces, nested rules included — the filled
+ * button reads two of its slots from a rule for the icon it contains, and the dropdown item reads
+ * all four of its own from a rule for the label.
+ *
+ * @param list<string> $path
  */
-function ruleDeclarations(string $css, string $selector): string
+function ruleDeclarations(string $css, array $path): string
 {
-    $marker = "{$selector} {";
-    $occurrences = mb_substr_count($css, $marker);
+    $block = $css;
 
-    if ($occurrences !== 1) {
-        throw new UnexpectedValueException("The selector `{$selector}` occurs {$occurrences} times in the stylesheet — this test needs exactly one rule to read.");
-    }
+    foreach ($path as $selector) {
+        $marker = "{$selector} {";
+        $occurrences = mb_substr_count($block, $marker);
 
-    $start = mb_strpos($css, $marker);
-
-    if ($start === false) {
-        throw new UnexpectedValueException("The selector `{$selector}` is not in the stylesheet.");
-    }
-
-    $start += mb_strlen($marker);
-    $depth = 1;
-
-    foreach (mb_str_split(mb_substr($css, $start)) as $offset => $character) {
-        $depth += match ($character) {
-            '{' => 1,
-            '}' => -1,
-            default => 0,
-        };
-
-        if ($depth === 0) {
-            return mb_substr($css, $start, $offset);
+        if ($occurrences !== 1) {
+            throw new UnexpectedValueException("The selector `{$selector}` occurs {$occurrences} times in the block it is read from — this test needs exactly one rule to read.");
         }
+
+        $start = mb_strpos($block, $marker);
+
+        if ($start === false) {
+            throw new UnexpectedValueException("The selector `{$selector}` is not in the stylesheet.");
+        }
+
+        $start += mb_strlen($marker);
+        $depth = 1;
+        $length = null;
+
+        foreach (mb_str_split(mb_substr($block, $start)) as $offset => $character) {
+            $depth += match ($character) {
+                '{' => 1,
+                '}' => -1,
+                default => 0,
+            };
+
+            if ($depth === 0) {
+                $length = $offset;
+
+                break;
+            }
+        }
+
+        if ($length === null) {
+            throw new UnexpectedValueException("The rule for `{$selector}` is never closed.");
+        }
+
+        $block = mb_substr($block, $start, $length);
     }
 
-    throw new UnexpectedValueException("The rule for `{$selector}` is never closed.");
+    return $block;
 }
 
 /**
+ * @param list<string> $path
  * @return list<string> the `--sy-` slot variables the rule reads, matched in the `bg-(--sy-bg)`
  *                      form Tailwind spells an arbitrary custom property with
  */
-function slotVariablesRead(string $stylesheet, string $selector): array
+function slotVariablesRead(string $stylesheet, array $path): array
 {
     preg_match_all(
         '/\(\s*(--sy-[a-z-]+)\s*\)/',
-        ruleDeclarations(stylesheet($stylesheet), $selector),
+        ruleDeclarations(stylesheet($stylesheet), $path),
         $variables,
     );
 
@@ -205,9 +225,10 @@ it('emits only classes that utilities.css defines', function (array $palette): v
  * choice alone.
  */
 it('sets exactly the slot variables the component stylesheets read', function (array $palette): void {
-    foreach (coloredRules() as $description => [$policy, $stylesheet, $selector]) {
-        $read = slotVariablesRead($stylesheet, $selector);
+    foreach (coloredRules() as $description => [$policy, $stylesheet, $path]) {
+        $read = slotVariablesRead($stylesheet, $path);
         $set = slotVariablesSetBy(shadeClasses($policy, $palette));
+        $selector = implode(' → ', $path);
 
         sort($read);
         sort($set);

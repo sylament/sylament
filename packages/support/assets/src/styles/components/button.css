@@ -32,7 +32,8 @@
         @apply gap-1.5 px-4 py-3 text-sm;
     }
 
-    &:not(.sy-color) {
+    &:not(.sy-color),
+    label& {
         @apply bg-white text-gray-950 ring-1 ring-gray-950/10 dark:bg-white/5 dark:text-white dark:ring-white/20;
 
         &.sy-force-enabled,
@@ -41,7 +42,7 @@
         }
     }
 
-    &:not(.sy-outlined).sy-color {
+    &:not(.sy-outlined).sy-color:not(label) {
         @apply bg-(--sy-bg) text-(--sy-text) dark:bg-(--sy-dark-bg) dark:text-(--sy-dark-text);
 
         &.sy-force-enabled,
@@ -50,6 +51,48 @@
         }
 
         & > .sy-icon {
+            @apply text-(--sy-text) dark:text-(--sy-dark-text);
+        }
+    }
+
+    &:not(.sy-outlined) {
+        input:checked + label& {
+            @apply bg-gray-400 text-white ring-0 dark:bg-gray-600;
+
+            &.sy-force-enabled,
+            &:not(.sy-disabled):not([disabled]) {
+                @apply hover:bg-gray-300 dark:hover:bg-gray-500;
+            }
+        }
+
+        &.sy-color {
+            label& {
+                input:checked + & {
+                    @apply bg-(--sy-bg) text-(--sy-text) ring-0 dark:bg-(--sy-dark-bg) dark:text-(--sy-dark-text);
+                }
+
+                &.sy-force-enabled,
+                &:not(.sy-disabled):not([disabled]) {
+                    input:checked + & {
+                        @apply hover:bg-(--sy-hover-bg) hover:text-(--sy-hover-text) dark:hover:bg-(--sy-dark-hover-bg) dark:hover:text-(--sy-dark-hover-text);
+                    }
+
+                    input:focus-visible + & {
+                        @apply z-10 ring-2 ring-gray-950/10 dark:ring-white/20;
+                    }
+
+                    input:checked:focus-visible + & {
+                        @apply ring-color-500/50 dark:ring-color-400/50;
+                    }
+                }
+            }
+        }
+    }
+
+    label& {
+        @apply cursor-pointer;
+
+        & > .sy-icon:is(:checked + label > .sy-icon) {
             @apply text-(--sy-text) dark:text-(--sy-dark-text);
         }
     }

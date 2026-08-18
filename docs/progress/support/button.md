@@ -4,8 +4,10 @@ The `<twig:SylamentSupport:Button>` anonymous template — the shared text-butto
 widget. It has no Sylament PHP class: it ports Filament's Blade
 `button/index.blade.php` (the rendered markup) together with the
 `ButtonComponent.php` whose sole job is the runtime color map, and it tracks the
-`button.css` chrome beside them — including the `.sy-btn-group` arm, which joins
-a row of buttons into one control and has no template of its own. The current Twig
+`button.css` chrome beside them — including the two arms with no template of
+their own: `.sy-btn-group`, which joins a row of buttons into one control, and
+the `input:checked + label.sy-btn` arms, which paint a label-shaped button while
+the input it covers is checked. The current Twig
 is a thin subset — it renders a `<button>`/`<a>` with a size, a leading icon, a
 disabled state, and a color class, and leaves Filament's badge, tooltip,
 key-binding, loading-indicator, form-processing, and `labeledFrom` behavior
@@ -54,6 +56,7 @@ permanent note in [Divergences](#divergences).
 | `spaMode` SPA navigation | [`generate_href_html($href, …, $spaMode)`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#details) |
 | `form` / `formId` | [`'form' => $formId`](../../../vendor/filament/support/resources/views/components/button/index.blade.php) | todo | — | [detail](#details) |
 | [`.sy-btn-group` — the joined row of buttons](../../../packages/support/assets/src/styles/components/button.css) | [`.fi-btn-group`](../../../vendor/filament/support/resources/css/components/button.css) | done | — | [diverges](#the-button-group-arm-ships-without-its-processing-sub-rule) |
+| [`input:checked + label.sy-btn` — the selected state of a label button](../../../packages/support/assets/src/styles/components/button.css) | [`input:checked + label&`](../../../vendor/filament/support/resources/css/components/button.css) | done | — | [diverges](#the-label-buttons-paint-their-colour-only-while-checked) |
 
 ## Details
 
@@ -122,6 +125,53 @@ behaviour the `Loading indicator / wire:target / form processing` row above mark
 **todo**. Nothing in the port emits `sy-processing`, so the rule would ship a
 selector with no element. **Reversible**, and its reverse is bookkeeping: the
 sub-rule lands with that row, in the same change that first emits the class.
+
+### The label buttons paint their colour only while checked
+
+A `<label class="sy-btn">` over an `<input type="radio">` is the shape
+[`ToggleButtons`](../forms/toggle-buttons.md#the-selected-state-is-painted-from-the-sibling-input-in-both-variants)
+renders an option set in, and it is the one caller for which "coloured" is not a
+constant: the same markup is a chosen option and an unchosen one, and only the
+sibling input tells them apart. Filament splits its colour block accordingly, and
+that split had never been ported — our rule painted `bg-(--sy-bg)` on any
+`.sy-color`, so every option glowed whichever was chosen. It landed at M3 · 1, on
+the same argument as the group arm: the selector is support's, the tree is the
+field's.
+
+The arms are vendor's, rule for rule with the prefix rename — a checked coloured
+label takes the palette fill and `ring-0`, a checked uncoloured one takes
+`bg-gray-400 text-white` (`gray-600` in dark), an unchecked label of either kind
+falls through to the plain white-and-ring treatment, the icon inside a checked
+label follows the label's text colour, and every label gets `cursor-pointer`.
+Vendor's `input:focus-visible + &` / `input:checked:focus-visible + &` rings come
+with them, **including their gap**: both sit under `.fi-color`, so an uncoloured
+option set has no focus ring of its own. That is worth an upstream look rather
+than a silent local fix — diverging here would put our keyboard affordance
+somewhere Filament's users have not seen it.
+
+What diverges is where the *unchecked* arm comes from. Filament applies
+`bg-white … dark:bg-white/5` to every non-outlined button and overrides it for
+the coloured ones, so an unchecked label needs no rule at all; the ring comes
+from a separate `&:not(.fi-color), label&`. This file had already merged those
+two into one `&:not(.sy-color)` branch, so the port adds `label&` to that
+branch's selector list and qualifies the colour rule `:not(label)` — Filament's
+own qualifier, on our flattened rule instead of inside its nested `&.fi-color`
+node. The computed result matches: a label gets the plain treatment until its
+input is checked, and a **non-label** button is untouched, which is the whole
+risk here since every other `.sy-btn` in the toolkit is a `<button>` or an `<a>`.
+That claim was checked rather than reasoned — the stylesheet was compiled before
+and after and both sheets loaded into one page, and across eight non-label shapes
+(plain, coloured, anchor, outlined, disabled, `xs`, grouped, and one with an
+icon) in light and dark, every computed background, colour, ring, cursor,
+z-index, opacity, radius, padding and font size is identical.
+
+One consequence for the test that reads this file:
+[`PolicyShadeGridTest`](../../../packages/support/tests/Unit/Colors/Components/PolicyShadeGridTest.php)
+locates each policy's coloured rule by its selector text, and `&.sy-color` now
+introduces two rules here — the outlined arm and the checked label arm. It takes
+a nested selector *path* rather than one selector, resolving each step inside the
+block the step before it opened, which is what keeps the outlined entry pointing
+at one rule.
 
 ### The outlined variant is selected by a prop, and by a second policy class
 

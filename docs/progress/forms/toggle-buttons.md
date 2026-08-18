@@ -44,7 +44,7 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| Construction &amp; rendering — the hidden input, the button label, the icon and the option colour | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#the-dead-disabled-on-a-label-is-not-ported) · [diverges](#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
+| Construction &amp; rendering — the hidden input, the button label, the icon and the option colour | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-selected-state-is-painted-from-the-sibling-input-in-both-variants) · [diverges](#the-checked-attribute-is-rendered-server-side) · [diverges](#the-dead-disabled-on-a-label-is-not-ported) · [diverges](#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
 | `grouped()` / `isGrouped()` and the grouped tree | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-grouped-variant-is-a-second-template-picked-by-gettemplate) · [semantics](#the-grouped-labels-must-stay-direct-children-of-the-group) · [diverges](#the-two-vendor-asymmetries-between-the-variants-are-preserved-and-one-is-dropped) |
 | `multiple()` / `isMultiple()` — `role`, `type` and the dropped `name` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-multiple-arm-needs-a-model-that-rests-at-an-array) |
 | `boolean()` — the `1`/`0` pair, its colours, its icons and the int-backed cast | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time) · [semantics](radio.md#the-cast-chain-collapses-to-whatever-boolean-installs) · [diverges](#the-boolean-labels-are-untranslated-literals) |
@@ -342,6 +342,36 @@ alone rather than by a `Choice` that would have had to admit emptiness. Reading
 the raw state is what keeps that carve-out to genuinely empty fields: a payload
 that wrote something the enum cast cannot resolve is not empty, and meets the
 `Choice`.
+
+### The selected state is painted from the sibling input, in both variants
+
+Nothing on the `<label>` says it is selected: the `checked` attribute is on the
+`<input>` the label covers, and the field emits the same classes either way.
+Which means the *only* thing that can tell a chosen option from an unchosen one
+is CSS reading across the sibling — support's
+[`input:checked + label.sy-btn` arms](../support/button.md#the-label-buttons-paint-their-colour-only-while-checked),
+where a coloured label takes its palette fill and an uncoloured one takes
+`bg-gray-400`, while everything unchecked stays on the plain white/ring
+treatment a button gets with no colour at all.
+
+Both templates already emitted the tree that needs — `<input>` immediately
+followed by `<label class="sy-btn">`, inside a `div.sy-fo-toggle-buttons-btn-ctn`
+by default and directly under the group when
+[`grouped()`](#the-grouped-labels-must-stay-direct-children-of-the-group) — so
+this cost the field no markup change. The **adjacency** is what is load-bearing
+and it is invisible: putting anything between the two, or moving the input after
+the label the way a plain checkbox row does, leaves every option painted
+identically with nothing failing anywhere. `ToggleButtonsTest` pins
+`input.sy-fo-toggle-buttons-input + label.sy-btn` in both variants for exactly
+that reason, beside the direct-child assertion the group arm needs.
+
+The arms landed at M3 · 1, after this field had already shipped: support's
+`button.css` had never carried Filament's checked block, so its colour rule
+applied to *any* `.sy-color` — every option glowed in its own colour whichever
+one was chosen, and a chosen gray option was the plainest thing on screen. The
+port ships vendor's split, including its gap: the `input:focus-visible` ring
+arms exist only for the coloured labels, so a gray option set is keyboard-focusable
+with no ring of its own.
 
 ## Divergences
 

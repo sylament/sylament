@@ -245,7 +245,15 @@ the call itself is wrapped in `catch (TypeError)`, both because a bare
 would otherwise 500 the request — the price is that a `TypeError` genuinely
 raised *inside* the called method's own body (not from the argument bind) is
 indistinguishable from a mistyped argument and is masked the same way, as a
-plain `null` result with no way for the caller to tell the two apart.
+plain `null` result with no way for the caller to tell the two apart. The gate
+also asks the reflected method whether it `isPublic()`, because `method_exists()`
+admits non-public ones: a `protected`/`private` method carrying
+`#[ExposedLiveComponentMethod]` would reach the spread and raise an `Error` —
+which `catch (TypeError)` does not hold — so it answers `null` exactly like an
+unexposed method instead. One shape stays a 500, accepted: a payload whose
+`arguments` is not a JSON object fails the action's own `array $arguments`
+binding as a `TypeError` inside the argument resolver, before the body this gate
+lives in ever runs — unreachable from our own JS, which always sends an object.
 
 _See also: the global [rename table](../renames.md) — the interface ⇄ trait name
 swap, the `Filament\Schemas\Contracts` → `Sylament\Schemas\Contracts`

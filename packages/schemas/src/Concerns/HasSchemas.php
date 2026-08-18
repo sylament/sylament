@@ -169,14 +169,15 @@ trait HasSchemas
         #[LiveArg] array $arguments = [],
     ): void {
         // Security: callable from the browser. The schema name is resolved through
-        // resolveSchemaByName()'s reflection gate (never getSchema()), and only
+        // resolveSchemaByName()'s reflection gate (never getSchema()), and only public
         // #[ExposedLiveComponentMethod] methods on the resolved component are called.
         $result = null;
         $component = $this->getSchemaComponent($componentKey);
         if ($component !== null && method_exists($component, $method)) {
             $reflection = new ReflectionMethod($component, $method);
             if (
-                $reflection->getAttributes(ExposedLiveComponentMethod::class) !== []
+                $reflection->isPublic()
+                && $reflection->getAttributes(ExposedLiveComponentMethod::class) !== []
                 && $this->argumentsMatchSignature($reflection, $arguments)
             ) {
                 try {

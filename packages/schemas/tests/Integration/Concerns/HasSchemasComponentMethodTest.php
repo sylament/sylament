@@ -48,6 +48,22 @@ it('answers null for a method missing the ExposedLiveComponentMethod attribute',
     expect($event['payload']['result'])->toBeNull();
 });
 
+it('answers null for a non-public method carrying the attribute, and still re-renders', function (): void {
+    $component = test()->createLiveComponent('LiveStateHost');
+    $component->call('callSchemaComponentMethod', [
+        'componentKey' => 'schema.title',
+        'method' => 'exposedButProtected',
+        'arguments' => [],
+    ]);
+
+    $render = $component->render();
+    $event = $component->getDispatchedBrowserEvent($render, 'sylament:schema-component-method-result');
+
+    expect($event)->not->toBeNull()
+        ->and($event['payload']['result'])->toBeNull()
+        ->and((string) $render)->toContain('data-model="data.title"');
+});
+
 it('answers null for an unknown component key', function (): void {
     $event = callLiveStateHostSchemaComponentMethod([
         'componentKey' => 'schema.doesNotExist',

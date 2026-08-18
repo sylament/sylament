@@ -22,7 +22,7 @@ down to their shared ancestor rather than one borrowing the other's package.
 
 | Feature | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
-| [`like(QueryBuilder $query, string $path, string $search, ?bool $forceCaseInsensitive): Comparison`](../../../packages/schemas/src/Query/SearchConstraint.php) — a `LIKE` (or case-insensitive `LOWER(...) LIKE`) comparison, parameter-bound onto `$query` | done | — | [semantics](#case-insensitivity-defaults-off-the-query-platform-not-a-fixed-choice) |
+| [`like(QueryBuilder $query, string $path, string $search, ?bool $forceCaseInsensitive): Comparison`](../../../packages/schemas/src/Query/SearchConstraint.php) — a `LIKE` (or case-insensitive `LOWER(...) LIKE`) comparison, parameter-bound onto `$query` | done | — | [semantics](#case-insensitivity-defaults-off-the-querys-platform-not-a-fixed-choice) |
 
 ## Semantics
 

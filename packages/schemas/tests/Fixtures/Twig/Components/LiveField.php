@@ -35,4 +35,10 @@ class LiveField extends Component
     {
         return 'not exposed';
     }
+
+    #[ExposedLiveComponentMethod]
+    protected function exposedButProtected(): string
+    {
+        return 'not reachable from the browser';
+    }
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sylament\Schemas\State;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Mapping\MappingException;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use ReflectionClass;
@@ -113,11 +112,11 @@ class AssociationReader
     {
         $metadata = $this->requireEntityManager()->getClassMetadata($class);
 
-        try {
-            return $metadata->getSingleIdentifierFieldName();
-        } catch (MappingException) {
+        if ($metadata->isIdentifierComposite) {
             throw new LogicException(sprintf('Records of [%s] carry a composite identifier, which a relation-backed field cannot key; use single-identifier entities.', $class));
         }
+
+        return $metadata->getSingleIdentifierFieldName();
     }
 
     /**

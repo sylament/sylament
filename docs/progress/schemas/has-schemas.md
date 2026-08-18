@@ -64,11 +64,14 @@ file, a link to that file.
 | Translatable content driver (`getFilamentTranslatableContentDriver`, `getActiveSchemaLocale`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-translatable-content-driver-is-not-ported) |
 | Testing helpers (`fillFormDataForTesting`, `disable/enableSchemaStateUpdateHooksForTesting`, `getDefaultTestingSchemaName`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `TestsSchemas` | [detail](#the-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
 
-The eleven **done** rows are the schema-hosting core (`schemas()`, `getSchema()`
+The fifteen **done** rows are the schema-hosting core (`schemas()`, `getSchema()`
 with its `<name>Schema` method-name fallback, `getCachedSchemas()`,
-`makeSchema()`, `fill()`, `cacheSchema()`, `hasCachedSchema()`) and the full
+`makeSchema()`, `fill()`, `cacheSchema()`, `hasCachedSchema()`), the full
 PreDehydrate/PostHydrate state-hook loop (`oldState`, `persistOldState`,
-`callAfterSchemaStateUpdated`, `getOldSchemaState`). The core is covered by
+`callAfterSchemaStateUpdated`, `getOldSchemaState`), and the browser-callable
+seam (`resolveSchemaByName()`, `getSchemaComponent()`,
+`callSchemaComponentMethod()` and the `ComponentToolsTrait` composition it
+answers through). The core is covered by
 [`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php)
 (build-from-method, default name, caching, throw-on-missing/non-`Schema`,
 key-by-name, `getCachedSchemas`/`makeSchema` fresh-vs-bound, register/unset via
@@ -91,8 +94,8 @@ old value on a changed field and does not fire when unchanged.
 [`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php);
 `callSchemaComponentMethod()`, its `ComponentToolsTrait`-supplied
 `dispatchBrowserEvent()`, and the browser-callable seam end-to-end (the
-attribute gate, the argument-shape hardening, the hidden-component and
-unknown-key/unknown-method arms) are covered by
+attribute gate, the visibility gate, the argument-shape hardening, the
+hidden-component and unknown-key/unknown-method arms) are covered by
 [`HasSchemasComponentMethodTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasComponentMethodTest.php)
 against the `LiveStateHost`/`LiveField` fixtures.
 

@@ -120,8 +120,6 @@ export default class extends Controller<HTMLSelectElement> {
     }
 
     if (ts !== null) {
-      // destroy() reverts the <select> to its construction-time markup, stale after every
-      // skip-morph render; the current markup is what stays valid.
       const html = this.element.innerHTML;
       ts.destroy();
       this.element.innerHTML = html;
@@ -136,8 +134,6 @@ export default class extends Controller<HTMLSelectElement> {
       throw new Error("The sylament--forms--select controller needs a live component host.");
     }
 
-    // The host's ExternalMutationTracker has to be observing when Tom Select inserts its wrapper,
-    // or the first morph removes it — so the control is built only once the host resolved.
     const component = await resolveHost(root);
 
     if (generation !== this.#generation) {
@@ -239,6 +235,7 @@ export default class extends Controller<HTMLSelectElement> {
         ? {
             load: this.#load,
             loadThrottle: this.searchDebounceValue,
+            refreshThrottle: 0,
             shouldLoad: (query: string) => query.length > 0,
             score: () => this.#score,
             onType: (query: string) => {
@@ -257,8 +254,6 @@ export default class extends Controller<HTMLSelectElement> {
       ts.control_input.placeholder = this.searchPromptValue;
       ts.control_input.setAttribute("aria-label", "Search");
     } else {
-      // Filament's non-searchable control has no text box: keep Tom Select's input for the
-      // placeholder and the keyboard model, but never let it take typing.
       ts.control_input.readOnly = true;
       ts.control_input.setAttribute("inputmode", "none");
     }
@@ -293,7 +288,6 @@ export default class extends Controller<HTMLSelectElement> {
 
     const value = ts.getValue();
 
-    // Tom Select hands back its live `items` array; ValueStore.set() compares by reference.
     component.set(
       this.statePathValue,
       Array.isArray(value) ? [...value] : value,
@@ -314,8 +308,6 @@ export default class extends Controller<HTMLSelectElement> {
     const items = this.#items(component);
 
     if (this.dynamicSearchResultsValue && ts.inputValue() !== "") {
-      // An unrelated render must not discard the search results on screen; only the selection's
-      // own options are topped up so the value below can resolve.
       for (const option of this.#pool.options) {
         if (items.includes(option.value) && ts.options[option.value] === undefined) {
           ts.addOption({ ...option });
@@ -325,7 +317,9 @@ export default class extends Controller<HTMLSelectElement> {
       this.#syncPool(ts);
     }
 
-    if (!sameList(items, ts.items)) {
+    const sameValue = this.element.multiple ? sameSet(items, ts.items) : sameList(items, ts.items);
+
+    if (!sameValue) {
       ts.setValue(items, true);
     }
 
@@ -367,8 +361,6 @@ export default class extends Controller<HTMLSelectElement> {
     }
 
     if (query !== ts.inputValue()) {
-      // The query was emptied (or the dropdown closed) while the debounce was pending — Tom
-      // Select cancels a pending load only for a newer one — so this search is already moot.
       delete ts.loadedSearches[query];
       settleLoad(ts);
 
@@ -379,6 +371,7 @@ export default class extends Controller<HTMLSelectElement> {
     this.#visibleValues = new Set();
 
     if (ts.isOpen) {
+      ts.isDropdownContentStale = true;
       ts.refreshOptions(false);
     }
 
@@ -399,6 +392,7 @@ export default class extends Controller<HTMLSelectElement> {
 
       if (searchId === this.#searchId) {
         this.#visibleValues = null;
+        this.#announce("");
       }
 
       settleLoad(ts);
@@ -451,7 +445,10 @@ export default class extends Controller<HTMLSelectElement> {
     this.#syncPool(ts);
   }
 
-  /** Replace Tom Select's option pool with the cached server pool, re-rendering only what changed. */
+  /**
+   * Replace Tom Select's option pool with the cached server pool, re-rendering only what changed
+   * and re-`$order`ing every option to its pool index so the dropdown keeps the server's order.
+   */
   #syncPool(ts: TomSelect): void {
     ts.clearOptions();
     ts.clearOptionGroups();
@@ -460,13 +457,17 @@ export default class extends Controller<HTMLSelectElement> {
       ts.addOptionGroup(group.value, { label: group.label });
     }
 
-    for (const option of this.#pool.options) {
+    for (const [index, option] of this.#pool.options.entries()) {
+      const order = index + 1;
       const existing = ts.options[option.value];
 
       if (existing === undefined) {
-        ts.addOption({ ...option });
+        ts.addOption({ ...option, $order: order });
       } else if (!sameOption(existing, option)) {
-        ts.updateOption(option.value, { ...option });
+        ts.updateOption(option.value, { ...option, $order: order });
+      } else if (existing.$order !== order) {
+        existing.$order = order;
+        ts.isDropdownContentStale = true;
       }
     }
 
@@ -488,7 +489,6 @@ export default class extends Controller<HTMLSelectElement> {
       clearButton.hidden = ts.items.length === 0;
     }
 
-    // dropdown_input's placeholder box stands in for the selection until there is one.
     const itemsPlaceholder = ts.control.querySelector<HTMLElement>(".items-placeholder");
 
     if (itemsPlaceholder !== null) {
@@ -633,7 +633,6 @@ export default class extends Controller<HTMLSelectElement> {
       return;
     }
 
-    // Tom Select re-points the field's <label for> at its own control and never points it back.
     document
       .querySelector(`label[for="${CSS.escape(`${id}-ts-control`)}"]`)
       ?.setAttribute("for", id);
@@ -650,9 +649,6 @@ async function resolveHost(root: HTMLElement): Promise<Component> {
   try {
     return await getComponent(root);
   } catch {
-    // Not registered yet (controller registration order, a lazy live controller): wait for the
-    // host's own `live:connect` — a nested host's bubbles through here too, hence the target
-    // check — and ask once more.
     await new Promise<void>((resolve) => {
       const onConnect = (event: Event): void => {
         if (event.target !== root) {
@@ -777,6 +773,12 @@ function sameOption(existing: TomOption, option: PoolOption): boolean {
 
 function sameList(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+
+function sameSet(a: string[], b: string[]): boolean {
+  const known = new Set(b);
+
+  return a.length === b.length && a.every((value) => known.has(value));
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

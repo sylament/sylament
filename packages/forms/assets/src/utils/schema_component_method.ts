@@ -77,7 +77,6 @@ function queueFor(component: Component, key: string): Pending[] {
 
 function listen(component: Component, byKey: Map<string, Pending[]>): void {
   component.element.addEventListener(RESULT_EVENT, (event: Event) => {
-    // A nested host's events bubble through this element; only the host's own answer counts.
     if (event.target !== component.element || !(event instanceof CustomEvent)) {
       return;
     }

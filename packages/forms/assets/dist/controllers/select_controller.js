@@ -3865,6 +3865,7 @@ var select_controller_default = class extends Controller {
       ...this.dynamicSearchResultsValue ? {
         load: this.#load,
         loadThrottle: this.searchDebounceValue,
+        refreshThrottle: 0,
         shouldLoad: (query) => query.length > 0,
         score: () => this.#score,
         onType: (query) => {
@@ -3932,7 +3933,8 @@ var select_controller_default = class extends Controller {
     } else {
       this.#syncPool(ts);
     }
-    if (!sameList(items, ts.items)) {
+    const sameValue = this.element.multiple ? sameSet(items, ts.items) : sameList(items, ts.items);
+    if (!sameValue) {
       ts.setValue(items, true);
     }
     if (ts.isDisabled !== this.element.disabled) {
@@ -3968,6 +3970,7 @@ var select_controller_default = class extends Controller {
     const searchId = ++this.#searchId;
     this.#visibleValues = /* @__PURE__ */ new Set();
     if (ts.isOpen) {
+      ts.isDropdownContentStale = true;
       ts.refreshOptions(false);
     }
     this.#announce(this.searchingMessageValue);
@@ -3982,6 +3985,7 @@ var select_controller_default = class extends Controller {
       }
       if (searchId === this.#searchId) {
         this.#visibleValues = null;
+        this.#announce("");
       }
       settleLoad(ts);
       return;
@@ -4021,19 +4025,26 @@ var select_controller_default = class extends Controller {
     this.#visibleValues = null;
     this.#syncPool(ts);
   }
-  /** Replace Tom Select's option pool with the cached server pool, re-rendering only what changed. */
+  /**
+   * Replace Tom Select's option pool with the cached server pool, re-rendering only what changed
+   * and re-`$order`ing every option to its pool index so the dropdown keeps the server's order.
+   */
   #syncPool(ts) {
     ts.clearOptions();
     ts.clearOptionGroups();
     for (const group of this.#pool.groups) {
       ts.addOptionGroup(group.value, { label: group.label });
     }
-    for (const option of this.#pool.options) {
+    for (const [index, option] of this.#pool.options.entries()) {
+      const order = index + 1;
       const existing = ts.options[option.value];
       if (existing === void 0) {
-        ts.addOption({ ...option });
+        ts.addOption({ ...option, $order: order });
       } else if (!sameOption(existing, option)) {
-        ts.updateOption(option.value, { ...option });
+        ts.updateOption(option.value, { ...option, $order: order });
+      } else if (existing.$order !== order) {
+        existing.$order = order;
+        ts.isDropdownContentStale = true;
       }
     }
     if (ts.isOpen) {
@@ -4253,6 +4264,10 @@ function sameOption(existing, option) {
 }
 function sameList(a, b) {
   return a.length === b.length && a.every((value, index) => value === b[index]);
+}
+function sameSet(a, b) {
+  const known = new Set(b);
+  return a.length === b.length && a.every((value) => known.has(value));
 }
 function isRecord(value) {
   return typeof value === "object" && value !== null;

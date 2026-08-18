@@ -156,10 +156,12 @@ departs from both Filament and the vendor defaults:
   exist here (the server render is the option truth), so it has no render site.
 - **Tom Select is constructed only after the host resolved.** `connect()` waits
   for `getComponent(closest live root)` — retrying once after the root's own
-  `live:connect` when the live controller has not registered yet — because the
-  host's `ExternalMutationTracker` must be observing when Tom Select inserts its
-  wrapper, or the first morph removes it. There is no "before the host is
-  reachable" fallback: a `<select>` outside any live component throws.
+  `live:connect` when the live controller has not registered yet, matched by
+  `event.target` because a **nested** host's `live:connect` bubbles through the
+  same element — because the host's `ExternalMutationTracker` must be observing
+  when Tom Select inserts its wrapper, or the first morph removes it. There is no
+  "before the host is reachable" fallback: a `<select>` outside any live component
+  throws.
 - **Every host render re-syncs the control** (`component.on('render:finished')`,
   plus the `sylament:select-refresh-selected-option-label` browser event,
   accepted only when `event.target` is the host root and `detail.statePath`
@@ -167,23 +169,45 @@ departs from both Filament and the vendor defaults:
   and applied through `clearOptions()` (which keeps the selected options) plus a
   content diff — an option is `addOption`ed when missing and `updateOption`ed
   only when its label, disabled flag or group changed, so an unrelated render
-  does not re-render every chip — **unless** a dynamic search query is typed, in
-  which case only the selection's own options are topped up (an unrelated render
-  must not discard the results on screen; the search response's own results land
-  one microtask after `render:finished`, so they never race it). The value is
+  does not re-render every chip. Each option also carries an explicit `$order`
+  off its pool index: `clearOptions()` keeps the selected option with its
+  original `$order` while every re-added option takes a fresh, higher one from
+  Tom Select's own counter, and sifter sorts `$score` then `$order` — so without
+  the carry a preloaded select shows its current value **first** in the dropdown
+  after any render. An order-only change is written straight onto the kept
+  option's data and marks the dropdown content stale, rather than paying an
+  `updateOption()` re-render for a move. That whole pool re-sync is skipped
+  **while** a dynamic search query is typed, in which case only the selection's
+  own options are topped up (an unrelated render must not discard the results on
+  screen; the search response's own results land one microtask after
+  `render:finished`, so they never race it). The value is
   then `setValue(valueStore.get(statePath), silent)`, but only when it differs
   from Tom Select's items: `addItem` closes the dropdown whenever
   `closeAfterSelect` holds and the control is full, so a blind re-set would shut
-  an open single select on every render. Disabled follows the `<select>` through
-  `disable()`/`enable()`.
+  an open single select on every render. In **multi** mode that comparison is
+  order-insensitive, because the server's array order need not match the chip
+  order and `setValue()` is a clear plus `addItems` whose last `addItem` calls
+  `refreshOptions(isFocused && multi)` — which would open a focused control's
+  dropdown on an otherwise unrelated render. Disabled follows the `<select>`
+  through `disable()`/`enable()`.
 - **Search is a live round-trip through the schema-method seam.** With
   `dynamicSearchResults`, `load(query, cb)` calls
   `callSchemaComponentMethod(component, key, 'getSearchResultsForJs', {search})`
   from [`schema_component_method.ts`](../../../packages/forms/assets/src/utils/schema_component_method.ts)
-  (`loadThrottle` = `searchDebounce`, `shouldLoad` = a non-empty query), blanks
-  the list under the `searchingMessage` while it is in flight, `clearOptions()`s
-  and hands the flattened results (Filament's `{label, options}` groups become an
-  `optgroup` field plus `addOptionGroup`) to Tom Select. Stale results are
+  (`loadThrottle` = `searchDebounce`, `refreshThrottle` = 0, `shouldLoad` = a
+  non-empty query), blanks the list under the `searchingMessage` while it is in
+  flight, `clearOptions()`s and hands the flattened results (Filament's
+  `{label, options}` groups become an `optgroup` field plus `addOptionGroup`) to
+  Tom Select. `refreshThrottle` is **zeroed** because Tom Select delays its own
+  `_onInput()` by it (300 ms by default) before the throttled `load` is even
+  reached, where Filament's `searchDebounce` is the whole delay — leaving the
+  default would silently make the effective debounce
+  `refreshThrottle + searchDebounce`. Blanking the list is the stale flag rather
+  than the refresh: `_onInput()` has already run `refreshOptions()` for this same
+  query, so `search()` would answer from `currentResults` and leave the previous
+  list up — `isDropdownContentStale = true` before the refresh is what makes the
+  `searchingMessage` the only thing on screen (Filament's `showLoadingState`).
+  Stale results are
   dropped by a search id that also advances when the query is emptied or the
   dropdown closes; a dropped response is **settled by hand** (`loading` decremented,
   the `loading` class cleared, the open list refreshed) rather than through
@@ -198,9 +222,11 @@ departs from both Filament and the vendor defaults:
   hide `no_results` behind it. On the query's clear or the dropdown's close the
   pool is restored (Filament's `originalOptions` reset). A rejected call — the
   host's `response:error`, or a request that settled without its result event —
-  falls back to the pool, as Filament's catch does; the host has already
-  surfaced the error. Non-dynamic searchable selects run Tom Select's own sifter
-  over `searchFields` with no request.
+  falls back to the pool and clears the `role="status"` announcement (otherwise
+  the region keeps saying "Searching…" for a search that has already failed), as
+  Filament's catch does; the host has already surfaced the error. Non-dynamic
+  searchable selects run Tom Select's own sifter over `searchFields` with no
+  request.
 - **The helper** keeps a FIFO of pending resolvers per
   `${componentKey}\0${method}` on the host, listens once per component for the
   result event (ignoring nested hosts' bubbling copies), and rejects every entry
@@ -231,10 +257,13 @@ departs from both Filament and the vendor defaults:
   `clear_button` (single, `canSelectPlaceholder`) renders a
   `sy-fo-select-clear-btn` `<button aria-label="Clear selection">`, hidden while
   nothing is selected; the `dropdown_input` search box gets `searchPrompt` as
-  placeholder and `aria-label="Search"`, and its `items-placeholder` box is
-  hidden once there is a selection. Non-searchable selects keep Tom Select's
-  control input (never `controlInput: null`, which detaches the placeholder) but
-  make it `readOnly` with `inputmode="none"`. `hidePlaceholder` is on in both
+  placeholder and `aria-label="Search"`, and its `items-placeholder` box — which
+  stands in for the selection until there is one — is hidden once there is.
+  Non-searchable selects keep Tom Select's control input (never
+  `controlInput: null`, which detaches the placeholder, and Filament's
+  non-searchable control has no text box at all, but the input is also the
+  control's keyboard model) and instead make it `readOnly` with
+  `inputmode="none"` so it never takes typing. `hidePlaceholder` is on in both
   modes so a placeholder never sits beside a selection.
 - **A11y additions over Tom Select** (it lacks all three): `aria-multiselectable="true"`
   on the listbox in multi mode; a `sy-fo-sr-only` `role="status" aria-live="polite"`

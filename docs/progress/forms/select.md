@@ -676,7 +676,7 @@ instead. So the invariant is unchanged where it matters: a full map is validated
 as a full map, and a partial one is never validated as if it were full. Because
 `isSearchable()` [defaults to `isMultiple()`](#multiple-forces-the-js-control-and-is-searchable-by-default),
 a `multiple()` relationship select is on this arm unless it says `preload()` —
-the three shipped tests that build one gained the call, and the trait's "always
+the four shipped tests that build one gained the call, and the trait's "always
 a full map" docblock became this paragraph.
 
 One consequence worth stating: on either arm the save hook receives an

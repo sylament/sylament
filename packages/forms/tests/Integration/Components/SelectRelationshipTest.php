@@ -464,7 +464,9 @@ it('answers no search results when the relationship names no column to search', 
 });
 
 it('refuses a search column that hops an association rather than failing inside Doctrine', function (): void {
-    $this::getContainer()->get(EntityManagerInterface::class);
+    // Boot before Select::make(): a component built while no kernel is up gets the
+    // container-less AssociationReader, and the guard below needs a real mapping.
+    $this::getContainer();
 
     $select = Select::make('post')->relationship(titleAttribute: 'title')->searchable(['author.name']);
     wireRecordSelect($select, new PostSection());

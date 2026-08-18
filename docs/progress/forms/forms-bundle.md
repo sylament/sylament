@@ -189,7 +189,12 @@ departs from both Filament and the vendor defaults:
   The sync then floors Tom Select's own counter at the pool size
   (`ts.order = Math.max(ts.order, pool.length)`), so an option a search adds
   afterwards — minting its `$order` from that counter — can never land on an
-  `-opt-N` a pool index already holds. That whole pool re-sync is skipped
+  `-opt-N` a pool index already holds. One residual stays open on purpose: an
+  option kept across a pool *reorder* keeps its old `$id` (re-minting would
+  desync it from Tom Select's cached rendered `div`), so a fresh option minted at
+  that pool index can still share its `-opt-K` string until the next full
+  re-render — closing it means `uncacheValue()` on the order-only branch, i.e.
+  the re-render that branch exists to avoid, and it is left for the sweep. That whole pool re-sync is skipped
   **while** a dynamic search query is typed, in which case only the selection's
   own options are topped up (an unrelated render must not discard the results on
   screen; the search response's own results land one microtask after

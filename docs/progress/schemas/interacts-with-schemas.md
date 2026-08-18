@@ -177,7 +177,7 @@ returns.
 Filament's `getSchemaComponent()` resolves the schema name by calling
 `$this->getSchema($schemaName)` directly, and that is safe there because
 Filament's `getSchema()` **does** gate: it delegates to `cacheSchema()`
-(`vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php:221-310`),
+(`vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php:202-310`),
 which tries the bare name then the `<name>Schema` suffix and accepts the
 method only when its first parameter — or, with none, its return type — is
 declared `Schema`, answering `null` for everything else. Sylament's
@@ -193,8 +193,10 @@ first parameter (or, with none, its return type) is declared `Schema` — a
 name it refuses answers `null` rather than throwing. What is genuinely
 Sylament-only is the **name**: Filament has no member to rename from,
 because its gate is a private step inside `cacheSchema()` rather than a
-callable host method. Two hardenings sit on top of Filament's gate, both
-because *our* trait declares `Schema`-shaped methods Filament's does not:
+callable host method. Two hardenings sit on top of Filament's gate — Filament's own trait
+carries `Schema`-shaped members its arms admit as well (`makeSchema(): Schema`,
+`currentlyValidatingSchema(?Schema $schema)`), so this is a hardening past
+Filament rather than a gap only ours has:
 the candidate may not be a member `InteractsWithSchemas` itself declares
 (`validateSchema(Schema $schema, bool $shouldThrow = true)`,
 `validateSchemaRecord(Schema $schema, object $record)`, `makeSchema(): Schema`

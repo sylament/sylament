@@ -100,7 +100,12 @@ export default class extends Controller<HTMLElement> {
 
   #refresh(): void {
     const query = this.#query();
-    const visible = this.#visibleOptions(query, true);
+
+    for (const option of this.optionTargets) {
+      option.hidden = query !== "" && !this.#matches(option, query);
+    }
+
+    const visible = this.#visibleOptions();
 
     if (this.hasNoResultsTarget) {
       this.noResultsTarget.hidden = query === "" || visible.length > 0;
@@ -118,25 +123,23 @@ export default class extends Controller<HTMLElement> {
   }
 
   /**
-   * The options matching the current search, hiding the rest when `apply` is set. An empty query
-   * matches everything; a non-empty one is a case-insensitive substring of the option's rendered
-   * label or description text — never of its value, which vendor does not search either.
+   * What the user can currently see — the filter `#refresh()` last applied, never a fresh read of
+   * the search input. The two diverge inside a non-zero `searchDebounce`, and every consumer here
+   * (the bulk toggle above all) means the set on screen.
    */
-  #visibleOptions(query?: string, apply = false): HTMLElement[] {
-    const needle = query ?? this.#query();
+  #visibleOptions(): HTMLElement[] {
+    return this.optionTargets.filter((option) => !option.hidden);
+  }
 
-    return this.optionTargets.filter((option) => {
-      const matches =
-        needle === "" ||
-        this.#text(option, LABEL_SELECTOR).includes(needle) ||
-        this.#text(option, DESCRIPTION_SELECTOR).includes(needle);
-
-      if (apply) {
-        option.hidden = !matches;
-      }
-
-      return matches;
-    });
+  /**
+   * A case-insensitive substring of the option's rendered label or description text — never of its
+   * value, which vendor does not search either.
+   */
+  #matches(option: HTMLElement, query: string): boolean {
+    return (
+      this.#text(option, LABEL_SELECTOR).includes(query) ||
+      this.#text(option, DESCRIPTION_SELECTOR).includes(query)
+    );
   }
 
   /**

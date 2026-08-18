@@ -62,7 +62,10 @@ class checkbox_list_controller_default extends Controller {
   };
   #refresh() {
     const query = this.#query();
-    const visible = this.#visibleOptions(query, true);
+    for (const option of this.optionTargets) {
+      option.hidden = query !== "" && !this.#matches(option, query);
+    }
+    const visible = this.#visibleOptions();
     if (this.hasNoResultsTarget) {
       this.noResultsTarget.hidden = query === "" || visible.length > 0;
     }
@@ -75,19 +78,19 @@ class checkbox_list_controller_default extends Controller {
     }
   }
   /**
-   * The options matching the current search, hiding the rest when `apply` is set. An empty query
-   * matches everything; a non-empty one is a case-insensitive substring of the option's rendered
-   * label or description text — never of its value, which vendor does not search either.
+   * What the user can currently see — the filter `#refresh()` last applied, never a fresh read of
+   * the search input. The two diverge inside a non-zero `searchDebounce`, and every consumer here
+   * (the bulk toggle above all) means the set on screen.
    */
-  #visibleOptions(query, apply = false) {
-    const needle = query ?? this.#query();
-    return this.optionTargets.filter((option) => {
-      const matches = needle === "" || this.#text(option, LABEL_SELECTOR).includes(needle) || this.#text(option, DESCRIPTION_SELECTOR).includes(needle);
-      if (apply) {
-        option.hidden = !matches;
-      }
-      return matches;
-    });
+  #visibleOptions() {
+    return this.optionTargets.filter((option) => !option.hidden);
+  }
+  /**
+   * A case-insensitive substring of the option's rendered label or description text — never of its
+   * value, which vendor does not search either.
+   */
+  #matches(option, query) {
+    return this.#text(option, LABEL_SELECTOR).includes(query) || this.#text(option, DESCRIPTION_SELECTOR).includes(query);
   }
   /**
    * A disabled option counts as satisfied, vendor-exact: it can never be reached by a click, so

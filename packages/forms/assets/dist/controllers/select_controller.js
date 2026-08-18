@@ -3829,6 +3829,7 @@ var select_controller_default = class extends Controller {
       hideSelected: multiple,
       ...multiple ? {} : { closeAfterSelect: true },
       searchField: [...this.searchFieldsValue],
+      refreshThrottle: 0,
       ...this.placeholderValue === "" ? {} : { placeholder: this.placeholderValue },
       wrapperClass: [
         "sy-fo-select-ctn",
@@ -3865,7 +3866,6 @@ var select_controller_default = class extends Controller {
       ...this.dynamicSearchResultsValue ? {
         load: this.#load,
         loadThrottle: this.searchDebounceValue,
-        refreshThrottle: 0,
         shouldLoad: (query) => query.length > 0,
         score: () => this.#score,
         onType: (query) => {
@@ -4028,6 +4028,10 @@ var select_controller_default = class extends Controller {
   /**
    * Replace Tom Select's option pool with the cached server pool, re-rendering only what changed
    * and re-`$order`ing every option to its pool index so the dropdown keeps the server's order.
+   * `$id` — which `addOption()` mints from `$order` but `updateOption()` drops, clearing the
+   * `aria-activedescendant` of an option updated while active — is carried by hand, and Tom
+   * Select's own counter is floored at the pool size so a search-added option never mints an
+   * `-opt-N` a pool index already holds.
    */
   #syncPool(ts) {
     ts.clearOptions();
@@ -4040,13 +4044,18 @@ var select_controller_default = class extends Controller {
       const existing = ts.options[option.value];
       if (existing === void 0) {
         ts.addOption({ ...option, $order: order });
-      } else if (!sameOption(existing, option)) {
-        ts.updateOption(option.value, { ...option, $order: order });
+        continue;
+      }
+      const id = existing.$id ?? `${this.element.id}-opt-${order}`;
+      if (!sameOption(existing, option)) {
+        ts.updateOption(option.value, { ...option, $order: order, $id: id });
       } else if (existing.$order !== order) {
         existing.$order = order;
+        existing.$id = id;
         ts.isDropdownContentStale = true;
       }
     }
+    ts.order = Math.max(ts.order, this.#pool.options.length);
     if (ts.isOpen) {
       ts.refreshOptions(false);
     }

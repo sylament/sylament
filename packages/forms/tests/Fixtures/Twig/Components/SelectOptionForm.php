@@ -52,9 +52,12 @@ class SelectOptionForm implements InteractsWithActions, InteractsWithSchemas
     public bool $hasRelationship = true;
 
     /**
-     * False forces the native branch even for the multiple cases — `Select`'s
-     * `isSearchable()` reads `false ?? isMultiple()`, so an explicit false wins —
-     * which is what keeps every case that does not opt in unchanged.
+     * False buys a **full** option map — `Select`'s `isSearchable()` reads
+     * `false ?? isMultiple()`, so the explicit false wins even for the multiple
+     * cases, `hasFullOptionMap()` holds and `getOptionsFromRelationship()`
+     * enumerates — which is what keeps every case that does not opt in
+     * unchanged. It does not force the native branch: `multiple()` takes the JS
+     * one either way.
      */
     #[LiveProp]
     public bool $isSearchable = false;

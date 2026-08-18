@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Author;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 use Symfony\UX\LiveComponent\Test\TestLiveComponent;
 
@@ -149,4 +150,9 @@ it('enumerates nothing but the selected option while the select is searchable an
         ])
         // The row the search did not ask for never reaches the client.
         ->and($html)->not->toContain('Bob');
+
+    $rendered = new Crawler($html)->filter('select[name="author"]');
+
+    expect($rendered->attr('data-controller'))->toBe('sylament--forms--select')
+        ->and($rendered->attr('data-model'))->toBeNull();
 });

@@ -176,7 +176,20 @@ departs from both Filament and the vendor defaults:
   the carry a preloaded select shows its current value **first** in the dropdown
   after any render. An order-only change is written straight onto the kept
   option's data and marks the dropdown content stale, rather than paying an
-  `updateOption()` re-render for a move. That whole pool re-sync is skipped
+  `updateOption()` re-render for a move. `$id` is carried by hand beside
+  `$order`, for a sharper reason: `addOption()` mints it as
+  `<inputId>-opt-<$order>` but `updateOption()` copies `$order` and **not**
+  `$id`, and `_render('option')` *removes* the attribute when `$id` is
+  undefined — so a label edit through `refreshSelectedOptionLabel()`, or a
+  `disableOptionWhen` flip, would clear the `aria-activedescendant` target of
+  the very option it re-renders. The prefix is read off the `<select>`'s own
+  `id` rather than Tom Select's private `inputId`, which is the same string:
+  the constructor derives one from the other through
+  `getId(input, 'tomselect-N')`, which sets the attribute when it is absent.
+  The sync then floors Tom Select's own counter at the pool size
+  (`ts.order = Math.max(ts.order, pool.length)`), so an option a search adds
+  afterwards — minting its `$order` from that counter — can never land on an
+  `-opt-N` a pool index already holds. That whole pool re-sync is skipped
   **while** a dynamic search query is typed, in which case only the selection's
   own options are topped up (an unrelated render must not discard the results on
   screen; the search response's own results land one microtask after
@@ -194,15 +207,18 @@ departs from both Filament and the vendor defaults:
   `dynamicSearchResults`, `load(query, cb)` calls
   `callSchemaComponentMethod(component, key, 'getSearchResultsForJs', {search})`
   from [`schema_component_method.ts`](../../../packages/forms/assets/src/utils/schema_component_method.ts)
-  (`loadThrottle` = `searchDebounce`, `refreshThrottle` = 0, `shouldLoad` = a
-  non-empty query), blanks the list under the `searchingMessage` while it is in
+  (`loadThrottle` = `searchDebounce`, `shouldLoad` = a non-empty query),
+  blanks the list under the `searchingMessage` while it is in
   flight, `clearOptions()`s and hands the flattened results (Filament's
   `{label, options}` groups become an `optgroup` field plus `addOptionGroup`) to
-  Tom Select. `refreshThrottle` is **zeroed** because Tom Select delays its own
-  `_onInput()` by it (300 ms by default) before the throttled `load` is even
-  reached, where Filament's `searchDebounce` is the whole delay — leaving the
-  default would silently make the effective debounce
-  `refreshThrottle + searchDebounce`. Blanking the list is the stale flag rather
+  Tom Select. `refreshThrottle` is **zeroed for every select**, dynamic or
+  not, because Tom Select delays its own `_onInput()` by it (300 ms by
+  default) before either the throttled `load` or the local sifter filter is
+  reached: on the dynamic arm the default would silently make the effective
+  debounce `refreshThrottle + searchDebounce` where Filament's
+  `searchDebounce` is the whole delay, and over a static option map it would
+  lag the local filter 300 ms behind each keystroke where Filament's is
+  instant. Blanking the list is the stale flag rather
   than the refresh: `_onInput()` has already run `refreshOptions()` for this same
   query, so `search()` would answer from `currentResults` and leave the previous
   list up — `isDropdownContentStale = true` before the refresh is what makes the

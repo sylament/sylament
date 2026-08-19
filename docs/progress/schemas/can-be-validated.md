@@ -57,7 +57,9 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | [`ValidationException`](../../../packages/schemas/src/Exceptions/ValidationException.php) | — | done | — | [diverges](#validationexception-rides-the-http-exception-re-render-pipeline) |
 | [`HasSchemas::validateSchema()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#validateschema-runs-symfonys-validator-per-state-path-instead-of-livewires-whole-component-validate) · [semantics](#the-bag-section-is-replaced-wholesale-on-every-validation) |
 | [`PresenceGate::apply()`](../../../packages/schemas/src/Validation/PresenceGate.php) in front of each path's run | [`Validator::presentOrRuleIsImplicit()`](../../../vendor/laravel/framework/src/Illuminate/Validation/Validator.php) (Laravel) | done | — | [detail](presence-gate.md) |
-| [`HasSchemas::getErrorsForSchemaStatePath()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | — |
+| [`HasSchemas::getErrorsForSchemaStatePath()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [semantics](#the-read-across-identities-de-duplicates) |
+| [The validation identity (`getSchemaValidationKey()` + `clearNestedSchemaValidation()`)](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](#a-components-child-schema-is-keyed-by-that-component-not-by-the-root) |
+| [`form-validation-error` dispatch on the throwing branch](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity) |
 | [`HasSchemas::clearSchemaValidation()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](interacts-with-schemas.md#clearschemavalidation-is-scoped-where-filament-resets-the-whole-livewire-error-bag) |
 | [`$validatedSchemas` `#[LiveProp]` + `#[PostHydrate(priority: -20)]` sticky re-validation](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](#sticky-re-validation-replaces-filaments-submit-only-model) · [semantics](#a-clean-silent-re-validation-keeps-the-schema-sticky) |
 | [`setSchemaStateValidator()` `#[Required]` injection](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | — |
@@ -75,7 +77,13 @@ the host machinery end-to-end through a real live host + validator — submit-pa
 bag/stickiness/typed exception, silent path, success clearing, scoped and full
 clear, sticky re-validation across live round-trips including the stale-key
 drop, and the `getState()`/`getStateSnapshot()` split — by
-[`HasSchemasValidationTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasValidationTest.php);
+[`HasSchemasValidationTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasValidationTest.php),
+which also carries the identity cases over a `Section`-nested fixture host
+(`ValidationNestedHost`): the root identity, the component's child-schema
+identity, its sticky round trip, the unresolvable-identity drop, the
+nested-clear on a root pass, the de-duplicated read, and the
+`form-validation-error` payload on each identity shape plus its absence on the
+silent path;
 the exception by
 [`ValidationExceptionTest`](../../../packages/schemas/tests/Unit/Exceptions/ValidationExceptionTest.php);
 the component-tier flag trio the walk guards on by the component
@@ -161,6 +169,27 @@ section but leaves the key sticky. The asymmetry is deliberate: sticky means
 re-appearing if the user breaks the field again mid-edit. Stickiness is
 harmless while clean and is cleared by the next successful submit or a scoped
 `clearSchemaValidation()`.
+
+### The read across identities de-duplicates
+
+`getErrorsForSchemaStatePath()` merges every identity's bag section and returns
+`array_values(array_unique($messages))`. Two identities can legitimately hold the
+same path's message at once — a root submit fails and stays sticky, then a Wizard
+step's Next re-validates that step's child schema — and both re-validate on every
+request, so the raw merge would render one message twice under one field. The
+de-duplication is on read rather than on write because each bag section is still
+owned wholesale by the pass that filled it.
+
+### A host built outside the container announces nothing
+
+The `form-validation-error` dispatch is guarded on the `LiveResponder` that UX
+LiveComponent's `ComponentToolsTrait` injects through a `#[Required]` setter: a
+host built with `new` (every schemas/forms render fixture that never boots a live
+request) never received one, and there is no browser to announce to. The bag, the
+stickiness and the throw are unchanged for such a host — only the announcement is
+skipped. The three Integration cases asserting the event on a container-built host
+are what keep the guard from silently becoming always-false if the vendor property
+is ever renamed.
 
 ## Divergences
 
@@ -333,9 +362,13 @@ fixes. Here a failed submit records the schema key in the `$validatedSchemas`
 `#[LiveProp]`, and `#[PostHydrate(priority: -20)]
 revalidateValidatedSchemas()` re-validates each sticky schema silently on every
 subsequent request — errors clear field-by-field as the user fixes them (the
-`ValidatableComponentTrait` idiom). A sticky key whose schema no longer
-resolves (a stale mounted-action name that dodged cleanup) is dropped, the
-stale-stack self-heal idiom. The priority is a **cross-package contract** like
+`ValidatableComponentTrait` idiom). The pass resolves an identity three ways: a
+cached or declared name through `getSchema()`, a
+[component's absolute key](#a-components-child-schema-is-keyed-by-that-component-not-by-the-root)
+through `getSchemaComponent($key)?->getChildSchema()`, and — when neither
+answers — nothing, so a sticky identity that no longer resolves (a stale
+mounted-action name that dodged cleanup, a Step removed from a Wizard) is
+dropped, the stale-stack self-heal idiom. The priority is a **cross-package contract** like
 [the −10 it sits under](has-schemas.md#livewires-updatingupdated-state-hooks-become-a-predehydrateposthydrate-snapshot-and-diff):
 −20 runs below the mounted-action schema re-cache (+10, actions) so mounted
 schemas are resolvable, and below `callAfterSchemaStateUpdated` (−10) so
@@ -354,3 +387,45 @@ no job. The schema-side half of the same pipeline — the
 `mutateStateForValidation`/`pruneStateToMatchKeys` mutation layer — is recorded
 in [schema.md](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer).
 Permanent alongside it.
+
+### A component's child schema is keyed by that component, not by the root
+
+A schema's validation identity is `$schema->getParentComponent()?->getKey() ??
+$schema->getKey()`. A root schema keeps the name the host registered it under
+(`schema`, `mountedActionSchema0`); a **component's** child schema takes the
+owning component's absolute key (`schema.basics::wizard-step`). Filament has no
+such rule because it never validates a child schema in isolation — its Wizard
+does (`Step::getChildSchema()->validate()`), and there the child schema inherits
+the root's key, so a per-step pass would overwrite the whole form's bag section
+and make the sticky `#[PostHydrate(-20)]` pass re-validate the entire form on the
+next request. Three consequences, all deliberate:
+
+- `revalidateValidatedSchemas()` gains a branch that resolves such an identity
+  back through `getSchemaComponent($key)?->getChildSchema()` before falling
+  through to `clearSchemaValidation()`, so a step's errors survive the round trip
+  exactly as a root schema's do — and a step that has since disappeared from the
+  schema self-heals the same way a stale mounted-action name does.
+- Validating a **root** schema clears every sticky identity and bag section
+  prefixed `<rootKey>.`: a root pass supersedes the passes over the components
+  inside it, so the same message is never carried by two identities that both
+  re-validate.
+- The child schema itself is **not** re-keyed. Descendant keys stay
+  Filament-exact, so a field keeps `schema.author` when it moves under a Tab or a
+  Step and everything addressing components by key is untouched.
+
+Reverses only if child-schema validation stops being a thing — the Wizard is its
+first consumer and relation managers will be the second.
+
+### The throwing branch announces form-validation-error, carrying the schema identity
+
+Filament dispatches `form-validation-error` with `livewireId: $this->getId()` from
+its Livewire `validate()`/`validateOnly()` overrides, and its client-side schema
+handler uses that id to decide whether the event belongs to it. Sylament dispatches
+the same event name from `validateSchema()`'s throwing branch with
+`['schemaKey' => $identity]` instead: there is no live-component id producer on
+this side, and the schema root the JS scopes to is identified by its key, so the
+payload carries what the listener actually needs. The silent path
+(`shouldThrow: false`) dispatches nothing — the sticky pass runs it on every
+request and an announcement per request would re-scroll the page. Recorded as a
+payload translation in [renames.md](../renames.md), not a behavioural divergence.
+

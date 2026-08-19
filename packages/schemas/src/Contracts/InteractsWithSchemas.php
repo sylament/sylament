@@ -101,8 +101,12 @@ interface InteractsWithSchemas
     /**
      * Run the validator over the schema's collected constraints against the raw
      * live state. Failures fill the error bag; on the submit path (default) a
-     * failure also records the schema key sticky and throws, while success
-     * clears both. The silent path only rewrites the bag section.
+     * failure also records the schema identity sticky, announces
+     * `form-validation-error` to the browser and throws, while success clears
+     * both. The silent path only rewrites the bag section. The identity is the
+     * schema's own key for a root schema and the owning component's absolute
+     * key for a component's child schema, so validating one step of a wizard
+     * cannot overwrite the whole form's bag.
      */
     public function validateSchema(Schema $schema, bool $shouldThrow = true): void;
 

@@ -59,6 +59,7 @@ file, a link to that file.
 | `partiallyRenderSchemaComponent()` | [`InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#partiallyrenderschemacomponent-has-no-livecomponent-twin) |
 | [`ComponentToolsTrait` composition (`dispatchBrowserEvent()` and siblings)](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](#hasschemas-composes-componenttoolstrait-alongside-hasactions) |
 | [Validation integration (`validateSchema`, error bag, sticky re-validation)](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | in progress | — | [can-be-validated.md](can-be-validated.md) |
+| [`form-validation-error` browser event on a failing submit-path validation](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [can-be-validated.md](can-be-validated.md#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity) |
 | File-upload integration (`componentFileAttachments`, `isFileUploadForSchemaComponent`, …) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `RestrictsFileUploadsToSchemaComponents` + forms `BaseFileUpload` | [detail](#the-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
 | `ResolvesDynamicLivewireProperties` (used trait) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `ResolvesDynamicLivewireProperties` port | [detail](#the-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
 | Translatable content driver (`getFilamentTranslatableContentDriver`, `getActiveSchemaLocale`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-translatable-content-driver-is-not-ported) |
@@ -71,7 +72,8 @@ PreDehydrate/PostHydrate state-hook loop (`oldState`, `persistOldState`,
 `callAfterSchemaStateUpdated`, `getOldSchemaState`), and the browser-callable
 seam (`resolveSchemaByName()`, `getSchemaComponent()`,
 `callSchemaComponentMethod()` and the `ComponentToolsTrait` composition it
-answers through). The core is covered by
+answers through — whose second consumer is the `form-validation-error` event a
+failing submit-path validation dispatches). The core is covered by
 [`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php)
 (build-from-method, default name, caching, throw-on-missing/non-`Schema`,
 key-by-name, `getCachedSchemas`/`makeSchema` fresh-vs-bound, register/unset via

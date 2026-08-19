@@ -36,7 +36,7 @@ _Detail_ carries a **detail** link to the write-up in [Details](#details)
 | [`cacheSchema(string $name, ?Schema $schema): ?Schema`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-host-contract-declares-schemas-and-makeschema-that-filament-keeps-only-on-the-trait) |
 | [`hasCachedSchema(string $name): bool`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-host-contract-declares-schemas-and-makeschema-that-filament-keeps-only-on-the-trait) |
 | [`getOldSchemaState(?string $path): mixed`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Contracts\HasSchemas::getOldSchemaState()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | done | — | [diverges](#getoldschemastate-takes-a-nullable-path) |
-| [`validateSchema(Schema $schema, bool $shouldThrow = true): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-contract-declares-a-schema-scoped-validation-surface-livewire-owns-in-filament) |
+| [`validateSchema(Schema $schema, bool $shouldThrow = true): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#the-contract-declares-a-schema-scoped-validation-surface-livewire-owns-in-filament) · [diverges](can-be-validated.md#a-components-child-schema-is-keyed-by-that-component-not-by-the-root) |
 | [`validateSchemaRecord(Schema $schema, object $record): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) |
 | [`getErrorsForSchemaStatePath(?string $path): list<string>`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](#the-contract-declares-a-schema-scoped-validation-surface-livewire-owns-in-filament) |
 | [`clearSchemaValidation(?string $schemaKey = null): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](#clearschemavalidation-is-scoped-where-filament-resets-the-whole-livewire-error-bag) |
@@ -247,11 +247,16 @@ Livewire component has it, so nothing declares it on `Contracts\HasSchemas`.
 UX LiveComponent has no such ambient method; `Symfony\UX\LiveComponent\ComponentToolsTrait::dispatchBrowserEvent(string $eventName, array $payload = []): void`
 is the closest equivalent, and [`HasSchemas`](has-schemas.md) composes that
 trait so the contract can declare the method schemas' own
-`callSchemaComponentMethod()` and forms' `Select` (through `getLiveComponent()`)
-both call. A host built with `new` rather than resolved from the container has
-no injected `LiveResponder` and throws (an uninitialized-typed-property error)
-the moment it calls this — every real, container-built host has one via the
-trait's `#[Required]` setter.
+`callSchemaComponentMethod()`, the `form-validation-error` announcement
+`validateSchema()`'s throwing branch makes (payload `{schemaKey}`, where Filament
+sends `livewireId` —
+[why](can-be-validated.md#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity)),
+and forms' `Select` (through `getLiveComponent()`) all call. A host built with
+`new` rather than resolved from the container has no injected `LiveResponder` and
+throws (an uninitialized-typed-property error) the moment it calls this — every
+real, container-built host has one via the trait's `#[Required]` setter, which is
+why the validation announcement is the one call site guarded on it
+([why](can-be-validated.md#a-host-built-outside-the-container-announces-nothing)).
 
 ### `callSchemaComponentMethod()` answers through a browser event, with no partial render
 

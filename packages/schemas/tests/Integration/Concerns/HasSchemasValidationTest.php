@@ -220,3 +220,124 @@ it('skips callBeforeStateDehydrated when shouldCallHooksBefore is false', functi
 
     expect($schema->getState(shouldCallHooksBefore: false))->toBe(['title' => 'original']);
 });
+
+/*
+ * The validation identity (M3 · 5): a root schema keeps its registered name, a
+ * component's child schema is keyed by that component's absolute key, and the
+ * sticky pass resolves the second form through `getSchemaComponent()`.
+ */
+
+it('keys a root schema validation by the name the host registered it under', function (): void {
+    $host = $this->createLiveComponent('ValidationNestedHost')->component();
+
+    expect(fn () => $host->validateSchema($host->getSchema()))
+        ->toThrow(ValidationException::class)
+        ->and($host->validatedSchemas)->toBe(['schema'])
+        ->and($host->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.'])
+        ->and($host->getErrorsForSchemaStatePath('data.other'))->toBe(['This value should not be blank.']);
+});
+
+it("keys a component's child schema by the owning component's absolute key", function (): void {
+    $host = $this->createLiveComponent('ValidationNestedHost')->component();
+
+    expect(fn () => $host->getBasicsSchema()->validate())
+        ->toThrow(ValidationException::class)
+        ->and($host->validatedSchemas)->toBe(['schema.basics::section'])
+        ->and($host->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.'])
+        ->and($host->getErrorsForSchemaStatePath('data.other'))->toBe([]);
+});
+
+it('fills a child schema bag without stickiness on the silent path', function (): void {
+    $host = $this->createLiveComponent('ValidationNestedHost')->component();
+
+    $host->validateSchema($host->getBasicsSchema(), shouldThrow: false);
+
+    expect($host->validatedSchemas)->toBe([])
+        ->and($host->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.'])
+        ->and($host->getErrorsForSchemaStatePath('data.other'))->toBe([]);
+});
+
+it('re-validates a sticky child-schema identity on the next request, and only it', function (): void {
+    $component = $this->createLiveComponent('ValidationNestedHost', ['validatedSchemas' => ['schema.basics::section']]);
+
+    expect($component->component()->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.'])
+        ->and($component->component()->getErrorsForSchemaStatePath('data.other'))->toBe([]);
+
+    $component->call('noop');
+
+    expect($component->component()->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.'])
+        ->and($component->component()->getErrorsForSchemaStatePath('data.other'))->toBe([])
+        ->and($component->component()->validatedSchemas)->toBe(['schema.basics::section']);
+});
+
+it('drops a child-schema identity whose component no longer resolves', function (): void {
+    $host = $this->createLiveComponent('ValidationNestedHost')->component();
+    $host->validatedSchemas = ['schema.gone::section'];
+
+    $host->revalidateValidatedSchemas();
+
+    expect($host->validatedSchemas)->toBe([])
+        ->and($host->getErrorsForSchemaStatePath('data.title'))->toBe([]);
+});
+
+it('clears nested identities when the root schema is validated', function (): void {
+    $host = $this->createLiveComponent('ValidationNestedHost')->component();
+
+    try {
+        $host->getBasicsSchema()->validate();
+    } catch (ValidationException) {
+    }
+
+    expect($host->validatedSchemas)->toBe(['schema.basics::section']);
+
+    try {
+        $host->validateSchema($host->getSchema());
+    } catch (ValidationException) {
+    }
+
+    expect($host->validatedSchemas)->toBe(['schema']);
+});
+
+it('returns a message once when a root and a child identity both hold it', function (): void {
+    $host = $this->createLiveComponent('ValidationNestedHost')->component();
+
+    try {
+        $host->validateSchema($host->getSchema());
+    } catch (ValidationException) {
+    }
+
+    try {
+        $host->getBasicsSchema()->validate();
+    } catch (ValidationException) {
+    }
+
+    expect($host->validatedSchemas)->toBe(['schema', 'schema.basics::section'])
+        ->and($host->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.']);
+});
+
+it('dispatches form-validation-error naming the failing root identity', function (): void {
+    $component = $this->createLiveComponent('ValidationNestedHost');
+    $component->call('validateRoot');
+
+    $event = $component->getDispatchedBrowserEvent($component->render(), 'form-validation-error');
+
+    expect($event)->not->toBeNull()
+        ->and($event['payload'])->toBe(['schemaKey' => 'schema']);
+});
+
+it("dispatches form-validation-error naming the failing component's child-schema identity", function (): void {
+    $component = $this->createLiveComponent('ValidationNestedHost');
+    $component->call('validateBasics');
+
+    $event = $component->getDispatchedBrowserEvent($component->render(), 'form-validation-error');
+
+    expect($event)->not->toBeNull()
+        ->and($event['payload'])->toBe(['schemaKey' => 'schema.basics::section']);
+});
+
+it('dispatches nothing on the silent validation path', function (): void {
+    $component = $this->createLiveComponent('ValidationNestedHost');
+    $component->call('validateRootSilently');
+
+    expect($component->getDispatchedBrowserEvent($component->render(), 'form-validation-error'))->toBeNull();
+});

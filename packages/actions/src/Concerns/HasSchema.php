@@ -8,6 +8,8 @@ use Closure;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Wizard;
+use Sylament\Schemas\Components\Wizard\Step;
 use Sylament\Schemas\Schema;
 
 trait HasSchema
@@ -57,6 +59,23 @@ trait HasSchema
 
         if ($modifiedSchema === []) {
             return null;
+        }
+
+        if (is_array($modifiedSchema) && $this->isWizard()) {
+            /** @var array<Step> $steps */
+            $steps = $modifiedSchema;
+
+            $wizard = Wizard::make($steps)
+                ->contained(false)
+                ->startOnStep($this->getWizardStartStep())
+                ->cancelAction($this->getModalCancelAction())
+                ->submitAction($this->getModalSubmitAction())
+                ->skippable($this->isWizardSkippable())
+                ->disabled($this->isSchemaDisabled());
+
+            $wizard = $this->evaluate($this->modifyWizardUsing, ['wizard' => $wizard]) ?? $wizard;
+
+            $modifiedSchema = [$wizard];
         }
 
         if (is_array($modifiedSchema)) {

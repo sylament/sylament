@@ -56,7 +56,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | bulk actions (`bulk` flag) | [diverges](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) |
 | `getClone()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`getClone()`) | done | — | Filament-exact one-liner (`clone $this`). A shallow clone is the whole contract on this side: what a caller needs is an action whose `record()` / `table()` / `group()` bindings can be re-stamped per row without touching the declared original. `ActionGroup`'s override adds the member deep-clone ([there](action-group.md#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately)) |
 | `toArray()` / `fromArray()` — the 21 ported keys | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toArray()`/`fromArray()`) | done | — | [diverges](#the-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened) · [semantics](#the-serialized-key-list-drops-alpineclickhandler-and-shouldposttourl) · [semantics](#fromarray-restores-only-the-five-built-in-templates) · [semantics](#fromarray-degrades-a-to-dispatch-with-no-target-component-to-a-plain-dispatch) |
-| `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php), `parentAction()` by [`prepareModalAction()`](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) decidable |
+| `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php), `parentAction()` by [`prepareModalAction()`](#canopenmodals-unported-remainder) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) decidable |
 | [`CanCallParentAction`](../../../packages/actions/src/Concerns/CanCallParentAction.php) | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | done | — | Filament-exact two-method port (`callParent()` + getter). The getter is `getParentActionCallLiveComponentClickHandler()` against Filament's `…Livewire…`, the systematic Livewire → UX LiveComponent naming translation from the [rename table](../renames.md), not a rename of its own. Read by all five trigger templates, ranked **above** `shouldClose()` in the click precedence |
 | [`HasParentActions`](../../../packages/actions/src/Concerns/HasParentActions.php) | [`Concerns/HasParentActions.php`](../../../vendor/filament/actions/src/Concerns/HasParentActions.php) | done | — | Complete, method-for-method and body-for-body. Three of its accessors (`shouldCancelParentActionsOnClose()`, `shouldCancelAllParentActionsOnClose()`, `getParentActionToCancelToOnClose()`) have no consumer here — and none in `vendor/filament` either, so they are kept as declared API rather than trimmed |
 | Trigger rendering ([`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig) + the [`Link`](../../../packages/actions/templates/partials/Action/Link.html.twig) / [`Badge`](../../../packages/actions/templates/partials/Action/Badge.html.twig) / [`Grouped`](../../../packages/actions/templates/partials/Action/Grouped.html.twig) / [`IconButton`](../../../packages/actions/templates/partials/Action/IconButton.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toGroupedHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [semantics](#an-uncolored-badge-or-link-action-renders-primary-not-gray), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
@@ -77,7 +77,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanDispatchEvent`](../../../packages/actions/src/Concerns/CanDispatchEvent.php) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | done | — | Filament-exact port of the whole non-deprecated surface. `dispatch()` / `dispatchSelf()` / `dispatchTo()` store the event and its payload and stamp `$dispatchDirection` — `false` for a plain dispatch, `'self'`, `'to'` — with only `dispatchTo()` recording a target component; both directed setters route through `dispatch()` first, so a re-`dispatch()` after them resets the direction to `false` exactly as upstream. `eventData()` sets the payload alone, and `getEvent()` / `getEventData()` evaluate at read time, so a closure sees the action's state when it is read rather than when it was declared. Composed onto `Action` only — vendor's `ActionGroup` composes it nowhere either. All five trigger templates read the getters, as an arm of their shared click precedence that emits [payload attributes rather than a click binding](#a-dispatch-action-renders-payload-attributes-not-a-click-binding). Covered by [`CanDispatchEventTest`](../../../packages/actions/tests/Unit/Concerns/CanDispatchEventTest.php) and [`ActionDispatchRenderTest`](../../../packages/actions/tests/Integration/ActionDispatchRenderTest.php) |
 | `emit()` / `emitSelf()` / `emitTo()` (deprecated) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | skipped | — | [diverges](#the-deprecated-emit-aliases-are-not-ported) |
 | [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | — | [detail](#cannotify-sends-titles-only-the-notification-override-setters-are-missing) |
-| [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
+| [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#canopenmodals-unported-remainder), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
 | [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
 | POST-to-url support | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | skipped | — | [diverges](#post-to-url-support-is-not-ported) |
 | [`CanRequireConfirmation`](../../../packages/actions/src/Concerns/CanRequireConfirmation.php) | [`Concerns/CanRequireConfirmation.php`](../../../vendor/filament/actions/src/Concerns/CanRequireConfirmation.php) | done | — | [diverges](#confirmation-is-a-flag-not-a-modal-config-layer) |
@@ -349,7 +349,7 @@ the built notification injected as `notification` the way Filament does.
 `rateLimitedNotification*` wait on an authorization-response equivalent and a
 rate-limiting concern respectively; the bulk injections wait on `BulkAction`.
 
-### CanOpenModal's chrome, layout, and wizard surface is not ported
+### CanOpenModal's unported remainder
 
 **Ported and test-covered** (`tests/Unit/Concerns/CanOpenModalTest.php`): the
 seven content-config properties and their getters — `modalHeading` (falls back
@@ -396,8 +396,10 @@ primary-for-gray-or-unset) / `getModalCancelAction()` (`close()` + gray) /
 `getModalAction()` / `prepareModalAction()` / `prepareModalActionGroup()` /
 `makeModalAction()` (`Action::make($name)->button()`), each memoized in the
 `cached*` properties Filament uses. Scoped deltas, each deliberate:
-`getModalFooterActions()` drops the `isWizard()` early return (wizards are
-unported) but carries Filament's center-alignment `array_reverse` — applied only
+`getModalFooterActions()` carries Filament's `isWizard()` early return (a wizard
+renders its own footer row, so the modal must not render a second one — landed
+with the [wizard arm](has-schema.md#the-wizard-arm)) and its
+center-alignment `array_reverse` — applied only
 in the composed submit/extras/cancel branch, matching both `Alignment::Center`
 and the `'center'` string, so a confirmation modal renders cancel-first;
 `getModalSubmitAction()` now carries Filament's
@@ -446,8 +448,6 @@ support's [`ModalComponent` static-config row](../support/modal.md#modalcomponen
 **Missing vs Filament** — Filament's trait is ~800 lines; the port is now ~690.
 Absent entirely, with no property, setter, or getter:
 
-- **Wizard suppression**: `getModalFooterActions()`'s `isWizard()` early return,
-  deferred with `HasWizard`.
 - **Deprecated aliases**: `centerModal()`, `modalButton()`, `modalSubheading()`,
   `extraModalActions()`, `makeExtraModalAction()` are not carried over — expected;
   Sylament has no deprecation-shim policy and these all have live equivalents
@@ -493,7 +493,7 @@ child frame. The `instanceof` narrowing exists because the trait is also
 composed by non-`Action` classes; Filament passes `$this` unconditionally from
 a class that is always an `Action`.
 
-**Next step**: the wizard suppression returns with `HasWizard`; the four
+**Next step**: the four
 `?? true` literals become reads of the `ModalComponent`-equivalent
 global-defaults seam if and when that lands. What is left beyond those is one
 scoped delta from the list above — `prepareModalAction()`/
@@ -1101,9 +1101,10 @@ siblings that *have* landed so the list cannot silently go stale:
   (`CanBeMounted`, `HasExtraModalOverlayAttributes` and
   `HasExtraModalWindowAttributes` are ported — see the
   [package README](README.md#features)).
-- **Forms/schemas/infolists integration**: `HasInfolist` and `HasWizard`
-  (`HasSchema`, `HasData`, `CanSubmitForm` and `BelongsToSchemaComponent` are
-  all composed now — the first through [`has-schema.md`](has-schema.md), the
+- **Forms/schemas/infolists integration**: `HasInfolist`
+  (`HasSchema`, `HasWizard`, `HasData`, `CanSubmitForm` and
+  `BelongsToSchemaComponent` are
+  all composed now — the first two through [`has-schema.md`](has-schema.md), the
   other three through their [package README](README.md#features) rows — and the
   `schema*` closure-dependency names landed with the schemas-actions
   integration, see the Details section above).
@@ -1423,7 +1424,7 @@ confirmation only *tweaks* in Filament (footer action composition, slide-over,
 sticky panes, click-through/escape/autofocus toggles,
 `modalContent`/`modalContentFooter`, alignment/width defaults keyed off
 confirmation) — `CanOpenModal`'s own gap, recorded on the
-[CanOpenModal detail row](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported),
+[CanOpenModal detail row](#canopenmodals-unported-remainder),
 not this trait's.
 
 ### Label translation and the deprecated `disableLabel()` alias are not ported
@@ -1563,7 +1564,7 @@ A third shape exists but has no constructor yet:
 calls the **parent** action's `callMountedAction`, ranked above `close()` in
 the same precedence chain — Filament's `createAnother` / `attachAnother`
 pattern, which arrives here with the prebuilt actions
-([detail](#canopenmodals-chrome-layout-and-wizard-surface-is-not-ported)). One limitation moved rather than vanished: an
+([detail](#canopenmodals-unported-remainder)). One limitation moved rather than vanished: an
 array-of-shades color (a value `getColor(): string|array<string>|null`
 explicitly allows) still cannot be represented in the rendered classes — that
 is now the general button-template limitation (`Action/Button.html.twig`

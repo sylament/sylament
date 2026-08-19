@@ -36,6 +36,7 @@ use Sylament\Actions\Concerns\HasName;
 use Sylament\Actions\Concerns\HasParentActions;
 use Sylament\Actions\Concerns\HasSchema;
 use Sylament\Actions\Concerns\HasSize;
+use Sylament\Actions\Concerns\HasWizard;
 use Sylament\Actions\Concerns\InteractsWithRecord;
 use Sylament\Actions\Enums\ActionStatus;
 use Sylament\Schemas\Components\Component;
@@ -100,6 +101,7 @@ class Action extends ViewComponent
     use HasSchema;
     use HasSize;
     use HasTooltip;
+    use HasWizard;
     use InteractsWithRecord;
 
     protected string $evaluationIdentifier = 'action';

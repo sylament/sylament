@@ -403,6 +403,10 @@ trait CanOpenModal
      */
     public function getModalFooterActions(): array
     {
+        if ($this->isWizard()) {
+            return [];
+        }
+
         if (isset($this->cachedModalFooterActions)) {
             return $this->cachedModalFooterActions;
         }

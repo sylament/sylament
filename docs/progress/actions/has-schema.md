@@ -18,19 +18,18 @@ via its trait block. It earns a file of its own rather than folding into
 declaration and the host pipeline are two halves of one feature, and each needs
 one addressable home to link the other from.
 
-**Status:** in progress — see the
-[status vocabulary](../README.md#statuses). Every ported row is **done** and the
-two unported ones are permanent omissions, but the row set is not all-settled:
-the wizard arm and the host schema-resolver fallback are **skipped** against
-Filament surface that exists, so the file records deviations rather than an
-audit with nothing left in it.
+**Status:** done — see the
+[status vocabulary](../README.md#statuses). Every ported row is **done**; the
+two unported ones (the host schema-resolver fallback and the deprecated aliases)
+are permanent omissions with their reasons recorded below. The wizard arm was
+the last outstanding row and landed with M3 · 5.
 
 Reference — the Filament source this is diffed against:
 
 - [`actions/src/Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php)
   — the trait this ports
 - [`actions/src/Concerns/HasWizard.php`](../../../vendor/filament/actions/src/Concerns/HasWizard.php)
-  — the concern the unported wizard arm reaches into
+  — the sibling concern the wizard arm reads
 - [`actions/src/Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php)
   — where Filament consumes `getSchema()`, ported as
   [`HasActions::getMountedActionSchema()`](has-actions.md)
@@ -44,10 +43,10 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`schema(array\|Closure\|null $schema)`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `schema()` | done | — | Filament-exact setter. The backing property is one member wider than the parameter — [diverges](#the-schema-property-is-one-member-wider-than-its-setter) |
-| [`getSchema(Schema $schema): ?Schema`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `getSchema()` | done | — | Its three named injections (`form` / `schema` / `infolist`, all the container being built) win over `Action`'s own `resolveDefaultClosureDependencyForEvaluationByName('schema')`, which resolves `getSchemaContainer()` — [`Invoker::call()`](../../../packages/support/src/Evaluation/Invoker.php) checks `$namedInjections` by `array_key_exists()` before it ever calls the `$resolveParameter` callback — so a `fn (Schema $schema) => [...]` passed to `schema()` receives *this* call's container, never the action's pre-existing one. [diverges](#getschema-returns-null-for-an-empty-schema-not-an-empty-schema) · [diverges](#getschema-has-no-host-schema-resolver-fallback) · [diverges](#the-wizard-arm-is-not-ported) |
+| [`getSchema(Schema $schema): ?Schema`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `getSchema()` | done | — | Its three named injections (`form` / `schema` / `infolist`, all the container being built) win over `Action`'s own `resolveDefaultClosureDependencyForEvaluationByName('schema')`, which resolves `getSchemaContainer()` — [`Invoker::call()`](../../../packages/support/src/Evaluation/Invoker.php) checks `$namedInjections` by `array_key_exists()` before it ever calls the `$resolveParameter` callback — so a `fn (Schema $schema) => [...]` passed to `schema()` receives *this* call's container, never the action's pre-existing one. [diverges](#getschema-returns-null-for-an-empty-schema-not-an-empty-schema) · [diverges](#getschema-has-no-host-schema-resolver-fallback) · [detail](#the-wizard-arm) |
 | [`disabledSchema(bool\|Closure $condition = true)` / `isSchemaDisabled()`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `disabledSchema()` / `isSchemaDisabled()` | done | — | Filament-exact, body for body. Usable only because schemas' [`CanBeDisabled`](../schemas/can-be-disabled.md) pair landed in the same epic — `getSchema()`'s disabled arm calls `Schema::disabled()`, which did not exist before it |
-| [`formWrapper(bool\|Closure\|null $condition = true)` / `hasFormWrapper()`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `formWrapper()` / `hasFormWrapper()` | done | — | [diverges](#hasformwrapper-defaults-to-plain-true). Two consumers: [`CanOpenModal::getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php)'s `->submit(…)` / `->action(…)` branch, and [`ActionModal`](../../../packages/actions/templates/components/ActionModal/index.html.twig), which derives its `submitHandler` prop from it |
-| `getSchema()`'s wizard branch (the `isWizard()` arm and its `modifyWizardUsing()` hook) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `getSchema()` | skipped | — | [diverges](#the-wizard-arm-is-not-ported). The sibling `HasWizard` concern the arm reads keeps its own row in [the package README](README.md#features) |
+| [`formWrapper(bool\|Closure\|null $condition = true)` / `hasFormWrapper()`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `formWrapper()` / `hasFormWrapper()` | done | — | [diverges](#hasformwrapper-stays-true-for-a-wizard). Two consumers: [`CanOpenModal::getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php)'s `->submit(…)` / `->action(…)` branch, and [`ActionModal`](../../../packages/actions/templates/components/ActionModal/index.html.twig), which derives its `submitHandler` prop from it |
+| `getSchema()`'s wizard branch (the `isWizard()` arm and its `modifyWizardUsing()` hook) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `getSchema()` | done | — | [detail](#the-wizard-arm) · [diverges](#the-wizard-arm-drops-the-alpine-submit-handler). The sibling [`HasWizard`](../../../packages/actions/src/Concerns/HasWizard.php) concern the arm reads keeps its own row in [the package README](README.md#features) |
 | Host schema-resolver fallback (`getDefaultActionSchemaResolver()`) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `getSchema()`'s `??` arm | skipped | — | [diverges](#getschema-has-no-host-schema-resolver-fallback) |
 | Deprecated aliases (`form()`, `getForm()`, `disableForm()`, `disabledForm()`, `isFormDisabled()`) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) | skipped | — | The project has never ported a deprecated Filament surface; each is a one-line delegate to the current name, all five of which are ported above |
 
@@ -65,54 +64,86 @@ for the trait in isolation, and end to end through a real mounted frame by
 client write round-trips into `$action->getData()`),
 [`HasActionsValidationTest`](../../../packages/actions/tests/Integration/Concerns/HasActionsValidationTest.php)
 (a declared schema carrying a constrained component decides whether the submit
-reaches the action at all) and
+reaches the action at all),
 [`ActionModalRenderTest`](../../../packages/actions/tests/Integration/Components/ActionModalRenderTest.php)
-(the `<form>` window and the schema slot).
+(the `<form>` window and the schema slot) and, for the wizard arm,
+[`HasWizardTest`](../../../packages/actions/tests/Unit/Concerns/HasWizardTest.php)
+plus
+[`HasSchemaWizardTest`](../../../packages/actions/tests/Integration/Concerns/HasSchemaWizardTest.php)
+(the uncontained wizard in the modal, its cancel/submit footer slots, the
+suppressed modal footer, and the non-wizard control that keeps its own).
 
 ## Details
 
-Nothing outstanding — every row above is **done** or **skipped**; the permanent
-deviations are in [Divergences](#divergences).
+### The wizard arm
+
+`getSchema()` branches on `isWizard()` and, for an array-shaped declaration,
+wraps the whole thing in a schemas
+[`Wizard`](../schemas/wizard.md) before the array reaches
+`$schema->components()` — `contained(false)`, `startOnStep()`, the modal
+cancel and submit actions re-homed as the wizard's own footer slots,
+`skippable()`, `disabled()`, and the `modifyWizardUsing()` hook, whose closure
+receives the built wizard as the `wizard` named injection and may return a
+replacement (returning nothing keeps the built one). The steps themselves come
+from the sibling
+[`HasWizard`](../../../packages/actions/src/Concerns/HasWizard.php) concern,
+ported member for member: `steps()` (which flips the wizard flag and forwards to
+`schema()`), `startOnStep()`, `skippableSteps()`, `modifyWizardUsing()` (which
+also flips the flag, so a hook alone makes an action a wizard), `isWizard()`,
+`isWizardSkippable()` and `getWizardStartStep()`.
+
+The other half of the arm is the suppression on the modal side:
+[`CanOpenModal::getModalFooterActions()`](../../../packages/actions/src/Concerns/CanOpenModal.php)
+returns `[]` for a wizard, because the wizard renders its own back/next/cancel/
+submit row and the modal must not render a second one underneath it. Both halves
+are Filament's, and both are covered — the trait in isolation by
+[`HasWizardTest`](../../../packages/actions/tests/Unit/Concerns/HasWizardTest.php),
+and end to end through a real mounted modal by
+[`HasSchemaWizardTest`](../../../packages/actions/tests/Integration/Concerns/HasSchemaWizardTest.php).
+
+One member of Filament's `HasWizard` is typed differently here:
+`$modifyWizardUsing` is `Wizard|Closure|null` where Filament's is `?Closure`,
+the same widening [`Wizard::nextAction()`](../schemas/wizard.md) already uses —
+`evaluate()`'s generic subtracts `Closure` from the property's union, so a
+bare `?Closure` would infer the *closure* as the evaluated type and make the
+`?? $wizard` fallback provably dead at level max. The public setter stays
+Filament-exact at `?Closure`.
 
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
 
-### The wizard arm is not ported
+### The wizard arm drops the Alpine submit handler
 
-Filament's `getSchema()` branches on `isWizard()` and, for an array-shaped
-declaration, wraps the whole thing in a `Wizard` component — `contained(false)`,
-`startOnStep()`, the modal cancel/submit actions re-homed as wizard actions, an
-Alpine submit handler, `skippable()`, `disabled()`, and a `modifyWizardUsing()`
-hook — all of it fed by the sibling
-[`HasWizard`](../../../vendor/filament/actions/src/Concerns/HasWizard.php)
-concern (`steps()`, `startOnStep()`, `skippableSteps()`, `isWizard()`,
-`isWizardSkippable()`, `modifyWizardUsing()`, `getWizardStartStep()`). Schemas
-ships no `Wizard` component, so the branch has nothing to build and the concern
-nothing to configure; neither is composed onto `Action`. `Wizard` is named an
-explicit non-goal for the current milestone — see
-[roadmap M1's out-of-scope list](../roadmap.md#m1--entity-crud-slice) ("advanced
-layouts (`Flex`, `FusedGroup`, `Tabs`, `Wizard`)"). Both return together, in one
-change: the branch is meaningless without the component, and the component is
-useless to actions without the branch.
+Filament's branch also calls
+`->alpineSubmitHandler("\$wire.{$this->getLivewireCallMountedActionName()}()")`,
+which hands the wizard's last-step submit button an Alpine expression to run.
+Sylament has no Alpine and schemas' `Wizard` exposes no such setter: the submit
+slot holds the modal's own submit `Action`, which is a real
+`button[type="submit"]` inside the modal's `<form>` wrapper, so the browser
+submits it natively and the live component's `callMountedAction` runs off that.
+Nothing is lost, and the port would have no place to put the string.
 
-### `hasFormWrapper()` defaults to plain `true`
+### `hasFormWrapper()` stays `true` for a wizard
 
 Filament returns `$this->evaluate($this->hasFormWrapper) ?? (! $this->isWizard())`
-— the wrapper is on unless the modal *is* a wizard, which renders its own
-submit chrome. With
-[no wizard arm](#the-wizard-arm-is-not-ported) that fallback collapses to a
-literal `true`, and the port writes it as one rather than keeping a
-`! false` that reads like a live branch.
+— the wrapper is off for a wizard, because Filament's wizard renders its own
+submit chrome and its steps are what a submit would act on. The port keeps the
+literal `true` it shipped before the wizard arm landed, deliberately: a step
+renders no form of its own here, so the outer `<form>` is the only one, and
+dropping it would leave the last-step submit button with nothing to submit.
 
-The consequence is worth stating because it is what the rest of the epic rests
-on: a schema-bearing action **always** renders inside a real `<form>`, so
-[`CanOpenModal::getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php)
+The consequences are the ones the rest of the modal pipeline rests on. A
+schema-bearing action — wizard or not — always renders inside a real `<form>`,
+so [`CanOpenModal::getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php)
 always takes the `->submit($name)` arm and never the `->action($name)` one, and
 the modal window is therefore always the `<form>` that button submits. The
-`->action(…)` half of that branch is live code with no reachable caller until
-either a `Wizard` lands or a user calls `formWrapper(false)` explicitly — it is
-kept because the latter is public API, not because the default can reach it.
+`->action(…)` half of that branch is live code with no reachable caller unless
+a user calls `formWrapper(false)` explicitly — it is kept because that is public
+API, not because the default can reach it. Inside the wizard, Enter in a text
+input on a non-last step is intercepted by
+[the wizard controller](../schemas/wizard.md), which advances instead of
+submitting; on the last step it falls through to the native form submit.
 
 ### `getSchema()` returns null for an empty schema, not an empty `Schema`
 

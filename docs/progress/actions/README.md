@@ -125,10 +125,10 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 | [`HasId`](../../../packages/actions/src/Concerns/HasId.php) | [`Concerns/HasId.php`](../../../vendor/filament/actions/src/Concerns/HasId.php) | done | Filament-exact two-method port; not composed onto `Action` (Filament composes it only on `SelectAction`, its future consumer here) |
 | HasInfolist | [`Concerns/HasInfolist.php`](../../../vendor/filament/actions/src/Concerns/HasInfolist.php) | todo | - |
 | HasKeyBindings | [`Concerns/HasKeyBindings.php`](../../../vendor/filament/actions/src/Concerns/HasKeyBindings.php) | todo | - |
-| [`HasSchema`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) | in progress | [has-schema.md](has-schema.md) |
+| [`HasSchema`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) | done | [has-schema.md](has-schema.md) |
 | HasTableIcon | [`Concerns/HasTableIcon.php`](../../../vendor/filament/actions/src/Concerns/HasTableIcon.php) | todo | - |
 | HasTooltip | [`Concerns/HasTooltip.php`](../../../vendor/filament/actions/src/Concerns/HasTooltip.php) | todo | - |
-| HasWizard | [`Concerns/HasWizard.php`](../../../vendor/filament/actions/src/Concerns/HasWizard.php) | todo | - |
+| [`HasWizard`](../../../packages/actions/src/Concerns/HasWizard.php) | [`Concerns/HasWizard.php`](../../../vendor/filament/actions/src/Concerns/HasWizard.php) | done | Filament-exact member for member (`steps()` / `startOnStep()` / `skippableSteps()` / `modifyWizardUsing()` / `isWizard()` / `isWizardSkippable()` / `getWizardStartStep()`), with `$modifyWizardUsing` typed one member wider than its setter for the same level-max reason `Wizard::nextAction()` is. What it configures is the schema-side branch — [has-schema.md](has-schema.md#the-wizard-arm) |
 | InteractsWithSelectedRecords | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | todo | - |
 
 ## Supporting surface

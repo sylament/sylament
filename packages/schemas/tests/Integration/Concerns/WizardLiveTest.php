@@ -98,6 +98,8 @@ it('validates the second step on its own paths', function (): void {
 
     expect($component->getDispatchedBrowserEvent($render, 'form-validation-error')['payload'] ?? null)
         ->toBe(['schemaKey' => WizardHost::SECOND_STEP_KEY])
+        ->and($component->component()->getErrorsForSchemaStatePath('data.body'))
+        ->toBe(['This value should not be blank.'])
         ->and($component->component()->getErrorsForSchemaStatePath('data.title'))->toBe([]);
 });
 

@@ -242,8 +242,14 @@ it('renders a step description and its icons', function (): void {
         Step::make('Details'),
     ]));
 
+    $completedIcons = $crawler->filter('svg.sy-sc-wizard-header-step-completed-icon');
+
     expect($crawler->filter('.sy-sc-wizard-header-step-description')->text())->toBe('The first bits')
         ->and($crawler->filter('svg.sy-sc-wizard-header-step-icon')->count())->toBe(1)
+        // The fixture icons differ by viewBox, so the declared completed icon is
+        // distinguishable from the `heroicons:check` default the other step keeps.
+        ->and($completedIcons->eq(0)->attr('viewBox'))->toBe('0 0 20 20')
+        ->and($completedIcons->eq(1)->attr('viewBox'))->toBe('0 0 24 24')
         ->and($crawler->filter('.sy-sc-wizard-header-step')->eq(0)->filter('.sy-sc-wizard-header-step-number')->count())->toBe(0)
         ->and($crawler->filter('.sy-sc-wizard-header-step')->eq(1)->filter('.sy-sc-wizard-header-step-number')->text())->toBe('02');
 });

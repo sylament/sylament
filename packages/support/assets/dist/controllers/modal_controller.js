@@ -193,7 +193,7 @@ class modal_controller_default extends Controller {
       return;
     }
     this.#escapeListener = (event) => {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && !event.defaultPrevented) {
         this.element.close();
       }
     };

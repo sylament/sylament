@@ -127,9 +127,11 @@ is the Stimulus binding that constructs the engine and joins it to the host live
 component. That is the 2026-08-19 swap of the M3 · 4 decision (carried roadmap
 decision (3): Tom Select behind a thin integration), taken because the vendor
 utility answers by construction what the Tom Select integration was paying for
-by hand — the flip-and-shift positioning, the modal escape, the chip reorder,
-the max-items announcement, the `$order`/`$id` carry, and the six class settings
-that skinned a foreign DOM.
+by hand — the flip-and-shift positioning, the chip reorder, the max-items
+announcement, the `$order`/`$id` carry, and the six class settings that skinned
+a foreign DOM (the modal escape is not the engine's doing: vendor clips inside
+its modals, and ours escapes them through
+[support's fixed positioning context](../support/modal.md#the-modal-is-a-fixed-positioning-context)).
 
 - **The engine lives in forms, and only inside the bundle.** `utils/select.ts`
   is filed here because forms is its only consumer; it moves to a support
@@ -269,9 +271,10 @@ that skinned a foreign DOM.
   `package.json` and `LICENSE` — there is no licence *file* beside the bundle
   any more, because that was Apache-2.0 §4's demand for Tom Select and MIT is
   served by the banner, the way support's bundled `@floating-ui/dom` already is.
-  `@types/sortablejs` is dev-only (sortablejs ships none). Both libraries are
-  inlined twice on a page once M3 · 6 lands its own sortable controller in
-  support — Filament's own per-bundle inlining, ~10 KB gzipped each, recorded
+  `@types/sortablejs` is dev-only (sortablejs ships none). `@floating-ui/dom`
+  is already inlined twice on a page — support's dropdown controller carries its
+  own copy — and `sortablejs` will be once M3 · 6 lands its sortable controller
+  in support: Filament's own per-bundle inlining, ~10 KB gzipped each, recorded
   and accepted.
 - **No test in this repo runs the controller or the engine** — the
   [`checkbox-list` note](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it)

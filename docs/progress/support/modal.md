@@ -206,7 +206,11 @@ a dialog whose `cancel` was prevented (accepted — `closeByEscaping(false)` is 
 nudge, not a trap); and a **click-through** modal is non-modal
 (`dialog.show()`), which receives no `cancel` event at all, so the controller
 registers a document-level `keydown` Escape listener for the lifetime of that
-open state, gated on the same value and torn down on `close` and `disconnect`.
+open state, gated on the same value, torn down on `close` and `disconnect`, and
+skipping a keydown whose default was already prevented — so a child control that
+consumed the key (forms' select engine closing its open dropdown) takes the first
+Escape and the dialog the second, the same split the platform gives a
+`showModal()` dialog, whose `cancel` a prevented keydown suppresses.
 
 ### Click-away closes on a pointerdown-and-click origin pair
 

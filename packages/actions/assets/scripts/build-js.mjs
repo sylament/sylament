@@ -1,14 +1,17 @@
 /**
  * Builds src/**\/*.ts into dist/ for AssetMapper consumption.
  *
- * Two shipping modes, driven by BUNDLED_ENTRIES:
+ * Three shipping modes, driven by BUNDLED_ENTRIES:
  *   - default: per-file, unbundled — import specifiers ship verbatim to the
  *     browser (relative imports carry .js; bare specifiers resolve through the
  *     consuming app's importmap, e.g. @hotwired/stimulus);
  *   - bundled: entries with a dependency consumers have no importmap entry
- *     for — the dependency is inlined, its license banner composed from the
- *     installed package so it can never go stale, and framework packages are
- *     kept external.
+ *     for — the dependency is inlined, its license banner(s) composed from the
+ *     installed package(s) so they can never go stale, and framework packages
+ *     are kept external;
+ *   - inlined only: modules a bundled entry names in `inlines` — they exist
+ *     inside that bundle and are excluded from the per-file build, because
+ *     shipped standalone their bare imports would have no importmap entry.
  *
  * Usage: node scripts/build-js.mjs [--watch]
  */

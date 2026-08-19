@@ -161,7 +161,9 @@ export default class extends Controller<HTMLSelectElement> {
       getOptionsUsing: null,
       getSearchResultsUsing: this.dynamicSearchResultsValue
         ? (query: string) =>
-            callSchemaComponentMethod(component, this.keyValue, SEARCH_METHOD, { search: query })
+            callSchemaComponentMethod(component, this.keyValue, SEARCH_METHOD, {
+              search: query,
+            }).then((results) => optionsOf(Array.isArray(results) ? results : []))
         : null,
       hasDynamicOptions: false,
       hasDynamicSearchResults: this.dynamicSearchResultsValue,

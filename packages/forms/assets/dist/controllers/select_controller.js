@@ -5109,7 +5109,9 @@ var select_controller_default = class extends Controller {
       getOptionLabelUsing: null,
       getOptionLabelsUsing: null,
       getOptionsUsing: null,
-      getSearchResultsUsing: this.dynamicSearchResultsValue ? (query) => callSchemaComponentMethod(component, this.keyValue, SEARCH_METHOD, { search: query }) : null,
+      getSearchResultsUsing: this.dynamicSearchResultsValue ? (query) => callSchemaComponentMethod(component, this.keyValue, SEARCH_METHOD, {
+        search: query
+      }).then((results) => optionsOf(Array.isArray(results) ? results : [])) : null,
       hasDynamicOptions: false,
       hasDynamicSearchResults: this.dynamicSearchResultsValue,
       hasInitialNoOptionsMessage: this.initialNoOptionsMessageValue,

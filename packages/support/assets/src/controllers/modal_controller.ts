@@ -256,7 +256,7 @@ export default class extends Controller<HTMLDialogElement> {
     }
 
     this.#escapeListener = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") {
+      if (event.key === "Escape" && !event.defaultPrevented) {
         this.element.close();
       }
     };

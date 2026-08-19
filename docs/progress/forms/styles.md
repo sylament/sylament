@@ -79,7 +79,7 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 | [`input.css` — `.sy-fo-input`, the text control for `TextInput`, `Textarea` and the three pickers](../../../packages/forms/assets/src/styles/components/input.css) | [`support/…/input/index.css`](../../../vendor/filament/support/resources/css/components/input/index.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) + [`components/textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css) + [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | an alignment setter | [detail](#the-input-and-select-stylesheets-stop-at-the-alignment-arms) · [diverges](#the-input-wrapper-invents-a-hover-ring) · [diverges](#the-textarea-rule-is-the-ports-own-because-nothing-autosizes) |
 | [`radio.css` — the `.sy-fo-radio` option set and the `.sy-fo-radio-input` control](../../../packages/forms/assets/src/styles/components/radio.css) | [`components/radio.css`](../../../vendor/filament/forms/resources/css/components/radio.css) + [`support/…/input/radio.css`](../../../vendor/filament/support/resources/css/components/input/radio.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](radio.md#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) |
 | [`repeater.css` — `.sy-fo-repeater` and `.sy-fo-simple-repeater` item chrome](../../../packages/forms/assets/src/styles/components/repeater.css) | [`components/repeater.css`](../../../vendor/filament/forms/resources/css/components/repeater.css) | in progress | the four deferred chrome clusters | [detail](repeater.md#four-chrome-clusters-are-deferred-not-dropped) · [diverges](#the-repeater-item-lists-declare-their-own-grid) |
-| [`select.css` — `.sy-fo-select`, the native control and its chevron, and the `.sy-fo-select-*` skin the JS control renders into](../../../packages/forms/assets/src/styles/components/select.css) | [`support/…/input/select.css`](../../../vendor/filament/support/resources/css/components/input/select.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) | in progress | schemas' `HasInlineLabel` | [detail](#the-input-and-select-stylesheets-stop-at-the-alignment-arms) · [diverges](#the-input-wrapper-invents-a-hover-ring) · [diverges](#the-js-select-skin-styles-tom-selects-dom-not-filaments) |
+| [`select.css` — `.sy-fo-select`, the native control and its chevron, and the `.sy-fo-select-*` skin the JS control renders into](../../../packages/forms/assets/src/styles/components/select.css) | [`support/…/input/select.css`](../../../vendor/filament/support/resources/css/components/input/select.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) | in progress | schemas' `HasInlineLabel` | [detail](#the-input-and-select-stylesheets-stop-at-the-alignment-arms) · [diverges](#the-input-wrapper-invents-a-hover-ring) · [diverges](#the-js-select-skin-is-filaments-on-the-ported-controls-container) |
 | [`toggle-buttons.css` — the `.sy-fo-toggle-buttons` option set and its hidden inputs](../../../packages/forms/assets/src/styles/components/toggle-buttons.css) | [`components/toggle-buttons.css`](../../../vendor/filament/forms/resources/css/components/toggle-buttons.css) | in progress | schemas' `HasInlineLabel` | [semantics](toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group) · [semantics](toggle-buttons.md#the-selected-state-is-painted-from-the-sibling-input-in-both-variants) · [diverges](toggle-buttons.md#extraattributes-stays-on-the-field-wrapper) |
 | [`toggle.css` — the `.sy-fo-toggle` root, track, thumb and icon pair](../../../packages/forms/assets/src/styles/components/toggle.css) | [`support/…/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css) | done | — | [diverges](toggle.md#the-toggle-is-a-styled-checkbox-not-a-button) · [diverges](toggle.md#the-icon-rules-select-by-name-where-filament-selects-by-position) · [diverges](toggle.md#the-two-colours-ride-on-two-elements) |
 | `text-input.css` / `select.css` — the rules no port carries | [`components/`](../../../vendor/filament/forms/resources/css/components/) | blocked | `revealable()` · schemas' `HasInlineLabel` | [detail](#two-vendor-stylesheets-are-partly-rather-than-wholly-unported) |
@@ -183,12 +183,13 @@ are not in vendor's forms `select.css` either — that file is thirteen lines (b
 of its rules are ruled on [below](#two-vendor-stylesheets-are-partly-rather-than-wholly-unported)).
 They live in `support/…/input/select.css:23-120`, the same file this row's native
 arm ports — keyed off the bare *class* `.fi-select-input` where the native arm is
-keyed off `select.fi-select-input`, a split the port now needs for a reason of its
-own ([element-qualification](#the-js-select-skin-styles-tom-selects-dom-not-filaments)).
+keyed off `select.fi-select-input`. The port keeps that element qualification and
+hangs the JS half off the container class the engine builds instead
+([element-qualification](#the-js-select-skin-is-filaments-on-the-ported-controls-container)).
 They land with
-[`native(false)`](select.md#nativefalse-switches-to-the-js-control), over a
-bundled Tom Select rather than Filament's own Alpine component:
-[the JS select skin](#the-js-select-skin-styles-tom-selects-dom-not-filaments).
+[`native(false)`](select.md#nativefalse-switches-to-the-js-control), transcribed
+onto the DOM a port of Filament's own select utility builds:
+[the JS select skin](#the-js-select-skin-is-filaments-on-the-ported-controls-container).
 
 ### Two vendor stylesheets are partly rather than wholly unported
 
@@ -441,109 +442,94 @@ emitted `sy-grid-cols-*` would then be fighting a hardcoded single-column `grid`
 from the same layer. The deferral is recorded on the component; this compensating
 declaration is recorded here so the removal is not left to be rediscovered.
 
-### The JS select skin styles Tom Select's DOM, not Filament's
+### The JS select skin is Filament's, on the ported control's container
 
 Vendor's JS-select rules (`support/…/input/select.css:23-120`) are nested under
-`.fi-select-input` and address a DOM Filament's own Alpine component builds. Ours
-address the DOM [a bundled Tom Select](select.md#nativefalse-switches-to-the-js-control)
-builds, so the port is a mapping rather than a transcription — the declarations
-are Filament's, the elements are Tom Select's:
+`.fi-select-input` and address the DOM Filament's own select utility builds. Ours
+address the DOM [our port of that utility](select.md#nativefalse-switches-to-the-js-control)
+builds, so the port is a transcription rather than a mapping — one rule for one
+rule, renamed onto the container class the engine inserts beside the hidden
+`<select>`:
 
 | Vendor rule | Ours | The element |
 | --- | --- | --- |
-| `.fi-select-input-ctn` `relative` | `.sy-fo-select-ctn` | the wrapper (`wrapperClass`) |
-| `div[x-ref='select']` `min-h-9` + `.fi-select-input-btn` + `.fi-select-input-value-ctn` + `.fi-select-input-value-badges-ctn` | `.sy-fo-select-control` | the control (`controlClass`) — one element where vendor has four |
-| `.fi-select-input-value-label` `flex-1` | `.sy-fo-select-ctn.single .sy-fo-select-item` | the single selection (`itemClass`) |
-| the JS-built `fi-badge …` chip | `.sy-badge` reused, from the `badgeClass` value the template computes | the multi chips (`itemClass` + the controller's `item` template) |
-| `.fi-select-input-value-remove-btn` | `.sy-fo-select-clear-btn` | `clear_button`'s `className` |
-| `.fi-select-input-ctn-clearable .fi-select-input-btn` `pe-14` | `.sy-fo-select-ctn.plugin-clear_button.has-items .sy-fo-select-control` | the plugin's own wrapper class |
-| `.fi-dropdown-panel` `max-h-60 max-w-full!` | `.sy-fo-select-dropdown` (`--sy-dropdown-width: 100%`) + `.sy-fo-select-options` (`max-h-60`) | panel and scroll container — two elements where vendor has one |
-| `.fi-select-input-options-ctn` / `.fi-select-input-option-group` `divide-y` | `.sy-fo-select-option-group + .sy-fo-select-option-group` | the groups (the controller's `optgroup` template) |
-| `.fi-select-input-option-group .fi-dropdown-header` | `.sy-fo-select-option-group-label` | the group heading (`optgroup_header`) |
-| `.fi-select-input-option` `min-w-px text-wrap` | `.sy-fo-select-option-label` (with `.sy-fo-select-item-label`) | the label span inside an option |
-| `.fi-select-input-search-ctn` | `.sy-fo-select-dropdown .dropdown-input-wrap` / `.dropdown-input` | `dropdown_input`'s box |
-| `.fi-select-input-placeholder` | the `::placeholder` colours on the control's text box | that text box — `dropdown_input`'s `.items-placeholder` included, being an `<input>` in the control too |
-| `.fi-disabled` | `.sy-fo-select-ctn.disabled` | Tom Select's own state class |
-| `.fi-select-input-message` / `-max-items-message` | `.sy-fo-select-message` / `.sy-fo-select-max-items-message` | the controller's three message templates and its max-items element |
-| `.fi-select-input-ctn-option-labels-not-wrapped` | `.sy-fo-select-ctn-labels-not-wrapped` | the wrapper, per `wrapOptionLabels(false)` |
+| `.fi-select-input-ctn` `relative` | `.sy-fo-select-ctn` | the container, inserted `afterend` of the hidden `<select>` |
+| `div[x-ref='select']` `min-h-9` | — | Alpine's ref wrapper, which the port has no counterpart for; the button carries `min-h-9` itself, as vendor's does |
+| `.fi-select-input-btn` | `.sy-fo-select-btn` | the combobox button — the chevron `background-image` lives here |
+| `.fi-select-input-value-ctn` | `.sy-fo-select-value-ctn` | the value row inside the button |
+| `.fi-select-input-value-badges-ctn` | `.sy-fo-select-value-badges-ctn` | the multi chips row (SortableJS's root when reorderable) |
+| `.fi-select-input-value-label` | `.sy-fo-select-value-label` | the single selection's label |
+| `.fi-select-input-value-remove-btn` | `.sy-fo-select-value-remove-btn` | the clear button, appended to the container rather than the button |
+| `.fi-select-input-ctn-clearable .fi-select-input-btn` `pe-14` | `.sy-fo-select-ctn-clearable .sy-fo-select-btn` | the button, under the container's clearable flag |
+| `.fi-dropdown-panel` `max-h-60 max-w-full!` | `.sy-fo-select-dropdown` — `max-w-full` plus `--sy-dropdown-max-height: 15rem` and `--sy-dropdown-overflow: auto` | the panel |
+| `.fi-select-input-options-ctn` `divide-y` | `.sy-fo-select-options-ctn` | the grouped list's root `<ul>` |
+| `.fi-select-input-option-group` `divide-y` | `.sy-fo-select-option-group` | a group `<li>` |
+| `.fi-select-input-option-group .fi-dropdown-header` | `.sy-fo-select-option-group-label` | the group heading |
+| `.fi-select-input-search-ctn` `sticky top-0 z-10 bg-white` | `.sy-fo-select-search-ctn` | the search row at the top of the panel |
+| `.fi-select-input-option` `min-w-px text-wrap` | `.sy-fo-select-option` | an option `<li>` |
+| `.fi-select-input-placeholder` | `.sy-fo-select-placeholder` | the placeholder span |
+| `.fi-disabled` (+ its placeholder arm) | `.sy-disabled` | the button, the clear button and the search input |
+| `.fi-select-input-message` / `-max-items-message` | `.sy-fo-select-message` / `.sy-fo-select-max-items-message` | the loading/empty rows and the max-items row |
+| `.fi-select-input-ctn-option-labels-not-wrapped` | `.sy-fo-select-ctn-labels-not-wrapped` | the container, per `wrapOptionLabels(false)` — both `> span` arms transcribed |
 
-Every `sy-` class above is one the controller puts there: six ride on Tom Select's
-own class settings (wrapper, control, dropdown, dropdown content, item, option),
-two on a plugin's `className`, and the rest are emitted by the render templates it
-replaces or by the elements it appends. The classes that are **not** ours are
-hardcoded in the library (`single`/`multi`, `has-items`, `input-hidden`,
-`disabled`, `active`, `selected`, `plugin-clear_button`, `optgroup`,
-`dropdown-input`, `items-placeholder`, `highlight`, `[data-selectable]`,
-`[aria-disabled]`) and are matched here **only** under a `sy-` ancestor or on an
-element carrying a `sy-` class of its own, per
-[styling.md rule 11](../../styling.md). The two sides
-are one contract with the
-[controller](forms-bundle.md#the-select-controller-is-a-thin-binding-over-a-bundled-tom-select-not-a-port-of-filaments-select-utility): a class renamed on either side breaks the paint in
-silence, and no test in this repo renders the control.
+Seven rulings carried through the transcription.
 
-Five consequences worth stating.
+**The native rules stay element-qualified.** `select.sy-fo-select` and
+`select.sy-fo-select-has-inline-prefix` keep the native chevron and padding on the
+`<select>` alone, which is vendor's own form (`select.fi-select-input`) and reads
+here as a live constraint rather than a habit: on the JS branch that `<select>` is
+hidden but still carries both classes, and it now sits as a *sibling* of a
+container whose whole skin is named `sy-fo-select-*`, so the qualification is what
+keeps the two rule sets from ever meeting as the class lists grow.
 
-**The native rules are element-qualified now.** Tom Select copies the source
-`<select>`'s class list onto its wrapper (`tom-select.ts:168-174`), so
-`sy-fo-select` lands on a `<div>` too. `select.sy-fo-select` and
-`select.sy-fo-select-has-inline-prefix` keep the native paint (and its chevron)
-off it, while `.sy-fo-select-ctn.sy-fo-select-has-inline-prefix` uses the copy on
-purpose, to reach the control's leading padding.
+**`max-w-full!` loses its `!important`, and the panel becomes the scroll
+container.** Nothing here outranks it — the engine writes the panel's `width`
+inline, which beats support's `width: var(--sy-dropdown-width, …)` rule outright —
+so the flag would only be noise. Vendor's `max-h-60` is expressed through the
+panel's own `--sy-dropdown-max-height` / `--sy-dropdown-overflow` contract instead
+of a local `max-height`, because that contract is what makes the panel itself the
+scroll container ([dropdown.css](../../../packages/support/assets/src/styles/components/dropdown.css)
+gates `overflow-y` on the pair). That is what makes the search row's
+`sticky top-0` real: with the previous engine the scroll container was an element
+*below* the search row, so the row had nothing to stick to and took a dividing
+border instead.
 
-**Structural rules the library assumes are ported from its own stylesheet**, not
-from Filament: the hidden-original rule (as `select.sy-fo-select.ts-hidden-accessible`,
-element- and class-qualified because a bare `.ts-hidden-accessible` would be an
-unnamespaced global in a page-wide sheet), the wrapper's `position: relative`, the
-dropdown's `top-full inset-x-0`, the content's `overflow`, the control's
-`flex-wrap` row and the reset of its text box. That
-reset drops every `!important` the vendor carries: those exist to beat host
-stylesheets it cannot see, and this one only has to beat the scoped preflight,
-which any class selector already outranks
-([styling.md rule 8](../../styling.md) still holds for a consumer). Vendor's
-`--ts-pr-*` padding maths is skipped with it — the chevron is drawn the way the
-native control draws it, with a fixed `pe-8` — and so are the rules behind
-templates the controller replaces (`.spinner`, `.no-results`, `.create`) and the
-`plugin-remove_button` theme, since the chip's delete button is the controller's
-own. One structural rule is deliberately **not** ported: vendor's
-`.ts-control > * { vertical-align: baseline; display: inline-block }` is inert on
-the children of a flex control — both declarations are — except for the one thing
-it would do here, blockifying the multi chip from the `.sy-badge`'s `inline-flex`
-to `block` and taking the label/delete-button row with it. It is dropped rather
-than excepted.
+**The group label is a local class.** Vendor styles the heading through the shared
+`.fi-dropdown-header` and adds only `font-medium text-gray-500`; support ships no
+`sy-dropdown-header`, so `.sy-fo-select-option-group-label` carries the shared
+rule's `p-2 text-sm` alongside them. It moves down the day that component lands.
 
-**The control suppresses its own focus outline; the wrapper's `focus` class needs no
-rule.** Vendor's `.fi-select-input-btn` carries `focus:ring-0 focus:outline-none`
-because the visible ring belongs to the input wrapper, and the same split holds
-here — except that here the outline half is load-bearing rather than defensive.
-`dropdown_input`'s before-setup hook points Tom Select's `focus_node` at the
-control `<div>` (`plugins/dropdown_input/plugin.ts`), and `enable()` gives that
-node `tabIndex = this.tabIndex` (`tom-select.ts:2624`), so a searchable select's
-control is a real tab stop: the UA paints its own outline there on top of
-`.sy-input-wrp`'s `focus-within:ring-2` — a double ring under keyboard focus in
-Chrome and under any focus in Firefox, since the scoped preflight resets no
-outline and adds `:-moz-focusring { outline: auto }`. `focus:outline-none` on
-`.sy-fo-select-control` is the whole fix. The `ring-0` half is not ported: no rule
-of ours puts a ring on the control, so it would only emit a `box-shadow` chain
-nothing reads. Tom Select's `focus` class on the wrapper (`tom-select.ts:2194`)
-likewise gets no rule — the ring is already painted one element out. A
-non-searchable select keeps `focus_node` on the control's text box, which the
-control's `> input` reset already covers.
+**The button suppresses its outline because the wrapper paints the ring.**
+Vendor's `focus:ring-0 focus:outline-none` on `.fi-select-input-btn` is ported as
+written: the visible focus ring is `.sy-input-wrp`'s `focus-within:ring-2`, and
+the button is a real tab stop, so without this the UA paints a second ring on top
+of it.
 
-**Two Filament effects are deliberately not reproduced.** The in-dropdown search
-row is not `sticky top-0 z-10 bg-white`: `dropdown_input` inserts it as a sibling
-*above* `.ts-dropdown-content`, and the scroll container is that content element,
-so the row cannot scroll away and has nothing to stick to — it gets a dividing
-border instead. And the dropdown does not flip: `sy-position-top` is a CSS arm the
-controller sets from `position('top')`, where Filament runs Floating UI with
-`flip()` ([recorded on the component](select.md#the-dropdown-does-not-flip-and-the-modal-clips-it)).
+**`sy-fo-sr-only` is reused for the status region**, rather than a second copy of
+the utility — the same support-tier-class-under-a-forms-name case recorded
+[above](#sy-fo-sr-only-is-a-support-utility-authored-as-a-forms-component-class).
 
-**The option highlight is local.** Filament paints its selected/active option
-through the shared `.fi-dropdown-list-item.fi-selected` arm; support's
-[`dropdown-item.css`](../support/dropdown-item.md) has no `.sy-selected`
-counterpart, so `.sy-fo-select-option.active/.selected` carries the same
-`bg-gray-50 dark:bg-white/5` here. It moves down to the shared item the day that
-arm lands, and `.highlight` (Tom Select's search-term marker, which Filament has
-no equivalent for at all) stays here either way.
+**The selected-option arm moved down to support.** Vendor paints the highlighted
+option through the shared `.fi-dropdown-list-item.fi-selected`; the port emits
+`sy-dropdown-item sy-selected` and
+[`dropdown-item.css`](../support/dropdown-item.md) now carries all three of
+vendor's arms (the neutral background, the `sy-color` background, and the label's
+text swap). Nothing select-specific is left here for it.
+
+**One arm is the port's own**: `.sy-fo-select-ctn-has-inline-prefix
+.sy-fo-select-btn { ps-0 }`. Filament's JS button keeps its `ps-3` beside an
+inline prefix, which double-pads the control; the controller flags the container
+when the hidden `<select>` carries `sy-fo-select-has-inline-prefix` and this arm
+removes the padding, matching what the native branch already does.
+
+No bundled-library class is selected anywhere in this file any more — the engine
+builds its own DOM and SortableJS's `sortable-ghost` / `sortable-chosen` /
+`sortable-drag` go unstyled, as they do in Filament — so
+[styling.md rule 11](../../styling.md) holds vacuously here and waits on the
+repeater's drag control for its first live case. The remaining two-sided contract
+is with the [controller](forms-bundle.md) and the engine it drives: a class
+renamed on either side breaks the paint in silence, and no test in this repo
+renders the control.
 
 _See also: the global [rename table](../renames.md) — the `fi-*` → `sy-fo-*` class
 prefix, the `--x` → `--sy-x` custom-property prefix, and the

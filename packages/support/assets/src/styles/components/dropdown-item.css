@@ -3,6 +3,10 @@
 
     &:not(.sy-disabled):not([disabled]) {
         @apply hover:bg-gray-50 focus-visible:bg-gray-50 dark:hover:bg-white/5 dark:focus-visible:bg-white/5;
+
+        &.sy-selected {
+            @apply bg-gray-50 dark:bg-white/5;
+        }
     }
 
     &.sy-disabled,
@@ -13,10 +17,18 @@
     &.sy-color {
         &:not(.sy-disabled):not([disabled]) {
             @apply hover:bg-color-50 focus-visible:bg-color-50 dark:hover:bg-color-400/10 dark:focus-visible:bg-color-400/10;
+
+            &.sy-selected {
+                @apply bg-color-50 dark:bg-color-400/10;
+            }
         }
 
         & .sy-dropdown-item-label {
             @apply text-(--sy-text) hover:text-(--sy-hover-text) dark:text-(--sy-dark-text) dark:hover:text-(--sy-dark-hover-text);
+
+            &.sy-selected {
+                @apply text-(--sy-hover-text) dark:text-(--sy-dark-hover-text);
+            }
         }
     }
 }

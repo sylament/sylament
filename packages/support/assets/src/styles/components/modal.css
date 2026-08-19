@@ -181,7 +181,7 @@
 
     /* Open-state window transition targets (the closed state above is the start/end frame). */
     &[open] > .sy-modal-window {
-        @apply scale-100 opacity-100;
+        @apply scale-none opacity-100;
 
         @starting-style {
             @apply scale-95 opacity-0;
@@ -312,7 +312,7 @@
         @apply overflow-clip;
 
         & > .sy-modal-window {
-            @apply scale-100 overflow-y-auto opacity-100 transition-transform;
+            @apply scale-none overflow-y-auto opacity-100 transition-transform;
 
             & .sy-modal-header {
                 @apply gap-x-3 pt-5;
@@ -336,7 +336,7 @@
         }
 
         &[open] > .sy-modal-window {
-            @apply translate-x-0;
+            @apply translate-none;
 
             @starting-style {
                 @apply rtl:translate-x-full;
@@ -362,7 +362,7 @@
 
     /* Screen-width: no movement animation (Filament suppresses the transition frames). */
     &.sy-modal-screen > .sy-modal-window {
-        @apply scale-100 opacity-100 transition-none;
+        @apply scale-none opacity-100 transition-none;
     }
 
     /* Click-through: a non-modal panel — dialog.show() leaves the top layer, so position

@@ -21,7 +21,7 @@ it('renders a closed dialog with the modal controller wiring', function (): void
     $html = renderModal('<twig:SylamentSupport:Modal id="delete-modal" heading="Delete?" />');
 
     expect($html)->toContain('<dialog')
-        ->toContain('class="sy sy-modal sy-clickable"')
+        ->toContain('class="sy sy-modal sy-fixed-positioning-context sy-clickable"')
         ->toContain('sy-modal-window sy-modal-md')
         ->toContain('id="delete-modal"')
         ->toContain('data-controller="sylament--support--modal"')

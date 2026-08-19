@@ -154,20 +154,18 @@ Consumers never need Tailwind installed.
     JS-generated, so the question rule 1 does not answer is what a *stylesheet*
     may select. The stylesheet is page-wide and unscoped by nesting, so a
     top-level `.ts-dropdown` would silently style a host app's own widget of the
-    same name. Both halves of the answer are in
-    [`forms/select.css`](../packages/forms/assets/src/styles/components/select.css),
-    the toolkit's first bundled-library skin: the settings Tom Select does expose
-    carry ours alongside its own (`dropdownClass: 'sy-dropdown-panel
-    sy-fo-select-dropdown ts-dropdown'`), and the state classes it hardcodes are
-    reached through them (`.sy-fo-select-ctn.has-items`,
-    `.sy-fo-select-dropdown .highlight`, and
-    `select.sy-fo-select.ts-hidden-accessible`, where the library stamps its class
-    onto our own `<select>`). Nothing changes for a consumer: the `sy-` half is
-    the public hook, and the vendor half is an implementation detail of whichever
-    version we bundle. The cost is a two-sided contract with the controller that
-    supplies those settings — record it on both sides
-    ([forms styles.md](progress/forms/styles.md#the-js-select-skin-styles-tom-selects-dom-not-filaments)),
-    because a rename on either side breaks the paint in silence.
+    same name. The toolkit currently selects **no** bundled-library class at all:
+    forms' select engine — a port of Filament's own — builds its DOM itself and
+    emits only `sy-` classes, and it leaves SortableJS's `sortable-ghost` /
+    `sortable-chosen` / `sortable-drag` unstyled, exactly as Filament's select
+    does. So the rule stands vacuously today, and its first live case will be the
+    repeater's drag control (M3 · 6): Filament supplies its own class through
+    SortableJS's `ghostClass` setting (`support/resources/js/sortable.js`) and
+    styles it in `support/resources/css/sortable.css` — the first branch above,
+    a wrapper class handed to the library rather than a vendor class selected
+    bare. The Tom Select skin that used to ground this rule left with the engine
+    swap
+    ([forms styles.md](progress/forms/styles.md#the-js-select-skin-is-filaments-on-the-ported-controls-container)).
 
 ## How consumers customize
 

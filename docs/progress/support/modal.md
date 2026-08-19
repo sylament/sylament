@@ -247,8 +247,8 @@ plays for client-side closes (ESC, click-away, close button). A server-driven
 unmount removes the element from the DOM in the same morph that flips the open
 state, so there is nothing left to transition out.
 
-Two `<dialog>`-plus-Tailwind-v4 traps this stylesheet has to work around, both
-found by rendering the built CSS in a browser rather than by any test:
+Five `<dialog>`-plus-Tailwind-v4 traps this stylesheet has to work around, every
+one found by rendering the built CSS in a browser rather than by any test:
 
 - **Tailwind v4 compiles `scale-*` / `translate-*` to the independent transform
   properties**, not to `transform: scale()` / `transform: translate()`. A
@@ -291,6 +291,16 @@ found by rendering the built CSS in a browser rather than by any test:
   Both now apply unconditionally; they are inert while the dialog is
   `display: none`. Only paint-level state (the dim) and `display` itself belong
   on `[open]`.
+- **A settled non-`none` individual transform is a containing block for
+  `position: fixed` descendants.** The open state used to end at `scale-100` /
+  `translate-x-0`, which are real transform values, not the absence of one — so
+  the window became the containing block of any fixed-positioned dropdown inside
+  it, and the window's own `overflow-y: auto` then clipped it. The open states now
+  end at `scale-none` / `translate-none`, which interpolate from the closed
+  `scale-95` / `-translate-x-full` frames exactly as before (Chromium-verified
+  2026-08-19) and settle with no containing block, so the modal can be a
+  [fixed positioning context](#the-modal-is-a-fixed-positioning-context) for what
+  it contains. The `@starting-style` and closed frames are untouched.
 
 ### The client-side close reports itself with a `dismissed` event
 
@@ -496,3 +506,21 @@ Filament lets each modal name its `openEventName` / `closeEventName` /
 Sylament hard-codes `sylament-open-modal` / `sylament-close-modal` (id-matched in
 the controller) and has no quiet-close variant — the quiet path exists in Filament
 to suppress a Livewire re-render round-trip that the native dialog does not incur.
+
+### The modal is a fixed positioning context
+
+Filament stamps `fi-absolute-positioning-context` on its modal root, so a select
+dropdown opened inside a modal positions with Floating UI's `absolute` strategy —
+and is therefore laid out inside the window, where a sticky-pane modal's
+`overflow-y: auto` clips it. Ours stamps `sy-fixed-positioning-context` on the
+`<dialog>` instead: forms' select engine reads the pair of marker classes off its
+button's ancestors and picks the `fixed` strategy under this one, so the dropdown
+is positioned against the viewport and escapes both the window's overflow and the
+dialog's. It stays put because the engine installs a capture-phase `scroll`
+listener while its panel is open and repositions on every scroll, the window's
+included. The class name is the prefix rename of Filament's marker pair, and
+nothing in support reads it — the markers carry no rules of their own in Filament
+either. Tables' content container will carry the same one when M4 · 4 ports it.
+This only works because the window's open state settles at `scale: none` /
+`translate: none`; see the transform trap
+[above](#transitions-are-css-native-not-js-driven).

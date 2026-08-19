@@ -9,9 +9,9 @@ points at. There is no Sylament PHP class, matching the other trigger
 primitives: Filament's `ItemComponent` exists only to compute a runtime color
 map this port does not use, so the template is the whole component. The
 structural surface — tag switching, `type`/`form`, `disabled`, color, icon,
-label — is ported; the decorative surface (image, badge, selected state) and the
-whole interactive layer (tooltip, key bindings, loading indicator, SPA mode) are
-not built.
+label — is ported, as is the selected state's stylesheet arm; the rest of the
+decorative surface (image, badge) and the whole interactive layer (tooltip, key
+bindings, loading indicator, SPA mode) are not built.
 
 Its stylesheet predates it. `.sy-dropdown-item` and `.sy-dropdown-item-label`
 shipped inside
@@ -28,7 +28,11 @@ addition, and they are reachable only because `color` is a new prop. They have
 since been trued up to
 [`item.css`](../../../vendor/filament/support/resources/css/components/dropdown/list/item.css)
 — `p-2` padding, the four dropped box declarations, the `gray-50` hover surface,
-the disabled-gated hover/focus arm and the label's `flex-1`.
+the disabled-gated hover/focus arm and the label's `flex-1`. The three
+`.sy-selected` arms landed last, with the select engine swap: nothing in this
+template emits the class, and no prop drives it in Filament's view either — it is
+applied by callers, and forms' select engine is the first
+([forms styles.md](../forms/styles.md#the-js-select-skin-is-filaments-on-the-ported-controls-container)).
 
 **Status:** in progress — see the
 [status vocabulary](../README.md#statuses).
@@ -65,7 +69,7 @@ once the row is **done**; **semantics** → the permanent note in
 | `image` | [`fi-dropdown-list-item-image`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | todo | — | [detail](#image) |
 | `badge` / `badgeColor` / `badgeTooltip` | [badge block + `BadgeComponent`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | todo | — | [detail](#badge--badgecolor--badgetooltip) |
 | Deferred Alpine badge (`alpineDeferredBadgeData`/`Loading`) | [`x-if` deferred-badge block](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | blocked | UX LiveComponent state layer | [detail](#deferred-alpine-badge) |
-| `fi-selected` selected state | [`&.fi-selected` rules](../../../vendor/filament/support/resources/css/components/dropdown/list/item.css) | todo | — | [detail](#fi-selected-selected-state) |
+| [`fi-selected` selected state](../../../packages/support/assets/src/styles/components/dropdown-item.css) | [`&.fi-selected` rules](../../../vendor/filament/support/resources/css/components/dropdown/list/item.css) | done | — | — |
 | `tooltip` | [`x-tooltip` block + disabled-tooltip filter](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | blocked | Stimulus tooltip controller | [detail](#tooltip) |
 | Key bindings | [`x-mousetrap` block](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | blocked | Stimulus mousetrap controller | [detail](#key-bindings) |
 | Loading indicator | [`generate_loading_indicator_html(…)` + `wire:*`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | blocked | UX LiveComponent state layer | [detail](#loading-indicator) |
@@ -116,13 +120,6 @@ placeholder loading indicator and then swaps in an `x-if`-gated badge once the
 data arrives — an Alpine-expression contract between the item and whatever
 resolves the badge asynchronously. It presupposes the UX LiveComponent state
 layer, plus the plain badge row above.
-
-### `fi-selected` selected state
-
-Filament's `item.css` keeps the hover background pinned for a `.fi-selected`
-row, in both the gray and colored branches, so a dropdown can mark the current
-choice. No prop drives it in the Blade view — the class is applied by callers —
-and no port consumer applies one, so neither the class nor its rules are shipped.
 
 ### `tooltip`
 

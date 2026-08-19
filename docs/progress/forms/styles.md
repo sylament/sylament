@@ -495,9 +495,11 @@ gates `overflow-y` on the pair). That is what makes the search row's
 border instead.
 
 **The group label is a local class.** Vendor styles the heading through the shared
-`.fi-dropdown-header` and adds only `font-medium text-gray-500`; support ships no
-`sy-dropdown-header`, so `.sy-fo-select-option-group-label` carries the shared
-rule's `p-2 text-sm` alongside them. It moves down the day that component lands.
+`.fi-dropdown-header` (`flex w-full gap-2 p-3 text-sm font-medium`) and adds only
+`font-medium text-gray-500 dark:text-gray-400` in the select arm; support ships no
+`sy-dropdown-header`, so `.sy-fo-select-option-group-label` carries `p-2 text-sm`
+— the port's own M3 · 4 value, a step tighter than vendor's `p-3` — alongside
+them. It moves down the day that component lands.
 
 **The button suppresses its outline because the wrapper paints the ring.**
 Vendor's `focus:ring-0 focus:outline-none` on `.fi-select-input-btn` is ported as
@@ -527,7 +529,7 @@ builds its own DOM and SortableJS's `sortable-ghost` / `sortable-chosen` /
 `sortable-drag` go unstyled, as they do in Filament — so
 [styling.md rule 11](../../styling.md) holds vacuously here and waits on the
 repeater's drag control for its first live case. The remaining two-sided contract
-is with the [controller](forms-bundle.md) and the engine it drives: a class
+is with the [controller](forms-bundle.md#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host) and the engine it drives: a class
 renamed on either side breaks the paint in silence, and no test in this repo
 renders the control.
 

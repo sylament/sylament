@@ -153,7 +153,7 @@ Consumers never need Tailwind installed.
     re-emitted from Twig.** Rule 1 governs templates, and these classes are
     JS-generated, so the question rule 1 does not answer is what a *stylesheet*
     may select. The stylesheet is page-wide and unscoped by nesting, so a
-    top-level `.ts-dropdown` would silently style a host app's own widget of the
+    top-level `.sortable-ghost` would silently style a host app's own widget of the
     same name. The toolkit currently selects **no** bundled-library class at all:
     forms' select engine — a port of Filament's own — builds its DOM itself and
     emits only `sy-` classes, and it leaves SortableJS's `sortable-ghost` /

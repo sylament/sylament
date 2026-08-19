@@ -163,8 +163,12 @@ class Tabs extends Component
      */
     public function getActiveTab(): int
     {
-        if ($this->isTabPersistedInQueryString()) {
-            $queryStringTab = $this->requestStack?->getMainRequest()?->query->get((string) $this->getTabQueryStringKey());
+        $queryStringKey = $this->getTabQueryStringKey();
+
+        if (filled($queryStringKey)) {
+            // `all()` rather than `get()`: an array-shaped `?tab[]=x` makes InputBag::get()
+            // throw, and a malformed query string must not break the render.
+            $queryStringTab = $this->requestStack?->getMainRequest()?->query->all()[$queryStringKey] ?? null;
 
             if (is_string($queryStringTab)) {
                 foreach ($this->getTabs() as $index => $tab) {

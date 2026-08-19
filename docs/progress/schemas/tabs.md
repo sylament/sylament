@@ -186,7 +186,9 @@ corrects it. Ours compares `getKey(isAbsolute: false)`, the value `data-tab-key`
 both carry, so the server renders the right tab on the first paint. The read goes through a
 nullable `RequestStack` injected by the `#[Required]` setter (the `NavigationItem` shape): a
 component built with `new` has none and skips the read, which costs only that first-paint
-optimisation because the controller re-reads the query string on connect anyway.
+optimisation because the controller re-reads the query string on connect anyway. The value
+is read off `query->all()` rather than `query->get()`: `InputBag::get()` throws on an
+array-shaped `?tab[]=x`, and a hand-edited URL must not take the whole render down.
 
 ### Two Sylament-only accessors carry what Alpine read from the client
 

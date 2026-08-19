@@ -137,6 +137,13 @@ builds a *fresh* set of tabs, keys those, and throws them away, leaving the rend
 with their label-derived keys and no tab matching the host property. Pinned by
 `TabsTest`'s closure-valued case.
 
+One deliberate delta from vendor in the same loop: Filament's `$tab->key(strval($tabKey))`
+takes `key()`'s default `$isInheritable = true`, so in its `livewireProperty` mode a tab's
+descendants are re-addressed as `{root}.{arrayKey}.{child}`; ours re-keys with
+`isInheritable: false`, so descendant keys stay `{root}.{child}` in both modes — the same
+rule D4 applies everywhere else (a child's absolute key never moves because a tab was
+renamed), and the mode M6 · 1's relation managers will use inherits it.
+
 ### `getTabs()` filters hidden tabs out, so every index is a visible position
 
 `getActiveTab()` is a 1-based index *into the visible tabs*, and `getTabs()` is the one

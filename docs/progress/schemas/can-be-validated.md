@@ -415,6 +415,16 @@ next request. Three consequences, all deliberate:
   Filament-exact, so a field keeps `schema.author` when it moves under a Tab or a
   Step and everything addressing components by key is untouched.
 
+One limit the rule carries, recorded rather than solved: a component with
+**several** child schemas — a Repeater's per-item schemas, each keyed by its item
+key under one parent — shares a single identity (`schema.items`), and the sticky
+resolver maps that identity back to the component's *default* child schema, whose
+fields read the template paths rather than an item's. Today only
+`Action::getSchemaState()` inside a repeater item (`Schema::getState()` →
+`validate()`) can reach it, and the next root pass clears the `schema.`-prefixed
+identities; the fix, when a consumer needs it, is to prefer the child schema's own
+key whenever it differs from the default child schema's.
+
 Reverses only if child-schema validation stops being a thing — the Wizard is its
 first consumer and relation managers will be the second.
 

@@ -2,14 +2,15 @@
 
 The Twig templates in
 [`packages/schemas/templates/partials/`](../../../packages/schemas/templates/partials)
-— `Actions`, `Fieldset`, `Grid`, `Group`, `Html`, `Icon`, `Schema`, `Section`,
-`Text` — that render the
+— `Actions`, `Fieldset`, `Flex`, `Grid`, `Group`, `Html`, `Icon`, `Schema`,
+`Section`, `Text` — that render the
 schemas components through Support's
 [`ViewComponent`](../support/component.md). Each ports the HTML that a Filament
 schemas component emits from its PHP `toEmbeddedHtml()` (Filament v5 no longer
 ships Blade files for these — see the divergence below). This file is a thin
-cross-index over the nine templates; per-feature specifics live in the
+cross-index over the ten templates; per-feature specifics live in the
 per-component files ([`actions.md`](actions.md), [`fieldset.md`](fieldset.md),
+[`flex.md`](flex.md),
 [`grid.md`](grid.md), [`group.md`](group.md), [`icon.md`](icon.md),
 [`text.md`](text.md), [`section.md`](section.md), [`schema.md`](schema.md)),
 not here.
@@ -21,6 +22,7 @@ Reference — the Filament source this is diffed against:
 
 - [`schemas/src/Components/Actions.php`](../../../vendor/filament/schemas/src/Components/Actions.php),
   [`Fieldset.php`](../../../vendor/filament/schemas/src/Components/Fieldset.php),
+  [`Flex.php`](../../../vendor/filament/schemas/src/Components/Flex.php),
   [`Grid.php`](../../../vendor/filament/schemas/src/Components/Grid.php),
   [`Group.php`](../../../vendor/filament/schemas/src/Components/Group.php),
   [`Html.php`](../../../vendor/filament/schemas/src/Components/Html.php),
@@ -43,6 +45,7 @@ in-progress features, a **diverges** note here for a structural one, or `—`.
 | --- | --- | --- | --- | --- |
 | [`Actions/index.html.twig`](../../../packages/schemas/templates/partials/Actions/index.html.twig) | [`Actions::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Actions.php) | in progress | — | [actions.md](actions.md) |
 | [`Fieldset/index.html.twig`](../../../packages/schemas/templates/partials/Fieldset/index.html.twig) | [`Fieldset::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Fieldset.php) | done | — | [fieldset.md](fieldset.md) |
+| [`Flex/index.html.twig`](../../../packages/schemas/templates/partials/Flex/index.html.twig) | [`Flex::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Flex.php) | done | — | [flex.md](flex.md) |
 | [`Grid/index.html.twig`](../../../packages/schemas/templates/partials/Grid/index.html.twig) | [`Grid::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Grid.php) | done | — | [grid.md](grid.md) |
 | [`Group/index.html.twig`](../../../packages/schemas/templates/partials/Group/index.html.twig) | [`Group::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Group.php) | done | — | [group.md](group.md) |
 | [`Html/index.html.twig`](../../../packages/schemas/templates/partials/Html/index.html.twig) | [`Html::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Html.php) | done | — | — |

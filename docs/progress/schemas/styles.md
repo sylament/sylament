@@ -36,7 +36,8 @@ CSS. _Detail_ carries a **diverges** link to a permanent note in
 | [`actions.css` — `.sy-sc-actions` column + `.sy-sc-actions-ctn` row](../../../packages/schemas/assets/src/styles/components/actions.css) | [`components/actions.css`](../../../vendor/filament/schemas/resources/css/components/actions.css) | in progress | — | [diverges](#actions-css-folds-in-the-actions-package-row-stylesheet-and-drops-the-sticky-and-vertical-alignment-variants) |
 | [`text.css` — `.sy-sc-text` (lives in the support package)](../../../packages/support/assets/src/styles/components/text.css) | [`components/text.css`](../../../vendor/filament/schemas/resources/css/components/text.css) | done | — | [diverges](#text-css-was-ported-into-the-support-package) |
 | [`fused-group.css` — `.sy-fo-fused-group` ring, dividers and corner rules (lives in the forms package)](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) | done | — | [diverges](#fused-group-css-was-ported-into-the-forms-package) |
-| `flex.css` / `form.css` / `image.css` / `tabs.css` / `unordered-list.css` / `wizard.css` | [`components/`](../../../vendor/filament/schemas/resources/css/components/) | blocked | Flex, Form, Image, Tabs, UnorderedList, Wizard | [detail](#the-six-remaining-stylesheets-are-unported) |
+| [`flex.css` — `.sy-sc-flex` row, breakpoint, alignment, dense and growable variants](../../../packages/schemas/assets/src/styles/components/flex.css) | [`components/flex.css`](../../../vendor/filament/schemas/resources/css/components/flex.css) | done | — | [diverges](#flex-css-keeps-the-hidden-child-rule-the-port-never-emits) |
+| `form.css` / `image.css` / `tabs.css` / `unordered-list.css` / `wizard.css` | [`components/`](../../../vendor/filament/schemas/resources/css/components/) | blocked | Form, Image, Tabs, UnorderedList, Wizard | [detail](#the-remaining-component-stylesheets-are-unported) |
 
 No test exercises CSS. The render tests assert that the class hooks these rules
 attach to (`sy-sc`, `sy-sc-section`, `sy-sc-section-label-hidden`, `sy-sc-icon`,
@@ -48,16 +49,27 @@ committed `assets/dist` matches a fresh build.
 
 ## Details
 
-### The six remaining stylesheets are unported
+### The remaining component stylesheets are unported
 
-`flex.css`, `form.css`, `image.css`, `tabs.css`,
+`form.css`, `image.css`, `tabs.css`,
 `unordered-list.css`, and `wizard.css` have no `sy-sc-*` counterpart yet. Each is
-**blocked** on its component (Flex, Form, Image, Tabs,
+**blocked** on its component (Form, Image, Tabs,
 UnorderedList, Wizard) — the styling lands in the same change as the Twig template
 it targets, so there is nothing to author against until then. Next step for each:
 port when its component does.
 
 ## Divergences
+
+### Flex CSS keeps the hidden-child rule the port never emits
+
+`flex.css` is Filament's file with `fi-` → `sy-`, including
+`& > .sy-hidden { @apply hidden; }`. Nothing in this port stamps that class on a
+Flex child: [`Flex`](flex.md) filters hidden children server-side
+(`getComponents(withHidden: false)`), and Filament only adds it from the Alpine
+`x-bind:class` of the [unported JS-visibility arm](flex.md#the-per-child-alpine-visibility-and-state-wiring-is-not-ported).
+The rule is kept rather than deleted so the stylesheet stays a straight prefix
+swap of the vendor file — it costs one dead selector and returns to life the
+moment that arm lands.
 
 ### Actions CSS folds in the actions-package row stylesheet and drops the sticky and vertical-alignment variants
 

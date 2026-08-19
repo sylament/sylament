@@ -50,7 +50,7 @@ concerns, so it ships in `sylament/forms` and its row here points there —
 | [`Group`](../../../packages/schemas/src/Components/Group.php) | [`Components/Group.php`](../../../vendor/filament/schemas/src/Components/Group.php) | done | [group.md](group.md) |
 | [`Section`](../../../packages/schemas/src/Components/Section.php) | [`Components/Section.php`](../../../vendor/filament/schemas/src/Components/Section.php) | done | [section.md](section.md) |
 | [`Fieldset`](../../../packages/schemas/src/Components/Fieldset.php) | [`Components/Fieldset.php`](../../../vendor/filament/schemas/src/Components/Fieldset.php) | done | [fieldset.md](fieldset.md) |
-| `Flex` | [`Components/Flex.php`](../../../vendor/filament/schemas/src/Components/Flex.php) | todo | — |
+| [`Flex`](../../../packages/schemas/src/Components/Flex.php) | [`Components/Flex.php`](../../../vendor/filament/schemas/src/Components/Flex.php) | done | [flex.md](flex.md) |
 | [`FusedGroup`](../../../packages/forms/src/Components/FusedGroup.php) (ships in **forms**) | [`Components/FusedGroup.php`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | in progress | [../forms/fused-group.md](../forms/fused-group.md) |
 | `Tabs` | [`Components/Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php) | todo | — |
 | `Tabs\Tab` | [`Components/Tabs/Tab.php`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | todo | — |

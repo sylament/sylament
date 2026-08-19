@@ -1,0 +1,13 @@
+<div
+        {{ attrs({
+            class: ['sy', 'sy-sc-flex', 'sy-from-' ~ fromBreakpoint, verticalAlignmentClass, alignmentClass, {'sy-dense': isDense}],
+        }, component.getExtraAttributes) }}
+>
+    {% for child in children %}
+        {% if child.isAction %}
+            <div>{{ renderComponent(child.component) }}</div>
+        {% else %}
+            <div {{ attrs({class: {'sy-growable': child.grows}}) }}>{{ renderComponent(child.component) }}</div>
+        {% endif %}
+    {% endfor %}
+</div>

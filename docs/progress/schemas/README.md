@@ -220,5 +220,5 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | Command stubs | [`stubs/`](../../../vendor/filament/schemas/stubs) | todo | — |
 | [Component views](../../../packages/schemas/templates/partials) | [`resources/views/components/`](../../../vendor/filament/schemas/resources/views/components) | in progress | [component-views.md](component-views.md) |
 | [Styles](../../../packages/schemas/assets/src/styles) | [`resources/css/`](../../../vendor/filament/schemas/resources/css) | in progress | [styles.md](styles.md) |
-| [Scripts](../../../packages/schemas/assets/src) | [`resources/js/`](../../../vendor/filament/schemas/resources/js) | in progress | [schemas-bundle.md](schemas-bundle.md#the-schemas-asset-workspace) |
+| [Scripts](../../../packages/schemas/assets/src) | [`resources/js/`](../../../vendor/filament/schemas/resources/js) | in progress | [schemas-bundle.md](schemas-bundle.md#the-schemas-package-grew-a-js-workspace-of-its-own) |
 | Translations | [`resources/lang/`](../../../vendor/filament/schemas/resources/lang) | todo | — |

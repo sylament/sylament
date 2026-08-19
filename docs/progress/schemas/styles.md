@@ -7,7 +7,7 @@ Each stylesheet is `@apply`-authored into `components/<name>.css` and `@import`e
 into [`index.css`](../../../packages/schemas/assets/src/styles/index.css) under
 `layer(components)`, mirroring Filament's `index.css` structure. The `fi-*` class
 prefix is translated to the schemas component code `sy-sc-*` (see the
-[CSS contract](../../styling.md)). Five of Filament's stylesheets are ported so
+[CSS contract](../../styling.md)). Seven of Filament's stylesheets are ported so
 far (schema, section, icon, actions, flex, tabs, wizard) — `icon.css`, `flex.css` and
 `tabs.css` rule-for-rule, `schema.css` and `actions.css` dropping variants from
 their source, and `section.css` and `wizard.css` adding rules; the rest wait on
@@ -20,7 +20,10 @@ Reference — the Filament source this is diffed against:
 - [`schemas/resources/css/schema.css`](../../../vendor/filament/schemas/resources/css/schema.css)
   — the grid/gap/alignment stylesheet ported into `components/schema.css`
 - [`schemas/resources/css/components/`](../../../vendor/filament/schemas/resources/css/components/)
-  — the eleven per-component stylesheets (section, icon, text, tabs, and the seven unported)
+  — the eleven per-component stylesheets: six ported here (actions, flex, icon,
+  section, tabs, wizard), two ported into the package that emits their classes
+  (text into support, fused-group into forms), and three unported (form, image,
+  unordered-list)
 
 ## Surface
 

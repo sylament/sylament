@@ -172,8 +172,9 @@ Schemas' three are per-schema: `tabs` and `wizard` drive tab switching and the
 wizard's step navigation, and `schema` sits on every root schema — it reveals the
 field a failed validation points at, expanding whatever section, tab or step
 hides it, and resets client-side state when the server asks. Leave `tabs` or
-`wizard` out and the component renders its first tab or first step and stays
-there.
+`wizard` out and the component renders its initially active tab or step — the one
+`activeTab()` / `startOnStep()` or the query string names, which the server
+resolves — and stays there.
 
 **`@sylament/actions` is easy to leave out and fails silently.** Its single
 `dispatch` controller binds to no element of its own — it registers one

@@ -96,13 +96,14 @@ function normalizeLabels(results: unknown): SelectLabel[] {
   const labels: SelectLabel[] = [];
 
   for (const entry of results) {
-    if (
-      typeof entry === "object" &&
-      entry !== null &&
-      typeof (entry as { value?: unknown }).value === "string" &&
-      typeof (entry as { label?: unknown }).label === "string"
-    ) {
-      labels.push(entry as SelectLabel);
+    if (typeof entry !== "object" || entry === null) {
+      continue;
+    }
+
+    const { value, label } = entry as { value?: unknown; label?: unknown };
+
+    if (value !== undefined && label !== undefined) {
+      labels.push({ value: String(value), label: String(label) });
     }
   }
 
@@ -608,11 +609,9 @@ export class Select {
       element.setAttribute("aria-label", tempDiv.textContent || tempDiv.innerText || optionLabel);
     }
 
-    const state = typeof this.state === "string" ? this.state : "";
-
     const isSelected = this.isMultiple
       ? Array.isArray(this.state) && this.state.includes(optionValue)
-      : state === optionValue;
+      : this.state === optionValue;
 
     element.setAttribute("aria-selected", isSelected ? "true" : "false");
 
@@ -896,7 +895,7 @@ export class Select {
     } else if (blank(selectedLabel) && this.getOptionLabelUsing !== null) {
       try {
         const fetched = await this.getOptionLabelUsing();
-        selectedLabel = typeof fetched === "string" ? fetched : "";
+        selectedLabel = fetched === null || fetched === undefined ? "" : String(fetched);
 
         if (filled(selectedLabel) && filled(state)) {
           this.labelRepository[state] = selectedLabel;
@@ -1343,7 +1342,6 @@ export class Select {
     } else {
       this.selectedIndex = -1;
 
-      const state = typeof this.state === "string" ? this.state : "";
       const options = this.getVisibleOptions();
 
       if (this.isMultiple) {
@@ -1359,7 +1357,7 @@ export class Select {
         }
       } else {
         for (let i = 0; i < options.length; i++) {
-          if (options[i].getAttribute("data-value") === state) {
+          if (options[i].getAttribute("data-value") === this.state) {
             this.selectedIndex = i;
             break;
           }

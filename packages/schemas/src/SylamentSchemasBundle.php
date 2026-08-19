@@ -30,7 +30,7 @@ class SylamentSchemasBundle extends SylamentBundle
         $services = $configurator->services();
 
         $services
-            ->load(__NAMESPACE__ . '\\Components\\', __DIR__ . '/Components/*.php')
+            ->load(__NAMESPACE__ . '\\Components\\', __DIR__ . '/Components/{*,Tabs/*,Wizard/*}.php')
             ->autowire()
             ->autoconfigure();
 

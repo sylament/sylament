@@ -204,6 +204,7 @@ export default class extends Controller<HTMLSelectElement> {
       select.container.classList.add(CONTAINER_INLINE_PREFIX_CLASS);
     }
 
+    this.#mirrorAria(select);
     this.#select = select;
 
     component.on("render:finished", this.#onRender);
@@ -238,7 +239,7 @@ export default class extends Controller<HTMLSelectElement> {
 
     const state = this.#state(component);
 
-    if (!sameState(state, select.state, this.element.multiple)) {
+    if (!sameState(state, select.state, this.element.multiple, this.reorderableValue)) {
       select.state = state;
       void select.updateSelectedDisplay();
       select.renderOptions();
@@ -249,7 +250,22 @@ export default class extends Controller<HTMLSelectElement> {
     } else {
       select.enable();
     }
+
+    this.#mirrorAria(select);
   };
+
+  /** The hidden `<select>` is what the server marks invalid or required; the combobox button is what the user operates. */
+  #mirrorAria(select: Select): void {
+    for (const name of ["aria-invalid", "aria-required"]) {
+      const value = this.element.getAttribute(name);
+
+      if (value === null) {
+        select.selectButton.removeAttribute(name);
+      } else {
+        select.selectButton.setAttribute(name, value);
+      }
+    }
+  }
 
   #onRefreshLabel = (event: Event): void => {
     const component = this.#component;
@@ -383,16 +399,19 @@ function labelsOf(entries: unknown[]): SelectLabel[] {
   return labels;
 }
 
-function sameState(a: SelectState, b: SelectState, multiple: boolean): boolean {
+/**
+ * A multiple selection compares as a list when its order is state (`reorderable()`) and as a
+ * multiset otherwise, so an unrelated render does not rebuild the chips over a mere reordering.
+ */
+function sameState(a: SelectState, b: SelectState, multiple: boolean, ordered: boolean): boolean {
   if (!multiple) {
     return a === b;
   }
 
-  const left = Array.isArray(a) ? a : [];
-  const right = Array.isArray(b) ? b : [];
-  const known = new Set(right);
+  const left = Array.isArray(a) ? (ordered ? a : [...a].sort()) : [];
+  const right = Array.isArray(b) ? (ordered ? b : [...b].sort()) : [];
 
-  return left.length === right.length && left.every((value) => known.has(value));
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -37,7 +37,7 @@ export default class extends Controller<HTMLElement> {
   };
 
   #onKeyDown = (event: KeyboardEvent): void => {
-    if (event.key === "Escape") {
+    if (event.key === "Escape" && !event.defaultPrevented) {
       this.close();
       this.#focusableTrigger()?.focus();
     }

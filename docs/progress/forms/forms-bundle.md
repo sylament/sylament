@@ -207,11 +207,16 @@ its modals, and ours escapes them through
   the repository from `selectedOptions`. The value store's entry for `statePath`
   is normalised to the strings the engine compares (single: `''` or `String(v)`;
   multiple: the non-blank entries as strings) and written onto the engine only
-  when it differs **structurally** — order-insensitively in multi mode, because
-  the server's array order need not match the chip order and re-setting would
-  rebuild the badges under a drag; after a reorder the engine has already
-  written the new order out, so the next render matches and nothing is rebuilt.
-  Finally `disabled` follows the `<select>` through `disable()` / `enable()`.
+  when it differs **structurally** — as an ordered list under `reorderable()`,
+  where the order is state and a server render holding the same values in
+  another order must re-sync the chips, and as a multiset otherwise, so an
+  unrelated render does not rebuild the chips over a mere reordering; after a
+  drag the engine has already written the new order out, so the next render
+  matches and nothing is rebuilt. Finally `disabled` follows the `<select>`
+  through `disable()` / `enable()`, and the `<select>`'s `aria-invalid` and
+  `aria-required` are mirrored onto the combobox button (here and at
+  construction), since the hidden `<select>` is out of the accessibility tree
+  and Filament's button carries neither.
   The refresh event runs that same re-sync and then `refreshLabels()`, which
   repaints the selection and its option row from the repository the render just
   refilled.
@@ -240,12 +245,15 @@ its modals, and ours escapes them through
   badges container, `animation: 150`, whose `onEnd` reads the `[data-value]`
   order back out of the DOM and reports it through `onStateChange` — so the drag
   writes straight to the value store like any other change.
-- **The port corrects five vendor defects and drops one listener.** The five —
+- **The port corrects seven vendor defects and drops one listener.** The seven —
   the badge remove buttons' dead disabled selector, `enable()` adding the
-  disabled class to the clear button, the un-destroyed `Sortable`, `form.submit()`
-  where `requestSubmit()` is meant, and the label `<span>` dropped from an
-  updated plain-text option — are recorded with their reasoning in
-  [select.md](select.md#the-engine-port-corrects-five-vendor-defects). The drop
+  disabled class to the clear button, the un-destroyed `Sortable` (and a
+  positioning frame left queued past `destroy()`), `form.submit()` where
+  `requestSubmit()` is meant, the label `<span>` dropped from an updated
+  plain-text option, an option value interpolated raw into a `querySelector`
+  selector, and an emptied search box that let an in-flight search land on it —
+  are recorded with their reasoning in
+  [select.md](select.md#the-engine-port-corrects-seven-vendor-defects). The drop
   is vendor's `filament-forms::select.refreshSelectedOptionLabel` **window**
   listener and its `livewireId`: the refresh reaches us as a host browser event
   the controller matches, so the engine has no Livewire-era hook at all.

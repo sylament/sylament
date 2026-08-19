@@ -304,3 +304,15 @@ covers, which is why the belt is kept alongside the braces.
 only automatic verifiers of this file, and the behavioural verification is the demo
 browser pass on the filters card in live mode; the `dist` byte-stability gate is
 the only automatic check the change itself carries.
+
+### A prevented Escape does not close the panel
+
+The controller's document-level `keydown` listener closes the panel on Escape —
+the port of Filament's `@keydown.escape.window` close — but skips a keydown whose
+default was already prevented. Filament's dropdown has no such gate because its
+panel never hosts a control with its own Escape; ours does once tables' filter
+form puts a `multiple()` or `searchable()` [select](../forms/select.md) inside it,
+whose engine consumes Escape to close its own listbox (`preventDefault()`, no
+`stopPropagation()`). Without the gate one keypress closed the listbox and the
+filters panel together. Support's [modal](modal.md) carries the same gate on its
+click-through Escape listener, for the same control.

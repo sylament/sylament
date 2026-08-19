@@ -86,7 +86,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | `transformOptionsForJsUsing()` / `transformOptionsForJs()` and the four exposed methods — `getSearchResultsForJs()`, `getOptionsForJs()`, `getOptionLabelsForJs()`, `getOptionLabel()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#transformoptionsforjs-casts-a-markup-label-to-text) · [semantics](#the-search-round-trip-is-a-live-action-that-re-renders-the-host) |
 | `dynamicOptions()` / `hasDynamicOptions()` / `hasDynamicSearchResults()` / `hasInitialNoOptionsMessage()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-search-round-trip-is-a-live-action-that-re-renders-the-host) |
 | `position()` / `getPosition()`, `wrapOptionLabels()` / `canOptionLabelsWrap()`, `forceSearchCaseInsensitive()` / `isSearchForcedCaseInsensitive()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-dropdown-flips-and-escapes-the-modal) |
-| `reorderable()` / `isReorderable()` — chips dragged into order, the order written back | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-dropdown-flips-and-escapes-the-modal) |
+| `reorderable()` / `isReorderable()` — chips dragged into order, the order written back | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#reorderable-drags-the-chips-through-sortablejs-and-writes-the-order-back) |
 | `getSelectedRecordUsing()` / `getSelectedRecord()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) |
 | [`relationship()`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — to-one and to-many, over the [association reader](../schemas/association-reader.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](#relationship-is-three-lazy-closures-over-the-association-reader) · [semantics](#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) · [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | The relationship search and label arms — `getSearchResultsFromRelationship()`, `getOptionsFromRelationship()` (searchable / preload / limit / ordering), `getOptionLabelFromRelationship()`, `getOptionLabelsFromRelationship()`, and the shared `getOptionLabelFromRecordUsing()` trio | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) · [diverges](#a-search-column-is-a-mapped-field-and-the-title-ordering-skips-what-it-cannot-order) |
@@ -871,10 +871,17 @@ where Filament stamps the *absolute* context on its own, so a select inside a
 scrolling modal window — sticky header/footer panes, slide-overs — escapes that
 window's `overflow-y: auto` where Filament's dropdown is clipped by it.
 
+### `reorderable()` drags the chips through SortableJS and writes the order back
+
 `reorderable()` rides in with the same engine: the selected chips are dragged
 through SortableJS inside it, and `onEnd` rebuilds the state from the badges'
 `[data-value]` order and reports it through the same state-change callback a
-click does, so the reorder is one live write like any other.
+click does, so the reorder is one live write like any other. Because the order
+is then part of the value, the controller's re-sync compares a reorderable
+multiple selection against the server's as an **ordered list**, and a server
+render carrying the same values in another order re-syncs the chips; a
+non-reorderable multiple compares as a multiset, so an unrelated render does not
+rebuild its chips over a mere reordering.
 
 ### The hidden select lends its id to the combobox button
 
@@ -885,11 +892,16 @@ construction — a tracked attribute change the host's `ExternalMutationTracker`
 re-applies after every morph — and restores it on disconnect; the engine sets it
 on the button. The server-side contract is unchanged, which is why the render
 tests still assert `id` on the `<select>`; the handoff is runtime-only and
-invisible to PHP.
+invisible to PHP. The button also mirrors the `<select>`'s `aria-invalid` and
+`aria-required` — at construction and after every host render — because the
+hidden `<select>` is `display: none` and out of the accessibility tree, while
+Filament's own button carries neither; the JS branch renders `aria-required`
+on the `<select>` for exactly that mirror, where the native branch renders
+`required`.
 
-### The engine port corrects five vendor defects
+### The engine port corrects seven vendor defects
 
-The port is method-for-method vendor's, with five behavioural fixes — each a bug
+The port is method-for-method vendor's, with seven behavioural fixes — each a bug
 in `support/resources/js/utilities/select.js` (5.7.6) rather than a divergence
 we wanted:
 
@@ -909,7 +921,10 @@ we wanted:
 3. `addBadgesForSelectedOptions()` constructs a new `Sortable` on every full
    display update (868) and never destroys the previous one, leaking an
    instance per render. Ours destroys it before every rebuild — reorderable or
-   not — and in `destroy()`.
+   not — when the last chip goes and the placeholder returns, and in
+   `destroy()`, which also cancels a positioning frame still queued by
+   `deferPositionDropdown()` (vendor's `destroy()` at 2352 leaves it to run
+   against the removed container).
 4. `handleDropdownKeydown()`'s Enter with no focused option calls
    `form.submit()` (1297), which fires no `submit` event; under a
    `live_action('save:prevent', event: 'submit')` form that navigates away
@@ -918,6 +933,16 @@ we wanted:
    dropping the `<span>` its own stylesheet's `.fi-select-input-option > span`
    arm selects, so a refreshed label loses the option row's truncation. Ours
    keeps the `span.sy-fo-select-option-label` in both arms.
+6. `selectOption()` finds the badge to remove with
+   `querySelector(\`[data-value="${value}"]\`)` (2094), the value interpolated
+   raw — a value holding a double quote or a backslash throws a `SyntaxError`
+   before the state changes, so that chip can never be deselected. Ours passes
+   the value through `CSS.escape()`.
+7. `handleSearch()`'s empty-query branch (1799) restores the original options
+   but leaves `activeSearchId` alone, so a dynamic search already in flight
+   still commits its results over the emptied box when it lands, and the stale
+   list stays until the dropdown is closed and reopened. Ours bumps the id and
+   clears the searching flag there, the way `closeDropdown()` does.
 
 ## Divergences
 

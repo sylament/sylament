@@ -3909,6 +3909,8 @@ var Select = class {
     const fragment = document.createDocumentFragment();
     if (this.isMultiple) {
       if (!Array.isArray(this.state) || this.state.length === 0) {
+        this.sortable?.destroy();
+        this.sortable = null;
         const placeholderSpan = document.createElement("span");
         placeholderSpan.textContent = this.placeholder;
         placeholderSpan.classList.add("sy-fo-select-placeholder");
@@ -4630,6 +4632,8 @@ var Select = class {
       clearTimeout(this.searchTimeout);
     }
     if (query === "") {
+      this.activeSearchId++;
+      this.isSearching = false;
       this.options = clone2(this.originalOptions);
       this.renderOptions();
       return;
@@ -4790,7 +4794,9 @@ var Select = class {
     }
     let newState = Array.isArray(this.state) ? [...this.state] : [];
     if (newState.includes(value)) {
-      const badgeToRemove = this.selectedDisplay.querySelector(`[data-value="${value}"]`);
+      const badgeToRemove = this.selectedDisplay.querySelector(
+        `[data-value="${CSS.escape(value)}"]`
+      );
       if (filled(badgeToRemove)) {
         const badgesContainer = badgeToRemove.parentElement;
         if (filled(badgesContainer) && badgesContainer.children.length === 1) {
@@ -4979,6 +4985,10 @@ var Select = class {
       clearTimeout(this.searchTimeout);
       this.searchTimeout = null;
     }
+    if (this.positioningRequestAnimationFrame !== null) {
+      cancelAnimationFrame(this.positioningRequestAnimationFrame);
+      this.positioningRequestAnimationFrame = null;
+    }
     this.sortable?.destroy();
     this.sortable = null;
     this.container.remove();
@@ -5145,6 +5155,7 @@ var select_controller_default = class extends Controller {
     if (this.element.classList.contains(INLINE_PREFIX_CLASS)) {
       select.container.classList.add(CONTAINER_INLINE_PREFIX_CLASS);
     }
+    this.#mirrorAria(select);
     this.#select = select;
     component.on("render:finished", this.#onRender);
     component.element.addEventListener(REFRESH_EVENT, this.#onRefreshLabel);
@@ -5170,7 +5181,7 @@ var select_controller_default = class extends Controller {
     select.replaceOptions(optionsOf(this.optionsValue));
     select.rememberLabels(labelsOf(this.selectedOptionsValue));
     const state = this.#state(component);
-    if (!sameState(state, select.state, this.element.multiple)) {
+    if (!sameState(state, select.state, this.element.multiple, this.reorderableValue)) {
       select.state = state;
       void select.updateSelectedDisplay();
       select.renderOptions();
@@ -5180,7 +5191,19 @@ var select_controller_default = class extends Controller {
     } else {
       select.enable();
     }
+    this.#mirrorAria(select);
   };
+  /** The hidden `<select>` is what the server marks invalid or required; the combobox button is what the user operates. */
+  #mirrorAria(select) {
+    for (const name of ["aria-invalid", "aria-required"]) {
+      const value = this.element.getAttribute(name);
+      if (value === null) {
+        select.selectButton.removeAttribute(name);
+      } else {
+        select.selectButton.setAttribute(name, value);
+      }
+    }
+  }
   #onRefreshLabel = (event) => {
     const component = this.#component;
     if (component === null || event.target !== component.element || !(event instanceof CustomEvent)) {
@@ -5275,14 +5298,13 @@ function labelsOf(entries) {
   }
   return labels;
 }
-function sameState(a, b, multiple) {
+function sameState(a, b, multiple, ordered) {
   if (!multiple) {
     return a === b;
   }
-  const left = Array.isArray(a) ? a : [];
-  const right = Array.isArray(b) ? b : [];
-  const known = new Set(right);
-  return left.length === right.length && left.every((value) => known.has(value));
+  const left = Array.isArray(a) ? ordered ? a : [...a].sort() : [];
+  const right = Array.isArray(b) ? ordered ? b : [...b].sort() : [];
+  return left.length === right.length && left.every((value, index2) => value === right[index2]);
 }
 function isRecord(value) {
   return typeof value === "object" && value !== null;

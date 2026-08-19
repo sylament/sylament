@@ -1345,7 +1345,7 @@ var dropdown_controller_default = class extends Controller {
     }
   };
   #onKeyDown = (event) => {
-    if (event.key === "Escape") {
+    if (event.key === "Escape" && !event.defaultPrevented) {
       this.close();
       this.#focusableTrigger()?.focus();
     }

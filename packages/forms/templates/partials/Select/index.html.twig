@@ -60,6 +60,7 @@
             'data-skip-morph': isNative ? null : true,
             multiple: component.isMultiple,
             required: isNative ? component.isMarkedAsRequired : null,
+            'aria-required': isNative or not component.isMarkedAsRequired ? null : true,
             'aria-invalid': component.getErrorMessages is not empty,
             disabled: component.isDisabled,
             autofocus: component.isAutofocused,

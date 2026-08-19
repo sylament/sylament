@@ -887,14 +887,18 @@ it('carries the max-items pair and the position of a multiple select', function 
         ->and(selectValue($select, 'searchable'))->toBe('true');
 });
 
-it('keeps required on the native branch and drops it from the JS branch', function (): void {
+it('keeps required on the native branch and trades it for aria-required on the JS branch', function (): void {
     $native = new Crawler(renderField(Select::make('status')->options(['a' => 'A'])->required()))->filter('select.sy-fo-select');
     $js = new Crawler(renderField(Select::make('status')->options(['a' => 'A'])->required()->searchable()))->filter('select.sy-fo-select');
+    $optional = new Crawler(renderField(Select::make('status')->options(['a' => 'A'])->searchable()))->filter('select.sy-fo-select');
 
     expect($native->attr('required'))->not->toBeNull()
+        ->and($native->attr('aria-required'))->toBeNull()
         ->and($native->attr('data-model'))->toBe('norender|data.status')
         ->and($js->attr('required'))->toBeNull()
-        ->and($js->attr('data-controller'))->toBe('sylament--forms--select');
+        ->and($js->attr('aria-required'))->toBe('true')
+        ->and($js->attr('data-controller'))->toBe('sylament--forms--select')
+        ->and($optional->attr('aria-required'))->toBeNull();
 });
 
 it('renders the current selection as an option the map does not carry', function (): void {

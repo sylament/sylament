@@ -663,6 +663,9 @@ export class Select {
 
     if (this.isMultiple) {
       if (!Array.isArray(this.state) || this.state.length === 0) {
+        this.sortable?.destroy();
+        this.sortable = null;
+
         const placeholderSpan = document.createElement("span");
         placeholderSpan.textContent = this.placeholder;
         placeholderSpan.classList.add("sy-fo-select-placeholder");
@@ -1582,6 +1585,8 @@ export class Select {
     }
 
     if (query === "") {
+      this.activeSearchId++;
+      this.isSearching = false;
       this.options = clone(this.originalOptions);
       this.renderOptions();
       return;
@@ -1799,7 +1804,9 @@ export class Select {
     let newState = Array.isArray(this.state) ? [...this.state] : [];
 
     if (newState.includes(value)) {
-      const badgeToRemove = this.selectedDisplay.querySelector(`[data-value="${value}"]`);
+      const badgeToRemove = this.selectedDisplay.querySelector(
+        `[data-value="${CSS.escape(value)}"]`,
+      );
 
       if (filled(badgeToRemove)) {
         const badgesContainer = badgeToRemove.parentElement;
@@ -2036,6 +2043,11 @@ export class Select {
     if (this.searchTimeout !== null) {
       clearTimeout(this.searchTimeout);
       this.searchTimeout = null;
+    }
+
+    if (this.positioningRequestAnimationFrame !== null) {
+      cancelAnimationFrame(this.positioningRequestAnimationFrame);
+      this.positioningRequestAnimationFrame = null;
     }
 
     this.sortable?.destroy();

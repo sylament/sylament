@@ -78,6 +78,7 @@ another file.
 | `withoutDate()` / `withoutSeconds()` / `withoutTime()` | [`DateTimePicker.php`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | skipped | — | [diverges](#the-deprecated-surface-is-not-ported) |
 | [The template](../../../packages/forms/templates/partials/DateTimePicker/index.html.twig) | [`DateTimePicker::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) — the `$isNative` branch | done | — | [semantics](#the-value-attribute-reads-the-raw-state-not-the-cast-one) |
 | [The WebKit height rule](../../../packages/forms/assets/src/styles/components/input.css) | [`date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | done | — | [detail](styles.md#the-date-time-picker-stylesheet-is-one-native-rule-and-a-calendar-panel) |
+| [`required` drops when concealed](../../../packages/forms/templates/partials/DateTimePicker/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) | done | — | [can-be-concealed.md](../schemas/can-be-concealed.md) |
 
 Coverage: the field's own logic — the three variants' `getType()`, the type
 derived from `date(false)` / `time(false)`, the `native(false)` throw, both

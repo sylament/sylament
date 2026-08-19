@@ -98,6 +98,7 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | `pivotData()` | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity recipe | [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` | — |
 | Affixes ([`HasAffixes`](../../../packages/forms/src/Components/Concerns/HasAffixes.php), `wrapInputHtml`) | [`Concerns/HasAffixes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasAffixes.php) | done | — | [detail](has-affixes.md) · [semantics](#the-inline-prefix-class-counts-visible-actions-where-the-text-inputs-counts-all-of-them) |
+| [`required` drops when concealed](../../../packages/forms/templates/partials/Select/index.html.twig) — the native branch only; `aria-required` is ungated | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [can-be-concealed.md](../schemas/can-be-concealed.md) |
 
 Coverage: the concern surface — flattening, per-option disabling, merge/replace,
 placeholder selectability and dynamic options — by

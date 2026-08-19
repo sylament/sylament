@@ -37,6 +37,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`isBlankStateValue()`](../../../packages/forms/src/Components/Checkbox.php) — an untouched box reads blank | — | done | — | [semantics](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves) |
 | `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` | — |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#the-checkboxs-extra-input-attributes-win-where-filaments-lose) |
+| [`required` drops when concealed](../../../packages/forms/templates/partials/Checkbox/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | [can-be-concealed.md](../schemas/can-be-concealed.md) |
 
 Coverage: the inline / not-inline placement in both directions, the extra input
 attributes reaching the `<input>` and outranking what the field computes, the

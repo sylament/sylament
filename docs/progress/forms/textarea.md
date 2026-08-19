@@ -37,6 +37,7 @@ _Detail_ links the write-up in [Details](#details), deleted once the row is
 | Trim state (`CanTrimState`) | [`schemas/Concerns/CanTrimState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanTrimState.php) | blocked | schemas state-mutation surface | [detail](#the-state-mutation-surface-is-blocked-on-schemas) |
 | Strip characters (`CanStripCharactersFromState`) | [`schemas/Concerns/CanStripCharactersFromState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | blocked | schemas state-cast infrastructure | [detail](#the-state-mutation-surface-is-blocked-on-schemas) |
 | State casts + `mutate*` / `mutates*` hooks | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | blocked | schemas state-cast infrastructure | [detail](#the-state-mutation-surface-is-blocked-on-schemas) |
+| [Native constraint attributes drop when concealed](../../../packages/forms/templates/partials/Textarea/index.html.twig) — `required`, `minlength`, `maxlength` | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | [can-be-concealed.md](../schemas/can-be-concealed.md) |
 
 ## Details
 

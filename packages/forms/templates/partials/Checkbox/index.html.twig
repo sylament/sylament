@@ -6,7 +6,7 @@
         name: component.getName,
         'data-model': component.getDataModel,
         checked: component.getState,
-        required: component.isMarkedAsRequired,
+        required: component.isMarkedAsRequired and not component.isConcealed,
         'aria-invalid': component.getErrorMessages is not empty,
         disabled: component.isDisabled,
         autofocus: component.isAutofocused,

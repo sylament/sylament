@@ -16,6 +16,7 @@
     <div
             {{ attrs({
                 class: ['sy', 'sy-fo-field'],
+                'data-field-wrapper': true,
             }, field.getExtraFieldWrapperAttributes, field.getExtraAttributes) }}
     >
         {% if field.getLabel is not null %}
@@ -50,6 +51,7 @@
     <div
             {{ attrs({
                 class: ['sy', 'sy-fo-field'],
+                'data-field-wrapper': true,
             }, field.getExtraFieldWrapperAttributes, field.getExtraAttributes) }}
     >
         {% if field.getLabel is not null and field.isLabelHidden %}

@@ -35,7 +35,7 @@
             max: maxAttribute,
             step: component.getStep,
             list: datalistOptions ? component.getId ~ '-list' : null,
-            required: component.isMarkedAsRequired,
+            required: component.isMarkedAsRequired and not component.isConcealed,
             'aria-invalid': component.getErrorMessages is not empty,
             readonly: component.isReadOnly,
             disabled: component.isDisabled,

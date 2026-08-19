@@ -458,7 +458,7 @@ it('renders the standalone support component from raw icon props', function (): 
 it('renders no collapse markup by default', function (): void {
     $html = renderSection(Section::make('Profile'));
 
-    expect($html)->not->toContain('data-controller')
+    expect($html)->not->toContain('sylament--support--section')
         ->not->toContain('sy-collapsible')
         ->not->toContain('sy-collapsed')
         ->not->toContain('sy-section-collapse-btn')
@@ -476,7 +476,7 @@ it('wires the Stimulus controller on a collapsible section', function (): void {
         ->toContain('open-section@window-&gt;sylament--support--section#expand')
         ->toContain('toggle-section@window-&gt;sylament--support--section#toggle')
         ->toContain('expand-&gt;sylament--support--section#reveal')
-        ->not->toContain('reset-schema-component-state')
+        ->not->toContain('sylament--support--section#resetState')
         ->toContain('data-sylament--support--section-id-value="profile::section"')
         ->toContain('data-sylament--support--section-collapsed-value="false"')
         ->toContain('data-sylament--support--section-expand-label-value="Expand section"')
@@ -525,7 +525,7 @@ it('renders an initially collapsed section with matching ARIA', function (): voi
 it('renders no collapse markup when collapsed() opts out of collapsibility', function (): void {
     $html = renderSection(Section::make('Profile')->collapsed(shouldMakeComponentCollapsible: false));
 
-    expect($html)->not->toContain('data-controller')
+    expect($html)->not->toContain('sylament--support--section')
         ->not->toContain('sy-collapsed')
         ->not->toContain('sy-section-collapse-btn');
 });
@@ -546,7 +546,7 @@ it('cloaks the content container when persisting the collapse state', function (
 it('never renders an aside section as collapsible', function (): void {
     $html = renderSection(Section::make('Profile')->aside()->collapsible());
 
-    expect($html)->not->toContain('data-controller')
+    expect($html)->not->toContain('sylament--support--section')
         ->not->toContain('sy-collapsible')
         ->not->toContain('sy-section-collapse-btn');
 });

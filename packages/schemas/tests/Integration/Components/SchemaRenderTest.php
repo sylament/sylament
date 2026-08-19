@@ -285,3 +285,27 @@ it('renders nothing for a schema whose children are all hidden', function (): vo
 
     expect($html)->toBe('');
 });
+
+it('binds the schema root controller to a live-hosted root schema', function (): void {
+    $html = renderToHtml(schemaWithChild()->key('schema'));
+
+    expect($html)->toContain('data-controller="sylament--schemas--schema"')
+        ->toContain('data-sylament--schemas--schema-schema-key-value="schema"')
+        ->toContain('form-validation-error@window-&gt;sylament--schemas--schema#onValidationError')
+        ->toContain('reset-schema-component-state@window-&gt;sylament--schemas--schema#onStateReset');
+});
+
+it('binds the schema root controller once, never to a child schema', function (): void {
+    $html = renderToHtml(schema()->key('schema')->components([
+        Section::make('Details')->components([Text::make('INNER')]),
+    ]));
+
+    expect($html)->toContain('INNER')
+        ->and(mb_substr_count($html, 'data-controller="sylament--schemas--schema"'))->toBe(1);
+});
+
+it('does not bind the schema root controller without a live component host', function (): void {
+    $html = renderToHtml(Schema::make()->key('schema')->components([new Component()]));
+
+    expect($html)->not->toContain('sylament--schemas--schema');
+});

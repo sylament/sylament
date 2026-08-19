@@ -1,6 +1,11 @@
 {% set isInline = component.isInline %}
 {% set alignmentClass = component.getAlignmentClass %}
 
+{% set rootController = 'sylament--schemas--schema' %}
+{% set rootStimulus = component.isRoot and component.getLiveComponentOrNull ? stimulus_controller(rootController, {schemaKey: component.getKey})
+    |stimulus_action(rootController, 'onValidationError', 'form-validation-error@window')
+    |stimulus_action(rootController, 'onStateReset', 'reset-schema-component-state@window') : null %}
+
 <div
         {{ attrs({
             class: [
@@ -12,7 +17,7 @@
                     'sy-sc-dense': component.isDense,
                 },
             ],
-        }, isInline ? null : grid(component.getColumns), component.getExtraAttributes) }}
+        }, isInline ? null : grid(component.getColumns), component.getExtraAttributes, rootStimulus) }}
 >
     {% for childComponent in visibleChildren %}
         {% if childComponent.isAction %}

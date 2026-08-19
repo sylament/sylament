@@ -3,9 +3,8 @@
 
 // src/controllers/select_controller.ts
 import { Controller } from "@hotwired/stimulus";
-import { getComponent } from "@symfony/ux-live-component";
 
-// src/utils/schema_component_method.ts
+// ../../schemas/assets/src/utils/schema_component_method.ts
 var RESULT_EVENT = "sylament:schema-component-method-result";
 var ACTION = "callSchemaComponentMethod";
 var queues = /* @__PURE__ */ new WeakMap();
@@ -59,6 +58,9 @@ function listen(component, byKey) {
     }
   });
 }
+
+// src/controllers/select_controller.ts
+import { getComponent } from "@symfony/ux-live-component";
 
 // ../../../node_modules/.pnpm/@floating-ui+utils@0.2.12/node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs
 var min = Math.min;

@@ -129,7 +129,11 @@
                             @apply text-gray-500 dark:text-gray-400;
                         }
                     }
+                }
+            }
 
+            &:not(.sy-active):not(.sy-completed) {
+                & .sy-sc-wizard-header-step-btn {
                     & .sy-sc-wizard-header-step-text {
                         & .sy-sc-wizard-header-step-label {
                             @apply text-gray-500 dark:text-gray-400;

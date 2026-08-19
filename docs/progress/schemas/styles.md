@@ -170,5 +170,11 @@ rather than a `sy-sr-only` utility, matching `section.css`. And vendor's
 inactive-label rule (`wizard.css:115-119`) nests
 `.fi-sc-wizard-header-step-text` **inside** `.fi-sc-wizard-header-step-icon-ctn`,
 where the text is that element's sibling, so it matches nothing; it is written at
-the `-text` level as intended rather than copied dead.
+the `-text` level as intended rather than copied dead. Reviving it costs one
+guard vendor never needed: a live rule at that level also matches a **completed**
+step (completed implies not active) and, emitted after the completed block at
+equal specificity, would win and fade a completed label to the upcoming-step
+gray. The selector is therefore `&:not(.sy-active):not(.sy-completed)`, which
+makes the three label states — active, completed, upcoming — mutually exclusive
+by construction rather than by source order.
 

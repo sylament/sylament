@@ -7,10 +7,10 @@ Each stylesheet is `@apply`-authored into `components/<name>.css` and `@import`e
 into [`index.css`](../../../packages/schemas/assets/src/styles/index.css) under
 `layer(components)`, mirroring Filament's `index.css` structure. The `fi-*` class
 prefix is translated to the schemas component code `sy-sc-*` (see the
-[CSS contract](../../styling.md)). Four of Filament's stylesheets are ported so
-far (schema, section, icon, actions) — `icon.css` rule-for-rule, `schema.css` and
-`actions.css` dropping variants from their source and `section.css` adding one;
-the rest wait on the components they style.
+[CSS contract](../../styling.md)). Five of Filament's stylesheets are ported so
+far (schema, section, icon, actions, tabs) — `icon.css` and `tabs.css`
+rule-for-rule, `schema.css` and `actions.css` dropping variants from their source
+and `section.css` adding one; the rest wait on the components they style.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -19,7 +19,7 @@ Reference — the Filament source this is diffed against:
 - [`schemas/resources/css/schema.css`](../../../vendor/filament/schemas/resources/css/schema.css)
   — the grid/gap/alignment stylesheet ported into `components/schema.css`
 - [`schemas/resources/css/components/`](../../../vendor/filament/schemas/resources/css/components/)
-  — the eleven per-component stylesheets (section, icon, text, and the eight unported)
+  — the eleven per-component stylesheets (section, icon, text, tabs, and the seven unported)
 
 ## Surface
 
@@ -37,11 +37,12 @@ CSS. _Detail_ carries a **diverges** link to a permanent note in
 | [`text.css` — `.sy-sc-text` (lives in the support package)](../../../packages/support/assets/src/styles/components/text.css) | [`components/text.css`](../../../vendor/filament/schemas/resources/css/components/text.css) | done | — | [diverges](#text-css-was-ported-into-the-support-package) |
 | [`fused-group.css` — `.sy-fo-fused-group` ring, dividers and corner rules (lives in the forms package)](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) | done | — | [diverges](#fused-group-css-was-ported-into-the-forms-package) |
 | [`flex.css` — `.sy-sc-flex` row, breakpoint, alignment, dense and growable variants](../../../packages/schemas/assets/src/styles/components/flex.css) | [`components/flex.css`](../../../vendor/filament/schemas/resources/css/components/flex.css) | done | — | [diverges](#flex-css-keeps-the-hidden-child-rule-the-port-never-emits) |
-| `form.css` / `image.css` / `tabs.css` / `unordered-list.css` / `wizard.css` | [`components/`](../../../vendor/filament/schemas/resources/css/components/) | blocked | Form, Image, Tabs, UnorderedList, Wizard | [detail](#the-remaining-component-stylesheets-are-unported) |
+| [`tabs.css` — `.sy-sc-tabs` panel show/hide, contained and vertical variants](../../../packages/schemas/assets/src/styles/components/tabs.css) | [`components/tabs.css`](../../../vendor/filament/schemas/resources/css/components/tabs.css) | done | — | — |
+| `form.css` / `image.css` / `unordered-list.css` / `wizard.css` | [`components/`](../../../vendor/filament/schemas/resources/css/components/) | blocked | Form, Image, UnorderedList, Wizard | [detail](#the-remaining-component-stylesheets-are-unported) |
 
 No test exercises CSS. The render tests assert that the class hooks these rules
 attach to (`sy-sc`, `sy-sc-section`, `sy-sc-section-label-hidden`, `sy-sc-icon`,
-`sy-sc-actions-ctn`, `sy-color`, `sy-grid-*`) are emitted into the HTML, but the styling itself never
+`sy-sc-actions-ctn`, `sy-sc-tabs`, `sy-sc-tabs-tab`, `sy-color`, `sy-grid-*`) are emitted into the HTML, but the styling itself never
 runs — CSS cannot reach **done** through a behavior test, so its status rests on
 faithfulness of the port. The `pnpm build` (clean → tsc → esbuild → tailwind, with
 a `.sy`-scoped preflight) compiles them; the only guard is the CI check that the
@@ -51,9 +52,9 @@ committed `assets/dist` matches a fresh build.
 
 ### The remaining component stylesheets are unported
 
-`form.css`, `image.css`, `tabs.css`,
-`unordered-list.css`, and `wizard.css` have no `sy-sc-*` counterpart yet. Each is
-**blocked** on its component (Form, Image, Tabs,
+`form.css`, `image.css`, `unordered-list.css`,
+and `wizard.css` have no `sy-sc-*` counterpart yet. Each is
+**blocked** on its component (Form, Image,
 UnorderedList, Wizard) — the styling lands in the same change as the Twig template
 it targets, so there is nothing to author against until then. Next step for each:
 port when its component does.

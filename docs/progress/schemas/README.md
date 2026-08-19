@@ -16,7 +16,7 @@ file wherever a divergence, an open gap, or real sub-structure earns one. A
 plain-text name is not built yet and stays **todo**. Single-use concerns have
 folded into the detail file of the component that uses them (Schema's into
 [`schema.md`](schema.md), the base Component's into [`component.md`](component.md),
-Section's into [`section.md`](section.md)) and left the Features tables, per
+Section's into [`section.md`](section.md), Tabs' into [`tabs.md`](tabs.md)) and left the Features tables, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing).
 [`support/component.md`](../support/component.md) is the shape each detail file
 follows.
@@ -52,8 +52,8 @@ concerns, so it ships in `sylament/forms` and its row here points there —
 | [`Fieldset`](../../../packages/schemas/src/Components/Fieldset.php) | [`Components/Fieldset.php`](../../../vendor/filament/schemas/src/Components/Fieldset.php) | done | [fieldset.md](fieldset.md) |
 | [`Flex`](../../../packages/schemas/src/Components/Flex.php) | [`Components/Flex.php`](../../../vendor/filament/schemas/src/Components/Flex.php) | done | [flex.md](flex.md) |
 | [`FusedGroup`](../../../packages/forms/src/Components/FusedGroup.php) (ships in **forms**) | [`Components/FusedGroup.php`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | in progress | [../forms/fused-group.md](../forms/fused-group.md) |
-| `Tabs` | [`Components/Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php) | todo | — |
-| `Tabs\Tab` | [`Components/Tabs/Tab.php`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | todo | — |
+| [`Tabs`](../../../packages/schemas/src/Components/Tabs.php) | [`Components/Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php) | in progress | [tabs.md](tabs.md) |
+| [`Tabs\Tab`](../../../packages/schemas/src/Components/Tabs/Tab.php) | [`Components/Tabs/Tab.php`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | [tab.md](tab.md) |
 | `Wizard` | [`Components/Wizard.php`](../../../vendor/filament/schemas/src/Components/Wizard.php) | todo | — |
 | `Wizard\Step` | [`Components/Wizard/Step.php`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | todo | — |
 | [`Actions`](../../../packages/schemas/src/Components/Actions.php) | [`Components/Actions.php`](../../../vendor/filament/schemas/src/Components/Actions.php) | in progress | [actions.md](actions.md) |
@@ -115,7 +115,7 @@ own single-use concerns folded into [`component.md`](component.md).
 | `CanGetStateFromRelationships` | [`Components/Concerns/CanGetStateFromRelationships.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanGetStateFromRelationships.php) | todo | — |
 | `CanOpenUrl` | [`Components/Concerns/CanOpenUrl.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanOpenUrl.php) | todo | — |
 | `CanPartiallyRender` | [`Components/Concerns/CanPartiallyRender.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanPartiallyRender.php) | todo | — |
-| `CanPersistTab` | [`Components/Concerns/CanPersistTab.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanPersistTab.php) | todo | — |
+| [`CanPersistTab`](../../../packages/schemas/src/Components/Concerns/CanPersistTab.php) | [`Components/Concerns/CanPersistTab.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanPersistTab.php) | done | [tabs.md](tabs.md#canpersisttabs-property-is-protected-and-the-storage-key-drops-alpines-prefix) |
 | `CanPoll` | [`Components/Concerns/CanPoll.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanPoll.php) | todo | — |
 | `CanStripCharactersFromState` | [`Components/Concerns/CanStripCharactersFromState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | todo | — |
 | `CanTrimState` | [`Components/Concerns/CanTrimState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanTrimState.php) | todo | — |
@@ -211,7 +211,7 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | [`SchemaExtension`](../../../packages/schemas/src/Twig/Extension/SchemaExtension.php) | — | done | [schema-extension.md](schema-extension.md) |
 | [`Colors\Components\IconComponent`](../../../packages/schemas/src/Colors/Components/IconComponent.php) | [`View/Components/IconComponent.php`](../../../vendor/filament/schemas/src/View/Components/IconComponent.php) | done | [icon.md](icon.md#the-default-icon-color-is-gray-with-no-color-class-not-filaments-primary) |
 | [`Colors\Components\TextComponent`](../../../packages/schemas/src/Colors/Components/TextComponent.php) | [`View/Components/TextComponent.php`](../../../vendor/filament/schemas/src/View/Components/TextComponent.php) | done | [text.md](text.md#the-default-gray-color-lives-in-the-color-policy-not-setup) |
-| `SchemaIconAlias` | [`View/SchemaIconAlias.php`](../../../vendor/filament/schemas/src/View/SchemaIconAlias.php) | todo | — |
+| [`SchemaIconAlias`](../../../packages/schemas/src/Twig/SchemaIconAlias.php) | [`View/SchemaIconAlias.php`](../../../vendor/filament/schemas/src/View/SchemaIconAlias.php) | in progress | [tabs.md](tabs.md) |
 | `TestsSchemas` | [`Testing/TestsSchemas.php`](../../../vendor/filament/schemas/src/Testing/TestsSchemas.php) | todo | — |
 | `JsContent` | [`JsContent.php`](../../../vendor/filament/schemas/src/JsContent.php) | todo | — |
 | [`SchemasServiceProvider`](../../../packages/schemas/src/SylamentSchemasBundle.php) | [`SchemasServiceProvider.php`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | in progress | [schemas-bundle.md](schemas-bundle.md) |

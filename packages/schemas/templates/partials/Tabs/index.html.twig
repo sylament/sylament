@@ -1,0 +1,150 @@
+{% set controller = 'sylament--schemas--tabs' %}
+{% set isServerDriven = liveComponentProperty is not null %}
+
+{% set rootAttributes = {
+    id: id ?: null,
+    class: ['sy', 'sy-sc-tabs', {
+        'sy-contained': isContained,
+        'sy-vertical': isVertical,
+        'sy-cloak': not isServerDriven and isTabPersisted and id,
+    }],
+} %}
+
+{% set stimulus = isServerDriven ? null : stimulus_controller(controller, {
+    activeTab: activeTab,
+    key: hasDeferredBadges ? tabsKey : null,
+    schemaKey: schemaKey,
+    persist: isTabPersisted and id ? true : null,
+    persistId: isTabPersisted and id ? id : null,
+    queryStringKey: tabQueryStringKey,
+    scrollable: isScrollable ? null : false,
+    deferredBadges: hasDeferredBadges ? true : null,
+})|stimulus_action(controller, 'resetState', 'reset-schema-component-state@window') %}
+
+{% if stimulus and not isScrollable %}
+    {% set stimulus = stimulus|stimulus_action(controller, 'resize', 'resize@window') %}
+{% endif %}
+
+<div {{ attrs(rootAttributes, component.getExtraAttributes, stimulus) }}>
+    <twig:SylamentSupport:Tabs
+            :label="label"
+            :contained="isContained"
+            :vertical="isVertical"
+            role="tablist"
+            {{ ...(isServerDriven ? {} : stimulus_target(controller, 'nav')) }}
+    >
+        {% for tab in tabs %}
+            {% set tabKey = tab.getKey(false) %}
+            {% set tabId = tab.getId %}
+            {% set isDeferred = not isServerDriven and tab.isBadgeDeferred %}
+            {% set isActive = isServerDriven ? activeLiveComponentTab == tabKey : activeTabKey == tabKey %}
+            {% set tabLabel = tab.getLabel ?? (isServerDriven and canGenerateTabLabel ? component.getLiveComponent.generateTabLabel(tabKey) : null) %}
+
+            <twig:SylamentSupport:TabsItem
+                    role="tab"
+                    :id="tabId ? tabId ~ '-tab' : false"
+                    :aria-controls="tabId ?: false"
+                    :aria-selected="isActive ? 'true' : 'false'"
+                    :active="isActive"
+                    :data-tab-key="tabKey ?: false"
+                    :icon="tab.getIcon"
+                    :iconPosition="tab.getIconPosition"
+                    :badge="isDeferred ? null : tab.getBadge"
+                    :badgeColor="isDeferred ? null : tab.getBadgeColor(tab.getBadge)"
+                    :badgeIcon="isDeferred ? null : tab.getBadgeIcon(tab.getBadge)"
+                    :badgeIconPosition="isDeferred ? null : tab.getBadgeIconPosition(tab.getBadge)"
+                    :badgeTooltip="isDeferred ? null : tab.getBadgeTooltip(tab.getBadge)"
+                    {{ ...tab.getExtraAttributeBag.toScalarAttributes }}
+                    {{ ...(isServerDriven
+                        ? {'data-action': 'live#update', 'data-model': liveComponentProperty, 'data-value': tabKey, 'data-loading': 'addAttribute(disabled)'}
+                        : stimulus_target(controller, 'tab')|stimulus_action(controller, 'select', 'click')) }}
+            >
+                <twig:block name="content">{{ tabLabel }}</twig:block>
+                <twig:block name="badge">
+                    {% if isDeferred %}
+                        <span class="sy-tabs-item-badge-placeholder" {{ attrs({'data-tab-key': tabKey}, stimulus_target(controller, 'badgePlaceholder')) }}>
+                            <twig:SylamentSupport:LoadingIndicator size="sm" />
+                        </span>
+                    {% endif %}
+                </twig:block>
+            </twig:SylamentSupport:TabsItem>
+        {% endfor %}
+
+        {% if not isServerDriven and not isScrollable %}
+            <twig:SylamentSupport:Dropdown placement="bottom-start" :offset="8" {{ ...stimulus_target(controller, 'dropdown') }}>
+                <twig:block name="trigger">
+                    {% for tab in tabs %}
+                        {% set tabKey = tab.getKey(false) %}
+                        {% set isDeferred = tab.isBadgeDeferred %}
+
+                        <twig:SylamentSupport:TabsItem
+                                role="tab"
+                                aria-selected="false"
+                                :active="activeTabKey == tabKey"
+                                :data-tab-key="tabKey ?: false"
+                                icon="heroicons:chevron-down"
+                                :iconAlias="constant('Sylament\\Schemas\\Twig\\SchemaIconAlias::COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON')"
+                                iconPosition="before"
+                                :badge="isDeferred ? null : tab.getBadge"
+                                :badgeColor="isDeferred ? null : tab.getBadgeColor(tab.getBadge)"
+                                :badgeTooltip="isDeferred ? null : tab.getBadgeTooltip(tab.getBadge)"
+                                {{ ...stimulus_target(controller, 'triggerTab') }}
+                        >
+                            <twig:block name="content">{{ tab.getLabel }}</twig:block>
+                            <twig:block name="badge">
+                                {% if isDeferred %}
+                                    <span class="sy-tabs-item-badge-placeholder" {{ attrs({'data-tab-key': tabKey}, stimulus_target(controller, 'badgePlaceholder')) }}>
+                                        <twig:SylamentSupport:LoadingIndicator size="sm" />
+                                    </span>
+                                {% endif %}
+                            </twig:block>
+                        </twig:SylamentSupport:TabsItem>
+                    {% endfor %}
+
+                    <button type="button" role="tab" aria-selected="false" {{ attrs({class: 'sy sy-tabs-item'}, stimulus_target(controller, 'moreButton')) }}>
+                        <span class="sy-tabs-item-label">{{ generateIconHtml('heroicons:ellipsis-horizontal', constant('Sylament\\Schemas\\Twig\\SchemaIconAlias::COMPONENTS_TABS_MORE_TABS_BUTTON')) }}</span>
+                    </button>
+                </twig:block>
+
+                <twig:block name="content">
+                    <div class="sy-dropdown-list">
+                        {% for tab in tabs %}
+                            {% set tabKey = tab.getKey(false) %}
+                            {% set isDeferred = tab.isBadgeDeferred %}
+                            {% set badgeTooltip = tab.getBadgeTooltip(tab.getBadge) %}
+
+                            <twig:SylamentSupport:DropdownItem
+                                    color="gray"
+                                    :icon="tab.getIcon"
+                                    :data-tab-key="tabKey ?: false"
+                                    data-loading="addAttribute(disabled)"
+                                    {{ ...(activeTabKey == tabKey ? {class: 'sy-selected'} : {}) }}
+                                    {{ ...(stimulus_target(controller, 'dropdownItem')|stimulus_action(controller, 'selectFromDropdown', 'click')|stimulus_action('sylament--support--dropdown', 'close', 'click')) }}
+                            >
+                                <twig:block name="content">
+                                    {{- tab.getLabel -}}
+
+                                    {% if isDeferred %}
+                                        <span class="sy-tabs-item-badge-placeholder" {{ attrs({'data-tab-key': tabKey}, stimulus_target(controller, 'badgePlaceholder')) }}>
+                                            <twig:SylamentSupport:LoadingIndicator size="sm" />
+                                        </span>
+                                    {% elseif tab.getBadge is filled %}
+                                        <twig:SylamentSupport:Badge
+                                                size="sm"
+                                                :color="tab.getBadgeColor(tab.getBadge) ?? 'primary'"
+                                                {{ ...(badgeTooltip ? {title: badgeTooltip} : {}) }}
+                                        >{{- tab.getBadge -}}</twig:SylamentSupport:Badge>
+                                    {% endif %}
+                                </twig:block>
+                            </twig:SylamentSupport:DropdownItem>
+                        {% endfor %}
+                    </div>
+                </twig:block>
+            </twig:SylamentSupport:Dropdown>
+        {% endif %}
+    </twig:SylamentSupport:Tabs>
+
+    {% for tab in tabs %}
+        {{ renderComponent(tab) }}
+    {% endfor %}
+</div>

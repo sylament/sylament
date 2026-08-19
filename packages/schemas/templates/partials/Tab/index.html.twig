@@ -1,0 +1,15 @@
+{% set controller = 'sylament--schemas--tabs' %}
+
+{% if hasContent and (not isLiveComponentProperty or isActive) %}
+    <div
+            {{ attrs({
+                id: tabId ?: null,
+                role: 'tabpanel',
+                'aria-labelledby': tabId ? tabId ~ '-tab' : null,
+                class: ['sy', 'sy-sc-tabs-tab', {'sy-active': isActive}],
+                'data-tab-key': tabKey,
+            }, component.getExtraAttributes, isLiveComponentProperty ? null : stimulus_target(controller, 'panel')|stimulus_action(controller, 'expand', 'expand')) }}
+    >
+        {{ renderComponent(contentSchema) }}
+    </div>
+{% endif %}

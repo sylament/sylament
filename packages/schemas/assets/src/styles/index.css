@@ -3,3 +3,4 @@
 @import './components/icon.css' layer(components);
 @import './components/schema.css' layer(components);
 @import './components/section.css' layer(components);
+@import './components/tabs.css' layer(components);

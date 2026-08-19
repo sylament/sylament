@@ -1,0 +1,39 @@
+.sy-sc-tabs {
+    @apply flex flex-col;
+
+    & .sy-tabs.sy-invisible {
+        @apply invisible;
+    }
+
+    & .sy-sc-tabs-tab {
+        @apply outline-hidden;
+
+        &.sy-active {
+            @apply mt-6;
+        }
+
+        &:not(.sy-active) {
+            @apply invisible absolute h-0 overflow-hidden p-0;
+        }
+    }
+
+    &.sy-contained {
+        @apply rounded-xl bg-white shadow-xs ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10;
+
+        & .sy-sc-tabs-tab {
+            &.sy-active {
+                @apply mt-0 p-6;
+            }
+        }
+    }
+
+    &.sy-vertical {
+        @apply flex-row;
+
+        & .sy-sc-tabs-tab {
+            &.sy-active {
+                @apply ms-6 mt-0 flex-1;
+            }
+        }
+    }
+}

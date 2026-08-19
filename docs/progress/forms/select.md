@@ -4,8 +4,7 @@
 an enum, or a Doctrine association, rendered as the native `<select>` or — once
 it is searchable, multiple, renders HTML labels or declares `native(false)` — as
 the JS control forms' `select` Stimulus controller builds — a port of Filament's
-own select utility. It
-composes the shared option pair ([`HasOptions`](has-options.md),
+own select utility. It composes the shared option pair ([`HasOptions`](has-options.md),
 [`CanDisableOptions`](can-disable-options.md) and its
 [contract](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php)),
 the searchable trio it shares with [`CheckboxList`](checkbox-list.md)

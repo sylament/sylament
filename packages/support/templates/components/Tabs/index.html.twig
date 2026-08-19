@@ -1,0 +1,18 @@
+{% props
+    label = null,
+
+    contained = false,
+    vertical = false
+%}
+
+<nav
+    {{ attributes.defaults({
+        class: classes('sy sy-tabs', {
+            'sy-contained': contained,
+            'sy-vertical': vertical,
+        }),
+        'aria-label': label ?? 'Tabs',
+    }) }}
+>
+    {% block content %}{% endblock content %}
+</nav>

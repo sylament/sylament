@@ -13,3 +13,5 @@
 @import './components/pagination.css' layer(components);
 @import './components/breadcrumbs.css' layer(components);
 @import './components/input-wrapper.css' layer(components);
+@import './components/tabs.css' layer(components);
+@import './components/loading-indicator.css' layer(components);

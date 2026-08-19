@@ -88,6 +88,10 @@ it('injects the icon manager into the icon extension', function (): void {
         ->and($extension->generateIconHtml('heroicons:x-mark'))->not->toBeNull();
 });
 
+it('aliases the icon extension by class-string so a service can autowire it', function (): void {
+    expect($this::getContainer()->get(IconExtension::class))->toBeInstanceOf(IconExtension::class);
+});
+
 it('renders icons from the fixture icon directory through the ux-icons renderer', function (): void {
     $manager = $this::getContainer()->get(IconManager::class);
 

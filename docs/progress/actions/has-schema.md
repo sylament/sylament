@@ -87,7 +87,8 @@ receives the built wizard as the `wizard` named injection and may return a
 replacement (returning nothing keeps the built one). The steps themselves come
 from the sibling
 [`HasWizard`](../../../packages/actions/src/Concerns/HasWizard.php) concern,
-ported member for member: `steps()` (which flips the wizard flag and forwards to
+ported member for member (the declaration order differs from vendor's; the set
+does not): `steps()` (which flips the wizard flag and forwards to
 `schema()`), `startOnStep()`, `skippableSteps()`, `modifyWizardUsing()` (which
 also flips the flag, so a hook alone makes an action a wizard), `isWizard()`,
 `isWizardSkippable()` and `getWizardStartStep()`.
@@ -108,6 +109,17 @@ the same widening [`Wizard::nextAction()`](../schemas/wizard.md) already uses â€
 bare `?Closure` would infer the *closure* as the evaluated type and make the
 `?? $wizard` fallback provably dead at level max. The public setter stays
 Filament-exact at `?Closure`.
+
+The arm carries one PHPStan assertion of its own: the array it hands
+`Wizard::make()` is annotated `/** @var array<Step> $steps */`, because
+`getSchema()`'s array arm is typed as the general component list a schema takes
+while `Wizard::make()` accepts steps only. Filament's `Wizard::make()` carries the
+identical `@param array<Step> | Closure` and its `HasSchema` passes the same array
+in with no annotation, so the mismatch exists over there too and is simply not
+flagged. The assertion is unchecked: a non-`Step` in a `steps()` declaration is a
+user error the wizard surfaces at render, where `Wizard::getSteps()` filters by
+`instanceof Step` and simply omits it. Reverses if the array arm ever narrows its
+own type by the wizard flag.
 
 ## Divergences
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Integration\Concerns;
 
+use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
@@ -25,19 +26,16 @@ it('renders the mounted wizard schema uncontained inside the modal', function ()
 });
 
 it('renders the modal cancel and submit actions in the wizard footer slots', function (): void {
-    $html = mountWizardAction('onboard');
+    $crawler = new Crawler(mountWizardAction('onboard'));
 
-    $cancelSlot = mb_strpos($html, 'data-sylament--schemas--wizard-target="cancelSlot"');
-    $submitSlot = mb_strpos($html, 'data-sylament--schemas--wizard-target="submitSlot"');
+    $cancelSlot = $crawler->filter('[data-sylament--schemas--wizard-target="cancelSlot"]');
+    $submitSlot = $crawler->filter('[data-sylament--schemas--wizard-target="submitSlot"]');
 
-    expect($cancelSlot)->not->toBeFalse()
-        ->and($submitSlot)->not->toBeFalse()
-        ->and(mb_substr($html, $cancelSlot, $submitSlot - $cancelSlot))
-        ->toContain('Cancel')
-        ->and(mb_substr($html, $submitSlot))
-        ->toContain('Submit')
-        ->and(mb_substr($html, $submitSlot))
-        ->toContain('type="submit"');
+    expect($cancelSlot->count())->toBe(1)
+        ->and($cancelSlot->text())->toContain('Cancel')
+        ->and($submitSlot->count())->toBe(1)
+        ->and($submitSlot->text())->toContain('Submit')
+        ->and($submitSlot->filter('button[type="submit"]')->count())->toBe(1);
 });
 
 it('suppresses the modal footer actions for a wizard action', function (): void {

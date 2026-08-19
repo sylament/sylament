@@ -39,6 +39,7 @@
             {% set isDeferred = not isServerDriven and tab.isBadgeDeferred %}
             {% set isActive = isServerDriven ? activeLiveComponentTab == tabKey : activeTabKey == tabKey %}
             {% set tabLabel = tab.getLabel ?? (isServerDriven and canGenerateTabLabel ? component.getLiveComponent.generateTabLabel(tabKey) : null) %}
+            {% set tabBadge = isDeferred ? null : tab.getBadge %}
 
             <twig:SylamentSupport:TabsItem
                     role="tab"
@@ -49,11 +50,11 @@
                     :data-tab-key="tabKey ?: false"
                     :icon="tab.getIcon"
                     :iconPosition="tab.getIconPosition"
-                    :badge="isDeferred ? null : tab.getBadge"
-                    :badgeColor="isDeferred ? null : tab.getBadgeColor(tab.getBadge)"
-                    :badgeIcon="isDeferred ? null : tab.getBadgeIcon(tab.getBadge)"
-                    :badgeIconPosition="isDeferred ? null : tab.getBadgeIconPosition(tab.getBadge)"
-                    :badgeTooltip="isDeferred ? null : tab.getBadgeTooltip(tab.getBadge)"
+                    :badge="tabBadge"
+                    :badgeColor="isDeferred ? null : tab.getBadgeColor(tabBadge)"
+                    :badgeIcon="isDeferred ? null : tab.getBadgeIcon(tabBadge)"
+                    :badgeIconPosition="isDeferred ? null : tab.getBadgeIconPosition(tabBadge)"
+                    :badgeTooltip="isDeferred ? null : tab.getBadgeTooltip(tabBadge)"
                     {{ ...tab.getExtraAttributeBag.toScalarAttributes }}
                     {{ ...(isServerDriven
                         ? {'data-action': 'live#update', 'data-model': liveComponentProperty, 'data-value': tabKey, 'data-loading': 'addAttribute(disabled)'}
@@ -76,6 +77,7 @@
                     {% for tab in tabs %}
                         {% set tabKey = tab.getKey(false) %}
                         {% set isDeferred = tab.isBadgeDeferred %}
+                        {% set tabBadge = isDeferred ? null : tab.getBadge %}
 
                         <twig:SylamentSupport:TabsItem
                                 role="tab"
@@ -85,9 +87,9 @@
                                 icon="heroicons:chevron-down"
                                 :iconAlias="constant('Sylament\\Schemas\\Twig\\SchemaIconAlias::COMPONENTS_TABS_DROPDOWN_TRIGGER_BUTTON')"
                                 iconPosition="before"
-                                :badge="isDeferred ? null : tab.getBadge"
-                                :badgeColor="isDeferred ? null : tab.getBadgeColor(tab.getBadge)"
-                                :badgeTooltip="isDeferred ? null : tab.getBadgeTooltip(tab.getBadge)"
+                                :badge="tabBadge"
+                                :badgeColor="isDeferred ? null : tab.getBadgeColor(tabBadge)"
+                                :badgeTooltip="isDeferred ? null : tab.getBadgeTooltip(tabBadge)"
                                 {{ ...stimulus_target(controller, 'triggerTab') }}
                         >
                             <twig:block name="content">{{ tab.getLabel }}</twig:block>
@@ -111,7 +113,8 @@
                         {% for tab in tabs %}
                             {% set tabKey = tab.getKey(false) %}
                             {% set isDeferred = tab.isBadgeDeferred %}
-                            {% set badgeTooltip = tab.getBadgeTooltip(tab.getBadge) %}
+                            {% set tabBadge = isDeferred ? null : tab.getBadge %}
+                            {% set badgeTooltip = isDeferred ? null : tab.getBadgeTooltip(tabBadge) %}
 
                             <twig:SylamentSupport:DropdownItem
                                     color="gray"
@@ -128,12 +131,12 @@
                                         <span class="sy-tabs-item-badge-placeholder" {{ attrs({'data-tab-key': tabKey}, stimulus_target(controller, 'badgePlaceholder')) }}>
                                             <twig:SylamentSupport:LoadingIndicator size="sm" />
                                         </span>
-                                    {% elseif tab.getBadge is filled %}
+                                    {% elseif tabBadge is filled %}
                                         <twig:SylamentSupport:Badge
                                                 size="sm"
-                                                :color="tab.getBadgeColor(tab.getBadge) ?? 'primary'"
+                                                :color="tab.getBadgeColor(tabBadge) ?? 'primary'"
                                                 {{ ...(badgeTooltip ? {title: badgeTooltip} : {}) }}
-                                        >{{- tab.getBadge -}}</twig:SylamentSupport:Badge>
+                                        >{{- tabBadge -}}</twig:SylamentSupport:Badge>
                                     {% endif %}
                                 </twig:block>
                             </twig:SylamentSupport:DropdownItem>

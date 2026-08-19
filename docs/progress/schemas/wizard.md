@@ -208,7 +208,10 @@ setter (the `NavigationItem::setEvaluationServices()` shape) and a wizard built
 with `new` outside the container simply skips the read. The comparison is
 `$step->getKey()` — the **absolute** key, which is what Filament's own wizard JS
 writes into the URL, so unlike
-`Tabs`' own arm no correction was needed. The read is a first-paint
+`Tabs`' own arm no correction was needed. The value is read off `query->all()`
+rather than `query->get()`, exactly as [`Tabs`](tabs.md#the-query-string-arm-compares-the-key-the-url-actually-carries)
+does: `InputBag::get()` throws on an array-shaped `?step[]=x`, and a hand-edited
+URL must not take the whole render down. The read is a first-paint
 optimisation: the controller re-reads the URL on connect anyway.
 
 ### getStartStepKey() is Sylament-only

@@ -105,6 +105,14 @@ it('falls back to the start step for an unknown query-string value', function ()
     expect($wizard->getStartStep())->toBe(1);
 });
 
+it('falls back to the start step for an array-shaped query-string value', function (): void {
+    $wizard = Wizard::make([Step::make('One'), Step::make('Two')])->persistStepInQueryString();
+    $wizard->setRequestStack(requestStackWith('step[]=' . rawurlencode('schema.two::wizard-step')));
+    wireWizard($wizard);
+
+    expect($wizard->getStartStep())->toBe(1);
+});
+
 it('skips the query-string read with no request stack', function (): void {
     $wizard = wireWizard(Wizard::make([Step::make('One'), Step::make('Two')])->persistStepInQueryString());
 

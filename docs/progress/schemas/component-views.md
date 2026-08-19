@@ -8,7 +8,7 @@ schemas components through Support's
 [`ViewComponent`](../support/component.md). Each ports the HTML that a Filament
 schemas component emits from its PHP `toEmbeddedHtml()` (Filament v5 no longer
 ships Blade files for these — see the divergence below). This file is a thin
-cross-index over the fourteen templates; per-feature specifics live in the
+cross-index over those templates; per-feature specifics live in the
 per-component files ([`actions.md`](actions.md), [`fieldset.md`](fieldset.md),
 [`flex.md`](flex.md),
 [`grid.md`](grid.md), [`group.md`](group.md), [`icon.md`](icon.md),

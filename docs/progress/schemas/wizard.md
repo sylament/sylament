@@ -177,6 +177,14 @@ attribute-driven and un-targeted, so the wrapper carries
 `wire:loading.class` on the same element — and `livewireTarget()` stays
 unported, as it already is in [actions](../actions/action.md).
 
+The two `modify…ActionUsing` properties are typed `Action|Closure|null` rather
+than `?Closure`, even though their setters take only a closure: `evaluate()`
+infers its return type by subtracting `Closure` from the property's union, so a
+bare `?Closure` would type the result `Closure` and `?? $action` would be dead
+code to PHPStan. Widening the property to the closure's own result type is the
+[house convention](../../../CLAUDE.md) for exactly this, and the setter signature
+still keeps an `Action` from ever being assigned.
+
 ### The footer slots take an Action, a Markup or a string, and the three-way split is resolved in PHP
 
 Filament types `cancelAction()`/`submitAction()` as `string | Htmlable | null`

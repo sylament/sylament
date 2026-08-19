@@ -1,6 +1,6 @@
 import { Controller } from "@hotwired/stimulus";
+import { callSchemaComponentMethod } from "@sylament/schemas/utils/schema_component_method.js";
 import { type Component, getComponent } from "@symfony/ux-live-component";
-import { callSchemaComponentMethod } from "../utils/schema_component_method.js";
 import {
   Select,
   type SelectLabel,

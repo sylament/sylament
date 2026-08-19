@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@hotwired/stimulus": "^3.0.0",
+    "@sylament/schemas": "workspace:*",
     "@symfony/ux-live-component": "^3.2.0",
     "@types/sortablejs": "^1.15.9",
     "esbuild": "^0.28.0",

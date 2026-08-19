@@ -32,7 +32,7 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | --- | --- | --- | --- | --- |
 | [Bundle registration + `@SylamentForms` view namespace](../../../packages/forms/src/SylamentFormsBundle.php) | [`->hasViews()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | done | — | [diverges](#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | Asset registration (12 field AlpineComponents) | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | in progress | — | [detail](#asset-registration) |
-| [`sylament--forms--select`](../../../packages/forms/assets/src/controllers/select_controller.ts) — the JS select control, a port of Filament's select utility ([`utils/select.ts`](../../../packages/forms/assets/src/utils/select.ts)) bound to the live host, plus the [`callSchemaComponentMethod`](../../../packages/forms/assets/src/utils/schema_component_method.ts) helper it searches through | [`resources/js/components/select.js`](../../../vendor/filament/forms/resources/js/components/select.js) + [`support/…/js/utilities/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js) | done | — | [diverges](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host) |
+| [`sylament--forms--select`](../../../packages/forms/assets/src/controllers/select_controller.ts) — the JS select control, a port of Filament's select utility ([`utils/select.ts`](../../../packages/forms/assets/src/utils/select.ts)) bound to the live host, plus the [`callSchemaComponentMethod`](../../../packages/schemas/assets/src/utils/schema_component_method.ts) helper it searches through, now imported from `@sylament/schemas` | [`resources/js/components/select.js`](../../../vendor/filament/forms/resources/js/components/select.js) + [`support/…/js/utilities/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js) | done | — | [diverges](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#translations) |
 | `Livewire::component('table-select', …)` | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | blocked | TableSelect field feature | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
@@ -142,7 +142,9 @@ its modals, and ours escapes them through
   resolves a bare import only through the root importmap
   (`JavaScriptImportPathCompiler::findAssetForBareImport()`), so an
   `@sylament/support/utils/select.js` import would need every consumer's
-  importmap touched. The module also ships **only** inlined: it is named in the
+  importmap touched — which is not what the `schema_component_method.ts` move
+  did, since a **bundled** entry's import is resolved at build time (see the
+  helper bullet below). The module also ships **only** inlined: it is named in the
   `BUNDLED_ENTRIES` entry's `inlines` list, which excludes it from the per-file
   build, because a per-file `dist/utils/select.js` would carry bare
   `@floating-ui/dom` / `sortablejs` imports that 404 in a browser.
@@ -223,7 +225,7 @@ its modals, and ours escapes them through
 - **Search is a live round-trip through the schema-method seam.** With
   `dynamicSearchResults`, `getSearchResultsUsing` is
   `callSchemaComponentMethod(component, key, 'getSearchResultsForJs', {search})`
-  from [`schema_component_method.ts`](../../../packages/forms/assets/src/utils/schema_component_method.ts);
+  from [`schema_component_method.ts`](../../../packages/schemas/assets/src/utils/schema_component_method.ts);
   everything around it is the engine's, ported verbatim — the `searchDebounce`
   timer, the `activeSearchId` guard that drops a stale response, the searching /
   no-results messages, the reset to `originalOptions` when the query is emptied,
@@ -231,12 +233,33 @@ its modals, and ours escapes them through
   surfaced the failure through its own error overlay), and the local
   `filterOptions()` over `searchableOptionFields` for a searchable select with
   no dynamic arm.
-- **The helper** keeps a FIFO of pending resolvers per
+- **The helper now lives in schemas**, and this controller imports it across
+  workspaces. It keeps a FIFO of pending resolvers per
   `${componentKey}\0${method}` on the host, listens once per component for the
   result event (ignoring nested hosts' bubbling copies), and rejects every entry
   on `response:error` or when the action's promise resolves with the entry still
-  pending. It lives in forms today and moves to a schemas workspace on its
-  second consumer (Wizard/Tabs, M3 · 5).
+  pending — all unchanged. What changed in M3 · 5 is its home: the deferral this
+  bullet used to carry ("moves to a schemas workspace on its second consumer")
+  came due when Wizard's `nextStep` and Tabs' `getDeferredTabBadges` became that
+  consumer, so the file moved to
+  [`packages/schemas/assets/src/utils/`](../../../packages/schemas/assets/src/utils/schema_component_method.ts)
+  and this import became the bare specifier
+  `@sylament/schemas/utils/schema_component_method.js`, resolved through schemas'
+  `exports` map (`{"./utils/*.js": "./src/utils/*.ts"}`) and a
+  `"@sylament/schemas": "workspace:*"` devDependency of this workspace. It costs a
+  consumer nothing: this entry is a `BUNDLED_ENTRIES` build, so esbuild inlines
+  the helper at build time and no bare `@sylament/schemas/...` specifier ever
+  reaches a browser or an importmap — which is exactly why the same move is *not*
+  available to `utils/select.ts`'s eventual promotion under the per-file build.
+  `packages/forms/assets/dist/utils/schema_component_method.{js,js.map}` were
+  deleted in the same commit; the standalone copy ships from schemas' `dist` now,
+  and the whole workspace shape is written up in
+  [schemas-bundle.md](../schemas/schemas-bundle.md#the-schema-component-method-helper-lives-here-now).
+  The controller's own private `resolveHost()` did **not** move: schemas ships the
+  generalised [`resolveLiveHost()`](../../../packages/schemas/assets/src/utils/live_host.ts)
+  its three controllers use, and collapsing the two is a sweep item — it would be
+  a second cross-workspace import for no build-time gain, since this controller
+  already has the code inlined.
 - **Reorder is the `reorderable` value.** The controller passes it as
   `isReorderable` at construction and, because Stimulus calls a value's changed
   callback on every morph that rewrites it, `reorderableValueChanged()` flips
@@ -279,7 +302,11 @@ its modals, and ours escapes them through
   `package.json` and `LICENSE` — there is no licence *file* beside the bundle
   any more, because that was Apache-2.0 §4's demand for Tom Select and MIT is
   served by the banner, the way support's bundled `@floating-ui/dom` already is.
-  `@types/sortablejs` is dev-only (sortablejs ships none). `@floating-ui/dom`
+  `@types/sortablejs` is dev-only (sortablejs ships none), as is the
+  `@sylament/schemas` workspace link the helper import needs — a `workspace:*`
+  specifier that reaches the split `sylament/forms` archive and is inert there
+  (nobody `npm install`s a Sylament package, and StimulusBundle reads only the
+  `symfony` key). `@floating-ui/dom`
   is already inlined twice on a page — support's dropdown controller carries its
   own copy — and `sortablejs` will be once M3 · 6 lands its sortable controller
   in support: Filament's own per-bundle inlining, ~10 KB gzipped each, recorded

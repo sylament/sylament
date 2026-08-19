@@ -198,7 +198,7 @@ schemas' helper.
 Filament's schemas JS is four Alpine pieces: the `filamentSchema` root data in
 `index.js`, and the `tabs`/`wizard`/`actions` `AlpineComponent`s. Three are ported
 here, method by method (with
-[three named deltas](#three-deliberate-deltas-from-vendors-runtime-behaviour)),
+[two named deltas](#two-deliberate-deltas-from-vendors-runtime-behaviour)),
 keeping vendor's names wherever a name survives the
 translation (`updateTabsWithinDropdown`, `findOverflowIndex`,
 `calculateAvailableWidth`/`ContainerGap`/`DropdownIconWidth`/`TabItemGap`/
@@ -215,7 +215,7 @@ translation (`updateTabsWithinDropdown`, `findOverflowIndex`,
   is `#apply()` + `#updateQueryString()` + `#persistTab()` + `#autofocus()`;
   `#setStep()` is `#apply()` + `#updateQueryString()` + `#autofocus()` +
   `#scroll()` — the last of those being one of the
-  [three deltas](#three-deliberate-deltas-from-vendors-runtime-behaviour), since
+  [two deltas](#two-deliberate-deltas-from-vendors-runtime-behaviour), since
   vendor scrolls from its `goTo*` paths rather than from the assignment.
 - **`$nextTick` becomes `queueMicrotask`** in the three places vendor defers
   (the autofocus scan, the wizard's header scroll, the root controller's two
@@ -255,9 +255,9 @@ Three details worth naming:
   morphs leave the client-built DOM alone; an appended sibling would be duplicated
   instead, since UX Live inserts the server's node *after* a client-added one. A
   placeholder the morph replaces re-applies from the cached map through
-  `badgePlaceholderTargetConnected`, and a rejected call leaves every placeholder
-  showing its indicator (a [deliberate delta](#three-deliberate-deltas-from-vendors-runtime-behaviour)
-  from vendor). `disconnect()` bumps a `#generation` counter so an in-flight
+  `badgePlaceholderTargetConnected`, and a rejected call empties every
+  placeholder instead of leaving it spinning, which is what the `finally` in
+  vendor's inline `x-data` does. `disconnect()` bumps a `#generation` counter so an in-flight
   answer to a disconnected controller is dropped. An entry's `badge` is read only
   when it is a string, matching Filament's `?string` typing of the property — a
   numeric badge would be dropped rather than coerced.
@@ -400,24 +400,17 @@ Three event names cross the PHP/JS boundary here, and only one of them is a
   `activeTab` (unless the tab is persisted or in the query string), and the
   wizard controller returns to `startStep` (unless it is in the query string).
 
-### Three deliberate deltas from vendor's runtime behaviour
+### Two deliberate deltas from vendor's runtime behaviour
 
 The three controllers are otherwise method-by-method ports, so the places where
 the behaviour differs are worth naming rather than leaving to a diff:
 
-1. **A rejected `getDeferredTabBadges` leaves every placeholder showing its
-   loading indicator.** Vendor's inline `x-data` (in `Tabs.php`, not `tabs.js`)
-   clears `isLoadingDeferredBadges` in a `finally`, so a failed call hides the
-   indicator and renders no badge. Ours keeps it: a transient failure
-   then reads as *not answered yet* rather than as *this tab has no badge*, which
-   is what the design asked for. The cost is an indicator that never resolves
-   until the next full render — accepted, and the reason it is written down.
-2. **A client-state reset scrolls the wizard header.** `#scroll()` sits in
+1. **A client-state reset scrolls the wizard header.** `#scroll()` sits in
    `#setStep()`, so every step change scrolls the header `li` into view, the
    reset included; vendor's reset handler assigns `step` without scrolling, and
    only its `goTo*` paths scroll. Moving `#scroll()` out to the three `goTo*`
    callers is the vendor-exact shape if the difference ever matters.
-3. **`#goToStep()` on an unknown key is a no-op.** Vendor guards with
+2. **`#goToStep()` on an unknown key is a no-op.** Vendor guards with
    `getStepIndex(stepKey) <= -1`, which can never be true, because its own
    `getStepIndex()` maps a miss to `0` — so vendor silently jumps to the first
    step. Ours compares the key against `#stepKeys()` with `indexOf` and returns.

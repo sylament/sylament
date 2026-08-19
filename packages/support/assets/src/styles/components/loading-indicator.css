@@ -1,5 +1,5 @@
 .sy-loading-indicator {
-    @apply animate-spin;
+    @apply size-5 motion-safe:animate-spin;
 
     &.sy-size-xs {
         @apply size-3;

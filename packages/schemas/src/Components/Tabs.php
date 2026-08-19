@@ -312,6 +312,11 @@ class Tabs extends Component
      * Each tab's key must match the array key written into the live component property,
      * so a `live#update` write activates it. Done here rather than at render time so the
      * key is settled before any absolute key (a nested action's, say) is computed and cached.
+     *
+     * The tabs are read back off the schema rather than from `$childComponents`: that source
+     * may be a `Closure`, and evaluating it again would key a throwaway second set while the
+     * schema kept its label-derived keys. {@see Schema::getComponents()} preserves the source
+     * array keys, so it reaches the same objects under the same keys.
      */
     protected function configureChildSchema(Schema $schema, string $key): Schema
     {
@@ -321,13 +326,7 @@ class Tabs extends Component
             return $schema;
         }
 
-        $components = $this->evaluate($this->childComponents['default'] ?? []);
-
-        if (!is_array($components)) {
-            return $schema;
-        }
-
-        foreach ($components as $tabKey => $tab) {
+        foreach ($schema->getComponents() as $tabKey => $tab) {
             if ($tab instanceof Tab) {
                 $tab->key((string) $tabKey, isInheritable: false);
             }

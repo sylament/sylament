@@ -126,6 +126,19 @@ it('liveComponentProperty() re-keys tabs by their array key', function (): void 
         ))->toBe(['all', 'published']);
 });
 
+it('re-keys the tabs a closure-valued tabs() builds, not a throwaway second evaluation', function (): void {
+    $tabs = Tabs::make()->liveComponentProperty('activeTab')->tabs(fn (): array => [
+        'all' => Tab::make('All'),
+        'published' => Tab::make('Published'),
+    ]);
+    Schema::make(new HasSchemasFixture())->components([$tabs])->getComponents();
+
+    expect(array_map(
+        static fn (Tab $tab): ?string => $tab->getKey(isAbsolute: false),
+        $tabs->getTabs(),
+    ))->toBe(['all', 'published']);
+});
+
 it('keys tabs from their labels without a live component property', function (): void {
     $tabs = wireTabs(Tabs::make()->tabs([
         'all' => Tab::make('All'),

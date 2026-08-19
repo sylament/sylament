@@ -126,6 +126,17 @@ hooks run while the child schema is being built, before anything can have read a
 Moving the loop later — into `getExtraTemplateData()`, say — would look equivalent and
 silently break nested action keys.
 
+The two hooks differ in what they reach, and that decides where the loop reads its tabs
+from. Filament's hook *returns* the component array, so mutating it in place hits the
+objects the schema then receives. Ours is handed the finished `Schema`, and the evaluation
+that produced its components already happened in
+[`HasChildComponents::getChildSchema()`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php).
+So the loop reads `$schema->getComponents()` — which preserves the source array keys — and
+never re-evaluates `$childComponents`: a second evaluation of a `Closure`-valued `tabs()`
+builds a *fresh* set of tabs, keys those, and throws them away, leaving the rendered tabs
+with their label-derived keys and no tab matching the host property. Pinned by
+`TabsTest`'s closure-valued case.
+
 ### `getTabs()` filters hidden tabs out, so every index is a visible position
 
 `getActiveTab()` is a 1-based index *into the visible tabs*, and `getTabs()` is the one
@@ -196,8 +207,8 @@ array-shaped `?tab[]=x`, and a hand-edited URL must not take the whole render do
 templates ask Alpine for `tab` and read `$wire.{$property}` in an expression, neither of
 which exists server-side. Both are the minimum needed to render the initial state the
 divergence above describes — the first names the active tab in client mode, the second
-stringifies the bound host property in server mode. Recorded in
-[`renames.md`](../renames.md) as additions with no source.
+stringifies the bound host property in server mode. `getActiveTabKey()` is recorded in
+[`renames.md`](../renames.md) among the names with no Filament source.
 
 ### Deferred badges are keyed by tab key, not by array index
 

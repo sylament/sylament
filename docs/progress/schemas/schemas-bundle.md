@@ -197,7 +197,9 @@ schemas' helper.
 
 Filament's schemas JS is four Alpine pieces: the `filamentSchema` root data in
 `index.js`, and the `tabs`/`wizard`/`actions` `AlpineComponent`s. Three are ported
-here, method by method, keeping vendor's names wherever a name survives the
+here, method by method (with
+[three named deltas](#three-deliberate-deltas-from-vendors-runtime-behaviour)),
+keeping vendor's names wherever a name survives the
 translation (`updateTabsWithinDropdown`, `findOverflowIndex`,
 `calculateAvailableWidth`/`ContainerGap`/`DropdownIconWidth`/`TabItemGap`/
 `TabItemPadding`, `isDropdownButtonVisible`, `getStepIndex`, `isStepAccessible`,
@@ -212,7 +214,9 @@ translation (`updateTabsWithinDropdown`, `findOverflowIndex`,
 - **`$watch('tab')` / `$watch('step')` become the setter's own tail.** `#setTab()`
   is `#apply()` + `#updateQueryString()` + `#persistTab()` + `#autofocus()`;
   `#setStep()` is `#apply()` + `#updateQueryString()` + `#autofocus()` +
-  `#scroll()`.
+  `#scroll()` — the last of those being one of the
+  [three deltas](#three-deliberate-deltas-from-vendors-runtime-behaviour), since
+  vendor scrolls from its `goTo*` paths rather than from the assignment.
 - **`$nextTick` becomes `queueMicrotask`** in the three places vendor defers
   (the autofocus scan, the wizard's header scroll, the root controller's two
   handlers).
@@ -252,8 +256,11 @@ Three details worth naming:
   instead, since UX Live inserts the server's node *after* a client-added one. A
   placeholder the morph replaces re-applies from the cached map through
   `badgePlaceholderTargetConnected`, and a rejected call leaves every placeholder
-  showing its indicator. `disconnect()` bumps a `#generation` counter so an
-  in-flight answer to a disconnected controller is dropped.
+  showing its indicator (a [deliberate delta](#three-deliberate-deltas-from-vendors-runtime-behaviour)
+  from vendor). `disconnect()` bumps a `#generation` counter so an in-flight
+  answer to a disconnected controller is dropped. An entry's `badge` is read only
+  when it is a string, matching Filament's `?string` typing of the property — a
+  numeric badge would be dropped rather than coerced.
 - **The overflow measurement runs synchronously.** Vendor's
   `updateTabsWithinDropdown()` awaits `$nextTick` before measuring, because Alpine
   has to flush the `x-show` bindings it just reset; ours writes the same inline
@@ -274,6 +281,146 @@ Three details worth naming:
   non-last step, `preventDefault()`s and calls `requestNextStep()`. Textareas,
   buttons, checkboxes and `defaultPrevented`/`isComposing` events are left alone,
   and the last step falls through to the enclosing form's implicit submission.
+
+### The controllers' values, targets and actions
+
+The contract the templates emit — the Tabs and Wizard partials for the two
+component controllers, the Schema partial for the root one. Names below are the
+Stimulus spellings; the markup carries them kebab-cased under the controller
+identifier (`data-sylament--schemas--tabs-active-tab-value`,
+`data-sylament--schemas--tabs-target="tab"`).
+
+**`sylament--schemas--schema`** — on the Schema partial's root `<div>`, and only
+when the schema is a root schema *and* a live component sits above it (a nested
+schema carries nothing, so the walk runs once per host).
+
+| Kind | Name | Meaning |
+| --- | --- | --- |
+| value | `schemaKey` (String) | this schema's key, matched against the `schemaKey` payload of `reset-schema-component-state` |
+| action | `form-validation-error@window` → `onValidationError` | reveal + scroll to the first `[data-validation-error]` |
+| action | `reset-schema-component-state@window` → `onStateReset` | refocus the first *visible* `[autofocus]` field |
+
+It declares no targets: both handlers `querySelector` over their own subtree.
+
+**`sylament--schemas--tabs`** — on the Tabs component's root.
+
+| Value | Type | Meaning |
+| --- | --- | --- |
+| `activeTab` | Number, default `1` | the server's active tab, 1-based; the fallback on connect and on every revalidation |
+| `key` | String | the Tabs component's key — the second argument to `callSchemaComponentMethod` |
+| `schemaKey` | String | the owning schema's key — the `reset-schema-component-state` guard |
+| `persist` | Boolean | `persistTab()`: read on connect, written on every change |
+| `persistId` | String | the `localStorage` key's suffix (`tabs-<persistId>`) |
+| `queryStringKey` | String | non-empty ⇒ read on connect (highest priority) and `history.replaceState`d on change |
+| `scrollable` | Boolean, default `true` | `false` ⇒ run the overflow measurement and the visibility rules |
+| `deferredBadges` | Boolean | `true` ⇒ call `getDeferredTabBadges` once on connect |
+
+| Target | What it is |
+| --- | --- |
+| `nav` | the `<nav>` holding the inline tabs followed by the dropdown root; the measured container, and it carries `sy-invisible` until the first measurement completes |
+| `tab` | one per inline tab button; toggled `sy-active` + `aria-selected`, and its `data-tab-key` is the key list's only source of truth (vendor's `$refs.tabsData` JSON blob is dropped) |
+| `panel` | one per tab panel; toggled `sy-active` |
+| `badgePlaceholder` | one per deferred-badge slot; its `data-tab-key` selects the entry |
+| `dropdown` | the overflow dropdown's root. Declared because it is part of the contract lane A emits, but never dereferenced: the measurement reaches the same element as the `nav`'s last child, which is how vendor reaches it |
+| `triggerTab` | one per tab, rendered inside the dropdown trigger; mirrors `sy-active`/`aria-selected` |
+| `moreButton` | the dropdown's trigger button; its icon width feeds the overflow maths, and its absence (with `nav`'s) is what makes the measurement a no-op under `scrollable(true)` |
+| `dropdownItem` | one per tab, inside the dropdown panel; toggled `sy-selected` |
+
+| Action | On | Effect |
+| --- | --- | --- |
+| `click` → `select` | each inline tab button | `#setTab(dataset.tabKey)` |
+| `click` → `selectFromDropdown` | each dropdown item (paired with `click->sylament--support--dropdown#close`) | the same, then the dropdown closes itself |
+| `expand` → `expand` | each panel | the root controller's reveal walk (below) |
+| `reset-schema-component-state@window` → `resetState` | the root | back to `activeTab`, unless persisted or in the query string |
+| `resize@window` → `resize` | the root, emitted only under `scrollable(false)` | the 150 ms-debounced re-measurement |
+
+**`sylament--schemas--wizard`** — on the Wizard component's root.
+
+| Value | Type | Meaning |
+| --- | --- | --- |
+| `key` | String | the Wizard component's key — the second argument to `callSchemaComponentMethod`, and the match for both window events' `key` payload |
+| `schemaKey` | String | the owning schema's key — the `reset-schema-component-state` guard |
+| `startStep` | Number, default `1` | the server's active step, 1-based; the server has already resolved the query string into it, so the controller never reads the URL on connect |
+| `skippable` | Boolean | `true` ⇒ every step is reachable from the header; otherwise only steps before the current one are |
+| `queryStringKey` | String | non-empty ⇒ `history.replaceState`d on change (and the reset handler stands down) |
+
+| Target | What it is |
+| --- | --- |
+| `header` | the header `<ol>`; absent when the header is not rendered, and the element `#scroll()` reads the current step off (its child at the step index, as vendor does) |
+| `headerStep` | one `<li>` per step; toggled `sy-active`/`sy-completed` |
+| `headerButton` | one `<button>` per step; `aria-current` + `disabled` |
+| `stepStatus` | one `sr-only` span per step (`Completed` / `` / `Not completed`) |
+| `step` | one per step panel; its `data-step-key` is the key list's source of truth, and it is toggled `sy-active` + `tabIndex` |
+| `previousSlot` | the previous action's wrapper; hidden on the first step, and its `data-action` presence is what tells `#apply()` whether the action is enabled |
+| `cancelSlot` | the cancel action's wrapper; hidden after the first step |
+| `nextSlot` | the next action's wrapper; hidden on the last step |
+| `submitSlot` | the submit action's wrapper; hidden before the last step |
+
+| Action | On | Effect |
+| --- | --- | --- |
+| `click` → `goToStepFromHeader` | each header button | `#goToStep(dataset.stepKey)` |
+| `click` → `goToPreviousStep` | `previousSlot`, unless the action is disabled | one step back |
+| `click` → `requestNextStep` | `nextSlot`, unless the action is disabled | `nextStep` through the seam; the advance itself arrives as `next-wizard-step` |
+| `expand` → `expand` | each step panel | the reveal walk, guarded by `#isStepAccessible()` |
+| `next-wizard-step@window` → `onNextStepEvent` | the root | `key` match ⇒ advance |
+| `go-to-wizard-step@window` → `onGoToStepEvent` | the root | `key` match ⇒ go to `detail.step` |
+| `reset-schema-component-state@window` → `resetState` | the root | back to `startStep`, unless in the query string |
+| `keydown` → `onKeydown` | the root | the Enter rule above |
+
+### The `expand` walk, and the two window events either side of it
+
+Three event names cross the PHP/JS boundary here, and only one of them is a
+`@window` event in both directions.
+
+- **`form-validation-error@window`** — dispatched by the host after a failed
+  `validateSchema()`, with no payload the controller reads. The root controller
+  checks that `event.target` is its own `[data-controller~="live"]` root, then
+  `queueMicrotask`s (the 422 re-render has to land first) and works on the first
+  `[data-validation-error]` in its subtree: the `expand` walk, then a 200 ms
+  `setTimeout` scrolling `error.closest('[data-field-wrapper]') ?? error` into
+  view. The `?? error` is ours — vendor calls `.scrollIntoView()` straight off a
+  `closest()` that can be `null`.
+- **`expand`** — the reveal itself, and the one that is neither a `@window` event
+  nor a bubbling one. The root controller walks `error.parentNode` to the top of
+  the document and dispatches a **fresh, non-bubbling** `CustomEvent('expand')`
+  on every node on the way (vendor's shape in `index.js`). Every ancestor that
+  can conceal answers it on its own element with a `data-action` of its own —
+  a Tab panel with `expand->sylament--schemas--tabs#expand`, a Wizard step panel
+  with `expand->sylament--schemas--wizard#expand`, and support's Section with
+  `expand->sylament--support--section#reveal` (already shipped, and the reason
+  the event name is fixed). Per-node dispatch rather than one bubbling event is
+  what keeps the listener on the concealing element itself: a bubbling `expand`
+  would also fire those same handlers for any *other* descendant that dispatched
+  one.
+- **`reset-schema-component-state@window`** — dispatched by the host after a
+  client-side state reset, carrying `{schemaKey}`. Three controllers listen, each
+  with the same two-part guard (`event.target` is its own live root, and
+  `detail.schemaKey` equals its `schemaKey` value): the root controller refocuses
+  the first visible `[autofocus]` field, the tabs controller returns to
+  `activeTab` (unless the tab is persisted or in the query string), and the
+  wizard controller returns to `startStep` (unless it is in the query string).
+
+### Three deliberate deltas from vendor's runtime behaviour
+
+The three controllers are otherwise method-by-method ports, so the places where
+the behaviour differs are worth naming rather than leaving to a diff:
+
+1. **A rejected `getDeferredTabBadges` leaves every placeholder showing its
+   loading indicator.** Vendor's inline `x-data` (in `Tabs.php`, not `tabs.js`)
+   clears `isLoadingDeferredBadges` in a `finally`, so a failed call hides the
+   indicator and renders no badge. Ours keeps it: a transient failure
+   then reads as *not answered yet* rather than as *this tab has no badge*, which
+   is what the design asked for. The cost is an indicator that never resolves
+   until the next full render — accepted, and the reason it is written down.
+2. **A client-state reset scrolls the wizard header.** `#scroll()` sits in
+   `#setStep()`, so every step change scrolls the header `li` into view, the
+   reset included; vendor's reset handler assigns `step` without scrolling, and
+   only its `goTo*` paths scroll. Moving `#scroll()` out to the three `goTo*`
+   callers is the vendor-exact shape if the difference ever matters.
+3. **`#goToStep()` on an unknown key is a no-op.** Vendor guards with
+   `getStepIndex(stepKey) <= -1`, which can never be true, because its own
+   `getStepIndex()` maps a miss to `0` — so vendor silently jumps to the first
+   step. Ours compares the key against `#stepKeys()` with `indexOf` and returns.
 
 ### The schema-component-method helper lives here now
 

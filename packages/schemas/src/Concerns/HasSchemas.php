@@ -471,6 +471,8 @@ trait HasSchemas
 
         $this->validatedSchemas = array_values(array_diff($this->validatedSchemas, [$schemaKey]));
         unset($this->schemaValidationErrors[$schemaKey]);
+
+        $this->clearNestedSchemaValidation($schemaKey);
     }
 
     public function makeSchema(): Schema

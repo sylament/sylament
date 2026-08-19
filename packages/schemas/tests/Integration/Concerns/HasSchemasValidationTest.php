@@ -298,6 +298,23 @@ it('clears nested identities when the root schema is validated', function (): vo
     expect($host->validatedSchemas)->toBe(['schema']);
 });
 
+it('clears nested identities when the root identity is scope-cleared', function (): void {
+    $host = $this->createLiveComponent('ValidationNestedHost')->component();
+
+    try {
+        $host->getBasicsSchema()->validate();
+    } catch (ValidationException) {
+    }
+
+    expect($host->validatedSchemas)->toBe(['schema.basics::section'])
+        ->and($host->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.']);
+
+    $host->clearSchemaValidation('schema');
+
+    expect($host->validatedSchemas)->toBe([])
+        ->and($host->getErrorsForSchemaStatePath('data.title'))->toBe([]);
+});
+
 it('returns a message once when a root and a child identity both hold it', function (): void {
     $host = $this->createLiveComponent('ValidationNestedHost')->component();
 

@@ -408,7 +408,9 @@ next request. Three consequences, all deliberate:
 - Validating a **root** schema clears every sticky identity and bag section
   prefixed `<rootKey>.`: a root pass supersedes the passes over the components
   inside it, so the same message is never carried by two identities that both
-  re-validate.
+  re-validate. A scoped `clearSchemaValidation('<rootKey>')` clears the same
+  prefix, for the same reason — a reset that left the step identities behind
+  would resurrect the cleared messages on the next sticky pass.
 - The child schema itself is **not** re-keyed. Descendant keys stay
   Filament-exact, so a field keeps `schema.author` when it moves under a Tab or a
   Step and everything addressing components by key is untouched.

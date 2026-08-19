@@ -156,8 +156,10 @@ reads back. The machinery, semantics, and per-member divergences live in
 Filament clears stale modal errors with Livewire's global `resetErrorBag()`,
 which wipes every error on the component — opening one modal erases an
 unrelated page-form's messages. `clearSchemaValidation(?string $schemaKey)`
-drops one schema's stickiness and bag section (or all of both when the key is
-`null`), so clearing is scoped to the schema being reset. Deliberate and
+drops one schema's stickiness and bag section — plus every identity prefixed
+`<key>.`, the child schemas inside it, mirroring what validating a root does —
+or all of both when the key is `null`, so clearing is scoped to the schema being
+reset. Deliberate and
 permanent — the global wipe was a Livewire single-bag artifact, not a feature.
 
 ### currentlyValidatingSchema() is not ported

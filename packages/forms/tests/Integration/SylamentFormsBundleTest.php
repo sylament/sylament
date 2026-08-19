@@ -20,8 +20,9 @@ it('maps the built assets directory into AssetMapper under @sylament/forms', fun
 });
 
 it('resolves the built select controller through AssetMapper', function (): void {
-    // The bundle is a `BUNDLED_ENTRIES` build (Tom Select inlined), so the shipped file is the
-    // committed dist artifact — `findLogicalPath()` returns null for a file that is not there.
+    // The bundle is a `BUNDLED_ENTRIES` build (Floating UI and SortableJS inlined), so the shipped
+    // file is the committed dist artifact — `findLogicalPath()` returns null for a file that is
+    // not there.
     $asset = $this::getContainer()->get(AssetMapperInterface::class)->getAssetFromSourcePath(
         dirname(__DIR__, 2) . '/assets/dist/controllers/select_controller.js',
     );

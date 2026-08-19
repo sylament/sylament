@@ -1,3663 +1,9 @@
-/*! tom-select 2.6.2 | Apache-2.0 License | Copyright 2013–2015 Brian Reavis | https://tom-select.js.org */
+/*! @floating-ui/dom 1.8.0 | MIT License | Copyright (c) 2021-present Floating UI contributors | https://floating-ui.com */
+/*! sortablejs 1.15.7 | MIT License | Copyright (c) 2019 All contributors to Sortable */
 
 // src/controllers/select_controller.ts
 import { Controller } from "@hotwired/stimulus";
 import { getComponent } from "@symfony/ux-live-component";
-
-// ../../../node_modules/.pnpm/tom-select@2.6.2/node_modules/tom-select/dist/esm/contrib/microevent.js
-function forEvents(events, callback) {
-  events.split(/\s+/).forEach((event) => {
-    callback(event);
-  });
-}
-var MicroEvent = class {
-  constructor() {
-    this._events = {};
-  }
-  on(events, fct) {
-    forEvents(events, (event) => {
-      const event_array = this._events[event] || [];
-      event_array.push(fct);
-      this._events[event] = event_array;
-    });
-  }
-  off(events, fct) {
-    var n = arguments.length;
-    if (n === 0) {
-      this._events = {};
-      return;
-    }
-    forEvents(events, (event) => {
-      if (n === 1) {
-        delete this._events[event];
-        return;
-      }
-      const event_array = this._events[event];
-      if (event_array === void 0)
-        return;
-      event_array.splice(event_array.indexOf(fct), 1);
-      this._events[event] = event_array;
-    });
-  }
-  trigger(events, ...args) {
-    var self = this;
-    forEvents(events, (event) => {
-      const event_array = self._events[event];
-      if (event_array === void 0)
-        return;
-      event_array.forEach((fct) => {
-        fct.apply(self, args);
-      });
-    });
-  }
-};
-
-// ../../../node_modules/.pnpm/tom-select@2.6.2/node_modules/tom-select/dist/esm/contrib/microplugin.js
-function MicroPlugin(Interface) {
-  Interface.plugins = {};
-  return class extends Interface {
-    constructor() {
-      super(...arguments);
-      this.plugins = {
-        names: [],
-        settings: {},
-        requested: {},
-        loaded: {}
-      };
-    }
-    /**
-     * Registers a plugin.
-     *
-     * @param {function} fn
-     */
-    static define(name, fn) {
-      Interface.plugins[name] = {
-        "name": name,
-        "fn": fn
-      };
-    }
-    /**
-     * Initializes the listed plugins (with options).
-     * Acceptable formats:
-     *
-     * List (without options):
-     *   ['a', 'b', 'c']
-     *
-     * List (with options):
-     *   [{'name': 'a', options: {}}, {'name': 'b', options: {}}]
-     *
-     * Hash (with options):
-     *   {'a': { ... }, 'b': { ... }, 'c': { ... }}
-     *
-     * @param {array|object} plugins
-     */
-    initializePlugins(plugins) {
-      var key, name;
-      const self = this;
-      const queue = [];
-      if (Array.isArray(plugins)) {
-        plugins.forEach((plugin3) => {
-          if (typeof plugin3 === "string") {
-            queue.push(plugin3);
-          } else {
-            self.plugins.settings[plugin3.name] = plugin3.options;
-            queue.push(plugin3.name);
-          }
-        });
-      } else if (plugins) {
-        for (key in plugins) {
-          if (plugins.hasOwnProperty(key)) {
-            self.plugins.settings[key] = plugins[key];
-            queue.push(key);
-          }
-        }
-      }
-      while (name = queue.shift()) {
-        self.require(name);
-      }
-    }
-    loadPlugin(name) {
-      var self = this;
-      var plugins = self.plugins;
-      var plugin3 = Interface.plugins[name];
-      if (!Interface.plugins.hasOwnProperty(name)) {
-        throw new Error('Unable to find "' + name + '" plugin');
-      }
-      plugins.requested[name] = true;
-      plugins.loaded[name] = plugin3.fn.apply(self, [self.plugins.settings[name] || {}]);
-      plugins.names.push(name);
-    }
-    /**
-     * Initializes a plugin.
-     *
-     */
-    require(name) {
-      var self = this;
-      var plugins = self.plugins;
-      if (!self.plugins.loaded.hasOwnProperty(name)) {
-        if (plugins.requested[name]) {
-          throw new Error('Plugin has circular dependency ("' + name + '")');
-        }
-        self.loadPlugin(name);
-      }
-      return plugins.loaded[name];
-    }
-  };
-}
-
-// ../../../node_modules/.pnpm/@orchidjs+unicode-variants@1.1.2/node_modules/@orchidjs/unicode-variants/dist/esm/regex.js
-var arrayToPattern = (chars) => {
-  chars = chars.filter(Boolean);
-  if (chars.length < 2) {
-    return chars[0] || "";
-  }
-  return maxValueLength(chars) == 1 ? "[" + chars.join("") + "]" : "(?:" + chars.join("|") + ")";
-};
-var sequencePattern = (array) => {
-  if (!hasDuplicates(array)) {
-    return array.join("");
-  }
-  let pattern = "";
-  let prev_char_count = 0;
-  const prev_pattern = () => {
-    if (prev_char_count > 1) {
-      pattern += "{" + prev_char_count + "}";
-    }
-  };
-  array.forEach((char, i) => {
-    if (char === array[i - 1]) {
-      prev_char_count++;
-      return;
-    }
-    prev_pattern();
-    pattern += char;
-    prev_char_count = 1;
-  });
-  prev_pattern();
-  return pattern;
-};
-var setToPattern = (chars) => {
-  let array = Array.from(chars);
-  return arrayToPattern(array);
-};
-var hasDuplicates = (array) => {
-  return new Set(array).size !== array.length;
-};
-var escape_regex = (str) => {
-  return (str + "").replace(/([\$\(\)\*\+\.\?\[\]\^\{\|\}\\])/gu, "\\$1");
-};
-var maxValueLength = (array) => {
-  return array.reduce((longest, value) => Math.max(longest, unicodeLength(value)), 0);
-};
-var unicodeLength = (str) => {
-  return Array.from(str).length;
-};
-
-// ../../../node_modules/.pnpm/@orchidjs+unicode-variants@1.1.2/node_modules/@orchidjs/unicode-variants/dist/esm/strings.js
-var allSubstrings = (input) => {
-  if (input.length === 1)
-    return [[input]];
-  let result = [];
-  const start = input.substring(1);
-  const suba = allSubstrings(start);
-  suba.forEach(function(subresult) {
-    let tmp = subresult.slice(0);
-    tmp[0] = input.charAt(0) + tmp[0];
-    result.push(tmp);
-    tmp = subresult.slice(0);
-    tmp.unshift(input.charAt(0));
-    result.push(tmp);
-  });
-  return result;
-};
-
-// ../../../node_modules/.pnpm/@orchidjs+unicode-variants@1.1.2/node_modules/@orchidjs/unicode-variants/dist/esm/index.js
-var code_points = [[0, 65535]];
-var accent_pat = "[\u0300-\u036F\xB7\u02BE\u02BC]";
-var unicode_map;
-var multi_char_reg;
-var max_char_length = 3;
-var latin_convert = {};
-var latin_condensed = {
-  "/": "\u2044\u2215",
-  "0": "\u07C0",
-  "a": "\u2C65\u0250\u0251",
-  "aa": "\uA733",
-  "ae": "\xE6\u01FD\u01E3",
-  "ao": "\uA735",
-  "au": "\uA737",
-  "av": "\uA739\uA73B",
-  "ay": "\uA73D",
-  "b": "\u0180\u0253\u0183",
-  "c": "\uA73F\u0188\u023C\u2184",
-  "d": "\u0111\u0257\u0256\u1D05\u018C\uABB7\u0501\u0266",
-  "e": "\u025B\u01DD\u1D07\u0247",
-  "f": "\uA77C\u0192",
-  "g": "\u01E5\u0260\uA7A1\u1D79\uA77F\u0262",
-  "h": "\u0127\u2C68\u2C76\u0265",
-  "i": "\u0268\u0131",
-  "j": "\u0249\u0237",
-  "k": "\u0199\u2C6A\uA741\uA743\uA745\uA7A3",
-  "l": "\u0142\u019A\u026B\u2C61\uA749\uA747\uA781\u026D",
-  "m": "\u0271\u026F\u03FB",
-  "n": "\uA7A5\u019E\u0272\uA791\u1D0E\u043B\u0509",
-  "o": "\xF8\u01FF\u0254\u0275\uA74B\uA74D\u1D11",
-  "oe": "\u0153",
-  "oi": "\u01A3",
-  "oo": "\uA74F",
-  "ou": "\u0223",
-  "p": "\u01A5\u1D7D\uA751\uA753\uA755\u03C1",
-  "q": "\uA757\uA759\u024B",
-  "r": "\u024D\u027D\uA75B\uA7A7\uA783",
-  "s": "\xDF\u023F\uA7A9\uA785\u0282",
-  "t": "\u0167\u01AD\u0288\u2C66\uA787",
-  "th": "\xFE",
-  "tz": "\uA729",
-  "u": "\u0289",
-  "v": "\u028B\uA75F\u028C",
-  "vy": "\uA761",
-  "w": "\u2C73",
-  "y": "\u01B4\u024F\u1EFF",
-  "z": "\u01B6\u0225\u0240\u2C6C\uA763",
-  "hv": "\u0195"
-};
-for (let latin in latin_condensed) {
-  let unicode = latin_condensed[latin] || "";
-  for (let i = 0; i < unicode.length; i++) {
-    let char = unicode.substring(i, i + 1);
-    latin_convert[char] = latin;
-  }
-}
-var convert_pat = new RegExp(Object.keys(latin_convert).join("|") + "|" + accent_pat, "gu");
-var initialize = (_code_points) => {
-  if (unicode_map !== void 0)
-    return;
-  unicode_map = generateMap(_code_points || code_points);
-};
-var normalize = (str, form = "NFKD") => str.normalize(form);
-var asciifold = (str) => {
-  return Array.from(str).reduce(
-    /**
-     * @param {string} result
-     * @param {string} char
-     */
-    (result, char) => {
-      return result + _asciifold(char);
-    },
-    ""
-  );
-};
-var _asciifold = (str) => {
-  str = normalize(str).toLowerCase().replace(convert_pat, (char) => {
-    return latin_convert[char] || "";
-  });
-  return normalize(str, "NFC");
-};
-function* generator(code_points2) {
-  for (const [code_point_min, code_point_max] of code_points2) {
-    for (let i = code_point_min; i <= code_point_max; i++) {
-      let composed = String.fromCharCode(i);
-      let folded = asciifold(composed);
-      if (folded == composed.toLowerCase()) {
-        continue;
-      }
-      if (folded.length > max_char_length) {
-        continue;
-      }
-      if (folded.length == 0) {
-        continue;
-      }
-      yield { folded, composed, code_point: i };
-    }
-  }
-}
-var generateSets = (code_points2) => {
-  const unicode_sets = {};
-  const addMatching = (folded, to_add) => {
-    const folded_set = unicode_sets[folded] || /* @__PURE__ */ new Set();
-    const patt = new RegExp("^" + setToPattern(folded_set) + "$", "iu");
-    if (to_add.match(patt)) {
-      return;
-    }
-    folded_set.add(escape_regex(to_add));
-    unicode_sets[folded] = folded_set;
-  };
-  for (let value of generator(code_points2)) {
-    addMatching(value.folded, value.folded);
-    addMatching(value.folded, value.composed);
-  }
-  return unicode_sets;
-};
-var generateMap = (code_points2) => {
-  const unicode_sets = generateSets(code_points2);
-  const unicode_map2 = {};
-  let multi_char = [];
-  for (let folded in unicode_sets) {
-    let set = unicode_sets[folded];
-    if (set) {
-      unicode_map2[folded] = setToPattern(set);
-    }
-    if (folded.length > 1) {
-      multi_char.push(escape_regex(folded));
-    }
-  }
-  multi_char.sort((a, b) => b.length - a.length);
-  const multi_char_patt = arrayToPattern(multi_char);
-  multi_char_reg = new RegExp("^" + multi_char_patt, "u");
-  return unicode_map2;
-};
-var mapSequence = (strings, min_replacement = 1) => {
-  let chars_replaced = 0;
-  strings = strings.map((str) => {
-    if (unicode_map[str]) {
-      chars_replaced += str.length;
-    }
-    return unicode_map[str] || str;
-  });
-  if (chars_replaced >= min_replacement) {
-    return sequencePattern(strings);
-  }
-  return "";
-};
-var substringsToPattern = (str, min_replacement = 1) => {
-  min_replacement = Math.max(min_replacement, str.length - 1);
-  return arrayToPattern(allSubstrings(str).map((sub_pat) => {
-    return mapSequence(sub_pat, min_replacement);
-  }));
-};
-var sequencesToPattern = (sequences, all = true) => {
-  let min_replacement = sequences.length > 1 ? 1 : 0;
-  return arrayToPattern(sequences.map((sequence) => {
-    let seq = [];
-    const len = all ? sequence.length() : sequence.length() - 1;
-    for (let j = 0; j < len; j++) {
-      seq.push(substringsToPattern(sequence.substrs[j] || "", min_replacement));
-    }
-    return sequencePattern(seq);
-  }));
-};
-var inSequences = (needle_seq, sequences) => {
-  for (const seq of sequences) {
-    if (seq.start != needle_seq.start || seq.end != needle_seq.end) {
-      continue;
-    }
-    if (seq.substrs.join("") !== needle_seq.substrs.join("")) {
-      continue;
-    }
-    let needle_parts = needle_seq.parts;
-    const filter = (part) => {
-      for (const needle_part of needle_parts) {
-        if (needle_part.start === part.start && needle_part.substr === part.substr) {
-          return false;
-        }
-        if (part.length == 1 || needle_part.length == 1) {
-          continue;
-        }
-        if (part.start < needle_part.start && part.end > needle_part.start) {
-          return true;
-        }
-        if (needle_part.start < part.start && needle_part.end > part.start) {
-          return true;
-        }
-      }
-      return false;
-    };
-    let filtered = seq.parts.filter(filter);
-    if (filtered.length > 0) {
-      continue;
-    }
-    return true;
-  }
-  return false;
-};
-var Sequence = class _Sequence {
-  parts;
-  substrs;
-  start;
-  end;
-  constructor() {
-    this.parts = [];
-    this.substrs = [];
-    this.start = 0;
-    this.end = 0;
-  }
-  add(part) {
-    if (part) {
-      this.parts.push(part);
-      this.substrs.push(part.substr);
-      this.start = Math.min(part.start, this.start);
-      this.end = Math.max(part.end, this.end);
-    }
-  }
-  last() {
-    return this.parts[this.parts.length - 1];
-  }
-  length() {
-    return this.parts.length;
-  }
-  clone(position, last_piece) {
-    let clone = new _Sequence();
-    let parts = JSON.parse(JSON.stringify(this.parts));
-    let last_part = parts.pop();
-    for (const part of parts) {
-      clone.add(part);
-    }
-    let last_substr = last_piece.substr.substring(0, position - last_part.start);
-    let clone_last_len = last_substr.length;
-    clone.add({ start: last_part.start, end: last_part.start + clone_last_len, length: clone_last_len, substr: last_substr });
-    return clone;
-  }
-};
-var getPattern = (str) => {
-  initialize();
-  str = asciifold(str);
-  let pattern = "";
-  let sequences = [new Sequence()];
-  for (let i = 0; i < str.length; i++) {
-    let substr = str.substring(i);
-    let match = substr.match(multi_char_reg);
-    const char = str.substring(i, i + 1);
-    const match_str = match ? match[0] : null;
-    let overlapping = [];
-    let added_types = /* @__PURE__ */ new Set();
-    for (const sequence of sequences) {
-      const last_piece = sequence.last();
-      if (!last_piece || last_piece.length == 1 || last_piece.end <= i) {
-        if (match_str) {
-          const len = match_str.length;
-          sequence.add({ start: i, end: i + len, length: len, substr: match_str });
-          added_types.add("1");
-        } else {
-          sequence.add({ start: i, end: i + 1, length: 1, substr: char });
-          added_types.add("2");
-        }
-      } else if (match_str) {
-        let clone = sequence.clone(i, last_piece);
-        const len = match_str.length;
-        clone.add({ start: i, end: i + len, length: len, substr: match_str });
-        overlapping.push(clone);
-      } else {
-        added_types.add("3");
-      }
-    }
-    if (overlapping.length > 0) {
-      overlapping = overlapping.sort((a, b) => {
-        return a.length() - b.length();
-      });
-      for (let clone of overlapping) {
-        if (inSequences(clone, sequences)) {
-          continue;
-        }
-        sequences.push(clone);
-      }
-      continue;
-    }
-    if (i > 0 && added_types.size == 1 && !added_types.has("3")) {
-      pattern += sequencesToPattern(sequences, false);
-      let new_seq = new Sequence();
-      const old_seq = sequences[0];
-      if (old_seq) {
-        new_seq.add(old_seq.last());
-      }
-      sequences = [new_seq];
-    }
-  }
-  pattern += sequencesToPattern(sequences, true);
-  return pattern;
-};
-
-// ../../../node_modules/.pnpm/@orchidjs+sifter@1.1.0/node_modules/@orchidjs/sifter/dist/esm/utils.js
-var getAttr = (obj, name) => {
-  if (!obj)
-    return;
-  return obj[name];
-};
-var getAttrNesting = (obj, name) => {
-  if (!obj)
-    return;
-  var part, names = name.split(".");
-  while ((part = names.shift()) && (obj = obj[part]))
-    ;
-  return obj;
-};
-var scoreValue = (value, token, weight) => {
-  var score, pos;
-  if (!value)
-    return 0;
-  value = value + "";
-  if (token.regex == null)
-    return 0;
-  pos = value.search(token.regex);
-  if (pos === -1)
-    return 0;
-  score = token.string.length / value.length;
-  if (pos === 0)
-    score += 0.5;
-  return score * weight;
-};
-var propToArray = (obj, key) => {
-  var value = obj[key];
-  if (typeof value == "function")
-    return value;
-  if (value && !Array.isArray(value)) {
-    obj[key] = [value];
-  }
-};
-var iterate = (object, callback) => {
-  if (Array.isArray(object)) {
-    object.forEach(callback);
-  } else {
-    for (var key in object) {
-      if (object.hasOwnProperty(key)) {
-        callback(object[key], key);
-      }
-    }
-  }
-};
-var cmp = (a, b) => {
-  if (typeof a === "number" && typeof b === "number") {
-    return a > b ? 1 : a < b ? -1 : 0;
-  }
-  a = asciifold(a + "").toLowerCase();
-  b = asciifold(b + "").toLowerCase();
-  if (a > b)
-    return 1;
-  if (b > a)
-    return -1;
-  return 0;
-};
-
-// ../../../node_modules/.pnpm/@orchidjs+sifter@1.1.0/node_modules/@orchidjs/sifter/dist/esm/sifter.js
-var Sifter = class {
-  items;
-  // []|{};
-  settings;
-  /**
-   * Textually searches arrays and hashes of objects
-   * by property (or multiple properties). Designed
-   * specifically for autocomplete.
-   *
-   */
-  constructor(items, settings) {
-    this.items = items;
-    this.settings = settings || { diacritics: true };
-  }
-  /**
-   * Splits a search string into an array of individual
-   * regexps to be used to match results.
-   *
-   */
-  tokenize(query, respect_word_boundaries, weights) {
-    if (!query || !query.length)
-      return [];
-    const tokens = [];
-    const words = query.split(/\s+/);
-    var field_regex;
-    if (weights) {
-      field_regex = new RegExp("^(" + Object.keys(weights).map(escape_regex).join("|") + "):(.*)$");
-    }
-    words.forEach((word) => {
-      let field_match;
-      let field = null;
-      let regex = null;
-      if (field_regex && (field_match = word.match(field_regex))) {
-        field = field_match[1];
-        word = field_match[2];
-      }
-      if (word.length > 0) {
-        if (this.settings.diacritics) {
-          regex = getPattern(word) || null;
-        } else {
-          regex = escape_regex(word);
-        }
-        if (regex && respect_word_boundaries)
-          regex = "\\b" + regex;
-      }
-      tokens.push({
-        string: word,
-        regex: regex ? new RegExp(regex, "iu") : null,
-        field
-      });
-    });
-    return tokens;
-  }
-  /**
-   * Returns a function to be used to score individual results.
-   *
-   * Good matches will have a higher score than poor matches.
-   * If an item is not a match, 0 will be returned by the function.
-   *
-   * @returns {T.ScoreFn}
-   */
-  getScoreFunction(query, options) {
-    var search = this.prepareSearch(query, options);
-    return this._getScoreFunction(search);
-  }
-  /**
-   * @returns {T.ScoreFn}
-   *
-   */
-  _getScoreFunction(search) {
-    const tokens = search.tokens, token_count = tokens.length;
-    if (!token_count) {
-      return function() {
-        return 0;
-      };
-    }
-    const fields = search.options.fields, weights = search.weights, field_count = fields.length, getAttrFn = search.getAttrFn;
-    if (!field_count) {
-      return function() {
-        return 1;
-      };
-    }
-    const scoreObject = (function() {
-      if (field_count === 1) {
-        return function(token, data) {
-          const field = fields[0].field;
-          return scoreValue(getAttrFn(data, field), token, weights[field] || 1);
-        };
-      }
-      return function(token, data) {
-        var sum = 0;
-        if (token.field) {
-          const value = getAttrFn(data, token.field);
-          if (!token.regex && value) {
-            sum += 1 / field_count;
-          } else {
-            sum += scoreValue(value, token, 1);
-          }
-        } else {
-          iterate(weights, (weight, field) => {
-            sum += scoreValue(getAttrFn(data, field), token, weight);
-          });
-        }
-        return sum / field_count;
-      };
-    })();
-    if (token_count === 1) {
-      return function(data) {
-        return scoreObject(tokens[0], data);
-      };
-    }
-    if (search.options.conjunction === "and") {
-      return function(data) {
-        var score, sum = 0;
-        for (let token of tokens) {
-          score = scoreObject(token, data);
-          if (score <= 0)
-            return 0;
-          sum += score;
-        }
-        return sum / token_count;
-      };
-    } else {
-      return function(data) {
-        var sum = 0;
-        iterate(tokens, (token) => {
-          sum += scoreObject(token, data);
-        });
-        return sum / token_count;
-      };
-    }
-  }
-  /**
-   * Returns a function that can be used to compare two
-   * results, for sorting purposes. If no sorting should
-   * be performed, `null` will be returned.
-   *
-   * @return function(a,b)
-   */
-  getSortFunction(query, options) {
-    var search = this.prepareSearch(query, options);
-    return this._getSortFunction(search);
-  }
-  _getSortFunction(search) {
-    var implicit_score, sort_flds = [];
-    const self = this, options = search.options, sort = !search.query && options.sort_empty ? options.sort_empty : options.sort;
-    if (typeof sort == "function") {
-      return sort.bind(this);
-    }
-    const get_field = function(name, result) {
-      if (name === "$score")
-        return result.score;
-      return search.getAttrFn(self.items[result.id], name);
-    };
-    if (sort) {
-      for (let s of sort) {
-        if (search.query || s.field !== "$score") {
-          sort_flds.push(s);
-        }
-      }
-    }
-    if (search.query) {
-      implicit_score = true;
-      for (let fld of sort_flds) {
-        if (fld.field === "$score") {
-          implicit_score = false;
-          break;
-        }
-      }
-      if (implicit_score) {
-        sort_flds.unshift({ field: "$score", direction: "desc" });
-      }
-    } else {
-      sort_flds = sort_flds.filter((fld) => fld.field !== "$score");
-    }
-    const sort_flds_count = sort_flds.length;
-    if (!sort_flds_count) {
-      return null;
-    }
-    return function(a, b) {
-      var result, field;
-      for (let sort_fld of sort_flds) {
-        field = sort_fld.field;
-        let multiplier = sort_fld.direction === "desc" ? -1 : 1;
-        result = multiplier * cmp(get_field(field, a), get_field(field, b));
-        if (result)
-          return result;
-      }
-      return 0;
-    };
-  }
-  /**
-   * Parses a search query and returns an object
-   * with tokens and fields ready to be populated
-   * with results.
-   *
-   */
-  prepareSearch(query, optsUser) {
-    const weights = {};
-    var options = Object.assign({}, optsUser);
-    propToArray(options, "sort");
-    propToArray(options, "sort_empty");
-    if (options.fields) {
-      propToArray(options, "fields");
-      const fields = [];
-      options.fields.forEach((field) => {
-        if (typeof field == "string") {
-          field = { field, weight: 1 };
-        }
-        fields.push(field);
-        weights[field.field] = "weight" in field ? field.weight : 1;
-      });
-      options.fields = fields;
-    }
-    return {
-      options,
-      query: query.toLowerCase().trim(),
-      tokens: this.tokenize(query, options.respect_word_boundaries, weights),
-      total: 0,
-      items: [],
-      weights,
-      getAttrFn: options.nesting ? getAttrNesting : getAttr
-    };
-  }
-  /**
-   * Searches through all items and returns a sorted array of matches.
-   *
-   */
-  search(query, options) {
-    var self = this, score, search;
-    search = this.prepareSearch(query, options);
-    options = search.options;
-    query = search.query;
-    const fn_score = options.score || self._getScoreFunction(search);
-    if (query.length) {
-      iterate(self.items, (item, id) => {
-        score = fn_score(item);
-        if (options.filter === false || score > 0) {
-          search.items.push({ "score": score, "id": id });
-        }
-      });
-    } else {
-      iterate(self.items, (_, id) => {
-        search.items.push({ "score": 1, "id": id });
-      });
-    }
-    const fn_sort = self._getSortFunction(search);
-    if (fn_sort)
-      search.items.sort(fn_sort);
-    search.total = search.items.length;
-    if (typeof options.limit === "number") {
-      search.items = search.items.slice(0, options.limit);
-    }
-    return search;
-  }
-};
-
-// ../../../node_modules/.pnpm/tom-select@2.6.2/node_modules/tom-select/dist/esm/utils.js
-var hash_key = (value) => {
-  if (typeof value === "undefined" || value === null)
-    return null;
-  return get_hash(value);
-};
-var get_hash = (value) => {
-  if (typeof value === "boolean")
-    return value ? "1" : "0";
-  return value + "";
-};
-var escape_html = (str) => {
-  return (str + "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-};
-var timeout = (fn, timeout2) => {
-  if (timeout2 > 0) {
-    return window.setTimeout(fn, timeout2);
-  }
-  fn.call(null);
-  return null;
-};
-var loadDebounce = (fn, delay) => {
-  var timeout2;
-  return function(value, callback) {
-    var self = this;
-    if (timeout2) {
-      self.loading = Math.max(self.loading - 1, 0);
-      clearTimeout(timeout2);
-    }
-    timeout2 = setTimeout(function() {
-      timeout2 = null;
-      self.loadedSearches[value] = true;
-      fn.call(self, value, callback);
-    }, delay);
-  };
-};
-var debounce_events = (self, types, fn) => {
-  var type;
-  var trigger = self.trigger;
-  var event_args = {};
-  self.trigger = function() {
-    var type2 = arguments[0];
-    if (types.indexOf(type2) !== -1) {
-      event_args[type2] = arguments;
-    } else {
-      return trigger.apply(self, arguments);
-    }
-  };
-  fn.apply(self, []);
-  self.trigger = trigger;
-  for (type of types) {
-    if (type in event_args) {
-      trigger.apply(self, event_args[type]);
-    }
-  }
-};
-var getSelection = (input) => {
-  return {
-    start: input.selectionStart || 0,
-    length: (input.selectionEnd || 0) - (input.selectionStart || 0)
-  };
-};
-var preventDefault = (evt, stop = false) => {
-  if (evt) {
-    evt.preventDefault();
-    if (stop) {
-      evt.stopPropagation();
-    }
-  }
-};
-var addEvent = (target, type, callback, options) => {
-  target.addEventListener(type, callback, options);
-};
-var isKeyDown = (key_name, evt) => {
-  if (!evt) {
-    return false;
-  }
-  if (!evt[key_name]) {
-    return false;
-  }
-  var count = (evt.altKey ? 1 : 0) + (evt.ctrlKey ? 1 : 0) + (evt.shiftKey ? 1 : 0) + (evt.metaKey ? 1 : 0);
-  if (count === 1) {
-    return true;
-  }
-  return false;
-};
-var getId = (el, id) => {
-  const existing_id = el.getAttribute("id");
-  if (existing_id) {
-    return existing_id;
-  }
-  el.setAttribute("id", id);
-  return id;
-};
-var addSlashes = (str) => {
-  return str.replace(/[\\"']/g, "\\$&");
-};
-var append = (parent, node) => {
-  if (node)
-    parent.append(node);
-};
-var iterate2 = (object, callback) => {
-  if (Array.isArray(object)) {
-    object.forEach(callback);
-  } else {
-    for (var key in object) {
-      if (object.hasOwnProperty(key)) {
-        callback(object[key], key);
-      }
-    }
-  }
-};
-
-// ../../../node_modules/.pnpm/tom-select@2.6.2/node_modules/tom-select/dist/esm/vanilla.js
-var getDom = (query) => {
-  if (query.jquery) {
-    return query[0];
-  }
-  if (query instanceof HTMLElement) {
-    return query;
-  }
-  if (isHtmlString(query)) {
-    var tpl = document.createElement("template");
-    tpl.innerHTML = query.trim();
-    return tpl.content.firstChild;
-  }
-  return document.querySelector(query);
-};
-var isHtmlString = (arg) => {
-  if (typeof arg === "string" && arg.indexOf("<") > -1) {
-    return true;
-  }
-  return false;
-};
-var escapeQuery = (query) => {
-  return query.replace(/['"\\]/g, "\\$&");
-};
-var triggerEvent = (dom_el, event_name) => {
-  var event = document.createEvent("HTMLEvents");
-  event.initEvent(event_name, true, false);
-  dom_el.dispatchEvent(event);
-};
-var applyCSS = (dom_el, css) => {
-  Object.assign(dom_el.style, css);
-};
-var addClasses = (elmts, ...classes) => {
-  var norm_classes = classesArray(classes);
-  elmts = castAsArray(elmts);
-  elmts.map((el) => {
-    norm_classes.map((cls) => {
-      el.classList.add(cls);
-    });
-  });
-};
-var removeClasses = (elmts, ...classes) => {
-  var norm_classes = classesArray(classes);
-  elmts = castAsArray(elmts);
-  elmts.map((el) => {
-    norm_classes.map((cls) => {
-      el.classList.remove(cls);
-    });
-  });
-};
-var classesArray = (args) => {
-  var classes = [];
-  iterate2(args, (_classes) => {
-    if (typeof _classes === "string") {
-      _classes = _classes.trim().split(/[\t\n\f\r\s]/);
-    }
-    if (Array.isArray(_classes)) {
-      classes = classes.concat(_classes);
-    }
-  });
-  return classes.filter(Boolean);
-};
-var castAsArray = (arg) => {
-  if (!Array.isArray(arg)) {
-    arg = [arg];
-  }
-  return arg;
-};
-var parentMatch = (target, selector, wrapper) => {
-  if (wrapper && !wrapper.contains(target)) {
-    return;
-  }
-  while (target && target.matches) {
-    if (target.matches(selector)) {
-      return target;
-    }
-    target = target.parentNode;
-  }
-};
-var getTail = (list, direction = 0) => {
-  if (direction > 0) {
-    return list[list.length - 1];
-  }
-  return list[0];
-};
-var isEmptyObject = (obj) => {
-  return Object.keys(obj).length === 0;
-};
-var nodeIndex = (el, amongst) => {
-  if (!el)
-    return -1;
-  amongst = amongst || el.nodeName;
-  var i = 0;
-  while (el = el.previousElementSibling) {
-    if (el.matches(amongst)) {
-      i++;
-    }
-  }
-  return i;
-};
-var setAttr = (el, attrs) => {
-  iterate2(attrs, (val, attr) => {
-    if (val == null) {
-      el.removeAttribute(attr);
-    } else {
-      el.setAttribute(attr, "" + val);
-    }
-  });
-};
-var replaceNode = (existing, replacement) => {
-  if (existing.parentNode)
-    existing.parentNode.replaceChild(replacement, existing);
-};
-
-// ../../../node_modules/.pnpm/tom-select@2.6.2/node_modules/tom-select/dist/esm/contrib/highlight.js
-var highlight = (element, regex) => {
-  if (regex === null)
-    return;
-  if (typeof regex === "string") {
-    if (!regex.length)
-      return;
-    regex = new RegExp(regex, "i");
-  }
-  const highlightText = (node) => {
-    var match = node.data.match(regex);
-    if (match && node.data.length > 0) {
-      var spannode = document.createElement("span");
-      spannode.className = "highlight";
-      var middlebit = node.splitText(match.index);
-      middlebit.splitText(match[0].length);
-      var middleclone = middlebit.cloneNode(true);
-      spannode.appendChild(middleclone);
-      replaceNode(middlebit, spannode);
-      return 1;
-    }
-    return 0;
-  };
-  const highlightChildren = (node) => {
-    if (node.nodeType === 1 && node.childNodes && !/(script|style)/i.test(node.tagName) && (node.className !== "highlight" || node.tagName !== "SPAN")) {
-      Array.from(node.childNodes).forEach((element2) => {
-        highlightRecursive(element2);
-      });
-    }
-  };
-  const highlightRecursive = (node) => {
-    if (node.nodeType === 3) {
-      return highlightText(node);
-    }
-    highlightChildren(node);
-    return 0;
-  };
-  highlightRecursive(element);
-};
-var removeHighlight = (el) => {
-  var elements = el.querySelectorAll("span.highlight");
-  Array.prototype.forEach.call(elements, function(el2) {
-    var parent = el2.parentNode;
-    parent.replaceChild(el2.firstChild, el2);
-    parent.normalize();
-  });
-};
-
-// ../../../node_modules/.pnpm/tom-select@2.6.2/node_modules/tom-select/dist/esm/constants.js
-var KEY_A = 65;
-var KEY_RETURN = 13;
-var KEY_ESC = 27;
-var KEY_LEFT = 37;
-var KEY_UP = 38;
-var KEY_RIGHT = 39;
-var KEY_DOWN = 40;
-var KEY_BACKSPACE = 8;
-var KEY_DELETE = 46;
-var KEY_TAB = 9;
-var IS_MAC = typeof navigator === "undefined" ? false : /Mac/.test(navigator.userAgent);
-var KEY_SHORTCUT = IS_MAC ? "metaKey" : "ctrlKey";
-
-// ../../../node_modules/.pnpm/tom-select@2.6.2/node_modules/tom-select/dist/esm/defaults.js
-var defaults_default = {
-  options: [],
-  optgroups: [],
-  plugins: [],
-  delimiter: ",",
-  splitOn: null,
-  // regexp or string for splitting up values from a paste command
-  persist: true,
-  diacritics: true,
-  create: null,
-  createOnBlur: false,
-  createFilter: null,
-  clearAfterSelect: false,
-  highlight: true,
-  openOnFocus: true,
-  shouldOpen: null,
-  maxOptions: 50,
-  maxItems: null,
-  hideSelected: null,
-  duplicates: false,
-  addPrecedence: false,
-  selectOnTab: false,
-  preload: null,
-  allowEmptyOption: false,
-  //closeAfterSelect: false,
-  refreshThrottle: 300,
-  loadThrottle: 300,
-  loadingClass: "loading",
-  dataAttr: null,
-  //'data-data',
-  optgroupField: "optgroup",
-  valueField: "value",
-  labelField: "text",
-  disabledField: "disabled",
-  optgroupLabelField: "label",
-  optgroupValueField: "value",
-  lockOptgroupOrder: false,
-  sortField: "$order",
-  searchField: ["text"],
-  searchConjunction: "and",
-  mode: null,
-  wrapperClass: "ts-wrapper",
-  controlClass: "ts-control",
-  dropdownClass: "ts-dropdown",
-  dropdownContentClass: "ts-dropdown-content",
-  itemClass: "item",
-  optionClass: "option",
-  dropdownParent: null,
-  controlInput: '<input type="text" autocomplete="off" size="1" />',
-  copyClassesToDropdown: false,
-  placeholder: null,
-  hidePlaceholder: null,
-  shouldLoad: function(query) {
-    return query.length > 0;
-  },
-  /*
-  load                 : null, // function(query, callback) { ... }
-  score                : null, // function(search) { ... }
-  onInitialize         : null, // function() { ... }
-  onChange             : null, // function(value) { ... }
-  onItemAdd            : null, // function(value, $item) { ... }
-  onItemRemove         : null, // function(value) { ... }
-  onClear              : null, // function() { ... }
-  onOptionAdd          : null, // function(value, data) { ... }
-  onOptionRemove       : null, // function(value) { ... }
-  onOptionClear        : null, // function() { ... }
-  onOptionGroupAdd     : null, // function(id, data) { ... }
-  onOptionGroupRemove  : null, // function(id) { ... }
-  onOptionGroupClear   : null, // function() { ... }
-  onDropdownOpen       : null, // function(dropdown) { ... }
-  onDropdownClose      : null, // function(dropdown) { ... }
-  onType               : null, // function(str) { ... }
-  onDelete             : null, // function(values) { ... }
-  */
-  render: {
-    /*
-    item: null,
-    optgroup: null,
-    optgroup_header: null,
-    option: null,
-    option_create: null
-    */
-  }
-};
-
-// ../../../node_modules/.pnpm/tom-select@2.6.2/node_modules/tom-select/dist/esm/getSettings.js
-function getSettings(input, settings_user) {
-  var settings = Object.assign({}, defaults_default, settings_user);
-  var attr_data = settings.dataAttr;
-  var field_label = settings.labelField;
-  var field_value = settings.valueField;
-  var field_disabled = settings.disabledField;
-  var field_optgroup = settings.optgroupField;
-  var field_optgroup_label = settings.optgroupLabelField;
-  var field_optgroup_value = settings.optgroupValueField;
-  var tag_name = input.tagName.toLowerCase();
-  var placeholder = input.getAttribute("placeholder") || input.getAttribute("data-placeholder");
-  if (!placeholder && !settings.allowEmptyOption) {
-    let option = input.querySelector('option[value=""]');
-    if (option) {
-      placeholder = option.textContent;
-    }
-  }
-  var settings_element = {
-    placeholder,
-    options: [],
-    optgroups: [],
-    items: [],
-    maxItems: null
-  };
-  var init_select = () => {
-    var tagName;
-    var options = settings_element.options;
-    var optionsMap = {};
-    var group_count = 1;
-    let $order = 0;
-    var readData = (el) => {
-      var data = Object.assign({}, el.dataset);
-      var json = attr_data && data[attr_data];
-      if (typeof json === "string" && json.length) {
-        data = Object.assign(data, JSON.parse(json));
-      }
-      return data;
-    };
-    var addOption = (option, group) => {
-      var value = hash_key(option.value);
-      if (value == null)
-        return;
-      if (!value && !settings.allowEmptyOption)
-        return;
-      if (optionsMap.hasOwnProperty(value)) {
-        if (group) {
-          var arr = optionsMap[value][field_optgroup];
-          if (!arr) {
-            optionsMap[value][field_optgroup] = group;
-          } else if (!Array.isArray(arr)) {
-            optionsMap[value][field_optgroup] = [arr, group];
-          } else {
-            arr.push(group);
-          }
-        }
-      } else {
-        var option_data = readData(option);
-        option_data[field_label] = option_data[field_label] || option.textContent;
-        option_data[field_value] = option_data[field_value] || value;
-        option_data[field_disabled] = option_data[field_disabled] || option.disabled;
-        option_data[field_optgroup] = option_data[field_optgroup] || group;
-        option_data.$option = option;
-        option_data.$order = option_data.$order || ++$order;
-        optionsMap[value] = option_data;
-        options.push(option_data);
-      }
-      if (option.selected) {
-        settings_element.items.push(value);
-      }
-    };
-    var addGroup = (optgroup) => {
-      var id, optgroup_data;
-      optgroup_data = readData(optgroup);
-      optgroup_data[field_optgroup_label] = optgroup_data[field_optgroup_label] || optgroup.getAttribute("label") || "";
-      optgroup_data[field_optgroup_value] = optgroup_data[field_optgroup_value] || group_count++;
-      optgroup_data[field_disabled] = optgroup_data[field_disabled] || optgroup.disabled;
-      optgroup_data.$order = optgroup_data.$order || ++$order;
-      settings_element.optgroups.push(optgroup_data);
-      id = optgroup_data[field_optgroup_value];
-      iterate2(optgroup.children, (option) => {
-        addOption(option, id);
-      });
-    };
-    settings_element.maxItems = input.hasAttribute("multiple") ? null : 1;
-    iterate2(input.children, (child) => {
-      tagName = child.tagName.toLowerCase();
-      if (tagName === "optgroup") {
-        addGroup(child);
-      } else if (tagName === "option") {
-        addOption(child);
-      }
-    });
-  };
-  var init_textbox = () => {
-    var _a, _b;
-    const data_raw = input.getAttribute(attr_data);
-    if (!data_raw) {
-      var value = (_b = (_a = input === null || input === void 0 ? void 0 : input.value) === null || _a === void 0 ? void 0 : _a.trim()) !== null && _b !== void 0 ? _b : "";
-      if (!settings.allowEmptyOption && !value.length)
-        return;
-      const values = value.split(settings.delimiter);
-      iterate2(values, (value2) => {
-        const option = {};
-        option[field_label] = value2;
-        option[field_value] = value2;
-        settings_element.options.push(option);
-      });
-      settings_element.items = values;
-    } else {
-      settings_element.options = JSON.parse(data_raw);
-      iterate2(settings_element.options, (opt) => {
-        settings_element.items.push(opt[field_value]);
-      });
-    }
-  };
-  if (tag_name === "select") {
-    init_select();
-  } else {
-    init_textbox();
-  }
-  return Object.assign({}, defaults_default, settings_element, settings_user);
-}
-
-// ../../../node_modules/.pnpm/tom-select@2.6.2/node_modules/tom-select/dist/esm/tom-select.js
-var instance_i = 0;
-var TomSelect = class extends MicroPlugin(MicroEvent) {
-  constructor(input_arg, user_settings) {
-    super();
-    this.order = 0;
-    this.isOpen = false;
-    this.isDisabled = false;
-    this.isReadOnly = false;
-    this.isInvalid = false;
-    this.isValid = true;
-    this.isLocked = false;
-    this.isFocused = false;
-    this.isInputHidden = false;
-    this.isSetup = false;
-    this.isDropdownContentStale = true;
-    this.ignoreFocus = false;
-    this.ignoreHover = false;
-    this.hasOptions = false;
-    this.lastValue = "";
-    this.caretPos = 0;
-    this.loading = 0;
-    this.loadedSearches = {};
-    this.activeOption = null;
-    this.activeItems = [];
-    this.optgroups = {};
-    this.options = {};
-    this.userOptions = {};
-    this.items = [];
-    this.refreshTimeout = null;
-    instance_i++;
-    var dir;
-    var input = getDom(input_arg);
-    if (input.tomselect) {
-      throw new Error("Tom Select already initialized on this element");
-    }
-    input.tomselect = this;
-    var computedStyle = window.getComputedStyle && window.getComputedStyle(input, null);
-    dir = computedStyle.getPropertyValue("direction");
-    const settings = getSettings(input, user_settings);
-    this.settings = settings;
-    this.input = input;
-    this.tabIndex = input.tabIndex || 0;
-    this.is_select_tag = input.tagName.toLowerCase() === "select";
-    this.rtl = /rtl/i.test(dir);
-    this.inputId = getId(input, "tomselect-" + instance_i);
-    this.isRequired = input.required;
-    this.sifter = new Sifter(this.options, { diacritics: settings.diacritics });
-    settings.mode = settings.mode || (settings.maxItems === 1 ? "single" : "multi");
-    if (typeof settings.hideSelected !== "boolean") {
-      settings.hideSelected = settings.mode === "multi";
-    }
-    if (typeof settings.hidePlaceholder !== "boolean") {
-      settings.hidePlaceholder = settings.mode !== "multi";
-    }
-    var filter = settings.createFilter;
-    if (typeof filter !== "function") {
-      if (typeof filter === "string") {
-        filter = new RegExp(filter);
-      }
-      if (filter instanceof RegExp) {
-        settings.createFilter = (input2) => filter.test(input2);
-      } else {
-        settings.createFilter = (value) => {
-          return this.settings.duplicates || !this.options[value];
-        };
-      }
-    }
-    this.initializePlugins(settings.plugins);
-    this.setupCallbacks();
-    this.setupTemplates();
-    const wrapper = getDom("<div>");
-    const control = getDom("<div>");
-    const dropdown = this._render("dropdown");
-    const dropdown_content = getDom(`<div role="listbox" tabindex="-1">`);
-    const classes = this.input.getAttribute("class") || "";
-    const inputMode = settings.mode;
-    var control_input;
-    addClasses(wrapper, settings.wrapperClass, classes, inputMode);
-    addClasses(control, settings.controlClass);
-    append(wrapper, control);
-    addClasses(dropdown, settings.dropdownClass, inputMode);
-    if (settings.copyClassesToDropdown) {
-      addClasses(dropdown, classes);
-    }
-    addClasses(dropdown_content, settings.dropdownContentClass);
-    append(dropdown, dropdown_content);
-    getDom(settings.dropdownParent || wrapper).appendChild(dropdown);
-    if (isHtmlString(settings.controlInput)) {
-      control_input = getDom(settings.controlInput);
-      var attrs = ["autocorrect", "autocapitalize", "autocomplete", "spellcheck", "aria-label"];
-      iterate2(attrs, (attr) => {
-        if (input.getAttribute(attr)) {
-          setAttr(control_input, { [attr]: input.getAttribute(attr) });
-        }
-      });
-      control_input.tabIndex = -1;
-      control.appendChild(control_input);
-      this.focus_node = control_input;
-    } else if (settings.controlInput) {
-      control_input = getDom(settings.controlInput);
-      this.focus_node = control_input;
-    } else {
-      control_input = getDom("<input/>");
-      this.focus_node = control;
-    }
-    this.wrapper = wrapper;
-    this.dropdown = dropdown;
-    this.dropdown_content = dropdown_content;
-    this.control = control;
-    this.control_input = control_input;
-    this.setup();
-  }
-  /**
-   * set up event bindings.
-   *
-   */
-  setup() {
-    const self = this;
-    const settings = self.settings;
-    const control_input = self.control_input;
-    const dropdown = self.dropdown;
-    const dropdown_content = self.dropdown_content;
-    const wrapper = self.wrapper;
-    const control = self.control;
-    const input = self.input;
-    const focus_node = self.focus_node;
-    const passive_event = { passive: true };
-    const listboxId = self.inputId + "-ts-dropdown";
-    setAttr(dropdown_content, {
-      id: listboxId
-    });
-    setAttr(focus_node, {
-      role: "combobox",
-      "aria-haspopup": "listbox",
-      "aria-expanded": "false",
-      "aria-controls": listboxId
-    });
-    const control_id = getId(focus_node, self.inputId + "-ts-control");
-    const query = "label[for='" + escapeQuery(self.inputId) + "']";
-    const label = document.querySelector(query);
-    const label_click = self.focus.bind(self);
-    if (label) {
-      addEvent(label, "click", label_click);
-      setAttr(label, { for: control_id });
-      const label_id = getId(label, self.inputId + "-ts-label");
-      setAttr(focus_node, { "aria-labelledby": label_id });
-      setAttr(dropdown_content, { "aria-labelledby": label_id });
-    }
-    wrapper.style.width = input.style.width;
-    wrapper.style.minWidth = input.style.minWidth;
-    wrapper.style.maxWidth = input.style.maxWidth;
-    if (self.plugins.names.length) {
-      const classes_plugins = "plugin-" + self.plugins.names.join(" plugin-");
-      addClasses([wrapper, dropdown], classes_plugins);
-    }
-    if ((settings.maxItems === null || settings.maxItems > 1) && self.is_select_tag) {
-      setAttr(input, { multiple: "multiple" });
-    }
-    if (settings.placeholder) {
-      setAttr(control_input, { placeholder: settings.placeholder });
-    }
-    if (!settings.splitOn && settings.delimiter) {
-      settings.splitOn = new RegExp("\\s*" + escape_regex(settings.delimiter) + "+\\s*");
-    }
-    if (settings.load && settings.loadThrottle) {
-      settings.load = loadDebounce(settings.load, settings.loadThrottle);
-    }
-    addEvent(dropdown, "mousemove", () => {
-      self.ignoreHover = false;
-    });
-    addEvent(dropdown, "mouseenter", (e) => {
-      var target_match = parentMatch(e.target, "[data-selectable]", dropdown);
-      if (target_match)
-        self.onOptionHover(e, target_match);
-    }, { capture: true });
-    addEvent(dropdown, "click", (evt) => {
-      const option = parentMatch(evt.target, "[data-selectable]");
-      if (option) {
-        self.onOptionSelect(evt, option);
-        preventDefault(evt, true);
-      }
-    });
-    addEvent(control, "click", (evt) => {
-      var target_match = parentMatch(evt.target, "[data-ts-item]", control);
-      if (target_match && self.onItemSelect(evt, target_match)) {
-        preventDefault(evt, true);
-        return;
-      }
-      if (control_input.value != "") {
-        return;
-      }
-      self.onClick();
-      preventDefault(evt, true);
-    });
-    addEvent(focus_node, "keydown", (e) => self.onKeyDown(e));
-    addEvent(control_input, "keypress", (e) => self.onKeyPress(e));
-    addEvent(control_input, "input", (e) => self.onInput(e));
-    addEvent(focus_node, "blur", (e) => self.onBlur(e));
-    addEvent(focus_node, "focus", (e) => self.onFocus(e));
-    addEvent(control_input, "paste", (e) => self.onPaste(e));
-    const doc_mousedown = (evt) => {
-      const target = evt.composedPath()[0];
-      if (!wrapper.contains(target) && !dropdown.contains(target)) {
-        if (self.isFocused) {
-          self.blur();
-        }
-        self.inputState();
-        return;
-      }
-      if (target == control_input && self.isOpen) {
-        evt.stopPropagation();
-      } else {
-        preventDefault(evt, true);
-      }
-    };
-    const win_scroll = () => {
-      if (self.isOpen) {
-        self.positionDropdown();
-      }
-    };
-    const input_invalid = () => {
-      if (self.isValid) {
-        self.isValid = false;
-        self.isInvalid = true;
-        self.refreshState();
-      }
-    };
-    addEvent(input, "invalid", input_invalid);
-    addEvent(document, "mousedown", doc_mousedown);
-    addEvent(window, "scroll", win_scroll, passive_event);
-    addEvent(window, "resize", win_scroll, passive_event);
-    this._destroy = () => {
-      input.removeEventListener("invalid", input_invalid);
-      document.removeEventListener("mousedown", doc_mousedown);
-      window.removeEventListener("scroll", win_scroll);
-      window.removeEventListener("resize", win_scroll);
-      if (label)
-        label.removeEventListener("click", label_click);
-    };
-    this.revertSettings = {
-      innerHTML: input.innerHTML,
-      tabIndex: input.tabIndex
-    };
-    input.tabIndex = -1;
-    input.insertAdjacentElement("afterend", self.wrapper);
-    self.sync(false);
-    settings.items = [];
-    delete settings.optgroups;
-    delete settings.options;
-    self.refreshItems();
-    self.close(false);
-    self.inputState();
-    self.isSetup = true;
-    self.on("change", this.onChange);
-    addClasses(input, "tomselected", "ts-hidden-accessible");
-    self.trigger("initialize");
-    if (settings.preload === true) {
-      self.preload();
-    }
-  }
-  /**
-   * Register options and optgroups
-   *
-   */
-  setupOptions(options = [], optgroups = []) {
-    this.addOptions(options);
-    iterate2(optgroups, (optgroup) => {
-      this.registerOptionGroup(optgroup);
-    });
-  }
-  /**
-   * Sets up default rendering functions.
-   */
-  setupTemplates() {
-    var self = this;
-    var field_label = self.settings.labelField;
-    var field_optgroup = self.settings.optgroupLabelField;
-    var templates = {
-      "optgroup": (data) => {
-        let optgroup = document.createElement("div");
-        optgroup.className = "optgroup";
-        optgroup.appendChild(data.options);
-        return optgroup;
-      },
-      "optgroup_header": (data, escape) => {
-        return '<div class="optgroup-header">' + escape(data[field_optgroup]) + "</div>";
-      },
-      "option": (data, escape) => {
-        return "<div>" + escape(data[field_label]) + "</div>";
-      },
-      "item": (data, escape) => {
-        return "<div>" + escape(data[field_label]) + "</div>";
-      },
-      "option_create": (data, escape) => {
-        return '<div class="create">Add <strong>' + escape(data.input) + "</strong>&hellip;</div>";
-      },
-      "no_results": () => {
-        return '<div class="no-results">No results found</div>';
-      },
-      "loading": () => {
-        return '<div class="spinner"></div>';
-      },
-      "not_loading": () => {
-      },
-      "dropdown": () => {
-        return "<div></div>";
-      }
-    };
-    self.settings.render = Object.assign({}, templates, self.settings.render);
-  }
-  /**
-   * Maps fired events to callbacks provided
-   * in the settings used when creating the control.
-   */
-  setupCallbacks() {
-    var key, fn;
-    var callbacks = {
-      "initialize": "onInitialize",
-      "change": "onChange",
-      "item_add": "onItemAdd",
-      "item_remove": "onItemRemove",
-      "item_select": "onItemSelect",
-      "clear": "onClear",
-      "option_add": "onOptionAdd",
-      "option_remove": "onOptionRemove",
-      "option_clear": "onOptionClear",
-      "optgroup_add": "onOptionGroupAdd",
-      "optgroup_remove": "onOptionGroupRemove",
-      "optgroup_clear": "onOptionGroupClear",
-      "dropdown_open": "onDropdownOpen",
-      "dropdown_close": "onDropdownClose",
-      "type": "onType",
-      "load": "onLoad",
-      "focus": "onFocus",
-      "blur": "onBlur"
-    };
-    for (key in callbacks) {
-      fn = this.settings[callbacks[key]];
-      if (fn)
-        this.on(key, fn);
-    }
-  }
-  /**
-   * Sync the Tom Select instance with the original input or select
-   *
-   */
-  sync(get_settings = true) {
-    const self = this;
-    const settings = get_settings ? getSettings(self.input, { delimiter: self.settings.delimiter, allowEmptyOption: self.settings.allowEmptyOption }) : self.settings;
-    self.setupOptions(settings.options, settings.optgroups);
-    self.setValue(settings.items || [], true);
-    if (self.input.disabled) {
-      self.disable();
-    } else if (self.input.readOnly) {
-      self.setReadOnly(true);
-    } else {
-      self.enable();
-    }
-    self.lastQuery = null;
-  }
-  /**
-   * Triggered when the main control element
-   * has a click event.
-   *
-   */
-  onClick() {
-    var self = this;
-    if (self.activeItems.length > 0) {
-      self.clearActiveItems();
-      self.focus();
-      return;
-    }
-    if (self.isFocused && self.isOpen) {
-      self.blur();
-    } else {
-      self.focus();
-    }
-  }
-  /**
-   * @deprecated v1.7
-   *
-   */
-  onMouseDown() {
-  }
-  /**
-   * Triggered when the value of the control has been changed.
-   * This should propagate the event to the original DOM
-   * input / select element.
-   */
-  onChange() {
-    triggerEvent(this.input, "input");
-    triggerEvent(this.input, "change");
-  }
-  /**
-   * Triggered on <input> paste.
-   *
-   */
-  onPaste(e) {
-    var self = this;
-    if (self.isInputHidden || self.isLocked) {
-      preventDefault(e);
-      return;
-    }
-    if (!self.settings.splitOn) {
-      return;
-    }
-    setTimeout(() => {
-      var pastedText = self.inputValue();
-      if (!pastedText.match(self.settings.splitOn)) {
-        return;
-      }
-      var splitInput = pastedText.trim().split(self.settings.splitOn);
-      iterate2(splitInput, (piece) => {
-        const hash = hash_key(piece);
-        if (hash) {
-          if (this.options[piece]) {
-            self.addItem(piece);
-          } else {
-            self.createItem(piece);
-          }
-        }
-      });
-    }, 0);
-  }
-  /**
-   * Triggered on <input> keypress.
-   *
-   */
-  onKeyPress(e) {
-    var self = this;
-    if (self.isLocked) {
-      preventDefault(e);
-      return;
-    }
-    var character = String.fromCharCode(e.keyCode || e.which);
-    if (self.settings.create && self.settings.mode === "multi" && character === self.settings.delimiter) {
-      self.createItem();
-      preventDefault(e);
-      return;
-    }
-  }
-  /**
-   * Triggered on <input> keydown.
-   *
-   */
-  onKeyDown(e) {
-    var self = this;
-    self.ignoreHover = true;
-    if (self.isLocked) {
-      if (e.keyCode !== KEY_TAB) {
-        preventDefault(e);
-      }
-      return;
-    }
-    switch (e.keyCode) {
-      // ctrl+A: select all
-      case KEY_A:
-        if (isKeyDown(KEY_SHORTCUT, e)) {
-          if (self.control_input.value == "") {
-            preventDefault(e);
-            self.selectAll();
-            return;
-          }
-        }
-        break;
-      // esc: close dropdown
-      case KEY_ESC:
-        if (self.isOpen) {
-          preventDefault(e, true);
-          self.close();
-        }
-        self.clearActiveItems();
-        return;
-      // down: open dropdown or move selection down
-      case KEY_DOWN:
-        if (!self.isOpen && self.hasOptions) {
-          self.open();
-        } else if (self.activeOption) {
-          let next = self.getAdjacent(self.activeOption, 1);
-          if (next)
-            self.setActiveOption(next);
-        }
-        preventDefault(e);
-        return;
-      // up: move selection up
-      case KEY_UP:
-        if (self.activeOption) {
-          let prev = self.getAdjacent(self.activeOption, -1);
-          if (prev)
-            self.setActiveOption(prev);
-        }
-        preventDefault(e);
-        return;
-      // return: select active option
-      case KEY_RETURN:
-        if (self.canSelect(self.activeOption)) {
-          self.onOptionSelect(e, self.activeOption);
-          preventDefault(e);
-        } else if (self.settings.create && self.createItem()) {
-          preventDefault(e);
-        } else if (document.activeElement == self.control_input && self.isOpen) {
-          preventDefault(e);
-        }
-        return;
-      // left: modifiy item selection to the left
-      case KEY_LEFT:
-        self.advanceSelection(-1, e);
-        return;
-      // right: modifiy item selection to the right
-      case KEY_RIGHT:
-        self.advanceSelection(1, e);
-        return;
-      // tab: select active option and/or create item
-      case KEY_TAB:
-        if (self.settings.selectOnTab) {
-          if (self.canSelect(self.activeOption)) {
-            self.onOptionSelect(e, self.activeOption);
-            preventDefault(e);
-          } else if (self.settings.create && self.createItem()) {
-            preventDefault(e);
-          }
-        }
-        return;
-      // delete|backspace: delete items
-      case KEY_BACKSPACE:
-      case KEY_DELETE:
-        self.deleteSelection(e);
-        return;
-    }
-    if (self.isInputHidden && !isKeyDown(KEY_SHORTCUT, e)) {
-      preventDefault(e);
-    }
-  }
-  /**
-   * Triggered on <input> keyup.
-   *
-   */
-  onInput(e) {
-    if (this.isLocked) {
-      return;
-    }
-    const value = this.inputValue();
-    if (this.lastValue === value)
-      return;
-    this.lastValue = value;
-    if (value == "") {
-      this._onInput();
-      return;
-    }
-    if (this.refreshTimeout) {
-      window.clearTimeout(this.refreshTimeout);
-    }
-    this.refreshTimeout = timeout(() => {
-      this.refreshTimeout = null;
-      this._onInput();
-    }, this.settings.refreshThrottle);
-  }
-  _onInput() {
-    const value = this.lastValue;
-    if (this.settings.shouldLoad.call(this, value)) {
-      this.load(value);
-    }
-    this.refreshOptions();
-    this.trigger("type", value);
-  }
-  /**
-   * Triggered when the user rolls over
-   * an option in the autocomplete dropdown menu.
-   *
-   */
-  onOptionHover(evt, option) {
-    if (this.ignoreHover)
-      return;
-    this.setActiveOption(option, false);
-  }
-  /**
-   * Triggered on <input> focus.
-   *
-   */
-  onFocus(e) {
-    var self = this;
-    var wasFocused = self.isFocused;
-    if (self.isDisabled || self.isReadOnly) {
-      self.blur();
-      preventDefault(e);
-      return;
-    }
-    if (self.ignoreFocus)
-      return;
-    self.isFocused = true;
-    if (self.settings.preload === "focus")
-      self.preload();
-    if (!wasFocused)
-      self.trigger("focus");
-    if (!self.activeItems.length) {
-      self.inputState();
-      self.refreshOptions(!!self.settings.openOnFocus);
-    }
-    self.refreshState();
-  }
-  /**
-   * Triggered on <input> blur.
-   *
-   */
-  onBlur(e) {
-    if (document.hasFocus() === false)
-      return;
-    var self = this;
-    if (!self.isFocused)
-      return;
-    self.isFocused = false;
-    self.ignoreFocus = false;
-    var deactivate = () => {
-      self.close();
-      self.setActiveItem();
-      self.setCaret(self.items.length);
-      self.trigger("blur");
-    };
-    if (self.settings.create && self.settings.createOnBlur) {
-      self.createItem(null, deactivate);
-    } else {
-      deactivate();
-    }
-  }
-  /**
-   * Triggered when the user clicks on an option
-   * in the autocomplete dropdown menu.
-   *
-   */
-  onOptionSelect(evt, option) {
-    var value, self = this;
-    if (option.parentElement && option.parentElement.matches("[data-disabled]")) {
-      return;
-    }
-    if (option.classList.contains("create")) {
-      self.createItem(null, () => {
-        if (self.settings.closeAfterSelect) {
-          self.close();
-        } else if (self.settings.clearAfterSelect) {
-          self.setTextboxValue();
-        }
-      });
-    } else {
-      value = option.dataset.value;
-      if (typeof value !== "undefined") {
-        self.isDropdownContentStale = self.settings.hideSelected;
-        self.addItem(value);
-        if (self.settings.closeAfterSelect) {
-          self.close();
-        } else if (self.settings.clearAfterSelect) {
-          self.setTextboxValue();
-        }
-        if (!self.settings.hideSelected && evt.type && /click/.test(evt.type)) {
-          self.setActiveOption(option);
-        }
-      }
-    }
-  }
-  /**
-   * Return true if the given option can be selected
-   *
-   */
-  canSelect(option) {
-    if (this.isOpen && option && this.dropdown_content.contains(option)) {
-      return true;
-    }
-    return false;
-  }
-  /**
-   * Triggered when the user clicks on an item
-   * that has been selected.
-   *
-   */
-  onItemSelect(evt, item) {
-    var self = this;
-    if (!self.isLocked && self.settings.mode === "multi") {
-      preventDefault(evt);
-      self.setActiveItem(item, evt);
-      return true;
-    }
-    return false;
-  }
-  /**
-   * Determines whether or not to invoke
-   * the user-provided option provider / loader
-   *
-   * Note, there is a subtle difference between
-   * this.canLoad() and this.settings.shouldLoad();
-   *
-   *	- settings.shouldLoad() is a user-input validator.
-   *	When false is returned, the not_loading template
-   *	will be added to the dropdown
-   *
-   *	- canLoad() is lower level validator that checks
-   * 	the Tom Select instance. There is no inherent user
-   *	feedback when canLoad returns false
-   *
-   */
-  canLoad(value) {
-    if (!this.settings.load)
-      return false;
-    if (this.loadedSearches.hasOwnProperty(value))
-      return false;
-    return true;
-  }
-  /**
-   * Invokes the user-provided option provider / loader.
-   *
-   */
-  load(value) {
-    const self = this;
-    if (!self.canLoad(value))
-      return;
-    addClasses(self.wrapper, self.settings.loadingClass);
-    self.loading++;
-    const callback = self.loadCallback.bind(self);
-    self.settings.load.call(self, value, callback);
-  }
-  /**
-   * Invoked by the user-provided option provider
-   *
-   */
-  loadCallback(options, optgroups) {
-    const self = this;
-    self.loading = Math.max(self.loading - 1, 0);
-    self.isDropdownContentStale = true;
-    self.clearActiveOption();
-    self.setupOptions(options, optgroups);
-    self.refreshOptions(self.isFocused && !self.isInputHidden);
-    if (!self.loading) {
-      removeClasses(self.wrapper, self.settings.loadingClass);
-    }
-    self.trigger("load", options, optgroups);
-  }
-  preload() {
-    var classList = this.wrapper.classList;
-    if (classList.contains("preloaded"))
-      return;
-    classList.add("preloaded");
-    this.load("");
-  }
-  /**
-   * Sets the input field of the control to the specified value.
-   *
-   */
-  setTextboxValue(value = "") {
-    var input = this.control_input;
-    var changed = input.value !== value;
-    if (changed) {
-      input.value = value;
-      triggerEvent(input, "update");
-      this.lastValue = value;
-    }
-  }
-  /**
-   * Returns the value of the control. If multiple items
-   * can be selected (e.g. <select multiple>), this returns
-   * an array. If only one item can be selected, this
-   * returns a string.
-   *
-   */
-  getValue() {
-    if (this.is_select_tag && this.input.hasAttribute("multiple")) {
-      return this.items;
-    }
-    return this.items.join(this.settings.delimiter);
-  }
-  /**
-   * Resets the selected items to the given value.
-   *
-   */
-  setValue(value, silent) {
-    var events = silent ? [] : ["change"];
-    debounce_events(this, events, () => {
-      this.clear(silent);
-      this.addItems(value, silent);
-    });
-  }
-  /**
-   * Resets the number of max items to the given value
-   *
-   */
-  setMaxItems(value) {
-    if (value === 0)
-      value = null;
-    this.settings.maxItems = value;
-    this.refreshState();
-  }
-  /**
-   * Sets the selected item.
-   *
-   */
-  setActiveItem(item, e) {
-    var self = this;
-    var eventName;
-    var i, begin, end, swap;
-    var last;
-    if (self.settings.mode === "single")
-      return;
-    if (!item) {
-      self.clearActiveItems();
-      if (self.isFocused) {
-        self.inputState();
-      }
-      return;
-    }
-    eventName = e && e.type.toLowerCase();
-    if (eventName === "click" && isKeyDown("shiftKey", e) && self.activeItems.length) {
-      last = self.getLastActive();
-      begin = Array.prototype.indexOf.call(self.control.children, last);
-      end = Array.prototype.indexOf.call(self.control.children, item);
-      if (begin > end) {
-        swap = begin;
-        begin = end;
-        end = swap;
-      }
-      for (i = begin; i <= end; i++) {
-        item = self.control.children[i];
-        if (self.activeItems.indexOf(item) === -1) {
-          self.setActiveItemClass(item);
-        }
-      }
-      preventDefault(e);
-    } else if (eventName === "click" && isKeyDown(KEY_SHORTCUT, e) || eventName === "keydown" && isKeyDown("shiftKey", e)) {
-      if (item.classList.contains("active")) {
-        self.removeActiveItem(item);
-      } else {
-        self.setActiveItemClass(item);
-      }
-    } else {
-      self.clearActiveItems();
-      self.setActiveItemClass(item);
-    }
-    self.inputState();
-    if (!self.isFocused) {
-      self.focus();
-    }
-  }
-  /**
-   * Set the active and last-active classes
-   *
-   */
-  setActiveItemClass(item) {
-    const self = this;
-    const last_active = self.control.querySelector(".last-active");
-    if (last_active)
-      removeClasses(last_active, "last-active");
-    addClasses(item, "active last-active");
-    self.trigger("item_select", item);
-    if (self.activeItems.indexOf(item) == -1) {
-      self.activeItems.push(item);
-    }
-  }
-  /**
-   * Remove active item
-   *
-   */
-  removeActiveItem(item) {
-    var idx = this.activeItems.indexOf(item);
-    this.activeItems.splice(idx, 1);
-    removeClasses(item, "active");
-  }
-  /**
-   * Clears all the active items
-   *
-   */
-  clearActiveItems() {
-    removeClasses(this.activeItems, "active");
-    this.activeItems = [];
-  }
-  /**
-   * Sets the selected item in the dropdown menu
-   * of available options.
-   *
-   */
-  setActiveOption(option, scroll = true) {
-    if (option === this.activeOption) {
-      return;
-    }
-    this.clearActiveOption();
-    if (!option)
-      return;
-    this.activeOption = option;
-    setAttr(this.focus_node, { "aria-activedescendant": option.getAttribute("id") });
-    setAttr(option, { "aria-selected": "true" });
-    addClasses(option, "active");
-    if (scroll)
-      this.scrollToOption(option);
-  }
-  /**
-   * Sets the dropdown_content scrollTop to display the option
-   *
-   */
-  scrollToOption(option, behavior) {
-    if (!option)
-      return;
-    const content = this.dropdown_content;
-    const height_menu = content.clientHeight;
-    const scrollTop = content.scrollTop || 0;
-    const height_item = option.offsetHeight;
-    const y = option.getBoundingClientRect().top - content.getBoundingClientRect().top + scrollTop;
-    if (y + height_item > height_menu + scrollTop) {
-      this.scroll(y - height_menu + height_item, behavior);
-    } else if (y < scrollTop) {
-      this.scroll(y, behavior);
-    }
-  }
-  /**
-   * Scroll the dropdown to the given position
-   *
-   */
-  scroll(scrollTop, behavior) {
-    const content = this.dropdown_content;
-    if (behavior) {
-      content.style.scrollBehavior = behavior;
-    }
-    content.scrollTop = scrollTop;
-    content.style.scrollBehavior = "";
-  }
-  /**
-   * Clears the active option
-   *
-   */
-  clearActiveOption() {
-    if (this.activeOption) {
-      removeClasses(this.activeOption, "active");
-      setAttr(this.activeOption, { "aria-selected": null });
-    }
-    this.activeOption = null;
-    setAttr(this.focus_node, { "aria-activedescendant": null });
-  }
-  /**
-   * Selects all items (CTRL + A).
-   */
-  selectAll() {
-    const self = this;
-    if (self.settings.mode === "single")
-      return;
-    const activeItems = self.controlChildren();
-    if (!activeItems.length)
-      return;
-    self.inputState();
-    self.close();
-    self.activeItems = activeItems;
-    iterate2(activeItems, (item) => {
-      self.setActiveItemClass(item);
-    });
-  }
-  /**
-   * Determines if the control_input should be in a hidden or visible state
-   *
-   */
-  inputState() {
-    var self = this;
-    if (!self.control.contains(self.control_input))
-      return;
-    setAttr(self.control_input, { placeholder: self.settings.placeholder });
-    if (self.activeItems.length > 0 || !self.isFocused && self.settings.hidePlaceholder && self.items.length > 0) {
-      self.setTextboxValue();
-      self.isInputHidden = true;
-    } else {
-      if (self.settings.hidePlaceholder && self.items.length > 0) {
-        setAttr(self.control_input, { placeholder: "" });
-      }
-      self.isInputHidden = false;
-    }
-    self.wrapper.classList.toggle("input-hidden", self.isInputHidden);
-  }
-  /**
-   * Get the input value
-   */
-  inputValue() {
-    return this.control_input.value.trim();
-  }
-  /**
-   * Gives the control focus.
-   */
-  focus() {
-    var self = this;
-    if (self.isDisabled || self.isReadOnly)
-      return;
-    self.ignoreFocus = true;
-    const focusTarget = this.control_input.offsetWidth ? this.control_input : this.focus_node;
-    focusTarget.focus();
-    setTimeout(() => {
-      self.ignoreFocus = false;
-      const root = focusTarget.getRootNode();
-      if (root.activeElement !== focusTarget) {
-        return;
-      }
-      this.onFocus();
-    }, 0);
-  }
-  /**
-   * Forces the control out of focus.
-   *
-   */
-  blur() {
-    this.focus_node.blur();
-    this.onBlur();
-  }
-  /**
-   * Returns a function that scores an object
-   * to show how good of a match it is to the
-   * provided query.
-   *
-   * @return {function}
-   */
-  getScoreFunction(query) {
-    return this.sifter.getScoreFunction(query, this.getSearchOptions());
-  }
-  /**
-   * Returns search options for sifter (the system
-   * for scoring and sorting results).
-   *
-   * @see https://github.com/orchidjs/sifter.js
-   * @return {object}
-   */
-  getSearchOptions() {
-    var settings = this.settings;
-    var sort = settings.sortField;
-    if (typeof settings.sortField === "string") {
-      sort = [{ field: settings.sortField }];
-    }
-    return {
-      fields: settings.searchField,
-      conjunction: settings.searchConjunction,
-      sort,
-      nesting: settings.nesting
-    };
-  }
-  /**
-   * Searches through available options and returns
-   * a sorted array of matches.
-   *
-   */
-  search(query) {
-    var result, calculateScore;
-    var self = this;
-    var options = this.getSearchOptions();
-    if (self.settings.score) {
-      calculateScore = self.settings.score.call(self, query);
-      if (typeof calculateScore !== "function") {
-        throw new Error('Tom Select "score" setting must be a function that returns a function');
-      }
-    }
-    if (self.isDropdownContentStale || query !== self.lastQuery) {
-      self.lastQuery = query;
-      if (/(.)\1{15,}/.test(query)) {
-        query = "";
-      }
-      result = self.sifter.search(query, Object.assign(options, { score: calculateScore }));
-      self.currentResults = result;
-    } else {
-      result = Object.assign({}, self.currentResults);
-    }
-    if (self.settings.hideSelected) {
-      result.items = result.items.filter((item) => {
-        let hashed = hash_key(item.id);
-        return !(hashed !== null && self.items.indexOf(hashed) !== -1);
-      });
-    }
-    return result;
-  }
-  /**
-   * Refreshes the list of available options shown
-   * in the autocomplete dropdown menu.
-   *
-   */
-  refreshOptions(triggerDropdown = true) {
-    var i, j, k, n, optgroup, optgroups, html, has_create_option, active_group;
-    var create;
-    const groups = {};
-    const groups_order = [];
-    var self = this;
-    var query = self.inputValue();
-    const same_query = query === self.lastQuery || query == "" && self.lastQuery == null;
-    var results = self.search(query);
-    var active_option = null;
-    var show_dropdown = self.settings.shouldOpen || false;
-    var dropdown_content = self.dropdown_content;
-    if (same_query) {
-      active_option = self.activeOption;
-      if (active_option) {
-        active_group = active_option.closest("[data-group]");
-      }
-    }
-    n = results.items.length;
-    if (typeof self.settings.maxOptions === "number") {
-      n = Math.min(n, self.settings.maxOptions);
-    }
-    if (n > 0) {
-      show_dropdown = true;
-    }
-    const getGroupFragment = (optgroup2, order) => {
-      let group_order_i = groups[optgroup2];
-      if (group_order_i !== void 0) {
-        let order_group = groups_order[group_order_i];
-        if (order_group !== void 0) {
-          return [group_order_i, order_group.fragment];
-        }
-      }
-      let group_fragment = document.createDocumentFragment();
-      group_order_i = groups_order.length;
-      groups_order.push({ fragment: group_fragment, order, optgroup: optgroup2 });
-      return [group_order_i, group_fragment];
-    };
-    for (i = 0; i < n; i++) {
-      let item = results.items[i];
-      if (!item)
-        continue;
-      let opt_value = item.id;
-      let option = self.options[opt_value];
-      if (option === void 0)
-        continue;
-      let opt_hash = get_hash(opt_value);
-      let option_el = self.getOption(opt_hash, true);
-      if (!self.settings.hideSelected) {
-        option_el.classList.toggle("selected", self.items.includes(opt_hash));
-      }
-      optgroup = option[self.settings.optgroupField] || "";
-      optgroups = Array.isArray(optgroup) ? optgroup : [optgroup];
-      for (j = 0, k = optgroups && optgroups.length; j < k; j++) {
-        optgroup = optgroups[j];
-        let order = option.$order;
-        let self_optgroup = self.optgroups[optgroup];
-        if (self_optgroup === void 0 && typeof self.settings.optionGroupRegister === "function") {
-          var regGroup;
-          if (regGroup = self.settings.optionGroupRegister.apply(self, [optgroup])) {
-            self.registerOptionGroup(regGroup);
-          }
-        }
-        self_optgroup = self.optgroups[optgroup];
-        if (self_optgroup === void 0) {
-          optgroup = "";
-        } else {
-          order = self_optgroup.$order;
-        }
-        const [group_order_i, group_fragment] = getGroupFragment(optgroup, order);
-        if (j > 0) {
-          option_el = option_el.cloneNode(true);
-          setAttr(option_el, { id: option.$id + "-clone-" + j, "aria-selected": null });
-          option_el.classList.add("ts-cloned");
-          removeClasses(option_el, "active");
-          if (self.activeOption && self.activeOption.dataset.value == opt_value) {
-            if (active_group && active_group.dataset.group === optgroup.toString()) {
-              active_option = option_el;
-            }
-          }
-        }
-        group_fragment.appendChild(option_el);
-        if (optgroup != "") {
-          groups[optgroup] = group_order_i;
-        }
-      }
-    }
-    if (self.settings.lockOptgroupOrder) {
-      groups_order.sort((a, b) => {
-        return a.order - b.order;
-      });
-    }
-    html = document.createDocumentFragment();
-    iterate2(groups_order, (group_order) => {
-      let group_fragment = group_order.fragment;
-      let optgroup2 = group_order.optgroup;
-      if (!group_fragment || !group_fragment.children.length)
-        return;
-      let group_heading = self.optgroups[optgroup2];
-      if (group_heading !== void 0) {
-        let group_options = document.createDocumentFragment();
-        let header = self.render("optgroup_header", group_heading);
-        append(group_options, header);
-        append(group_options, group_fragment);
-        let group_html = self.render("optgroup", { group: group_heading, options: group_options });
-        append(html, group_html);
-      } else {
-        append(html, group_fragment);
-      }
-    });
-    dropdown_content.innerHTML = "";
-    append(dropdown_content, html);
-    self.isDropdownContentStale = false;
-    if (self.settings.highlight) {
-      removeHighlight(dropdown_content);
-      if (results.query.length && results.tokens.length) {
-        iterate2(results.tokens, (tok) => {
-          highlight(dropdown_content, tok.regex);
-        });
-      }
-    }
-    var add_template = (template) => {
-      let content = self.render(template, { input: query });
-      if (content) {
-        show_dropdown = true;
-        dropdown_content.insertBefore(content, dropdown_content.firstChild);
-      }
-      return content;
-    };
-    if (self.loading) {
-      add_template("loading");
-    } else if (!self.settings.shouldLoad.call(self, query)) {
-      add_template("not_loading");
-    } else if (results.items.length === 0) {
-      add_template("no_results");
-    }
-    has_create_option = self.canCreate(query);
-    if (has_create_option) {
-      create = add_template("option_create");
-    }
-    self.hasOptions = results.items.length > 0 || has_create_option;
-    if (show_dropdown) {
-      if (results.items.length > 0) {
-        if (!active_option && self.settings.mode === "single" && self.items[0] != void 0) {
-          active_option = self.getOption(self.items[0]);
-        }
-        if (!dropdown_content.contains(active_option)) {
-          let active_index = 0;
-          if (create && !self.settings.addPrecedence) {
-            active_index = 1;
-          }
-          active_option = self.selectable()[active_index];
-        }
-      } else if (create) {
-        active_option = create;
-      }
-      if (triggerDropdown && !self.isOpen) {
-        self.open();
-        self.scrollToOption(active_option, "auto");
-      }
-      self.setActiveOption(active_option);
-    } else {
-      self.clearActiveOption();
-      if (triggerDropdown && self.isOpen) {
-        self.close(false);
-      }
-    }
-  }
-  /**
-   * Return list of selectable options
-   *
-   */
-  selectable() {
-    return this.dropdown_content.querySelectorAll("[data-selectable]");
-  }
-  /**
-   * Adds an available option. If it already exists,
-   * nothing will happen. Note: this does not refresh
-   * the options list dropdown (use `refreshOptions`
-   * for that).
-   *
-   * Usage:
-   *
-   *   this.addOption(data)
-   *
-   */
-  addOption(data, user_created = false) {
-    const self = this;
-    if (Array.isArray(data)) {
-      self.addOptions(data, user_created);
-      return false;
-    }
-    const key = hash_key(data[self.settings.valueField]);
-    if (key === null || self.options.hasOwnProperty(key)) {
-      self.updateOption(data[self.settings.valueField], data);
-      return false;
-    }
-    data.$order = data.$order || ++self.order;
-    data.$id = self.inputId + "-opt-" + data.$order;
-    self.options[key] = data;
-    self.isDropdownContentStale = true;
-    if (user_created) {
-      self.userOptions[key] = user_created;
-      self.trigger("option_add", key, data);
-    }
-    return key;
-  }
-  /**
-   * Add multiple options
-   *
-   */
-  addOptions(data, user_created = false) {
-    iterate2(data, (dat) => {
-      this.addOption(dat, user_created);
-    });
-  }
-  /**
-   * @deprecated 1.7.7
-   */
-  registerOption(data) {
-    return this.addOption(data);
-  }
-  /**
-   * Registers an option group to the pool of option groups.
-   *
-   * @return {boolean|string}
-   */
-  registerOptionGroup(data) {
-    var key = hash_key(data[this.settings.optgroupValueField]);
-    if (key === null)
-      return false;
-    data.$order = data.$order || ++this.order;
-    this.optgroups[key] = data;
-    return key;
-  }
-  /**
-   * Registers a new optgroup for options
-   * to be bucketed into.
-   *
-   */
-  addOptionGroup(id, data) {
-    var hashed_id;
-    data[this.settings.optgroupValueField] = id;
-    if (hashed_id = this.registerOptionGroup(data)) {
-      this.trigger("optgroup_add", hashed_id, data);
-    }
-  }
-  /**
-   * Removes an existing option group.
-   *
-   */
-  removeOptionGroup(id) {
-    if (this.optgroups.hasOwnProperty(id)) {
-      delete this.optgroups[id];
-      this.clearCache();
-      this.trigger("optgroup_remove", id);
-    }
-  }
-  /**
-   * Clears all existing option groups.
-   */
-  clearOptionGroups() {
-    this.optgroups = {};
-    this.clearCache();
-    this.trigger("optgroup_clear");
-  }
-  /**
-   * Updates an option available for selection. If
-   * it is visible in the selected items or options
-   * dropdown, it will be re-rendered automatically.
-   *
-   */
-  updateOption(value, data) {
-    const self = this;
-    var item_new;
-    var index_item;
-    const value_old = hash_key(value);
-    const value_new = hash_key(data[self.settings.valueField]);
-    if (value_old === null)
-      return;
-    const data_old = self.options[value_old];
-    if (data_old == void 0)
-      return;
-    if (typeof value_new !== "string")
-      throw new Error("Value must be set in option data");
-    const option = self.getOption(value_old);
-    const item = self.getItem(value_old);
-    data.$order = data.$order || data_old.$order;
-    delete self.options[value_old];
-    self.uncacheValue(value_new);
-    self.options[value_new] = data;
-    if (option) {
-      if (self.dropdown_content.contains(option)) {
-        const option_new = self._render("option", data);
-        replaceNode(option, option_new);
-        if (self.activeOption === option) {
-          self.setActiveOption(option_new);
-        }
-      }
-      option.remove();
-    }
-    if (item) {
-      index_item = self.items.indexOf(value_old);
-      if (index_item !== -1) {
-        self.items.splice(index_item, 1, value_new);
-      }
-      item_new = self._render("item", data);
-      if (item.classList.contains("active"))
-        addClasses(item_new, "active");
-      replaceNode(item, item_new);
-    }
-    self.isDropdownContentStale = true;
-  }
-  /**
-   * Removes a single option.
-   *
-   */
-  removeOption(value, silent) {
-    const self = this;
-    value = get_hash(value);
-    self.uncacheValue(value);
-    delete self.userOptions[value];
-    delete self.options[value];
-    self.isDropdownContentStale = true;
-    self.trigger("option_remove", value);
-    self.removeItem(value, silent);
-  }
-  /**
-   * Clears all options.
-   */
-  clearOptions(filter) {
-    const boundFilter = (filter || this.clearFilter).bind(this);
-    this.loadedSearches = {};
-    this.userOptions = {};
-    this.clearCache();
-    const selected = {};
-    iterate2(this.options, (option, key) => {
-      if (boundFilter(option, key)) {
-        selected[key] = option;
-      }
-    });
-    this.options = this.sifter.items = selected;
-    this.isDropdownContentStale = true;
-    this.trigger("option_clear");
-  }
-  /**
-   * Used by clearOptions() to decide whether or not an option should be removed
-   * Return true to keep an option, false to remove
-   *
-   */
-  clearFilter(option, value) {
-    if (this.items.indexOf(value) >= 0) {
-      return true;
-    }
-    return false;
-  }
-  /**
-   * Returns the dom element of the option
-   * matching the given value.
-   *
-   */
-  getOption(value, create = false) {
-    const hashed = hash_key(value);
-    if (hashed === null)
-      return null;
-    const option = this.options[hashed];
-    if (option != void 0) {
-      if (option.$div) {
-        return option.$div;
-      }
-      if (create) {
-        return this._render("option", option);
-      }
-    }
-    return null;
-  }
-  /**
-   * Returns the dom element of the next or previous dom element of the same type
-   * Note: adjacent options may not be adjacent DOM elements (optgroups)
-   *
-   */
-  getAdjacent(option, direction, type = "option") {
-    var self = this, all;
-    if (!option) {
-      return null;
-    }
-    if (type == "item") {
-      all = self.controlChildren();
-    } else {
-      all = self.dropdown_content.querySelectorAll("[data-selectable]");
-    }
-    for (let i = 0; i < all.length; i++) {
-      if (all[i] != option) {
-        continue;
-      }
-      if (direction > 0) {
-        return all[i + 1];
-      }
-      return all[i - 1];
-    }
-    return null;
-  }
-  /**
-   * Returns the dom element of the item
-   * matching the given value.
-   *
-   */
-  getItem(item) {
-    if (typeof item == "object") {
-      return item;
-    }
-    var value = hash_key(item);
-    return value !== null ? this.control.querySelector(`[data-value="${addSlashes(value)}"]`) : null;
-  }
-  /**
-   * "Selects" multiple items at once. Adds them to the list
-   * at the current caret position.
-   *
-   */
-  addItems(values, silent) {
-    var self = this;
-    var items = Array.isArray(values) ? values : [values];
-    items = items.filter((x) => self.items.indexOf(x) === -1);
-    const last_item = items[items.length - 1];
-    items.forEach((item) => {
-      self.isPending = item !== last_item;
-      self.addItem(item, silent);
-    });
-  }
-  /**
-   * "Selects" an item. Adds it to the list
-   * at the current caret position.
-   *
-   */
-  addItem(value, silent) {
-    var events = silent ? [] : ["change", "dropdown_close"];
-    debounce_events(this, events, () => {
-      var item, wasFull;
-      const self = this;
-      const inputMode = self.settings.mode;
-      const hashed = hash_key(value);
-      if (hashed && self.items.indexOf(hashed) !== -1) {
-        if (inputMode === "single") {
-          self.close();
-        }
-        if (inputMode === "single" || !self.settings.duplicates) {
-          return;
-        }
-      }
-      if (hashed === null || !self.options.hasOwnProperty(hashed))
-        return;
-      if (inputMode === "single")
-        self.clear(silent);
-      if (inputMode === "multi" && self.isFull())
-        return;
-      item = self._render("item", self.options[hashed]);
-      if (self.control.contains(item)) {
-        item = item.cloneNode(true);
-      }
-      wasFull = self.isFull();
-      self.items.splice(self.caretPos, 0, hashed);
-      self.insertAtCaret(item);
-      if (self.isSetup) {
-        if (!self.isPending && self.settings.hideSelected) {
-          let option = self.getOption(hashed);
-          let next = self.getAdjacent(option, 1);
-          if (next) {
-            self.setActiveOption(next);
-          }
-        }
-        if (self.settings.clearAfterSelect) {
-          self.setTextboxValue();
-        }
-        if (!self.isPending && !self.settings.closeAfterSelect) {
-          self.refreshOptions(self.isFocused && inputMode !== "single");
-        }
-        if (self.settings.closeAfterSelect != false && self.isFull()) {
-          self.close();
-        } else if (!self.isPending) {
-          self.positionDropdown();
-        }
-        self.trigger("item_add", hashed, item);
-        if (!self.isPending) {
-          self.updateOriginalInput({ silent });
-        }
-      }
-      if (!self.isPending || !wasFull && self.isFull()) {
-        self.inputState();
-        self.refreshState();
-      }
-    });
-  }
-  /**
-   * Removes the selected item matching
-   * the provided value.
-   *
-   */
-  removeItem(item = null, silent) {
-    const self = this;
-    item = self.getItem(item);
-    if (!item)
-      return;
-    var i, idx;
-    const value = item.dataset.value;
-    i = nodeIndex(item);
-    item.remove();
-    if (item.classList.contains("active")) {
-      idx = self.activeItems.indexOf(item);
-      self.activeItems.splice(idx, 1);
-      removeClasses(item, "active");
-    }
-    self.items.splice(i, 1);
-    self.isDropdownContentStale = true;
-    if (!self.settings.persist && self.userOptions.hasOwnProperty(value)) {
-      self.removeOption(value, silent);
-    }
-    if (i < self.caretPos) {
-      self.setCaret(self.caretPos - 1);
-    }
-    self.updateOriginalInput({ silent });
-    self.refreshState();
-    self.positionDropdown();
-    self.trigger("item_remove", value, item);
-  }
-  /**
-   * Invokes the `create` method provided in the
-   * TomSelect options that should provide the data
-   * for the new item, given the user input.
-   *
-   * Once this completes, it will be added
-   * to the item list.
-   *
-   */
-  createItem(input = null, callback = () => {
-  }) {
-    if (arguments.length === 3) {
-      callback = arguments[2];
-    }
-    if (typeof callback != "function") {
-      callback = () => {
-      };
-    }
-    var self = this;
-    var caret = self.caretPos;
-    var output;
-    input = input || self.inputValue();
-    if (!self.canCreate(input)) {
-      const hash = hash_key(input);
-      if (hash) {
-        if (this.options[input]) {
-          self.addItem(input);
-        }
-      }
-      callback();
-      return false;
-    }
-    self.lock();
-    var created = false;
-    var create = (data) => {
-      self.unlock();
-      if (!data || typeof data !== "object")
-        return callback();
-      var value = hash_key(data[self.settings.valueField]);
-      if (typeof value !== "string") {
-        return callback();
-      }
-      self.setTextboxValue();
-      self.addOption(data, true);
-      self.setCaret(caret);
-      self.addItem(value);
-      callback(data);
-      created = true;
-    };
-    if (typeof self.settings.create === "function") {
-      output = self.settings.create.call(this, input, create);
-    } else {
-      output = {
-        [self.settings.labelField]: input,
-        [self.settings.valueField]: input
-      };
-    }
-    if (!created) {
-      create(output);
-    }
-    return true;
-  }
-  /**
-   * Re-renders the selected item lists.
-   */
-  refreshItems() {
-    var self = this;
-    self.isDropdownContentStale = true;
-    if (self.isSetup) {
-      self.addItems(self.items);
-    }
-    self.updateOriginalInput();
-    self.refreshState();
-  }
-  /**
-   * Updates all state-dependent attributes
-   * and CSS classes.
-   */
-  refreshState() {
-    const self = this;
-    self.refreshValidityState();
-    const isFull = self.isFull();
-    const isLocked = self.isLocked;
-    self.wrapper.classList.toggle("rtl", self.rtl);
-    const wrap_classList = self.wrapper.classList;
-    wrap_classList.toggle("focus", self.isFocused);
-    wrap_classList.toggle("disabled", self.isDisabled);
-    wrap_classList.toggle("readonly", self.isReadOnly);
-    wrap_classList.toggle("required", self.isRequired);
-    wrap_classList.toggle("invalid", !self.isValid);
-    wrap_classList.toggle("locked", isLocked);
-    wrap_classList.toggle("full", isFull);
-    wrap_classList.toggle("input-active", self.isFocused && !self.isInputHidden);
-    wrap_classList.toggle("dropdown-active", self.isOpen);
-    wrap_classList.toggle("has-options", isEmptyObject(self.options));
-    wrap_classList.toggle("has-items", self.items.length > 0);
-  }
-  /**
-   * Update the `required` attribute of both input and control input.
-   *
-   * The `required` property needs to be activated on the control input
-   * for the error to be displayed at the right place. `required` also
-   * needs to be temporarily deactivated on the input since the input is
-   * hidden and can't show errors.
-   */
-  refreshValidityState() {
-    var self = this;
-    if (!self.input.validity) {
-      return;
-    }
-    self.isValid = self.input.validity.valid;
-    self.isInvalid = !self.isValid;
-  }
-  /**
-   * Determines whether or not more items can be added
-   * to the control without exceeding the user-defined maximum.
-   *
-   * @returns {boolean}
-   */
-  isFull() {
-    return this.settings.maxItems !== null && this.items.length >= this.settings.maxItems;
-  }
-  /**
-   * Refreshes the original <select> or <input>
-   * element to reflect the current state.
-   *
-   */
-  updateOriginalInput(opts = {}) {
-    const self = this;
-    var option, label;
-    const empty_option = self.input.querySelector('option[value=""]');
-    if (self.is_select_tag) {
-      let AddSelected = function(option_el, value, label2) {
-        if (!option_el) {
-          option_el = getDom('<option value="' + escape_html(value) + '">' + escape_html(label2) + "</option>");
-        }
-        if (option_el != empty_option) {
-          self.input.append(option_el);
-        }
-        selected.push(option_el);
-        if (option_el != empty_option || has_selected > 0 || self.settings.mode == "multi") {
-          option_el.selected = true;
-        }
-        return option_el;
-      };
-      const selected = [];
-      const has_selected = self.input.querySelectorAll("option:checked").length;
-      self.input.querySelectorAll("option:checked").forEach((option_el) => {
-        option_el.selected = false;
-      });
-      if (self.items.length == 0 && self.settings.mode == "single") {
-        AddSelected(empty_option, "", "");
-      } else {
-        self.items.forEach((value) => {
-          option = self.options[value];
-          label = option[self.settings.labelField] || "";
-          if (selected.includes(option.$option)) {
-            const reuse_opt = self.input.querySelector(`option[value="${addSlashes(value)}"]:not(:checked)`);
-            AddSelected(reuse_opt, value, label);
-          } else {
-            option.$option = AddSelected(option.$option, value, label);
-          }
-        });
-      }
-    } else {
-      self.input.value = self.getValue();
-    }
-    if (self.isSetup) {
-      if (!opts.silent) {
-        self.trigger("change", self.getValue());
-      }
-    }
-  }
-  /**
-   * Shows the autocomplete dropdown containing
-   * the available options.
-   */
-  open() {
-    var self = this;
-    if (self.isLocked || self.isOpen || self.settings.mode === "multi" && self.isFull())
-      return;
-    self.isOpen = true;
-    setAttr(self.focus_node, { "aria-expanded": "true" });
-    self.refreshState();
-    applyCSS(self.dropdown, { visibility: "hidden", display: "block" });
-    self.positionDropdown();
-    applyCSS(self.dropdown, { visibility: "visible", display: "block" });
-    self.focus();
-    self.trigger("dropdown_open", self.dropdown);
-  }
-  /**
-   * Closes the autocomplete dropdown menu.
-   */
-  close(setTextboxValue = true) {
-    var self = this;
-    var trigger = self.isOpen;
-    if (setTextboxValue) {
-      self.setTextboxValue();
-      if (self.settings.mode === "single" && self.items.length) {
-        self.inputState();
-      }
-    }
-    self.isOpen = false;
-    setAttr(self.focus_node, { "aria-expanded": "false" });
-    applyCSS(self.dropdown, { display: "none" });
-    if (self.settings.hideSelected) {
-      self.clearActiveOption();
-    }
-    self.refreshState();
-    if (trigger)
-      self.trigger("dropdown_close", self.dropdown);
-  }
-  /**
-   * Calculates and applies the appropriate
-   * position of the dropdown if dropdownParent = 'body'.
-   * Otherwise, position is determined by css
-   */
-  positionDropdown() {
-    if (this.settings.dropdownParent !== "body") {
-      return;
-    }
-    var context = this.control;
-    var rect = context.getBoundingClientRect();
-    var top = context.offsetHeight + rect.top + window.scrollY;
-    var left = rect.left + window.scrollX;
-    applyCSS(this.dropdown, {
-      width: rect.width + "px",
-      top: top + "px",
-      left: left + "px"
-    });
-  }
-  /**
-   * Resets / clears all selected items
-   * from the control.
-   *
-   */
-  clear(silent) {
-    var self = this;
-    if (!self.items.length)
-      return;
-    var items = self.controlChildren();
-    iterate2(items, (item) => {
-      self.removeItem(item, true);
-    });
-    self.inputState();
-    if (!silent)
-      self.updateOriginalInput();
-    self.trigger("clear");
-  }
-  /**
-   * A helper method for inserting an element
-   * at the current caret position.
-   *
-   */
-  insertAtCaret(el) {
-    const self = this;
-    const caret = self.caretPos;
-    const target = self.control;
-    target.insertBefore(el, target.children[caret] || null);
-    self.setCaret(caret + 1);
-  }
-  /**
-   * Removes the current selected item(s).
-   *
-   */
-  deleteSelection(e) {
-    var direction, selection, caret, tail;
-    var self = this;
-    direction = e && e.keyCode === KEY_BACKSPACE ? -1 : 1;
-    selection = getSelection(self.control_input);
-    const rm_items = [];
-    if (self.activeItems.length) {
-      tail = getTail(self.activeItems, direction);
-      caret = nodeIndex(tail);
-      if (direction > 0) {
-        caret++;
-      }
-      iterate2(self.activeItems, (item) => rm_items.push(item));
-    } else if ((self.isFocused || self.settings.mode === "single") && self.items.length) {
-      const items = self.controlChildren();
-      let rm_item;
-      if (direction < 0 && selection.start === 0 && selection.length === 0) {
-        rm_item = items[self.caretPos - 1];
-      } else if (direction > 0 && selection.start === self.inputValue().length) {
-        rm_item = items[self.caretPos];
-      }
-      if (rm_item !== void 0) {
-        rm_items.push(rm_item);
-      }
-    }
-    if (!self.shouldDelete(rm_items, e)) {
-      return false;
-    }
-    preventDefault(e, true);
-    if (typeof caret !== "undefined") {
-      self.setCaret(caret);
-    }
-    while (rm_items.length) {
-      self.removeItem(rm_items.pop());
-    }
-    self.inputState();
-    self.positionDropdown();
-    self.refreshOptions(false);
-    return true;
-  }
-  /**
-   * Return true if the items should be deleted
-   */
-  shouldDelete(items, evt) {
-    const values = items.map((item) => item.dataset.value);
-    if (!values.length || typeof this.settings.onDelete === "function" && this.settings.onDelete.call(this, values, evt) === false) {
-      return false;
-    }
-    return true;
-  }
-  /**
-   * Selects the previous / next item (depending on the `direction` argument).
-   *
-   * > 0 - right
-   * < 0 - left
-   *
-   */
-  advanceSelection(direction, e) {
-    var last_active, adjacent, self = this;
-    if (self.rtl)
-      direction *= -1;
-    if (self.inputValue().length)
-      return;
-    if (isKeyDown(KEY_SHORTCUT, e) || isKeyDown("shiftKey", e)) {
-      last_active = self.getLastActive(direction);
-      if (last_active) {
-        if (!last_active.classList.contains("active")) {
-          adjacent = last_active;
-        } else {
-          adjacent = self.getAdjacent(last_active, direction, "item");
-        }
-      } else if (direction > 0) {
-        adjacent = self.control_input.nextElementSibling;
-      } else {
-        adjacent = self.control_input.previousElementSibling;
-      }
-      if (adjacent) {
-        if (adjacent.classList.contains("active")) {
-          self.removeActiveItem(last_active);
-        }
-        self.setActiveItemClass(adjacent);
-      }
-    } else {
-      self.moveCaret(direction);
-    }
-  }
-  moveCaret(direction) {
-  }
-  /**
-   * Get the last active item
-   *
-   */
-  getLastActive(direction) {
-    let last_active = this.control.querySelector(".last-active");
-    if (last_active) {
-      return last_active;
-    }
-    var result = this.control.querySelectorAll(".active");
-    if (result) {
-      return getTail(result, direction);
-    }
-  }
-  /**
-   * Moves the caret to the specified index.
-   *
-   * The input must be moved by leaving it in place and moving the
-   * siblings, due to the fact that focus cannot be restored once lost
-   * on mobile webkit devices
-   *
-   */
-  setCaret(new_pos) {
-    this.caretPos = this.items.length;
-  }
-  /**
-   * Return list of item dom elements
-   *
-   */
-  controlChildren() {
-    return Array.from(this.control.querySelectorAll("[data-ts-item]"));
-  }
-  /**
-   * Disables user input on the control. Used while
-   * items are being asynchronously created.
-   */
-  lock() {
-    this.setLocked(true);
-  }
-  /**
-   * Re-enables user input on the control.
-   */
-  unlock() {
-    this.setLocked(false);
-  }
-  /**
-   * Disable or enable user input on the control
-   */
-  setLocked(lock = this.isReadOnly || this.isDisabled) {
-    this.isLocked = lock;
-    this.refreshState();
-  }
-  /**
-   * Disables user input on the control completely.
-   * While disabled, it cannot receive focus.
-   */
-  disable() {
-    this.setDisabled(true);
-    this.close();
-  }
-  /**
-   * Enables the control so that it can respond
-   * to focus and user input.
-   */
-  enable() {
-    this.setDisabled(false);
-  }
-  setDisabled(disabled) {
-    this.focus_node.tabIndex = disabled ? -1 : this.tabIndex;
-    this.isDisabled = disabled;
-    this.input.disabled = disabled;
-    this.control_input.disabled = disabled;
-    this.setLocked();
-  }
-  setReadOnly(isReadOnly) {
-    this.isReadOnly = isReadOnly;
-    this.input.readOnly = isReadOnly;
-    this.control_input.readOnly = isReadOnly;
-    this.setLocked();
-  }
-  /**
-   * Completely destroys the control and
-   * unbinds all event listeners so that it can
-   * be garbage collected.
-   */
-  destroy() {
-    var self = this;
-    var revertSettings = self.revertSettings;
-    self.trigger("destroy");
-    self.off();
-    self.wrapper.remove();
-    self.dropdown.remove();
-    self.input.innerHTML = revertSettings.innerHTML;
-    self.input.tabIndex = revertSettings.tabIndex;
-    removeClasses(self.input, "tomselected", "ts-hidden-accessible");
-    self._destroy();
-    delete self.input.tomselect;
-  }
-  /**
-   * A helper method for rendering "item" and
-   * "option" templates, given the data.
-   *
-   */
-  render(templateName, data) {
-    var id, html;
-    const self = this;
-    if (typeof this.settings.render[templateName] !== "function") {
-      return null;
-    }
-    html = self.settings.render[templateName].call(this, data, escape_html);
-    if (!html) {
-      return null;
-    }
-    html = getDom(html);
-    if (templateName === "option" || templateName === "option_create") {
-      if (data[self.settings.disabledField]) {
-        setAttr(html, { "aria-disabled": "true" });
-      } else {
-        setAttr(html, { "data-selectable": "" });
-      }
-    } else if (templateName === "optgroup") {
-      id = data.group[self.settings.optgroupValueField];
-      setAttr(html, { "data-group": id });
-      if (data.group[self.settings.disabledField]) {
-        setAttr(html, { "data-disabled": "" });
-      }
-    }
-    if (templateName === "option" || templateName === "item") {
-      const value = get_hash(data[self.settings.valueField]);
-      setAttr(html, { "data-value": value });
-      if (templateName === "item") {
-        addClasses(html, self.settings.itemClass);
-        setAttr(html, { "data-ts-item": "" });
-      } else {
-        addClasses(html, self.settings.optionClass);
-        setAttr(html, {
-          role: "option",
-          id: data.$id
-        });
-        data.$div = html;
-        self.options[value] = data;
-      }
-    }
-    return html;
-  }
-  /**
-   * Type guarded rendering
-   *
-   */
-  _render(templateName, data) {
-    const html = this.render(templateName, data);
-    if (html == null) {
-      throw "HTMLElement expected";
-    }
-    return html;
-  }
-  /**
-   * Clears the render cache for a template. If
-   * no template is given, clears all render
-   * caches.
-   *
-   */
-  clearCache() {
-    iterate2(this.options, (option) => {
-      if (option.$div) {
-        option.$div.remove();
-        delete option.$div;
-      }
-    });
-  }
-  /**
-   * Removes a value from item and option caches
-   *
-   */
-  uncacheValue(value) {
-    const option_el = this.getOption(value);
-    if (option_el)
-      option_el.remove();
-  }
-  /**
-   * Determines whether or not to display the
-   * create item prompt, given a user input.
-   *
-   */
-  canCreate(input) {
-    return this.settings.create && input.length > 0 && this.settings.createFilter.call(this, input);
-  }
-  /**
-   * Wraps this.`method` so that `new_fn` can be invoked 'before', 'after', or 'instead' of the original method
-   *
-   * this.hook('instead','onKeyDown',function( arg1, arg2 ...){
-   *
-   * });
-   */
-  hook(when, method, new_fn) {
-    var self = this;
-    var orig_method = self[method];
-    self[method] = function() {
-      var result, result_new;
-      if (when === "after") {
-        result = orig_method.apply(self, arguments);
-      }
-      result_new = new_fn.apply(self, arguments);
-      if (when === "instead") {
-        return result_new;
-      }
-      if (when === "before") {
-        result = orig_method.apply(self, arguments);
-      }
-      return result;
-    };
-  }
-};
-
-// ../../../node_modules/.pnpm/tom-select@2.6.2/node_modules/tom-select/dist/esm/plugins/clear_button/plugin.js
-var getDom2 = (query) => {
-  if (query.jquery) {
-    return query[0];
-  }
-  if (query instanceof HTMLElement) {
-    return query;
-  }
-  if (isHtmlString2(query)) {
-    var tpl = document.createElement("template");
-    tpl.innerHTML = query.trim();
-    return tpl.content.firstChild;
-  }
-  return document.querySelector(query);
-};
-var isHtmlString2 = (arg) => {
-  if (typeof arg === "string" && arg.indexOf("<") > -1) {
-    return true;
-  }
-  return false;
-};
-function plugin(userOptions) {
-  const self = this;
-  const options = Object.assign({
-    className: "clear-button",
-    title: "Clear All",
-    role: "button",
-    tabindex: 0,
-    html: (data) => {
-      return `<div class="${data.className}" title="${data.title}" role="${data.role}" tabindex="${data.tabindex}">&times;</div>`;
-    }
-  }, userOptions);
-  self.on("initialize", () => {
-    var button = getDom2(options.html(options));
-    button.addEventListener("click", (evt) => {
-      if (self.isLocked) return;
-      self.clear();
-      if (self.settings.mode === "single" && self.settings.allowEmptyOption) {
-        self.addItem("");
-      }
-      self.refreshOptions(false);
-      evt.preventDefault();
-      evt.stopPropagation();
-    });
-    self.control.appendChild(button);
-  });
-}
-
-// ../../../node_modules/.pnpm/tom-select@2.6.2/node_modules/tom-select/dist/esm/plugins/dropdown_input/plugin.js
-var KEY_ESC2 = 27;
-var KEY_TAB2 = 9;
-var preventDefault2 = (evt, stop = false) => {
-  if (evt) {
-    evt.preventDefault();
-    if (stop) {
-      evt.stopPropagation();
-    }
-  }
-};
-var addEvent2 = (target, type, callback, options) => {
-  target.addEventListener(type, callback, options);
-};
-var iterate3 = (object, callback) => {
-  if (Array.isArray(object)) {
-    object.forEach(callback);
-  } else {
-    for (var key in object) {
-      if (object.hasOwnProperty(key)) {
-        callback(object[key], key);
-      }
-    }
-  }
-};
-var getDom3 = (query) => {
-  if (query.jquery) {
-    return query[0];
-  }
-  if (query instanceof HTMLElement) {
-    return query;
-  }
-  if (isHtmlString3(query)) {
-    var tpl = document.createElement("template");
-    tpl.innerHTML = query.trim();
-    return tpl.content.firstChild;
-  }
-  return document.querySelector(query);
-};
-var isHtmlString3 = (arg) => {
-  if (typeof arg === "string" && arg.indexOf("<") > -1) {
-    return true;
-  }
-  return false;
-};
-var addClasses2 = (elmts, ...classes) => {
-  var norm_classes = classesArray2(classes);
-  elmts = castAsArray2(elmts);
-  elmts.map((el) => {
-    norm_classes.map((cls) => {
-      el.classList.add(cls);
-    });
-  });
-};
-var classesArray2 = (args) => {
-  var classes = [];
-  iterate3(args, (_classes) => {
-    if (typeof _classes === "string") {
-      _classes = _classes.trim().split(/[\t\n\f\r\s]/);
-    }
-    if (Array.isArray(_classes)) {
-      classes = classes.concat(_classes);
-    }
-  });
-  return classes.filter(Boolean);
-};
-var castAsArray2 = (arg) => {
-  if (!Array.isArray(arg)) {
-    arg = [arg];
-  }
-  return arg;
-};
-function plugin2() {
-  const self = this;
-  self.settings.shouldOpen = true;
-  self.hook("before", "setup", () => {
-    var _self$input;
-    self.focus_node = self.control;
-    addClasses2(self.control_input, "dropdown-input");
-    const div = getDom3('<div class="dropdown-input-wrap">');
-    div.append(self.control_input);
-    self.dropdown.insertBefore(div, self.dropdown.firstChild);
-    const placeholder = getDom3('<input class="items-placeholder" tabindex="-1" />');
-    placeholder.placeholder = self.settings.placeholder || "";
-    self.control.append(placeholder);
-    const label = (_self$input = self.input) == null ? void 0 : _self$input.getAttribute("aria-label");
-    if (!label) return;
-    placeholder.setAttribute("aria-label", label);
-  });
-  self.on("initialize", () => {
-    self.control_input.addEventListener("keydown", (evt) => {
-      switch (evt.keyCode) {
-        case KEY_ESC2:
-          if (self.isOpen) {
-            preventDefault2(evt, true);
-            self.close();
-          }
-          self.clearActiveItems();
-          return;
-        case KEY_TAB2:
-          self.focus_node.tabIndex = -1;
-          break;
-      }
-      return self.onKeyDown.call(self, evt);
-    });
-    self.on("blur", () => {
-      self.focus_node.tabIndex = self.isDisabled ? -1 : self.tabIndex;
-    });
-    self.on("dropdown_open", () => {
-      self.control_input.focus();
-    });
-    const orig_onBlur = self.onBlur;
-    self.hook("instead", "onBlur", (evt) => {
-      if (evt && evt.relatedTarget == self.control_input) return;
-      return orig_onBlur.call(self);
-    });
-    addEvent2(self.control_input, "blur", () => self.onBlur());
-    self.hook("before", "close", () => {
-      if (!self.isOpen) return;
-      self.focus_node.focus({
-        preventScroll: true
-      });
-    });
-  });
-}
 
 // src/utils/schema_component_method.ts
 var RESULT_EVENT = "sylament:schema-component-method-result";
@@ -3669,9 +15,9 @@ function callSchemaComponentMethod(component, componentKey, method, args = {}) {
     const entry = { resolve, reject };
     queue.push(entry);
     const settle = (reason) => {
-      const index = queue.indexOf(entry);
-      if (index !== -1) {
-        queue.splice(index, 1);
+      const index2 = queue.indexOf(entry);
+      if (index2 !== -1) {
+        queue.splice(index2, 1);
         reject(reason);
       }
     };
@@ -3714,14 +60,4968 @@ function listen(component, byKey) {
   });
 }
 
-// src/controllers/select_controller.ts
-TomSelect.define("dropdown_input", plugin2);
-TomSelect.define("clear_button", plugin);
-var REFRESH_EVENT = "sylament:select-refresh-selected-option-label";
-var SEARCH_METHOD = "getSearchResultsForJs";
-var CLEAR_BUTTON_CLASS = "sy-fo-select-clear-btn";
+// ../../../node_modules/.pnpm/@floating-ui+utils@0.2.12/node_modules/@floating-ui/utils/dist/floating-ui.utils.mjs
+var min = Math.min;
+var max = Math.max;
+var round = Math.round;
+var createCoords = (v) => ({
+  x: v,
+  y: v
+});
+var oppositeSideMap = {
+  left: "right",
+  right: "left",
+  bottom: "top",
+  top: "bottom"
+};
+function clamp(start, value, end) {
+  return max(start, min(value, end));
+}
+function evaluate(value, param) {
+  return typeof value === "function" ? value(param) : value;
+}
+function getSide(placement) {
+  return placement.split("-")[0];
+}
+function getAlignment(placement) {
+  return placement.split("-")[1];
+}
+function getOppositeAxis(axis) {
+  return axis === "x" ? "y" : "x";
+}
+function getAxisLength(axis) {
+  return axis === "y" ? "height" : "width";
+}
+function getSideAxis(placement) {
+  const firstChar = placement[0];
+  return firstChar === "t" || firstChar === "b" ? "y" : "x";
+}
+function getAlignmentAxis(placement) {
+  return getOppositeAxis(getSideAxis(placement));
+}
+function getAlignmentSides(placement, rects, rtl) {
+  if (rtl === void 0) {
+    rtl = false;
+  }
+  const alignment = getAlignment(placement);
+  const alignmentAxis = getAlignmentAxis(placement);
+  const length = getAxisLength(alignmentAxis);
+  let mainAlignmentSide = alignmentAxis === "x" ? alignment === (rtl ? "end" : "start") ? "right" : "left" : alignment === "start" ? "bottom" : "top";
+  if (rects.reference[length] > rects.floating[length]) {
+    mainAlignmentSide = getOppositePlacement(mainAlignmentSide);
+  }
+  return [mainAlignmentSide, getOppositePlacement(mainAlignmentSide)];
+}
+function getExpandedPlacements(placement) {
+  const oppositePlacement = getOppositePlacement(placement);
+  return [getOppositeAlignmentPlacement(placement), oppositePlacement, getOppositeAlignmentPlacement(oppositePlacement)];
+}
+function getOppositeAlignmentPlacement(placement) {
+  return placement.includes("start") ? placement.replace("start", "end") : placement.replace("end", "start");
+}
+var lrPlacement = ["left", "right"];
+var rlPlacement = ["right", "left"];
+var tbPlacement = ["top", "bottom"];
+var btPlacement = ["bottom", "top"];
+function getSideList(side, isStart, rtl) {
+  switch (side) {
+    case "top":
+    case "bottom":
+      if (rtl) return isStart ? rlPlacement : lrPlacement;
+      return isStart ? lrPlacement : rlPlacement;
+    case "left":
+    case "right":
+      return isStart ? tbPlacement : btPlacement;
+    default:
+      return [];
+  }
+}
+function getOppositeAxisPlacements(placement, flipAlignment, direction, rtl) {
+  const alignment = getAlignment(placement);
+  let list = getSideList(getSide(placement), direction === "start", rtl);
+  if (alignment) {
+    list = list.map((side) => side + "-" + alignment);
+    if (flipAlignment) {
+      list = list.concat(list.map(getOppositeAlignmentPlacement));
+    }
+  }
+  return list;
+}
+function getOppositePlacement(placement) {
+  const side = getSide(placement);
+  return oppositeSideMap[side] + placement.slice(side.length);
+}
+function expandPaddingObject(padding) {
+  var _padding$top, _padding$right, _padding$bottom, _padding$left;
+  return {
+    top: (_padding$top = padding.top) != null ? _padding$top : 0,
+    right: (_padding$right = padding.right) != null ? _padding$right : 0,
+    bottom: (_padding$bottom = padding.bottom) != null ? _padding$bottom : 0,
+    left: (_padding$left = padding.left) != null ? _padding$left : 0
+  };
+}
+function getPaddingObject(padding) {
+  return typeof padding !== "number" ? expandPaddingObject(padding) : {
+    top: padding,
+    right: padding,
+    bottom: padding,
+    left: padding
+  };
+}
+function rectToClientRect(rect) {
+  const {
+    x,
+    y,
+    width,
+    height
+  } = rect;
+  return {
+    width,
+    height,
+    top: y,
+    left: x,
+    right: x + width,
+    bottom: y + height,
+    x,
+    y
+  };
+}
+
+// ../../../node_modules/.pnpm/@floating-ui+core@1.8.0/node_modules/@floating-ui/core/dist/floating-ui.core.mjs
+function computeCoordsFromPlacement(_ref, placement, rtl) {
+  let {
+    reference,
+    floating
+  } = _ref;
+  const sideAxis = getSideAxis(placement);
+  const alignmentAxis = getAlignmentAxis(placement);
+  const alignLength = getAxisLength(alignmentAxis);
+  const side = getSide(placement);
+  const isVertical = sideAxis === "y";
+  const commonX = reference.x + reference.width / 2 - floating.width / 2;
+  const commonY = reference.y + reference.height / 2 - floating.height / 2;
+  const commonAlign = reference[alignLength] / 2 - floating[alignLength] / 2;
+  let coords;
+  switch (side) {
+    case "top":
+      coords = {
+        x: commonX,
+        y: reference.y - floating.height
+      };
+      break;
+    case "bottom":
+      coords = {
+        x: commonX,
+        y: reference.y + reference.height
+      };
+      break;
+    case "right":
+      coords = {
+        x: reference.x + reference.width,
+        y: commonY
+      };
+      break;
+    case "left":
+      coords = {
+        x: reference.x - floating.width,
+        y: commonY
+      };
+      break;
+    default:
+      coords = {
+        x: reference.x,
+        y: reference.y
+      };
+  }
+  const alignment = getAlignment(placement);
+  if (alignment) {
+    coords[alignmentAxis] += commonAlign * (alignment === "end" ? 1 : -1) * (rtl && isVertical ? -1 : 1);
+  }
+  return coords;
+}
+async function detectOverflow(state, options) {
+  var _await$platform$isEle;
+  if (options === void 0) {
+    options = {};
+  }
+  const {
+    x,
+    y,
+    platform: platform2,
+    rects,
+    elements,
+    strategy
+  } = state;
+  const {
+    boundary = "clippingAncestors",
+    rootBoundary = "viewport",
+    elementContext = "floating",
+    altBoundary = false,
+    padding = 0
+  } = evaluate(options, state);
+  const paddingObject = getPaddingObject(padding);
+  const altContext = elementContext === "floating" ? "reference" : "floating";
+  const element = elements[altBoundary ? altContext : elementContext];
+  const clippingClientRect = rectToClientRect(await platform2.getClippingRect({
+    element: ((_await$platform$isEle = await (platform2.isElement == null ? void 0 : platform2.isElement(element))) != null ? _await$platform$isEle : true) ? element : element.contextElement || await (platform2.getDocumentElement == null ? void 0 : platform2.getDocumentElement(elements.floating)),
+    boundary,
+    rootBoundary,
+    strategy
+  }));
+  const rect = elementContext === "floating" ? {
+    x,
+    y,
+    width: rects.floating.width,
+    height: rects.floating.height
+  } : rects.reference;
+  const offsetParent = await (platform2.getOffsetParent == null ? void 0 : platform2.getOffsetParent(elements.floating));
+  const offsetScale = await (platform2.isElement == null ? void 0 : platform2.isElement(offsetParent)) && await (platform2.getScale == null ? void 0 : platform2.getScale(offsetParent)) || {
+    x: 1,
+    y: 1
+  };
+  const elementClientRect = rectToClientRect(platform2.convertOffsetParentRelativeRectToViewportRelativeRect ? await platform2.convertOffsetParentRelativeRectToViewportRelativeRect({
+    elements,
+    rect,
+    offsetParent,
+    strategy
+  }) : rect);
+  return {
+    top: (clippingClientRect.top - elementClientRect.top + paddingObject.top) / offsetScale.y,
+    bottom: (elementClientRect.bottom - clippingClientRect.bottom + paddingObject.bottom) / offsetScale.y,
+    left: (clippingClientRect.left - elementClientRect.left + paddingObject.left) / offsetScale.x,
+    right: (elementClientRect.right - clippingClientRect.right + paddingObject.right) / offsetScale.x
+  };
+}
+var MAX_RESET_COUNT = 50;
+var computePosition = async (reference, floating, config) => {
+  const {
+    placement = "bottom",
+    strategy = "absolute",
+    middleware = [],
+    platform: platform2
+  } = config;
+  const platformWithDetectOverflow = platform2.detectOverflow ? platform2 : {
+    ...platform2,
+    detectOverflow
+  };
+  const rtl = await (platform2.isRTL == null ? void 0 : platform2.isRTL(floating));
+  let rects = await platform2.getElementRects({
+    reference,
+    floating,
+    strategy
+  });
+  let {
+    x,
+    y
+  } = computeCoordsFromPlacement(rects, placement, rtl);
+  let statefulPlacement = placement;
+  let resetCount = 0;
+  const middlewareData = {};
+  for (let i = 0; i < middleware.length; i++) {
+    const currentMiddleware = middleware[i];
+    if (!currentMiddleware) {
+      continue;
+    }
+    const {
+      name,
+      fn
+    } = currentMiddleware;
+    const {
+      x: nextX,
+      y: nextY,
+      data,
+      reset
+    } = await fn({
+      x,
+      y,
+      initialPlacement: placement,
+      placement: statefulPlacement,
+      strategy,
+      middlewareData,
+      rects,
+      platform: platformWithDetectOverflow,
+      elements: {
+        reference,
+        floating
+      }
+    });
+    x = nextX != null ? nextX : x;
+    y = nextY != null ? nextY : y;
+    middlewareData[name] = {
+      ...middlewareData[name],
+      ...data
+    };
+    if (reset && resetCount < MAX_RESET_COUNT) {
+      resetCount++;
+      if (typeof reset === "object") {
+        if (reset.placement) {
+          statefulPlacement = reset.placement;
+        }
+        if (reset.rects) {
+          rects = reset.rects === true ? await platform2.getElementRects({
+            reference,
+            floating,
+            strategy
+          }) : reset.rects;
+        }
+        ({
+          x,
+          y
+        } = computeCoordsFromPlacement(rects, statefulPlacement, rtl));
+      }
+      i = -1;
+    }
+  }
+  return {
+    x,
+    y,
+    placement: statefulPlacement,
+    strategy,
+    middlewareData
+  };
+};
+var flip = function(options) {
+  if (options === void 0) {
+    options = {};
+  }
+  return {
+    name: "flip",
+    options,
+    async fn(state) {
+      var _middlewareData$arrow, _middlewareData$flip;
+      const {
+        placement,
+        middlewareData,
+        rects,
+        initialPlacement,
+        platform: platform2,
+        elements
+      } = state;
+      const {
+        mainAxis: checkMainAxis = true,
+        crossAxis: checkCrossAxis = true,
+        fallbackPlacements: specifiedFallbackPlacements,
+        fallbackStrategy = "bestFit",
+        fallbackAxisSideDirection = "none",
+        flipAlignment = true,
+        ...detectOverflowOptions
+      } = evaluate(options, state);
+      if ((_middlewareData$arrow = middlewareData.arrow) != null && _middlewareData$arrow.alignmentOffset) {
+        return {};
+      }
+      const side = getSide(placement);
+      const initialSideAxis = getSideAxis(initialPlacement);
+      const isBasePlacement = getSide(initialPlacement) === initialPlacement;
+      const rtl = await (platform2.isRTL == null ? void 0 : platform2.isRTL(elements.floating));
+      const fallbackPlacements = specifiedFallbackPlacements || (isBasePlacement || !flipAlignment ? [getOppositePlacement(initialPlacement)] : getExpandedPlacements(initialPlacement));
+      const hasFallbackAxisSideDirection = fallbackAxisSideDirection !== "none";
+      if (!specifiedFallbackPlacements && hasFallbackAxisSideDirection) {
+        fallbackPlacements.push(...getOppositeAxisPlacements(initialPlacement, flipAlignment, fallbackAxisSideDirection, rtl));
+      }
+      const placements2 = [initialPlacement, ...fallbackPlacements];
+      const overflow = await platform2.detectOverflow(state, detectOverflowOptions);
+      const overflows = [];
+      let overflowsData = ((_middlewareData$flip = middlewareData.flip) == null ? void 0 : _middlewareData$flip.overflows) || [];
+      if (checkMainAxis) {
+        overflows.push(overflow[side]);
+      }
+      if (checkCrossAxis) {
+        const sides2 = getAlignmentSides(placement, rects, rtl);
+        overflows.push(overflow[sides2[0]], overflow[sides2[1]]);
+      }
+      overflowsData = [...overflowsData, {
+        placement,
+        overflows
+      }];
+      if (!overflows.every((side2) => side2 <= 0)) {
+        var _middlewareData$flip2, _overflowsData$filter;
+        const nextIndex = (((_middlewareData$flip2 = middlewareData.flip) == null ? void 0 : _middlewareData$flip2.index) || 0) + 1;
+        const nextPlacement = placements2[nextIndex];
+        if (nextPlacement) {
+          const ignoreCrossAxisOverflow = checkCrossAxis === "alignment" ? initialSideAxis !== getSideAxis(nextPlacement) : false;
+          if (!ignoreCrossAxisOverflow || // We leave the current main axis only if every placement on that axis
+          // overflows the main axis.
+          overflowsData.every((d) => getSideAxis(d.placement) === initialSideAxis ? d.overflows[0] > 0 : true)) {
+            return {
+              data: {
+                index: nextIndex,
+                overflows: overflowsData
+              },
+              reset: {
+                placement: nextPlacement
+              }
+            };
+          }
+        }
+        let resetPlacement = (_overflowsData$filter = overflowsData.filter((d) => d.overflows[0] <= 0).sort((a, b) => a.overflows[1] - b.overflows[1])[0]) == null ? void 0 : _overflowsData$filter.placement;
+        if (!resetPlacement) {
+          switch (fallbackStrategy) {
+            case "bestFit": {
+              var _overflowsData$filter2;
+              const placement2 = (_overflowsData$filter2 = overflowsData.filter((d) => {
+                if (hasFallbackAxisSideDirection) {
+                  const currentSideAxis = getSideAxis(d.placement);
+                  return currentSideAxis === initialSideAxis || // Create a bias to the `y` side axis due to horizontal
+                  // reading directions favoring greater width.
+                  currentSideAxis === "y";
+                }
+                return true;
+              }).map((d) => [d.placement, d.overflows.filter((overflow2) => overflow2 > 0).reduce((acc, overflow2) => acc + overflow2, 0)]).sort((a, b) => a[1] - b[1])[0]) == null ? void 0 : _overflowsData$filter2[0];
+              if (placement2) {
+                resetPlacement = placement2;
+              }
+              break;
+            }
+            case "initialPlacement":
+              resetPlacement = initialPlacement;
+              break;
+          }
+        }
+        if (placement !== resetPlacement) {
+          return {
+            reset: {
+              placement: resetPlacement
+            }
+          };
+        }
+      }
+      return {};
+    }
+  };
+};
+var originSides = /* @__PURE__ */ new Set(["left", "top"]);
+async function convertValueToCoords(state, options) {
+  const {
+    placement,
+    platform: platform2,
+    elements
+  } = state;
+  const rtl = await (platform2.isRTL == null ? void 0 : platform2.isRTL(elements.floating));
+  const side = getSide(placement);
+  const alignment = getAlignment(placement);
+  const isVertical = getSideAxis(placement) === "y";
+  const mainAxisMulti = originSides.has(side) ? -1 : 1;
+  const crossAxisMulti = rtl && isVertical ? -1 : 1;
+  const rawValue = evaluate(options, state);
+  let {
+    mainAxis,
+    crossAxis,
+    alignmentAxis
+  } = typeof rawValue === "number" ? {
+    mainAxis: rawValue,
+    crossAxis: 0,
+    alignmentAxis: null
+  } : {
+    mainAxis: rawValue.mainAxis || 0,
+    crossAxis: rawValue.crossAxis || 0,
+    alignmentAxis: rawValue.alignmentAxis
+  };
+  if (alignment && typeof alignmentAxis === "number") {
+    crossAxis = alignment === "end" ? alignmentAxis * -1 : alignmentAxis;
+  }
+  return isVertical ? {
+    x: crossAxis * crossAxisMulti,
+    y: mainAxis * mainAxisMulti
+  } : {
+    x: mainAxis * mainAxisMulti,
+    y: crossAxis * crossAxisMulti
+  };
+}
+var offset = function(options) {
+  if (options === void 0) {
+    options = 0;
+  }
+  return {
+    name: "offset",
+    options,
+    async fn(state) {
+      var _middlewareData$offse, _middlewareData$arrow;
+      const {
+        x,
+        y,
+        placement,
+        middlewareData
+      } = state;
+      const diffCoords = await convertValueToCoords(state, options);
+      if (placement === ((_middlewareData$offse = middlewareData.offset) == null ? void 0 : _middlewareData$offse.placement) && (_middlewareData$arrow = middlewareData.arrow) != null && _middlewareData$arrow.alignmentOffset) {
+        return {};
+      }
+      return {
+        x: x + diffCoords.x,
+        y: y + diffCoords.y,
+        data: {
+          ...diffCoords,
+          placement
+        }
+      };
+    }
+  };
+};
+var shift = function(options) {
+  if (options === void 0) {
+    options = {};
+  }
+  return {
+    name: "shift",
+    options,
+    async fn(state) {
+      const {
+        x,
+        y,
+        placement,
+        platform: platform2
+      } = state;
+      const {
+        mainAxis: checkMainAxis = true,
+        crossAxis: checkCrossAxis = false,
+        limiter = {
+          fn: (_ref) => {
+            let {
+              x: x2,
+              y: y2
+            } = _ref;
+            return {
+              x: x2,
+              y: y2
+            };
+          }
+        },
+        ...detectOverflowOptions
+      } = evaluate(options, state);
+      const coords = {
+        x,
+        y
+      };
+      const overflow = await platform2.detectOverflow(state, detectOverflowOptions);
+      const crossAxis = getSideAxis(placement);
+      const mainAxis = getOppositeAxis(crossAxis);
+      let mainAxisCoord = coords[mainAxis];
+      let crossAxisCoord = coords[crossAxis];
+      const clampCoord = (axis, coord) => clamp(coord + overflow[axis === "y" ? "top" : "left"], coord, coord - overflow[axis === "y" ? "bottom" : "right"]);
+      if (checkMainAxis) {
+        mainAxisCoord = clampCoord(mainAxis, mainAxisCoord);
+      }
+      if (checkCrossAxis) {
+        crossAxisCoord = clampCoord(crossAxis, crossAxisCoord);
+      }
+      const limitedCoords = limiter.fn({
+        ...state,
+        [mainAxis]: mainAxisCoord,
+        [crossAxis]: crossAxisCoord
+      });
+      return {
+        ...limitedCoords,
+        data: {
+          x: limitedCoords.x - x,
+          y: limitedCoords.y - y,
+          enabled: {
+            [mainAxis]: checkMainAxis,
+            [crossAxis]: checkCrossAxis
+          }
+        }
+      };
+    }
+  };
+};
+
+// ../../../node_modules/.pnpm/@floating-ui+utils@0.2.12/node_modules/@floating-ui/utils/dist/floating-ui.utils.dom.mjs
+function hasWindow() {
+  return typeof window !== "undefined";
+}
+function getNodeName(node) {
+  if (isNode(node)) {
+    return (node.nodeName || "").toLowerCase();
+  }
+  return "#document";
+}
+function getWindow(node) {
+  var _node$ownerDocument;
+  return (node == null || (_node$ownerDocument = node.ownerDocument) == null ? void 0 : _node$ownerDocument.defaultView) || window;
+}
+function getDocumentElement(node) {
+  var _ref;
+  return (_ref = (isNode(node) ? node.ownerDocument : node.document) || window.document) == null ? void 0 : _ref.documentElement;
+}
+function isNode(value) {
+  if (!hasWindow()) {
+    return false;
+  }
+  return value instanceof Node || value instanceof getWindow(value).Node;
+}
+function isElement(value) {
+  if (!hasWindow()) {
+    return false;
+  }
+  return value instanceof Element || value instanceof getWindow(value).Element;
+}
+function isHTMLElement(value) {
+  if (!hasWindow()) {
+    return false;
+  }
+  return value instanceof HTMLElement || value instanceof getWindow(value).HTMLElement;
+}
+function isShadowRoot(value) {
+  if (!hasWindow() || typeof ShadowRoot === "undefined") {
+    return false;
+  }
+  return value instanceof ShadowRoot || value instanceof getWindow(value).ShadowRoot;
+}
+function isOverflowElement(element) {
+  const {
+    overflow,
+    overflowX,
+    overflowY,
+    display
+  } = getComputedStyle2(element);
+  return /auto|scroll|overlay|hidden|clip/.test(overflow + overflowY + overflowX) && display !== "inline" && display !== "contents";
+}
+function isTableElement(element) {
+  return /^(table|td|th)$/.test(getNodeName(element));
+}
+function isTopLayer(element) {
+  try {
+    if (element.matches(":popover-open")) {
+      return true;
+    }
+  } catch (_e) {
+  }
+  try {
+    return element.matches(":modal");
+  } catch (_e) {
+    return false;
+  }
+}
+var willChangeRe = /transform|translate|scale|rotate|perspective|filter/;
+var containRe = /paint|layout|strict|content/;
+var isNotNone = (value) => !!value && value !== "none";
+var isWebKitValue;
+function isContainingBlock(elementOrCss) {
+  const css2 = isElement(elementOrCss) ? getComputedStyle2(elementOrCss) : elementOrCss;
+  return isNotNone(css2.transform) || isNotNone(css2.translate) || isNotNone(css2.scale) || isNotNone(css2.rotate) || isNotNone(css2.perspective) || !isWebKit() && (isNotNone(css2.backdropFilter) || isNotNone(css2.filter)) || willChangeRe.test(css2.willChange || "") || containRe.test(css2.contain || "");
+}
+function getContainingBlock(element) {
+  let currentNode = getParentNode(element);
+  while (isHTMLElement(currentNode) && !isLastTraversableNode(currentNode)) {
+    if (isContainingBlock(currentNode)) {
+      return currentNode;
+    } else if (isTopLayer(currentNode)) {
+      return null;
+    }
+    currentNode = getParentNode(currentNode);
+  }
+  return null;
+}
+function isWebKit() {
+  if (isWebKitValue == null) {
+    isWebKitValue = typeof CSS !== "undefined" && CSS.supports && CSS.supports("-webkit-backdrop-filter", "none");
+  }
+  return isWebKitValue;
+}
+function isLastTraversableNode(node) {
+  return /^(html|body|#document)$/.test(getNodeName(node));
+}
+function getComputedStyle2(element) {
+  return getWindow(element).getComputedStyle(element);
+}
+function getNodeScroll(element) {
+  if (isElement(element)) {
+    return {
+      scrollLeft: element.scrollLeft,
+      scrollTop: element.scrollTop
+    };
+  }
+  return {
+    scrollLeft: element.scrollX,
+    scrollTop: element.scrollY
+  };
+}
+function getParentNode(node) {
+  if (getNodeName(node) === "html") {
+    return node;
+  }
+  const result = (
+    // Step into the shadow DOM of the parent of a slotted node.
+    node.assignedSlot || // DOM Element detected.
+    node.parentNode || // ShadowRoot detected.
+    isShadowRoot(node) && node.host || // Fallback.
+    getDocumentElement(node)
+  );
+  return isShadowRoot(result) ? result.host : result;
+}
+function getNearestOverflowAncestor(node) {
+  const parentNode = getParentNode(node);
+  if (isLastTraversableNode(parentNode)) {
+    return (node.ownerDocument || node).body;
+  }
+  if (isHTMLElement(parentNode) && isOverflowElement(parentNode)) {
+    return parentNode;
+  }
+  return getNearestOverflowAncestor(parentNode);
+}
+function getOverflowAncestors(node, list, traverseIframes) {
+  var _node$ownerDocument2;
+  if (list === void 0) {
+    list = [];
+  }
+  if (traverseIframes === void 0) {
+    traverseIframes = true;
+  }
+  const scrollableAncestor = getNearestOverflowAncestor(node);
+  const isBody = scrollableAncestor === ((_node$ownerDocument2 = node.ownerDocument) == null ? void 0 : _node$ownerDocument2.body);
+  const win = getWindow(scrollableAncestor);
+  if (isBody) {
+    const frameElement = getFrameElement(win);
+    return list.concat(win, win.visualViewport || [], isOverflowElement(scrollableAncestor) ? scrollableAncestor : [], frameElement && traverseIframes ? getOverflowAncestors(frameElement) : []);
+  } else {
+    return list.concat(scrollableAncestor, getOverflowAncestors(scrollableAncestor, [], traverseIframes));
+  }
+}
+function getFrameElement(win) {
+  return win.parent && Object.getPrototypeOf(win.parent) ? win.frameElement : null;
+}
+
+// ../../../node_modules/.pnpm/@floating-ui+dom@1.8.0/node_modules/@floating-ui/dom/dist/floating-ui.dom.mjs
+function getCssDimensions(element) {
+  const css2 = getComputedStyle2(element);
+  let width = parseFloat(css2.width) || 0;
+  let height = parseFloat(css2.height) || 0;
+  const hasOffset = isHTMLElement(element);
+  const offsetWidth = hasOffset ? element.offsetWidth : width;
+  const offsetHeight = hasOffset ? element.offsetHeight : height;
+  const shouldFallback = round(width) !== offsetWidth || round(height) !== offsetHeight;
+  if (shouldFallback) {
+    width = offsetWidth;
+    height = offsetHeight;
+  }
+  return {
+    width,
+    height,
+    $: shouldFallback
+  };
+}
+function unwrapElement(element) {
+  return !isElement(element) ? element.contextElement : element;
+}
+function getScale(element) {
+  const domElement = unwrapElement(element);
+  if (!isHTMLElement(domElement)) {
+    return createCoords(1);
+  }
+  const rect = domElement.getBoundingClientRect();
+  const {
+    width,
+    height,
+    $
+  } = getCssDimensions(domElement);
+  let x = ($ ? round(rect.width) : rect.width) / width;
+  let y = ($ ? round(rect.height) : rect.height) / height;
+  if (!x || !Number.isFinite(x)) {
+    x = 1;
+  }
+  if (!y || !Number.isFinite(y)) {
+    y = 1;
+  }
+  return {
+    x,
+    y
+  };
+}
+var noOffsets = /* @__PURE__ */ createCoords(0);
+function getVisualOffsets(element) {
+  const win = getWindow(element);
+  if (!isWebKit() || !win.visualViewport) {
+    return noOffsets;
+  }
+  return {
+    x: win.visualViewport.offsetLeft,
+    y: win.visualViewport.offsetTop
+  };
+}
+function shouldAddVisualOffsets(element, isFixed, floatingOffsetParent) {
+  if (isFixed === void 0) {
+    isFixed = false;
+  }
+  return !!floatingOffsetParent && isFixed && floatingOffsetParent === getWindow(element);
+}
+function getBoundingClientRect(element, includeScale, isFixedStrategy, offsetParent) {
+  if (includeScale === void 0) {
+    includeScale = false;
+  }
+  if (isFixedStrategy === void 0) {
+    isFixedStrategy = false;
+  }
+  const clientRect = element.getBoundingClientRect();
+  const domElement = unwrapElement(element);
+  let scale = createCoords(1);
+  if (includeScale) {
+    if (offsetParent) {
+      if (isElement(offsetParent)) {
+        scale = getScale(offsetParent);
+      }
+    } else {
+      scale = getScale(element);
+    }
+  }
+  const visualOffsets = shouldAddVisualOffsets(domElement, isFixedStrategy, offsetParent) ? getVisualOffsets(domElement) : createCoords(0);
+  let x = (clientRect.left + visualOffsets.x) / scale.x;
+  let y = (clientRect.top + visualOffsets.y) / scale.y;
+  let width = clientRect.width / scale.x;
+  let height = clientRect.height / scale.y;
+  if (domElement && offsetParent) {
+    const win = getWindow(domElement);
+    const offsetWin = isElement(offsetParent) ? getWindow(offsetParent) : offsetParent;
+    let currentWin = win;
+    let currentIFrame = getFrameElement(currentWin);
+    while (currentIFrame && offsetWin !== currentWin) {
+      const iframeScale = getScale(currentIFrame);
+      const iframeRect = currentIFrame.getBoundingClientRect();
+      const css2 = getComputedStyle2(currentIFrame);
+      const left = iframeRect.left + (currentIFrame.clientLeft + parseFloat(css2.paddingLeft)) * iframeScale.x;
+      const top = iframeRect.top + (currentIFrame.clientTop + parseFloat(css2.paddingTop)) * iframeScale.y;
+      x *= iframeScale.x;
+      y *= iframeScale.y;
+      width *= iframeScale.x;
+      height *= iframeScale.y;
+      x += left;
+      y += top;
+      currentWin = getWindow(currentIFrame);
+      currentIFrame = getFrameElement(currentWin);
+    }
+  }
+  return rectToClientRect({
+    width,
+    height,
+    x,
+    y
+  });
+}
+function getWindowScrollBarX(element, rect) {
+  const leftScroll = getNodeScroll(element).scrollLeft;
+  if (!rect) {
+    return getBoundingClientRect(getDocumentElement(element)).left + leftScroll;
+  }
+  return rect.left + leftScroll;
+}
+function getHTMLOffset(documentElement, scroll) {
+  const htmlRect = documentElement.getBoundingClientRect();
+  const x = htmlRect.left + scroll.scrollLeft - getWindowScrollBarX(documentElement, htmlRect);
+  const y = htmlRect.top + scroll.scrollTop;
+  return {
+    x,
+    y
+  };
+}
+function convertOffsetParentRelativeRectToViewportRelativeRect(_ref) {
+  let {
+    elements,
+    rect,
+    offsetParent,
+    strategy
+  } = _ref;
+  const isFixed = strategy === "fixed";
+  const documentElement = getDocumentElement(offsetParent);
+  const topLayer = elements ? isTopLayer(elements.floating) : false;
+  if (offsetParent === documentElement || topLayer && isFixed) {
+    return rect;
+  }
+  let scroll = {
+    scrollLeft: 0,
+    scrollTop: 0
+  };
+  let scale = createCoords(1);
+  const offsets = createCoords(0);
+  const isOffsetParentAnElement = isHTMLElement(offsetParent);
+  if (isOffsetParentAnElement || !isFixed) {
+    if (getNodeName(offsetParent) !== "body" || isOverflowElement(documentElement)) {
+      scroll = getNodeScroll(offsetParent);
+    }
+    if (isOffsetParentAnElement) {
+      const offsetRect = getBoundingClientRect(offsetParent);
+      scale = getScale(offsetParent);
+      offsets.x = offsetRect.x + offsetParent.clientLeft;
+      offsets.y = offsetRect.y + offsetParent.clientTop;
+    }
+  }
+  const htmlOffset = documentElement && !isOffsetParentAnElement && !isFixed ? getHTMLOffset(documentElement, scroll) : createCoords(0);
+  return {
+    width: rect.width * scale.x,
+    height: rect.height * scale.y,
+    x: rect.x * scale.x - scroll.scrollLeft * scale.x + offsets.x + htmlOffset.x,
+    y: rect.y * scale.y - scroll.scrollTop * scale.y + offsets.y + htmlOffset.y
+  };
+}
+function getClientRects(element) {
+  return element.getClientRects ? Array.from(element.getClientRects()) : [];
+}
+function getDocumentRect(html) {
+  const scroll = getNodeScroll(html);
+  const body = html.ownerDocument.body;
+  const width = max(html.scrollWidth, html.clientWidth, body.scrollWidth, body.clientWidth);
+  const height = max(html.scrollHeight, html.clientHeight, body.scrollHeight, body.clientHeight);
+  let x = -scroll.scrollLeft + getWindowScrollBarX(html);
+  const y = -scroll.scrollTop;
+  if (getComputedStyle2(body).direction === "rtl") {
+    x += max(html.clientWidth, body.clientWidth) - width;
+  }
+  return {
+    width,
+    height,
+    x,
+    y
+  };
+}
+var SCROLLBAR_MAX = 25;
+function getViewportRect(element, strategy, rootBoundary) {
+  if (rootBoundary === void 0) {
+    rootBoundary = "viewport";
+  }
+  const isLayoutViewport = rootBoundary === "layoutViewport";
+  const win = getWindow(element);
+  const html = getDocumentElement(element);
+  const visualViewport = win.visualViewport;
+  let width = html.clientWidth;
+  let height = html.clientHeight;
+  let x = 0;
+  let y = 0;
+  if (visualViewport) {
+    const layoutRelativeClientCoords = !isWebKit() || strategy === "fixed";
+    if (isLayoutViewport) {
+      if (!layoutRelativeClientCoords) {
+        x = -visualViewport.offsetLeft;
+        y = -visualViewport.offsetTop;
+      }
+    } else {
+      width = visualViewport.width;
+      height = visualViewport.height;
+      if (layoutRelativeClientCoords) {
+        x = visualViewport.offsetLeft;
+        y = visualViewport.offsetTop;
+      }
+    }
+  }
+  const windowScrollbarX = getWindowScrollBarX(html);
+  if (windowScrollbarX <= 0) {
+    const doc = html.ownerDocument;
+    const body = doc.body;
+    const bodyStyles = getComputedStyle(body);
+    const bodyMarginInline = doc.compatMode === "CSS1Compat" ? parseFloat(bodyStyles.marginLeft) + parseFloat(bodyStyles.marginRight) || 0 : 0;
+    const reservedWidth = Math.abs(html.clientWidth - body.clientWidth - bodyMarginInline);
+    const gutter = getComputedStyle(html).scrollbarGutter === "stable both-edges" ? reservedWidth / 2 : reservedWidth;
+    if (gutter <= SCROLLBAR_MAX) {
+      width -= gutter;
+    }
+  }
+  return {
+    width,
+    height,
+    x,
+    y
+  };
+}
+function getInnerBoundingClientRect(element, strategy) {
+  const clientRect = getBoundingClientRect(element, true, strategy === "fixed");
+  const top = clientRect.top + element.clientTop;
+  const left = clientRect.left + element.clientLeft;
+  const scale = getScale(element);
+  const width = element.clientWidth * scale.x;
+  const height = element.clientHeight * scale.y;
+  const x = left * scale.x;
+  const y = top * scale.y;
+  return {
+    width,
+    height,
+    x,
+    y
+  };
+}
+function getClientRectFromClippingAncestor(element, clippingAncestor, strategy) {
+  let rect;
+  if (clippingAncestor === "viewport" || clippingAncestor === "layoutViewport") {
+    rect = getViewportRect(element, strategy, clippingAncestor);
+  } else if (clippingAncestor === "document") {
+    rect = getDocumentRect(getDocumentElement(element));
+  } else if (isElement(clippingAncestor)) {
+    rect = getInnerBoundingClientRect(clippingAncestor, strategy);
+  } else {
+    const visualOffsets = getVisualOffsets(element);
+    rect = {
+      x: clippingAncestor.x - visualOffsets.x,
+      y: clippingAncestor.y - visualOffsets.y,
+      width: clippingAncestor.width,
+      height: clippingAncestor.height
+    };
+  }
+  return rectToClientRect(rect);
+}
+function getClippingElementAncestors(element, cache) {
+  const cachedResult = cache.get(element);
+  if (cachedResult) {
+    return cachedResult;
+  }
+  let result = getOverflowAncestors(element, [], false).filter((el) => isElement(el) && getNodeName(el) !== "body");
+  let lastKeptComputedStyle = null;
+  const elementIsFixed = getComputedStyle2(element).position === "fixed";
+  let currentNode = elementIsFixed ? getParentNode(element) : element;
+  while (isElement(currentNode) && !isLastTraversableNode(currentNode)) {
+    const computedStyle = getComputedStyle2(currentNode);
+    const currentNodeIsContaining = isContainingBlock(currentNode);
+    const lastPosition = lastKeptComputedStyle ? lastKeptComputedStyle.position : elementIsFixed ? "fixed" : "";
+    const shouldDropCurrentNode = !currentNodeIsContaining && (lastPosition === "fixed" || lastPosition === "absolute" && computedStyle.position === "static");
+    if (shouldDropCurrentNode) {
+      result = result.filter((ancestor) => ancestor !== currentNode);
+    } else {
+      lastKeptComputedStyle = computedStyle;
+    }
+    currentNode = getParentNode(currentNode);
+  }
+  cache.set(element, result);
+  return result;
+}
+function getClippingRect(_ref) {
+  let {
+    element,
+    boundary,
+    rootBoundary,
+    strategy
+  } = _ref;
+  const elementClippingAncestors = boundary === "clippingAncestors" ? isTopLayer(element) ? [] : getClippingElementAncestors(element, this._c) : [].concat(boundary);
+  const clippingAncestors = [...elementClippingAncestors, rootBoundary];
+  const firstRect = getClientRectFromClippingAncestor(element, clippingAncestors[0], strategy);
+  let top = firstRect.top;
+  let right = firstRect.right;
+  let bottom = firstRect.bottom;
+  let left = firstRect.left;
+  for (let i = 1; i < clippingAncestors.length; i++) {
+    const rect = getClientRectFromClippingAncestor(element, clippingAncestors[i], strategy);
+    top = max(rect.top, top);
+    right = min(rect.right, right);
+    bottom = min(rect.bottom, bottom);
+    left = max(rect.left, left);
+  }
+  return {
+    width: right - left,
+    height: bottom - top,
+    x: left,
+    y: top
+  };
+}
+function getDimensions(element) {
+  const {
+    width,
+    height
+  } = getCssDimensions(element);
+  return {
+    width,
+    height
+  };
+}
+function getRectRelativeToOffsetParent(element, offsetParent, strategy) {
+  const isOffsetParentAnElement = isHTMLElement(offsetParent);
+  const documentElement = getDocumentElement(offsetParent);
+  const isFixed = strategy === "fixed";
+  const rect = getBoundingClientRect(element, true, isFixed, offsetParent);
+  let scroll = {
+    scrollLeft: 0,
+    scrollTop: 0
+  };
+  const offsets = createCoords(0);
+  if (isOffsetParentAnElement || !isFixed) {
+    if (getNodeName(offsetParent) !== "body" || isOverflowElement(documentElement)) {
+      scroll = getNodeScroll(offsetParent);
+    }
+    if (isOffsetParentAnElement) {
+      const offsetRect = getBoundingClientRect(offsetParent, true, isFixed, offsetParent);
+      offsets.x = offsetRect.x + offsetParent.clientLeft;
+      offsets.y = offsetRect.y + offsetParent.clientTop;
+    }
+  }
+  if (!isOffsetParentAnElement && documentElement) {
+    offsets.x = getWindowScrollBarX(documentElement);
+  }
+  const htmlOffset = documentElement && !isOffsetParentAnElement && !isFixed ? getHTMLOffset(documentElement, scroll) : createCoords(0);
+  const x = rect.left + scroll.scrollLeft - offsets.x - htmlOffset.x;
+  const y = rect.top + scroll.scrollTop - offsets.y - htmlOffset.y;
+  return {
+    x,
+    y,
+    width: rect.width,
+    height: rect.height
+  };
+}
+function isStaticPositioned(element) {
+  return getComputedStyle2(element).position === "static";
+}
+function getTrueOffsetParent(element, polyfill) {
+  if (!isHTMLElement(element) || getComputedStyle2(element).position === "fixed") {
+    return null;
+  }
+  if (polyfill) {
+    return polyfill(element);
+  }
+  let rawOffsetParent = element.offsetParent;
+  if (getDocumentElement(element) === rawOffsetParent) {
+    rawOffsetParent = rawOffsetParent.ownerDocument.body;
+  }
+  return rawOffsetParent;
+}
+function getOffsetParent(element, polyfill) {
+  const win = getWindow(element);
+  if (isTopLayer(element)) {
+    return win;
+  }
+  if (!isHTMLElement(element)) {
+    let svgOffsetParent = getParentNode(element);
+    while (svgOffsetParent && !isLastTraversableNode(svgOffsetParent)) {
+      if (isElement(svgOffsetParent) && !isStaticPositioned(svgOffsetParent)) {
+        return svgOffsetParent;
+      }
+      svgOffsetParent = getParentNode(svgOffsetParent);
+    }
+    return win;
+  }
+  let offsetParent = getTrueOffsetParent(element, polyfill);
+  while (offsetParent && isTableElement(offsetParent) && isStaticPositioned(offsetParent)) {
+    offsetParent = getTrueOffsetParent(offsetParent, polyfill);
+  }
+  if (offsetParent && isLastTraversableNode(offsetParent) && isStaticPositioned(offsetParent) && !isContainingBlock(offsetParent)) {
+    return win;
+  }
+  return offsetParent || getContainingBlock(element) || win;
+}
+var getElementRects = async function(data) {
+  const getOffsetParentFn = this.getOffsetParent || getOffsetParent;
+  const getDimensionsFn = this.getDimensions;
+  const floatingDimensions = await getDimensionsFn(data.floating);
+  return {
+    reference: getRectRelativeToOffsetParent(data.reference, await getOffsetParentFn(data.floating), data.strategy),
+    floating: {
+      x: 0,
+      y: 0,
+      width: floatingDimensions.width,
+      height: floatingDimensions.height
+    }
+  };
+};
+function isRTL(element) {
+  return getComputedStyle2(element).direction === "rtl";
+}
+var platform = {
+  convertOffsetParentRelativeRectToViewportRelativeRect,
+  getDocumentElement,
+  getClippingRect,
+  getOffsetParent,
+  getElementRects,
+  getClientRects,
+  getDimensions,
+  getScale,
+  isElement,
+  isRTL
+};
+var offset2 = offset;
+var shift2 = shift;
+var flip2 = flip;
+var computePosition2 = (reference, floating, options) => {
+  const cache = /* @__PURE__ */ new Map();
+  const mergedOptions = options != null ? options : {};
+  const platformWithCache = {
+    ...platform,
+    ...mergedOptions.platform,
+    _c: cache
+  };
+  return computePosition(reference, floating, {
+    ...mergedOptions,
+    platform: platformWithCache
+  });
+};
+
+// ../../../node_modules/.pnpm/sortablejs@1.15.7/node_modules/sortablejs/modular/sortable.esm.js
+function _defineProperty(e, r, t) {
+  return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, {
+    value: t,
+    enumerable: true,
+    configurable: true,
+    writable: true
+  }) : e[r] = t, e;
+}
+function _extends() {
+  return _extends = Object.assign ? Object.assign.bind() : function(n) {
+    for (var e = 1; e < arguments.length; e++) {
+      var t = arguments[e];
+      for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]);
+    }
+    return n;
+  }, _extends.apply(null, arguments);
+}
+function ownKeys(e, r) {
+  var t = Object.keys(e);
+  if (Object.getOwnPropertySymbols) {
+    var o = Object.getOwnPropertySymbols(e);
+    r && (o = o.filter(function(r2) {
+      return Object.getOwnPropertyDescriptor(e, r2).enumerable;
+    })), t.push.apply(t, o);
+  }
+  return t;
+}
+function _objectSpread2(e) {
+  for (var r = 1; r < arguments.length; r++) {
+    var t = null != arguments[r] ? arguments[r] : {};
+    r % 2 ? ownKeys(Object(t), true).forEach(function(r2) {
+      _defineProperty(e, r2, t[r2]);
+    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function(r2) {
+      Object.defineProperty(e, r2, Object.getOwnPropertyDescriptor(t, r2));
+    });
+  }
+  return e;
+}
+function _objectWithoutProperties(e, t) {
+  if (null == e) return {};
+  var o, r, i = _objectWithoutPropertiesLoose(e, t);
+  if (Object.getOwnPropertySymbols) {
+    var n = Object.getOwnPropertySymbols(e);
+    for (r = 0; r < n.length; r++) o = n[r], -1 === t.indexOf(o) && {}.propertyIsEnumerable.call(e, o) && (i[o] = e[o]);
+  }
+  return i;
+}
+function _objectWithoutPropertiesLoose(r, e) {
+  if (null == r) return {};
+  var t = {};
+  for (var n in r) if ({}.hasOwnProperty.call(r, n)) {
+    if (-1 !== e.indexOf(n)) continue;
+    t[n] = r[n];
+  }
+  return t;
+}
+function _toPrimitive(t, r) {
+  if ("object" != typeof t || !t) return t;
+  var e = t[Symbol.toPrimitive];
+  if (void 0 !== e) {
+    var i = e.call(t, r || "default");
+    if ("object" != typeof i) return i;
+    throw new TypeError("@@toPrimitive must return a primitive value.");
+  }
+  return ("string" === r ? String : Number)(t);
+}
+function _toPropertyKey(t) {
+  var i = _toPrimitive(t, "string");
+  return "symbol" == typeof i ? i : i + "";
+}
+function _typeof(o) {
+  "@babel/helpers - typeof";
+  return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function(o2) {
+    return typeof o2;
+  } : function(o2) {
+    return o2 && "function" == typeof Symbol && o2.constructor === Symbol && o2 !== Symbol.prototype ? "symbol" : typeof o2;
+  }, _typeof(o);
+}
+var version = "1.15.7";
+function userAgent(pattern) {
+  if (typeof window !== "undefined" && window.navigator) {
+    return !!/* @__PURE__ */ navigator.userAgent.match(pattern);
+  }
+}
+var IE11OrLess = userAgent(/(?:Trident.*rv[ :]?11\.|msie|iemobile|Windows Phone)/i);
+var Edge = userAgent(/Edge/i);
+var FireFox = userAgent(/firefox/i);
+var Safari = userAgent(/safari/i) && !userAgent(/chrome/i) && !userAgent(/android/i);
+var IOS = userAgent(/iP(ad|od|hone)/i);
+var ChromeForAndroid = userAgent(/chrome/i) && userAgent(/android/i);
+var captureMode = {
+  capture: false,
+  passive: false
+};
+function on(el, event, fn) {
+  el.addEventListener(event, fn, !IE11OrLess && captureMode);
+}
+function off(el, event, fn) {
+  el.removeEventListener(event, fn, !IE11OrLess && captureMode);
+}
+function matches(el, selector) {
+  if (!selector) return;
+  selector[0] === ">" && (selector = selector.substring(1));
+  if (el) {
+    try {
+      if (el.matches) {
+        return el.matches(selector);
+      } else if (el.msMatchesSelector) {
+        return el.msMatchesSelector(selector);
+      } else if (el.webkitMatchesSelector) {
+        return el.webkitMatchesSelector(selector);
+      }
+    } catch (_) {
+      return false;
+    }
+  }
+  return false;
+}
+function getParentOrHost(el) {
+  return el.host && el !== document && el.host.nodeType && el.host !== el ? el.host : el.parentNode;
+}
+function closest(el, selector, ctx, includeCTX) {
+  if (el) {
+    ctx = ctx || document;
+    do {
+      if (selector != null && (selector[0] === ">" ? el.parentNode === ctx && matches(el, selector) : matches(el, selector)) || includeCTX && el === ctx) {
+        return el;
+      }
+      if (el === ctx) break;
+    } while (el = getParentOrHost(el));
+  }
+  return null;
+}
+var R_SPACE = /\s+/g;
+function toggleClass(el, name, state) {
+  if (el && name) {
+    if (el.classList) {
+      el.classList[state ? "add" : "remove"](name);
+    } else {
+      var className = (" " + el.className + " ").replace(R_SPACE, " ").replace(" " + name + " ", " ");
+      el.className = (className + (state ? " " + name : "")).replace(R_SPACE, " ");
+    }
+  }
+}
+function css(el, prop, val) {
+  var style = el && el.style;
+  if (style) {
+    if (val === void 0) {
+      if (document.defaultView && document.defaultView.getComputedStyle) {
+        val = document.defaultView.getComputedStyle(el, "");
+      } else if (el.currentStyle) {
+        val = el.currentStyle;
+      }
+      return prop === void 0 ? val : val[prop];
+    } else {
+      if (!(prop in style) && prop.indexOf("webkit") === -1) {
+        prop = "-webkit-" + prop;
+      }
+      style[prop] = val + (typeof val === "string" ? "" : "px");
+    }
+  }
+}
+function matrix(el, selfOnly) {
+  var appliedTransforms = "";
+  if (typeof el === "string") {
+    appliedTransforms = el;
+  } else {
+    do {
+      var transform = css(el, "transform");
+      if (transform && transform !== "none") {
+        appliedTransforms = transform + " " + appliedTransforms;
+      }
+    } while (!selfOnly && (el = el.parentNode));
+  }
+  var matrixFn = window.DOMMatrix || window.WebKitCSSMatrix || window.CSSMatrix || window.MSCSSMatrix;
+  return matrixFn && new matrixFn(appliedTransforms);
+}
+function find(ctx, tagName, iterator) {
+  if (ctx) {
+    var list = ctx.getElementsByTagName(tagName), i = 0, n = list.length;
+    if (iterator) {
+      for (; i < n; i++) {
+        iterator(list[i], i);
+      }
+    }
+    return list;
+  }
+  return [];
+}
+function getWindowScrollingElement() {
+  var scrollingElement = document.scrollingElement;
+  if (scrollingElement) {
+    return scrollingElement;
+  } else {
+    return document.documentElement;
+  }
+}
+function getRect(el, relativeToContainingBlock, relativeToNonStaticParent, undoScale, container) {
+  if (!el.getBoundingClientRect && el !== window) return;
+  var elRect, top, left, bottom, right, height, width;
+  if (el !== window && el.parentNode && el !== getWindowScrollingElement()) {
+    elRect = el.getBoundingClientRect();
+    top = elRect.top;
+    left = elRect.left;
+    bottom = elRect.bottom;
+    right = elRect.right;
+    height = elRect.height;
+    width = elRect.width;
+  } else {
+    top = 0;
+    left = 0;
+    bottom = window.innerHeight;
+    right = window.innerWidth;
+    height = window.innerHeight;
+    width = window.innerWidth;
+  }
+  if ((relativeToContainingBlock || relativeToNonStaticParent) && el !== window) {
+    container = container || el.parentNode;
+    if (!IE11OrLess) {
+      do {
+        if (container && container.getBoundingClientRect && (css(container, "transform") !== "none" || relativeToNonStaticParent && css(container, "position") !== "static")) {
+          var containerRect = container.getBoundingClientRect();
+          top -= containerRect.top + parseInt(css(container, "border-top-width"));
+          left -= containerRect.left + parseInt(css(container, "border-left-width"));
+          bottom = top + elRect.height;
+          right = left + elRect.width;
+          break;
+        }
+      } while (container = container.parentNode);
+    }
+  }
+  if (undoScale && el !== window) {
+    var elMatrix = matrix(container || el), scaleX = elMatrix && elMatrix.a, scaleY = elMatrix && elMatrix.d;
+    if (elMatrix) {
+      top /= scaleY;
+      left /= scaleX;
+      width /= scaleX;
+      height /= scaleY;
+      bottom = top + height;
+      right = left + width;
+    }
+  }
+  return {
+    top,
+    left,
+    bottom,
+    right,
+    width,
+    height
+  };
+}
+function isScrolledPast(el, elSide, parentSide) {
+  var parent = getParentAutoScrollElement(el, true), elSideVal = getRect(el)[elSide];
+  while (parent) {
+    var parentSideVal = getRect(parent)[parentSide], visible = void 0;
+    if (parentSide === "top" || parentSide === "left") {
+      visible = elSideVal >= parentSideVal;
+    } else {
+      visible = elSideVal <= parentSideVal;
+    }
+    if (!visible) return parent;
+    if (parent === getWindowScrollingElement()) break;
+    parent = getParentAutoScrollElement(parent, false);
+  }
+  return false;
+}
+function getChild(el, childNum, options, includeDragEl) {
+  var currentChild = 0, i = 0, children = el.children;
+  while (i < children.length) {
+    if (children[i].style.display !== "none" && children[i] !== Sortable.ghost && (includeDragEl || children[i] !== Sortable.dragged) && closest(children[i], options.draggable, el, false)) {
+      if (currentChild === childNum) {
+        return children[i];
+      }
+      currentChild++;
+    }
+    i++;
+  }
+  return null;
+}
+function lastChild(el, selector) {
+  var last = el.lastElementChild;
+  while (last && (last === Sortable.ghost || css(last, "display") === "none" || selector && !matches(last, selector))) {
+    last = last.previousElementSibling;
+  }
+  return last || null;
+}
+function index(el, selector) {
+  var index2 = 0;
+  if (!el || !el.parentNode) {
+    return -1;
+  }
+  while (el = el.previousElementSibling) {
+    if (el.nodeName.toUpperCase() !== "TEMPLATE" && el !== Sortable.clone && (!selector || matches(el, selector))) {
+      index2++;
+    }
+  }
+  return index2;
+}
+function getRelativeScrollOffset(el) {
+  var offsetLeft = 0, offsetTop = 0, winScroller = getWindowScrollingElement();
+  if (el) {
+    do {
+      var elMatrix = matrix(el), scaleX = elMatrix.a, scaleY = elMatrix.d;
+      offsetLeft += el.scrollLeft * scaleX;
+      offsetTop += el.scrollTop * scaleY;
+    } while (el !== winScroller && (el = el.parentNode));
+  }
+  return [offsetLeft, offsetTop];
+}
+function indexOfObject(arr, obj) {
+  for (var i in arr) {
+    if (!arr.hasOwnProperty(i)) continue;
+    for (var key in obj) {
+      if (obj.hasOwnProperty(key) && obj[key] === arr[i][key]) return Number(i);
+    }
+  }
+  return -1;
+}
+function getParentAutoScrollElement(el, includeSelf) {
+  if (!el || !el.getBoundingClientRect) return getWindowScrollingElement();
+  var elem = el;
+  var gotSelf = false;
+  do {
+    if (elem.clientWidth < elem.scrollWidth || elem.clientHeight < elem.scrollHeight) {
+      var elemCSS = css(elem);
+      if (elem.clientWidth < elem.scrollWidth && (elemCSS.overflowX == "auto" || elemCSS.overflowX == "scroll") || elem.clientHeight < elem.scrollHeight && (elemCSS.overflowY == "auto" || elemCSS.overflowY == "scroll")) {
+        if (!elem.getBoundingClientRect || elem === document.body) return getWindowScrollingElement();
+        if (gotSelf || includeSelf) return elem;
+        gotSelf = true;
+      }
+    }
+  } while (elem = elem.parentNode);
+  return getWindowScrollingElement();
+}
+function extend(dst, src) {
+  if (dst && src) {
+    for (var key in src) {
+      if (src.hasOwnProperty(key)) {
+        dst[key] = src[key];
+      }
+    }
+  }
+  return dst;
+}
+function isRectEqual(rect1, rect2) {
+  return Math.round(rect1.top) === Math.round(rect2.top) && Math.round(rect1.left) === Math.round(rect2.left) && Math.round(rect1.height) === Math.round(rect2.height) && Math.round(rect1.width) === Math.round(rect2.width);
+}
+var _throttleTimeout;
+function throttle(callback, ms) {
+  return function() {
+    if (!_throttleTimeout) {
+      var args = arguments, _this = this;
+      if (args.length === 1) {
+        callback.call(_this, args[0]);
+      } else {
+        callback.apply(_this, args);
+      }
+      _throttleTimeout = setTimeout(function() {
+        _throttleTimeout = void 0;
+      }, ms);
+    }
+  };
+}
+function cancelThrottle() {
+  clearTimeout(_throttleTimeout);
+  _throttleTimeout = void 0;
+}
+function scrollBy(el, x, y) {
+  el.scrollLeft += x;
+  el.scrollTop += y;
+}
+function clone(el) {
+  var Polymer = window.Polymer;
+  var $ = window.jQuery || window.Zepto;
+  if (Polymer && Polymer.dom) {
+    return Polymer.dom(el).cloneNode(true);
+  } else if ($) {
+    return $(el).clone(true)[0];
+  } else {
+    return el.cloneNode(true);
+  }
+}
+function getChildContainingRectFromElement(container, options, ghostEl2) {
+  var rect = {};
+  Array.from(container.children).forEach(function(child) {
+    var _rect$left, _rect$top, _rect$right, _rect$bottom;
+    if (!closest(child, options.draggable, container, false) || child.animated || child === ghostEl2) return;
+    var childRect = getRect(child);
+    rect.left = Math.min((_rect$left = rect.left) !== null && _rect$left !== void 0 ? _rect$left : Infinity, childRect.left);
+    rect.top = Math.min((_rect$top = rect.top) !== null && _rect$top !== void 0 ? _rect$top : Infinity, childRect.top);
+    rect.right = Math.max((_rect$right = rect.right) !== null && _rect$right !== void 0 ? _rect$right : -Infinity, childRect.right);
+    rect.bottom = Math.max((_rect$bottom = rect.bottom) !== null && _rect$bottom !== void 0 ? _rect$bottom : -Infinity, childRect.bottom);
+  });
+  rect.width = rect.right - rect.left;
+  rect.height = rect.bottom - rect.top;
+  rect.x = rect.left;
+  rect.y = rect.top;
+  return rect;
+}
+var expando = "Sortable" + (/* @__PURE__ */ new Date()).getTime();
+function AnimationStateManager() {
+  var animationStates = [], animationCallbackId;
+  return {
+    captureAnimationState: function captureAnimationState() {
+      animationStates = [];
+      if (!this.options.animation) return;
+      var children = [].slice.call(this.el.children);
+      children.forEach(function(child) {
+        if (css(child, "display") === "none" || child === Sortable.ghost) return;
+        animationStates.push({
+          target: child,
+          rect: getRect(child)
+        });
+        var fromRect = _objectSpread2({}, animationStates[animationStates.length - 1].rect);
+        if (child.thisAnimationDuration) {
+          var childMatrix = matrix(child, true);
+          if (childMatrix) {
+            fromRect.top -= childMatrix.f;
+            fromRect.left -= childMatrix.e;
+          }
+        }
+        child.fromRect = fromRect;
+      });
+    },
+    addAnimationState: function addAnimationState(state) {
+      animationStates.push(state);
+    },
+    removeAnimationState: function removeAnimationState(target) {
+      animationStates.splice(indexOfObject(animationStates, {
+        target
+      }), 1);
+    },
+    animateAll: function animateAll(callback) {
+      var _this = this;
+      if (!this.options.animation) {
+        clearTimeout(animationCallbackId);
+        if (typeof callback === "function") callback();
+        return;
+      }
+      var animating = false, animationTime = 0;
+      animationStates.forEach(function(state) {
+        var time = 0, target = state.target, fromRect = target.fromRect, toRect = getRect(target), prevFromRect = target.prevFromRect, prevToRect = target.prevToRect, animatingRect = state.rect, targetMatrix = matrix(target, true);
+        if (targetMatrix) {
+          toRect.top -= targetMatrix.f;
+          toRect.left -= targetMatrix.e;
+        }
+        target.toRect = toRect;
+        if (target.thisAnimationDuration) {
+          if (isRectEqual(prevFromRect, toRect) && !isRectEqual(fromRect, toRect) && // Make sure animatingRect is on line between toRect & fromRect
+          (animatingRect.top - toRect.top) / (animatingRect.left - toRect.left) === (fromRect.top - toRect.top) / (fromRect.left - toRect.left)) {
+            time = calculateRealTime(animatingRect, prevFromRect, prevToRect, _this.options);
+          }
+        }
+        if (!isRectEqual(toRect, fromRect)) {
+          target.prevFromRect = fromRect;
+          target.prevToRect = toRect;
+          if (!time) {
+            time = _this.options.animation;
+          }
+          _this.animate(target, animatingRect, toRect, time);
+        }
+        if (time) {
+          animating = true;
+          animationTime = Math.max(animationTime, time);
+          clearTimeout(target.animationResetTimer);
+          target.animationResetTimer = setTimeout(function() {
+            target.animationTime = 0;
+            target.prevFromRect = null;
+            target.fromRect = null;
+            target.prevToRect = null;
+            target.thisAnimationDuration = null;
+          }, time);
+          target.thisAnimationDuration = time;
+        }
+      });
+      clearTimeout(animationCallbackId);
+      if (!animating) {
+        if (typeof callback === "function") callback();
+      } else {
+        animationCallbackId = setTimeout(function() {
+          if (typeof callback === "function") callback();
+        }, animationTime);
+      }
+      animationStates = [];
+    },
+    animate: function animate(target, currentRect, toRect, duration) {
+      if (duration) {
+        css(target, "transition", "");
+        css(target, "transform", "");
+        var elMatrix = matrix(this.el), scaleX = elMatrix && elMatrix.a, scaleY = elMatrix && elMatrix.d, translateX = (currentRect.left - toRect.left) / (scaleX || 1), translateY = (currentRect.top - toRect.top) / (scaleY || 1);
+        target.animatingX = !!translateX;
+        target.animatingY = !!translateY;
+        css(target, "transform", "translate3d(" + translateX + "px," + translateY + "px,0)");
+        this.forRepaintDummy = repaint(target);
+        css(target, "transition", "transform " + duration + "ms" + (this.options.easing ? " " + this.options.easing : ""));
+        css(target, "transform", "translate3d(0,0,0)");
+        typeof target.animated === "number" && clearTimeout(target.animated);
+        target.animated = setTimeout(function() {
+          css(target, "transition", "");
+          css(target, "transform", "");
+          target.animated = false;
+          target.animatingX = false;
+          target.animatingY = false;
+        }, duration);
+      }
+    }
+  };
+}
+function repaint(target) {
+  return target.offsetWidth;
+}
+function calculateRealTime(animatingRect, fromRect, toRect, options) {
+  return Math.sqrt(Math.pow(fromRect.top - animatingRect.top, 2) + Math.pow(fromRect.left - animatingRect.left, 2)) / Math.sqrt(Math.pow(fromRect.top - toRect.top, 2) + Math.pow(fromRect.left - toRect.left, 2)) * options.animation;
+}
+var plugins = [];
+var defaults = {
+  initializeByDefault: true
+};
+var PluginManager = {
+  mount: function mount(plugin) {
+    for (var option2 in defaults) {
+      if (defaults.hasOwnProperty(option2) && !(option2 in plugin)) {
+        plugin[option2] = defaults[option2];
+      }
+    }
+    plugins.forEach(function(p) {
+      if (p.pluginName === plugin.pluginName) {
+        throw "Sortable: Cannot mount plugin ".concat(plugin.pluginName, " more than once");
+      }
+    });
+    plugins.push(plugin);
+  },
+  pluginEvent: function pluginEvent(eventName, sortable, evt) {
+    var _this = this;
+    this.eventCanceled = false;
+    evt.cancel = function() {
+      _this.eventCanceled = true;
+    };
+    var eventNameGlobal = eventName + "Global";
+    plugins.forEach(function(plugin) {
+      if (!sortable[plugin.pluginName]) return;
+      if (sortable[plugin.pluginName][eventNameGlobal]) {
+        sortable[plugin.pluginName][eventNameGlobal](_objectSpread2({
+          sortable
+        }, evt));
+      }
+      if (sortable.options[plugin.pluginName] && sortable[plugin.pluginName][eventName]) {
+        sortable[plugin.pluginName][eventName](_objectSpread2({
+          sortable
+        }, evt));
+      }
+    });
+  },
+  initializePlugins: function initializePlugins(sortable, el, defaults2, options) {
+    plugins.forEach(function(plugin) {
+      var pluginName = plugin.pluginName;
+      if (!sortable.options[pluginName] && !plugin.initializeByDefault) return;
+      var initialized = new plugin(sortable, el, sortable.options);
+      initialized.sortable = sortable;
+      initialized.options = sortable.options;
+      sortable[pluginName] = initialized;
+      _extends(defaults2, initialized.defaults);
+    });
+    for (var option2 in sortable.options) {
+      if (!sortable.options.hasOwnProperty(option2)) continue;
+      var modified = this.modifyOption(sortable, option2, sortable.options[option2]);
+      if (typeof modified !== "undefined") {
+        sortable.options[option2] = modified;
+      }
+    }
+  },
+  getEventProperties: function getEventProperties(name, sortable) {
+    var eventProperties = {};
+    plugins.forEach(function(plugin) {
+      if (typeof plugin.eventProperties !== "function") return;
+      _extends(eventProperties, plugin.eventProperties.call(sortable[plugin.pluginName], name));
+    });
+    return eventProperties;
+  },
+  modifyOption: function modifyOption(sortable, name, value) {
+    var modifiedValue;
+    plugins.forEach(function(plugin) {
+      if (!sortable[plugin.pluginName]) return;
+      if (plugin.optionListeners && typeof plugin.optionListeners[name] === "function") {
+        modifiedValue = plugin.optionListeners[name].call(sortable[plugin.pluginName], value);
+      }
+    });
+    return modifiedValue;
+  }
+};
+function dispatchEvent(_ref) {
+  var sortable = _ref.sortable, rootEl2 = _ref.rootEl, name = _ref.name, targetEl = _ref.targetEl, cloneEl2 = _ref.cloneEl, toEl = _ref.toEl, fromEl = _ref.fromEl, oldIndex2 = _ref.oldIndex, newIndex2 = _ref.newIndex, oldDraggableIndex2 = _ref.oldDraggableIndex, newDraggableIndex2 = _ref.newDraggableIndex, originalEvent = _ref.originalEvent, putSortable2 = _ref.putSortable, extraEventProperties = _ref.extraEventProperties;
+  sortable = sortable || rootEl2 && rootEl2[expando];
+  if (!sortable) return;
+  var evt, options = sortable.options, onName = "on" + name.charAt(0).toUpperCase() + name.substr(1);
+  if (window.CustomEvent && !IE11OrLess && !Edge) {
+    evt = new CustomEvent(name, {
+      bubbles: true,
+      cancelable: true
+    });
+  } else {
+    evt = document.createEvent("Event");
+    evt.initEvent(name, true, true);
+  }
+  evt.to = toEl || rootEl2;
+  evt.from = fromEl || rootEl2;
+  evt.item = targetEl || rootEl2;
+  evt.clone = cloneEl2;
+  evt.oldIndex = oldIndex2;
+  evt.newIndex = newIndex2;
+  evt.oldDraggableIndex = oldDraggableIndex2;
+  evt.newDraggableIndex = newDraggableIndex2;
+  evt.originalEvent = originalEvent;
+  evt.pullMode = putSortable2 ? putSortable2.lastPutMode : void 0;
+  var allEventProperties = _objectSpread2(_objectSpread2({}, extraEventProperties), PluginManager.getEventProperties(name, sortable));
+  for (var option2 in allEventProperties) {
+    evt[option2] = allEventProperties[option2];
+  }
+  if (rootEl2) {
+    rootEl2.dispatchEvent(evt);
+  }
+  if (options[onName]) {
+    options[onName].call(sortable, evt);
+  }
+}
+var _excluded = ["evt"];
+var pluginEvent2 = function pluginEvent3(eventName, sortable) {
+  var _ref = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : {}, originalEvent = _ref.evt, data = _objectWithoutProperties(_ref, _excluded);
+  PluginManager.pluginEvent.bind(Sortable)(eventName, sortable, _objectSpread2({
+    dragEl,
+    parentEl,
+    ghostEl,
+    rootEl,
+    nextEl,
+    lastDownEl,
+    cloneEl,
+    cloneHidden,
+    dragStarted: moved,
+    putSortable,
+    activeSortable: Sortable.active,
+    originalEvent,
+    oldIndex,
+    oldDraggableIndex,
+    newIndex,
+    newDraggableIndex,
+    hideGhostForTarget: _hideGhostForTarget,
+    unhideGhostForTarget: _unhideGhostForTarget,
+    cloneNowHidden: function cloneNowHidden() {
+      cloneHidden = true;
+    },
+    cloneNowShown: function cloneNowShown() {
+      cloneHidden = false;
+    },
+    dispatchSortableEvent: function dispatchSortableEvent(name) {
+      _dispatchEvent({
+        sortable,
+        name,
+        originalEvent
+      });
+    }
+  }, data));
+};
+function _dispatchEvent(info) {
+  dispatchEvent(_objectSpread2({
+    putSortable,
+    cloneEl,
+    targetEl: dragEl,
+    rootEl,
+    oldIndex,
+    oldDraggableIndex,
+    newIndex,
+    newDraggableIndex
+  }, info));
+}
+var dragEl;
+var parentEl;
+var ghostEl;
+var rootEl;
+var nextEl;
+var lastDownEl;
+var cloneEl;
+var cloneHidden;
+var oldIndex;
+var newIndex;
+var oldDraggableIndex;
+var newDraggableIndex;
+var activeGroup;
+var putSortable;
+var awaitingDragStarted = false;
+var ignoreNextClick = false;
+var sortables = [];
+var tapEvt;
+var touchEvt;
+var lastDx;
+var lastDy;
+var tapDistanceLeft;
+var tapDistanceTop;
+var moved;
+var lastTarget;
+var lastDirection;
+var pastFirstInvertThresh = false;
+var isCircumstantialInvert = false;
+var targetMoveDistance;
+var ghostRelativeParent;
+var ghostRelativeParentInitialScroll = [];
+var _silent = false;
+var savedInputChecked = [];
+var documentExists = typeof document !== "undefined";
+var PositionGhostAbsolutely = IOS;
+var CSSFloatProperty = Edge || IE11OrLess ? "cssFloat" : "float";
+var supportDraggable = documentExists && !ChromeForAndroid && !IOS && "draggable" in document.createElement("div");
+var supportCssPointerEvents = (function() {
+  if (!documentExists) return;
+  if (IE11OrLess) {
+    return false;
+  }
+  var el = document.createElement("x");
+  el.style.cssText = "pointer-events:auto";
+  return el.style.pointerEvents === "auto";
+})();
+var _detectDirection = function _detectDirection2(el, options) {
+  var elCSS = css(el), elWidth = parseInt(elCSS.width) - parseInt(elCSS.paddingLeft) - parseInt(elCSS.paddingRight) - parseInt(elCSS.borderLeftWidth) - parseInt(elCSS.borderRightWidth), child1 = getChild(el, 0, options), child2 = getChild(el, 1, options), firstChildCSS = child1 && css(child1), secondChildCSS = child2 && css(child2), firstChildWidth = firstChildCSS && parseInt(firstChildCSS.marginLeft) + parseInt(firstChildCSS.marginRight) + getRect(child1).width, secondChildWidth = secondChildCSS && parseInt(secondChildCSS.marginLeft) + parseInt(secondChildCSS.marginRight) + getRect(child2).width;
+  if (elCSS.display === "flex") {
+    return elCSS.flexDirection === "column" || elCSS.flexDirection === "column-reverse" ? "vertical" : "horizontal";
+  }
+  if (elCSS.display === "grid") {
+    return elCSS.gridTemplateColumns.split(" ").length <= 1 ? "vertical" : "horizontal";
+  }
+  if (child1 && firstChildCSS["float"] && firstChildCSS["float"] !== "none") {
+    var touchingSideChild2 = firstChildCSS["float"] === "left" ? "left" : "right";
+    return child2 && (secondChildCSS.clear === "both" || secondChildCSS.clear === touchingSideChild2) ? "vertical" : "horizontal";
+  }
+  return child1 && (firstChildCSS.display === "block" || firstChildCSS.display === "flex" || firstChildCSS.display === "table" || firstChildCSS.display === "grid" || firstChildWidth >= elWidth && elCSS[CSSFloatProperty] === "none" || child2 && elCSS[CSSFloatProperty] === "none" && firstChildWidth + secondChildWidth > elWidth) ? "vertical" : "horizontal";
+};
+var _dragElInRowColumn = function _dragElInRowColumn2(dragRect, targetRect, vertical) {
+  var dragElS1Opp = vertical ? dragRect.left : dragRect.top, dragElS2Opp = vertical ? dragRect.right : dragRect.bottom, dragElOppLength = vertical ? dragRect.width : dragRect.height, targetS1Opp = vertical ? targetRect.left : targetRect.top, targetS2Opp = vertical ? targetRect.right : targetRect.bottom, targetOppLength = vertical ? targetRect.width : targetRect.height;
+  return dragElS1Opp === targetS1Opp || dragElS2Opp === targetS2Opp || dragElS1Opp + dragElOppLength / 2 === targetS1Opp + targetOppLength / 2;
+};
+var _detectNearestEmptySortable = function _detectNearestEmptySortable2(x, y) {
+  var ret;
+  sortables.some(function(sortable) {
+    var threshold = sortable[expando].options.emptyInsertThreshold;
+    if (!threshold || lastChild(sortable)) return;
+    var rect = getRect(sortable), insideHorizontally = x >= rect.left - threshold && x <= rect.right + threshold, insideVertically = y >= rect.top - threshold && y <= rect.bottom + threshold;
+    if (insideHorizontally && insideVertically) {
+      return ret = sortable;
+    }
+  });
+  return ret;
+};
+var _prepareGroup = function _prepareGroup2(options) {
+  function toFn(value, pull) {
+    return function(to, from, dragEl2, evt) {
+      var sameGroup = to.options.group.name && from.options.group.name && to.options.group.name === from.options.group.name;
+      if (value == null && (pull || sameGroup)) {
+        return true;
+      } else if (value == null || value === false) {
+        return false;
+      } else if (pull && value === "clone") {
+        return value;
+      } else if (typeof value === "function") {
+        return toFn(value(to, from, dragEl2, evt), pull)(to, from, dragEl2, evt);
+      } else {
+        var otherGroup = (pull ? to : from).options.group.name;
+        return value === true || typeof value === "string" && value === otherGroup || value.join && value.indexOf(otherGroup) > -1;
+      }
+    };
+  }
+  var group = {};
+  var originalGroup = options.group;
+  if (!originalGroup || _typeof(originalGroup) != "object") {
+    originalGroup = {
+      name: originalGroup
+    };
+  }
+  group.name = originalGroup.name;
+  group.checkPull = toFn(originalGroup.pull, true);
+  group.checkPut = toFn(originalGroup.put);
+  group.revertClone = originalGroup.revertClone;
+  options.group = group;
+};
+var _hideGhostForTarget = function _hideGhostForTarget2() {
+  if (!supportCssPointerEvents && ghostEl) {
+    css(ghostEl, "display", "none");
+  }
+};
+var _unhideGhostForTarget = function _unhideGhostForTarget2() {
+  if (!supportCssPointerEvents && ghostEl) {
+    css(ghostEl, "display", "");
+  }
+};
+if (documentExists && !ChromeForAndroid) {
+  document.addEventListener("click", function(evt) {
+    if (ignoreNextClick) {
+      evt.preventDefault();
+      evt.stopPropagation && evt.stopPropagation();
+      evt.stopImmediatePropagation && evt.stopImmediatePropagation();
+      ignoreNextClick = false;
+      return false;
+    }
+  }, true);
+}
+var nearestEmptyInsertDetectEvent = function nearestEmptyInsertDetectEvent2(evt) {
+  if (dragEl) {
+    evt = evt.touches ? evt.touches[0] : evt;
+    var nearest = _detectNearestEmptySortable(evt.clientX, evt.clientY);
+    if (nearest) {
+      var event = {};
+      for (var i in evt) {
+        if (evt.hasOwnProperty(i)) {
+          event[i] = evt[i];
+        }
+      }
+      event.target = event.rootEl = nearest;
+      event.preventDefault = void 0;
+      event.stopPropagation = void 0;
+      nearest[expando]._onDragOver(event);
+    }
+  }
+};
+var _checkOutsideTargetEl = function _checkOutsideTargetEl2(evt) {
+  if (dragEl) {
+    dragEl.parentNode[expando]._isOutsideThisEl(evt.target);
+  }
+};
+function Sortable(el, options) {
+  if (!(el && el.nodeType && el.nodeType === 1)) {
+    throw "Sortable: `el` must be an HTMLElement, not ".concat({}.toString.call(el));
+  }
+  this.el = el;
+  this.options = options = _extends({}, options);
+  el[expando] = this;
+  var defaults2 = {
+    group: null,
+    sort: true,
+    disabled: false,
+    store: null,
+    handle: null,
+    draggable: /^[uo]l$/i.test(el.nodeName) ? ">li" : ">*",
+    swapThreshold: 1,
+    // percentage; 0 <= x <= 1
+    invertSwap: false,
+    // invert always
+    invertedSwapThreshold: null,
+    // will be set to same as swapThreshold if default
+    removeCloneOnHide: true,
+    direction: function direction() {
+      return _detectDirection(el, this.options);
+    },
+    ghostClass: "sortable-ghost",
+    chosenClass: "sortable-chosen",
+    dragClass: "sortable-drag",
+    ignore: "a, img",
+    filter: null,
+    preventOnFilter: true,
+    animation: 0,
+    easing: null,
+    setData: function setData(dataTransfer, dragEl2) {
+      dataTransfer.setData("Text", dragEl2.textContent);
+    },
+    dropBubble: false,
+    dragoverBubble: false,
+    dataIdAttr: "data-id",
+    delay: 0,
+    delayOnTouchOnly: false,
+    touchStartThreshold: (Number.parseInt ? Number : window).parseInt(window.devicePixelRatio, 10) || 1,
+    forceFallback: false,
+    fallbackClass: "sortable-fallback",
+    fallbackOnBody: false,
+    fallbackTolerance: 0,
+    fallbackOffset: {
+      x: 0,
+      y: 0
+    },
+    // Disabled on Safari: #1571; Enabled on Safari IOS: #2244
+    supportPointer: Sortable.supportPointer !== false && "PointerEvent" in window && (!Safari || IOS),
+    emptyInsertThreshold: 5
+  };
+  PluginManager.initializePlugins(this, el, defaults2);
+  for (var name in defaults2) {
+    !(name in options) && (options[name] = defaults2[name]);
+  }
+  _prepareGroup(options);
+  for (var fn in this) {
+    if (fn.charAt(0) === "_" && typeof this[fn] === "function") {
+      this[fn] = this[fn].bind(this);
+    }
+  }
+  this.nativeDraggable = options.forceFallback ? false : supportDraggable;
+  if (this.nativeDraggable) {
+    this.options.touchStartThreshold = 1;
+  }
+  if (options.supportPointer) {
+    on(el, "pointerdown", this._onTapStart);
+  } else {
+    on(el, "mousedown", this._onTapStart);
+    on(el, "touchstart", this._onTapStart);
+  }
+  if (this.nativeDraggable) {
+    on(el, "dragover", this);
+    on(el, "dragenter", this);
+  }
+  sortables.push(this.el);
+  options.store && options.store.get && this.sort(options.store.get(this) || []);
+  _extends(this, AnimationStateManager());
+}
+Sortable.prototype = /** @lends Sortable.prototype */
+{
+  constructor: Sortable,
+  _isOutsideThisEl: function _isOutsideThisEl(target) {
+    if (!this.el.contains(target) && target !== this.el) {
+      lastTarget = null;
+    }
+  },
+  _getDirection: function _getDirection(evt, target) {
+    return typeof this.options.direction === "function" ? this.options.direction.call(this, evt, target, dragEl) : this.options.direction;
+  },
+  _onTapStart: function _onTapStart(evt) {
+    if (!evt.cancelable) return;
+    var _this = this, el = this.el, options = this.options, preventOnFilter = options.preventOnFilter, type = evt.type, touch = evt.touches && evt.touches[0] || evt.pointerType && evt.pointerType === "touch" && evt, target = (touch || evt).target, originalTarget = evt.target.shadowRoot && (evt.path && evt.path[0] || evt.composedPath && evt.composedPath()[0]) || target, filter = options.filter;
+    _saveInputCheckedState(el);
+    if (dragEl) {
+      return;
+    }
+    if (/mousedown|pointerdown/.test(type) && evt.button !== 0 || options.disabled) {
+      return;
+    }
+    if (originalTarget.isContentEditable) {
+      return;
+    }
+    if (!this.nativeDraggable && Safari && target && target.tagName.toUpperCase() === "SELECT") {
+      return;
+    }
+    target = closest(target, options.draggable, el, false);
+    if (target && target.animated) {
+      return;
+    }
+    if (lastDownEl === target) {
+      return;
+    }
+    oldIndex = index(target);
+    oldDraggableIndex = index(target, options.draggable);
+    if (typeof filter === "function") {
+      if (filter.call(this, evt, target, this)) {
+        _dispatchEvent({
+          sortable: _this,
+          rootEl: originalTarget,
+          name: "filter",
+          targetEl: target,
+          toEl: el,
+          fromEl: el
+        });
+        pluginEvent2("filter", _this, {
+          evt
+        });
+        preventOnFilter && evt.preventDefault();
+        return;
+      }
+    } else if (filter) {
+      filter = filter.split(",").some(function(criteria) {
+        criteria = closest(originalTarget, criteria.trim(), el, false);
+        if (criteria) {
+          _dispatchEvent({
+            sortable: _this,
+            rootEl: criteria,
+            name: "filter",
+            targetEl: target,
+            fromEl: el,
+            toEl: el
+          });
+          pluginEvent2("filter", _this, {
+            evt
+          });
+          return true;
+        }
+      });
+      if (filter) {
+        preventOnFilter && evt.preventDefault();
+        return;
+      }
+    }
+    if (options.handle && !closest(originalTarget, options.handle, el, false)) {
+      return;
+    }
+    this._prepareDragStart(evt, touch, target);
+  },
+  _prepareDragStart: function _prepareDragStart(evt, touch, target) {
+    var _this = this, el = _this.el, options = _this.options, ownerDocument = el.ownerDocument, dragStartFn;
+    if (target && !dragEl && target.parentNode === el) {
+      var dragRect = getRect(target);
+      rootEl = el;
+      dragEl = target;
+      parentEl = dragEl.parentNode;
+      nextEl = dragEl.nextSibling;
+      lastDownEl = target;
+      activeGroup = options.group;
+      Sortable.dragged = dragEl;
+      tapEvt = {
+        target: dragEl,
+        clientX: (touch || evt).clientX,
+        clientY: (touch || evt).clientY
+      };
+      tapDistanceLeft = tapEvt.clientX - dragRect.left;
+      tapDistanceTop = tapEvt.clientY - dragRect.top;
+      this._lastX = (touch || evt).clientX;
+      this._lastY = (touch || evt).clientY;
+      dragEl.style["will-change"] = "all";
+      dragStartFn = function dragStartFn2() {
+        pluginEvent2("delayEnded", _this, {
+          evt
+        });
+        if (Sortable.eventCanceled) {
+          _this._onDrop();
+          return;
+        }
+        _this._disableDelayedDragEvents();
+        if (!FireFox && _this.nativeDraggable) {
+          dragEl.draggable = true;
+        }
+        _this._triggerDragStart(evt, touch);
+        _dispatchEvent({
+          sortable: _this,
+          name: "choose",
+          originalEvent: evt
+        });
+        toggleClass(dragEl, options.chosenClass, true);
+      };
+      options.ignore.split(",").forEach(function(criteria) {
+        find(dragEl, criteria.trim(), _disableDraggable);
+      });
+      on(ownerDocument, "dragover", nearestEmptyInsertDetectEvent);
+      on(ownerDocument, "mousemove", nearestEmptyInsertDetectEvent);
+      on(ownerDocument, "touchmove", nearestEmptyInsertDetectEvent);
+      if (options.supportPointer) {
+        on(ownerDocument, "pointerup", _this._onDrop);
+        !this.nativeDraggable && on(ownerDocument, "pointercancel", _this._onDrop);
+      } else {
+        on(ownerDocument, "mouseup", _this._onDrop);
+        on(ownerDocument, "touchend", _this._onDrop);
+        on(ownerDocument, "touchcancel", _this._onDrop);
+      }
+      if (FireFox && this.nativeDraggable) {
+        this.options.touchStartThreshold = 4;
+        dragEl.draggable = true;
+      }
+      pluginEvent2("delayStart", this, {
+        evt
+      });
+      if (options.delay && (!options.delayOnTouchOnly || touch) && (!this.nativeDraggable || !(Edge || IE11OrLess))) {
+        if (Sortable.eventCanceled) {
+          this._onDrop();
+          return;
+        }
+        if (options.supportPointer) {
+          on(ownerDocument, "pointerup", _this._disableDelayedDrag);
+          on(ownerDocument, "pointercancel", _this._disableDelayedDrag);
+        } else {
+          on(ownerDocument, "mouseup", _this._disableDelayedDrag);
+          on(ownerDocument, "touchend", _this._disableDelayedDrag);
+          on(ownerDocument, "touchcancel", _this._disableDelayedDrag);
+        }
+        on(ownerDocument, "mousemove", _this._delayedDragTouchMoveHandler);
+        on(ownerDocument, "touchmove", _this._delayedDragTouchMoveHandler);
+        options.supportPointer && on(ownerDocument, "pointermove", _this._delayedDragTouchMoveHandler);
+        _this._dragStartTimer = setTimeout(dragStartFn, options.delay);
+      } else {
+        dragStartFn();
+      }
+    }
+  },
+  _delayedDragTouchMoveHandler: function _delayedDragTouchMoveHandler(e) {
+    var touch = e.touches ? e.touches[0] : e;
+    if (Math.max(Math.abs(touch.clientX - this._lastX), Math.abs(touch.clientY - this._lastY)) >= Math.floor(this.options.touchStartThreshold / (this.nativeDraggable && window.devicePixelRatio || 1))) {
+      this._disableDelayedDrag();
+    }
+  },
+  _disableDelayedDrag: function _disableDelayedDrag() {
+    dragEl && _disableDraggable(dragEl);
+    clearTimeout(this._dragStartTimer);
+    this._disableDelayedDragEvents();
+  },
+  _disableDelayedDragEvents: function _disableDelayedDragEvents() {
+    var ownerDocument = this.el.ownerDocument;
+    off(ownerDocument, "mouseup", this._disableDelayedDrag);
+    off(ownerDocument, "touchend", this._disableDelayedDrag);
+    off(ownerDocument, "touchcancel", this._disableDelayedDrag);
+    off(ownerDocument, "pointerup", this._disableDelayedDrag);
+    off(ownerDocument, "pointercancel", this._disableDelayedDrag);
+    off(ownerDocument, "mousemove", this._delayedDragTouchMoveHandler);
+    off(ownerDocument, "touchmove", this._delayedDragTouchMoveHandler);
+    off(ownerDocument, "pointermove", this._delayedDragTouchMoveHandler);
+  },
+  _triggerDragStart: function _triggerDragStart(evt, touch) {
+    touch = touch || evt.pointerType == "touch" && evt;
+    if (!this.nativeDraggable || touch) {
+      if (this.options.supportPointer) {
+        on(document, "pointermove", this._onTouchMove);
+      } else if (touch) {
+        on(document, "touchmove", this._onTouchMove);
+      } else {
+        on(document, "mousemove", this._onTouchMove);
+      }
+    } else {
+      on(dragEl, "dragend", this);
+      on(rootEl, "dragstart", this._onDragStart);
+    }
+    try {
+      if (document.selection) {
+        _nextTick(function() {
+          document.selection.empty();
+        });
+      } else {
+        window.getSelection().removeAllRanges();
+      }
+    } catch (err) {
+    }
+  },
+  _dragStarted: function _dragStarted(fallback, evt) {
+    awaitingDragStarted = false;
+    if (rootEl && dragEl) {
+      pluginEvent2("dragStarted", this, {
+        evt
+      });
+      if (this.nativeDraggable) {
+        on(document, "dragover", _checkOutsideTargetEl);
+      }
+      var options = this.options;
+      !fallback && toggleClass(dragEl, options.dragClass, false);
+      toggleClass(dragEl, options.ghostClass, true);
+      Sortable.active = this;
+      fallback && this._appendGhost();
+      _dispatchEvent({
+        sortable: this,
+        name: "start",
+        originalEvent: evt
+      });
+    } else {
+      this._nulling();
+    }
+  },
+  _emulateDragOver: function _emulateDragOver() {
+    if (touchEvt) {
+      this._lastX = touchEvt.clientX;
+      this._lastY = touchEvt.clientY;
+      _hideGhostForTarget();
+      var target = document.elementFromPoint(touchEvt.clientX, touchEvt.clientY);
+      var parent = target;
+      while (target && target.shadowRoot) {
+        target = target.shadowRoot.elementFromPoint(touchEvt.clientX, touchEvt.clientY);
+        if (target === parent) break;
+        parent = target;
+      }
+      dragEl.parentNode[expando]._isOutsideThisEl(target);
+      if (parent) {
+        do {
+          if (parent[expando]) {
+            var inserted = void 0;
+            inserted = parent[expando]._onDragOver({
+              clientX: touchEvt.clientX,
+              clientY: touchEvt.clientY,
+              target,
+              rootEl: parent
+            });
+            if (inserted && !this.options.dragoverBubble) {
+              break;
+            }
+          }
+          target = parent;
+        } while (parent = getParentOrHost(parent));
+      }
+      _unhideGhostForTarget();
+    }
+  },
+  _onTouchMove: function _onTouchMove(evt) {
+    if (tapEvt) {
+      var options = this.options, fallbackTolerance = options.fallbackTolerance, fallbackOffset = options.fallbackOffset, touch = evt.touches ? evt.touches[0] : evt, ghostMatrix = ghostEl && matrix(ghostEl, true), scaleX = ghostEl && ghostMatrix && ghostMatrix.a, scaleY = ghostEl && ghostMatrix && ghostMatrix.d, relativeScrollOffset = PositionGhostAbsolutely && ghostRelativeParent && getRelativeScrollOffset(ghostRelativeParent), dx = (touch.clientX - tapEvt.clientX + fallbackOffset.x) / (scaleX || 1) + (relativeScrollOffset ? relativeScrollOffset[0] - ghostRelativeParentInitialScroll[0] : 0) / (scaleX || 1), dy = (touch.clientY - tapEvt.clientY + fallbackOffset.y) / (scaleY || 1) + (relativeScrollOffset ? relativeScrollOffset[1] - ghostRelativeParentInitialScroll[1] : 0) / (scaleY || 1);
+      if (!Sortable.active && !awaitingDragStarted) {
+        if (fallbackTolerance && Math.max(Math.abs(touch.clientX - this._lastX), Math.abs(touch.clientY - this._lastY)) < fallbackTolerance) {
+          return;
+        }
+        this._onDragStart(evt, true);
+      }
+      if (ghostEl) {
+        if (ghostMatrix) {
+          ghostMatrix.e += dx - (lastDx || 0);
+          ghostMatrix.f += dy - (lastDy || 0);
+        } else {
+          ghostMatrix = {
+            a: 1,
+            b: 0,
+            c: 0,
+            d: 1,
+            e: dx,
+            f: dy
+          };
+        }
+        var cssMatrix = "matrix(".concat(ghostMatrix.a, ",").concat(ghostMatrix.b, ",").concat(ghostMatrix.c, ",").concat(ghostMatrix.d, ",").concat(ghostMatrix.e, ",").concat(ghostMatrix.f, ")");
+        css(ghostEl, "webkitTransform", cssMatrix);
+        css(ghostEl, "mozTransform", cssMatrix);
+        css(ghostEl, "msTransform", cssMatrix);
+        css(ghostEl, "transform", cssMatrix);
+        lastDx = dx;
+        lastDy = dy;
+        touchEvt = touch;
+      }
+      evt.cancelable && evt.preventDefault();
+    }
+  },
+  _appendGhost: function _appendGhost() {
+    if (!ghostEl) {
+      var container = this.options.fallbackOnBody ? document.body : rootEl, rect = getRect(dragEl, true, PositionGhostAbsolutely, true, container), options = this.options;
+      if (PositionGhostAbsolutely) {
+        ghostRelativeParent = container;
+        while (css(ghostRelativeParent, "position") === "static" && css(ghostRelativeParent, "transform") === "none" && ghostRelativeParent !== document) {
+          ghostRelativeParent = ghostRelativeParent.parentNode;
+        }
+        if (ghostRelativeParent !== document.body && ghostRelativeParent !== document.documentElement) {
+          if (ghostRelativeParent === document) ghostRelativeParent = getWindowScrollingElement();
+          rect.top += ghostRelativeParent.scrollTop;
+          rect.left += ghostRelativeParent.scrollLeft;
+        } else {
+          ghostRelativeParent = getWindowScrollingElement();
+        }
+        ghostRelativeParentInitialScroll = getRelativeScrollOffset(ghostRelativeParent);
+      }
+      ghostEl = dragEl.cloneNode(true);
+      toggleClass(ghostEl, options.ghostClass, false);
+      toggleClass(ghostEl, options.fallbackClass, true);
+      toggleClass(ghostEl, options.dragClass, true);
+      css(ghostEl, "transition", "");
+      css(ghostEl, "transform", "");
+      css(ghostEl, "box-sizing", "border-box");
+      css(ghostEl, "margin", 0);
+      css(ghostEl, "top", rect.top);
+      css(ghostEl, "left", rect.left);
+      css(ghostEl, "width", rect.width);
+      css(ghostEl, "height", rect.height);
+      css(ghostEl, "opacity", "0.8");
+      css(ghostEl, "position", PositionGhostAbsolutely ? "absolute" : "fixed");
+      css(ghostEl, "zIndex", "100000");
+      css(ghostEl, "pointerEvents", "none");
+      Sortable.ghost = ghostEl;
+      container.appendChild(ghostEl);
+      css(ghostEl, "transform-origin", tapDistanceLeft / parseInt(ghostEl.style.width) * 100 + "% " + tapDistanceTop / parseInt(ghostEl.style.height) * 100 + "%");
+    }
+  },
+  _onDragStart: function _onDragStart(evt, fallback) {
+    var _this = this;
+    var dataTransfer = evt.dataTransfer;
+    var options = _this.options;
+    pluginEvent2("dragStart", this, {
+      evt
+    });
+    if (Sortable.eventCanceled) {
+      this._onDrop();
+      return;
+    }
+    pluginEvent2("setupClone", this);
+    if (!Sortable.eventCanceled) {
+      cloneEl = clone(dragEl);
+      cloneEl.removeAttribute("id");
+      cloneEl.draggable = false;
+      cloneEl.style["will-change"] = "";
+      this._hideClone();
+      toggleClass(cloneEl, this.options.chosenClass, false);
+      Sortable.clone = cloneEl;
+    }
+    _this.cloneId = _nextTick(function() {
+      pluginEvent2("clone", _this);
+      if (Sortable.eventCanceled) return;
+      if (!_this.options.removeCloneOnHide) {
+        rootEl.insertBefore(cloneEl, dragEl);
+      }
+      _this._hideClone();
+      _dispatchEvent({
+        sortable: _this,
+        name: "clone"
+      });
+    });
+    !fallback && toggleClass(dragEl, options.dragClass, true);
+    if (fallback) {
+      ignoreNextClick = true;
+      _this._loopId = setInterval(_this._emulateDragOver, 50);
+    } else {
+      off(document, "mouseup", _this._onDrop);
+      off(document, "touchend", _this._onDrop);
+      off(document, "touchcancel", _this._onDrop);
+      if (dataTransfer) {
+        dataTransfer.effectAllowed = "move";
+        options.setData && options.setData.call(_this, dataTransfer, dragEl);
+      }
+      on(document, "drop", _this);
+      css(dragEl, "transform", "translateZ(0)");
+    }
+    awaitingDragStarted = true;
+    _this._dragStartId = _nextTick(_this._dragStarted.bind(_this, fallback, evt));
+    on(document, "selectstart", _this);
+    moved = true;
+    window.getSelection().removeAllRanges();
+    if (Safari) {
+      css(document.body, "user-select", "none");
+    }
+  },
+  // Returns true - if no further action is needed (either inserted or another condition)
+  _onDragOver: function _onDragOver(evt) {
+    var el = this.el, target = evt.target, dragRect, targetRect, revert, options = this.options, group = options.group, activeSortable = Sortable.active, isOwner = activeGroup === group, canSort = options.sort, fromSortable = putSortable || activeSortable, vertical, _this = this, completedFired = false;
+    if (_silent) return;
+    function dragOverEvent(name, extra) {
+      pluginEvent2(name, _this, _objectSpread2({
+        evt,
+        isOwner,
+        axis: vertical ? "vertical" : "horizontal",
+        revert,
+        dragRect,
+        targetRect,
+        canSort,
+        fromSortable,
+        target,
+        completed,
+        onMove: function onMove(target2, after2) {
+          return _onMove(rootEl, el, dragEl, dragRect, target2, getRect(target2), evt, after2);
+        },
+        changed
+      }, extra));
+    }
+    function capture() {
+      dragOverEvent("dragOverAnimationCapture");
+      _this.captureAnimationState();
+      if (_this !== fromSortable) {
+        fromSortable.captureAnimationState();
+      }
+    }
+    function completed(insertion) {
+      dragOverEvent("dragOverCompleted", {
+        insertion
+      });
+      if (insertion) {
+        if (isOwner) {
+          activeSortable._hideClone();
+        } else {
+          activeSortable._showClone(_this);
+        }
+        if (_this !== fromSortable) {
+          toggleClass(dragEl, putSortable ? putSortable.options.ghostClass : activeSortable.options.ghostClass, false);
+          toggleClass(dragEl, options.ghostClass, true);
+        }
+        if (putSortable !== _this && _this !== Sortable.active) {
+          putSortable = _this;
+        } else if (_this === Sortable.active && putSortable) {
+          putSortable = null;
+        }
+        if (fromSortable === _this) {
+          _this._ignoreWhileAnimating = target;
+        }
+        _this.animateAll(function() {
+          dragOverEvent("dragOverAnimationComplete");
+          _this._ignoreWhileAnimating = null;
+        });
+        if (_this !== fromSortable) {
+          fromSortable.animateAll();
+          fromSortable._ignoreWhileAnimating = null;
+        }
+      }
+      if (target === dragEl && !dragEl.animated || target === el && !target.animated) {
+        lastTarget = null;
+      }
+      if (!options.dragoverBubble && !evt.rootEl && target !== document) {
+        dragEl.parentNode[expando]._isOutsideThisEl(evt.target);
+        !insertion && nearestEmptyInsertDetectEvent(evt);
+      }
+      !options.dragoverBubble && evt.stopPropagation && evt.stopPropagation();
+      return completedFired = true;
+    }
+    function changed() {
+      newIndex = index(dragEl);
+      newDraggableIndex = index(dragEl, options.draggable);
+      _dispatchEvent({
+        sortable: _this,
+        name: "change",
+        toEl: el,
+        newIndex,
+        newDraggableIndex,
+        originalEvent: evt
+      });
+    }
+    if (evt.preventDefault !== void 0) {
+      evt.cancelable && evt.preventDefault();
+    }
+    target = closest(target, options.draggable, el, true);
+    dragOverEvent("dragOver");
+    if (Sortable.eventCanceled) return completedFired;
+    if (dragEl.contains(evt.target) || target.animated && target.animatingX && target.animatingY || _this._ignoreWhileAnimating === target) {
+      return completed(false);
+    }
+    ignoreNextClick = false;
+    if (activeSortable && !options.disabled && (isOwner ? canSort || (revert = parentEl !== rootEl) : putSortable === this || (this.lastPutMode = activeGroup.checkPull(this, activeSortable, dragEl, evt)) && group.checkPut(this, activeSortable, dragEl, evt))) {
+      vertical = this._getDirection(evt, target) === "vertical";
+      dragRect = getRect(dragEl);
+      dragOverEvent("dragOverValid");
+      if (Sortable.eventCanceled) return completedFired;
+      if (revert) {
+        parentEl = rootEl;
+        capture();
+        this._hideClone();
+        dragOverEvent("revert");
+        if (!Sortable.eventCanceled) {
+          if (nextEl) {
+            rootEl.insertBefore(dragEl, nextEl);
+          } else {
+            rootEl.appendChild(dragEl);
+          }
+        }
+        return completed(true);
+      }
+      var elLastChild = lastChild(el, options.draggable);
+      if (!elLastChild || _ghostIsLast(evt, vertical, this) && !elLastChild.animated) {
+        if (elLastChild === dragEl) {
+          return completed(false);
+        }
+        if (elLastChild && el === evt.target) {
+          target = elLastChild;
+        }
+        if (target) {
+          targetRect = getRect(target);
+        }
+        if (_onMove(rootEl, el, dragEl, dragRect, target, targetRect, evt, !!target) !== false) {
+          capture();
+          if (elLastChild && elLastChild.nextSibling) {
+            el.insertBefore(dragEl, elLastChild.nextSibling);
+          } else {
+            el.appendChild(dragEl);
+          }
+          parentEl = el;
+          changed();
+          return completed(true);
+        }
+      } else if (elLastChild && _ghostIsFirst(evt, vertical, this)) {
+        var firstChild = getChild(el, 0, options, true);
+        if (firstChild === dragEl) {
+          return completed(false);
+        }
+        target = firstChild;
+        targetRect = getRect(target);
+        if (_onMove(rootEl, el, dragEl, dragRect, target, targetRect, evt, false) !== false) {
+          capture();
+          el.insertBefore(dragEl, firstChild);
+          parentEl = el;
+          changed();
+          return completed(true);
+        }
+      } else if (target.parentNode === el) {
+        targetRect = getRect(target);
+        var direction = 0, targetBeforeFirstSwap, differentLevel = dragEl.parentNode !== el, differentRowCol = !_dragElInRowColumn(dragEl.animated && dragEl.toRect || dragRect, target.animated && target.toRect || targetRect, vertical), side1 = vertical ? "top" : "left", scrolledPastTop = isScrolledPast(target, "top", "top") || isScrolledPast(dragEl, "top", "top"), scrollBefore = scrolledPastTop ? scrolledPastTop.scrollTop : void 0;
+        if (lastTarget !== target) {
+          targetBeforeFirstSwap = targetRect[side1];
+          pastFirstInvertThresh = false;
+          isCircumstantialInvert = !differentRowCol && options.invertSwap || differentLevel;
+        }
+        direction = _getSwapDirection(evt, target, targetRect, vertical, differentRowCol ? 1 : options.swapThreshold, options.invertedSwapThreshold == null ? options.swapThreshold : options.invertedSwapThreshold, isCircumstantialInvert, lastTarget === target);
+        var sibling;
+        if (direction !== 0) {
+          var dragIndex = index(dragEl);
+          do {
+            dragIndex -= direction;
+            sibling = parentEl.children[dragIndex];
+          } while (sibling && (css(sibling, "display") === "none" || sibling === ghostEl));
+        }
+        if (direction === 0 || sibling === target) {
+          return completed(false);
+        }
+        lastTarget = target;
+        lastDirection = direction;
+        var nextSibling = target.nextElementSibling, after = false;
+        after = direction === 1;
+        var moveVector = _onMove(rootEl, el, dragEl, dragRect, target, targetRect, evt, after);
+        if (moveVector !== false) {
+          if (moveVector === 1 || moveVector === -1) {
+            after = moveVector === 1;
+          }
+          _silent = true;
+          setTimeout(_unsilent, 30);
+          capture();
+          if (after && !nextSibling) {
+            el.appendChild(dragEl);
+          } else {
+            target.parentNode.insertBefore(dragEl, after ? nextSibling : target);
+          }
+          if (scrolledPastTop) {
+            scrollBy(scrolledPastTop, 0, scrollBefore - scrolledPastTop.scrollTop);
+          }
+          parentEl = dragEl.parentNode;
+          if (targetBeforeFirstSwap !== void 0 && !isCircumstantialInvert) {
+            targetMoveDistance = Math.abs(targetBeforeFirstSwap - getRect(target)[side1]);
+          }
+          changed();
+          return completed(true);
+        }
+      }
+      if (el.contains(dragEl)) {
+        return completed(false);
+      }
+    }
+    return false;
+  },
+  _ignoreWhileAnimating: null,
+  _offMoveEvents: function _offMoveEvents() {
+    off(document, "mousemove", this._onTouchMove);
+    off(document, "touchmove", this._onTouchMove);
+    off(document, "pointermove", this._onTouchMove);
+    off(document, "dragover", nearestEmptyInsertDetectEvent);
+    off(document, "mousemove", nearestEmptyInsertDetectEvent);
+    off(document, "touchmove", nearestEmptyInsertDetectEvent);
+  },
+  _offUpEvents: function _offUpEvents() {
+    var ownerDocument = this.el.ownerDocument;
+    off(ownerDocument, "mouseup", this._onDrop);
+    off(ownerDocument, "touchend", this._onDrop);
+    off(ownerDocument, "pointerup", this._onDrop);
+    off(ownerDocument, "pointercancel", this._onDrop);
+    off(ownerDocument, "touchcancel", this._onDrop);
+    off(document, "selectstart", this);
+  },
+  _onDrop: function _onDrop(evt) {
+    var el = this.el, options = this.options;
+    newIndex = index(dragEl);
+    newDraggableIndex = index(dragEl, options.draggable);
+    pluginEvent2("drop", this, {
+      evt
+    });
+    parentEl = dragEl && dragEl.parentNode;
+    newIndex = index(dragEl);
+    newDraggableIndex = index(dragEl, options.draggable);
+    if (Sortable.eventCanceled) {
+      this._nulling();
+      return;
+    }
+    awaitingDragStarted = false;
+    isCircumstantialInvert = false;
+    pastFirstInvertThresh = false;
+    clearInterval(this._loopId);
+    clearTimeout(this._dragStartTimer);
+    _cancelNextTick(this.cloneId);
+    _cancelNextTick(this._dragStartId);
+    if (this.nativeDraggable) {
+      off(document, "drop", this);
+      off(el, "dragstart", this._onDragStart);
+    }
+    this._offMoveEvents();
+    this._offUpEvents();
+    if (Safari) {
+      css(document.body, "user-select", "");
+    }
+    css(dragEl, "transform", "");
+    if (evt) {
+      if (moved) {
+        evt.cancelable && evt.preventDefault();
+        !options.dropBubble && evt.stopPropagation();
+      }
+      ghostEl && ghostEl.parentNode && ghostEl.parentNode.removeChild(ghostEl);
+      if (rootEl === parentEl || putSortable && putSortable.lastPutMode !== "clone") {
+        cloneEl && cloneEl.parentNode && cloneEl.parentNode.removeChild(cloneEl);
+      }
+      if (dragEl) {
+        if (this.nativeDraggable) {
+          off(dragEl, "dragend", this);
+        }
+        _disableDraggable(dragEl);
+        dragEl.style["will-change"] = "";
+        if (moved && !awaitingDragStarted) {
+          toggleClass(dragEl, putSortable ? putSortable.options.ghostClass : this.options.ghostClass, false);
+        }
+        toggleClass(dragEl, this.options.chosenClass, false);
+        _dispatchEvent({
+          sortable: this,
+          name: "unchoose",
+          toEl: parentEl,
+          newIndex: null,
+          newDraggableIndex: null,
+          originalEvent: evt
+        });
+        if (rootEl !== parentEl) {
+          if (newIndex >= 0) {
+            _dispatchEvent({
+              rootEl: parentEl,
+              name: "add",
+              toEl: parentEl,
+              fromEl: rootEl,
+              originalEvent: evt
+            });
+            _dispatchEvent({
+              sortable: this,
+              name: "remove",
+              toEl: parentEl,
+              originalEvent: evt
+            });
+            _dispatchEvent({
+              rootEl: parentEl,
+              name: "sort",
+              toEl: parentEl,
+              fromEl: rootEl,
+              originalEvent: evt
+            });
+            _dispatchEvent({
+              sortable: this,
+              name: "sort",
+              toEl: parentEl,
+              originalEvent: evt
+            });
+          }
+          putSortable && putSortable.save();
+        } else {
+          if (newIndex !== oldIndex) {
+            if (newIndex >= 0) {
+              _dispatchEvent({
+                sortable: this,
+                name: "update",
+                toEl: parentEl,
+                originalEvent: evt
+              });
+              _dispatchEvent({
+                sortable: this,
+                name: "sort",
+                toEl: parentEl,
+                originalEvent: evt
+              });
+            }
+          }
+        }
+        if (Sortable.active) {
+          if (newIndex == null || newIndex === -1) {
+            newIndex = oldIndex;
+            newDraggableIndex = oldDraggableIndex;
+          }
+          _dispatchEvent({
+            sortable: this,
+            name: "end",
+            toEl: parentEl,
+            originalEvent: evt
+          });
+          this.save();
+        }
+      }
+    }
+    this._nulling();
+  },
+  _nulling: function _nulling() {
+    pluginEvent2("nulling", this);
+    rootEl = dragEl = parentEl = ghostEl = nextEl = cloneEl = lastDownEl = cloneHidden = tapEvt = touchEvt = moved = newIndex = newDraggableIndex = oldIndex = oldDraggableIndex = lastTarget = lastDirection = putSortable = activeGroup = Sortable.dragged = Sortable.ghost = Sortable.clone = Sortable.active = null;
+    var el = this.el;
+    savedInputChecked.forEach(function(checkEl) {
+      if (el.contains(checkEl)) {
+        checkEl.checked = true;
+      }
+    });
+    savedInputChecked.length = lastDx = lastDy = 0;
+  },
+  handleEvent: function handleEvent(evt) {
+    switch (evt.type) {
+      case "drop":
+      case "dragend":
+        this._onDrop(evt);
+        break;
+      case "dragenter":
+      case "dragover":
+        if (dragEl) {
+          this._onDragOver(evt);
+          _globalDragOver(evt);
+        }
+        break;
+      case "selectstart":
+        evt.preventDefault();
+        break;
+    }
+  },
+  /**
+   * Serializes the item into an array of string.
+   * @returns {String[]}
+   */
+  toArray: function toArray() {
+    var order = [], el, children = this.el.children, i = 0, n = children.length, options = this.options;
+    for (; i < n; i++) {
+      el = children[i];
+      if (closest(el, options.draggable, this.el, false)) {
+        order.push(el.getAttribute(options.dataIdAttr) || _generateId(el));
+      }
+    }
+    return order;
+  },
+  /**
+   * Sorts the elements according to the array.
+   * @param  {String[]}  order  order of the items
+   */
+  sort: function sort(order, useAnimation) {
+    var items = {}, rootEl2 = this.el;
+    this.toArray().forEach(function(id, i) {
+      var el = rootEl2.children[i];
+      if (closest(el, this.options.draggable, rootEl2, false)) {
+        items[id] = el;
+      }
+    }, this);
+    useAnimation && this.captureAnimationState();
+    order.forEach(function(id) {
+      if (items[id]) {
+        rootEl2.removeChild(items[id]);
+        rootEl2.appendChild(items[id]);
+      }
+    });
+    useAnimation && this.animateAll();
+  },
+  /**
+   * Save the current sorting
+   */
+  save: function save() {
+    var store = this.options.store;
+    store && store.set && store.set(this);
+  },
+  /**
+   * For each element in the set, get the first element that matches the selector by testing the element itself and traversing up through its ancestors in the DOM tree.
+   * @param   {HTMLElement}  el
+   * @param   {String}       [selector]  default: `options.draggable`
+   * @returns {HTMLElement|null}
+   */
+  closest: function closest$1(el, selector) {
+    return closest(el, selector || this.options.draggable, this.el, false);
+  },
+  /**
+   * Set/get option
+   * @param   {string} name
+   * @param   {*}      [value]
+   * @returns {*}
+   */
+  option: function option(name, value) {
+    var options = this.options;
+    if (value === void 0) {
+      return options[name];
+    } else {
+      var modifiedValue = PluginManager.modifyOption(this, name, value);
+      if (typeof modifiedValue !== "undefined") {
+        options[name] = modifiedValue;
+      } else {
+        options[name] = value;
+      }
+      if (name === "group") {
+        _prepareGroup(options);
+      }
+    }
+  },
+  /**
+   * Destroy
+   */
+  destroy: function destroy() {
+    pluginEvent2("destroy", this);
+    var el = this.el;
+    el[expando] = null;
+    off(el, "mousedown", this._onTapStart);
+    off(el, "touchstart", this._onTapStart);
+    off(el, "pointerdown", this._onTapStart);
+    if (this.nativeDraggable) {
+      off(el, "dragover", this);
+      off(el, "dragenter", this);
+    }
+    Array.prototype.forEach.call(el.querySelectorAll("[draggable]"), function(el2) {
+      el2.removeAttribute("draggable");
+    });
+    this._onDrop();
+    this._disableDelayedDragEvents();
+    sortables.splice(sortables.indexOf(this.el), 1);
+    this.el = el = null;
+  },
+  _hideClone: function _hideClone() {
+    if (!cloneHidden) {
+      pluginEvent2("hideClone", this);
+      if (Sortable.eventCanceled) return;
+      css(cloneEl, "display", "none");
+      if (this.options.removeCloneOnHide && cloneEl.parentNode) {
+        cloneEl.parentNode.removeChild(cloneEl);
+      }
+      cloneHidden = true;
+    }
+  },
+  _showClone: function _showClone(putSortable2) {
+    if (putSortable2.lastPutMode !== "clone") {
+      this._hideClone();
+      return;
+    }
+    if (cloneHidden) {
+      pluginEvent2("showClone", this);
+      if (Sortable.eventCanceled) return;
+      if (dragEl.parentNode == rootEl && !this.options.group.revertClone) {
+        rootEl.insertBefore(cloneEl, dragEl);
+      } else if (nextEl) {
+        rootEl.insertBefore(cloneEl, nextEl);
+      } else {
+        rootEl.appendChild(cloneEl);
+      }
+      if (this.options.group.revertClone) {
+        this.animate(dragEl, cloneEl);
+      }
+      css(cloneEl, "display", "");
+      cloneHidden = false;
+    }
+  }
+};
+function _globalDragOver(evt) {
+  if (evt.dataTransfer) {
+    evt.dataTransfer.dropEffect = "move";
+  }
+  evt.cancelable && evt.preventDefault();
+}
+function _onMove(fromEl, toEl, dragEl2, dragRect, targetEl, targetRect, originalEvent, willInsertAfter) {
+  var evt, sortable = fromEl[expando], onMoveFn = sortable.options.onMove, retVal;
+  if (window.CustomEvent && !IE11OrLess && !Edge) {
+    evt = new CustomEvent("move", {
+      bubbles: true,
+      cancelable: true
+    });
+  } else {
+    evt = document.createEvent("Event");
+    evt.initEvent("move", true, true);
+  }
+  evt.to = toEl;
+  evt.from = fromEl;
+  evt.dragged = dragEl2;
+  evt.draggedRect = dragRect;
+  evt.related = targetEl || toEl;
+  evt.relatedRect = targetRect || getRect(toEl);
+  evt.willInsertAfter = willInsertAfter;
+  evt.originalEvent = originalEvent;
+  fromEl.dispatchEvent(evt);
+  if (onMoveFn) {
+    retVal = onMoveFn.call(sortable, evt, originalEvent);
+  }
+  return retVal;
+}
+function _disableDraggable(el) {
+  el.draggable = false;
+}
+function _unsilent() {
+  _silent = false;
+}
+function _ghostIsFirst(evt, vertical, sortable) {
+  var firstElRect = getRect(getChild(sortable.el, 0, sortable.options, true));
+  var childContainingRect = getChildContainingRectFromElement(sortable.el, sortable.options, ghostEl);
+  var spacer = 10;
+  return vertical ? evt.clientX < childContainingRect.left - spacer || evt.clientY < firstElRect.top && evt.clientX < firstElRect.right : evt.clientY < childContainingRect.top - spacer || evt.clientY < firstElRect.bottom && evt.clientX < firstElRect.left;
+}
+function _ghostIsLast(evt, vertical, sortable) {
+  var lastElRect = getRect(lastChild(sortable.el, sortable.options.draggable));
+  var childContainingRect = getChildContainingRectFromElement(sortable.el, sortable.options, ghostEl);
+  var spacer = 10;
+  return vertical ? evt.clientX > childContainingRect.right + spacer || evt.clientY > lastElRect.bottom && evt.clientX > lastElRect.left : evt.clientY > childContainingRect.bottom + spacer || evt.clientX > lastElRect.right && evt.clientY > lastElRect.top;
+}
+function _getSwapDirection(evt, target, targetRect, vertical, swapThreshold, invertedSwapThreshold, invertSwap, isLastTarget) {
+  var mouseOnAxis = vertical ? evt.clientY : evt.clientX, targetLength = vertical ? targetRect.height : targetRect.width, targetS1 = vertical ? targetRect.top : targetRect.left, targetS2 = vertical ? targetRect.bottom : targetRect.right, invert = false;
+  if (!invertSwap) {
+    if (isLastTarget && targetMoveDistance < targetLength * swapThreshold) {
+      if (!pastFirstInvertThresh && (lastDirection === 1 ? mouseOnAxis > targetS1 + targetLength * invertedSwapThreshold / 2 : mouseOnAxis < targetS2 - targetLength * invertedSwapThreshold / 2)) {
+        pastFirstInvertThresh = true;
+      }
+      if (!pastFirstInvertThresh) {
+        if (lastDirection === 1 ? mouseOnAxis < targetS1 + targetMoveDistance : mouseOnAxis > targetS2 - targetMoveDistance) {
+          return -lastDirection;
+        }
+      } else {
+        invert = true;
+      }
+    } else {
+      if (mouseOnAxis > targetS1 + targetLength * (1 - swapThreshold) / 2 && mouseOnAxis < targetS2 - targetLength * (1 - swapThreshold) / 2) {
+        return _getInsertDirection(target);
+      }
+    }
+  }
+  invert = invert || invertSwap;
+  if (invert) {
+    if (mouseOnAxis < targetS1 + targetLength * invertedSwapThreshold / 2 || mouseOnAxis > targetS2 - targetLength * invertedSwapThreshold / 2) {
+      return mouseOnAxis > targetS1 + targetLength / 2 ? 1 : -1;
+    }
+  }
+  return 0;
+}
+function _getInsertDirection(target) {
+  if (index(dragEl) < index(target)) {
+    return 1;
+  } else {
+    return -1;
+  }
+}
+function _generateId(el) {
+  var str = el.tagName + el.className + el.src + el.href + el.textContent, i = str.length, sum = 0;
+  while (i--) {
+    sum += str.charCodeAt(i);
+  }
+  return sum.toString(36);
+}
+function _saveInputCheckedState(root) {
+  savedInputChecked.length = 0;
+  var inputs = root.getElementsByTagName("input");
+  var idx = inputs.length;
+  while (idx--) {
+    var el = inputs[idx];
+    el.checked && savedInputChecked.push(el);
+  }
+}
+function _nextTick(fn) {
+  return setTimeout(fn, 0);
+}
+function _cancelNextTick(id) {
+  return clearTimeout(id);
+}
+if (documentExists) {
+  on(document, "touchmove", function(evt) {
+    if ((Sortable.active || awaitingDragStarted) && evt.cancelable) {
+      evt.preventDefault();
+    }
+  });
+}
+Sortable.utils = {
+  on,
+  off,
+  css,
+  find,
+  is: function is(el, selector) {
+    return !!closest(el, selector, el, false);
+  },
+  extend,
+  throttle,
+  closest,
+  toggleClass,
+  clone,
+  index,
+  nextTick: _nextTick,
+  cancelNextTick: _cancelNextTick,
+  detectDirection: _detectDirection,
+  getChild,
+  expando
+};
+Sortable.get = function(element) {
+  return element[expando];
+};
+Sortable.mount = function() {
+  for (var _len = arguments.length, plugins2 = new Array(_len), _key = 0; _key < _len; _key++) {
+    plugins2[_key] = arguments[_key];
+  }
+  if (plugins2[0].constructor === Array) plugins2 = plugins2[0];
+  plugins2.forEach(function(plugin) {
+    if (!plugin.prototype || !plugin.prototype.constructor) {
+      throw "Sortable: Mounted plugin must be a constructor function, not ".concat({}.toString.call(plugin));
+    }
+    if (plugin.utils) Sortable.utils = _objectSpread2(_objectSpread2({}, Sortable.utils), plugin.utils);
+    PluginManager.mount(plugin);
+  });
+};
+Sortable.create = function(el, options) {
+  return new Sortable(el, options);
+};
+Sortable.version = version;
+var autoScrolls = [];
+var scrollEl;
+var scrollRootEl;
+var scrolling = false;
+var lastAutoScrollX;
+var lastAutoScrollY;
+var touchEvt$1;
+var pointerElemChangedInterval;
+function AutoScrollPlugin() {
+  function AutoScroll() {
+    this.defaults = {
+      scroll: true,
+      forceAutoScrollFallback: false,
+      scrollSensitivity: 30,
+      scrollSpeed: 10,
+      bubbleScroll: true
+    };
+    for (var fn in this) {
+      if (fn.charAt(0) === "_" && typeof this[fn] === "function") {
+        this[fn] = this[fn].bind(this);
+      }
+    }
+  }
+  AutoScroll.prototype = {
+    dragStarted: function dragStarted(_ref) {
+      var originalEvent = _ref.originalEvent;
+      if (this.sortable.nativeDraggable) {
+        on(document, "dragover", this._handleAutoScroll);
+      } else {
+        if (this.options.supportPointer) {
+          on(document, "pointermove", this._handleFallbackAutoScroll);
+        } else if (originalEvent.touches) {
+          on(document, "touchmove", this._handleFallbackAutoScroll);
+        } else {
+          on(document, "mousemove", this._handleFallbackAutoScroll);
+        }
+      }
+    },
+    dragOverCompleted: function dragOverCompleted(_ref2) {
+      var originalEvent = _ref2.originalEvent;
+      if (!this.options.dragOverBubble && !originalEvent.rootEl) {
+        this._handleAutoScroll(originalEvent);
+      }
+    },
+    drop: function drop3() {
+      if (this.sortable.nativeDraggable) {
+        off(document, "dragover", this._handleAutoScroll);
+      } else {
+        off(document, "pointermove", this._handleFallbackAutoScroll);
+        off(document, "touchmove", this._handleFallbackAutoScroll);
+        off(document, "mousemove", this._handleFallbackAutoScroll);
+      }
+      clearPointerElemChangedInterval();
+      clearAutoScrolls();
+      cancelThrottle();
+    },
+    nulling: function nulling() {
+      touchEvt$1 = scrollRootEl = scrollEl = scrolling = pointerElemChangedInterval = lastAutoScrollX = lastAutoScrollY = null;
+      autoScrolls.length = 0;
+    },
+    _handleFallbackAutoScroll: function _handleFallbackAutoScroll(evt) {
+      this._handleAutoScroll(evt, true);
+    },
+    _handleAutoScroll: function _handleAutoScroll(evt, fallback) {
+      var _this = this;
+      var x = (evt.touches ? evt.touches[0] : evt).clientX, y = (evt.touches ? evt.touches[0] : evt).clientY, elem = document.elementFromPoint(x, y);
+      touchEvt$1 = evt;
+      if (fallback || this.options.forceAutoScrollFallback || Edge || IE11OrLess || Safari) {
+        autoScroll(evt, this.options, elem, fallback);
+        var ogElemScroller = getParentAutoScrollElement(elem, true);
+        if (scrolling && (!pointerElemChangedInterval || x !== lastAutoScrollX || y !== lastAutoScrollY)) {
+          pointerElemChangedInterval && clearPointerElemChangedInterval();
+          pointerElemChangedInterval = setInterval(function() {
+            var newElem = getParentAutoScrollElement(document.elementFromPoint(x, y), true);
+            if (newElem !== ogElemScroller) {
+              ogElemScroller = newElem;
+              clearAutoScrolls();
+            }
+            autoScroll(evt, _this.options, newElem, fallback);
+          }, 10);
+          lastAutoScrollX = x;
+          lastAutoScrollY = y;
+        }
+      } else {
+        if (!this.options.bubbleScroll || getParentAutoScrollElement(elem, true) === getWindowScrollingElement()) {
+          clearAutoScrolls();
+          return;
+        }
+        autoScroll(evt, this.options, getParentAutoScrollElement(elem, false), false);
+      }
+    }
+  };
+  return _extends(AutoScroll, {
+    pluginName: "scroll",
+    initializeByDefault: true
+  });
+}
+function clearAutoScrolls() {
+  autoScrolls.forEach(function(autoScroll2) {
+    clearInterval(autoScroll2.pid);
+  });
+  autoScrolls = [];
+}
+function clearPointerElemChangedInterval() {
+  clearInterval(pointerElemChangedInterval);
+}
+var autoScroll = throttle(function(evt, options, rootEl2, isFallback) {
+  if (!options.scroll) return;
+  var x = (evt.touches ? evt.touches[0] : evt).clientX, y = (evt.touches ? evt.touches[0] : evt).clientY, sens = options.scrollSensitivity, speed = options.scrollSpeed, winScroller = getWindowScrollingElement();
+  var scrollThisInstance = false, scrollCustomFn;
+  if (scrollRootEl !== rootEl2) {
+    scrollRootEl = rootEl2;
+    clearAutoScrolls();
+    scrollEl = options.scroll;
+    scrollCustomFn = options.scrollFn;
+    if (scrollEl === true) {
+      scrollEl = getParentAutoScrollElement(rootEl2, true);
+    }
+  }
+  var layersOut = 0;
+  var currentParent = scrollEl;
+  do {
+    var el = currentParent, rect = getRect(el), top = rect.top, bottom = rect.bottom, left = rect.left, right = rect.right, width = rect.width, height = rect.height, canScrollX = void 0, canScrollY = void 0, scrollWidth = el.scrollWidth, scrollHeight = el.scrollHeight, elCSS = css(el), scrollPosX = el.scrollLeft, scrollPosY = el.scrollTop;
+    if (el === winScroller) {
+      canScrollX = width < scrollWidth && (elCSS.overflowX === "auto" || elCSS.overflowX === "scroll" || elCSS.overflowX === "visible");
+      canScrollY = height < scrollHeight && (elCSS.overflowY === "auto" || elCSS.overflowY === "scroll" || elCSS.overflowY === "visible");
+    } else {
+      canScrollX = width < scrollWidth && (elCSS.overflowX === "auto" || elCSS.overflowX === "scroll");
+      canScrollY = height < scrollHeight && (elCSS.overflowY === "auto" || elCSS.overflowY === "scroll");
+    }
+    var vx = canScrollX && (Math.abs(right - x) <= sens && scrollPosX + width < scrollWidth) - (Math.abs(left - x) <= sens && !!scrollPosX);
+    var vy = canScrollY && (Math.abs(bottom - y) <= sens && scrollPosY + height < scrollHeight) - (Math.abs(top - y) <= sens && !!scrollPosY);
+    if (!autoScrolls[layersOut]) {
+      for (var i = 0; i <= layersOut; i++) {
+        if (!autoScrolls[i]) {
+          autoScrolls[i] = {};
+        }
+      }
+    }
+    if (autoScrolls[layersOut].vx != vx || autoScrolls[layersOut].vy != vy || autoScrolls[layersOut].el !== el) {
+      autoScrolls[layersOut].el = el;
+      autoScrolls[layersOut].vx = vx;
+      autoScrolls[layersOut].vy = vy;
+      clearInterval(autoScrolls[layersOut].pid);
+      if (vx != 0 || vy != 0) {
+        scrollThisInstance = true;
+        autoScrolls[layersOut].pid = setInterval(function() {
+          if (isFallback && this.layer === 0) {
+            Sortable.active._onTouchMove(touchEvt$1);
+          }
+          var scrollOffsetY = autoScrolls[this.layer].vy ? autoScrolls[this.layer].vy * speed : 0;
+          var scrollOffsetX = autoScrolls[this.layer].vx ? autoScrolls[this.layer].vx * speed : 0;
+          if (typeof scrollCustomFn === "function") {
+            if (scrollCustomFn.call(Sortable.dragged.parentNode[expando], scrollOffsetX, scrollOffsetY, evt, touchEvt$1, autoScrolls[this.layer].el) !== "continue") {
+              return;
+            }
+          }
+          scrollBy(autoScrolls[this.layer].el, scrollOffsetX, scrollOffsetY);
+        }.bind({
+          layer: layersOut
+        }), 24);
+      }
+    }
+    layersOut++;
+  } while (options.bubbleScroll && currentParent !== winScroller && (currentParent = getParentAutoScrollElement(currentParent, false)));
+  scrolling = scrollThisInstance;
+}, 30);
+var drop = function drop2(_ref) {
+  var originalEvent = _ref.originalEvent, putSortable2 = _ref.putSortable, dragEl2 = _ref.dragEl, activeSortable = _ref.activeSortable, dispatchSortableEvent = _ref.dispatchSortableEvent, hideGhostForTarget = _ref.hideGhostForTarget, unhideGhostForTarget = _ref.unhideGhostForTarget;
+  if (!originalEvent) return;
+  var toSortable = putSortable2 || activeSortable;
+  hideGhostForTarget();
+  var touch = originalEvent.changedTouches && originalEvent.changedTouches.length ? originalEvent.changedTouches[0] : originalEvent;
+  var target = document.elementFromPoint(touch.clientX, touch.clientY);
+  unhideGhostForTarget();
+  if (toSortable && !toSortable.el.contains(target)) {
+    dispatchSortableEvent("spill");
+    this.onSpill({
+      dragEl: dragEl2,
+      putSortable: putSortable2
+    });
+  }
+};
+function Revert() {
+}
+Revert.prototype = {
+  startIndex: null,
+  dragStart: function dragStart(_ref2) {
+    var oldDraggableIndex2 = _ref2.oldDraggableIndex;
+    this.startIndex = oldDraggableIndex2;
+  },
+  onSpill: function onSpill(_ref3) {
+    var dragEl2 = _ref3.dragEl, putSortable2 = _ref3.putSortable;
+    this.sortable.captureAnimationState();
+    if (putSortable2) {
+      putSortable2.captureAnimationState();
+    }
+    var nextSibling = getChild(this.sortable.el, this.startIndex, this.options);
+    if (nextSibling) {
+      this.sortable.el.insertBefore(dragEl2, nextSibling);
+    } else {
+      this.sortable.el.appendChild(dragEl2);
+    }
+    this.sortable.animateAll();
+    if (putSortable2) {
+      putSortable2.animateAll();
+    }
+  },
+  drop
+};
+_extends(Revert, {
+  pluginName: "revertOnSpill"
+});
+function Remove() {
+}
+Remove.prototype = {
+  onSpill: function onSpill2(_ref4) {
+    var dragEl2 = _ref4.dragEl, putSortable2 = _ref4.putSortable;
+    var parentSortable = putSortable2 || this.sortable;
+    parentSortable.captureAnimationState();
+    dragEl2.parentNode && dragEl2.parentNode.removeChild(dragEl2);
+    parentSortable.animateAll();
+  },
+  drop
+};
+_extends(Remove, {
+  pluginName: "removeOnSpill"
+});
+Sortable.mount(new AutoScrollPlugin());
+Sortable.mount(Remove, Revert);
+var sortable_esm_default = Sortable;
+
+// src/utils/select.ts
 var X_MARK_16 = '<svg class="sy sy-icon sy-size-xs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z"/></svg>';
 var X_MARK_20 = '<svg class="sy sy-icon sy-size-sm" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>';
+function blank(value) {
+  return value === null || value === void 0 || value === "" || typeof value === "string" && value.trim() === "";
+}
+function filled(value) {
+  return !blank(value);
+}
+function isGroup(entry) {
+  return Array.isArray(entry.options);
+}
+function normalizeOptions(results) {
+  if (Array.isArray(results)) {
+    return results;
+  }
+  if (typeof results === "object" && results !== null && Array.isArray(results.options)) {
+    return results.options;
+  }
+  return [];
+}
+function normalizeLabels(results) {
+  if (!Array.isArray(results)) {
+    return [];
+  }
+  const labels = [];
+  for (const entry of results) {
+    if (typeof entry !== "object" || entry === null) {
+      continue;
+    }
+    const { value, label } = entry;
+    if (value !== void 0 && label !== void 0) {
+      labels.push({ value: String(value), label: String(label) });
+    }
+  }
+  return labels;
+}
+function clone2(options) {
+  return JSON.parse(JSON.stringify(options));
+}
+function randomSuffix() {
+  return Math.random().toString(36).substring(2, 11);
+}
+var Select = class {
+  ariaLabel;
+  badgeClass;
+  canOptionLabelsWrap;
+  canSelectPlaceholder;
+  element;
+  getOptionLabelUsing;
+  getOptionLabelsUsing;
+  getOptionsUsing;
+  getSearchResultsUsing;
+  hasDynamicOptions;
+  hasDynamicSearchResults;
+  hasInitialNoOptionsMessage;
+  id;
+  initialOptionLabel;
+  initialOptionLabels;
+  initialState;
+  isAutofocused;
+  isDisabled;
+  isHtmlAllowed;
+  isMultiple;
+  isReorderable;
+  isSearchable;
+  loadingMessage;
+  maxItems;
+  maxItemsMessage;
+  noOptionsMessage;
+  noSearchResultsMessage;
+  onStateChange;
+  options;
+  optionsLimit;
+  originalOptions;
+  placeholder;
+  position;
+  searchableOptionFields;
+  searchDebounce;
+  searchingMessage;
+  searchPrompt;
+  state;
+  statePath;
+  activeSearchId = 0;
+  labelRepository = {};
+  isOpen = false;
+  selectedIndex = -1;
+  searchQuery = "";
+  searchTimeout = null;
+  isSearching = false;
+  maxItemsMessageElement = null;
+  selectedDisplayVersion = 0;
+  container = document.createElement("div");
+  selectButton = document.createElement("button");
+  selectedDisplay = document.createElement("div");
+  dropdown = document.createElement("div");
+  optionsList = document.createElement("ul");
+  statusRegion = document.createElement("div");
+  dropdownId = "";
+  searchContainer = null;
+  searchInput = null;
+  sortable = null;
+  buttonClickListener = null;
+  documentClickListener = null;
+  buttonKeydownListener = null;
+  dropdownKeydownListener = null;
+  resizeListener = null;
+  scrollListener = null;
+  positioningRequestAnimationFrame = null;
+  constructor({
+    ariaLabel = null,
+    badgeClass,
+    canOptionLabelsWrap = true,
+    canSelectPlaceholder = true,
+    element,
+    getOptionLabelUsing = null,
+    getOptionLabelsUsing = null,
+    getOptionsUsing = null,
+    getSearchResultsUsing = null,
+    hasDynamicOptions = false,
+    hasDynamicSearchResults = true,
+    hasInitialNoOptionsMessage = false,
+    id = null,
+    initialOptionLabel = null,
+    initialOptionLabels = null,
+    initialState = null,
+    isAutofocused = false,
+    isDisabled = false,
+    isHtmlAllowed = false,
+    isMultiple = false,
+    isReorderable = false,
+    isSearchable = false,
+    loadingMessage = "Loading...",
+    maxItems = null,
+    maxItemsMessage = "Maximum number of items selected",
+    noOptionsMessage = "No options available",
+    noSearchResultsMessage = "No results found",
+    onStateChange = () => {
+    },
+    options,
+    optionsLimit = null,
+    placeholder = "",
+    position = null,
+    searchableOptionFields = ["label"],
+    searchDebounce = 1e3,
+    searchingMessage = "Searching...",
+    searchPrompt = "Search...",
+    state,
+    statePath = null
+  }) {
+    this.ariaLabel = ariaLabel;
+    this.badgeClass = badgeClass;
+    this.canOptionLabelsWrap = canOptionLabelsWrap;
+    this.canSelectPlaceholder = canSelectPlaceholder;
+    this.element = element;
+    this.getOptionLabelUsing = getOptionLabelUsing;
+    this.getOptionLabelsUsing = getOptionLabelsUsing;
+    this.getOptionsUsing = getOptionsUsing;
+    this.getSearchResultsUsing = getSearchResultsUsing;
+    this.hasDynamicOptions = hasDynamicOptions;
+    this.hasDynamicSearchResults = hasDynamicSearchResults;
+    this.hasInitialNoOptionsMessage = hasInitialNoOptionsMessage;
+    this.id = id;
+    this.initialOptionLabel = initialOptionLabel;
+    this.initialOptionLabels = initialOptionLabels;
+    this.initialState = initialState;
+    this.isAutofocused = isAutofocused;
+    this.isDisabled = isDisabled;
+    this.isHtmlAllowed = isHtmlAllowed;
+    this.isMultiple = isMultiple;
+    this.isReorderable = isReorderable;
+    this.isSearchable = isSearchable;
+    this.loadingMessage = loadingMessage;
+    this.maxItems = maxItems;
+    this.maxItemsMessage = maxItemsMessage;
+    this.noOptionsMessage = noOptionsMessage;
+    this.noSearchResultsMessage = noSearchResultsMessage;
+    this.onStateChange = onStateChange;
+    this.options = options;
+    this.optionsLimit = optionsLimit;
+    this.originalOptions = clone2(options);
+    this.placeholder = placeholder;
+    this.position = position;
+    this.searchableOptionFields = Array.isArray(searchableOptionFields) ? searchableOptionFields : ["label"];
+    this.searchDebounce = searchDebounce;
+    this.searchingMessage = searchingMessage;
+    this.searchPrompt = searchPrompt;
+    this.state = state;
+    this.statePath = statePath;
+    this.render();
+    this.setUpEventListeners();
+    if (this.isAutofocused) {
+      this.selectButton.focus();
+    }
+  }
+  populateLabelRepositoryFromOptions(options) {
+    if (!Array.isArray(options)) {
+      return;
+    }
+    for (const option2 of options) {
+      if (isGroup(option2)) {
+        this.populateLabelRepositoryFromOptions(option2.options);
+      } else {
+        this.labelRepository[option2.value] = option2.label;
+      }
+    }
+  }
+  render() {
+    this.populateLabelRepositoryFromOptions(this.options);
+    this.container.className = "sy-fo-select-ctn";
+    if (!this.canOptionLabelsWrap) {
+      this.container.classList.add("sy-fo-select-ctn-labels-not-wrapped");
+    }
+    this.selectButton.className = "sy-fo-select-btn";
+    this.selectButton.type = "button";
+    this.selectButton.setAttribute("role", "combobox");
+    this.selectButton.setAttribute("aria-haspopup", "listbox");
+    this.selectButton.setAttribute("aria-expanded", "false");
+    if (filled(this.id)) {
+      this.selectButton.id = this.id;
+    }
+    if (filled(this.ariaLabel)) {
+      this.selectButton.setAttribute("aria-label", this.ariaLabel);
+    }
+    this.selectedDisplay.className = "sy-fo-select-value-ctn";
+    void this.updateSelectedDisplay();
+    this.selectButton.appendChild(this.selectedDisplay);
+    this.dropdown.className = "sy-dropdown-panel sy-fo-select-dropdown";
+    this.dropdown.setAttribute("role", "listbox");
+    this.dropdown.setAttribute("tabindex", "-1");
+    this.dropdown.style.display = "none";
+    this.dropdownId = `sy-fo-select-dropdown-${randomSuffix()}`;
+    this.dropdown.id = this.dropdownId;
+    this.selectButton.setAttribute("aria-controls", this.dropdownId);
+    if (this.isMultiple) {
+      this.dropdown.setAttribute("aria-multiselectable", "true");
+    }
+    if (this.isSearchable) {
+      const searchContainer = document.createElement("div");
+      searchContainer.className = "sy-fo-select-search-ctn";
+      const searchInput = document.createElement("input");
+      searchInput.className = "sy-fo-input";
+      searchInput.type = "text";
+      searchInput.placeholder = this.searchPrompt;
+      searchInput.setAttribute("aria-label", "Search");
+      searchContainer.appendChild(searchInput);
+      this.dropdown.appendChild(searchContainer);
+      this.searchContainer = searchContainer;
+      this.searchInput = searchInput;
+      searchInput.addEventListener("input", () => {
+        if (this.isDisabled) {
+          return;
+        }
+        this.handleSearch(searchInput.value);
+      });
+      searchInput.addEventListener("keydown", (event) => {
+        if (this.isDisabled) {
+          return;
+        }
+        if (event.key === "Tab") {
+          event.preventDefault();
+          const options = this.getVisibleOptions();
+          if (options.length === 0) return;
+          if (event.shiftKey) {
+            this.selectedIndex = options.length - 1;
+          } else {
+            this.selectedIndex = 0;
+          }
+          for (const option2 of options) {
+            option2.classList.remove("sy-selected");
+          }
+          options[this.selectedIndex].classList.add("sy-selected");
+          options[this.selectedIndex].focus();
+        } else if (event.key === "ArrowDown") {
+          event.preventDefault();
+          event.stopPropagation();
+          const options = this.getVisibleOptions();
+          if (options.length === 0) return;
+          this.selectedIndex = -1;
+          searchInput.blur();
+          this.focusNextOption();
+        } else if (event.key === "ArrowUp") {
+          event.preventDefault();
+          event.stopPropagation();
+          const options = this.getVisibleOptions();
+          if (options.length === 0) return;
+          this.selectedIndex = options.length - 1;
+          searchInput.blur();
+          options[this.selectedIndex].classList.add("sy-selected");
+          options[this.selectedIndex].focus();
+          if (options[this.selectedIndex].id !== "") {
+            this.dropdown.setAttribute("aria-activedescendant", options[this.selectedIndex].id);
+          }
+          this.scrollOptionIntoView(options[this.selectedIndex]);
+        } else if (event.key === "Enter") {
+          event.preventDefault();
+          event.stopPropagation();
+          if (this.isSearching) {
+            return;
+          }
+          const options = this.getVisibleOptions();
+          if (options.length === 0) {
+            return;
+          }
+          const firstEnabled = options.find((option2) => {
+            const ariaDisabled = option2.getAttribute("aria-disabled") === "true";
+            const hasDisabledClass = option2.classList.contains("sy-disabled");
+            const isHidden = option2.offsetParent === null;
+            return !(ariaDisabled || hasDisabledClass || isHidden);
+          });
+          if (firstEnabled === void 0) {
+            return;
+          }
+          const value = firstEnabled.getAttribute("data-value");
+          if (value === null) {
+            return;
+          }
+          this.selectOption(value);
+        }
+      });
+    }
+    this.statusRegion.className = "sy-fo-sr-only";
+    this.statusRegion.setAttribute("role", "status");
+    this.statusRegion.setAttribute("aria-live", "polite");
+    this.statusRegion.setAttribute("aria-atomic", "true");
+    this.renderOptions();
+    this.container.appendChild(this.selectButton);
+    this.container.appendChild(this.dropdown);
+    this.container.appendChild(this.statusRegion);
+    this.element.insertAdjacentElement("afterend", this.container);
+    this.applyDisabledState();
+  }
+  renderOptions() {
+    this.optionsList.innerHTML = "";
+    let totalRenderedCount = 0;
+    const optionsToRender = this.options;
+    let optionsCount = 0;
+    let hasGroupedOptions = false;
+    for (const option2 of this.options) {
+      if (isGroup(option2)) {
+        optionsCount += option2.options.length;
+        hasGroupedOptions = true;
+      } else {
+        optionsCount++;
+      }
+    }
+    if (hasGroupedOptions) {
+      this.optionsList.className = "sy-fo-select-options-ctn";
+    } else if (optionsCount > 0) {
+      this.optionsList.className = "sy-dropdown-list";
+    }
+    let ungroupedList = hasGroupedOptions ? null : this.optionsList;
+    let renderedCount = 0;
+    for (const option2 of optionsToRender) {
+      if (this.optionsLimit !== null && this.optionsLimit > 0 && renderedCount >= this.optionsLimit) {
+        break;
+      }
+      if (isGroup(option2)) {
+        let groupOptions = option2.options;
+        const state = this.state;
+        if (this.isMultiple && Array.isArray(state) && state.length > 0) {
+          groupOptions = option2.options.filter((groupOption) => !state.includes(groupOption.value));
+        }
+        if (groupOptions.length > 0) {
+          if (this.optionsLimit !== null && this.optionsLimit > 0) {
+            const remainingSlots = this.optionsLimit - renderedCount;
+            if (remainingSlots < groupOptions.length) {
+              groupOptions = groupOptions.slice(0, remainingSlots);
+            }
+          }
+          this.renderOptionGroup(option2.label, groupOptions);
+          renderedCount += groupOptions.length;
+          totalRenderedCount += groupOptions.length;
+        }
+      } else {
+        if (this.isMultiple && Array.isArray(this.state) && this.state.includes(option2.value)) {
+          continue;
+        }
+        if (ungroupedList === null) {
+          ungroupedList = document.createElement("ul");
+          ungroupedList.className = "sy-dropdown-list";
+          this.optionsList.appendChild(ungroupedList);
+        }
+        const optionElement = this.createOptionElement(option2.value, option2);
+        ungroupedList.appendChild(optionElement);
+        renderedCount++;
+        totalRenderedCount++;
+      }
+    }
+    if (totalRenderedCount === 0) {
+      if (this.searchQuery !== "") {
+        this.showNoResultsMessage();
+      } else if (this.hasInitialNoOptionsMessage || this.hasDynamicOptions) {
+        this.showNoOptionsMessage();
+      } else if (this.isMultiple && this.isOpen && !this.isSearchable) {
+        this.closeDropdown();
+      }
+      if (this.optionsList.parentNode === this.dropdown) {
+        this.dropdown.removeChild(this.optionsList);
+      }
+    } else {
+      this.hideLoadingState();
+      if (this.optionsList.parentNode !== this.dropdown) {
+        this.dropdown.appendChild(this.optionsList);
+      }
+    }
+  }
+  renderOptionGroup(label, options) {
+    if (options.length === 0) {
+      return;
+    }
+    const optionGroup = document.createElement("li");
+    optionGroup.className = "sy-fo-select-option-group";
+    const optionGroupLabel = document.createElement("div");
+    optionGroupLabel.className = "sy-fo-select-option-group-label";
+    optionGroupLabel.textContent = label;
+    const groupOptionsList = document.createElement("ul");
+    groupOptionsList.className = "sy-dropdown-list";
+    for (const option2 of options) {
+      groupOptionsList.appendChild(this.createOptionElement(option2.value, option2));
+    }
+    optionGroup.appendChild(optionGroupLabel);
+    optionGroup.appendChild(groupOptionsList);
+    this.optionsList.appendChild(optionGroup);
+  }
+  createOptionElement(value, option2) {
+    const optionValue = value;
+    const optionLabel = option2.label;
+    const isDisabled = option2.isDisabled ?? false;
+    const element = document.createElement("li");
+    element.className = "sy-dropdown-item sy-fo-select-option";
+    if (isDisabled) {
+      element.classList.add("sy-disabled");
+    }
+    element.id = `sy-fo-select-option-${randomSuffix()}`;
+    element.setAttribute("role", "option");
+    element.setAttribute("data-value", optionValue);
+    element.setAttribute("tabindex", "0");
+    if (isDisabled) {
+      element.setAttribute("aria-disabled", "true");
+    }
+    if (this.isHtmlAllowed) {
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = optionLabel;
+      element.setAttribute("aria-label", tempDiv.textContent || tempDiv.innerText || optionLabel);
+    }
+    const isSelected = this.isMultiple ? Array.isArray(this.state) && this.state.includes(optionValue) : this.state === optionValue;
+    element.setAttribute("aria-selected", isSelected ? "true" : "false");
+    if (isSelected) {
+      element.classList.add("sy-selected");
+    }
+    const labelSpan = document.createElement("span");
+    labelSpan.className = "sy-fo-select-option-label";
+    if (this.isHtmlAllowed) {
+      labelSpan.innerHTML = optionLabel;
+    } else {
+      labelSpan.textContent = optionLabel;
+    }
+    element.appendChild(labelSpan);
+    if (!isDisabled) {
+      element.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        this.selectOption(optionValue);
+        if (this.isMultiple) {
+          const searchInput = this.searchInput;
+          if (this.isSearchable && searchInput !== null) {
+            setTimeout(() => {
+              searchInput.focus();
+            }, 0);
+          } else {
+            setTimeout(() => {
+              element.focus();
+            }, 0);
+          }
+        }
+      });
+    }
+    return element;
+  }
+  async updateSelectedDisplay() {
+    this.selectedDisplayVersion = this.selectedDisplayVersion + 1;
+    const renderVersion = this.selectedDisplayVersion;
+    const fragment = document.createDocumentFragment();
+    if (this.isMultiple) {
+      if (!Array.isArray(this.state) || this.state.length === 0) {
+        const placeholderSpan = document.createElement("span");
+        placeholderSpan.textContent = this.placeholder;
+        placeholderSpan.classList.add("sy-fo-select-placeholder");
+        fragment.appendChild(placeholderSpan);
+      } else {
+        const selectedLabels = await this.getLabelsForMultipleSelection();
+        if (renderVersion !== this.selectedDisplayVersion) return;
+        this.addBadgesForSelectedOptions(selectedLabels, fragment);
+      }
+      if (renderVersion === this.selectedDisplayVersion) {
+        this.selectedDisplay.replaceChildren(fragment);
+        if (this.isOpen) {
+          this.deferPositionDropdown();
+        }
+      }
+      return;
+    }
+    if (this.state === null || this.state === "") {
+      const placeholderSpan = document.createElement("span");
+      placeholderSpan.textContent = this.placeholder;
+      placeholderSpan.classList.add("sy-fo-select-placeholder");
+      fragment.appendChild(placeholderSpan);
+      if (renderVersion === this.selectedDisplayVersion) {
+        this.selectedDisplay.replaceChildren(fragment);
+        const existingRemoveButton = this.container.querySelector(".sy-fo-select-value-remove-btn");
+        if (existingRemoveButton !== null) {
+          existingRemoveButton.remove();
+        }
+        this.container.classList.remove("sy-fo-select-ctn-clearable");
+      }
+      return;
+    }
+    const selectedLabel = await this.getLabelForSingleSelection();
+    if (renderVersion !== this.selectedDisplayVersion) return;
+    this.addSingleSelectionDisplay(selectedLabel, fragment);
+    if (renderVersion === this.selectedDisplayVersion) {
+      this.selectedDisplay.replaceChildren(fragment);
+    }
+  }
+  async getLabelsForMultipleSelection() {
+    const selectedLabels = this.getSelectedOptionLabels();
+    const missingValues = [];
+    if (Array.isArray(this.state)) {
+      for (const value of this.state) {
+        if (filled(this.labelRepository[value])) {
+          continue;
+        }
+        if (filled(selectedLabels[value])) {
+          this.labelRepository[value] = selectedLabels[value];
+          continue;
+        }
+        missingValues.push(value);
+      }
+    }
+    if (missingValues.length > 0 && filled(this.initialOptionLabels) && JSON.stringify(this.state) === JSON.stringify(this.initialState)) {
+      for (const initialOption of this.initialOptionLabels) {
+        if (filled(initialOption) && missingValues.includes(initialOption.value)) {
+          this.labelRepository[initialOption.value] = initialOption.label;
+        }
+      }
+    } else if (missingValues.length > 0 && this.getOptionLabelsUsing !== null) {
+      try {
+        const fetchedOptions = normalizeLabels(await this.getOptionLabelsUsing());
+        for (const option2 of fetchedOptions) {
+          this.labelRepository[option2.value] = option2.label;
+        }
+      } catch (error) {
+        console.error("Error fetching option labels:", error);
+      }
+    }
+    const result = [];
+    if (Array.isArray(this.state)) {
+      for (const value of this.state) {
+        if (filled(this.labelRepository[value])) {
+          result.push(this.labelRepository[value]);
+        } else if (filled(selectedLabels[value])) {
+          result.push(selectedLabels[value]);
+        } else {
+          result.push(value);
+        }
+      }
+    }
+    return result;
+  }
+  createBadgeElement(value, label) {
+    const badge = document.createElement("span");
+    badge.className = this.badgeClass;
+    if (filled(value)) {
+      badge.setAttribute("data-value", value);
+    }
+    const labelContainer = document.createElement("span");
+    labelContainer.className = "sy-badge-label-ctn";
+    const labelElement = document.createElement("span");
+    labelElement.className = "sy-badge-label";
+    if (this.canOptionLabelsWrap) {
+      labelElement.classList.add("sy-wrapped");
+    }
+    if (this.isHtmlAllowed) {
+      labelElement.innerHTML = label;
+    } else {
+      labelElement.textContent = label;
+    }
+    labelContainer.appendChild(labelElement);
+    badge.appendChild(labelContainer);
+    badge.appendChild(this.createRemoveButton(value, label));
+    return badge;
+  }
+  createRemoveButton(value, label) {
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "sy-badge-delete-btn";
+    removeButton.innerHTML = X_MARK_16;
+    removeButton.setAttribute(
+      "aria-label",
+      `Remove ${this.isHtmlAllowed ? label.replace(/<[^>]*>/g, "") : label}`
+    );
+    if (this.isDisabled) {
+      removeButton.setAttribute("disabled", "disabled");
+      removeButton.classList.add("sy-disabled");
+    }
+    removeButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (filled(value)) {
+        this.selectOption(value);
+      }
+    });
+    removeButton.addEventListener("keydown", (event) => {
+      if (event.key === " " || event.key === "Enter") {
+        event.preventDefault();
+        event.stopPropagation();
+        if (filled(value)) {
+          this.selectOption(value);
+        }
+      }
+    });
+    return removeButton;
+  }
+  addBadgesForSelectedOptions(selectedLabels, target = this.selectedDisplay) {
+    const badgesContainer = document.createElement("div");
+    badgesContainer.className = "sy-fo-select-value-badges-ctn";
+    selectedLabels.forEach((label, index2) => {
+      const value = Array.isArray(this.state) ? this.state[index2] : null;
+      badgesContainer.appendChild(this.createBadgeElement(value, label));
+    });
+    target.appendChild(badgesContainer);
+    this.sortable?.destroy();
+    this.sortable = null;
+    if (this.isReorderable) {
+      badgesContainer.addEventListener("click", (event) => {
+        event.stopPropagation();
+      });
+      badgesContainer.addEventListener("mousedown", (event) => {
+        event.stopPropagation();
+      });
+      this.sortable = new sortable_esm_default(badgesContainer, {
+        animation: 150,
+        onEnd: () => {
+          const newState = [];
+          for (const badge of badgesContainer.querySelectorAll("[data-value]")) {
+            newState.push(badge.getAttribute("data-value") ?? "");
+          }
+          this.state = newState;
+          this.onStateChange(this.state);
+        }
+      });
+    }
+  }
+  async getLabelForSingleSelection() {
+    const state = typeof this.state === "string" ? this.state : "";
+    let selectedLabel = this.labelRepository[state];
+    if (blank(selectedLabel)) {
+      selectedLabel = this.getSelectedOptionLabel(state);
+    }
+    if (blank(selectedLabel) && filled(this.initialOptionLabel) && this.state === this.initialState) {
+      selectedLabel = this.initialOptionLabel;
+      if (filled(state)) {
+        this.labelRepository[state] = selectedLabel;
+      }
+    } else if (blank(selectedLabel) && this.getOptionLabelUsing !== null) {
+      try {
+        const fetched = await this.getOptionLabelUsing();
+        selectedLabel = fetched === null || fetched === void 0 ? "" : String(fetched);
+        if (filled(selectedLabel) && filled(state)) {
+          this.labelRepository[state] = selectedLabel;
+        }
+      } catch (error) {
+        console.error("Error fetching option label:", error);
+        selectedLabel = state;
+      }
+    } else if (blank(selectedLabel)) {
+      selectedLabel = state;
+    }
+    return selectedLabel;
+  }
+  addSingleSelectionDisplay(selectedLabel, target = this.selectedDisplay) {
+    const labelContainer = document.createElement("span");
+    labelContainer.className = "sy-fo-select-value-label";
+    if (this.isHtmlAllowed) {
+      labelContainer.innerHTML = selectedLabel;
+    } else {
+      labelContainer.textContent = selectedLabel;
+    }
+    target.appendChild(labelContainer);
+    if (!this.canSelectPlaceholder) {
+      return;
+    }
+    if (this.container.querySelector(".sy-fo-select-value-remove-btn") !== null) {
+      return;
+    }
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "sy-fo-select-value-remove-btn";
+    removeButton.innerHTML = X_MARK_20;
+    removeButton.setAttribute("aria-label", "Clear selection");
+    if (this.isDisabled) {
+      removeButton.setAttribute("disabled", "disabled");
+      removeButton.classList.add("sy-disabled");
+    }
+    removeButton.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.selectOption("");
+    });
+    removeButton.addEventListener("keydown", (event) => {
+      if (event.key === " " || event.key === "Enter") {
+        event.preventDefault();
+        event.stopPropagation();
+        this.selectOption("");
+      }
+    });
+    this.container.appendChild(removeButton);
+    this.container.classList.add("sy-fo-select-ctn-clearable");
+  }
+  getSelectedOptionLabel(value) {
+    if (filled(this.labelRepository[value])) {
+      return this.labelRepository[value];
+    }
+    let selectedLabel = "";
+    for (const option2 of this.options) {
+      if (isGroup(option2)) {
+        for (const groupOption of option2.options) {
+          if (groupOption.value === value) {
+            selectedLabel = groupOption.label;
+            this.labelRepository[value] = selectedLabel;
+            break;
+          }
+        }
+      } else if (option2.value === value) {
+        selectedLabel = option2.label;
+        this.labelRepository[value] = selectedLabel;
+        break;
+      }
+    }
+    return selectedLabel;
+  }
+  setUpEventListeners() {
+    this.buttonClickListener = () => {
+      this.toggleDropdown();
+    };
+    this.documentClickListener = (event) => {
+      const target = event.target;
+      if (!this.container.contains(target instanceof Node ? target : null) && this.isOpen) {
+        this.closeDropdown();
+      }
+    };
+    this.buttonKeydownListener = (event) => {
+      if (this.isDisabled) {
+        return;
+      }
+      this.handleSelectButtonKeydown(event);
+    };
+    this.dropdownKeydownListener = (event) => {
+      if (this.isDisabled) {
+        return;
+      }
+      if (this.isSearchable && document.activeElement === this.searchInput && !["Tab", "Escape"].includes(event.key)) {
+        return;
+      }
+      this.handleDropdownKeydown(event);
+    };
+    this.selectButton.addEventListener("click", this.buttonClickListener);
+    document.addEventListener("click", this.documentClickListener);
+    this.selectButton.addEventListener("keydown", this.buttonKeydownListener);
+    this.dropdown.addEventListener("keydown", this.dropdownKeydownListener);
+  }
+  updateOptionLabelInList(value, newLabel) {
+    this.labelRepository[value] = newLabel;
+    const options = this.getVisibleOptions();
+    for (const option2 of options) {
+      if (option2.getAttribute("data-value") === value) {
+        option2.innerHTML = "";
+        const labelSpan = document.createElement("span");
+        labelSpan.className = "sy-fo-select-option-label";
+        if (this.isHtmlAllowed) {
+          labelSpan.innerHTML = newLabel;
+        } else {
+          labelSpan.textContent = newLabel;
+        }
+        option2.appendChild(labelSpan);
+        break;
+      }
+    }
+    for (const option2 of this.options) {
+      if (isGroup(option2)) {
+        for (const groupOption of option2.options) {
+          if (groupOption.value === value) {
+            groupOption.label = newLabel;
+            break;
+          }
+        }
+      } else if (option2.value === value) {
+        option2.label = newLabel;
+        break;
+      }
+    }
+    for (const option2 of this.originalOptions) {
+      if (isGroup(option2)) {
+        for (const groupOption of option2.options) {
+          if (groupOption.value === value) {
+            groupOption.label = newLabel;
+            break;
+          }
+        }
+      } else if (option2.value === value) {
+        option2.label = newLabel;
+        break;
+      }
+    }
+  }
+  handleSelectButtonKeydown(event) {
+    switch (event.key) {
+      case "ArrowDown":
+        event.preventDefault();
+        event.stopPropagation();
+        if (!this.isOpen) {
+          void this.openDropdown();
+        } else {
+          this.focusNextOption();
+        }
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        event.stopPropagation();
+        if (!this.isOpen) {
+          void this.openDropdown();
+        } else {
+          this.focusPreviousOption();
+        }
+        break;
+      case " ": {
+        event.preventDefault();
+        if (this.isOpen) {
+          if (this.selectedIndex >= 0) {
+            const focusedOption = this.getVisibleOptions()[this.selectedIndex];
+            if (focusedOption) {
+              focusedOption.click();
+            }
+          }
+        } else {
+          void this.openDropdown();
+        }
+        break;
+      }
+      case "Enter":
+        break;
+      case "Escape":
+        if (this.isOpen) {
+          event.preventDefault();
+          this.closeDropdown();
+        }
+        break;
+      case "Tab":
+        if (this.isOpen) {
+          this.closeDropdown();
+        }
+        break;
+      default: {
+        if (this.isSearchable && !event.ctrlKey && !event.metaKey && !event.altKey && typeof event.key === "string" && event.key.length === 1) {
+          event.preventDefault();
+          const char = event.key;
+          if (!this.isOpen) {
+            void this.openDropdown();
+          }
+          const searchInput = this.searchInput;
+          if (searchInput !== null) {
+            searchInput.focus();
+            searchInput.value = searchInput.value + char;
+            searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        }
+        break;
+      }
+    }
+  }
+  handleDropdownKeydown(event) {
+    switch (event.key) {
+      case "ArrowDown":
+        event.preventDefault();
+        event.stopPropagation();
+        this.focusNextOption();
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        event.stopPropagation();
+        this.focusPreviousOption();
+        break;
+      case " ": {
+        event.preventDefault();
+        if (this.selectedIndex >= 0) {
+          const focusedOption = this.getVisibleOptions()[this.selectedIndex];
+          if (focusedOption) {
+            focusedOption.click();
+          }
+        }
+        break;
+      }
+      case "Enter": {
+        event.preventDefault();
+        if (this.selectedIndex >= 0) {
+          const focusedOption = this.getVisibleOptions()[this.selectedIndex];
+          if (focusedOption) {
+            focusedOption.click();
+          }
+        } else {
+          const form = this.element.closest("form");
+          if (form) {
+            form.requestSubmit();
+          }
+        }
+        break;
+      }
+      case "Escape":
+        event.preventDefault();
+        this.closeDropdown();
+        this.selectButton.focus();
+        break;
+      case "Tab":
+        this.closeDropdown();
+        break;
+      default: {
+        if (this.isSearchable && !event.ctrlKey && !event.metaKey && !event.altKey && typeof event.key === "string" && event.key.length === 1) {
+          event.preventDefault();
+          const char = event.key;
+          const searchInput = this.searchInput;
+          if (searchInput !== null) {
+            searchInput.focus();
+            searchInput.value = searchInput.value + char;
+            searchInput.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        }
+        break;
+      }
+    }
+  }
+  toggleDropdown() {
+    if (this.isDisabled) {
+      return;
+    }
+    if (this.isOpen) {
+      this.closeDropdown();
+      return;
+    }
+    if (this.isMultiple && !this.isSearchable && !this.hasAvailableOptions()) {
+      return;
+    }
+    void this.openDropdown();
+  }
+  hasAvailableOptions() {
+    for (const option2 of this.options) {
+      if (isGroup(option2)) {
+        for (const groupOption of option2.options) {
+          if (!Array.isArray(this.state) || !this.state.includes(groupOption.value)) {
+            return true;
+          }
+        }
+      } else if (!Array.isArray(this.state) || !this.state.includes(option2.value)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  async openDropdown() {
+    this.dropdown.style.display = "block";
+    this.dropdown.style.opacity = "0";
+    const useFixedPositioning = this.selectButton.closest(".sy-fixed-positioning-context") !== null && this.selectButton.closest(".sy-absolute-positioning-context") === null;
+    this.dropdown.style.position = useFixedPositioning ? "fixed" : "absolute";
+    this.dropdown.style.width = `${this.selectButton.offsetWidth}px`;
+    this.selectButton.setAttribute("aria-expanded", "true");
+    this.isOpen = true;
+    this.positionDropdown();
+    if (this.resizeListener === null) {
+      this.resizeListener = () => {
+        this.dropdown.style.width = `${this.selectButton.offsetWidth}px`;
+        this.positionDropdown();
+      };
+      window.addEventListener("resize", this.resizeListener);
+    }
+    if (this.scrollListener === null) {
+      this.scrollListener = () => this.positionDropdown();
+      window.addEventListener("scroll", this.scrollListener, true);
+    }
+    this.dropdown.style.opacity = "1";
+    const searchInput = this.searchInput;
+    if (this.isSearchable && searchInput !== null) {
+      searchInput.value = "";
+      this.searchQuery = "";
+      if (!this.hasDynamicOptions) {
+        this.options = clone2(this.originalOptions);
+        this.renderOptions();
+      }
+    }
+    if (this.hasDynamicOptions && this.getOptionsUsing !== null) {
+      this.showLoadingState(false);
+      try {
+        const normalizedFetched = normalizeOptions(await this.getOptionsUsing());
+        this.options = normalizedFetched;
+        this.originalOptions = clone2(normalizedFetched);
+        this.populateLabelRepositoryFromOptions(normalizedFetched);
+        if (this.isSearchable && searchInput !== null && (searchInput.value.trim() !== "" || this.searchQuery.trim() !== "")) {
+          const query = (searchInput.value !== "" ? searchInput.value : this.searchQuery).trim().toLowerCase();
+          this.hideLoadingState();
+          this.filterOptions(query);
+        } else {
+          this.renderOptions();
+        }
+      } catch (error) {
+        console.error("Error fetching options:", error);
+        this.hideLoadingState();
+      }
+    } else if (!this.hasInitialNoOptionsMessage || this.searchQuery !== "") {
+      this.hideLoadingState();
+    }
+    if (this.isSearchable && searchInput !== null) {
+      searchInput.focus();
+    } else {
+      this.selectedIndex = -1;
+      const options = this.getVisibleOptions();
+      if (this.isMultiple) {
+        if (Array.isArray(this.state) && this.state.length > 0) {
+          for (let i = 0; i < options.length; i++) {
+            const value = options[i].getAttribute("data-value");
+            if (value !== null && this.state.includes(value)) {
+              this.selectedIndex = i;
+              break;
+            }
+          }
+        }
+      } else {
+        for (let i = 0; i < options.length; i++) {
+          if (options[i].getAttribute("data-value") === this.state) {
+            this.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      if (this.selectedIndex === -1 && options.length > 0) {
+        this.selectedIndex = 0;
+      }
+      if (this.selectedIndex >= 0) {
+        options[this.selectedIndex].classList.add("sy-selected");
+        options[this.selectedIndex].focus();
+      }
+    }
+  }
+  positionDropdown() {
+    const placement = this.position === "top" ? "top-start" : "bottom-start";
+    const middleware = [offset2(4), shift2({ padding: 5 })];
+    if (this.position !== "top" && this.position !== "bottom") {
+      middleware.push(flip2());
+    }
+    const useFixedPositioning = this.selectButton.closest(".sy-fixed-positioning-context") !== null && this.selectButton.closest(".sy-absolute-positioning-context") === null;
+    void computePosition2(this.selectButton, this.dropdown, {
+      placement,
+      middleware,
+      strategy: useFixedPositioning ? "fixed" : "absolute"
+    }).then(({ x, y }) => {
+      Object.assign(this.dropdown.style, {
+        left: `${x}px`,
+        top: `${y}px`
+      });
+    });
+  }
+  deferPositionDropdown() {
+    if (!this.isOpen) return;
+    if (this.positioningRequestAnimationFrame !== null) {
+      cancelAnimationFrame(this.positioningRequestAnimationFrame);
+      this.positioningRequestAnimationFrame = null;
+    }
+    this.positioningRequestAnimationFrame = requestAnimationFrame(() => {
+      this.positionDropdown();
+      this.positioningRequestAnimationFrame = null;
+    });
+  }
+  closeDropdown() {
+    this.dropdown.style.display = "none";
+    this.selectButton.setAttribute("aria-expanded", "false");
+    this.isOpen = false;
+    if (this.searchTimeout !== null) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
+    }
+    this.activeSearchId++;
+    this.isSearching = false;
+    this.hideLoadingState();
+    this.hideMaxItemsMessage();
+    if (this.resizeListener !== null) {
+      window.removeEventListener("resize", this.resizeListener);
+      this.resizeListener = null;
+    }
+    if (this.scrollListener !== null) {
+      window.removeEventListener("scroll", this.scrollListener, true);
+      this.scrollListener = null;
+    }
+    for (const option2 of this.getVisibleOptions()) {
+      option2.classList.remove("sy-selected");
+    }
+    this.dropdown.removeAttribute("aria-activedescendant");
+  }
+  focusNextOption() {
+    const options = this.getVisibleOptions();
+    if (options.length === 0) return;
+    if (this.selectedIndex >= 0 && this.selectedIndex < options.length) {
+      options[this.selectedIndex].classList.remove("sy-selected");
+    }
+    const searchInput = this.searchInput;
+    if (this.selectedIndex === options.length - 1 && this.isSearchable && searchInput !== null) {
+      this.selectedIndex = -1;
+      searchInput.focus();
+      this.dropdown.removeAttribute("aria-activedescendant");
+      return;
+    }
+    this.selectedIndex = (this.selectedIndex + 1) % options.length;
+    options[this.selectedIndex].classList.add("sy-selected");
+    options[this.selectedIndex].focus();
+    if (options[this.selectedIndex].id !== "") {
+      this.dropdown.setAttribute("aria-activedescendant", options[this.selectedIndex].id);
+    }
+    this.scrollOptionIntoView(options[this.selectedIndex]);
+  }
+  focusPreviousOption() {
+    const options = this.getVisibleOptions();
+    if (options.length === 0) return;
+    if (this.selectedIndex >= 0 && this.selectedIndex < options.length) {
+      options[this.selectedIndex].classList.remove("sy-selected");
+    }
+    const searchInput = this.searchInput;
+    if ((this.selectedIndex === 0 || this.selectedIndex === -1) && this.isSearchable && searchInput !== null) {
+      this.selectedIndex = -1;
+      searchInput.focus();
+      this.dropdown.removeAttribute("aria-activedescendant");
+      return;
+    }
+    this.selectedIndex = (this.selectedIndex - 1 + options.length) % options.length;
+    options[this.selectedIndex].classList.add("sy-selected");
+    options[this.selectedIndex].focus();
+    if (options[this.selectedIndex].id !== "") {
+      this.dropdown.setAttribute("aria-activedescendant", options[this.selectedIndex].id);
+    }
+    this.scrollOptionIntoView(options[this.selectedIndex]);
+  }
+  scrollOptionIntoView(option2) {
+    if (!option2) return;
+    const dropdownRect = this.dropdown.getBoundingClientRect();
+    const optionRect = option2.getBoundingClientRect();
+    if (optionRect.bottom > dropdownRect.bottom) {
+      this.dropdown.scrollTop += optionRect.bottom - dropdownRect.bottom;
+    } else if (optionRect.top < dropdownRect.top) {
+      this.dropdown.scrollTop -= dropdownRect.top - optionRect.top;
+    }
+  }
+  getVisibleOptions() {
+    let ungroupedOptions = [];
+    if (this.optionsList.classList.contains("sy-dropdown-list")) {
+      ungroupedOptions = Array.from(
+        this.optionsList.querySelectorAll(':scope > li[role="option"]')
+      );
+    } else {
+      ungroupedOptions = Array.from(
+        this.optionsList.querySelectorAll(
+          ':scope > ul.sy-dropdown-list > li[role="option"]'
+        )
+      );
+    }
+    const groupOptions = Array.from(
+      this.optionsList.querySelectorAll(
+        'li.sy-fo-select-option-group > ul > li[role="option"]'
+      )
+    );
+    return [...ungroupedOptions, ...groupOptions];
+  }
+  getSelectedOptionLabels() {
+    if (!Array.isArray(this.state) || this.state.length === 0) {
+      return {};
+    }
+    const labels = {};
+    for (const value of this.state) {
+      let found = false;
+      for (const option2 of this.options) {
+        if (isGroup(option2)) {
+          for (const groupOption of option2.options) {
+            if (groupOption.value === value) {
+              labels[value] = groupOption.label;
+              found = true;
+              break;
+            }
+          }
+          if (found) break;
+        } else if (option2.value === value) {
+          labels[value] = option2.label;
+          break;
+        }
+      }
+    }
+    return labels;
+  }
+  handleSearch(rawQuery) {
+    const query = rawQuery.trim();
+    this.searchQuery = query;
+    if (this.searchTimeout !== null) {
+      clearTimeout(this.searchTimeout);
+    }
+    if (query === "") {
+      this.options = clone2(this.originalOptions);
+      this.renderOptions();
+      return;
+    }
+    const getSearchResultsUsing = this.getSearchResultsUsing;
+    if (getSearchResultsUsing === null || !this.hasDynamicSearchResults) {
+      this.filterOptions(query);
+      return;
+    }
+    this.searchTimeout = setTimeout(async () => {
+      this.searchTimeout = null;
+      const searchId = ++this.activeSearchId;
+      this.isSearching = true;
+      try {
+        this.showLoadingState(true);
+        const results = await getSearchResultsUsing(query);
+        if (searchId !== this.activeSearchId || !this.isOpen) {
+          return;
+        }
+        this.options = normalizeOptions(results);
+        this.populateLabelRepositoryFromOptions(this.options);
+        this.hideLoadingState();
+        this.renderOptions();
+        if (this.isOpen) {
+          this.deferPositionDropdown();
+        }
+        if (this.options.length === 0) {
+          this.showNoResultsMessage();
+        }
+      } catch (error) {
+        if (searchId === this.activeSearchId) {
+          console.error("Error fetching search results:", error);
+          this.hideLoadingState();
+          this.options = clone2(this.originalOptions);
+          this.renderOptions();
+        }
+      } finally {
+        if (searchId === this.activeSearchId) {
+          this.isSearching = false;
+        }
+      }
+    }, this.searchDebounce);
+  }
+  showLoadingState(isSearching = false) {
+    if (this.optionsList.parentNode === this.dropdown) {
+      this.dropdown.removeChild(this.optionsList);
+    }
+    this.hideLoadingState();
+    const loadingItem = document.createElement("div");
+    loadingItem.className = "sy-fo-select-message";
+    loadingItem.textContent = isSearching ? this.searchingMessage : this.loadingMessage;
+    this.dropdown.appendChild(loadingItem);
+    if (this.isOpen) {
+      this.deferPositionDropdown();
+      this.statusRegion.textContent = loadingItem.textContent;
+    }
+  }
+  hideLoadingState() {
+    const loadingItem = this.dropdown.querySelector(".sy-fo-select-message");
+    if (loadingItem !== null) {
+      loadingItem.remove();
+      this.statusRegion.textContent = "";
+    }
+  }
+  showNoOptionsMessage() {
+    if (this.optionsList.parentNode === this.dropdown) {
+      this.dropdown.removeChild(this.optionsList);
+    }
+    this.hideLoadingState();
+    const noOptionsItem = document.createElement("div");
+    noOptionsItem.className = "sy-fo-select-message";
+    noOptionsItem.textContent = this.noOptionsMessage;
+    this.dropdown.appendChild(noOptionsItem);
+    if (this.isOpen) {
+      this.deferPositionDropdown();
+      this.statusRegion.textContent = this.noOptionsMessage;
+    }
+  }
+  showNoResultsMessage() {
+    if (this.optionsList.parentNode === this.dropdown) {
+      this.dropdown.removeChild(this.optionsList);
+    }
+    this.hideLoadingState();
+    const noResultsItem = document.createElement("div");
+    noResultsItem.className = "sy-fo-select-message";
+    noResultsItem.textContent = this.noSearchResultsMessage;
+    this.dropdown.appendChild(noResultsItem);
+    if (this.isOpen) {
+      this.deferPositionDropdown();
+      this.statusRegion.textContent = this.noSearchResultsMessage;
+    }
+  }
+  showMaxItemsMessage() {
+    this.hideMaxItemsMessage();
+    const maxItemsMessageElement = document.createElement("div");
+    maxItemsMessageElement.className = "sy-fo-select-max-items-message";
+    maxItemsMessageElement.textContent = this.maxItemsMessage;
+    this.maxItemsMessageElement = maxItemsMessageElement;
+    if (this.optionsList.parentNode === this.dropdown) {
+      this.dropdown.insertBefore(maxItemsMessageElement, this.optionsList);
+    } else {
+      this.dropdown.appendChild(maxItemsMessageElement);
+    }
+    this.deferPositionDropdown();
+    this.statusRegion.textContent = this.maxItemsMessage;
+  }
+  hideMaxItemsMessage() {
+    if (this.maxItemsMessageElement === null) {
+      return;
+    }
+    this.maxItemsMessageElement.remove();
+    this.maxItemsMessageElement = null;
+    if (this.statusRegion.textContent === this.maxItemsMessage) {
+      this.statusRegion.textContent = "";
+    }
+  }
+  filterOptions(query) {
+    const searchInLabel = this.searchableOptionFields.includes("label");
+    const searchInValue = this.searchableOptionFields.includes("value");
+    const search = query.toLowerCase();
+    const filteredOptions = [];
+    for (const option2 of this.originalOptions) {
+      if (isGroup(option2)) {
+        const filteredGroupOptions = option2.options.filter(
+          (groupOption) => searchInLabel && groupOption.label.toLowerCase().includes(search) || searchInValue && groupOption.value.toLowerCase().includes(search)
+        );
+        if (filteredGroupOptions.length > 0) {
+          filteredOptions.push({
+            label: option2.label,
+            options: filteredGroupOptions
+          });
+        }
+      } else if (searchInLabel && option2.label.toLowerCase().includes(search) || searchInValue && option2.value.toLowerCase().includes(search)) {
+        filteredOptions.push(option2);
+      }
+    }
+    this.options = filteredOptions;
+    this.renderOptions();
+    if (this.options.length === 0) {
+      this.showNoResultsMessage();
+    }
+    if (this.isOpen) {
+      this.positionDropdown();
+    }
+  }
+  selectOption(value) {
+    if (this.isDisabled) {
+      return;
+    }
+    if (!this.isMultiple) {
+      this.state = value;
+      void this.updateSelectedDisplay();
+      this.renderOptions();
+      this.closeDropdown();
+      this.selectButton.focus();
+      this.onStateChange(this.state);
+      return;
+    }
+    let newState = Array.isArray(this.state) ? [...this.state] : [];
+    if (newState.includes(value)) {
+      const badgeToRemove = this.selectedDisplay.querySelector(`[data-value="${value}"]`);
+      if (filled(badgeToRemove)) {
+        const badgesContainer = badgeToRemove.parentElement;
+        if (filled(badgesContainer) && badgesContainer.children.length === 1) {
+          newState = newState.filter((entry) => entry !== value);
+          this.state = newState;
+          void this.updateSelectedDisplay();
+        } else {
+          badgeToRemove.remove();
+          newState = newState.filter((entry) => entry !== value);
+          this.state = newState;
+        }
+      } else {
+        newState = newState.filter((entry) => entry !== value);
+        this.state = newState;
+        void this.updateSelectedDisplay();
+      }
+      this.hideMaxItemsMessage();
+      this.renderOptions();
+      if (this.isOpen) {
+        this.deferPositionDropdown();
+      }
+      this.maintainFocusInMultipleMode();
+      this.onStateChange(this.state);
+      return;
+    }
+    if (this.maxItems !== null && newState.length >= this.maxItems) {
+      if (this.maxItemsMessage !== "") {
+        this.showMaxItemsMessage();
+      }
+      return;
+    }
+    this.hideMaxItemsMessage();
+    newState.push(value);
+    this.state = newState;
+    const existingBadgesContainer = this.selectedDisplay.querySelector(
+      ".sy-fo-select-value-badges-ctn"
+    );
+    if (!filled(existingBadgesContainer)) {
+      void this.updateSelectedDisplay();
+    } else {
+      void this.addSingleBadge(value, existingBadgesContainer);
+    }
+    this.renderOptions();
+    if (this.isOpen) {
+      this.deferPositionDropdown();
+    }
+    this.maintainFocusInMultipleMode();
+    this.onStateChange(this.state);
+  }
+  async addSingleBadge(value, badgesContainer) {
+    let label = this.labelRepository[value];
+    if (blank(label)) {
+      label = this.getSelectedOptionLabel(value);
+      if (filled(label)) {
+        this.labelRepository[value] = label;
+      }
+    }
+    if (blank(label) && this.getOptionLabelsUsing !== null) {
+      try {
+        const fetchedOptions = normalizeLabels(await this.getOptionLabelsUsing());
+        for (const option2 of fetchedOptions) {
+          if (option2.value === value) {
+            label = option2.label;
+            this.labelRepository[value] = label;
+            break;
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching option label:", error);
+      }
+    }
+    if (blank(label)) {
+      label = value;
+    }
+    badgesContainer.appendChild(this.createBadgeElement(value, label));
+  }
+  maintainFocusInMultipleMode() {
+    const searchInput = this.searchInput;
+    if (this.isSearchable && searchInput !== null) {
+      searchInput.focus();
+      return;
+    }
+    const options = this.getVisibleOptions();
+    if (options.length === 0) {
+      return;
+    }
+    this.selectedIndex = -1;
+    if (Array.isArray(this.state) && this.state.length > 0) {
+      for (let i = 0; i < options.length; i++) {
+        const value = options[i].getAttribute("data-value");
+        if (value !== null && this.state.includes(value)) {
+          this.selectedIndex = i;
+          break;
+        }
+      }
+    }
+    if (this.selectedIndex === -1) {
+      this.selectedIndex = 0;
+    }
+    options[this.selectedIndex].classList.add("sy-selected");
+    options[this.selectedIndex].focus();
+  }
+  disable() {
+    if (this.isDisabled) return;
+    this.isDisabled = true;
+    this.applyDisabledState();
+    if (this.isOpen) {
+      this.closeDropdown();
+    }
+  }
+  enable() {
+    if (!this.isDisabled) return;
+    this.isDisabled = false;
+    this.applyDisabledState();
+  }
+  applyDisabledState() {
+    if (this.isDisabled) {
+      this.selectButton.setAttribute("disabled", "disabled");
+      this.selectButton.setAttribute("aria-disabled", "true");
+      this.selectButton.classList.add("sy-disabled");
+      if (this.isMultiple) {
+        for (const button of this.container.querySelectorAll(".sy-badge-delete-btn")) {
+          button.setAttribute("disabled", "disabled");
+          button.classList.add("sy-disabled");
+        }
+      }
+      if (!this.isMultiple && this.canSelectPlaceholder) {
+        const removeButton = this.container.querySelector(".sy-fo-select-value-remove-btn");
+        if (removeButton) {
+          removeButton.setAttribute("disabled", "disabled");
+          removeButton.classList.add("sy-disabled");
+        }
+      }
+      if (this.isSearchable && this.searchInput !== null) {
+        this.searchInput.setAttribute("disabled", "disabled");
+        this.searchInput.classList.add("sy-disabled");
+      }
+    } else {
+      this.selectButton.removeAttribute("disabled");
+      this.selectButton.removeAttribute("aria-disabled");
+      this.selectButton.classList.remove("sy-disabled");
+      if (this.isMultiple) {
+        for (const button of this.container.querySelectorAll(".sy-badge-delete-btn")) {
+          button.removeAttribute("disabled");
+          button.classList.remove("sy-disabled");
+        }
+      }
+      if (!this.isMultiple && this.canSelectPlaceholder) {
+        const removeButton = this.container.querySelector(".sy-fo-select-value-remove-btn");
+        if (removeButton) {
+          removeButton.removeAttribute("disabled");
+          removeButton.classList.remove("sy-disabled");
+        }
+      }
+      if (this.isSearchable && this.searchInput !== null) {
+        this.searchInput.removeAttribute("disabled");
+        this.searchInput.classList.remove("sy-disabled");
+      }
+    }
+  }
+  destroy() {
+    if (this.buttonClickListener !== null) {
+      this.selectButton.removeEventListener("click", this.buttonClickListener);
+    }
+    if (this.documentClickListener !== null) {
+      document.removeEventListener("click", this.documentClickListener);
+    }
+    if (this.buttonKeydownListener !== null) {
+      this.selectButton.removeEventListener("keydown", this.buttonKeydownListener);
+    }
+    if (this.dropdownKeydownListener !== null) {
+      this.dropdown.removeEventListener("keydown", this.dropdownKeydownListener);
+    }
+    if (this.resizeListener !== null) {
+      window.removeEventListener("resize", this.resizeListener);
+      this.resizeListener = null;
+    }
+    if (this.scrollListener !== null) {
+      window.removeEventListener("scroll", this.scrollListener, true);
+      this.scrollListener = null;
+    }
+    if (this.isOpen) {
+      this.closeDropdown();
+    }
+    if (this.searchTimeout !== null) {
+      clearTimeout(this.searchTimeout);
+      this.searchTimeout = null;
+    }
+    this.sortable?.destroy();
+    this.sortable = null;
+    this.container.remove();
+  }
+  /**
+   * Replace the server-rendered pool. While a search query is typed, only the fallback pool is
+   * replaced — the results on screen stay — and the fresh pool takes over on the next clear; idle,
+   * the list re-renders only when the pool actually changed, so an unrelated host render does not
+   * drop keyboard focus from an open list.
+   */
+  replaceOptions(options) {
+    const next = clone2(options);
+    const changed = JSON.stringify(next) !== JSON.stringify(this.originalOptions);
+    this.originalOptions = next;
+    this.populateLabelRepositoryFromOptions(next);
+    if (this.searchQuery !== "" || !changed) {
+      return;
+    }
+    this.options = clone2(next);
+    this.renderOptions();
+  }
+  rememberLabels(entries) {
+    for (const entry of entries) {
+      this.labelRepository[entry.value] = entry.label;
+    }
+  }
+  /** Repaint the selection and its option row from the repository, which the host's render has just refilled. */
+  refreshLabels() {
+    void this.updateSelectedDisplay();
+    if (!this.isMultiple && typeof this.state === "string" && filled(this.state)) {
+      const label = this.labelRepository[this.state];
+      if (label !== void 0) {
+        this.updateOptionLabelInList(this.state, label);
+      }
+    }
+  }
+};
+
+// src/controllers/select_controller.ts
+var REFRESH_EVENT = "sylament:select-refresh-selected-option-label";
+var SEARCH_METHOD = "getSearchResultsForJs";
+var INLINE_PREFIX_CLASS = "sy-fo-select-has-inline-prefix";
+var CONTAINER_INLINE_PREFIX_CLASS = "sy-fo-select-ctn-has-inline-prefix";
 var select_controller_default = class extends Controller {
   static values = {
     key: String,
@@ -3740,6 +5040,7 @@ var select_controller_default = class extends Controller {
     htmlAllowed: Boolean,
     labelsWrap: Boolean,
     position: String,
+    reorderable: Boolean,
     searchFields: Array,
     placeholder: String,
     searchPrompt: String,
@@ -3751,34 +5052,36 @@ var select_controller_default = class extends Controller {
   };
   #generation = 0;
   #component = null;
-  #ts = null;
+  #select = null;
   #binding = { render: true, debounce: 0 };
-  #pool = { options: [], groups: [] };
-  #searchId = 0;
-  #visibleValues = null;
-  #status = null;
-  #maxItemsMessage = null;
+  #id = "";
   connect() {
     void this.#connect(++this.#generation);
   }
   disconnect() {
     this.#generation++;
     const component = this.#component;
-    const ts = this.#ts;
+    const select = this.#select;
     this.#component = null;
-    this.#ts = null;
-    this.#status = null;
-    this.#maxItemsMessage = null;
+    this.#select = null;
     if (component !== null) {
       component.off("render:finished", this.#onRender);
       component.element.removeEventListener(REFRESH_EVENT, this.#onRefreshLabel);
     }
-    if (ts !== null) {
-      const html = this.element.innerHTML;
-      ts.destroy();
-      this.element.innerHTML = html;
-      this.#restoreLabel();
+    select?.destroy();
+    if (this.#id !== "") {
+      this.element.id = this.#id;
+      this.#id = "";
     }
+    this.element.style.removeProperty("display");
+  }
+  reorderableValueChanged() {
+    const select = this.#select;
+    if (select === null) {
+      return;
+    }
+    select.isReorderable = this.reorderableValue;
+    void select.updateSelectedDisplay();
   }
   async #connect(generation) {
     const root = this.element.closest('[data-controller~="live"]');
@@ -3791,160 +5094,90 @@ var select_controller_default = class extends Controller {
     }
     this.#component = component;
     this.#binding = parseBinding(this.modelBindingValue);
-    this.#pool = this.#serverPool();
-    const ts = new TomSelect(this.element, this.#settings(component));
-    this.#ts = ts;
-    this.#decorate(ts);
-    this.#syncAffordances();
+    const multiple = this.element.multiple;
+    const state = this.#state(component);
+    const selectedOptions = labelsOf(this.selectedOptionsValue);
+    this.#id = this.element.id;
+    this.element.removeAttribute("id");
+    this.element.style.display = "none";
+    const select = new Select({
+      element: this.element,
+      id: this.#id === "" ? null : this.#id,
+      badgeClass: this.badgeClassValue,
+      canOptionLabelsWrap: this.labelsWrapValue,
+      canSelectPlaceholder: this.canSelectPlaceholderValue,
+      getOptionLabelUsing: null,
+      getOptionLabelsUsing: null,
+      getOptionsUsing: null,
+      getSearchResultsUsing: this.dynamicSearchResultsValue ? (query) => callSchemaComponentMethod(component, this.keyValue, SEARCH_METHOD, { search: query }) : null,
+      hasDynamicOptions: false,
+      hasDynamicSearchResults: this.dynamicSearchResultsValue,
+      hasInitialNoOptionsMessage: this.initialNoOptionsMessageValue,
+      initialOptionLabel: !multiple && typeof state === "string" && state !== "" ? selectedOptions.find((entry) => entry.value === state)?.label ?? null : null,
+      initialOptionLabels: multiple ? selectedOptions : [],
+      initialState: state,
+      isAutofocused: this.element.autofocus,
+      isDisabled: this.element.disabled,
+      isHtmlAllowed: this.htmlAllowedValue,
+      isMultiple: multiple,
+      isReorderable: this.reorderableValue,
+      isSearchable: this.searchableValue,
+      loadingMessage: this.loadingMessageValue,
+      maxItems: this.hasMaxItemsValue ? this.maxItemsValue : null,
+      maxItemsMessage: this.maxItemsMessageValue,
+      noOptionsMessage: this.noOptionsMessageValue,
+      noSearchResultsMessage: this.noSearchResultsMessageValue,
+      onStateChange: (value) => this.#onStateChange(value),
+      options: optionsOf(this.optionsValue),
+      optionsLimit: this.optionsLimitValue,
+      placeholder: this.placeholderValue,
+      position: this.hasPositionValue ? this.positionValue : null,
+      searchableOptionFields: [...this.searchFieldsValue],
+      searchDebounce: this.searchDebounceValue,
+      searchingMessage: this.searchingMessageValue,
+      searchPrompt: this.searchPromptValue,
+      state,
+      statePath: this.statePathValue
+    });
+    select.rememberLabels(selectedOptions);
+    if (this.element.classList.contains(INLINE_PREFIX_CLASS)) {
+      select.container.classList.add(CONTAINER_INLINE_PREFIX_CLASS);
+    }
+    this.#select = select;
     component.on("render:finished", this.#onRender);
     component.element.addEventListener(REFRESH_EVENT, this.#onRefreshLabel);
   }
-  #settings(component) {
-    const multiple = this.element.multiple;
-    const plugins = {};
-    if (this.searchableValue) {
-      plugins.dropdown_input = {};
-    }
-    if (!multiple && this.canSelectPlaceholderValue) {
-      plugins.clear_button = {
-        className: CLEAR_BUTTON_CLASS,
-        html: () => `<button type="button" class="${CLEAR_BUTTON_CLASS}" aria-label="Clear selection">${X_MARK_20}</button>`
-      };
-    }
-    return {
-      valueField: "value",
-      labelField: "label",
-      disabledField: "isDisabled",
-      optgroupField: "optgroup",
-      optgroupLabelField: "label",
-      optgroupValueField: "value",
-      options: this.#pool.options.map((option) => ({ ...option })),
-      optgroups: this.#pool.groups.map((group) => ({ ...group })),
-      items: this.#items(component),
-      maxItems: multiple ? this.hasMaxItemsValue ? this.maxItemsValue : null : 1,
-      maxOptions: this.optionsLimitValue > 0 ? this.optionsLimitValue : null,
-      plugins,
-      openOnFocus: true,
-      hidePlaceholder: true,
-      hideSelected: multiple,
-      ...multiple ? {} : { closeAfterSelect: true },
-      searchField: [...this.searchFieldsValue],
-      refreshThrottle: 0,
-      ...this.placeholderValue === "" ? {} : { placeholder: this.placeholderValue },
-      wrapperClass: [
-        "sy-fo-select-ctn",
-        "ts-wrapper",
-        this.labelsWrapValue ? "" : "sy-fo-select-ctn-labels-not-wrapped"
-      ].join(" "),
-      controlClass: "sy-fo-select-control ts-control",
-      dropdownClass: [
-        "sy-dropdown-panel",
-        "sy-fo-select-dropdown",
-        "ts-dropdown",
-        this.positionValue === "top" ? "sy-position-top" : ""
-      ].join(" "),
-      dropdownContentClass: "sy-dropdown-list sy-fo-select-options ts-dropdown-content",
-      itemClass: "sy-fo-select-item item",
-      optionClass: "sy-dropdown-item sy-fo-select-option option",
-      render: {
-        option: (data, escapeHtml) => `<div><span class="sy-fo-select-option-label">${this.#labelHtml(data, escapeHtml)}</span></div>`,
-        item: multiple ? (data) => this.#chip(data) : (data, escapeHtml) => `<div><span class="sy-fo-select-item-label">${this.#labelHtml(data, escapeHtml)}</span></div>`,
-        optgroup: (data) => {
-          const group = document.createElement("div");
-          group.className = "sy-fo-select-option-group optgroup";
-          group.appendChild(data.options);
-          return group;
-        },
-        optgroup_header: (data, escapeHtml) => `<div class="sy-fo-select-option-group-label optgroup-header">${escapeHtml(String(data.label ?? ""))}</div>`,
-        no_results: (_data, escapeHtml) => message(escapeHtml, this.noSearchResultsMessageValue),
-        loading: (_data, escapeHtml) => message(escapeHtml, this.searchingMessageValue),
-        not_loading: (_data, escapeHtml) => this.initialNoOptionsMessageValue && !this.#hasSelectableOption() ? message(escapeHtml, this.noOptionsMessageValue) : null
-      },
-      onChange: () => this.#onChange(),
-      onItemAdd: () => this.#syncAffordances(),
-      onItemRemove: () => this.#syncAffordances(),
-      ...this.dynamicSearchResultsValue ? {
-        load: this.#load,
-        loadThrottle: this.searchDebounceValue,
-        shouldLoad: (query) => query.length > 0,
-        score: () => this.#score,
-        onType: (query) => {
-          if (query === "") {
-            this.#restorePool();
-          }
-        },
-        onDropdownClose: () => this.#restorePool()
-      } : {}
-    };
-  }
-  #decorate(ts) {
-    if (this.searchableValue) {
-      ts.control_input.placeholder = this.searchPromptValue;
-      ts.control_input.setAttribute("aria-label", "Search");
-    } else {
-      ts.control_input.readOnly = true;
-      ts.control_input.setAttribute("inputmode", "none");
-    }
-    if (this.element.multiple) {
-      ts.dropdown_content.setAttribute("aria-multiselectable", "true");
-      const maxItemsMessage = document.createElement("div");
-      maxItemsMessage.className = "sy-fo-select-max-items-message";
-      maxItemsMessage.textContent = this.maxItemsMessageValue;
-      maxItemsMessage.hidden = true;
-      ts.control.insertAdjacentElement("afterend", maxItemsMessage);
-      this.#maxItemsMessage = maxItemsMessage;
-    }
-    const status = document.createElement("div");
-    status.className = "sy-fo-sr-only";
-    status.setAttribute("role", "status");
-    status.setAttribute("aria-live", "polite");
-    status.setAttribute("aria-atomic", "true");
-    ts.wrapper.append(status);
-    this.#status = status;
-  }
-  #onChange() {
-    const ts = this.#ts;
+  #onStateChange(value) {
     const component = this.#component;
-    if (ts === null || component === null) {
+    if (component === null) {
       return;
     }
-    const value = ts.getValue();
     component.set(
       this.statePathValue,
-      Array.isArray(value) ? [...value] : value,
+      Array.isArray(value) ? [...value] : value ?? "",
       this.#binding.render,
       this.#binding.debounce
     );
   }
   #onRender = () => {
-    const ts = this.#ts;
+    const select = this.#select;
     const component = this.#component;
-    if (ts === null || component === null) {
+    if (select === null || component === null) {
       return;
     }
-    this.#pool = this.#serverPool();
-    const items = this.#items(component);
-    if (this.dynamicSearchResultsValue && ts.inputValue() !== "") {
-      for (const option of this.#pool.options) {
-        if (items.includes(option.value) && ts.options[option.value] === void 0) {
-          ts.addOption({ ...option });
-        }
-      }
+    select.replaceOptions(optionsOf(this.optionsValue));
+    select.rememberLabels(labelsOf(this.selectedOptionsValue));
+    const state = this.#state(component);
+    if (!sameState(state, select.state, this.element.multiple)) {
+      select.state = state;
+      void select.updateSelectedDisplay();
+      select.renderOptions();
+    }
+    if (this.element.disabled) {
+      select.disable();
     } else {
-      this.#syncPool(ts);
+      select.enable();
     }
-    const sameValue = this.element.multiple ? sameSet(items, ts.items) : sameList(items, ts.items);
-    if (!sameValue) {
-      ts.setValue(items, true);
-    }
-    if (ts.isDisabled !== this.element.disabled) {
-      if (this.element.disabled) {
-        ts.disable();
-      } else {
-        ts.enable();
-      }
-    }
-    this.#syncAffordances();
   };
   #onRefreshLabel = (event) => {
     const component = this.#component;
@@ -3954,234 +5187,19 @@ var select_controller_default = class extends Controller {
     const detail = event.detail;
     if (isRecord(detail) && detail.statePath === this.statePathValue) {
       this.#onRender();
+      this.#select?.refreshLabels();
     }
   };
-  #load = async (query, callback) => {
-    const ts = this.#ts;
-    const component = this.#component;
-    if (ts === null || component === null) {
-      return;
-    }
-    if (query !== ts.inputValue()) {
-      delete ts.loadedSearches[query];
-      settleLoad(ts);
-      return;
-    }
-    const searchId = ++this.#searchId;
-    this.#visibleValues = /* @__PURE__ */ new Set();
-    if (ts.isOpen) {
-      ts.isDropdownContentStale = true;
-      ts.refreshOptions(false);
-    }
-    this.#announce(this.searchingMessageValue);
-    let result;
-    try {
-      result = await callSchemaComponentMethod(component, this.keyValue, SEARCH_METHOD, {
-        search: query
-      });
-    } catch {
-      if (this.#ts !== ts) {
-        return;
-      }
-      if (searchId === this.#searchId) {
-        this.#visibleValues = null;
-        this.#announce("");
-      }
-      settleLoad(ts);
-      return;
-    }
-    if (this.#ts !== ts) {
-      return;
-    }
-    if (searchId !== this.#searchId) {
-      settleLoad(ts);
-      return;
-    }
-    const { options, groups } = flatten(Array.isArray(result) ? result : []);
-    this.#visibleValues = new Set(options.map((option) => option.value));
-    ts.clearOptions();
-    callback(options, groups);
-    this.#announce(options.length === 0 ? this.noSearchResultsMessageValue : "");
-  };
-  /**
-   * The server decides what a query matches: an option scores only while it belongs to the
-   * last search response, or always while no search is active. Sifter's own scoring would
-   * re-filter the response by its text, and a constant score would keep the selected option
-   * in every result list — hiding `no_results` behind it.
-   */
-  #score = (...args) => {
-    const option = args[0];
-    if (this.#visibleValues === null) {
-      return 1;
-    }
-    return option !== void 0 && this.#visibleValues.has(String(option.value)) ? 1 : 0;
-  };
-  #restorePool() {
-    const ts = this.#ts;
-    if (ts === null) {
-      return;
-    }
-    this.#searchId++;
-    this.#visibleValues = null;
-    this.#syncPool(ts);
-  }
-  /**
-   * Replace Tom Select's option pool with the cached server pool, re-rendering only what changed
-   * and re-`$order`ing every option to its pool index so the dropdown keeps the server's order.
-   * `$id` — which `addOption()` mints from `$order` but `updateOption()` drops, clearing the
-   * `aria-activedescendant` of an option updated while active — is carried by hand, and Tom
-   * Select's own counter is floored at the pool size so a search-added option never mints an
-   * `-opt-N` a pool index already holds.
-   */
-  #syncPool(ts) {
-    ts.clearOptions();
-    ts.clearOptionGroups();
-    for (const group of this.#pool.groups) {
-      ts.addOptionGroup(group.value, { label: group.label });
-    }
-    for (const [index, option] of this.#pool.options.entries()) {
-      const order = index + 1;
-      const existing = ts.options[option.value];
-      if (existing === void 0) {
-        ts.addOption({ ...option, $order: order });
-        continue;
-      }
-      const id = existing.$id ?? `${this.element.id}-opt-${order}`;
-      if (!sameOption(existing, option)) {
-        ts.updateOption(option.value, { ...option, $order: order, $id: id });
-      } else if (existing.$order !== order) {
-        existing.$order = order;
-        existing.$id = id;
-        ts.isDropdownContentStale = true;
-      }
-    }
-    ts.order = Math.max(ts.order, this.#pool.options.length);
-    if (ts.isOpen) {
-      ts.refreshOptions(false);
-    }
-  }
-  #syncAffordances() {
-    const ts = this.#ts;
-    if (ts === null) {
-      return;
-    }
-    const clearButton = ts.control.querySelector(`.${CLEAR_BUTTON_CLASS}`);
-    if (clearButton !== null) {
-      clearButton.hidden = ts.items.length === 0;
-    }
-    const itemsPlaceholder = ts.control.querySelector(".items-placeholder");
-    if (itemsPlaceholder !== null) {
-      itemsPlaceholder.hidden = ts.items.length > 0;
-    }
-    const maxItemsMessage = this.#maxItemsMessage;
-    if (maxItemsMessage === null) {
-      return;
-    }
-    const full = ts.isFull();
-    if (full && maxItemsMessage.hidden) {
-      maxItemsMessage.hidden = false;
-      this.#announce(this.maxItemsMessageValue);
-    } else if (!full && !maxItemsMessage.hidden) {
-      maxItemsMessage.hidden = true;
-      if (this.#status?.textContent === this.maxItemsMessageValue) {
-        this.#announce("");
-      }
-    }
-  }
-  #serverPool() {
-    const pool = flatten(this.optionsValue);
-    const known = new Set(pool.options.map((option) => option.value));
-    for (const entry of this.selectedOptionsValue) {
-      if (!isRecord(entry)) {
-        continue;
-      }
-      const value = String(entry.value ?? "");
-      if (!known.has(value)) {
-        known.add(value);
-        pool.options.push({ value, label: String(entry.label ?? ""), isDisabled: false });
-      }
-    }
-    return pool;
-  }
-  #items(component) {
+  /** The value store's entry for the state path, as the strings the engine compares. */
+  #state(component) {
     const raw = component.valueStore.get(this.statePathValue);
-    if (Array.isArray(raw)) {
-      return raw.filter((value) => !isBlank(value)).map(String);
+    if (this.element.multiple) {
+      if (Array.isArray(raw)) {
+        return raw.filter((value) => !isBlank(value)).map(String);
+      }
+      return isBlank(raw) ? [] : [String(raw)];
     }
-    return isBlank(raw) ? [] : [String(raw)];
-  }
-  #hasSelectableOption() {
-    const ts = this.#ts;
-    if (ts === null) {
-      return false;
-    }
-    const multiple = this.element.multiple;
-    return this.#pool.options.some((option) => !multiple || !ts.items.includes(option.value));
-  }
-  #labelHtml(data, escapeHtml) {
-    const label = String(data.label ?? "");
-    return this.htmlAllowedValue ? label : escapeHtml(label);
-  }
-  #plainLabel(data) {
-    const label = String(data.label ?? "");
-    if (!this.htmlAllowedValue) {
-      return label;
-    }
-    const template = document.createElement("template");
-    template.innerHTML = label;
-    return template.content.textContent ?? "";
-  }
-  #chip(data) {
-    const chip = document.createElement("div");
-    chip.className = this.badgeClassValue;
-    const labelContainer = document.createElement("span");
-    labelContainer.className = "sy-badge-label-ctn";
-    const label = document.createElement("span");
-    label.className = this.labelsWrapValue ? "sy-badge-label sy-wrapped" : "sy-badge-label";
-    if (this.htmlAllowedValue) {
-      label.innerHTML = String(data.label ?? "");
-    } else {
-      label.textContent = String(data.label ?? "");
-    }
-    const remove = document.createElement("button");
-    remove.type = "button";
-    remove.className = "sy-badge-delete-btn";
-    remove.setAttribute("aria-label", `Remove ${this.#plainLabel(data)}`);
-    remove.innerHTML = X_MARK_16;
-    remove.addEventListener("mousedown", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-    });
-    remove.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      this.#removeChip(remove);
-    });
-    labelContainer.append(label);
-    chip.append(labelContainer, remove);
-    return chip;
-  }
-  #removeChip(button) {
-    const ts = this.#ts;
-    const item = button.closest("[data-ts-item]");
-    if (ts === null || ts.isLocked || !isTomItem(item)) {
-      return;
-    }
-    ts.removeItem(item);
-    ts.refreshOptions(false);
-    ts.inputState();
-  }
-  #restoreLabel() {
-    const id = this.element.id;
-    if (id === "") {
-      return;
-    }
-    document.querySelector(`label[for="${CSS.escape(`${id}-ts-control`)}"]`)?.setAttribute("for", id);
-  }
-  #announce(text) {
-    if (this.#status !== null) {
-      this.#status.textContent = text;
-    }
+    return isBlank(raw) ? "" : String(raw);
   }
 };
 async function resolveHost(root) {
@@ -4219,64 +5237,50 @@ function parseBinding(directive) {
   }
   return binding;
 }
-function flatten(entries) {
-  const options = [];
-  const groups = [];
-  const groupValues = /* @__PURE__ */ new Set();
-  const add = (entry, optgroup) => {
-    if (!isRecord(entry)) {
-      return;
-    }
-    const option = {
-      value: String(entry.value ?? ""),
-      label: String(entry.label ?? ""),
-      isDisabled: Boolean(entry.isDisabled)
-    };
-    if (optgroup !== void 0) {
-      option.optgroup = optgroup;
-    }
-    options.push(option);
-  };
+function optionsOf(entries) {
+  const list = [];
   for (const entry of entries) {
     if (!isRecord(entry)) {
       continue;
     }
     if (Array.isArray(entry.options)) {
-      const label = String(entry.label ?? "");
-      if (!groupValues.has(label)) {
-        groupValues.add(label);
-        groups.push({ value: label, label });
+      const group = { label: String(entry.label ?? ""), options: [] };
+      for (const option2 of entry.options) {
+        if (isRecord(option2)) {
+          group.options.push(optionOf(option2));
+        }
       }
-      for (const option of entry.options) {
-        add(option, label);
-      }
+      list.push(group);
     } else {
-      add(entry);
+      list.push(optionOf(entry));
     }
   }
-  return { options, groups };
+  return list;
 }
-function message(escapeHtml, text) {
-  return `<div class="sy-fo-select-message">${escapeHtml(text)}</div>`;
+function optionOf(entry) {
+  return {
+    label: String(entry.label ?? ""),
+    value: String(entry.value ?? ""),
+    isDisabled: Boolean(entry.isDisabled)
+  };
 }
-function settleLoad(ts) {
-  ts.loading = Math.max(ts.loading - 1, 0);
-  if (ts.loading === 0) {
-    ts.wrapper.classList.remove(ts.settings.loadingClass);
+function labelsOf(entries) {
+  const labels = [];
+  for (const entry of entries) {
+    if (isRecord(entry)) {
+      labels.push({ value: String(entry.value ?? ""), label: String(entry.label ?? "") });
+    }
   }
-  if (ts.isOpen) {
-    ts.refreshOptions(false);
+  return labels;
+}
+function sameState(a, b, multiple) {
+  if (!multiple) {
+    return a === b;
   }
-}
-function sameOption(existing, option) {
-  return existing.label === option.label && Boolean(existing.isDisabled) === option.isDisabled && (existing.optgroup ?? void 0) === option.optgroup;
-}
-function sameList(a, b) {
-  return a.length === b.length && a.every((value, index) => value === b[index]);
-}
-function sameSet(a, b) {
-  const known = new Set(b);
-  return a.length === b.length && a.every((value) => known.has(value));
+  const left = Array.isArray(a) ? a : [];
+  const right = Array.isArray(b) ? b : [];
+  const known = new Set(right);
+  return left.length === right.length && left.every((value) => known.has(value));
 }
 function isRecord(value) {
   return typeof value === "object" && value !== null;
@@ -4284,10 +5288,17 @@ function isRecord(value) {
 function isBlank(value) {
   return value === null || value === void 0 || value === "";
 }
-function isTomItem(element) {
-  return element instanceof HTMLElement && typeof element.dataset.value === "string";
-}
 export {
   select_controller_default as default
 };
+/*! Bundled license information:
+
+sortablejs/modular/sortable.esm.js:
+  (**!
+   * Sortable 1.15.7
+   * @author	RubaXa   <trash@rubaxa.org>
+   * @author	owenm    <owen23355@gmail.com>
+   * @license MIT
+   *)
+*/
 //# sourceMappingURL=select_controller.js.map

@@ -19,7 +19,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import * as esbuild from 'esbuild';
 
-/** src-relative entry → { external: bare specifiers left to the importmap, license: package whose notice heads the bundle }. */
+/** src-relative entry → { external: bare specifiers left to the importmap, license: package(s) whose notice heads the bundle, inlines: src-relative modules that ship only inside this bundle }. */
 const BUNDLED_ENTRIES = {
     'controllers/dropdown_controller.ts': {
         external: ['@hotwired/stimulus'],
@@ -39,16 +39,18 @@ const sharedOptions = {
     sourcemap: watch ? 'inline' : 'linked',
 };
 
-function licenseBanner(packageName) {
-    const packageJsonPath = require.resolve(`${packageName}/package.json`);
-    const { version, license, homepage } = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-    const licenseText = fs.readFileSync(path.join(path.dirname(packageJsonPath), 'LICENSE'), 'utf8');
-    const copyright = licenseText.split('\n').map((line) => line.trim()).find((line) => /^Copyright\s+(\(c\)\s*)?\d{4}/.test(line));
-    if (!version || !license || !copyright) {
-        throw new Error(`Cannot compose the license banner for ${packageName}: missing version, license, or a "Copyright" line in LICENSE.`);
-    }
+function licenseBanner(packageNames) {
+    return [packageNames].flat().map((packageName) => {
+        const packageJsonPath = require.resolve(`${packageName}/package.json`);
+        const { version, license, homepage } = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+        const licenseText = fs.readFileSync(path.join(path.dirname(packageJsonPath), 'LICENSE'), 'utf8');
+        const copyright = licenseText.split('\n').map((line) => line.trim()).find((line) => /^Copyright\s+(\(c\)\s*)?\d{4}/.test(line));
+        if (!version || !license || !copyright) {
+            throw new Error(`Cannot compose the license banner for ${packageName}: missing version, license, or a "Copyright" line in LICENSE.`);
+        }
 
-    return `/*! ${packageName} ${version} | ${license} License | ${copyright.trim()}${homepage ? ` | ${homepage}` : ''} */`;
+        return `/*! ${packageName} ${version} | ${license} License | ${copyright.trim()}${homepage ? ` | ${homepage}` : ''} */`;
+    }).join('\n');
 }
 
 const allEntries = fs
@@ -57,13 +59,15 @@ const allEntries = fs
     .map((file) => file.split(path.sep).join('/'))
     .sort();
 
-for (const bundled of Object.keys(BUNDLED_ENTRIES)) {
-    if (!allEntries.includes(bundled)) {
-        throw new Error(`BUNDLED_ENTRIES names ${bundled}, which does not exist under src/.`);
+const inlinedEntries = new Set(Object.values(BUNDLED_ENTRIES).flatMap(({ inlines = [] }) => inlines));
+
+for (const entry of [...Object.keys(BUNDLED_ENTRIES), ...inlinedEntries]) {
+    if (!allEntries.includes(entry)) {
+        throw new Error(`BUNDLED_ENTRIES names ${entry}, which does not exist under src/.`);
     }
 }
 
-const defaultEntries = allEntries.filter((file) => !(file in BUNDLED_ENTRIES));
+const defaultEntries = allEntries.filter((file) => !(file in BUNDLED_ENTRIES) && !inlinedEntries.has(file));
 
 const groups = [
     { ...sharedOptions, entryPoints: defaultEntries.map((file) => path.join(srcDir, file)) },

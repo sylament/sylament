@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "rm -rf dist",
     "build": "pnpm clean && pnpm test:types && pnpm build:js",
-    "build:js": "node scripts/copy-licenses.mjs && node scripts/build-js.mjs",
+    "build:js": "node scripts/build-js.mjs",
     "watch": "node scripts/build-js.mjs --watch",
     "test:types": "tsc --noEmit"
   },
@@ -28,8 +28,7 @@
   },
   "dependencies": {
     "@floating-ui/dom": "^1.8.0",
-    "sortablejs": "^1.15.7",
-    "tom-select": "^2.6.2"
+    "sortablejs": "^1.15.7"
   },
   "peerDependencies": {
     "@hotwired/stimulus": "^3.0.0",

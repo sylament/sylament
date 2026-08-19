@@ -1,0 +1,114 @@
+{% set controller = 'sylament--schemas--wizard' %}
+
+{% set stimulus = stimulus_controller(controller, {
+    key: wizardKey,
+    schemaKey: schemaKey,
+    startStep: startStep,
+    skippable: isSkippable ? true : null,
+    queryStringKey: stepQueryStringKey,
+})
+    |stimulus_action(controller, 'onNextStepEvent', 'next-wizard-step@window')
+    |stimulus_action(controller, 'onGoToStepEvent', 'go-to-wizard-step@window')
+    |stimulus_action(controller, 'resetState', 'reset-schema-component-state@window')
+    |stimulus_action(controller, 'onKeydown', 'keydown') %}
+
+{% set stepCount = steps|length %}
+{% set startIndex = startStep - 1 %}
+{% set isFirst = startIndex <= 0 %}
+{% set isLast = startIndex + 1 >= stepCount %}
+
+{% set previousAttributes = stimulus_target(controller, 'previousSlot') %}
+{% if not previousAction.isDisabled %}
+    {% set previousAttributes = previousAttributes|stimulus_action(controller, 'goToPreviousStep', 'click') %}
+{% endif %}
+{% set nextAttributes = stimulus_target(controller, 'nextSlot') %}
+{% if not nextAction.isDisabled %}
+    {% set nextAttributes = nextAttributes|stimulus_action(controller, 'requestNextStep', 'click') %}
+{% endif %}
+
+<div
+        {{ attrs({
+            id: id ?: null,
+            class: ['sy', 'sy-sc-wizard', {
+                'sy-contained': isContained,
+                'sy-sc-wizard-header-hidden': isHeaderHidden,
+            }],
+        }, component.getExtraAttributes, stimulus) }}
+>
+    {% if not isHeaderHidden %}
+        <ol {{ attrs({class: 'sy-sc-wizard-header', role: 'list', 'aria-label': label ?: null}, stimulus_target(controller, 'header')) }}>
+            {% for step in steps %}
+                {% set index = loop.index0 %}
+                {% set stepKey = step.getKey %}
+                {% set stepId = step.getId %}
+                {% set isStepActive = index == startIndex %}
+                {% set isStepCompleted = index < startIndex %}
+                {% set isStepAccessible = isSkippable or index < startIndex %}
+                {% set completedIcon = step.getCompletedIcon %}
+
+                <li {{ attrs({
+                    class: ['sy-sc-wizard-header-step', {'sy-active': isStepActive, 'sy-completed': isStepCompleted}],
+                    'data-step-key': stepKey,
+                }, stimulus_target(controller, 'headerStep')) }}>
+                    <button {{ attrs({
+                        type: 'button',
+                        class: 'sy-sc-wizard-header-step-btn',
+                        id: stepId ? stepId ~ '-tab' : null,
+                        'aria-controls': stepId ?: null,
+                        'aria-current': isStepActive ? 'step' : null,
+                        disabled: not isStepAccessible or previousAction.isDisabled,
+                        'data-step-key': stepKey,
+                    }, stimulus_target(controller, 'headerButton')|stimulus_action(controller, 'goToStepFromHeader', 'click')) }}>
+                        <div class="sy-sc-wizard-header-step-icon-ctn">
+                            {{ generateIconHtml(completedIcon ?? 'heroicons:check', completedIcon ? null : constant('Sylament\\Schemas\\Twig\\SchemaIconAlias::COMPONENTS_WIZARD_COMPLETED_STEP'), {class: 'sy-sc-wizard-header-step-completed-icon'}, 'lg') }}
+
+                            {% if step.getIcon %}
+                                {{ generateIconHtml(step.getIcon, attributes: {class: 'sy-sc-wizard-header-step-icon'}, size: 'lg') }}
+                            {% else %}
+                                <span aria-hidden="true" class="sy-sc-wizard-header-step-number">{{ '%02d'|format(index + 1) }}</span>
+                            {% endif %}
+                        </div>
+
+                        <div class="sy-sc-wizard-header-step-text">
+                            <span {{ attrs({class: ['sy-sc-wizard-header-step-label', {'sy-sc-wizard-header-step-label-hidden': step.isLabelHidden}]}) }}>{{ step.getLabel }}</span>
+
+                            {% if step.getDescription %}
+                                <span class="sy-sc-wizard-header-step-description">{{ step.getDescription }}</span>
+                            {% endif %}
+
+                            <span {{ attrs({class: 'sy-sc-wizard-header-step-status'}, stimulus_target(controller, 'stepStatus')) }}>{{ isStepCompleted ? 'Completed' : (isStepActive ? '' : 'Not completed') }}</span>
+                        </div>
+                    </button>
+
+                    {% if not loop.last %}
+                        <svg fill="none" preserveAspectRatio="none" viewBox="0 0 22 80" aria-hidden="true" class="sy-sc-wizard-header-step-separator">
+                            <path d="M0 -2L20 40L0 82" stroke-linejoin="round" stroke="currentcolor" vector-effect="non-scaling-stroke"></path>
+                        </svg>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    {% endif %}
+
+    {% for step in steps %}
+        {{ renderComponent(step) }}
+    {% endfor %}
+
+    <div class="sy-sc-wizard-footer">
+        <div {{ attrs({class: {'sy-hidden': isFirst}}, previousAttributes) }}>
+            {{ renderComponent(previousAction) }}
+        </div>
+
+        <div {{ attrs({class: {'sy-hidden': not isFirst}}, stimulus_target(controller, 'cancelSlot')) }}>
+            {{ cancelActionComponent ? renderComponent(cancelActionComponent) : cancelActionHtml }}
+        </div>
+
+        <div {{ attrs({class: {'sy-hidden': isLast}, 'data-loading': 'addClass(sy-disabled)'}, nextAttributes) }}>
+            {{ renderComponent(nextAction) }}
+        </div>
+
+        <div {{ attrs({class: {'sy-hidden': not isLast}}, stimulus_target(controller, 'submitSlot')) }}>
+            {{ submitActionComponent ? renderComponent(submitActionComponent) : submitActionHtml }}
+        </div>
+    </div>
+</div>

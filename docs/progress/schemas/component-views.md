@@ -3,17 +3,18 @@
 The Twig templates in
 [`packages/schemas/templates/partials/`](../../../packages/schemas/templates/partials)
 — `Actions`, `Fieldset`, `Flex`, `Grid`, `Group`, `Html`, `Icon`, `Schema`,
-`Section`, `Tab`, `Tabs`, `Text` — that render the
+`Section`, `Step`, `Tab`, `Tabs`, `Text`, `Wizard` — that render the
 schemas components through Support's
 [`ViewComponent`](../support/component.md). Each ports the HTML that a Filament
 schemas component emits from its PHP `toEmbeddedHtml()` (Filament v5 no longer
 ships Blade files for these — see the divergence below). This file is a thin
-cross-index over the twelve templates; per-feature specifics live in the
+cross-index over the fourteen templates; per-feature specifics live in the
 per-component files ([`actions.md`](actions.md), [`fieldset.md`](fieldset.md),
 [`flex.md`](flex.md),
 [`grid.md`](grid.md), [`group.md`](group.md), [`icon.md`](icon.md),
 [`tab.md`](tab.md), [`tabs.md`](tabs.md),
-[`text.md`](text.md), [`section.md`](section.md), [`schema.md`](schema.md)),
+[`text.md`](text.md), [`section.md`](section.md), [`schema.md`](schema.md),
+[`wizard.md`](wizard.md), [`step.md`](step.md)),
 not here.
 
 **Status:** in progress — see the
@@ -55,9 +56,11 @@ in-progress features, a **diverges** note here for a structural one, or `—`.
 | [`Icon/index.html.twig`](../../../packages/schemas/templates/partials/Icon/index.html.twig) | [`Icon::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Icon.php) | in progress | — | [icon.md](icon.md) |
 | [`Schema/index.html.twig`](../../../packages/schemas/templates/partials/Schema/index.html.twig) | [`Schema::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-template-omits-the-livecomponent-wiring-hidden-placeholders-and-grid-liberation) |
 | [`Section/index.html.twig`](../../../packages/schemas/templates/partials/Section/index.html.twig) | [`Section::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [section.md](section.md) |
+| [`Step/index.html.twig`](../../../packages/schemas/templates/partials/Step/index.html.twig) | [`Wizard\Step::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | done | — | [step.md](step.md) |
 | [`Text/index.html.twig`](../../../packages/schemas/templates/partials/Text/index.html.twig) | [`Text::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Text.php) | in progress | — | [text.md](text.md) |
 | [`Tabs/index.html.twig`](../../../packages/schemas/templates/partials/Tabs/index.html.twig) | [`Tabs::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs.php) | done | — | [tabs.md](tabs.md) |
 | [`Tab/index.html.twig`](../../../packages/schemas/templates/partials/Tab/index.html.twig) | [`Tab::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | — | [tab.md](tab.md) |
+| [`Wizard/index.html.twig`](../../../packages/schemas/templates/partials/Wizard/index.html.twig) | [`Wizard::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Wizard.php) | in progress | the `sylament--schemas--wizard` controller | [wizard.md](wizard.md) |
 
 Every template carries a render test in schemas' Integration suite (only the
 schemas Kernel registers TwigComponentBundle/StimulusBundle, so these templates

@@ -54,8 +54,8 @@ concerns, so it ships in `sylament/forms` and its row here points there —
 | [`FusedGroup`](../../../packages/forms/src/Components/FusedGroup.php) (ships in **forms**) | [`Components/FusedGroup.php`](../../../vendor/filament/schemas/src/Components/FusedGroup.php) | in progress | [../forms/fused-group.md](../forms/fused-group.md) |
 | [`Tabs`](../../../packages/schemas/src/Components/Tabs.php) | [`Components/Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php) | in progress | [tabs.md](tabs.md) |
 | [`Tabs\Tab`](../../../packages/schemas/src/Components/Tabs/Tab.php) | [`Components/Tabs/Tab.php`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php) | done | [tab.md](tab.md) |
-| `Wizard` | [`Components/Wizard.php`](../../../vendor/filament/schemas/src/Components/Wizard.php) | todo | — |
-| `Wizard\Step` | [`Components/Wizard/Step.php`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | todo | — |
+| [`Wizard`](../../../packages/schemas/src/Components/Wizard.php) | [`Components/Wizard.php`](../../../vendor/filament/schemas/src/Components/Wizard.php) | in progress | [wizard.md](wizard.md) |
+| [`Wizard\Step`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Components/Wizard/Step.php`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | in progress | [step.md](step.md) |
 | [`Actions`](../../../packages/schemas/src/Components/Actions.php) | [`Components/Actions.php`](../../../vendor/filament/schemas/src/Components/Actions.php) | in progress | [actions.md](actions.md) |
 | `Callout` | [`Components/Callout.php`](../../../vendor/filament/schemas/src/Components/Callout.php) | todo | — |
 | `EmbeddedSchema` | [`Components/EmbeddedSchema.php`](../../../vendor/filament/schemas/src/Components/EmbeddedSchema.php) | todo | — |

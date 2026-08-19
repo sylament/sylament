@@ -8,9 +8,10 @@ into [`index.css`](../../../packages/schemas/assets/src/styles/index.css) under
 `layer(components)`, mirroring Filament's `index.css` structure. The `fi-*` class
 prefix is translated to the schemas component code `sy-sc-*` (see the
 [CSS contract](../../styling.md)). Five of Filament's stylesheets are ported so
-far (schema, section, icon, actions, tabs) — `icon.css` and `tabs.css`
-rule-for-rule, `schema.css` and `actions.css` dropping variants from their source
-and `section.css` adding one; the rest wait on the components they style.
+far (schema, section, icon, actions, flex, tabs, wizard) — `icon.css`, `flex.css` and
+`tabs.css` rule-for-rule, `schema.css` and `actions.css` dropping variants from
+their source, and `section.css` and `wizard.css` adding rules; the rest wait on
+the components they style.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -38,7 +39,8 @@ CSS. _Detail_ carries a **diverges** link to a permanent note in
 | [`fused-group.css` — `.sy-fo-fused-group` ring, dividers and corner rules (lives in the forms package)](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) | done | — | [diverges](#fused-group-css-was-ported-into-the-forms-package) |
 | [`flex.css` — `.sy-sc-flex` row, breakpoint, alignment, dense and growable variants](../../../packages/schemas/assets/src/styles/components/flex.css) | [`components/flex.css`](../../../vendor/filament/schemas/resources/css/components/flex.css) | done | — | [diverges](#flex-css-keeps-the-hidden-child-rule-the-port-never-emits) |
 | [`tabs.css` — `.sy-sc-tabs` panel show/hide, contained and vertical variants](../../../packages/schemas/assets/src/styles/components/tabs.css) | [`components/tabs.css`](../../../vendor/filament/schemas/resources/css/components/tabs.css) | done | — | — |
-| `form.css` / `image.css` / `unordered-list.css` / `wizard.css` | [`components/`](../../../vendor/filament/schemas/resources/css/components/) | blocked | Form, Image, UnorderedList, Wizard | [detail](#the-remaining-component-stylesheets-are-unported) |
+| [`wizard.css` — `.sy-sc-wizard` header stepper, panels and footer](../../../packages/schemas/assets/src/styles/components/wizard.css) | [`components/wizard.css`](../../../vendor/filament/schemas/resources/css/components/wizard.css) | done | — | [diverges](#wizard-css-writes-the-x-show-pairs-and-the-mis-nested-label-rule-as-real-rules) |
+| `form.css` / `image.css` / `unordered-list.css` | [`components/`](../../../vendor/filament/schemas/resources/css/components/) | blocked | Form, Image, UnorderedList | [detail](#the-remaining-component-stylesheets-are-unported) |
 
 No test exercises CSS. The render tests assert that the class hooks these rules
 attach to (`sy-sc`, `sy-sc-section`, `sy-sc-section-label-hidden`, `sy-sc-icon`,
@@ -52,10 +54,9 @@ committed `assets/dist` matches a fresh build.
 
 ### The remaining component stylesheets are unported
 
-`form.css`, `image.css`, `unordered-list.css`,
-and `wizard.css` have no `sy-sc-*` counterpart yet. Each is
+`form.css`, `image.css` and `unordered-list.css` have no `sy-sc-*` counterpart yet. Each is
 **blocked** on its component (Form, Image,
-UnorderedList, Wizard) — the styling lands in the same change as the Twig template
+UnorderedList) — the styling lands in the same change as the Twig template
 it targets, so there is nothing to author against until then. Next step for each:
 port when its component does.
 
@@ -151,3 +152,23 @@ so the file is not reported missing.
 
 _See also: the global [rename table](../renames.md) — the `fi-*` → `sy-sc-*` class
 prefix is a systematic translation recorded there, not a per-stylesheet divergence._
+
+### Wizard CSS writes the x-show pairs and the mis-nested label rule as real rules
+
+`wizard.css` is vendor's rule-for-rule with the `fi-` → `sy-` prefix swap and
+three deliberate edits, all consequences of the
+[server-rendered start step](wizard.md#the-server-renders-the-start-step-alpines-x-show-pairs-become-state-classes-and-css).
+Filament shows and hides the completed tick against the number/icon with a pair of
+`x-show` expressions in the markup; here both live in every header row and the
+stylesheet does the switching —
+`&:not(.sy-completed) .sy-sc-wizard-header-step-completed-icon { hidden }` and
+`&.sy-completed .sy-sc-wizard-header-step-icon, &.sy-completed
+.sy-sc-wizard-header-step-number { hidden }`. The two screen-reader-only classes
+the markup emits get `@apply sr-only` inline
+(`.sy-sc-wizard-header-step-label-hidden`, `.sy-sc-wizard-header-step-status`)
+rather than a `sy-sr-only` utility, matching `section.css`. And vendor's
+inactive-label rule (`wizard.css:115-119`) nests
+`.fi-sc-wizard-header-step-text` **inside** `.fi-sc-wizard-header-step-icon-ctn`,
+where the text is that element's sibling, so it matches nothing; it is written at
+the `-text` level as intended rather than copied dead.
+

@@ -1,0 +1,198 @@
+.sy-sc-wizard {
+    @apply flex flex-col;
+
+    & .sy-sc-wizard-header {
+        @apply grid md:grid-flow-col md:overflow-x-auto;
+
+        & .sy-sc-wizard-header-step {
+            @apply relative flex;
+
+            &:not(.sy-active) {
+                @apply hidden md:flex;
+            }
+
+            & .sy-sc-wizard-header-step-btn {
+                @apply flex h-full items-center gap-x-4 px-6 py-4 text-start;
+
+                & .sy-sc-wizard-header-step-icon-ctn {
+                    @apply flex size-10 shrink-0 items-center justify-center rounded-full;
+
+                    & .sy-sc-wizard-header-step-number {
+                        @apply text-sm font-medium;
+                    }
+                }
+
+                & .sy-sc-wizard-header-step-text {
+                    @apply grid justify-items-start md:w-max md:max-w-60;
+
+                    & .sy-sc-wizard-header-step-label {
+                        @apply text-sm font-medium;
+                    }
+
+                    & .sy-sc-wizard-header-step-label-hidden {
+                        @apply sr-only;
+                    }
+
+                    & .sy-sc-wizard-header-step-description {
+                        @apply text-start text-sm text-gray-500 dark:text-gray-400;
+                    }
+
+                    & .sy-sc-wizard-header-step-status {
+                        @apply sr-only;
+                    }
+                }
+            }
+
+            & .sy-sc-wizard-header-step-separator {
+                @apply absolute end-0 hidden h-full w-5 text-gray-200 md:block rtl:rotate-180 dark:text-white/5;
+            }
+
+            &:not(.sy-completed) {
+                & .sy-sc-wizard-header-step-completed-icon {
+                    @apply hidden;
+                }
+
+                & .sy-sc-wizard-header-step-btn {
+                    & .sy-sc-wizard-header-step-icon-ctn {
+                        @apply border-2;
+                    }
+                }
+
+                &.sy-active {
+                    & .sy-sc-wizard-header-step-btn {
+                        & .sy-sc-wizard-header-step-icon-ctn {
+                            & .sy-icon {
+                                @apply text-primary-600 dark:text-primary-500;
+                            }
+                        }
+                    }
+                }
+
+                &:not(.sy-active) {
+                    & .sy-sc-wizard-header-step-btn {
+                        & .sy-sc-wizard-header-step-icon-ctn {
+                            & .sy-icon {
+                                @apply text-gray-500 dark:text-gray-400;
+                            }
+                        }
+                    }
+                }
+            }
+
+            &.sy-completed {
+                & .sy-sc-wizard-header-step-icon,
+                & .sy-sc-wizard-header-step-number {
+                    @apply hidden;
+                }
+
+                & .sy-sc-wizard-header-step-btn {
+                    & .sy-sc-wizard-header-step-icon-ctn {
+                        @apply bg-primary-600 dark:bg-primary-500;
+
+                        & .sy-icon {
+                            @apply text-white;
+                        }
+                    }
+
+                    & .sy-sc-wizard-header-step-text {
+                        & .sy-sc-wizard-header-step-label {
+                            @apply text-gray-950 dark:text-white;
+                        }
+                    }
+                }
+            }
+
+            &.sy-active {
+                & .sy-sc-wizard-header-step-btn {
+                    & .sy-sc-wizard-header-step-icon-ctn {
+                        @apply border-primary-600 dark:border-primary-500;
+
+                        & .sy-sc-wizard-header-step-number {
+                            @apply text-primary-600 dark:text-primary-500;
+                        }
+                    }
+
+                    & .sy-sc-wizard-header-step-text {
+                        & .sy-sc-wizard-header-step-label {
+                            @apply text-primary-700 dark:text-primary-400;
+                        }
+                    }
+                }
+            }
+
+            &:not(.sy-active) {
+                & .sy-sc-wizard-header-step-btn {
+                    & .sy-sc-wizard-header-step-icon-ctn {
+                        @apply border-gray-300 dark:border-gray-600;
+
+                        & .sy-sc-wizard-header-step-number {
+                            @apply text-gray-500 dark:text-gray-400;
+                        }
+                    }
+
+                    & .sy-sc-wizard-header-step-text {
+                        & .sy-sc-wizard-header-step-label {
+                            @apply text-gray-500 dark:text-gray-400;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    & .sy-sc-wizard-step {
+        @apply outline-hidden;
+
+        &:not(.sy-active) {
+            @apply invisible absolute h-0 overflow-hidden p-0;
+        }
+    }
+
+    &:not(.sy-sc-wizard-header-hidden) {
+        & .sy-sc-wizard-step {
+            &.sy-active {
+                @apply mt-6;
+            }
+        }
+    }
+
+    & .sy-sc-wizard-footer {
+        @apply flex items-center justify-between gap-x-3;
+
+        & > .sy-hidden {
+            @apply hidden;
+        }
+
+        & > .sy-disabled {
+            @apply pointer-events-none opacity-70;
+        }
+    }
+
+    &.sy-contained {
+        @apply rounded-xl bg-white shadow-xs ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10;
+
+        & .sy-sc-wizard-header {
+            @apply border-b border-gray-200 dark:border-white/10;
+        }
+
+        & .sy-sc-wizard-step {
+            &.sy-active {
+                @apply mt-0 p-6;
+            }
+        }
+
+        & .sy-sc-wizard-footer {
+            @apply px-6 pb-6;
+        }
+    }
+
+    &:not(.sy-contained) {
+        & .sy-sc-wizard-header {
+            @apply rounded-xl bg-white shadow-xs ring-1 ring-gray-950/5 dark:bg-gray-900 dark:ring-white/10;
+        }
+
+        & .sy-sc-wizard-footer {
+            @apply mt-6;
+        }
+    }
+}

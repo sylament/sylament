@@ -1,0 +1,15 @@
+{% set controller = 'sylament--schemas--wizard' %}
+
+<div
+        {{ attrs({
+            id: stepId ?: null,
+            role: 'group',
+            'aria-labelledby': hasHeaderReference ? stepId ~ '-tab' : null,
+            'aria-label': not hasHeaderReference and labelText ? labelText : null,
+            tabindex: '0',
+            class: ['sy', 'sy-sc-wizard-step', {'sy-active': isActive}],
+            'data-step-key': stepKey,
+        }, component.getExtraAttributes, stimulus_target(controller, 'step')|stimulus_action(controller, 'expand', 'expand')) }}
+>
+    {{ renderComponent(contentSchema) }}
+</div>

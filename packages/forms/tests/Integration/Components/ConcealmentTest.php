@@ -6,11 +6,14 @@ namespace Sylament\Forms\Tests\Integration\Components;
 
 use Sylament\Forms\Components\Checkbox;
 use Sylament\Forms\Components\DateTimePicker;
+use Sylament\Forms\Components\FusedGroup;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Components\Textarea;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Schemas\Components\Section;
+use Sylament\Schemas\Components\Tabs;
+use Sylament\Schemas\Components\Tabs\Tab;
 use Sylament\Schemas\Schema;
 use Symfony\Component\DomCrawler\Crawler;
 
@@ -38,6 +41,25 @@ function renderConcealmentFixture(): Crawler
                 Checkbox::make('oc')->required(),
                 DateTimePicker::make('od')->required(),
                 Select::make('os')->required()->options(['a' => 'A']),
+                FusedGroup::make([TextInput::make('fmin'), TextInput::make('fmax')])->label('Range'),
+            ]),
+        ]),
+    ));
+}
+
+/**
+ * The motivating concealer: a required field on a tab nobody has opened. The control is
+ * in the DOM from the first render, so the native constraint has to come off the same way
+ * the collapsible Section's does.
+ */
+function renderTabConcealmentFixture(): Crawler
+{
+    return new Crawler(renderToHtml(
+        Schema::make(new FieldRenderHost())->statePath('data')->components([
+            Tabs::make('T')->tabs([
+                Tab::make('A')->components([
+                    TextInput::make('tt')->label('Tabbed')->required()->minLength(2)->maxLength(5),
+                ]),
             ]),
         ]),
     ));
@@ -105,4 +127,25 @@ it('marks every field wrapper for the schema controller', function (): void {
     expect($crawler->filter('div.sy-fo-field[data-field-wrapper]')->count())
         ->toBe($crawler->filter('div.sy-fo-field')->count())
         ->and($crawler->filter('div.sy-fo-field')->count())->toBeGreaterThan(0);
+});
+
+it('marks a fused group child wrapper, the plain branch, for the schema controller', function (): void {
+    $children = renderConcealmentFixture()->filter('div.sy-fo-fused-group div.sy-fo-field');
+
+    expect($children->count())->toBe(2)
+        ->and($children->eq(0)->attr('data-field-wrapper'))->not->toBeNull()
+        ->and($children->eq(1)->attr('data-field-wrapper'))->not->toBeNull();
+});
+
+it('drops the constraint attributes from a control inside a tab', function (): void {
+    $crawler = renderTabConcealmentFixture();
+    $input = $crawler->filter('input#tt');
+
+    expect($input->count())->toBe(1)
+        ->and($input->attr('required'))->toBeNull()
+        ->and($input->attr('minlength'))->toBeNull()
+        ->and($input->attr('maxlength'))->toBeNull()
+        ->and($input->attr('aria-invalid'))->toBe('false')
+        ->and($crawler->filter('label[for="tt"]')->text())->toBe('Tabbed*')
+        ->and($crawler->filter('div.sy-fo-field[data-field-wrapper]')->count())->toBe(1);
 });

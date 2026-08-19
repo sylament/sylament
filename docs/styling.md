@@ -23,8 +23,10 @@ Consumers never need Tailwind installed.
    prefixed grid markers) that exist as styling hooks, selectors for variant rules,
    and JS targets — inert until a component file or controller cares. A utility a
    component needs and support does not ship globally (`sy-invisible`, `sr-only`
-   twins) is nested under that component's own class in its stylesheet — schemas'
-   `tabs.css` and `wizard.css` are the precedent.
+   twins) is nested under that component's own class in its stylesheet (support's
+   `fieldset.css`, schemas' `section.css`), or published as a package-prefixed class
+   of its own when more than one component needs it (forms' `.sy-fo-sr-only`, panels'
+   `.sy-pa-skip-link`).
 2. **Every component template's root element carries the bare `sy` marker class**
    (`<div class="sy sy-fo-field">`). It is how the scoped preflight identifies
    Sylament markup — exact-class matching, so a host app's own `sy-*`-like class names

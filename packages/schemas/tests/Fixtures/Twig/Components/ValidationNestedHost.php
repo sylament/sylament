@@ -90,6 +90,12 @@ class ValidationNestedHost implements InteractsWithSchemas
     }
 
     #[LiveAction]
+    public function resetClientState(): void
+    {
+        $this->getSchema()->dispatchClientSideStateReset();
+    }
+
+    #[LiveAction]
     public function noop(): void
     {
     }

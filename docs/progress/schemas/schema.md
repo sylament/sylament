@@ -57,7 +57,8 @@ their detail sections do.
 | [`hasGap`/`isDense` parent-walk overrides](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | — |
 | [`getAllColumns` parent inheritance override](../../../packages/schemas/src/Schema.php) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | in progress | — | [detail](#the-parent-walk-inheritance-overrides-are-untested) |
 | [Twig-template rendering (`Schema/index.html.twig`)](../../../packages/schemas/templates/partials/Schema/index.html.twig) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-renders-visible-children-only-without-hidden-placeholders) |
-| Root Livewire/Alpine render wiring (`wire:partial`, `x-data filamentSchema`, client-side state reset) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | skipped | — | [diverges](#the-root-schema-drops-livewire-partial-render-and-alpine-wiring) |
+| [`dispatchClientSideStateReset()`](../../../packages/schemas/src/Schema.php) | [`Schema::dispatchClientSideStateReset()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-root-schema-drops-livewire-partial-render-and-alpine-wiring) |
+| Root Livewire/Alpine render wiring (`wire:partial`, `x-data filamentSchema`) | [`Schema`](../../../vendor/filament/schemas/src/Schema.php) | skipped | — | [diverges](#the-root-schema-drops-livewire-partial-render-and-alpine-wiring) |
 | [`BelongsToParentComponent`](../../../packages/schemas/src/Concerns/BelongsToParentComponent.php) | [`Concerns/BelongsToParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/BelongsToParentComponent.php) | done | — | [diverges](#parentcomponent-accepts-null-to-detach) |
 | [`CanBeEmbeddedInParentComponent`](../../../packages/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | [`Concerns/CanBeEmbeddedInParentComponent.php`](../../../vendor/filament/schemas/src/Concerns/CanBeEmbeddedInParentComponent.php) | done | — | — |
 | [`CanBeInline`](../../../packages/schemas/src/Concerns/CanBeInline.php) | [`Concerns/CanBeInline.php`](../../../vendor/filament/schemas/src/Concerns/CanBeInline.php) | done | — | — |
@@ -282,13 +283,24 @@ reintroduced — not planned.
 
 Filament's `renderEmbeddedHtml()` emits `wire:partial` (`schema.{key}`),
 `x-data="filamentSchema({ livewireId, schemaKey })"`, and
-`x-on:form-validation-error`/`reset-schema-component-state` on the root div, and
-exposes `dispatchClientSideStateReset()`. Sylament's `Schema/index.html.twig` emits none
-of these. Live binding runs field-side through UX LiveComponent `data-model`
+`x-on:form-validation-error`/`reset-schema-component-state` on the root div.
+Sylament's `Schema/index.html.twig` emits no `wire:partial` and no client-side
+state object: live binding runs field-side through UX LiveComponent `data-model`
 attributes plus a full component re-render (proven by `LiveStateTest`), so
-per-schema partial rendering, the client-side Alpine state object, and client-side
-state reset have no port. Reverses if per-schema partial rendering or client-side
-state reset become goals.
+per-schema partial rendering has no port and reverses only if it becomes a goal.
+
+The two window listeners **do** port, as a Stimulus controller on the root
+schema element rather than an Alpine `x-on:` pair, and both of their producers
+now exist:
+[`validateSchema()`'s throwing branch](can-be-validated.md#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity)
+announces `form-validation-error`, and `dispatchClientSideStateReset()` is
+ported here as a one-method surface on `Schema` announcing
+`reset-schema-component-state` with `{schemaKey: getKey()}` (Filament sends
+`livewireId` beside the key; there is no live-component id producer on this
+side). Nothing in the port **calls** the reset yet — Filament's callers are
+`CreateRecord`'s create-another and `CreateAction`, neither of which has landed —
+so it ships as the announcement half of a wired pair, exercised by a fixture
+action in `HasSchemasValidationTest`.
 
 ### The `$model` closure parameter and the `Model` type gate are dropped
 

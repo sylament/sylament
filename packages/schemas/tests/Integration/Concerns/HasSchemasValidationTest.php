@@ -341,3 +341,18 @@ it('dispatches nothing on the silent validation path', function (): void {
 
     expect($component->getDispatchedBrowserEvent($component->render(), 'form-validation-error'))->toBeNull();
 });
+
+/*
+ * `Schema::dispatchClientSideStateReset()` lives on the schema rather than the host,
+ * but only a live host can be driven to observe the event it announces.
+ */
+
+it('announces a client-side state reset naming the schema', function (): void {
+    $component = $this->createLiveComponent('ValidationNestedHost');
+    $component->call('resetClientState');
+
+    $event = $component->getDispatchedBrowserEvent($component->render(), 'reset-schema-component-state');
+
+    expect($event)->not->toBeNull()
+        ->and($event['payload'])->toBe(['schemaKey' => 'schema']);
+});

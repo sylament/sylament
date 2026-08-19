@@ -168,6 +168,17 @@ class Schema extends ViewComponent
         return $this->getParentComponent()?->getAllColumns() ?? $this->getOwnAllColumns();
     }
 
+    /**
+     * Tell the browser to drop whatever client-side state the components of this schema
+     * hold — an open tab, a wizard step — and return to the state the server renders.
+     */
+    public function dispatchClientSideStateReset(): void
+    {
+        $this->getLiveComponent()->dispatchBrowserEvent('reset-schema-component-state', [
+            'schemaKey' => $this->getKey(),
+        ]);
+    }
+
     public function render(Environment $twig): ?string
     {
         if ($this->getComponents(withHidden: false) === []) {

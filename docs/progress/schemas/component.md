@@ -14,8 +14,9 @@ composes — `CanGrow`, `CanOrderColumns`, `CanSpanColumns`, `HasExtraAttributes
 — are audited in [`support/component.md`](../support/component.md). The
 cross-component schema concerns it composes have their own files:
 [`HasColumns`](has-columns.md), [`HasGap`](has-gap.md),
-[`HasStateBindingModifiers`](has-state-binding-modifiers.md), and the visibility
-concern [`CanBeHidden`](can-be-hidden.md). The single-use concerns below
+[`HasStateBindingModifiers`](has-state-binding-modifiers.md), the visibility
+concern [`CanBeHidden`](can-be-hidden.md), and the concealment walk
+[`CanBeConcealed`](can-be-concealed.md). The single-use concerns below
 (`BelongsToContainer`, `HasChildComponents`, `HasId`, plus the component-level
 `HasState`, `HasKey`, `HasHeadings`) are folded into this file as surface rows.
 
@@ -65,9 +66,9 @@ divergence it earned stay behind.
 
 `evaluationIdentifier = 'component'` is set, and the composed set covers
 container/child/identity/visibility/heading/state plus the
-[record binding](belongs-to-record.md), actions, and the shared column and gap
-concerns — enough to drive Section and the forms `Field` slots. Left: the
-Filament traits not yet on the base — `CanBeConcealed`,
+[record binding](belongs-to-record.md), actions, [concealment](can-be-concealed.md),
+and the shared column and gap concerns — enough to drive Section and the forms `Field` slots. Left: the
+Filament traits not yet on the base —
 `CanBeGridContainer`, `CanBeLiberatedFromContainerGrid`,
 `CanBeRepeated`, `CanPartiallyRender`, `CanPoll`,
 `HasEntryWrapper`, `HasFieldWrapper`, `HasInlineLabel`, `HasMaxWidth`,

@@ -189,9 +189,7 @@ The stylesheet is support's alone, but the controllers are not: serve
 `vendor/sylament/actions/assets/dist/controllers/*.js` and
 `vendor/sylament/forms/assets/dist/controllers/*.js` too if you installed those
 packages and want toasts, action event dispatch, or the checkbox-list and
-searchable-select controls. Forms' `dist` also carries
-`tom-select-LICENSE.txt` — the notice for the library bundled into its select
-controller, which the Apache-2.0 licence requires you to keep beside it.
+searchable-select controls.
 
 Copy them into your public directory, or point your own build at them.
 </details>

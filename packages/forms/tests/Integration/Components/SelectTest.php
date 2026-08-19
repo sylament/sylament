@@ -498,6 +498,13 @@ it('carries the position, label-wrap and case-insensitivity switches', function 
         ->and(Select::make('status')->forceSearchCaseInsensitive(false)->isSearchForcedCaseInsensitive())->toBeFalse();
 });
 
+it('is not reorderable unless asked, and evaluates the condition', function (): void {
+    expect(Select::make('tags')->multiple()->isReorderable())->toBeFalse()
+        ->and(Select::make('tags')->multiple()->reorderable()->isReorderable())->toBeTrue()
+        ->and(Select::make('tags')->multiple()->reorderable(false)->isReorderable())->toBeFalse()
+        ->and(Select::make('tags')->multiple()->reorderable(fn (Select $component): bool => $component->isMultiple())->isReorderable())->toBeTrue();
+});
+
 it('substitutes the count into the max items message', function (): void {
     expect(Select::make('tags')->multiple()->maxItems(2)->getMaxItemsMessage())->toBe('Only 2 can be selected.')
         ->and(Select::make('tags')->multiple()->maxItems(2)->maxItemsMessage('Two, tops')->getMaxItemsMessage())->toBe('Two, tops');
@@ -806,6 +813,7 @@ it('binds the JS branch to the select controller and carries every value it read
         Schema::make($host)->statePath('data')->components([
             Select::make('status')
                 ->label('Status')
+                ->required()
                 ->searchable()
                 ->searchValues()
                 ->options(['draft' => 'Draft', 'published' => 'Published'])
@@ -829,7 +837,8 @@ it('binds the JS branch to the select controller and carries every value it read
         ->and($select->attr('data-model'))->toBeNull()
         ->and($select->attr('data-skip-morph'))->toBe('true')
         ->and($select->attr('id'))->toBe('status')
-        ->and($select->attr('name'))->toBe('status');
+        ->and($select->attr('name'))->toBe('status')
+        ->and($select->attr('required'))->toBeNull();
 
     expect(selectValue($select, 'key'))->toBe('status')
         ->and(selectValue($select, 'state-path'))->toBe('data.status')
@@ -852,6 +861,7 @@ it('binds the JS branch to the select controller and carries every value it read
         ->and(selectValue($select, 'no-search-results-message'))->toBe('Nothing matches.')
         ->and(selectValue($select, 'no-options-message'))->toBe('Nothing to pick.')
         ->and(selectValue($select, 'loading-message'))->toBe('Hold on...')
+        ->and(selectValue($select, 'reorderable'))->toBe('false')
         ->and(selectValue($select, 'badge-class'))->toStartWith('sy-badge sy-size-md sy-color sy-color-primary ')
         ->and(selectValue($select, 'badge-class'))->toContain('sy-text-color-');
 
@@ -865,14 +875,26 @@ it('carries the max-items pair and the position of a multiple select', function 
             ->multiple()
             ->options(['a' => 'A', 'b' => 'B'])
             ->maxItems(2)
-            ->position('top'),
+            ->position('top')
+            ->reorderable(),
     ))->filter('select.sy-fo-select');
 
     expect($select->attr('multiple'))->not->toBeNull()
         ->and(selectValue($select, 'max-items'))->toBe('2')
         ->and(selectValue($select, 'max-items-message'))->toBe('Only 2 can be selected.')
         ->and(selectValue($select, 'position'))->toBe('top')
+        ->and(selectValue($select, 'reorderable'))->toBe('true')
         ->and(selectValue($select, 'searchable'))->toBe('true');
+});
+
+it('keeps required on the native branch and drops it from the JS branch', function (): void {
+    $native = new Crawler(renderField(Select::make('status')->options(['a' => 'A'])->required()))->filter('select.sy-fo-select');
+    $js = new Crawler(renderField(Select::make('status')->options(['a' => 'A'])->required()->searchable()))->filter('select.sy-fo-select');
+
+    expect($native->attr('required'))->not->toBeNull()
+        ->and($native->attr('data-model'))->toBe('norender|data.status')
+        ->and($js->attr('required'))->toBeNull()
+        ->and($js->attr('data-controller'))->toBe('sylament--forms--select');
 });
 
 it('renders the current selection as an option the map does not carry', function (): void {

@@ -94,6 +94,8 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
 
     protected bool|Closure $canOptionLabelsWrap = true;
 
+    protected bool|Closure $isReorderable = false;
+
     protected bool|Closure|null $hasDynamicOptions = null;
 
     /**
@@ -314,6 +316,18 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
     public function canOptionLabelsWrap(): bool
     {
         return (bool) $this->evaluate($this->canOptionLabelsWrap);
+    }
+
+    public function reorderable(bool|Closure $condition = true): static
+    {
+        $this->isReorderable = $condition;
+
+        return $this;
+    }
+
+    public function isReorderable(): bool
+    {
+        return (bool) $this->evaluate($this->isReorderable);
     }
 
     public function dynamicOptions(bool|Closure|null $condition = true): static

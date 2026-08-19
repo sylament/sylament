@@ -3,7 +3,8 @@
 `Sylament\Forms\Components\Select` — the select field, over a static option map,
 an enum, or a Doctrine association, rendered as the native `<select>` or — once
 it is searchable, multiple, renders HTML labels or declares `native(false)` — as
-the JS control forms' `select` Stimulus controller builds over Tom Select. It
+the JS control forms' `select` Stimulus controller builds — a port of Filament's
+own select utility. It
 composes the shared option pair ([`HasOptions`](has-options.md),
 [`CanDisableOptions`](can-disable-options.md) and its
 [contract](../../../packages/forms/src/Components/Contracts/CanDisableOptions.php)),
@@ -49,8 +50,8 @@ Reference — the Filament source this is diffed against:
   — the concerns (the last four each have a file of their own, linked above)
 - [`support/resources/js/utilities/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js)
   and [`forms/resources/js/components/select.js`](../../../vendor/filament/forms/resources/js/components/select.js)
-  — Filament's own first-party JS control, the port's is
-  [Tom Select behind a first-party controller](#nativefalse-switches-to-the-js-control)
+  — Filament's own first-party JS control, which the port
+  [carries as its engine](#nativefalse-switches-to-the-js-control)
 - [`forms/resources/lang/en/components.php`](../../../vendor/filament/forms/resources/lang/en/components.php)
   — the `select.*` strings the literals stand in for
 
@@ -85,8 +86,8 @@ _Blocked by_ names what has to land first. _Detail_ links a permanent note in
 | [`CanAllowHtml`](can-allow-html.md) — `allowHtml()` | [`Concerns/CanAllowHtml.php`](../../../vendor/filament/forms/src/Components/Concerns/CanAllowHtml.php) | done | — | [detail](can-allow-html.md) · [semantics](#transformoptionsforjs-casts-a-markup-label-to-text) |
 | `transformOptionsForJsUsing()` / `transformOptionsForJs()` and the four exposed methods — `getSearchResultsForJs()`, `getOptionsForJs()`, `getOptionLabelsForJs()`, `getOptionLabel()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#transformoptionsforjs-casts-a-markup-label-to-text) · [semantics](#the-search-round-trip-is-a-live-action-that-re-renders-the-host) |
 | `dynamicOptions()` / `hasDynamicOptions()` / `hasDynamicSearchResults()` / `hasInitialNoOptionsMessage()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-search-round-trip-is-a-live-action-that-re-renders-the-host) |
-| `position()` / `getPosition()`, `wrapOptionLabels()` / `canOptionLabelsWrap()`, `forceSearchCaseInsensitive()` / `isSearchForcedCaseInsensitive()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [diverges](#the-dropdown-does-not-flip-and-the-modal-clips-it) |
-| `reorderable()` / `isReorderable()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | blocked | the SortableJS control (M3 · 6) | [diverges](#the-dropdown-does-not-flip-and-the-modal-clips-it) |
+| `position()` / `getPosition()`, `wrapOptionLabels()` / `canOptionLabelsWrap()`, `forceSearchCaseInsensitive()` / `isSearchForcedCaseInsensitive()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-dropdown-flips-and-escapes-the-modal) |
+| `reorderable()` / `isReorderable()` — chips dragged into order, the order written back | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-dropdown-flips-and-escapes-the-modal) |
 | `getSelectedRecordUsing()` / `getSelectedRecord()` | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-option-actions-are-suffix-actions-with-doctrine-defaults) |
 | [`relationship()`](../../../packages/forms/src/Components/Concerns/HasRelationship.php) — to-one and to-many, over the [association reader](../schemas/association-reader.md) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [detail](#relationship-is-three-lazy-closures-over-the-association-reader) · [semantics](#a-relationship-map-is-full-or-an-exception-except-where-search-makes-it-partial-by-design) · [diverges](#the-save-arm-writes-a-desired-list-not-attachdetach) |
 | The relationship search and label arms — `getSearchResultsFromRelationship()`, `getOptionsFromRelationship()` (searchable / preload / limit / ordering), `getOptionLabelFromRelationship()`, `getOptionLabelsFromRelationship()`, and the shared `getOptionLabelFromRecordUsing()` trio | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | done | — | [semantics](#the-relationship-search-arm-runs-a-like-per-column-over-the-scoped-option-query) · [diverges](#a-search-column-is-a-mapped-field-and-the-title-ordering-skips-what-it-cannot-order) |
@@ -853,6 +854,72 @@ There is no suffix twin here — the `<select>` keeps its `pe-8` for the chevron
 whatever the suffix side holds, so suffix actions (which is where
 `createOption` / `editOption` live) never touch the control's padding.
 
+### The dropdown flips and escapes the modal
+
+Positioning is Filament's, ported verbatim: `computePosition()` with
+`offset(4)`, `shift({padding: 5})` and `flip()` — so the list opens above the
+control when there is no room below and slides to stay inside the viewport —
+unless `position()` pins `'top'` or `'bottom'`, which drops `flip()` and takes
+the pinned placement. The strategy is `absolute` by default and `fixed` when the
+button sits under a `sy-fixed-positioning-context` ancestor with no nearer
+`sy-absolute-positioning-context` (Filament's two opt-in classes,
+prefix-renamed).
+
+One thing is faithful-plus rather than faithful: support's modal stamps
+`sy-fixed-positioning-context` on its `<dialog>`
+([modal.md](../support/modal.md#the-modal-is-a-fixed-positioning-context)),
+where Filament stamps the *absolute* context on its own, so a select inside a
+scrolling modal window — sticky header/footer panes, slide-overs — escapes that
+window's `overflow-y: auto` where Filament's dropdown is clipped by it.
+
+`reorderable()` rides in with the same engine: the selected chips are dragged
+through SortableJS inside it, and `onEnd` rebuilds the state from the badges'
+`[data-value]` order and reports it through the same state-change callback a
+click does, so the reorder is one live write like any other.
+
+### The hidden select lends its id to the combobox button
+
+Filament gives the field's id to its `button[role="combobox"]`, so the field's
+`<label for>` focuses the control. Ours does the same at runtime: the controller
+reads `element.id`, removes the attribute from the hidden `<select>` at
+construction — a tracked attribute change the host's `ExternalMutationTracker`
+re-applies after every morph — and restores it on disconnect; the engine sets it
+on the button. The server-side contract is unchanged, which is why the render
+tests still assert `id` on the `<select>`; the handoff is runtime-only and
+invisible to PHP.
+
+### The engine port corrects five vendor defects
+
+The port is method-for-method vendor's, with five behavioural fixes — each a bug
+in `support/resources/js/utilities/select.js` (5.7.6) rather than a divergence
+we wanted:
+
+1. `applyDisabledState()` toggles `.fi-select-input-badge-remove` (2292, 2325),
+   a class nothing renders — the badge remove button is `fi-badge-delete-btn` —
+   so a multi-select's remove buttons are never disabled. Ours toggles
+   `.sy-badge-delete-btn`.
+2. Same method's *enable* branch runs `classList.add('fi-disabled')` on the
+   single-select clear button (2340) where `remove` is meant, so re-enabling a
+   control leaves its clear button styled disabled. Ours removes the class.
+   Both branches also have a hole ahead of them: `applyDisabledState()` runs
+   synchronously from `render()`, while the badges and the clear button are
+   appended only after `updateSelectedDisplay()`'s `await`, and `disable()`
+   returns early once the flag is set — so a control disabled at construction
+   never revisits them. Ours creates those buttons already disabled when the
+   control is.
+3. `addBadgesForSelectedOptions()` constructs a new `Sortable` on every full
+   display update (868) and never destroys the previous one, leaking an
+   instance per render. Ours destroys it before every rebuild — reorderable or
+   not — and in `destroy()`.
+4. `handleDropdownKeydown()`'s Enter with no focused option calls
+   `form.submit()` (1297), which fires no `submit` event; under a
+   `live_action('save:prevent', event: 'submit')` form that navigates away
+   instead of saving. Ours calls `form.requestSubmit()`.
+5. `updateOptionLabelInList()`'s plain-text arm appends a bare text node (1141),
+   dropping the `<span>` its own stylesheet's `.fi-select-input-option > span`
+   arm selects, so a refreshed label loses the option row's truncation. Ours
+   keeps the `span.sy-fo-select-option-label` in both arms.
+
 ## Divergences
 
 Deliberate deviations from Filament, and the reason each holds. Provisional ones
@@ -863,17 +930,27 @@ say what would reverse them.
 Filament's `native(false)` switches `Select` from a real `<select>` to its own
 first-party JavaScript control — `support/resources/js/utilities/select.js`, some
 2 400 lines on `@floating-ui/dom` + `sortablejs` (the trail once said Choices.js;
-v5 dropped it, and the premise was stale). The port switches to **Tom Select**
-behind a thin first-party Stimulus controller, `sylament--forms--select`, bundled
-into forms' `dist` — the roadmap's carried decision (3), a "thin integration
-around Tom Select" over writing our own control. Porting Filament's own control
-was weighed as the alternative and set aside: exact DOM/CSS parity and no new
-dependency, but a hand-port of that size ships with no JS test rig, and the
-decision explicitly chose the library. Recorded so the choice can be revisited if
-Tom Select's semantics prove too foreign; the controller, its values and its CSS
-are the template's and the stylesheet's trail
-([styles.md](styles.md)), this file carries what the PHP side promised it and
-where that differs from Filament:
+v5 dropped it, and the premise was stale). The port switches to **that same
+control**, ported to TypeScript as `packages/forms/assets/src/utils/select.ts`
+and driven by the thin first-party Stimulus controller `sylament--forms--select`,
+both bundled into forms' `dist` with `@floating-ui/dom` and `sortablejs`.
+
+M3 · 4 shipped it over **Tom Select** instead — the roadmap's carried decision
+(3), a "thin integration around Tom Select" over writing our own control — and
+that decision was revisited on 2026-08-19 and overturned. What forced the
+revisit was the friction list the integration accumulated in one epic, every
+item of it the cost of an engine that does not share the server's contract: an
+own delete button rendered beside Tom Select's, the dropdown settled by hand,
+a membership score written to keep the server's option order, `$order` and `$id`
+kept in sync per option, a duplicate `<option selected>` for the value the map
+did not carry, the selected label re-targeted after a refresh, and the local
+filter's throttle zeroed. The port's costs (a 2 400-line hand-port with no JS
+test rig — the engine's verification is a method-by-method vendor diff plus the
+browser pass) were accepted against exact DOM/CSS parity, `reorderable()`,
+Floating UI positioning and one shared vocabulary with Filament. The controller,
+its values and its CSS are the template's and the stylesheet's trail
+([forms-bundle.md](forms-bundle.md), [styles.md](styles.md)); this file carries
+what the PHP side promised it and where that differs from Filament:
 
 - **The server render is the option and selection truth.** Filament's control
   fetches `getOptionsForJs` on every open when `hasDynamicOptions()` and probes
@@ -891,8 +968,21 @@ where that differs from Filament:
   model to `""` silently. The controller owns the binding instead, calling
   `component.set()` itself from the `statePath` and `modelBinding` values the
   template hands it; the native branch keeps `data-model` unchanged.
-- **The dropdown does not flip, and `reorderable()` waits**
-  ([below](#the-dropdown-does-not-flip-and-the-modal-clips-it)).
+- **The dropdown flips and escapes the modal**
+  ([below](#the-dropdown-flips-and-escapes-the-modal)).
+- **The JS-branch `<select>` carries no `required`.** Filament's JS branch
+  renders no native constraint attribute at all — it renders no `<select>`.
+  Ours keeps a hidden one as the carrier of the Stimulus values and the no-JS
+  fallback, and `required` is the one attribute with a native effect on a
+  hidden control: Enter in the open dropdown with no focused option submits
+  through `form.requestSubmit()`, which runs interactive constraint validation,
+  and a hidden `<select required>` sitting on the placeholder is invalid *and*
+  unfocusable — the submit is blocked with a console error and no visible
+  message, where the server-side required message is the contract. The template
+  emits `required` in the native branch only; everything else the hidden
+  `<select>` carries stays, because the engine reads it (`multiple`,
+  `disabled`, `autofocus`, `id`) or a test pins it (`name`, `class`,
+  `aria-invalid`).
 
 ### The search round-trip is a live action that re-renders the host
 
@@ -955,16 +1045,6 @@ title attribute that is not a mapped field — one read through an association o
 a getter — leaves the database's order alone rather than throwing, since the
 label read still works and the ordering was never part of the shipped contract
 (the relation layer ordered nothing).
-
-### The dropdown does not flip, and the modal clips it
-
-Filament positions its dropdown with Floating UI, flipping above the control
-when there is no room below and — like the port — clipping inside modal windows.
-Tom Select positions with CSS below the control; `position()` / `getPosition()`
-are ported and honoured as `'top'` / `'bottom'` arms, auto-flip is not. Recorded
-gaps: the flip, and the modal clipping Filament shares. `reorderable()` /
-`isReorderable()` stay blocked: Tom Select's `drag_drop` plugin is not the
-sanctioned SortableJS control, so the row waits on M3 · 6.
 
 ### The two new strings are untranslated literals
 

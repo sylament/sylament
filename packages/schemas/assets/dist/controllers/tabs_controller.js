@@ -330,19 +330,20 @@ class tabs_controller_default extends Controller {
     }
   }
   async #loadDeferredBadges(generation) {
+    let badges;
     try {
       const host = await resolveLiveHost(this.element);
-      const badges = await callSchemaComponentMethod(host, this.keyValue, BADGES_METHOD);
-      if (isRecord(badges)) {
-        for (const [key, entry] of Object.entries(badges)) {
-          this.#badges.set(key, isRecord(entry) ? entry : null);
-        }
-      }
+      badges = await callSchemaComponentMethod(host, this.keyValue, BADGES_METHOD);
     } catch {
-      this.#badges.clear();
+      badges = null;
     }
     if (generation !== this.#generation) {
       return;
+    }
+    if (isRecord(badges)) {
+      for (const [key, entry] of Object.entries(badges)) {
+        this.#badges.set(key, isRecord(entry) ? entry : null);
+      }
     }
     this.#badgesLoaded = true;
     for (const placeholder of this.badgePlaceholderTargets) {

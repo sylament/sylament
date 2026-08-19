@@ -501,23 +501,26 @@ export default class extends Controller<HTMLElement> {
   }
 
   async #loadDeferredBadges(generation: number): Promise<void> {
+    let badges: unknown;
+
     try {
       const host = await resolveLiveHost(this.element);
-      const badges = await callSchemaComponentMethod(host, this.keyValue, BADGES_METHOD);
-
-      if (isRecord(badges)) {
-        for (const [key, entry] of Object.entries(badges)) {
-          this.#badges.set(key, isRecord(entry) ? entry : null);
-        }
-      }
+      badges = await callSchemaComponentMethod(host, this.keyValue, BADGES_METHOD);
     } catch {
       // The host never answered. Vendor clears its loading flag in a `finally`, so the
-      // placeholders empty rather than spinning forever; an empty map does that here.
-      this.#badges.clear();
+      // placeholders empty rather than spinning forever; falling through with no badges
+      // does that here.
+      badges = null;
     }
 
     if (generation !== this.#generation) {
       return;
+    }
+
+    if (isRecord(badges)) {
+      for (const [key, entry] of Object.entries(badges)) {
+        this.#badges.set(key, isRecord(entry) ? entry : null);
+      }
     }
 
     this.#badgesLoaded = true;

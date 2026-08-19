@@ -51,7 +51,11 @@ there. Milestones prove out here (see `docs/progress/roadmap.md`).
   `src/Twig/Components/Showcase/<Package>/`, declared
   `#[AsLiveComponent(template: 'components/Showcase/LiveCard.html.twig')] final
   class X extends App\Showcase\ShowcaseCard` (abstract `title()`/`schema()`,
-  optional `description()`, a writable `$data` bag, `mount()` fills). `/` is
+  optional `description()`, a writable `$data` bag, `mount()` fills; its
+  `getSchema()` stamps a per-card prefix on every component's id — keys stay
+  `schema.<name>` for the seam — because twenty cards keyed `schema` on one page
+  would otherwise render the same ids and a `<label for>` would land in another
+  card). `/` is
   the Playground — a hand-poking scratchpad whose actions `dd()` on purpose,
   outside the card discipline. Beside the showcase, `/articles/new` and
   `/articles/{id}/edit` (M1 · 2) are real CRUD pages sharing the

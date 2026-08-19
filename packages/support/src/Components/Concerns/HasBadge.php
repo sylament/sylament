@@ -34,7 +34,9 @@ trait HasBadge
 
     public function getBadge(): ?string
     {
-        return $this->evaluate($this->badge);
+        $badge = $this->evaluate($this->badge);
+
+        return $badge === null ? null : (string) $badge;
     }
 
     /**

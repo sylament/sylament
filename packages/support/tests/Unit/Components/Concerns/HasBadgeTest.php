@@ -26,6 +26,11 @@ it('casts a numeric badge to string on set', function (): void {
         ->and(new HasBadgeFixture()->badge(2.5)->getBadge())->toBe('2.5');
 });
 
+it('casts a numeric badge a closure returns to string', function (): void {
+    expect(new HasBadgeFixture()->badge(fn (): int => 3)->getBadge())->toBe('3')
+        ->and(new HasBadgeFixture()->badge(fn (): float => 2.5)->getBadge())->toBe('2.5');
+});
+
 it('evaluates closures and injects the badge into the colour closure', function (): void {
     $fixture = new HasBadgeFixture()
         ->badge(fn (): string => 'new')

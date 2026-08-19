@@ -128,6 +128,11 @@ and the Stimulus controllers through `assets/controllers.json`:
             "notifications": { "enabled": true, "fetch": "eager" },
             "notification":  { "enabled": true, "fetch": "eager" }
         },
+        "@sylament/schemas": {
+            "schema": { "enabled": true, "fetch": "eager" },
+            "tabs":   { "enabled": true, "fetch": "eager" },
+            "wizard": { "enabled": true, "fetch": "eager" }
+        },
         "@sylament/support": {
             "core": {
                 "enabled": true,
@@ -148,7 +153,7 @@ and the Stimulus controllers through `assets/controllers.json`:
 List a block for each Sylament package you installed. In a Flex app you do not
 write this by hand — `composer` runs the package-json synchronizer, which copies
 each package's declared `enabled`/`fetch` in for you; the block above is what it
-produces for `support`, `forms`, `notifications` and `actions` together.
+produces for `support`, `schemas`, `forms`, `notifications` and `actions` together.
 
 Support's `core` controller carries the `autoimport` that pulls in the
 stylesheet; the other three power collapsible sections, modals and dropdown
@@ -162,6 +167,13 @@ whose binding belongs to the controller rather than to a `data-model` attribute,
 so omitting the block leaves a box that neither searches nor sends what the user
 picked. A select that is none of those four is a native `<select>` and needs no
 JavaScript at all.
+
+Schemas' three are per-schema: `tabs` and `wizard` drive tab switching and the
+wizard's step navigation, and `schema` sits on every root schema — it reveals the
+field a failed validation points at, expanding whatever section, tab or step
+hides it, and resets client-side state when the server asks. Leave `tabs` or
+`wizard` out and the component renders its first tab or first step and stays
+there.
 
 **`@sylament/actions` is easy to leave out and fails silently.** Its single
 `dispatch` controller binds to no element of its own — it registers one
@@ -186,10 +198,11 @@ yourself from `vendor/sylament/support/assets/dist/`:
 
 The stylesheet is support's alone, but the controllers are not: serve
 `vendor/sylament/notifications/assets/dist/controllers/*.js`,
-`vendor/sylament/actions/assets/dist/controllers/*.js` and
-`vendor/sylament/forms/assets/dist/controllers/*.js` too if you installed those
-packages and want toasts, action event dispatch, or the checkbox-list and
-searchable-select controls.
+`vendor/sylament/actions/assets/dist/controllers/*.js`,
+`vendor/sylament/forms/assets/dist/controllers/*.js` and
+`vendor/sylament/schemas/assets/dist/controllers/*.js` too if you installed those
+packages and want toasts, action event dispatch, the checkbox-list and
+searchable-select controls, or tabs and wizards.
 
 Copy them into your public directory, or point your own build at them.
 </details>

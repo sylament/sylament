@@ -249,7 +249,6 @@ class Tabs extends Component
 
             $badge = $tab->getBadge();
             $badgeColor = $tab->getBadgeColor($badge) ?? 'primary';
-            $badgeColorClasses = '';
             $badgeColorStyles = '';
 
             if (is_array($badgeColor)) {

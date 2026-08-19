@@ -158,6 +158,17 @@ reads `data-value`, so it is left alone rather than papered over with a swallowi
 a support component; `TabsRenderTest` pins it so the extra attribute reads as a known
 consequence.
 
+### A tab's extra attributes are spread before the wiring, so the wiring wins a collision
+
+Each tab button spreads `tab.getExtraAttributeBag.toScalarAttributes` first and the
+controller wiring (`data-tab-key`, the target/action descriptors, or server mode's
+`live#update` trio) after it, so a user `extraAttributes(['data-action' => …])` on a `Tab` is
+replaced rather than concatenated. That is Filament's own order — `Tabs.php:410` merges
+`$tabExtraAttributeBag->getAttributes()` and *then* its `role`/`aria-selected`/`x-on:click`
+map — so the behaviour is parity, not a divergence; it is stated here because the
+`ComponentAttributeBag` merge rules (class and style token lists append, later scalars win)
+make "the last spread wins" easy to misread as "everything merges".
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
@@ -186,7 +197,12 @@ flash. Filament cloaks always. This is the same call support's
 Filament declares `public bool | Closure $isTabPersisted` — the only public property on the
 concern — and nothing reads it from outside. Ours is `protected`, like every other
 condition property in this port. The stored key is `tabs-{id}` rather than Alpine's
-`_x_{id}`, the same call the section controller made for its collapse state.
+`_x_{id}`, the same call the section controller made for its collapse state. One timing
+delta rides along: the controller writes storage from `#setTab()` only, so a tab the
+**query string** picked on connect is not persisted until the first click, where Alpine's
+`$persist` writes on every assignment to `tab`, `init()`'s included. It is observable only
+with both arms on at once (`persistTab()` *and* `persistTabInQueryString()`), and then only
+until that first click.
 
 ### The query-string arm compares the key the URL actually carries
 

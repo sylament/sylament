@@ -152,8 +152,6 @@ class Step extends Component implements CanConcealComponents
         $id = $this->getId();
         $label = $this->getLabel();
 
-        // The header button carrying `id="{id}-tab"` only renders with the header, so a
-        // hiddenHeader() wizard has no such element to point `aria-labelledby` at.
         $hasHeaderReference = filled($id) && !$wizard->isHeaderHidden();
 
         return [

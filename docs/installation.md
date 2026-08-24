@@ -233,6 +233,8 @@ yourself from `vendor/sylament/support/assets/dist/`:
   this one file
 - `controllers/*.js` — the Stimulus controllers, if you want the interactive
   components
+- `utils/*.js` — the helpers those controllers import, in that directory beside
+  them
 
 The stylesheet is support's alone, but the controllers are not: serve
 `vendor/sylament/notifications/assets/dist/controllers/*.js`,
@@ -243,9 +245,10 @@ The stylesheet is support's alone, but the controllers are not: serve
 packages and want toasts, action event dispatch, the checkbox-list and
 searchable-select controls, repeater item collapse and drag reorder, file
 uploads, tabs and wizards, or table record selection. Where a package's `dist/`
-also holds a `utils/` directory — `forms`, `schemas` and `tables` do — serve it
-alongside its controllers and keep the relative layout: those controllers ship
-unbundled and import their helpers as `../utils/<name>.js`.
+also holds a `utils/` directory — `support`, `forms`, `schemas` and `tables` all
+do — serve it alongside that package's controllers and keep the relative layout:
+those controllers ship unbundled and import their helpers as
+`../utils/<name>.js`.
 
 Copy them into your public directory, or point your own build at them.
 </details>

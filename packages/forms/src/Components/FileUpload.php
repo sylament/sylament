@@ -5,19 +5,17 @@ declare(strict_types=1);
 namespace Sylament\Forms\Components;
 
 use Closure;
+use InvalidArgumentException;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Support\Components\Concerns\HasAlignment;
 
+use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 use function Sylament\Support\wrap;
 
 /**
  * The shipped file field: {@see BaseFileUpload}'s lifecycle behind a FilePond control, whose whole
  * configuration travels to the browser as Stimulus values on the partial's root.
- *
- * The crop, resize, transform, exif and image-editor families are not shipped — a missing method
- * fails as loudly as a throwing one and leaves nothing half-working — so `avatar()` is reduced to
- * the calls that still mean something without them.
  */
 class FileUpload extends BaseFileUpload
 {
@@ -51,6 +49,41 @@ class FileUpload extends BaseFileUpload
      */
     protected array|Closure $mimeTypeMap = [];
 
+    protected bool|Closure $shouldAutomaticallyCropImagesToAspectRatio = false;
+
+    protected string|Closure|null $automaticallyResizeImagesMode = null;
+
+    protected string|Closure|null $automaticallyResizeImagesHeight = null;
+
+    protected string|Closure|null $automaticallyResizeImagesWidth = null;
+
+    protected bool|Closure $shouldAutomaticallyUpscaleImagesWhenResizing = true;
+
+    protected bool|Closure $shouldOrientImagesFromExif = true;
+
+    protected bool|Closure $hasImageEditor = false;
+
+    protected bool|Closure $hasCircleCropper = false;
+
+    protected bool|Closure $canEditSvgs = true;
+
+    protected bool|Closure $isSvgEditingConfirmed = false;
+
+    protected bool|Closure $shouldAutomaticallyOpenImageEditorForAspectRatio = false;
+
+    protected int|Closure|null $imageEditorViewportWidth = null;
+
+    protected int|Closure|null $imageEditorViewportHeight = null;
+
+    protected int $imageEditorMode = 1;
+
+    protected string|Closure|null $imageEditorEmptyFillColor = null;
+
+    /**
+     * @var array<string|null>|Closure
+     */
+    protected array|Closure $imageEditorAspectRatioOptions = [];
+
     public function appendFiles(bool|Closure $condition = true): static
     {
         $this->shouldAppendFiles = $condition;
@@ -58,22 +91,57 @@ class FileUpload extends BaseFileUpload
         return $this;
     }
 
-    /**
-     * Filament's preset makes twelve calls, seven of them into the deferred crop and resize
-     * plugins. What survives is the circle panel, the four bottom-centred controls and `image()`
-     * — deliberately not `imageAspectRatio('1:1')`, which without client-side cropping would
-     * refuse every photo that is not already square.
-     */
+    public function automaticallyCropImagesToAspectRatio(bool|Closure $condition = true): static
+    {
+        $this->shouldAutomaticallyCropImagesToAspectRatio = $condition;
+
+        return $this;
+    }
+
+    public function automaticallyResizeImagesMode(string|Closure|null $mode): static
+    {
+        $this->automaticallyResizeImagesMode = $mode;
+
+        return $this;
+    }
+
+    public function automaticallyResizeImagesToHeight(string|Closure|null $height): static
+    {
+        $this->automaticallyResizeImagesHeight = $height;
+
+        return $this;
+    }
+
+    public function automaticallyResizeImagesToWidth(string|Closure|null $width): static
+    {
+        $this->automaticallyResizeImagesWidth = $width;
+
+        return $this;
+    }
+
+    public function automaticallyUpscaleImagesWhenResizing(bool|Closure $condition = true): static
+    {
+        $this->shouldAutomaticallyUpscaleImagesWhenResizing = $condition;
+
+        return $this;
+    }
+
     public function avatar(): static
     {
         $this->isAvatar = true;
 
         $this->image();
-        $this->panelLayout('compact circle');
+        $this->imageAspectRatio('1:1');
+        $this->automaticallyResizeImagesMode('cover');
+        $this->automaticallyUpscaleImagesWhenResizing(false);
+        $this->automaticallyCropImagesToAspectRatio();
+        $this->automaticallyResizeImagesToHeight('500');
+        $this->automaticallyResizeImagesToWidth('500');
         $this->loadingIndicatorPosition('center bottom');
-        $this->removeUploadedFileButtonPosition('center bottom');
-        $this->uploadButtonPosition('center bottom');
-        $this->uploadProgressIndicatorPosition('center bottom');
+        $this->panelLayout('compact circle');
+        $this->removeUploadedFileButtonPosition(fn (FileUpload $component): string => $component->hasImageEditor() ? 'left bottom' : 'center bottom');
+        $this->uploadButtonPosition(fn (FileUpload $component): string => $component->hasImageEditor() ? 'right bottom' : 'center bottom');
+        $this->uploadProgressIndicatorPosition(fn (FileUpload $component): string => $component->hasImageEditor() ? 'right bottom' : 'center bottom');
 
         return $this;
     }
@@ -88,6 +156,13 @@ class FileUpload extends BaseFileUpload
     public function imagePreviewHeight(string|Closure|null $height): static
     {
         $this->imagePreviewHeight = $height;
+
+        return $this;
+    }
+
+    public function orientImagesFromExif(bool|Closure $condition = true): static
+    {
+        $this->shouldOrientImagesFromExif = $condition;
 
         return $this;
     }
@@ -151,6 +226,127 @@ class FileUpload extends BaseFileUpload
         return $this;
     }
 
+    public function imageEditor(bool|Closure $condition = true): static
+    {
+        $this->hasImageEditor = $condition;
+
+        return $this;
+    }
+
+    public function circleCropper(bool|Closure $condition = true): static
+    {
+        $this->hasCircleCropper = $condition;
+
+        return $this;
+    }
+
+    public function editableSvgs(bool|Closure $condition = true): static
+    {
+        $this->canEditSvgs = $condition;
+
+        return $this;
+    }
+
+    public function confirmSvgEditing(bool|Closure $condition = true): static
+    {
+        $this->isSvgEditingConfirmed = $condition;
+
+        return $this;
+    }
+
+    public function automaticallyOpenImageEditorForAspectRatio(bool|Closure $condition = true): static
+    {
+        $this->shouldAutomaticallyOpenImageEditorForAspectRatio = $condition;
+
+        return $this;
+    }
+
+    public function imageEditorViewportWidth(int|Closure|null $width): static
+    {
+        $this->imageEditorViewportWidth = $width;
+
+        return $this;
+    }
+
+    public function imageEditorViewportHeight(int|Closure|null $height): static
+    {
+        $this->imageEditorViewportHeight = $height;
+
+        return $this;
+    }
+
+    public function imageEditorMode(int $mode): static
+    {
+        if (! in_array($mode, [1, 2, 3], true)) {
+            throw new InvalidArgumentException("The file upload editor mode must be either 1, 2 or 3. [{$mode}] given, which is unsupported. See https://github.com/fengyuanchen/cropperjs/blob/v1/README.md#viewmode for more information on the available modes. Mode 0 is not supported, as it does not allow configuration via manual inputs.");
+        }
+
+        $this->imageEditorMode = $mode;
+
+        return $this;
+    }
+
+    public function imageEditorEmptyFillColor(string|Closure|null $color): static
+    {
+        $this->imageEditorEmptyFillColor = $color;
+
+        return $this;
+    }
+
+    /**
+     * @param array<string|null>|Closure $ratios
+     */
+    public function imageEditorAspectRatioOptions(array|Closure $ratios): static
+    {
+        $this->imageEditorAspectRatioOptions = $ratios;
+
+        return $this;
+    }
+
+    public function shouldAutomaticallyCropImagesToAspectRatio(): bool
+    {
+        return (bool) $this->evaluate($this->shouldAutomaticallyCropImagesToAspectRatio);
+    }
+
+    public function getAutomaticallyCropImagesAspectRatio(): ?string
+    {
+        if (! $this->shouldAutomaticallyCropImagesToAspectRatio()) {
+            return null;
+        }
+
+        $imageAspectRatio = $this->getImageAspectRatio();
+
+        if (blank($imageAspectRatio)) {
+            return null;
+        }
+
+        if (is_array($imageAspectRatio)) {
+            $imageAspectRatio = $imageAspectRatio[0] ?? null;
+        }
+
+        return $this->normalizeAspectRatio($imageAspectRatio);
+    }
+
+    public function getAutomaticallyResizeImagesMode(): ?string
+    {
+        return $this->evaluate($this->automaticallyResizeImagesMode);
+    }
+
+    public function getAutomaticallyResizeImagesHeight(): ?string
+    {
+        return $this->evaluate($this->automaticallyResizeImagesHeight);
+    }
+
+    public function getAutomaticallyResizeImagesWidth(): ?string
+    {
+        return $this->evaluate($this->automaticallyResizeImagesWidth);
+    }
+
+    public function shouldAutomaticallyUpscaleImagesWhenResizing(): bool
+    {
+        return (bool) $this->evaluate($this->shouldAutomaticallyUpscaleImagesWhenResizing);
+    }
+
     public function getImagePreviewHeight(): ?string
     {
         return $this->evaluate($this->imagePreviewHeight);
@@ -211,12 +407,143 @@ class FileUpload extends BaseFileUpload
         return (bool) $this->evaluate($this->shouldAppendFiles);
     }
 
+    public function shouldOrientImagesFromExif(): bool
+    {
+        return (bool) $this->evaluate($this->shouldOrientImagesFromExif);
+    }
+
     /**
      * @return array<string, string>
      */
     public function getMimeTypeMap(): array
     {
         return $this->evaluate($this->mimeTypeMap);
+    }
+
+    public function getImageEditorViewportHeight(): ?int
+    {
+        if (($targetHeight = (int) $this->getAutomaticallyResizeImagesHeight()) > 1) {
+            return (int) round($targetHeight * $this->getParentTargetSizes($targetHeight));
+        }
+
+        if (filled($ratio = $this->getAutomaticallyCropImagesAspectRatio())) {
+            $parts = explode(':', $ratio);
+
+            if (count($parts) === 2) {
+                return (int) $parts[1];
+            }
+        }
+
+        return $this->evaluate($this->imageEditorViewportHeight);
+    }
+
+    public function getImageEditorViewportWidth(): ?int
+    {
+        if (($targetWidth = (int) $this->getAutomaticallyResizeImagesWidth()) > 1) {
+            return (int) round($targetWidth * $this->getParentTargetSizes($targetWidth));
+        }
+
+        if (filled($ratio = $this->getAutomaticallyCropImagesAspectRatio())) {
+            $parts = explode(':', $ratio);
+
+            if (count($parts) === 2) {
+                return (int) $parts[0];
+            }
+        }
+
+        return $this->evaluate($this->imageEditorViewportWidth);
+    }
+
+    protected function getParentTargetSizes(int $widthOrHeight): int|float
+    {
+        $targetWidth = (int) $this->getAutomaticallyResizeImagesWidth();
+
+        if ($targetWidth === 0) {
+            return 1;
+        }
+
+        return $widthOrHeight > 1 ? 360 / $targetWidth : 1;
+    }
+
+    public function getImageEditorMode(): int
+    {
+        return $this->imageEditorMode;
+    }
+
+    public function getImageEditorEmptyFillColor(): ?string
+    {
+        return $this->evaluate($this->imageEditorEmptyFillColor);
+    }
+
+    public function hasImageEditor(): bool
+    {
+        if ($this->shouldAutomaticallyOpenImageEditorForAspectRatio()) {
+            return true;
+        }
+
+        return (bool) $this->evaluate($this->hasImageEditor);
+    }
+
+    public function isImageEditorExplicitlyEnabled(): bool
+    {
+        return (bool) $this->evaluate($this->hasImageEditor);
+    }
+
+    public function hasCircleCropper(): bool
+    {
+        return (bool) $this->evaluate($this->hasCircleCropper);
+    }
+
+    public function canEditSvgs(): bool
+    {
+        return (bool) $this->evaluate($this->canEditSvgs);
+    }
+
+    public function isSvgEditingConfirmed(): bool
+    {
+        return (bool) $this->evaluate($this->isSvgEditingConfirmed);
+    }
+
+    public function shouldAutomaticallyOpenImageEditorForAspectRatio(): bool
+    {
+        if (! $this->evaluate($this->shouldAutomaticallyOpenImageEditorForAspectRatio)) {
+            return false;
+        }
+
+        if ($this->isMultiple()) {
+            throw new InvalidArgumentException('The [automaticallyOpenImageEditorForAspectRatio()] method cannot be used when [multiple()] is enabled.');
+        }
+
+        $ratio = $this->getImageAspectRatio();
+
+        if (blank($ratio)) {
+            throw new InvalidArgumentException('The [automaticallyOpenImageEditorForAspectRatio()] method requires [imageAspectRatio()] to be set with a single aspect ratio.');
+        }
+
+        if (is_array($ratio) && count($ratio) > 1) {
+            throw new InvalidArgumentException('The [automaticallyOpenImageEditorForAspectRatio()] method cannot be used when [imageAspectRatio()] has multiple allowed aspect ratios.');
+        }
+
+        return true;
+    }
+
+    public function getAutomaticallyOpenImageEditorForAspectRatio(): ?float
+    {
+        if (! $this->shouldAutomaticallyOpenImageEditorForAspectRatio()) {
+            return null;
+        }
+
+        $ratio = $this->getImageAspectRatio();
+
+        if (is_array($ratio)) {
+            $ratio = $ratio[0] ?? null;
+        }
+
+        if (blank($ratio)) {
+            return null;
+        }
+
+        return $this->calculateAspectRatio($ratio);
     }
 
     /**

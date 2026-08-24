@@ -4,22 +4,31 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Unit\Components;
 
+use InvalidArgumentException;
 use Sylament\Forms\Components\FileUpload;
 
-it('reduces avatar() to what ships: no crop, no resize, and therefore no aspect ratio', function (): void {
-    // Filament's `avatar()` makes twelve calls, seven of them into the deferred crop and resize
-    // plugins — `imageAspectRatio('1:1')` among them, which without client-side cropping would
-    // refuse every non-square photo.
+it("makes Filament's twelve avatar() calls, the three positions branching on the editor", function (): void {
     $avatar = FileUpload::make('avatar')->avatar();
 
     expect($avatar->isAvatar())->toBeTrue()
         ->and($avatar->getAcceptedFileTypes())->toBe(['image/*'])
-        ->and($avatar->getPanelLayout())->toBe('compact circle')
+        ->and($avatar->getImageAspectRatio())->toBe('1:1')
+        ->and($avatar->getAutomaticallyCropImagesAspectRatio())->toBe('1:1')
+        ->and($avatar->getAutomaticallyResizeImagesMode())->toBe('cover')
+        ->and($avatar->shouldAutomaticallyUpscaleImagesWhenResizing())->toBeFalse()
+        ->and($avatar->getAutomaticallyResizeImagesHeight())->toBe('500')
+        ->and($avatar->getAutomaticallyResizeImagesWidth())->toBe('500')
         ->and($avatar->getLoadingIndicatorPosition())->toBe('center bottom')
+        ->and($avatar->getPanelLayout())->toBe('compact circle')
         ->and($avatar->getRemoveUploadedFileButtonPosition())->toBe('center bottom')
         ->and($avatar->getUploadButtonPosition())->toBe('center bottom')
-        ->and($avatar->getUploadProgressIndicatorPosition())->toBe('center bottom')
-        ->and($avatar->getImageAspectRatio())->toBeNull();
+        ->and($avatar->getUploadProgressIndicatorPosition())->toBe('center bottom');
+
+    $editable = FileUpload::make('avatar')->avatar()->imageEditor();
+
+    expect($editable->getRemoveUploadedFileButtonPosition())->toBe('left bottom')
+        ->and($editable->getUploadButtonPosition())->toBe('right bottom')
+        ->and($editable->getUploadProgressIndicatorPosition())->toBe('right bottom');
 });
 
 it('accepts every image type under image()', function (): void {
@@ -66,4 +75,86 @@ it('appends files rather than prepending them when asked', function (): void {
 
 it('carries the image preview height straight through to FilePond', function (): void {
     expect(FileUpload::make('cover')->imagePreviewHeight('250')->getImagePreviewHeight())->toBe('250');
+});
+
+it('rests the crop, resize, exif and editor families at their defaults', function (): void {
+    $upload = FileUpload::make('cover');
+
+    expect($upload->shouldAutomaticallyCropImagesToAspectRatio())->toBeFalse()
+        ->and($upload->getAutomaticallyCropImagesAspectRatio())->toBeNull()
+        ->and($upload->getAutomaticallyResizeImagesMode())->toBeNull()
+        ->and($upload->getAutomaticallyResizeImagesHeight())->toBeNull()
+        ->and($upload->getAutomaticallyResizeImagesWidth())->toBeNull()
+        ->and($upload->shouldAutomaticallyUpscaleImagesWhenResizing())->toBeTrue()
+        ->and($upload->shouldOrientImagesFromExif())->toBeTrue()
+        ->and($upload->hasImageEditor())->toBeFalse()
+        ->and($upload->isImageEditorExplicitlyEnabled())->toBeFalse()
+        ->and($upload->hasCircleCropper())->toBeFalse()
+        ->and($upload->canEditSvgs())->toBeTrue()
+        ->and($upload->isSvgEditingConfirmed())->toBeFalse()
+        ->and($upload->shouldAutomaticallyOpenImageEditorForAspectRatio())->toBeFalse()
+        ->and($upload->getAutomaticallyOpenImageEditorForAspectRatio())->toBeNull()
+        ->and($upload->getImageEditorViewportWidth())->toBeNull()
+        ->and($upload->getImageEditorViewportHeight())->toBeNull()
+        ->and($upload->getImageEditorMode())->toBe(1)
+        ->and($upload->getImageEditorEmptyFillColor())->toBeNull();
+});
+
+it('crops to the first image aspect ratio only once the crop flag is on', function (): void {
+    expect(FileUpload::make('cover')->imageAspectRatio(['16:9', '4:3'])->getAutomaticallyCropImagesAspectRatio())->toBeNull()
+        ->and(FileUpload::make('cover')->imageAspectRatio(['16/9', '4:3'])->automaticallyCropImagesToAspectRatio()->getAutomaticallyCropImagesAspectRatio())->toBe('16:9')
+        ->and(FileUpload::make('cover')->automaticallyCropImagesToAspectRatio()->getAutomaticallyCropImagesAspectRatio())->toBeNull();
+});
+
+it('derives the editor from the auto-open flag but reports the explicit switch separately', function (): void {
+    $auto = FileUpload::make('cover')->imageAspectRatio('16:9')->automaticallyOpenImageEditorForAspectRatio();
+
+    expect($auto->hasImageEditor())->toBeTrue()
+        ->and($auto->isImageEditorExplicitlyEnabled())->toBeFalse()
+        ->and($auto->getAutomaticallyOpenImageEditorForAspectRatio())->toEqualWithDelta(16 / 9, 0.0001);
+});
+
+it('refuses the auto-open editor on a multiple field, without a ratio, or with several', function (): void {
+    expect(fn (): bool => FileUpload::make('cover')->multiple()->imageAspectRatio('1:1')->automaticallyOpenImageEditorForAspectRatio()->hasImageEditor())
+        ->toThrow(InvalidArgumentException::class, 'cannot be used when [multiple()] is enabled');
+    expect(fn (): bool => FileUpload::make('cover')->automaticallyOpenImageEditorForAspectRatio()->hasImageEditor())
+        ->toThrow(InvalidArgumentException::class, 'requires [imageAspectRatio()] to be set with a single aspect ratio');
+    expect(fn (): bool => FileUpload::make('cover')->imageAspectRatio(['1:1', '4:3'])->automaticallyOpenImageEditorForAspectRatio()->hasImageEditor())
+        ->toThrow(InvalidArgumentException::class, 'has multiple allowed aspect ratios');
+});
+
+it('accepts only editor modes 1, 2 and 3', function (): void {
+    expect(FileUpload::make('cover')->imageEditorMode(3)->getImageEditorMode())->toBe(3);
+    expect(fn (): FileUpload => FileUpload::make('cover')->imageEditorMode(0))
+        ->toThrow(InvalidArgumentException::class, 'Mode 0 is not supported');
+});
+
+it('derives the editor viewport from the resize target, then the crop ratio, then the setting', function (): void {
+    $resized = FileUpload::make('cover')->automaticallyResizeImagesToWidth('500')->automaticallyResizeImagesToHeight('500');
+    $cropped = FileUpload::make('cover')->imageAspectRatio('16:9')->automaticallyCropImagesToAspectRatio();
+    $configured = FileUpload::make('cover')->imageEditorViewportWidth(800)->imageEditorViewportHeight(600);
+
+    expect($resized->getImageEditorViewportWidth())->toBe(360)
+        ->and($resized->getImageEditorViewportHeight())->toBe(360)
+        ->and($cropped->getImageEditorViewportWidth())->toBe(16)
+        ->and($cropped->getImageEditorViewportHeight())->toBe(9)
+        ->and($configured->getImageEditorViewportWidth())->toBe(800)
+        ->and($configured->getImageEditorViewportHeight())->toBe(600);
+});
+
+it('carries the editor settings through their closures', function (): void {
+    $upload = FileUpload::make('cover')
+        ->imageEditor(fn (FileUpload $component): bool => $component->getName() === 'cover')
+        ->circleCropper()
+        ->editableSvgs(false)
+        ->confirmSvgEditing()
+        ->orientImagesFromExif(false)
+        ->imageEditorEmptyFillColor('#ffffff');
+
+    expect($upload->hasImageEditor())->toBeTrue()
+        ->and($upload->hasCircleCropper())->toBeTrue()
+        ->and($upload->canEditSvgs())->toBeFalse()
+        ->and($upload->isSvgEditingConfirmed())->toBeTrue()
+        ->and($upload->shouldOrientImagesFromExif())->toBeFalse()
+        ->and($upload->getImageEditorEmptyFillColor())->toBe('#ffffff');
 });

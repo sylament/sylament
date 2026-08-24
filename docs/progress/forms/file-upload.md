@@ -20,10 +20,8 @@ reaches the field through schemas'
 [`uploadSchemaComponentFile()`](../schemas/interacts-with-schemas.md).
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
-Everything the scoped FilePond bundle can serve is done; the crop, resize,
-transform, exif and image-editor families are **blocked** on the image-editor
-decision, and the deprecated aliases are **skipped**, as the port ships no
-deprecated surface.
+Everything the scoped FilePond bundle and the editor serve is done; the
+deprecated aliases are **skipped**, as the port ships no deprecated surface.
 
 Reference — the Filament source this is diffed against:
 
@@ -72,7 +70,7 @@ _Ports_ cell is `—` has no Filament counterpart.
 | [`storeFileNamesIn()` / `getFileNamesStatePath()` / `storeFileName()` / `removeStoredFileName()` / `getStoredFileNames()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#the-filename-map-keeps-filaments-resolved-vs-raw-asymmetry) |
 | [`getStateToDehydrate()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`getStateToDehydrate()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`getDefaultStateCasts()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`getDefaultStateCasts()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [schemas](../schemas/README.md) |
-| [`imageAspectRatio()` / `getImageAspectRatio()` / `calculateAspectRatio()` / `normalizeAspectRatio()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`imageAspectRatio()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#imageaspectratio-ships-as-validation-only) |
+| [`imageAspectRatio()` / `getImageAspectRatio()` / `calculateAspectRatio()` / `normalizeAspectRatio()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`imageAspectRatio()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [semantics](#imageaspectratio-validates-and-automaticallycropimagestoaspectratio-crops) |
 | [The six `*Using` setters](../../../packages/forms/src/Components/BaseFileUpload.php) — `deleteUploadedFileUsing()`, `getUploadedFileUsing()`, `getOpenableFileUrlUsing()`, `getDownloadableFileUrlUsing()`, `reorderUploadedFilesUsing()`, `saveUploadedFileUsing()` | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | — |
 | [`getUploadedFileNameForStorageUsing()` / `getUploadedFileNameForStorage()`](../../../packages/forms/src/Components/BaseFileUpload.php) | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | done | — | [diverges](#a-generator-that-names-nothing-throws) |
 | [`getMaxUploadSize(): int`](../../../packages/forms/src/Components/BaseFileUpload.php) | — | done | — | [diverges](#the-client-side-size-ceiling-is-the-minimum-of-the-fields-and-phps) |
@@ -88,7 +86,7 @@ _Ports_ cell is `—` has no Filament counterpart.
 | --- | --- | --- | --- | --- |
 | [The partial](../../../packages/forms/templates/partials/FileUpload/index.html.twig) and its 32 Stimulus values | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [semantics](#the-dom-contract-is-the-controllers-only-input) |
 | [`getExtraTemplateData()`](../../../packages/forms/src/Components/FileUpload.php) | the `toEmbeddedHtml()` preamble | done | — | [diverges](#the-three-maps-are-object-cast-so-an-empty-one-serialises-as-) |
-| [`avatar()` / `isAvatar()`](../../../packages/forms/src/Components/FileUpload.php) | [`avatar()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [diverges](#avatar-ships-reduced-and-sets-no-aspect-ratio) |
+| [`avatar()` / `isAvatar()`](../../../packages/forms/src/Components/FileUpload.php) | [`avatar()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`image()`](../../../packages/forms/src/Components/FileUpload.php) | [`image()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`appendFiles()` / `shouldAppendFiles()`](../../../packages/forms/src/Components/FileUpload.php) | [`appendFiles()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`imagePreviewHeight()` / `getImagePreviewHeight()`](../../../packages/forms/src/Components/FileUpload.php) | [`imagePreviewHeight()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
@@ -97,9 +95,9 @@ _Ports_ cell is `—` has no Filament counterpart.
 | [`panelLayout()` / `getPanelLayout()`](../../../packages/forms/src/Components/FileUpload.php) | [`panelLayout()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`loadingIndicatorPosition()` / `removeUploadedFileButtonPosition()` / `uploadButtonPosition()` / `uploadProgressIndicatorPosition()` and their getters](../../../packages/forms/src/Components/FileUpload.php) | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`mimeTypeMap()` / `getMimeTypeMap()`](../../../packages/forms/src/Components/FileUpload.php) | [`mimeTypeMap()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [diverges](#the-bundle-drops-fileponds-mime-database) |
-| `automaticallyCropImagesToAspectRatio()` and the whole resize family (`automaticallyResizeImagesMode()`, `automaticallyResizeImagesToHeight()`, `automaticallyResizeImagesToWidth()`, `automaticallyUpscaleImagesWhenResizing()`) | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | blocked | the image-editor decision | [diverges](#the-crop-resize-transform-and-editor-families-are-not-shipped-at-all) |
-| `orientImagesFromExif()` / `shouldOrientImagesFromExif()` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | blocked | the exif plugin | [diverges](#the-crop-resize-transform-and-editor-families-are-not-shipped-at-all) |
-| The image-editor family — `imageEditor()`, `circleCropper()`, `editableSvgs()`, `confirmSvgEditing()`, `automaticallyOpenImageEditorForAspectRatio()`, `imageEditorViewportWidth()` / `Height()`, `imageEditorMode()`, `imageEditorEmptyFillColor()`, `imageEditorAspectRatioOptions()`, `getImageEditorActions()` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | blocked | the image-editor decision | [diverges](#the-crop-resize-transform-and-editor-families-are-not-shipped-at-all) |
+| `automaticallyCropImagesToAspectRatio()` and the whole resize family (`automaticallyResizeImagesMode()`, `automaticallyResizeImagesToHeight()`, `automaticallyResizeImagesToWidth()`, `automaticallyUpscaleImagesWhenResizing()`) | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
+| `orientImagesFromExif()` / `shouldOrientImagesFromExif()` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
+| The image-editor family — `imageEditor()`, `circleCropper()`, `editableSvgs()`, `confirmSvgEditing()`, `automaticallyOpenImageEditorForAspectRatio()`, `imageEditorViewportWidth()` / `Height()`, `imageEditorMode()`, `imageEditorEmptyFillColor()`, `imageEditorAspectRatioOptions()`, `getImageEditorActions()` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | `idleLabel()` / `imageCropAspectRatio()` / `imageResizeMode()` / `imageResizeTargetHeight()` / `imageResizeTargetWidth()` / `imageResizeUpscale()` / `orientImageFromExif()` / `imageEditorAspectRatios()` and their deprecated getters | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | skipped | — | the port ships no deprecated surface |
 | `$publishedViewOverrideCheckPath` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | skipped | — | there is no published-view mechanism to probe for |
 
@@ -110,7 +108,8 @@ two), the aspect-ratio constraints, the three record arms of
 `getOriginalFilePaths()`, the disk fallback, both filename arms, the nullable
 visibility, the state cast, the PHP ceiling, and the hydration filter;
 [`Unit/Components/FileUploadTest`](../../../packages/forms/tests/Unit/Components/FileUploadTest.php)
-— the reduced `avatar()` and the FilePond-facing getters;
+— Filament's twelve-call `avatar()`, the editor family's defaults,
+derivations and throws, and the FilePond-facing getters;
 [`Integration/Components/FileUploadTest`](../../../packages/forms/tests/Integration/Components/FileUploadTest.php)
 — the DOM contract, both `{}` maps, the single extra-attribute spread, the
 `data-live-ignore` pond, and the public/absent URL arms;
@@ -179,6 +178,32 @@ exactly as the [select's option map](select.md) does — while the pond subtree
 never does, because FilePond owns its DOM after `create()`. A `disabled` flip
 therefore reaches the pond through its value and `setOptions()`, never through
 the `<input>`, whose attributes stop updating the moment FilePond adopts it.
+
+### `imageAspectRatio()` validates and `automaticallyCropImagesToAspectRatio()` crops
+
+Filament splits the ratio in two, and so do we. `imageAspectRatio()` sets the
+value and reaches the browser through **no** Stimulus value of its own — it is a
+server-side `Image` constraint at upload time and nothing else. The ratio
+FilePond crops to is `getAutomaticallyCropImagesAspectRatio()`'s, which reads
+the same value but returns `null` unless `automaticallyCropImagesToAspectRatio()`
+turned the flag on, and takes the first entry when the value is a list. The
+deprecated `imageCropAspectRatio()` did both at once, so a migrating call
+becomes two: `imageAspectRatio($ratio)` **and**
+`automaticallyCropImagesToAspectRatio()`.
+
+### The auto-open tolerance and the validator's rounding
+
+Two rounding regimes meet on the same ratio, and the window between them is
+Filament's as much as ours. The client skips the auto-open editor when the
+picked image is within `0.01` of the target ratio, while the server's `Image`
+constraint compares `round(w / h, 2)` against bounds Symfony also rounds to two
+decimals — so a 1.009 image passes the client and still fails `minRatio: 1.0`.
+The window closes whenever `automaticallyCropImagesToAspectRatio()` is on as
+well, because the transform then crops to the ratio before the bytes are sent.
+
+An aspect-ratio rule also buys a MIME rule: the `Image` constraint carries
+Symfony's `'image/*'` default set, so declaring a ratio enforces "sniffs as an
+image" too — true since the constraint landed, written down here.
 
 ## Divergences
 
@@ -316,30 +341,13 @@ the file first.
 `minSize()` keeps Filament's `"{n}KB"` string, which is FilePond's own unit
 spelling.
 
-### `imageAspectRatio()` ships as validation only
+### `imageEditorEmptyFillColor` takes no array
 
-The setter and the normalisation helpers port verbatim, and the ratios become
-`Image` constraints at upload time. Its **crop** half — Filament wires the same
-value into FilePond's `imageCropAspectRatio` — is deferred with the image
-editor.
-
-### `avatar()` ships reduced and sets no aspect ratio
-
-Filament's preset makes twelve calls, seven of them into the deferred crop and
-resize plugins. Ours sets `image()`, `panelLayout('compact circle')`, the four
-`'center bottom'` positions and the avatar root class — and deliberately **not**
-`imageAspectRatio('1:1')`, because without client-side cropping that rule would
-refuse every photo that is not already square. Filament's three position
-closures collapse to literals for the same reason: they branch on
-`hasImageEditor()`, which is always false here.
-
-### The crop, resize, transform and editor families are not shipped at all
-
-Not stubs, not throwing methods: the setters do not exist. A missing method
-fails as loudly as a throwing one and leaves nothing half-working, and a stub
-that silently does nothing is the worst of the three. The rows above are
-**blocked** on the image-editor decision rather than skipped, because the
-surface is wanted — it is the plugin bundle that is not.
+Filament's property is `string | array | Closure | null` while the setter that
+writes it takes `string | Closure | null` and the getter that reads it returns
+`?string` — the array arm is reachable by no public member and would reach the
+browser as a JSON array the controller has no branch for. Ours is
+`string|Closure|null` throughout, so the type says what the surface does.
 
 ### The bundle drops FilePond's mime database
 

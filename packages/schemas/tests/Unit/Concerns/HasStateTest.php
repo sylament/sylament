@@ -11,6 +11,7 @@ use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\State\Casts\DateTimeStateCast;
 use Sylament\Schemas\State\Casts\EnumStateCast;
+use Sylament\Schemas\Tests\Fixtures\Components\MutatingField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Components\StateGroup;
 use Sylament\Schemas\Tests\Fixtures\Concerns\MultiSchemaHostFixture;
@@ -478,4 +479,40 @@ it('fills a numeric-string path from a record without a type error', function ()
     $schema->fill(new Post());
 
     expect($schema->getRawState())->toBe(['0' => null]);
+});
+
+it('mutates only the paths the map holds, through the owning component, children first', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        MutatingField::make('title')->mutateStateForValidationUsing(fn (mixed $state): string => mb_strtoupper((string) $state)),
+        Section::make('Group')->components([
+            MutatingField::make('inner')->trim(),
+        ]),
+        MutatingField::make('untouched'),
+    ]);
+    $schema->getComponents();
+
+    $state = $schema->mutateStateForValidation(['data.title' => 'abc', 'data.inner' => '  x ', 'data.untouched' => ' y ']);
+
+    expect($state)->toBe(['data.title' => 'ABC', 'data.inner' => 'x', 'data.untouched' => ' y ']);
+});
+
+it('leaves a path the map does not hold alone', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        MutatingField::make('title')->trim(),
+    ]);
+    $schema->getComponents();
+
+    expect($schema->mutateStateForValidation(['data.other' => ' y ']))->toBe(['data.other' => ' y ']);
+});
+
+it('does not mutate a component that is neither dehydrated nor validated', function (): void {
+    $host = new StateHostFixture();
+    $schema = Schema::make($host)->statePath('data')->components([
+        MutatingField::make('title')->trim()->dehydrated(false)->validatedWhenNotDehydrated(false),
+    ]);
+    $schema->getComponents();
+
+    expect($schema->mutateStateForValidation(['data.title' => ' x ']))->toBe(['data.title' => ' x ']);
 });

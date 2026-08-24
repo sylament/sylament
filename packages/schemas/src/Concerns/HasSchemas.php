@@ -379,9 +379,18 @@ trait HasSchemas
             ?? throw new LogicException('No validator injected into ' . static::class . ' — the container calls setSchemaStateValidator(); a host built with `new` must inject one itself.');
 
         $errors = [];
+        $constraintsByPath = $schema->getValidationConstraints();
 
-        foreach ($schema->getValidationConstraints() as $path => $constraints) {
-            $value = $schema->getPropertyAccessor()->get($this, $path);
+        $state = [];
+
+        foreach (array_keys($constraintsByPath) as $path) {
+            $state[$path] = $schema->getPropertyAccessor()->get($this, $path);
+        }
+
+        $state = $schema->mutateStateForValidation($state);
+
+        foreach ($constraintsByPath as $path => $constraints) {
+            $value = $state[$path];
             $violations = $validator->validate($value, PresenceGate::apply($value, $constraints));
 
             foreach ($violations as $violation) {

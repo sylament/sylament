@@ -373,3 +373,44 @@ it('announces a client-side state reset naming the schema', function (): void {
     expect($event)->not->toBeNull()
         ->and($event['payload'])->toBe(['schemaKey' => 'schema']);
 });
+
+it('validates the mutated value, so a mutation that blanks a value fails the required constraint', function (): void {
+    $host = $this->createLiveComponent('ValidationHost')->component();
+    $host->getSchema()->getComponentByStatePath('data.title')?->mutateStateForValidationUsing(fn (): string => '');
+    $host->data = ['title' => 'filled'];
+
+    expect(fn () => $host->validateSchema($host->getSchema()))->toThrow(ValidationException::class)
+        ->and($host->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.']);
+});
+
+it('gates the mutated value, so a mutation that trims a value to nothing strips the non-implicit constraints', function (): void {
+    $host = $this->createLiveComponent('ValidationHost')->component();
+    $host->getSchema()->getComponentByStatePath('data.slug')?->fixtureConstraints([new Length(min: 3)])
+        ->mutateStateForValidationUsing(fn (mixed $state): string => mb_trim((string) $state));
+    $host->data = ['title' => 'Hello', 'slug' => '  '];
+
+    $host->validateSchema($host->getSchema());
+
+    expect($host->getErrorsForSchemaStatePath('data.slug'))->toBe([]);
+});
+
+it('leaves the host bag untouched when a value is mutated for validation', function (): void {
+    $host = $this->createLiveComponent('ValidationHost')->component();
+    $host->getSchema()->getComponentByStatePath('data.title')?->mutateStateForValidationUsing(fn (mixed $state): string => mb_trim((string) $state));
+    $host->data = ['title' => '  Hello  '];
+
+    $host->validateSchema($host->getSchema());
+
+    expect($host->data['title'])->toBe('  Hello  ');
+});
+
+it('mutates on the sticky pass too', function (): void {
+    $component = $this->createLiveComponent('ValidationHost', ['validatedSchemas' => ['schema']]);
+    $host = $component->component();
+    $host->getSchema()->getComponentByStatePath('data.title')?->mutateStateForValidationUsing(fn (): string => '');
+    $host->data = ['title' => 'filled'];
+
+    $host->revalidateValidatedSchemas();
+
+    expect($host->getErrorsForSchemaStatePath('data.title'))->toBe(['This value should not be blank.']);
+});

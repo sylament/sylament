@@ -271,6 +271,43 @@ trait HasState
     }
 
     /**
+     * The values the runner is about to validate, keyed by absolute state path,
+     * after every component that mutates state for validation has had its say —
+     * child schemas first, then the component, so an item's field mutates before
+     * the repeater holding it. A path the map does not hold is not validated and
+     * so not mutated; a component with no relative state path never mutates.
+     *
+     * @param  array<string, mixed> $state
+     * @return array<string, mixed>
+     */
+    public function mutateStateForValidation(array $state): array
+    {
+        foreach ($this->getComponents(withActions: false, withHidden: true) as $component) {
+            if ($component->isNeitherDehydratedNorValidated()) {
+                continue;
+            }
+
+            foreach ($component->getChildSchemas() as $childSchema) {
+                $state = $childSchema->mutateStateForValidation($state);
+            }
+
+            $statePath = $component->getStatePath();
+
+            if (! filled($component->getStatePath(isAbsolute: false)) || $statePath === null) {
+                continue;
+            }
+
+            if (! array_key_exists($statePath, $state) || ! $component->mutatesStateForValidation()) {
+                continue;
+            }
+
+            $state[$statePath] = $component->mutateStateForValidation($state[$statePath]);
+        }
+
+        return $state;
+    }
+
+    /**
      * @param array<string, mixed> $state
      */
     public function callBeforeStateDehydrated(array &$state = []): void

@@ -347,7 +347,11 @@ then fenced:
   **one** component are legitimately in flight at once. Action order alone would
   usually match them correctly; keying makes it true by construction, so a mixed
   outcome (one file accepted, one refused) cannot paint the refusal on the wrong
-  item.
+  item. Within one key the queue is still FIFO, in action order — the browser
+  helper
+  ([`utils/schema_component_method.ts`](../../../packages/schemas/assets/src/utils/schema_component_method.ts))
+  keys it `(componentKey, method, fileKey)`, so a `callSchemaComponentMethod()`
+  call, which passes no file key, lands in exactly the queue it used before.
 - **A `_batch` request hands the same `FileBag` to every action in it.** Written
   down rather than prevented, because it is inherent to UX Live's batching:
   `[upload(A), upload(B)]` in one batch sees the same files, and a batch mixing

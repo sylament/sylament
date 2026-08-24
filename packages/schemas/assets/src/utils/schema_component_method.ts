@@ -2,6 +2,7 @@ import type { Component } from "@symfony/ux-live-component";
 
 const RESULT_EVENT = "sylament:schema-component-method-result";
 const ACTION = "callSchemaComponentMethod";
+const UPLOAD_ACTION = "uploadSchemaComponentFile";
 
 type Pending = {
   resolve: (result: unknown) => void;
@@ -11,10 +12,11 @@ type Pending = {
 type ResultDetail = {
   componentKey?: unknown;
   method?: unknown;
+  fileKey?: unknown;
   result?: unknown;
 };
 
-/** Pending calls per component, keyed `${componentKey}\0${method}`, resolved FIFO. */
+/** Pending calls per component, keyed `${componentKey}\0${method}\0${fileKey}`, resolved FIFO. */
 const queues = new WeakMap<Component, Map<string, Pending[]>>();
 
 /**
@@ -33,7 +35,63 @@ export function callSchemaComponentMethod(
   method: string,
   args: Record<string, unknown> = {},
 ): Promise<unknown> {
-  const queue = queueFor(component, `${componentKey}\0${method}`);
+  return awaitResult(
+    component,
+    queueKey(componentKey, method, null),
+    () => component.action(ACTION, { componentKey, method, arguments: args }),
+    `${ACTION}(${componentKey}, ${method})`,
+  );
+}
+
+/**
+ * Upload one file to the schema component `componentKey` names, through the host's
+ * `uploadSchemaComponentFile` live action, and resolve with the result that component's
+ * `acceptUploadedFile()` answered.
+ *
+ * The file rides the live request as a multipart part named `sylament_upload_<fileKey>`: UX Live
+ * reads it off a real `<input type="file">` handed to `component.files()`, and empties that
+ * input's list after the response — a plain object would satisfy the same duck type but keep its
+ * files forever, re-uploading the same bytes on every later request, so the input is a real
+ * element even though it is never attached to the document.
+ *
+ * The file key is what tells concurrent uploads to one component apart: it keys the pending queue
+ * here and rides back in the result payload, so a mixed outcome cannot resolve against the wrong
+ * file. Within one key the queue is still FIFO, in action order.
+ */
+export function uploadSchemaComponentFile(
+  component: Component,
+  componentKey: string,
+  fileKey: string,
+  file: File,
+): Promise<unknown> {
+  const input = document.createElement("input");
+  input.type = "file";
+
+  const transfer = new DataTransfer();
+  transfer.items.add(file);
+  input.files = transfer.files;
+
+  component.files(`sylament_upload_${fileKey}`, input);
+
+  return awaitResult(
+    component,
+    queueKey(componentKey, UPLOAD_ACTION, fileKey),
+    () => component.action(UPLOAD_ACTION, { componentKey, fileKey }),
+    `${UPLOAD_ACTION}(${componentKey}, ${fileKey})`,
+  );
+}
+
+function queueKey(componentKey: string, method: string, fileKey: string | null): string {
+  return `${componentKey}\0${method}\0${fileKey ?? ""}`;
+}
+
+function awaitResult(
+  component: Component,
+  key: string,
+  start: () => Promise<unknown>,
+  label: string,
+): Promise<unknown> {
+  const queue = queueFor(component, key);
 
   return new Promise<unknown>((resolve, reject) => {
     const entry: Pending = { resolve, reject };
@@ -48,10 +106,10 @@ export function callSchemaComponentMethod(
       }
     };
 
-    component.action(ACTION, { componentKey, method, arguments: args }).then(
-      () => settle(new Error(`${ACTION}(${componentKey}, ${method}) answered without a result.`)),
+    start().then(
+      () => settle(new Error(`${label} answered without a result.`)),
       (reason: unknown) =>
-        settle(reason instanceof Error ? reason : new Error(`${ACTION} request failed.`)),
+        settle(reason instanceof Error ? reason : new Error(`${label} request failed.`)),
     );
   });
 }
@@ -82,7 +140,11 @@ function listen(component: Component, byKey: Map<string, Pending[]>): void {
     }
 
     const detail = (event.detail ?? {}) as ResultDetail;
-    const entry = byKey.get(`${String(detail.componentKey)}\0${String(detail.method)}`)?.shift();
+    const fileKey =
+      detail.fileKey === undefined || detail.fileKey === null ? null : String(detail.fileKey);
+    const entry = byKey
+      .get(queueKey(String(detail.componentKey), String(detail.method), fileKey))
+      ?.shift();
 
     entry?.resolve(detail.result);
   });

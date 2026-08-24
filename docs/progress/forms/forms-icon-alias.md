@@ -35,9 +35,22 @@ the write-up in [Details](#details), deleted once the row is **done**, or
 | [`COMPONENTS_REPEATER_ACTIONS_COLLAPSE`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
 | [`COMPONENTS_REPEATER_ACTIONS_EXPAND`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
 | [`COMPONENTS_REPEATER_ACTIONS_REORDER`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
-| The other 33 constants | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | todo | — | [detail](#the-alias-set-is-eight-constants-of-filaments-41) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_DRAG_CROP`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_DRAG_MOVE`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_FLIP_HORIZONTAL`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_FLIP_VERTICAL`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_DOWN`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_LEFT`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_RIGHT`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_UP`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ROTATE_LEFT`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ROTATE_RIGHT`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_100`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_IN`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_OUT`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| The other 20 constants | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | todo | — | [detail](#the-alias-set-is-twenty-one-constants-of-filaments-41) |
 
-The eight values are pinned by
+The twenty-one values are pinned by
 [`FormsIconAliasTest`](../../../packages/forms/tests/Unit/Twig/FormsIconAliasTest.php),
 which is what makes the de-prefixing below a decision rather than a typo. Three
 of them reach their icon through a template. Two are the boolean pair, which
@@ -51,7 +64,7 @@ box passes it to the wrapper's `prefixIconAlias` prop
 ([the one wrapper a template opens by hand](checkbox-list.md#the-search-box-is-the-one-wrapper-a-template-opens-by-hand)),
 so all three resolve against real markup.
 
-The other five resolve in PHP rather than through a template. The two select
+The other eighteen resolve in PHP rather than through a template. The two select
 constants were the first **forms** aliases to do so, a shape panels reached
 first with
 [`Dashboard::getNavigationIcon()`](../panels/README.md#dashboard), which resolves
@@ -74,20 +87,27 @@ expand and reorder actions are built in PHP. `Repeater` resolves them through an
 and [the drag handle](repeater.md#the-drag-reorder-round-trip-accepts-the-clients-order)
 are where those icons land). The repeater's other four actions — clone, delete,
 move up, move down — still pass bare icon strings, so their aliases are among the
-33 below.
+20 below.
+
+The file-upload editor's thirteen take that route as well: they resolve in PHP
+through [`FileUpload::getImageEditorActions()`](file-upload.md), whose `alias`
+entries the partial hands to `<twig:SylamentSupport:Button>`'s `iconAlias` prop,
+so an override registered under `sylament.icons` replaces the toolbar icon at
+render, pinned by
+[`FileUploadTest`](../../../packages/forms/tests/Integration/Components/FileUploadTest.php).
 
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its rows flip to **done**.
 
-### The alias set is eight constants of Filament's 41
+### The alias set is twenty-one constants of Filament's 41
 
 Filament declares every overridable icon slot in the whole field catalog up front.
 Sylament declares the three belonging to the two option fields, the select's two
-option actions, and the repeater's collapse, expand and reorder actions. Of the
-remaining 33, 29 name icons of fields that are not built here — the builder's
-seven item actions, the file-upload editor's thirteen toolbar buttons, the
+option actions, the repeater's collapse, expand and reorder actions, and the
+file-upload editor's thirteen toolbar buttons. Of the remaining 20, 16 name icons
+of fields that are not built here — the builder's seven item actions, the
 key-value action pair, the rich editor's four panel buttons, and the text input's
 three affix actions. The other four are the exception — the repeater's clone,
 delete, move-up and move-down aliases name actions that already ship, and those
@@ -95,7 +115,7 @@ four actions pass bare icon strings only because nothing has given them their
 alias pass yet.
 
 **Next step:** those four, which wait on a sweep rather than on a field. The other
-29 have none of their own. An alias is only overridable once something reads it,
+16 have none of their own. An alias is only overridable once something reads it,
 so each constant lands in the same change as the field or feature that renders
 its icon — the growth order
 [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases),
@@ -120,7 +140,8 @@ Filament's values are namespaced by package —
 `components.select.actions.edit-option`,
 `components.repeater.actions.collapse`,
 `components.repeater.actions.expand`,
-`components.repeater.actions.reorder`.
+`components.repeater.actions.reorder`, and the thirteen
+`components.file-upload.editor.actions.*` values the editor toolbar reads.
 
 Filament is inconsistent about this — `SupportIconAlias`'s values are bare
 (`modal.close-button`, `section.collapse-button`) while every other package

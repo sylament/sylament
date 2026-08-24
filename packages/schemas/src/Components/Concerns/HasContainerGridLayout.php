@@ -14,7 +14,7 @@ trait HasContainerGridLayout
     protected ?array $gridColumns = null;
 
     /**
-     * @param array<string, int|null>|int|Closure|null $columns
+     * @param array<string, int|Closure|null>|int|Closure|null $columns
      */
     public function grid(array|int|Closure|null $columns = 2): static
     {

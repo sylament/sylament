@@ -85,10 +85,15 @@ as their concerns are audited; nothing here blocks the already-composed set.
 [guarded](has-operation.md#the-injection-arm-is-guarded-so-a-detached-component-still-evaluates)),
 tested end to end by
 [`ComponentTest`](../../../packages/schemas/tests/Unit/Components/ComponentTest.php)
-and the two concerns' own suites. Left: `parentRepeaterItemIndex` only, gated on
-repeaters. Filament's `model` key is deliberately absent, not pending — see
+and the two concerns' own suites. Left: `parentRepeaterItemIndex` only, and it is
+no longer gated on a trait —
+[`CanBeRepeated`](#canberepeated-discriminates-on-haskeyeditems-not-on-a-forms-type)
+landed with the repeater chrome and answers `getParentRepeaterItemIndex()`
+already; what is missing is the arm that injects that number into a closure under
+that name. Filament's `model` key is deliberately absent, not pending — see
 [the dropped parameter](belongs-to-record.md#the-model-closure-parameter-is-not-ported).
-Next step: add the repeater key with `CanBeRepeated`.
+Next step: add the `$parentRepeaterItemIndex` key to the by-name map — deferred
+past the repeater-chrome epic and owned by its sweep.
 
 ### `getExtraTemplateData()` is not overridden
 
@@ -485,6 +490,18 @@ agree — `filled(false)` is `true` in Laravel's helper and in
 [`filled()`](../support/helpers.md)'s sole static assertion is a null check, so
 the `instanceof` is needed anyway to reach the `?Schema` return at level max.
 Saying it directly costs nothing and pins the sentinel's meaning.
+
+The memo is **not** flushed by
+[`Cloneable::getClone()`](../../../packages/schemas/src/Components/Concerns/Cloneable.php),
+which resets the three cached absolute paths and nothing else — Filament's
+`getClone()` flushes it no more than ours does, so a clone inheriting the
+original's answer is parity, not an oversight. It also stays out of reach on the
+shipped clone path, which copies components before anything has queried them —
+[`Repeater`](../forms/repeater.md#every-item-schema-is-keyed-as-well-as-re-pathed)
+cloning its *template* child schema per item is the live case, and a template is
+never rendered, so nothing in it has walked for a parent repeater item and there
+is no memoised answer to carry across. A clone taken after a walk would keep the
+original's.
 
 _See also: the global [rename table](../renames.md) — the Livewire → UX
 LiveComponent, Blade view → Twig template, `Htmlable` → `Twig\Markup`, and

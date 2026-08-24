@@ -231,11 +231,11 @@ against the raw config array.
 the moment it gains a `package.json`; its `tsconfig.json` and
 `scripts/build-js.mjs` are copies of notifications', identical **modulo each
 copy's own `BUNDLED_ENTRIES` table** — empty here, where support's bundles
-`@floating-ui/dom` into the dropdown controller and forms' bundles
-`@floating-ui/dom` and `sortablejs` into the select one, its `license` a list
-and its `inlines` naming the engine module — so every entry ships per-file and
-unbundled with its import
-specifiers verbatim. Keeping the copies in lockstep is manual, and the
+`@floating-ui/dom` into the dropdown controller and `sortablejs` into the
+sortable one, and forms' bundles both of them into the select one, its `license`
+a list and its `inlines` naming the engine module — so every entry ships
+per-file and unbundled with its import specifiers verbatim. Keeping the copies
+in lockstep is manual, and the
 searchable-select epic is what that costs in practice: `licenseBanner()` had to
 change in all five at once, learning to trim each `LICENSE` line before matching
 the copyright (for Tom Select's indented notice at the time), and again for the

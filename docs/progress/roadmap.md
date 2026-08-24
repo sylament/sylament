@@ -223,7 +223,11 @@ sign-off granted; epic 6 owns the shared control in support; its first consumer
 became forms' select engine (bundled into forms' `dist`,
 [pulled-forward 23](#pulled-forward), 2026-08-19), each dist inlining its own
 copy as Filament's bundles do; consumed 2026-08-24 by epic 6, which ships the
-shared control as `sylament--support--sortable`.
+shared control as `sylament--support--sortable`. **The upload-previews arm of
+that sentence is superseded**, and the decision reads as one control for repeater
+items and table rows: `FileUpload` reorders through FilePond's own
+`allowReorder`, Filament's own shape, as epic 7's row says and epic 6's row
+records.
 (2) **File-upload seams** (epic 7): the storage contract and the drop-zone JS.
 **Decided 2026-08-17:** `league/flysystem-bundle` for storage and a **scoped
 FilePond** for the drop zone — core plus file-validate-size, file-validate-type

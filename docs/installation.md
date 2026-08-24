@@ -212,7 +212,8 @@ The stylesheet is support's alone, but the controllers are not: serve
 `vendor/sylament/forms/assets/dist/controllers/*.js` and
 `vendor/sylament/schemas/assets/dist/controllers/*.js` too if you installed those
 packages and want toasts, action event dispatch, the checkbox-list and
-searchable-select controls, or tabs and wizards.
+searchable-select controls, repeater item collapse and drag reorder, or tabs and
+wizards.
 
 Copy them into your public directory, or point your own build at them.
 </details>

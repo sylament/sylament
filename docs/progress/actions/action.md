@@ -167,14 +167,18 @@ static assertion is a null check, so calling it there is an
 `alreadyNarrowedType` error at level max.
 `ActionGroup::getSchemaState()` gains no such branch, matching Filament: a group
 composes no `HasArguments`, so it has no `item` to read.
-The `get`/`set` arms keep Filament's **non-null-safe**
-`getSchemaComponent()` deref (behind an inline PHPStan ignore): a
-schema-less action evaluating a `$get`/`$set` closure fatals, exactly as in
-Filament, pinned by `ActionTest`. So does an action declared *inside* a
-mounted-action schema, for the same reason and equally in Filament — that schema
-is a **root** schema with no parent component, so all three arms of
-`getSchemaComponent()` return `null`; the browser pass that found it is written
-up in
+The `get`/`set` arms keep Filament's **non-null-safe** reach for the schema
+component, routed through
+[`getSchemaComponentOrFail()`](belongs-to-schema-component.md#getschemacomponentorfail-throws-where-filament-fatals),
+whose `?? throw` is what satisfies level max — the unguarded deref was the only
+thing in this codebase that ever needed an inline ignore, and the throw is what
+replaced it: a schema-less action evaluating a `$get`/`$set` closure still stops
+the request, exactly where Filament's does, on a `LogicException` naming the
+class rather than a fatal on null, pinned by `ActionTest`. So does an action
+declared *inside* a mounted-action schema, for the same reason and equally in
+Filament — that schema is a **root** schema with no parent component, so all
+three arms of `getSchemaComponent()` return `null`; the browser pass that found
+it is written up in
 [has-actions.md](has-actions.md#set-and-get-are-unavailable-to-an-action-inside-a-mounted-action-schema).
 Both arms also chain
 `->skipComponentsChildContainersWhileSearching(false)` onto the returned

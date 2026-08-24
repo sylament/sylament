@@ -383,6 +383,20 @@ the two between-item surfaces are an `if`/`elseif`, not a pair: where a visible
 `addBetween` renders, `labelBetweenItems()` does **not**, even when both are
 declared. The label is the fallback for the gap, not a companion to the button.
 
+A third consequence, narrower and vendor's own, lives in the action body: the
+positional arm only appends. `getAddBetweenAction()` walks the raw state
+rebuilding it key by key and, when `generateUuid()` answers `null`, inserts with
+`$items[] = []` — which under integer keys takes the next free index, the one the
+following iteration overwrites with its own item. So a mid-list insert into
+positionally keyed state loses the new item and `fill()`s the neighbour that took
+its key; an insert after the last item is unaffected. The collision is shared
+with Filament's own `getAddBetweenAction()`, line for line, and it is unreachable
+in production — uuid keying is always on outside
+[`Repeater::fake()`](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid),
+the test-only null-uuid mode — so it is recorded here as a vendor-parity edge
+rather than fixed. Hardening it (rebuilding the list positionally, which every
+dehydrate renumbers anyway) is the sweep's to take.
+
 Neither between-item element is a sortable item — no `data-sortable-item` — so
 the drag control skips them and an ordering never contains a divider's key.
 
@@ -436,8 +450,13 @@ components is positional, by Filament's counter: the first column takes the
 first component that consumes one, the second the second, and so on. A
 [`Hidden`](hidden.md) field consumes no column, an invisible component consumes
 one and renders an empty `sy-hidden` cell in its place, and once the columns are
-exhausted every remaining component — `Hidden` included — is dropped. The
-column's `verticalAlignment()` reaches the cell, not the header; its
+exhausted every remaining component — `Hidden` included — is dropped. That drop
+is **silent and order-sensitive**, because the budget guard runs *before* the
+`Hidden` branch, faithful to vendor's guard order: a `Hidden` survives only while
+some column is still unclaimed, so it has to sit ahead of the component that
+fills the last one. The demo's table card is the live example, declaring
+`Hidden::make('id')` first for exactly this reason. The column's
+`verticalAlignment()` reaches the cell, not the header; its
 `alignment()`, `width()` and `wrapHeader()` reach the header, not the cell.
 
 The reorder and actions columns are conditional in their own right: the reorder

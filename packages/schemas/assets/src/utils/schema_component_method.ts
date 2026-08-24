@@ -7,6 +7,8 @@ const UPLOAD_ACTION = "uploadSchemaComponentFile";
 type Pending = {
   resolve: (result: unknown) => void;
   reject: (reason: Error) => void;
+  /** The action this entry is waiting on, so a shared failure names the right one. */
+  label: string;
 };
 
 type ResultDetail = {
@@ -91,10 +93,11 @@ function awaitResult(
   start: () => Promise<unknown>,
   label: string,
 ): Promise<unknown> {
-  const queue = queueFor(component, key);
+  const byKey = queuesFor(component);
+  const queue = queueFor(byKey, key);
 
   return new Promise<unknown>((resolve, reject) => {
-    const entry: Pending = { resolve, reject };
+    const entry: Pending = { resolve, reject, label };
     queue.push(entry);
 
     const settle = (reason: Error): void => {
@@ -104,6 +107,8 @@ function awaitResult(
         queue.splice(index, 1);
         reject(reason);
       }
+
+      dropQueueIfDrained(byKey, key, queue);
     };
 
     start().then(
@@ -114,7 +119,7 @@ function awaitResult(
   });
 }
 
-function queueFor(component: Component, key: string): Pending[] {
+function queuesFor(component: Component): Map<string, Pending[]> {
   let byKey = queues.get(component);
 
   if (byKey === undefined) {
@@ -123,6 +128,10 @@ function queueFor(component: Component, key: string): Pending[] {
     listen(component, byKey);
   }
 
+  return byKey;
+}
+
+function queueFor(byKey: Map<string, Pending[]>, key: string): Pending[] {
   let queue = byKey.get(key);
 
   if (queue === undefined) {
@@ -131,6 +140,16 @@ function queueFor(component: Component, key: string): Pending[] {
   }
 
   return queue;
+}
+
+/**
+ * Every upload mints a fresh file key, so its queue key is used once and never again — left in
+ * place they would accumulate one empty array per uploaded file for the page's lifetime.
+ */
+function dropQueueIfDrained(byKey: Map<string, Pending[]>, key: string, queue: Pending[]): void {
+  if (queue.length === 0 && byKey.get(key) === queue) {
+    byKey.delete(key);
+  }
 }
 
 function listen(component: Component, byKey: Map<string, Pending[]>): void {
@@ -142,20 +161,24 @@ function listen(component: Component, byKey: Map<string, Pending[]>): void {
     const detail = (event.detail ?? {}) as ResultDetail;
     const fileKey =
       detail.fileKey === undefined || detail.fileKey === null ? null : String(detail.fileKey);
-    const entry = byKey
-      .get(queueKey(String(detail.componentKey), String(detail.method), fileKey))
-      ?.shift();
+    const key = queueKey(String(detail.componentKey), String(detail.method), fileKey);
+    const queue = byKey.get(key);
 
-    entry?.resolve(detail.result);
+    if (queue === undefined) {
+      return;
+    }
+
+    queue.shift()?.resolve(detail.result);
+    dropQueueIfDrained(byKey, key, queue);
   });
 
   component.on("response:error", () => {
-    const reason = new Error(`${ACTION} request failed.`);
-
-    for (const queue of byKey.values()) {
+    for (const [key, queue] of byKey) {
       for (const entry of queue.splice(0)) {
-        entry.reject(reason);
+        entry.reject(new Error(`${entry.label} request failed.`));
       }
+
+      byKey.delete(key);
     }
   });
 }

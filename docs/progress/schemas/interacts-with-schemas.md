@@ -372,7 +372,16 @@ then fenced:
   whole props blob in the same body (eight dropped files are eight sequential
   round trips); `fetch()` reports no upload progress, so a client shows an
   indeterminate indicator; and there is no abort — a cancelled upload becomes
-  "remove the file once the request settles". A dedicated signed route would buy
+  "remove the file once the request settles". A fourth cost is UX Live's rather
+  than ours, and it is paid per file: `Component.files()` writes the `<input>`
+  into the controller's `pendingFiles` map and nothing ever deletes the entry, so
+  every upload leaves a detached input behind that `performRequest()` iterates
+  over for the rest of the page's life. That is memory and per-request iteration
+  only, never a re-upload — the controller empties each input's `FileList` on the
+  response, so a later request counts zero files and takes the plain
+  non-multipart path. The helper's own bookkeeping does not add to it: a
+  per-`fileKey` queue is deleted from the map the moment it drains, since a file
+  key is minted once and never seen again. A dedicated signed route would buy
   progress and abort back at the cost of a route, a signer and a second security
   boundary; it is the recorded follow-up if progress turns out to be
   non-negotiable.

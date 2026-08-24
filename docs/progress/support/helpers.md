@@ -4,9 +4,11 @@
 functions (composer `files` autoload, imported with `use function`). It ports
 Filament's own `helpers.php` **and** the Laravel global helpers Filament's file
 leans on but never defines (`blank()`, `filled()`, `Arr::wrap()`) — Sylament has
-no Laravel runtime, so they are reimplemented here. Today the file holds only
-those three Laravel foundations; every function in it is pure, and that is now
-an invariant — see [the divergence below](#generate_icon_html-moved-to-the-twig-extension).
+no Laravel runtime, so they are reimplemented here. Today the file holds those
+three Laravel foundations plus `sanitize_url()`, a `Str` macro Filament declares
+in its service provider rather than in `helpers.php`; every function in it is
+pure, and that is now an invariant — see
+[the divergence below](#generate_icon_html-moved-to-the-twig-extension).
 The rest of Filament's `helpers.php` surface is not built yet.
 
 **Status:** in progress — see the
@@ -16,6 +18,9 @@ Reference — the Filament source this is diffed against:
 
 - [`support/src/helpers.php`](../../../vendor/filament/support/src/helpers.php)
   — the Filament helper set (the sixteen functions tracked below)
+- [`support/src/SupportServiceProvider.php`](../../../vendor/filament/support/src/SupportServiceProvider.php)
+  — `packageBooted()`'s `Str` macros, one of which (`sanitizeUrl`) lands here as
+  a function
 - [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php)
   — Laravel's `blank()` / `filled()`, which Filament's file consumes
 - [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php)
@@ -33,6 +38,7 @@ write-up in [Details](#details), and/or **diverges** → the permanent note in
 | [`blank()`](../../../packages/support/src/helpers.php) | [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php) | done | — | [diverges](#blank-gives-markup-text-semantics-despite-its-countable-count) |
 | [`filled()`](../../../packages/support/src/helpers.php) | [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php) | done | — | — |
 | [`wrap()`](../../../packages/support/src/helpers.php) | [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
+| [`sanitize_url()`](../../../packages/support/src/helpers.php) | [`Str::sanitizeUrl` in `SupportServiceProvider.php`](../../../vendor/filament/support/src/SupportServiceProvider.php) | done | — | [diverges](#sanitize_url-is-a-helper-because-the-macro-target-does-not-exist-here) |
 | `generate_icon_html()` — lives on [`IconExtension`](../../../packages/support/src/Twig/Extension/IconExtension.php) | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | done | — | [diverges](#generate_icon_html-moved-to-the-twig-extension) · [diverges](#decorative-icon-defaults-rely-on-ux-icons-not-on-bundled-icon-sets) |
 | `format_money()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `format_number()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
@@ -52,10 +58,10 @@ write-up in [Details](#details), and/or **diverges** → the permanent note in
 
 ## Details
 
-Specifics for the rows that are not finished. The four `done` rows are covered
+Specifics for the rows that are not finished. The five `done` rows are covered
 by [`tests/Unit/HelpersTest.php`](../../../packages/support/tests/Unit/HelpersTest.php)
 (`blank`/`filled` valueless-vs-meaningful data sets, the Markup text-semantics
-case, and the `wrap` cases) and, for the icon row,
+case, the `wrap` cases, and the `sanitize_url` refusal set) and, for the icon row,
 [`tests/Unit/Twig/Extension/IconExtensionTest.php`](../../../packages/support/tests/Unit/Twig/Extension/IconExtensionTest.php)
 plus [its Integration counterpart](../../../packages/support/tests/Integration/Twig/Extension/IconExtensionTest.php)
 against the real ux-icons renderer; they carry no write-up here.
@@ -179,6 +185,30 @@ on a value an over-defensive `?? null` was the only reason to think nullable.
 A helper call PHPStan has proved constant is a signal to reorder the guard (or
 to delete the defensiveness that made the call look necessary), not to reach for
 a suppression.
+
+### `sanitize_url()` is a helper because the macro target does not exist here
+
+Filament declares it as a `Str::macro` (and a `Stringable::macro` forwarding to
+it) in
+[`SupportServiceProvider::packageBooted()`](../../../vendor/filament/support/src/SupportServiceProvider.php),
+so it is neither a `helpers.php` function nor a class method. Macro-based
+extension is a rejected pattern here
+([why](component.md#macroable-is-not-ported)) and there is no `Str` to extend, so
+the body lands in this file: it is pure, it takes only its arguments, and its
+first consumer — forms' `FileUpload`, describing an uploaded file's public URL —
+imports it with `use function`; tables' `ImageColumn` will be the second, for the
+same reason. The `Stringable` forwarder has no analog and is dropped.
+
+The body is otherwise verbatim, including the three comments Filament carries:
+they state *why* each of the four refusals exists (which obfuscation each one
+catches), which the code cannot, and this is a sink whose callers embed the
+result in an `href`. Two mechanical adjustments: `preg_match()` results are
+compared `=== 1` rather than used as booleans, and `strtolower()` becomes
+`mb_strtolower()` to match the rest of the codebase (schemes matched by the
+regex are ASCII, so the two agree). One behavioural addition: a `null` from
+`preg_replace_callback()` — a PCRE failure — is a **refusal** rather than a
+crash, because a sanitizer that cannot decode its input must not pass it
+through.
 
 ### `wrap()` and the Laravel globals are reimplemented, not forwarded
 

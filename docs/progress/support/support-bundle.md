@@ -140,7 +140,10 @@ divergence either. Of the four `Str` macros, `sanitizeCssColor` came with it, as
 public method on the manager rather than a function in `helpers.php`, both of its
 callers being the manager's own emitters
 ([why](color-manager.md#the-css-colour-sanitizer-is-a-method-on-the-manager-and-drops-rather-than-nulls));
-`sanitizeHtml`, `sanitizeUrl` and `ucwords` remain unported.
+`sanitizeUrl` came the same way, as the pure
+[`sanitize_url()`](helpers.md) helper its first consumer — forms' `FileUpload` —
+imports with `use function`, since it needs no service at all. `sanitizeHtml` and
+`ucwords` remain unported.
 
 ### The ported `grid()` / `gridColumn()` also drop blank breakpoint *keys*
 

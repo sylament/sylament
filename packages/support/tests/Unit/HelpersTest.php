@@ -12,6 +12,7 @@ use Twig\Markup;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
+use function Sylament\Support\sanitize_url;
 use function Sylament\Support\wrap;
 
 it('treats valueless input as blank', function (mixed $value): void {
@@ -71,4 +72,26 @@ it('wraps a value into an array the way Arr::wrap does', function (): void {
         ->and(wrap('a'))->toBe(['a'])
         ->and(wrap(false))->toBe([false])
         ->and(wrap(['x' => 1]))->toBe(['x' => 1]);
+});
+
+it("sanitizes urls the way Filament's Str::sanitizeUrl does", function (?string $url, ?string $expected): void {
+    expect(sanitize_url($url))->toBe($expected);
+})->with([
+    'blank' => [null, null],
+    'empty string' => ['', null],
+    'http' => ['https://example.com/a?b=c', 'https://example.com/a?b=c'],
+    'relative' => ['/uploads/x.png', '/uploads/x.png'],
+    'javascript' => ['javascript:alert(1)', null],
+    'entity-encoded scheme' => ['&#106;avascript:alert(1)', null],
+    'hex-entity-encoded scheme' => ['&#x6a;avascript:alert(1)', null],
+    'percent tab' => ['https://example.com/%09x', null],
+    'raw control' => ["https://example.com/\x01", null],
+    'raw space' => ['https://example.com/a b', null],
+    'uppercase scheme' => ['HTTPS://example.com', 'HTTPS://example.com'],
+    'data' => ['data:text/html,x', null],
+]);
+
+it('honours a custom scheme allow-list', function (): void {
+    expect(sanitize_url('mailto:a@b.c', ['mailto']))->toBe('mailto:a@b.c')
+        ->and(sanitize_url('https://example.com', ['mailto']))->toBeNull();
 });

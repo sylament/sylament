@@ -14,10 +14,8 @@ use function Sylament\Forms\Tests\renderRepeater;
 uses(InteractsWithLiveComponents::class);
 
 /*
- * The three repeater partials through the real Twig stack. Items are seeded on the
- * host bag rather than hydrated, so they stay positionally keyed and the ids the
- * template composes are readable in an assertion; a real mount keys them by uuid,
- * which is why nothing here asserts a literal key.
+ * The three repeater partials through the real Twig stack, over the seeded bag
+ * `renderRepeater()` documents.
  */
 
 it('renders one item block per item, each carrying a stable id', function (): void {

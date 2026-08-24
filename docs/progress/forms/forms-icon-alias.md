@@ -32,13 +32,16 @@ the write-up in [Details](#details), deleted once the row is **done**, or
 | [`COMPONENTS_TOGGLE_BUTTONS_BOOLEAN_TRUE`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
 | [`COMPONENTS_SELECT_ACTIONS_CREATE_OPTION`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
 | [`COMPONENTS_SELECT_ACTIONS_EDIT_OPTION`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
-| The other 36 constants | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | todo | — | [detail](#the-alias-set-is-five-constants-of-filaments-41) |
+| [`COMPONENTS_REPEATER_ACTIONS_COLLAPSE`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_REPEATER_ACTIONS_EXPAND`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| [`COMPONENTS_REPEATER_ACTIONS_REORDER`](../../../packages/forms/src/Twig/FormsIconAlias.php) | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | done | — | [diverges](#the-alias-values-drop-filaments-package-prefix) |
+| The other 33 constants | [`FormsIconAlias`](../../../vendor/filament/forms/src/View/FormsIconAlias.php) | todo | — | [detail](#the-alias-set-is-eight-constants-of-filaments-41) |
 
-The five values are pinned by
+The eight values are pinned by
 [`FormsIconAliasTest`](../../../packages/forms/tests/Unit/Twig/FormsIconAliasTest.php),
-which is what makes the de-prefixing below a decision rather than a typo. Two of
-them now have a render site: `ToggleButtons`' two templates pass the boolean pair
-to the `Icon` tag's `alias` prop, resolving
+which is what makes the de-prefixing below a decision rather than a typo. Three
+of them reach their icon through a template. Two are the boolean pair, which
+`ToggleButtons`' two templates pass to the `Icon` tag's `alias` prop, resolving
 [at render rather than at `boolean()` call time](toggle-buttons.md#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time),
 and an override registered under `sylament.icons` is pinned replacing one of them
 by
@@ -46,10 +49,10 @@ by
 The third has one too, since the input wrapper landed: the checkbox list's search
 box passes it to the wrapper's `prefixIconAlias` prop
 ([the one wrapper a template opens by hand](checkbox-list.md#the-search-box-is-the-one-wrapper-a-template-opens-by-hand)),
-so all three constants now resolve against real markup.
+so all three resolve against real markup.
 
-The two select constants resolve differently — they are the first **forms**
-aliases read in PHP rather than handed to a template, a shape panels reached
+The other five resolve in PHP rather than through a template. The two select
+constants were the first **forms** aliases to do so, a shape panels reached
 first with
 [`Dashboard::getNavigationIcon()`](../panels/README.md#dashboard), which resolves
 `PanelsIconAlias::PAGES_DASHBOARD_NAVIGATION_ITEM` through an injected
@@ -60,25 +63,40 @@ through an `IconManager` taken by a `#[Required]` setter, at the moment it build
 each option action. An override registered for the create-option alias is pinned
 replacing the rendered icon by
 [`SelectCreateOptionTest`](../../../packages/forms/tests/Integration/Components/SelectCreateOptionTest.php),
-which is the second of the five constants to have its override exercised against
-real markup rather than only its value asserted.
+which is the second constant to have its override exercised against real markup
+rather than only its value asserted.
+
+The repeater's three take that same route, for the same reason — its collapse,
+expand and reorder actions are built in PHP. `Repeater` resolves them through an
+`IconManager` taken by the same `#[Required]` setter, in a private
+`resolveActionIcon()` the three factories call as they mint each action
+([the chrome actions](repeater.md#collapse-state-is-the-clients-once-the-controller-connects)
+and [the drag handle](repeater.md#the-drag-reorder-round-trip-accepts-the-clients-order)
+are where those icons land). The repeater's other four actions — clone, delete,
+move up, move down — still pass bare icon strings, so their aliases are among the
+33 below.
 
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its rows flip to **done**.
 
-### The alias set is five constants of Filament's 41
+### The alias set is eight constants of Filament's 41
 
 Filament declares every overridable icon slot in the whole field catalog up front.
-Sylament declares the three belonging to the two option fields, plus the select's
-two option actions. The remaining 36 all name icons of fields that are not built
-here — the builder's seven item actions, the file-upload editor's twelve toolbar
-buttons, the key-value and repeater action pairs, the rich editor's panel buttons,
-and the text input's three affix actions.
+Sylament declares the three belonging to the two option fields, the select's two
+option actions, and the repeater's collapse, expand and reorder actions. Of the
+remaining 33, 29 name icons of fields that are not built here — the builder's
+seven item actions, the file-upload editor's thirteen toolbar buttons, the
+key-value action pair, the rich editor's four panel buttons, and the text input's
+three affix actions. The other four are the exception — the repeater's clone,
+delete, move-up and move-down aliases name actions that already ship, and those
+four actions pass bare icon strings only because nothing has given them their
+alias pass yet.
 
-**Next step:** none on its own. An alias is only overridable once something reads
-it, so each constant lands in the same change as the field or feature that renders
+**Next step:** those four, which wait on a sweep rather than on a field. The other
+29 have none of their own. An alias is only overridable once something reads it,
+so each constant lands in the same change as the field or feature that renders
 its icon — the growth order
 [`SupportIconAlias`](../support/support-icon-alias.md#pagination-rtl-aliases),
 [`TablesIconAlias`](../tables/tables-bundle.md#the-alias-set-is-seven-constants-of-filaments-23)
@@ -99,7 +117,10 @@ Filament's values are namespaced by package —
 `components.toggle-buttons.boolean.true`,
 `components.toggle-buttons.boolean.false`,
 `components.select.actions.create-option`,
-`components.select.actions.edit-option`.
+`components.select.actions.edit-option`,
+`components.repeater.actions.collapse`,
+`components.repeater.actions.expand`,
+`components.repeater.actions.reorder`.
 
 Filament is inconsistent about this — `SupportIconAlias`'s values are bare
 (`modal.close-button`, `section.collapse-button`) while every other package

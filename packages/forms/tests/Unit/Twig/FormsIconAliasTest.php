@@ -14,3 +14,9 @@ it('pins the alias literals the select resolves its option-action icons through'
     expect(FormsIconAlias::COMPONENTS_SELECT_ACTIONS_CREATE_OPTION)->toBe('components.select.actions.create-option')
         ->and(FormsIconAlias::COMPONENTS_SELECT_ACTIONS_EDIT_OPTION)->toBe('components.select.actions.edit-option');
 });
+
+it('pins the alias literals the repeater resolves its chrome-action icons through', function (): void {
+    expect(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_COLLAPSE)->toBe('components.repeater.actions.collapse')
+        ->and(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_EXPAND)->toBe('components.repeater.actions.expand')
+        ->and(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_REORDER)->toBe('components.repeater.actions.reorder');
+});

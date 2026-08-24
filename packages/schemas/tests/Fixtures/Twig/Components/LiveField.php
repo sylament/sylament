@@ -31,6 +31,16 @@ class LiveField extends Component
         return array_fill(0, $times, $value);
     }
 
+    /**
+     * Raw bytes that are not valid UTF-8 — the shape `json_encode()` genuinely refuses,
+     * unlike a closure or a property-less object, which both encode to `{}`.
+     */
+    #[ExposedLiveComponentMethod]
+    public function unencodableForJs(): string
+    {
+        return "\xB1\x31";
+    }
+
     public function notExposed(): string
     {
         return 'not exposed';

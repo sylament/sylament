@@ -44,6 +44,7 @@ _Detail_ carries a **detail** link to the write-up in [Details](#details)
 | [`getSchemaComponent(string $key, bool $withHidden = false): Component\|Action\|ActionGroup\|null`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Contracts\HasSchemas::getSchemaComponent()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | done | — | [diverges](#getschemacomponent-drops-the-child-container-skip-list) |
 | [`dispatchBrowserEvent(string $eventName, array $payload = []): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | — | done | — | [diverges](#dispatchbrowserevent-is-a-sylament-only-contract-member) |
 | [`callSchemaComponentMethod(string $componentKey, string $method, array $arguments = []): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [diverges](#callschemacomponentmethod-answers-through-a-browser-event-with-no-partial-render) |
+| [`uploadSchemaComponentFile(string $componentKey, string $fileKey, Request $request): void`](../../../packages/schemas/src/Contracts/InteractsWithSchemas.php) | [`Concerns\InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) (`use WithFileUploads`) | done | — | [diverges](#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) |
 | `makeFilamentTranslatableContentDriver()` | [`Contracts\HasSchemas::makeFilamentTranslatableContentDriver()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | todo | — | [detail](#the-translatable-content-driver-method-is-not-declared) |
 | `currentlyValidatingSchema(?Schema)` | [`Contracts\HasSchemas::currentlyValidatingSchema()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | skipped | — | [diverges](#currentlyvalidatingschema-is-not-ported) |
 | `getDefaultTestingSchemaName()` | [`Contracts\HasSchemas::getDefaultTestingSchemaName()`](../../../vendor/filament/schemas/src/Contracts/HasSchemas.php) | blocked | TestsSchemas (testing helper) | [detail](#the-testing-contract-method-is-not-declared) |
@@ -65,7 +66,11 @@ their machinery and semantics are tracked in
 [`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php);
 `callSchemaComponentMethod()` (and, through it, `dispatchBrowserEvent()`) is
 covered end-to-end by
-[`HasSchemasComponentMethodTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasComponentMethodTest.php).
+[`HasSchemasComponentMethodTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasComponentMethodTest.php),
+and `uploadSchemaComponentFile()` by
+[`HasSchemasUploadTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasUploadTest.php)
+beside it, which drives real `UploadedFile`s through
+`TestLiveComponent::call()`'s third argument.
 `resolveSchemaByName()` is also exercised through actions'
 [`resolveSchemaComponentAction()`](../actions/has-actions.md), which now calls
 it instead of carrying its own copy of the same reflection gate.
@@ -270,8 +275,20 @@ render entirely and ships the return value alone. UX LiveComponent's
 neither branch ports: the action always re-renders the whole host normally
 and hands the result back as the browser event
 `sylament:schema-component-method-result` with payload `{componentKey,
-method, result}` — exactly the channel `HasActions::mountAction()` and
-notifications already dispatch through. Cost, paid on every call: a search
+method, fileKey, result}` — exactly the channel `HasActions::mountAction()` and
+notifications already dispatch through. (`fileKey` is `null` for every call
+through this seam; it exists for
+[`uploadSchemaComponentFile()`](#uploadschemacomponentfile-carries-the-bytes-beside-the-seam),
+which shares the event and the private dispatcher behind it.) That dispatcher
+runs one guard both arms pay for: the result is `json_encode`d with
+`JSON_THROW_ON_ERROR` first, and a `JsonException` becomes a `LogicException`
+naming the method and the component key. A browser-callable method returning
+something JSON cannot carry — raw bytes that are not UTF-8, an `INF` — is a
+programmer error, and the seam is the one place a reader can be shown it;
+without the guard the value reaches `dispatchBrowserEvent()` and dies far
+downstream as a broken response header. Note what the guard does **not**
+catch: a closure and a property-less object both encode to `{}` quite happily,
+so they arrive as an empty result rather than a throw. Cost, paid on every call: a search
 round-trip through this seam re-renders the host where Filament's method
 would not (bounded by the caller's own debounce, and the same cost every
 `live()` field already pays per keystroke). A second, Sylament-only cost sits
@@ -292,6 +309,62 @@ unexposed method instead. One shape stays a 500, accepted: a payload whose
 `arguments` is not a JSON object fails the action's own `array $arguments`
 binding as a `TypeError` inside the argument resolver, before the body this gate
 lives in ever runs — unreachable from our own JS, which always sends an object.
+
+### `uploadSchemaComponentFile()` carries the bytes beside the seam
+
+A `#[LiveAction]`'s arguments are JSON, so a file cannot travel through
+`callSchemaComponentMethod()` at all. Filament has no counterpart to point at
+either: Livewire's `WithFileUploads` opens four RPC endpoints
+(`_startUpload`/`_finishUpload`/`_uploadErrored`/`_removeUpload`) on every
+component, and `RestrictsFileUploadsToSchemaComponents` exists purely to shut
+them again for anything that is not a schema component. Ours is a **second
+`#[LiveAction]` beside the seam**, closed by construction rather than opened and
+then fenced:
+
+- **The bytes ride the same live request.** UX Live's transport already does
+  multipart — `Component.files(key, input)` stashes a real `<input type="file">`
+  and `performRequest()` appends one `FormData` part per file beside the props
+  blob — so the action needs no route, no signer and no second security
+  boundary. The part is named `sylament_upload_<fileKey>` and is read straight
+  off `$request->files`; **nothing about the file is taken from browser-supplied
+  arguments**, which is the whole reason this is not a file arm on the seam's
+  own `$arguments` spread.
+- **Two gates, both narrow.** The component is resolved through the same
+  `getSchemaComponent()` path the seam uses (so a hidden component, an unknown
+  key and a key naming a host-contract member all answer `null`), and only a
+  component implementing
+  [`Components\Contracts\AcceptsUploadedFiles`](../../../packages/schemas/src/Components/Contracts/AcceptsUploadedFiles.php)
+  is handed the file. An implementor may still refuse — `null` for "not
+  mounted, disabled", `['ok' => false, 'message' => …]` for a constraint that
+  turned the file away without writing anything.
+- **The file key is shape-checked before it names anything.** `$fileKey` must
+  match `^[A-Za-z0-9-]{1,64}$`, checked *before* it is concatenated into a
+  multipart part name and before an implementor may use it as a state key. A
+  refused key answers `null` with no part read.
+- **The result is FIFO per `(componentKey, method, fileKey)`.** The action
+  answers on the seam's own event, so the browser helper's matcher is reused
+  unchanged — but the payload carries `fileKey`, because several uploads to
+  **one** component are legitimately in flight at once. Action order alone would
+  usually match them correctly; keying makes it true by construction, so a mixed
+  outcome (one file accepted, one refused) cannot paint the refusal on the wrong
+  item.
+- **A `_batch` request hands the same `FileBag` to every action in it.** Written
+  down rather than prevented, because it is inherent to UX Live's batching:
+  `[upload(A), upload(B)]` in one batch sees the same files, and a batch mixing
+  an upload with an unrelated action runs both with a multipart body present.
+  The file is still gated per component and per part name, so B only ever
+  receives the part B's own `fileKey` names.
+- **What it costs, stated up front.** Every upload re-renders the host with the
+  whole props blob in the same body (eight dropped files are eight sequential
+  round trips); `fetch()` reports no upload progress, so a client shows an
+  indeterminate indicator; and there is no abort — a cancelled upload becomes
+  "remove the file once the request settles". A dedicated signed route would buy
+  progress and abort back at the cost of a route, a signer and a second security
+  boundary; it is the recorded follow-up if progress turns out to be
+  non-negotiable.
+
+`RestrictsFileUploadsToSchemaComponents` is therefore **skipped**, not blocked:
+it fences an RPC surface this port never opens.
 
 _See also: the global [rename table](../renames.md) — the interface ⇄ trait name
 swap, the `Filament\Schemas\Contracts` → `Sylament\Schemas\Contracts`

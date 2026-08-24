@@ -8,6 +8,7 @@ use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Schema;
+use Symfony\Component\HttpFoundation\Request;
 
 interface InteractsWithSchemas
 {
@@ -69,12 +70,34 @@ interface InteractsWithSchemas
      * otherwise the result is `null`, never a throw or a 500, including when
      * a resolved argument is of the wrong type. The result always travels
      * back as the browser event `sylament:schema-component-method-result`
-     * with payload `{componentKey, method, result}`, never as this method's
-     * own return value.
+     * with payload `{componentKey, method, fileKey, result}` — `fileKey` is
+     * `null` for everything but {@see uploadSchemaComponentFile()} — never as
+     * this method's own return value. A result that is not JSON-serialisable
+     * throws a `LogicException` naming the method and the component key: a
+     * browser-callable method returning one is a programmer error, and the
+     * seam is where it should surface.
      *
      * @param array<mixed> $arguments
      */
     public function callSchemaComponentMethod(string $componentKey, string $method, array $arguments = []): void;
+
+    /**
+     * The seam's file arm: hand the browser's multipart part named
+     * `sylament_upload_<fileKey>` to the schema component `$componentKey`
+     * names, when that component implements
+     * {@see \Sylament\Schemas\Components\Contracts\AcceptsUploadedFiles}. A
+     * separate action because a `#[LiveAction]`'s arguments are JSON and a
+     * file is not — the bytes ride the same live request as a real multipart
+     * part, so nothing about the file is taken from browser-supplied
+     * arguments. `$fileKey` must match `^[A-Za-z0-9-]{1,64}$` before it names
+     * a part; a refused key, a component that is not an implementor, a hidden
+     * component and a missing part all answer `null` rather than throwing.
+     * The result travels back on the same event as
+     * {@see callSchemaComponentMethod()}, carrying `$fileKey` so a browser
+     * with several uploads in flight to one component can match each result
+     * to its own file.
+     */
+    public function uploadSchemaComponentFile(string $componentKey, string $fileKey, Request $request): void;
 
     public function makeSchema(): Schema;
 

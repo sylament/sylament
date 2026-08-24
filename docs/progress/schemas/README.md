@@ -155,7 +155,7 @@ shared with the base `Component` or not yet started.
 | [`HasStateBindingModifiers`](../../../packages/schemas/src/Components/Concerns/HasStateBindingModifiers.php) | [`Concerns/HasStateBindingModifiers.php`](../../../vendor/filament/schemas/src/Concerns/HasStateBindingModifiers.php) | in progress | [has-state-binding-modifiers.md](has-state-binding-modifiers.md) |
 | [`InteractsWithSchemas`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`Concerns/InteractsWithSchemas.php`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | in progress | [has-schemas.md](has-schemas.md) |
 | `ResolvesDynamicLivewireProperties` | [`Concerns/ResolvesDynamicLivewireProperties.php`](../../../vendor/filament/schemas/src/Concerns/ResolvesDynamicLivewireProperties.php) | todo | — |
-| `RestrictsFileUploadsToSchemaComponents` | [`Concerns/RestrictsFileUploadsToSchemaComponents.php`](../../../vendor/filament/schemas/src/Concerns/RestrictsFileUploadsToSchemaComponents.php) | todo | — |
+| `RestrictsFileUploadsToSchemaComponents` | [`Concerns/RestrictsFileUploadsToSchemaComponents.php`](../../../vendor/filament/schemas/src/Concerns/RestrictsFileUploadsToSchemaComponents.php) | skipped | [interacts-with-schemas.md](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) — it fences the upload RPC Livewire opens on every component; ours is closed by construction |
 
 ## Supporting surface
 
@@ -197,6 +197,7 @@ with no Ports link is Sylament-only — no Filament source to diff against.
 | [`OptionsArrayStateCast`](../../../packages/schemas/src/State/Casts/OptionsArrayStateCast.php) | [`Components/StateCasts/OptionsArrayStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/OptionsArrayStateCast.php) | done | [options-array-state-cast.md](options-array-state-cast.md) |
 | `SliderStateCast` | [`Components/StateCasts/SliderStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/SliderStateCast.php) | todo | — |
 | `StripCharactersStateCast` | [`Components/StateCasts/StripCharactersStateCast.php`](../../../vendor/filament/schemas/src/Components/StateCasts/StripCharactersStateCast.php) | todo | — |
+| [`AcceptsUploadedFiles`](../../../packages/schemas/src/Components/Contracts/AcceptsUploadedFiles.php) | — | done | [interacts-with-schemas.md](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) — Sylament-only: the gate `uploadSchemaComponentFile()` hands a file through |
 | [`CanConcealComponents`](../../../packages/schemas/src/Components/Contracts/CanConcealComponents.php) | [`Components/Contracts/CanConcealComponents.php`](../../../vendor/filament/schemas/src/Components/Contracts/CanConcealComponents.php) | done | — |
 | [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php) | [`HasValidationRules.php` (forms)](../../../vendor/filament/forms/src/Components/Contracts/HasValidationRules.php) | done | [can-be-validated.md](can-be-validated.md) |
 | [`ValidationException`](../../../packages/schemas/src/Exceptions/ValidationException.php) | — | done | [can-be-validated.md](can-be-validated.md) |

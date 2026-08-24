@@ -8,6 +8,7 @@ use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Set;
+use Sylament\Schemas\Tests\Fixtures\Components\UploadAccepting;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -60,6 +61,11 @@ class LiveStateHost implements InteractsWithSchemas
                     ->debounce(250),
                 LiveField::make('secret')
                     ->hidden(),
+                UploadAccepting::make('upload'),
+                UploadAccepting::make('hiddenUpload')
+                    ->hidden(),
+                UploadAccepting::make('disabledUpload')
+                    ->disabled(),
             ]);
     }
 

@@ -85,6 +85,7 @@ it('advances and announces the step change once the step is valid', function ():
         ->toBe([
             'componentKey' => WizardHost::WIZARD_KEY,
             'method' => 'nextStep',
+            'fileKey' => null,
             'result' => null,
         ]);
 });
@@ -173,6 +174,7 @@ it('answers a previousStep call with the result event alone', function (): void 
         ->toBe([
             'componentKey' => WizardHost::WIZARD_KEY,
             'method' => 'previousStep',
+            'fileKey' => null,
             'result' => null,
         ])
         ->and($component->getDispatchedBrowserEvent($render, 'next-wizard-step'))->toBeNull()

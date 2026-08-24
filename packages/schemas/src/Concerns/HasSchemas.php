@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Concerns;
 
+use JsonException;
 use LogicException;
 use ReflectionMethod;
 use ReflectionNamedType;
@@ -12,11 +13,14 @@ use RuntimeException;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Contracts\AcceptsUploadedFiles;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Validation\PresenceGate;
 use Sylament\Support\Components\Attributes\ExposedLiveComponentMethod;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Contracts\Service\Attribute\Required;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -193,8 +197,53 @@ trait HasSchemas
             }
         }
 
+        $this->dispatchSchemaComponentMethodResult($componentKey, $method, $result);
+    }
+
+    #[LiveAction]
+    public function uploadSchemaComponentFile(
+        #[LiveArg] string $componentKey,
+        #[LiveArg] string $fileKey,
+        Request $request,
+    ): void {
+        // Security: callable from the browser. The component is resolved through the same gate
+        // callSchemaComponentMethod() uses, only an AcceptsUploadedFiles implementor is handed a
+        // file, the file key is shape-checked before it names a state key or a multipart part, and
+        // the file is the one part the browser attached under that key — nothing is taken from
+        // browser-supplied arguments.
+        $result = null;
+        $component = $this->getSchemaComponent($componentKey);
+
+        if ($component instanceof AcceptsUploadedFiles && preg_match('/^[A-Za-z0-9-]{1,64}$/', $fileKey) === 1) {
+            $file = $request->files->get('sylament_upload_' . $fileKey);
+
+            if ($file instanceof UploadedFile) {
+                $result = $component->acceptUploadedFile($fileKey, $file);
+            }
+        }
+
+        $this->dispatchSchemaComponentMethodResult($componentKey, 'uploadSchemaComponentFile', $result, $fileKey);
+    }
+
+    /**
+     * The one exit both browser-callable seams take: the result rides back as the
+     * `sylament:schema-component-method-result` event, carrying the file key that tells
+     * concurrent uploads to one component apart (`null` for every non-upload call).
+     */
+    private function dispatchSchemaComponentMethodResult(
+        string $componentKey,
+        string $method,
+        mixed $result,
+        ?string $fileKey = null,
+    ): void {
+        try {
+            json_encode($result, JSON_THROW_ON_ERROR);
+        } catch (JsonException $jsonException) {
+            throw new LogicException(sprintf('The method "%s" on schema component "%s" returned a value that is not JSON-serialisable; a browser-callable method must.', $method, $componentKey), $jsonException->getCode(), previous: $jsonException);
+        }
+
         $this->dispatchBrowserEvent('sylament:schema-component-method-result', [
-            'componentKey' => $componentKey, 'method' => $method, 'result' => $result,
+            'componentKey' => $componentKey, 'method' => $method, 'fileKey' => $fileKey, 'result' => $result,
         ]);
     }
 

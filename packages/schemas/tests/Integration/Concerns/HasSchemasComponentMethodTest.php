@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Integration\Concerns;
 
+use LogicException;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
@@ -34,8 +35,20 @@ it('calls the exposed method with named arguments and dispatches the result', fu
         ->and($event['payload'])->toBe([
             'componentKey' => 'schema.title',
             'method' => 'echoForJs',
+            'fileKey' => null,
             'result' => ['x', 'x'],
         ]);
+});
+
+it('throws naming the method and the component key for a result that is not JSON-serialisable', function (): void {
+    expect(fn (): ?array => callLiveStateHostSchemaComponentMethod([
+        'componentKey' => 'schema.title',
+        'method' => 'unencodableForJs',
+        'arguments' => [],
+    ]))
+        ->toThrow(LogicException::class, 'unencodableForJs')
+        ->toThrow(LogicException::class, 'schema.title')
+        ->toThrow(LogicException::class, 'JSON-serialisable');
 });
 
 it('answers null for a method missing the ExposedLiveComponentMethod attribute', function (): void {

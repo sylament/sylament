@@ -87,6 +87,7 @@ it('answers a search with the matching rows in the shape the JS control speaks',
         ->and($event['payload'])->toBe([
             'componentKey' => 'schema.author',
             'method' => 'getSearchResultsForJs',
+            'fileKey' => null,
             'result' => [
                 ['label' => 'Ada', 'value' => (string) $ada->getId(), 'isDisabled' => false],
             ],

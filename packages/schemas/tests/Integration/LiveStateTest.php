@@ -57,5 +57,6 @@ it('assembles getState from the bag on a live action', function (): void {
         'slug' => null,
         'heading' => null,
         'excerpt' => null,
+        'upload' => null,
     ]);
 });

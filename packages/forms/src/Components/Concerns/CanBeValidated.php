@@ -7,27 +7,51 @@ namespace Sylament\Forms\Components\Concerns;
 use BackedEnum;
 use Closure;
 use DateTimeImmutable;
+use Doctrine\ORM\QueryBuilder;
 use Exception;
 use LogicException;
 use ReflectionObject;
 use ReflectionProperty;
 use Sylament\Forms\Components\Contracts\CanBeLengthConstrained;
+use Sylament\Forms\Components\Contracts\HasNestedRecursiveValidationConstraints;
 use Sylament\Forms\Components\Field;
+use Sylament\Forms\Validation\ActiveUrl;
+use Sylament\Forms\Validation\Alpha;
+use Sylament\Forms\Validation\AlphaDash;
+use Sylament\Forms\Validation\AlphaNum;
+use Sylament\Forms\Validation\Ascii;
 use Sylament\Forms\Validation\DateComparison;
 use Sylament\Forms\Validation\Distinct;
+use Sylament\Forms\Validation\EndsWith;
+use Sylament\Forms\Validation\ExistingValue;
 use Sylament\Forms\Validation\MatchesField;
 use Sylament\Forms\Validation\Prohibited;
+use Sylament\Forms\Validation\StartsWith;
+use Sylament\Forms\Validation\UniqueValue;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\State\RecordTarget;
 use Sylament\Schemas\State\RecordTypeReader;
 use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\All;
+use Symfony\Component\Validator\Constraints\AtLeastOneOf;
+use Symfony\Component\Validator\Constraints\Choice;
+use Symfony\Component\Validator\Constraints\CssColor;
 use Symfony\Component\Validator\Constraints\DivisibleBy;
 use Symfony\Component\Validator\Constraints\GreaterThan;
 use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
+use Symfony\Component\Validator\Constraints\Ip;
+use Symfony\Component\Validator\Constraints\Json;
 use Symfony\Component\Validator\Constraints\LessThan;
 use Symfony\Component\Validator\Constraints\LessThanOrEqual;
+use Symfony\Component\Validator\Constraints\MacAddress;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Regex;
+use Symfony\Component\Validator\Constraints\Sequentially;
+use Symfony\Component\Validator\Constraints\Type;
+use Symfony\Component\Validator\Constraints\Ulid;
+use Symfony\Component\Validator\Constraints\Uuid;
+use Symfony\Component\Validator\Constraints\When;
 use Symfony\Contracts\Service\Attribute\Required;
 
 use function Sylament\Support\blank;
@@ -65,6 +89,19 @@ trait CanBeValidated
      * @var array<class-string<Constraint>, string|Closure|array<string, string|Closure>>
      */
     protected array $validationMessages = [];
+
+    /**
+     * Filament's single regex slot: the last call wins, and `TextInput::tel()`
+     * writes it too.
+     */
+    protected string|Closure|null $regexPattern = null;
+
+    /**
+     * @var array<scalar>|string|Closure|null
+     */
+    protected array|string|Closure|null $inValidationConstraintValues = null;
+
+    protected bool|Closure $shouldUniqueValidationIgnoreRecordByDefault = true;
 
     private RecordTypeReader $recordTypeReader;
 
@@ -293,6 +330,317 @@ trait CanBeValidated
         return ucfirst(str_replace('_', ' ', $segment));
     }
 
+    public function string(bool|Closure $condition = true): static
+    {
+        $this->constraint(new Type(type: 'string'), $condition);
+
+        return $this;
+    }
+
+    public function json(bool|Closure $condition = true): static
+    {
+        $this->constraint(new Json(), $condition);
+
+        return $this;
+    }
+
+    public function ulid(bool|Closure $condition = true): static
+    {
+        $this->constraint(new Ulid(), $condition);
+
+        return $this;
+    }
+
+    /**
+     * Loose, because strict rejects the nil UUID that Laravel's regex accepts and
+     * real data contains; loose also drops the version and variant checks, neither
+     * of which Laravel makes.
+     */
+    public function uuid(bool|Closure $condition = true): static
+    {
+        $this->constraint(new Uuid(strict: false), $condition);
+
+        return $this;
+    }
+
+    public function macAddress(bool|Closure $condition = true): static
+    {
+        $this->constraint(new MacAddress(type: MacAddress::ALL), $condition);
+
+        return $this;
+    }
+
+    /**
+     * `Ip()`'s own default is V4, so every arm names its version.
+     */
+    public function ip(bool|Closure $condition = true): static
+    {
+        $this->constraint(new Ip(version: Ip::ALL), $condition);
+
+        return $this;
+    }
+
+    public function ipv4(bool|Closure $condition = true): static
+    {
+        $this->constraint(new Ip(version: Ip::V4), $condition);
+
+        return $this;
+    }
+
+    public function ipv6(bool|Closure $condition = true): static
+    {
+        $this->constraint(new Ip(version: Ip::V6), $condition);
+
+        return $this;
+    }
+
+    /**
+     * Laravel's `hex_color` is exactly the four hex shapes; `CssColor`'s default
+     * twelve formats would also accept `red`, `rgb(…)` and `Canvas`.
+     */
+    public function hexColor(bool|Closure $condition = true): static
+    {
+        $this->constraint(new CssColor(formats: [
+            CssColor::HEX_LONG,
+            CssColor::HEX_LONG_WITH_ALPHA,
+            CssColor::HEX_SHORT,
+            CssColor::HEX_SHORT_WITH_ALPHA,
+        ]), $condition);
+
+        return $this;
+    }
+
+    public function alpha(bool|Closure $condition = true): static
+    {
+        $this->constraint(new Alpha(), $condition);
+
+        return $this;
+    }
+
+    public function alphaDash(bool|Closure $condition = true): static
+    {
+        $this->constraint(new AlphaDash(), $condition);
+
+        return $this;
+    }
+
+    public function alphaNum(bool|Closure $condition = true): static
+    {
+        $this->constraint(new AlphaNum(), $condition);
+
+        return $this;
+    }
+
+    public function ascii(bool|Closure $condition = true): static
+    {
+        $this->constraint(new Ascii(), $condition);
+
+        return $this;
+    }
+
+    public function activeUrl(bool|Closure $condition = true): static
+    {
+        $this->constraint(new ActiveUrl(), $condition);
+
+        return $this;
+    }
+
+    public function regex(string|Closure|null $pattern): static
+    {
+        $this->regexPattern = $pattern;
+
+        return $this;
+    }
+
+    public function getRegexPattern(): ?string
+    {
+        return $this->evaluate($this->regexPattern);
+    }
+
+    public function notRegex(string|Closure|null $pattern): static
+    {
+        $this->constraint(
+            static fn (Field $component): Regex => new Regex(
+                pattern: (string) $component->evaluate($pattern),
+                message: 'This value has a format that is not allowed.',
+                match: false,
+            ),
+            static fn (Field $component): bool => filled($component->evaluate($pattern)),
+        );
+
+        return $this;
+    }
+
+    /**
+     * @param array<scalar>|string|Closure $values
+     */
+    public function startsWith(array|string|Closure $values, bool|Closure $condition = true): static
+    {
+        return $this->affixComparisonRule(StartsWith::class, $values, $condition, match: true);
+    }
+
+    /**
+     * @param array<scalar>|string|Closure $values
+     */
+    public function doesntStartWith(array|string|Closure $values, bool|Closure $condition = true): static
+    {
+        return $this->affixComparisonRule(StartsWith::class, $values, $condition, match: false);
+    }
+
+    /**
+     * @param array<scalar>|string|Closure $values
+     */
+    public function endsWith(array|string|Closure $values, bool|Closure $condition = true): static
+    {
+        return $this->affixComparisonRule(EndsWith::class, $values, $condition, match: true);
+    }
+
+    /**
+     * @param array<scalar>|string|Closure $values
+     */
+    public function doesntEndWith(array|string|Closure $values, bool|Closure $condition = true): static
+    {
+        return $this->affixComparisonRule(EndsWith::class, $values, $condition, match: false);
+    }
+
+    /**
+     * @param class-string<StartsWith|EndsWith> $constraintClass
+     * @param array<scalar>|string|Closure      $values
+     */
+    private function affixComparisonRule(string $constraintClass, array|string|Closure $values, bool|Closure $condition, bool $match): static
+    {
+        $this->constraint(
+            static function (Field $component) use ($constraintClass, $values, $match): ?Constraint {
+                $resolved = $component->resolveAffixValues($values);
+
+                return $resolved === [] ? null : new $constraintClass(values: $resolved, match: $match);
+            },
+            $condition,
+        );
+
+        return $this;
+    }
+
+    /**
+     * Filament passes a comma string through unsplit so that Laravel splits it; the
+     * split happens here instead, and it does not trim — the rule-string artifact is
+     * kept so a caller's spelling means the same thing on both sides.
+     *
+     * @param  array<scalar>|string|Closure $values
+     * @return list<string>
+     */
+    private function resolveAffixValues(array|string|Closure $values): array
+    {
+        $values = $this->evaluate($values);
+
+        if (is_string($values)) {
+            $values = explode(',', $values);
+        }
+
+        return array_values(array_map(strval(...), wrap($values)));
+    }
+
+    /**
+     * Filament's single `in` slot: the condition folds into a value closure, and
+     * `in(null)` clears it. A user list *replaces* an option field's derived
+     * membership check.
+     *
+     * @param array<scalar>|string|Closure|null $values
+     */
+    public function in(array|string|Closure|null $values, bool|Closure $condition = true): static
+    {
+        if (! $condition) {
+            $values = null;
+        } elseif ($condition instanceof Closure) {
+            $values = static fn (Field $component): array|string|Closure|null => $component->evaluateClosureArm($condition) ? $values : null;
+        }
+
+        $this->inValidationConstraintValues = $values;
+
+        return $this;
+    }
+
+    /**
+     * @param array<scalar>|string|Closure $values
+     */
+    public function notIn(array|string|Closure $values, bool|Closure $condition = true): static
+    {
+        $this->constraint(
+            static fn (Field $component): Choice => new Choice(
+                choices: $component->doubleChoiceSpellings($component->evaluate($values)),
+                multiple: $component->hasInValidationOnMultipleValues(),
+                strict: true,
+                message: 'This value is not allowed.',
+                multipleMessage: 'One or more of the given values is not allowed.',
+                match: false,
+            ),
+            $condition,
+        );
+
+        return $this;
+    }
+
+    public function getInValidationConstraint(): ?Choice
+    {
+        $values = $this->getInValidationConstraintValues();
+
+        if ($values === null) {
+            return null;
+        }
+
+        return new Choice(
+            choices: $this->doubleChoiceSpellings($values),
+            multiple: $this->hasInValidationOnMultipleValues(),
+            strict: true,
+        );
+    }
+
+    /**
+     * @return ?array<scalar>
+     */
+    public function getInValidationConstraintValues(): ?array
+    {
+        $values = $this->evaluate($this->inValidationConstraintValues);
+
+        if (is_string($values)) {
+            return array_map(mb_trim(...), explode(',', $values));
+        }
+
+        return $values;
+    }
+
+    public function hasInValidationOnMultipleValues(): bool
+    {
+        return false;
+    }
+
+    /**
+     * Every accepted value in both the cast and the wire spelling, because `Choice`
+     * is strict (loose throws at validation time) while the raw bag speaks strings
+     * and a filled record may speak ints. De-duplicated by **strict** identity —
+     * `array_unique()` collapses `1` and `'1'` under every sort flag.
+     *
+     * @return list<mixed>
+     */
+    private function doubleChoiceSpellings(mixed $values): array
+    {
+        $doubled = [];
+
+        foreach (wrap($values) as $value) {
+            if ($value instanceof BackedEnum) {
+                $value = $value->value;
+            }
+
+            foreach ([$value, is_scalar($value) ? (string) $value : null] as $candidate) {
+                if ($candidate !== null && ! in_array($candidate, $doubled, true)) {
+                    $doubled[] = $candidate;
+                }
+            }
+        }
+
+        return $doubled;
+    }
+
     public function requiredIf(string|Closure $statePath, mixed $stateValues, bool $isStatePathAbsolute = false): static
     {
         return $this->conditionalPresenceRule(
@@ -437,6 +785,120 @@ trait CanBeValidated
         return $this;
     }
 
+    /**
+     * Laravel's `unique`, over one DQL probe. `$entity` falls back to the record
+     * class the component tier resolves nearest-first, `$property` to the field's
+     * own name; with neither, no constraint is emitted at all.
+     *
+     * `$ignorable` is `?object` where Filament types it `Model|Closure|null`: a
+     * `Closure` *is* an object, so PHP refuses the union outright, and the closure
+     * arm still works — `evaluate()` invokes it.
+     */
+    public function unique(string|Closure|null $entity = null, string|Closure|null $property = null, ?object $ignorable = null, ?bool $ignoreRecord = null, ?Closure $modifyQueryUsing = null): static
+    {
+        $this->constraint(static function (Field $component) use ($entity, $property, $ignorable, $ignoreRecord, $modifyQueryUsing): ?UniqueValue {
+            $entityClass = $component->resolveConstraintEntityClass($entity);
+
+            if ($entityClass === null) {
+                return null;
+            }
+
+            return new UniqueValue(
+                entityClass: $entityClass,
+                property: $component->resolveConstraintProperty($property),
+                ignoredIdentifier: $component->resolveIgnoredIdentifier($ignorable, $ignoreRecord),
+                modifyQueryUsing: $component->wrapQueryModifier($modifyQueryUsing),
+            );
+        });
+
+        return $this;
+    }
+
+    /**
+     * Laravel's `exists`, over one DQL probe. An array value is one `IN` probe whose
+     * matched count must equal the number of distinct values asked for.
+     */
+    public function exists(string|Closure|null $entity = null, string|Closure|null $property = null, ?Closure $modifyQueryUsing = null): static
+    {
+        $this->constraint(static function (Field $component) use ($entity, $property, $modifyQueryUsing): ?ExistingValue {
+            $entityClass = $component->resolveConstraintEntityClass($entity);
+
+            if ($entityClass === null) {
+                return null;
+            }
+
+            return new ExistingValue(
+                entityClass: $entityClass,
+                property: $component->resolveConstraintProperty($property),
+                modifyQueryUsing: $component->wrapQueryModifier($modifyQueryUsing),
+            );
+        });
+
+        return $this;
+    }
+
+    public function uniqueValidationIgnoresRecordByDefault(bool|Closure $condition = true): static
+    {
+        $this->shouldUniqueValidationIgnoreRecordByDefault = $condition;
+
+        return $this;
+    }
+
+    public function shouldUniqueValidationIgnoreRecordByDefault(): bool
+    {
+        return (bool) $this->evaluate($this->shouldUniqueValidationIgnoreRecordByDefault);
+    }
+
+    /**
+     * @return class-string|null
+     */
+    private function resolveConstraintEntityClass(string|Closure|null $entity): ?string
+    {
+        /** @var class-string|null $entityClass */
+        $entityClass = $this->evaluate($entity) ?? $this->getRecordClass();
+
+        return $entityClass;
+    }
+
+    private function resolveConstraintProperty(string|Closure|null $property): string
+    {
+        return $this->evaluate($property) ?? (string) $this->getName();
+    }
+
+    /**
+     * The identifier the probe excludes: an explicit `ignorable:` first, otherwise
+     * the bound record when the default (or the explicit flag) says to ignore it.
+     * A record that has never been flushed carries no identifier, and there is
+     * nothing to exclude — which is the create page's normal state.
+     */
+    private function resolveIgnoredIdentifier(?object $ignorable, ?bool $ignoreRecord): string|int|null
+    {
+        $record = $this->evaluate($ignorable);
+
+        if ($record === null && ($ignoreRecord ?? $this->shouldUniqueValidationIgnoreRecordByDefault())) {
+            $record = $this->getRecord();
+        }
+
+        if (! is_object($record)) {
+            return null;
+        }
+
+        return $this->getAssociationReader()->findRecordKey($record);
+    }
+
+    /**
+     * The user's closure, wrapped so it keeps Invoker injection — a consumer writes
+     * `fn (QueryBuilder $query, Get $get) => …` and gets both.
+     */
+    private function wrapQueryModifier(?Closure $modifyQueryUsing): ?Closure
+    {
+        if (! $modifyQueryUsing instanceof Closure) {
+            return null;
+        }
+
+        return fn (QueryBuilder $query): mixed => $this->evaluate($modifyQueryUsing, ['query' => $query], [QueryBuilder::class => $query]);
+    }
+
     public function filled(bool|Closure $condition = true): static
     {
         $this->constraint(static fn (Field $component): Constraint => $component->getRequiredConstraint(), $condition);
@@ -457,14 +919,24 @@ trait CanBeValidated
 
     /**
      * The divisor, or null when the closure arm resolved to nothing — which is what
-     * Filament's `filled()` pair condition is testing for. The parameter is `mixed`
-     * because that is what a closure may answer, whatever the setter's union says.
+     * Filament's `filled()` pair condition is testing for.
      */
-    private function evaluateDivisor(mixed $value): int|float|null
+    private function evaluateDivisor(int|float|Closure $value): int|float|null
     {
-        $divisor = $this->evaluate($value);
+        $divisor = $this->evaluateClosureArm($value);
 
         return is_int($divisor) || is_float($divisor) ? $divisor : null;
+    }
+
+    /**
+     * `evaluate()` with the answer typed as what a closure may actually return.
+     * The generic infers its return by subtracting `Closure` from the argument's
+     * declared union, which is optimistic for the closure arm: `multipleOf(fn () => null)`
+     * and `in([...], fn (): bool => false)` both resolve outside their own unions.
+     */
+    private function evaluateClosureArm(mixed $value): mixed
+    {
+        return $this->evaluate($value);
     }
 
     /**
@@ -808,6 +1280,18 @@ trait CanBeValidated
             $constraints = [...$constraints, ...$this->getLengthValidationConstraints()];
         }
 
+        // Upstream this slot is skipped for a multi-value field, because there the
+        // per-element form is a rule on a separate `<path>.*` key. Here both forms
+        // land on the field's own path and differ only by `multiple:`, so there is
+        // nothing to route around — and skipping would drop the constraint whole.
+        if (($inConstraint = $this->getInValidationConstraint()) instanceof Choice) {
+            $constraints[] = $inConstraint;
+        }
+
+        if (filled($regexPattern = $this->getRegexPattern())) {
+            $constraints[] = new Regex(pattern: $regexPattern);
+        }
+
         foreach ($this->constraints as [$constraint, $condition]) {
             if (! $this->evaluate($condition)) {
                 continue;
@@ -822,6 +1306,14 @@ trait CanBeValidated
             foreach ($evaluated instanceof Constraint ? [$evaluated] : $evaluated as $single) {
                 $constraints[] = $single;
             }
+        }
+
+        if (
+            $this instanceof HasNestedRecursiveValidationConstraints
+            && is_array($this->getRawState())
+            && ($nested = $this->getNestedRecursiveValidationConstraints()) !== []
+        ) {
+            $constraints[] = new All(constraints: $nested);
         }
 
         return $constraints;
@@ -840,32 +1332,58 @@ trait CanBeValidated
         }
 
         foreach ($constraints as $index => $constraint) {
-            $options = $messages[$constraint::class] ?? [];
-
-            if ($options === []) {
-                continue;
-            }
-
-            $available = $this->getValidationMessageOptions($constraint);
-            $constraint = clone $constraint;
-            $constraints[$index] = $constraint;
-
-            foreach ($options as $option => $message) {
-                if (! in_array($option, $available, strict: true)) {
-                    throw new LogicException(sprintf(
-                        'Sylament cannot apply a validation message to [%s] because %s has no [%s] message option. Use one of: [%s].',
-                        $this->getStatePath(),
-                        $constraint::class,
-                        $option,
-                        implode('], [', $available),
-                    ));
-                }
-
-                $constraint->{$option} = $message;
-            }
+            $constraints[$index] = $this->applyValidationMessagesTo($constraint, $messages);
         }
 
         return $constraints;
+    }
+
+    /**
+     * One constraint's messages applied, cloning on write, recursing into a
+     * composite's own members — `All`, `Sequentially`, `AtLeastOneOf` and `When`
+     * all hide their members from a flat class-keyed match otherwise. The four are
+     * named rather than matched on `Composite`, which declares no property of its
+     * own: the name of the one holding the members is a `protected` hook each
+     * subclass answers. Two lists this therefore does not reach are
+     * `When::$otherwise` and `Collection::$fields`; no arm emits either.
+     *
+     * @param array<class-string<Constraint>, array<string, string>> $messages
+     */
+    private function applyValidationMessagesTo(Constraint $constraint, array $messages): Constraint
+    {
+        if ($constraint instanceof All || $constraint instanceof AtLeastOneOf || $constraint instanceof Sequentially || $constraint instanceof When) {
+            $nested = array_map(fn (Constraint $nested): Constraint => $this->applyValidationMessagesTo($nested, $messages), $constraint->getNestedConstraints());
+
+            if ($nested !== $constraint->constraints) {
+                $constraint = clone $constraint;
+                $constraint->constraints = $nested;
+            }
+        }
+
+        $options = $messages[$constraint::class] ?? [];
+
+        if ($options === []) {
+            return $constraint;
+        }
+
+        $available = $this->getValidationMessageOptions($constraint);
+        $constraint = clone $constraint;
+
+        foreach ($options as $option => $message) {
+            if (! in_array($option, $available, strict: true)) {
+                throw new LogicException(sprintf(
+                    'Sylament cannot apply a validation message to [%s] because %s has no [%s] message option. Use one of: [%s].',
+                    $this->getStatePath(),
+                    $constraint::class,
+                    $option,
+                    implode('], [', $available),
+                ));
+            }
+
+            $constraint->{$option} = $message;
+        }
+
+        return $constraint;
     }
 
     /**

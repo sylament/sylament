@@ -13,6 +13,7 @@ use Sylament\Forms\Components\Concerns\HasGridDirection;
 use Sylament\Forms\Components\Concerns\HasIcons;
 use Sylament\Forms\Components\Concerns\HasOptions;
 use Sylament\Forms\Components\Concerns\HasTooltips;
+use Sylament\Forms\Components\Contracts\HasNestedRecursiveValidationConstraints;
 use Sylament\Forms\Twig\FormsIconAlias;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
@@ -27,9 +28,10 @@ use Symfony\Component\Validator\Constraints\Type;
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 
-class ToggleButtons extends Field implements Contracts\CanDisableOptions
+class ToggleButtons extends Field implements Contracts\CanDisableOptions, HasNestedRecursiveValidationConstraints
 {
     use CanDisableOptions;
+    use Concerns\HasNestedRecursiveValidationConstraints;
     use HasColors;
     use HasExtraInputAttributes;
     use HasGridDirection;
@@ -188,6 +190,11 @@ class ToggleButtons extends Field implements Contracts\CanDisableOptions
         return true;
     }
 
+    public function hasInValidationOnMultipleValues(): bool
+    {
+        return $this->isMultiple();
+    }
+
     /**
      * @return list<Constraint>
      */
@@ -198,6 +205,13 @@ class ToggleButtons extends Field implements Contracts\CanDisableOptions
         $rawState = $this->getRawState();
 
         if (blank($rawState)) {
+            return $constraints;
+        }
+
+        // A user `in()` list replaces the derived membership check, which is what
+        // Filament's overrides do by returning the parent's list first — before the
+        // options are ever consulted, so `in()` on an option-less field is valid.
+        if ($this->getInValidationConstraintValues() !== null) {
             return $constraints;
         }
 

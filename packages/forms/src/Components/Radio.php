@@ -95,6 +95,13 @@ class Radio extends Field implements Contracts\CanDisableOptions
             return $constraints;
         }
 
+        // A user `in()` list replaces the derived membership check, which is what
+        // Filament's overrides do by returning the parent's list first — before the
+        // options are ever consulted, so `in()` on an option-less field is valid.
+        if ($this->getInValidationConstraintValues() !== null) {
+            return $constraints;
+        }
+
         if ($this->options === null && $this->getEnum() === null) {
             throw new LogicException(
                 "Sylament failed to validate the [{$this->getStatePath()}] radio because it has no options() configuration. Call options() so Sylament knows which values are valid.",

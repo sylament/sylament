@@ -11,6 +11,8 @@ use Sylament\Forms\Twig\FormsIconAlias;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Icons\IconManager;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Component\Validator\Constraints\All;
+use Symfony\Component\Validator\Constraints\Callback;
 
 use function Sylament\Forms\Tests\renderToHtml;
 
@@ -309,4 +311,18 @@ it('lets a registered alias replace an editor toolbar icon at render time', func
         ->filter('button[data-action="click->sylament--forms--file-upload#editorZoom"]')->first();
 
     expect($button->filter('svg')->attr('viewBox'))->toBe('0 0 24 24');
+});
+
+it('carries a nested constraint on the collection set, beside the File split', function (): void {
+    $upload = FileUpload::make('cover')->nestedRecursiveConstraint(new Callback(static fn (): null => null));
+
+    $host = new FieldRenderHost();
+    $host->data = ['cover' => ['a.png' => 'a.png']];
+
+    Schema::make($host)->statePath('data')->components([$upload])->getComponents();
+
+    $all = array_values(array_filter($upload->getValidationConstraints(), static fn (object $c): bool => $c instanceof All));
+
+    expect($all)->toHaveCount(1)
+        ->and($all[0]->constraints[0])->toBeInstanceOf(Callback::class);
 });

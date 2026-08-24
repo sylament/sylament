@@ -13,6 +13,10 @@ use Sylament\Forms\Components\Concerns\HasAffixes;
 use Sylament\Forms\Components\Concerns\HasDatalistOptions;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasStep;
+use Sylament\Schemas\Components\Concerns\CanStripCharactersFromState;
+use Sylament\Schemas\Components\Concerns\CanTrimState;
+use Sylament\Schemas\State\Casts\Contracts\StateCast;
+use Sylament\Schemas\State\Casts\StripCharactersStateCast;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
@@ -29,6 +33,8 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained, Contr
     use CanBeAutocompleted;
     use CanBeLengthConstrained;
     use CanBeReadOnly;
+    use CanStripCharactersFromState;
+    use CanTrimState;
     use HasAffixes;
     use HasDatalistOptions;
     use HasExtraInputAttributes;
@@ -108,9 +114,17 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained, Contr
         return $this;
     }
 
+    /**
+     * Also writes the shared `regex()` slot, so `->tel()->regex('/…/')` keeps the
+     * later call and `->regex('/…/')->tel()` keeps the tel pattern — Filament's own
+     * behaviour, which only looked like a `tel()` decision while no `regex()` existed
+     * to collide with.
+     */
     public function tel(bool|Closure $condition = true): static
     {
         $this->isTel = $condition;
+
+        $this->regex(fn (): ?string => $this->isTel() ? $this->getTelRegex() : null);
 
         return $this;
     }
@@ -231,10 +245,6 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained, Contr
             $constraints[] = new Regex('/^[+-]?\d+$/');
         }
 
-        if ($this->isTel()) {
-            $constraints[] = new Regex($this->getTelRegex());
-        }
-
         if ($this->isUrl()) {
             $constraints[] = new Url();
         }
@@ -248,5 +258,41 @@ class TextInput extends Field implements Contracts\CanBeLengthConstrained, Contr
         }
 
         return $constraints;
+    }
+
+    public function mutateStateForValidation(mixed $state): mixed
+    {
+        return parent::mutateStateForValidation($this->trimState($this->stripCharactersFromState($state)));
+    }
+
+    public function mutatesStateForValidation(): bool
+    {
+        return parent::mutatesStateForValidation() || $this->hasStripCharacters() || $this->isTrimmed();
+    }
+
+    /**
+     * Filament's asymmetry, kept: `trim()` reaches the saved value from here, while
+     * `stripCharacters()` reaches it through the state cast below — and neither
+     * reaches the raw bag the browser wrote.
+     */
+    public function mutateDehydratedState(mixed $state): mixed
+    {
+        return parent::mutateDehydratedState($this->trimState($state));
+    }
+
+    public function mutatesDehydratedState(): bool
+    {
+        return parent::mutatesDehydratedState() || $this->isTrimmed();
+    }
+
+    /**
+     * @return array<StateCast>
+     */
+    public function getDefaultStateCasts(): array
+    {
+        return [
+            ...parent::getDefaultStateCasts(),
+            ...($this->hasStripCharacters() ? [new StripCharactersStateCast(array_values($this->getStripCharacters()))] : []),
+        ];
     }
 }

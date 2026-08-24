@@ -14,6 +14,7 @@ use League\Flysystem\UnableToRetrieveMetadata;
 use League\Flysystem\UnableToSetVisibility;
 use League\Flysystem\Visibility;
 use LogicException;
+use Sylament\Forms\Components\Contracts\HasNestedRecursiveValidationConstraints;
 use Sylament\Forms\Uploads\TemporaryUploadedFile;
 use Sylament\Forms\Uploads\TemporaryUploads;
 use Sylament\Forms\Validation\MinFileSize;
@@ -51,8 +52,10 @@ use function Sylament\Support\wrap;
  * The base is abstract because it renders nothing — {@see FileUpload} is the shipped field — but
  * every method below is the base's, so a consumer's own subclass inherits the whole lifecycle.
  */
-abstract class BaseFileUpload extends Field implements AcceptsUploadedFiles
+abstract class BaseFileUpload extends Field implements AcceptsUploadedFiles, HasNestedRecursiveValidationConstraints
 {
+    use Concerns\HasNestedRecursiveValidationConstraints;
+
     /**
      * @var iterable<string>|Closure|null
      */

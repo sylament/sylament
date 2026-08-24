@@ -7,28 +7,44 @@ namespace Sylament\Forms\Tests\Unit\Components\Concerns;
 use DateTimeImmutable;
 use LogicException;
 use Sylament\Forms\Components\Field;
+use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Components\Toggle;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureField;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureLengthField;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Records\Article;
 use Sylament\Forms\Tests\Fixtures\Records\ValidationStatus;
+use Sylament\Forms\Validation\ActiveUrl;
+use Sylament\Forms\Validation\Alpha;
+use Sylament\Forms\Validation\AlphaDash;
+use Sylament\Forms\Validation\AlphaNum;
+use Sylament\Forms\Validation\Ascii;
 use Sylament\Forms\Validation\DateComparison;
+use Sylament\Forms\Validation\EndsWith;
 use Sylament\Forms\Validation\MatchesField;
 use Sylament\Forms\Validation\Prohibited;
+use Sylament\Forms\Validation\StartsWith;
 use Sylament\Schemas\Schema;
 use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\Choice;
+use Symfony\Component\Validator\Constraints\CssColor;
 use Symfony\Component\Validator\Constraints\DivisibleBy;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\GreaterThan;
 use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
+use Symfony\Component\Validator\Constraints\Ip;
+use Symfony\Component\Validator\Constraints\Json;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\LessThan;
 use Symfony\Component\Validator\Constraints\LessThanOrEqual;
+use Symfony\Component\Validator\Constraints\MacAddress;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Positive;
 use Symfony\Component\Validator\Constraints\Regex;
+use Symfony\Component\Validator\Constraints\Type;
+use Symfony\Component\Validator\Constraints\Ulid;
+use Symfony\Component\Validator\Constraints\Uuid;
 use Symfony\Component\Validator\Validation;
 use Twig\Markup;
 
@@ -709,4 +725,98 @@ it('emits DivisibleBy under multipleOf, and nothing when the closure resolves to
     expect(constraintsOf(wireField(FixtureField::make('a')->multipleOf(5)), DivisibleBy::class)[0]->value)->toBe(5)
         ->and(constraintsOf(wireField(FixtureField::make('a')->multipleOf(fn (): float => 0.5)), DivisibleBy::class)[0]->value)->toBe(0.5)
         ->and(constraintsOf(wireField(FixtureField::make('a')->multipleOf(fn (): null => null)), DivisibleBy::class))->toBe([]);
+});
+
+it('maps each format arm onto its constraint, with the options Laravel means', function (): void {
+    expect(constraintsOf(wireField(FixtureField::make('a')->ip()), Ip::class)[0]->version)->toBe(Ip::ALL)
+        ->and(constraintsOf(wireField(FixtureField::make('a')->ipv4()), Ip::class)[0]->version)->toBe(Ip::V4)
+        ->and(constraintsOf(wireField(FixtureField::make('a')->ipv6()), Ip::class)[0]->version)->toBe(Ip::V6)
+        ->and(constraintsOf(wireField(FixtureField::make('a')->uuid()), Uuid::class)[0]->strict)->toBeFalse()
+        ->and(constraintsOf(wireField(FixtureField::make('a')->macAddress()), MacAddress::class)[0]->type)->toBe(MacAddress::ALL)
+        ->and(constraintsOf(wireField(FixtureField::make('a')->hexColor()), CssColor::class)[0]->formats)
+        ->toBe([CssColor::HEX_LONG, CssColor::HEX_LONG_WITH_ALPHA, CssColor::HEX_SHORT, CssColor::HEX_SHORT_WITH_ALPHA])
+        ->and(constraintsOf(wireField(FixtureField::make('a')->string()), Type::class)[0]->type)->toBe('string')
+        ->and(constraintsOf(wireField(FixtureField::make('a')->json()), Json::class))->toHaveCount(1)
+        ->and(constraintsOf(wireField(FixtureField::make('a')->ulid()), Ulid::class))->toHaveCount(1);
+});
+
+it('maps the four pattern arms and activeUrl onto the first-party classes', function (): void {
+    expect(constraintsOf(wireField(FixtureField::make('a')->alpha()), Alpha::class))->toHaveCount(1)
+        ->and(constraintsOf(wireField(FixtureField::make('a')->alphaDash()), AlphaDash::class))->toHaveCount(1)
+        ->and(constraintsOf(wireField(FixtureField::make('a')->alphaNum()), AlphaNum::class))->toHaveCount(1)
+        ->and(constraintsOf(wireField(FixtureField::make('a')->ascii()), Ascii::class))->toHaveCount(1)
+        ->and(constraintsOf(wireField(FixtureField::make('a')->activeUrl()), ActiveUrl::class))->toHaveCount(1);
+});
+
+it('emits nothing for a format arm under a false condition', function (): void {
+    expect(wireField(FixtureField::make('a')->ip(false)->alpha(false)->json(false))->getValidationConstraints())->toBe([]);
+});
+
+it('keeps only the last regex() call and drops it with null', function (): void {
+    $twice = constraintsOf(wireField(FixtureField::make('a')->regex('/a/')->regex('/b/')), Regex::class);
+
+    expect($twice)->toHaveCount(1)
+        ->and($twice[0]->pattern)->toBe('/b/')
+        ->and(constraintsOf(wireField(FixtureField::make('a')->regex('/a/')->regex(null)), Regex::class))->toBe([]);
+});
+
+it('emits a negated Regex under notRegex, and both together', function (): void {
+    $negated = constraintsOf(wireField(FixtureField::make('a')->notRegex('/x/')), Regex::class);
+
+    expect($negated)->toHaveCount(1)
+        ->and($negated[0]->match)->toBeFalse()
+        ->and($negated[0]->message)->toBe('This value has a format that is not allowed.')
+        ->and(constraintsOf(wireField(FixtureField::make('a')->regex('/a/')->notRegex('/x/')), Regex::class))->toHaveCount(2)
+        ->and(constraintsOf(wireField(FixtureField::make('a')->notRegex(null)), Regex::class))->toBe([]);
+});
+
+it('lets tel() and regex() share one slot, last call winning', function (): void {
+    $telThenRegex = constraintsOf(wireField(TextInput::make('t')->tel()->regex('/u/')), Regex::class);
+    $regexThenTel = constraintsOf(wireField(TextInput::make('t')->regex('/u/')->tel()), Regex::class);
+
+    expect($telThenRegex)->toHaveCount(1)
+        ->and($telThenRegex[0]->pattern)->toBe('/u/')
+        ->and($regexThenTel)->toHaveCount(1)
+        ->and($regexThenTel[0]->pattern)->toBe(TextInput::make('t')->getTelRegex());
+});
+
+it('splits a comma string and inverts the negations for the affix arms', function (): void {
+    expect(constraintsOf(wireField(FixtureField::make('a')->startsWith('a,b')), StartsWith::class)[0]->values)->toBe(['a', 'b'])
+        ->and(constraintsOf(wireField(FixtureField::make('a')->startsWith(['a'])), StartsWith::class)[0]->values)->toBe(['a'])
+        ->and(constraintsOf(wireField(FixtureField::make('a')->doesntStartWith('x')), StartsWith::class)[0]->match)->toBeFalse()
+        ->and(constraintsOf(wireField(FixtureField::make('a')->endsWith('.pdf')), EndsWith::class)[0]->values)->toBe(['.pdf'])
+        ->and(constraintsOf(wireField(FixtureField::make('a')->doesntEndWith('.exe')), EndsWith::class)[0]->match)->toBeFalse()
+        ->and(constraintsOf(wireField(FixtureField::make('a')->startsWith([])), StartsWith::class))->toBe([]);
+});
+
+it('emits a strict Choice from a user in() list, doubling every spelling', function (): void {
+    expect(constraintsOf(wireField(FixtureField::make('a')->in(['1', '2'])), Choice::class)[0]->choices)->toBe(['1', '2'])
+        ->and(constraintsOf(wireField(FixtureField::make('a')->in([1, 2])), Choice::class)[0]->choices)->toBe([1, '1', 2, '2'])
+        ->and(constraintsOf(wireField(FixtureField::make('a')->in('a, b')), Choice::class)[0]->choices)->toBe(['a', 'b'])
+        ->and(constraintsOf(wireField(FixtureField::make('a')->in([ValidationStatus::Published])), Choice::class)[0]->choices)->toBe(['published'])
+        ->and(constraintsOf(wireField(FixtureField::make('a')->in(['x'])), Choice::class)[0]->multiple)->toBeFalse()
+        ->and(constraintsOf(wireField(FixtureField::make('a')->in(['x'])), Choice::class)[0]->strict)->toBeTrue();
+});
+
+it('clears the in() slot with null or a false condition', function (): void {
+    expect(constraintsOf(wireField(FixtureField::make('a')->in(['x'])->in(null)), Choice::class))->toBe([])
+        ->and(constraintsOf(wireField(FixtureField::make('a')->in(['x'], false)), Choice::class))->toBe([])
+        ->and(constraintsOf(wireField(FixtureField::make('a')->in(['x'], fn (): bool => false)), Choice::class))->toBe([])
+        ->and(constraintsOf(wireField(FixtureField::make('a')->in(['x'], fn (): bool => true)), Choice::class))->toHaveCount(1);
+});
+
+it('emits a negated Choice under notIn, with the negation messages', function (): void {
+    $notIn = constraintsOf(wireField(FixtureField::make('a')->notIn(['x'])), Choice::class);
+
+    expect($notIn)->toHaveCount(1)
+        ->and($notIn[0]->match)->toBeFalse()
+        ->and($notIn[0]->message)->toBe('This value is not allowed.')
+        ->and($notIn[0]->multipleMessage)->toBe('One or more of the given values is not allowed.');
+});
+
+it('answers the in() slot values, comma-split and trimmed', function (): void {
+    expect(wireField(FixtureField::make('a')->in('x, y'))->getInValidationConstraintValues())->toBe(['x', 'y'])
+        ->and(wireField(FixtureField::make('a'))->getInValidationConstraintValues())->toBeNull()
+        ->and(wireField(FixtureField::make('a'))->getInValidationConstraint())->toBeNull()
+        ->and(wireField(FixtureField::make('a'))->hasInValidationOnMultipleValues())->toBeFalse();
 });

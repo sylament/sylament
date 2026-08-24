@@ -16,6 +16,7 @@ use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasGridDirection;
 use Sylament\Forms\Components\Concerns\HasOptions;
 use Sylament\Forms\Components\Concerns\HasRelationship;
+use Sylament\Forms\Components\Contracts\HasNestedRecursiveValidationConstraints;
 use Sylament\Schemas\State\Casts\Contracts\StateCast;
 use Sylament\Schemas\State\Casts\EnumArrayStateCast;
 use Sylament\Schemas\State\Casts\OptionsArrayStateCast;
@@ -30,12 +31,13 @@ use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 use function Symfony\Component\String\u;
 
-class CheckboxList extends Field implements Contracts\CanDisableOptions
+class CheckboxList extends Field implements Contracts\CanDisableOptions, HasNestedRecursiveValidationConstraints
 {
     use CanAllowHtml;
     use CanBeSearchable;
     use CanDisableOptions;
     use CanLimitItemsLength;
+    use Concerns\HasNestedRecursiveValidationConstraints;
     use HasDescriptions;
     use HasExtraInputAttributes;
     use HasGridDirection;
@@ -251,6 +253,11 @@ class CheckboxList extends Field implements Contracts\CanDisableOptions
         return [new OptionsArrayStateCast()];
     }
 
+    public function hasInValidationOnMultipleValues(): bool
+    {
+        return true;
+    }
+
     /**
      * The list's three server-side guards, in the order a tampered payload meets
      * them: a non-array raw state is failed by type alone, because
@@ -285,6 +292,13 @@ class CheckboxList extends Field implements Contracts\CanDisableOptions
         }
 
         if (blank($rawState)) {
+            return $constraints;
+        }
+
+        // A user `in()` list replaces the derived membership check, which is what
+        // Filament's overrides do by returning the parent's list first — before the
+        // options are ever consulted, so `in()` on an option-less field is valid.
+        if ($this->getInValidationConstraintValues() !== null) {
             return $constraints;
         }
 

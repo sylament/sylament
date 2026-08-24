@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests\Integration\Components;
 
 use Sylament\Forms\Components\Textarea;
+use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Schemas\Schema;
 use Symfony\Component\DomCrawler\Crawler;
 
 use function Sylament\Forms\Tests\renderField;
@@ -129,4 +131,18 @@ it('merges extra input attributes onto the textarea and lets them win', function
 
     expect($textarea->attr('data-extra'))->toBe('yes')
         ->and($textarea->attr('rows'))->toBe('8');
+});
+
+it('trims and strips exactly as TextInput does', function (): void {
+    $host = new FieldRenderHost();
+    $host->data = ['n' => ' 1,234 '];
+
+    $field = Textarea::make('n')->trim()->stripCharacters(',');
+    $schema = Schema::make($host)->statePath('data')->components([$field]);
+    $schema->getComponents();
+
+    expect($schema->mutateStateForValidation(['data.n' => ' 1,234 ']))->toBe(['data.n' => '1234'])
+        ->and($schema->getStateSnapshot())->toBe(['n' => '1234'])
+        ->and($host->data['n'])->toBe(' 1,234 ')
+        ->and($field->mutatesStateForValidation())->toBeTrue();
 });

@@ -24,6 +24,7 @@ use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
 use Sylament\Forms\Components\Concerns\HasLoadingMessage;
 use Sylament\Forms\Components\Concerns\HasOptions;
 use Sylament\Forms\Components\Concerns\HasRelationship;
+use Sylament\Forms\Components\Contracts\HasNestedRecursiveValidationConstraints;
 use Sylament\Forms\Twig\FormsIconAlias;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Query\SearchConstraint;
@@ -48,7 +49,7 @@ use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 use function Sylament\Support\wrap;
 
-class Select extends Field implements Contracts\CanDisableOptions, Contracts\HasAffixes
+class Select extends Field implements Contracts\CanDisableOptions, Contracts\HasAffixes, HasNestedRecursiveValidationConstraints
 {
     use CanAllowHtml;
     use CanBeNative;
@@ -57,6 +58,7 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
     use CanDisableOptions;
     use CanLimitItemsLength;
     use CanSelectPlaceholder;
+    use Concerns\HasNestedRecursiveValidationConstraints;
     use HasAffixes;
     use HasExtraInputAttributes;
     use HasLoadingMessage;
@@ -1093,6 +1095,11 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         ];
     }
 
+    public function hasInValidationOnMultipleValues(): bool
+    {
+        return $this->isMultiple();
+    }
+
     /**
      * Validation runs against the raw state. A multiple select whose raw state is
      * not an array is failed by a type constraint alone — `Choice(multiple: true)`
@@ -1132,6 +1139,13 @@ class Select extends Field implements Contracts\CanDisableOptions, Contracts\Has
         }
 
         if (blank($rawState)) {
+            return $constraints;
+        }
+
+        // A user `in()` list replaces the derived membership check, which is what
+        // Filament's overrides do by returning the parent's list first — before the
+        // options are ever consulted, so `in()` on an option-less field is valid.
+        if ($this->getInValidationConstraintValues() !== null) {
             return $constraints;
         }
 

@@ -579,3 +579,36 @@ it('still reports both bounds on a required field, whose NotBlank survives the g
 
     expect($host->getErrorsForSchemaStatePath('data.count'))->toBe(['This value should not be blank.']);
 });
+
+it('strips characters for validation, for the saved value, and never for the raw bag', function (): void {
+    $host = new FieldRenderHost();
+    $host->data = ['n' => '1,234'];
+
+    $field = TextInput::make('n')->stripCharacters(',')->numeric();
+    $schema = Schema::make($host)->statePath('data')->components([$field]);
+    $schema->getComponents();
+
+    expect($schema->mutateStateForValidation(['data.n' => '1,234']))->toBe(['data.n' => '1234'])
+        ->and($schema->getStateSnapshot())->toBe(['n' => '1234'])
+        ->and($host->data['n'])->toBe('1,234');
+});
+
+it('trims for validation and for the saved value, and never for the raw bag', function (): void {
+    $host = new FieldRenderHost();
+    $host->data = ['n' => '  ada  '];
+
+    $field = TextInput::make('n')->trim();
+    $schema = Schema::make($host)->statePath('data')->components([$field]);
+    $schema->getComponents();
+
+    expect($schema->mutateStateForValidation(['data.n' => '  ada  ']))->toBe(['data.n' => 'ada'])
+        ->and($schema->getStateSnapshot())->toBe(['n' => 'ada'])
+        ->and($host->data['n'])->toBe('  ada  ');
+});
+
+it('mutates state for validation only once trim, strip or a closure is set', function (): void {
+    expect(TextInput::make('n')->mutatesStateForValidation())->toBeFalse()
+        ->and(TextInput::make('n')->trim()->mutatesStateForValidation())->toBeTrue()
+        ->and(TextInput::make('n')->stripCharacters(',')->mutatesStateForValidation())->toBeTrue()
+        ->and(TextInput::make('n')->mutateStateForValidationUsing(fn (): string => 'x')->mutatesStateForValidation())->toBeTrue();
+});

@@ -4,18 +4,31 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Integration\Components\Concerns;
 
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Forms\Components\Checkbox;
 use Sylament\Forms\Components\CheckboxList;
+use Sylament\Forms\Components\Contracts\HasNestedRecursiveValidationConstraints;
 use Sylament\Forms\Components\Field;
+use Sylament\Forms\Components\FileUpload;
+use Sylament\Forms\Components\Radio;
 use Sylament\Forms\Components\Repeater;
+use Sylament\Forms\Components\Select;
 use Sylament\Forms\Components\TextInput;
+use Sylament\Forms\Components\ToggleButtons;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Handle;
+use Sylament\Forms\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Forms\Tests\Fixtures\Records\Article;
 use Sylament\Forms\Tests\Fixtures\Records\Author;
 use Sylament\Forms\Validation\Distinct;
+use Sylament\Forms\Validation\ExistingValue;
+use Sylament\Forms\Validation\UniqueValue;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\RecordTypeReader;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 /*
@@ -356,3 +369,177 @@ it('emits nothing for a field outside any repeater', function (): void {
 
     expect(array_filter($field->getValidationConstraints(), static fn (object $c): bool => $c instanceof Distinct))->toBe([]);
 });
+
+/**
+ * @return list<Choice>
+ */
+function choiceConstraints(Field $field): array
+{
+    return array_values(array_filter(
+        $field->getValidationConstraints(),
+        static fn (Constraint $constraint): bool => $constraint instanceof Choice,
+    ));
+}
+
+it("lets a user in() list replace an option field's derived membership check", function (): void {
+    $host = new FieldRenderHost();
+    $host->data = ['role' => 'ghost'];
+
+    $select = Select::make('role')->options(['a' => 'A'])->in(['ghost']);
+    Schema::make($host)->statePath('data')->components([$select])->getComponents();
+
+    $choices = choiceConstraints($select);
+
+    expect($choices)->toHaveCount(1)
+        ->and($choices[0]->choices)->toBe(['ghost'])
+        ->and($choices[0]->multiple)->toBeFalse();
+});
+
+it('accepts in() on an option-less field, where the derived check would throw', function (): void {
+    $host = new FieldRenderHost();
+    $host->data = ['role' => 'ghost'];
+
+    $radio = Radio::make('role')->in(['ghost']);
+    Schema::make($host)->statePath('data')->components([$radio])->getComponents();
+
+    expect(choiceConstraints($radio))->toHaveCount(1);
+});
+
+it('marks the in() Choice multiple on the multi-value fields', function (): void {
+    $host = new FieldRenderHost();
+    $host->data = ['roles' => ['ghost'], 'tags' => ['ghost'], 'flags' => ['ghost']];
+
+    $list = CheckboxList::make('roles')->options(['a' => 'A'])->in(['ghost']);
+    $select = Select::make('tags')->multiple()->options(['a' => 'A'])->in(['ghost']);
+    $buttons = ToggleButtons::make('flags')->multiple()->options(['a' => 'A'])->in(['ghost']);
+
+    Schema::make($host)->statePath('data')->components([$list, $select, $buttons])->getComponents();
+
+    expect($list->hasInValidationOnMultipleValues())->toBeTrue()
+        ->and(choiceConstraints($list)[0]->multiple)->toBeTrue()
+        ->and($select->hasInValidationOnMultipleValues())->toBeTrue()
+        ->and(choiceConstraints($select)[0]->multiple)->toBeTrue()
+        ->and($buttons->hasInValidationOnMultipleValues())->toBeTrue()
+        ->and(choiceConstraints($buttons)[0]->multiple)->toBeTrue();
+});
+
+it('implements the nested-constraint contract on the four multi-value consumers', function (): void {
+    expect(Select::make('a'))->toBeInstanceOf(HasNestedRecursiveValidationConstraints::class)
+        ->and(CheckboxList::make('a'))->toBeInstanceOf(HasNestedRecursiveValidationConstraints::class)
+        ->and(ToggleButtons::make('a'))->toBeInstanceOf(HasNestedRecursiveValidationConstraints::class)
+        ->and(FileUpload::make('a'))->toBeInstanceOf(HasNestedRecursiveValidationConstraints::class);
+});
+
+it("emits a unique constraint against the schema's record class, ignoring the bound record", function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    $handle = new Handle('ada');
+    EntityManagerFactory::seed($entityManager, $handle);
+    $persisted = $entityManager->find(Handle::class, $handle->getId());
+
+    $host = new FieldRenderHost();
+    $host->data = ['name' => 'ada'];
+
+    $field = TextInput::make('name')->unique();
+
+    Schema::make($host)->statePath('data')->record($persisted)->components([$field])->getComponents();
+
+    $unique = constraintsOfClass($field, UniqueValue::class);
+
+    expect($unique)->toHaveCount(1)
+        ->and($unique[0]->entityClass)->toBe(Handle::class)
+        ->and($unique[0]->property)->toBe('name')
+        ->and($unique[0]->ignoredIdentifier)->toBe((string) $handle->getId());
+});
+
+it('ignores nothing for a class-string binding, an unflushed record or an opt-out', function (): void {
+    $classString = wireUniqueField(TextInput::make('name')->unique(), Handle::class);
+    $fresh = wireUniqueField(TextInput::make('name')->unique(), new Handle('fresh'));
+    $optOut = wireUniqueField(TextInput::make('name')->unique(ignoreRecord: false), Handle::class);
+    $defaultOff = wireUniqueField(TextInput::make('name')->uniqueValidationIgnoresRecordByDefault(false)->unique(), Handle::class);
+
+    expect(constraintsOfClass($classString, UniqueValue::class)[0]->ignoredIdentifier)->toBeNull()
+        ->and(constraintsOfClass($fresh, UniqueValue::class)[0]->ignoredIdentifier)->toBeNull()
+        ->and(constraintsOfClass($optOut, UniqueValue::class)[0]->ignoredIdentifier)->toBeNull()
+        ->and(constraintsOfClass($defaultOff, UniqueValue::class)[0]->ignoredIdentifier)->toBeNull();
+});
+
+it('lets an explicit ignorable win over the bound record', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    $ada = new Handle('ada');
+    $bob = new Handle('bob');
+    EntityManagerFactory::seed($entityManager, $ada, $bob);
+
+    $field = wireUniqueField(TextInput::make('name')->unique(ignorable: $entityManager->find(Handle::class, $bob->getId())), $entityManager->find(Handle::class, $ada->getId()));
+
+    expect(constraintsOfClass($field, UniqueValue::class)[0]->ignoredIdentifier)->toBe((string) $bob->getId());
+});
+
+it('emits no data-layer constraint when no entity class resolves', function (): void {
+    $host = new FieldRenderHost();
+    $field = TextInput::make('name')->unique();
+
+    Schema::make($host)->statePath('data')->components([$field])->getComponents();
+
+    expect(constraintsOfClass($field, UniqueValue::class))->toBe([]);
+});
+
+it('emits an exists constraint naming the entity and property', function (): void {
+    $field = wireUniqueField(TextInput::make('name')->exists(Handle::class, 'owner'), null);
+    $existing = constraintsOfClass($field, ExistingValue::class);
+
+    expect($existing)->toHaveCount(1)
+        ->and($existing[0]->entityClass)->toBe(Handle::class)
+        ->and($existing[0]->property)->toBe('owner');
+});
+
+it('wraps modifyQueryUsing so the Invoker injects into it', function (): void {
+    $received = null;
+    $field = wireUniqueField(
+        TextInput::make('name')->unique(modifyQueryUsing: function (QueryBuilder $query) use (&$received): void {
+            $received = $query;
+        }),
+        Handle::class,
+    );
+
+    $constraint = constraintsOfClass($field, UniqueValue::class)[0];
+    $builder = $this::getContainer()->get(EntityManagerInterface::class)->createQueryBuilder();
+    ($constraint->modifyQueryUsing)($builder);
+
+    expect($received)->toBe($builder);
+});
+
+/**
+ * @template TConstraint of Constraint
+ *
+ * @param  class-string<TConstraint> $class
+ * @return list<TConstraint>
+ */
+function constraintsOfClass(Field $field, string $class): array
+{
+    return array_values(array_filter(
+        $field->getValidationConstraints(),
+        static fn (Constraint $constraint): bool => $constraint instanceof $class,
+    ));
+}
+
+/**
+ * Wire a field under a schema bound to `$record`, which is the frame `unique()`
+ * and `exists()` resolve their entity class and their ignored identifier from.
+ */
+function wireUniqueField(Field $field, object|string|null $record): Field
+{
+    $host = new FieldRenderHost();
+    $host->data = ['name' => 'ada'];
+
+    $schema = Schema::make($host)->statePath('data');
+
+    if ($record !== null) {
+        $schema->record($record);
+    } else {
+        $schema->record(Handle::class);
+    }
+
+    $schema->components([$field])->getComponents();
+
+    return $field;
+}

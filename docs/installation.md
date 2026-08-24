@@ -7,9 +7,9 @@ ships.
 > **Project status.** Sylament is early-stage and **not yet released**. There are
 > no tags and nothing is on Packagist, so the instructions below install the
 > development branch from GitHub. Expect the API to move. Today `support`,
-> `schemas`, `forms`, `actions`, `notifications` and `tables` carry real
-> functionality; `infolists`, `panels` and `widgets` are placeholders that ship
-> a bundle class and nothing else.
+> `schemas`, `forms`, `actions`, `notifications`, `tables` and `panels` carry
+> real functionality; `infolists` and `widgets` are placeholders that ship a
+> bundle class and nothing else.
 
 ## Requirements
 
@@ -26,6 +26,11 @@ just the case where the bound object happens to be managed by Doctrine.
 `symfony/asset-mapper` is optional but recommended — it is how the compiled CSS
 and the Stimulus controllers reach your pages without you wiring anything. See
 [Front-end assets](#3-front-end-assets) for what to do without it.
+
+Storage is conditional in a similar way. `league/flysystem` comes in with
+`forms`, but nothing reaches for it until you use a field that writes a file —
+and when you do, those files need somewhere to go. See
+[Storage for file uploads](#5-storage-for-file-uploads).
 
 ## 1. Add the packages
 
@@ -123,7 +128,8 @@ and the Stimulus controllers through `assets/controllers.json`:
         "@sylament/forms": {
             "checkbox-list": { "enabled": true, "fetch": "eager" },
             "select":        { "enabled": true, "fetch": "eager" },
-            "repeater":      { "enabled": true, "fetch": "eager" }
+            "repeater":      { "enabled": true, "fetch": "eager" },
+            "file-upload":   { "enabled": true, "fetch": "lazy" }
         },
         "@sylament/notifications": {
             "notifications": { "enabled": true, "fetch": "eager" },
@@ -161,10 +167,11 @@ Support's `core` controller carries the `autoimport` that pulls in the
 stylesheet; the other four power collapsible sections, modals, dropdown
 positioning and drag-and-drop reordering, and you can disable one you do not
 use. Notifications' two controllers drive the toast stack and each toast's
-auto-dismiss, hover-pause and close. Forms' three are per-field:
+auto-dismiss, hover-pause and close. Forms' four are per-field:
 `checkbox-list` supplies a checkbox list's search filter and bulk toggle,
-`select` is the searchable select control, and `repeater` owns a repeater
-item's collapse state and turns a drag into the reorder the server records.
+`select` is the searchable select control, `repeater` owns a repeater
+item's collapse state and turns a drag into the reorder the server records, and
+`file-upload` is the drop zone, previews and upload of `FileUpload`.
 `select` is not optional for the fields that use it: a `searchable()`,
 `multiple()`, `native(false)` or `allowHtml()` select renders a plain `<select>`
 whose binding belongs to the controller rather than to a `data-model` attribute,
@@ -176,6 +183,12 @@ cloaks for a stored `persistCollapsed` state stays hidden, since `sy-cloak` is
 revealed only once a controller applies its first state. A `reorderable()`
 repeater falls back to whatever it was given otherwise — the move buttons if
 `reorderableWithButtons()` is on, nothing if the drag handle is the only route.
+`file-upload` is the one controller declared `"fetch": "lazy"`: it carries
+FilePond with it, and a page with no upload field on it should not pay for
+that. It is also the one whose omission fails total rather than partial —
+`FileUpload` falls back to the bare `<input type="file">` under its label, with
+nothing listening to it, so there is no drop zone, no preview, and a picked
+file never leaves the page.
 
 Schemas' three are per-schema: `tabs` and `wizard` drive tab switching and the
 wizard's step navigation, and `schema` sits on every root schema — it reveals the
@@ -212,8 +225,8 @@ The stylesheet is support's alone, but the controllers are not: serve
 `vendor/sylament/forms/assets/dist/controllers/*.js` and
 `vendor/sylament/schemas/assets/dist/controllers/*.js` too if you installed those
 packages and want toasts, action event dispatch, the checkbox-list and
-searchable-select controls, repeater item collapse and drag reorder, or tabs and
-wizards.
+searchable-select controls, repeater item collapse and drag reorder, file
+uploads, or tabs and wizards.
 
 Copy them into your public directory, or point your own build at them.
 </details>
@@ -235,7 +248,65 @@ at all** until you register one, so it costs you an empty line today — but
 without it, a palette you register later will silently render colourless. Add it
 now. See [Configuration → Colours](configuration.md#colours).
 
-## 5. Check it works
+## 5. Storage for file uploads
+
+Skip this unless you use `FileUpload`, or anything else that writes a file.
+Sylament ships no adapters and no storage configuration of its own: it writes
+through a **flysystem storage** your application registers, and finds it by
+name. The usual way to register one is `league/flysystem-bundle`:
+
+```bash
+composer require league/flysystem-bundle
+```
+
+```php
+// config/bundles.php
+League\FlysystemBundle\FlysystemBundle::class => ['all' => true],
+```
+
+Define at least one storage, then point the toolkit at it:
+
+```yaml
+# config/packages/flysystem.yaml
+flysystem:
+    storages:
+        public.storage:
+            local:
+                directory: '%kernel.project_dir%/public/uploads'
+            visibility: public
+            directory_visibility: public
+            public_url: '/uploads'
+```
+
+```yaml
+# config/packages/sylament.yaml
+sylament:
+    default_filesystem_disk: public.storage
+```
+
+Leave `default_filesystem_disk` unset and every component that does not name a
+storage of its own throws on first use, naming the key. A component names one
+with `->disk('private.storage')` — the setter is called `disk()` because
+Filament's is, and the value it takes is a flysystem storage name.
+
+A file waits on a storage between the upload and the save, and unless you say
+otherwise that is the same one, under `sylament-tmp/`. Move it if you would
+rather keep in-flight bytes off a public disk:
+
+```yaml
+# config/packages/sylament_forms.yaml
+sylament_forms:
+    temporary_file_upload:
+        disk: private.storage   # default: whatever default_filesystem_disk names
+        directory: sylament-tmp
+        cleanup: true           # sweep leftovers older than 24 h on each upload
+```
+
+See [Configuration → Storage](configuration.md#storage) for the rest: private
+files and their temporary URLs, and how a service of your own joins the registry
+without the bundle.
+
+## 6. Check it works
 
 Drop a component into any template:
 

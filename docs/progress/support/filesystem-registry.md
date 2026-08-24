@@ -146,34 +146,16 @@ quietly returning nothing.
 
 ## Consumer setup
 
-The three steps an application takes before a `FileUpload` can write anything.
-This is also the text
-[`docs/installation.md`](../../installation.md) carries as its storage step:
+What the registry needs from an application is two things, and only two: at
+least one service carrying the `flysystem.storage` tag — `league/flysystem-bundle`
+is the usual route, [a tag by hand](#a-consumer-without-the-bundle-tags-its-own-operator)
+the other — and `sylament.default_filesystem_disk` naming one of them, without
+which every component that does not name a disk of its own throws on first use,
+naming the key.
 
-1. `composer require league/flysystem-bundle` and register
-   `League\FlysystemBundle\FlysystemBundle::class => ['all' => true]` in
-   `config/bundles.php`.
-2. Define at least one storage:
-
-    ```yaml
-    # config/packages/flysystem.yaml
-    flysystem:
-        storages:
-            public.storage:
-                local:
-                    directory: '%kernel.project_dir%/public/uploads'
-                visibility: public
-                directory_visibility: public
-                public_url: '/uploads'
-    ```
-
-3. Point the toolkit at it:
-
-    ```yaml
-    # config/packages/sylament.yaml
-    sylament:
-        default_filesystem_disk: public.storage
-    ```
-
-Skip step 3 and every component that does not name a disk of its own throws on
-first use, naming the key.
+The consumer-facing how-to is not repeated here:
+[installation.md § 5](../../installation.md#5-storage-for-file-uploads) walks
+through installing the bundle, defining a storage and pointing the toolkit at
+it, and [configuration.md § Storage](../../configuration.md#storage) documents
+the keys, the per-component override and what private files cost on a `local`
+adapter.

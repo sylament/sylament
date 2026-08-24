@@ -89,7 +89,7 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 | `checkbox.css` — gone from this tree; the box, tick, dash and invalid arms are [support's `.sy-checkbox`](../../../packages/support/assets/src/styles/components/checkbox.css), which the two emitting templates carry beside their own `sy-fo-checkbox` hook | [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | done | — | [diverges](#the-checkbox-skin-moved-to-support-when-tables-became-its-second-consumer) |
 | [`date-time-picker.css` — its one native-control rule, ported into `input.css` as `.sy-fo-input::-webkit-datetime-edit`](../../../packages/forms/assets/src/styles/components/input.css) | [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | the JS calendar vertical ([date-time-picker.md](date-time-picker.md#the-js-calendar-family-waits-on-a-js-vertical-of-its-own)) | [detail](#the-date-time-picker-stylesheet-is-one-native-rule-and-a-calendar-panel) |
 | [`field.css` — the `.sy-fo-field` wrapper grid, label column, content column and error list](../../../packages/forms/assets/src/styles/components/field.css) | [`components/field.css`](../../../vendor/filament/forms/resources/css/components/field.css) | in progress | schemas' `HasInlineLabel` · support's `HasVerticalAlignment` | [detail](#the-field-stylesheet-omits-the-leading-schema-un-grow) · [diverges](#field-css-is-flat-where-filament-nests) · [diverges](#sy-fo-sr-only-is-a-support-utility-authored-as-a-forms-component-class) |
-| [`file-upload.css` — the `.sy-fo-file-upload` wrapper, its FilePond overrides, the two JS-built action anchors and the editor dialog's skin](../../../packages/forms/assets/src/styles/components/file-upload.css) | [`components/file-upload.css`](../../../vendor/filament/forms/resources/css/components/file-upload.css) | in progress | media preview | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) · [diverges](#filepond--label-action-takes-the-link-colour-policy-not-vendors-hardcoded-shade) · [diverges](#the-download-and-open-action-anchors-are-the-ports-own) |
+| [`file-upload.css` — vendor's root layout (the `flex flex-col gap-y-2` root, the `sy-align-*` arms, the avatar input container's width and the error message), the `.sy-fo-file-upload` wrapper's FilePond overrides, the two JS-built action anchors and the editor dialog's skin](../../../packages/forms/assets/src/styles/components/file-upload.css) | [`components/file-upload.css`](../../../vendor/filament/forms/resources/css/components/file-upload.css) | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) · [diverges](#filepond--label-action-takes-the-link-colour-policy-not-vendors-hardcoded-shade) · [diverges](#the-download-and-open-action-anchors-are-the-ports-own) · [diverges](#the-dark-backdrop-arm-sits-in-an-variant-dark-block) |
 | `filepond.generated.css` — FilePond's own base stylesheet, rewritten under `.sy-fo-file-upload` by support's `scope-vendor-css.mjs` (generated, gitignored) | `filepond/dist/filepond.css` + `filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css` + `filepond-plugin-image-edit/dist/filepond-plugin-image-edit.css` (npm, not Filament) | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
 | `cropper.generated.css` — Cropper.js's own stylesheet, rewritten under `.sy-fo-file-upload-editor` by support's `scope-vendor-css.mjs` (generated, gitignored) | `cropperjs/dist/cropper.css` (npm, not Filament) | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
 | [`fused-group.css` — the `.sy-fo-fused-group` ring, dividers and corner rules](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`schemas/…/components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) | done | — | [diverges](../schemas/styles.md#fused-group-css-was-ported-into-the-forms-package) · [semantics](fused-group.md#the-corner-rules-reach-through-two-elements-the-schema-partial-nests) |
@@ -276,8 +276,10 @@ until then. Next step for each: port when its field does.
 The tenth is the odd one out: `file-upload/filepond-plugin-media-preview.css` is
 nested under a stylesheet that *is* ported, and is blocked on the media-preview
 plugin rather than on a field — `FileUpload` ships with FilePond's core plus
-`file-validate-size`, `file-validate-type` and `image-preview`, so audio and video
-items render as file cards with no player. Next step: port when the plugin joins
+every plugin but this one: the two validators (`file-validate-size`,
+`file-validate-type`) and the six image plugins (`image-crop`, `image-edit`,
+`image-exif-orientation`, `image-preview`, `image-resize`, `image-transform`), so
+audio and video items render as file cards with no player. Next step: port when the plugin joins
 the bundle, a decision of its own — the editor shipped without it.
 
 One support-tier stylesheet sits in the same position one package over:
@@ -674,6 +676,19 @@ repeater's drag control for its first live case. The remaining two-sided contrac
 is with the [controller](forms-bundle.md#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host) and the engine it drives: a class
 renamed on either side breaks the paint in silence, and no test in this repo
 renders the control.
+
+### The dark backdrop arm sits in an `@variant dark` block
+
+The editor dialog's `::backdrop` takes its light shade inline
+(`bg-gray-950/50`) and its dark one from an `@variant dark` block one nesting
+level up, rather than from a `dark:` prefix beside it. Written inline, the dark
+variant compiles to a `:where()` compound sitting next to the pseudo-element, and
+the optimiser Tailwind runs over the compiled sheet mangles that pairing into
+`::backdrop:where()` — a selector that matches nothing, with no error anywhere.
+Hoisting the arm one level up keeps the two rules apart through the build, and
+support's committed `dist/styles/index.css` carries both (50 % light, 75 % under
+`.dark`). It is the only `@variant` block in the forms tree, and it is there for
+the build rather than for the design.
 
 _See also: the global [rename table](../renames.md) — the `fi-*` → `sy-fo-*` class
 prefix, the `--x` → `--sy-x` custom-property prefix, and the

@@ -95,7 +95,7 @@ _Ports_ cell is `—` has no Filament counterpart.
 | [`panelLayout()` / `getPanelLayout()`](../../../packages/forms/src/Components/FileUpload.php) | [`panelLayout()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`loadingIndicatorPosition()` / `removeUploadedFileButtonPosition()` / `uploadButtonPosition()` / `uploadProgressIndicatorPosition()` and their getters](../../../packages/forms/src/Components/FileUpload.php) | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`mimeTypeMap()` / `getMimeTypeMap()`](../../../packages/forms/src/Components/FileUpload.php) | [`mimeTypeMap()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [diverges](#the-bundle-drops-fileponds-mime-database) |
-| `automaticallyCropImagesToAspectRatio()` and the whole resize family (`automaticallyResizeImagesMode()`, `automaticallyResizeImagesToHeight()`, `automaticallyResizeImagesToWidth()`, `automaticallyUpscaleImagesWhenResizing()`) | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [diverges](#getimageeditoractions-carries-methods-and-params-not-alpine) |
+| `automaticallyCropImagesToAspectRatio()` and the whole resize family (`automaticallyResizeImagesMode()`, `automaticallyResizeImagesToHeight()`, `automaticallyResizeImagesToWidth()`, `automaticallyUpscaleImagesWhenResizing()`) | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [semantics](#imageaspectratio-validates-and-automaticallycropimagestoaspectratio-crops) |
 | `orientImagesFromExif()` / `shouldOrientImagesFromExif()` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | The image-editor family — `imageEditor()`, `circleCropper()`, `editableSvgs()`, `confirmSvgEditing()`, `automaticallyOpenImageEditorForAspectRatio()`, `imageEditorViewportWidth()` / `Height()`, `imageEditorMode()`, `imageEditorEmptyFillColor()`, `imageEditorAspectRatioOptions()`, `getImageEditorActions()` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [diverges](#getimageeditoractions-carries-methods-and-params-not-alpine) |
 | `idleLabel()` / `imageCropAspectRatio()` / `imageResizeMode()` / `imageResizeTargetHeight()` / `imageResizeTargetWidth()` / `imageResizeUpscale()` / `orientImageFromExif()` / `imageEditorAspectRatios()` and their deprecated getters | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | skipped | — | the port ships no deprecated surface |
@@ -251,8 +251,9 @@ just before the remove until the re-added item starts processing, and
 `#reconcile()` returns early while it is set — so a morph landing between the
 remove and the add cannot rebuild `pond.files` from a state that no longer
 describes the pond. It is cleared at the top of `#process()`, on an `addFile()`
-rejection, and by the `removefile` event when the re-added item is removed before
-it ever uploaded.
+rejection, by the `removefile` event when the re-added item is removed before it
+ever uploaded, and by `disconnect()`, which drops it with the rest of the
+editor's state so a reconnected controller starts unguarded.
 
 One upstream override does nothing here. image-edit installs a
 `SHOULD_REMOVE_ON_REVERT` filter, but FilePond 4.32.12's core has no site for it
@@ -278,9 +279,10 @@ nothing today and costs correctness there.
 The transform plugin resizes on a Web Worker it builds at runtime from a
 stringified function and a `Blob` URL, so an application serving a strict
 Content-Security-Policy must allow `worker-src blob:` or the resize fails. The
-worker path is taken only when a transform is actually configured — with no crop,
-resize or filter the plugin goes straight to `toBlob()` — so a field that merely
-uploads is unaffected. This is upstream's shape, not a Sylament choice, and it is
+worker path is taken only when a resize or a filter is configured — a crop is
+applied by drawing onto the canvas rather than pushed onto the worker's list, and
+with neither of the other two the plugin goes straight to `toBlob()` — so a field
+that merely uploads is unaffected. This is upstream's shape, not a Sylament choice, and it is
 recorded beside the field's other platform requirements because the alternative
 is not shipping the transform at all.
 
@@ -498,6 +500,14 @@ dialog, since added nodes are not blocked). And there is no body-scroll lock:
 support's modal has none either, so `noscroll`'s half of `x-trap` is the one
 piece of Filament's overlay with no replacement here.
 
+Opening is ordered against the platform rather than against a timer. The dialog
+is `showModal()`ed first and Cropper constructed on the image it now contains,
+and `replace()` runs one `requestAnimationFrame` later — by which point the
+dialog has been laid out and the image container has a size to measure. Filament
+reaches that point with a 200 ms `setTimeout` instead, which the port does not
+need: the browser pass measured the container at 928×749 on that frame
+(Chrome 151), so the crop box binds to real dimensions on the first open.
+
 ### The bundle drops FilePond's mime database
 
 `mimeTypeMap()` ships as the extension→MIME override it is, and it is the only
@@ -654,6 +664,13 @@ falls back to PNG for any type the engine cannot encode — `image/gif`,
 stored item's `fetch()` may hand back — so keying the rename to the *requested*
 type would name PNG bytes `photo-v1.gif`, the same lie one source further along.
 One expression, the server untouched, and M3·7's naming semantics intact.
+
+A name carrying no dot at all is handled rather than mangled on the way through:
+`versionedName()` reads a missing dot as an empty extension and appends the one
+the blob earns, so `photo` cropped to PNG becomes `photo-v1.png`. Filament's
+`slice(0, lastIndexOf('.'))` on `-1` drops the last character and its
+`split('.').pop()` returns the whole name, so the same file comes back as
+`phot-v1.photo`.
 
 Everything else in `saveEditor()` ports verbatim, including three things worth
 not "fixing". The circle mask is an ellipse inscribed in the crop box, so a

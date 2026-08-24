@@ -483,9 +483,11 @@ and the shape differs in seven ways worth knowing before touching it.
   replaces, so `this.inputTarget` throws afterwards while `FilePond.destroy()`
   needs that same element (and restores it, which is what lets a later `connect()`
   find the target again). Everything downstream reads the captured reference.
-- **Four JS-owned literals join D18's four.** `The file could not be uploaded.`
-  is Filament's; `The file could not be removed.`, `The file could not be
-  loaded.` and `The files could not be reordered.` are ours, because Filament's
+- **Four JS-owned literals join the four PHP-side ones**
+  [file-upload.md](file-upload.md#literals-not-translation-keys) lists.
+  `The file could not be uploaded.` is Filament's; `The file could not be
+  removed.`, `The file could not be loaded.` and `The files could not be
+  reordered.` are ours, because Filament's
   `revert`/`remove` never call FilePond's `error` at all, its `load` resolves a
   failed fetch as an empty blob, and its `reorderfiles` handler `await`s the
   server inside an event listener nothing catches — a silent failure every time.
@@ -506,9 +508,9 @@ a FilePond option is added. A cancelled upload's key is consumed on **both**
 settle arms and the item is `abort()`ed rather than `error()`ed, so the
 cancelled set cannot leak and a cancelled item leaves no error chrome behind.
 The two `void` seam calls grew rejection arms: a failed `reorderUploadedFiles`
-surfaces `The files could not be reordered.` and clears the reconcile guard's
-last-state so the next morph rebuilds the list in the server's order, and the
-cancel-time `removeUploadedFile` surfaces `The file could not be removed.`.
+surfaces `The files could not be reordered.` and clears `#lastState`, the
+reconcile memo, so the next morph rebuilds the list in the server's order, and
+the cancel-time `removeUploadedFile` surfaces `The file could not be removed.`.
 `FilePond.create()` runs inside `try/finally` so the `#initializing` re-entrance
 flag cannot stick after a throw, `maxFileSize` is passed only under
 `hasMaxFileSizeValue` (an absent value is not a zero ceiling), and

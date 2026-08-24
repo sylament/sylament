@@ -108,9 +108,6 @@
     & .sy-fo-file-upload-editor {
         @apply fixed inset-0 isolate m-0 h-[100dvh] w-screen max-h-none max-w-none border-0 bg-transparent p-2 sm:p-10 md:p-20;
 
-        /* The dark arm is a rule of its own one level up: lightningcss mangles a
-           `:where()` compound sitting next to `::backdrop`, so an inline `dark:`
-           here compiles to a dead `::backdrop:where()`. */
         &::backdrop {
             @apply bg-gray-950/50;
         }

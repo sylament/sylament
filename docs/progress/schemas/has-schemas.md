@@ -56,24 +56,26 @@ file, a link to that file.
 | [`resolveSchemaByName()` — the shared reflection gate](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [interacts-with-schemas.md](interacts-with-schemas.md#resolveschemabyname-is-a-sylament-only-extraction-with-no-filament-source) |
 | [`getSchemaComponent()` absolute-key addressing](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::getSchemaComponent()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [interacts-with-schemas.md](interacts-with-schemas.md#getschemacomponent-drops-the-child-container-skip-list) |
 | [`callSchemaComponentMethod()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [interacts-with-schemas.md](interacts-with-schemas.md#callschemacomponentmethod-answers-through-a-browser-event-with-no-partial-render) |
+| [`uploadSchemaComponentFile()`](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [interacts-with-schemas.md](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) |
 | `partiallyRenderSchemaComponent()` | [`InteractsWithSchemas::callSchemaComponentMethod()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [diverges](#partiallyrenderschemacomponent-has-no-livecomponent-twin) |
 | [`ComponentToolsTrait` composition (`dispatchBrowserEvent()` and siblings)](../../../packages/schemas/src/Concerns/HasSchemas.php) | — | done | — | [diverges](#hasschemas-composes-componenttoolstrait-alongside-hasactions) |
 | [Validation integration (`validateSchema`, error bag, sticky re-validation)](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | in progress | — | [can-be-validated.md](can-be-validated.md) |
 | [`form-validation-error` browser event on a failing submit-path validation](../../../packages/schemas/src/Concerns/HasSchemas.php) | [`InteractsWithSchemas::validate()`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | done | — | [can-be-validated.md](can-be-validated.md#the-throwing-branch-announces-form-validation-error-carrying-the-schema-identity) |
-| File-upload integration (`componentFileAttachments`, `isFileUploadForSchemaComponent`, …) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `RestrictsFileUploadsToSchemaComponents` + forms `BaseFileUpload` | [detail](#the-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
-| `ResolvesDynamicLivewireProperties` (used trait) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `ResolvesDynamicLivewireProperties` port | [detail](#the-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
+| Livewire file-upload integration (`use WithFileUploads`, `componentFileAttachments`, `isFileUploadForSchemaComponent`, `getSchemaComponentForFileUpload`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | skipped | — | [interacts-with-schemas.md](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam) |
+| `ResolvesDynamicLivewireProperties` (used trait) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `ResolvesDynamicLivewireProperties` port | [detail](#the-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
 | Translatable content driver (`getFilamentTranslatableContentDriver`, `getActiveSchemaLocale`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | todo | — | [detail](#the-translatable-content-driver-is-not-ported) |
-| Testing helpers (`fillFormDataForTesting`, `disable/enableSchemaStateUpdateHooksForTesting`, `getDefaultTestingSchemaName`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `TestsSchemas` | [detail](#the-file-upload-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
+| Testing helpers (`fillFormDataForTesting`, `disable/enableSchemaStateUpdateHooksForTesting`, `getDefaultTestingSchemaName`) | [`InteractsWithSchemas`](../../../vendor/filament/schemas/src/Concerns/InteractsWithSchemas.php) | blocked | `TestsSchemas` | [detail](#the-dynamic-property-and-testing-integrations-arrive-with-their-own-concerns) |
 
-The fifteen **done** rows are the schema-hosting core (`schemas()`, `getSchema()`
+The sixteen **done** rows are the schema-hosting core (`schemas()`, `getSchema()`
 with its `<name>Schema` method-name fallback, `getCachedSchemas()`,
 `makeSchema()`, `fill()`, `cacheSchema()`, `hasCachedSchema()`), the full
 PreDehydrate/PostHydrate state-hook loop (`oldState`, `persistOldState`,
 `callAfterSchemaStateUpdated`, `getOldSchemaState`), and the browser-callable
 seam (`resolveSchemaByName()`, `getSchemaComponent()`,
-`callSchemaComponentMethod()` and the `ComponentToolsTrait` composition it
-answers through — whose second consumer is the `form-validation-error` event a
-failing submit-path validation dispatches). The core is covered by
+`callSchemaComponentMethod()`, `uploadSchemaComponentFile()` beside it, and the
+`ComponentToolsTrait` composition they answer through — whose second consumer is
+the `form-validation-error` event a failing submit-path validation dispatches).
+The core is covered by
 [`HasSchemasTest`](../../../packages/schemas/tests/Unit/Concerns/HasSchemasTest.php)
 (build-from-method, default name, caching, throw-on-missing/non-`Schema`,
 key-by-name, `getCachedSchemas`/`makeSchema` fresh-vs-bound, register/unset via
@@ -100,6 +102,13 @@ attribute gate, the visibility gate, the argument-shape hardening, the
 hidden-component and unknown-key/unknown-method arms) are covered by
 [`HasSchemasComponentMethodTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasComponentMethodTest.php)
 against the `LiveStateHost`/`LiveField` fixtures.
+`uploadSchemaComponentFile()` — the second browser-callable action, which carries
+the bytes the seam's JSON arguments cannot — is covered beside it by
+[`HasSchemasUploadTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasUploadTest.php)
+(the `AcceptsUploadedFiles` gate, the file-key shape check, the part-name match,
+and the hidden/unknown/refusing arms), and its divergence from Filament's
+Livewire-upload route is written up in
+[interacts-with-schemas.md](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam).
 
 ## Details
 
@@ -107,16 +116,26 @@ Specifics for the rows that are not finished — what is left and what the next
 step is. Delete a subsection when its row flips to **done**; the row and any
 divergence stay behind.
 
-### The file-upload, dynamic-property, and testing integrations arrive with their own concerns
+### The dynamic-property and testing integrations arrive with their own concerns
 
 Filament folds these into `InteractsWithSchemas` via `use`d traits and inline
-methods; here each is **blocked** on the concern that owns it — file uploads on
-`RestrictsFileUploadsToSchemaComponents` (plus
-forms' `BaseFileUpload`), dynamic properties on a `ResolvesDynamicLivewireProperties`
-port, and the testing helpers on `TestsSchemas`. The port wires them in through
+methods; here each is **blocked** on the concern that owns it — dynamic
+properties on a `ResolvesDynamicLivewireProperties` port, and the testing helpers
+on `TestsSchemas`. The port wires them in through
 those concerns rather than re-inlining them here, so the trait stays a thin
-schema host. Nothing consumes them until a panel/live host lands. The
-validation integration landed the same way: its members
+schema host. Nothing consumes them until a panel/live host lands. Filament's
+file-upload members were the third of this group until M3 · 7 landed
+`uploadSchemaComponentFile()`; they are now **skipped** rather than blocked,
+because `use WithFileUploads` / `componentFileAttachments` /
+`isFileUploadForSchemaComponent()` / `getSchemaComponentForFileUpload()` exist
+only to fence the four Livewire upload RPC endpoints, and this port opens no such
+endpoints —
+[the write-up](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam)
+has the reasoning, and it is the same reasoning that makes
+`RestrictsFileUploadsToSchemaComponents` skipped in
+[the package README](README.md) and the provider's `on('call')` abort hook
+skipped in [schemas-bundle.md](schemas-bundle.md#livewire-specific-provider-responsibilities-are-dropped-not-ported).
+The validation integration landed the same way: its members
 (`validateSchema()`, the error bag, `clearSchemaValidation()`, the
 `$validatedSchemas` sticky loop at `#[PostHydrate(priority: -20)]`) live on
 this trait but are tracked in [`can-be-validated.md`](can-be-validated.md) with

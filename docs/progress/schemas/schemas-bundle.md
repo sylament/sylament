@@ -10,8 +10,9 @@ wires the two services the ported surface needs — the
 [`SchemaExtension`](schema-extension.md) Twig extension and the state
 [`PropertyAccessor`](property-accessor.md) — registers the built JS under
 `@sylament/schemas`, and inherits the `@SylamentSchemas` Twig namespace by
-AbstractBundle/TwigBundle convention. `Make*` commands, translations, and the
-file-upload security hook are not ported yet.
+AbstractBundle/TwigBundle convention. `Make*` commands and translations are not
+ported yet; the file-upload security hook never will be, because the surface it
+fences is one this port does not open.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -38,7 +39,7 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | `actions` AlpineComponent | [`resources/js/components/actions.js`](../../../vendor/filament/schemas/resources/js/components/actions.js) | todo | — | [detail](#asset-registration) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | todo | — | [detail](#translations) |
-| File-upload restriction hook (`on('call')` abort) | [`packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | blocked | file-upload feature | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
+| File-upload restriction hook (`on('call')` abort) | [`packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 | `Testable::mixin(new TestsSchemas)` | [`packageBooted()`](../../../vendor/filament/schemas/src/SchemasServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
 
 Both service registrations are covered:
@@ -140,9 +141,15 @@ The provider's `Testable::mixin(new TestsSchemas)` and the `on('call', ...)` hoo
 that aborts unauthorized `_startUpload` / `_finishUpload` / `_uploadErrored` /
 `_removeUpload` calls are Livewire-runtime concerns. The Testable mixin is a
 deliberate non-goal (**skipped** — Sylament tests are Pest/`KernelTestCase`, not
-Livewire `Testable`). The file-upload security hook is **blocked** on the
-file-upload feature landing (`RestrictsFileUploadsToSchemaComponents` plus a
-`FileUpload` field), not skipped — it is wanted for parity once uploads exist.
+Livewire `Testable`). The file-upload security hook is **skipped** too, and M3 · 7
+is what settled that: uploads reach a schema component through a single
+`#[LiveAction]`,
+[`uploadSchemaComponentFile()`](interacts-with-schemas.md#uploadschemacomponentfile-carries-the-bytes-beside-the-seam),
+which is gated on the `AcceptsUploadedFiles` contract and reads one named
+multipart part. There are no `_startUpload` / `_finishUpload` / `_uploadErrored` /
+`_removeUpload` endpoints to abort, so the hook — and
+`RestrictsFileUploadsToSchemaComponents`, the flag it reads — fence a surface that
+does not exist here.
 
 ### The schemas package grew a JS workspace of its own
 

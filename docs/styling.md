@@ -32,6 +32,12 @@ Consumers never need Tailwind installed.
    Sylament markup — exact-class matching, so a host app's own `sy-*`-like class names
    can never trigger the reset. Inner elements don't need it (they're descendants of a
    marked root), but a component that can render standalone must have it on its root.
+   One other marker class travels with `sy`: a server-rendered `sy-cloak` (hidden only
+   under `@media (scripting: enabled)`, `base.css`) marks markup a controller reveals
+   once its first state is applied — the gate keeps the content reachable with JS off,
+   where an unconditional hide would strand it. `Section` (`persistCollapsed`), `Tabs`
+   (`persist`) and the `Repeater` (`persistCollapsed`) emit it, each only in the
+   persisted case where a stored value can override the server's first paint.
 3. **Component CSS lives in one file per component**:
    `packages/<pkg>/assets/src/styles/components/<name>.css`, written with `@apply` and
    nested CSS, `dark:`/`hover:` variants inline. Plain CSS only where `@apply` can't
@@ -159,17 +165,16 @@ Consumers never need Tailwind installed.
     JS-generated, so the question rule 1 does not answer is what a *stylesheet*
     may select. The stylesheet is page-wide and unscoped by nesting, so a
     top-level `.sortable-ghost` would silently style a host app's own widget of the
-    same name. The toolkit currently selects **no** bundled-library class at all:
-    forms' select engine — a port of Filament's own — builds its DOM itself and
-    emits only `sy-` classes, and it leaves SortableJS's `sortable-ghost` /
-    `sortable-chosen` / `sortable-drag` unstyled, exactly as Filament's select
-    does. So the rule stands vacuously today, and its first live case will be the
-    repeater's drag control (M3 · 6): Filament supplies its own class through
-    SortableJS's `ghostClass` setting (`support/resources/js/sortable.js`) and
-    styles it in `support/resources/css/sortable.css` — the first branch above,
-    a wrapper class handed to the library rather than a vendor class selected
-    bare. The Tom Select skin that used to ground this rule left with the engine
-    swap
+    same name. The shipped case is support's drag-and-drop control: the
+    `sortable` controller hands SortableJS `ghostClass: 'sy-sortable-ghost'`, and
+    `components/sortable.css` selects that name alone — the first branch above, a
+    wrapper class supplied to the library rather than a vendor class selected
+    bare, exactly as Filament does it (`support/resources/js/sortable.js` +
+    `resources/css/sortable.css`). Forms' select engine — a port of Filament's
+    own — is the other side of the rule: it builds its DOM itself, emits only
+    `sy-` classes, and leaves SortableJS's `sortable-ghost` / `sortable-chosen` /
+    `sortable-drag` unstyled, exactly as Filament's select does. The Tom Select
+    skin that used to ground this rule left with the engine swap
     ([forms styles.md](progress/forms/styles.md#the-js-select-skin-is-filaments-on-the-ported-controls-container)).
 
 ## How consumers customize

@@ -122,7 +122,8 @@ and the Stimulus controllers through `assets/controllers.json`:
         },
         "@sylament/forms": {
             "checkbox-list": { "enabled": true, "fetch": "eager" },
-            "select":        { "enabled": true, "fetch": "eager" }
+            "select":        { "enabled": true, "fetch": "eager" },
+            "repeater":      { "enabled": true, "fetch": "eager" }
         },
         "@sylament/notifications": {
             "notifications": { "enabled": true, "fetch": "eager" },
@@ -143,7 +144,8 @@ and the Stimulus controllers through `assets/controllers.json`:
             },
             "section": { "enabled": true, "fetch": "eager" },
             "modal":   { "enabled": true, "fetch": "eager" },
-            "dropdown":{ "enabled": true, "fetch": "eager" }
+            "dropdown":{ "enabled": true, "fetch": "eager" },
+            "sortable":{ "enabled": true, "fetch": "eager" }
         }
     },
     "entrypoints": []
@@ -156,17 +158,24 @@ each package's declared `enabled`/`fetch` in for you; the block above is what it
 produces for `support`, `schemas`, `forms`, `notifications` and `actions` together.
 
 Support's `core` controller carries the `autoimport` that pulls in the
-stylesheet; the other three power collapsible sections, modals and dropdown
-positioning, and you can disable one you do not use. Notifications' two
-controllers drive the toast stack and each toast's auto-dismiss, hover-pause and
-close. Forms' two are per-field: `checkbox-list` supplies a checkbox list's
-search filter and bulk toggle, and `select` is the searchable select control. That
-second one is not optional for the fields that use it: a `searchable()`,
+stylesheet; the other four power collapsible sections, modals, dropdown
+positioning and drag-and-drop reordering, and you can disable one you do not
+use. Notifications' two controllers drive the toast stack and each toast's
+auto-dismiss, hover-pause and close. Forms' three are per-field:
+`checkbox-list` supplies a checkbox list's search filter and bulk toggle,
+`select` is the searchable select control, and `repeater` owns a repeater
+item's collapse state and turns a drag into the reorder the server records.
+`select` is not optional for the fields that use it: a `searchable()`,
 `multiple()`, `native(false)` or `allowHtml()` select renders a plain `<select>`
 whose binding belongs to the controller rather than to a `data-model` attribute,
 so omitting the block leaves a box that neither searches nor sends what the user
 picked. A select that is none of those four is a native `<select>` and needs no
-JavaScript at all.
+JavaScript at all. `repeater` takes support's `sortable` with it: leave them
+out and a repeater's collapse buttons do nothing, and any markup the field
+cloaks for a stored `persistCollapsed` state stays hidden, since `sy-cloak` is
+revealed only once a controller applies its first state. A `reorderable()`
+repeater falls back to whatever it was given otherwise — the move buttons if
+`reorderableWithButtons()` is on, nothing if the drag handle is the only route.
 
 Schemas' three are per-schema: `tabs` and `wizard` drive tab switching and the
 wizard's step navigation, and `schema` sits on every root schema — it reveals the

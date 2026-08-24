@@ -338,13 +338,18 @@ exception-to-re-render pipeline.
 Filament's host `validate($rules, $messages, $attributes)` delegates to
 Livewire — whole-object validation over the component's data, one shared error
 bag. Sylament's `validateSchema(Schema $schema, bool $shouldThrow = true)`
-validates one schema: it collects `$schema->getValidationConstraints()` and,
-per path, reads the raw client state through
-`$schema->getPropertyAccessor()->get($host, $path)` (the same read
-`getRawState()` does), filters the path's constraints through
-[`PresenceGate::apply()`](presence-gate.md) so a blank string reaches only the
-implicit ones, and runs `ValidatorInterface::validate($value,
-$constraints)`, stringifying each violation message. Results key by
+validates one schema in three steps. It collects
+`$schema->getValidationConstraints()`; reads **every** one of those paths' raw
+client state through `$schema->getPropertyAccessor()->get($host, $path)` (the
+same read `getRawState()` does) into one flat map, which it hands to
+[`Schema::mutateStateForValidation()`](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer)
+so each component may rewrite its own value; then, per path, filters that path's
+constraints through [`PresenceGate::apply()`](presence-gate.md) so a blank string
+reaches only the implicit ones and runs `ValidatorInterface::validate($value,
+$constraints)`, stringifying each violation message. Reading the whole map before
+validating any of it is what lets a cross-field constraint resolve its sibling at
+build time and bake the value in — the mechanism every comparison and
+conditional-required arm in [forms](../forms/can-be-validated.md) uses. Results key by
 `$schema->getKey()` — every cached schema is keyed by
 `getSchema()`/`cacheSchema()`, and a keyless schema throws a `LogicException` —
 so validation scopes per schema and nested modals cannot cross-contaminate,
@@ -383,10 +388,14 @@ would reverse the skip.
 The host-level `getRules()`/`getValidationAttributes()` merges and
 `prepareForValidation()` exist to feed every schema's rules into Livewire's
 component-wide `validate()` call. With per-schema `validateSchema()` they have
-no job. The schema-side half of the same pipeline — the
-`mutateStateForValidation`/`pruneStateToMatchKeys` mutation layer — is recorded
-in [schema.md](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer).
-Permanent alongside it.
+no job. Permanent.
+
+The schema-side half of the same pipeline parts company with them as of M3 · 8:
+`mutateStateForValidation` **is** ported, as a flat-map walk `validateSchema()`
+applies between reading every path and validating any of them
+([schema.md](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer)),
+while `pruneStateToMatchKeys()` stays unported because a per-path runner mutates
+a copy it discards.
 
 ### A component's child schema is keyed by that component, not by the root
 

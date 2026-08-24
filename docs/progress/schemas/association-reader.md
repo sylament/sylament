@@ -51,6 +51,7 @@ a _Ports_ link.
 | Transient / anonymous-class guarding inside `describe()` | done | — | [semantics](#istransient-answers-false-for-an-anonymous-class-so-it-is-not-the-whole-guard) |
 | [`getReference(string $class, int\|string $id)`](../../../packages/schemas/src/State/AssociationReader.php) — a managed reference without a load | done | — | [diverges](#getreference-throws-where-doctrine-returns-null) |
 | [`getRecordKey(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — the string key an entity is spoken by | done | — | [semantics](#the-record-key-is-tables-semantics-moved-onto-the-mapping) |
+| [`findRecordKey(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — the same key, or null for an entity that has none yet | done | — | [semantics](#findrecordkey-answers-null-where-getrecordkey-throws) |
 | [`getIdentifierFieldName(string $class)`](../../../packages/schemas/src/State/AssociationReader.php) — the mapped identifier's field name, for a caller that needs the property rather than the value | done | — | [diverges](#a-composite-identifier-is-refused-not-encoded) |
 | [`createOptionQuery(string $targetClass, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — the base query an option list narrows | done | — | [semantics](#the-option-query-is-a-starting-point-not-a-result) |
 | [`remove(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — delete an orphan through the unit of work | done | — | [semantics](#remove-is-here-so-orphan-deletion-does-not-grow-a-second-seam) |
@@ -155,6 +156,23 @@ its return feeds an item key and a `getReference()` lookup, and `''` is not a ke
 anything can resolve. Nothing in either package maps a boolean identifier today,
 so this is a recorded delta rather than a bug filed against tables — but it is a
 delta, not a rephrasing.
+
+### findRecordKey() answers null where getRecordKey() throws
+
+`getRecordKey()` is now a one-line wrapper: it calls `findRecordKey()` and throws
+the "has none set" `LogicException` when the answer is null. The split exists
+because two callers want opposite things from an entity that has never been
+flushed. A relation-backed field speaking an option list by key has a bug if the
+record it is rendering has no identifier — that is the throw. A `unique()`
+constraint asking "which row should I exclude from the probe?" has no bug at all
+— a create form's record is unflushed by definition, and the honest answer is
+"nothing to exclude", which is exactly what `null` means to
+[`UniqueValue`](../forms/can-be-validated.md).
+
+Only the empty-identifier arm moved. The composite-identifier refusal stays on
+`findRecordKey()`, so both callers still get it, and so does the "not a printable
+value" throw inside the coercion: an identifier that exists but cannot be spoken
+is an error either way, not "nothing to ignore".
 
 ### The option query is a starting point, not a result
 

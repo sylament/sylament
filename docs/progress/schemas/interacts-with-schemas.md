@@ -172,12 +172,14 @@ permanent — the global wipe was a Livewire single-bag artifact, not a feature.
 Filament stores the currently-validating schema on the Livewire component for
 two reasons: to scope the `prepareForValidation()` state mutation to one schema
 instead of all, and to break infinite loops in schemas that self-validate (the
-table query builder crashing while an action submits). Neither exists here —
-there is no `prepareForValidation` layer
-([schema.md](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer))
-and no table self-validation, and `validateSchema()` is already scoped by its
-`Schema` argument. Reverses only if a `prepareForValidation`-like mutation pass
-returns.
+table query builder crashing while an action submits). Neither reason survives
+the translation. A mutation pass **has** since returned — M3 · 8's
+[`mutateStateForValidation()` walk](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer)
+— but it needs no stored schema to scope it: `validateSchema()` calls it on the
+`Schema` it was handed, so the argument already carries the scope Filament has to
+stash on the component. And there is no table self-validation to loop on. Stays
+skipped; it would only reverse if some pass had to know the current schema from
+somewhere other than its own call stack.
 
 ### `resolveSchemaByName()` is a Sylament-only extraction with no Filament source
 

@@ -372,16 +372,33 @@ Filament's two container reads are now both ported —
 `getState(bool $shouldCallHooksBefore = true, ?Closure $afterValidate = null)`
 runs `validate()` on entry (throwing
 [`ValidationException`](can-be-validated.md) before any dehydration) and
-`getStateSnapshot()` is the validation-free variant — but the machinery
-Filament wraps around its validate call stays permanently unported:
-`prepareForValidation()` / per-component `mutateStateForValidation()` (which
-rewrite a copy of the live state before Laravel's validator sees it — Symfony
-violations never mutate state and there is no rule-object enum→scalar
-conversion to prepare), `pruneStateToMatchKeys()` (which re-syncs clean
-Livewire values), and the `Component::withVisibilityCache(...)` wrapper (no
-visibility cache exists). The validator therefore sees the raw live state
-exactly as the host reads it. `$afterValidate` is invoked plainly with the
-final dehydrated state (Filament's `value($afterValidate, $state)` position).
+`getStateSnapshot()` is the validation-free variant. Of the machinery Filament
+wraps around its validate call, one piece is ported and two are not.
+
+The mutation layer **is** ported, as of M3 · 8, but as a flat-map walk rather
+than Livewire's nested rewrite: `Schema::mutateStateForValidation(array $state):
+array` takes the `absolutePath => value` map the runner has just read, walks the
+components child-schemas-first (`withActions: false, withHidden: true`, skipping
+`isNeitherDehydratedNorValidated()`), and hands each path the map holds to the
+owning component's own
+[`mutateStateForValidation()`](component.md#the-mutatestateforvalidation-members-mutate-the-runners-copy-of-one-path).
+[`validateSchema()`](interacts-with-schemas.md) calls it between reading every
+path and validating any of them, so a mutated value is what both the presence
+gate and the validator see. The signature is **by value** where the dehydration
+sibling `mutateDehydratedState(array &$state = [])` is by reference: the runner
+keeps the return, and a by-reference parameter that also returns is a shape this
+tree has called out before.
+
+Two pieces stay permanently unported. `prepareForValidation()` — the host-side
+merge of `getRules()` / `getValidationAttributes()` into one Livewire call —
+has no counterpart because validation here is per path, not per component
+([interacts-with-schemas.md](interacts-with-schemas.md)). And
+`pruneStateToMatchKeys()` re-syncs clean Livewire values after that whole-array
+rewrite; a per-path runner mutates a copy and discards it, and `getState()`
+never consumes a validated array, so there is nothing to prune. The
+`Component::withVisibilityCache(...)` wrapper is likewise absent — no visibility
+cache exists. `$afterValidate` is invoked plainly with the final dehydrated state
+(Filament's `value($afterValidate, $state)` position).
 The child-schema `isHiddenAndNotDehydratedWhenHidden()` guards remain
 un-mirrored, consistent with hidden-guarding living at component level
 ([can-be-validated.md](can-be-validated.md#the-collection-walk-cannot-skip-directly-hidden-child-schemas)).

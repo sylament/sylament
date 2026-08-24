@@ -176,6 +176,17 @@ The state engine is fully ported and covered across three test files
 state-path composition, raw/cast read-write via the
 [PropertyAccessor seam](property-accessor.md), defaults, hydrate, the
 dehydration prune/mutate walk, and the `afterStateUpdated` round-trip. The
+validation-mutation trio joins them —
+`mutateStateForValidationUsing(?Closure $callback)`,
+`mutateStateForValidation(mixed $state): mixed` (which evaluates the closure with
+a named `state` injection) and `mutatesStateForValidation(): bool` — each ported
+verbatim and covered in the component-tier `HasStateTest`, with the
+[root-tier walk](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer)
+that drives them covered in the schema-tier one. `Field` deliberately does **not**
+override `mutatesStateForValidation()` to a constant `true` the way Filament's
+forms trait does: its only first-party job upstream is unwrapping a `BackedEnum`
+for Laravel's `in` rule, and the raw bag here never holds an enum —
+[`EnumStateCast::set()`](enum-state-cast.md) stringifies on hydration. The
 validation flag trio is in too, Filament-exact —
 `validatedWhenNotDehydrated(bool|Closure $condition = true)`,
 `isValidatedWhenNotDehydrated()` (default `true`), and
@@ -184,11 +195,14 @@ validation flag trio is in too, Filament-exact —
 by the component-tier `HasStateTest`.
 
 It stays in progress because whole method families are deliberately absent —
-relationship-derived and constant state, the `mutateStateForValidation`
-members, and partial-render/JS hooks (each a divergence below) — and because
-one ported method, `formatStateUsing()`, has no direct test. Next step: add a
-`formatStateUsing` test; port the absent families under their respective epics
-(the [relationship-derived state](#relationship-derived-and-constant-state-are-dropped-from-the-component-trait)
+relationship-derived and constant state, and partial-render/JS hooks (each a
+divergence below) — and because one ported method, `formatStateUsing()`, has no
+direct test. The `mutateStateForValidation` members are no longer among them:
+they shipped with M3 · 8 and carry a
+[semantics note](#the-mutatestateforvalidation-members-mutate-the-runners-copy-of-one-path)
+of their own. Next step: add a `formatStateUsing` test; port the absent families
+under their respective epics (the
+[relationship-derived state](#relationship-derived-and-constant-state-are-dropped-from-the-component-trait)
 families below, `CanPartiallyRender`).
 
 ### getLivewireKey() is deferred to the live-component layer
@@ -396,18 +410,31 @@ has nothing left to do, and constant state — a *display* value read across a
 relation, never dehydrated — has no consumer in the port yet. Revisit when one
 arrives (infolists is the likely first).
 
-### The mutateStateForValidation members are not ported
+### The mutateStateForValidation members mutate the runner's copy of one path
 
-Filament's `mutateStateForValidation()` / `mutateStateForValidationUsing()` /
-`mutatesStateForValidation()` rewrite a copy of a component's state for the
-host's `prepareForValidation()` pass before Laravel's validator sees it. The
-Symfony port validates the raw live state — violations never mutate state and
-no rule-object enum→scalar conversion exists
-([schema.md](schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer))
-— so the members have no job. Permanent. The sibling flag trio
-(`validatedWhenNotDehydrated` / `isValidatedWhenNotDehydrated` /
-`isNeitherDehydratedNorValidated`) is ported Filament-exact — it is the guard
-the [validation collection walk](can-be-validated.md) skips on.
+`mutateStateForValidationUsing()` / `mutateStateForValidation()` /
+`mutatesStateForValidation()` are ported verbatim, and this tree said until
+M3 · 8 that they never would be. The reason given was Livewire's shape: upstream,
+the host's `prepareForValidation()` rewrites a whole nested attributes array
+before Laravel's validator sees it, and `getState()` then has to prune that array
+back down to the keys the schema owns. A per-path runner needs none of that
+plumbing — [`validateSchema()`](interacts-with-schemas.md) reads one path's value,
+hands it to the owning component's `mutateStateForValidation()`, validates the
+result and discards the copy, and `getState()` never consumes a validated array
+at all. So the hooks port cleanly while `prepareForValidation()` and
+`pruneStateToMatchKeys()` stay unported, and what reverses is only the claim that
+the hooks had no job.
+
+Two consequences, both deliberate. The mutation reaches **the validated value
+only** — the live bag the browser wrote is untouched, so a field the user typed
+whitespace into keeps it on screen. And the mutated value is what
+[`PresenceGate`](presence-gate.md) sees, so trimming an input to nothing gates it
+as blank and strips its non-implicit constraints.
+
+The sibling flag trio (`validatedWhenNotDehydrated` /
+`isValidatedWhenNotDehydrated` / `isNeitherDehydratedNorValidated`) is ported
+Filament-exact — it is the guard both the
+[validation collection walk](can-be-validated.md) and the mutation walk skip on.
 
 ### Child-schema recursion moves from the component trait up to the schema trait
 

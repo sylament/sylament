@@ -200,14 +200,18 @@ failure mode of forgetting being a wrong violation on a user's screen. One filte
 in front of the runner is also what makes a consumer's escape-hatch
 `->constraint(new Regex('/…/'))` gate without the consumer doing anything.
 
-Permanent while validation runs per state path. Whether
-[record-sourced constraints](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object)
-want an equivalent when they land is genuinely open and belongs to that change:
-that pass validates a *mapped* object, so its values have been through the state
-casts — but a `string` property is written the `''` it was given, and an entity's
-own `#[Assert\Length(min: 3)]` would then see exactly the value this gate exists
-to keep away from a field constraint. It is not answered here because the shape
-of that pass is not built yet.
+Permanent while validation runs per state path. The
+[record-sourced pass](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object)
+has since shipped, and it gets **no** equivalent, by decision. It validates a
+*mapped* object: Symfony walks the entity's own metadata property by property,
+and a `string` property written the `''` it was given does reach an entity-level
+`#[Assert\Length(min: 3)]`. But that is the entity's own contract about its own
+persisted value, not a field's contract about what a user typed — an empty column
+failing `Length(min: 3)` is the correct answer there, where an untouched optional
+input failing it is not. The two passes want opposite defaults, and a gate in
+front of the record pass would silently disable half of every entity's
+constraints. Reverses only if a consumer shows a case where the entity pass
+should skip a blank the field pass already let through.
 
 ### The blank test trims multibyte where Laravel trims bytes
 
@@ -238,10 +242,15 @@ codebase's own blank test would be the surprising thing. Permanent.
   check at all: its body is `in_array($rule, ['Unique', 'Exists']) ? !
   $this->messages->has($attribute) : true`, so it holds back the two **database**
   rules once the attribute already has any message, "to avoid possible database
-  type comparison errors" in its own words. It is meaningful only for the
-  [data-layer family](../forms/can-be-validated.md#the-data-layer-rules-wait-on-a-doctrine-query-layer),
-  which is **blocked** on a Doctrine query layer — revisit it in the change that
-  lands that, not before.
+  type comparison errors" in its own words. It was left open for the
+  [data-layer family](../forms/can-be-validated.md), which M3 · 8 has since
+  landed, and the answer is that nothing equivalent is needed: `UniqueValue` and
+  `ExistingValue` are not implicit, so the gate strips them from a blank string
+  before the runner sees them, and their validators return on `null` — a blank
+  required field never reaches the database. What Laravel's check additionally
+  buys is suppressing the probe once an *earlier* rule on the same attribute
+  failed; here every constraint on a path runs, and a probe of a value that will
+  be rejected anyway costs one indexed read. Skipped.
 
 ### What each Symfony validator does with the empty string, and why the gate is not defensive
 
@@ -259,13 +268,27 @@ means it compared `''` and found nothing wrong.
 | --- | --- | --- |
 | `NotBlank` (implicit — still reached) | violates | violates |
 | `Email`, `Regex`, `Url` | not run | not run |
-| `Type('numeric')`, `Length(min:)`, `GreaterThanOrEqual` | not run | **violates** |
-| `Length(max:)`, `LessThanOrEqual` | not run | runs, passes |
+| `Ip`, `Uuid`, `Ulid`, `Json`, `CssColor`, `MacAddress` | not run | not run |
+| `Type('numeric')`, `Length(min:)`, `GreaterThanOrEqual`, `GreaterThan` | not run | **violates** |
+| `Choice` | not run | **violates** ("not a valid choice") |
+| `DivisibleBy`, `Count`, `All` | not run | **violates** (a *type* message) |
+| `Type('string')`, `Length(max:)`, `LessThanOrEqual`, `LessThan` | not run | runs, passes |
 
 `EmailValidator`, `RegexValidator` and `UrlValidator` open with
-`if (null === $value || '' === $value) { return; }`; `TypeValidator`,
-`LengthValidator` and every `AbstractComparisonValidator` subclass return on
-`null` only, so `''` reached their comparison.
+`if (null === $value || '' === $value) { return; }`, and so do the six
+format validators on the third row — which is why the whole
+[format sugar](../forms/can-be-validated.md) needed no gating of its own.
+`TypeValidator`, `LengthValidator`, `ChoiceValidator` and every
+`AbstractComparisonValidator` subclass return on `null` only, so `''` reached
+their comparison.
+
+The `DivisibleBy`/`Count`/`All` row is a different mechanism again and worth
+naming, because "violates" understates it: their validators **throw**
+`UnexpectedValueException` on a value of the wrong shape, and the runner turns
+that into a hardcoded type violation — "This value should be of type numeric.",
+"…of type array|\Countable.", "…of type iterable." respectively. So without the
+gate, an untouched optional field would report a type error naming an internal
+PHP type at the user. That is the sharpest case for the filter in this table.
 
 The outcomes line up by direction — a **minimum** violated on `''` and a
 **maximum** did not — but that is only the bottom two rows. The

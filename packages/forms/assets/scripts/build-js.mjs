@@ -24,6 +24,10 @@ import * as esbuild from 'esbuild';
 
 /** src-relative entry → { external: bare specifiers left to the importmap, license: package(s) whose notice heads the bundle, inlines: src-relative modules that ship only inside this bundle }. */
 const BUNDLED_ENTRIES = {
+    'controllers/file_upload_controller.ts': {
+        external: ['@hotwired/stimulus', '@symfony/ux-live-component'],
+        license: ['filepond', 'filepond-plugin-file-validate-size', 'filepond-plugin-file-validate-type', 'filepond-plugin-image-preview'],
+    },
     'controllers/select_controller.ts': {
         external: ['@hotwired/stimulus', '@symfony/ux-live-component'],
         license: ['@floating-ui/dom', 'sortablejs'],
@@ -43,12 +47,16 @@ const sharedOptions = {
     sourcemap: watch ? 'inline' : 'linked',
 };
 
+/** LICENSE file names vendors ship, in the order they are looked for. */
+const LICENSE_FILES = ['LICENSE', 'LICENSE.md', 'license'];
+
 function licenseBanner(packageNames) {
     return [packageNames].flat().map((packageName) => {
         const packageJsonPath = require.resolve(`${packageName}/package.json`);
         const { version, license, homepage } = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-        const licenseText = fs.readFileSync(path.join(path.dirname(packageJsonPath), 'LICENSE'), 'utf8');
-        const copyright = licenseText.split('\n').map((line) => line.trim()).find((line) => /^Copyright\s+(\(c\)\s*)?\d{4}/.test(line));
+        const licensePath = LICENSE_FILES.map((file) => path.join(path.dirname(packageJsonPath), file)).find((file) => fs.existsSync(file));
+        const licenseText = licensePath === undefined ? '' : fs.readFileSync(licensePath, 'utf8');
+        const copyright = licenseText.split('\n').map((line) => line.trim()).find((line) => /^Copyright\s+(\(c\)\s*)?(\d{4}(\s*[-–]\s*\d{4})?\s+)?\S/.test(line));
         if (!version || !license || !copyright) {
             throw new Error(`Cannot compose the license banner for ${packageName}: missing version, license, or a "Copyright" line in LICENSE.`);
         }

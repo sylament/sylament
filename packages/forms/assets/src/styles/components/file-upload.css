@@ -100,4 +100,98 @@
         -webkit-mask-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJoLTYgdy02IiBmaWxsPSJub25lIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiPgogIDxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTEwIDZINmEyIDIgMCAwMC0yIDJ2MTBhMiAyIDAgMDAyIDJoMTBhMiAyIDAgMDAyLTJ2LTRNMTQgNGg2bTAgMHY2bTAtNkwxMCAxNCIgLz4KPC9zdmc+Cg==');
         mask-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGNsYXNzPSJoLTYgdy02IiBmaWxsPSJub25lIiB2aWV3Qm94PSIwIDAgMjQgMjQiIHN0cm9rZT0iY3VycmVudENvbG9yIiBzdHJva2Utd2lkdGg9IjIiPgogIDxwYXRoIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgZD0iTTEwIDZINmEyIDIgMCAwMC0yIDJ2MTBhMiAyIDAgMDAyIDJoMTBhMiAyIDAgMDAyLTJ2LTRNMTQgNGg2bTAgMHY2bTAtNkwxMCAxNCIgLz4KPC9zdmc+Cg==');
     }
+
+    & .filepond--file-action-button.filepond--action-edit-item {
+        @apply bg-black/50;
+    }
+
+    & .sy-fo-file-upload-editor {
+        @apply fixed inset-0 isolate m-0 h-[100dvh] w-screen max-h-none max-w-none border-0 bg-transparent p-2 sm:p-10 md:p-20;
+
+        /* The dark arm is a rule of its own one level up: lightningcss mangles a
+           `:where()` compound sitting next to `::backdrop`, so an inline `dark:`
+           here compiles to a dead `::backdrop:where()`. */
+        &::backdrop {
+            @apply bg-gray-950/50;
+        }
+
+        & .sy-fo-file-upload-editor-window {
+            @apply isolate mx-auto flex h-full w-full flex-col overflow-hidden rounded-xl bg-white ring-1 ring-gray-900/10 lg:flex-row dark:bg-gray-800 dark:ring-gray-50/10;
+        }
+
+        & .sy-fo-file-upload-editor-image-ctn {
+            @apply m-4 max-h-full max-w-full flex-1;
+        }
+
+        & .sy-fo-file-upload-editor-image {
+            @apply block h-full w-auto max-w-full;
+        }
+
+        & .sy-fo-file-upload-editor-control-panel {
+            @apply flex h-full w-full flex-1 flex-col overflow-y-auto bg-gray-50 lg:max-w-xs dark:bg-gray-900/30;
+
+            & .sy-fo-file-upload-editor-control-panel-main {
+                @apply flex-1 space-y-6 overflow-auto p-4;
+            }
+
+            & .sy-fo-file-upload-editor-control-panel-group {
+                @apply grid gap-3;
+
+                & .sy-btn-group {
+                    @apply w-full;
+                }
+
+                & .sy-btn.sy-active {
+                    @apply bg-gray-50 dark:bg-gray-700;
+                }
+
+                & .sy-fo-file-upload-editor-control-panel-group-title {
+                    @apply text-xs text-gray-950 dark:text-white;
+                }
+            }
+
+            & .sy-fo-file-upload-editor-control-panel-footer {
+                @apply flex items-center gap-3 px-4 py-3;
+            }
+
+            & .sy-fo-file-upload-editor-control-panel-reset-action {
+                @apply ms-auto;
+            }
+        }
+
+        & .cropper-drag-box.cropper-crop.cropper-modal {
+            @apply bg-gray-100/50 opacity-100 dark:bg-gray-900/80;
+        }
+
+        &.sy-fo-file-upload-editor-circle-cropper {
+            & .cropper-view-box,
+            & .cropper-face {
+                border-radius: 50%;
+            }
+        }
+
+        &.sy-fo-file-upload-editor-crop-only {
+            & .sy-fo-file-upload-editor-window {
+                @apply max-w-3xl flex-col;
+            }
+
+            & .sy-fo-file-upload-editor-image-ctn {
+                @apply min-h-0 flex-1 overflow-hidden;
+            }
+
+            & .sy-fo-file-upload-editor-control-panel {
+                @apply h-auto flex-none lg:max-w-none;
+            }
+
+            & .sy-fo-file-upload-editor-control-panel-footer {
+                @apply justify-start;
+            }
+        }
+    }
+
+    @variant dark {
+        & .sy-fo-file-upload-editor::backdrop {
+            @apply bg-gray-950/75;
+        }
+    }
 }

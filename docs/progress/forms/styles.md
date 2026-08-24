@@ -2,7 +2,7 @@
 
 The forms bundle's component CSS —
 [`packages/forms/assets/src/styles/`](../../../packages/forms/assets/src/styles/)
-— is ten authored stylesheets plus one the build generates, and only seven of
+— is ten authored stylesheets plus two the build generates, and only seven of
 them draw on
 [`forms/resources/css/`](../../../vendor/filament/forms/resources/css/) at all.
 **The rest port from
@@ -22,9 +22,10 @@ which is the single most useful thing to know before reading this file. The
 tenth reads from neither package: `fused-group.css` ports **schemas**'
 `components/fused-group.css`, because
 [the component it styles ships here rather than there](fused-group.md#fusedgroup-lives-in-forms-not-schemas).
-And the generated one reads from **npm** rather than from Filament at all:
-`filepond.generated.css` is FilePond's own base stylesheet, rewritten under
-`.sy-fo-file-upload` by support's build
+And the two generated ones read from **npm** rather than from Filament at all:
+`filepond.generated.css` is FilePond's own base stylesheet and
+`cropper.generated.css` Cropper.js's, each rewritten under a file-upload class by
+support's build
 ([diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build)).
 One authored stylesheet **left** this tree rather than being written into it:
 the checkbox skin moved to support the moment tables became its second consumer
@@ -33,10 +34,10 @@ Every row below names the vendor file it was actually written against.
 
 Each authored stylesheet lands in `components/<name>.css` and is `@import`ed
 into [`index.css`](../../../packages/forms/assets/src/styles/index.css) under
-`layer(components)`, mirroring Filament's `index.css` structure; the generated
-`filepond.generated.css` sits at the top of `src/styles/` (the gitignore glob is
-one level deep) and is imported first, so the skin that overrides it comes later
-in the same layer. Forms ships no
+`layer(components)`, mirroring Filament's `index.css` structure; the two
+generated sheets sit at the top of `src/styles/` (the gitignore glob is one level
+deep) and are imported first, so the skin that overrides them comes later in the
+same layer. Forms ships no
 `assets/dist` and joins no pnpm workspace: support's
 [`index.css`](../../../packages/support/assets/src/styles/index.css) imports this
 aggregator, so these rules compile into support's single built stylesheet and
@@ -88,8 +89,9 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 | `checkbox.css` — gone from this tree; the box, tick, dash and invalid arms are [support's `.sy-checkbox`](../../../packages/support/assets/src/styles/components/checkbox.css), which the two emitting templates carry beside their own `sy-fo-checkbox` hook | [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | done | — | [diverges](#the-checkbox-skin-moved-to-support-when-tables-became-its-second-consumer) |
 | [`date-time-picker.css` — its one native-control rule, ported into `input.css` as `.sy-fo-input::-webkit-datetime-edit`](../../../packages/forms/assets/src/styles/components/input.css) | [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | the JS calendar vertical ([date-time-picker.md](date-time-picker.md#the-js-calendar-family-waits-on-a-js-vertical-of-its-own)) | [detail](#the-date-time-picker-stylesheet-is-one-native-rule-and-a-calendar-panel) |
 | [`field.css` — the `.sy-fo-field` wrapper grid, label column, content column and error list](../../../packages/forms/assets/src/styles/components/field.css) | [`components/field.css`](../../../vendor/filament/forms/resources/css/components/field.css) | in progress | schemas' `HasInlineLabel` · support's `HasVerticalAlignment` | [detail](#the-field-stylesheet-omits-the-leading-schema-un-grow) · [diverges](#field-css-is-flat-where-filament-nests) · [diverges](#sy-fo-sr-only-is-a-support-utility-authored-as-a-forms-component-class) |
-| [`file-upload.css` — the `.sy-fo-file-upload` wrapper, its FilePond overrides and the two JS-built action anchors](../../../packages/forms/assets/src/styles/components/file-upload.css) | [`components/file-upload.css`](../../../vendor/filament/forms/resources/css/components/file-upload.css) | in progress | the image editor · media preview | [detail](#the-file-upload-stylesheet-stops-at-the-editor) · [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
-| `filepond.generated.css` — FilePond's own base stylesheet, rewritten under `.sy-fo-file-upload` by support's `scope-vendor-css.mjs` (generated, gitignored) | `filepond/dist/filepond.css` + `filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css` (npm, not Filament) | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
+| [`file-upload.css` — the `.sy-fo-file-upload` wrapper, its FilePond overrides, the two JS-built action anchors and the editor dialog's skin](../../../packages/forms/assets/src/styles/components/file-upload.css) | [`components/file-upload.css`](../../../vendor/filament/forms/resources/css/components/file-upload.css) | in progress | media preview | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) · [diverges](#filepond--label-action-takes-the-link-colour-policy-not-vendors-hardcoded-shade) · [diverges](#the-download-and-open-action-anchors-are-the-ports-own) |
+| `filepond.generated.css` — FilePond's own base stylesheet, rewritten under `.sy-fo-file-upload` by support's `scope-vendor-css.mjs` (generated, gitignored) | `filepond/dist/filepond.css` + `filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css` + `filepond-plugin-image-edit/dist/filepond-plugin-image-edit.css` (npm, not Filament) | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
+| `cropper.generated.css` — Cropper.js's own stylesheet, rewritten under `.sy-fo-file-upload-editor` by support's `scope-vendor-css.mjs` (generated, gitignored) | `cropperjs/dist/cropper.css` (npm, not Filament) | done | — | [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
 | [`fused-group.css` — the `.sy-fo-fused-group` ring, dividers and corner rules](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`schemas/…/components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) | done | — | [diverges](../schemas/styles.md#fused-group-css-was-ported-into-the-forms-package) · [semantics](fused-group.md#the-corner-rules-reach-through-two-elements-the-schema-partial-nests) |
 | [`input.css` — `.sy-fo-input`, the text control for `TextInput`, `Textarea` and the three pickers](../../../packages/forms/assets/src/styles/components/input.css) | [`support/…/input/index.css`](../../../vendor/filament/support/resources/css/components/input/index.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) + [`components/textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css) + [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | an alignment setter | [detail](#the-input-and-select-stylesheets-stop-at-the-alignment-arms) · [diverges](#the-input-wrapper-invents-a-hover-ring) · [diverges](#the-textarea-rule-is-the-ports-own-because-nothing-autosizes) |
 | [`radio.css` — the `.sy-fo-radio` option set and the `.sy-fo-radio-input` control](../../../packages/forms/assets/src/styles/components/radio.css) | [`components/radio.css`](../../../vendor/filament/forms/resources/css/components/radio.css) + [`support/…/input/radio.css`](../../../vendor/filament/support/resources/css/components/input/radio.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](radio.md#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) |
@@ -103,7 +105,7 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 This table carries no [unaudited row](../README.md#an-unaudited-table-says-so):
 every one of the twenty stylesheets in
 [`forms/resources/css/components/`](../../../vendor/filament/forms/resources/css/components/)
-has a row above — plus one row for `filepond.generated.css`, which has no Filament
+has a row above — plus two rows for the generated sheets, which have no Filament
 counterpart at all. The claim is scoped to that directory on purpose. The
 support-tier sources the five cross-package ports draw from are named per row
 rather than enumerated, and support's own `resources/css/` is not this table's
@@ -261,36 +263,6 @@ the pseudo-element exists only on date and time inputs. Next step: the file
 appears when the calendar does, and this rule moves into it if the calendar
 brings a wrapper element with it.
 
-### The file-upload stylesheet stops at the editor
-
-[`file-upload.css`](../../../packages/forms/assets/src/styles/components/file-upload.css)
-carries all fourteen of vendor's nested rules — the `.filepond--root` card and its
-`data-disabled` / `compact circle` / `grid` arms, the transparent panel root, the
-three drop-label rules, the drip blob, and the two action anchors — plus vendor's
-own root layout (`flex flex-col gap-y-2`, the `sy-align-*` arms, the avatar
-input-container width and the error message), which the epic's plan omitted from
-its rule list but the partial emits classes for. What it does **not** carry is
-vendor's fifteenth rule, `.filepond--file-action-button.filepond--action-edit-item`
-(`bg-black/50`), and the eighty-line `& .fi-fo-file-upload-editor { … }` block
-beneath it: both belong to the image editor, which ships no Cropper.js and no
-`allowImageEdit`, so there is no element for those rules to paint. Next step: port
-with the editor.
-
-Two rules diverge from vendor rather than being dropped.
-`.filepond--label-action` — FilePond's "Browse" link — is `text-(--sy-text)
-hover:opacity-80 dark:text-(--sy-dark-text)` where vendor hardcodes
-`text-primary-700 hover:text-primary-600 …`; the link colour policy sits on the
-pond container and supplies the slots, per [styling.md rule 5](../../styling.md).
-And the two action anchors are ours (`sy-fo-file-upload-download-action` /
-`-open-action` with an inner `-icon` span) rather than vendor's
-`filepond--download-icon` / `filepond--open-icon`: our JS builds those anchors, so
-there is no vendor class to select at all — [rule 11](../../styling.md)'s second
-branch has nothing to reach here. Their mask-image payloads are copied verbatim
-from vendor (`file-upload.css:82-83, 92-93`), which is why the download glyph is a
-Feather arrow and the open glyph a Heroicons external-link rather than a matched
-pair; both are MIT and the layout/mask split onto two elements is the port's own,
-so the anchor carries the box and the span carries the mask.
-
 ### The ten unported forms stylesheets
 
 `builder.css`, `code-editor.css`, `color-picker.css`, `key-value.css`,
@@ -306,7 +278,7 @@ nested under a stylesheet that *is* ported, and is blocked on the media-preview
 plugin rather than on a field — `FileUpload` ships with FilePond's core plus
 `file-validate-size`, `file-validate-type` and `image-preview`, so audio and video
 items render as file cards with no player. Next step: port when the plugin joins
-the bundle, which is the same decision as the deferred image editor.
+the bundle, a decision of its own — the editor shipped without it.
 
 One support-tier stylesheet sits in the same position one package over:
 `input/one-time-code.css`, blocked on `OneTimeCodeInput`. It is listed here
@@ -541,6 +513,25 @@ rule for rule. The compensating `@apply grid` these two rules carried while
 `HasContainerGridLayout` was deferred is gone with the deferral
 ([repeater.md](repeater.md#the-items-grid-is-supports-grid)).
 
+### `.filepond--label-action` takes the link colour policy, not vendor's hardcoded shade
+
+`.filepond--label-action` — FilePond's "Browse" link — is `text-(--sy-text)
+hover:opacity-80 dark:text-(--sy-dark-text)` where vendor hardcodes
+`text-primary-700 hover:text-primary-600 …`; the link colour policy sits on the
+pond container and supplies the slots, per [styling.md rule 5](../../styling.md).
+
+### The download and open action anchors are the port's own
+
+The two action anchors are ours (`sy-fo-file-upload-download-action` /
+`-open-action` with an inner `-icon` span) rather than vendor's
+`filepond--download-icon` / `filepond--open-icon`: our JS builds those anchors, so
+there is no vendor class to select at all — [rule 11](../../styling.md)'s second
+branch has nothing to reach here. Their mask-image payloads are copied verbatim
+from vendor (`file-upload.css:82-83, 92-93`), which is why the download glyph is a
+Feather arrow and the open glyph a Heroicons external-link rather than a matched
+pair; both are MIT and the layout/mask split onto two elements is the port's own,
+so the anchor carries the box and the span carries the mask.
+
 ### The FilePond base stylesheet is redistributed scoped by the build
 
 Filament imports `filepond/dist/filepond.min.css` and the image-preview plugin's
@@ -586,6 +577,12 @@ The selector walker itself moved out of `scope-preflight.mjs` into a shared
 drop `body`) became options rather than a second copy. The refactor's proof is
 byte-identity: the generated preflight and support's built `dist/styles/index.css`
 are unchanged by it.
+
+Cropper.js's stylesheet is the second generated vendor sheet:
+`scope-vendor-css.mjs` rewrites `cropperjs/dist/cropper.css` as forms' gitignored
+`cropper.generated.css`, every rule scoped under `.sy-fo-file-upload-editor` — the
+dialog's class rather than the field's, since Cropper's DOM only ever lives inside
+it.
 
 ### The JS select skin is Filament's, on the ported control's container
 

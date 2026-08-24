@@ -179,7 +179,12 @@ Consumers never need Tailwind installed.
     skin (M3 · 7): the library hardcodes its `filepond--*` classes onto the DOM
     it builds inside the `.sy-fo-file-upload` wrapper we render, so
     [`file-upload.css`](../packages/forms/assets/src/styles/components/file-upload.css)
-    nests every override under that class. FilePond's **base** stylesheet is the
+    nests every override under that class. The image editor (pulled-forward 24)
+    put the same branch to work a second time in that same file: Cropper.js
+    hardcodes its `.cropper-*` classes onto the DOM it builds inside the
+    `<dialog>` we render, so the editor's overrides — the crop modal and the
+    circle cropper's two rounded boxes — nest under `.sy-fo-file-upload-editor`.
+    FilePond's **base** stylesheet is the
     third: it selects those classes bare at top level and declares three global
     `@keyframes` (`spin` collides with support's own), so support's
     `assets/scripts/scope-vendor-css.mjs` regenerates it as the gitignored

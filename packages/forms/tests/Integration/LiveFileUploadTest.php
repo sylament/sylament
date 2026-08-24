@@ -52,7 +52,7 @@ function fixtureFile(string $name = 'holiday.png', ?string $contents = null): Up
 
     file_put_contents($path, $contents ?? pngBytes());
 
-    return new UploadedFile($path, $name, null, null, true);
+    return new UploadedFile($path, $name, test: true);
 }
 
 function liveStorage(string $name = 'test.storage'): FilesystemOperator
@@ -208,6 +208,21 @@ it('keeps a multiple field in order and reorders it on request', function (): vo
     expect(array_keys($component->component()->data['attachments']))->toBe(['two', 'one']);
 });
 
+it('refuses to reorder a field that is not reorderable', function (): void {
+    $component = $this->createLiveComponent('FileUploadForm');
+
+    upload($component, 'schema.attachments', 'one', fixtureFile('one.png'));
+    upload($component, 'schema.attachments', 'two', fixtureFile('two.png'));
+
+    $component->call('callSchemaComponentMethod', [
+        'componentKey' => 'schema.attachments',
+        'method' => 'reorderUploadedFiles',
+        'arguments' => ['fileKeys' => ['two', 'one']],
+    ]);
+
+    expect(array_keys($component->component()->data['attachments']))->toBe(['one', 'two']);
+});
+
 it('names the stored file by the client name or by a caller generator', function (): void {
     $preserved = $this->createLiveComponent('FileUploadForm', ['shouldPreserveFilenames' => true]);
     upload($preserved, 'schema.cover', 'abc', fixtureFile());
@@ -228,6 +243,22 @@ it('dehydrates the original filenames beside the state when storeFileNamesIn() n
     $component->call('save');
 
     expect($component->component()->savedState['coverName'])->toBe('holiday.png');
+});
+
+it("dehydrates a multiple field's original filenames as a stored-path map", function (): void {
+    $component = $this->createLiveComponent('FileUploadForm', ['attachmentFileNamesStatePath' => 'attachmentNames']);
+
+    upload($component, 'schema.attachments', 'one', fixtureFile('one.png'));
+    upload($component, 'schema.attachments', 'two', fixtureFile('two.png'));
+
+    $component->call('save');
+
+    $saved = $component->component()->savedState['attachments'];
+
+    // A single field dehydrates the client name on its own; a multiple one keys it by the path
+    // the file was stored under, which is the only handle the browser gets back.
+    expect($component->component()->savedState['attachmentNames'])
+        ->toBe([$saved[0] => 'one.png', $saved[1] => 'two.png']);
 });
 
 it('moves the bytes on the same storage and streams them across to another', function (): void {
@@ -283,10 +314,18 @@ it('deletes the temporary file when the browser removes it, and runs the delete 
 
 it('refuses the upload and every mutator while disabled', function (): void {
     liveStorage()->write('covers/kept.png', pngBytes());
+    liveStorage()->write('attachments/a.png', pngBytes());
+    liveStorage()->write('attachments/b.png', pngBytes());
 
+    // `reorderable(true)` on top of `disabled(true)`, so the refusal below is the disabled arm of
+    // `reorderUploadedFiles()` rather than the not-reorderable one.
     $component = $this->createLiveComponent('FileUploadForm', [
         'isDisabled' => true,
-        'seed' => ['cover' => 'covers/kept.png'],
+        'isReorderable' => true,
+        'seed' => [
+            'cover' => 'covers/kept.png',
+            'attachments' => ['attachments/a.png', 'attachments/b.png'],
+        ],
     ]);
 
     expect(upload($component, 'schema.cover', 'abc', fixtureFile()))->toBeNull();
@@ -300,6 +339,15 @@ it('refuses the upload and every mutator while disabled', function (): void {
     ]);
 
     expect($component->component()->data['cover'])->toHaveKey($fileKey);
+
+    $component->call('callSchemaComponentMethod', [
+        'componentKey' => 'schema.attachments',
+        'method' => 'reorderUploadedFiles',
+        'arguments' => ['fileKeys' => array_reverse(array_keys($component->component()->data['attachments']))],
+    ]);
+
+    expect(array_values($component->component()->data['attachments']))
+        ->toBe(['attachments/a.png', 'attachments/b.png']);
 });
 
 it('fires the state hook on an upload and on a removal', function (): void {

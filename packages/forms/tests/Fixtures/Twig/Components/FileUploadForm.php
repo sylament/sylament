@@ -85,6 +85,9 @@ class FileUploadForm implements InteractsWithSchemas
     public ?string $fileNamesStatePath = null;
 
     #[LiveProp]
+    public ?string $attachmentFileNamesStatePath = null;
+
+    #[LiveProp]
     public ?int $maxSize = null;
 
     #[LiveProp]
@@ -155,6 +158,7 @@ class FileUploadForm implements InteractsWithSchemas
                     ->multiple()
                     ->disk('test.storage')
                     ->directory('attachments')
+                    ->storeFileNamesIn($this->attachmentFileNamesStatePath)
                     ->reorderable($this->isReorderable)
                     ->disabled($this->isDisabled),
             ]);

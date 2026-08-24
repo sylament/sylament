@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Components;
 
+use BackedEnum;
 use Closure;
 use LogicException;
 use Sylament\Actions\Action;
@@ -11,33 +12,54 @@ use Sylament\Forms\Components\Concerns\BelongsToRelationship;
 use Sylament\Forms\Components\Concerns\CanBeCloned;
 use Sylament\Forms\Components\Concerns\CanGenerateUuids;
 use Sylament\Forms\Components\Concerns\CanLimitItemsLength;
+use Sylament\Forms\Components\Concerns\HasExtraItemActions;
+use Sylament\Forms\Components\Repeater\TableColumn;
+use Sylament\Forms\Twig\FormsIconAlias;
+use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Concerns\CanBeCollapsed;
+use Sylament\Schemas\Components\Concerns\CanBeCompact;
+use Sylament\Schemas\Components\Concerns\HasContainerGridLayout;
+use Sylament\Schemas\Components\Contracts\CanConcealComponents;
+use Sylament\Schemas\Components\Contracts\HasExtraItemActions as HasExtraItemActionsContract;
 use Sylament\Schemas\Components\Contracts\HasKeyedItems;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\AssociationTarget;
 use Sylament\Schemas\State\Casts\ObjectStateCast;
 use Sylament\Schemas\State\RecordTarget;
+use Sylament\Support\Components\Concerns\HasReorderAnimationDuration;
 use Sylament\Support\Enums\Alignment;
 use Sylament\Support\Enums\Size;
+use Sylament\Support\Enums\VerticalAlignment;
+use Sylament\Support\Icons\IconManager;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Count;
 use Symfony\Component\Validator\Constraints\Type;
+use Symfony\Contracts\Service\Attribute\Required;
 use Twig\Markup;
 
 use function Sylament\Forms\array_move_after;
 use function Sylament\Forms\array_move_before;
+use function Sylament\Support\filled;
 use function Symfony\Component\String\u;
 
-class Repeater extends Field implements HasKeyedItems
+class Repeater extends Field implements CanConcealComponents, HasExtraItemActionsContract, HasKeyedItems
 {
     use BelongsToRelationship;
     use CanBeCloned;
+    use CanBeCollapsed;
+    use CanBeCompact;
     use CanGenerateUuids;
     use CanLimitItemsLength;
+    use HasContainerGridLayout;
+    use HasExtraItemActions;
+    use HasReorderAnimationDuration;
 
     public const string TEMPLATE = '@SylamentForms/partials/Repeater/index.html.twig';
 
     public const string SIMPLE_TEMPLATE = '@SylamentForms/partials/Repeater/Simple.html.twig';
+
+    public const string TABLE_TEMPLATE = '@SylamentForms/partials/Repeater/Table.html.twig';
 
     /**
      * The item-key prefix that carries a loaded child's record key, so a save
@@ -112,19 +134,44 @@ class Repeater extends Field implements HasKeyedItems
 
     protected bool|Closure $isReorderableWithButtons = false;
 
+    protected bool|Closure $isReorderableWithDragAndDrop = true;
+
     protected string|Closure|null $addActionLabel = null;
+
+    protected string|Closure|null $addBetweenActionLabel = null;
+
+    protected string|Closure|null $labelBetweenItems = null;
+
+    /**
+     * @var array<TableColumn>|Closure|null
+     */
+    protected array|Closure|null $tableColumns = null;
 
     protected Alignment|string|Closure|null $addActionAlignment = null;
 
     protected Action|Closure|null $modifyAddActionUsing = null;
 
+    protected Action|Closure|null $modifyAddBetweenActionUsing = null;
+
     protected Action|Closure|null $modifyCloneActionUsing = null;
 
+    protected Action|Closure|null $modifyCollapseActionUsing = null;
+
+    protected Action|Closure|null $modifyCollapseAllActionUsing = null;
+
     protected Action|Closure|null $modifyDeleteActionUsing = null;
+
+    protected Action|Closure|null $modifyExpandActionUsing = null;
+
+    protected Action|Closure|null $modifyExpandAllActionUsing = null;
 
     protected Action|Closure|null $modifyMoveDownActionUsing = null;
 
     protected Action|Closure|null $modifyMoveUpActionUsing = null;
+
+    protected Action|Closure|null $modifyReorderActionUsing = null;
+
+    private ?IconManager $iconManager = null;
 
     protected function setUp(): void
     {
@@ -138,13 +185,25 @@ class Repeater extends Field implements HasKeyedItems
 
         $this->registerActions([
             fn (Repeater $component): Action => $component->getAddAction(),
+            fn (Repeater $component): Action => $component->getAddBetweenAction(),
             fn (Repeater $component): Action => $component->getCloneAction(),
+            fn (Repeater $component): Action => $component->getCollapseAction(),
+            fn (Repeater $component): Action => $component->getCollapseAllAction(),
             fn (Repeater $component): Action => $component->getDeleteAction(),
+            fn (Repeater $component): Action => $component->getExpandAction(),
+            fn (Repeater $component): Action => $component->getExpandAllAction(),
             fn (Repeater $component): Action => $component->getMoveDownAction(),
             fn (Repeater $component): Action => $component->getMoveUpAction(),
+            fn (Repeater $component): Action => $component->getReorderAction(),
         ]);
 
         $this->mutateDehydratedStateUsing(static fn (Repeater $component, mixed $state): array => $component->dehydrateItems(is_array($state) ? $state : []));
+    }
+
+    #[Required]
+    public function setIconManager(IconManager $iconManager): void
+    {
+        $this->iconManager = $iconManager;
     }
 
     public function ownsRecordSubtree(): bool
@@ -532,6 +591,8 @@ class Repeater extends Field implements HasKeyedItems
             $component->saveItemsToRelationship($record, $state);
         });
 
+        $this->reorderable(false);
+
         return $this;
     }
 
@@ -544,6 +605,8 @@ class Repeater extends Field implements HasKeyedItems
     public function orderColumn(string|Closure|null $column = 'sort'): static
     {
         $this->orderColumn = $column;
+
+        $this->reorderable(fn (Repeater $component): bool => $component->getOrderColumn() !== null);
 
         return $this;
     }
@@ -721,6 +784,66 @@ class Repeater extends Field implements HasKeyedItems
         return $this->evaluate($this->isReorderableWithButtons) && $this->isReorderable();
     }
 
+    public function reorderableWithDragAndDrop(bool|Closure $condition = true): static
+    {
+        $this->isReorderableWithDragAndDrop = $condition;
+
+        return $this;
+    }
+
+    public function isReorderableWithDragAndDrop(): bool
+    {
+        return $this->evaluate($this->isReorderableWithDragAndDrop) && $this->isReorderable();
+    }
+
+    public function labelBetweenItems(string|Closure|null $label): static
+    {
+        $this->labelBetweenItems = $label;
+
+        return $this;
+    }
+
+    public function getLabelBetweenItems(): ?string
+    {
+        return $this->evaluate($this->labelBetweenItems);
+    }
+
+    /**
+     * Lay the items out as one table row each, pairing the item's components with
+     * these columns by position.
+     *
+     * @param array<TableColumn>|Closure|null $columns
+     */
+    public function table(array|Closure|null $columns): static
+    {
+        $this->tableColumns = $columns;
+
+        return $this;
+    }
+
+    /**
+     * @return array<TableColumn>|null
+     */
+    public function getTableColumns(): ?array
+    {
+        return $this->evaluate($this->tableColumns);
+    }
+
+    public function isTable(): bool
+    {
+        return filled($this->getTableColumns());
+    }
+
+    public function canConcealComponents(): bool
+    {
+        return $this->isCollapsible();
+    }
+
+    public function getTemplate(): ?string
+    {
+        return $this->evaluate($this->template) ?? ($this->isTable() ? self::TABLE_TEMPLATE : $this->evaluate($this->defaultTemplate));
+    }
+
     public function getAddAction(): Action
     {
         $action = Action::make($this->getAddActionName())
@@ -741,6 +864,8 @@ class Repeater extends Field implements HasKeyedItems
                 $component->rawState($items);
 
                 $component->getChildSchema((string) ($newUuid ?? array_key_last($items)))?->fill();
+
+                $component->collapsed(false, shouldMakeComponentCollapsible: false);
 
                 $component->callAfterStateUpdatedHooks();
             })
@@ -873,6 +998,8 @@ class Repeater extends Field implements HasKeyedItems
 
                 $component->rawState($items);
 
+                $component->collapsed(false, shouldMakeComponentCollapsible: false);
+
                 $component->callAfterStateUpdatedHooks();
             })
             ->iconButton()
@@ -958,6 +1085,221 @@ class Repeater extends Field implements HasKeyedItems
         return 'moveDown';
     }
 
+    public function getAddBetweenAction(): Action
+    {
+        $action = Action::make($this->getAddBetweenActionName())
+            ->label(fn (Repeater $component): string => $component->getAddBetweenActionLabel())
+            ->color('gray')
+            ->action(function (array $arguments, Repeater $component): void {
+                $afterItem = $arguments['afterItem'] ?? null;
+
+                if (! is_string($afterItem) && ! is_int($afterItem)) {
+                    throw new LogicException('The repeater add-between action was mounted without an "afterItem" argument naming the item to insert after.');
+                }
+
+                $newKey = $component->generateUuid();
+                $rawState = $component->getRawState();
+                $items = [];
+
+                foreach ((is_array($rawState) ? $rawState : []) as $key => $item) {
+                    $items[$key] = $item;
+
+                    if ((string) $key === (string) $afterItem) {
+                        if ($newKey !== null) {
+                            $items[$newKey] = [];
+                        } else {
+                            $items[] = [];
+                            $newKey = (string) array_key_last($items);
+                        }
+                    }
+                }
+
+                $component->rawState($items);
+
+                if ($newKey !== null) {
+                    $component->getChildSchema($newKey)?->fill();
+                }
+
+                $component->collapsed(false, shouldMakeComponentCollapsible: false);
+
+                $component->callAfterStateUpdatedHooks();
+            })
+            ->button()
+            ->size(Size::Small)
+            ->visible(false);
+
+        return $this->applyActionModifier($this->modifyAddBetweenActionUsing, $action);
+    }
+
+    public function addBetweenAction(?Closure $callback): static
+    {
+        $this->modifyAddBetweenActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function getAddBetweenActionName(): string
+    {
+        return 'addBetween';
+    }
+
+    public function addBetweenActionLabel(string|Closure|null $label): static
+    {
+        $this->addBetweenActionLabel = $label;
+
+        return $this;
+    }
+
+    public function getAddBetweenActionLabel(): string
+    {
+        return $this->evaluate($this->addBetweenActionLabel) ?? 'Insert between';
+    }
+
+    public function getReorderAction(): Action
+    {
+        $action = Action::make($this->getReorderActionName())
+            ->label('Move')
+            ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_REORDER, 'heroicons:arrows-up-down-20-solid'))
+            ->color('gray')
+            ->action(function (array $arguments, Repeater $component): void {
+                $order = $arguments['items'] ?? null;
+
+                if (! is_array($order) || ! array_is_list($order)) {
+                    throw new LogicException('The repeater reorder action was mounted without an "items" argument listing the item keys in their new order.');
+                }
+
+                $rawState = $component->getRawState();
+                $items = is_array($rawState) ? $rawState : [];
+                $reordered = [];
+
+                foreach ($order as $itemKey) {
+                    if ((is_string($itemKey) || is_int($itemKey)) && array_key_exists($itemKey, $items)) {
+                        $reordered[$itemKey] = $items[$itemKey];
+                    }
+                }
+
+                $component->rawState($reordered + $items);
+
+                $component->callAfterStateUpdatedHooks();
+            })
+            ->liveComponentClickHandlerEnabled(false)
+            ->iconButton()
+            ->size(Size::Small)
+            ->visible(fn (Repeater $component): bool => $component->isReorderableWithDragAndDrop());
+
+        return $this->applyActionModifier($this->modifyReorderActionUsing, $action);
+    }
+
+    public function reorderAction(?Closure $callback): static
+    {
+        $this->modifyReorderActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function getReorderActionName(): string
+    {
+        return 'reorder';
+    }
+
+    public function getCollapseAction(): Action
+    {
+        $action = Action::make($this->getCollapseActionName())
+            ->label('Collapse')
+            ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_COLLAPSE, 'heroicons:chevron-up-20-solid'))
+            ->color('gray')
+            ->liveComponentClickHandlerEnabled(false)
+            ->iconButton()
+            ->size(Size::Small);
+
+        return $this->applyActionModifier($this->modifyCollapseActionUsing, $action);
+    }
+
+    public function collapseAction(?Closure $callback): static
+    {
+        $this->modifyCollapseActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function getCollapseActionName(): string
+    {
+        return 'collapse';
+    }
+
+    public function getExpandAction(): Action
+    {
+        $action = Action::make($this->getExpandActionName())
+            ->label('Expand')
+            ->icon($this->resolveActionIcon(FormsIconAlias::COMPONENTS_REPEATER_ACTIONS_EXPAND, 'heroicons:chevron-down-20-solid'))
+            ->color('gray')
+            ->liveComponentClickHandlerEnabled(false)
+            ->iconButton()
+            ->size(Size::Small);
+
+        return $this->applyActionModifier($this->modifyExpandActionUsing, $action);
+    }
+
+    public function expandAction(?Closure $callback): static
+    {
+        $this->modifyExpandActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function getExpandActionName(): string
+    {
+        return 'expand';
+    }
+
+    public function getCollapseAllAction(): Action
+    {
+        $action = Action::make($this->getCollapseAllActionName())
+            ->label('Collapse all')
+            ->color('gray')
+            ->liveComponentClickHandlerEnabled(false)
+            ->link()
+            ->size(Size::Small);
+
+        return $this->applyActionModifier($this->modifyCollapseAllActionUsing, $action);
+    }
+
+    public function collapseAllAction(?Closure $callback): static
+    {
+        $this->modifyCollapseAllActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function getCollapseAllActionName(): string
+    {
+        return 'collapseAll';
+    }
+
+    public function getExpandAllAction(): Action
+    {
+        $action = Action::make($this->getExpandAllActionName())
+            ->label('Expand all')
+            ->color('gray')
+            ->liveComponentClickHandlerEnabled(false)
+            ->link()
+            ->size(Size::Small);
+
+        return $this->applyActionModifier($this->modifyExpandAllActionUsing, $action);
+    }
+
+    public function expandAllAction(?Closure $callback): static
+    {
+        $this->modifyExpandAllActionUsing = $callback;
+
+        return $this;
+    }
+
+    public function getExpandAllActionName(): string
+    {
+        return 'expandAll';
+    }
+
     /**
      * The per-item preamble a template cannot express in a single getter call:
      * each item's triggers are the shared structural action bound to that item's
@@ -971,44 +1313,160 @@ class Repeater extends Field implements HasKeyedItems
         $items = $this->getItems();
         $itemCount = count($items);
 
+        $isTable = $this->isTable();
+        $isDefault = ! $isTable && ! $this->isSimple();
+
         $addAction = $this->getAction($this->getAddActionName());
+        $addBetweenAction = $isDefault ? $this->getAction($this->getAddBetweenActionName()) : null;
         $cloneAction = $this->getAction($this->getCloneActionName());
         $deleteAction = $this->getAction($this->getDeleteActionName());
         $moveDownAction = $this->getAction($this->getMoveDownActionName());
         $moveUpAction = $this->getAction($this->getMoveUpActionName());
+        $reorderAction = $this->getAction($this->getReorderActionName());
+        $collapseAllAction = $isDefault ? $this->getAction($this->getCollapseAllActionName()) : null;
+        $expandAllAction = $isDefault ? $this->getAction($this->getExpandAllActionName()) : null;
+        $extraItemActions = $this->getExtraItemActions();
 
+        $isAddable = $this->isAddable();
         $isCloneable = $this->isCloneable();
+        $isCollapsible = $isDefault && $this->isCollapsible();
         $isDeletable = $this->isDeletable();
         $isReorderableWithButtons = $this->isReorderableWithButtons();
+        $isDragReorderable = $this->isReorderableWithDragAndDrop() && ($reorderAction?->isVisible() ?? false);
+        $hasItemHeaders = $this->hasItemHeaders();
+        $labelBetweenItems = $isDefault ? $this->getLabelBetweenItems() : null;
+        $tableColumns = $isTable ? array_values($this->getTableColumns() ?? []) : [];
+
+        if ($isDragReorderable) {
+            $reorderAction->extraAttributes(['data-sortable-handle' => true], merge: true);
+        }
 
         $itemRows = [];
         $index = 0;
 
         foreach ($items as $itemKey => $itemSchema) {
             $index++;
+            $itemKey = (string) $itemKey;
+            $isFirst = $index === 1;
+            $isLast = $index === $itemCount;
 
+            $visibleExtraItemActions = array_values(array_filter(
+                array_map(static fn (Action $action): Action => $action(['item' => $itemKey]), $extraItemActions),
+                static fn (Action $action): bool => $action->isVisible(),
+            ));
             $itemCloneAction = $cloneAction?->__invoke(['item' => $itemKey]);
             $itemDeleteAction = $deleteAction?->__invoke(['item' => $itemKey]);
-            $itemMoveUpAction = $moveUpAction?->__invoke(['item' => $itemKey])->disabled($index === 1);
-            $itemMoveDownAction = $moveDownAction?->__invoke(['item' => $itemKey])->disabled($index === $itemCount);
+            $itemMoveUpAction = $moveUpAction?->__invoke(['item' => $itemKey])->disabled($isFirst);
+            $itemMoveDownAction = $moveDownAction?->__invoke(['item' => $itemKey])->disabled($isLast);
+            $itemAddBetweenAction = ($isAddable && ! $isLast) ? $addBetweenAction?->__invoke(['afterItem' => $itemKey]) : null;
+
+            $rowReorderAction = $isDragReorderable ? $reorderAction : null;
+            $rowMoveUpAction = ($isReorderableWithButtons && $itemMoveUpAction?->isVisible()) ? $itemMoveUpAction : null;
+            $rowMoveDownAction = ($isReorderableWithButtons && $itemMoveDownAction?->isVisible()) ? $itemMoveDownAction : null;
+            $rowCloneAction = ($isCloneable && $itemCloneAction?->isVisible()) ? $itemCloneAction : null;
+            $rowDeleteAction = ($isDeletable && $itemDeleteAction?->isVisible()) ? $itemDeleteAction : null;
+            $rowAddBetweenAction = ($itemAddBetweenAction?->isVisible() ?? false) ? $itemAddBetweenAction : null;
+            $label = $this->getItemLabel($itemKey, $index - 1);
+
+            $tableRow = $isTable ? $this->buildTableRow($itemSchema, $tableColumns) : ['cells' => [], 'hiddenComponents' => []];
 
             $itemRows[] = [
                 'key' => $itemKey,
                 'schema' => $itemSchema,
-                'label' => $this->getItemLabel((string) $itemKey, $index - 1),
-                'isFirst' => $index === 1,
-                'isLast' => $index === $itemCount,
-                'moveUpAction' => ($isReorderableWithButtons && $itemMoveUpAction?->isVisible()) ? $itemMoveUpAction : null,
-                'moveDownAction' => ($isReorderableWithButtons && $itemMoveDownAction?->isVisible()) ? $itemMoveDownAction : null,
-                'cloneAction' => ($isCloneable && $itemCloneAction?->isVisible()) ? $itemCloneAction : null,
-                'deleteAction' => ($isDeletable && $itemDeleteAction?->isVisible()) ? $itemDeleteAction : null,
+                'label' => $label,
+                'isFirst' => $isFirst,
+                'isLast' => $isLast,
+                'isCollapsed' => $isCollapsible && $this->isCollapsed($itemSchema),
+                'hasHeader' => $hasItemHeaders && (
+                    $rowReorderAction instanceof Action || $rowMoveUpAction instanceof Action || $rowMoveDownAction instanceof Action
+                    || filled($label) || $rowCloneAction instanceof Action || $rowDeleteAction instanceof Action
+                    || $isCollapsible || $visibleExtraItemActions !== []
+                ),
+                'reorderAction' => $rowReorderAction,
+                'moveUpAction' => $rowMoveUpAction,
+                'moveDownAction' => $rowMoveDownAction,
+                'cloneAction' => $rowCloneAction,
+                'deleteAction' => $rowDeleteAction,
+                'extraItemActions' => $visibleExtraItemActions,
+                'addBetweenAction' => $rowAddBetweenAction,
+                'cells' => $tableRow['cells'],
+                'hiddenComponents' => $tableRow['hiddenComponents'],
             ];
         }
 
         return [
             'itemRows' => $itemRows,
-            'addAction' => ($this->isAddable() && $addAction?->isVisible()) ? $addAction : null,
+            'addAction' => ($isAddable && $addAction?->isVisible()) ? $addAction : null,
+            'hasController' => $isCollapsible || $isDragReorderable,
+            'isCollapsible' => $isCollapsible,
+            'persistCollapsed' => $isCollapsible && $this->shouldPersistCollapsed(),
+            'isDragReorderable' => $isDragReorderable,
+            'animationDuration' => $this->getReorderAnimationDuration(),
+            'gridColumns' => $this->getGridColumns(),
+            'collapseAllAction' => ($isCollapsible && $collapseAllAction?->isVisible()) ? $collapseAllAction : null,
+            'expandAllAction' => ($isCollapsible && $expandAllAction?->isVisible()) ? $expandAllAction : null,
+            'collapseAction' => $isCollapsible ? $this->getAction($this->getCollapseActionName()) : null,
+            'expandAction' => $isCollapsible ? $this->getAction($this->getExpandActionName()) : null,
+            'labelBetweenItems' => $labelBetweenItems,
+            'tableColumns' => $tableColumns,
+            'hasReorderColumn' => $isTable && $itemCount > 1 && ($isReorderableWithButtons || $this->isReorderableWithDragAndDrop()),
+            'hasActionsColumn' => $isTable && ($extraItemActions !== [] || $isCloneable || $isDeletable),
+            'isCompact' => $isTable && $this->isCompact(),
         ];
+    }
+
+    /**
+     * Pair an item's components with the table columns by position — Filament's
+     * counter: a Hidden field consumes no column and renders in the trailing hidden
+     * cell, an invisible component still consumes one, components past the last
+     * column are dropped.
+     *
+     * @param list<TableColumn> $tableColumns
+     *
+     * @return array{cells: list<array{component: Component, isVisible: bool, verticalAlignmentClass: ?string}>, hiddenComponents: list<Component>}
+     */
+    private function buildTableRow(Schema $itemSchema, array $tableColumns): array
+    {
+        $cells = [];
+        $hiddenComponents = [];
+        $counter = 0;
+
+        foreach ($itemSchema->getComponents(withActions: true, withHidden: true) as $schemaComponent) {
+            if (! $schemaComponent instanceof Component) {
+                throw new LogicException(sprintf('Table repeaters must only contain schema components, but [%s] was used.', $schemaComponent::class));
+            }
+
+            if (count($tableColumns) <= $counter) {
+                continue;
+            }
+
+            if ($schemaComponent instanceof Hidden) {
+                $hiddenComponents[] = $schemaComponent;
+
+                continue;
+            }
+
+            $counter++;
+            $verticalAlignment = $tableColumns[$counter - 1]->getVerticalAlignment();
+
+            $cells[] = [
+                'component' => $schemaComponent,
+                'isVisible' => $schemaComponent->isVisible(),
+                'verticalAlignmentClass' => $verticalAlignment instanceof VerticalAlignment
+                    ? "sy-vertical-align-{$verticalAlignment->value}"
+                    : $verticalAlignment,
+            ];
+        }
+
+        return ['cells' => $cells, 'hiddenComponents' => $hiddenComponents];
+    }
+
+    /**
+     * The icon a user's alias override names, or the shipped default.
+     */
+    private function resolveActionIcon(string $alias, string $fallback): string|BackedEnum|Markup
+    {
+        return ($this->iconManager ??= new IconManager())->resolve($alias) ?? $fallback;
     }
 
     /**

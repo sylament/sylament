@@ -78,7 +78,7 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 | [`fused-group.css` — the `.sy-fo-fused-group` ring, dividers and corner rules](../../../packages/forms/assets/src/styles/components/fused-group.css) | [`schemas/…/components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css) | done | — | [diverges](../schemas/styles.md#fused-group-css-was-ported-into-the-forms-package) · [semantics](fused-group.md#the-corner-rules-reach-through-two-elements-the-schema-partial-nests) |
 | [`input.css` — `.sy-fo-input`, the text control for `TextInput`, `Textarea` and the three pickers](../../../packages/forms/assets/src/styles/components/input.css) | [`support/…/input/index.css`](../../../vendor/filament/support/resources/css/components/input/index.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) + [`components/textarea.css`](../../../vendor/filament/forms/resources/css/components/textarea.css) + [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | an alignment setter | [detail](#the-input-and-select-stylesheets-stop-at-the-alignment-arms) · [diverges](#the-input-wrapper-invents-a-hover-ring) · [diverges](#the-textarea-rule-is-the-ports-own-because-nothing-autosizes) |
 | [`radio.css` — the `.sy-fo-radio` option set and the `.sy-fo-radio-input` control](../../../packages/forms/assets/src/styles/components/radio.css) | [`components/radio.css`](../../../vendor/filament/forms/resources/css/components/radio.css) + [`support/…/input/radio.css`](../../../vendor/filament/support/resources/css/components/input/radio.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](radio.md#the-option-inputs-carry-aria-invalid-instead-of-a-fi-valid--fi-invalid-class-pair) |
-| [`repeater.css` — `.sy-fo-repeater` and `.sy-fo-simple-repeater` item chrome](../../../packages/forms/assets/src/styles/components/repeater.css) | [`components/repeater.css`](../../../vendor/filament/forms/resources/css/components/repeater.css) | in progress | the four deferred chrome clusters | [detail](repeater.md#four-chrome-clusters-are-deferred-not-dropped) · [diverges](#the-repeater-item-lists-declare-their-own-grid) |
+| [`repeater.css` — `.sy-fo-repeater`, `.sy-fo-simple-repeater` and `.sy-fo-table-repeater` item chrome](../../../packages/forms/assets/src/styles/components/repeater.css) | [`components/repeater.css`](../../../vendor/filament/forms/resources/css/components/repeater.css) | in progress | infolists | [detail](#the-repeater-stylesheet-waits-on-infolists-for-two-rules) · [diverges](#the-repeater-item-lists-take-supports-grid) |
 | [`select.css` — `.sy-fo-select`, the native control and its chevron, and the `.sy-fo-select-*` skin the JS control renders into](../../../packages/forms/assets/src/styles/components/select.css) | [`support/…/input/select.css`](../../../vendor/filament/support/resources/css/components/input/select.css) + [`support/…/input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) | in progress | schemas' `HasInlineLabel` | [detail](#the-input-and-select-stylesheets-stop-at-the-alignment-arms) · [diverges](#the-input-wrapper-invents-a-hover-ring) · [diverges](#the-js-select-skin-is-filaments-on-the-ported-controls-container) |
 | [`toggle-buttons.css` — the `.sy-fo-toggle-buttons` option set and its hidden inputs](../../../packages/forms/assets/src/styles/components/toggle-buttons.css) | [`components/toggle-buttons.css`](../../../vendor/filament/forms/resources/css/components/toggle-buttons.css) | in progress | schemas' `HasInlineLabel` | [semantics](toggle-buttons.md#the-grouped-labels-must-stay-direct-children-of-the-group) · [semantics](toggle-buttons.md#the-selected-state-is-painted-from-the-sibling-input-in-both-variants) · [diverges](toggle-buttons.md#extraattributes-stays-on-the-field-wrapper) |
 | [`toggle.css` — the `.sy-fo-toggle` root, track, thumb and icon pair](../../../packages/forms/assets/src/styles/components/toggle.css) | [`support/…/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css) | done | — | [diverges](toggle.md#the-toggle-is-a-styled-checkbox-not-a-button) · [diverges](toggle.md#the-icon-rules-select-by-name-where-filament-selects-by-position) · [diverges](toggle.md#the-two-colours-ride-on-two-elements) |
@@ -121,6 +121,19 @@ matches a fresh build.
 Specifics for rows that are not finished — what is in, what is left, and the next
 step. Delete a subsection when its row flips to **done**; the table row and any
 divergence it earned stay behind.
+
+### The repeater stylesheet waits on infolists for two rules
+
+Every rule of vendor's 401-line `repeater.css` is ported except two, both in the
+table-mode compact block and both keyed off infolists classes that do not exist
+yet: `.fi-in-entry` / `.fi-in-entry-label` (the entry's own gap and label, which
+the compact table hides the same way it hides a field's) and
+`.fi-in-entry-content` (its horizontal padding). [`infolists`](../infolists/README.md)
+ships a bundle class and nothing else, so there is no `sy-in-*` name to hang
+them on. Their siblings *are* ported — `.sy-fo-field`, `.sy-fo-field-label-content`,
+`.sy-fo-toggle-buttons .sy-fo-field-content-col` and `.sy-fo-radio` all carry
+their vendor rule — so the gap is exactly the infolists half. Add the two rules
+in the same change that gives infolists an entry partial.
 
 ### The field stylesheet omits the leading-schema un-grow
 
@@ -425,22 +438,14 @@ row. Both are inventions rather than translations, and both reverse when autosiz
 lands: the rule becomes vendor's, gated on the same `sy-fo-*` class the autosize
 controller keys off.
 
-### The repeater item lists declare their own grid
+### The repeater item lists take support's grid
 
-```css
-/* ours */    & .sy-fo-repeater-items { @apply grid items-start gap-4; }
-/* vendor */  & .fi-fo-repeater-items { @apply items-start gap-4; }
-```
-
-Vendor takes `display: grid` from the container-grid classes
-`HasContainerGridLayout` emits onto that element; the port's items grid is
-deferred with the rest of that concern
-([repeater.md](repeater.md#four-chrome-clusters-are-deferred-not-dropped)), so the
-stylesheet supplies the declaration itself on both item lists, the simple
-repeater's included. Correct today and wrong the moment the concern lands — an
-emitted `sy-grid-cols-*` would then be fighting a hardcoded single-column `grid`
-from the same layer. The deferral is recorded on the component; this compensating
-declaration is recorded here so the removal is not left to be rediscovered.
+The item lists take support's `grid()` (`sy-grid` plus the per-breakpoint
+`--cols-*` custom properties), so the repeater owns no grid CSS: both item lists
+declare only the spacing and alignment the grid does not carry, matching vendor
+rule for rule. The compensating `@apply grid` these two rules carried while
+`HasContainerGridLayout` was deferred is gone with the deferral
+([repeater.md](repeater.md#the-items-grid-is-supports-grid)).
 
 ### The JS select skin is Filament's, on the ported control's container
 

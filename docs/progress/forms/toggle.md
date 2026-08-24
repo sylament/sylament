@@ -36,7 +36,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | `required()` — no attribute, and a `NotNull` constraint | [`Components/Toggle.php`](../../../vendor/filament/forms/src/Components/Toggle.php) | done | — | [diverges](#required-means-presence-not-truth) |
 | [`isBlankStateValue()`](../../../packages/forms/src/Components/Toggle.php) — an untouched switch reads blank | — | done | — | [semantics](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves) |
 | [`HasToggleColors`](../../../packages/forms/src/Components/Concerns/HasToggleColors.php) (`onColor()` / `offColor()`) | [`Concerns/HasToggleColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasToggleColors.php) | done | — | [diverges](#the-two-colours-ride-on-two-elements) |
-| `CanFixIndistinctState` (`fixIndistinctState()`) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` + the distinct/live surface | [detail](#fixindistinctstate-awaits-the-repeater) |
+| `CanFixIndistinctState` (`fixIndistinctState()`) | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | the distinct/live surface | [detail](#fixindistinctstate-awaits-the-repeater) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#the-toggle-carries-extra-input-attributes-filaments-does-not) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — | [detail](#the-alpine-attribute-concern-is-not-ported) |
 
@@ -73,9 +73,11 @@ step. Delete a subsection when its row flips to **done**.
 
 Filament's `fixIndistinctState()` composes `distinct()`, `live()` and an
 `afterStateUpdated()` hook that walks up to the parent `Repeater` and switches
-every sibling item off when this one is switched on. None of `Repeater`,
-`distinct()` or the parent-repeater lookup exists here, so the trait has nothing
-to build on. **Blocked** until the repeater lands.
+every sibling item off when this one is switched on. `Repeater` ships, and so
+does the parent-repeater lookup the hook walks — schemas' `CanBeRepeated`
+([repeater.md](repeater.md)) — leaving only `distinct()`, which is
+[deferred to M3 · 8](can-be-validated.md) with the rest of the validation
+families. **Blocked** on that alone now.
 
 ### The Alpine attribute concern is not ported
 

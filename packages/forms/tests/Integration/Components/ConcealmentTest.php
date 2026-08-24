@@ -7,6 +7,7 @@ namespace Sylament\Forms\Tests\Integration\Components;
 use Sylament\Forms\Components\Checkbox;
 use Sylament\Forms\Components\DateTimePicker;
 use Sylament\Forms\Components\FusedGroup;
+use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Components\Textarea;
 use Sylament\Forms\Components\TextInput;
@@ -17,6 +18,7 @@ use Sylament\Schemas\Components\Tabs\Tab;
 use Sylament\Schemas\Schema;
 use Symfony\Component\DomCrawler\Crawler;
 
+use function Sylament\Forms\Tests\renderRepeater;
 use function Sylament\Forms\Tests\renderToHtml;
 
 /**
@@ -148,4 +150,14 @@ it('drops the constraint attributes from a control inside a tab', function (): v
         ->and($input->attr('aria-invalid'))->toBe('false')
         ->and($crawler->filter('label[for="tt"]')->text())->toBe('Tabbed*')
         ->and($crawler->filter('div.sy-fo-field[data-field-wrapper]')->count())->toBe(1);
+});
+
+it('drops native constraints inside a collapsible repeater and keeps them inside a plain one', function (): void {
+    $collapsible = renderRepeater(Repeater::make('tags')->collapsible()->components([TextInput::make('name')->required()->maxLength(5)]), ['tags' => [['name' => 'a']]]);
+    $plain = renderRepeater(Repeater::make('tags')->components([TextInput::make('name')->required()->maxLength(5)]), ['tags' => [['name' => 'a']]]);
+
+    expect($collapsible->filter('input[required]'))->toHaveCount(0)
+        ->and($collapsible->filter('input[maxlength]'))->toHaveCount(0)
+        ->and($plain->filter('input[required]'))->toHaveCount(1)
+        ->and($plain->filter('input[maxlength="5"]'))->toHaveCount(1);
 });

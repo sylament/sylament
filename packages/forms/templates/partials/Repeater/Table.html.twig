@@ -1,0 +1,123 @@
+{% set repeaterController = 'sylament--forms--repeater' %}
+{% set sortableController = 'sylament--support--sortable' %}
+{% set repeaterStimulus = hasController ? stimulus_controller(repeaterController, {key: component.getKey}) : null %}
+{% set sortableStimulus = isDragReorderable ? stimulus_controller(sortableController, {
+    animationDuration: animationDuration,
+})|stimulus_action(repeaterController, 'reorder', sortableController ~ ':end') : null %}
+
+<twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
+    <div
+            {{ attrs({
+                class: ['sy', 'sy-fo-table-repeater', {'sy-compact': isCompact}],
+                id: component.getId,
+                role: 'group',
+                'aria-labelledby': component.getId ~ '-label',
+            }, repeaterStimulus) }}
+    >
+        {% if itemRows is not empty %}
+            <table>
+                <thead>
+                    <tr>
+                        {% if hasReorderColumn %}
+                            <th scope="col" class="sy-fo-table-repeater-empty-header-cell"><span class="sy-fo-sr-only">Reorder</span></th>
+                        {% endif %}
+
+                        {% for column in tableColumns %}
+                            <th
+                                    {{ attrs({
+                                        scope: 'col',
+                                        class: [{'sy-wrapped': column.canHeaderWrap}, column.getAlignmentClass],
+                                        style: column.getWidth ? ['width: ' ~ column.getWidth] : null,
+                                    }) }}
+                            >
+                                {% if column.isHeaderLabelHidden %}
+                                    <span class="sy-fo-sr-only">{{ column.getLabel }}</span>
+                                {% else %}
+                                    {{ column.getLabel }}{% if column.isMarkedAsRequired %}<sup class="sy-fo-table-repeater-header-required-mark">*</sup>{% endif %}
+                                {% endif %}
+                            </th>
+                        {% endfor %}
+
+                        {% if hasActionsColumn %}
+                            <th scope="col" class="sy-fo-table-repeater-empty-header-cell"><span class="sy-fo-sr-only">Actions</span></th>
+                        {% endif %}
+                    </tr>
+                </thead>
+
+                <tbody {{ attrs(sortableStimulus) }}>
+                    {% for row in itemRows %}
+                        <tr
+                                {{ attrs({
+                                    id: component.getKey ~ '.' ~ row.key,
+                                    'data-item-key': row.key,
+                                    'data-sortable-item': isDragReorderable ? row.key : null,
+                                }) }}
+                        >
+                            {% if hasReorderColumn %}
+                                <td>
+                                    {% if row.reorderAction or row.moveUpAction or row.moveDownAction %}
+                                        <div class="sy-fo-table-repeater-actions">
+                                            {% if row.reorderAction %}
+                                                <div>{{ renderComponent(row.reorderAction) }}</div>
+                                            {% endif %}
+
+                                            {% if row.moveUpAction %}
+                                                <div>{{ renderComponent(row.moveUpAction) }}</div>
+                                            {% endif %}
+
+                                            {% if row.moveDownAction %}
+                                                <div>{{ renderComponent(row.moveDownAction) }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+
+                            {% for cell in row.cells %}
+                                {% if cell.isVisible %}
+                                    <td {{ attrs({class: cell.verticalAlignmentClass}) }}>{{ renderComponent(cell.component) }}</td>
+                                {% else %}
+                                    <td class="sy-hidden"></td>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if hasActionsColumn %}
+                                <td>
+                                    {% if row.extraItemActions is not empty or row.cloneAction or row.deleteAction %}
+                                        <div class="sy-fo-table-repeater-actions">
+                                            {% for extraItemAction in row.extraItemActions %}
+                                                <div>{{ renderComponent(extraItemAction) }}</div>
+                                            {% endfor %}
+
+                                            {% if row.cloneAction %}
+                                                <div>{{ renderComponent(row.cloneAction) }}</div>
+                                            {% endif %}
+
+                                            {% if row.deleteAction %}
+                                                <div>{{ renderComponent(row.deleteAction) }}</div>
+                                            {% endif %}
+                                        </div>
+                                    {% endif %}
+                                </td>
+                            {% endif %}
+
+                            {% if row.hiddenComponents is not empty %}
+                                <td class="sy-fo-table-repeater-hidden-cell">
+                                    {% for hiddenComponent in row.hiddenComponents %}
+                                        {{ renderComponent(hiddenComponent) }}
+                                    {% endfor %}
+                                </td>
+                            {% endif %}
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+
+        {% if addAction %}
+            <div {{ attrs({class: ['sy-fo-table-repeater-add', component.getAddActionAlignmentClass]}) }}>
+                {{ renderComponent(addAction) }}
+            </div>
+        {% endif %}
+    </div>
+</twig:SylamentForms:FieldWrapper>

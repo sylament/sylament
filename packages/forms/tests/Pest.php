@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests;
 
 use Sylament\Forms\Components\Field;
+use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Schemas\Schema;
 use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\DependencyInjection\ComponentResolver;
+use Symfony\Component\DomCrawler\Crawler;
 
 pest()
     ->extend(TestCase::class)
@@ -42,6 +44,22 @@ function renderToHtml(ViewComponent $component): string
 function renderField(Field $field): string
 {
     return renderToHtml(Schema::make(new FieldRenderHost())->statePath('data')->components([$field]));
+}
+
+/**
+ * Render a repeater as the child of a real Schema over a seeded `data` bag. The
+ * items are seeded rather than hydrated, so they stay positionally keyed and the
+ * ids the template composes are readable in an assertion; a real mount keys them
+ * by uuid, which is why nothing asserts a literal key off a mounted repeater.
+ *
+ * @param array<string, mixed> $data
+ */
+function renderRepeater(Repeater $repeater, array $data = []): Crawler
+{
+    $host = new FieldRenderHost();
+    $host->data = $data;
+
+    return new Crawler(renderToHtml(Schema::make($host)->statePath('data')->components([$repeater])));
 }
 
 /**

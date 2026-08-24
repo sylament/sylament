@@ -4,36 +4,21 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Integration\Components;
 
+use Sylament\Actions\Action;
 use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\TextInput;
-use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
-use Sylament\Schemas\Schema;
-use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
-use function Sylament\Forms\Tests\renderToHtml;
+use function Sylament\Forms\Tests\renderRepeater;
 
 uses(InteractsWithLiveComponents::class);
 
 /*
- * The two repeater partials through the real Twig stack. Items are seeded on the
+ * The three repeater partials through the real Twig stack. Items are seeded on the
  * host bag rather than hydrated, so they stay positionally keyed and the ids the
  * template composes are readable in an assertion; a real mount keys them by uuid,
  * which is why nothing here asserts a literal key.
  */
-
-/**
- * Render a repeater as the child of a real Schema over a seeded `data` bag.
- *
- * @param array<string, mixed> $data
- */
-function renderRepeater(Repeater $repeater, array $data = []): Crawler
-{
-    $host = new FieldRenderHost();
-    $host->data = $data;
-
-    return new Crawler(renderToHtml(Schema::make($host)->statePath('data')->components([$repeater])));
-}
 
 it('renders one item block per item, each carrying a stable id', function (): void {
     $repeater = Repeater::make('tags')->components([TextInput::make('name')]);
@@ -94,7 +79,7 @@ it('renders the move and clone triggers once their surfaces are on', function ()
 
 it('renders no item header when every header surface is off', function (): void {
     $crawler = renderRepeater(
-        Repeater::make('tags')->components([TextInput::make('name')])->deletable(false),
+        Repeater::make('tags')->components([TextInput::make('name')])->deletable(false)->reorderable(false),
         ['tags' => [['name' => 'a']]],
     );
 
@@ -179,4 +164,121 @@ it('renders an item field error inside that item block', function (): void {
     expect($items->count())->toBe(2)
         ->and($items->first()->filter('.sy-fo-field-error-message')->count())->toBe(0)
         ->and($items->last()->filter('.sy-fo-field-error-message')->text())->toBe('This value should not be blank.');
+});
+
+it('attaches the repeater controller, the sortable control and the handle only when drag reorder is on', function (): void {
+    $repeater = Repeater::make('tags')->components([TextInput::make('name')]);
+    $crawler = renderRepeater($repeater, ['tags' => [['name' => 'a'], ['name' => 'b']]]);
+
+    expect($crawler->filter('.sy-fo-repeater')->attr('data-controller'))->toBe('sylament--forms--repeater')
+        ->and($crawler->filter('.sy-fo-repeater')->attr('data-sylament--forms--repeater-key-value'))->toBe($repeater->getKey())
+        ->and($crawler->filter('.sy-fo-repeater-items')->attr('data-controller'))->toBe('sylament--support--sortable')
+        ->and($crawler->filter('.sy-fo-repeater-items')->attr('data-sylament--support--sortable-animation-duration-value'))->toBe('300')
+        ->and($crawler->filter('.sy-fo-repeater-items')->attr('data-action'))->toBe('sylament--support--sortable:end->sylament--forms--repeater#reorder')
+        ->and($crawler->filter('.sy-fo-repeater-item')->extract(['data-sortable-item']))->toBe(['0', '1'])
+        ->and($crawler->filter('.sy-fo-repeater-item')->extract(['data-item-key']))->toBe(['0', '1'])
+        ->and($crawler->filter('.sy-fo-repeater-item-header-start-actions button[data-sortable-handle]'))->toHaveCount(2)
+        ->and($crawler->filter('.sy-fo-repeater-item-header-start-actions button[data-sortable-handle]')->first()->attr('aria-label'))->toBe('Move')
+        ->and($crawler->filter('.sy-fo-repeater-item-header-start-actions button[data-sortable-handle]')->first()->attr('data-action'))->toBeNull();
+
+    $off = renderRepeater(Repeater::make('tags')->reorderable(false)->components([TextInput::make('name')]), ['tags' => [['name' => 'a']]]);
+
+    expect($off->filter('.sy-fo-repeater')->attr('data-controller'))->toBeNull()
+        ->and($off->filter('[data-sortable-item], [data-sortable-handle], [data-controller~="sylament--support--sortable"]'))->toHaveCount(0);
+});
+
+it('renders the collapse chrome from the server state and wires it to the controller', function (): void {
+    $crawler = renderRepeater(Repeater::make('tags')->collapsed()->persistCollapsed()->components([TextInput::make('name')]), ['tags' => [['name' => 'a'], ['name' => 'b']]]);
+
+    $root = $crawler->filter('.sy-fo-repeater');
+    $items = $crawler->filter('.sy-fo-repeater-item');
+
+    expect($root->attr('class'))->toContain('sy-collapsible')->toContain('sy-cloak')
+        ->and($root->attr('data-sylament--forms--repeater-persist-value'))->toBe('true')
+        ->and($items->first()->attr('class'))->toContain('sy-collapsed')
+        ->and($items->first()->attr('data-sylament--forms--repeater-target'))->toBe('item')
+        ->and($items->first()->attr('data-action'))->toBe('expand->sylament--forms--repeater#expandItem')
+        ->and($crawler->filter('.sy-fo-repeater-item-header')->first()->attr('data-action'))->toBe('click->sylament--forms--repeater#toggleItemFromHeader')
+        ->and($crawler->filter('.sy-fo-repeater-item-header-collapsible-actions')->first()->attr('data-action'))->toBe('click->sylament--forms--repeater#toggleItemFromButton')
+        ->and($crawler->filter('.sy-fo-repeater-item-header-collapse-action button')->first()->attr('aria-label'))->toBe('Collapse')
+        ->and($crawler->filter('.sy-fo-repeater-item-header-expand-action button')->first()->attr('aria-label'))->toBe('Expand')
+        ->and($crawler->filter('.sy-fo-repeater-actions')->attr('class'))->not->toContain('sy-hidden')
+        ->and($crawler->filter('.sy-fo-repeater-actions > span')->first()->attr('data-action'))->toBe('click->sylament--forms--repeater#collapseAll')
+        ->and($crawler->filter('.sy-fo-repeater-actions > span')->last()->attr('data-action'))->toBe('click->sylament--forms--repeater#expandAll');
+
+    $one = renderRepeater(Repeater::make('tags')->collapsible()->components([TextInput::make('name')]), ['tags' => [['name' => 'a']]]);
+
+    expect($one->filter('.sy-fo-repeater-actions')->attr('class'))->toContain('sy-hidden')
+        ->and($one->filter('.sy-fo-repeater')->attr('class'))->not->toContain('sy-cloak')
+        ->and($one->filter('.sy-fo-repeater-item')->attr('class'))->not->toContain('sy-collapsed');
+});
+
+it('renders between-items chrome only where asked, and never as a draggable sibling', function (): void {
+    $withAdd = renderRepeater(
+        Repeater::make('tags')->addBetweenAction(static fn (Action $action): Action => $action->visible())->labelBetweenItems('and')->components([TextInput::make('name')]),
+        ['tags' => [['name' => 'a'], ['name' => 'b'], ['name' => 'c']]],
+    );
+
+    expect($withAdd->filter('.sy-fo-repeater-add-between-items-ctn'))->toHaveCount(2)
+        ->and($withAdd->filter('.sy-fo-repeater-label-between-items-ctn'))->toHaveCount(0)
+        ->and($withAdd->filter('.sy-fo-repeater-add-between-items-ctn')->first()->attr('data-sortable-item'))->toBeNull()
+        ->and($withAdd->filter('.sy-fo-repeater-add-between-items button')->first()->attr('data-live-arguments-param'))->toContain('"afterItem":"0"');
+
+    $withLabel = renderRepeater(Repeater::make('tags')->labelBetweenItems('and')->components([TextInput::make('name')]), ['tags' => [['name' => 'a'], ['name' => 'b']]]);
+
+    expect($withLabel->filter('.sy-fo-repeater-label-between-items')->text())->toBe('and')
+        ->and($withLabel->filter('.sy-fo-repeater-add-between-items-ctn'))->toHaveCount(0);
+});
+
+it('renders visible extra item actions first in the header, bound to their item', function (): void {
+    $crawler = renderRepeater(
+        Repeater::make('tags')->cloneable()->extraItemActions([
+            Action::make('inspect')->icon('heroicons:eye-20-solid'),
+            Action::make('never')->visible(false),
+        ])->components([TextInput::make('name')]),
+        ['tags' => [['name' => 'a']]],
+    );
+
+    $buttons = $crawler->filter('.sy-fo-repeater-item-header-end-actions button');
+
+    expect($buttons->first()->attr('data-live-name-param'))->toBe('inspect')
+        ->and($buttons->first()->attr('data-live-arguments-param'))->toContain('"item":"0"')
+        ->and($buttons->eq(1)->attr('data-live-name-param'))->toBe('clone')
+        ->and($crawler->filter('[data-live-name-param="never"]'))->toHaveCount(0);
+});
+
+it("lays the items out on support's grid", function (): void {
+    $crawler = renderRepeater(Repeater::make('tags')->grid(2)->components([TextInput::make('name')]), ['tags' => [['name' => 'a']]]);
+
+    $list = $crawler->filter('.sy-fo-repeater-items');
+
+    expect($list->attr('class'))->toContain('sy-grid')->toContain('lg:sy-grid-cols')
+        ->and($list->attr('style'))->toContain('--cols-lg: repeat(2, minmax(0, 1fr))');
+});
+
+it('keeps an item header for a repeater whose only header surface is collapsibility', function (): void {
+    $crawler = renderRepeater(
+        Repeater::make('tags')->collapsible()->reorderable(false)->deletable(false)->components([TextInput::make('name')]),
+        ['tags' => [['name' => 'a']]],
+    );
+
+    expect($crawler->filter('.sy-fo-repeater-item-has-header .sy-fo-repeater-item-header'))->toHaveCount(1)
+        ->and($crawler->filter('.sy-fo-repeater-item-header-collapsible-actions'))->toHaveCount(1);
+});
+
+it('orders the simple-mode item actions reorder, move, extras, clone, delete', function (): void {
+    $crawler = renderRepeater(
+        Repeater::make('tags')
+            ->simple(TextInput::make('value'))
+            ->reorderableWithButtons()
+            ->cloneable()
+            ->extraItemActions([Action::make('inspect')->icon('heroicons:eye-20-solid')]),
+        ['tags' => ['a', 'b']],
+    );
+
+    $labels = $crawler->filter('.sy-fo-simple-repeater-item')->first()->filter('.sy-fo-simple-repeater-item-actions button')->extract(['aria-label']);
+
+    expect($labels)->toBe(['Move', 'Move up', 'Move down', 'Inspect', 'Clone', 'Delete'])
+        ->and($crawler->filter('.sy-fo-simple-repeater-items')->attr('data-controller'))->toBe('sylament--support--sortable')
+        ->and($crawler->filter('.sy-fo-simple-repeater-item')->first()->attr('data-sortable-item'))->toBe('0');
 });

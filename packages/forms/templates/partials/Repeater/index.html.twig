@@ -1,29 +1,64 @@
+{% set repeaterController = 'sylament--forms--repeater' %}
+{% set sortableController = 'sylament--support--sortable' %}
+{% set repeaterStimulus = hasController ? stimulus_controller(repeaterController, {
+    key: component.getKey,
+    persist: persistCollapsed ? true : null,
+}) : null %}
+{% set sortableStimulus = isDragReorderable ? stimulus_controller(sortableController, {
+    animationDuration: animationDuration,
+})|stimulus_action(repeaterController, 'reorder', sortableController ~ ':end') : null %}
+{% set itemStimulus = isCollapsible ? stimulus_target(repeaterController, 'item')|stimulus_action(repeaterController, 'expandItem', 'expand') : null %}
+{% set headerStimulus = isCollapsible ? stimulus_action(repeaterController, 'toggleItemFromHeader', 'click') : null %}
+
 <twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
     <div
             {{ attrs({
-                class: ['sy', 'sy-fo-repeater'],
+                class: ['sy', 'sy-fo-repeater', {
+                    'sy-collapsible': isCollapsible,
+                    'sy-cloak': persistCollapsed,
+                }],
                 id: component.getId,
                 role: 'group',
                 'aria-labelledby': component.getId ~ '-label',
-            }) }}
+            }, repeaterStimulus) }}
     >
+        {% if collapseAllAction or expandAllAction %}
+            <div {{ attrs({class: ['sy-fo-repeater-actions', {'sy-hidden': itemRows|length < 2}]}) }}>
+                {% if collapseAllAction %}
+                    <span {{ attrs(stimulus_action(repeaterController, 'collapseAll', 'click')) }}>{{ renderComponent(collapseAllAction) }}</span>
+                {% endif %}
+
+                {% if expandAllAction %}
+                    <span {{ attrs(stimulus_action(repeaterController, 'expandAll', 'click')) }}>{{ renderComponent(expandAllAction) }}</span>
+                {% endif %}
+            </div>
+        {% endif %}
+
         {% if itemRows is not empty %}
-            <ul class="sy-fo-repeater-items">
+            <ul {{ attrs({class: 'sy-fo-repeater-items'}, grid(gridColumns), sortableStimulus) }}>
                 {% for row in itemRows %}
-                    {% set hasStartActions = row.moveUpAction or row.moveDownAction %}
-                    {% set hasEndActions = row.cloneAction or row.deleteAction %}
-                    {% set hasHeader = component.hasItemHeaders and (hasStartActions or row.label is not empty or hasEndActions) %}
+                    {% set hasStartActions = row.reorderAction or row.moveUpAction or row.moveDownAction %}
+                    {% set hasEndActions = row.extraItemActions is not empty or row.cloneAction or row.deleteAction or isCollapsible %}
 
                     <li
                             {{ attrs({
-                                class: ['sy-fo-repeater-item', {'sy-fo-repeater-item-has-header': hasHeader}],
+                                class: ['sy-fo-repeater-item', {
+                                    'sy-fo-repeater-item-has-header': row.hasHeader,
+                                    'sy-collapsed': row.isCollapsed,
+                                }],
                                 id: component.getKey ~ '.' ~ row.key,
-                            }) }}
+                                'data-item-key': row.key,
+                                'data-sortable-item': isDragReorderable ? row.key : null,
+                            }, itemStimulus) }}
                     >
-                        {% if hasHeader %}
-                            <div class="sy-fo-repeater-item-header">
+                        {% if row.hasHeader %}
+                            <div {{ attrs({class: 'sy-fo-repeater-item-header'}, headerStimulus) }}>
                                 {% if hasStartActions %}
                                     <ul class="sy-fo-repeater-item-header-start-actions">
+                                        {% if row.reorderAction %}
+                                            <li>{{ renderComponent(row.reorderAction) }}</li>
+                                        {% endif %}
+
                                         {% if row.moveUpAction %}
                                             <li>{{ renderComponent(row.moveUpAction) }}</li>
                                         {% endif %}
@@ -44,12 +79,23 @@
 
                                 {% if hasEndActions %}
                                     <ul class="sy-fo-repeater-item-header-end-actions">
+                                        {% for extraItemAction in row.extraItemActions %}
+                                            <li>{{ renderComponent(extraItemAction) }}</li>
+                                        {% endfor %}
+
                                         {% if row.cloneAction %}
                                             <li>{{ renderComponent(row.cloneAction) }}</li>
                                         {% endif %}
 
                                         {% if row.deleteAction %}
                                             <li>{{ renderComponent(row.deleteAction) }}</li>
+                                        {% endif %}
+
+                                        {% if isCollapsible %}
+                                            <li {{ attrs({class: 'sy-fo-repeater-item-header-collapsible-actions'}, stimulus_action(repeaterController, 'toggleItemFromButton', 'click')) }}>
+                                                <div class="sy-fo-repeater-item-header-collapse-action">{{ renderComponent(collapseAction) }}</div>
+                                                <div class="sy-fo-repeater-item-header-expand-action">{{ renderComponent(expandAction) }}</div>
+                                            </li>
                                         {% endif %}
                                     </ul>
                                 {% endif %}
@@ -60,6 +106,20 @@
                             {{ renderComponent(row.schema) }}
                         </div>
                     </li>
+
+                    {% if not row.isLast %}
+                        {% if row.addBetweenAction %}
+                            <li class="sy-fo-repeater-add-between-items-ctn">
+                                <div class="sy-fo-repeater-add-between-items">{{ renderComponent(row.addBetweenAction) }}</div>
+                            </li>
+                        {% elseif labelBetweenItems is not empty %}
+                            <li class="sy-fo-repeater-label-between-items-ctn">
+                                <div class="sy-fo-repeater-label-between-items-divider-before"></div>
+                                <span class="sy-fo-repeater-label-between-items">{{ labelBetweenItems }}</span>
+                                <div class="sy-fo-repeater-label-between-items-divider-after"></div>
+                            </li>
+                        {% endif %}
+                    {% endif %}
                 {% endfor %}
             </ul>
         {% endif %}

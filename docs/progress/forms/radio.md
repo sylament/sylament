@@ -97,12 +97,13 @@ are wanted for parity.
 
 `CanFixIndistinctState` composes `distinct()`, `live()` and an
 `afterStateUpdated()` hook that walks up to the parent `Repeater` and clears the
-same option from every sibling item. `distinct()` is
+same option from every sibling item. The parent-repeater lookup the hook needs
+now ships — schemas' `CanBeRepeated` gives every component
+`getParentRepeater()` / `getParentRepeaterItem()` / `getParentRepeaterItemIndex()`
+([repeater.md](repeater.md)) — so the only thing still missing is `distinct()`,
 [deferred to M3 · 8](can-be-validated.md) with the rest of the validation
-families, and the parent-repeater item lookup the hook needs is M3 · 6's — the
-same reading [`Checkbox`](checkbox.md) and
-[`Toggle`](toggle.md#fixindistinctstate-awaits-the-repeater) give it, one
-prerequisite further along now that `Repeater` itself exists.
+families. The same reading [`Checkbox`](checkbox.md) and
+[`Toggle`](toggle.md#fixindistinctstate-awaits-the-repeater) give it.
 
 `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` is the same lookup wearing
 the other hat: it registers a `disableOptionWhen()` predicate that asks the

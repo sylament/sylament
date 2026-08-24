@@ -128,7 +128,7 @@ field-wrapper chrome, so it lands here instead —
 | [`Radio`](../../../packages/forms/src/Components/Radio.php) | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | in progress | [radio.md](radio.md) |
 | RelationshipRepeater | [`Components/RelationshipRepeater.php`](../../../vendor/filament/forms/src/Components/RelationshipRepeater.php) | todo | — |
 | [`Repeater`](../../../packages/forms/src/Components/Repeater.php) | [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | in progress | [repeater.md](repeater.md) |
-| Repeater / TableColumn | [`Components/Repeater/TableColumn.php`](../../../vendor/filament/forms/src/Components/Repeater/TableColumn.php) | todo | — |
+| [`Repeater / TableColumn`](../../../packages/forms/src/Components/Repeater/TableColumn.php) | [`Components/Repeater/TableColumn.php`](../../../vendor/filament/forms/src/Components/Repeater/TableColumn.php) | done | [repeater.md](repeater.md#table-mode-pairs-columns-by-position) |
 | RichEditor | [`Components/RichEditor.php`](../../../vendor/filament/forms/src/Components/RichEditor.php) | todo | — |
 | [`Select`](../../../packages/forms/src/Components/Select.php) | [`Components/Select.php`](../../../vendor/filament/forms/src/Components/Select.php) | in progress | [select.md](select.md) |
 | Slider | [`Components/Slider.php`](../../../vendor/filament/forms/src/Components/Slider.php) | todo | — |
@@ -228,7 +228,7 @@ third.
 | [`HasDescriptions`](../../../packages/forms/src/Components/Concerns/HasDescriptions.php) | [`Components/Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | [has-descriptions.md](has-descriptions.md) |
 | [`HasEnum`](../../../packages/forms/src/Components/Concerns/HasEnum.php) | [`Components/Concerns/HasEnum.php`](../../../vendor/filament/forms/src/Components/Concerns/HasEnum.php) | done | [has-enum.md](has-enum.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Components/Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | [has-extra-input-attributes.md](has-extra-input-attributes.md) |
-| HasExtraItemActions | [`Components/Concerns/HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | todo | — |
+| [`HasExtraItemActions`](../../../packages/forms/src/Components/Concerns/HasExtraItemActions.php) | [`Components/Concerns/HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | done | [repeater.md](repeater.md#an-extra-item-action-reads-its-items-state) |
 | HasFileAttachments | [`Components/Concerns/HasFileAttachments.php`](../../../vendor/filament/forms/src/Components/Concerns/HasFileAttachments.php) | todo | — |
 | [`HasGridDirection`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php) | [`Components/Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | [has-grid-direction.md](has-grid-direction.md) |
 | HasInputMode | [`Components/Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | skipped | [text-input.md](text-input.md#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Integration\Components;
 
+use LogicException;
+use Sylament\Actions\Action;
 use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
@@ -195,4 +197,87 @@ it('closes every structural surface when the field is disabled', function (): vo
         ->and($repeater->isReorderableWithButtons())->toBeFalse()
         ->and($repeater->isCloneable())->toBeFalse()
         ->and($repeater->getAction($repeater->getDeleteActionName())?->isVisible())->toBeFalse();
+});
+
+it('reorders the items to the keys the client sent, appending the ones it did not and dropping unknown ones', function (): void {
+    $component = $this->createLiveComponent('RepeaterForm', [
+        'data' => ['tags' => [['name' => 'a'], ['name' => 'b'], ['name' => 'c']]],
+    ]);
+    [$a, $b, $c] = array_keys($component->component()->data['tags']);
+
+    $component->call('mountAction', repeaterMount('reorder', ['items' => [$c, $a, $b]]));
+    expect(array_keys($component->component()->data['tags']))->toBe([$c, $a, $b]);
+
+    $component->call('mountAction', repeaterMount('reorder', ['items' => [$b, 'zzz']]));
+    expect(array_keys($component->component()->data['tags']))->toBe([$b, $c, $a])
+        ->and($component->component()->stateUpdates)->toBe(2);
+});
+
+it('refuses a reorder without an ordered key list', function (): void {
+    $component = $this->createLiveComponent('RepeaterForm', ['data' => ['tags' => [['name' => 'a']]]]);
+
+    expect(fn () => $component->call('mountAction', repeaterMount('reorder', ['items' => 'a'])))
+        ->toThrow(LogicException::class);
+});
+
+it('keeps positional keys through a reorder under fake()', function (): void {
+    // fake() registers a configureUsing closure on the shared ComponentManager; the
+    // live host's make() runs after it, and the first assertion pins that it took.
+    Repeater::fake();
+
+    $component = $this->createLiveComponent('RepeaterForm', ['data' => ['tags' => [['name' => 'a'], ['name' => 'b']]]]);
+
+    expect(array_keys($component->component()->data['tags']))->toBe([0, 1]);
+
+    $component->call('mountAction', repeaterMount('reorder', ['items' => ['1', '0']]));
+
+    expect(array_keys($component->component()->data['tags']))->toBe([1, 0])
+        ->and(array_values($component->component()->data['tags']))->toBe([['name' => 'b'], ['name' => 'a']]);
+});
+
+it('inserts a filled item after the named one on the add-between action', function (): void {
+    $component = $this->createLiveComponent('RepeaterForm', ['data' => ['tags' => [['name' => 'a'], ['name' => 'b']]], 'isAddBetweenVisible' => true]);
+    [$a, $b] = array_keys($component->component()->data['tags']);
+
+    $component->call('mountAction', repeaterMount('addBetween', ['afterItem' => $a]));
+    $tags = $component->component()->data['tags'];
+
+    expect(array_values($tags))->toBe([['name' => 'a'], ['name' => 'x'], ['name' => 'b']])
+        ->and(array_keys($tags)[0])->toBe($a)
+        ->and(array_keys($tags)[2])->toBe($b);
+});
+
+it('leaves a collapsed repeater open for the rest of the request after adding, cloning or inserting', function (): void {
+    $repeater = wireActionRepeater(Repeater::make('tags')->collapsed()->components([TextInput::make('name')]), ['tags' => [['name' => 'a']]]);
+    $key = array_keys($repeater->getItems())[0];
+
+    expect($repeater->isCollapsed($repeater->getItems()[$key]))->toBeTrue();
+
+    $repeater->getAction('add')?->call();
+
+    expect($repeater->isCollapsible())->toBeTrue()
+        ->and($repeater->isCollapsed($repeater->getItems()[$key]))->toBeFalse();
+});
+
+it('mounts an extra item action by name with the item key and injects the item\'s state as $schemaState', function (): void {
+    $component = $this->createLiveComponent('RepeaterForm', ['data' => ['tags' => [['name' => 'a'], ['name' => 'b']]]]);
+    [, $b] = array_keys($component->component()->data['tags']);
+
+    $component->call('mountAction', repeaterMount('inspect', ['item' => $b]));
+
+    expect($component->component()->inspected)->toBe(['name' => 'b']);
+});
+
+it('leaves the collapse state open after a clone and an insert as well', function (): void {
+    $repeater = wireActionRepeater(Repeater::make('tags')->collapsed()->cloneable()->addBetweenAction(static fn (Action $action): Action => $action->visible())->components([TextInput::make('name')]), ['tags' => [['name' => 'a'], ['name' => 'b']]]);
+    [$a] = array_keys($repeater->getItems());
+
+    $repeater->getAction('clone')?->__invoke(['item' => $a])->call();
+    expect($repeater->isCollapsed($repeater->getItems()[$a]))->toBeFalse();
+
+    $again = wireActionRepeater(Repeater::make('tags')->collapsed()->addBetweenAction(static fn (Action $action): Action => $action->visible())->components([TextInput::make('name')]), ['tags' => [['name' => 'a'], ['name' => 'b']]]);
+    [$first] = array_keys($again->getItems());
+
+    $again->getAction('addBetween')?->__invoke(['afterItem' => $first])->call();
+    expect($again->isCollapsed($again->getItems()[$first]))->toBeFalse();
 });

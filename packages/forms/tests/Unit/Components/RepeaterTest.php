@@ -6,6 +6,7 @@ namespace Sylament\Forms\Tests\Unit\Components;
 
 use LogicException;
 use Sylament\Forms\Components\Repeater;
+use Sylament\Forms\Components\Repeater\TableColumn;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Records\Article;
@@ -340,4 +341,62 @@ it('carries the item chrome flags', function (): void {
         ->and($labelled->hasItemHeaders())->toBeFalse()
         ->and($labelled->isItemLabelTruncated())->toBeFalse()
         ->and($labelled->getItemLabel('0', 0))->toBe('a');
+});
+
+it('registers the eleven structural actions under their Filament names', function (): void {
+    [$repeater] = wireRepeater(Repeater::make('tags')->components([TextInput::make('name')]));
+
+    expect(array_keys($repeater->getActions()))->toBe(['add', 'addBetween', 'clone', 'collapse', 'collapseAll', 'delete', 'expand', 'expandAll', 'moveDown', 'moveUp', 'reorder'])
+        ->and($repeater->getAddBetweenActionLabel())->toBe('Insert between')
+        ->and($repeater->addBetweenActionLabel('Squeeze one in')->getAddBetweenActionLabel())->toBe('Squeeze one in')
+        ->and($repeater->getAction('addBetween')?->isVisible())->toBeFalse()
+        ->and($repeater->getAction('reorder')?->isLiveComponentClickHandlerEnabled())->toBeFalse()
+        ->and($repeater->getAction('collapse')?->isLiveComponentClickHandlerEnabled())->toBeFalse()
+        ->and($repeater->getAction('collapseAll')?->getLabel())->toBe('Collapse all')
+        ->and($repeater->getAction('expandAll')?->getLabel())->toBe('Expand all');
+});
+
+it('drag-reorders by default and only when reorderable at all', function (): void {
+    // isReorderable() reaches CanBeDisabled::isDisabled() → getContainer(), so every repeater is wired.
+    Repeater::fake();
+    $wired = static fn (Repeater $repeater): Repeater => wireRepeater($repeater)[0];
+
+    expect($wired(Repeater::make('a'))->isReorderableWithDragAndDrop())->toBeTrue()
+        ->and($wired(Repeater::make('a'))->isReorderableWithButtons())->toBeFalse()
+        ->and($wired(Repeater::make('a')->reorderable(false))->isReorderableWithDragAndDrop())->toBeFalse()
+        ->and($wired(Repeater::make('a')->reorderableWithDragAndDrop(false))->isReorderableWithDragAndDrop())->toBeFalse()
+        ->and($wired(Repeater::make('a')->disabled())->isReorderableWithDragAndDrop())->toBeFalse();
+});
+
+it("ties a relationship repeater's reorderability to its order column, in Filament's order of calls", function (): void {
+    Repeater::fake();
+    $wired = static fn (Repeater $repeater): Repeater => wireRepeater($repeater, [], TaggedPost::class)[0];
+
+    expect($wired(Repeater::make('tags')->relationship())->isReorderable())->toBeFalse()
+        ->and($wired(Repeater::make('tags')->relationship()->orderColumn('position'))->isReorderable())->toBeTrue()
+        ->and($wired(Repeater::make('tags')->orderColumn('position')->relationship())->isReorderable())->toBeFalse()
+        ->and($wired(Repeater::make('tags')->orderColumn(null))->isReorderable())->toBeFalse();
+});
+
+it('is a table only with columns, and table wins over simple', function (): void {
+    expect(Repeater::make('a')->isTable())->toBeFalse()
+        ->and(Repeater::make('a')->table([])->isTable())->toBeFalse()
+        ->and(Repeater::make('a')->table([TableColumn::make('Name')])->isTable())->toBeTrue()
+        ->and(Repeater::make('a')->table(static fn (): array => [TableColumn::make('Name')])->getTemplate())->toBe(Repeater::TABLE_TEMPLATE)
+        ->and(Repeater::make('a')->simple(TextInput::make('v'))->table([TableColumn::make('Name')])->getTemplate())->toBe(Repeater::TABLE_TEMPLATE)
+        ->and(Repeater::make('a')->simple(TextInput::make('v'))->getTemplate())->toBe(Repeater::SIMPLE_TEMPLATE);
+});
+
+it('conceals its children exactly when collapsible', function (): void {
+    expect(Repeater::make('a')->canConcealComponents())->toBeFalse()
+        ->and(Repeater::make('a')->collapsible()->canConcealComponents())->toBeTrue()
+        ->and(Repeater::make('a')->collapsed()->canConcealComponents())->toBeTrue()
+        ->and(Repeater::make('a')->collapsed(shouldMakeComponentCollapsible: false)->canConcealComponents())->toBeFalse();
+});
+
+it('carries the items grid and the label between items', function (): void {
+    expect(Repeater::make('a')->grid(2)->getGridColumns())->toBe(['lg' => 2])
+        ->and(Repeater::make('a')->labelBetweenItems('and')->getLabelBetweenItems())->toBe('and')
+        ->and(Repeater::make('a')->getLabelBetweenItems())->toBeNull()
+        ->and(Repeater::make('a')->getReorderAnimationDuration())->toBe(300);
 });

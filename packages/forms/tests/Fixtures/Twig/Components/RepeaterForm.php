@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Fixtures\Twig\Components;
 
+use Sylament\Actions\Action;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Forms\Components\Repeater;
@@ -52,6 +53,18 @@ class RepeaterForm implements InteractsWithActions, InteractsWithSchemas
     #[LiveProp]
     public bool $isDisabled = false;
 
+    #[LiveProp]
+    public bool $isAddBetweenVisible = false;
+
+    /**
+     * The item state the `inspect` extra item action was handed, so a test can
+     * read back what `$schemaState` resolved to for the item it was mounted on.
+     *
+     * @var array<string, mixed>|null
+     */
+    #[LiveProp]
+    public ?array $inspected = null;
+
     /**
      * @param array<string, mixed>|null $data
      */
@@ -72,6 +85,12 @@ class RepeaterForm implements InteractsWithActions, InteractsWithSchemas
                     ->cloneable($this->isCloneable)
                     ->reorderableWithButtons($this->isReorderableWithButtons)
                     ->disabled($this->isDisabled)
+                    ->addBetweenAction(fn (Action $action): Action => $action->visible($this->isAddBetweenVisible))
+                    ->extraItemActions([
+                        Action::make('inspect')->action(function (array $schemaState): void {
+                            $this->inspected = $schemaState;
+                        }),
+                    ])
                     ->afterStateUpdated(function (): void {
                         $this->stateUpdates++;
                     }),

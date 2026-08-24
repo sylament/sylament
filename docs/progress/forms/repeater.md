@@ -22,17 +22,19 @@ deletions on a real two-tag `Post`. That identity is exactly what
 [`relationship()`](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
 supplies, so a repeater that declares one maps a Doctrine collection and the
 refusal steps aside for it — [and only for it](#object-collections-stay-refused-until-a-relationship-supplies-the-identity).
-`table()` mode remains out.
+`table()` mode ships, over that same item pipeline.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses). The
 array-backed field ships end to end: item pipeline, per-item child schemas, the
-five structural actions, item chrome, the two partials, the record round-trip,
-the
+eleven structural actions, item chrome, the collapse family, `addBetween` /
+`labelBetweenItems`, `extraItemActions()`, the items grid, `table()` mode, the
+three partials, the record round-trip, the
 [value-object item mode](#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam)
 and the
 [relationship mode](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
-over a Doctrine collection. What is left is chrome (collapse, `addBetween`,
-extra item actions, the items grid) and the `table()` mode.
+over a Doctrine collection. What is left is the one **blocked** row,
+`partiallyRenderAfterActionsCalled()`, which wants a UX LiveComponent
+partial-render equivalent.
 
 Reference — the Filament source this is diffed against, walked end to end for
 this table, so it carries no [unaudited row](../README.md#an-unaudited-table-says-so):
@@ -48,6 +50,21 @@ this table, so it carries no [unaudited row](../README.md#an-unaudited-table-say
 - [`schemas/src/Components/Concerns/HasChildComponents.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php)
   and [`Cloneable.php`](../../../vendor/filament/schemas/src/Components/Concerns/Cloneable.php)
   — the keyed-child-schema cache and clone layer the item schemas ride on
+- [`forms/src/Components/Repeater/TableColumn.php`](../../../vendor/filament/forms/src/Components/Repeater/TableColumn.php)
+  — the table-mode column object
+- [`schemas/src/Components/Concerns/HasContainerGridLayout.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasContainerGridLayout.php),
+  [`CanBeRepeated.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeRepeated.php)
+  and [`schemas/src/Components/Contracts/HasExtraItemActions.php`](../../../vendor/filament/schemas/src/Components/Contracts/HasExtraItemActions.php)
+  — the schemas-tier seams the chrome sits on
+- [`support/src/Concerns/HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php),
+  [`HasWidth.php`](../../../vendor/filament/support/src/Concerns/HasWidth.php)
+  and [`CanWrapHeader.php`](../../../vendor/filament/support/src/Concerns/CanWrapHeader.php)
+  — the support-tier concerns the drag control and the table columns compose
+- [`forms/resources/css/components/repeater.css`](../../../vendor/filament/forms/resources/css/components/repeater.css)
+  — the stylesheet all three views are painted by
+- [`forms/resources/lang/en/components.php`](../../../vendor/filament/forms/resources/lang/en/components.php)
+  — the `repeater` block, which is where every label and column heading string
+  here comes from
 
 ## Surface
 
@@ -69,17 +86,17 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 | Delete action (`getDeleteAction()` / `deleteAction()` / `deletable()` / `isDeletable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
 | Clone action (`getCloneAction()` / `cloneAction()`) + `CanBeCloned` (`cloneable()` / `isCloneable()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) · [`CanBeCloned.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeCloned.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) |
 | Move actions + button reorder (`getMoveUpAction()` / `getMoveDownAction()` / `moveUpAction()` / `moveDownAction()` / `reorderable()` / `reorderableWithButtons()` / `isReorderable()` / `isReorderableWithButtons()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-structural-action-fires-the-repeaters-afterstateupdated-hooks-itself) · [diverges](#the-move-helpers-correct-two-vendor-edge-defects) |
-| Drag-and-drop reorder (`getReorderAction()` / `reorderAction()` / `reorderableWithDragAndDrop()` / `isReorderableWithDragAndDrop()`) + `HasReorderAnimationDuration` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | drag-and-drop JS vertical | [diverges](#drag-and-drop-reorder-is-deferred-and-filaments-defaults-are-kept) |
+| Drag-and-drop reorder (`getReorderAction()` / `reorderAction()` / `reorderableWithDragAndDrop()` / `isReorderableWithDragAndDrop()`) + `HasReorderAnimationDuration` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-drag-reorder-round-trip-accepts-the-clients-order) · [diverges](#the-reorder-action-is-hardened-and-answers-only-real-moves) |
 | [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) (`minItems()` / `maxItems()` / `getItemsCount()`) — shared with `CheckboxList`, so it keeps [its own file](can-limit-items-length.md) | [`CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [detail](can-limit-items-length.md) · [semantics](#an-item-field-derives-no-requirement-from-the-record) |
 | Item chrome (`itemLabel()` / `getItemLabel()` / `hasItemLabels()` / `itemNumbers()` / `itemHeaders()` / `truncateItemLabel()` / `getHeadingsCount()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
 | `getItemState()` / `getRawItemState()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | — |
 | `getItemKeys()` / `getItemStatePaths()` ([`HasKeyedItems`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php)) — the collection-keyed item keys and the item's declared paths the [violation-path translator](../schemas/violation-path-translator.md) resolves a record-side violation against | — | done | — | [semantics](#a-save-records-which-collection-key-each-item-was-written-to) |
-| Template + stylesheet (`toEmbeddedHtml()` / `toSimpleEmbeddedHtml()` → `partials/Repeater/`, `repeater.css`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [diverges](field.md#labeltag-is-a-boolean-labelasheading) |
-| Collapse chrome (`getCollapseAction()` / `getExpandAction()` / `getCollapseAllAction()` / `getExpandAllAction()` + their modifiers, `CanBeCollapsed` / `CanBeCompact` composition, `canConcealComponents()`, `shouldPersistCollapsed()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
-| `addBetween` pair (`getAddBetweenAction()` / `addBetweenAction()` / `addBetweenActionLabel()`) + `labelBetweenItems()` / `getLabelBetweenItems()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
-| `extraItemActions()` (`HasExtraItemActions`) | [`HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
-| Items grid (`HasContainerGridLayout`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
-| `table()` mode (`table()` / `getTableColumns()` / `isTable()` / `toTableEmbeddedHtml()`; the `TableColumn` class keeps [its own README row](README.md#components)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | todo | — | [detail](#four-chrome-clusters-are-deferred-not-dropped) |
+| Template + stylesheet (`toEmbeddedHtml()` / `toSimpleEmbeddedHtml()` / `toTableEmbeddedHtml()` → `partials/Repeater/{index,Simple,Table}.html.twig`, `repeater.css`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#collapse-state-is-the-clients-once-the-controller-connects) · [diverges](field.md#labeltag-is-a-boolean-labelasheading) |
+| Collapse chrome (`getCollapseAction()` / `getExpandAction()` / `getCollapseAllAction()` / `getExpandAllAction()` + their modifiers, `CanBeCollapsed` / `CanBeCompact` composition, `canConcealComponents()`, `shouldPersistCollapsed()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#collapse-state-is-the-clients-once-the-controller-connects) · [diverges](#the-repeater-item-owns-its-collapse-state-unlike-the-section) |
+| `addBetween` pair (`getAddBetweenAction()` / `addBetweenAction()` / `addBetweenActionLabel()`) + `labelBetweenItems()` / `getLabelBetweenItems()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#addbetween-hides-by-default-and-crowds-out-the-label-between-items) |
+| `extraItemActions()` (`HasExtraItemActions`) | [`HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | done | — | [semantics](#an-extra-item-action-reads-its-items-state) |
+| Items grid (`HasContainerGridLayout`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-items-grid-is-supports-grid) |
+| `table()` mode (`table()` / `getTableColumns()` / `isTable()` / `toTableEmbeddedHtml()`; the `TableColumn` class keeps [its own README row](README.md#components)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#table-mode-pairs-columns-by-position) · [diverges](#hidden-fields-render-in-a-trailing-hidden-cell) |
 | Relationship family — **shipped**: `relationship()`, `hasRelationship()` / `getRelationshipName()`, `orderColumn()` / `getOrderColumn()`, the three setters `mutateRelationshipDataBeforeFillUsing()` / `mutateRelationshipDataBeforeCreateUsing()` / `mutateRelationshipDataBeforeSaveUsing()`, the fill and save arms (Filament's `fillFromRelationship()` / `getStateFromRelatedRecords()` / `saveToRelationship()`, here the two [component-tier hooks](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)). **Not ported**: `getRelationship()` / `getRelatedModel()` (Eloquent objects with no Doctrine counterpart — `AssociationTarget` answers both), `getCachedExistingRecords()` / `clearCachedExistingRecords()`, `afterCreate()` / `afterUpdate()` / `afterDelete()`, the three public callers `mutateRelationshipDataBeforeFill()` / `mutateRelationshipDataBeforeCreate()` / `mutateRelationshipDataBeforeSave()` (the arms call the callbacks through one private helper instead), the `getLabel()` override, item `constantState()` / record stamping | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) · [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
 | `partiallyRenderAfterActionsCalled()` / `shouldPartiallyRenderAfterActionsCalled()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | UX LiveComponent partial-render equivalent | — |
 | `array_move_before()` / `array_move_after()` (`packages/forms/src/helpers.php`, the reorder bodies) | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | — | — |
@@ -99,22 +116,6 @@ live in their own files — the record-walk changes in
 the wrapper heading arm in [field.md](field.md#labeltag-is-a-boolean-labelasheading),
 and `distinct()`'s blocker in
 [can-be-validated.md](can-be-validated.md#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build).
-
-### Four chrome clusters are deferred, not dropped
-
-Deferred to keep this epic JS-free and the template one honest size, each still
-**todo** because nothing prerequisite is missing — they are work, not waiting:
-the **collapse family** (per-item collapse/expand, collapse-all/expand-all,
-`CanBeCollapsed` / `CanBeCompact`, the `CanConcealComponents` contract tied to
-collapsibility, `persistCollapsed`) is client-side behaviour wanting a
-repeater-item Stimulus controller; **`addBetween` + `labelBetweenItems`** are
-between-item template branches Filament ships hidden by default;
-**`extraItemActions()`** wants the per-item action descent exercised beyond the
-built-ins (an action *inside* an item schema — modal resolution through a
-uuid-keyed child schema — is untested surface until then); the **items grid**
-waits on the container-grid concerns deferred in M1 · 4. `table()` mode is out
-with them — it is a whole second rendering surface (`TableColumn`, header
-plumbing) with no consumer in sight.
 
 ## Semantics
 
@@ -308,6 +309,145 @@ desired list), before-save skips writing it but the child stays in the desired
 list, so declining a save is not a deletion. And the whole diff runs inside the
 single `getData()` call, with no flush of its own: the caller flushes, once,
 exactly as with every other mapped field.
+
+Reorderability is coupled to the order column, and the coupling is
+call-order-sensitive exactly as in Filament. `relationship()` ends with
+`reorderable(false)`, because a collection whose order nothing persists would
+let the user arrange rows that come back in Doctrine's order on the next load.
+`orderColumn()` ends with `reorderable(fn (Repeater $component): bool =>
+$component->getOrderColumn() !== null)`, which switches it back on — so
+`relationship()->orderColumn('position')` is reorderable and
+`orderColumn('position')->relationship()` is **not**, the later call winning
+either way. Ours reads the column through a closure rather than passing it as
+Filament's truthy `reorderable($column)` does, so a closure-valued column is
+resolved at evaluation time rather than counted as truthy while unresolved, and
+`orderColumn(null)` reads as not reorderable rather than as the literal `null`
+Filament would hand `reorderable()`.
+
+### The drag reorder round-trip accepts the client's order
+
+Drag reorder is on by default, exactly as in Filament, and it is the one
+structural action whose argument is a *whole ordering* rather than one item key.
+The list element carries support's drag control
+([sortable.md](../support/sortable.md)); the control answers a drop with an
+ordered list of the `data-sortable-item` keys, forms' repeater controller turns
+that into a `reorder` mount, and the action writes the items back in that order.
+Nothing is sent per item, so a drag is one round-trip regardless of how far the
+item moved.
+
+`isReorderableWithDragAndDrop()` is `reorderableWithDragAndDrop() &&
+isReorderable()`, mirroring the buttons arm, so `reorderable(false)` — or a
+disabled field — silences both surfaces at once, and the handle, the control and
+its markers all drop out of the DOM together rather than rendering inert. The
+handle is the reorder action's own trigger, stamped `data-sortable-handle`
+through `extraAttributes(merge: true)`, which is why it renders with
+`liveComponentClickHandlerEnabled(false)`: it is grabbed, never clicked.
+
+### Collapse state is the client's once the controller connects
+
+The server renders the collapse state it knows — `sy-collapsed` on an item the
+component reports collapsed, and the CSS hides that item's content. From the
+moment the repeater's Stimulus controller connects, the item's own
+`data-collapsed` attribute is the truth instead, which is why every collapse
+rule in the stylesheet is a **pair**: `.sy-collapsed:not([data-collapsed])` for
+the server's answer and `[data-collapsed="true"]` for the client's, with the
+matching `:not(.sy-collapsed):not([data-collapsed])` / `[data-collapsed="false"]`
+pair for the expanded arm. A morph that re-renders an item therefore cannot
+snap it shut behind the user's back: the attribute the controller stamped
+outranks the class the server sent.
+
+`persistCollapsed()` puts `sy-cloak` on the root, so the whole repeater stays
+invisible until the controller has replayed the stored state — the same cloak
+idiom `Tabs` uses. The collapse and expand triggers are two stacked icon
+buttons, both always rendered, the CSS fading and rotating whichever one does
+not apply; that is Filament's markup and it is what makes the transition
+possible without a re-render.
+
+Three structural actions re-open the repeater for the rest of the request:
+`add`, `clone` and `addBetween` each call
+`collapsed(false, shouldMakeComponentCollapsible: false)` before firing the
+`afterStateUpdated` hooks, so a repeater declared `collapsed()` does not swallow
+the row the user just asked for. The named argument matters: without it the
+call would *make* a non-collapsible repeater collapsible as a side effect of
+adding an item.
+
+### `addBetween` hides by default and crowds out the label between items
+
+`getAddBetweenAction()` ships `visible(false)`, Filament-exact — the between-item
+add button is opt-in through `addBetweenAction(fn (Action $action) =>
+$action->visible())`. Two consequences worth stating, because both look like
+bugs from the outside. First, `mountAction()` unmounts a hidden action
+(`isDisabled()` reads `isHidden()`), so a test or a demo that mounts
+`addBetween` without switching it on gets silence rather than an error. Second,
+the two between-item surfaces are an `if`/`elseif`, not a pair: where a visible
+`addBetween` renders, `labelBetweenItems()` does **not**, even when both are
+declared. The label is the fallback for the gap, not a companion to the button.
+
+Neither between-item element is a sortable item — no `data-sortable-item` — so
+the drag control skips them and an ordering never contains a divider's key.
+
+### An extra item action reads its item's state
+
+`extraItemActions()` appends actions the header (or the simple/table row) renders
+per item, each bound to that item with `['item' => $itemKey]`. The binding is
+what makes the action's `$schemaState` resolve to the *item's* state rather than
+the repeater's: `Action::getSchemaState()` sees the host implements schemas'
+`HasExtraItemActions` contract and answers `getItemState($itemKey)`. So
+`Action::make('inspect')->action(fn (array $schemaState) => …)` receives one
+item's array, which is the whole point of the family.
+
+The forms concern keys its cache by `getName()` rather than by position, because
+schemas' `cacheActions()` splices the map into its own with a spread and PHP
+renumbers integer keys through a spread — a positional list would collide with
+the structural actions already in that cache. The splice does not run
+`prepareAction()` over the merged map, so the concern stamps
+`schemaComponent($this)` itself, along with the icon-button defaults
+(`defaultColor('gray')`, `defaultSize(Size::Small)`,
+`defaultTemplate(Action::ICON_BUTTON_TEMPLATE)`) that a caller's own
+`color()`/`size()`/`button()` still overrides.
+
+### The items grid is support's `grid()`
+
+`grid()` comes from schemas' `HasContainerGridLayout` and the item list carries
+whatever support's `grid()` Twig function emits for it — `sy-grid`, the
+per-breakpoint `sy-grid-cols` classes, and the `--cols-*` custom properties. The
+repeater's own stylesheet therefore declares no `display: grid` on either item
+list; it only adds the spacing and alignment the grid does not carry. An
+ungridded repeater still gets `--cols-default: repeat(1, …)`, which is why the
+default rendering is a single column without a special case.
+
+The simple and table views take the same call, so `grid()` composes with
+`simple()`; `table()` lays its items out as rows and the grid on the (unused)
+list element never renders there.
+
+### Table mode pairs columns by position
+
+`table([TableColumn::make('Name'), …])` switches the whole rendering surface:
+`getTemplate()` answers `TABLE_TEMPLATE` whenever columns are declared, so
+`table()` outranks `simple()` when both are set, and an explicit `template()`
+still outranks both. `isTable()` is `filled($this->getTableColumns())`, so
+`table([])` is not a table — an empty column list reverts to the default view
+rather than rendering a headerless table.
+
+A `TableColumn` is a label plus header options (`hiddenHeaderLabel()`,
+`markAsRequired()`, `wrapHeader()`, `width()`, `alignment()`,
+`verticalAlignment()`); it holds **no** field. The pairing with the item's
+components is positional, by Filament's counter: the first column takes the
+first component that consumes one, the second the second, and so on. A
+[`Hidden`](hidden.md) field consumes no column, an invisible component consumes
+one and renders an empty `sy-hidden` cell in its place, and once the columns are
+exhausted every remaining component — `Hidden` included — is dropped. The
+column's `verticalAlignment()` reaches the cell, not the header; its
+`alignment()`, `width()` and `wrapHeader()` reach the header, not the cell.
+
+The reorder and actions columns are conditional in their own right: the reorder
+header cell renders only with more than one item *and* some reorder surface on,
+and the actions header cell only when the row can carry an extra item action, a
+clone or a delete. Each header cell carries an `sy-fo-sr-only` label ("Reorder",
+"Actions") so the table is still readable to a screen reader. An item schema
+that contains anything other than a schema component — an `Action`, say — is
+refused with a `LogicException` naming the class, because there is no cell such
+a thing could sit in.
 
 ### A save records which collection key each item was written to
 
@@ -608,18 +748,30 @@ the mode ships dependency-free. Sugar over the explicit arm, additive, breaking
 nothing. Optional polish that survives the deferral: a dev-time mismatch guard
 when a readable docblock contradicts the explicit class.
 
-### Drag-and-drop reorder is deferred and Filament's defaults are kept
+### The reorder action is hardened and answers only real moves
 
-Filament reorders by drag (SortableJS via its `x-sortable` Alpine plugin, on by
-default) and by buttons (off by default). The drag surface is a JS vertical —
-a sortable dependency, a Stimulus controller, morph interplay — deliberately
-out of this epic, which ships **no JavaScript** (the `Toggle` precedent). The
-defaults do not shift to compensate: `reorderableWithButtons()` stays opt-in
-false, so nothing renders differently from Filament by silent default — a
-migrating user simply finds drag reorder missing (a blocked row, loud in this
-table) and buttons one call away. Flipping the buttons default on was
-considered and rejected: a surprise control Filament users never asked for is
-worse than a documented gap. Reverses when the drag-and-drop JS vertical lands.
+Filament's reorder body is `[...array_flip($arguments['items']), ...$state]` —
+the client's key list flipped into a map whose *values* are the positions it
+came from, then spread over by the current state. Two things fall out of that
+which do not survive here. The flip is unvalidated: whatever the client sent
+becomes an array key, and a key naming no item enters the state carrying an
+integer position as its value, so an item schema is then built over an `int`.
+And `array_flip()` is only a positional trick for producing keys in the sent
+order — the values it produces are always discarded by the spread.
+
+Ours states that directly: the argument must be a **list** (`array_is_list()`,
+so a JSON object rather than an array is refused with a `LogicException` naming
+the argument), each sent key is kept only when `array_key_exists()` finds it in
+the current state, and the result is `$reordered + $items` — the array union,
+which keeps the reordered keys in the sent order and appends whatever the client
+did not mention, in the state's own order. An unknown key is dropped rather than
+invented; an item the client omitted survives rather than vanishing. Both arms
+are pinned by
+[`RepeaterActionsTest`](../../../packages/forms/tests/Integration/Components/RepeaterActionsTest.php).
+The key coercion is PHP's own: a numeric string from the client finds the
+integer key a positionally keyed map carries, which is what keeps
+[`fake()`](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid)
+repeaters reorderable.
 
 ### Uuid generation is a mode flag, and `generateUuidUsing(true)` mints a real uuid
 
@@ -707,6 +859,44 @@ fix lands, and the diff is what states its cost. The fix is on the walk, not on
 the repeater: either recurse the way Filament does (re-reading child schemas per
 descent), or flush a container's cached child schemas the moment its own default
 replaces the state they were derived from.
+
+### The repeater item owns its collapse state, unlike the Section
+
+[`Section`](../schemas/section.md) collapses through a `<details>` element — the
+browser owns the open/closed state and the server only seeds it. A repeater item
+cannot: it needs a header that is a click target *and* holds its own buttons, a
+collapse-all/expand-all pair reaching every sibling, and a per-item persisted
+state, none of which `<details>` gives without fighting it. So the repeater item
+is a plain `<li>` whose state is a class before its controller connects and a
+`data-collapsed` attribute after, and the content is hidden by CSS rather than
+by the element's own semantics.
+
+The cost is the one `<details>` would have paid for us: the collapsed content
+stays in the DOM. That is deliberate rather than incidental — the fields inside
+a collapsed item must keep their live bindings, so the item can be submitted and
+validated without ever being opened — and it is why `canConcealComponents()`
+returns `isCollapsible()`. A concealing component drops the native constraints
+(`required`, `maxlength`) off the controls inside it, so a browser cannot refuse
+to submit a form over a field the user cannot see; the server-side validation
+still runs. `Section` reaches the same contract by the same reasoning.
+
+### Hidden fields render in a trailing hidden cell
+
+Filament's table view emits a `Hidden` field's markup **between** two `<td>`
+elements — `<?= $schemaComponent->toHtml() ?>` with no cell around it — which is
+invalid inside a `<tr>` and is re-parented by every browser's HTML parser, so
+the hidden input lands outside the table and outside the row it belongs to. Ours
+collects the row's `Hidden` components instead and renders them in one trailing
+`<td class="sy-fo-table-repeater-hidden-cell">`, which the stylesheet hides at
+every breakpoint. The markup is valid, the input stays inside its row, and the
+cell is invisible either way.
+
+The counter is untouched by this: a `Hidden` field still consumes no column, and
+it is still dropped once the columns are exhausted, matching Filament's order
+(the column-budget guard wraps the Hidden branch rather than sitting inside it).
+So a `Hidden` declared *after* the last column-consuming component does not
+render at all — a Filament quirk kept on purpose, since diverging would make the
+column budget mean two different things depending on the component's type.
 
 ### Deprecated Filament members are not ported
 

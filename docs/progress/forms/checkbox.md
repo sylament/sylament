@@ -61,8 +61,9 @@ Specifics for rows that are not finished. Delete a subsection when its row flips
 to **done**.
 
 The one unfinished row is not partly ported. `CanFixIndistinctState` exists to
-disambiguate identically-pathed checkboxes inside a `Repeater`, which is itself
-unported, so it has nothing to fix yet — **blocked** on that, the same reading
+disambiguate identically-pathed checkboxes inside a `Repeater`. The repeater and
+the parent-repeater lookup the hook walks both ship now, so the row is
+**blocked** on `distinct()` alone — the same reading
 [`Toggle`](toggle.md#fixindistinctstate-awaits-the-repeater) gives it.
 
 ## Semantics

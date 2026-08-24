@@ -19,17 +19,7 @@ type SelectionState = {
   tracking: boolean;
 };
 
-/**
- * Record selection over the live host's ValueStore (Filament's `filamentTable` Alpine data): every
- * tick writes the three selection models with `reRender: false`, so N ticks cost zero requests and
- * the next action carries the whole selection, and the checkboxes, the header's tri-state box, the
- * selection banner and every bulk-only trigger are repainted from that store on connect and after
- * every morph.
- *
- * Two select-all strategies, as Filament: with deselect-tracking available the flag flips and both
- * lists empty — "all 40 000 selected" for free — otherwise the host's `selectAllTableRecords` live
- * action enumerates the keys server-side (our divergence from Filament's value-returning call).
- */
+/** Record selection over the live host's ValueStore, the port of Filament's `filamentTable` data. */
 export default class extends Controller<HTMLElement> {
   static targets = [
     "recordCheckbox",
@@ -224,7 +214,7 @@ export default class extends Controller<HTMLElement> {
     return state.tracking ? !state.deselected.has(key) : state.selected.has(key);
   }
 
-  /** Filament's `areRecordsSelected`: an empty page reads as selected, so callers guard on length. */
+  /** Filament's `areRecordsSelected`: no keys reads as selected. */
   #areSelected(state: SelectionState, keys: string[]): boolean {
     return keys.every((key) => this.#isSelected(state, key));
   }
@@ -247,9 +237,7 @@ export default class extends Controller<HTMLElement> {
 
   #canSelectAll(state: SelectionState): boolean {
     if (this.pageOnlyValue) {
-      const keys = this.#pageKeys();
-
-      return keys.length > 0 && !this.#areSelected(state, keys);
+      return !this.#areSelected(state, this.#pageKeys());
     }
 
     if (!this.hasAllSelectableCountValue || this.allSelectableCountValue === 0) {
@@ -280,7 +268,6 @@ export default class extends Controller<HTMLElement> {
       const keys = this.#pageKeys();
       const selectedOnPage = keys.filter((key) => this.#isSelected(state, key)).length;
 
-      // `indeterminate` is IDL-only — no markup can carry it, which is this controller's floor.
       this.pageCheckboxTarget.checked = keys.length > 0 && selectedOnPage === keys.length;
       this.pageCheckboxTarget.indeterminate = selectedOnPage > 0 && selectedOnPage < keys.length;
     }
@@ -321,11 +308,7 @@ export default class extends Controller<HTMLElement> {
     );
   }
 
-  /**
-   * Filament's `handleCheckboxClick`, minus the clicked box itself: there the inline click handler
-   * toggles it during the same event, here `toggleRecord` runs on the `change` that follows this
-   * one, so leaving it out of the range is what keeps the two from cancelling each other.
-   */
+  /** The shift range excludes the clicked box — `toggleRecord` owns it, on the `change` that follows. */
   #handleCheckboxClick(event: Event, checkbox: HTMLInputElement): void {
     const last = this.#lastChecked;
     this.#lastChecked = checkbox;
@@ -338,7 +321,6 @@ export default class extends Controller<HTMLElement> {
     const start = checkboxes.indexOf(last);
     const end = checkboxes.indexOf(checkbox);
 
-    // A morph replaced the remembered element: the range has no anchor, so it self-heals to none.
     if (start === -1 || end === -1) {
       return;
     }

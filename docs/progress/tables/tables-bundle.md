@@ -61,7 +61,7 @@ a [Details](#details) write-up, a **diverges** link to
 | [`ext-mbstring` on the package manifest](../../../packages/tables/composer.json) | — (Sylament-only; Filament's manifest declares no extensions) | done | — | [diverges](#the-manifest-declares-ext-mbstring) |
 | [`sylament/forms` on the package manifest](../../../packages/tables/composer.json) | [`filament/forms` on Filament's](../../../vendor/filament/tables/composer.json) | done | — | [diverges](#the-manifest-declares-sylamentforms) |
 | [`@SylamentTables` view namespace](../../../packages/tables/templates) | [`->hasViews()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
-| [Asset registration](../../../packages/tables/src/SylamentTablesBundle.php) (`Js::make('tables')` + four column `AlpineComponent`s) | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | in progress | — | [detail](#asset-registration) |
+| [Asset registration](../../../packages/tables/src/SylamentTablesBundle.php) (`Js::make('tables')` + four column `AlpineComponent`s) | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | in progress | — | [detail](#asset-registration) · [diverges](#the-selection-controller-diverges-from-tablejs-in-four-places) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php), [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#translations) |
 | `Testable::mixin(...)` — the six tables mixins | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
@@ -158,8 +158,15 @@ interactive columns, "which is when the four `AlpineComponent`s are ported."
 (`sylament--tables--table`, `fetch: eager`), the client half of record selection
 — the port of Filament's `filamentTable` Alpine data
 ([`resources/js/components/table.js`](../../../vendor/filament/tables/resources/js/components/table.js)),
-minus its filters-dropdown positioning (support's `Dropdown` owns that here) and
-its group-collapse arm (M4 · 6). `BUNDLED_ENTRIES` in the copied
+minus everything that is not selection: the filters-dropdown positioning (support's
+`Dropdown` owns that here), the group-collapse arm (M4 · 6), the two props no
+caller sets (`maxSelectableRecords` and the entangled
+`currentSelectionLivewireProperty`), the `mountAction` wrapper that pushed the
+three models just before mounting — every tick already pushes them, so there is
+nothing left to flush — the `scrollToTopOfTable` listener, and the
+`deselectAllTableRecords` browser event the host broadcasts to clear a selection,
+which lands as a re-render the repaint reads instead. What is ported behaves as
+Filament's does in all but [four places](#the-selection-controller-diverges-from-tablejs-in-four-places). `BUNDLED_ENTRIES` in the copied
 [`build-js.mjs`](../../../packages/tables/assets/scripts/build-js.mjs) is empty:
 every file builds per-file and unbundled, and the only third-party import in the
 tree — `@symfony/ux-live-component`, reached by
@@ -378,6 +385,49 @@ Integration suite at all — the same trap schemas' kernel already documents. Tw
 registration: the booted kernel's Twig loader lists a `SylamentForms` namespace
 under which the checkbox partial resolves, and a real `Checkbox` renders inside a
 `Schema` bound to a `data`-bag host.
+
+### The selection controller diverges from `table.js` in four places
+
+The port is otherwise line-for-line ([Asset registration](#asset-registration)
+names the arms it drops whole). These four are behavioural, and all four are
+deliberate.
+
+**The shift-click range excludes the clicked checkbox.** Filament's
+`handleCheckboxClick` pushes every value between the anchor and the clicked box
+*inclusive*, because there the box's own toggle is an inline Alpine `click`
+handler that has already run by the time the range is applied. Ours runs from a
+delegated `click` listener while the box's own tick is
+`change->sylament--tables--table#toggleRecord`, which fires **after** the click —
+so a range including the clicked key would set it and have `toggleRecord`
+immediately unset it again. The coupling is worth stating because it lives in the
+template, not here: **the row checkbox must stay bound to `change`**. Rebinding it
+to `click` reverses the two, and every shift-selection silently comes out one
+record short.
+
+**The tracking count is clamped at zero.** Filament returns
+`allSelectableRecordsCount - deselectedRecords.size` raw, which goes negative the
+moment the deselected list outlives the ceiling that produced it — a filter
+narrowing the query between morphs is enough. The count is rendered into the
+selection banner, so `Math.max(…, 0)` turns a wrong number into a merely stale
+one.
+
+**With no ceiling, the tracking count is the page's.** Filament's
+`(ceiling ?? deselected.size) - deselected.size` evaluates to exactly `0` when the
+host's `getAllSelectableTableRecordsCount()` is null — the banner disappears while
+records are in fact selected. We count the checked boxes on the page instead, the
+same floor the tri-state header checkbox already works from, so an unbounded
+tracking selection still reads as "n records selected" for the n on screen.
+
+**Select-all's server arm is a void live action, and its page-only arm never
+leaves the browser.** Filament `await`s `$wire.getAllSelectableTableRecordKeys()`
+and fills the client set from the return value, for both the no-tracking and the
+page-only case. UX LiveComponent actions return no value to JS, so the
+no-tracking arm calls `component.action('selectAllTableRecords')` and lets the
+host fill its own prop and re-render — the repaint on `render:finished` is what
+puts the ticks on screen. The page-only arm needs no round trip at all: the keys
+it would ask for are the `value`s of the checkboxes already rendered, so it
+selects those directly. The tracking arm is unchanged — flag up, both lists empty,
+zero requests.
 
 _See also: the global [rename table](../renames.md) — the
 `TablesServiceProvider` → `SylamentTablesBundle` swap and the Spatie

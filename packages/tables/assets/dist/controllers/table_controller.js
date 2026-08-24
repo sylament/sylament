@@ -144,7 +144,7 @@ class table_controller_default extends Controller {
   #isSelected(state, key) {
     return state.tracking ? !state.deselected.has(key) : state.selected.has(key);
   }
-  /** Filament's `areRecordsSelected`: an empty page reads as selected, so callers guard on length. */
+  /** Filament's `areRecordsSelected`: no keys reads as selected. */
   #areSelected(state, keys) {
     return keys.every((key) => this.#isSelected(state, key));
   }
@@ -162,8 +162,7 @@ class table_controller_default extends Controller {
   }
   #canSelectAll(state) {
     if (this.pageOnlyValue) {
-      const keys = this.#pageKeys();
-      return keys.length > 0 && !this.#areSelected(state, keys);
+      return !this.#areSelected(state, this.#pageKeys());
     }
     if (!this.hasAllSelectableCountValue || this.allSelectableCountValue === 0) {
       return false;
@@ -216,11 +215,7 @@ class table_controller_default extends Controller {
       { signal: this.#clickController.signal }
     );
   }
-  /**
-   * Filament's `handleCheckboxClick`, minus the clicked box itself: there the inline click handler
-   * toggles it during the same event, here `toggleRecord` runs on the `change` that follows this
-   * one, so leaving it out of the range is what keeps the two from cancelling each other.
-   */
+  /** The shift range excludes the clicked box — `toggleRecord` owns it, on the `change` that follows. */
   #handleCheckboxClick(event, checkbox) {
     const last = this.#lastChecked;
     this.#lastChecked = checkbox;

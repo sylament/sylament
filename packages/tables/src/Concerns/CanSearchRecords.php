@@ -41,8 +41,7 @@ trait CanSearchRecords
 
     /**
      * The clear button's channel to the same state change the prop's `onUpdated`
-     * hook handles, so it deselects on the same terms — Filament has no such
-     * action, its clear being a model write that fires `updatedTableSearch()`.
+     * hook handles, so it deselects on the same terms.
      */
     #[LiveAction]
     public function resetTableSearch(): void

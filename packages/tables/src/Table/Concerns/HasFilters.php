@@ -134,10 +134,9 @@ trait HasFilters
     }
 
     /**
-     * Filament files this filter setting here although its only readers are
-     * selection: the two host `updated*` tails that clear the selection, the
-     * selected-records query that re-applies the filters, and
-     * `canTrackDeselectedRecords()`, which turns tracking off when this is off.
+     * A filter setting read only by the selection: the host tails that clear it,
+     * the selected-records query's filter re-apply, and
+     * `canTrackDeselectedRecords()`.
      */
     public function shouldDeselectAllRecordsWhenFiltered(): bool
     {

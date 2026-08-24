@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Components\Concerns;
 
+use BackedEnum;
 use Closure;
 use DateTimeImmutable;
 use Exception;
@@ -13,18 +14,42 @@ use ReflectionProperty;
 use Sylament\Forms\Components\Contracts\CanBeLengthConstrained;
 use Sylament\Forms\Components\Field;
 use Sylament\Forms\Validation\DateComparison;
+use Sylament\Forms\Validation\Distinct;
+use Sylament\Forms\Validation\MatchesField;
+use Sylament\Forms\Validation\Prohibited;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\State\RecordTarget;
 use Sylament\Schemas\State\RecordTypeReader;
 use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\DivisibleBy;
+use Symfony\Component\Validator\Constraints\GreaterThan;
+use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
+use Symfony\Component\Validator\Constraints\LessThan;
+use Symfony\Component\Validator\Constraints\LessThanOrEqual;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Contracts\Service\Attribute\Required;
 
 use function Sylament\Support\blank;
+use function Sylament\Support\filled;
+use function Sylament\Support\wrap;
 
 trait CanBeValidated
 {
+    /**
+     * Laravel's `accepted` list, matched strictly.
+     *
+     * @var list<mixed>
+     */
+    private const array ACCEPTED_VALUES = ['yes', 'on', '1', 1, true, 'true'];
+
+    /**
+     * Laravel's `declined` list, matched strictly.
+     *
+     * @var list<mixed>
+     */
+    private const array DECLINED_VALUES = ['no', 'off', '0', 0, false, 'false'];
+
     /**
      * Null is "never declared", which is what lets the bound record's write-side
      * types decide; `required(false)` is a declaration and beats them.
@@ -109,8 +134,8 @@ trait CanBeValidated
     public function dateComparisonRule(string $rule, string|Closure $date, bool $isStatePathAbsolute = false): static
     {
         $this->constraint(
-            fn (): ?DateComparison => $this->buildDateComparisonConstraint($rule, $date, $isStatePathAbsolute),
-            fn (): bool => (bool) $this->evaluate($date),
+            static fn (Field $component): ?DateComparison => $component->buildDateComparisonConstraint($rule, $date, $isStatePathAbsolute),
+            static fn (Field $component): bool => (bool) $component->evaluate($date),
         );
 
         return $this;
@@ -129,16 +154,11 @@ trait CanBeValidated
         $date = $this->evaluate($date);
 
         if (! strtotime($date)) {
-            $liveComponent = $this->getLiveComponentOrNull();
-
-            if (! $liveComponent instanceof InteractsWithSchemas) {
+            if (! $this->hasLiveSiblingState()) {
                 return null;
             }
 
-            $date = $this->getRootContainer()->getPropertyAccessor()->get(
-                $liveComponent,
-                $this->resolveRelativeStatePath($date, $isStatePathAbsolute),
-            );
+            $date = $this->resolveSiblingRawState($date, $isStatePathAbsolute);
 
             if (! is_string($date) || mb_trim($date) === '') {
                 return null;
@@ -153,6 +173,481 @@ trait CanBeValidated
         }
 
         return new DateComparison($operator, $boundary);
+    }
+
+    public function gt(string|Closure $statePath, bool $isStatePathAbsolute = false): static
+    {
+        return $this->orderingComparisonRule(GreaterThan::class, $statePath, $isStatePathAbsolute);
+    }
+
+    public function gte(string|Closure $statePath, bool $isStatePathAbsolute = false): static
+    {
+        return $this->orderingComparisonRule(GreaterThanOrEqual::class, $statePath, $isStatePathAbsolute);
+    }
+
+    public function lt(string|Closure $statePath, bool $isStatePathAbsolute = false): static
+    {
+        return $this->orderingComparisonRule(LessThan::class, $statePath, $isStatePathAbsolute);
+    }
+
+    public function lte(string|Closure $statePath, bool $isStatePathAbsolute = false): static
+    {
+        return $this->orderingComparisonRule(LessThanOrEqual::class, $statePath, $isStatePathAbsolute);
+    }
+
+    public function same(string|Closure $statePath, bool $isStatePathAbsolute = false): static
+    {
+        return $this->matchingComparisonRule($statePath, $isStatePathAbsolute, match: true);
+    }
+
+    public function different(string|Closure $statePath, bool $isStatePathAbsolute = false): static
+    {
+        return $this->matchingComparisonRule($statePath, $isStatePathAbsolute, match: false);
+    }
+
+    /**
+     * Laravel's `confirmed`: the partner is a real component in the same container
+     * named `<this field>_confirmation`, read absolutely because the suffix applies
+     * to the whole dotted path.
+     */
+    public function confirmed(bool|Closure $condition = true): static
+    {
+        $this->constraint(
+            static fn (Field $component): ?MatchesField => $component->buildMatchesFieldConstraint($component->getStatePath() . '_confirmation', isStatePathAbsolute: true, match: true),
+            $condition,
+        );
+
+        return $this;
+    }
+
+    /**
+     * @param class-string<GreaterThan|GreaterThanOrEqual|LessThan|LessThanOrEqual> $constraintClass
+     */
+    private function orderingComparisonRule(string $constraintClass, string|Closure $statePath, bool $isStatePathAbsolute): static
+    {
+        $this->constraint(
+            static function (Field $component) use ($constraintClass, $statePath, $isStatePathAbsolute): ?Constraint {
+                if (! $component->hasLiveSiblingState()) {
+                    return null;
+                }
+
+                $sibling = $component->resolveSiblingRawState((string) $component->evaluate($statePath), $isStatePathAbsolute);
+
+                // A boundary that is not there is no comparison at all — the named
+                // field's own `required()` owns its presence, exactly as the date
+                // family already decided.
+                if ($sibling === null || (is_string($sibling) && mb_trim($sibling) === '')) {
+                    return null;
+                }
+
+                return new $constraintClass(value: $sibling);
+            },
+            static fn (Field $component): bool => (bool) $component->evaluate($statePath),
+        );
+
+        return $this;
+    }
+
+    private function matchingComparisonRule(string|Closure $statePath, bool $isStatePathAbsolute, bool $match): static
+    {
+        $this->constraint(
+            static fn (Field $component): ?MatchesField => $component->buildMatchesFieldConstraint((string) $component->evaluate($statePath), $isStatePathAbsolute, $match),
+            static fn (Field $component): bool => (bool) $component->evaluate($statePath),
+        );
+
+        return $this;
+    }
+
+    /**
+     * Unlike the ordering arms, a blank or null partner is compared rather than
+     * skipped: an untyped confirmation field is the case the rule exists for.
+     */
+    private function buildMatchesFieldConstraint(string $statePath, bool $isStatePathAbsolute, bool $match): ?MatchesField
+    {
+        if (! $this->hasLiveSiblingState()) {
+            return null;
+        }
+
+        return new MatchesField(
+            value: $this->resolveSiblingRawState($statePath, $isStatePathAbsolute),
+            other: $this->getSiblingLabel($this->resolveRelativeStatePath($statePath, $isStatePathAbsolute)),
+            match: $match,
+        );
+    }
+
+    /**
+     * The partner's own label, so a message names it instead of printing its value;
+     * the path's last segment humanised when no component answers to that path.
+     */
+    private function getSiblingLabel(string $absoluteStatePath): string
+    {
+        $sibling = $this->getRootContainer()->getComponentByStatePath($absoluteStatePath);
+        $label = $sibling instanceof Field ? $sibling->getLabel() : null;
+
+        if (filled($label)) {
+            return strip_tags((string) $label);
+        }
+
+        $segment = mb_substr($absoluteStatePath, (int) mb_strrpos($absoluteStatePath, '.') + (str_contains($absoluteStatePath, '.') ? 1 : 0));
+
+        return ucfirst(str_replace('_', ' ', $segment));
+    }
+
+    public function requiredIf(string|Closure $statePath, mixed $stateValues, bool $isStatePathAbsolute = false): static
+    {
+        return $this->conditionalPresenceRule(
+            static fn (Field $component): bool => $component->matchesConditionValues($component->resolveSiblingRawState((string) $component->evaluate($statePath), $isStatePathAbsolute), $component->evaluate($stateValues)),
+            static fn (Field $component): bool => (bool) $component->evaluate($statePath),
+            isProhibition: false,
+        );
+    }
+
+    public function requiredUnless(string|Closure $statePath, mixed $stateValues, bool $isStatePathAbsolute = false): static
+    {
+        return $this->conditionalPresenceRule(
+            static fn (Field $component): bool => ! $component->matchesConditionValues($component->resolveSiblingRawState((string) $component->evaluate($statePath), $isStatePathAbsolute), $component->evaluate($stateValues)),
+            static fn (Field $component): bool => (bool) $component->evaluate($statePath),
+            isProhibition: false,
+        );
+    }
+
+    public function requiredIfAccepted(string|Closure $statePath, bool $isStatePathAbsolute = false): static
+    {
+        return $this->conditionalPresenceRule(
+            static fn (Field $component): bool => in_array($component->resolveSiblingRawState((string) $component->evaluate($statePath), $isStatePathAbsolute), self::ACCEPTED_VALUES, strict: true),
+            static fn (Field $component): bool => (bool) $component->evaluate($statePath),
+            isProhibition: false,
+        );
+    }
+
+    public function requiredIfDeclined(string|Closure $statePath, bool $isStatePathAbsolute = false): static
+    {
+        return $this->conditionalPresenceRule(
+            static fn (Field $component): bool => in_array($component->resolveSiblingRawState((string) $component->evaluate($statePath), $isStatePathAbsolute), self::DECLINED_VALUES, strict: true),
+            static fn (Field $component): bool => (bool) $component->evaluate($statePath),
+            isProhibition: false,
+        );
+    }
+
+    /**
+     * @param string|array<string>|Closure $statePaths
+     */
+    public function requiredWith(string|array|Closure $statePaths, bool $isStatePathAbsolute = false): static
+    {
+        return $this->conditionalPresenceRule(
+            static fn (Field $component): bool => array_any($component->resolveSiblingStatePaths($statePaths, $isStatePathAbsolute), static fn (string $path): bool => filled($component->resolveSiblingRawState($path, isStatePathAbsolute: true))),
+            static fn (Field $component): bool => (bool) $component->evaluate($statePaths),
+            isProhibition: false,
+        );
+    }
+
+    /**
+     * @param string|array<string>|Closure $statePaths
+     */
+    public function requiredWithAll(string|array|Closure $statePaths, bool $isStatePathAbsolute = false): static
+    {
+        return $this->conditionalPresenceRule(
+            static fn (Field $component): bool => array_all($component->resolveSiblingStatePaths($statePaths, $isStatePathAbsolute), static fn (string $path): bool => filled($component->resolveSiblingRawState($path, isStatePathAbsolute: true))),
+            static fn (Field $component): bool => (bool) $component->evaluate($statePaths),
+            isProhibition: false,
+        );
+    }
+
+    /**
+     * @param string|array<string>|Closure $statePaths
+     */
+    public function requiredWithout(string|array|Closure $statePaths, bool $isStatePathAbsolute = false): static
+    {
+        return $this->conditionalPresenceRule(
+            static fn (Field $component): bool => array_any($component->resolveSiblingStatePaths($statePaths, $isStatePathAbsolute), static fn (string $path): bool => blank($component->resolveSiblingRawState($path, isStatePathAbsolute: true))),
+            static fn (Field $component): bool => (bool) $component->evaluate($statePaths),
+            isProhibition: false,
+        );
+    }
+
+    /**
+     * @param string|array<string>|Closure $statePaths
+     */
+    public function requiredWithoutAll(string|array|Closure $statePaths, bool $isStatePathAbsolute = false): static
+    {
+        return $this->conditionalPresenceRule(
+            static fn (Field $component): bool => array_all($component->resolveSiblingStatePaths($statePaths, $isStatePathAbsolute), static fn (string $path): bool => blank($component->resolveSiblingRawState($path, isStatePathAbsolute: true))),
+            static fn (Field $component): bool => (bool) $component->evaluate($statePaths),
+            isProhibition: false,
+        );
+    }
+
+    public function prohibited(bool|Closure $condition = true): static
+    {
+        $this->constraint(new Prohibited(), $condition);
+
+        return $this;
+    }
+
+    public function prohibitedIf(string|Closure $statePath, mixed $stateValues, bool $isStatePathAbsolute = false): static
+    {
+        return $this->conditionalPresenceRule(
+            static fn (Field $component): bool => $component->matchesConditionValues($component->resolveSiblingRawState((string) $component->evaluate($statePath), $isStatePathAbsolute), $component->evaluate($stateValues)),
+            static fn (Field $component): bool => (bool) $component->evaluate($statePath),
+            isProhibition: true,
+        );
+    }
+
+    public function prohibitedUnless(string|Closure $statePath, mixed $stateValues, bool $isStatePathAbsolute = false): static
+    {
+        return $this->conditionalPresenceRule(
+            static fn (Field $component): bool => ! $component->matchesConditionValues($component->resolveSiblingRawState((string) $component->evaluate($statePath), $isStatePathAbsolute), $component->evaluate($stateValues)),
+            static fn (Field $component): bool => (bool) $component->evaluate($statePath),
+            isProhibition: true,
+        );
+    }
+
+    /**
+     * Laravel puts the violation on *this* field: if I am present, they must be
+     * empty. The offending siblings' labels are baked into the message at build
+     * time, so the constraint stays a plain presence test.
+     *
+     * @param array<string>|string|Closure $statePaths
+     */
+    public function prohibits(array|string|Closure $statePaths, bool $isStatePathAbsolute = false): static
+    {
+        $this->constraint(
+            static function (Field $component) use ($statePaths, $isStatePathAbsolute): ?Prohibited {
+                if (! $component->hasLiveSiblingState()) {
+                    return null;
+                }
+
+                $filled = array_values(array_filter(
+                    $component->resolveSiblingStatePaths($statePaths, $isStatePathAbsolute),
+                    static fn (string $path): bool => filled($component->resolveSiblingRawState($path, isStatePathAbsolute: true)),
+                ));
+
+                if ($filled === []) {
+                    return null;
+                }
+
+                return new Prohibited(message: sprintf(
+                    'This value cannot be combined with %s.',
+                    implode(', ', array_map($component->getSiblingLabel(...), $filled)),
+                ));
+            },
+            static fn (Field $component): bool => (bool) $component->evaluate($statePaths),
+        );
+
+        return $this;
+    }
+
+    public function filled(bool|Closure $condition = true): static
+    {
+        $this->constraint(static fn (Field $component): Constraint => $component->getRequiredConstraint(), $condition);
+
+        return $this;
+    }
+
+    public function multipleOf(int|float|Closure $value): static
+    {
+        $this->constraint(static function (Field $component) use ($value): ?DivisibleBy {
+            $divisor = $component->evaluateDivisor($value);
+
+            return $divisor === null ? null : new DivisibleBy(value: $divisor);
+        });
+
+        return $this;
+    }
+
+    /**
+     * The divisor, or null when the closure arm resolved to nothing — which is what
+     * Filament's `filled()` pair condition is testing for. The parameter is `mixed`
+     * because that is what a closure may answer, whatever the setter's union says.
+     */
+    private function evaluateDivisor(mixed $value): int|float|null
+    {
+        $divisor = $this->evaluate($value);
+
+        return is_int($divisor) || is_float($divisor) ? $divisor : null;
+    }
+
+    /**
+     * Filament's `distinct()`, which compares one repeater item's field against the
+     * same field in every sibling item. The three arms are the value's PHP type;
+     * the sibling facts are resolved here and handed to the constraint.
+     */
+    public function distinct(bool|Closure $condition = true): static
+    {
+        $this->constraint(static fn (Field $component): ?Distinct => $component->buildDistinctConstraint(), $condition);
+
+        return $this;
+    }
+
+    private function buildDistinctConstraint(): ?Distinct
+    {
+        if (! $this->hasLiveSiblingState()) {
+            return null;
+        }
+
+        $rawState = $this->getRawState();
+
+        if (blank($rawState)) {
+            return null;
+        }
+
+        $repeater = $this->getParentRepeater();
+        $item = $this->getParentRepeaterItem();
+        $statePath = $this->getStatePath();
+
+        if ($repeater === null || $item === null || $statePath === null) {
+            return null;
+        }
+
+        $itemPath = (string) $item->getStatePath();
+        $itemKey = (string) $item->getStatePath(isAbsolute: false);
+
+        // The field's path *within* an item, taken by stripping the item schema's own
+        // prefix rather than by string surgery on the first dot — an item key may hold
+        // one, and a layout component between the two contributes no segment either way.
+        $fieldPath = mb_substr($statePath, mb_strlen($itemPath) + 1);
+        $itemsPrefix = mb_substr($itemPath, 0, mb_strlen($itemPath) - mb_strlen($itemKey));
+        $siblingKeys = array_keys(array_diff_key(wrap($repeater->getRawState()), [$itemKey => true]));
+
+        if ($siblingKeys === []) {
+            return null;
+        }
+
+        $siblingValues = array_map(
+            fn (int|string $siblingKey): mixed => $this->resolveSiblingRawState("{$itemsPrefix}{$siblingKey}.{$fieldPath}", isStatePathAbsolute: true),
+            $siblingKeys,
+        );
+
+        if (is_bool($rawState)) {
+            return new Distinct(
+                mode: Distinct::BOOLEAN,
+                isSiblingSelected: in_array(true, $siblingValues, strict: true),
+                mustBeSelected: $this->isRequired(),
+            );
+        }
+
+        if (is_array($rawState)) {
+            $union = [];
+
+            foreach ($siblingValues as $siblingValue) {
+                $union = [...$union, ...array_values(wrap($siblingValue))];
+            }
+
+            return new Distinct(mode: Distinct::ARRAY, siblingValues: $union);
+        }
+
+        return new Distinct(mode: Distinct::SCALAR, siblingValues: $siblingValues);
+    }
+
+    /**
+     * A conditional presence rule: the field's own required constraint when the
+     * predicate holds, or {@see Prohibited} for the prohibition twin. Nothing is
+     * emitted for a field that is already required — the base builder has put that
+     * constraint in the list once, and a second copy reports the message twice.
+     * `$isRequired` is never written, so no asterisk appears; a conditionally
+     * required field that should be starred says `markAsRequired()`.
+     *
+     * `$predicate` receives the evaluating field, never the one this method was
+     * called on: a repeater clones its item components, and a closure that captured
+     * `$this` would answer for the template rather than the item.
+     */
+    private function conditionalPresenceRule(Closure $predicate, bool|Closure $condition, bool $isProhibition): static
+    {
+        $this->constraint(
+            static function (Field $component) use ($predicate, $isProhibition): ?Constraint {
+                if (! $component->hasLiveSiblingState()) {
+                    return null;
+                }
+
+                if (! $isProhibition && $component->isRequired()) {
+                    return null;
+                }
+
+                if (! $predicate($component)) {
+                    return null;
+                }
+
+                return $isProhibition ? new Prohibited() : $component->getRequiredConstraint();
+            },
+            $condition,
+        );
+
+        return $this;
+    }
+
+    /**
+     * Laravel's exact strictness rule: loose for strings and ints, so a text input's
+     * `'1'` still matches `1`, but strict for booleans and nulls, so a checkbox's raw
+     * `true` is not matched by the string `'1'`.
+     */
+    private function matchesConditionValues(mixed $other, mixed $values): bool
+    {
+        // Not `wrap()`: its `null` → `[]` arm reads null as absence, and here null is a
+        // value the caller asked to match — `requiredIf('other', null)` means "when the
+        // sibling is null", which the live bag cannot distinguish from an absent key.
+        $values = array_map(
+            static fn (mixed $value): mixed => $value instanceof BackedEnum ? $value->value : $value,
+            is_array($values) ? $values : [$values],
+        );
+
+        return in_array($other, $values, strict: is_bool($other) || $other === null);
+    }
+
+    /**
+     * Filament's `multiFieldComparisonRule()` parsing, absolute: an array as-is, a
+     * comma string split and trimmed *only* when the paths are relative — an
+     * absolute string passes through unsplit.
+     *
+     * @param  string|array<string>|Closure $statePaths
+     * @return list<string>
+     */
+    private function resolveSiblingStatePaths(string|array|Closure $statePaths, bool $isStatePathAbsolute): array
+    {
+        $statePaths = $this->evaluate($statePaths);
+
+        if (is_string($statePaths) && ! $isStatePathAbsolute) {
+            $statePaths = array_map(mb_trim(...), explode(',', $statePaths));
+        }
+
+        return array_values(array_map(
+            fn (mixed $statePath): string => $this->resolveRelativeStatePath((string) $statePath, $isStatePathAbsolute),
+            wrap($statePaths),
+        ));
+    }
+
+    /**
+     * Whether sibling state can be read at all: the field sits in a schema bound to
+     * a live host. A unit-built field, or a schema rendered without one, emits no
+     * cross-field constraint — there is nothing to read.
+     */
+    private function hasLiveSiblingState(): bool
+    {
+        return $this->getLiveComponentOrNull() instanceof InteractsWithSchemas;
+    }
+
+    /**
+     * The raw live state at another field's path, container-relative unless
+     * absolute — the read the runner itself performs. Re-run on every build, so a
+     * sticky re-validation tracks a sibling the user is still typing into.
+     */
+    protected function resolveSiblingRawState(string $statePath, bool $isStatePathAbsolute = false): mixed
+    {
+        $liveComponent = $this->getLiveComponentOrNull();
+
+        if (! $liveComponent instanceof InteractsWithSchemas) {
+            // Named by `getName()`, never by `getStatePath()`: the absolute path walks
+            // `getContainer()`, an uninitialised typed property on exactly the unbound
+            // field this branch describes.
+            throw new LogicException(sprintf(
+                '[%s] cannot read sibling state: it sits in no schema bound to a live component.',
+                $this->getName() ?? static::class,
+            ));
+        }
+
+        return $this->getRootContainer()->getPropertyAccessor()->get(
+            $liveComponent,
+            $this->resolveRelativeStatePath($statePath, $isStatePathAbsolute),
+        );
     }
 
     /**

@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests\Integration\Components\Concerns;
 
 use Sylament\Forms\Components\Checkbox;
+use Sylament\Forms\Components\CheckboxList;
+use Sylament\Forms\Components\Field;
+use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Records\Article;
 use Sylament\Forms\Tests\Fixtures\Records\Author;
+use Sylament\Forms\Validation\Distinct;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\RecordTypeReader;
@@ -226,4 +230,129 @@ it('does not derive from a mid-tree binding alone', function (): void {
     $schema->rawState(['author' => ['name' => null]]);
 
     expect($schema->getComponentByStatePath('data.author.name')->isRequired())->toBeFalse();
+});
+
+/**
+ * Wire a repeater whose items hold one field, over positional item keys so a test
+ * can name them: `Repeater::fake()` turns uuid generation off for every repeater
+ * built while its removal closure is alive.
+ *
+ * @param array<int, array<string, mixed>> $items
+ */
+function wireRepeaterItems(Field $field, array $items): Repeater
+{
+    $host = new FieldRenderHost();
+    $host->data = ['tags' => $items];
+
+    $repeater = Repeater::make('tags')->components([$field]);
+
+    Schema::make($host)->statePath('data')->components([$repeater])->getComponents();
+    $repeater->hydrateItems();
+
+    return $repeater;
+}
+
+/**
+ * @return list<Distinct>
+ */
+function distinctConstraintsAt(Repeater $repeater, string $statePath): array
+{
+    $field = $repeater->getChildSchema()?->getComponentByStatePath($statePath)
+        ?? $repeater->getRootContainer()->getComponentByStatePath($statePath);
+
+    return array_values(array_filter(
+        $field?->getValidationConstraints() ?? [],
+        static fn (object $constraint): bool => $constraint instanceof Distinct,
+    ));
+}
+
+it('builds a scalar distinct constraint from the sibling items', function (): void {
+    $forget = Repeater::fake();
+
+    $repeater = wireRepeaterItems(TextInput::make('name')->distinct(), [['name' => 'a'], ['name' => 'a'], ['name' => 'b']]);
+
+    $first = distinctConstraintsAt($repeater, 'data.tags.0.name');
+    $third = distinctConstraintsAt($repeater, 'data.tags.2.name');
+
+    expect($first)->toHaveCount(1)
+        ->and($first[0]->mode)->toBe(Distinct::SCALAR)
+        ->and($first[0]->siblingValues)->toBe(['a', 'b'])
+        ->and($third[0]->siblingValues)->toBe(['a', 'a']);
+
+    $forget();
+});
+
+it('builds a boolean distinct constraint, carrying whether a sibling is ticked', function (): void {
+    $forget = Repeater::fake();
+
+    $repeater = wireRepeaterItems(Checkbox::make('primary')->distinct(), [['primary' => true], ['primary' => true], ['primary' => false]]);
+    $constraints = distinctConstraintsAt($repeater, 'data.tags.0.primary');
+
+    expect($constraints[0]->mode)->toBe(Distinct::BOOLEAN)
+        ->and($constraints[0]->isSiblingSelected)->toBeTrue()
+        ->and($constraints[0]->mustBeSelected)->toBeFalse();
+
+    $forget();
+});
+
+it('demands a selection when the distinct checkbox is required and nothing is ticked', function (): void {
+    $forget = Repeater::fake();
+
+    $repeater = wireRepeaterItems(Checkbox::make('primary')->distinct()->required(), [['primary' => false], ['primary' => false]]);
+    $constraints = distinctConstraintsAt($repeater, 'data.tags.0.primary');
+
+    expect($constraints[0]->isSiblingSelected)->toBeFalse()
+        ->and($constraints[0]->mustBeSelected)->toBeTrue();
+
+    $forget();
+});
+
+it('unions the sibling arrays for a multi-value field', function (): void {
+    $forget = Repeater::fake();
+
+    $repeater = wireRepeaterItems(
+        CheckboxList::make('roles')->options(['a' => 'A', 'b' => 'B', 'c' => 'C'])->distinct(),
+        [['roles' => ['a']], ['roles' => ['b']], ['roles' => ['c']]],
+    );
+    $constraints = distinctConstraintsAt($repeater, 'data.tags.0.roles');
+
+    expect($constraints[0]->mode)->toBe(Distinct::ARRAY)
+        ->and($constraints[0]->siblingValues)->toBe(['b', 'c']);
+
+    $forget();
+});
+
+it('resolves through a layout component between the item and the field', function (): void {
+    $forget = Repeater::fake();
+
+    $host = new FieldRenderHost();
+    $host->data = ['tags' => [['name' => 'a'], ['name' => 'a']]];
+
+    $repeater = Repeater::make('tags')->components([Section::make('Wrap')->components([TextInput::make('name')->distinct()])]);
+    Schema::make($host)->statePath('data')->components([$repeater])->getComponents();
+    $repeater->hydrateItems();
+
+    expect(distinctConstraintsAt($repeater, 'data.tags.0.name')[0]->siblingValues)->toBe(['a']);
+
+    $forget();
+});
+
+it('emits nothing for a lone item or a blank own value', function (): void {
+    $forget = Repeater::fake();
+
+    expect(distinctConstraintsAt(wireRepeaterItems(TextInput::make('name')->distinct(), [['name' => 'a']]), 'data.tags.0.name'))->toBe([])
+        ->and(distinctConstraintsAt(wireRepeaterItems(TextInput::make('name')->distinct(), [['name' => ''], ['name' => 'b']]), 'data.tags.0.name'))->toBe([]);
+
+    $forget();
+});
+
+it('emits nothing for a field outside any repeater', function (): void {
+    $host = new FieldRenderHost();
+    $host->data = ['name' => 'a'];
+
+    $field = TextInput::make('name')->distinct();
+
+    Schema::make($host)->statePath('data')->components([$field])->getComponents();
+
+    expect(array_filter($field->getValidationConstraints(), static fn (object $c): bool => $c instanceof Distinct))->toBe([]);
 });

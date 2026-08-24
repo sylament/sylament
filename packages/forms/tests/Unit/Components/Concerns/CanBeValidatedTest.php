@@ -7,18 +7,30 @@ namespace Sylament\Forms\Tests\Unit\Components\Concerns;
 use DateTimeImmutable;
 use LogicException;
 use Sylament\Forms\Components\Field;
+use Sylament\Forms\Components\Toggle;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureField;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureLengthField;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Records\Article;
+use Sylament\Forms\Tests\Fixtures\Records\ValidationStatus;
 use Sylament\Forms\Validation\DateComparison;
+use Sylament\Forms\Validation\MatchesField;
+use Sylament\Forms\Validation\Prohibited;
 use Sylament\Schemas\Schema;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\Constraints\DivisibleBy;
 use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\GreaterThan;
+use Symfony\Component\Validator\Constraints\GreaterThanOrEqual;
 use Symfony\Component\Validator\Constraints\Length;
+use Symfony\Component\Validator\Constraints\LessThan;
+use Symfony\Component\Validator\Constraints\LessThanOrEqual;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\NotNull;
 use Symfony\Component\Validator\Constraints\Positive;
 use Symfony\Component\Validator\Constraints\Regex;
+use Symfony\Component\Validator\Validation;
+use Twig\Markup;
 
 use function Sylament\Forms\Tests\wireField;
 
@@ -461,4 +473,240 @@ it('rebuilds the boundary on every run, so the sibling can change', function ():
     $host->data = ['startsAt' => '2026-09-01T08:00'];
 
     expect(dateComparisons($field)[0]->boundary->format('Y-m-d H:i:s'))->toBe('2026-09-01 08:00:00');
+});
+
+/**
+ * Wire a field beside one sibling per key of `$data`, under a `data`-bag host
+ * holding that state — the frame every cross-field arm reads.
+ *
+ * @param array<string, mixed> $data
+ */
+function wireFieldToSiblings(Field $field, array $data, ?FieldRenderHost $host = null): Field
+{
+    $host ??= new FieldRenderHost();
+    $host->data = $data;
+
+    Schema::make($host)
+        ->statePath('data')
+        ->components([...array_map(FixtureField::make(...), array_keys($data)), $field])
+        ->getComponents();
+
+    return $field;
+}
+
+/**
+ * @template TConstraint of Constraint
+ *
+ * @param  class-string<TConstraint> $class
+ * @return list<TConstraint>
+ */
+function constraintsOf(Field $field, string $class): array
+{
+    return array_values(array_filter(
+        $field->getValidationConstraints(),
+        static fn (Constraint $constraint): bool => $constraint instanceof $class,
+    ));
+}
+
+it('bakes the sibling value into an ordering constraint', function (): void {
+    $field = wireFieldToSiblings(FixtureField::make('a')->gt('other'), ['other' => '9']);
+
+    expect(constraintsOf($field, GreaterThan::class))->toHaveCount(1)
+        ->and(constraintsOf($field, GreaterThan::class)[0]->value)->toBe('9');
+});
+
+it('drops an ordering constraint whose sibling is blank, null or unreadable', function (): void {
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->gt('other'), ['other' => '']), GreaterThan::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->gt('other'), ['other' => null]), GreaterThan::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->gt('nope'), ['other' => '9']), GreaterThan::class))->toBe([]);
+});
+
+it('emits no cross-field constraint for a field with no live host', function (): void {
+    expect(FixtureField::make('a')->gt('other')->getValidationConstraints())->toBe([])
+        ->and(FixtureField::make('a')->same('other')->getValidationConstraints())->toBe([])
+        ->and(FixtureField::make('a')->requiredIf('other', 'x')->getValidationConstraints())->toBe([])
+        ->and(FixtureField::make('a')->distinct()->getValidationConstraints())->toBe([]);
+});
+
+it('maps each ordering arm onto its stock constraint', function (): void {
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->gte('other'), ['other' => '9']), GreaterThanOrEqual::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->lt('other'), ['other' => '9']), LessThan::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->lte('other'), ['other' => '9']), LessThanOrEqual::class))->toHaveCount(1);
+});
+
+it('compares two numeric strings numerically through the live validator', function (): void {
+    $constraints = wireFieldToSiblings(FixtureField::make('a')->gt('other'), ['other' => '9'])->getValidationConstraints();
+    $tooSmall = wireFieldToSiblings(FixtureField::make('a')->gt('other'), ['other' => '11'])->getValidationConstraints();
+
+    expect(Validation::createValidator()->validate('10', $constraints))->toHaveCount(0)
+        ->and(Validation::createValidator()->validate('10', $tooSmall))->toHaveCount(1);
+});
+
+it('resolves an absolute sibling path in both spellings', function (): void {
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->gt('/data.other'), ['other' => '9']), GreaterThan::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->gt('data.other', isStatePathAbsolute: true), ['other' => '9']), GreaterThan::class))->toHaveCount(1);
+});
+
+it('re-reads the sibling on every build', function (): void {
+    $host = new FieldRenderHost();
+    $field = wireFieldToSiblings(FixtureField::make('a')->gt('other'), ['other' => '9'], $host);
+
+    $host->data = ['other' => '99'];
+
+    expect(constraintsOf($field, GreaterThan::class)[0]->value)->toBe('99');
+});
+
+it('compares a sibling by identity, naming it rather than printing it', function (): void {
+    $matches = constraintsOf(wireFieldToSiblings(FixtureField::make('a')->same('other'), ['other' => 'x']), MatchesField::class);
+
+    expect($matches)->toHaveCount(1)
+        ->and($matches[0]->value)->toBe('x')
+        ->and($matches[0]->other)->toBe('Other')
+        ->and($matches[0]->match)->toBeTrue();
+});
+
+it('compares a blank or null sibling rather than skipping it', function (): void {
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->same('other'), ['other' => '']), MatchesField::class)[0]->value)->toBe('')
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->same('other'), ['other' => null]), MatchesField::class)[0]->value)->toBeNull();
+});
+
+it('strips tags from a Markup sibling label', function (): void {
+    $host = new FieldRenderHost();
+    $host->data = ['other' => 'x'];
+
+    $field = FixtureField::make('a')->same('other');
+
+    Schema::make($host)
+        ->statePath('data')
+        ->components([FixtureField::make('other')->label(new Markup('<em>Other</em>', 'UTF-8')), $field])
+        ->getComponents();
+
+    expect(constraintsOf($field, MatchesField::class)[0]->other)->toBe('Other');
+});
+
+it('inverts under different()', function (): void {
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->different('other'), ['other' => 'x']), MatchesField::class)[0]->match)->toBeFalse();
+});
+
+it('reads the confirmation partner at the snake-cased suffix', function (): void {
+    $host = new FieldRenderHost();
+    $host->data = ['password_confirmation' => 'pw'];
+
+    $field = FixtureField::make('password')->confirmed();
+
+    Schema::make($host)
+        ->statePath('data')
+        ->components([FixtureField::make('password_confirmation'), $field])
+        ->getComponents();
+
+    expect(constraintsOf($field, MatchesField::class)[0]->value)->toBe('pw')
+        ->and(constraintsOf($field, MatchesField::class)[0]->other)->toBe('Password confirmation');
+});
+
+it('falls back to the humanised path segment when no component answers to the partner path', function (): void {
+    $field = wireFieldToSiblings(FixtureField::make('password')->confirmed(), ['other' => 'x']);
+    $matches = constraintsOf($field, MatchesField::class);
+
+    expect($matches[0]->value)->toBeNull()
+        ->and($matches[0]->other)->toBe('Password confirmation')
+        ->and(Validation::createValidator()->validate('pw', $matches)->get(0)->getMessage())
+        ->toBe('This value must match Password confirmation.');
+});
+
+it('requires the field when the sibling matches, loosely for scalars', function (): void {
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', 'published'), ['status' => 'published']), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', 'published'), ['status' => 'draft']), NotBlank::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', ['a', 'b']), ['status' => 'b']), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('count', 1), ['count' => '1']), NotBlank::class))->toHaveCount(1);
+});
+
+it("lets the sibling's own type decide the strictness, as Laravel does", function (): void {
+    // `in_array($sibling, $values, is_bool($sibling) || is_null($sibling))` — the
+    // *sibling* picks strict or loose, not the declared value. So a raw `true`
+    // sibling is never matched by the string `'1'`, while a `'1'` sibling is
+    // matched by `true` under PHP's loose comparison.
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', true), ['flag' => true]), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', '1'), ['flag' => true]), NotBlank::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', true), ['flag' => '1']), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', null), ['flag' => null]), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('flag', ''), ['flag' => null]), NotBlank::class))->toBe([]);
+});
+
+it('unwraps a backed enum in the matched values', function (): void {
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', ValidationStatus::Published), ['status' => 'published']), NotBlank::class))->toHaveCount(1);
+});
+
+it('requires the field when the sibling is accepted or declined', function (): void {
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfAccepted('terms'), ['terms' => 'on']), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfAccepted('terms'), ['terms' => true]), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfAccepted('terms'), ['terms' => '1']), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfAccepted('terms'), ['terms' => 'off']), NotBlank::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfDeclined('terms'), ['terms' => 'off']), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredIfDeclined('terms'), ['terms' => 'on']), NotBlank::class))->toBe([]);
+});
+
+it('requires the field unless the sibling matches, an absent sibling included', function (): void {
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredUnless('status', 'draft'), ['status' => 'published']), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredUnless('status', 'draft'), ['status' => 'draft']), NotBlank::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredUnless('status', 'draft'), ['status' => null]), NotBlank::class))->toHaveCount(1);
+});
+
+it('requires the field with, with all, without and without all', function (): void {
+    expect(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWith('x,y'), ['x' => 'set', 'y' => '']), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWith('x,y'), ['x' => '', 'y' => '']), NotBlank::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithAll(['x', 'y']), ['x' => 'set', 'y' => '']), NotBlank::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithAll(['x', 'y']), ['x' => 'set', 'y' => 'set']), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithout('x'), ['x' => '']), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithout('x'), ['x' => 'set']), NotBlank::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithoutAll(['x', 'y']), ['x' => '', 'y' => 'set']), NotBlank::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->requiredWithoutAll(['x', 'y']), ['x' => '', 'y' => '']), NotBlank::class))->toHaveCount(1);
+});
+
+it("emits the field's own required constraint, so a boolean field keeps NotNull", function (): void {
+    $field = wireFieldToSiblings(Toggle::make('a')->requiredIf('status', 'published'), ['status' => 'published']);
+
+    expect(constraintsOf($field, NotNull::class))->toHaveCount(1)
+        ->and(constraintsOf($field, NotBlank::class))->toBe([]);
+});
+
+it('emits no second required constraint for a field that is already required', function (): void {
+    $field = wireFieldToSiblings(FixtureField::make('a')->required()->requiredIf('status', 'published'), ['status' => 'published']);
+
+    expect(constraintsOf($field, NotBlank::class))->toHaveCount(1);
+});
+
+it('never marks the field required, so no asterisk appears', function (): void {
+    $field = wireFieldToSiblings(FixtureField::make('a')->requiredIf('status', 'published'), ['status' => 'published']);
+
+    expect($field->isRequired())->toBeFalse()
+        ->and($field->isMarkedAsRequired())->toBeFalse();
+});
+
+it('prohibits a value unconditionally and conditionally', function (): void {
+    expect(constraintsOf(wireField(FixtureField::make('a')->prohibited()), Prohibited::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->prohibitedIf('status', 'draft'), ['status' => 'draft']), Prohibited::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->prohibitedIf('status', 'draft'), ['status' => 'published']), Prohibited::class))->toBe([])
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->prohibitedUnless('status', 'draft'), ['status' => 'published']), Prohibited::class))->toHaveCount(1)
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->prohibitedUnless('status', 'draft'), ['status' => 'draft']), Prohibited::class))->toBe([]);
+});
+
+it('prohibits combining with a filled sibling, naming it in the message', function (): void {
+    $field = wireFieldToSiblings(FixtureField::make('a')->prohibits('x, y'), ['x' => 'set', 'y' => '']);
+    $prohibited = constraintsOf($field, Prohibited::class);
+
+    expect($prohibited)->toHaveCount(1)
+        ->and($prohibited[0]->message)->toBe('This value cannot be combined with X.')
+        ->and(constraintsOf(wireFieldToSiblings(FixtureField::make('a')->prohibits('x'), ['x' => '']), Prohibited::class))->toBe([]);
+});
+
+it('emits the required constraint under filled()', function (): void {
+    expect(constraintsOf(wireField(FixtureField::make('a')->filled()), NotBlank::class))->toHaveCount(1)
+        ->and(constraintsOf(wireField(Toggle::make('a')->filled()), NotNull::class))->toHaveCount(1)
+        ->and(wireField(FixtureField::make('a')->filled())->isRequired())->toBeFalse();
+});
+
+it('emits DivisibleBy under multipleOf, and nothing when the closure resolves to nothing', function (): void {
+    expect(constraintsOf(wireField(FixtureField::make('a')->multipleOf(5)), DivisibleBy::class)[0]->value)->toBe(5)
+        ->and(constraintsOf(wireField(FixtureField::make('a')->multipleOf(fn (): float => 0.5)), DivisibleBy::class)[0]->value)->toBe(0.5)
+        ->and(constraintsOf(wireField(FixtureField::make('a')->multipleOf(fn (): null => null)), DivisibleBy::class))->toBe([]);
 });

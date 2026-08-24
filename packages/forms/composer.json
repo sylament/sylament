@@ -15,9 +15,11 @@
     "require": {
         "php": "^8.5",
         "doctrine/orm": "^3.6",
+        "league/flysystem": "^3",
         "sylament/actions": "self.version",
         "sylament/schemas": "self.version",
         "sylament/support": "self.version",
+        "symfony/http-foundation": "^8.1",
         "symfony/service-contracts": "^3.6",
         "symfony/stimulus-bundle": "^3.1",
         "symfony/string": "^8.1",

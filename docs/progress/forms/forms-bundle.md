@@ -34,6 +34,7 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | Asset registration (12 field AlpineComponents) | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | in progress | — | [detail](#asset-registration) |
 | [`sylament--forms--select`](../../../packages/forms/assets/src/controllers/select_controller.ts) — the JS select control, a port of Filament's select utility ([`utils/select.ts`](../../../packages/forms/assets/src/utils/select.ts)) bound to the live host, plus the [`callSchemaComponentMethod`](../../../packages/schemas/assets/src/utils/schema_component_method.ts) helper it searches through, now imported from `@sylament/schemas` | [`resources/js/components/select.js`](../../../vendor/filament/forms/resources/js/components/select.js) + [`support/…/js/utilities/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js) | done | — | [diverges](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host) |
 | [`sylament--forms--repeater`](../../../packages/forms/assets/src/controllers/repeater_controller.ts) — the client half of the repeater's chrome: per-item collapse state (`data-collapsed`), collapse-all/expand-all, the validation `expand` reveal, and the bridge from support's drag control to the host's `reorder` action | [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) (the embedded view's Alpine object) | done | — | [diverges](#the-repeater-controller-owns-the-items-collapse-state-and-bridges-the-drag-control-to-the-reorder-action) |
+| [`sylament--forms--file-upload`](../../../packages/forms/assets/src/controllers/file_upload_controller.ts) — FilePond 4.32 plus `file-validate-size`, `file-validate-type` and `image-preview`, bundled; uploads ride the schemas seam ([`uploadSchemaComponentFile`](../../../packages/schemas/assets/src/utils/schema_component_method.ts)) and the three mutators ride `callSchemaComponentMethod`; its skin is [`file-upload.css`](../../../packages/forms/assets/src/styles/components/file-upload.css) over the scoped `filepond.generated.css` | [`resources/js/components/file-upload.js`](../../../vendor/filament/forms/resources/js/components/file-upload.js) | done | — | [diverges](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#translations) |
 | `Livewire::component('table-select', …)` | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | blocked | TableSelect field feature | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
@@ -55,6 +56,18 @@ which resolves the built `checkbox_list_controller.js` through
 same shape the actions, panels and support bundle tests use. The unported
 responsibilities have no coverage because they have no code.
 
+## Configuration
+
+The bundle's semantic config lives under the derived `sylament_forms` alias (a
+bundle cannot extend another bundle's tree). One node ships:
+`sylament_forms.temporary_file_upload.{disk, directory, cleanup}`, the store
+behind `FileUpload`'s temporary uploads — written up in
+[temporary-uploads.md](temporary-uploads.md). The toolkit-wide storage keys
+(`sylament.default_filesystem_disk`, `sylament.temporary_file_url_expiry_minutes`)
+sit on support's `sylament` tree instead, because tables' `ImageColumn` and
+infolists' `ImageEntry` will read them too —
+[filesystem-registry.md](../support/filesystem-registry.md).
+
 ## Details
 
 ### Asset registration
@@ -74,12 +87,13 @@ That registration now exists, which is what moves the row to **in progress**: it
 is the whole path for the package's built JS, and
 [`SylamentFormsBundleTest`](../../../packages/forms/tests/Integration/SylamentFormsBundleTest.php)
 pins it by resolving the built `checkbox-list` and `select` controllers through
-`AssetMapperInterface`. What is still partial is the **inventory** — two of the
+`AssetMapperInterface`. What is still partial is the **inventory** — three of the
 twelve are ported
-([`checkbox-list`](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it)
-and [`select`](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host))
-and the other ten belong to fields that do not exist here yet. The workspace's
-third controller,
+([`checkbox-list`](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it),
+[`select`](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host)
+and [`file-upload`](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller))
+and the other nine belong to fields that do not exist here yet. The workspace's
+fourth controller,
 [`repeater`](#the-repeater-controller-owns-the-items-collapse-state-and-bridges-the-drag-control-to-the-reorder-action),
 is not one of the twelve: Filament embeds the repeater's Alpine object in the
 component's own view rather than registering it as an asset. **Next step:**
@@ -89,7 +103,8 @@ depends on a committed artifact: the controller is a `BUNDLED_ENTRIES` build,
 so its `dist/controllers/select_controller.js` exists only when the rebuilt dist
 is committed, and `AssetMapperRepository::findLogicalPath()` answers `null` for
 a missing file — the test fails loudly rather than the consuming app's
-controllers-map generation.
+controllers-map generation. `file-upload` is a `BUNDLED_ENTRIES` build too, and
+carries the same dependency.
 
 ### Make* commands + stub publishing
 
@@ -424,6 +439,65 @@ the other two.
 [`checkbox-list` note](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it)
 applies verbatim: verification is the reviewer's line-by-line read against the
 vendor Alpine object plus the demo's browser pass.
+
+### The file-upload controller bundles FilePond and is the only lazy controller
+
+Filament's `file-upload.js` is an Alpine component over FilePond that reaches
+Livewire's temporary-upload pipeline (`$wire.upload()`, `$wire.cancelUpload()`)
+and entangles the field's state. Ours is
+[`file_upload_controller.ts`](../../../packages/forms/assets/src/controllers/file_upload_controller.ts),
+and the shape differs in seven ways worth knowing before touching it.
+
+- **`fetch: lazy`, the only one in the toolkit.** The bundle is ~490 KB
+  un-minified (FilePond core plus `file-validate-size`, `file-validate-type` and
+  `image-preview`, four MIT banners composed by `build-js.mjs`) and appears on few
+  pages; every other Sylament controller is `eager`. StimulusBundle therefore
+  fetches it only when a `data-controller="sylament--forms--file-upload"` element
+  appears, which is exactly the trade this size justifies. Nothing else in the
+  toolkit is lazy, so a consuming app that copies another controller's
+  `controllers.json` entry will make it eager by accident.
+- **No `mime` package.** Filament's `fileValidateTypeDetectType` falls back to the
+  npm `mime` database, which is the single largest block of its 373 KB bundle.
+  Ours resolves `mimeTypeMap[extension] || detectedType` and stops there, so the
+  one degraded case is a file whose browser type is empty and whose extension the
+  field's `mimeTypeMap()` does not name — which is what that setter exists for.
+- **Upload is one live round trip, so there is no byte progress and no true
+  abort.** `uploadSchemaComponentFile()` posts the file as a multipart part of a
+  live action; `fetch()` reports no upload progress, so `progress(false, 0, 0)`
+  puts FilePond's indicator in indeterminate mode, and FilePond's abort can only
+  mark the key cancelled — when the request lands, the controller calls
+  `removeUploadedFile` and *then* aborts the item.
+- **The state is reconciled by hand.** Filament entangles `state` through Alpine
+  and re-reads the server on every change; our pond subtree is `data-live-ignore`,
+  so the controller re-reads the `state` and `uploadedFiles` Stimulus values after
+  each morph and rebuilds `pond.files` only when the state JSON changed and holds
+  no `sylament-file:` token — the twin of Filament's `$watch('state')`, gated on
+  the same four short-circuits plus an active-upload counter. Note the gate is
+  keyed on **state** alone: `uploadedFiles` carries temporary URLs that can
+  regenerate on every render, and keying on those would rebuild the pond
+  continuously.
+- **`disabled()` flows through an option, not a key bust.** Filament hashes
+  `isDisabled()` into its `wire:key` so Livewire destroys and rebuilds the whole
+  subtree; `disabledValueChanged()` calls `pond.setOptions({disabled})` instead.
+- **The `<input>` is captured once.** `FilePond.create()` detaches the element it
+  replaces, so `this.inputTarget` throws afterwards while `FilePond.destroy()`
+  needs that same element (and restores it, which is what lets a later `connect()`
+  find the target again). Everything downstream reads the captured reference.
+- **Three JS-owned literals join D18's four.** `The file could not be uploaded.`
+  is Filament's; `The file could not be removed.` and `The file could not be
+  loaded.` are ours, because Filament's `revert`/`remove` never call FilePond's
+  `error` at all and its `load` resolves a failed fetch as an empty blob — a
+  silent success either way. Literals, not translation keys, per the epic's
+  carried decision (4).
+
+Two shipped-type gaps are worked around in the file and will bite anyone
+upgrading FilePond: `initfile` is a real event (`filepond.esm.js:8842`) missing
+from the `FilePondEvent` union, and `maxFileSize`/`minFileSize` are `Type.INT`
+options declared `string` — the controller passes the byte ceiling as a decimal
+string, which FilePond parses back to exactly that integer. The `error` event's
+first argument is `{main, sub}` for a validation failure and `{type, code, body}`
+for a transport one, so the message is composed defensively rather than rendered
+as Filament's `undefined: undefined`.
 
 ### Livewire-specific provider responsibilities are dropped, not ported
 

@@ -23,9 +23,13 @@ lets [`CanAccessProperties`](../../../packages/schemas/src/Components/Concerns/C
 reach the container. The `@SylamentTables` template namespace is live too, as of
 the [`Table`](table.md) and [`TextColumn`](text-column.md) partials — though it
 costs the bundle no code, since TwigBundle maps `packages/tables/templates` by
-convention the moment the directory exists. Asset registration, the three
-`make:` commands and their stubs, translations, and the six Livewire testing
-mixins are unported.
+convention the moment the directory exists. Asset registration is live too, as
+of the selection controller: `prependExtension()` maps `assets/dist` into
+AssetMapper under `@sylament/tables`, and the package joined the pnpm workspace
+to build what goes there — [below](#asset-registration). The four
+interactive-column Alpine components that registration also carries in Filament,
+the three `make:` commands and their stubs, translations, and the six Livewire
+testing mixins are unported.
 The package manifest gained `sylament/forms` with the filter layer: a filter
 builds its control out of real form fields (`Checkbox`, `Select`), so `src/`
 imports `Sylament\Forms\Components\Field` directly and the split-repo dependency
@@ -57,7 +61,7 @@ a [Details](#details) write-up, a **diverges** link to
 | [`ext-mbstring` on the package manifest](../../../packages/tables/composer.json) | — (Sylament-only; Filament's manifest declares no extensions) | done | — | [diverges](#the-manifest-declares-ext-mbstring) |
 | [`sylament/forms` on the package manifest](../../../packages/tables/composer.json) | [`filament/forms` on Filament's](../../../vendor/filament/tables/composer.json) | done | — | [diverges](#the-manifest-declares-sylamentforms) |
 | [`@SylamentTables` view namespace](../../../packages/tables/templates) | [`->hasViews()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | done | — | [diverges](../schemas/schemas-bundle.md#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
-| Asset registration (`Js::make('tables')` + four column `AlpineComponent`s) | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#asset-registration) |
+| [Asset registration](../../../packages/tables/src/SylamentTablesBundle.php) (`Js::make('tables')` + four column `AlpineComponent`s) | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | in progress | — | [detail](#asset-registration) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php), [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | todo | — | [detail](#translations) |
 | `Testable::mixin(...)` — the six tables mixins | [`packageBooted()`](../../../vendor/filament/tables/src/TablesServiceProvider.php) | skipped | — | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
@@ -83,6 +87,12 @@ _"There are no registered paths for namespace `SylamentTables`"_ until
 `SylamentForms` namespace under which a real `Checkbox` renders inside a `Schema`
 (the [`sylament/forms` declaration](#the-manifest-declares-sylamentforms), whose
 test-kernel half is what those two cases can actually assert).
+The **in progress** asset row is covered there too, by the same standard: the
+booted `AssetMapperInterface` resolves both built files —
+`assets/dist/controllers/table_controller.js` and the `assets/dist/utils/live_host.js`
+it imports — to their `@sylament/tables/...` logical paths, which is exactly the
+lookup StimulusBundle's `ControllersMapGenerator` performs and exactly what
+returns null without the `prependExtension()` hook.
 `renderTable()` itself is covered twice: by the Unit
 [`TableExtensionTest`](../../../packages/tables/tests/Unit/Twig/Extension/TableExtensionTest.php)
 against an `ArrayLoader` stub — the function name, the render, and both
@@ -132,16 +142,52 @@ Filament's `packageBooted()` calls `FilamentAsset::register([...],
 'filament/tables')` with `Js::make('tables', __DIR__ . '/../dist/index.js')` plus
 four `AlpineComponent`s for the interactive columns (`columns/checkbox`,
 `columns/select`, `columns/text-input`, `columns/toggle`). Sylament's translation
-is a `prependExtension()` registering `packages/tables/assets/dist` as
-`@sylament/tables` (mirroring
-[`SylamentSupportBundle`](../../../packages/support/src/SylamentSupportBundle.php)'s).
-Nothing is wired: the bundle has no `prependExtension()` override, and
-`packages/tables/assets/` holds only
-[`src/styles/index.css`](../../../packages/tables/assets/src/styles/index.css) —
-no `package.json`, so tables is not in the pnpm workspace either. **Next step:**
-add the `prependExtension()` registration when tables grows built assets, which
-is when the interactive columns (checkbox, select, text input, toggle) are ported
-— the four `AlpineComponent`s exist for exactly those.
+is a [`prependExtension()`](../../../packages/tables/src/SylamentTablesBundle.php)
+registering `packages/tables/assets/dist` as `@sylament/tables` behind
+`isAssetMapperAvailable()` (mirroring
+[`SylamentSchemasBundle`](../../../packages/schemas/src/SylamentSchemasBundle.php)'s
+line for line), and it ships: `packages/tables/assets` is the **seventh** pnpm
+workspace, JS-only in the shape notifications, panels and schemas already have —
+`dist/` holds controllers, while `src/styles/` keeps reaching the browser through
+support's single stylesheet compile, unchanged.
+
+This section previously predicted that the registration would arrive with the
+interactive columns, "which is when the four `AlpineComponent`s are ported."
+**Selection got there first.** What the workspace ships today is one controller,
+[`table_controller.ts`](../../../packages/tables/assets/src/controllers/table_controller.ts)
+(`sylament--tables--table`, `fetch: eager`), the client half of record selection
+— the port of Filament's `filamentTable` Alpine data
+([`resources/js/components/table.js`](../../../vendor/filament/tables/resources/js/components/table.js)),
+minus its filters-dropdown positioning (support's `Dropdown` owns that here) and
+its group-collapse arm (M4 · 6). `BUNDLED_ENTRIES` in the copied
+[`build-js.mjs`](../../../packages/tables/assets/scripts/build-js.mjs) is empty:
+every file builds per-file and unbundled, and the only third-party import in the
+tree — `@symfony/ux-live-component`, reached by
+[`utils/live_host.ts`](../../../packages/tables/assets/src/utils/live_host.ts) —
+stays a bare specifier the consuming app's importmap resolves, exactly as schemas'
+does. That helper is a **deliberate ten-line copy** of
+[schemas'](../../../packages/schemas/assets/src/utils/live_host.ts), the same
+trade `cloak.ts` already carries
+([schemas-bundle.md](../schemas/schemas-bundle.md#the-schemas-package-grew-a-js-workspace-of-its-own)):
+a per-file build ships its specifiers verbatim, so importing across workspaces
+would mean a bare specifier every consumer's importmap has to know.
+
+Three consequences worth stating plainly. The controller writes selection through
+`component.set(model, value, false)` and reads it back through
+`component.getData(model)`, so N checkbox ticks cost **zero** requests and the
+next action carries the whole selection — the reason a JS half exists at all,
+alongside the tri-state header checkbox, whose `indeterminate` is an IDL-only
+property no markup can carry. It re-asserts that state onto the DOM on `connect()`
+and on the host's `render:finished` hook, because the store — not the
+server-rendered `checked` attribute — is what wins after the first morph. And,
+like [actions' page-wide `dispatch` controller](../actions/actions-bundle.md#the-dispatch-controller-is-page-wide-and-filament-has-no-counterpart-for-it),
+a consuming app that leaves `@sylament/tables` out of its `assets/controllers.json`
+loses every one of those behaviours with no error anywhere: the checkboxes render
+and do nothing. Filament needs Alpine the same way.
+
+**Next step:** the four interactive columns (checkbox, select, text input, toggle)
+land as controllers in this same workspace — the `AlpineComponent`s exist for
+exactly those — and the column manager's own component follows with M4 · 5.
 
 ### `Make*` commands + stub publishing
 

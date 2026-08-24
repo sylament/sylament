@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests;
 
+use FilesystemIterator;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
+use SplFileInfo;
 use Sylament\Forms\Components\Field;
 use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
@@ -15,6 +19,9 @@ use Symfony\Component\DomCrawler\Crawler;
 
 pest()
     ->extend(TestCase::class)
+    ->afterEach(function (): void {
+        removeDirectory(uploadStorageDir());
+    })
     ->in('Integration');
 
 pest()
@@ -72,4 +79,34 @@ function wireField(Field $field): Field
     Schema::make(new FieldRenderHost())->components([$field])->getComponents();
 
     return $field;
+}
+
+/**
+ * Where a fixture storage keeps its bytes. The Kernel configures both `local` storages under its
+ * cache directory, and `getProjectDir()` resolves that to `packages/forms` — so this is the same
+ * path without booting a kernel, which is what lets a test read what flysystem wrote and what the
+ * `afterEach` above takes back. Nothing rolls a test's disk writes back on its own.
+ */
+function uploadStorageDir(string $storage = ''): string
+{
+    return mb_rtrim(dirname(__DIR__) . '/var/cache/test/storage/' . $storage, '/');
+}
+
+function removeDirectory(string $directory): void
+{
+    if (! is_dir($directory)) {
+        return;
+    }
+
+    $entries = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::CHILD_FIRST,
+    );
+
+    /** @var SplFileInfo $entry */
+    foreach ($entries as $entry) {
+        $entry->isDir() ? rmdir($entry->getPathname()) : unlink($entry->getPathname());
+    }
+
+    rmdir($directory);
 }

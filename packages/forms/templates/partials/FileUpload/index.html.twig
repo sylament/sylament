@@ -1,0 +1,62 @@
+{% set controller = 'sylament--forms--file-upload' %}
+{% set linkColorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\LinkComponent', 'primary') %}
+
+{#
+    The controller's value map, annotated here because a comment cannot live inside attrs():
+      state            fileKey → token|path (the raw map, an object so an empty one is `{}`)
+      uploadedFiles    fileKey → {name, size, type, url?, openableUrl?, downloadableUrl?} | null
+      maxFileSize      bytes — min(maxSize, the PHP ceiling)
+      minSize          "{n}KB" | null (FilePond's own unit spelling)
+#}
+<twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
+    <div {{ attrs({
+        class: ['sy', 'sy-fo-file-upload', {'sy-fo-file-upload-avatar': component.isAvatar}, component.getAlignmentClass],
+        id: component.getId,
+        role: 'group',
+        'aria-labelledby': component.getId ~ '-label',
+    }, stimulus_controller(controller, {
+        key: component.getKey,
+        statePath: component.getStatePath,
+        state: stateMap,
+        uploadedFiles: uploadedFiles,
+        multiple: component.isMultiple,
+        disabled: component.isDisabled,
+        deletable: component.isDeletable,
+        reorderable: component.isReorderable,
+        pasteable: component.isPasteable,
+        previewable: component.isPreviewable,
+        downloadable: component.isDownloadable,
+        openable: component.isOpenable,
+        avatar: component.isAvatar,
+        appendFiles: component.shouldAppendFiles,
+        acceptedFileTypes: component.getAcceptedFileTypes,
+        maxFileSize: maxFileSize,
+        minSize: minSize,
+        maxFiles: component.getMaxFiles,
+        maxFilesMessage: maxFilesMessage,
+        maxParallelUploads: component.getMaxParallelUploads,
+        mimeTypeMap: component.getMimeTypeMap,
+        placeholder: component.getPlaceholder,
+        imagePreviewHeight: component.getImagePreviewHeight,
+        itemPanelAspectRatio: component.getItemPanelAspectRatio,
+        panelAspectRatio: component.getPanelAspectRatio,
+        panelLayout: component.getPanelLayout,
+        loadingIndicatorPosition: component.getLoadingIndicatorPosition,
+        removeUploadedFileButtonPosition: component.getRemoveUploadedFileButtonPosition,
+        uploadButtonPosition: component.getUploadButtonPosition,
+        uploadProgressIndicatorPosition: component.getUploadProgressIndicatorPosition,
+        downloadActionLabel: 'Download',
+        openActionLabel: 'Open in new tab',
+    })) }}>
+        <div {{ attrs({class: ['sy-fo-file-upload-input-ctn', linkColorAttrs.class], style: linkColorAttrs.style, 'data-live-ignore': true}, stimulus_target(controller, 'pond')) }}>
+            <input {{ attrs({
+                type: 'file',
+                multiple: component.isMultiple,
+                disabled: component.isDisabled,
+                'aria-labelledby': component.getId ~ '-label',
+            }, component.getExtraInputAttributes, stimulus_target(controller, 'input')) }}>
+        </div>
+
+        <div class="sy-fo-file-upload-error-message" role="alert" hidden {{ stimulus_target(controller, 'error') }}></div>
+    </div>
+</twig:SylamentForms:FieldWrapper>

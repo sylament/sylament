@@ -24,6 +24,7 @@
         "symfony/service-contracts": "^3.6",
         "symfony/string": "^8.1",
         "symfony/translation-contracts": "^3.6",
+        "symfony/uid": "^8.1",
         "symfony/ux-live-component": "^3.1",
         "symfony/validator": "^8.1"
     },

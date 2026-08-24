@@ -288,8 +288,8 @@ programmer error, and the seam is the one place a reader can be shown it;
 without the guard the value reaches `dispatchBrowserEvent()` and dies far
 downstream as a broken response header. Note what the guard does **not**
 catch: a closure and a property-less object both encode to `{}` quite happily,
-so they arrive as an empty result rather than a throw. Cost, paid on every call: a search
-round-trip through this seam re-renders the host where Filament's method
+so they arrive as an empty result rather than a throw. Cost, paid on every
+call: a search round-trip through this seam re-renders the host where Filament's method
 would not (bounded by the caller's own debounce, and the same cost every
 `live()` field already pays per keystroke). A second, Sylament-only cost sits
 beside it: the browser-supplied `$arguments` are checked against the target
@@ -334,9 +334,14 @@ then fenced:
   key and a key naming a host-contract member all answer `null`), and only a
   component implementing
   [`Components\Contracts\AcceptsUploadedFiles`](../../../packages/schemas/src/Components/Contracts/AcceptsUploadedFiles.php)
-  is handed the file. An implementor may still refuse — `null` for "not
-  mounted, disabled", `['ok' => false, 'message' => …]` for a constraint that
-  turned the file away without writing anything.
+  is handed the file. That contract is Sylament-only — it has no Filament
+  source, because Filament needs no gate where Livewire has already opened the
+  door for every component — and it is a *component* contract, so it is filed
+  under `Components/Contracts/`. An implementor may still refuse: `null` for
+  "not mounted, disabled", `['ok' => false, 'message' => …]` for a constraint
+  that turned the file away without writing anything, and the accepted shape
+  `['ok' => true, 'fileKey' => …, …]` otherwise. Every arm must be
+  JSON-serialisable, which the dispatcher's guard enforces.
 - **The file key is shape-checked before it names anything.** `$fileKey` must
   match `^[A-Za-z0-9-]{1,64}$`, checked *before* it is concatenated into a
   multipart part name and before an implementor may use it as a state key. A

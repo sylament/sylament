@@ -12291,6 +12291,7 @@ FilePond.registerPlugin(
 var UPLOAD_ERROR = "The file could not be uploaded.";
 var REMOVE_ERROR = "The file could not be removed.";
 var LOAD_ERROR = "The file could not be loaded.";
+var REORDER_ERROR = "The files could not be reordered.";
 var MAX_FILES_WARNING = "Max files";
 var TEMPORARY_TOKEN_PREFIX = "sylament-file:";
 var AVATAR_PANEL_LAYOUT = "compact circle";
@@ -12348,13 +12349,16 @@ var file_upload_controller_default = class extends Controller {
   connect() {
     const generation = ++this.#generation;
     this.#observeVisibility();
-    void resolveLiveHost(this.element).then((host) => {
-      if (generation !== this.#generation) {
-        return;
-      }
-      this.#host = host;
-      this.#init();
-    });
+    resolveLiveHost(this.element).then(
+      (host) => {
+        if (generation !== this.#generation) {
+          return;
+        }
+        this.#host = host;
+        this.#init();
+      },
+      () => this.#showError(UPLOAD_ERROR)
+    );
   }
   disconnect() {
     this.#generation++;
@@ -12417,14 +12421,17 @@ var file_upload_controller_default = class extends Controller {
     if (this.#pond !== null || this.#initializing || !this.hasInputTarget || this.#isHidden()) {
       return;
     }
-    this.#initializing = true;
-    const input = this.inputTarget;
-    const pond = FilePond.create(input, this.#options());
-    this.#input = input;
-    this.#pond = pond;
-    this.#lastState = JSON.stringify(this.stateValue);
-    this.#registerEvents(pond);
-    this.#initializing = false;
+    try {
+      this.#initializing = true;
+      const input = this.inputTarget;
+      const pond = FilePond.create(input, this.#options());
+      this.#input = input;
+      this.#pond = pond;
+      this.#lastState = JSON.stringify(this.stateValue);
+      this.#registerEvents(pond);
+    } finally {
+      this.#initializing = false;
+    }
   }
   #options() {
     return {
@@ -12439,7 +12446,7 @@ var file_upload_controller_default = class extends Controller {
       itemInsertLocation: this.appendFilesValue ? "after" : "before",
       maxFiles: this.hasMaxFilesValue ? this.maxFilesValue : null,
       // The size options are Type.INT and parse a numeric string; the shipped types say `string`.
-      maxFileSize: String(this.maxFileSizeValue),
+      maxFileSize: this.hasMaxFileSizeValue ? String(this.maxFileSizeValue) : null,
       styleButtonProcessItemPosition: this.uploadButtonPositionValue,
       styleButtonRemoveItemPosition: this.removeUploadedFileButtonPositionValue,
       styleItemPanelAspectRatio: this.hasItemPanelAspectRatioValue ? this.itemPanelAspectRatioValue : null,
@@ -12512,7 +12519,7 @@ var file_upload_controller_default = class extends Controller {
   }
   #detectType(file, detectedType) {
     const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-    const mimeType = this.mimeTypeMapValue[extension] ?? detectedType;
+    const mimeType = this.mimeTypeMapValue[extension] || detectedType;
     return mimeType === "" ? Promise.reject(new Error(`The type of ${file.name} could not be detected.`)) : Promise.resolve(mimeType);
   }
   /** Filament resolves a failed fetch as an empty blob; a stored file that will not load is an error here. */
@@ -12549,7 +12556,9 @@ var file_upload_controller_default = class extends Controller {
       (result) => {
         this.#activeUploads--;
         if (this.#cancelled.delete(fileKey)) {
-          void callSchemaComponentMethod(host, this.keyValue, "removeUploadedFile", { fileKey });
+          callSchemaComponentMethod(host, this.keyValue, "removeUploadedFile", {
+            fileKey
+          }).catch(() => this.#showError(REMOVE_ERROR));
           abort();
           return;
         }
@@ -12562,6 +12571,10 @@ var file_upload_controller_default = class extends Controller {
       },
       () => {
         this.#activeUploads--;
+        if (this.#cancelled.delete(fileKey)) {
+          abort();
+          return;
+        }
         error(UPLOAD_ERROR);
       }
     );
@@ -12629,8 +12642,11 @@ var file_upload_controller_default = class extends Controller {
         fileKeys.push(fileKey);
       }
     }
-    void callSchemaComponentMethod(host, this.keyValue, "reorderUploadedFiles", {
+    callSchemaComponentMethod(host, this.keyValue, "reorderUploadedFiles", {
       fileKeys: this.appendFilesValue ? fileKeys : fileKeys.reverse()
+    }).catch(() => {
+      this.#lastState = null;
+      this.#showError(REORDER_ERROR);
     });
   }
   #onInitFile(file) {

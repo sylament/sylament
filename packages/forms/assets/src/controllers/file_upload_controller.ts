@@ -19,6 +19,7 @@ FilePond.registerPlugin(
 const UPLOAD_ERROR = "The file could not be uploaded.";
 const REMOVE_ERROR = "The file could not be removed.";
 const LOAD_ERROR = "The file could not be loaded.";
+const REORDER_ERROR = "The files could not be reordered.";
 const MAX_FILES_WARNING = "Max files";
 const TEMPORARY_TOKEN_PREFIX = "sylament-file:";
 const AVATAR_PANEL_LAYOUT = "compact circle";
@@ -108,6 +109,7 @@ export default class extends Controller<HTMLElement> {
   declare readonly appendFilesValue: boolean;
   declare readonly hasAcceptedFileTypesValue: boolean;
   declare readonly acceptedFileTypesValue: string[];
+  declare readonly hasMaxFileSizeValue: boolean;
   declare readonly maxFileSizeValue: number;
   declare readonly hasMinSizeValue: boolean;
   declare readonly minSizeValue: string;
@@ -153,14 +155,17 @@ export default class extends Controller<HTMLElement> {
 
     this.#observeVisibility();
 
-    void resolveLiveHost(this.element).then((host) => {
-      if (generation !== this.#generation) {
-        return;
-      }
+    resolveLiveHost(this.element).then(
+      (host) => {
+        if (generation !== this.#generation) {
+          return;
+        }
 
-      this.#host = host;
-      this.#init();
-    });
+        this.#host = host;
+        this.#init();
+      },
+      () => this.#showError(UPLOAD_ERROR),
+    );
   }
 
   disconnect(): void {
@@ -240,16 +245,19 @@ export default class extends Controller<HTMLElement> {
       return;
     }
 
-    this.#initializing = true;
+    try {
+      this.#initializing = true;
 
-    const input = this.inputTarget;
-    const pond = FilePond.create(input, this.#options());
+      const input = this.inputTarget;
+      const pond = FilePond.create(input, this.#options());
 
-    this.#input = input;
-    this.#pond = pond;
-    this.#lastState = JSON.stringify(this.stateValue);
-    this.#registerEvents(pond);
-    this.#initializing = false;
+      this.#input = input;
+      this.#pond = pond;
+      this.#lastState = JSON.stringify(this.stateValue);
+      this.#registerEvents(pond);
+    } finally {
+      this.#initializing = false;
+    }
   }
 
   #options(): FilePond.FilePondOptions {
@@ -265,7 +273,7 @@ export default class extends Controller<HTMLElement> {
       itemInsertLocation: this.appendFilesValue ? "after" : "before",
       maxFiles: this.hasMaxFilesValue ? this.maxFilesValue : null,
       // The size options are Type.INT and parse a numeric string; the shipped types say `string`.
-      maxFileSize: String(this.maxFileSizeValue),
+      maxFileSize: this.hasMaxFileSizeValue ? String(this.maxFileSizeValue) : null,
       styleButtonProcessItemPosition: this.uploadButtonPositionValue,
       styleButtonRemoveItemPosition: this.removeUploadedFileButtonPositionValue,
       styleItemPanelAspectRatio: this.hasItemPanelAspectRatioValue
@@ -371,7 +379,7 @@ export default class extends Controller<HTMLElement> {
 
   #detectType(file: File, detectedType: string): Promise<string> {
     const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
-    const mimeType = this.mimeTypeMapValue[extension] ?? detectedType;
+    const mimeType = this.mimeTypeMapValue[extension] || detectedType;
 
     return mimeType === ""
       ? Promise.reject(new Error(`The type of ${file.name} could not be detected.`))
@@ -427,7 +435,9 @@ export default class extends Controller<HTMLElement> {
         this.#activeUploads--;
 
         if (this.#cancelled.delete(fileKey)) {
-          void callSchemaComponentMethod(host, this.keyValue, "removeUploadedFile", { fileKey });
+          callSchemaComponentMethod(host, this.keyValue, "removeUploadedFile", {
+            fileKey,
+          }).catch(() => this.#showError(REMOVE_ERROR));
           abort();
 
           return;
@@ -443,6 +453,13 @@ export default class extends Controller<HTMLElement> {
       },
       () => {
         this.#activeUploads--;
+
+        if (this.#cancelled.delete(fileKey)) {
+          abort();
+
+          return;
+        }
+
         error(UPLOAD_ERROR);
       },
     );
@@ -536,8 +553,11 @@ export default class extends Controller<HTMLElement> {
       }
     }
 
-    void callSchemaComponentMethod(host, this.keyValue, "reorderUploadedFiles", {
+    callSchemaComponentMethod(host, this.keyValue, "reorderUploadedFiles", {
       fileKeys: this.appendFilesValue ? fileKeys : fileKeys.reverse(),
+    }).catch(() => {
+      this.#lastState = null;
+      this.#showError(REORDER_ERROR);
     });
   }
 

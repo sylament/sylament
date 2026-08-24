@@ -12,7 +12,9 @@ through live-component hydration. The store also owns the 24-hour sweep that
 keeps abandoned uploads from accumulating.
 
 The field that mints and redeems these tokens is
-[`FileUpload`](file-upload.md).
+[`FileUpload`](file-upload.md); the constraint filed beside them,
+[`MinFileSize`](can-be-validated.md), is here because Symfony's `File` caps a
+size and never floors it.
 
 **Status:** done — see the [status vocabulary](../README.md#statuses).
 

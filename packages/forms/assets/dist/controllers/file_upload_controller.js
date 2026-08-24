@@ -5296,23 +5296,23 @@ var require_filepond = __commonJS({
               dispatch2("REVERT_ITEM_PROCESSING", { query: item2 });
               return;
             }
-            var handleRevert = function handleRevert2(shouldRevert) {
+            var handleRevert2 = function handleRevert3(shouldRevert) {
               if (!shouldRevert) return;
               dispatch2("REVERT_ITEM_PROCESSING", { query: item2 });
             };
             var fn2 = query("GET_BEFORE_REMOVE_FILE");
             if (!fn2) {
-              return handleRevert(true);
+              return handleRevert2(true);
             }
             var requestRemoveResult = fn2(createItemAPI(item2));
             if (requestRemoveResult == null) {
-              return handleRevert(true);
+              return handleRevert2(true);
             }
             if (typeof requestRemoveResult === "boolean") {
-              return handleRevert(requestRemoveResult);
+              return handleRevert2(requestRemoveResult);
             }
             if (typeof requestRemoveResult.then === "function") {
-              requestRemoveResult.then(handleRevert);
+              requestRemoveResult.then(handleRevert2);
             }
           }),
           REVERT_ITEM_PROCESSING: getItemByQueryFromState(state2, function(item2) {
@@ -9376,6 +9376,521 @@ var require_filepond_plugin_file_validate_type = __commonJS({
   }
 });
 
+// ../../../node_modules/.pnpm/filepond-plugin-image-crop@2.0.6_filepond@4.32.12/node_modules/filepond-plugin-image-crop/dist/filepond-plugin-image-crop.js
+var require_filepond_plugin_image_crop = __commonJS({
+  "../../../node_modules/.pnpm/filepond-plugin-image-crop@2.0.6_filepond@4.32.12/node_modules/filepond-plugin-image-crop/dist/filepond-plugin-image-crop.js"(exports, module) {
+    (function(global, factory) {
+      typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = global || self, global.FilePondPluginImageCrop = factory());
+    })(exports, function() {
+      "use strict";
+      var isImage = function isImage2(file) {
+        return /^image/.test(file.type);
+      };
+      var plugin = function plugin2(_ref) {
+        var addFilter = _ref.addFilter, utils = _ref.utils;
+        var Type = utils.Type, isFile = utils.isFile, getNumericAspectRatioFromString = utils.getNumericAspectRatioFromString;
+        var allowCrop = function allowCrop2(item, query) {
+          return !(!isImage(item.file) || !query("GET_ALLOW_IMAGE_CROP"));
+        };
+        var isObject = function isObject2(value) {
+          return typeof value === "object";
+        };
+        var isNumber = function isNumber2(value) {
+          return typeof value === "number";
+        };
+        var updateCrop = function updateCrop2(item, obj) {
+          return item.setMetadata(
+            "crop",
+            Object.assign({}, item.getMetadata("crop"), obj)
+          );
+        };
+        addFilter("DID_CREATE_ITEM", function(item, _ref2) {
+          var query = _ref2.query;
+          item.extend("setImageCrop", function(crop) {
+            if (!allowCrop(item, query) || !isObject(center)) return;
+            item.setMetadata("crop", crop);
+            return crop;
+          });
+          item.extend("setImageCropCenter", function(center2) {
+            if (!allowCrop(item, query) || !isObject(center2)) return;
+            return updateCrop(item, { center: center2 });
+          });
+          item.extend("setImageCropZoom", function(zoom) {
+            if (!allowCrop(item, query) || !isNumber(zoom)) return;
+            return updateCrop(item, { zoom: Math.max(1, zoom) });
+          });
+          item.extend("setImageCropRotation", function(rotation) {
+            if (!allowCrop(item, query) || !isNumber(rotation)) return;
+            return updateCrop(item, { rotation });
+          });
+          item.extend("setImageCropFlip", function(flip) {
+            if (!allowCrop(item, query) || !isObject(flip)) return;
+            return updateCrop(item, { flip });
+          });
+          item.extend("setImageCropAspectRatio", function(newAspectRatio) {
+            if (!allowCrop(item, query) || typeof newAspectRatio === "undefined")
+              return;
+            var currentCrop = item.getMetadata("crop");
+            var aspectRatio = getNumericAspectRatioFromString(newAspectRatio);
+            var newCrop = {
+              center: {
+                x: 0.5,
+                y: 0.5
+              },
+              flip: currentCrop ? Object.assign({}, currentCrop.flip) : {
+                horizontal: false,
+                vertical: false
+              },
+              rotation: 0,
+              zoom: 1,
+              aspectRatio
+            };
+            item.setMetadata("crop", newCrop);
+            return newCrop;
+          });
+        });
+        addFilter("DID_LOAD_ITEM", function(item, _ref3) {
+          var query = _ref3.query;
+          return new Promise(function(resolve, reject) {
+            var file = item.file;
+            if (!isFile(file) || !isImage(file) || !query("GET_ALLOW_IMAGE_CROP")) {
+              return resolve(item);
+            }
+            var crop = item.getMetadata("crop");
+            if (crop) {
+              return resolve(item);
+            }
+            var humanAspectRatio = query("GET_IMAGE_CROP_ASPECT_RATIO");
+            item.setMetadata("crop", {
+              center: {
+                x: 0.5,
+                y: 0.5
+              },
+              flip: {
+                horizontal: false,
+                vertical: false
+              },
+              rotation: 0,
+              zoom: 1,
+              aspectRatio: humanAspectRatio ? getNumericAspectRatioFromString(humanAspectRatio) : null
+            });
+            resolve(item);
+          });
+        });
+        return {
+          options: {
+            // enable or disable image cropping
+            allowImageCrop: [true, Type.BOOLEAN],
+            // the aspect ratio of the crop ('1:1', '16:9', etc)
+            imageCropAspectRatio: [null, Type.STRING]
+          }
+        };
+      };
+      var isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
+      if (isBrowser) {
+        document.dispatchEvent(
+          new CustomEvent("FilePond:pluginloaded", { detail: plugin })
+        );
+      }
+      return plugin;
+    });
+  }
+});
+
+// ../../../node_modules/.pnpm/filepond-plugin-image-edit@1.6.3_filepond@4.32.12/node_modules/filepond-plugin-image-edit/dist/filepond-plugin-image-edit.js
+var require_filepond_plugin_image_edit = __commonJS({
+  "../../../node_modules/.pnpm/filepond-plugin-image-edit@1.6.3_filepond@4.32.12/node_modules/filepond-plugin-image-edit/dist/filepond-plugin-image-edit.js"(exports, module) {
+    (function(global, factory) {
+      typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = global || self, global.FilePondPluginImageEdit = factory());
+    })(exports, function() {
+      "use strict";
+      var isPreviewableImage = function isPreviewableImage2(file) {
+        return /^image/.test(file.type);
+      };
+      var plugin = function plugin2(_) {
+        var addFilter = _.addFilter, utils = _.utils, views = _.views;
+        var Type = utils.Type, createRoute = utils.createRoute, _utils$createItemAPI = utils.createItemAPI, createItemAPI = _utils$createItemAPI === void 0 ? function(item) {
+          return item;
+        } : _utils$createItemAPI;
+        var fileActionButton = views.fileActionButton;
+        addFilter("SHOULD_REMOVE_ON_REVERT", function(shouldRemove, _ref) {
+          var item = _ref.item, query = _ref.query;
+          return new Promise(function(resolve) {
+            var file = item.file;
+            var canEdit = query("GET_ALLOW_IMAGE_EDIT") && query("GET_IMAGE_EDIT_ALLOW_EDIT") && isPreviewableImage(file);
+            resolve(!canEdit);
+          });
+        });
+        addFilter("DID_LOAD_ITEM", function(item, _ref2) {
+          var query = _ref2.query, dispatch = _ref2.dispatch;
+          return new Promise(function(resolve, reject) {
+            if (item.origin > 1) {
+              resolve(item);
+              return;
+            }
+            var file = item.file;
+            if (!query("GET_ALLOW_IMAGE_EDIT") || !query("GET_IMAGE_EDIT_INSTANT_EDIT")) {
+              resolve(item);
+              return;
+            }
+            if (!isPreviewableImage(file)) {
+              resolve(item);
+              return;
+            }
+            var createEditorResponseHandler = function createEditorResponseHandler2(item2, resolve2, reject2) {
+              return function(userDidConfirm) {
+                editRequestQueue.shift();
+                if (userDidConfirm) {
+                  resolve2(item2);
+                } else {
+                  reject2(item2);
+                }
+                dispatch("KICK");
+                requestEdit();
+              };
+            };
+            var requestEdit = function requestEdit2() {
+              if (!editRequestQueue.length) return;
+              var _editRequestQueue$ = editRequestQueue[0], item2 = _editRequestQueue$.item, resolve2 = _editRequestQueue$.resolve, reject2 = _editRequestQueue$.reject;
+              dispatch("EDIT_ITEM", {
+                id: item2.id,
+                handleEditorResponse: createEditorResponseHandler(
+                  item2,
+                  resolve2,
+                  reject2
+                )
+              });
+            };
+            queueEditRequest({ item, resolve, reject });
+            if (editRequestQueue.length === 1) {
+              requestEdit();
+            }
+          });
+        });
+        addFilter("DID_CREATE_ITEM", function(item, _ref3) {
+          var query = _ref3.query, dispatch = _ref3.dispatch;
+          item.extend("edit", function() {
+            dispatch("EDIT_ITEM", { id: item.id });
+          });
+        });
+        var editRequestQueue = [];
+        var queueEditRequest = function queueEditRequest2(editRequest) {
+          editRequestQueue.push(editRequest);
+          return editRequest;
+        };
+        addFilter("CREATE_VIEW", function(viewAPI) {
+          var is = viewAPI.is, view = viewAPI.view, query = viewAPI.query;
+          if (!query("GET_ALLOW_IMAGE_EDIT")) return;
+          var canShowImagePreview = query("GET_ALLOW_IMAGE_PREVIEW");
+          var shouldExtendView = is("file-info") && !canShowImagePreview || is("file") && canShowImagePreview;
+          if (!shouldExtendView) return;
+          var editor = query("GET_IMAGE_EDIT_EDITOR");
+          if (!editor) return;
+          if (!editor.filepondCallbackBridge) {
+            editor.outputData = true;
+            editor.outputFile = false;
+            editor.filepondCallbackBridge = {
+              onconfirm: editor.onconfirm || function() {
+              },
+              oncancel: editor.oncancel || function() {
+              }
+            };
+          }
+          var openEditor = function openEditor2(_ref4) {
+            var root = _ref4.root, props = _ref4.props, action = _ref4.action;
+            var id = props.id;
+            var handleEditorResponse = action.handleEditorResponse;
+            editor.cropAspectRatio = root.query("GET_IMAGE_CROP_ASPECT_RATIO") || editor.cropAspectRatio;
+            editor.outputCanvasBackgroundColor = root.query("GET_IMAGE_TRANSFORM_CANVAS_BACKGROUND_COLOR") || editor.outputCanvasBackgroundColor;
+            var item = root.query("GET_ITEM", id);
+            if (!item) return;
+            var file = item.file;
+            var crop = item.getMetadata("crop");
+            var cropDefault = {
+              center: {
+                x: 0.5,
+                y: 0.5
+              },
+              flip: {
+                horizontal: false,
+                vertical: false
+              },
+              zoom: 1,
+              rotation: 0,
+              aspectRatio: null
+            };
+            var resize = item.getMetadata("resize");
+            var filter = item.getMetadata("filter") || null;
+            var filters = item.getMetadata("filters") || null;
+            var colors = item.getMetadata("colors") || null;
+            var markup = item.getMetadata("markup") || null;
+            var imageParameters = {
+              crop: crop || cropDefault,
+              size: resize ? {
+                upscale: resize.upscale,
+                mode: resize.mode,
+                width: resize.size.width,
+                height: resize.size.height
+              } : null,
+              filter: filters ? filters.id || filters.matrix : root.query("GET_ALLOW_IMAGE_FILTER") && root.query("GET_IMAGE_FILTER_COLOR_MATRIX") && !colors ? filter : null,
+              color: colors,
+              markup
+            };
+            editor.onconfirm = function(_ref5) {
+              var data2 = _ref5.data;
+              var crop2 = data2.crop, size = data2.size, filter2 = data2.filter, color = data2.color, colorMatrix = data2.colorMatrix, markup2 = data2.markup;
+              var metadata = {};
+              if (crop2) {
+                metadata.crop = crop2;
+              }
+              if (size) {
+                var initialSize = (item.getMetadata("resize") || {}).size;
+                var targetSize = {
+                  width: size.width,
+                  height: size.height
+                };
+                if (!(targetSize.width && targetSize.height) && initialSize) {
+                  targetSize.width = initialSize.width;
+                  targetSize.height = initialSize.height;
+                }
+                if (targetSize.width || targetSize.height) {
+                  metadata.resize = {
+                    upscale: size.upscale,
+                    mode: size.mode,
+                    size: targetSize
+                  };
+                }
+              }
+              if (markup2) {
+                metadata.markup = markup2;
+              }
+              metadata.colors = color;
+              metadata.filters = filter2;
+              metadata.filter = colorMatrix;
+              item.setMetadata(metadata);
+              editor.filepondCallbackBridge.onconfirm(data2, createItemAPI(item));
+              if (!handleEditorResponse) return;
+              editor.onclose = function() {
+                handleEditorResponse(true);
+                editor.onclose = null;
+              };
+            };
+            editor.oncancel = function() {
+              editor.filepondCallbackBridge.oncancel(createItemAPI(item));
+              if (!handleEditorResponse) return;
+              editor.onclose = function() {
+                handleEditorResponse(false);
+                editor.onclose = null;
+              };
+            };
+            editor.open(file, imageParameters);
+          };
+          var didLoadItem = function didLoadItem2(_ref6) {
+            var root = _ref6.root, props = _ref6.props;
+            if (!query("GET_IMAGE_EDIT_ALLOW_EDIT")) return;
+            var id = props.id;
+            var item = query("GET_ITEM", id);
+            if (!item) return;
+            var file = item.file;
+            if (!isPreviewableImage(file)) return;
+            root.ref.handleEdit = function(e) {
+              e.stopPropagation();
+              root.dispatch("EDIT_ITEM", { id });
+            };
+            if (canShowImagePreview) {
+              var buttonView = view.createChildView(fileActionButton, {
+                label: "edit",
+                icon: query("GET_IMAGE_EDIT_ICON_EDIT"),
+                opacity: 0
+              });
+              buttonView.element.classList.add("filepond--action-edit-item");
+              buttonView.element.dataset.align = query(
+                "GET_STYLE_IMAGE_EDIT_BUTTON_EDIT_ITEM_POSITION"
+              );
+              buttonView.on("click", root.ref.handleEdit);
+              root.ref.buttonEditItem = view.appendChildView(buttonView);
+            } else {
+              var filenameElement = view.element.querySelector(
+                ".filepond--file-info-main"
+              );
+              var editButton = document.createElement("button");
+              editButton.className = "filepond--action-edit-item-alt";
+              editButton.innerHTML = query("GET_IMAGE_EDIT_ICON_EDIT") + "<span>edit</span>";
+              editButton.addEventListener("click", root.ref.handleEdit);
+              filenameElement.appendChild(editButton);
+              root.ref.editButton = editButton;
+            }
+          };
+          view.registerDestroyer(function(_ref7) {
+            var root = _ref7.root;
+            if (root.ref.buttonEditItem) {
+              root.ref.buttonEditItem.off("click", root.ref.handleEdit);
+            }
+            if (root.ref.editButton) {
+              root.ref.editButton.removeEventListener("click", root.ref.handleEdit);
+            }
+          });
+          var routes = {
+            EDIT_ITEM: openEditor,
+            DID_LOAD_ITEM: didLoadItem
+          };
+          if (canShowImagePreview) {
+            var didPreviewUpdate = function didPreviewUpdate2(_ref8) {
+              var root = _ref8.root;
+              if (!root.ref.buttonEditItem) return;
+              root.ref.buttonEditItem.opacity = 1;
+            };
+            routes.DID_IMAGE_PREVIEW_SHOW = didPreviewUpdate;
+          } else {
+          }
+          view.registerWriter(createRoute(routes));
+        });
+        return {
+          options: {
+            // enable or disable image editing
+            allowImageEdit: [true, Type.BOOLEAN],
+            // location of processing button
+            styleImageEditButtonEditItemPosition: ["bottom center", Type.STRING],
+            // open editor when image is dropped
+            imageEditInstantEdit: [false, Type.BOOLEAN],
+            // allow editing
+            imageEditAllowEdit: [true, Type.BOOLEAN],
+            // the icon to use for the edit button
+            imageEditIconEdit: [
+              '<svg width="26" height="26" viewBox="0 0 26 26" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M8.5 17h1.586l7-7L15.5 8.414l-7 7V17zm-1.707-2.707l8-8a1 1 0 0 1 1.414 0l3 3a1 1 0 0 1 0 1.414l-8 8A1 1 0 0 1 10.5 19h-3a1 1 0 0 1-1-1v-3a1 1 0 0 1 .293-.707z" fill="currentColor" fill-rule="nonzero"/></svg>',
+              Type.STRING
+            ],
+            // editor object
+            imageEditEditor: [null, Type.OBJECT]
+          }
+        };
+      };
+      var isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
+      if (isBrowser) {
+        document.dispatchEvent(
+          new CustomEvent("FilePond:pluginloaded", { detail: plugin })
+        );
+      }
+      return plugin;
+    });
+  }
+});
+
+// ../../../node_modules/.pnpm/filepond-plugin-image-exif-orientation@1.0.11_filepond@4.32.12/node_modules/filepond-plugin-image-exif-orientation/dist/filepond-plugin-image-exif-orientation.js
+var require_filepond_plugin_image_exif_orientation = __commonJS({
+  "../../../node_modules/.pnpm/filepond-plugin-image-exif-orientation@1.0.11_filepond@4.32.12/node_modules/filepond-plugin-image-exif-orientation/dist/filepond-plugin-image-exif-orientation.js"(exports, module) {
+    (function(global, factory) {
+      typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = global || self, global.FilePondPluginImageExifOrientation = factory());
+    })(exports, function() {
+      "use strict";
+      var isJPEG = function isJPEG2(file) {
+        return /^image\/jpeg/.test(file.type);
+      };
+      var Marker = {
+        JPEG: 65496,
+        APP1: 65505,
+        EXIF: 1165519206,
+        TIFF: 18761,
+        Orientation: 274,
+        Unknown: 65280
+      };
+      var getUint16 = function getUint162(view, offset) {
+        var little = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : false;
+        return view.getUint16(offset, little);
+      };
+      var getUint32 = function getUint322(view, offset) {
+        var little = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : false;
+        return view.getUint32(offset, little);
+      };
+      var getImageOrientation = function getImageOrientation2(file) {
+        return new Promise(function(resolve, reject) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            var view = new DataView(e.target.result);
+            if (getUint16(view, 0) !== Marker.JPEG) {
+              resolve(-1);
+              return;
+            }
+            var length = view.byteLength;
+            var offset = 2;
+            while (offset < length) {
+              var marker = getUint16(view, offset);
+              offset += 2;
+              if (marker === Marker.APP1) {
+                if (getUint32(view, offset += 2) !== Marker.EXIF) {
+                  break;
+                }
+                var little = getUint16(view, offset += 6) === Marker.TIFF;
+                offset += getUint32(view, offset + 4, little);
+                var tags = getUint16(view, offset, little);
+                offset += 2;
+                for (var i = 0; i < tags; i++) {
+                  if (getUint16(view, offset + i * 12, little) === Marker.Orientation) {
+                    resolve(getUint16(view, offset + i * 12 + 8, little));
+                    return;
+                  }
+                }
+              } else if ((marker & Marker.Unknown) !== Marker.Unknown) {
+                break;
+              } else {
+                offset += getUint16(view, offset);
+              }
+            }
+            resolve(-1);
+          };
+          reader.readAsArrayBuffer(file.slice(0, 64 * 1024));
+        });
+      };
+      var IS_BROWSER = (function() {
+        return typeof window !== "undefined" && typeof window.document !== "undefined";
+      })();
+      var isBrowser = function isBrowser2() {
+        return IS_BROWSER;
+      };
+      var testSrc = "data:image/jpg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/4QA6RXhpZgAATU0AKgAAAAgAAwESAAMAAAABAAYAAAEoAAMAAAABAAIAAAITAAMAAAABAAEAAAAAAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////wAALCAABAAIBASIA/8QAJgABAAAAAAAAAAAAAAAAAAAAAxABAAAAAAAAAAAAAAAAAAAAAP/aAAgBAQAAPwBH/9k=";
+      var shouldCorrect = void 0;
+      var testImage = isBrowser() ? new Image() : {};
+      testImage.onload = function() {
+        return shouldCorrect = testImage.naturalWidth > testImage.naturalHeight;
+      };
+      testImage.src = testSrc;
+      var shouldCorrectImageExifOrientation = function shouldCorrectImageExifOrientation2() {
+        return shouldCorrect;
+      };
+      var plugin = function plugin2(_ref) {
+        var addFilter = _ref.addFilter, utils = _ref.utils;
+        var Type = utils.Type, isFile = utils.isFile;
+        addFilter("DID_LOAD_ITEM", function(item, _ref2) {
+          var query = _ref2.query;
+          return new Promise(function(resolve, reject) {
+            var file = item.file;
+            if (!isFile(file) || !isJPEG(file) || !query("GET_ALLOW_IMAGE_EXIF_ORIENTATION") || !shouldCorrectImageExifOrientation()) {
+              return resolve(item);
+            }
+            getImageOrientation(file).then(function(orientation) {
+              item.setMetadata("exif", { orientation });
+              resolve(item);
+            });
+          });
+        });
+        return {
+          options: {
+            // Enable or disable image orientation reading
+            allowImageExifOrientation: [true, Type.BOOLEAN]
+          }
+        };
+      };
+      var isBrowser$1 = typeof window !== "undefined" && typeof window.document !== "undefined";
+      if (isBrowser$1) {
+        document.dispatchEvent(
+          new CustomEvent("FilePond:pluginloaded", { detail: plugin })
+        );
+      }
+      return plugin;
+    });
+  }
+});
+
 // ../../../node_modules/.pnpm/filepond-plugin-image-preview@4.6.12_filepond@4.32.12/node_modules/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js
 var require_filepond_plugin_image_preview = __commonJS({
   "../../../node_modules/.pnpm/filepond-plugin-image-preview@4.6.12_filepond@4.32.12/node_modules/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js"(exports, module) {
@@ -11101,9 +11616,9 @@ var require_filepond_plugin_image_preview = __commonJS({
           height
         };
       };
-      var getImageRectZoomFactor = function getImageRectZoomFactor2(imageRect, cropRect, rotation, center) {
-        var cx = center.x > 0.5 ? 1 - center.x : center.x;
-        var cy = center.y > 0.5 ? 1 - center.y : center.y;
+      var getImageRectZoomFactor = function getImageRectZoomFactor2(imageRect, cropRect, rotation, center2) {
+        var cx = center2.x > 0.5 ? 1 - center2.x : center2.x;
+        var cy = center2.y > 0.5 ? 1 - center2.y : center2.y;
         var imageWidth = cx * 2 * imageRect.width;
         var imageHeight = cy * 2 * imageRect.height;
         var rotatedCropSize = getRotatedRectSize(cropRect, rotation);
@@ -11130,7 +11645,7 @@ var require_filepond_plugin_image_preview = __commonJS({
       };
       var getCurrentCropSize = function getCurrentCropSize2(imageSize) {
         var crop = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {};
-        var zoom = crop.zoom, rotation = crop.rotation, center = crop.center, aspectRatio = crop.aspectRatio;
+        var zoom = crop.zoom, rotation = crop.rotation, center2 = crop.center, aspectRatio = crop.aspectRatio;
         if (!aspectRatio) aspectRatio = imageSize.height / imageSize.width;
         var canvasSize = calculateCanvasSize(imageSize, aspectRatio, zoom);
         var canvasCenter = {
@@ -11149,7 +11664,7 @@ var require_filepond_plugin_image_preview = __commonJS({
           imageSize,
           getCenteredCropRect(stage, aspectRatio),
           rotation,
-          shouldLimit ? center : { x: 0.5, y: 0.5 }
+          shouldLimit ? center2 : { x: 0.5, y: 0.5 }
         );
         var scale = zoom * stageZoomFactor;
         return {
@@ -12154,6 +12669,2934 @@ var require_filepond_plugin_image_preview = __commonJS({
   }
 });
 
+// ../../../node_modules/.pnpm/filepond-plugin-image-resize@2.0.10_filepond@4.32.12/node_modules/filepond-plugin-image-resize/dist/filepond-plugin-image-resize.js
+var require_filepond_plugin_image_resize = __commonJS({
+  "../../../node_modules/.pnpm/filepond-plugin-image-resize@2.0.10_filepond@4.32.12/node_modules/filepond-plugin-image-resize/dist/filepond-plugin-image-resize.js"(exports, module) {
+    (function(global, factory) {
+      typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = global || self, global.FilePondPluginImageResize = factory());
+    })(exports, function() {
+      "use strict";
+      var isImage = function isImage2(file) {
+        return /^image/.test(file.type);
+      };
+      var getImageSize = function getImageSize2(url, cb) {
+        var image = new Image();
+        image.onload = function() {
+          var width = image.naturalWidth;
+          var height = image.naturalHeight;
+          image = null;
+          cb({ width, height });
+        };
+        image.onerror = function() {
+          return cb(null);
+        };
+        image.src = url;
+      };
+      var plugin = function plugin2(_ref) {
+        var addFilter = _ref.addFilter, utils = _ref.utils;
+        var Type = utils.Type;
+        addFilter("DID_LOAD_ITEM", function(item, _ref2) {
+          var query = _ref2.query;
+          return new Promise(function(resolve, reject) {
+            var file = item.file;
+            if (!isImage(file) || !query("GET_ALLOW_IMAGE_RESIZE")) {
+              return resolve(item);
+            }
+            var mode = query("GET_IMAGE_RESIZE_MODE");
+            var width = query("GET_IMAGE_RESIZE_TARGET_WIDTH");
+            var height = query("GET_IMAGE_RESIZE_TARGET_HEIGHT");
+            var upscale = query("GET_IMAGE_RESIZE_UPSCALE");
+            if (width === null && height === null) return resolve(item);
+            var targetWidth = width === null ? height : width;
+            var targetHeight = height === null ? targetWidth : height;
+            var fileURL = URL.createObjectURL(file);
+            getImageSize(fileURL, function(size) {
+              URL.revokeObjectURL(fileURL);
+              if (!size) return resolve(item);
+              var imageWidth = size.width, imageHeight = size.height;
+              var orientation = (item.getMetadata("exif") || {}).orientation || -1;
+              if (orientation >= 5 && orientation <= 8) {
+                var _ref3 = [imageHeight, imageWidth];
+                imageWidth = _ref3[0];
+                imageHeight = _ref3[1];
+              }
+              if (imageWidth === targetWidth && imageHeight === targetHeight)
+                return resolve(item);
+              if (!upscale) {
+                if (mode === "cover") {
+                  if (imageWidth <= targetWidth || imageHeight <= targetHeight)
+                    return resolve(item);
+                } else if (imageWidth <= targetWidth && imageHeight <= targetWidth) {
+                  return resolve(item);
+                }
+              }
+              item.setMetadata("resize", {
+                mode,
+                upscale,
+                size: {
+                  width: targetWidth,
+                  height: targetHeight
+                }
+              });
+              resolve(item);
+            });
+          });
+        });
+        return {
+          options: {
+            // Enable or disable image resizing
+            allowImageResize: [true, Type.BOOLEAN],
+            // the method of rescaling
+            // - force => force set size
+            // - cover => pick biggest dimension
+            // - contain => pick smaller dimension
+            imageResizeMode: ["cover", Type.STRING],
+            // set to false to disable upscaling of image smaller than the target width / height
+            imageResizeUpscale: [true, Type.BOOLEAN],
+            // target width
+            imageResizeTargetWidth: [null, Type.INT],
+            // target height
+            imageResizeTargetHeight: [null, Type.INT]
+          }
+        };
+      };
+      var isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
+      if (isBrowser) {
+        document.dispatchEvent(new CustomEvent("FilePond:pluginloaded", { detail: plugin }));
+      }
+      return plugin;
+    });
+  }
+});
+
+// ../../../node_modules/.pnpm/filepond-plugin-image-transform@3.8.8_filepond@4.32.12/node_modules/filepond-plugin-image-transform/dist/filepond-plugin-image-transform.js
+var require_filepond_plugin_image_transform = __commonJS({
+  "../../../node_modules/.pnpm/filepond-plugin-image-transform@3.8.8_filepond@4.32.12/node_modules/filepond-plugin-image-transform/dist/filepond-plugin-image-transform.js"(exports, module) {
+    (function(global, factory) {
+      typeof exports === "object" && typeof module !== "undefined" ? module.exports = factory() : typeof define === "function" && define.amd ? define(factory) : (global = global || self, global.FilePondPluginImageTransform = factory());
+    })(exports, function() {
+      "use strict";
+      var isImage = function isImage2(file) {
+        return /^image/.test(file.type);
+      };
+      var getFilenameWithoutExtension = function getFilenameWithoutExtension2(name) {
+        return name.substr(0, name.lastIndexOf(".")) || name;
+      };
+      var ExtensionMap = {
+        jpeg: "jpg",
+        "svg+xml": "svg"
+      };
+      var renameFileToMatchMimeType = function renameFileToMatchMimeType2(filename, mimeType) {
+        var name = getFilenameWithoutExtension(filename);
+        var type = mimeType.split("/")[1];
+        var extension = ExtensionMap[type] || type;
+        return "".concat(name, ".").concat(extension);
+      };
+      var getValidOutputMimeType = function getValidOutputMimeType2(type) {
+        return /jpeg|png|svg\+xml/.test(type) ? type : "image/jpeg";
+      };
+      var isImage$1 = function isImage2(file) {
+        return /^image/.test(file.type);
+      };
+      var MATRICES = {
+        1: function _() {
+          return [1, 0, 0, 1, 0, 0];
+        },
+        2: function _(width) {
+          return [-1, 0, 0, 1, width, 0];
+        },
+        3: function _(width, height) {
+          return [-1, 0, 0, -1, width, height];
+        },
+        4: function _(width, height) {
+          return [1, 0, 0, -1, 0, height];
+        },
+        5: function _() {
+          return [0, 1, 1, 0, 0, 0];
+        },
+        6: function _(width, height) {
+          return [0, 1, -1, 0, height, 0];
+        },
+        7: function _(width, height) {
+          return [0, -1, -1, 0, height, width];
+        },
+        8: function _(width) {
+          return [0, -1, 1, 0, 0, width];
+        }
+      };
+      var getImageOrientationMatrix = function getImageOrientationMatrix2(width, height, orientation) {
+        if (orientation === -1) {
+          orientation = 1;
+        }
+        return MATRICES[orientation](width, height);
+      };
+      var createVector = function createVector2(x, y) {
+        return { x, y };
+      };
+      var vectorDot = function vectorDot2(a, b) {
+        return a.x * b.x + a.y * b.y;
+      };
+      var vectorSubtract = function vectorSubtract2(a, b) {
+        return createVector(a.x - b.x, a.y - b.y);
+      };
+      var vectorDistanceSquared = function vectorDistanceSquared2(a, b) {
+        return vectorDot(vectorSubtract(a, b), vectorSubtract(a, b));
+      };
+      var vectorDistance = function vectorDistance2(a, b) {
+        return Math.sqrt(vectorDistanceSquared(a, b));
+      };
+      var getOffsetPointOnEdge = function getOffsetPointOnEdge2(length, rotation) {
+        var a = length;
+        var A = 1.5707963267948966;
+        var B = rotation;
+        var C = 1.5707963267948966 - rotation;
+        var sinA = Math.sin(A);
+        var sinB = Math.sin(B);
+        var sinC = Math.sin(C);
+        var cosC = Math.cos(C);
+        var ratio = a / sinA;
+        var b = ratio * sinB;
+        var c = ratio * sinC;
+        return createVector(cosC * b, cosC * c);
+      };
+      var getRotatedRectSize = function getRotatedRectSize2(rect, rotation) {
+        var w = rect.width;
+        var h = rect.height;
+        var hor = getOffsetPointOnEdge(w, rotation);
+        var ver = getOffsetPointOnEdge(h, rotation);
+        var tl = createVector(rect.x + Math.abs(hor.x), rect.y - Math.abs(hor.y));
+        var tr = createVector(rect.x + rect.width + Math.abs(ver.y), rect.y + Math.abs(ver.x));
+        var bl = createVector(rect.x - Math.abs(ver.y), rect.y + rect.height - Math.abs(ver.x));
+        return {
+          width: vectorDistance(tl, tr),
+          height: vectorDistance(tl, bl)
+        };
+      };
+      var getImageRectZoomFactor = function getImageRectZoomFactor2(imageRect, cropRect) {
+        var rotation = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : 0;
+        var center2 = arguments.length > 3 && arguments[3] !== void 0 ? arguments[3] : { x: 0.5, y: 0.5 };
+        var cx = center2.x > 0.5 ? 1 - center2.x : center2.x;
+        var cy = center2.y > 0.5 ? 1 - center2.y : center2.y;
+        var imageWidth = cx * 2 * imageRect.width;
+        var imageHeight = cy * 2 * imageRect.height;
+        var rotatedCropSize = getRotatedRectSize(cropRect, rotation);
+        return Math.max(rotatedCropSize.width / imageWidth, rotatedCropSize.height / imageHeight);
+      };
+      var getCenteredCropRect = function getCenteredCropRect2(container, aspectRatio) {
+        var width = container.width;
+        var height = width * aspectRatio;
+        if (height > container.height) {
+          height = container.height;
+          width = height / aspectRatio;
+        }
+        var x = (container.width - width) * 0.5;
+        var y = (container.height - height) * 0.5;
+        return {
+          x,
+          y,
+          width,
+          height
+        };
+      };
+      var calculateCanvasSize = function calculateCanvasSize2(image, canvasAspectRatio) {
+        var zoom = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : 1;
+        var imageAspectRatio = image.height / image.width;
+        var canvasWidth = 1;
+        var canvasHeight = canvasAspectRatio;
+        var imgWidth = 1;
+        var imgHeight = imageAspectRatio;
+        if (imgHeight > canvasHeight) {
+          imgHeight = canvasHeight;
+          imgWidth = imgHeight / imageAspectRatio;
+        }
+        var scalar = Math.max(canvasWidth / imgWidth, canvasHeight / imgHeight);
+        var width = image.width / (zoom * scalar * imgWidth);
+        var height = width * canvasAspectRatio;
+        return {
+          width,
+          height
+        };
+      };
+      var canvasRelease = function canvasRelease2(canvas) {
+        canvas.width = 1;
+        canvas.height = 1;
+        var ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, 1, 1);
+      };
+      var isFlipped = function isFlipped2(flip) {
+        return flip && (flip.horizontal || flip.vertical);
+      };
+      var getBitmap = function getBitmap2(image, orientation, flip) {
+        if (orientation <= 1 && !isFlipped(flip)) {
+          image.width = image.naturalWidth;
+          image.height = image.naturalHeight;
+          return image;
+        }
+        var canvas = document.createElement("canvas");
+        var width = image.naturalWidth;
+        var height = image.naturalHeight;
+        var swapped = orientation >= 5 && orientation <= 8;
+        if (swapped) {
+          canvas.width = height;
+          canvas.height = width;
+        } else {
+          canvas.width = width;
+          canvas.height = height;
+        }
+        var ctx = canvas.getContext("2d");
+        if (orientation) {
+          ctx.transform.apply(ctx, getImageOrientationMatrix(width, height, orientation));
+        }
+        if (isFlipped(flip)) {
+          var matrix = [1, 0, 0, 1, 0, 0];
+          if (!swapped && flip.horizontal || swapped & flip.vertical) {
+            matrix[0] = -1;
+            matrix[4] = width;
+          }
+          if (!swapped && flip.vertical || swapped && flip.horizontal) {
+            matrix[3] = -1;
+            matrix[5] = height;
+          }
+          ctx.transform.apply(ctx, matrix);
+        }
+        ctx.drawImage(image, 0, 0, width, height);
+        return canvas;
+      };
+      var imageToImageData = function imageToImageData2(imageElement, orientation) {
+        var crop = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : {};
+        var options = arguments.length > 3 && arguments[3] !== void 0 ? arguments[3] : {};
+        var canvasMemoryLimit = options.canvasMemoryLimit, _options$background = options.background, background = _options$background === void 0 ? null : _options$background;
+        var zoom = crop.zoom || 1;
+        var bitmap = getBitmap(imageElement, orientation, crop.flip);
+        var imageSize = {
+          width: bitmap.width,
+          height: bitmap.height
+        };
+        var aspectRatio = crop.aspectRatio || imageSize.height / imageSize.width;
+        var canvasSize = calculateCanvasSize(imageSize, aspectRatio, zoom);
+        if (canvasMemoryLimit) {
+          var requiredMemory = canvasSize.width * canvasSize.height;
+          if (requiredMemory > canvasMemoryLimit) {
+            var scalar = Math.sqrt(canvasMemoryLimit) / Math.sqrt(requiredMemory);
+            imageSize.width = Math.floor(imageSize.width * scalar);
+            imageSize.height = Math.floor(imageSize.height * scalar);
+            canvasSize = calculateCanvasSize(imageSize, aspectRatio, zoom);
+          }
+        }
+        var canvas = document.createElement("canvas");
+        var canvasCenter = {
+          x: canvasSize.width * 0.5,
+          y: canvasSize.height * 0.5
+        };
+        var stage = {
+          x: 0,
+          y: 0,
+          width: canvasSize.width,
+          height: canvasSize.height,
+          center: canvasCenter
+        };
+        var shouldLimit = typeof crop.scaleToFit === "undefined" || crop.scaleToFit;
+        var scale = zoom * getImageRectZoomFactor(
+          imageSize,
+          getCenteredCropRect(stage, aspectRatio),
+          crop.rotation,
+          shouldLimit ? crop.center : { x: 0.5, y: 0.5 }
+        );
+        canvas.width = Math.round(canvasSize.width / scale);
+        canvas.height = Math.round(canvasSize.height / scale);
+        canvasCenter.x /= scale;
+        canvasCenter.y /= scale;
+        var imageOffset = {
+          x: canvasCenter.x - imageSize.width * (crop.center ? crop.center.x : 0.5),
+          y: canvasCenter.y - imageSize.height * (crop.center ? crop.center.y : 0.5)
+        };
+        var ctx = canvas.getContext("2d");
+        if (background) {
+          ctx.fillStyle = background;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.translate(canvasCenter.x, canvasCenter.y);
+        ctx.rotate(crop.rotation || 0);
+        ctx.drawImage(
+          bitmap,
+          imageOffset.x - canvasCenter.x,
+          imageOffset.y - canvasCenter.y,
+          imageSize.width,
+          imageSize.height
+        );
+        var imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        canvasRelease(canvas);
+        return imageData;
+      };
+      var IS_BROWSER = (function() {
+        return typeof window !== "undefined" && typeof window.document !== "undefined";
+      })();
+      if (IS_BROWSER) {
+        if (!HTMLCanvasElement.prototype.toBlob) {
+          Object.defineProperty(HTMLCanvasElement.prototype, "toBlob", {
+            value: function value(callback, type, quality) {
+              var dataURL = this.toDataURL(type, quality).split(",")[1];
+              setTimeout(function() {
+                var binStr = atob(dataURL);
+                var len = binStr.length;
+                var arr = new Uint8Array(len);
+                for (var i = 0; i < len; i++) {
+                  arr[i] = binStr.charCodeAt(i);
+                }
+                callback(new Blob([arr], { type: type || "image/png" }));
+              });
+            }
+          });
+        }
+      }
+      var canvasToBlob = function canvasToBlob2(canvas, options) {
+        var beforeCreateBlob = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : null;
+        return new Promise(function(resolve) {
+          var promisedImage = beforeCreateBlob ? beforeCreateBlob(canvas) : canvas;
+          Promise.resolve(promisedImage).then(function(canvas2) {
+            canvas2.toBlob(resolve, options.type, options.quality);
+          });
+        });
+      };
+      var vectorMultiply = function vectorMultiply2(v, amount) {
+        return createVector$1(v.x * amount, v.y * amount);
+      };
+      var vectorAdd = function vectorAdd2(a, b) {
+        return createVector$1(a.x + b.x, a.y + b.y);
+      };
+      var vectorNormalize = function vectorNormalize2(v) {
+        var l = Math.sqrt(v.x * v.x + v.y * v.y);
+        if (l === 0) {
+          return {
+            x: 0,
+            y: 0
+          };
+        }
+        return createVector$1(v.x / l, v.y / l);
+      };
+      var vectorRotate = function vectorRotate2(v, radians, origin) {
+        var cos = Math.cos(radians);
+        var sin = Math.sin(radians);
+        var t = createVector$1(v.x - origin.x, v.y - origin.y);
+        return createVector$1(origin.x + cos * t.x - sin * t.y, origin.y + sin * t.x + cos * t.y);
+      };
+      var createVector$1 = function createVector2() {
+        var x = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : 0;
+        var y = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : 0;
+        return { x, y };
+      };
+      var getMarkupValue = function getMarkupValue2(value, size) {
+        var scalar = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : 1;
+        var axis = arguments.length > 3 ? arguments[3] : void 0;
+        if (typeof value === "string") {
+          return parseFloat(value) * scalar;
+        }
+        if (typeof value === "number") {
+          return value * (axis ? size[axis] : Math.min(size.width, size.height));
+        }
+        return;
+      };
+      var getMarkupStyles = function getMarkupStyles2(markup, size, scale) {
+        var lineStyle = markup.borderStyle || markup.lineStyle || "solid";
+        var fill = markup.backgroundColor || markup.fontColor || "transparent";
+        var stroke = markup.borderColor || markup.lineColor || "transparent";
+        var strokeWidth = getMarkupValue(markup.borderWidth || markup.lineWidth, size, scale);
+        var lineCap = markup.lineCap || "round";
+        var lineJoin = markup.lineJoin || "round";
+        var dashes = typeof lineStyle === "string" ? "" : lineStyle.map(function(v) {
+          return getMarkupValue(v, size, scale);
+        }).join(",");
+        var opacity = markup.opacity || 1;
+        return {
+          "stroke-linecap": lineCap,
+          "stroke-linejoin": lineJoin,
+          "stroke-width": strokeWidth || 0,
+          "stroke-dasharray": dashes,
+          stroke,
+          fill,
+          opacity
+        };
+      };
+      var isDefined = function isDefined2(value) {
+        return value != null;
+      };
+      var getMarkupRect = function getMarkupRect2(rect, size) {
+        var scalar = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : 1;
+        var left = getMarkupValue(rect.x, size, scalar, "width") || getMarkupValue(rect.left, size, scalar, "width");
+        var top = getMarkupValue(rect.y, size, scalar, "height") || getMarkupValue(rect.top, size, scalar, "height");
+        var width = getMarkupValue(rect.width, size, scalar, "width");
+        var height = getMarkupValue(rect.height, size, scalar, "height");
+        var right = getMarkupValue(rect.right, size, scalar, "width");
+        var bottom = getMarkupValue(rect.bottom, size, scalar, "height");
+        if (!isDefined(top)) {
+          if (isDefined(height) && isDefined(bottom)) {
+            top = size.height - height - bottom;
+          } else {
+            top = bottom;
+          }
+        }
+        if (!isDefined(left)) {
+          if (isDefined(width) && isDefined(right)) {
+            left = size.width - width - right;
+          } else {
+            left = right;
+          }
+        }
+        if (!isDefined(width)) {
+          if (isDefined(left) && isDefined(right)) {
+            width = size.width - left - right;
+          } else {
+            width = 0;
+          }
+        }
+        if (!isDefined(height)) {
+          if (isDefined(top) && isDefined(bottom)) {
+            height = size.height - top - bottom;
+          } else {
+            height = 0;
+          }
+        }
+        return {
+          x: left || 0,
+          y: top || 0,
+          width: width || 0,
+          height: height || 0
+        };
+      };
+      var pointsToPathShape = function pointsToPathShape2(points) {
+        return points.map(function(point, index) {
+          return "".concat(index === 0 ? "M" : "L", " ").concat(point.x, " ").concat(point.y);
+        }).join(" ");
+      };
+      var setAttributes = function setAttributes2(element, attr) {
+        return Object.keys(attr).forEach(function(key) {
+          return element.setAttribute(key, attr[key]);
+        });
+      };
+      var ns = "http://www.w3.org/2000/svg";
+      var svg = function svg2(tag, attr) {
+        var element = document.createElementNS(ns, tag);
+        if (attr) {
+          setAttributes(element, attr);
+        }
+        return element;
+      };
+      var updateRect = function updateRect2(element) {
+        return setAttributes(element, Object.assign({}, element.rect, element.styles));
+      };
+      var updateEllipse = function updateEllipse2(element) {
+        var cx = element.rect.x + element.rect.width * 0.5;
+        var cy = element.rect.y + element.rect.height * 0.5;
+        var rx = element.rect.width * 0.5;
+        var ry = element.rect.height * 0.5;
+        return setAttributes(
+          element,
+          Object.assign(
+            {
+              cx,
+              cy,
+              rx,
+              ry
+            },
+            element.styles
+          )
+        );
+      };
+      var IMAGE_FIT_STYLE = {
+        contain: "xMidYMid meet",
+        cover: "xMidYMid slice"
+      };
+      var updateImage = function updateImage2(element, markup) {
+        setAttributes(
+          element,
+          Object.assign({}, element.rect, element.styles, {
+            preserveAspectRatio: IMAGE_FIT_STYLE[markup.fit] || "none"
+          })
+        );
+      };
+      var TEXT_ANCHOR = {
+        left: "start",
+        center: "middle",
+        right: "end"
+      };
+      var updateText = function updateText2(element, markup, size, scale) {
+        var fontSize = getMarkupValue(markup.fontSize, size, scale);
+        var fontFamily = markup.fontFamily || "sans-serif";
+        var fontWeight = markup.fontWeight || "normal";
+        var textAlign = TEXT_ANCHOR[markup.textAlign] || "start";
+        setAttributes(
+          element,
+          Object.assign({}, element.rect, element.styles, {
+            "stroke-width": 0,
+            "font-weight": fontWeight,
+            "font-size": fontSize,
+            "font-family": fontFamily,
+            "text-anchor": textAlign
+          })
+        );
+        if (element.text !== markup.text) {
+          element.text = markup.text;
+          element.textContent = markup.text.length ? markup.text : " ";
+        }
+      };
+      var updateLine = function updateLine2(element, markup, size, scale) {
+        setAttributes(
+          element,
+          Object.assign({}, element.rect, element.styles, {
+            fill: "none"
+          })
+        );
+        var line = element.childNodes[0];
+        var begin = element.childNodes[1];
+        var end = element.childNodes[2];
+        var origin = element.rect;
+        var target = {
+          x: element.rect.x + element.rect.width,
+          y: element.rect.y + element.rect.height
+        };
+        setAttributes(line, {
+          x1: origin.x,
+          y1: origin.y,
+          x2: target.x,
+          y2: target.y
+        });
+        if (!markup.lineDecoration) return;
+        begin.style.display = "none";
+        end.style.display = "none";
+        var v = vectorNormalize({
+          x: target.x - origin.x,
+          y: target.y - origin.y
+        });
+        var l = getMarkupValue(0.05, size, scale);
+        if (markup.lineDecoration.indexOf("arrow-begin") !== -1) {
+          var arrowBeginRotationPoint = vectorMultiply(v, l);
+          var arrowBeginCenter = vectorAdd(origin, arrowBeginRotationPoint);
+          var arrowBeginA = vectorRotate(origin, 2, arrowBeginCenter);
+          var arrowBeginB = vectorRotate(origin, -2, arrowBeginCenter);
+          setAttributes(begin, {
+            style: "display:block;",
+            d: "M".concat(arrowBeginA.x, ",").concat(arrowBeginA.y, " L").concat(origin.x, ",").concat(origin.y, " L").concat(arrowBeginB.x, ",").concat(arrowBeginB.y)
+          });
+        }
+        if (markup.lineDecoration.indexOf("arrow-end") !== -1) {
+          var arrowEndRotationPoint = vectorMultiply(v, -l);
+          var arrowEndCenter = vectorAdd(target, arrowEndRotationPoint);
+          var arrowEndA = vectorRotate(target, 2, arrowEndCenter);
+          var arrowEndB = vectorRotate(target, -2, arrowEndCenter);
+          setAttributes(end, {
+            style: "display:block;",
+            d: "M".concat(arrowEndA.x, ",").concat(arrowEndA.y, " L").concat(target.x, ",").concat(target.y, " L").concat(arrowEndB.x, ",").concat(arrowEndB.y)
+          });
+        }
+      };
+      var updatePath = function updatePath2(element, markup, size, scale) {
+        setAttributes(
+          element,
+          Object.assign({}, element.styles, {
+            fill: "none",
+            d: pointsToPathShape(
+              markup.points.map(function(point) {
+                return {
+                  x: getMarkupValue(point.x, size, scale, "width"),
+                  y: getMarkupValue(point.y, size, scale, "height")
+                };
+              })
+            )
+          })
+        );
+      };
+      var createShape = function createShape2(node) {
+        return function(markup) {
+          return svg(node, { id: markup.id });
+        };
+      };
+      var createImage = function createImage2(markup) {
+        var shape = svg("image", {
+          id: markup.id,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round",
+          opacity: "0"
+        });
+        shape.onload = function() {
+          shape.setAttribute("opacity", markup.opacity || 1);
+        };
+        shape.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", markup.src);
+        return shape;
+      };
+      var createLine = function createLine2(markup) {
+        var shape = svg("g", {
+          id: markup.id,
+          "stroke-linecap": "round",
+          "stroke-linejoin": "round"
+        });
+        var line = svg("line");
+        shape.appendChild(line);
+        var begin = svg("path");
+        shape.appendChild(begin);
+        var end = svg("path");
+        shape.appendChild(end);
+        return shape;
+      };
+      var CREATE_TYPE_ROUTES = {
+        image: createImage,
+        rect: createShape("rect"),
+        ellipse: createShape("ellipse"),
+        text: createShape("text"),
+        path: createShape("path"),
+        line: createLine
+      };
+      var UPDATE_TYPE_ROUTES = {
+        rect: updateRect,
+        ellipse: updateEllipse,
+        image: updateImage,
+        text: updateText,
+        path: updatePath,
+        line: updateLine
+      };
+      var createMarkupByType = function createMarkupByType2(type, markup) {
+        return CREATE_TYPE_ROUTES[type](markup);
+      };
+      var updateMarkupByType = function updateMarkupByType2(element, type, markup, size, scale) {
+        if (type !== "path") {
+          element.rect = getMarkupRect(markup, size, scale);
+        }
+        element.styles = getMarkupStyles(markup, size, scale);
+        UPDATE_TYPE_ROUTES[type](element, markup, size, scale);
+      };
+      var sortMarkupByZIndex = function sortMarkupByZIndex2(a, b) {
+        if (a[1].zIndex > b[1].zIndex) {
+          return 1;
+        }
+        if (a[1].zIndex < b[1].zIndex) {
+          return -1;
+        }
+        return 0;
+      };
+      var cropSVG = function cropSVG2(blob) {
+        var crop = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {};
+        var markup = arguments.length > 2 ? arguments[2] : void 0;
+        var options = arguments.length > 3 ? arguments[3] : void 0;
+        return new Promise(function(resolve) {
+          var _options$background = options.background, background = _options$background === void 0 ? null : _options$background;
+          var fr = new FileReader();
+          fr.onloadend = function() {
+            var text = fr.result;
+            var original = document.createElement("div");
+            original.style.cssText = "position:absolute;pointer-events:none;width:0;height:0;visibility:hidden;";
+            original.innerHTML = text;
+            var originalNode = original.querySelector("svg");
+            document.body.appendChild(original);
+            var bBox = originalNode.getBBox();
+            original.parentNode.removeChild(original);
+            var titleNode = original.querySelector("title");
+            var viewBoxAttribute = originalNode.getAttribute("viewBox") || "";
+            var widthAttribute = originalNode.getAttribute("width") || "";
+            var heightAttribute = originalNode.getAttribute("height") || "";
+            var width = parseFloat(widthAttribute) || null;
+            var height = parseFloat(heightAttribute) || null;
+            var widthUnits = (widthAttribute.match(/[a-z]+/) || [])[0] || "";
+            var heightUnits = (heightAttribute.match(/[a-z]+/) || [])[0] || "";
+            var viewBoxList = viewBoxAttribute.split(" ").map(parseFloat);
+            var viewBox = viewBoxList.length ? {
+              x: viewBoxList[0],
+              y: viewBoxList[1],
+              width: viewBoxList[2],
+              height: viewBoxList[3]
+            } : bBox;
+            var imageWidth = width != null ? width : viewBox.width;
+            var imageHeight = height != null ? height : viewBox.height;
+            originalNode.style.overflow = "visible";
+            originalNode.setAttribute("width", imageWidth);
+            originalNode.setAttribute("height", imageHeight);
+            var markupSVG = "";
+            if (markup && markup.length) {
+              var size = {
+                width: imageWidth,
+                height: imageHeight
+              };
+              markupSVG = markup.sort(sortMarkupByZIndex).reduce(function(prev, shape) {
+                var el = createMarkupByType(shape[0], shape[1]);
+                updateMarkupByType(el, shape[0], shape[1], size);
+                el.removeAttribute("id");
+                if (el.getAttribute("opacity") === 1) {
+                  el.removeAttribute("opacity");
+                }
+                return prev + "\n" + el.outerHTML + "\n";
+              }, "");
+              markupSVG = "\n\n<g>".concat(markupSVG.replace(/&nbsp;/g, " "), "</g>\n\n");
+            }
+            var aspectRatio = crop.aspectRatio || imageHeight / imageWidth;
+            var canvasWidth = imageWidth;
+            var canvasHeight = canvasWidth * aspectRatio;
+            var shouldLimit = typeof crop.scaleToFit === "undefined" || crop.scaleToFit;
+            var cropCenterX = crop.center ? crop.center.x : 0.5;
+            var cropCenterY = crop.center ? crop.center.y : 0.5;
+            var canvasZoomFactor = getImageRectZoomFactor(
+              {
+                width: imageWidth,
+                height: imageHeight
+              },
+              getCenteredCropRect(
+                {
+                  width: canvasWidth,
+                  height: canvasHeight
+                },
+                aspectRatio
+              ),
+              crop.rotation,
+              shouldLimit ? { x: cropCenterX, y: cropCenterY } : {
+                x: 0.5,
+                y: 0.5
+              }
+            );
+            var scale = crop.zoom * canvasZoomFactor;
+            var rotation = crop.rotation * (180 / Math.PI);
+            var canvasCenter = {
+              x: canvasWidth * 0.5,
+              y: canvasHeight * 0.5
+            };
+            var imageOffset = {
+              x: canvasCenter.x - imageWidth * cropCenterX,
+              y: canvasCenter.y - imageHeight * cropCenterY
+            };
+            var cropTransforms = [
+              // rotate
+              "rotate(".concat(rotation, " ").concat(canvasCenter.x, " ").concat(canvasCenter.y, ")"),
+              // scale
+              "translate(".concat(canvasCenter.x, " ").concat(canvasCenter.y, ")"),
+              "scale(".concat(scale, ")"),
+              "translate(".concat(-canvasCenter.x, " ").concat(-canvasCenter.y, ")"),
+              // offset
+              "translate(".concat(imageOffset.x, " ").concat(imageOffset.y, ")")
+            ];
+            var cropFlipHorizontal = crop.flip && crop.flip.horizontal;
+            var cropFlipVertical = crop.flip && crop.flip.vertical;
+            var flipTransforms = [
+              "scale(".concat(cropFlipHorizontal ? -1 : 1, " ").concat(cropFlipVertical ? -1 : 1, ")"),
+              "translate(".concat(cropFlipHorizontal ? -imageWidth : 0, " ").concat(cropFlipVertical ? -imageHeight : 0, ")")
+            ];
+            var transformed = '<?xml version="1.0" encoding="UTF-8"?>\n<svg width="'.concat(canvasWidth).concat(widthUnits, '" height="').concat(canvasHeight).concat(heightUnits, '" \nviewBox="0 0 ').concat(canvasWidth, " ").concat(canvasHeight, '" ').concat(
+              background ? 'style="background:' + background + '" ' : "",
+              '\npreserveAspectRatio="xMinYMin"\nxmlns:xlink="http://www.w3.org/1999/xlink"\nxmlns="http://www.w3.org/2000/svg">\n<!-- Generated by PQINA - https://pqina.nl/ -->\n<title>'
+            ).concat(titleNode ? titleNode.textContent : "", '</title>\n<g transform="').concat(cropTransforms.join(" "), '">\n<g transform="').concat(flipTransforms.join(" "), '">\n').concat(originalNode.outerHTML).concat(markupSVG, "\n</g>\n</g>\n</svg>");
+            resolve(transformed);
+          };
+          fr.readAsText(blob);
+        });
+      };
+      var objectToImageData = function objectToImageData2(obj) {
+        var imageData;
+        try {
+          imageData = new ImageData(obj.width, obj.height);
+        } catch (e) {
+          var canvas = document.createElement("canvas");
+          imageData = canvas.getContext("2d").createImageData(obj.width, obj.height);
+        }
+        imageData.data.set(obj.data);
+        return imageData;
+      };
+      var TransformWorker = function TransformWorker2() {
+        var TRANSFORMS = { resize, filter };
+        var applyTransforms = function applyTransforms2(transforms, imageData) {
+          transforms.forEach(function(transform2) {
+            imageData = TRANSFORMS[transform2.type](imageData, transform2.data);
+          });
+          return imageData;
+        };
+        var transform = function transform2(data2, cb) {
+          var transforms = data2.transforms;
+          var filterTransform = null;
+          transforms.forEach(function(transform3) {
+            if (transform3.type === "filter") {
+              filterTransform = transform3;
+            }
+          });
+          if (filterTransform) {
+            var resizeTransform = null;
+            transforms.forEach(function(transform3) {
+              if (transform3.type === "resize") {
+                resizeTransform = transform3;
+              }
+            });
+            if (resizeTransform) {
+              resizeTransform.data.matrix = filterTransform.data;
+              transforms = transforms.filter(function(transform3) {
+                return transform3.type !== "filter";
+              });
+            }
+          }
+          cb(applyTransforms(transforms, data2.imageData));
+        };
+        self.onmessage = function(e) {
+          transform(e.data.message, function(response) {
+            self.postMessage({ id: e.data.id, message: response }, [response.data.buffer]);
+          });
+        };
+        var br = 1;
+        var bg = 1;
+        var bb = 1;
+        function applyFilterMatrix(index, data2, m) {
+          var ir = data2[index] / 255;
+          var ig = data2[index + 1] / 255;
+          var ib = data2[index + 2] / 255;
+          var ia = data2[index + 3] / 255;
+          var mr = ir * m[0] + ig * m[1] + ib * m[2] + ia * m[3] + m[4];
+          var mg = ir * m[5] + ig * m[6] + ib * m[7] + ia * m[8] + m[9];
+          var mb = ir * m[10] + ig * m[11] + ib * m[12] + ia * m[13] + m[14];
+          var ma = ir * m[15] + ig * m[16] + ib * m[17] + ia * m[18] + m[19];
+          var or = Math.max(0, mr * ma) + br * (1 - ma);
+          var og = Math.max(0, mg * ma) + bg * (1 - ma);
+          var ob = Math.max(0, mb * ma) + bb * (1 - ma);
+          data2[index] = Math.max(0, Math.min(1, or)) * 255;
+          data2[index + 1] = Math.max(0, Math.min(1, og)) * 255;
+          data2[index + 2] = Math.max(0, Math.min(1, ob)) * 255;
+        }
+        var identityMatrix = self.JSON.stringify([
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0
+        ]);
+        function isIdentityMatrix(filter2) {
+          return self.JSON.stringify(filter2 || []) === identityMatrix;
+        }
+        function filter(imageData, matrix) {
+          if (!matrix || isIdentityMatrix(matrix)) return imageData;
+          var data2 = imageData.data;
+          var l = data2.length;
+          var m11 = matrix[0];
+          var m12 = matrix[1];
+          var m13 = matrix[2];
+          var m14 = matrix[3];
+          var m15 = matrix[4];
+          var m21 = matrix[5];
+          var m22 = matrix[6];
+          var m23 = matrix[7];
+          var m24 = matrix[8];
+          var m25 = matrix[9];
+          var m31 = matrix[10];
+          var m32 = matrix[11];
+          var m33 = matrix[12];
+          var m34 = matrix[13];
+          var m35 = matrix[14];
+          var m41 = matrix[15];
+          var m42 = matrix[16];
+          var m43 = matrix[17];
+          var m44 = matrix[18];
+          var m45 = matrix[19];
+          var index = 0, r = 0, g = 0, b = 0, a = 0, mr = 0, mg = 0, mb = 0, ma = 0, or = 0, og = 0, ob = 0;
+          for (; index < l; index += 4) {
+            r = data2[index] / 255;
+            g = data2[index + 1] / 255;
+            b = data2[index + 2] / 255;
+            a = data2[index + 3] / 255;
+            mr = r * m11 + g * m12 + b * m13 + a * m14 + m15;
+            mg = r * m21 + g * m22 + b * m23 + a * m24 + m25;
+            mb = r * m31 + g * m32 + b * m33 + a * m34 + m35;
+            ma = r * m41 + g * m42 + b * m43 + a * m44 + m45;
+            or = Math.max(0, mr * ma) + br * (1 - ma);
+            og = Math.max(0, mg * ma) + bg * (1 - ma);
+            ob = Math.max(0, mb * ma) + bb * (1 - ma);
+            data2[index] = Math.max(0, Math.min(1, or)) * 255;
+            data2[index + 1] = Math.max(0, Math.min(1, og)) * 255;
+            data2[index + 2] = Math.max(0, Math.min(1, ob)) * 255;
+          }
+          return imageData;
+        }
+        function resize(imageData, data2) {
+          var _data$mode = data2.mode, mode = _data$mode === void 0 ? "contain" : _data$mode, _data$upscale = data2.upscale, upscale = _data$upscale === void 0 ? false : _data$upscale, width = data2.width, height = data2.height, matrix = data2.matrix;
+          matrix = !matrix || isIdentityMatrix(matrix) ? null : matrix;
+          if (!width && !height) {
+            return filter(imageData, matrix);
+          }
+          if (width === null) {
+            width = height;
+          } else if (height === null) {
+            height = width;
+          }
+          if (mode !== "force") {
+            var scalarWidth = width / imageData.width;
+            var scalarHeight = height / imageData.height;
+            var scalar = 1;
+            if (mode === "cover") {
+              scalar = Math.max(scalarWidth, scalarHeight);
+            } else if (mode === "contain") {
+              scalar = Math.min(scalarWidth, scalarHeight);
+            }
+            if (scalar > 1 && upscale === false) {
+              return filter(imageData, matrix);
+            }
+            width = imageData.width * scalar;
+            height = imageData.height * scalar;
+          }
+          var originWidth = imageData.width;
+          var originHeight = imageData.height;
+          var targetWidth = Math.round(width);
+          var targetHeight = Math.round(height);
+          var inputData = imageData.data;
+          var outputData = new Uint8ClampedArray(targetWidth * targetHeight * 4);
+          var ratioWidth = originWidth / targetWidth;
+          var ratioHeight = originHeight / targetHeight;
+          var ratioWidthHalf = Math.ceil(ratioWidth * 0.5);
+          var ratioHeightHalf = Math.ceil(ratioHeight * 0.5);
+          for (var j = 0; j < targetHeight; j++) {
+            for (var i = 0; i < targetWidth; i++) {
+              var x2 = (i + j * targetWidth) * 4;
+              var weight = 0;
+              var weights = 0;
+              var weightsAlpha = 0;
+              var r = 0;
+              var g = 0;
+              var b = 0;
+              var a = 0;
+              var centerY = (j + 0.5) * ratioHeight;
+              for (var yy = Math.floor(j * ratioHeight); yy < (j + 1) * ratioHeight; yy++) {
+                var dy = Math.abs(centerY - (yy + 0.5)) / ratioHeightHalf;
+                var centerX = (i + 0.5) * ratioWidth;
+                var w0 = dy * dy;
+                for (var xx = Math.floor(i * ratioWidth); xx < (i + 1) * ratioWidth; xx++) {
+                  var dx = Math.abs(centerX - (xx + 0.5)) / ratioWidthHalf;
+                  var w = Math.sqrt(w0 + dx * dx);
+                  if (w >= -1 && w <= 1) {
+                    weight = 2 * w * w * w - 3 * w * w + 1;
+                    if (weight > 0) {
+                      dx = 4 * (xx + yy * originWidth);
+                      var ref = inputData[dx + 3];
+                      a += weight * ref;
+                      weightsAlpha += weight;
+                      if (ref < 255) {
+                        weight = weight * ref / 250;
+                      }
+                      r += weight * inputData[dx];
+                      g += weight * inputData[dx + 1];
+                      b += weight * inputData[dx + 2];
+                      weights += weight;
+                    }
+                  }
+                }
+              }
+              outputData[x2] = r / weights;
+              outputData[x2 + 1] = g / weights;
+              outputData[x2 + 2] = b / weights;
+              outputData[x2 + 3] = a / weightsAlpha;
+              matrix && applyFilterMatrix(x2, outputData, matrix);
+            }
+          }
+          return {
+            data: outputData,
+            width: targetWidth,
+            height: targetHeight
+          };
+        }
+      };
+      var correctOrientation = function correctOrientation2(view, offset) {
+        if (view.getUint32(offset + 4, false) !== 1165519206) return;
+        offset += 4;
+        var intelByteAligned = view.getUint16(offset += 6, false) === 18761;
+        offset += view.getUint32(offset + 4, intelByteAligned);
+        var tags = view.getUint16(offset, intelByteAligned);
+        offset += 2;
+        for (var i = 0; i < tags; i++) {
+          if (view.getUint16(offset + i * 12, intelByteAligned) === 274) {
+            view.setUint16(offset + i * 12 + 8, 1, intelByteAligned);
+            return true;
+          }
+        }
+        return false;
+      };
+      var readData = function readData2(data2) {
+        var view = new DataView(data2);
+        if (view.getUint16(0) !== 65496) return null;
+        var offset = 2;
+        var marker;
+        var markerLength;
+        var orientationCorrected = false;
+        while (offset < view.byteLength) {
+          marker = view.getUint16(offset, false);
+          markerLength = view.getUint16(offset + 2, false) + 2;
+          var isData = marker >= 65504 && marker <= 65519 || marker === 65534;
+          if (!isData) {
+            break;
+          }
+          if (!orientationCorrected) {
+            orientationCorrected = correctOrientation(view, offset, markerLength);
+          }
+          if (offset + markerLength > view.byteLength) {
+            break;
+          }
+          offset += markerLength;
+        }
+        return data2.slice(0, offset);
+      };
+      var getImageHead = function getImageHead2(file) {
+        return new Promise(function(resolve) {
+          var reader = new FileReader();
+          reader.onload = function() {
+            return resolve(readData(reader.result) || null);
+          };
+          reader.readAsArrayBuffer(file.slice(0, 256 * 1024));
+        });
+      };
+      var getBlobBuilder = function getBlobBuilder2() {
+        return window.BlobBuilder = window.BlobBuilder || window.WebKitBlobBuilder || window.MozBlobBuilder || window.MSBlobBuilder;
+      };
+      var createBlob = function createBlob2(arrayBuffer, mimeType) {
+        var BB = getBlobBuilder();
+        if (BB) {
+          var bb = new BB();
+          bb.append(arrayBuffer);
+          return bb.getBlob(mimeType);
+        }
+        return new Blob([arrayBuffer], {
+          type: mimeType
+        });
+      };
+      var getUniqueId = function getUniqueId2() {
+        return Math.random().toString(36).substr(2, 9);
+      };
+      var createWorker = function createWorker2(fn) {
+        var workerBlob = new Blob(["(", fn.toString(), ")()"], { type: "application/javascript" });
+        var workerURL = URL.createObjectURL(workerBlob);
+        var worker = new Worker(workerURL);
+        var trips = [];
+        return {
+          transfer: function transfer() {
+          },
+          // (message, cb) => {}
+          post: function post(message, cb, transferList) {
+            var id2 = getUniqueId();
+            trips[id2] = cb;
+            worker.onmessage = function(e) {
+              var cb2 = trips[e.data.id];
+              if (!cb2) return;
+              cb2(e.data.message);
+              delete trips[e.data.id];
+            };
+            worker.postMessage(
+              {
+                id: id2,
+                message
+              },
+              transferList
+            );
+          },
+          terminate: function terminate() {
+            worker.terminate();
+            URL.revokeObjectURL(workerURL);
+          }
+        };
+      };
+      var loadImage = function loadImage2(url) {
+        return new Promise(function(resolve, reject) {
+          var img = new Image();
+          img.onload = function() {
+            resolve(img);
+          };
+          img.onerror = function(e) {
+            reject(e);
+          };
+          img.src = url;
+        });
+      };
+      var chain = function chain2(funcs) {
+        return funcs.reduce(function(promise, func) {
+          return promise.then(function(result) {
+            return func().then(Array.prototype.concat.bind(result));
+          });
+        }, Promise.resolve([]));
+      };
+      var canvasApplyMarkup = function canvasApplyMarkup2(canvas, markup) {
+        return new Promise(function(resolve) {
+          var size = {
+            width: canvas.width,
+            height: canvas.height
+          };
+          var ctx = canvas.getContext("2d");
+          var drawers = markup.sort(sortMarkupByZIndex).map(function(item) {
+            return function() {
+              return new Promise(function(resolve2) {
+                var result = TYPE_DRAW_ROUTES[item[0]](ctx, size, item[1], resolve2);
+                if (result) resolve2();
+              });
+            };
+          });
+          chain(drawers).then(function() {
+            return resolve(canvas);
+          });
+        });
+      };
+      var applyMarkupStyles = function applyMarkupStyles2(ctx, styles) {
+        ctx.beginPath();
+        ctx.lineCap = styles["stroke-linecap"];
+        ctx.lineJoin = styles["stroke-linejoin"];
+        ctx.lineWidth = styles["stroke-width"];
+        if (styles["stroke-dasharray"].length) {
+          ctx.setLineDash(styles["stroke-dasharray"].split(","));
+        }
+        ctx.fillStyle = styles["fill"];
+        ctx.strokeStyle = styles["stroke"];
+        ctx.globalAlpha = styles.opacity || 1;
+      };
+      var drawMarkupStyles = function drawMarkupStyles2(ctx) {
+        ctx.fill();
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      };
+      var drawRect = function drawRect2(ctx, size, markup) {
+        var rect = getMarkupRect(markup, size);
+        var styles = getMarkupStyles(markup, size);
+        applyMarkupStyles(ctx, styles);
+        ctx.rect(rect.x, rect.y, rect.width, rect.height);
+        drawMarkupStyles(ctx, styles);
+        return true;
+      };
+      var drawEllipse = function drawEllipse2(ctx, size, markup) {
+        var rect = getMarkupRect(markup, size);
+        var styles = getMarkupStyles(markup, size);
+        applyMarkupStyles(ctx, styles);
+        var x = rect.x, y = rect.y, w = rect.width, h = rect.height, kappa = 0.5522848, ox = w / 2 * kappa, oy = h / 2 * kappa, xe = x + w, ye = y + h, xm = x + w / 2, ym = y + h / 2;
+        ctx.moveTo(x, ym);
+        ctx.bezierCurveTo(x, ym - oy, xm - ox, y, xm, y);
+        ctx.bezierCurveTo(xm + ox, y, xe, ym - oy, xe, ym);
+        ctx.bezierCurveTo(xe, ym + oy, xm + ox, ye, xm, ye);
+        ctx.bezierCurveTo(xm - ox, ye, x, ym + oy, x, ym);
+        drawMarkupStyles(ctx, styles);
+        return true;
+      };
+      var drawImage = function drawImage2(ctx, size, markup, done) {
+        var rect = getMarkupRect(markup, size);
+        var styles = getMarkupStyles(markup, size);
+        applyMarkupStyles(ctx, styles);
+        var image = new Image();
+        var isCrossOriginImage = new URL(markup.src, window.location.href).origin !== window.location.origin;
+        if (isCrossOriginImage) image.crossOrigin = "";
+        image.onload = function() {
+          if (markup.fit === "cover") {
+            var ar = rect.width / rect.height;
+            var width = ar > 1 ? image.width : image.height * ar;
+            var height = ar > 1 ? image.width / ar : image.height;
+            var x = image.width * 0.5 - width * 0.5;
+            var y = image.height * 0.5 - height * 0.5;
+            ctx.drawImage(image, x, y, width, height, rect.x, rect.y, rect.width, rect.height);
+          } else if (markup.fit === "contain") {
+            var scalar = Math.min(rect.width / image.width, rect.height / image.height);
+            var _width = scalar * image.width;
+            var _height = scalar * image.height;
+            var _x = rect.x + rect.width * 0.5 - _width * 0.5;
+            var _y = rect.y + rect.height * 0.5 - _height * 0.5;
+            ctx.drawImage(image, 0, 0, image.width, image.height, _x, _y, _width, _height);
+          } else {
+            ctx.drawImage(
+              image,
+              0,
+              0,
+              image.width,
+              image.height,
+              rect.x,
+              rect.y,
+              rect.width,
+              rect.height
+            );
+          }
+          drawMarkupStyles(ctx, styles);
+          done();
+        };
+        image.src = markup.src;
+      };
+      var drawText = function drawText2(ctx, size, markup) {
+        var rect = getMarkupRect(markup, size);
+        var styles = getMarkupStyles(markup, size);
+        applyMarkupStyles(ctx, styles);
+        var fontSize = getMarkupValue(markup.fontSize, size);
+        var fontFamily = markup.fontFamily || "sans-serif";
+        var fontWeight = markup.fontWeight || "normal";
+        var textAlign = markup.textAlign || "left";
+        ctx.font = "".concat(fontWeight, " ").concat(fontSize, "px ").concat(fontFamily);
+        ctx.textAlign = textAlign;
+        ctx.fillText(markup.text, rect.x, rect.y);
+        drawMarkupStyles(ctx, styles);
+        return true;
+      };
+      var drawPath = function drawPath2(ctx, size, markup) {
+        var styles = getMarkupStyles(markup, size);
+        applyMarkupStyles(ctx, styles);
+        ctx.beginPath();
+        var points = markup.points.map(function(point) {
+          return {
+            x: getMarkupValue(point.x, size, 1, "width"),
+            y: getMarkupValue(point.y, size, 1, "height")
+          };
+        });
+        ctx.moveTo(points[0].x, points[0].y);
+        var l = points.length;
+        for (var i = 1; i < l; i++) {
+          ctx.lineTo(points[i].x, points[i].y);
+        }
+        drawMarkupStyles(ctx, styles);
+        return true;
+      };
+      var drawLine = function drawLine2(ctx, size, markup) {
+        var rect = getMarkupRect(markup, size);
+        var styles = getMarkupStyles(markup, size);
+        applyMarkupStyles(ctx, styles);
+        ctx.beginPath();
+        var origin = {
+          x: rect.x,
+          y: rect.y
+        };
+        var target = {
+          x: rect.x + rect.width,
+          y: rect.y + rect.height
+        };
+        ctx.moveTo(origin.x, origin.y);
+        ctx.lineTo(target.x, target.y);
+        var v = vectorNormalize({
+          x: target.x - origin.x,
+          y: target.y - origin.y
+        });
+        var l = 0.04 * Math.min(size.width, size.height);
+        if (markup.lineDecoration.indexOf("arrow-begin") !== -1) {
+          var arrowBeginRotationPoint = vectorMultiply(v, l);
+          var arrowBeginCenter = vectorAdd(origin, arrowBeginRotationPoint);
+          var arrowBeginA = vectorRotate(origin, 2, arrowBeginCenter);
+          var arrowBeginB = vectorRotate(origin, -2, arrowBeginCenter);
+          ctx.moveTo(arrowBeginA.x, arrowBeginA.y);
+          ctx.lineTo(origin.x, origin.y);
+          ctx.lineTo(arrowBeginB.x, arrowBeginB.y);
+        }
+        if (markup.lineDecoration.indexOf("arrow-end") !== -1) {
+          var arrowEndRotationPoint = vectorMultiply(v, -l);
+          var arrowEndCenter = vectorAdd(target, arrowEndRotationPoint);
+          var arrowEndA = vectorRotate(target, 2, arrowEndCenter);
+          var arrowEndB = vectorRotate(target, -2, arrowEndCenter);
+          ctx.moveTo(arrowEndA.x, arrowEndA.y);
+          ctx.lineTo(target.x, target.y);
+          ctx.lineTo(arrowEndB.x, arrowEndB.y);
+        }
+        drawMarkupStyles(ctx, styles);
+        return true;
+      };
+      var TYPE_DRAW_ROUTES = {
+        rect: drawRect,
+        ellipse: drawEllipse,
+        image: drawImage,
+        text: drawText,
+        line: drawLine,
+        path: drawPath
+      };
+      var imageDataToCanvas = function imageDataToCanvas2(imageData) {
+        var image = document.createElement("canvas");
+        image.width = imageData.width;
+        image.height = imageData.height;
+        var ctx = image.getContext("2d");
+        ctx.putImageData(imageData, 0, 0);
+        return image;
+      };
+      var transformImage = function transformImage2(file, instructions) {
+        var options = arguments.length > 2 && arguments[2] !== void 0 ? arguments[2] : {};
+        return new Promise(function(resolve, reject) {
+          if (!file || !isImage$1(file))
+            return reject({ status: "not an image file", file });
+          var stripImageHead = options.stripImageHead, beforeCreateBlob = options.beforeCreateBlob, afterCreateBlob = options.afterCreateBlob, canvasMemoryLimit = options.canvasMemoryLimit;
+          var crop = instructions.crop, size = instructions.size, filter = instructions.filter, markup = instructions.markup, output = instructions.output;
+          var orientation = instructions.image && instructions.image.orientation ? Math.max(1, Math.min(8, instructions.image.orientation)) : null;
+          var qualityAsPercentage = output && output.quality;
+          var quality = qualityAsPercentage === null ? null : qualityAsPercentage / 100;
+          var type = output && output.type || null;
+          var background = output && output.background || null;
+          var transforms = [];
+          if (size && (typeof size.width === "number" || typeof size.height === "number")) {
+            transforms.push({ type: "resize", data: size });
+          }
+          if (filter && filter.length === 20) {
+            transforms.push({ type: "filter", data: filter });
+          }
+          var resolveWithBlob = function resolveWithBlob2(blob) {
+            var promisedBlob = afterCreateBlob ? afterCreateBlob(blob) : blob;
+            Promise.resolve(promisedBlob).then(resolve);
+          };
+          var toBlob = function toBlob2(imageData, options2) {
+            var canvas = imageDataToCanvas(imageData);
+            var promisedCanvas = markup.length ? canvasApplyMarkup(canvas, markup) : canvas;
+            Promise.resolve(promisedCanvas).then(function(canvas2) {
+              canvasToBlob(canvas2, options2, beforeCreateBlob).then(function(blob) {
+                canvasRelease(canvas2);
+                if (stripImageHead) return resolveWithBlob(blob);
+                getImageHead(file).then(function(imageHead) {
+                  if (imageHead !== null) {
+                    blob = new Blob([imageHead, blob.slice(20)], {
+                      type: blob.type
+                    });
+                  }
+                  resolveWithBlob(blob);
+                });
+              }).catch(reject);
+            });
+          };
+          if (/svg/.test(file.type) && type === null) {
+            return cropSVG(file, crop, markup, { background }).then(function(text) {
+              resolve(createBlob(text, "image/svg+xml"));
+            });
+          }
+          var url = URL.createObjectURL(file);
+          loadImage(url).then(function(image) {
+            URL.revokeObjectURL(url);
+            var imageData = imageToImageData(image, orientation, crop, {
+              canvasMemoryLimit,
+              background
+            });
+            var outputFormat = {
+              quality,
+              type: type || file.type
+            };
+            if (!transforms.length) {
+              return toBlob(imageData, outputFormat);
+            }
+            var worker = createWorker(TransformWorker);
+            worker.post(
+              {
+                transforms,
+                imageData
+              },
+              function(response) {
+                toBlob(objectToImageData(response), outputFormat);
+                worker.terminate();
+              },
+              [imageData.data.buffer]
+            );
+          }).catch(reject);
+        });
+      };
+      function _typeof(obj) {
+        if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+          _typeof = function(obj2) {
+            return typeof obj2;
+          };
+        } else {
+          _typeof = function(obj2) {
+            return obj2 && typeof Symbol === "function" && obj2.constructor === Symbol && obj2 !== Symbol.prototype ? "symbol" : typeof obj2;
+          };
+        }
+        return _typeof(obj);
+      }
+      var REACT_ELEMENT_TYPE;
+      function _jsx(type, props, key, children) {
+        if (!REACT_ELEMENT_TYPE) {
+          REACT_ELEMENT_TYPE = typeof Symbol === "function" && Symbol.for && /* @__PURE__ */ Symbol.for("react.element") || 60103;
+        }
+        var defaultProps = type && type.defaultProps;
+        var childrenLength = arguments.length - 3;
+        if (!props && childrenLength !== 0) {
+          props = {
+            children: void 0
+          };
+        }
+        if (props && defaultProps) {
+          for (var propName in defaultProps) {
+            if (props[propName] === void 0) {
+              props[propName] = defaultProps[propName];
+            }
+          }
+        } else if (!props) {
+          props = defaultProps || {};
+        }
+        if (childrenLength === 1) {
+          props.children = children;
+        } else if (childrenLength > 1) {
+          var childArray = new Array(childrenLength);
+          for (var i = 0; i < childrenLength; i++) {
+            childArray[i] = arguments[i + 3];
+          }
+          props.children = childArray;
+        }
+        return {
+          $$typeof: REACT_ELEMENT_TYPE,
+          type,
+          key: key === void 0 ? null : "" + key,
+          ref: null,
+          props,
+          _owner: null
+        };
+      }
+      function _asyncIterator(iterable) {
+        var method;
+        if (typeof Symbol === "function") {
+          if (Symbol.asyncIterator) {
+            method = iterable[Symbol.asyncIterator];
+            if (method != null) return method.call(iterable);
+          }
+          if (Symbol.iterator) {
+            method = iterable[Symbol.iterator];
+            if (method != null) return method.call(iterable);
+          }
+        }
+        throw new TypeError("Object is not async iterable");
+      }
+      function _AwaitValue(value) {
+        this.wrapped = value;
+      }
+      function _AsyncGenerator(gen) {
+        var front, back;
+        function send(key, arg) {
+          return new Promise(function(resolve, reject) {
+            var request = {
+              key,
+              arg,
+              resolve,
+              reject,
+              next: null
+            };
+            if (back) {
+              back = back.next = request;
+            } else {
+              front = back = request;
+              resume(key, arg);
+            }
+          });
+        }
+        function resume(key, arg) {
+          try {
+            var result = gen[key](arg);
+            var value = result.value;
+            var wrappedAwait = value instanceof _AwaitValue;
+            Promise.resolve(wrappedAwait ? value.wrapped : value).then(
+              function(arg2) {
+                if (wrappedAwait) {
+                  resume("next", arg2);
+                  return;
+                }
+                settle(result.done ? "return" : "normal", arg2);
+              },
+              function(err) {
+                resume("throw", err);
+              }
+            );
+          } catch (err) {
+            settle("throw", err);
+          }
+        }
+        function settle(type, value) {
+          switch (type) {
+            case "return":
+              front.resolve({
+                value,
+                done: true
+              });
+              break;
+            case "throw":
+              front.reject(value);
+              break;
+            default:
+              front.resolve({
+                value,
+                done: false
+              });
+              break;
+          }
+          front = front.next;
+          if (front) {
+            resume(front.key, front.arg);
+          } else {
+            back = null;
+          }
+        }
+        this._invoke = send;
+        if (typeof gen.return !== "function") {
+          this.return = void 0;
+        }
+      }
+      if (typeof Symbol === "function" && Symbol.asyncIterator) {
+        _AsyncGenerator.prototype[Symbol.asyncIterator] = function() {
+          return this;
+        };
+      }
+      _AsyncGenerator.prototype.next = function(arg) {
+        return this._invoke("next", arg);
+      };
+      _AsyncGenerator.prototype.throw = function(arg) {
+        return this._invoke("throw", arg);
+      };
+      _AsyncGenerator.prototype.return = function(arg) {
+        return this._invoke("return", arg);
+      };
+      function _wrapAsyncGenerator(fn) {
+        return function() {
+          return new _AsyncGenerator(fn.apply(this, arguments));
+        };
+      }
+      function _awaitAsyncGenerator(value) {
+        return new _AwaitValue(value);
+      }
+      function _asyncGeneratorDelegate(inner, awaitWrap) {
+        var iter = {}, waiting = false;
+        function pump(key, value) {
+          waiting = true;
+          value = new Promise(function(resolve) {
+            resolve(inner[key](value));
+          });
+          return {
+            done: false,
+            value: awaitWrap(value)
+          };
+        }
+        if (typeof Symbol === "function" && Symbol.iterator) {
+          iter[Symbol.iterator] = function() {
+            return this;
+          };
+        }
+        iter.next = function(value) {
+          if (waiting) {
+            waiting = false;
+            return value;
+          }
+          return pump("next", value);
+        };
+        if (typeof inner.throw === "function") {
+          iter.throw = function(value) {
+            if (waiting) {
+              waiting = false;
+              throw value;
+            }
+            return pump("throw", value);
+          };
+        }
+        if (typeof inner.return === "function") {
+          iter.return = function(value) {
+            return pump("return", value);
+          };
+        }
+        return iter;
+      }
+      function asyncGeneratorStep(gen, resolve, reject, _next, _throw, key, arg) {
+        try {
+          var info = gen[key](arg);
+          var value = info.value;
+        } catch (error) {
+          reject(error);
+          return;
+        }
+        if (info.done) {
+          resolve(value);
+        } else {
+          Promise.resolve(value).then(_next, _throw);
+        }
+      }
+      function _asyncToGenerator(fn) {
+        return function() {
+          var self2 = this, args = arguments;
+          return new Promise(function(resolve, reject) {
+            var gen = fn.apply(self2, args);
+            function _next(value) {
+              asyncGeneratorStep(gen, resolve, reject, _next, _throw, "next", value);
+            }
+            function _throw(err) {
+              asyncGeneratorStep(gen, resolve, reject, _next, _throw, "throw", err);
+            }
+            _next(void 0);
+          });
+        };
+      }
+      function _classCallCheck(instance, Constructor) {
+        if (!(instance instanceof Constructor)) {
+          throw new TypeError("Cannot call a class as a function");
+        }
+      }
+      function _defineProperties(target, props) {
+        for (var i = 0; i < props.length; i++) {
+          var descriptor = props[i];
+          descriptor.enumerable = descriptor.enumerable || false;
+          descriptor.configurable = true;
+          if ("value" in descriptor) descriptor.writable = true;
+          Object.defineProperty(target, descriptor.key, descriptor);
+        }
+      }
+      function _createClass(Constructor, protoProps, staticProps) {
+        if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+        if (staticProps) _defineProperties(Constructor, staticProps);
+        return Constructor;
+      }
+      function _defineEnumerableProperties(obj, descs) {
+        for (var key in descs) {
+          var desc = descs[key];
+          desc.configurable = desc.enumerable = true;
+          if ("value" in desc) desc.writable = true;
+          Object.defineProperty(obj, key, desc);
+        }
+        if (Object.getOwnPropertySymbols) {
+          var objectSymbols = Object.getOwnPropertySymbols(descs);
+          for (var i = 0; i < objectSymbols.length; i++) {
+            var sym = objectSymbols[i];
+            var desc = descs[sym];
+            desc.configurable = desc.enumerable = true;
+            if ("value" in desc) desc.writable = true;
+            Object.defineProperty(obj, sym, desc);
+          }
+        }
+        return obj;
+      }
+      function _defaults(obj, defaults) {
+        var keys = Object.getOwnPropertyNames(defaults);
+        for (var i = 0; i < keys.length; i++) {
+          var key = keys[i];
+          var value = Object.getOwnPropertyDescriptor(defaults, key);
+          if (value && value.configurable && obj[key] === void 0) {
+            Object.defineProperty(obj, key, value);
+          }
+        }
+        return obj;
+      }
+      function _defineProperty(obj, key, value) {
+        if (key in obj) {
+          Object.defineProperty(obj, key, {
+            value,
+            enumerable: true,
+            configurable: true,
+            writable: true
+          });
+        } else {
+          obj[key] = value;
+        }
+        return obj;
+      }
+      function _extends() {
+        _extends = Object.assign || function(target) {
+          for (var i = 1; i < arguments.length; i++) {
+            var source = arguments[i];
+            for (var key in source) {
+              if (Object.prototype.hasOwnProperty.call(source, key)) {
+                target[key] = source[key];
+              }
+            }
+          }
+          return target;
+        };
+        return _extends.apply(this, arguments);
+      }
+      function _objectSpread(target) {
+        for (var i = 1; i < arguments.length; i++) {
+          var source = arguments[i] != null ? arguments[i] : {};
+          var ownKeys = Object.keys(source);
+          if (typeof Object.getOwnPropertySymbols === "function") {
+            ownKeys = ownKeys.concat(
+              Object.getOwnPropertySymbols(source).filter(function(sym) {
+                return Object.getOwnPropertyDescriptor(source, sym).enumerable;
+              })
+            );
+          }
+          ownKeys.forEach(function(key) {
+            _defineProperty(target, key, source[key]);
+          });
+        }
+        return target;
+      }
+      function _inherits(subClass, superClass) {
+        if (typeof superClass !== "function" && superClass !== null) {
+          throw new TypeError("Super expression must either be null or a function");
+        }
+        subClass.prototype = Object.create(superClass && superClass.prototype, {
+          constructor: {
+            value: subClass,
+            writable: true,
+            configurable: true
+          }
+        });
+        if (superClass) _setPrototypeOf(subClass, superClass);
+      }
+      function _inheritsLoose(subClass, superClass) {
+        subClass.prototype = Object.create(superClass.prototype);
+        subClass.prototype.constructor = subClass;
+        subClass.__proto__ = superClass;
+      }
+      function _getPrototypeOf(o) {
+        _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf2(o2) {
+          return o2.__proto__ || Object.getPrototypeOf(o2);
+        };
+        return _getPrototypeOf(o);
+      }
+      function _setPrototypeOf(o, p) {
+        _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf2(o2, p2) {
+          o2.__proto__ = p2;
+          return o2;
+        };
+        return _setPrototypeOf(o, p);
+      }
+      function isNativeReflectConstruct() {
+        if (typeof Reflect === "undefined" || !Reflect.construct) return false;
+        if (Reflect.construct.sham) return false;
+        if (typeof Proxy === "function") return true;
+        try {
+          Date.prototype.toString.call(Reflect.construct(Date, [], function() {
+          }));
+          return true;
+        } catch (e) {
+          return false;
+        }
+      }
+      function _construct(Parent, args, Class) {
+        if (isNativeReflectConstruct()) {
+          _construct = Reflect.construct;
+        } else {
+          _construct = function _construct2(Parent2, args2, Class2) {
+            var a = [null];
+            a.push.apply(a, args2);
+            var Constructor = Function.bind.apply(Parent2, a);
+            var instance = new Constructor();
+            if (Class2) _setPrototypeOf(instance, Class2.prototype);
+            return instance;
+          };
+        }
+        return _construct.apply(null, arguments);
+      }
+      function _isNativeFunction(fn) {
+        return Function.toString.call(fn).indexOf("[native code]") !== -1;
+      }
+      function _wrapNativeSuper(Class) {
+        var _cache = typeof Map === "function" ? /* @__PURE__ */ new Map() : void 0;
+        _wrapNativeSuper = function _wrapNativeSuper2(Class2) {
+          if (Class2 === null || !_isNativeFunction(Class2)) return Class2;
+          if (typeof Class2 !== "function") {
+            throw new TypeError("Super expression must either be null or a function");
+          }
+          if (typeof _cache !== "undefined") {
+            if (_cache.has(Class2)) return _cache.get(Class2);
+            _cache.set(Class2, Wrapper);
+          }
+          function Wrapper() {
+            return _construct(Class2, arguments, _getPrototypeOf(this).constructor);
+          }
+          Wrapper.prototype = Object.create(Class2.prototype, {
+            constructor: {
+              value: Wrapper,
+              enumerable: false,
+              writable: true,
+              configurable: true
+            }
+          });
+          return _setPrototypeOf(Wrapper, Class2);
+        };
+        return _wrapNativeSuper(Class);
+      }
+      function _instanceof(left, right) {
+        if (right != null && typeof Symbol !== "undefined" && right[Symbol.hasInstance]) {
+          return right[Symbol.hasInstance](left);
+        } else {
+          return left instanceof right;
+        }
+      }
+      function _interopRequireDefault(obj) {
+        return obj && obj.__esModule ? obj : {
+          default: obj
+        };
+      }
+      function _interopRequireWildcard(obj) {
+        if (obj && obj.__esModule) {
+          return obj;
+        } else {
+          var newObj = {};
+          if (obj != null) {
+            for (var key in obj) {
+              if (Object.prototype.hasOwnProperty.call(obj, key)) {
+                var desc = Object.defineProperty && Object.getOwnPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : {};
+                if (desc.get || desc.set) {
+                  Object.defineProperty(newObj, key, desc);
+                } else {
+                  newObj[key] = obj[key];
+                }
+              }
+            }
+          }
+          newObj.default = obj;
+          return newObj;
+        }
+      }
+      function _newArrowCheck(innerThis, boundThis) {
+        if (innerThis !== boundThis) {
+          throw new TypeError("Cannot instantiate an arrow function");
+        }
+      }
+      function _objectDestructuringEmpty(obj) {
+        if (obj == null) throw new TypeError("Cannot destructure undefined");
+      }
+      function _objectWithoutPropertiesLoose(source, excluded) {
+        if (source == null) return {};
+        var target = {};
+        var sourceKeys = Object.keys(source);
+        var key, i;
+        for (i = 0; i < sourceKeys.length; i++) {
+          key = sourceKeys[i];
+          if (excluded.indexOf(key) >= 0) continue;
+          target[key] = source[key];
+        }
+        return target;
+      }
+      function _objectWithoutProperties(source, excluded) {
+        if (source == null) return {};
+        var target = _objectWithoutPropertiesLoose(source, excluded);
+        var key, i;
+        if (Object.getOwnPropertySymbols) {
+          var sourceSymbolKeys = Object.getOwnPropertySymbols(source);
+          for (i = 0; i < sourceSymbolKeys.length; i++) {
+            key = sourceSymbolKeys[i];
+            if (excluded.indexOf(key) >= 0) continue;
+            if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue;
+            target[key] = source[key];
+          }
+        }
+        return target;
+      }
+      function _assertThisInitialized(self2) {
+        if (self2 === void 0) {
+          throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
+        }
+        return self2;
+      }
+      function _possibleConstructorReturn(self2, call) {
+        if (call && (typeof call === "object" || typeof call === "function")) {
+          return call;
+        }
+        return _assertThisInitialized(self2);
+      }
+      function _superPropBase(object, property) {
+        while (!Object.prototype.hasOwnProperty.call(object, property)) {
+          object = _getPrototypeOf(object);
+          if (object === null) break;
+        }
+        return object;
+      }
+      function _get(target, property, receiver) {
+        if (typeof Reflect !== "undefined" && Reflect.get) {
+          _get = Reflect.get;
+        } else {
+          _get = function _get2(target2, property2, receiver2) {
+            var base = _superPropBase(target2, property2);
+            if (!base) return;
+            var desc = Object.getOwnPropertyDescriptor(base, property2);
+            if (desc.get) {
+              return desc.get.call(receiver2);
+            }
+            return desc.value;
+          };
+        }
+        return _get(target, property, receiver || target);
+      }
+      function set(target, property, value, receiver) {
+        if (typeof Reflect !== "undefined" && Reflect.set) {
+          set = Reflect.set;
+        } else {
+          set = function set2(target2, property2, value2, receiver2) {
+            var base = _superPropBase(target2, property2);
+            var desc;
+            if (base) {
+              desc = Object.getOwnPropertyDescriptor(base, property2);
+              if (desc.set) {
+                desc.set.call(receiver2, value2);
+                return true;
+              } else if (!desc.writable) {
+                return false;
+              }
+            }
+            desc = Object.getOwnPropertyDescriptor(receiver2, property2);
+            if (desc) {
+              if (!desc.writable) {
+                return false;
+              }
+              desc.value = value2;
+              Object.defineProperty(receiver2, property2, desc);
+            } else {
+              _defineProperty(receiver2, property2, value2);
+            }
+            return true;
+          };
+        }
+        return set(target, property, value, receiver);
+      }
+      function _set(target, property, value, receiver, isStrict) {
+        var s = set(target, property, value, receiver || target);
+        if (!s && isStrict) {
+          throw new Error("failed to set property");
+        }
+        return value;
+      }
+      function _taggedTemplateLiteral(strings, raw) {
+        if (!raw) {
+          raw = strings.slice(0);
+        }
+        return Object.freeze(
+          Object.defineProperties(strings, {
+            raw: {
+              value: Object.freeze(raw)
+            }
+          })
+        );
+      }
+      function _taggedTemplateLiteralLoose(strings, raw) {
+        if (!raw) {
+          raw = strings.slice(0);
+        }
+        strings.raw = raw;
+        return strings;
+      }
+      function _temporalRef(val, name) {
+        if (val === _temporalUndefined) {
+          throw new ReferenceError(name + " is not defined - temporal dead zone");
+        } else {
+          return val;
+        }
+      }
+      function _readOnlyError(name) {
+        throw new Error('"' + name + '" is read-only');
+      }
+      function _classNameTDZError(name) {
+        throw new Error('Class "' + name + '" cannot be referenced in computed property keys.');
+      }
+      var _temporalUndefined = {};
+      function _slicedToArray(arr, i) {
+        return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest();
+      }
+      function _slicedToArrayLoose(arr, i) {
+        return _arrayWithHoles(arr) || _iterableToArrayLimitLoose(arr, i) || _nonIterableRest();
+      }
+      function _toArray(arr) {
+        return _arrayWithHoles(arr) || _iterableToArray(arr) || _nonIterableRest();
+      }
+      function _toConsumableArray(arr) {
+        return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
+      }
+      function _arrayWithoutHoles(arr) {
+        if (Array.isArray(arr)) {
+          for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+          return arr2;
+        }
+      }
+      function _arrayWithHoles(arr) {
+        if (Array.isArray(arr)) return arr;
+      }
+      function _iterableToArray(iter) {
+        if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]")
+          return Array.from(iter);
+      }
+      function _iterableToArrayLimit(arr, i) {
+        var _arr = [];
+        var _n = true;
+        var _d = false;
+        var _e = void 0;
+        try {
+          for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) {
+            _arr.push(_s.value);
+            if (i && _arr.length === i) break;
+          }
+        } catch (err) {
+          _d = true;
+          _e = err;
+        } finally {
+          try {
+            if (!_n && _i["return"] != null) _i["return"]();
+          } finally {
+            if (_d) throw _e;
+          }
+        }
+        return _arr;
+      }
+      function _iterableToArrayLimitLoose(arr, i) {
+        var _arr = [];
+        for (var _iterator = arr[Symbol.iterator](), _step; !(_step = _iterator.next()).done; ) {
+          _arr.push(_step.value);
+          if (i && _arr.length === i) break;
+        }
+        return _arr;
+      }
+      function _nonIterableSpread() {
+        throw new TypeError("Invalid attempt to spread non-iterable instance");
+      }
+      function _nonIterableRest() {
+        throw new TypeError("Invalid attempt to destructure non-iterable instance");
+      }
+      function _skipFirstGeneratorNext(fn) {
+        return function() {
+          var it = fn.apply(this, arguments);
+          it.next();
+          return it;
+        };
+      }
+      function _toPrimitive(input, hint) {
+        if (typeof input !== "object" || input === null) return input;
+        var prim = input[Symbol.toPrimitive];
+        if (prim !== void 0) {
+          var res = prim.call(input, hint || "default");
+          if (typeof res !== "object") return res;
+          throw new TypeError("@@toPrimitive must return a primitive value.");
+        }
+        return (hint === "string" ? String : Number)(input);
+      }
+      function _toPropertyKey(arg) {
+        var key = _toPrimitive(arg, "string");
+        return typeof key === "symbol" ? key : String(key);
+      }
+      function _initializerWarningHelper(descriptor, context) {
+        throw new Error(
+          "Decorating class property failed. Please ensure that proposal-class-properties is enabled and set to use loose mode. To use proposal-class-properties in spec mode with decorators, wait for the next major version of decorators in stage 2."
+        );
+      }
+      function _initializerDefineProperty(target, property, descriptor, context) {
+        if (!descriptor) return;
+        Object.defineProperty(target, property, {
+          enumerable: descriptor.enumerable,
+          configurable: descriptor.configurable,
+          writable: descriptor.writable,
+          value: descriptor.initializer ? descriptor.initializer.call(context) : void 0
+        });
+      }
+      function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
+        var desc = {};
+        Object.keys(descriptor).forEach(function(key) {
+          desc[key] = descriptor[key];
+        });
+        desc.enumerable = !!desc.enumerable;
+        desc.configurable = !!desc.configurable;
+        if ("value" in desc || desc.initializer) {
+          desc.writable = true;
+        }
+        desc = decorators.slice().reverse().reduce(function(desc2, decorator) {
+          return decorator(target, property, desc2) || desc2;
+        }, desc);
+        if (context && desc.initializer !== void 0) {
+          desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
+          desc.initializer = void 0;
+        }
+        if (desc.initializer === void 0) {
+          Object.defineProperty(target, property, desc);
+          desc = null;
+        }
+        return desc;
+      }
+      var id = 0;
+      function _classPrivateFieldLooseKey(name) {
+        return "__private_" + id++ + "_" + name;
+      }
+      function _classPrivateFieldLooseBase(receiver, privateKey) {
+        if (!Object.prototype.hasOwnProperty.call(receiver, privateKey)) {
+          throw new TypeError("attempted to use private field on non-instance");
+        }
+        return receiver;
+      }
+      function _classPrivateFieldGet(receiver, privateMap) {
+        if (!privateMap.has(receiver)) {
+          throw new TypeError("attempted to get private field on non-instance");
+        }
+        var descriptor = privateMap.get(receiver);
+        if (descriptor.get) {
+          return descriptor.get.call(receiver);
+        }
+        return descriptor.value;
+      }
+      function _classPrivateFieldSet(receiver, privateMap, value) {
+        if (!privateMap.has(receiver)) {
+          throw new TypeError("attempted to set private field on non-instance");
+        }
+        var descriptor = privateMap.get(receiver);
+        if (descriptor.set) {
+          descriptor.set.call(receiver, value);
+        } else {
+          if (!descriptor.writable) {
+            throw new TypeError("attempted to set read only private field");
+          }
+          descriptor.value = value;
+        }
+        return value;
+      }
+      function _classStaticPrivateFieldSpecGet(receiver, classConstructor, descriptor) {
+        if (receiver !== classConstructor) {
+          throw new TypeError("Private static access of wrong provenance");
+        }
+        return descriptor.value;
+      }
+      function _classStaticPrivateFieldSpecSet(receiver, classConstructor, descriptor, value) {
+        if (receiver !== classConstructor) {
+          throw new TypeError("Private static access of wrong provenance");
+        }
+        if (!descriptor.writable) {
+          throw new TypeError("attempted to set read only private field");
+        }
+        descriptor.value = value;
+        return value;
+      }
+      function _classStaticPrivateMethodGet(receiver, classConstructor, method) {
+        if (receiver !== classConstructor) {
+          throw new TypeError("Private static access of wrong provenance");
+        }
+        return method;
+      }
+      function _classStaticPrivateMethodSet() {
+        throw new TypeError("attempted to set read only static private field");
+      }
+      function _decorate(decorators, factory, superClass, mixins) {
+        var api = _getDecoratorsApi();
+        if (mixins) {
+          for (var i = 0; i < mixins.length; i++) {
+            api = mixins[i](api);
+          }
+        }
+        var r = factory(function initialize(O) {
+          api.initializeInstanceElements(O, decorated.elements);
+        }, superClass);
+        var decorated = api.decorateClass(
+          _coalesceClassElements(r.d.map(_createElementDescriptor)),
+          decorators
+        );
+        api.initializeClassElements(r.F, decorated.elements);
+        return api.runClassFinishers(r.F, decorated.finishers);
+      }
+      function _getDecoratorsApi() {
+        _getDecoratorsApi = function() {
+          return api;
+        };
+        var api = {
+          elementsDefinitionOrder: [["method"], ["field"]],
+          initializeInstanceElements: function(O, elements) {
+            ["method", "field"].forEach(function(kind) {
+              elements.forEach(function(element) {
+                if (element.kind === kind && element.placement === "own") {
+                  this.defineClassElement(O, element);
+                }
+              }, this);
+            }, this);
+          },
+          initializeClassElements: function(F, elements) {
+            var proto = F.prototype;
+            ["method", "field"].forEach(function(kind) {
+              elements.forEach(function(element) {
+                var placement = element.placement;
+                if (element.kind === kind && (placement === "static" || placement === "prototype")) {
+                  var receiver = placement === "static" ? F : proto;
+                  this.defineClassElement(receiver, element);
+                }
+              }, this);
+            }, this);
+          },
+          defineClassElement: function(receiver, element) {
+            var descriptor = element.descriptor;
+            if (element.kind === "field") {
+              var initializer = element.initializer;
+              descriptor = {
+                enumerable: descriptor.enumerable,
+                writable: descriptor.writable,
+                configurable: descriptor.configurable,
+                value: initializer === void 0 ? void 0 : initializer.call(receiver)
+              };
+            }
+            Object.defineProperty(receiver, element.key, descriptor);
+          },
+          decorateClass: function(elements, decorators) {
+            var newElements = [];
+            var finishers = [];
+            var placements = {
+              static: [],
+              prototype: [],
+              own: []
+            };
+            elements.forEach(function(element) {
+              this.addElementPlacement(element, placements);
+            }, this);
+            elements.forEach(function(element) {
+              if (!_hasDecorators(element)) return newElements.push(element);
+              var elementFinishersExtras = this.decorateElement(element, placements);
+              newElements.push(elementFinishersExtras.element);
+              newElements.push.apply(newElements, elementFinishersExtras.extras);
+              finishers.push.apply(finishers, elementFinishersExtras.finishers);
+            }, this);
+            if (!decorators) {
+              return {
+                elements: newElements,
+                finishers
+              };
+            }
+            var result = this.decorateConstructor(newElements, decorators);
+            finishers.push.apply(finishers, result.finishers);
+            result.finishers = finishers;
+            return result;
+          },
+          addElementPlacement: function(element, placements, silent) {
+            var keys = placements[element.placement];
+            if (!silent && keys.indexOf(element.key) !== -1) {
+              throw new TypeError("Duplicated element (" + element.key + ")");
+            }
+            keys.push(element.key);
+          },
+          decorateElement: function(element, placements) {
+            var extras = [];
+            var finishers = [];
+            for (var decorators = element.decorators, i = decorators.length - 1; i >= 0; i--) {
+              var keys = placements[element.placement];
+              keys.splice(keys.indexOf(element.key), 1);
+              var elementObject = this.fromElementDescriptor(element);
+              var elementFinisherExtras = this.toElementFinisherExtras(
+                (0, decorators[i])(elementObject) || elementObject
+              );
+              element = elementFinisherExtras.element;
+              this.addElementPlacement(element, placements);
+              if (elementFinisherExtras.finisher) {
+                finishers.push(elementFinisherExtras.finisher);
+              }
+              var newExtras = elementFinisherExtras.extras;
+              if (newExtras) {
+                for (var j = 0; j < newExtras.length; j++) {
+                  this.addElementPlacement(newExtras[j], placements);
+                }
+                extras.push.apply(extras, newExtras);
+              }
+            }
+            return {
+              element,
+              finishers,
+              extras
+            };
+          },
+          decorateConstructor: function(elements, decorators) {
+            var finishers = [];
+            for (var i = decorators.length - 1; i >= 0; i--) {
+              var obj = this.fromClassDescriptor(elements);
+              var elementsAndFinisher = this.toClassDescriptor(
+                (0, decorators[i])(obj) || obj
+              );
+              if (elementsAndFinisher.finisher !== void 0) {
+                finishers.push(elementsAndFinisher.finisher);
+              }
+              if (elementsAndFinisher.elements !== void 0) {
+                elements = elementsAndFinisher.elements;
+                for (var j = 0; j < elements.length - 1; j++) {
+                  for (var k = j + 1; k < elements.length; k++) {
+                    if (elements[j].key === elements[k].key && elements[j].placement === elements[k].placement) {
+                      throw new TypeError(
+                        "Duplicated element (" + elements[j].key + ")"
+                      );
+                    }
+                  }
+                }
+              }
+            }
+            return {
+              elements,
+              finishers
+            };
+          },
+          fromElementDescriptor: function(element) {
+            var obj = {
+              kind: element.kind,
+              key: element.key,
+              placement: element.placement,
+              descriptor: element.descriptor
+            };
+            var desc = {
+              value: "Descriptor",
+              configurable: true
+            };
+            Object.defineProperty(obj, Symbol.toStringTag, desc);
+            if (element.kind === "field") obj.initializer = element.initializer;
+            return obj;
+          },
+          toElementDescriptors: function(elementObjects) {
+            if (elementObjects === void 0) return;
+            return _toArray(elementObjects).map(function(elementObject) {
+              var element = this.toElementDescriptor(elementObject);
+              this.disallowProperty(elementObject, "finisher", "An element descriptor");
+              this.disallowProperty(elementObject, "extras", "An element descriptor");
+              return element;
+            }, this);
+          },
+          toElementDescriptor: function(elementObject) {
+            var kind = String(elementObject.kind);
+            if (kind !== "method" && kind !== "field") {
+              throw new TypeError(
+                `An element descriptor's .kind property must be either "method" or "field", but a decorator created an element descriptor with .kind "` + kind + '"'
+              );
+            }
+            var key = _toPropertyKey(elementObject.key);
+            var placement = String(elementObject.placement);
+            if (placement !== "static" && placement !== "prototype" && placement !== "own") {
+              throw new TypeError(
+                `An element descriptor's .placement property must be one of "static", "prototype" or "own", but a decorator created an element descriptor with .placement "` + placement + '"'
+              );
+            }
+            var descriptor = elementObject.descriptor;
+            this.disallowProperty(elementObject, "elements", "An element descriptor");
+            var element = {
+              kind,
+              key,
+              placement,
+              descriptor: Object.assign({}, descriptor)
+            };
+            if (kind !== "field") {
+              this.disallowProperty(elementObject, "initializer", "A method descriptor");
+            } else {
+              this.disallowProperty(
+                descriptor,
+                "get",
+                "The property descriptor of a field descriptor"
+              );
+              this.disallowProperty(
+                descriptor,
+                "set",
+                "The property descriptor of a field descriptor"
+              );
+              this.disallowProperty(
+                descriptor,
+                "value",
+                "The property descriptor of a field descriptor"
+              );
+              element.initializer = elementObject.initializer;
+            }
+            return element;
+          },
+          toElementFinisherExtras: function(elementObject) {
+            var element = this.toElementDescriptor(elementObject);
+            var finisher = _optionalCallableProperty(elementObject, "finisher");
+            var extras = this.toElementDescriptors(elementObject.extras);
+            return {
+              element,
+              finisher,
+              extras
+            };
+          },
+          fromClassDescriptor: function(elements) {
+            var obj = {
+              kind: "class",
+              elements: elements.map(this.fromElementDescriptor, this)
+            };
+            var desc = {
+              value: "Descriptor",
+              configurable: true
+            };
+            Object.defineProperty(obj, Symbol.toStringTag, desc);
+            return obj;
+          },
+          toClassDescriptor: function(obj) {
+            var kind = String(obj.kind);
+            if (kind !== "class") {
+              throw new TypeError(
+                `A class descriptor's .kind property must be "class", but a decorator created a class descriptor with .kind "` + kind + '"'
+              );
+            }
+            this.disallowProperty(obj, "key", "A class descriptor");
+            this.disallowProperty(obj, "placement", "A class descriptor");
+            this.disallowProperty(obj, "descriptor", "A class descriptor");
+            this.disallowProperty(obj, "initializer", "A class descriptor");
+            this.disallowProperty(obj, "extras", "A class descriptor");
+            var finisher = _optionalCallableProperty(obj, "finisher");
+            var elements = this.toElementDescriptors(obj.elements);
+            return {
+              elements,
+              finisher
+            };
+          },
+          runClassFinishers: function(constructor, finishers) {
+            for (var i = 0; i < finishers.length; i++) {
+              var newConstructor = (0, finishers[i])(constructor);
+              if (newConstructor !== void 0) {
+                if (typeof newConstructor !== "function") {
+                  throw new TypeError("Finishers must return a constructor.");
+                }
+                constructor = newConstructor;
+              }
+            }
+            return constructor;
+          },
+          disallowProperty: function(obj, name, objectType) {
+            if (obj[name] !== void 0) {
+              throw new TypeError(objectType + " can't have a ." + name + " property.");
+            }
+          }
+        };
+        return api;
+      }
+      function _createElementDescriptor(def) {
+        var key = _toPropertyKey(def.key);
+        var descriptor;
+        if (def.kind === "method") {
+          descriptor = {
+            value: def.value,
+            writable: true,
+            configurable: true,
+            enumerable: false
+          };
+        } else if (def.kind === "get") {
+          descriptor = {
+            get: def.value,
+            configurable: true,
+            enumerable: false
+          };
+        } else if (def.kind === "set") {
+          descriptor = {
+            set: def.value,
+            configurable: true,
+            enumerable: false
+          };
+        } else if (def.kind === "field") {
+          descriptor = {
+            configurable: true,
+            writable: true,
+            enumerable: true
+          };
+        }
+        var element = {
+          kind: def.kind === "field" ? "field" : "method",
+          key,
+          placement: def.static ? "static" : def.kind === "field" ? "own" : "prototype",
+          descriptor
+        };
+        if (def.decorators) element.decorators = def.decorators;
+        if (def.kind === "field") element.initializer = def.value;
+        return element;
+      }
+      function _coalesceGetterSetter(element, other) {
+        if (element.descriptor.get !== void 0) {
+          other.descriptor.get = element.descriptor.get;
+        } else {
+          other.descriptor.set = element.descriptor.set;
+        }
+      }
+      function _coalesceClassElements(elements) {
+        var newElements = [];
+        var isSameElement = function(other2) {
+          return other2.kind === "method" && other2.key === element.key && other2.placement === element.placement;
+        };
+        for (var i = 0; i < elements.length; i++) {
+          var element = elements[i];
+          var other;
+          if (element.kind === "method" && (other = newElements.find(isSameElement))) {
+            if (_isDataDescriptor(element.descriptor) || _isDataDescriptor(other.descriptor)) {
+              if (_hasDecorators(element) || _hasDecorators(other)) {
+                throw new ReferenceError(
+                  "Duplicated methods (" + element.key + ") can't be decorated."
+                );
+              }
+              other.descriptor = element.descriptor;
+            } else {
+              if (_hasDecorators(element)) {
+                if (_hasDecorators(other)) {
+                  throw new ReferenceError(
+                    "Decorators can't be placed on different accessors with for the same property (" + element.key + ")."
+                  );
+                }
+                other.decorators = element.decorators;
+              }
+              _coalesceGetterSetter(element, other);
+            }
+          } else {
+            newElements.push(element);
+          }
+        }
+        return newElements;
+      }
+      function _hasDecorators(element) {
+        return element.decorators && element.decorators.length;
+      }
+      function _isDataDescriptor(desc) {
+        return desc !== void 0 && !(desc.value === void 0 && desc.writable === void 0);
+      }
+      function _optionalCallableProperty(obj, name) {
+        var value = obj[name];
+        if (value !== void 0 && typeof value !== "function") {
+          throw new TypeError("Expected '" + name + "' to be a function");
+        }
+        return value;
+      }
+      function _classPrivateMethodGet(receiver, privateSet, fn) {
+        if (!privateSet.has(receiver)) {
+          throw new TypeError("attempted to get private field on non-instance");
+        }
+        return fn;
+      }
+      function _classPrivateMethodSet() {
+        throw new TypeError("attempted to reassign private method");
+      }
+      function _wrapRegExp(re, groups) {
+        _wrapRegExp = function(re2, groups2) {
+          return new BabelRegExp(re2, groups2);
+        };
+        var _RegExp = _wrapNativeSuper(RegExp);
+        var _super = RegExp.prototype;
+        var _groups = /* @__PURE__ */ new WeakMap();
+        function BabelRegExp(re2, groups2) {
+          var _this = _RegExp.call(this, re2);
+          _groups.set(_this, groups2);
+          return _this;
+        }
+        _inherits(BabelRegExp, _RegExp);
+        BabelRegExp.prototype.exec = function(str) {
+          var result = _super.exec.call(this, str);
+          if (result) result.groups = buildGroups(result, this);
+          return result;
+        };
+        BabelRegExp.prototype[Symbol.replace] = function(str, substitution) {
+          if (typeof substitution === "string") {
+            var groups2 = _groups.get(this);
+            return _super[Symbol.replace].call(
+              this,
+              str,
+              substitution.replace(/\$<([^>]+)>/g, function(_, name) {
+                return "$" + groups2[name];
+              })
+            );
+          } else if (typeof substitution === "function") {
+            var _this = this;
+            return _super[Symbol.replace].call(this, str, function() {
+              var args = [];
+              args.push.apply(args, arguments);
+              if (typeof args[args.length - 1] !== "object") {
+                args.push(buildGroups(args, _this));
+              }
+              return substitution.apply(this, args);
+            });
+          } else {
+            return _super[Symbol.replace].call(this, str, substitution);
+          }
+        };
+        function buildGroups(result, re2) {
+          var g = _groups.get(re2);
+          return Object.keys(g).reduce(function(groups2, name) {
+            groups2[name] = result[g[name]];
+            return groups2;
+          }, /* @__PURE__ */ Object.create(null));
+        }
+        return _wrapRegExp.apply(this, arguments);
+      }
+      var MARKUP_RECT = ["x", "y", "left", "top", "right", "bottom", "width", "height"];
+      var toOptionalFraction = function toOptionalFraction2(value) {
+        return typeof value === "string" && /%/.test(value) ? parseFloat(value) / 100 : value;
+      };
+      var prepareMarkup = function prepareMarkup2(markup) {
+        var _markup = _slicedToArray(markup, 2), type = _markup[0], props = _markup[1];
+        var rect = props.points ? {} : MARKUP_RECT.reduce(function(prev, curr) {
+          prev[curr] = toOptionalFraction(props[curr]);
+          return prev;
+        }, {});
+        return [
+          type,
+          Object.assign(
+            {
+              zIndex: 0
+            },
+            props,
+            rect
+          )
+        ];
+      };
+      var getImageSize = function getImageSize2(file) {
+        return new Promise(function(resolve, reject) {
+          var imageElement = new Image();
+          imageElement.src = URL.createObjectURL(file);
+          var measure = function measure2() {
+            var width = imageElement.naturalWidth;
+            var height = imageElement.naturalHeight;
+            var hasSize = width && height;
+            if (!hasSize) return;
+            URL.revokeObjectURL(imageElement.src);
+            clearInterval(intervalId);
+            resolve({ width, height });
+          };
+          imageElement.onerror = function(err) {
+            URL.revokeObjectURL(imageElement.src);
+            clearInterval(intervalId);
+            reject(err);
+          };
+          var intervalId = setInterval(measure, 1);
+          measure();
+        });
+      };
+      if (typeof window !== "undefined" && typeof window.document !== "undefined") {
+        if (!HTMLCanvasElement.prototype.toBlob) {
+          Object.defineProperty(HTMLCanvasElement.prototype, "toBlob", {
+            value: function value(cb, type, quality) {
+              var canvas = this;
+              setTimeout(function() {
+                var dataURL = canvas.toDataURL(type, quality).split(",")[1];
+                var binStr = atob(dataURL);
+                var index = binStr.length;
+                var data2 = new Uint8Array(index);
+                while (index--) {
+                  data2[index] = binStr.charCodeAt(index);
+                }
+                cb(new Blob([data2], { type: type || "image/png" }));
+              });
+            }
+          });
+        }
+      }
+      var isBrowser = typeof window !== "undefined" && typeof window.document !== "undefined";
+      var isIOS = isBrowser && /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      var plugin = function plugin2(_ref) {
+        var addFilter = _ref.addFilter, utils = _ref.utils;
+        var Type = utils.Type, forin = utils.forin, getFileFromBlob = utils.getFileFromBlob, isFile = utils.isFile;
+        var TRANSFORM_LIST = ["crop", "resize", "filter", "markup", "output"];
+        var createVariantCreator = function createVariantCreator2(updateMetadata) {
+          return function(transform, file, metadata) {
+            return transform(file, updateMetadata ? updateMetadata(metadata) : metadata);
+          };
+        };
+        var isDefaultCrop = function isDefaultCrop2(crop) {
+          return crop.aspectRatio === null && crop.rotation === 0 && crop.zoom === 1 && crop.center && crop.center.x === 0.5 && crop.center.y === 0.5 && crop.flip && crop.flip.horizontal === false && crop.flip.vertical === false;
+        };
+        addFilter("SHOULD_PREPARE_OUTPUT", function(shouldPrepareOutput, _ref2) {
+          var query = _ref2.query;
+          return new Promise(function(resolve) {
+            resolve(!query("IS_ASYNC"));
+          });
+        });
+        var shouldTransformFile = function shouldTransformFile2(query, file, item) {
+          return new Promise(function(resolve) {
+            if (!query("GET_ALLOW_IMAGE_TRANSFORM") || item.archived || !isFile(file) || !isImage(file)) {
+              return resolve(false);
+            }
+            getImageSize(file).then(function() {
+              var fn = query("GET_IMAGE_TRANSFORM_IMAGE_FILTER");
+              if (fn) {
+                var filterResult = fn(file);
+                if (filterResult == null) {
+                  return handleRevert(true);
+                }
+                if (typeof filterResult === "boolean") {
+                  return resolve(filterResult);
+                }
+                if (typeof filterResult.then === "function") {
+                  return filterResult.then(resolve);
+                }
+              }
+              resolve(true);
+            }).catch(function(err) {
+              resolve(false);
+            });
+          });
+        };
+        addFilter("DID_CREATE_ITEM", function(item, _ref3) {
+          var query = _ref3.query, dispatch = _ref3.dispatch;
+          if (!query("GET_ALLOW_IMAGE_TRANSFORM")) return;
+          item.extend("requestPrepare", function() {
+            return new Promise(function(resolve, reject) {
+              dispatch(
+                "REQUEST_PREPARE_OUTPUT",
+                {
+                  query: item.id,
+                  item,
+                  success: resolve,
+                  failure: reject
+                },
+                true
+              );
+            });
+          });
+        });
+        addFilter("PREPARE_OUTPUT", function(file, _ref4) {
+          var query = _ref4.query, item = _ref4.item;
+          return new Promise(function(resolve) {
+            shouldTransformFile(query, file, item).then(function(shouldTransform) {
+              if (!shouldTransform) return resolve(file);
+              var variants = [];
+              if (query("GET_IMAGE_TRANSFORM_VARIANTS_INCLUDE_ORIGINAL")) {
+                variants.push(function() {
+                  return new Promise(function(resolve2) {
+                    resolve2({
+                      name: query("GET_IMAGE_TRANSFORM_VARIANTS_ORIGINAL_NAME"),
+                      file
+                    });
+                  });
+                });
+              }
+              if (query("GET_IMAGE_TRANSFORM_VARIANTS_INCLUDE_DEFAULT")) {
+                variants.push(function(transform2, file2, metadata) {
+                  return new Promise(function(resolve2) {
+                    transform2(file2, metadata).then(function(file3) {
+                      return resolve2({
+                        name: query("GET_IMAGE_TRANSFORM_VARIANTS_DEFAULT_NAME"),
+                        file: file3
+                      });
+                    });
+                  });
+                });
+              }
+              var variantsDefinition = query("GET_IMAGE_TRANSFORM_VARIANTS") || {};
+              forin(variantsDefinition, function(key, fn) {
+                var createVariant = createVariantCreator(fn);
+                variants.push(function(transform2, file2, metadata) {
+                  return new Promise(function(resolve2) {
+                    createVariant(transform2, file2, metadata).then(function(file3) {
+                      return resolve2({ name: key, file: file3 });
+                    });
+                  });
+                });
+              });
+              var qualityAsPercentage = query("GET_IMAGE_TRANSFORM_OUTPUT_QUALITY");
+              var qualityMode = query("GET_IMAGE_TRANSFORM_OUTPUT_QUALITY_MODE");
+              var quality = qualityAsPercentage === null ? null : qualityAsPercentage / 100;
+              var type = query("GET_IMAGE_TRANSFORM_OUTPUT_MIME_TYPE");
+              var clientTransforms = query("GET_IMAGE_TRANSFORM_CLIENT_TRANSFORMS") || TRANSFORM_LIST;
+              item.setMetadata(
+                "output",
+                {
+                  type,
+                  quality,
+                  client: clientTransforms
+                },
+                true
+              );
+              var transform = function transform2(file2, metadata) {
+                return new Promise(function(resolve2, reject) {
+                  var filteredMetadata = Object.assign({}, metadata);
+                  Object.keys(filteredMetadata).filter(function(instruction) {
+                    return instruction !== "exif";
+                  }).forEach(function(instruction) {
+                    if (clientTransforms.indexOf(instruction) === -1) {
+                      delete filteredMetadata[instruction];
+                    }
+                  });
+                  var resize = filteredMetadata.resize, exif = filteredMetadata.exif, output = filteredMetadata.output, crop = filteredMetadata.crop, filter = filteredMetadata.filter, markup = filteredMetadata.markup;
+                  var instructions = {
+                    image: {
+                      orientation: exif ? exif.orientation : null
+                    },
+                    output: output && (output.type || typeof output.quality === "number" || output.background) ? {
+                      type: output.type,
+                      quality: typeof output.quality === "number" ? output.quality * 100 : null,
+                      background: output.background || query(
+                        "GET_IMAGE_TRANSFORM_CANVAS_BACKGROUND_COLOR"
+                      ) || null
+                    } : void 0,
+                    size: resize && (resize.size.width || resize.size.height) ? Object.assign(
+                      {
+                        mode: resize.mode,
+                        upscale: resize.upscale
+                      },
+                      resize.size
+                    ) : void 0,
+                    crop: crop && !isDefaultCrop(crop) ? Object.assign(
+                      {},
+                      crop
+                    ) : void 0,
+                    markup: markup && markup.length ? markup.map(prepareMarkup) : [],
+                    filter
+                  };
+                  if (instructions.output) {
+                    var willChangeType = output.type ? (
+                      // type set
+                      output.type !== file2.type
+                    ) : (
+                      // type not set
+                      false
+                    );
+                    var canChangeQuality = /\/jpe?g$/.test(file2.type);
+                    var willChangeQuality = output.quality !== null ? (
+                      // quality set
+                      canChangeQuality && qualityMode === "always"
+                    ) : (
+                      // quality not set
+                      false
+                    );
+                    var willModifyImageData = !!(instructions.size || instructions.crop || instructions.filter || willChangeType || willChangeQuality);
+                    if (!willModifyImageData) return resolve2(file2);
+                  }
+                  var options = {
+                    beforeCreateBlob: query("GET_IMAGE_TRANSFORM_BEFORE_CREATE_BLOB"),
+                    afterCreateBlob: query("GET_IMAGE_TRANSFORM_AFTER_CREATE_BLOB"),
+                    canvasMemoryLimit: query("GET_IMAGE_TRANSFORM_CANVAS_MEMORY_LIMIT"),
+                    stripImageHead: query(
+                      "GET_IMAGE_TRANSFORM_OUTPUT_STRIP_IMAGE_HEAD"
+                    )
+                  };
+                  transformImage(file2, instructions, options).then(function(blob) {
+                    var out = getFileFromBlob(
+                      blob,
+                      // rename the original filename to match the mime type of the output image
+                      renameFileToMatchMimeType(
+                        file2.name,
+                        getValidOutputMimeType(blob.type)
+                      )
+                    );
+                    resolve2(out);
+                  }).catch(reject);
+                });
+              };
+              var variantPromises = variants.map(function(create2) {
+                return create2(transform, file, item.getMetadata());
+              });
+              Promise.all(variantPromises).then(function(files) {
+                resolve(
+                  files.length === 1 && files[0].name === null ? (
+                    // return the File object
+                    files[0].file
+                  ) : (
+                    // return an array of files { name:'name', file:File }
+                    files
+                  )
+                );
+              });
+            });
+          });
+        });
+        return {
+          options: {
+            allowImageTransform: [true, Type.BOOLEAN],
+            // filter images to transform
+            imageTransformImageFilter: [null, Type.FUNCTION],
+            // null, 'image/jpeg', 'image/png'
+            imageTransformOutputMimeType: [null, Type.STRING],
+            // null, 0 - 100
+            imageTransformOutputQuality: [null, Type.INT],
+            // set to false to copy image exif data to output
+            imageTransformOutputStripImageHead: [true, Type.BOOLEAN],
+            // only apply transforms in this list
+            imageTransformClientTransforms: [null, Type.ARRAY],
+            // only apply output quality when a transform is required
+            imageTransformOutputQualityMode: ["always", Type.STRING],
+            // 'always'
+            // 'optional'
+            // 'mismatch' (future feature, only applied if quality differs from input)
+            // get image transform variants
+            imageTransformVariants: [null, Type.OBJECT],
+            // should we post the default transformed file
+            imageTransformVariantsIncludeDefault: [true, Type.BOOLEAN],
+            // which name to prefix the default transformed file with
+            imageTransformVariantsDefaultName: [null, Type.STRING],
+            // should we post the original file
+            imageTransformVariantsIncludeOriginal: [false, Type.BOOLEAN],
+            // which name to prefix the original file with
+            imageTransformVariantsOriginalName: ["original_", Type.STRING],
+            // called before creating the blob, receives canvas, expects promise resolve with canvas
+            imageTransformBeforeCreateBlob: [null, Type.FUNCTION],
+            // expects promise resolved with blob
+            imageTransformAfterCreateBlob: [null, Type.FUNCTION],
+            // canvas memory limit
+            imageTransformCanvasMemoryLimit: [
+              isBrowser && isIOS ? 4096 * 4096 : null,
+              Type.INT
+            ],
+            // background image of the output canvas
+            imageTransformCanvasBackgroundColor: [null, Type.STRING]
+          }
+        };
+      };
+      if (isBrowser) {
+        document.dispatchEvent(new CustomEvent("FilePond:pluginloaded", { detail: plugin }));
+      }
+      return plugin;
+    });
+  }
+});
+
 // src/controllers/file_upload_controller.ts
 import { Controller } from "@hotwired/stimulus";
 
@@ -12282,11 +15725,21 @@ function listen(component, byKey) {
 var FilePond = __toESM(require_filepond());
 var import_filepond_plugin_file_validate_size = __toESM(require_filepond_plugin_file_validate_size());
 var import_filepond_plugin_file_validate_type = __toESM(require_filepond_plugin_file_validate_type());
+var import_filepond_plugin_image_crop = __toESM(require_filepond_plugin_image_crop());
+var import_filepond_plugin_image_edit = __toESM(require_filepond_plugin_image_edit());
+var import_filepond_plugin_image_exif_orientation = __toESM(require_filepond_plugin_image_exif_orientation());
 var import_filepond_plugin_image_preview = __toESM(require_filepond_plugin_image_preview());
+var import_filepond_plugin_image_resize = __toESM(require_filepond_plugin_image_resize());
+var import_filepond_plugin_image_transform = __toESM(require_filepond_plugin_image_transform());
 FilePond.registerPlugin(
   import_filepond_plugin_file_validate_size.default,
   import_filepond_plugin_file_validate_type.default,
-  import_filepond_plugin_image_preview.default
+  import_filepond_plugin_image_crop.default,
+  import_filepond_plugin_image_edit.default,
+  import_filepond_plugin_image_exif_orientation.default,
+  import_filepond_plugin_image_preview.default,
+  import_filepond_plugin_image_resize.default,
+  import_filepond_plugin_image_transform.default
 );
 var UPLOAD_ERROR = "The file could not be uploaded.";
 var REMOVE_ERROR = "The file could not be removed.";
@@ -12298,7 +15751,15 @@ var AVATAR_PANEL_LAYOUT = "compact circle";
 var PREVIEWABLE_TYPE = /^(audio|image|video)\//;
 var INIT_FILE_EVENT = "initfile";
 var file_upload_controller_default = class extends Controller {
-  static targets = ["pond", "input", "error"];
+  static targets = [
+    "pond",
+    "input",
+    "error",
+    "editor",
+    "editorImage",
+    "editorField",
+    "editorRatio"
+  ];
   static values = {
     key: String,
     statePath: String,
@@ -12321,6 +15782,13 @@ var file_upload_controller_default = class extends Controller {
     maxFilesMessage: String,
     maxParallelUploads: Number,
     mimeTypeMap: Object,
+    imageCropAspectRatio: String,
+    imageResizeMode: String,
+    imageResizeTargetWidth: String,
+    imageResizeTargetHeight: String,
+    imageResizeUpscale: { type: Boolean, default: true },
+    orientImagesFromExif: { type: Boolean, default: true },
+    transformImages: Boolean,
     placeholder: String,
     imagePreviewHeight: String,
     itemPanelAspectRatio: String,
@@ -12330,8 +15798,20 @@ var file_upload_controller_default = class extends Controller {
     removeUploadedFileButtonPosition: String,
     uploadButtonPosition: String,
     uploadProgressIndicatorPosition: String,
+    imageEditor: Boolean,
+    imageEditorExplicitlyEnabled: Boolean,
+    circleCropper: Boolean,
+    imageEditorMode: { type: Number, default: 1 },
+    imageEditorEmptyFillColor: String,
+    imageEditorViewportWidth: Number,
+    imageEditorViewportHeight: Number,
+    automaticallyOpenImageEditorForAspectRatio: Number,
+    editableSvgs: { type: Boolean, default: true },
+    confirmSvgEditing: Boolean,
     downloadActionLabel: String,
-    openActionLabel: String
+    openActionLabel: String,
+    confirmSvgEditingMessage: String,
+    disabledSvgEditingMessage: String
   };
   #generation = 0;
   #host = null;
@@ -12346,6 +15826,11 @@ var file_upload_controller_default = class extends Controller {
   #resizeObserver = null;
   #intersectionObserver = null;
   #initializing = false;
+  #editor = null;
+  #editingFile = null;
+  #editorOpenedForAspectRatio = false;
+  /** The name of the file the editor is re-adding — non-null only until that item starts processing. */
+  #editorSwapName = null;
   connect() {
     const generation = ++this.#generation;
     this.#observeVisibility();
@@ -12377,6 +15862,8 @@ var file_upload_controller_default = class extends Controller {
     this.#sourceIndex.clear();
     this.#cancelled.clear();
     this.#activeUploads = 0;
+    this.#editorSwapName = null;
+    this.#editor = null;
   }
   stateValueChanged() {
     this.#reconcile();
@@ -12440,6 +15927,24 @@ var file_upload_controller_default = class extends Controller {
       allowRemove: this.deletableValue,
       allowReorder: this.reorderableValue,
       allowImagePreview: this.previewableValue,
+      allowImageExifOrientation: this.orientImagesFromExifValue,
+      allowImageTransform: this.transformImagesValue,
+      imageTransformOutputStripImageHead: false,
+      allowImageEdit: this.imageEditorExplicitlyEnabledValue,
+      imageEditEditor: {
+        open: (file) => this.#loadEditor(file),
+        onconfirm: () => {
+        },
+        oncancel: () => this.#closeEditor(),
+        onclose: () => this.#closeEditor()
+      },
+      beforeAddFile: (item) => this.#beforeAddFile(item),
+      ...this.hasImageCropAspectRatioValue ? { imageCropAspectRatio: this.imageCropAspectRatioValue } : {},
+      ...this.hasImageResizeModeValue ? { imageResizeMode: this.imageResizeModeValue } : {},
+      // The resize targets are Type.INT options parsing a numeric string — the maxFileSize precedent.
+      ...this.hasImageResizeTargetWidthValue ? { imageResizeTargetWidth: Number.parseInt(this.imageResizeTargetWidthValue, 10) } : {},
+      ...this.hasImageResizeTargetHeightValue ? { imageResizeTargetHeight: Number.parseInt(this.imageResizeTargetHeightValue, 10) } : {},
+      imageResizeUpscale: this.imageResizeUpscaleValue,
       credits: false,
       disabled: this.disabledValue,
       files: this.#buildFiles(),
@@ -12500,7 +16005,7 @@ var file_upload_controller_default = class extends Controller {
   /** The morph's twin of Filament's `$watch('state')`: rebuild the list only for a settled, changed, token-free state. */
   #reconcile() {
     const pond = this.#pond;
-    if (pond === null || this.#activeUploads > 0) {
+    if (pond === null || this.#activeUploads > 0 || this.#editorSwapName !== null) {
       return;
     }
     const state = this.stateValue;
@@ -12521,6 +16026,46 @@ var file_upload_controller_default = class extends Controller {
     const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
     const mimeType = this.mimeTypeMapValue[extension] || detectedType;
     return mimeType === "" ? Promise.reject(new Error(`The type of ${file.name} could not be detected.`)) : Promise.resolve(mimeType);
+  }
+  /** An image off the configured ratio never enters the pond — it opens the editor instead. */
+  async #beforeAddFile(item) {
+    if (!this.hasAutomaticallyOpenImageEditorForAspectRatioValue) {
+      return true;
+    }
+    const file = item.file;
+    if (!(file instanceof File) || !file.type.startsWith("image/")) {
+      return true;
+    }
+    if (await this.#checkImageAspectRatio(file)) {
+      return true;
+    }
+    this.#editorOpenedForAspectRatio = true;
+    this.#loadEditor(file);
+    return false;
+  }
+  /** A file that will not decode resolves `true`, so it is added unedited rather than lost. */
+  #checkImageAspectRatio(file) {
+    return new Promise((resolve) => {
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(
+          Math.abs(
+            image.width / image.height - this.automaticallyOpenImageEditorForAspectRatioValue
+          ) <= 0.01
+        );
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(true);
+      };
+      image.src = objectUrl;
+    });
+  }
+  #loadEditor(_file) {
+  }
+  #closeEditor() {
   }
   /** Filament resolves a failed fetch as an empty blob; a stored file that will not load is an error here. */
   #load(source, load, error) {
@@ -12543,6 +16088,7 @@ var file_upload_controller_default = class extends Controller {
    * the indicator is indeterminate, and an abort can only be honoured once the request settles.
    */
   #process(file, load, error, progress, abort) {
+    this.#editorSwapName = null;
     const host = this.#host;
     const fileKey = crypto.randomUUID();
     if (host === null) {
@@ -12615,7 +16161,12 @@ var file_upload_controller_default = class extends Controller {
     pond.on("reorderfiles", (files) => this.#onReorder(files));
     pond.on(INIT_FILE_EVENT, (file) => this.#onInitFile(file));
     pond.on("addfilestart", () => this.#clearError());
-    pond.on("removefile", () => this.#clearError());
+    pond.on("removefile", (_error, file) => {
+      this.#clearError();
+      if (this.#activeUploads === 0 && file.filename === this.#editorSwapName) {
+        this.#editorSwapName = null;
+      }
+    });
     pond.on("warning", (warning) => {
       if (isRecord(warning) && warning.body === MAX_FILES_WARNING && this.hasMaxFilesMessageValue) {
         this.#showError(this.maxFilesMessageValue);
@@ -12771,9 +16322,44 @@ filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.js:
    * Please visit https://pqina.nl/filepond/ for details.
    *)
 
+filepond-plugin-image-crop/dist/filepond-plugin-image-crop.js:
+  (*!
+   * FilePondPluginImageCrop 2.0.6
+   * Licensed under MIT, https://opensource.org/licenses/MIT/
+   * Please visit https://pqina.nl/filepond/ for details.
+   *)
+
+filepond-plugin-image-edit/dist/filepond-plugin-image-edit.js:
+  (*!
+   * FilePondPluginImageEdit 1.6.3
+   * Licensed under MIT, https://opensource.org/licenses/MIT/
+   * Please visit https://pqina.nl/filepond/ for details.
+   *)
+
+filepond-plugin-image-exif-orientation/dist/filepond-plugin-image-exif-orientation.js:
+  (*!
+   * FilePondPluginImageExifOrientation 1.0.11
+   * Licensed under MIT, https://opensource.org/licenses/MIT/
+   * Please visit https://pqina.nl/filepond/ for details.
+   *)
+
 filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js:
   (*!
    * FilePondPluginImagePreview 4.6.12
+   * Licensed under MIT, https://opensource.org/licenses/MIT/
+   * Please visit https://pqina.nl/filepond/ for details.
+   *)
+
+filepond-plugin-image-resize/dist/filepond-plugin-image-resize.js:
+  (*!
+   * FilePondPluginImageResize 2.0.10
+   * Licensed under MIT, https://opensource.org/licenses/MIT/
+   * Please visit https://pqina.nl/filepond/ for details.
+   *)
+
+filepond-plugin-image-transform/dist/filepond-plugin-image-transform.js:
+  (*!
+   * FilePondPluginImageTransform 3.8.8
    * Licensed under MIT, https://opensource.org/licenses/MIT/
    * Please visit https://pqina.nl/filepond/ for details.
    *)

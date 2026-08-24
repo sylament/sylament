@@ -5,15 +5,26 @@ import {
   uploadSchemaComponentFile,
 } from "@sylament/schemas/utils/schema_component_method.js";
 import type { Component } from "@symfony/ux-live-component";
+import type Cropper from "cropperjs";
 import * as FilePond from "filepond";
 import FilePondPluginFileValidateSize from "filepond-plugin-file-validate-size";
 import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
+import FilePondPluginImageCrop from "filepond-plugin-image-crop";
+import FilePondPluginImageEdit from "filepond-plugin-image-edit";
+import FilePondPluginImageExifOrientation from "filepond-plugin-image-exif-orientation";
 import FilePondPluginImagePreview from "filepond-plugin-image-preview";
+import FilePondPluginImageResize from "filepond-plugin-image-resize";
+import FilePondPluginImageTransform from "filepond-plugin-image-transform";
 
 FilePond.registerPlugin(
   FilePondPluginFileValidateSize,
   FilePondPluginFileValidateType,
+  FilePondPluginImageCrop,
+  FilePondPluginImageEdit,
+  FilePondPluginImageExifOrientation,
   FilePondPluginImagePreview,
+  FilePondPluginImageResize,
+  FilePondPluginImageTransform,
 );
 
 const UPLOAD_ERROR = "The file could not be uploaded.";
@@ -39,6 +50,9 @@ type UploadedFileEntry = {
 
 type UploadResult = { ok: true } | { ok: false; message: string };
 
+/** The resize plugin types the mode as a literal union; the Stimulus String needs the cast. */
+type ImageResizeMode = FilePond.FilePondOptions["imageResizeMode"];
+
 /**
  * FilePond over the schemas host seam: every upload rides one live round trip
  * (`uploadSchemaComponentFile`), every mutation one `callSchemaComponentMethod` call, and the
@@ -51,7 +65,15 @@ type UploadResult = { ok: true } | { ok: false; message: string };
  * retries — mandatory under Tabs and Wizard.
  */
 export default class extends Controller<HTMLElement> {
-  static targets = ["pond", "input", "error"];
+  static targets = [
+    "pond",
+    "input",
+    "error",
+    "editor",
+    "editorImage",
+    "editorField",
+    "editorRatio",
+  ];
 
   static values = {
     key: String,
@@ -75,6 +97,13 @@ export default class extends Controller<HTMLElement> {
     maxFilesMessage: String,
     maxParallelUploads: Number,
     mimeTypeMap: Object,
+    imageCropAspectRatio: String,
+    imageResizeMode: String,
+    imageResizeTargetWidth: String,
+    imageResizeTargetHeight: String,
+    imageResizeUpscale: { type: Boolean, default: true },
+    orientImagesFromExif: { type: Boolean, default: true },
+    transformImages: Boolean,
     placeholder: String,
     imagePreviewHeight: String,
     itemPanelAspectRatio: String,
@@ -84,14 +113,31 @@ export default class extends Controller<HTMLElement> {
     removeUploadedFileButtonPosition: String,
     uploadButtonPosition: String,
     uploadProgressIndicatorPosition: String,
+    imageEditor: Boolean,
+    imageEditorExplicitlyEnabled: Boolean,
+    circleCropper: Boolean,
+    imageEditorMode: { type: Number, default: 1 },
+    imageEditorEmptyFillColor: String,
+    imageEditorViewportWidth: Number,
+    imageEditorViewportHeight: Number,
+    automaticallyOpenImageEditorForAspectRatio: Number,
+    editableSvgs: { type: Boolean, default: true },
+    confirmSvgEditing: Boolean,
     downloadActionLabel: String,
     openActionLabel: String,
+    confirmSvgEditingMessage: String,
+    disabledSvgEditingMessage: String,
   };
 
   declare readonly hasInputTarget: boolean;
   declare readonly inputTarget: HTMLInputElement;
   declare readonly hasErrorTarget: boolean;
   declare readonly errorTarget: HTMLElement;
+  declare readonly hasEditorTarget: boolean;
+  declare readonly editorTarget: HTMLDialogElement;
+  declare readonly editorImageTarget: HTMLImageElement;
+  declare readonly editorFieldTargets: HTMLInputElement[];
+  declare readonly editorRatioTargets: HTMLElement[];
 
   declare readonly keyValue: string;
   declare readonly statePathValue: string;
@@ -120,6 +166,17 @@ export default class extends Controller<HTMLElement> {
   declare readonly hasMaxParallelUploadsValue: boolean;
   declare readonly maxParallelUploadsValue: number;
   declare readonly mimeTypeMapValue: Record<string, string>;
+  declare readonly hasImageCropAspectRatioValue: boolean;
+  declare readonly imageCropAspectRatioValue: string;
+  declare readonly hasImageResizeModeValue: boolean;
+  declare readonly imageResizeModeValue: string;
+  declare readonly hasImageResizeTargetWidthValue: boolean;
+  declare readonly imageResizeTargetWidthValue: string;
+  declare readonly hasImageResizeTargetHeightValue: boolean;
+  declare readonly imageResizeTargetHeightValue: string;
+  declare readonly imageResizeUpscaleValue: boolean;
+  declare readonly orientImagesFromExifValue: boolean;
+  declare readonly transformImagesValue: boolean;
   declare readonly hasPlaceholderValue: boolean;
   declare readonly placeholderValue: string;
   declare readonly hasImagePreviewHeightValue: boolean;
@@ -133,8 +190,24 @@ export default class extends Controller<HTMLElement> {
   declare readonly removeUploadedFileButtonPositionValue: string;
   declare readonly uploadButtonPositionValue: string;
   declare readonly uploadProgressIndicatorPositionValue: string;
+  declare readonly imageEditorValue: boolean;
+  declare readonly imageEditorExplicitlyEnabledValue: boolean;
+  declare readonly circleCropperValue: boolean;
+  declare readonly imageEditorModeValue: number;
+  declare readonly hasImageEditorEmptyFillColorValue: boolean;
+  declare readonly imageEditorEmptyFillColorValue: string;
+  declare readonly hasImageEditorViewportWidthValue: boolean;
+  declare readonly imageEditorViewportWidthValue: number;
+  declare readonly hasImageEditorViewportHeightValue: boolean;
+  declare readonly imageEditorViewportHeightValue: number;
+  declare readonly hasAutomaticallyOpenImageEditorForAspectRatioValue: boolean;
+  declare readonly automaticallyOpenImageEditorForAspectRatioValue: number;
+  declare readonly editableSvgsValue: boolean;
+  declare readonly confirmSvgEditingValue: boolean;
   declare readonly downloadActionLabelValue: string;
   declare readonly openActionLabelValue: string;
+  declare readonly confirmSvgEditingMessageValue: string;
+  declare readonly disabledSvgEditingMessageValue: string;
 
   #generation = 0;
   #host: Component | null = null;
@@ -149,6 +222,11 @@ export default class extends Controller<HTMLElement> {
   #resizeObserver: ResizeObserver | null = null;
   #intersectionObserver: IntersectionObserver | null = null;
   #initializing = false;
+  #editor: Cropper | null = null;
+  #editingFile: File | null = null;
+  #editorOpenedForAspectRatio = false;
+  /** The name of the file the editor is re-adding — non-null only until that item starts processing. */
+  #editorSwapName: string | null = null;
 
   connect(): void {
     const generation = ++this.#generation;
@@ -189,6 +267,8 @@ export default class extends Controller<HTMLElement> {
     this.#sourceIndex.clear();
     this.#cancelled.clear();
     this.#activeUploads = 0;
+    this.#editorSwapName = null;
+    this.#editor = null;
   }
 
   stateValueChanged(): void {
@@ -267,6 +347,31 @@ export default class extends Controller<HTMLElement> {
       allowRemove: this.deletableValue,
       allowReorder: this.reorderableValue,
       allowImagePreview: this.previewableValue,
+      allowImageExifOrientation: this.orientImagesFromExifValue,
+      allowImageTransform: this.transformImagesValue,
+      imageTransformOutputStripImageHead: false,
+      allowImageEdit: this.imageEditorExplicitlyEnabledValue,
+      imageEditEditor: {
+        open: (file: File) => this.#loadEditor(file),
+        onconfirm: () => {},
+        oncancel: () => this.#closeEditor(),
+        onclose: () => this.#closeEditor(),
+      },
+      beforeAddFile: (item) => this.#beforeAddFile(item),
+      ...(this.hasImageCropAspectRatioValue
+        ? { imageCropAspectRatio: this.imageCropAspectRatioValue }
+        : {}),
+      ...(this.hasImageResizeModeValue
+        ? { imageResizeMode: this.imageResizeModeValue as ImageResizeMode }
+        : {}),
+      // The resize targets are Type.INT options parsing a numeric string — the maxFileSize precedent.
+      ...(this.hasImageResizeTargetWidthValue
+        ? { imageResizeTargetWidth: Number.parseInt(this.imageResizeTargetWidthValue, 10) }
+        : {}),
+      ...(this.hasImageResizeTargetHeightValue
+        ? { imageResizeTargetHeight: Number.parseInt(this.imageResizeTargetHeightValue, 10) }
+        : {}),
+      imageResizeUpscale: this.imageResizeUpscaleValue,
       credits: false,
       disabled: this.disabledValue,
       files: this.#buildFiles(),
@@ -351,7 +456,7 @@ export default class extends Controller<HTMLElement> {
   #reconcile(): void {
     const pond = this.#pond;
 
-    if (pond === null || this.#activeUploads > 0) {
+    if (pond === null || this.#activeUploads > 0 || this.#editorSwapName !== null) {
       return;
     }
 
@@ -386,6 +491,56 @@ export default class extends Controller<HTMLElement> {
       : Promise.resolve(mimeType);
   }
 
+  /** An image off the configured ratio never enters the pond — it opens the editor instead. */
+  async #beforeAddFile(item: FilePond.FilePondFile): Promise<boolean> {
+    if (!this.hasAutomaticallyOpenImageEditorForAspectRatioValue) {
+      return true;
+    }
+
+    const file = item.file;
+
+    if (!(file instanceof File) || !file.type.startsWith("image/")) {
+      return true;
+    }
+
+    if (await this.#checkImageAspectRatio(file)) {
+      return true;
+    }
+
+    this.#editorOpenedForAspectRatio = true;
+    this.#loadEditor(file);
+
+    return false;
+  }
+
+  /** A file that will not decode resolves `true`, so it is added unedited rather than lost. */
+  #checkImageAspectRatio(file: File): Promise<boolean> {
+    return new Promise((resolve) => {
+      const image = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      image.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(
+          Math.abs(
+            image.width / image.height - this.automaticallyOpenImageEditorForAspectRatioValue,
+          ) <= 0.01,
+        );
+      };
+
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(true);
+      };
+
+      image.src = objectUrl;
+    });
+  }
+
+  #loadEditor(_file: File): void {}
+
+  #closeEditor(): void {}
+
   /** Filament resolves a failed fetch as an empty blob; a stored file that will not load is an error here. */
   #load(source: unknown, load: (file: Blob) => void, error: (message: string) => void): void {
     void (async () => {
@@ -418,6 +573,8 @@ export default class extends Controller<HTMLElement> {
     progress: (computable: boolean, loaded: number, total: number) => void,
     abort: () => void,
   ): { abort: () => void } {
+    this.#editorSwapName = null;
+
     const host = this.#host;
     const fileKey = crypto.randomUUID();
 
@@ -512,7 +669,14 @@ export default class extends Controller<HTMLElement> {
     pond.on("reorderfiles", (files: FilePond.FilePondFile[]) => this.#onReorder(files));
     pond.on(INIT_FILE_EVENT, (file: FilePond.FilePondFile) => this.#onInitFile(file));
     pond.on("addfilestart", () => this.#clearError());
-    pond.on("removefile", () => this.#clearError());
+    pond.on("removefile", (_error: unknown, file: FilePond.FilePondFile) => {
+      this.#clearError();
+
+      // The re-added item was removed before it ever processed; the original's revert carries the old name.
+      if (this.#activeUploads === 0 && file.filename === this.#editorSwapName) {
+        this.#editorSwapName = null;
+      }
+    });
 
     pond.on("warning", (warning: unknown) => {
       if (isRecord(warning) && warning.body === MAX_FILES_WARNING && this.hasMaxFilesMessageValue) {

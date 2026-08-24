@@ -8,6 +8,7 @@ use Closure;
 use Sylament\Actions\Action;
 use Sylament\Actions\ActionGroup;
 use Sylament\Schemas\Components\Contracts\HasAffixActions;
+use Sylament\Schemas\Components\Contracts\HasExtraItemActions;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\wrap;
@@ -119,6 +120,13 @@ trait HasActions
                 ...$this->cachedActions,
                 ...$this->getPrefixActions(),
                 ...$this->getSuffixActions(),
+            ];
+        }
+
+        if ($this instanceof HasExtraItemActions) {
+            $this->cachedActions = [
+                ...$this->cachedActions,
+                ...$this->getExtraItemActions(),
             ];
         }
 

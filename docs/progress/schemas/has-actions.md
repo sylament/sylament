@@ -39,7 +39,7 @@ carries a **diverges** link to [Divergences](#divergences), or `—`.
 | [`prepareAction()` / `prepareActionGroup()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`prepareAction()` / `prepareActionGroup()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | done | — | — |
 | [`hasAction()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) | [`hasAction()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | done | — | — |
 | [Affix action merging in `cacheActions()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) — incl. the [`HasAffixActions`](../../../packages/schemas/src/Components/Contracts/HasAffixActions.php) contract | [`cacheActions()` `HasAffixActions` branch](../../../vendor/filament/schemas/src/Components/Contracts/HasAffixActions.php) | done | — | [diverges](#the-affix-contract-is-typed-as-a-name-keyed-map) |
-| Extra-item action merging in `cacheActions()` | `cacheActions()` `HasExtraItemActions` branch | blocked | `HasExtraItemActions` contract (forms extra-item actions) | [diverges](#extra-item-action-merging-is-not-ported) |
+| [Extra-item action merging in `cacheActions()`](../../../packages/schemas/src/Components/Concerns/HasActions.php) — incl. the [`HasExtraItemActions`](../../../packages/schemas/src/Components/Contracts/HasExtraItemActions.php) contract | [`cacheActions()` `HasExtraItemActions` branch](../../../vendor/filament/schemas/src/Components/Contracts/HasExtraItemActions.php) | done | — | [diverges](#the-extra-item-contract-is-typed-as-a-name-keyed-map-too) |
 | `actionSchemaModel()` / `getActionSchemaModel()` | [`actionSchemaModel()` / `getActionSchemaModel()`](../../../vendor/filament/schemas/src/Components/Concerns/HasActions.php) | blocked | the action→schema record hop | [diverges](#actionschemamodel-is-not-ported) |
 
 ## Divergences
@@ -67,14 +67,20 @@ does — so an implementer's getters own the `schemaComponent()` stamping (and a
 affix-specific defaults) themselves, and returning raw `Action`s leaves them
 unstamped.
 
-### Extra-item action merging is not ported
+### The extra-item contract is typed as a name-keyed map too
 
-Filament's `cacheActions()` additionally merges `getExtraItemActions()` when
-`$this instanceof HasExtraItemActions`, a forms-only contract
-([`HasExtraItemActions.php`](../../../vendor/filament/schemas/src/Components/Contracts/HasExtraItemActions.php))
-still `todo` in the [package README](README.md#supporting-surface). No
-`instanceof` branch exists for it because no Sylament class implements it yet.
-Reverses in the same change that ports the `forms` extra-item-action concern.
+Filament types
+[`HasExtraItemActions::getExtraItemActions()`](../../../vendor/filament/schemas/src/Components/Contracts/HasExtraItemActions.php)
+`@return array<Action>`; the port declares `@return array<string, Action>`, for
+exactly the reason the affix contract does — the splice is a spread, PHP
+renumbers integer keys on spread, and a list-returning implementation would land
+its actions under `0`, `1`, … where `getAction('reorder')` misses silently. The
+branch sits between the affix splice and the `registerActions()` loop, matching
+Filament's order, so a registered action of the same name still wins.
+
+Like the affix splice it spreads the map in as-is, without running
+`prepareAction()` over it: the implementer's getter owns the
+`schemaComponent()` stamping.
 
 ### `actionSchemaModel()` is not ported
 

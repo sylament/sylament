@@ -67,10 +67,10 @@ divergence it earned stay behind.
 `evaluationIdentifier = 'component'` is set, and the composed set covers
 container/child/identity/visibility/heading/state plus the
 [record binding](belongs-to-record.md), actions, [concealment](can-be-concealed.md),
-and the shared column and gap concerns — enough to drive Section and the forms `Field` slots. Left: the
+and the shared column and gap concerns, plus [`CanBeRepeated`](#canberepeated-discriminates-on-haskeyeditems-not-on-a-forms-type) — enough to drive Section and the forms `Field` slots. Left: the
 Filament traits not yet on the base —
 `CanBeGridContainer`, `CanBeLiberatedFromContainerGrid`,
-`CanBeRepeated`, `CanPartiallyRender`, `CanPoll`,
+`CanPartiallyRender`, `CanPoll`,
 `HasEntryWrapper`, `HasFieldWrapper`, `HasInlineLabel`, `HasMaxWidth`,
 `HasMeta` — each of which has its own row in the
 [schemas README](README.md) and lands with its own epic. Next step: compose them
@@ -459,6 +459,32 @@ to the key concern — Sylament keeps key resolution in `HasKey`, not `HasState`
 The deprecated `getGetCallback`/`getSetCallback` aliases and the
 `shouldUpdateValidatedStateAfterBeforeStateDehydratedRuns()` getter are also
 intentionally not carried.
+
+### CanBeRepeated discriminates on HasKeyedItems, not on a forms type
+
+Filament's
+[`CanBeRepeated`](../../../vendor/filament/schemas/src/Components/Concerns/CanBeRepeated.php)
+hard-codes `Repeater | Builder` in its return type, its `instanceof` test and its
+`assert()` — three references from `schemas` up into `forms`, which the package
+split forbids. The port discriminates on
+[`HasKeyedItems`](../../../packages/schemas/src/Components/Contracts/HasKeyedItems.php)
+instead, the contract a repeater-shaped component already implements, and returns
+the intersection type `(Component&HasKeyedItems)|null`. Filament's `assert()`
+becomes a thrown `LogicException`, since shipped source carries no assertions that
+vanish under `zend.assertions=-1`.
+
+`getParentRepeaterItemIndex()` reads the index off `$repeater->getItemKeys()`
+rather than `array_keys($item->getParentComponent()->getState())`: the contract
+already publishes the item keying, so the index needs no state read at all, and
+it stays correct for a component whose state has not been hydrated. The memo
+field keeps Filament's three-state `Schema|false|null` shape but is tested with
+`!== null` / `instanceof` rather than Filament's `filled()` / `?:`. Both spellings
+agree — `filled(false)` is `true` in Laravel's helper and in
+[ours](../support/helpers.md), so the `false` sentinel does short-circuit the walk
+— but only by an accident of the helper a reader has to reconstruct, and
+[`filled()`](../support/helpers.md)'s sole static assertion is a null check, so
+the `instanceof` is needed anyway to reach the `?Schema` return at level max.
+Saying it directly costs nothing and pins the sentinel's meaning.
 
 _See also: the global [rename table](../renames.md) — the Livewire → UX
 LiveComponent, Blade view → Twig template, `Htmlable` → `Twig\Markup`, and

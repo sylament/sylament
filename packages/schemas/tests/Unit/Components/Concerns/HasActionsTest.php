@@ -7,6 +7,7 @@ namespace Sylament\Schemas\Tests\Unit\Components\Concerns;
 use Sylament\Actions\Action;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Tests\Fixtures\Components\AffixActionField;
+use Sylament\Schemas\Tests\Fixtures\Components\ExtraItemActionsContainer;
 
 it('keys registered actions by name', function (): void {
     $component = new Component();
@@ -204,4 +205,21 @@ it('returns null when a dotted tail does not resolve', function (): void {
 
     expect($component->getAction('save.missing'))->toBeNull()
         ->and($component->getAction('missing.confirm'))->toBeNull();
+});
+
+it('splices the extra item actions into the action cache between the affix and registered actions', function (): void {
+    $component = ExtraItemActionsContainer::make('rows')
+        ->extraItemActions([Action::make('preview')])
+        ->registerActions([Action::make('registered')]);
+
+    expect($component->getAction('preview'))->toBeInstanceOf(Action::class)
+        ->and(array_keys($component->getActions()))->toBe(['preview', 'registered']);
+});
+
+it('lets a registered action of the same name win, as Filament orders them', function (): void {
+    $component = ExtraItemActionsContainer::make('rows')
+        ->extraItemActions([Action::make('preview')->label('Extra')])
+        ->registerActions([Action::make('preview')->label('Registered')]);
+
+    expect($component->getAction('preview')?->getLabel())->toBe('Registered');
 });

@@ -11,7 +11,7 @@ use Sylament\Schemas\Components\Contracts\HasKeyedItems;
  * whose item keys and item-relative state paths are set rather than derived, so
  * the translator's index arm can be exercised without the forms package.
  */
-final class KeyedItemsOwner extends StateField implements HasKeyedItems
+class KeyedItemsOwner extends StateField implements HasKeyedItems
 {
     public function ownsRecordSubtree(): bool
     {

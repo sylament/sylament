@@ -151,6 +151,16 @@ wraps the `foreach`, not the `listContents()` line. Getting that wrong would
 turn an unreadable temp directory into a 500 on every upload, since `store()`
 prunes on success — the failure would surface at the upload, not at the sweep.
 
+That listing is also what the policy **costs**, which is the strongest argument
+for a scheduled command. Every successful upload pays a deep listing of the
+whole temp prefix: on a local disk a recursive directory walk, on a remote
+adapter a full paginated prefix listing whose page count grows with whatever is
+sitting there — so each un-swept file makes the next upload's listing longer.
+Livewire pays exactly the same price and we take it for parity, but it is why
+the [prune command](#there-is-no-prune-command-the-sweep-rides-on-upload-traffic)
+is recorded as the follow-up: moving the sweep to a schedule takes the listing
+off the request path entirely.
+
 ### `isToken()` is a prefix test, not a validity test
 
 `isToken()` answers whether a value *looks like* one of our tokens — a string
@@ -241,4 +251,6 @@ upload. A `sylament:forms:prune-temporary-uploads` command wrapping
 Symfony makes it cron-able — and it is recorded here rather than built so the
 gap is a decision rather than an oversight. What would reverse this: a
 deployment where uploads are bursty enough that a week of stale files matters,
-or a temp disk that bills for storage.
+or a temp disk that bills for storage — or, the strongest of the three, the
+[deep listing every upload pays for](#the-sweep-rides-on-upload-traffic-and-races-itself-on-purpose),
+which a scheduled sweep takes off the request path.

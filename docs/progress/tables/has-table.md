@@ -31,7 +31,7 @@ and, on the query lane, every single time, the count of everything behind that
 page, the flush that empties the cache, and the per-host id every row and cell is
 stamped with.
 
-Around that core it composes four host concerns, three of them landed by the
+Around that core it composes five host concerns, three of them landed by the
 table upgrades epic:
 [`CanPaginateRecords`](../../../packages/tables/src/Concerns/CanPaginateRecords.php)
 (the page and per-page state plus the `gotoTablePage()` live action),
@@ -41,19 +41,26 @@ table upgrades epic:
 (the search term) — plus
 [`HasFilters`](../../../packages/tables/src/Concerns/HasFilters.php) (the two
 filter bags, the filters form and the five filter live actions), from the filter
-layer. Each is a per-file row below rather than a folded one, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing). What
-Filament's nineteen-trait host does beyond them — bulk actions, selection,
-reordering, the column manager, and the whole query-lane half of the three
+layer, and
+[`HasBulkActions`](../../../packages/tables/src/Concerns/HasBulkActions.php) (the
+three selection props, the two resolution seams and the `selectAllTableRecords()`
+live action), from M4 · 1. Each is a per-file row below rather than a folded one,
+per [one row per file](../README.md#one-row-per-file-one-file-per-thing). What
+Filament's nineteen-trait host does beyond them — reordering, grouping,
+summaries, the column manager, and the whole query-lane half of the three
 above — is unported and listed below.
 
-The trait presumes no host property beyond the seven `#[LiveProp]`s it and its
+The trait presumes no host property beyond the ten `#[LiveProp]`s it and its
 concerns declare: `?string $tableHostId` (the persisted half of
 [`getTableHostId()`](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id)),
-`int $tablePage`, `?string $tableSort`, and the four **writable** props the
-chrome binds to — `?string $tableRecordsPerPage`, `?string $tableSearch` and the
+`int $tablePage`, `?string $tableSort`, and the seven **writable** props the
+chrome binds to — `?string $tableRecordsPerPage`, `?string $tableSearch`, the
 two [filter bags](#the-filter-bags-are-arrays-never-null-and-carry-no-getters),
-`array $tableFilters` and `array $tableDeferredFilters`.
+`array $tableFilters` and `array $tableDeferredFilters`, and the three
+[selection bags](#the-selection-is-server-canonical-and-re-derived-on-every-read),
+`array $selectedTableRecordKeys` (whose wire name stays Filament's
+`selectedTableRecords`), `array $deselectedTableRecords` and
+`bool $isTrackingDeselectedTableRecords`.
 Writability is the security line and it is
 [deliberate on each prop](#per-page-is-validated-in-the-getter-on-every-read):
 page and sort move only through a `#[LiveAction]`, so they stay checksummed,
@@ -82,8 +89,10 @@ Reference — the Filament source this is diffed against:
   — `sortTable()`, the `column:direction` parse, and `applySortingToTableQuery()`
 - [`tables/src/Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php)
   — the global search term, the per-column searches, and their query application
+- [`tables/src/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php)
+  — the host-side selection state, its two resolution seams and the key enumeration
 - [`tables/src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php)
-  — the 46-method interface this reduces to eleven
+  — the 46-method interface this reduces to seventeen
 
 ## Surface
 
@@ -101,7 +110,7 @@ instead.
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
 | [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-seven-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#the-missing-data-source-error-does-not-name-relationship) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
-| [`InteractsWithTable` — eleven methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-eleven-methods-of-filaments-forty-six) |
+| [`InteractsWithTable` — seventeen methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-seventeen-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | — |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
@@ -120,7 +129,9 @@ instead.
 | [`applyTableFilters()`, `removeTableFilter()`, `removeTableFilters()`, `resetTableFiltersForm()`, `updatedTableFilters()`, `handleTableFilterUpdates()`](../../../packages/tables/src/Concerns/HasFilters.php) | [`Concerns\HasFilters`](../../../vendor/filament/tables/src/Concerns/HasFilters.php) | done | — | [detail](#filter-mutations-reset-the-page-and-flush-the-record-cache) · [diverges](#the-live-mode-filter-hook-is-a-per-field-afterstateupdated-not-the-props-onupdated) |
 | [`resetTableSearch()`](../../../packages/tables/src/Concerns/CanSearchRecords.php) | [`Concerns\CanSearchRecords::resetTableSearch()`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | done | — | [detail](#filter-mutations-reset-the-page-and-flush-the-record-cache) |
 | The deprecated `*TableAction` host shims — `mountTableAction()`, `callMountedTableAction()`, `getMountedTableActionRecord()`, `unmountTableAction()`, `getTableRecordAction()`, … | [`Concerns\HasActions`](../../../vendor/filament/tables/src/Concerns/HasActions.php), [`HasRecordAction`](../../../vendor/filament/tables/src/Concerns/HasRecordAction.php) | skipped | — | Every method in both files is a one-line deprecated delegate, and the project has never ported a deprecated Filament surface. What they front is built: the host resolves a table-context mount through actions' [`resolveTableAction()`](../actions/has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference) and binds the record through `getTableRecord()` |
-| Bulk actions and selection — `getSelectedTableRecords()`, `getAllSelectableTableRecordKeys()`, `deselectAllTableRecords()` | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | blocked | table bulk actions | — |
+| [`HasBulkActions` — the three selection props, `isTableRecordSelected()`, `hasSelectedTableRecords()`, `getSelectedTableRecords()`, `getSelectedTableRecordsQuery()`, `getAllSelectableTableRecordKeys()`, `getAllSelectableTableRecordsCount()`, `selectAllTableRecords()`, `deselectAllTableRecords()`](../../../packages/tables/src/Concerns/HasBulkActions.php) | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | in progress | — | [detail](#the-selection-is-server-canonical-and-re-derived-on-every-read) · [semantics](#a-selection-outlives-a-page-and-a-sort-and-not-a-filter-or-a-search) · [diverges](#deselectalltablerecords-clears-the-server-state-where-filaments-only-dispatches-an-event) · [diverges](#select-all-across-pages-is-a-state-writing-live-action-not-an-answered-call) |
+| Grouped selection — `getGroupedSelectableTableRecordKeys()`, the group checkbox | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | todo | — | It scopes the key enumeration to one record group, which needs record grouping first — the row below |
+| The deprecated `*TableBulkAction*` host shims — `mountTableBulkAction()`, `callMountedTableBulkAction()`, `replaceMountedTableBulkAction()`, `getMountedTableBulkAction()`, `shouldSelectCurrentPageOnly()`, `getTableBulkActions()`, … | [`Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | skipped | — | Every one is a v4→v5 bridge delegating to the unified action API, and the project has never ported a deprecated Filament surface. What they front is built: a bulk mount is `mountAction($name, context: ['table' => true, 'bulk' => true])`, exactly what `mountTableBulkAction()` forwards to |
 | Grouping and summaries | [`CanGroupRecords`](../../../vendor/filament/tables/src/Concerns/CanGroupRecords.php), [`CanSummarizeRecords`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | todo | — | — |
 | Reordering, striping, the column manager, `HasContent`, `HasHeader` | [`CanReorderRecords`](../../../vendor/filament/tables/src/Concerns/CanReorderRecords.php) and four siblings | todo | — | — |
 | Translatable content driver — `getActiveTableLocale()`, `makeFilamentTranslatableContentDriver()` | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | todo | — | [has-schemas.md](../schemas/has-schemas.md#the-translatable-content-driver-is-not-ported) |
@@ -612,7 +623,7 @@ Of the search **indicators**, the global one ships —
 term, labelled `Search: <term>` (Filament's
 `filament-tables::table.fields.search.indicator` at its English value,
 [hardcoded like the rest of the copy](table.md#the-empty-state-heading-hardcodes-no-records)),
-and is the [tenth contract method](#the-contract-is-eleven-methods-of-filaments-forty-six).
+and is the [tenth contract method](#the-contract-is-seventeen-methods-of-filaments-forty-six).
 [`Table::getFilterIndicators()`](indicator.md#removal-is-structured-not-a-click-handler-string)
 pairs it with the `resetTableSearch` live action and puts it first in
 [the row](table.md#the-chip-is-one-badge-and-the-delete-affordance-is-supports),
@@ -624,11 +635,11 @@ of the filters' own chips. On the records lane none of this runs:
 the `search` injection hands the closure a string and the closure decides what
 matching means.
 
-### The contract is eleven methods of Filament's forty-six
+### The contract is seventeen methods of Filament's forty-six
 
 `Contracts\HasTable` declares 46 methods — the full host API a Filament table,
 column, filter, action, or test helper may call back into. Sylament's
-`InteractsWithTable` declares the eleven the shipped surface actually calls:
+`InteractsWithTable` declares the seventeen the shipped surface actually calls:
 `getTable()` (the template and the column layer need the table from the host),
 `getTableRecords()` (which [`Table::getRecords()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
 delegates to), and three that arrived with the record-action lane (M1 · 6) —
@@ -687,6 +698,29 @@ deliberate hold, not an oversight: the check predates this trait and flipping it
 to a contract call is the filters panel's change to make, alongside the rest of
 the applying half.
 
+M4 · 1's selection lane added six at once, the largest single growth so far, and
+each one still names a consumer outside the trait. Three are **template** reads,
+so `TemplateHostCallsTest` enforces them the way it enforced the ninth:
+`isTableRecordSelected(string $key)` (each checkbox's server-rendered `checked`),
+`hasSelectedTableRecords()` (the server-side `hidden` on the selection banner and
+on every bulk-only trigger) and `getAllSelectableTableRecordsCount()` (the
+banner's ceiling, and the Stimulus value the controller counts against). Three
+are **cross-package** reads, and they are the reason the guarded soft reference
+stays honest: a bulk action in `sylament/actions` resolves its records through
+`getSelectedTableRecords()`, its query through `getSelectedTableRecordsQuery()`
+and clears the selection through `deselectAllTableRecords()` — always after an
+`instanceof Sylament\Tables\Contracts\InteractsWithTable` check against the
+**published interface**, never through a `method_exists()` probe on a foreign
+trait.
+
+Two members of the same lane deliberately stayed off.
+`getAllSelectableTableRecordKeys()` is called only by the `selectAllTableRecords()`
+live action beside it, and that action is called only over the wire — neither has
+a consumer outside the trait, and declaring members without consumers is exactly
+what this rule forbids. `getAllTableRecordsCount()` stayed off too, for a second
+reason: the banner needs a count that can [answer `null`](#the-selection-is-server-canonical-and-re-derived-on-every-read),
+and that one throws.
+
 The contract grows a method at a time as the
 features that need it land — a host must be able to satisfy it, so declaring the
 pagination, filter and bulk-selection halves before those exist would force every
@@ -707,6 +741,90 @@ the contract without the trait, so each new member lands there as an explicit
 `null` stub. This is a **growth order**, not a
 divergence: the end state is the same set of members, minus whatever the
 Eloquent-only rows above turn out not to need.
+
+### The selection is server-canonical, and re-derived on every read
+
+Three writable `LiveProp`s hold the whole selection —
+`$selectedTableRecordKeys` (wire name `selectedTableRecords`),
+`$deselectedTableRecords` and `$isTrackingDeselectedTableRecords` — and none of
+them is trusted. The `updated` bag a live request carries is **not** checksummed
+(only the originals are), so a key in either list proves nothing about the record
+being on the page, extant, visible under the current filters, or selectable at
+all. Every read re-derives:
+
+- `normalizedSelectedTableRecordKeys()` runs on **every** read of either bag,
+  dropping anything that is not a non-bool scalar, casting the rest to `string`,
+  and re-listing with `array_values()`. A nested array, a `true`, a keyed map —
+  all gone before a key is compared. The props are typed `list<string>` because
+  that is what they are *meant* to hold; the normalizer is what makes the type
+  true of client input.
+- `isTableRecordSelected()` and `hasSelectedTableRecords()` are tracking-aware:
+  while tracking, the answer inverts and reads the deselection bag, and
+  "something is selected" is true by definition — an inverted empty exclusion set
+  means *everything*.
+- `getSelectedTableRecords()` re-applies the table's filters and search to the
+  query it builds, and re-applies `checkIfRecordIsSelectableUsing()` to whatever
+  comes back, in both universes. The
+  [filter half is conditional](table.md#one-filter-setting-drives-three-selection-behaviours);
+  the selectability half never is.
+
+Two universes, as everywhere else on this trait. On the **records lane** the
+selection resolves off the current page collection — `array_intersect_key()` for
+the keys, `array_diff_key()` for the deselections, Filament's `only`/`except`
+spelled in PHP — so a key selected on page 1 does not resolve from page 2, the
+same asymmetry [`getTableRecord()`](#gettablerecord-reads-fresh-when-the-render-cache-is-cold)
+already has. On the **query lane** it is a fresh query: `IN (:keys)`, or
+`NOT IN (:deselected)` while tracking, over the qualified single identifier —
+built the way `resolveQueryTableRecord()` builds its single-key constraint, and
+throwing the same `LogicException` on a composite identifier. An empty bag on
+that lane is safe rather than fatal: Doctrine expands an empty array parameter to
+`IN (NULL)`, which matches nothing, and `getSelectedTableRecords()` never gets
+that far anyway — it opens with the empty-and-not-tracking early-out and returns
+`[]` without touching the database.
+
+`getSelectedTableRecordsQuery(false)` — the arm a bulk action takes when it means
+to write without hydrating — carries one extra constraint the fetching arm does
+not need. Because that arm never hydrates, the selectability callback has nowhere
+to run afterwards, so it runs **first**: the query is cloned, walked, filtered
+through `isRecordSelectable()`, and the surviving keys are added as a second
+`IN (…)`. Filament's `constrainQueryToSelectableTableRecords()` does the same, and
+without it a DQL bulk delete would happily delete rows the table refuses to let
+the user select — the client is the only source of keys on that path.
+
+The resolved set is memoised in `$cachedSelectedTableRecords` for the rest of the
+request, and the two mutators (`selectAllTableRecords()`,
+`deselectAllTableRecords()`) null it, so a same-request read after a clear sees
+the clear. Filament's cache is never invalidated, because Filament's clear
+[never touches the server state](#deselectalltablerecords-clears-the-server-state-where-filaments-only-dispatches-an-event).
+The memo does **not** key on `$shouldFetchSelectedRecords`, Filament's exactly:
+call it once fetching and once not in the same request and the second call
+returns the first call's shape — records where keys were asked for, or the
+reverse. No shipped caller does, since an action reads its selection once.
+
+Two of Filament's moves are deliberately absent from the query. It applies
+`applySortingToTableQuery()` to the selected-records query; ours does not,
+because the ordering changes no membership and the non-fetch arm's builder is
+handed to a bulk action that may turn it into a DQL `DELETE`, which an
+`ORDER BY` would make invalid. And the `maxSelectableRecords` `limit()` is absent
+with the setting itself.
+
+`getAllSelectableTableRecordsCount()` is the banner's ceiling and the one member
+here that can answer **null**. With no selectability callback it is free — the
+page count where selection is page-only, the paginator's total otherwise. With a
+callback set it is Filament's documented performance cliff: the whole filtered
+set is hydrated and filtered, once per render. And on a simple-paginated
+`records()` closure there is no total at all, so it returns `null` rather than
+calling [`getAllTableRecordsCount()`](#the-all-records-count-answers-four-ways-where-filaments-answers-two),
+which throws for exactly that case. Null is an answer the chrome can render: the
+banner falls back to counting the page, and the select-all-across-pages link,
+which needs a ceiling, does not appear.
+
+Not ported, with the settings they belong to: chunked resolution
+(`chunkSelectedRecords()`, `lazyById()` — no shipped action asks for it and
+Doctrine's iteration story differs), the `maxSelectableRecords` enforcement in
+both universes, `resolveSelectedRecordsUsing()`, and the grouped key enumeration.
+Each has a [row](#surface) or a
+[table-side row](table.md#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed).
 
 ### Filter mutations reset the page and flush the record cache
 
@@ -1022,6 +1140,39 @@ no `afterStateUpdated` to its fields, and the `-10` walk is watching a form
 rooted at `tableDeferredFilters`. So the page never resets, the draft bag is
 never mirrored back from the write, and the next `applyTableFilters()` overwrites
 it with the stale draft.
+
+### A selection outlives a page and a sort, and not a filter or a search
+
+Which state changes clear the selection is not derivable from the code that
+clears it, because the clearing lives in two `updated*` tails rather than
+anywhere a reader would look. The rule, ported from Filament verbatim: a
+**filter** change and a **search** change deselect everything (when
+`deselectAllRecordsWhenFiltered()` is on, the default); a **sort**, a **page**
+change and a **per-page** change do not. The hook points are
+`handleTableFilterUpdates()` — already the single tail of all five filter
+mutations — and `updatedTableSearch()`, in both cases immediately before the
+existing page reset.
+
+A third site is Sylament's own: `resetTableSearch()`, the clear button's
+`#[LiveAction]`, deselects on the same terms. Filament has no such action — its
+search input is a live model write, so clearing it goes through
+`updatedTableSearch()` like any other edit — and without the splice the port
+would have two channels to one state change disagreeing about the selection.
+
+Nothing is deliberately absent from that list: `sortTable()`,
+`gotoTablePage()` and `updatedTableRecordsPerPage()` reset the page and flush the
+record cache without touching the three props, so a selection made on page 1 is
+still a selection on page 3. That is the whole reason the query lane resolves by
+key rather than from the page collection.
+
+Two consequences worth stating. A selection can outlive the page that showed it —
+including onto an overflow page with no rows at all, since a page past the end
+[renders empty with the total intact](#the-page-state-has-its-query-lane-and-no-session-or-url-half)
+— so the chrome that clears it has to stay reachable from an empty page. And on
+the records lane a surviving cross-page selection resolves to **nothing**,
+because that lane resolves off the current page collection; the keys are still
+held, still round-trip, and still count in the banner, but
+`getSelectedTableRecords()` returns only those on the page in front of you.
 
 ### A host trait is analysed only through a class that composes it
 
@@ -1754,7 +1905,7 @@ fall-through counts it.
 Nothing in the package reads the method yet. Filament's two callers are its
 `assertCountTableRecords()` test helper and panels' `ExposesTableToWidgets`,
 which hands the number to a page's widgets; neither is ported. So it stays off
-the [contract](#the-contract-is-eleven-methods-of-filaments-forty-six), which grows
+the [contract](#the-contract-is-seventeen-methods-of-filaments-forty-six), which grows
 only for members a shipped consumer calls, and it ships whole rather than in the
 half the closure lane could have answered on its own.
 
@@ -1834,6 +1985,54 @@ Filament table sorted by a relation is never suppressed either. The narrow case
 that does change is a user who hand-wrote `orderBy('artist.id')` and relied on the
 root key dropping out; they now get one extra `ORDER BY` term, which cannot
 change the row order they already had.
+
+### `deselectAllTableRecords()` clears the server state, where Filament's only dispatches an event
+
+Filament's body is one line — `$this->dispatch('deselectAllTableRecords')->self()`
+— and the PHP props are left holding the old selection. The Alpine component
+clears *its* sets and the emptied selection reaches the server on the next
+request. So anything reading `$selectedTableRecords` later in the same request —
+after the deselect-on-completion hook of a bulk action, say — sees a selection
+that has just been cleared.
+
+Ours writes the three props to their empty defaults and nulls the resolution
+cache. There is no browser event and no listener, because there is nothing for
+one to do: every call site is already inside a live request (the two `updated*`
+tails, and an action's deselect-after-completion), so the response's re-render
+carries the cleared props, the client store reinitialises from them, and the
+table controller repaints from that. This is the epic's central architectural
+divergence stated at its smallest: Filament's selection is client-authoritative
+with the server reading a copy, ours is server-canonical with the client holding
+a working copy.
+
+### Select-all across pages is a state-writing live action, not an answered call
+
+Filament's client, on the fallback select-all path, does
+`this.selectedRecords = new Set(await $wire.getAllSelectableTableRecordKeys())` —
+a Livewire method call whose **return value** the client stores. UX LiveComponent
+has no such channel: a `#[LiveAction]` re-renders, it does not answer.
+
+So the port inverts the direction. `getAllSelectableTableRecordKeys()` still
+exists with Filament's four-arm body, but its caller is a
+`#[LiveAction] selectAllTableRecords()` on the same trait, which enumerates the
+keys and writes them into `$selectedTableRecordKeys` itself. The cost is
+identical — one round trip either way — and the props stay canonical, which is the
+[whole selection architecture](#the-selection-is-server-canonical-and-re-derived-on-every-read).
+The action must end in an ordinary re-render for the client to see the result;
+short-circuiting the response would leave the checkboxes showing the old state.
+
+The cheap select-all path does not come here at all. With deselect-tracking
+available (the default) the client flips `isTrackingDeselectedTableRecords` and
+empties both lists through the value store — three deferred writes, **no request**
+— so "all 999 999 selected" costs nothing and no key list ever crosses the wire.
+This action is the fallback for the two cases tracking is off in:
+`trackDeselectedRecords(false)` (or `deselectAllRecordsWhenFiltered(false)`,
+which [forces it](table.md#one-filter-setting-drives-three-selection-behaviours)),
+and `selectCurrentPageOnly()`, where the enumeration is the page's keys anyway.
+
+One Filament caution ports with it: that enumeration has **no limit and no
+chunking**. On a filtered set of a million rows it returns a million strings and
+puts them all in a prop.
 
 ### The filter bags are arrays, never null, and carry no getters
 

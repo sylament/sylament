@@ -33,6 +33,8 @@ trait HasFilters
 
     protected bool|Closure $hasDeferredFilters = true;
 
+    protected bool|Closure $shouldDeselectAllRecordsWhenFiltered = true;
+
     /**
      * @param array<BaseFilter> $filters
      */
@@ -122,6 +124,24 @@ trait HasFilters
     public function hasDeferredFilters(): bool
     {
         return (bool) $this->evaluate($this->hasDeferredFilters);
+    }
+
+    public function deselectAllRecordsWhenFiltered(bool|Closure $condition = true): static
+    {
+        $this->shouldDeselectAllRecordsWhenFiltered = $condition;
+
+        return $this;
+    }
+
+    /**
+     * Filament files this filter setting here although its only readers are
+     * selection: the two host `updated*` tails that clear the selection, the
+     * selected-records query that re-applies the filters, and
+     * `canTrackDeselectedRecords()`, which turns tracking off when this is off.
+     */
+    public function shouldDeselectAllRecordsWhenFiltered(): bool
+    {
+        return (bool) $this->evaluate($this->shouldDeselectAllRecordsWhenFiltered);
     }
 
     public function filtersLayout(FiltersLayout|Closure|null $layout): static

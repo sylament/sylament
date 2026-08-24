@@ -117,13 +117,22 @@ overridable icon slot in the whole table builder. Sylament ships **seven** —
 `FILTERS_REMOVE_ALL_BUTTON` (the indicators row's clear-all button), the three
 `HEADER_CELL_SORT_*` (unsorted, ascending, descending — the sortable header's
 chevron picks one by state) and `SEARCH_FIELD`. All seven have their consuming
-surface ported. The remaining 16 all belong to features that are not built yet:
-reordering (`ACTIONS_ENABLE_REORDERING`, `ACTIONS_DISABLE_REORDERING`,
+surface ported. Fifteen of the remaining 16 belong to features that are not built
+yet: reordering (`ACTIONS_ENABLE_REORDERING`, `ACTIONS_DISABLE_REORDERING`,
 `REORDER_HANDLE`), the filters query builder (the six
 `FILTERS_QUERY_BUILDER_CONSTRAINTS_*`), grouping (`ACTIONS_GROUP`,
-`GROUPING_COLLAPSE_BUTTON`), bulk actions (`ACTIONS_OPEN_BULK_ACTIONS`), the
-column manager (`ACTIONS_COLUMN_MANAGER`) and the column catalog
-(`COLUMNS_COLLAPSE_BUTTON`, `COLUMNS_ICON_COLUMN_TRUE`, `COLUMNS_ICON_COLUMN_FALSE`).
+`GROUPING_COLLAPSE_BUTTON`), the column manager (`ACTIONS_COLUMN_MANAGER`) and
+the column catalog (`COLUMNS_COLLAPSE_BUTTON`, `COLUMNS_ICON_COLUMN_TRUE`,
+`COLUMNS_ICON_COLUMN_FALSE`).
+
+The sixteenth, `ACTIONS_OPEN_BULK_ACTIONS`, is the one exception, and it is worth
+naming because its feature **is** built: bulk actions landed with M4 · 1 and the
+alias still did not, because nothing reads it here.
+[`BulkActionGroup`](../actions/action-group.md) sets its trigger icon as a plain
+default in `setUp()`, and the trigger templates it renders through read
+`group.getIcon` directly — no actions partial resolves an alias at all. So the
+constant stays with the rule below rather than with its feature: an alias lands
+with its **reader**, and this one has none yet.
 
 **Next step:** none on its own. An alias is only overridable once something reads
 it, so each constant lands in the same change as the component or feature that

@@ -31,14 +31,13 @@ the [vocabulary](../README.md#statuses) defines **todo** as having nothing to
 wait on — so a row whose detail file already names a prerequisite would be
 false as **todo**. These tables carry the same four columns as every package
 README, so a **blocked** row names its prerequisite at the head of _Detail_,
-ahead of the detail-file link that carries the full write-up: _table bulk
-actions_ is the one most rows here wait on today, with _relation managers_ a
-second that one row names — the
+ahead of the detail-file link that carries the full write-up: _relation
+managers_ is the one most rows here wait on today — the
 [relation-scoped table](table.md#the-relation-scoped-table-arm-travels-with-relation-managers),
 `Table::relationship()` and the pivot surface around it, which is a **data lane**
 rather than a column path and belongs to the feature that supplies a parent
 record.
-Three more stood here until their epics landed. _Table upgrades
+Four more stood here until their epics landed. _Table upgrades
 ([pulled forward · 11](../roadmap.md#pulled-forward))_ went first: its rows are
 now **done**, **in progress** or — where what was left is Eloquent query
 assembly — moved onto the query lane, and the two that were waiting on nothing
@@ -52,8 +51,13 @@ carrier rather than against an epic. The _relation arm
 the aggregates and eager loading are in, so `InteractsWithTableQuery` folded into
 [`column.md`](column.md) and lost its row here, and what it did **not** take on —
 the relation-scoped table — now has a destination instead of an open question.
-_Table bulk actions_ still has no epic carrying it: it needs a `BulkAction` class
-and the row-selection machinery, and nothing on the roadmap schedules either. (The
+_Table bulk actions_ was the fourth, closed by
+[M4 · 1](../roadmap.md#m4--tables-widening): the `BulkAction` family landed in
+[`actions`](../actions/README.md), and the selection machinery it needed — the
+three writable props on the host, the checkbox settings on the table object, and
+the toolbar and header action sets that decide whether the checkboxes render at
+all — landed here with it, leaving the two selection rows **in progress**
+against the deferred settings each names rather than **blocked**. (The
 [`forms`](../forms/README.md) README records the opposite
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
@@ -214,8 +218,8 @@ pairs with, so it shares the first row below.
 | Host / CanSearchRecords | [`Concerns/CanSearchRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSearchRecords.php) | in progress | [has-table.md](has-table.md#search-is-the-global-term-only) |
 | Host / CanSortRecords | [`Concerns/CanSortRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSortRecords.php) | in progress | [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) |
 | Host / CanSummarizeRecords | [`Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Concerns/CanSummarizeRecords.php) | todo | — |
-| Host / HasActions | [`Concerns/HasActions.php`](../../../vendor/filament/tables/src/Concerns/HasActions.php) | skipped | Every method in the file is a deprecated `*TableAction` delegate to the actions-package equivalent, and the project has never ported a deprecated Filament surface. What it fronts is built: mounting, resolution and record binding go through actions' [`HasActions`](../actions/has-actions.md#resolvetableaction-drops-the-bulk-arm) and the [`InteractsWithTable`](has-table.md#the-contract-is-eleven-methods-of-filaments-forty-six) contract |
-| Host / HasBulkActions | [`Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | blocked | table bulk actions — [has-table.md](has-table.md) |
+| Host / HasActions | [`Concerns/HasActions.php`](../../../vendor/filament/tables/src/Concerns/HasActions.php) | skipped | Every method in the file is a deprecated `*TableAction` delegate to the actions-package equivalent, and the project has never ported a deprecated Filament surface. What it fronts is built: mounting, resolution and record binding go through actions' [`HasActions`](../actions/has-actions.md#resolvetableaction-drops-the-bulk-arm) and the [`InteractsWithTable`](has-table.md#the-contract-is-seventeen-methods-of-filaments-forty-six) contract |
+| [`Host / HasBulkActions`](../../../packages/tables/src/Concerns/HasBulkActions.php) | [`Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php) | in progress | [has-table.md](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
 | Host / HasColumnManager | [`Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Concerns/HasColumnManager.php) | todo | — |
 | Host / HasColumns | [`Concerns/HasColumns.php`](../../../vendor/filament/tables/src/Concerns/HasColumns.php) | todo | — |
 | Host / HasContent | [`Concerns/HasContent.php`](../../../vendor/filament/tables/src/Concerns/HasContent.php) | todo | — |
@@ -232,20 +236,20 @@ pairs with, so it shares the first row below.
 | Table / CanReorderRecords | [`Table/Concerns/CanReorderRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanReorderRecords.php) | todo | — |
 | Table / CanSummarizeRecords | [`Table/Concerns/CanSummarizeRecords.php`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | todo | — |
 | Table / HasArguments | [`Table/Concerns/HasArguments.php`](../../../vendor/filament/tables/src/Table/Concerns/HasArguments.php) | todo | — |
-| Table / HasBulkActions | [`Table/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | blocked | table bulk actions — [table.md](table.md) |
+| [`Table / HasBulkActions`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) | [`Table/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | in progress | [table.md](table.md#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) |
 | Table / HasColumnManager | [`Table/Concerns/HasColumnManager.php`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — |
 | Table / HasContent | [`Table/Concerns/HasContent.php`](../../../vendor/filament/tables/src/Table/Concerns/HasContent.php) | todo | — |
 | [`Table / HasFilterIndicators`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php) | [`Table/Concerns/HasFilterIndicators.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | in progress | [table.md](table.md) |
 | [`Table / HasFilters`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table/Concerns/HasFilters.php`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | in progress | [table.md](table.md) |
 | Table / HasHeader | [`Table/Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php) | todo | — |
-| Table / HasHeaderActions | [`Table/Concerns/HasHeaderActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php) | todo | — |
+| [`Table / HasHeaderActions`](../../../packages/tables/src/Table/Concerns/HasHeaderActions.php) | [`Table/Concerns/HasHeaderActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php) | in progress | [table.md](table.md#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch) |
 | Table / HasHeadings | [`Table/Concerns/HasHeadings.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeadings.php) | todo | — |
 | [`Table / HasQuery`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | in progress | relation managers, for the relation-scoped arm only — [table.md](table.md#the-relation-scoped-table-arm-travels-with-relation-managers) |
 | Table / HasQueryStringIdentifier | [`Table/Concerns/HasQueryStringIdentifier.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — |
 | Table / HasRecordAction | [`Table/Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | todo | — |
 | Table / HasRecordClasses | [`Table/Concerns/HasRecordClasses.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordClasses.php) | todo | — |
 | Table / HasRecordUrl | [`Table/Concerns/HasRecordUrl.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | todo | — |
-| Table / HasToolbarActions | [`Table/Concerns/HasToolbarActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasToolbarActions.php) | todo | — |
+| [`Table / HasToolbarActions`](../../../packages/tables/src/Table/Concerns/HasToolbarActions.php) | [`Table/Concerns/HasToolbarActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasToolbarActions.php) | done | [table.md](table.md#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch) |
 | Column / BelongsToGroup | [`Columns/Concerns/BelongsToGroup.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToGroup.php) | todo | — |
 | Column / BelongsToLayout | [`Columns/Concerns/BelongsToLayout.php`](../../../vendor/filament/tables/src/Columns/Concerns/BelongsToLayout.php) | todo | — |
 | Column / CanBeCopied | [`Columns/Concerns/CanBeCopied.php`](../../../vendor/filament/tables/src/Columns/Concerns/CanBeCopied.php) | todo | — |
@@ -293,6 +297,9 @@ Ports cell names no Filament source is Sylament-only — nothing to diff against
 `Actions/HeaderActionsPosition.php` sits here rather than in
 [Components](#components) despite its directory: it is an enum, not an action
 class, and it is the only file Filament's tables package keeps under `Actions/`.
+The port files it under `Enums/` beside its five siblings, which is where its
+_Feature_ cell links — [table.md](table.md#headeractionsposition-files-under-enums-where-filament-keeps-it-under-actions)
+carries that one-line divergence.
 
 The bundle owns the two Twig-side rows as well as its own, so all three share
 [tables-bundle.md](tables-bundle.md): what `loadExtension()` wires and why
@@ -314,7 +321,7 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | [Scripts](../../../packages/tables/assets/src) | [`resources/js/`](../../../vendor/filament/tables/resources/js) | in progress | the `@sylament/tables` workspace — the seventh, JS-only, added with record selection — ships one Stimulus controller, [`table`](../../../packages/tables/assets/src/controllers/table_controller.ts), porting the **selection half** of vendor's [`components/table.js`](../../../vendor/filament/tables/resources/js/components/table.js) — the filters-dropdown positioning (support's `Dropdown` owns that), the group-collapse arm (M4 · 6) and five smaller arms are dropped, and four behaviours diverge, all listed in [tables-bundle.md](tables-bundle.md#asset-registration); vendor's `components/column-manager.js` and the four editable-column components follow their features. Its one import outside Stimulus, `utils/live_host.ts`, is the sanctioned copy of schemas' — [tables-bundle.md](tables-bundle.md#asset-registration) |
 | [`Colors\Components\TextColumnComponent\ItemComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent.php) | [`View/Components/Columns/TextColumnComponent/ItemComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/TextColumnComponent/ItemComponent.php) | done | [text-column.md](text-column.md#the-item-policy-measures-the-dark-surface-against-gray-900) |
 | [`Colors\Components\TextColumnComponent\ItemComponent\IconComponent`](../../../packages/tables/src/Colors/Components/TextColumnComponent/ItemComponent/IconComponent.php) | [`View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php`](../../../vendor/filament/tables/src/View/Components/Columns/TextColumnComponent/ItemComponent/IconComponent.php) | done | [text-column.md](text-column.md#gray-is-a-colour-on-the-item-and-the-absence-of-one-on-the-icon) |
-| HeaderActionsPosition | [`Actions/HeaderActionsPosition.php`](../../../vendor/filament/tables/src/Actions/HeaderActionsPosition.php) | todo | — |
+| [`HeaderActionsPosition`](../../../packages/tables/src/Enums/HeaderActionsPosition.php) | [`Actions/HeaderActionsPosition.php`](../../../vendor/filament/tables/src/Actions/HeaderActionsPosition.php) | done | The enum ships whole; it files under `Enums/` rather than Filament's `Actions/` — [table.md](table.md#headeractionsposition-files-under-enums-where-filament-keeps-it-under-actions) |
 | Editable (contract) | [`Columns/Contracts/Editable.php`](../../../vendor/filament/tables/src/Columns/Contracts/Editable.php) | todo | — |
 | ColumnManagerLayout | [`Enums/ColumnManagerLayout.php`](../../../vendor/filament/tables/src/Enums/ColumnManagerLayout.php) | todo | — |
 | ColumnManagerResetActionPosition | [`Enums/ColumnManagerResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/ColumnManagerResetActionPosition.php) | todo | — |
@@ -322,7 +329,7 @@ folds into [`text-column.md`](text-column.md) the same way, against
 | [`FiltersResetActionPosition`](../../../packages/tables/src/Enums/FiltersResetActionPosition.php) | [`Enums/FiltersResetActionPosition.php`](../../../vendor/filament/tables/src/Enums/FiltersResetActionPosition.php) | done | [table.md](table.md) |
 | [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Enums/PaginationMode.php`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | The enum ships whole; `Default` and `Simple` are read by [`paginateTableQuery()`](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half), `Cursor` is refused until a keyset carrier exists — [table.md](table.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) |
 | [`RecordActionsPosition`](../../../packages/tables/src/Enums/RecordActionsPosition.php) | [`Enums/RecordActionsPosition.php`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | done | [table.md](table.md#the-position-default-has-no-content-arm-to-choose-between-yet) |
-| RecordCheckboxPosition | [`Enums/RecordCheckboxPosition.php`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | todo | — |
+| [`RecordCheckboxPosition`](../../../packages/tables/src/Enums/RecordCheckboxPosition.php) | [`Enums/RecordCheckboxPosition.php`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | done | [table.md](table.md#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) |
 | TableComponent | [`TableComponent.php`](../../../vendor/filament/tables/src/TableComponent.php) | todo | — |
 | Commands | [`Commands/`](../../../vendor/filament/tables/src/Commands) | todo | — |
 | Commands / FileGenerators | [`Commands/FileGenerators/`](../../../vendor/filament/tables/src/Commands/FileGenerators) | todo | — |

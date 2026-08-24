@@ -31,13 +31,26 @@ trait CanSearchRecords
             return;
         }
 
+        if ($this->getTable()->shouldDeselectAllRecordsWhenFiltered()) {
+            $this->deselectAllTableRecords();
+        }
+
         $this->tablePage = 1;
         $this->flushCachedTableRecords();
     }
 
+    /**
+     * The clear button's channel to the same state change the prop's `onUpdated`
+     * hook handles, so it deselects on the same terms — Filament has no such
+     * action, its clear being a model write that fires `updatedTableSearch()`.
+     */
     #[LiveAction]
     public function resetTableSearch(): void
     {
+        if ($this->getTable()->shouldDeselectAllRecordsWhenFiltered()) {
+            $this->deselectAllTableRecords();
+        }
+
         $this->tableSearch = '';
         $this->tablePage = 1;
         $this->flushCachedTableRecords();

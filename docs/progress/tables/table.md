@@ -7,7 +7,7 @@ object of the tables package, the counterpart to schemas'
 host builds through [`HasTable`](has-table.md), carrying the record data source
 and the empty-state copy. It ports Filament's
 [`Filament\Tables\Table`](../../../vendor/filament/tables/src/Table.php) together
-with the `Table\Concerns\` traits it composes — twelve today
+with the `Table\Concerns\` traits it composes — fifteen today
 ([`BelongsToLiveComponent`](../../../packages/tables/src/Table/Concerns/BelongsToLiveComponent.php),
 [`HasRecords`](../../../packages/tables/src/Table/Concerns/HasRecords.php),
 [`HasQuery`](../../../packages/tables/src/Table/Concerns/HasQuery.php),
@@ -15,19 +15,26 @@ with the `Table\Concerns\` traits it composes — twelve today
 [`HasColumns`](../../../packages/tables/src/Table/Concerns/HasColumns.php),
 [`HasActions`](../../../packages/tables/src/Table/Concerns/HasActions.php),
 [`HasRecordActions`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php),
+[`HasToolbarActions`](../../../packages/tables/src/Table/Concerns/HasToolbarActions.php),
+[`HasHeaderActions`](../../../packages/tables/src/Table/Concerns/HasHeaderActions.php),
+[`HasBulkActions`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php),
 [`CanPaginateRecords`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php),
 [`CanSortRecords`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php),
 [`CanSearchRecords`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php),
 [`HasFilters`](../../../packages/tables/src/Table/Concerns/HasFilters.php),
 [`HasFilterIndicators`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php)),
-thirty-one in Filament. The twelve ported are folded into the surface table below
-rather than earning rows upstairs, per
+thirty-one in Filament. Nine of the fifteen are folded into the surface table
+below rather than earning rows upstairs, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing); the
-nineteen still unported keep a per-file row in the package
+sixteen still unported keep a per-file row in the package
 [README](README.md#features), the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
 reached yet — as do `HasQuery`, ported but keeping its row for the relation arm
-it still owes, and the two filter concerns, keeping theirs for the form seam and
+it still owes, the three action sets landed by
+[M4 · 1](../roadmap.md#m4--tables-widening), keeping theirs because the two
+selection ones still owe the settings [listed below](#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed)
+and `HasToolbarActions` is simply **done** where a reader looks for it, and the
+two filter concerns, keeping theirs for the form seam and
 the chrome actions they do not carry yet. The rows below group those files by
 feature, which is what the per-file rows upstairs point at.
 
@@ -102,7 +109,7 @@ Rows never disappear — only their detail sections do.
 | [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
 | [The search chrome — `searchPlaceholder()`, `searchDebounce()`, `searchOnBlur()` and their getters](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [diverges](#getsearchdebouncemilliseconds-is-a-sylament-only-translation-of-filaments-duration-string) · [diverges](#searchonblur-renders-onchange-because-ux-live-component-has-no-blur-event) · [diverges](#the-search-field-flattens-supports-input-wrapper-into-two-classes) · [diverges](#items-center-is-lifted-onto-the-search-field-because-the-prefix-that-carried-it-is-gone) · [diverges](#the-search-input-adds-an-outline-none-vendor-does-not-have) |
 | [`splitSearchTerms()` / `shouldSplitSearchTerms()`, `searchUsing()` / `hasSearchUsingCallback()` / `callSearchUsing()`, `applyExtraSearchConstraints()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#search-is-the-global-term-only) · [semantics](#extra-searchable-columns-take-closures-that-return-their-expression) · [diverges](#the-default-search-comparison-assumes-a-string-typed-field) · [diverges](#a-search-term-is-not-escaped-for-like) |
-| [`getSearchIndicator()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-contract-is-eleven-methods-of-filaments-forty-six) · [detail](#the-unported-search-surface-splits-three-ways) |
+| [`getSearchIndicator()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [has-table.md](has-table.md#the-contract-is-seventeen-methods-of-filaments-forty-six) · [detail](#the-unported-search-surface-splits-three-ways) |
 | `persistSearchInSession()`, `persistColumnSearchesInSession()`, `isSearchableByColumn()`, `hasSearch()`, `getColumnSearchIndicators()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | todo | — | [detail](#the-unported-search-surface-splits-three-ways) |
 | `getExtraSearchableColumnRelationship()` | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | skipped | — | It answers *is this dotted name's head a relationship*, so Filament's caller can switch to `whereRelation`. Here [one resolution](#a-dotted-name-is-resolved-against-the-mapping-before-it-is-refused) answers that inside `SearchConstraint::forColumn()` for every tier at once, so an extra searchable column crosses an association with nothing to ask first — there is no caller left to hold the branch this member exists to decide |
 | Deferred loading and polling — `deferLoading()`, `poll()` | [`CanDeferLoading`](../../../vendor/filament/tables/src/Table/Concerns/CanDeferLoading.php), [`CanPollRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPollRecords.php) | todo | — | [detail](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them) |
@@ -110,32 +117,35 @@ Rows never disappear — only their detail sections do.
 | [`hiddenFilterIndicators()` / `getFilterIndicators()`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php) | [`Table\Concerns\HasFilterIndicators`](../../../vendor/filament/tables/src/Table/Concerns/HasFilterIndicators.php) | in progress | its column-search arm — the `getColumnSearchIndicators()` spread, with per-column search | [indicator.md](indicator.md#removal-is-structured-not-a-click-handler-string) · [has-table.md](has-table.md#search-is-the-global-term-only) |
 | The filters form seam and its chrome actions — `getFiltersForm()`, `filtersFormSchema()`, `filtersTriggerAction()`, `filtersApplyAction()`, `filtersRemoveAllAction()` and their getters | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | todo | — | — |
 | `persistFiltersInSession()` | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | todo | — | The session half of filtering, and the [toolkit-wide omission](has-table.md#no-table-state-is-persisted-in-the-session) recorded on the host side — it returns with that decision rather than with filters, the way the `persistSortInSession()` and `persistSearchInSession()` rows above do |
-| `deselectAllRecordsWhenFiltered()` | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | blocked | table bulk actions | It clears the row **selection** when a filter changes, and there is [no selection to clear](#the-flat-action-map-has-no-bulk-half-and-no-removal) |
+| [`deselectAllRecordsWhenFiltered()` / `shouldDeselectAllRecordsWhenFiltered()`](../../../packages/tables/src/Table/Concerns/HasFilters.php) | [`Table\Concerns\HasFilters`](../../../vendor/filament/tables/src/Table/Concerns/HasFilters.php) | done | — | [semantics](#one-filter-setting-drives-three-selection-behaviours) |
 | The query-string identifier — `queryStringIdentifier()` | [`HasQueryStringIdentifier`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — | — |
 | [`recordActions()` / `pushRecordActions()` / `getRecordActions()` / `getFlatRecordActions()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) | [`Table\Concerns\HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | in progress | — | [detail](#record-actions-register-without-the-per-action-modifier-hook) |
 | [`recordActionsPosition()` / `getRecordActionsPosition()`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) + [`RecordActionsPosition`](../../../packages/tables/src/Enums/RecordActionsPosition.php) | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php), [`Enums/RecordActionsPosition`](../../../vendor/filament/tables/src/Enums/RecordActionsPosition.php) | in progress | — | [detail](#the-position-default-has-no-content-arm-to-choose-between-yet) · [diverges](#the-position-setter-drops-filaments-string-arm) · [diverges](#the-four-rendered-positions-collapse-to-two) |
 | [`getVisibleRecordActionsByRecordKey()` — per-record clones, record-bound, hidden dropped](../../../packages/tables/src/Table/Concerns/HasRecordActions.php) | [`index.blade.php`'s `$reduceVisibleRecordActions` / `$recordActionsByRecordKey`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-visible-action-map-is-a-table-method-and-is-not-short-circuited) |
-| [The flat action map — `getAction()` / `hasAction()` / `getFlatActions()` / `cacheAction()` / `mergeCachedFlatActions()`](../../../packages/tables/src/Table/Concerns/HasActions.php) | [`Table\Concerns\HasActions`](../../../vendor/filament/tables/src/Table/Concerns/HasActions.php) | in progress | — | [detail](#the-flat-action-map-has-no-bulk-half-and-no-removal) |
+| [The two flat action maps — `getAction()` / `getBulkAction()` / `hasAction()` / `hasBulkAction()` / `getFlatActions()` / `getFlatBulkActions()` / `cacheAction()` / `mergeCachedFlatActions()` / `removeCachedActions()`](../../../packages/tables/src/Table/Concerns/HasActions.php) | [`Table\Concerns\HasActions`](../../../vendor/filament/tables/src/Table/Concerns/HasActions.php) | in progress | — | [detail](#the-flat-action-map-keeps-one-trim-and-its-caller) · [semantics](#the-bulk-split-is-by-class-and-eviction-is-by-identity) |
 | `modifyUngroupedRecordActionsUsing()` | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | todo | — | [detail](#record-actions-register-without-the-per-action-modifier-hook) |
 | Record-action presentation — `recordActionsColumnLabel()`, `recordActionsAlignment()` | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | todo | — | [detail](#the-actions-header-cell-is-always-the-unlabelled-arm) |
 | The deprecated v3 aliases — `actions()`, `pushActions()`, `actionsPosition()`, `actionsColumnLabel()`, `actionsAlignment()`, `getActions()`, `getActionsPosition()`, `getActionsColumnLabel()`, `getActionsAlignment()` | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | skipped | — | The project has never ported a deprecated Filament surface; each is a one-line delegate to the `record*` name above |
-| Header and toolbar actions, `recordAction()`, `recordUrl()` | [`HasHeaderActions`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php), [`HasToolbarActions`](../../../vendor/filament/tables/src/Table/Concerns/HasToolbarActions.php), [`HasRecordAction`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php), [`HasRecordUrl`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | todo | — | — |
-| Bulk actions — `bulkActions()`, `groupedBulkActions()`, `selectable()`, `isRecordSelectable()` | [`HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php) | blocked | table bulk actions | [detail](#the-flat-action-map-has-no-bulk-half-and-no-removal) |
+| [`toolbarActions()` / `pushToolbarActions()` / `getToolbarActions()`](../../../packages/tables/src/Table/Concerns/HasToolbarActions.php) | [`Table\Concerns\HasToolbarActions`](../../../vendor/filament/tables/src/Table/Concerns/HasToolbarActions.php) | done | — | [detail](#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch) |
+| [`headerActions()` / `pushHeaderActions()` / `getHeaderActions()` / `headerActionsPosition()` / `getHeaderActionsPosition()`](../../../packages/tables/src/Table/Concerns/HasHeaderActions.php) + [`HeaderActionsPosition`](../../../packages/tables/src/Enums/HeaderActionsPosition.php) | [`Table\Concerns\HasHeaderActions`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php), [`Actions/HeaderActionsPosition`](../../../vendor/filament/tables/src/Actions/HeaderActionsPosition.php) | in progress | — | [detail](#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch) · [diverges](#headeractionsposition-files-under-enums-where-filament-keeps-it-under-actions) |
+| `recordAction()`, `recordUrl()` | [`HasRecordAction`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php), [`HasRecordUrl`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | todo | — | — |
+| [The selection settings — `bulkActions()` / `pushBulkActions()` / `groupedBulkActions()` / `selectable()` / `isSelectionEnabled()` / `selectCurrentPageOnly()` / `selectsCurrentPageOnly()` / `checkIfRecordIsSelectableUsing()` / `checksIfRecordIsSelectable()` / `isRecordSelectable()` / `trackDeselectedRecords()` / `canTrackDeselectedRecords()` / `recordCheckboxPosition()` / `getRecordCheckboxPosition()` / `getAllSelectableRecordsCount()`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) + [`RecordCheckboxPosition`](../../../packages/tables/src/Enums/RecordCheckboxPosition.php) | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php), [`Enums/RecordCheckboxPosition`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | in progress | — | [detail](#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) · [semantics](#one-filter-setting-drives-three-selection-behaviours) · [has-table.md](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
 | Grouping and summaries — `groups()`, `defaultGroup()`, the summarizers | [`CanGroupRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php), [`CanSummarizeRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | todo | — | — |
 | Reordering — `reorderable()` | [`CanReorderRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanReorderRecords.php) | todo | — | — |
 | Presentation — `striped()`, `stackedOnMobile()`, `content()`, `header()`, the headings, `recordClasses()` | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) and five siblings | todo | — | — |
 | `HasArguments`, `HasExtraAttributes`, `HasDefaultDataFormattingSettings` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
-The twenty-one **done** rows are `make()`, the host binding, the data-source
+The twenty-three **done** rows are `make()`, the host binding, the data-source
 declaration, the query-lane declaration and the two members that read off it
 (`hasQuery()`, `getRecordClass()`), the host-delegating `getRecords()`,
 `getPaginator()` and `getRecordKey()`, the morph-stable row and cell keys built
 on the last of those, the empty-state heading and icon, the closure-injection
 wiring, the per-record visible-action map, the pagination surface, the
 sort-resolution surface and the default-sort family beside it, the three search
-rows — the declaration, the chrome, and the query half · 12 landed — and the
-partial that renders all of it; the column set, the empty-state description and
-the three remaining action rows are partly in, one step behind them.
+rows — the declaration, the chrome, and the query half · 12 landed — the
+toolbar action set and the filter setting the whole selection story reads, and
+the partial that renders all of it; the column set, the empty-state description
+and the four remaining action rows are partly in, one step behind them.
 
 The relation arm · 20 added to the lane has no row of its own here, and that is
 the [one-row-per-file](../README.md#one-row-per-file-one-file-per-thing) rule
@@ -425,7 +435,7 @@ delegates to a host method that arrives with it; `getColumnSearchIndicators()`
 returns one `Filters\Indicator` per column-scoped term and waits on that same
 per-column search. Only the global one ships: `getSearchIndicator()` is a
 nullable delegate to the host's `getTableSearchIndicator()` — the
-[tenth contract method](has-table.md#the-contract-is-eleven-methods-of-filaments-forty-six)
+[tenth contract method](has-table.md#the-contract-is-seventeen-methods-of-filaments-forty-six)
 — where the null return carries what Filament's separate `hasSearch()` gate
 says, so no companion method is needed.
 
@@ -452,17 +462,17 @@ affordance to render.
 Filament's `Table::setUp()` registers a default `emptyStateDescription()` closure
 that returns *"Create a `<model label>` to get started"* — but only when the
 table has an action named `create`, and `null` otherwise. The action half is now
-answerable: [`hasAction('create')`](#the-flat-action-map-has-no-bulk-half-and-no-removal)
-reads the flat map a `recordActions()` call fills. The **model label** is still
+answerable: [`hasAction('create')`](#the-flat-action-map-keeps-one-trim-and-its-caller)
+reads the flat map a `recordActions()`, `headerActions()` or `toolbarActions()`
+call fills. The **model label** is still
 missing, with the rest of the
 [label machinery](#the-empty-state-heading-hardcodes-no-records), so there is no
 string to interpolate. Sylament's `Table` therefore does not override `setUp()`
 at all, and `getEmptyStateDescription()` returns `null` until a user sets one.
 The default returns in the same change as the label machinery. Note what
 `hasAction('create')` will read by then: the flat map is shared across every
-registration lane, so a `create` action declared as a header action counts too —
-that lane is [still blocked](#surface), and today only `recordActions()` fills
-the map.
+registration lane, so a `create` action declared as a header or toolbar action
+counts too — both lanes fill it now.
 
 ### Record actions register without the per-action modifier hook
 
@@ -528,22 +538,16 @@ constant with extra steps. The `AfterContent` case of the enum ships anyway,
 because the enum is a verbatim port and a partial one would be a worse lie. The
 second arm returns in the same change as the content grid.
 
-### The flat action map has no bulk half and no removal
+### The flat action map keeps one trim, and its caller
 
-`getAction()`, `hasAction()`, `getFlatActions()`, `cacheAction()` and
-`mergeCachedFlatActions()` are Filament's, minus everything that mentions a bulk
-action: `getBulkAction()`, `getFlatBulkActions()`, `hasBulkAction()`, the
-`$flatBulkActions` property, and the `instanceof BulkAction` branch that sorts a
-cached action into one map or the other. There is no `BulkAction` class in the
-port — [`action.md`](../actions/action.md) tracks it — so the branch has nothing
-to test and the second map nothing to hold. The bulk half returns with that
-class.
+The map is Filament's whole surface now — `getAction()`, `getBulkAction()`,
+`hasAction()`, `hasBulkAction()`, `getFlatActions()`, `getFlatBulkActions()`,
+`cacheAction()` with its `instanceof BulkAction` split, `mergeCachedFlatActions()`
+and `removeCachedActions()`. The bulk half and the eviction landed together with
+[`BulkAction`](../actions/bulk-action.md) and the two action-set traits that call
+them, which is what the earlier version of this section was waiting for.
 
-`removeCachedActions()` is likewise out: its only Filament callers are
-`HasHeaderActions` and `HasToolbarActions`, which re-register a named action and
-evict the one they replace — both unported, so nothing can evict anything yet.
-
-One smaller trim is deliberate rather than incidental.
+One trim is deliberate rather than incidental.
 `mergeCachedFlatActions()` drops Filament's `$shouldOverwriteExistingActions`
 passthrough, while `cacheAction()` keeps its own
 `$shouldOverwriteExistingAction`. That looks lopsided until you find who passes
@@ -551,7 +555,79 @@ passthrough, while `cacheAction()` keeps its own
 action must **not** displace a same-named record or header action already in the
 map. Both members exist to serve that one caller, which is
 [blocked](#surface) — so the parameter stays where a caller will reach it and
-the passthrough returns with the caller that needs it.
+the passthrough returns with the caller that needs it. Every caller this epic
+added overwrites, so nothing here changed when the bulk half landed.
+
+### The header and toolbar setters are destructive, because the flat bulk map is the checkbox switch
+
+`toolbarActions()` and `headerActions()` both walk the set they are about to
+replace, hand each member (a group flattened first) to `removeCachedActions()`,
+empty their own ordered list, and only then push the new set. Filament's comment
+explains the shape and it is worth keeping as a statement rather than a
+narration: the flat **bulk** map is what
+[`isSelectionEnabled()`](#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed)
+reads, so an appending setter would leave a replaced bulk action switching the
+checkbox column on forever, and clearing the whole map instead would take the
+record actions down with it. Only identity eviction hits exactly the members the
+set being replaced owns.
+
+Two consequences a reader would otherwise have to derive. Re-registering under a
+name another set already cached is **last writer wins** in the flat map, and
+evicting the winner then leaves the map without the loser — the maps are keyed by
+name, the eviction is by identity, and nothing restores a shadowed entry. And
+`pushToolbarActions()` / `pushHeaderActions()` do **not** evict, by design: they
+are the append half the destructive setters delegate into.
+
+Two spelling differences from vendor, both no-ops. `pushHeaderActions()` loops
+`getFlatActions()` calling `cacheAction()` per member where `pushToolbarActions()`
+calls `mergeCachedFlatActions()`; the port uses the merge helper in both, since
+that helper *is* the loop. And `$action->table($this)` is stamped inside each
+`instanceof` branch rather than ahead of them, matching
+[`pushRecordActions()`](#record-actions-register-without-the-per-action-modifier-hook)
+and turning a bad member into the `InvalidArgumentException` the branch already
+throws instead of a fatal on an undefined method.
+
+### The selection settings ship as a subset, and the rest are listed
+
+Ported whole from `Table\Concerns\HasBulkActions`: the two deprecated aliases
+`bulkActions()` / `pushBulkActions()` (five lines each, forwarding to the toolbar
+setters, annotation included — they carry the API's household name and a
+migrating user greps for it in both directions), `groupedBulkActions()`,
+`selectable()` / `isSelectionEnabled()`, `selectCurrentPageOnly()` /
+`selectsCurrentPageOnly()`, `checkIfRecordIsSelectableUsing()` /
+`checksIfRecordIsSelectable()` / `isRecordSelectable()`,
+`trackDeselectedRecords()` / `canTrackDeselectedRecords()`,
+`recordCheckboxPosition()` / `getRecordCheckboxPosition()` and
+`getAllSelectableRecordsCount()`, which delegates to the host.
+
+Three of those getters carry behaviour a signature cannot: `isSelectionEnabled()`
+returns an explicit `selectable()` bool when one was set and otherwise answers
+*is any visible bulk action registered*, so a table turns its own checkboxes on;
+`selectsCurrentPageOnly()` is `evaluate(…) || ! hasQuery()`, so a `records()`
+table is page-only whatever the setter says; and `canTrackDeselectedRecords()` is
+force-false under `deselectAllRecordsWhenFiltered(false)`
+([why](#one-filter-setting-drives-three-selection-behaviours)).
+`checksIfRecordIsSelectable()` is a **presence** test and never evaluates the
+callback — every reader uses it to decide whether the per-record walk is worth
+running at all, so evaluating it there would cost the very thing it guards.
+
+Not ported, each for a stated reason rather than by omission:
+
+- `maxSelectableRecords()` / `getMaxSelectableRecords()` — and with them
+  Filament's per-universe asymmetry, a `LogicException` on the records lane
+  against a silent SQL `limit()` on the query lane. A cap wants one meaning
+  before it ships.
+- `disabledSelection()` / `isSelectionDisabled()` — it suppresses the banner's
+  two links only, which is chrome the banner has to render first.
+- `selectGroupsOnly()` / `selectsGroupsOnly()` and the group checkbox — they need
+  record grouping, which is a separate unported feature.
+- `resolveSelectedRecordsUsing()` — the records-lane override for how a selection
+  resolves; the built-in `only`/`except` over the page collection is the only
+  resolution here so far.
+- `currentSelectionLivewireProperty()` — **skipped**, not deferred: it entangles
+  the Alpine selection into a host property, which is exactly what the port's
+  [writable props](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read)
+  already are.
 
 ### `columns()` takes columns only, and does not push
 
@@ -634,6 +710,43 @@ support.
 
 Faithful ports subtle enough that the next reader would misread the code.
 Permanent, and addressable by anchor.
+
+### One filter setting drives three selection behaviours
+
+`deselectAllRecordsWhenFiltered()` reads as a filter setting and files with the
+filters, Filament's placement kept — but nothing in filtering consults it. Its
+three readers are all selection, and only the first is the one the name suggests:
+the host clears the selection from the filter and search
+[update tails](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read);
+`getSelectedTableRecordsQuery()` re-applies the filters and the search to the
+selected-records query **only while it is on**; and `canTrackDeselectedRecords()`
+returns false outright when it is off.
+
+The three hang together. Under the default, any selection that survives is inside
+the current filters by construction, so constraining the query is safe and closes
+the select-a-row, filter-it-away, bulk-delete-it hole. Turn it off and the
+selection deliberately outlives the filters, so constraining would silently drop
+records the user still has selected — and an inverted "everything except these"
+selection has no meaning at all once the set it inverts can drift underneath it,
+which is why tracking goes with it.
+
+### The bulk split is by class, and eviction is by identity
+
+`cacheAction()` sorts on `instanceof BulkAction`, not on `isBulk()`. So an
+`Action::make('x')->bulk()` — bulk on the wire, bulk in
+[`getContext()`](../actions/action.md) — lands in the **record** map, and a bulk
+mount reaches it only through the resolver's fall-through from the bulk map to
+the record one. It works; it just does not take the direct path, and it does not
+enable the checkbox column, since
+[`isSelectionEnabled()`](#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed)
+walks `getFlatBulkActions()`. Filament behaves identically; use `BulkAction` when
+the class matters.
+
+`removeCachedActions()` filters both maps with `in_array(…, strict: true)` —
+identity, never name. That is what lets the
+[destructive setters](#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch)
+evict their own members without touching a same-named action some other
+registration owns.
 
 ### The query lane is on exactly while no records closure is set
 
@@ -1001,6 +1114,18 @@ nullable one.
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
 what would reverse the decision when it is provisional.
+
+### `HeaderActionsPosition` files under `Enums/`, where Filament keeps it under `Actions/`
+
+Filament's `HeaderActionsPosition` is the only file its tables package keeps in
+`src/Actions/`, and it is an enum rather than an action class. The port files it
+in `Enums/` beside `RecordActionsPosition`, `RecordCheckboxPosition`,
+`FiltersLayout`, `FiltersResetActionPosition` and `PaginationMode`, so the six
+enums are in one place. Cases, name and defaults are Filament's; only the
+namespace segment moves, which is the
+[namespace translation](../renames.md#namespace-segments) rule rather than a
+rename. `RecordCheckboxPosition` is **not** a divergence of any kind — Filament
+already keeps that one in `Enums/`.
 
 ### The ten-per-page default is matched strictly
 

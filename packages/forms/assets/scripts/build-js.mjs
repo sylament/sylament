@@ -26,7 +26,7 @@ import * as esbuild from 'esbuild';
 const BUNDLED_ENTRIES = {
     'controllers/file_upload_controller.ts': {
         external: ['@hotwired/stimulus', '@symfony/ux-live-component'],
-        license: ['filepond', 'filepond-plugin-file-validate-size', 'filepond-plugin-file-validate-type', 'filepond-plugin-image-preview'],
+        license: ['filepond', 'filepond-plugin-file-validate-size', 'filepond-plugin-file-validate-type', 'filepond-plugin-image-crop', 'filepond-plugin-image-edit', 'filepond-plugin-image-exif-orientation', 'filepond-plugin-image-preview', 'filepond-plugin-image-resize', 'filepond-plugin-image-transform', 'cropperjs'],
     },
     'controllers/select_controller.ts': {
         external: ['@hotwired/stimulus', '@symfony/ux-live-component'],

@@ -1,4 +1,5 @@
 @import './filepond.generated.css' layer(components);
+@import './cropper.generated.css' layer(components);
 @import './components/checkbox-list.css' layer(components);
 @import './components/field.css' layer(components);
 @import './components/file-upload.css' layer(components);

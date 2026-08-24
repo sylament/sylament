@@ -1,7 +1,13 @@
 /*! filepond 4.32.12 | MIT License | Copyright (c) 2019 Pqina | https://pqina.nl/filepond/ */
 /*! filepond-plugin-file-validate-size 2.2.8 | MIT License | Copyright (c) 2020 PQINA | Rik Schennink <rik@pqina.nl> | https://pqina.nl/filepond/ */
 /*! filepond-plugin-file-validate-type 1.2.9 | MIT License | Copyright (c) PQINA | Rik Schennink <rik@pqina.nl> | https://pqina.nl/filepond/ */
+/*! filepond-plugin-image-crop 2.0.6 | MIT License | Copyright (c) 2019 PQINA | Rik Schennink <rik@pqina.nl> | https://pqina.nl/filepond/ */
+/*! filepond-plugin-image-edit 1.6.3 | MIT License | Copyright (c) 2019 PQINA | Rik Schennink <rik@pqina.nl> | https://pqina.nl/filepond/ */
+/*! filepond-plugin-image-exif-orientation 1.0.11 | MIT License | Copyright (c) 2020 PQINA | Rik Schennink <rik@pqina.nl> | https://pqina.nl/filepond/ */
 /*! filepond-plugin-image-preview 4.6.12 | MIT License | Copyright (c) 2018-2021 PQINA | Rik Schennink <rik@pqina.nl> | https://pqina.nl/filepond/ */
+/*! filepond-plugin-image-resize 2.0.10 | MIT License | Copyright (c) 2020 PQINA | Rik Schennink <rik@pqina.nl> | https://pqina.nl/filepond/ */
+/*! filepond-plugin-image-transform 3.8.8 | MIT License | Copyright (c) 2019 Pqina | Rik Schennink | https://pqina.nl/filepond/ */
+/*! cropperjs 1.6.3 | MIT License | Copyright 2015-present Chen Fengyuan | https://fengyuanchen.github.io/cropperjs */
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;

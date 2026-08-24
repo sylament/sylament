@@ -43,6 +43,9 @@ importers:
       '@floating-ui/dom':
         specifier: ^1.8.0
         version: 1.8.0
+      cropperjs:
+        specifier: ^1.5.13
+        version: 1.6.3
       filepond:
         specifier: ^4.32.12
         version: 4.32.12
@@ -52,9 +55,24 @@ importers:
       filepond-plugin-file-validate-type:
         specifier: ^1.2.9
         version: 1.2.9(filepond@4.32.12)
+      filepond-plugin-image-crop:
+        specifier: ^2.0.6
+        version: 2.0.6(filepond@4.32.12)
+      filepond-plugin-image-edit:
+        specifier: ^1.6.3
+        version: 1.6.3(filepond@4.32.12)
+      filepond-plugin-image-exif-orientation:
+        specifier: ^1.0.11
+        version: 1.0.11(filepond@4.32.12)
       filepond-plugin-image-preview:
         specifier: ^4.6.12
         version: 4.6.12(filepond@4.32.12)
+      filepond-plugin-image-resize:
+        specifier: ^2.0.10
+        version: 2.0.10(filepond@4.32.12)
+      filepond-plugin-image-transform:
+        specifier: ^3.8.7
+        version: 3.8.8(filepond@4.32.12)
       sortablejs:
         specifier: ^1.15.7
         version: 1.15.7
@@ -625,6 +643,9 @@ packages:
     engines: {node: '>=22'}
     hasBin: true
 
+  cropperjs@1.6.3:
+    resolution: {integrity: sha512-BRb0PRIzjbfM5n+i6L2D85pSbXI/w6cnnwb9W9cRKgAmbiP+OjDeq+Irhd86IujZDXm/7JWECfscllFIdrlmfw==}
+
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
@@ -655,10 +676,35 @@ packages:
     peerDependencies:
       filepond: '>=1.x <5.x'
 
+  filepond-plugin-image-crop@2.0.6:
+    resolution: {integrity: sha512-bSy/KND4EP/QtW8MxIj23qgSEPUVRrT8XdktJ+OU9y8xRjFjTG+qcuw1LsycARQYRtzi8cZrD3P4POOITfkywQ==}
+    peerDependencies:
+      filepond: '>=3.x <5.x'
+
+  filepond-plugin-image-edit@1.6.3:
+    resolution: {integrity: sha512-5q3RDaVlfvyI346ckF1DfKw4uN5rfAmUCv7HCG30jBZcGmepg8hFyjVM71uZXYeb4AgLhpCkSPP8Immwig8bzw==}
+    peerDependencies:
+      filepond: '>=3.7.2 <5.x'
+
+  filepond-plugin-image-exif-orientation@1.0.11:
+    resolution: {integrity: sha512-hLBc12Fk6Zkj3L8mSAn+elugHOqT5rLUbgVXQQIQjMe0FsGjtpoxqeVR6jt4IWHGat2L9sFAgU2TGmd1mqosCg==}
+    peerDependencies:
+      filepond: '>=3.x <5.x'
+
   filepond-plugin-image-preview@4.6.12:
     resolution: {integrity: sha512-Y8ETX5QVV0mbPB0586UH8AUmG9tZg8PuN5bdEAIlZVJFTct5ebViJ7+Am94/VhTPjLqZjBf1zmDq5JU6XRsZKw==}
     peerDependencies:
       filepond: '>=4.x <5.x'
+
+  filepond-plugin-image-resize@2.0.10:
+    resolution: {integrity: sha512-irX+J275u8Ph1KcciCeSQmxeFjbu0+co5XVCkiwdSNnz6KiqrCKN7RXTvEbdgSdDzyi5omr2oP1rKWps5L1RsQ==}
+    peerDependencies:
+      filepond: '>=3.x <5.x'
+
+  filepond-plugin-image-transform@3.8.8:
+    resolution: {integrity: sha512-zNSXOO4eUcl1Pc+WVrzhReJzvgSnLpiDPmBPEazeukA2hM+rIREKKl9w931x1ePZFCACjenuib7PubjyVaP0xQ==}
+    peerDependencies:
+      filepond: '>=3.6.0 <5.x'
 
   filepond@4.32.12:
     resolution: {integrity: sha512-wro0/deLwua9CkL7HJygOlDaPo1c7Ov8kfzbZjH7m4hdi56gdHGDeRWnYa+qXnRm3Lty69gUGVFb3JZy/9vT8g==}
@@ -1154,6 +1200,8 @@ snapshots:
       tree-kill: 1.2.2
       yargs: 18.0.0
 
+  cropperjs@1.6.3: {}
+
   detect-libc@2.1.2: {}
 
   emoji-regex@10.6.0: {}
@@ -1202,7 +1250,27 @@ snapshots:
     dependencies:
       filepond: 4.32.12
 
+  filepond-plugin-image-crop@2.0.6(filepond@4.32.12):
+    dependencies:
+      filepond: 4.32.12
+
+  filepond-plugin-image-edit@1.6.3(filepond@4.32.12):
+    dependencies:
+      filepond: 4.32.12
+
+  filepond-plugin-image-exif-orientation@1.0.11(filepond@4.32.12):
+    dependencies:
+      filepond: 4.32.12
+
   filepond-plugin-image-preview@4.6.12(filepond@4.32.12):
+    dependencies:
+      filepond: 4.32.12
+
+  filepond-plugin-image-resize@2.0.10(filepond@4.32.12):
+    dependencies:
+      filepond: 4.32.12
+
+  filepond-plugin-image-transform@3.8.8(filepond@4.32.12):
     dependencies:
       filepond: 4.32.12
 

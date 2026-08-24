@@ -30,11 +30,21 @@ const STYLESHEETS = {
         sources: [
             'filepond/dist/filepond.css',
             'filepond-plugin-image-preview/dist/filepond-plugin-image-preview.css',
+            'filepond-plugin-image-edit/dist/filepond-plugin-image-edit.css',
         ],
         scope: ':where(.sy-fo-file-upload)',
         variants: 'descendant',
         renameKeyframes: 'sy-fo-file-upload-',
-        license: ['filepond', 'filepond-plugin-image-preview'],
+        license: ['filepond', 'filepond-plugin-image-preview', 'filepond-plugin-image-edit'],
+    },
+    'cropper.generated.css': {
+        from: '../../../forms/assets/package.json',
+        into: '../../../forms/assets/src/styles',
+        sources: ['cropperjs/dist/cropper.css'],
+        scope: ':where(.sy-fo-file-upload-editor)',
+        variants: 'descendant',
+        renameKeyframes: 'sy-fo-file-upload-editor-',
+        license: ['cropperjs'],
     },
 };
 

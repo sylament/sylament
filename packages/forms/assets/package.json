@@ -16,6 +16,11 @@
         "fetch": "eager",
         "enabled": true
       },
+      "repeater": {
+        "main": "dist/controllers/repeater_controller.js",
+        "fetch": "eager",
+        "enabled": true
+      },
       "select": {
         "main": "dist/controllers/select_controller.js",
         "fetch": "eager",

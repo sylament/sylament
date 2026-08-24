@@ -33,6 +33,7 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | [Bundle registration + `@SylamentForms` view namespace](../../../packages/forms/src/SylamentFormsBundle.php) | [`->hasViews()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | done | — | [diverges](#the-view-namespace-is-registered-by-symfony-convention-not-by-an-explicit-provider-call) |
 | Asset registration (12 field AlpineComponents) | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | in progress | — | [detail](#asset-registration) |
 | [`sylament--forms--select`](../../../packages/forms/assets/src/controllers/select_controller.ts) — the JS select control, a port of Filament's select utility ([`utils/select.ts`](../../../packages/forms/assets/src/utils/select.ts)) bound to the live host, plus the [`callSchemaComponentMethod`](../../../packages/schemas/assets/src/utils/schema_component_method.ts) helper it searches through, now imported from `@sylament/schemas` | [`resources/js/components/select.js`](../../../vendor/filament/forms/resources/js/components/select.js) + [`support/…/js/utilities/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js) | done | — | [diverges](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host) |
+| [`sylament--forms--repeater`](../../../packages/forms/assets/src/controllers/repeater_controller.ts) — the client half of the repeater's chrome: per-item collapse state (`data-collapsed`), collapse-all/expand-all, the validation `expand` reveal, and the bridge from support's drag control to the host's `reorder` action | [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) (the embedded view's Alpine object) | done | — | [diverges](#the-repeater-controller-owns-the-items-collapse-state-and-bridges-the-drag-control-to-the-reorder-action) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#translations) |
 | `Livewire::component('table-select', …)` | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | blocked | TableSelect field feature | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
@@ -72,14 +73,18 @@ a consumer without AssetMapper is not forced to install it.
 That registration now exists, which is what moves the row to **in progress**: it
 is the whole path for the package's built JS, and
 [`SylamentFormsBundleTest`](../../../packages/forms/tests/Integration/SylamentFormsBundleTest.php)
-pins it by resolving both built controllers through `AssetMapperInterface`. What
-is still partial is the **inventory** — two of the twelve are ported
+pins it by resolving the built `checkbox-list` and `select` controllers through
+`AssetMapperInterface`. What is still partial is the **inventory** — two of the
+twelve are ported
 ([`checkbox-list`](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it)
-and [`select`](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host),
-the package's two Stimulus controllers) and the other ten belong to fields that
-do not exist here yet. **Next step:** nothing bundle-side — each remaining
-controller ships with its field and needs no further wiring, since the path is
-registered once for the directory. The `select` assertion is the one that
+and [`select`](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host))
+and the other ten belong to fields that do not exist here yet. The workspace's
+third controller,
+[`repeater`](#the-repeater-controller-owns-the-items-collapse-state-and-bridges-the-drag-control-to-the-reorder-action),
+is not one of the twelve: Filament embeds the repeater's Alpine object in the
+component's own view rather than registering it as an asset. **Next step:**
+nothing bundle-side — each remaining controller ships with its field and needs
+no further wiring, since the path is registered once for the directory. The `select` assertion is the one that
 depends on a committed artifact: the controller is a `BUNDLED_ENTRIES` build,
 so its `dist/controllers/select_controller.js` exists only when the rebuilt dist
 is committed, and `AssetMapperRepository::findLogicalPath()` answers `null` for
@@ -316,6 +321,109 @@ its modals, and ours escapes them through
   applies verbatim, and a JS rig was weighed for the engine and declined on
   2026-08-19: its verification is the reviewer's method-by-method diff against
   vendor's `select.js` plus the demo's browser pass.
+
+### The repeater controller owns the items' collapse state and bridges the drag control to the reorder action
+
+[`repeater_controller.ts`](../../../packages/forms/assets/src/controllers/repeater_controller.ts)
+is `sylament--forms--repeater`, the third controller in this workspace and the
+port of the client half of Filament's repeater Alpine object
+([`Repeater.php`'s embedded view](../../../vendor/filament/forms/src/Components/Repeater.php)).
+It reads two Stimulus values — `key` (the schema component key, the only string
+ever handed to the host) and `persist` (whether collapse state survives a
+reload) — and one target, `item`, which the
+[Repeater partials](../../../packages/forms/templates/partials/Repeater) stamp on
+every item element (the `<li>` in default and simple mode, the `<tr>` in table
+mode). Six methods carry the behaviour:
+
+- `toggleItemFromHeader` — bound on the item header's `click`, ignoring clicks
+  that landed inside `.sy-fo-repeater-item-header-start-actions` or
+  `.sy-fo-repeater-item-header-end-actions` so the reorder/clone/delete buttons
+  are not also a collapse toggle. The [Section controller's
+  `toggleFromHeader()`](../../../packages/support/assets/src/controllers/section_controller.ts)
+  is the precedent, selector for selector.
+- `toggleItemFromButton` — bound on the collapse/expand button pair's `click`,
+  and it calls `event.stopPropagation()` **by hand** rather than taking the
+  action option: `:stop` needs Stimulus 3.2 and the workspace's peer range is
+  `^3.0`. That is the one comment kept in the file body, for parity with the
+  Section controller, which carries the same line for the same reason.
+- `expandItem` — bound on the item's own `expand` event, the non-bubbling
+  per-ancestor reveal the [schema root dispatches after a validation
+  failure](../schemas/schemas-bundle.md#the-expand-walk-and-the-two-window-events-either-side-of-it).
+  `event.currentTarget` is the element carrying the `data-action`, so the item
+  resolves without a detail payload.
+- `collapseAll` / `expandAll` — bound on the two actions-bar buttons, walking
+  `this.itemTargets`. Stimulus scopes targets and actions to the nearest
+  controller of the same identifier, so a nested repeater collapses only its own
+  rows.
+- `reorder` — the drag bridge, below.
+
+**The collapse state is an attribute the controller stamps, not a class the
+server owns.** Each item carries `data-collapsed="true"|"false"` from the moment
+this controller sees it; the server-rendered `sy-collapsed` class is **first
+paint only** and is read exactly once, as the seed for that stamp. The reason is
+UX LiveComponent's `ExternalMutationTracker`: it replays a client mutation over
+a morph only when it recorded one, and it records neither of the two writes the
+obvious implementation would make. `handleGenericAttributeMutation()` bails on
+`newValue === oldValue`, so re-`setAttribute`ing the value already there is
+nothing; `handleClassAttributeMutation()` diffs the old and new token lists, so
+`classList.add()` of a class the element already carries is nothing either. A
+`null → "true"` attribute write is the one shape the tracker reliably records,
+which is why `#stamp()` writes the attribute on first sight even when the value
+it writes is `"false"`, and why `#setCollapsed()` never touches the class. The stamp is guarded on `hasAttribute()`, so an item
+the morph patched **in place** keeps whatever the user last chose, while an item
+the morph **re-created** arrives unstamped and is re-seeded from its server
+class. `#isCollapsed()` mirrors that fallback order (attribute, then class).
+
+Items are stamped from two places, and the redundancy is deliberate:
+`itemTargetConnected()` covers rows the server adds later, and the `connect()`
+loop is the belt-and-braces pass. On the current Stimulus (3.2.2) the
+`connect()` loop is in fact always the second of the two —
+`Context.connect()` starts the target observer *before* it calls
+`controller.connect()`, so every initial item has already been stamped by the
+time the loop runs — but `#stamp()` is idempotent, so the order is not
+load-bearing either way. `connect()` also `uncloak()`s the root, which is how a
+`persist`ing repeater avoids showing every item expanded for one frame before
+storage is read; [`utils/cloak.ts`](../../../packages/forms/assets/src/utils/cloak.ts)
+is a **byte-for-byte duplicate** of support's, for the same reason schemas
+carries one — the per-file build ships specifiers verbatim, so a cross-package
+import would have to be a bare specifier every consumer's importmap resolves
+([schemas-bundle.md](../schemas/schemas-bundle.md#the-schema-component-method-helper-lives-here-now)).
+
+Persistence is `window.localStorage` under `repeater-<key>-<itemKey>-isCollapsed`
+(`itemKey` from the item's `data-item-key`), written on every `#setCollapsed()`
+and read once per item in `#stamp()`. Both accessors are the Section
+controller's `try`/`catch` helpers verbatim, including their two comments — a
+browser with storage disabled falls back to the server's default and still
+collapses, it just does not remember.
+
+**Reorder goes through the host, not through the DOM.** The `<ul>` / `<tbody>`
+carries `data-action="sylament--support--sortable:end->sylament--forms--repeater#reorder"`,
+so [support's drag control](../support/sortable.md) hands this controller the
+new key order in the event's `detail.items`. A non-array detail returns
+silently; otherwise the controller resolves the closest `[data-controller~="live"]`
+root — throwing "The sylament--forms--repeater controller needs a live component
+host to reorder." when there is none, the select controller's message shape —
+and calls `component.action("mountAction", { name: "reorder", arguments: { items },
+context: { schemaComponent: this.keyValue } })`, i.e. the repeater's own
+`reorder` action mounted against its schema component. `getComponent()` is
+called at drag time rather than at connect, so there is no `live:connect` race
+to retry around: a user cannot drag a row before the host has connected, which
+is why this controller needs neither the select controller's private
+`resolveHost()` nor schemas'
+[`resolveLiveHost()`](../../../packages/schemas/assets/src/utils/live_host.ts).
+
+It ships **per-file** (no `BUNDLED_ENTRIES` entry, no new dependency): the built
+`dist/controllers/repeater_controller.js` keeps `@hotwired/stimulus`,
+`@symfony/ux-live-component` and `../utils/cloak.js` as verbatim specifiers, the
+first two resolved by the consuming app's importmap — `@symfony/ux-live-component`
+being already both a dev and a peer dependency of this workspace for the select
+controller's sake. Its `symfony.controllers` entry is `fetch: eager`, matching
+the other two.
+
+**No test in this repo runs it** — the
+[`checkbox-list` note](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it)
+applies verbatim: verification is the reviewer's line-by-line read against the
+vendor Alpine object plus the demo's browser pass.
 
 ### Livewire-specific provider responsibilities are dropped, not ported
 

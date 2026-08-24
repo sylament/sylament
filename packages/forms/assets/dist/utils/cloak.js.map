@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../src/utils/cloak.ts"],
+  "sourcesContent": ["const CLOAK_CLASS = \"sy-cloak\";\n\n/**\n * Reveal server-cloaked markup (Alpine x-cloak equivalent): the element ships\n * with the `sy-cloak` class (hidden while scripting is enabled \u2014 see base.css)\n * and the controller that owns it calls this once its initial state is\n * applied, typically from connect().\n */\nexport function uncloak(element: Element): void {\n  element.classList.remove(CLOAK_CLASS);\n}\n"],
+  "mappings": "AAAA,MAAM,cAAc;AAQb,SAAS,QAAQ,SAAwB;AAC9C,UAAQ,UAAU,OAAO,WAAW;AACtC;",
+  "names": []
+}

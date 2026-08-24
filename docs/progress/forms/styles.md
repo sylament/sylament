@@ -2,30 +2,33 @@
 
 The forms bundle's component CSS —
 [`packages/forms/assets/src/styles/`](../../../packages/forms/assets/src/styles/)
-— is eleven authored stylesheets plus one the build generates, and only seven of
+— is ten authored stylesheets plus one the build generates, and only seven of
 them draw on
 [`forms/resources/css/`](../../../vendor/filament/forms/resources/css/) at all.
 **The rest port from
 [`support/resources/css/`](../../../vendor/filament/support/resources/css/)**:
 Filament files the raw control chrome — checkbox, input, radio, select, toggle —
 in its *support* package and keeps only the field-and-wrapper layer in forms, so
-`checkbox.css`, `select.css` and `toggle.css` have no counterpart in the forms
+`select.css` and `toggle.css` have no counterpart in the forms
 tree at all, `input.css` is support-chrome plus two forms-tree pulls (vendor's
 `textarea.css` folded in whole, `date-time-picker.css` for its one native rule),
 `radio.css` has one for its option set only, and
 `toggle-buttons.css` and `checkbox-list.css` are the exceptions that prove the
 split — both are wholly forms', because their controls borrow support's button
-chrome (`toggle-buttons.css`) or forms' own already-ported checkbox
+chrome (`toggle-buttons.css`) or the shared checkbox skin
 (`checkbox-list.css`) by class rather than restyling either. Diffed
 against the wrong directory each of them reads as drift from beginning to end,
 which is the single most useful thing to know before reading this file. The
-eleventh reads from neither package: `fused-group.css` ports **schemas**'
+tenth reads from neither package: `fused-group.css` ports **schemas**'
 `components/fused-group.css`, because
 [the component it styles ships here rather than there](fused-group.md#fusedgroup-lives-in-forms-not-schemas).
 And the generated one reads from **npm** rather than from Filament at all:
 `filepond.generated.css` is FilePond's own base stylesheet, rewritten under
 `.sy-fo-file-upload` by support's build
 ([diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build)).
+One authored stylesheet **left** this tree rather than being written into it:
+the checkbox skin moved to support the moment tables became its second consumer
+([diverges](#the-checkbox-skin-moved-to-support-when-tables-became-its-second-consumer)).
 Every row below names the vendor file it was actually written against.
 
 Each authored stylesheet lands in `components/<name>.css` and is `@import`ed
@@ -52,8 +55,10 @@ Reference — the Filament source this is diffed against:
   directly, `textarea.css` folded into `input.css`, `text-input.css`, `select.css`
   and `date-time-picker.css` partly, the other ten unported
 - [`support/resources/css/components/input/`](../../../vendor/filament/support/resources/css/components/input/)
-  — `checkbox.css`, `index.css`, `radio.css` and `select.css`, the four control
-  sources, plus the `wrapper.css` chrome the port collapses into its controls
+  — `index.css`, `radio.css` and `select.css`, the three control sources still
+  ported into this tree, plus the `wrapper.css` chrome the port collapses into
+  its controls; the fourth, `checkbox.css`, is
+  [support's](../support/README.md#supporting-surface) now
 - [`schemas/resources/css/components/fused-group.css`](../../../vendor/filament/schemas/resources/css/components/fused-group.css)
   — the fused box, ported whole with the component that emits its class
 - [`support/resources/css/components/toggle.css`](../../../vendor/filament/support/resources/css/components/toggle.css)
@@ -80,7 +85,7 @@ _Blocked by_ names what unblocks the missing rules. _Detail_ carries a
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`checkbox-list.css` — the `.sy-fo-checkbox-list` option set, its search row and its no-results line](../../../packages/forms/assets/src/styles/components/checkbox-list.css) | [`components/checkbox-list.css`](../../../vendor/filament/forms/resources/css/components/checkbox-list.css) | done | — | [diverges](checkbox-list.md#the-control-class-is-the-existing-sy-fo-checkbox) |
-| [`checkbox.css` — `.sy-fo-checkbox` box, tick and invalid arms](../../../packages/forms/assets/src/styles/components/checkbox.css) | [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | done | — | [diverges](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes) · [diverges](#the-indeterminate-checkbox-arm-has-no-port) |
+| `checkbox.css` — gone from this tree; the box, tick, dash and invalid arms are [support's `.sy-checkbox`](../../../packages/support/assets/src/styles/components/checkbox.css), which the two emitting templates carry beside their own `sy-fo-checkbox` hook | [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | done | — | [diverges](#the-checkbox-skin-moved-to-support-when-tables-became-its-second-consumer) |
 | [`date-time-picker.css` — its one native-control rule, ported into `input.css` as `.sy-fo-input::-webkit-datetime-edit`](../../../packages/forms/assets/src/styles/components/input.css) | [`components/date-time-picker.css`](../../../vendor/filament/forms/resources/css/components/date-time-picker.css) | in progress | the JS calendar vertical ([date-time-picker.md](date-time-picker.md#the-js-calendar-family-waits-on-a-js-vertical-of-its-own)) | [detail](#the-date-time-picker-stylesheet-is-one-native-rule-and-a-calendar-panel) |
 | [`field.css` — the `.sy-fo-field` wrapper grid, label column, content column and error list](../../../packages/forms/assets/src/styles/components/field.css) | [`components/field.css`](../../../vendor/filament/forms/resources/css/components/field.css) | in progress | schemas' `HasInlineLabel` · support's `HasVerticalAlignment` | [detail](#the-field-stylesheet-omits-the-leading-schema-un-grow) · [diverges](#field-css-is-flat-where-filament-nests) · [diverges](#sy-fo-sr-only-is-a-support-utility-authored-as-a-forms-component-class) |
 | [`file-upload.css` — the `.sy-fo-file-upload` wrapper, its FilePond overrides and the two JS-built action anchors](../../../packages/forms/assets/src/styles/components/file-upload.css) | [`components/file-upload.css`](../../../vendor/filament/forms/resources/css/components/file-upload.css) | in progress | the image editor · media preview | [detail](#the-file-upload-stylesheet-stops-at-the-editor) · [diverges](#the-filepond-base-stylesheet-is-redistributed-scoped-by-the-build) |
@@ -109,7 +114,8 @@ to support's audit.
 No test exercises CSS. The render tests assert that the class hooks these rules
 attach to (`sy-fo-field` and its label/content/error descendants,
 `sy-fo-field-label-inline-control`, `sy-fo-sr-only`, `sy-fo-input`,
-`sy-fo-select`, `sy-fo-checkbox`, the six `sy-fo-toggle-*` classes, the
+`sy-fo-select`, `sy-fo-checkbox` beside the shared `sy-checkbox`, the six
+`sy-fo-toggle-*` classes, the
 `sy-fo-radio*` family, the `sy-fo-toggle-buttons*` trio with the `sy-btn-group`
 arm beside it, and the
 `sy-fo-repeater` / `sy-fo-simple-repeater` families) are emitted into the HTML —
@@ -317,22 +323,29 @@ outlive the detail sections above.
 
 ### The control stylesheets carry forms-coded names for support-tier classes
 
-`checkbox.css`, `input.css`, `radio.css`, `select.css` and `toggle.css` port
-`input[type='checkbox'].fi-checkbox-input`, `input.fi-input`,
-`input[type='radio'].fi-radio-input`, `select.fi-select-input` and `.fi-toggle` —
+`input.css`, `radio.css`, `select.css` and `toggle.css` port
+`input.fi-input`, `input[type='radio'].fi-radio-input`, `select.fi-select-input`
+and `.fi-toggle` —
 support-package classes, which [carry no package code](../renames.md) by the
 port's own naming rule (`fi-icon-btn` → `sy-icon-btn`). The port names them
-`.sy-fo-checkbox`, `.sy-fo-input`, `.sy-fo-radio-input`, `.sy-fo-select` and
+`.sy-fo-input`, `.sy-fo-radio-input`, `.sy-fo-select` and
 `.sy-fo-toggle` instead, so a support-tier class arrives under the forms code and
 in a forms stylesheet. It is the same
 tracks-its-emitter call schemas records in the other direction for
 [`text.css`](../schemas/styles.md#text-css-was-ported-into-the-support-package):
-forms is the only consumer of all five today, and filing a rule beside the one
+forms is the only consumer of all four today, and filing a rule beside the one
 template that emits it beats filing it beside the vendor that happened to author
 it. The re-coding reverses the moment a second package renders one of these
 controls — an infolists or tables cell reusing the input chrome would have to
 either import a forms-coded class or duplicate the rule, and moving the file down
 to support is the cheaper answer at that point.
+
+There were five, and the fifth is the reversal happening exactly as written:
+`checkbox.css` ported `input[type='checkbox'].fi-checkbox-input` as
+`.sy-fo-checkbox` until tables' selection column became its second consumer, at
+which point the file moved down to support and the class went back to being
+code-less ([below](#the-checkbox-skin-moved-to-support-when-tables-became-its-second-consumer)).
+Read this section as four stylesheets waiting on the same trigger.
 
 The radio keeps its `-input` suffix where the checkbox drops one, and that is not
 an inconsistency to tidy: `.sy-fo-radio` is already taken by the option-set
@@ -340,16 +353,16 @@ container the field renders around the controls, which the checkbox — a single
 element with no container — has no equivalent of. Vendor draws the same line for
 the same reason, `fi-fo-radio` beside `fi-radio-input`.
 
-The checkbox changes shape as well as tier: vendor qualifies its base rule with
-the element and the type attribute (`input[type='checkbox'].fi-checkbox-input`,
-**(0,2,1)**) where the port writes the class alone (`.sy-fo-checkbox`,
-**(0,1,0)**). Only one element ever carries that class, so the qualifier bought
-vendor nothing the template does not already guarantee, and the stylesheet's
-internal order survives — our `[aria-invalid='true']` arm outranks our base by
-the same one point vendor's `.fi-invalid` outranks its own. What is given up is
-external: a host rule now needs (0,1,0) rather than (0,2,1) to reach the box,
-the same ledger the
+The radio's own shape question — whether to keep vendor's element-and-type
+qualifier (`input[type='radio'].fi-radio-input`, **(0,2,1)**) or write the class
+alone (`.sy-fo-radio-input`, **(0,1,0)**) — is answered the second way, on the
+grounds that only one element ever carries the class, so the qualifier buys
+nothing the template does not already guarantee, and the stylesheet's internal
+order survives either way. What is given up is external: a host rule now needs
+(0,1,0) rather than (0,2,1) to reach the control, the same ledger the
 [flattened field stylesheet](#field-css-is-flat-where-filament-nests) sits on.
+The checkbox took the opposite answer when it moved to support, and deliberately
+— see below.
 
 ### Field CSS is flat where Filament nests
 
@@ -381,11 +394,13 @@ It is also **one stylesheet, not a package habit**: forms'
 [`repeater.css`](../../../packages/forms/assets/src/styles/components/repeater.css)
 keeps vendor's nesting rule for rule, as does schemas'
 [`section.css`](../../../packages/schemas/assets/src/styles/components/section.css).
-The same-element stylesheets (`checkbox.css`, `input.css`, `select.css`, and
+The same-element stylesheets (`input.css`, `select.css`, and
 `radio.css`'s three control rules — its option-set half keeps vendor's nesting)
 are flat too, but there the flattening is free: every one of their rules is a
 compound on the control itself, and a `&:checked` nested under the base rule
-compiles to the same selector as the `.sy-fo-checkbox:checked` written out. And
+compiles to the same selector as the `.sy-fo-input:focus` written out. Support's
+checkbox keeps vendor's nesting instead, its `:indeterminate` arm having two
+nested arms of its own to hold. And
 `toggle.css`'s shape follows from
 [its element model](toggle.md#the-toggle-is-a-styled-checkbox-not-a-button)
 rather than from this choice. Reverses by nesting the nine rules back under
@@ -420,26 +435,57 @@ and one class that could have been it, filed where only forms can name it. Closi
 it is a move plus a rename, and the four inlined copies collapse onto it in the
 same change.
 
-### The indeterminate checkbox arm has no port
+### The checkbox skin moved to support when tables became its second consumer
 
-Vendor's `input[type='checkbox'].fi-checkbox-input` nests a whole `&:indeterminate`
-block — the dash glyph, `bg-primary-600`, a focus arm, a disabled arm and an
-`.fi-invalid` nesting of its own. None of it is ported, and none of it ever will
-be under the current field: `HTMLInputElement.indeterminate` is a DOM property
-that no server-rendered attribute can set, and the
-[`Checkbox` template](../../../packages/forms/templates/partials/Checkbox/index.html.twig)
-ships no JavaScript to set it. The selector cannot match, so the rules would be
-dead weight in the built stylesheet. They come back only if a tri-state checkbox
-ever lands with a controller behind it.
+Filament files the checkbox skin in **support** and consumes it from both forms
+and tables. The port started it in forms as `.sy-fo-checkbox`, on the
+tracks-its-emitter rule [above](#the-control-stylesheets-carry-forms-coded-names-for-support-tier-classes),
+with that section's own escape clause attached: *the re-coding reverses the
+moment a second package renders one of these controls*. M4 · 1's record-selection
+column is that second package, so
+[`packages/forms/assets/src/styles/components/checkbox.css`](../../../packages/forms/assets/src/styles/components/)
+is gone with its import line and
+[`packages/support/assets/src/styles/components/checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css)
+holds the skin as the code-less `.sy-checkbox` — support-level classes carrying
+no package code being [styling.md rule 1](../../styling.md)'s own wording. The
+same escalation `InputWrapper` made one component earlier, and Filament's own
+layering restored.
+
+`sy-fo-checkbox` did **not** go with it. Both emitting templates —
+[`Checkbox`](../../../packages/forms/templates/partials/Checkbox/index.html.twig)
+and
+[`CheckboxList`](../../../packages/forms/templates/partials/CheckboxList/index.html.twig)
+— now write `class: 'sy-checkbox sy-fo-checkbox'`, exactly as Filament writes
+`fi-checkbox-input` beside its own hooks, and
+[`checkbox-list.css`](../../../packages/forms/assets/src/styles/components/checkbox-list.css)
+still reaches `.sy-fo-checkbox` for the option's own layout (`mt-1 shrink-0`) and
+its `:has(…:disabled)` arm. Every existing render assertion on `sy-fo-checkbox`
+therefore survives untouched. `Toggle` and `ToggleButtons` are **excluded** on
+purpose even though both render `type="checkbox"` inputs: their skins are a
+switch and a suppressed-input-behind-a-button-label respectively, and a
+16px ticked square would break both visually.
+
+The move restores two things the forms copy had dropped. The selector is
+element-qualified again (`input[type='checkbox'].sy-checkbox`, **(0,2,1)**),
+because a code-less class in support is reachable by any package's markup and the
+qualifier is what keeps it meaning *a checkbox*. And the whole `&:indeterminate`
+block is ported for the first time — the dash glyph, `bg-primary-600`, the focus
+arm, the disabled arm and its `[aria-invalid='true']` nesting. Forms never needed
+it and recorded so: `HTMLInputElement.indeterminate` is a DOM property no
+server-rendered attribute can set, and no forms control ships JavaScript that
+sets it. Tables' tri-state page checkbox is driven by
+[the selection controller](../tables/tables-bundle.md#the-selection-controller-diverges-from-tablejs-in-four-places),
+which sets exactly that property, so the rules now have a selector that matches.
 
 ### The checkbox and radio pin their checked glyph's size and placement
 
 Both control rules add three declarations vendor's do not carry — `bg-center`
 and `bg-no-repeat` in the `@apply` list, and a literal
 `background-size: 1rem 1rem` beside it — in
-[`checkbox.css`](../../../packages/forms/assets/src/styles/components/checkbox.css)
-and
 [`radio.css`](../../../packages/forms/assets/src/styles/components/radio.css)
+and, since it
+[moved to support](#the-checkbox-skin-moved-to-support-when-tables-became-its-second-consumer),
+[`checkbox.css`](../../../packages/support/assets/src/styles/components/checkbox.css)
 alike. The glyph is a `background-image` data URI on an `appearance-none` box,
 and the SVG declares a `viewBox` and no intrinsic width or height, so with
 nothing said a browser sizes it from the background positioning area and the
@@ -448,7 +494,8 @@ result, which is the same 1rem mark at the shipped `size-4` and a mark that
 stays 1rem if a host ever resizes the control. Recorded because it is an
 addition to a rule otherwise ported line for line — the checkbox's landed first
 and went unrecorded, and the radio copied it — and it reverses by deleting all
-three from both files, which renders identically today.
+three from both files, which renders identically today. The three travelled with
+the checkbox into support unchanged, so the note now spans two packages.
 
 ### The input wrapper invents a hover ring
 

@@ -82,7 +82,7 @@ Rows never disappear — only their detail sections do.
 | [`emptyStateDescription()` / `getEmptyStateDescription()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | in progress | — | [detail](#the-create-action-default-description-waits-on-the-model-label) |
 | [`emptyStateIcon()` / `getEmptyStateIcon()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | done | — | [diverges](#the-empty-state-icon-getter-returns-null-and-the-fallback-lives-in-the-template) |
 | [`$evaluationIdentifier = 'table'` + the `$liveComponent` name injection](../../../packages/tables/src/Table.php) | [`Table::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Table.php) | done | — | — |
-| [`$template`](../../../packages/tables/src/Table.php) + [the partial it names](../../../packages/tables/templates/partials/Table/index.html.twig) | [`$view = 'filament-tables::index'`](../../../vendor/filament/tables/src/Table.php), [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) · [diverges](#every-rule-in-tablecss-is-scoped-under-the-sy-ta-root-one-class-above-vendors) · [diverges](#a-markup-header-label-does-not-switch-the-sortable-header-to-a-span) · [semantics](#aria-sort-is-dropped-with-null-because-false-would-render-as-a-string) |
+| [`$template`](../../../packages/tables/src/Table.php) + [the partial it names](../../../packages/tables/templates/partials/Table/index.html.twig) | [`$view = 'filament-tables::index'`](../../../vendor/filament/tables/src/Table.php), [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) · [diverges](#every-rule-in-tablecss-is-scoped-under-the-sy-ta-root-one-class-above-vendors) · [diverges](#a-markup-header-label-does-not-switch-the-sortable-header-to-a-span) · [semantics](#aria-sort-is-dropped-with-null-because-false-would-render-as-a-string) · [diverges](#the-selection-cells-carry-no-header-cell-class-and-their-checkbox-skin-is-supports) |
 | `emptyState()` (a whole replacement view) | [`HasEmptyState::emptyState()`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | todo | — | — |
 | `emptyStateActions()` / `pushEmptyStateActions()` | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | todo | — | — |
 | Record labels — `modelLabel()`, `pluralModelLabel()`, `recordTitle()`, `recordTitleAttribute()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | todo | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
@@ -128,6 +128,8 @@ Rows never disappear — only their detail sections do.
 | The deprecated v3 aliases — `actions()`, `pushActions()`, `actionsPosition()`, `actionsColumnLabel()`, `actionsAlignment()`, `getActions()`, `getActionsPosition()`, `getActionsColumnLabel()`, `getActionsAlignment()` | [`HasRecordActions`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordActions.php) | skipped | — | The project has never ported a deprecated Filament surface; each is a one-line delegate to the `record*` name above |
 | [`toolbarActions()` / `pushToolbarActions()` / `getToolbarActions()`](../../../packages/tables/src/Table/Concerns/HasToolbarActions.php) | [`Table\Concerns\HasToolbarActions`](../../../vendor/filament/tables/src/Table/Concerns/HasToolbarActions.php) | done | — | [detail](#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch) |
 | [`headerActions()` / `pushHeaderActions()` / `getHeaderActions()` / `headerActionsPosition()` / `getHeaderActionsPosition()`](../../../packages/tables/src/Table/Concerns/HasHeaderActions.php) + [`HeaderActionsPosition`](../../../packages/tables/src/Enums/HeaderActionsPosition.php) | [`Table\Concerns\HasHeaderActions`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php), [`Actions/HeaderActionsPosition`](../../../vendor/filament/tables/src/Actions/HeaderActionsPosition.php) | in progress | — | [detail](#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch) · [diverges](#headeractionsposition-files-under-enums-where-filament-keeps-it-under-actions) |
+| [The two-group toolbar — the start actions group, its three reserved slots and the widened render gate](../../../packages/tables/templates/partials/Table/index.html.twig) + [`header-toolbar.css`](../../../packages/tables/assets/src/styles/components/header-toolbar.css) | [`index.blade.php`'s `fi-ta-header-toolbar`](../../../vendor/filament/tables/resources/views/index.blade.php), [`container.css`](../../../vendor/filament/tables/resources/css/container.css) | in progress | reordering · grouping · the column manager — the three slots stand empty | [diverges](#the-toolbars-start-group-carries-its-own-class-and-renders-only-when-it-has-content) · [diverges](#a-bulk-only-trigger-is-hidden-by-a-wrapper-span) · [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) |
+| [The selection chrome — the checkbox cells, the tri-state page checkbox and the selection banner](../../../packages/tables/templates/partials/Table/index.html.twig) + [`selection.css`](../../../packages/tables/assets/src/styles/components/selection.css) | [`index.blade.php`'s selection cells and `fi-ta-selection-indicator`](../../../vendor/filament/tables/resources/views/index.blade.php), [`support/…/input/checkbox.css`](../../../vendor/filament/support/resources/css/components/input/checkbox.css) | in progress | grouping — the group checkbox · the `fi-selected` row tint, which rides a client-stamped class | [diverges](#the-selection-banner-flattens-vendors-second-wrapper-and-renders-supports-link) · [diverges](#the-selection-cells-carry-no-header-cell-class-and-their-checkbox-skin-is-supports) · [tables-bundle.md](tables-bundle.md#the-selection-controller-diverges-from-tablejs-in-four-places) |
 | `recordAction()`, `recordUrl()` | [`HasRecordAction`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php), [`HasRecordUrl`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordUrl.php) | todo | — | — |
 | [The selection settings — `bulkActions()` / `pushBulkActions()` / `groupedBulkActions()` / `selectable()` / `isSelectionEnabled()` / `selectCurrentPageOnly()` / `selectsCurrentPageOnly()` / `checkIfRecordIsSelectableUsing()` / `checksIfRecordIsSelectable()` / `isRecordSelectable()` / `trackDeselectedRecords()` / `canTrackDeselectedRecords()` / `recordCheckboxPosition()` / `getRecordCheckboxPosition()` / `getAllSelectableRecordsCount()`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) + [`RecordCheckboxPosition`](../../../packages/tables/src/Enums/RecordCheckboxPosition.php) | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php), [`Enums/RecordCheckboxPosition`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | in progress | — | [detail](#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) · [semantics](#one-filter-setting-drives-three-selection-behaviours) · [has-table.md](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
 | Grouping and summaries — `groups()`, `defaultGroup()`, the summarizers | [`CanGroupRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php), [`CanSummarizeRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | todo | — | — |
@@ -1507,20 +1509,22 @@ containers inside `fi-ta-main` (`fi-ta-header-ctn`, `fi-ta-header-toolbar`) are
 emitted **unconditionally**, hidden with `x-cloak` + `x-show` when the table has
 no heading, description or toolbar action. Sylament's partial is three deep —
 `sy sy-ta` > `sy-ta-ctn` > `table.sy-ta-table` or `div.sy-ta-empty-state` — with
-no `sy-ta-main`, no `sy-ta-content-ctn`, no `sy-ta-header-ctn`, and no
-`aria-label` on the `<table>`; `sy-ta-header-toolbar` is the one container that
-does render, and only when the table is searchable or shows a filters trigger —
-in which case it carries its `sy-ta-header-toolbar-end` group, Filament's second
-toolbar child, and still no start group.
+no `sy-ta-main`, no `sy-ta-content-ctn`, no `sy-ta-header-ctn`, no `sy-ta-header`
+band and no `aria-label` on the `<table>`; `sy-ta-header-toolbar` is the one
+container that does render, and only when something would go in it — a search
+field, a filters trigger, a header action or a toolbar action.
 
 The wrappers are not markup for their own sake in Filament: they exist so Livewire's
 DOM morph finds the same nodes before and after a toolbar's visibility flips,
 which is why they render empty rather than being wrapped in an `@if`. The ones
-still missing cannot flip yet — the heading, description and toolbar actions they
-host all sit in **todo** or **blocked** rows above, and the `<table>`'s
-`aria-label` needs the [record labels](#the-empty-state-heading-hardcodes-no-records)
-that the same rows wait on. A wrapper emitted now would be a permanently empty
-node with a class no stylesheet targets.
+still missing cannot flip yet — `sy-ta-header` exists to hold a heading and a
+description, both **todo** rows above, and the `<table>`'s `aria-label` needs the
+[record labels](#the-empty-state-heading-hardcodes-no-records) those same rows
+wait on. A wrapper emitted now would be a permanently empty node with a class no
+stylesheet targets. `HeaderActionsPosition::Adaptive` is accepted with no CSS
+behind it for exactly that reason: the band it would position against does not
+exist yet, so header actions render in the toolbar's start group whichever case
+is set.
 
 Provisional, and the reversal is mechanical: each container comes back in the
 change that lands the first feature it holds, at which point its emptiness is
@@ -1528,19 +1532,147 @@ transient rather than permanent. The **class names** are already reserved by the
 Filament originals, so nothing about the eventual DOM depends on inventing them
 later.
 
-The `ms-auto` stopgap on `.sy-ta-search-field` is gone, and the prediction it
-carried was wrong in an instructive way: it expected filters to land in **slot
-1** beside the search field, and they do not. Filament's toolbar has exactly two
-children — a start-aligned actions group (reordering, toolbar actions, the
-grouping selector) and an end group holding the search field, the filters trigger
-and the column manager — so filters join the search field in the *same* child,
-and the toolbar still has one child here. The positional `& > :nth-child(2)` rule
-therefore never fired and could not, so both it and the stopgap drop together,
-replaced by `& > .sy-ta-header-toolbar-end { ms-auto }`: the end group is named
-rather than counted, which is correct with or without the slot-1 group and needs
-no second reversal when reordering and grouping land. The toolbar is pinned in
-all four states — search only, filters only, both, neither — by
+The `ms-auto` stopgap on `.sy-ta-search-field` left with the toolbar's second
+group, and the prediction that replaced it has since been paid off in full. It
+expected filters to land in **slot 1** beside the search field, and they did not:
+Filament's toolbar has exactly two children — a start-aligned actions group
+(reordering, toolbar actions, the grouping selector) and an end group holding the
+search field, the filters trigger and the column manager — so filters joined the
+search field in the *same* child, and the positional `& > :nth-child(2)` gave way
+to the named `& > .sy-ta-header-toolbar-end { ms-auto }`. Naming the group rather
+than counting it is what made
+[the start group](#the-toolbars-start-group-carries-its-own-class-and-renders-only-when-it-has-content)
+a one-rule addition when it landed, with no second reversal anywhere. The toolbar
+is pinned in every state — search only, filters only, actions only, all of them,
+none at all — by
 [`TableRenderingTest`](../../../packages/tables/tests/Integration/TableRenderingTest.php).
+
+### The toolbar's start group carries its own class and renders only when it has content
+
+Filament's start-aligned toolbar group *is* `fi-ta-actions`, the same class its
+record-action cell wrapper carries, and it renders unconditionally so the
+positional `& > :nth-child(1)` / `:nth-child(2)` rules always find two children.
+Neither half survives the port. The class is `sy-ta-header-toolbar-actions`,
+because `.sy-ta-actions` already means *the record-actions cell wrapper* here and
+its rule is `justify-end gap-3` — a start-aligned toolbar group under that name
+would be right-aligned and differently gapped — and because
+[`TableTest`](../../../packages/tables/tests/Integration/TableTest.php)'s
+all-hidden-actions case asserts the *absence* of the string `sy-ta-actions` from
+the rendered table, which a toolbar group of that name would falsify. The group
+is then gated on holding a header or toolbar action, which costs the end group
+nothing precisely because the two groups are named rather than counted
+([above](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper)): an
+absent first child leaves `& > .sy-ta-header-toolbar-end { ms-auto }` doing the
+same work. The stylesheet addition is one rule, `max-w-full shrink-0` — vendor's
+`fi-ta-actions` pair minus everything the toolbar's generic
+`& > * { flex min-h-9 items-center gap-x-4 }` already supplies.
+
+The group's contents keep Filament's order exactly — [reorder trigger]
+[header actions] [toolbar actions] [grouping selector] — with the first and last
+as comment slots (M4 · 3 and M4 · 6), and the end group reserving a third for the
+column manager (M4 · 5). Getting that order wrong is what forces a restructure two
+epics later, so the comments are load-bearing rather than decorative. The two
+action lists are walked as one `merge`d loop rather than two, because a bulk-only
+member of either wraps the same way and the slot order is unaffected by the join.
+
+### A bulk-only trigger is hidden by a wrapper span
+
+Filament reveals a bulk trigger with `x-cloak` + `x-show="getSelectedRecordsCount()"`
+written straight onto the trigger element. The port cannot: the trigger is
+rendered by the action's own template, and the only thing the table partial
+reaches into it is `getExtraAttributes()` — an unconditional map, which is where
+[`BulkAction`](../actions/bulk-action.md#bulk-only-visibility-is-a-data-marker-the-table-controller-flips-not-an-alpine-expression)
+stamps `data-sy-table-bulk-only`, `BulkActionGroup` stamping the same marker on
+its dropdown root. That marker is what the selection controller flips `hidden` on,
+so the client half needs nothing further; the **server** half — `hidden` on the
+first paint, before the controller connects — has nowhere to go on an element the
+partial does not write. So each bulk-only item is wrapped in a `<span>` carrying
+both the marker and `hidden` while nothing is selected, the shape
+`CheckboxList`'s two swapped bulk-toggle spans already use. Wrapper and trigger
+carry the same marker and flip together.
+
+Which items get the wrapper is read off the item itself — `isBulk` for an
+`Action`, and for an `ActionGroup` the marker's presence in
+`getExtraDropdownAttributes()`, which is the same declaration the controller
+selects on rather than a second predicate free to drift from it. The gap that
+leaves is Filament's `ActionGroup::hasNonBulkAction()`, deliberately unwritten
+here: a **plain** `ActionGroup` holding only bulk actions is unmarked, so it
+renders and stays visible with nothing selected. `BulkActionGroup` — what
+`groupedBulkActions()` builds, and what the demo uses — is marked and behaves.
+The gap closes with that method.
+
+### The selection banner flattens vendor's second wrapper and renders support's `Link`
+
+Filament's banner is one `fi-ta-selection-indicator` holding two children, so its
+`& > :nth-child(1)` / `:nth-child(2)` rules can address them: the first a `<div>`
+around the loading indicator and the count text, the second a `<div>` wrapping
+`fi-ta-selection-indicator-actions-ctn` — a wrapper that exists only because two
+render hooks bracket it. There are no render hooks here, so the second wrapper is
+dropped and `.sy-ta-selection-indicator-actions-ctn` **is** the second child.
+That makes vendor's own `& .fi-ta-selection-indicator-actions-ctn { flex gap-x-3 }`
+redundant with the `& > *` rule above it, so it is not ported either and the
+class survives as the DOM hook the tests and the controller select on. The
+loading indicator inside the first child goes with
+[the loading affordances](#loading-affordances-are-deferred-with-the-javascript-that-would-drive-them)
+the toolkit has not ported at all.
+
+Both links are `<twig:SylamentSupport:Link tag="button">`, which is exactly what
+`<x-filament::link tag="button">` is on the other side — so `primary` and
+`danger` come from the colour policy rather than a banner-local rule, and
+[`selection.css`](../../../packages/tables/assets/src/styles/components/selection.css)
+carries no link styling at all. "Select all" ships a server `hidden` and is
+revealed by the controller only where a ceiling is known and not everything is
+selected; "Deselect all" is visible whenever the banner is. The count is a
+controller-filled empty `<span>` seeded from two literal value strings
+(`1 record selected`, `:count records selected`) — Filament's `|`-separated
+Laravel plural string run through its own `window.pluralize` global, which the
+port does not ship; i18n takes both literals when it lands.
+
+The banner is server-gated on `isSelectionEnabled()` and client-gated on the
+count, as vendor's is, and it renders on an overflow (empty) page too: a
+selection outlives a page that lost its rows. Vendor's two extra server gates
+have no counterpart, `maxSelectableRecords(1)` and `deferLoading()` both being
+unported. So is the `fi-selected` row tint and its leading primary bar — that
+rides a class Filament's Alpine binds onto each `<tr>`, and the port stamps no
+per-row class from the client; the ticked checkbox carries the state visually
+until the row-click work of M4 · 3 revisits it.
+
+### The selection cells carry no header-cell class, and their checkbox skin is support's
+
+The `<th>` and `<td>` wrapping a checkbox carry `sy-ta-selection-cell` — never
+`sy-ta-header-cell`. That is Filament's own split, and it is load-bearing
+downstream: every header-label assertion in this repo and in the demo reads
+`th.sy-ta-header-cell` as *the column headers*, and a selection column would
+otherwise push an unlabelled cell into that list. The one deliberate trim is
+`sy-ta-cell` on the `<th>`, which vendor does stamp there: our `.sy-ta-cell` rule
+is written for a body cell (`p-0`, plus a `:has(.sy-ta-actions)` arm), so the
+header would import padding the selection rule then has to override. The body
+cell keeps both classes, and `.sy-ta-selection-cell` is authored *after*
+`.sy-ta-cell` in
+[`table.css`](../../../packages/tables/assets/src/styles/components/table.css)
+so its `px-3 py-4` outranks the base `p-0` on source order at equal specificity.
+
+A record the table refuses renders the cell **empty** rather than a disabled
+input — Filament's shape, and behavioural rather than cosmetic: the controller's
+page-key walk reads `.sy-ta-record-checkbox` values off the DOM, so a record with
+no input is excluded from "select page" by construction.
+
+The `<input>` is inline in the template with no support Twig component behind it,
+again Filament's shape, and its skin is the code-less `.sy-checkbox` class
+support gained in the same change, beside the `sy-ta-page-checkbox` /
+`sy-ta-record-checkbox` hooks. Moving the skin there is what gave the page
+checkbox its `:indeterminate` arm, which forms' copy never carried because
+nothing in forms can set that property
+([forms' styles.md](../forms/styles.md#the-checkbox-skin-moved-to-support-when-tables-became-its-second-consumer)).
+
+The two ARIA labels are Filament's own strings with one word translated —
+"Select/deselect all records on this page for bulk actions." and
+"Select/deselect record :key for bulk actions." against vendor's
+"Select/deselect all items for bulk actions." and
+"Select/deselect item :key for bulk actions." *Record* is this toolkit's word for
+what vendor's translation calls an item, and the page checkbox says which rows it
+covers because our header cell is the only place that label appears.
+
 
 ### Every rule in `table.css` is scoped under the `.sy-ta` root, one class above vendor's
 
@@ -1737,19 +1869,21 @@ which `wire:key` never was — the Integration `TableTest` reads the rows back b
 
 ### The four rendered positions collapse to two
 
-`RecordActionsPosition` has five cases and the partial branches on two:
-`BeforeCells` and `BeforeColumns` both render a **leading** `<td>`,
-`AfterColumns` and `AfterCells` both render a **trailing** one, and
-`AfterContent` renders neither.
+`RecordActionsPosition` has five cases, and the partial now branches on four of
+them separately: `BeforeCells` and `BeforeColumns` are two distinct insertion
+points around the selection cell, as are `AfterColumns` and `AfterCells`, while
+`AfterContent` renders nothing at all. What still collapses is the *output*, and
+only on a table with no selection — with the checkbox column absent there is
+nothing between the two leading points, or between the two trailing ones, so each
+pair lands the same cell in the same place.
 
 In Filament the pairs are distinct because there is a third thing in the row.
 `*Cells` sits outside the columns *and* outside the selection checkbox and the
 reorder handle; `*Columns` sits between them and the data columns — so
 `BeforeCells` puts the actions before the checkbox and `BeforeColumns` after it.
-Neither selection nor reordering is ported (both are **todo** rows above), so
-there is nothing between the two insertion points and the pairs coincide
-exactly. Rendering them as four distinct branches today would be four branches
-producing two outputs.
+M4 · 1 landed the checkbox and split the branches back apart at exactly those two
+points; reordering is the remaining absentee, and its handle joins the row at the
+same two points when M4 · 3 lands it.
 
 `AfterContent` renders nothing on purpose rather than by omission: it is the
 columns-*layout* position, where records render as cards rather than rows and the
@@ -1758,8 +1892,9 @@ actions go below the card body. That layout is unported
 gets no actions column at all — matching Filament, whose row-mode markup has no
 `AfterContent` arm either.
 
-Provisional and mechanical: the branches split back apart in the change that
-lands selection, and `AfterContent` gains its arm with the columns layout.
+Half resolved, half still provisional: the branch split is permanent, the
+coinciding output is not — it ends for any given table the moment selection is
+on — and `AfterContent` gains its arm with the columns layout.
 
 ### The position setter drops Filament's `string` arm
 

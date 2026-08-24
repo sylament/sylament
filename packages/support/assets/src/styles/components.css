@@ -8,6 +8,7 @@
 @import './components/dropdown.css' layer(components);
 @import './components/dropdown-item.css' layer(components);
 @import './components/badge.css' layer(components);
+@import './components/checkbox.css' layer(components);
 @import './components/link.css' layer(components);
 @import './components/fieldset.css' layer(components);
 @import './components/pagination.css' layer(components);

@@ -9,7 +9,9 @@ vertical with no `vendor/filament` counterpart at all. The bytes go straight to
 a flysystem storage; what the field's raw state carries is a
 `sylament-file:<hmac>:<filename>` **token**, so nothing binary ever travels
 through live-component hydration. The store also owns the 24-hour sweep that
-keeps abandoned uploads from accumulating.
+keeps abandoned uploads from accumulating, and the `sylament_forms` config tree
+that names its disk and directory — the toolkit's
+[first package-specific tree](forms-bundle.md).
 
 The field that mints and redeems these tokens is
 [`FileUpload`](file-upload.md); the constraint filed beside them,
@@ -29,6 +31,8 @@ Reference — the Livewire source this is diffed against:
   · [`GenerateSignedUploadUrl.php`](../../../vendor/livewire/livewire/src/Features/SupportFileUploads/GenerateSignedUploadUrl.php)
   — the three-request dance and its signed URL, replaced by one live request;
   `cleanupOldUploads()` on the trait is the sweep `prune()` ports
+- [`config/livewire.php`](../../../vendor/livewire/livewire/config/livewire.php)
+  — the `temporary_file_upload` config block the `sylament_forms` tree maps onto
 
 ## Surface
 
@@ -47,6 +51,7 @@ _Ports_ cell is `—` has no Livewire counterpart.
 | [`TemporaryUploadedFile`'s metadata getters](../../../packages/forms/src/Uploads/TemporaryUploadedFile.php) — `getToken()`, `getFilename()`, `getPath()`, `getDiskName()`, `getClientOriginalName()`, `getClientOriginalExtension()`, `getMimeType()`, `getSize()` | [`TemporaryUploadedFile`](../../../vendor/livewire/livewire/src/Features/SupportFileUploads/TemporaryUploadedFile.php) | done | — | [diverges](#temporaryuploadedfile-is-a-value-object-rather-than-an-uploadedfile) |
 | [`TemporaryUploadedFile::exists()` / `readStream()` / `delete()`](../../../packages/forms/src/Uploads/TemporaryUploadedFile.php) | [`TemporaryUploadedFile`](../../../vendor/livewire/livewire/src/Features/SupportFileUploads/TemporaryUploadedFile.php) | done | — | — |
 | [`TemporaryUploadedFile::jsonSerialize()` / `__toString()`](../../../packages/forms/src/Uploads/TemporaryUploadedFile.php) | — | done | — | [semantics](#both-serialisations-answer-the-token-so-raw-state-holds-one-string) |
+| [`sylament_forms.temporary_file_upload.{disk,directory,cleanup}`](../../../packages/forms/src/SylamentFormsBundle.php) | [`config/livewire.php`](../../../vendor/livewire/livewire/config/livewire.php) | done | — | [diverges](#the-config-tree-keeps-three-of-livewires-seven-keys) |
 | A console command that prunes on a schedule | — | skipped | — | [diverges](#there-is-no-prune-command-the-sweep-rides-on-upload-traffic) |
 
 Coverage:
@@ -63,6 +68,8 @@ refusal of a directory that normalises to the storage root.
 — the metadata getters, both serialisations, the stream read-back, a deleted
 file reporting gone rather than throwing, and `delete()` taking the sidecar with
 it and swallowing a second call.
+[`SylamentFormsBundleTest`](../../../packages/forms/tests/Integration/SylamentFormsBundleTest.php)
+— the store is a container service carrying the config tree's directory.
 
 ## Semantics
 
@@ -193,6 +200,27 @@ Livewire encodes the original filename into the temp filename itself, as
 stateless about it — the same request that writes the bytes writes the sidecar —
 and a metadata-bearing filename is a parser at exactly the place we want an
 opaque random string. Livewire only uses the scheme on S3 anyway.
+
+### The config tree keeps three of Livewire's seven keys
+
+`sylament_forms.temporary_file_upload` carries `disk` (null → the toolkit-wide
+`sylament.default_filesystem_disk`), `directory` (`sylament-tmp`, whitespace-
+normalised through Flysystem's `WhitespacePathNormalizer` exactly as Livewire
+normalises its own) and `cleanup` (`true`). The other four do not survive:
+`rules` becomes the field's own `maxSize()`/`minSize()`/`acceptedFileTypes()`
+constraints, which run at upload time; `middleware` and `max_upload_time` belong
+to the endpoint we do not have; and `preview_mimes` is only ever read by
+Livewire's preview route, which [`FileUpload`](file-upload.md) never calls.
+
+It lives under the derived `sylament_forms` alias rather than `sylament`,
+because a bundle cannot extend another bundle's config tree — see
+[`docs/configuration.md`](../../configuration.md).
+
+**Multi-server deployments need a shared temp storage or sticky sessions.** The
+upload request and the save request are different requests; with a local temp
+disk on two nodes, the second one cannot see what the first wrote. Livewire has
+the identical hole and answers it with "use S3"; the honest answer here is the
+same, and it is why the `disk` key exists separately from the destination disk.
 
 ### There is no prune command; the sweep rides on upload traffic
 

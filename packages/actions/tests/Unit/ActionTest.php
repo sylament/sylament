@@ -7,6 +7,7 @@ namespace Sylament\Actions\Tests\Unit;
 use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\Enums\ActionStatus;
+use Sylament\Actions\Tests\Fixtures\Components\ItemActionsContainer;
 use Sylament\Actions\Tests\Fixtures\Concerns\BothContractsHostFixture;
 use Sylament\Actions\Tests\Fixtures\DefaultNamedActionFixture;
 use Sylament\Actions\Tests\Fixtures\StateFieldFixture;
@@ -374,4 +375,33 @@ it('prefers an explicit name over getDefaultName()', function (): void {
 
 it('returns null from getDefaultName() by default', function (): void {
     expect(Action::getDefaultName())->toBeNull();
+});
+
+it('injects the item state as $schemaState for an action invoked with an item argument', function (): void {
+    $host = new BothContractsHostFixture();
+    $host->data = ['rows' => []];
+
+    $container = ItemActionsContainer::make('rows')->extraItemActions([Action::make('inspect')]);
+    $schema = Schema::make($host)->statePath('data')->components([$container]);
+    $schema->getComponents();
+
+    $action = $container->getAction('inspect')?->schemaContainer($schema);
+
+    expect($action)->toBeInstanceOf(Action::class)
+        ->and($action->arguments(['item' => 'k1'])->evaluate(fn ($schemaState): mixed => $schemaState))->toBe(['key' => 'k1', 'title' => 'Item k1'])
+        ->and($action->arguments(null)->evaluate(fn ($schemaState): mixed => $schemaState))->toBe(['rows' => []]);
+});
+
+it('falls through to the container walk when the item argument is blank', function (): void {
+    $host = new BothContractsHostFixture();
+    $host->data = ['rows' => []];
+
+    $container = ItemActionsContainer::make('rows')->extraItemActions([Action::make('inspect')]);
+    $schema = Schema::make($host)->statePath('data')->components([$container]);
+    $schema->getComponents();
+
+    $action = $container->getAction('inspect')?->schemaContainer($schema);
+
+    expect($action?->arguments(['item' => ''])->evaluate(fn ($schemaState): mixed => $schemaState))
+        ->toBe(['rows' => []]);
 });

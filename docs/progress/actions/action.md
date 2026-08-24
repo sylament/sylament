@@ -153,8 +153,20 @@ the nearest state-path-bearing parent component, vendor L602–621) and
 `getSchemaState()` (the first state-path-bearing container; Filament's
 `getStateSnapshot()` call maps to Sylament's `Schema::getState()`, which
 [schemas' HasState](../../../packages/schemas/src/Concerns/HasState.php)
-documents as its `getStateSnapshot` equivalent). `getSchemaState()` drops
-Filament's leading `HasExtraItemActions` branch — that contract is unported.
+documents as its `getStateSnapshot` equivalent). `getSchemaState()` carries
+Filament's leading `HasExtraItemActions` branch: when the bound schema component
+implements schemas'
+[`HasExtraItemActions`](../../../packages/schemas/src/Components/Contracts/HasExtraItemActions.php)
+and the action's arguments carry a non-empty `item`, `$schemaState` is *that
+item's* state rather than the container walk's — how a repeater's extra item
+actions see the row they were mounted on. The key is stringified before the call,
+so a numeric item key from the wire reaches `getItemState(string $key)` intact.
+The guard is a bare `!== ''` rather than [`filled()`](../support/helpers.md): the
+key is already narrowed to `int|string` at that point, and `filled()`'s only
+static assertion is a null check, so calling it there is an
+`alreadyNarrowedType` error at level max.
+`ActionGroup::getSchemaState()` gains no such branch, matching Filament: a group
+composes no `HasArguments`, so it has no `item` to read.
 The `get`/`set` arms keep Filament's **non-null-safe**
 `getSchemaComponent()` deref (behind an inline PHPStan ignore): a
 schema-less action evaluating a `$get`/`$set` closure fatals, exactly as in

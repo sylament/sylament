@@ -41,6 +41,7 @@ use Sylament\Actions\Concerns\InteractsWithRecord;
 use Sylament\Actions\Enums\ActionStatus;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
+use Sylament\Schemas\Components\Contracts\HasExtraItemActions;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Get;
 use Sylament\Schemas\State\Set;
@@ -454,6 +455,13 @@ class Action extends ViewComponent
      */
     public function getSchemaState(): ?array
     {
+        $schemaComponent = $this->getSchemaComponent();
+        $itemKey = $this->getArguments()['item'] ?? null;
+
+        if ($schemaComponent instanceof HasExtraItemActions && (is_string($itemKey) || is_int($itemKey)) && $itemKey !== '') {
+            return $schemaComponent->getItemState((string) $itemKey);
+        }
+
         $schemaContainer = $this->getSchemaContainer();
 
         while ($schemaContainer instanceof Schema) {

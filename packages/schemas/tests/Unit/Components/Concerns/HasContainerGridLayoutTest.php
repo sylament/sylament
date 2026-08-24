@@ -40,3 +40,8 @@ it('merges breakpoint maps across calls and evaluates closure entries on read', 
 
     expect($component->getGridColumns())->toBe(['default' => 1, 'md' => 2, 'xl' => 4, 'lg' => 3]);
 });
+
+it('drops an empty breakpoint name and reads an integer key as lg', function (): void {
+    expect(gridLayoutComponent()->grid(['' => 3, 'md' => 2])->getGridColumns())->toBe(['md' => 2])
+        ->and(gridLayoutComponent()->grid([0 => 3])->getGridColumns())->toBe(['lg' => 3]);
+});

@@ -6,8 +6,6 @@ namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
 
-use function Sylament\Support\blank;
-
 trait HasContainerGridLayout
 {
     /**
@@ -66,7 +64,7 @@ trait HasContainerGridLayout
                 continue;
             }
 
-            if (blank($gridColumnBreakpoint)) {
+            if ($gridColumnBreakpoint === '') {
                 continue;
             }
 

@@ -16,7 +16,7 @@ class SylamentFormsBundle extends SylamentBundle
     public function loadExtension(array $config, ContainerConfigurator $configurator, ContainerBuilder $container): void
     {
         $configurator->services()
-            ->load(__NAMESPACE__ . '\\Components\\', __DIR__ . '/Components/*.php')
+            ->load(__NAMESPACE__ . '\\Components\\', __DIR__ . '/Components/{*,Repeater/*}.php')
             ->autowire()
             ->autoconfigure();
     }

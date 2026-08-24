@@ -345,9 +345,8 @@ it('answers the error message rather than storing a file the browser could not d
     $file = new UploadedFile(
         TemporaryUploadsRig::uploadedFile('a.png', 'bytes')->getPathname(),
         'a.png',
-        null,
-        UPLOAD_ERR_INI_SIZE,
-        true,
+        error: UPLOAD_ERR_INI_SIZE,
+        test: true,
     );
 
     $result = $upload->acceptUploadedFile('abc', $file);

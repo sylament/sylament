@@ -159,6 +159,7 @@ it('sanitises the extension and falls back to bin', function (string $name, stri
     'punctuation stripped' => ['photo.p-n g', 'png'],
     'no extension' => ['noext', 'bin'],
     'nothing survives the strip' => ['photo.___', 'bin'],
+    'a falsy extension is still an extension' => ['photo.0', '0'],
     'capped at sixteen' => ['photo.' . 'abcdefghijklmnopqrstuvwxyz', 'abcdefghijklmnop'],
 ]);
 

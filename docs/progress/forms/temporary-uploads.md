@@ -61,7 +61,7 @@ browser's claim, the same-state-path round trip, and the four refusals
 (a foreign prefix, a tampered signature, a swapped filename, a filename outside
 the minted shape, including a traversal and a sidecar name under a *valid*
 signature); a missing sidecar and missing bytes; the extension sanitiser across
-six names; the sweep's age boundary, its `cleanup` flag on both settings, and
+seven names; the sweep's age boundary, its `cleanup` flag on both settings, and
 its zero answer for a directory nothing has written to; and the constructor's
 refusal of a directory that normalises to the storage root.
 [`TemporaryUploadedFileTest`](../../../packages/forms/tests/Unit/Uploads/TemporaryUploadedFileTest.php)

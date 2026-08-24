@@ -51,7 +51,8 @@ final readonly class TemporaryUploads
 
     public function store(UploadedFile $file, string $statePath): TemporaryUploadedFile
     {
-        $extension = mb_substr(mb_strtolower(preg_replace('/[^A-Za-z0-9]/', '', $file->getClientOriginalExtension()) ?: 'bin'), 0, 16);
+        $stripped = preg_replace('/[^A-Za-z0-9]/', '', $file->getClientOriginalExtension()) ?? '';
+        $extension = mb_substr(mb_strtolower($stripped === '' ? 'bin' : $stripped), 0, 16);
         $filename = bin2hex(random_bytes(20)) . '.' . $extension;
 
         // Security: the sidecar records the *sniffed* type, never `getClientMimeType()` — the

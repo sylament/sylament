@@ -53,6 +53,11 @@ class SylamentFormsBundle extends SylamentBundle
             ->autoconfigure();
 
         $services
+            ->load(__NAMESPACE__ . '\\Validation\\', __DIR__ . '/Validation/*Validator.php')
+            ->autowire()
+            ->autoconfigure();
+
+        $services
             ->set('sylament_forms.temporary_uploads', TemporaryUploads::class)
             ->args([
                 '$filesystems' => service(FilesystemRegistry::class),

@@ -80,7 +80,7 @@ not here.
 | [`CanOrderColumns`](../../../packages/support/src/Components/Concerns/CanOrderColumns.php) | [`Concerns/CanOrderColumns.php`](../../../vendor/filament/support/src/Concerns/CanOrderColumns.php) | done | — |
 | [`CanSpanColumns`](../../../packages/support/src/Components/Concerns/CanSpanColumns.php) | [`Concerns/CanSpanColumns.php`](../../../vendor/filament/support/src/Concerns/CanSpanColumns.php) | done | [can-span-columns.md](can-span-columns.md) |
 | [`CanWrap`](../../../packages/support/src/Components/Concerns/CanWrap.php) | [`Concerns/CanWrap.php`](../../../vendor/filament/support/src/Concerns/CanWrap.php) | done | — |
-| CanWrapHeader | [`Concerns/CanWrapHeader.php`](../../../vendor/filament/support/src/Concerns/CanWrapHeader.php) | todo | — |
+| [`CanWrapHeader`](../../../packages/support/src/Components/Concerns/CanWrapHeader.php) | [`Concerns/CanWrapHeader.php`](../../../vendor/filament/support/src/Concerns/CanWrapHeader.php) | done | — |
 | [`HasAlignment`](../../../packages/support/src/Components/Concerns/HasAlignment.php) | [`Concerns/HasAlignment.php`](../../../vendor/filament/support/src/Concerns/HasAlignment.php) | done | [has-alignment.md](has-alignment.md) |
 | [`HasBadge`](../../../packages/support/src/Components/Concerns/HasBadge.php) | [`Concerns/HasBadge.php`](../../../vendor/filament/support/src/Concerns/HasBadge.php) | done | `getBadge()` casts a non-null evaluated badge to string, so the closure arm coerces exactly as `badge(3)` does on set — `->badge(fn () => count($x))` is *the* Filament idiom, and under `declare(strict_types=1)` the `?string` return would otherwise `TypeError` on the number Filament's non-strict file coerces; a closure returning something unprintable (an array) surfaces as PHP's own "Array to string conversion" warning — an `ErrorException` under Symfony's debug error handler — rather than a `TypeError`, since PHPStan's generic `evaluate()` already types the value `?string` and leaves no legal branch to guard it |
 | [`HasBadgeTooltip`](../../../packages/support/src/Components/Concerns/HasBadgeTooltip.php) | [`Concerns/HasBadgeTooltip.php`](../../../vendor/filament/support/src/Concerns/HasBadgeTooltip.php) | done | — |
@@ -97,11 +97,11 @@ not here.
 | [`HasIconSize`](../../../packages/support/src/Components/Concerns/HasIconSize.php) | [`Concerns/HasIconSize.php`](../../../vendor/filament/support/src/Concerns/HasIconSize.php) | done | — |
 | [`HasLineClamp`](../../../packages/support/src/Components/Concerns/HasLineClamp.php) | [`Concerns/HasLineClamp.php`](../../../vendor/filament/support/src/Concerns/HasLineClamp.php) | done | — |
 | HasPlaceholder | [`Concerns/HasPlaceholder.php`](../../../vendor/filament/support/src/Concerns/HasPlaceholder.php) | todo | — |
-| HasReorderAnimationDuration | [`Concerns/HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php) | todo | — |
+| [`HasReorderAnimationDuration`](../../../packages/support/src/Components/Concerns/HasReorderAnimationDuration.php) | [`Concerns/HasReorderAnimationDuration.php`](../../../vendor/filament/support/src/Concerns/HasReorderAnimationDuration.php) | done | — |
 | [`HasTooltip`](../../../packages/support/src/Components/Concerns/HasTooltip.php) | [`Concerns/HasTooltip.php`](../../../vendor/filament/support/src/Concerns/HasTooltip.php) | done | — |
 | [`HasVerticalAlignment`](../../../packages/support/src/Components/Concerns/HasVerticalAlignment.php) | [`Concerns/HasVerticalAlignment.php`](../../../vendor/filament/support/src/Concerns/HasVerticalAlignment.php) | done | — |
 | [`HasWeight`](../../../packages/support/src/Components/Concerns/HasWeight.php) | [`Concerns/HasWeight.php`](../../../vendor/filament/support/src/Concerns/HasWeight.php) | done | [has-weight.md](has-weight.md) |
-| HasWidth | [`Concerns/HasWidth.php`](../../../vendor/filament/support/src/Concerns/HasWidth.php) | todo | — |
+| [`HasWidth`](../../../packages/support/src/Components/Concerns/HasWidth.php) | [`Concerns/HasWidth.php`](../../../vendor/filament/support/src/Concerns/HasWidth.php) | done | — |
 
 ## Supporting surface
 

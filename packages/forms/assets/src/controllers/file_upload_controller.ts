@@ -5,7 +5,7 @@ import {
   uploadSchemaComponentFile,
 } from "@sylament/schemas/utils/schema_component_method.js";
 import type { Component } from "@symfony/ux-live-component";
-import type Cropper from "cropperjs";
+import Cropper from "cropperjs";
 import * as FilePond from "filepond";
 import FilePondPluginFileValidateSize from "filepond-plugin-file-validate-size";
 import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
@@ -256,6 +256,8 @@ export default class extends Controller<HTMLElement> {
 
     const input = this.#input;
 
+    this.#destroyEditor();
+
     if (this.#pond !== null && input !== null) {
       FilePond.destroy(input);
     }
@@ -268,7 +270,7 @@ export default class extends Controller<HTMLElement> {
     this.#cancelled.clear();
     this.#activeUploads = 0;
     this.#editorSwapName = null;
-    this.#editor = null;
+    this.#editingFile = null;
   }
 
   stateValueChanged(): void {
@@ -281,6 +283,100 @@ export default class extends Controller<HTMLElement> {
 
   disabledValueChanged(): void {
     this.#pond?.setOptions({ disabled: this.disabledValue });
+  }
+
+  editorSetDragMode({ params }: { params: { mode: Cropper.DragMode } }): void {
+    this.#editor?.setDragMode(params.mode);
+  }
+
+  editorZoom({ params }: { params: { ratio: number } }): void {
+    this.#editor?.zoom(params.ratio);
+  }
+
+  editorZoomTo({ params }: { params: { ratio: number } }): void {
+    this.#editor?.zoomTo(params.ratio);
+  }
+
+  editorMove({ params }: { params: { x: number; y: number } }): void {
+    this.#editor?.move(params.x, params.y);
+  }
+
+  editorRotate({ params }: { params: { degrees: number } }): void {
+    this.#editor?.rotate(params.degrees);
+  }
+
+  editorFlip({ params }: { params: { axis: "x" | "y" } }): void {
+    const editor = this.#editor;
+
+    if (editor === null) {
+      return;
+    }
+
+    const data = editor.getData();
+
+    if (params.axis === "x") {
+      editor.scaleX(-data.scaleX || -1);
+    } else {
+      editor.scaleY(-data.scaleY || -1);
+    }
+  }
+
+  editorReset(): void {
+    this.#editor?.reset();
+  }
+
+  editorSetAspectRatio({
+    params,
+  }: {
+    params: { ratio: number | string; label: number | string };
+  }): void {
+    this.#editor?.setAspectRatio(Number(params.ratio));
+
+    for (const button of this.editorRatioTargets) {
+      button.classList.toggle(
+        "sy-active",
+        button.getAttribute("data-sylament--forms--file-upload-label-param") ===
+          String(params.label),
+      );
+    }
+  }
+
+  editorApplyField(
+    event: Event & { params: { field: "x" | "y" | "width" | "height" | "rotation" } },
+  ): void {
+    const editor = this.#editor;
+
+    if (event instanceof KeyboardEvent) {
+      if (event.key !== "Enter") {
+        return;
+      }
+
+      event.preventDefault();
+    }
+
+    if (editor === null || !(event.currentTarget instanceof HTMLInputElement)) {
+      return;
+    }
+
+    const value = Number(event.currentTarget.value);
+
+    if (event.params.field === "rotation") {
+      editor.rotateTo(value);
+    } else {
+      editor.setData({ ...editor.getData(true), [event.params.field]: value });
+    }
+  }
+
+  editorSave(): void {
+    this.#saveEditor();
+  }
+
+  editorCancel(event: Event): void {
+    if (event.type === "cancel") {
+      event.preventDefault();
+    }
+
+    this.#closeEditor();
   }
 
   #isHidden(): boolean {
@@ -537,9 +633,279 @@ export default class extends Controller<HTMLElement> {
     });
   }
 
-  #loadEditor(_file: File): void {}
+  #loadEditor(file: File): void {
+    if (this.disabledValue || !this.imageEditorValue || !this.hasEditorTarget) {
+      return;
+    }
 
-  #closeEditor(): void {}
+    const isSvg = file.type === "image/svg+xml";
+
+    if (isSvg && !this.editableSvgsValue) {
+      window.alert(this.disabledSvgEditingMessageValue);
+
+      return;
+    }
+
+    if (
+      isSvg &&
+      this.confirmSvgEditingValue &&
+      !window.confirm(this.confirmSvgEditingMessageValue)
+    ) {
+      return;
+    }
+
+    this.#fixImageDimensions(file, (editingFile) => {
+      this.#editingFile = editingFile;
+      this.#initEditor();
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result;
+
+        if (typeof result === "string") {
+          requestAnimationFrame(() => this.#editor?.replace(result));
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /** An SVG sized only by its viewBox has no intrinsic size for Cropper to measure, so one is written on. */
+  #fixImageDimensions(file: File, callback: (file: File) => void): void {
+    if (file.type !== "image/svg+xml") {
+      callback(file);
+
+      return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      const source = typeof reader.result === "string" ? reader.result : "";
+      const svg = new DOMParser().parseFromString(source, "image/svg+xml").querySelector("svg");
+      const viewBoxAttribute = ["viewBox", "ViewBox", "viewbox"].find((name) =>
+        svg?.hasAttribute(name),
+      );
+
+      if (svg === null || viewBoxAttribute === undefined) {
+        callback(file);
+
+        return;
+      }
+
+      const viewBox = (svg.getAttribute(viewBoxAttribute) ?? "").split(" ");
+
+      if (viewBox.length !== 4) {
+        callback(file);
+
+        return;
+      }
+
+      svg.setAttribute("width", `${Number.parseFloat(viewBox[2] ?? "0")}pt`);
+      svg.setAttribute("height", `${Number.parseFloat(viewBox[3] ?? "0")}pt`);
+
+      callback(
+        new File(
+          [new Blob([new XMLSerializer().serializeToString(svg)], { type: "image/svg+xml" })],
+          file.name,
+          {
+            type: "image/svg+xml",
+          },
+        ),
+      );
+    };
+
+    reader.readAsText(file);
+  }
+
+  #initEditor(): void {
+    const dialog = this.editorTarget;
+
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+
+    this.#destroyEditor();
+
+    const options: Cropper.Options<HTMLImageElement> = {
+      aspectRatio: this.hasAutomaticallyOpenImageEditorForAspectRatioValue
+        ? this.automaticallyOpenImageEditorForAspectRatioValue
+        : this.#viewportRatio(),
+      autoCropArea: 1,
+      center: true,
+      cropBoxResizable: true,
+      guides: true,
+      highlight: true,
+      responsive: true,
+      toggleDragModeOnDblclick: true,
+      viewMode: this.imageEditorModeValue as Cropper.ViewMode,
+      wheelZoomRatio: 0.02,
+    };
+
+    if (this.imageEditorExplicitlyEnabledValue) {
+      options.crop = (event) => {
+        this.#fieldInput("x").value = String(Math.round(event.detail.x));
+        this.#fieldInput("y").value = String(Math.round(event.detail.y));
+        this.#fieldInput("width").value = String(Math.round(event.detail.width));
+        this.#fieldInput("height").value = String(Math.round(event.detail.height));
+        this.#fieldInput("rotation").value = String(event.detail.rotate);
+      };
+    }
+
+    this.#editor = new Cropper(this.editorImageTarget, options);
+  }
+
+  /** Filament's fallback ratio is the viewport quotient; null over null is NaN, which Cropper reads as free. */
+  #viewportRatio(): number {
+    return this.hasImageEditorViewportWidthValue && this.hasImageEditorViewportHeightValue
+      ? this.imageEditorViewportWidthValue / this.imageEditorViewportHeightValue
+      : Number.NaN;
+  }
+
+  #fieldInput(field: string): HTMLInputElement {
+    const input = this.editorFieldTargets.find(
+      (candidate) =>
+        candidate.getAttribute("data-sylament--forms--file-upload-field-param") === field,
+    );
+
+    if (input === undefined) {
+      throw new Error(`The editor renders no ${field} input.`);
+    }
+
+    return input;
+  }
+
+  #closeEditor(): void {
+    if (this.#editorOpenedForAspectRatio) {
+      const item = this.#editingItem();
+
+      if (item !== undefined) {
+        this.#pond?.removeFile(item.id, { revert: true });
+      }
+
+      this.#editorOpenedForAspectRatio = false;
+    }
+
+    this.#editingFile = null;
+    this.#destroyEditor();
+
+    if (this.hasEditorTarget && this.editorTarget.open) {
+      this.editorTarget.close();
+    }
+
+    for (const button of this.editorRatioTargets) {
+      button.classList.remove("sy-active");
+    }
+  }
+
+  #destroyEditor(): void {
+    this.#editor?.destroy();
+    this.#editor = null;
+  }
+
+  #editingItem(): FilePond.FilePondFile | undefined {
+    const name = this.#editingFile?.name;
+
+    return name === undefined
+      ? undefined
+      : this.#pond?.getFiles().find((file) => file.filename === name);
+  }
+
+  #getRoundedCanvas(source: HTMLCanvasElement): HTMLCanvasElement {
+    const canvas = document.createElement("canvas");
+    canvas.width = source.width;
+    canvas.height = source.height;
+
+    const context = canvas.getContext("2d");
+
+    if (context === null) {
+      return source;
+    }
+
+    context.imageSmoothingEnabled = true;
+    context.drawImage(source, 0, 0, source.width, source.height);
+    context.globalCompositeOperation = "destination-in";
+    context.beginPath();
+    context.ellipse(
+      source.width / 2,
+      source.height / 2,
+      source.width / 2,
+      source.height / 2,
+      0,
+      0,
+      2 * Math.PI,
+    );
+    context.fill();
+
+    return canvas;
+  }
+
+  #saveEditor(): void {
+    const editor = this.#editor;
+    const editingFile = this.#editingFile;
+
+    if (this.disabledValue || !this.imageEditorValue || editor === null || editingFile === null) {
+      return;
+    }
+
+    this.#editorOpenedForAspectRatio = false;
+
+    let canvas = editor.getCroppedCanvas({
+      fillColor: this.hasImageEditorEmptyFillColorValue
+        ? this.imageEditorEmptyFillColorValue
+        : "transparent",
+      height: this.hasImageResizeTargetHeightValue
+        ? Number.parseInt(this.imageResizeTargetHeightValue, 10)
+        : undefined,
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: "high",
+      width: this.hasImageResizeTargetWidthValue
+        ? Number.parseInt(this.imageResizeTargetWidthValue, 10)
+        : undefined,
+    });
+
+    if (this.circleCropperValue) {
+      canvas = this.#getRoundedCanvas(canvas);
+    }
+
+    const outputType =
+      this.circleCropperValue || editingFile.type === "image/svg+xml"
+        ? "image/png"
+        : editingFile.type;
+
+    canvas.toBlob((blob) => {
+      if (blob === null) {
+        this.#closeEditor();
+
+        return;
+      }
+
+      const pond = this.#pond;
+
+      if (pond === null) {
+        this.#closeEditor();
+
+        return;
+      }
+
+      const item = this.#editingItem();
+      const name = versionedName(editingFile.name, outputType);
+
+      this.#editorSwapName = name;
+
+      if (item !== undefined) {
+        pond.removeFile(item.id, { revert: true });
+      }
+
+      pond
+        .addFile(new File([blob], name, { type: outputType, lastModified: Date.now() }))
+        .then(() => this.#closeEditor())
+        .catch(() => {
+          this.#editorSwapName = null;
+          this.#closeEditor();
+        });
+    }, outputType);
+  }
 
   /** Filament resolves a failed fetch as an empty blob; a stored file that will not load is an error here. */
   #load(source: unknown, load: (file: Blob) => void, error: (message: string) => void): void {
@@ -830,6 +1196,25 @@ function errorMessage(error: unknown): string {
     .filter((part) => typeof part === "string" && part !== "")
     .join(": ")
     .replace("Expects  or", "Expects");
+}
+
+/**
+ * Filament's `-vN` bump over the base name, with the port's one delta: the extension follows the
+ * output type, so a circle-cropped `photo.jpg` comes back as `photo-v1.png` rather than a `.jpg`
+ * carrying PNG bytes (the temporary store keeps the client extension).
+ */
+function versionedName(name: string, type: string): string {
+  const dot = name.lastIndexOf(".");
+  let base = dot === -1 ? name : name.slice(0, dot);
+  const original = dot === -1 ? "" : name.slice(dot + 1);
+  const extension = type === "image/png" ? "png" : original;
+  const version = /-v(\d+)/;
+
+  base = version.test(base)
+    ? base.replace(version, (_match, number: string) => `-v${Number(number) + 1}`)
+    : `${base}-v1`;
+
+  return extension === "" ? base : `${base}.${extension}`;
 }
 
 function urlFor(file: FilePond.FilePondFile, key: string): string | null {

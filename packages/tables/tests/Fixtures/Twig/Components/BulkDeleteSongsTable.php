@@ -24,11 +24,10 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
  * The bulk-delete host: a query-lane table over the container-wide entity
  * manager — the same reason
  * {@see DeletableSongsTable} uses one, since a confirmed bulk delete spans two
- * live requests — carrying `DeleteBulkAction` and three hand-written bulk
- * actions that exercise the counter reports, the query injections and the
- * transaction arms. The four
- * flags are `LiveProp`s so a test can rebuild the same table with the other arm
- * armed across a round trip.
+ * live requests — carrying `DeleteBulkAction` and five hand-written bulk actions
+ * that exercise the counter reports, the query injections and the transaction
+ * arms. The three flags are `LiveProp`s so a test can rebuild the same table
+ * with the other arm armed across a round trip.
  */
 #[AsLiveComponent(name: 'BulkDeleteSongsTable', template: '@TablesFixtures/components/BulkDeleteSongsTable.html.twig')]
 class BulkDeleteSongsTable implements InteractsWithActions, InteractsWithTable

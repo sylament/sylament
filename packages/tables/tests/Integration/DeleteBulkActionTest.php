@@ -6,6 +6,7 @@ namespace Sylament\Tables\Tests\Integration;
 
 use Doctrine\ORM\EntityManagerInterface;
 use RuntimeException;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Sylament\Tables\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingConnection;
@@ -32,7 +33,11 @@ uses(InteractsWithLiveComponents::class);
  * where {@see RecordingConnection} records BEGIN / COMMIT / ROLLBACK markers
  * beside the SQL. Each of those cases is written twice — with the flag and
  * without — because the ORM opens a transaction around every flush of its own,
- * so only the *contrast* proves the action's wrap did anything.
+ * so only the *contrast* proves the action's wrap did anything. That is also why
+ * the committing case asserts the BEGIN lands **before the selection SELECT**
+ * rather than merely around the DELETE: the flush's own transaction already
+ * brackets the DELETE, so bracketing proves nothing, while only the action's
+ * wrap can open a transaction before the records are even resolved.
  */
 
 /**
@@ -60,6 +65,29 @@ function seededBulkSongsClient(): array
 }
 
 /**
+ * The by-key delete's failing rig: `Song.artist_id` references `Artist` with no
+ * cascade, so one seeded song is enough to make the DQL `DELETE` of its artist
+ * violate a foreign key — once SQLite is asked to enforce them, which it does
+ * not by default.
+ *
+ * @return array{KernelBrowser, EntityManagerInterface}
+ */
+function seededBulkArtistsClient(): array
+{
+    $client = test()->getContainer()->get('test.client');
+    $client->disableReboot();
+
+    $entityManager = test()->getContainer()->get(EntityManagerInterface::class);
+    $entityManager->getConnection()->executeStatement('PRAGMA foreign_keys = ON');
+
+    $radiohead = new Artist(1, 'Radiohead');
+
+    EntityManagerFactory::seed($entityManager, $radiohead, new Song(1, 'Airbag', 100, $radiohead));
+
+    return [$client, $entityManager];
+}
+
+/**
  * @return list<int>
  */
 function survivingSongIds(EntityManagerInterface $entityManager): array
@@ -70,6 +98,43 @@ function survivingSongIds(EntityManagerInterface $entityManager): array
     $songs = $entityManager->getRepository(Song::class)->findBy([], ['id' => 'ASC']);
 
     return array_map(static fn (Song $song): int => $song->getId(), $songs);
+}
+
+/**
+ * The confirmed bulk delete's *second* request alone: the recorder is reset
+ * between the mount and the call, so the statement list starts where the action
+ * body does and a position assertion means something.
+ *
+ * @return list<string>
+ */
+function confirmedBulkDeleteStatements(KernelBrowser $client, RecordingMiddleware $recorder, bool $usesTransaction): array
+{
+    $component = test()->createLiveComponent('BulkDeleteSongsTable', ['usesTransaction' => $usesTransaction], client: $client)
+        ->set('selectedTableRecords', ['2'])
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]]);
+
+    $recorder->reset();
+
+    $component->call('callMountedAction');
+
+    return $recorder->statements();
+}
+
+/**
+ * The index of the first recorded statement starting with $prefix, or a
+ * sentinel past every index so a "precedes" assertion fails on an absent one.
+ *
+ * @param list<string> $statements
+ */
+function firstStatementIndex(array $statements, string $prefix): int
+{
+    foreach ($statements as $index => $sql) {
+        if (str_starts_with($sql, $prefix)) {
+            return $index;
+        }
+    }
+
+    return PHP_INT_MAX;
 }
 
 it('deletes exactly the selected records', function (): void {
@@ -166,6 +231,22 @@ it('reports the affected row count of the by-key delete as the successful count'
         ->and($html)->not->toContain('Failed to delete');
 });
 
+it('answers a failed by-key delete with the danger toast, leaving the rows', function (): void {
+    [$client, $entityManager] = seededBulkArtistsClient();
+
+    $html = (string) $this->createLiveComponent('BulkDeleteArtistsTable', client: $client)
+        ->set('selectedTableRecords', ['1'])
+        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction')
+        ->render();
+
+    $entityManager->clear();
+
+    expect($html)->toContain('Failed to delete 1 records')
+        ->and($html)->toContain('sy-status-danger')
+        ->and($entityManager->getRepository(Artist::class)->findAll())->toHaveCount(1);
+});
+
 it('mints the counters off the selection and warns on a partial failure', function (): void {
     [$client] = seededBulkSongsClient();
 
@@ -206,18 +287,24 @@ it('reports every record failed with a danger toast on a complete failure', func
 it('wraps the delete in a transaction it commits', function (): void {
     [$client, $entityManager, $recorder] = seededBulkSongsClient();
 
-    $this->createLiveComponent('BulkDeleteSongsTable', ['usesTransaction' => true], client: $client)
-        ->set('selectedTableRecords', ['2'])
-        ->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
-        ->call('callMountedAction');
-
-    $statements = $recorder->statements();
-    $delete = array_key_first(array_filter($statements, static fn (string $sql): bool => str_starts_with($sql, 'DELETE')));
+    $statements = confirmedBulkDeleteStatements($client, $recorder, usesTransaction: true);
+    $delete = firstStatementIndex($statements, 'DELETE');
 
     expect(survivingSongIds($entityManager))->toBe([1, 3, 4])
         ->and($statements)->not->toContain(RecordingConnection::ROLLBACK)
-        ->and(array_search(RecordingConnection::BEGIN, $statements, true))->toBeLessThan($delete)
+        ->and(firstStatementIndex($statements, RecordingConnection::BEGIN))
+        ->toBeLessThan(firstStatementIndex($statements, 'SELECT'))
         ->and(array_key_last(array_filter($statements, static fn (string $sql): bool => $sql === RecordingConnection::COMMIT)))->toBeGreaterThan($delete);
+});
+
+it('opens no transaction of its own when the same delete runs unwrapped', function (): void {
+    [$client, $entityManager, $recorder] = seededBulkSongsClient();
+
+    $statements = confirmedBulkDeleteStatements($client, $recorder, usesTransaction: false);
+
+    expect(survivingSongIds($entityManager))->toBe([1, 3, 4])
+        ->and(firstStatementIndex($statements, 'SELECT'))
+        ->toBeLessThan(firstStatementIndex($statements, RecordingConnection::BEGIN));
 });
 
 it('rolls the whole batch back when the bulk body throws', function (): void {

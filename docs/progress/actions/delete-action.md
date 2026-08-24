@@ -246,9 +246,17 @@ for the chrome, the inherited presets and the failure title's arithmetic, and en
 to end by
 [`DeleteBulkActionTest`](../../../packages/tables/tests/Integration/DeleteBulkActionTest.php)
 in the **tables** suite — the selection arms (keys, tracking, an active search,
-an unselectable record), both delete arms, the post-call deselect, the two
-failure toasts and the transaction wrap, each of the last written twice so the
-contrast with the unwrapped run is what proves it.
+an unselectable record), both delete arms and
+[both of their failure shapes](#both-arms-swallow-and-report-the-same-failure),
+the post-call deselect, the two failure toasts and the transaction wrap, each of
+the last written twice so the contrast with the unwrapped run is what proves it.
+The committing case reads the BEGIN's **position** rather than its presence —
+before the selection `SELECT`, which only the action's wrap can manage — because
+the ORM's own flush transaction brackets the `DELETE` either way, so bracketing
+alone would hold with the flag off. The failing by-key delete rides a second
+fixture host, `BulkDeleteArtistsTable`, over a record class other rows point at,
+with SQLite's foreign-key enforcement switched on so the DQL statement fails for
+real rather than by injection.
 
 ### Surface
 
@@ -327,3 +335,23 @@ which is harmless here because the response re-renders from a fresh query. The
 arm throws rather than guessing when the table is on the records lane or names no
 entity manager: deleting by key is a query-lane capability, and a `records()`
 table has no statement to issue.
+
+### Both arms swallow and report the same failure
+
+The by-key statement is wrapped in the same
+`try { … } catch (Throwable) { reportCompleteBulkProcessingFailure(); }` the
+hydrating arm carries, and Filament wraps its `getSelectedRecordsQuery()->delete()`
+identically. It matters more here than the symmetry suggests: a bulk write that
+is not caught leaves `callMountedAction()`'s own `catch (Throwable)` to roll the
+transaction back and rethrow, so a foreign key the delete violates would surface
+as a 500 with no toast at all — the exact opposite of the arm three lines below
+it, and of the contract the whole bulk-notification family exists for. One
+statement means the whole batch failed either way, so the complete-failure report
+is the right shape for both.
+
+The catch is total by design: a `LogicException` from the arm's own guards (a
+`records()`-lane table, a missing entity manager, a DQL delete that answers with
+something other than a row count) reports a complete failure rather than fataling,
+matching how the hydrating arm treats its non-object record guard. Both swallows
+still lose the exception's detail, which is the
+[open todo](#the-swallowed-exception-has-nowhere-to-go-yet) a logger closes.

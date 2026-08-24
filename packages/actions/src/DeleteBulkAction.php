@@ -45,7 +45,14 @@ class DeleteBulkAction extends BulkAction
         $this->action(function (): void {
             $this->process(function (DeleteBulkAction $action, array $records): void {
                 if (!$action->shouldFetchSelectedRecords()) {
-                    $action->reportBulkProcessingSuccessfulRecordsCount($action->deleteSelectedRecordsByKey($records));
+                    try {
+                        $action->reportBulkProcessingSuccessfulRecordsCount($action->deleteSelectedRecordsByKey($records));
+                    } catch (Throwable) {
+                        // The same swallow as the fetching arm below, for the same
+                        // reason: one statement means the whole batch failed, and the
+                        // danger toast is what says so instead of a 500.
+                        $action->reportCompleteBulkProcessingFailure();
+                    }
 
                     return;
                 }
@@ -81,11 +88,8 @@ class DeleteBulkAction extends BulkAction
     }
 
     /**
-     * The `fetchSelectedRecords(false)` arm: the selection has already been
-     * plucked to keys with the table's filters and selectability applied, so
-     * the delete is one DQL statement over those keys rather than a hydrating
-     * round trip. It bypasses ORM cascades and lifecycle callbacks, exactly as
-     * Filament's mass delete bypasses model events.
+     * One DQL `DELETE` over the already-plucked keys, bypassing ORM cascades
+     * and lifecycle callbacks.
      *
      * @param array<mixed> $keys
      */

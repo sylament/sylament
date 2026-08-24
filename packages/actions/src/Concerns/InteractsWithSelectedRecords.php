@@ -35,10 +35,9 @@ trait InteractsWithSelectedRecords
     }
 
     /**
-     * The selected records, re-derived by the table host from the keys the
-     * client sent — hydrated records, or their keys alone under
-     * `fetchSelectedRecords(false)`. Reading them is what mints the two
-     * counters the failure reports and `getStatus()` work off.
+     * The selected records — hydrated, or their keys alone under
+     * `fetchSelectedRecords(false)`. Reading them mints the two counters the
+     * failure reports and `getStatus()` work off.
      *
      * @return list<object|array<string, mixed>>|list<string>
      */

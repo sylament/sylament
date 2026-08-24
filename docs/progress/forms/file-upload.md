@@ -210,6 +210,71 @@ An aspect-ratio rule also buys a MIME rule: the `Image` constraint carries
 Symfony's `'image/*'` default set, so declaring a ratio enforces "sniffs as an
 image" too — true since the constraint landed, written down here.
 
+### The editor re-adds the edited file as a new upload
+
+The image-edit plugin is bundled for its chrome, not for its contract. It
+supplies the per-item edit button and the `EDIT_ITEM` route, and the
+`imageEditEditor` bridge hangs off that route — `open` calls the controller's
+`#loadEditor()`, `onconfirm` is a **no-op** (Filament's, verbatim), and
+`oncancel`/`onclose` both close the dialog. The confirm-and-metadata contract a
+commercial editor would answer with `markup`/`filter`/`colors` metadata goes
+unused here exactly as it does in Filament.
+
+Saving does the work instead. Cropper's `getCroppedCanvas()` output — masked on a
+second canvas under `circleCropper()` — becomes a blob, the original pond item is
+removed with `removeFile(id, { revert: true })`, and a new `File` named
+`<name>-vN.<ext>` is `addFile()`d. The edited file therefore re-enters at the top
+of the pipeline as an ordinary added file: validate, transform, `server.process`.
+The schemas seam and the server need nothing new — an edit is just another
+upload.
+
+`removeFile(id, { revert: true })` has two arms (`filepond.esm.js:4879-4934`) and
+both are already ours. A file uploaded in this session is a processed item, so
+FilePond calls `server.revert` — our `removeUploadedFile`, which drops the
+temporary file and its sidecar. A file loaded from the record is a `local` item,
+so it calls `server.remove` — our `deleteUploadedFile`, which disowns the state
+entry and leaves the stored file to the deleter closure, M3·7's semantics
+unchanged. Editing a stored file is therefore a replace, not a copy.
+
+The swap needs a guard, because the pond subtree is `data-live-ignore` and the
+reconcile runs on every morph: `#editorSwapName` holds the new file's name from
+just before the remove until the re-added item starts processing, and
+`#reconcile()` returns early while it is set — so a morph landing between the
+remove and the add cannot rebuild `pond.files` from a state that no longer
+describes the pond. It is cleared at the top of `#process()`, on an `addFile()`
+rejection, and by the `removefile` event when the re-added item is removed before
+it ever uploaded.
+
+One upstream override does nothing here. image-edit installs a
+`SHOULD_REMOVE_ON_REVERT` filter, but FilePond 4.32.12's core has no site for it
+(`REVERT_ITEM_PROCESSING` decides removal from `instantUpload` and `isMockItem`
+alone), so the filter is inert and the ✕ button keeps M3·7's behaviour.
+
+### EXIF orientation is the browser's on current engines
+
+`orientImagesFromExif()` ports with Filament's `true` default, and on every
+current browser it writes nothing at all. The exif-orientation plugin probes the
+engine with a 2×1 JPEG carrying a 90° rotation tag and reads a file's orientation
+only when the engine did **not** auto-orient that probe; since
+`image-orientation: from-image` became the CSS default, no current engine fails
+it, so no `exif` metadata is written. The transform plugin then sees
+`orientation: null`, its `getBitmap()` short-circuits (`null <= 1` is true), and
+it draws the already-oriented bitmap — the right result by a different route. The
+plugin earns its keep only on a non-auto-orienting engine, where it is also what
+feeds image-resize's dimension swap. So the default stays `true`: it costs
+nothing today and costs correctness there.
+
+### A strict CSP needs `worker-src blob:`
+
+The transform plugin resizes on a Web Worker it builds at runtime from a
+stringified function and a `Blob` URL, so an application serving a strict
+Content-Security-Policy must allow `worker-src blob:` or the resize fails. The
+worker path is taken only when a transform is actually configured — with no crop,
+resize or filter the plugin goes straight to `toBlob()` — so a field that merely
+uploads is unaffected. This is upstream's shape, not a Sylament choice, and it is
+recorded beside the field's other platform requirements because the alternative
+is not shipping the transform at all.
+
 ## Divergences
 
 ### Per-file constraints run at upload time, collection constraints at save
@@ -555,3 +620,32 @@ you want to continue?` — Filament's single-quoted PHP leaves a literal
 backslash-n there that renders as two characters, so ours carries the newline
 that was meant — and `Editing SVG files is disabled as it can result in quality
 loss when scaling.`
+
+### The edited file's extension follows its type
+
+Filament renames only the SVG arm of the editor's output (`svg` → `png`) and
+otherwise keeps the source extension, so a circle-cropped `photo.jpg` comes back
+as `photo-v1.jpg` carrying PNG bytes. The lie survives the whole pipeline:
+[`TemporaryUploads::store()`](../../../packages/forms/src/Uploads/TemporaryUploads.php)
+derives the on-disk extension from the **client** name while the sidecar records
+the **sniffed** type, and `getUploadedFileNameForStorage()` keeps the client
+extension in both arms — so parity would hold a `.jpg` in the temporary store,
+save a `.jpg` (or `photo-v1.jpg` under `preserveFilenames()`) and report
+`image/png` for it. Livewire's store has the same shape, so Filament ships that
+mismatch too.
+
+We rename at the origin instead. `versionedName()` picks `png` whenever the
+output blob is `image/png` — the circle cropper, or an SVG source — and the
+original extension otherwise. One expression, the server untouched, and M3·7's
+naming semantics intact.
+
+Everything else in `saveEditor()` ports verbatim, including three things worth
+not "fixing". The circle mask is an ellipse inscribed in the crop box, so a
+non-square crop yields an oval rather than a circle — Filament's. `toBlob()` is
+called with no quality argument, so a JPEG source re-encodes at the canvas
+default. And the version bump matches `-v(\d+)` **unanchored**, so
+`report-v2-final.png` bumps the first match and becomes `report-v3-final.png`
+instead of gaining a `-v1` at the end — Filament's quirk, kept for parity and
+written down here rather than silently corrected. The transform plugin's own
+rename-on-type-change (its `ExtensionMap`) is never reached, because
+`imageTransformOutputMimeType` is never set.

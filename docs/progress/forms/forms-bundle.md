@@ -34,7 +34,7 @@ _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | Asset registration (12 field AlpineComponents) | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | in progress | — | [detail](#asset-registration) |
 | [`sylament--forms--select`](../../../packages/forms/assets/src/controllers/select_controller.ts) — the JS select control, a port of Filament's select utility ([`utils/select.ts`](../../../packages/forms/assets/src/utils/select.ts)) bound to the live host, plus the [`callSchemaComponentMethod`](../../../packages/schemas/assets/src/utils/schema_component_method.ts) helper it searches through, now imported from `@sylament/schemas` | [`resources/js/components/select.js`](../../../vendor/filament/forms/resources/js/components/select.js) + [`support/…/js/utilities/select.js`](../../../vendor/filament/support/resources/js/utilities/select.js) | done | — | [diverges](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host) |
 | [`sylament--forms--repeater`](../../../packages/forms/assets/src/controllers/repeater_controller.ts) — the client half of the repeater's chrome: per-item collapse state (`data-collapsed`), collapse-all/expand-all, the validation `expand` reveal, and the bridge from support's drag control to the host's `reorder` action | [`Components/Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) (the embedded view's Alpine object) | done | — | [diverges](#the-repeater-controller-owns-the-items-collapse-state-and-bridges-the-drag-control-to-the-reorder-action) |
-| [`sylament--forms--file-upload`](../../../packages/forms/assets/src/controllers/file_upload_controller.ts) — FilePond 4.32 plus `file-validate-size`, `file-validate-type` and `image-preview`, bundled; uploads ride the schemas seam ([`uploadSchemaComponentFile`](../../../packages/schemas/assets/src/utils/schema_component_method.ts)) and the three mutators ride `callSchemaComponentMethod`; its skin is [`file-upload.css`](../../../packages/forms/assets/src/styles/components/file-upload.css) over the scoped `filepond.generated.css` | [`resources/js/components/file-upload.js`](../../../vendor/filament/forms/resources/js/components/file-upload.js) | done | — | [diverges](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller) |
+| [`sylament--forms--file-upload`](../../../packages/forms/assets/src/controllers/file_upload_controller.ts) — FilePond 4.32 plus its eight plugins (`file-validate-size`, `file-validate-type`, `image-crop`, `image-edit`, `image-exif-orientation`, `image-preview`, `image-resize`, `image-transform`) and Cropper.js 1.6, all bundled; uploads ride the schemas seam ([`uploadSchemaComponentFile`](../../../packages/schemas/assets/src/utils/schema_component_method.ts)) and the three mutators ride `callSchemaComponentMethod`; its skin is [`file-upload.css`](../../../packages/forms/assets/src/styles/components/file-upload.css) over the scoped `filepond.generated.css` and `cropper.generated.css` | [`resources/js/components/file-upload.js`](../../../vendor/filament/forms/resources/js/components/file-upload.js) | done | — | [diverges](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller) |
 | `Make*` commands + stub publishing | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#make-commands--stub-publishing) |
 | Translations (`hasTranslations`) | [`configurePackage()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | todo | — | [detail](#translations) |
 | `Livewire::component('table-select', …)` | [`packageBooted()`](../../../vendor/filament/forms/src/FormsServiceProvider.php) | blocked | TableSelect field feature | [diverges](#livewire-specific-provider-responsibilities-are-dropped-not-ported) |
@@ -448,14 +448,14 @@ and entangles the field's state. Ours is
 [`file_upload_controller.ts`](../../../packages/forms/assets/src/controllers/file_upload_controller.ts),
 and the shape differs in seven ways worth knowing before touching it.
 
-- **`fetch: lazy`, the only one in the toolkit.** The bundle is ~490 KB
-  un-minified (FilePond core plus `file-validate-size`, `file-validate-type` and
-  `image-preview`, four MIT banners composed by `build-js.mjs`) and appears on few
-  pages; every other Sylament controller is `eager`. StimulusBundle therefore
-  fetches it only when a `data-controller="sylament--forms--file-upload"` element
-  appears, which is exactly the trade this size justifies. Nothing else in the
-  toolkit is lazy, so a consuming app that copies another controller's
-  `controllers.json` entry will make it eager by accident.
+- **`fetch: lazy`, the only one in the toolkit.** The bundle is ~742 KB
+  un-minified (FilePond core plus its eight plugins and Cropper.js, ten MIT
+  banners composed by `build-js.mjs`) and appears on few pages; every other
+  Sylament controller is `eager`. StimulusBundle therefore fetches it only when
+  a `data-controller="sylament--forms--file-upload"` element appears, which is
+  exactly the trade this size justifies. Nothing else in the toolkit is lazy, so
+  a consuming app that copies another controller's `controllers.json` entry will
+  make it eager by accident.
 - **No `mime` package.** Filament's `fileValidateTypeDetectType` falls back to the
   npm `mime` database, which is the single largest block of its 373 KB bundle.
   Ours resolves `mimeTypeMap[extension] || detectedType` and stops there, so the
@@ -483,12 +483,13 @@ and the shape differs in seven ways worth knowing before touching it.
   replaces, so `this.inputTarget` throws afterwards while `FilePond.destroy()`
   needs that same element (and restores it, which is what lets a later `connect()`
   find the target again). Everything downstream reads the captured reference.
-- **Three JS-owned literals join D18's four.** `The file could not be uploaded.`
-  is Filament's; `The file could not be removed.` and `The file could not be
-  loaded.` are ours, because Filament's `revert`/`remove` never call FilePond's
-  `error` at all and its `load` resolves a failed fetch as an empty blob — a
-  silent success either way. Literals, not translation keys, per the epic's
-  carried decision (4).
+- **Four JS-owned literals join D18's four.** `The file could not be uploaded.`
+  is Filament's; `The file could not be removed.`, `The file could not be
+  loaded.` and `The files could not be reordered.` are ours, because Filament's
+  `revert`/`remove` never call FilePond's `error` at all, its `load` resolves a
+  failed fetch as an empty blob, and its `reorderfiles` handler `await`s the
+  server inside an event listener nothing catches — a silent failure every time.
+  Literals, not translation keys, per the epic's carried decision (4).
 
 Two shipped-type gaps are worked around in the file and will bite anyone
 upgrading FilePond: `initfile` is a real event (`filepond.esm.js:8842`) missing
@@ -498,6 +499,25 @@ string, which FilePond parses back to exactly that integer. The `error` event's
 first argument is `{main, sub}` for a validation failure and `{type, code, body}`
 for a transport one, so the message is composed defensively rather than rendered
 as Filament's `undefined: undefined`.
+
+Six sweep items the image-editor epic folded into the same file are worth
+reading as a set, because each is a shape that reappears whenever a seam call or
+a FilePond option is added. A cancelled upload's key is consumed on **both**
+settle arms and the item is `abort()`ed rather than `error()`ed, so the
+cancelled set cannot leak and a cancelled item leaves no error chrome behind.
+The two `void` seam calls grew rejection arms: a failed `reorderUploadedFiles`
+surfaces `The files could not be reordered.` and clears the reconcile guard's
+last-state so the next morph rebuilds the list in the server's order, and the
+cancel-time `removeUploadedFile` surfaces `The file could not be removed.`.
+`FilePond.create()` runs inside `try/finally` so the `#initializing` re-entrance
+flag cannot stick after a throw, `maxFileSize` is passed only under
+`hasMaxFileSizeValue` (an absent value is not a zero ceiling), and
+`resolveLiveHost()`'s rejection surfaces through the error banner instead of an
+unhandled promise rejection. The sixth is a Filament fidelity note rather than a
+bug: `#detectType` resolves `mimeTypeMap[extension] || detectedType` with `||`,
+not `??`, so a map entry deliberately set to the empty string falls through to
+the browser's detected type — Filament's operator, and the reason an empty entry
+is a "let the browser decide" instruction rather than a hard "no type".
 
 ### Livewire-specific provider responsibilities are dropped, not ported
 

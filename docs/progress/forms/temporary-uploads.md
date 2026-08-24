@@ -71,6 +71,16 @@ it and swallowing a second call.
 [`SylamentFormsBundleTest`](../../../packages/forms/tests/Integration/SylamentFormsBundleTest.php)
 — the store is a container service carrying the config tree's directory.
 
+Both `Unit/Uploads` suites build their stores through
+[`TemporaryUploadsRig`](../../../packages/forms/tests/Unit/Uploads/TemporaryUploadsRig.php)
+rather than the file-level Pest helper functions used everywhere else in the
+monorepo, because two files need the same rig and a helper declared in one of
+them exists only while the other is loaded too — which a full run does and a
+single-file run does not. The rig also tracks every path it puts on disk so each
+suite's `afterEach` can remove it: these are the first tests here to write
+outside the kernel's cache directory, and nothing rolls a unit test's disk
+writes back.
+
 ## Semantics
 
 ### What the HMAC binds is the field, not the user

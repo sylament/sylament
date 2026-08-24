@@ -6,11 +6,15 @@ namespace Sylament\Forms\Tests\Unit\Uploads;
 
 use Sylament\Forms\Uploads\TemporaryUploadedFile;
 
-it('carries the upload metadata the field re-renders from', function (): void {
-    [$store] = temporaryUploadsRig();
-    $png = fixturePngBytes();
+afterEach(function (): void {
+    TemporaryUploadsRig::cleanUp();
+});
 
-    $upload = $store->store(uploadedFixtureFile('holiday photo.png', $png), 'data.cover');
+it('carries the upload metadata the field re-renders from', function (): void {
+    [$store] = TemporaryUploadsRig::make();
+    $png = TemporaryUploadsRig::pngBytes();
+
+    $upload = $store->store(TemporaryUploadsRig::uploadedFile('holiday photo.png', $png), 'data.cover');
 
     expect($upload)->toBeInstanceOf(TemporaryUploadedFile::class)
         ->and($upload->getClientOriginalName())->toBe('holiday photo.png')
@@ -24,8 +28,8 @@ it('carries the upload metadata the field re-renders from', function (): void {
 });
 
 it('serialises and stringifies to the token, so raw state holds one string', function (): void {
-    [$store] = temporaryUploadsRig();
-    $upload = $store->store(uploadedFixtureFile('photo.png', fixturePngBytes()), 'data.cover');
+    [$store] = TemporaryUploadsRig::make();
+    $upload = $store->store(TemporaryUploadsRig::uploadedFile('photo.png', TemporaryUploadsRig::pngBytes()), 'data.cover');
 
     expect($upload->jsonSerialize())->toBe($upload->getToken())
         ->and((string) $upload)->toBe($upload->getToken())
@@ -33,24 +37,24 @@ it('serialises and stringifies to the token, so raw state holds one string', fun
 });
 
 it('reads its own bytes back as a stream', function (): void {
-    [$store] = temporaryUploadsRig();
-    $png = fixturePngBytes();
-    $upload = $store->store(uploadedFixtureFile('photo.png', $png), 'data.cover');
+    [$store] = TemporaryUploadsRig::make();
+    $png = TemporaryUploadsRig::pngBytes();
+    $upload = $store->store(TemporaryUploadsRig::uploadedFile('photo.png', $png), 'data.cover');
 
     expect(stream_get_contents($upload->readStream()))->toBe($png);
 });
 
 it('reports a deleted file as gone rather than throwing', function (): void {
-    [$store] = temporaryUploadsRig();
-    $upload = $store->store(uploadedFixtureFile('photo.png', fixturePngBytes()), 'data.cover');
+    [$store] = TemporaryUploadsRig::make();
+    $upload = $store->store(TemporaryUploadsRig::uploadedFile('photo.png', TemporaryUploadsRig::pngBytes()), 'data.cover');
     $store->getDisk()->delete($upload->getPath());
 
     expect($upload->exists())->toBeFalse();
 });
 
 it('deletes the bytes and the sidecar together, and swallows a second delete', function (): void {
-    [$store] = temporaryUploadsRig();
-    $upload = $store->store(uploadedFixtureFile('photo.png', fixturePngBytes()), 'data.cover');
+    [$store] = TemporaryUploadsRig::make();
+    $upload = $store->store(TemporaryUploadsRig::uploadedFile('photo.png', TemporaryUploadsRig::pngBytes()), 'data.cover');
 
     $upload->delete();
 

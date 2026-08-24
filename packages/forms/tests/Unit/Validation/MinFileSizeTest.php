@@ -10,13 +10,41 @@ use Sylament\Forms\Validation\MinFileSize;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Validation;
 
+/**
+ * One directory per test for everything `fileOfBytes()` writes, so `afterEach` can take the whole
+ * lot back — nothing rolls a unit test's disk writes back, and the files would otherwise pile up
+ * in the system temp directory on every suite run.
+ */
+function fileOfBytesDirectory(): string
+{
+    static $directory = null;
+
+    $directory ??= sys_get_temp_dir() . '/sylament-min-file-size-' . bin2hex(random_bytes(6));
+
+    if (!is_dir($directory)) {
+        mkdir($directory, recursive: true);
+    }
+
+    return $directory;
+}
+
 function fileOfBytes(int $bytes, string $name = 'sample.bin'): string
 {
-    $path = sys_get_temp_dir() . '/sylament-min-file-size-' . bin2hex(random_bytes(6)) . '-' . $name;
+    $path = fileOfBytesDirectory() . '/' . bin2hex(random_bytes(6)) . '-' . $name;
     file_put_contents($path, str_repeat('x', $bytes));
 
     return $path;
 }
+
+afterEach(function (): void {
+    $directory = fileOfBytesDirectory();
+
+    foreach (glob($directory . '/*') ?: [] as $path) {
+        unlink($path);
+    }
+
+    rmdir($directory);
+});
 
 it('flags a file under the minimum, naming the size, the limit and the unit', function (): void {
     $violations = Validation::createValidator()->validate(

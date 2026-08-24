@@ -5,65 +5,19 @@ declare(strict_types=1);
 namespace Sylament\Forms\Tests\Unit\Uploads;
 
 use InvalidArgumentException;
-use League\Flysystem\Filesystem;
 use League\Flysystem\FilesystemOperator;
-use League\Flysystem\Local\LocalFilesystemAdapter;
-use RuntimeException;
 use Sylament\Forms\Uploads\TemporaryUploads;
-use Sylament\Support\Filesystem\FilesystemRegistry;
-use Symfony\Component\DependencyInjection\ServiceLocator;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
-/**
- * A one-storage registry over a throwaway local directory, plus the directory itself so a
- * test can reach the bytes behind flysystem's back — `touch()` is how the sweep's clock moves.
- *
- * @return array{TemporaryUploads, string}
- */
-function temporaryUploadsRig(bool $cleanup = true, string $directory = 'sylament-tmp'): array
-{
-    $root = sys_get_temp_dir() . '/sylament-uploads-' . bin2hex(random_bytes(6));
-    $disk = new Filesystem(new LocalFilesystemAdapter($root));
-    $registry = new FilesystemRegistry(
-        new ServiceLocator(['tmp.storage' => static fn (): FilesystemOperator => $disk]),
-        'tmp.storage',
-    );
-
-    return [new TemporaryUploads($registry, 'secret', null, $directory, $cleanup), $root];
-}
-
-function uploadedFixtureFile(string $name, string $content): UploadedFile
-{
-    $path = tempnam(sys_get_temp_dir(), 'sylament-upload-');
-
-    if ($path === false) {
-        throw new RuntimeException('Could not create a temporary file for the fixture upload.');
-    }
-
-    file_put_contents($path, $content);
-
-    return new UploadedFile($path, $name, null, null, true);
-}
-
-function fixturePngBytes(): string
-{
-    $bytes = base64_decode(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-        true,
-    );
-
-    if ($bytes === false) {
-        throw new RuntimeException('The fixture PNG is not valid base64.');
-    }
-
-    return $bytes;
-}
+afterEach(function (): void {
+    TemporaryUploadsRig::cleanUp();
+});
 
 it('stores the bytes and a sidecar under a random name and returns a signed token', function (): void {
-    [$store] = temporaryUploadsRig();
-    $png = fixturePngBytes();
+    [$store] = TemporaryUploadsRig::make();
+    $png = TemporaryUploadsRig::pngBytes();
 
-    $upload = $store->store(uploadedFixtureFile('photo.png', $png), 'data.cover');
+    $upload = $store->store(TemporaryUploadsRig::uploadedFile('photo.png', $png), 'data.cover');
 
     expect($upload->getToken())->toMatch('/^sylament-file:[0-9a-f]{32}:[0-9a-f]{40}\.png$/')
         ->and($upload->getFilename())->toMatch('/^[0-9a-f]{40}\.png$/')
@@ -77,19 +31,19 @@ it('stores the bytes and a sidecar under a random name and returns a signed toke
 });
 
 it('sniffs the mime type rather than trusting the browser', function (): void {
-    [$store] = temporaryUploadsRig();
+    [$store] = TemporaryUploadsRig::make();
 
     // The client claim is `image/png`; the bytes are text. The sidecar must record the sniff.
-    $file = new UploadedFile(uploadedFixtureFile('notes.txt', 'hello')->getPathname(), 'notes.txt', 'image/png', null, true);
+    $file = new UploadedFile(TemporaryUploadsRig::uploadedFile('notes.txt', 'hello')->getPathname(), 'notes.txt', 'image/png', null, true);
     $upload = $store->store($file, 'data.cover');
 
     expect($upload->getMimeType())->toBe('text/plain');
 });
 
 it('resolves its own token for the same state path', function (): void {
-    [$store] = temporaryUploadsRig();
-    $png = fixturePngBytes();
-    $token = $store->store(uploadedFixtureFile('photo.png', $png), 'data.cover')->getToken();
+    [$store] = TemporaryUploadsRig::make();
+    $png = TemporaryUploadsRig::pngBytes();
+    $token = $store->store(TemporaryUploadsRig::uploadedFile('photo.png', $png), 'data.cover')->getToken();
 
     $resolved = $store->resolve($token, 'data.cover');
 
@@ -105,15 +59,15 @@ it('resolves its own token for the same state path', function (): void {
 });
 
 it('refuses the token for a different state path', function (): void {
-    [$store] = temporaryUploadsRig();
-    $token = $store->store(uploadedFixtureFile('photo.png', fixturePngBytes()), 'data.cover')->getToken();
+    [$store] = TemporaryUploadsRig::make();
+    $token = $store->store(TemporaryUploadsRig::uploadedFile('photo.png', TemporaryUploadsRig::pngBytes()), 'data.cover')->getToken();
 
     expect($store->resolve($token, 'data.other'))->toBeNull();
 });
 
 it('refuses a tampered signature, a swapped filename and a foreign prefix', function (): void {
-    [$store] = temporaryUploadsRig();
-    $token = $store->store(uploadedFixtureFile('photo.png', fixturePngBytes()), 'data.cover')->getToken();
+    [$store] = TemporaryUploadsRig::make();
+    $token = $store->store(TemporaryUploadsRig::uploadedFile('photo.png', TemporaryUploadsRig::pngBytes()), 'data.cover')->getToken();
     [$signature, $filename] = explode(':', mb_substr($token, mb_strlen(TemporaryUploads::TOKEN_PREFIX)), 2);
 
     expect($store->resolve(TemporaryUploads::TOKEN_PREFIX . strrev($signature) . ':' . $filename, 'data.cover'))->toBeNull()
@@ -125,8 +79,8 @@ it('refuses a tampered signature, a swapped filename and a foreign prefix', func
 it('refuses a filename outside the minted shape even under a valid signature', function (): void {
     // The signature alone would pass for any string, so the shape check is what stops a token
     // whose "filename" is a traversal or a sidecar name from naming an arbitrary path.
-    [$store] = temporaryUploadsRig();
-    $token = $store->store(uploadedFixtureFile('photo.png', fixturePngBytes()), 'data.cover')->getToken();
+    [$store] = TemporaryUploadsRig::make();
+    $token = $store->store(TemporaryUploadsRig::uploadedFile('photo.png', TemporaryUploadsRig::pngBytes()), 'data.cover')->getToken();
     $filename = explode(':', mb_substr($token, mb_strlen(TemporaryUploads::TOKEN_PREFIX)), 2)[1];
 
     $sign = static fn (string $name): string => mb_substr(hash_hmac('sha256', $name . "\0" . 'data.cover', 'secret'), 0, 32);
@@ -136,22 +90,22 @@ it('refuses a filename outside the minted shape even under a valid signature', f
 });
 
 it('resolves to null when the sidecar or the bytes are gone', function (): void {
-    [$store] = temporaryUploadsRig();
-    $upload = $store->store(uploadedFixtureFile('photo.png', fixturePngBytes()), 'data.cover');
+    [$store] = TemporaryUploadsRig::make();
+    $upload = $store->store(TemporaryUploadsRig::uploadedFile('photo.png', TemporaryUploadsRig::pngBytes()), 'data.cover');
     $store->getDisk()->delete($upload->getPath());
 
     expect($store->resolve($upload->getToken(), 'data.cover'))->toBeNull();
 
-    $second = $store->store(uploadedFixtureFile('photo.png', fixturePngBytes()), 'data.cover');
+    $second = $store->store(TemporaryUploadsRig::uploadedFile('photo.png', TemporaryUploadsRig::pngBytes()), 'data.cover');
     $store->getDisk()->delete($second->getPath() . '.json');
 
     expect($store->resolve($second->getToken(), 'data.cover'))->toBeNull();
 });
 
 it('sanitises the extension and falls back to bin', function (string $name, string $extension): void {
-    [$store] = temporaryUploadsRig();
+    [$store] = TemporaryUploadsRig::make();
 
-    expect($store->store(uploadedFixtureFile($name, 'x'), 'data.cover')->getFilename())
+    expect($store->store(TemporaryUploadsRig::uploadedFile($name, 'x'), 'data.cover')->getFilename())
         ->toEndWith('.' . $extension);
 })->with([
     'the last segment wins' => ['evil.PHP;.txt', 'txt'],
@@ -164,9 +118,9 @@ it('sanitises the extension and falls back to bin', function (string $name, stri
 ]);
 
 it('prunes files older than 24 hours and leaves younger ones', function (): void {
-    [$store, $root] = temporaryUploadsRig(cleanup: false);
-    $old = $store->store(uploadedFixtureFile('old.png', fixturePngBytes()), 'data.cover');
-    $young = $store->store(uploadedFixtureFile('young.png', fixturePngBytes()), 'data.cover');
+    [$store, $root] = TemporaryUploadsRig::make(cleanup: false);
+    $old = $store->store(TemporaryUploadsRig::uploadedFile('old.png', TemporaryUploadsRig::pngBytes()), 'data.cover');
+    $young = $store->store(TemporaryUploadsRig::uploadedFile('young.png', TemporaryUploadsRig::pngBytes()), 'data.cover');
     touch($root . '/' . $old->getPath(), time() - 90000);
 
     expect($store->prune())->toBe(1)
@@ -177,24 +131,24 @@ it('prunes files older than 24 hours and leaves younger ones', function (): void
 });
 
 it('sweeps on a successful store when cleanup is on, and not when it is off', function (): void {
-    [$sweeping, $sweepingRoot] = temporaryUploadsRig();
-    $stale = $sweeping->store(uploadedFixtureFile('stale.png', fixturePngBytes()), 'data.cover');
+    [$sweeping, $sweepingRoot] = TemporaryUploadsRig::make();
+    $stale = $sweeping->store(TemporaryUploadsRig::uploadedFile('stale.png', TemporaryUploadsRig::pngBytes()), 'data.cover');
     touch($sweepingRoot . '/' . $stale->getPath(), time() - 90000);
-    $sweeping->store(uploadedFixtureFile('fresh.png', fixturePngBytes()), 'data.cover');
+    $sweeping->store(TemporaryUploadsRig::uploadedFile('fresh.png', TemporaryUploadsRig::pngBytes()), 'data.cover');
 
     expect($sweeping->getDisk()->fileExists($stale->getPath()))->toBeFalse();
 
-    [$quiet, $quietRoot] = temporaryUploadsRig(cleanup: false);
-    $kept = $quiet->store(uploadedFixtureFile('stale.png', fixturePngBytes()), 'data.cover');
+    [$quiet, $quietRoot] = TemporaryUploadsRig::make(cleanup: false);
+    $kept = $quiet->store(TemporaryUploadsRig::uploadedFile('stale.png', TemporaryUploadsRig::pngBytes()), 'data.cover');
     touch($quietRoot . '/' . $kept->getPath(), time() - 90000);
-    $quiet->store(uploadedFixtureFile('fresh.png', fixturePngBytes()), 'data.cover');
+    $quiet->store(TemporaryUploadsRig::uploadedFile('fresh.png', TemporaryUploadsRig::pngBytes()), 'data.cover');
 
     expect($quiet->getDisk()->fileExists($kept->getPath()))->toBeTrue();
 });
 
 it('returns zero from prune when the temp directory has never been written to', function (): void {
     // store() prunes on every success, so an unlistable directory must not become a 500.
-    [$store] = temporaryUploadsRig();
+    [$store] = TemporaryUploadsRig::make();
 
     expect($store->prune())->toBe(0);
 });
@@ -207,7 +161,7 @@ it('recognises tokens', function (): void {
 });
 
 it('refuses a directory that normalises to the storage root', function (string $directory): void {
-    expect(fn (): array => temporaryUploadsRig(directory: $directory))
+    expect(fn (): array => TemporaryUploadsRig::make(directory: $directory))
         ->toThrow(InvalidArgumentException::class, 'storage root');
 })->with([
     'empty' => [''],
@@ -218,7 +172,7 @@ it('refuses a directory that normalises to the storage root', function (string $
 it('names the disk and the normalised directory', function (): void {
     // `WhitespacePathNormalizer` rejects control characters and collapses the separators; it does
     // not trim spaces, so a directory named with them survives.
-    [$store] = temporaryUploadsRig(directory: '/sylament tmp//nested/');
+    [$store] = TemporaryUploadsRig::make(directory: '/sylament tmp//nested/');
 
     expect($store->getDiskName())->toBe('tmp.storage')
         ->and($store->getDirectory())->toBe('sylament tmp/nested')

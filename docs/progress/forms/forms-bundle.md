@@ -448,7 +448,7 @@ and entangles the field's state. Ours is
 [`file_upload_controller.ts`](../../../packages/forms/assets/src/controllers/file_upload_controller.ts),
 and the shape differs in seven ways worth knowing before touching it.
 
-- **`fetch: lazy`, the only one in the toolkit.** The bundle is ~742 KB
+- **`fetch: lazy`, the only one in the toolkit.** The bundle is ~743 KB
   un-minified (FilePond core plus its eight plugins and Cropper.js, ten MIT
   banners composed by `build-js.mjs`) and appears on few pages; every other
   Sylament controller is `eager`. StimulusBundle therefore fetches it only when
@@ -484,7 +484,7 @@ and the shape differs in seven ways worth knowing before touching it.
   needs that same element (and restores it, which is what lets a later `connect()`
   find the target again). Everything downstream reads the captured reference.
 - **Four JS-owned literals join the four PHP-side ones**
-  [file-upload.md](file-upload.md#literals-not-translation-keys) lists.
+  [file-upload.md](file-upload.md#literals-not-translation-keys) opens with.
   `The file could not be uploaded.` is Filament's; `The file could not be
   removed.`, `The file could not be loaded.` and `The files could not be
   reordered.` are ours, because Filament's

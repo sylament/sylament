@@ -687,8 +687,8 @@ the optimiser Tailwind runs over the compiled sheet mangles that pairing into
 `::backdrop:where()` — a selector that matches nothing, with no error anywhere.
 Hoisting the arm one level up keeps the two rules apart through the build, and
 support's committed `dist/styles/index.css` carries both (50 % light, 75 % under
-`.dark`). It is the only `@variant` block in the forms tree, and it is there for
-the build rather than for the design.
+`.dark`). It is the only `@variant dark` block in the forms tree, and it is
+there for the build rather than for the design.
 
 _See also: the global [rename table](../renames.md) — the `fi-*` → `sy-fo-*` class
 prefix, the `--x` → `--sy-x` custom-property prefix, and the

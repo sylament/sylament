@@ -328,9 +328,9 @@ its modals, and ours escapes them through
   (nobody `npm install`s a Sylament package, and StimulusBundle reads only the
   `symfony` key). `@floating-ui/dom`
   is already inlined twice on a page — support's dropdown controller carries its
-  own copy — and `sortablejs` will be once M3 · 6 lands its sortable controller
-  in support: Filament's own per-bundle inlining, ~10 KB gzipped each, recorded
-  and accepted.
+  own copy — and `sortablejs` is too, since M3 · 6's sortable controller in
+  support carries its own: Filament's own per-bundle inlining, ~10 KB gzipped
+  each, recorded and accepted.
 - **No test in this repo runs the controller or the engine** — the
   [`checkbox-list` note](checkbox-list.md#the-controller-is-the-only-behaviour-and-no-test-in-this-repo-runs-it)
   applies verbatim, and a JS rig was weighed for the engine and declined on

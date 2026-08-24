@@ -6,6 +6,7 @@ namespace Sylament\Actions;
 
 use BackedEnum;
 use Closure;
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Actions\Concerns\BelongsToGroup;
 use Sylament\Actions\Concerns\BelongsToLiveComponent;
 use Sylament\Actions\Concerns\BelongsToSchemaComponent;
@@ -64,6 +65,7 @@ use Sylament\Support\Enums\Size;
 use Sylament\Support\Evaluation\ClosureParameter;
 use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
+use Sylament\Tables\Contracts\InteractsWithTable;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
@@ -327,7 +329,13 @@ class Action extends ViewComponent
      */
     public function call(array $parameters = []): mixed
     {
-        return $this->evaluate($this->getAction(), $parameters);
+        try {
+            return $this->evaluate($this->getAction(), $parameters);
+        } finally {
+            if ($this->shouldDeselectRecordsAfterCompletion() && ($host = $this->getLiveComponentOrNull()) instanceof InteractsWithTable) {
+                $host->deselectAllTableRecords();
+            }
+        }
     }
 
     public function cancel(bool $shouldRollBackDatabaseTransaction = false): void
@@ -450,6 +458,12 @@ class Action extends ViewComponent
             'arguments' => ClosureParameter::make($this->getArguments()),
             'data' => ClosureParameter::make($this->getData()),
             'liveComponent' => ClosureParameter::make($this->getLiveComponent()),
+            'records', 'selectedRecords' => $this->hasCanAccessSelectedRecords()
+                ? ClosureParameter::make($this->getSelectedRecords())
+                : parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
+            'recordsQuery', 'selectedRecordsQuery' => $this->hasCanAccessSelectedRecords()
+                ? ClosureParameter::make($this->getSelectedRecordsQuery())
+                : parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
             'schema' => ClosureParameter::make($this->getSchemaContainer()),
             'schemaComponent', 'component' => ClosureParameter::make($this->getSchemaComponent()),
             'schemaGet', 'get' => ClosureParameter::make($this->getSchemaComponentOrFail()->makeGetUtility()->skipComponentsChildContainersWhileSearching(false)),
@@ -463,6 +477,9 @@ class Action extends ViewComponent
     protected function resolveDefaultClosureDependencyForEvaluationByType(string $parameterType): ?ClosureParameter
     {
         return match ($parameterType) {
+            QueryBuilder::class => $this->hasCanAccessSelectedRecords()
+                ? ClosureParameter::make($this->getSelectedRecordsQuery())
+                : parent::resolveDefaultClosureDependencyForEvaluationByType($parameterType),
             Get::class => ClosureParameter::make($this->getSchemaComponentOrFail()->makeGetUtility()->skipComponentsChildContainersWhileSearching(false)),
             Set::class => ClosureParameter::make($this->getSchemaComponentOrFail()->makeSetUtility()->skipComponentsChildContainersWhileSearching(false)),
             default => parent::resolveDefaultClosureDependencyForEvaluationByType($parameterType),

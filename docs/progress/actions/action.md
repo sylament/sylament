@@ -50,12 +50,12 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Construction & `make()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | — |
-| `call()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | blocked | the tables selection host (same epic), visibility cache | [detail](#call-drops-the-post-call-cleanup) |
+| `call()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | The `try`/`finally` ships whole bar its second branch, which has no cache to clear — [bulk-action.md](bulk-action.md#the-post-call-deselect-reaches-its-host-through-the-nullable-accessor) |
 | `cancel(bool $shouldRollBackDatabaseTransaction = false)` / `halt(bool $shouldRollBackDatabaseTransaction = false)` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [semantics](#the-rollback-flags-setter-and-getter-disagree-on-casing) |
 | `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | Filament-exact, tally included: an explicit `success()`/`failure()` wins, an action that accesses no selected records is `Success`, and a bulk one compares its two counters — [bulk-action.md](bulk-action.md) |
 | `bulk()` / `isBulk()` + `$isBulk` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | The routing half of the bulk pair — [bulk-action.md](bulk-action.md) |
-| `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | `InteractsWithSelectedRecords` (table bulk actions), the Action→schema record/operation hop | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-10-of-16-names) |
-| `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | `InteractsWithSelectedRecords` (table bulk actions), the Action→schema record hop | [detail](#resolvedefaultclosuredependencyforevaluationbytype-carries-only-the-added-getset-arms) |
+| `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | model metadata, mounted-actions introspection, the Action→schema record/operation hop | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-10-of-16-names) · [diverges](#the-selected-record-injections-are-gated-on-the-access-flag) |
+| `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | the Action→schema record hop | [detail](#resolvedefaultclosuredependencyforevaluationbytype-carries-only-the-added-getset-arms) · [diverges](#the-selected-record-injections-are-gated-on-the-access-flag) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getcontext-drops-the-record-model-gate) |
 | `getClone()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`getClone()`) | done | — | Filament-exact one-liner (`clone $this`). A shallow clone is the whole contract on this side: what a caller needs is an action whose `record()` / `table()` / `group()` bindings can be re-stamped per row without touching the declared original. `ActionGroup`'s override adds the member deep-clone ([there](action-group.md#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately)) |
 | `toArray()` / `fromArray()` — the 21 ported keys | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toArray()`/`fromArray()`) | done | — | [diverges](#the-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened) · [semantics](#the-serialized-key-list-drops-alpineclickhandler-and-shouldposttourl) · [semantics](#fromarray-restores-only-the-five-built-in-templates) · [semantics](#fromarray-degrades-a-to-dispatch-with-no-target-component-to-a-plain-dispatch) |
@@ -106,27 +106,6 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 Specifics for rows that are not finished — what is already in, what is left,
 and the next step. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
-
-### `call()` drops the post-call cleanup
-
-Filament's `call()` wraps `$this->evaluate($this->getActionFunction(), $parameters)`
-in a `try`/`finally` that, on the way out, deselects table records
-(`shouldDeselectRecordsAfterCompletion()` → `getLivewire()->deselectAllTableRecords()`)
-and clears the visibility cache (`clearVisibilityCache()`). The port's
-[`call()`](../../../packages/actions/src/Action.php) is the bare
-`return $this->evaluate($this->getAction(), $parameters);` — no `finally`
-block at all. The **flag** the first branch reads now ships —
-[`CanDeselectRecordsAfterCompletion`](../../../packages/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php),
-audited in [bulk-action.md](bulk-action.md) — but the member it would call,
-`InteractsWithTable::deselectAllTableRecords()`, is declared by the tables
-selection host landing later in this same epic, so the `finally` lands with it
-([why the split](bulk-action.md#the-record-readers-and-the-post-call-deselect-land-with-the-selection-host)).
-The second branch stays unreachable regardless: the port's
-[`CanBeHidden`](../../../packages/actions/src/Concerns/CanBeHidden.php) has no
-cache to clear ([the cache is dropped](#canbehidden-omits-authorization-group-and-table-cache-integration)).
-**Blocked** on the selection host; add the `finally` block in the same change,
-reaching the host through the **nullable** accessor so a detached action with
-the flag set does not fatal.
 
 ### `resolveDefaultClosureDependencyForEvaluationByName` covers 10 of 16 names
 
@@ -191,11 +170,15 @@ own group subset (`schema`, `schemaComponent`/`component`, `schemaGet`/`get`,
 `schemaComponentState`/`state`, `schemaState` and the two duplicated state
 helpers — vendor's `ActionGroup` carries no `set` arm, and its `get` arm does
 not chain the skip-toggle call either, unlike `Action`'s; both asymmetries are
-vendor-verified and kept). Still missing, each blocked on its backing concern: `model`
+vendor-verified and kept). Two more landed with the bulk family:
+`selectedRecords`/`records` and `selectedRecordsQuery`/`recordsQuery`, resolving
+[`getSelectedRecords()` / `getSelectedRecordsQuery()`](bulk-action.md#the-two-record-readers-share-one-gate-and-one-message)
+behind the [access-flag gate](#the-selected-record-injections-are-gated-on-the-access-flag)
+Filament has no equivalent of, and resolving the plain selection where Filament
+resolves the [individually authorized](bulk-action.md#per-record-authorization-waits-on-the-authorization-epic)
+one. Still missing, each blocked on its backing concern: `model`
 (model metadata), `mountedActions` (mounted-actions introspection
-beyond today's `HasActions`), `selectedRecords`/`records` +
-`selectedRecordsQuery`/`recordsQuery` (the concerns ship, but the readers they
-resolve wait on the [tables selection host](bulk-action.md#the-record-readers-and-the-post-call-deselect-land-with-the-selection-host)),
+beyond today's `HasActions`),
 `schemaOperation`/`context`/`operation`
 (the value exists now — schemas' `Schema` has
 [`getOperation()`](../schemas/has-operation.md) — but no arm here reads it off
@@ -204,8 +187,11 @@ and `table` (`BelongsToTable`). Coverage: `record`/`arguments` via `ActionTest`'
 "calls the action closure…", `data` via `ActionTest`'s "injects $data from
 getData()", `liveComponent` via
 [`BelongsToLiveComponentTest`](../../../packages/actions/tests/Unit/Concerns/BelongsToLiveComponentTest.php),
-and the schema names via `ActionTest`'s injection cases (plus
-`ActionGroupTest` for the group subset).
+the schema names via `ActionTest`'s injection cases (plus
+`ActionGroupTest` for the group subset), and the two selected-record names via
+`ActionTest`'s gated-off cases plus the tables suite's
+[`DeleteBulkActionTest`](../../../packages/tables/tests/Integration/DeleteBulkActionTest.php),
+where a real host answers them.
 
 ### `resolveDefaultClosureDependencyForEvaluationByType` carries only the added Get/Set arms
 
@@ -214,11 +200,13 @@ to resolve `Builder::class` to the selected-records query,
 `EloquentCollection::class`/`Collection::class` to the individually-authorized
 selected records, and `Model::class` (or the record's own class) to the current
 record — so `fn (Model $record)` or `fn (Builder $query)` resolves without naming
-the parameter. **None of those three arms are ported**, and each is blocked on a
-different prerequisite: the query arm on the
-[tables selection host](bulk-action.md#the-record-readers-and-the-post-call-deselect-land-with-the-selection-host)
-this same epic lands (there is no collection arm to port — a Doctrine read
-returns a plain `list`, so the `records` **name** carries it), the record arm on
+the parameter. **One of those three arms is ported**: `Builder::class` maps to
+`Doctrine\ORM\QueryBuilder::class` and resolves
+[`getSelectedRecordsQuery()`](bulk-action.md#the-two-record-readers-share-one-gate-and-one-message),
+behind the same [access-flag gate](#the-selected-record-injections-are-gated-on-the-access-flag)
+the by-name arms carry. The other two stay out: there is no collection arm to
+port — a Doctrine read returns a plain `list`, so the `records` **name** carries
+it — and the record arm waits on
 the Action→schema record hop — until [`getRecord()`](#the-record-title-and-model-metadata-surface-is-not-ported)
 walks to the schema container, a record arm would resolve `null` for every action
 bound to a record-carrying schema, so landing it first would be worse than not
@@ -995,6 +983,28 @@ unconditionally through savepoints, so the wrap composes with an outer test
 transaction. Covered by
 [`CanUseDatabaseTransactionsTest`](../../../packages/actions/tests/Unit/Concerns/CanUseDatabaseTransactionsTest.php)
 for the default-off and fail-fast arms.
+
+### The selected-record injections are gated on the access flag
+
+Filament's four selected-record arms —
+`selectedRecords`/`records`, `selectedRecordsQuery`/`recordsQuery` by name and
+`Builder::class` by type — call the readers unconditionally, so *any* action
+whose closure happens to name a `$records` parameter throws the
+`accessSelectedRecords()` `LogicException` instead of resolving. That is
+tolerable in Filament, where `$records` is a bulk-action idiom; it is not here,
+because the same name reads naturally on a plain action that means *its own*
+collection of something. So all four arms are wrapped in
+`hasCanAccessSelectedRecords()` — the **presence** test, not the evaluated flag,
+so a closure-valued `accessSelectedRecords(fn () => …)` still counts — and fall
+through to `parent::resolveDefaultClosureDependencyForEvaluationBy*()` when it
+is false. The parameter then resolves the ordinary way: an injection, the
+container, its own default, or `null`.
+
+The gate is deliberately *not* `canAccessSelectedRecords()`: evaluating the flag
+to decide whether to resolve would run a user closure on every parameter of
+every action, and a flag that evaluates false would silently hand the parameter
+a container service rather than raising the gate the caller asked for.
+Pinned by `ActionTest`'s three fall-through cases.
 
 ### `$get`/`$set` resolve by type as well as by name
 

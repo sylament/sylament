@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Unit;
 
+use Doctrine\ORM\QueryBuilder;
+use LogicException;
+use RuntimeException;
 use Sylament\Actions\Action;
 use Sylament\Actions\BulkAction;
 use Sylament\Actions\Enums\ActionStatus;
+use Sylament\Actions\Tests\Fixtures\Concerns\BothContractsHostFixture;
+use Sylament\Tables\Contracts\InteractsWithTable;
 
 it('presets the two bulk flags', function (): void {
     $action = BulkAction::make('delete');
@@ -95,4 +100,30 @@ it('fetches selected records by default and lets a caller opt out', function ():
 it('deselects nothing after completion by default and lets a caller opt in', function (): void {
     expect(BulkAction::make('delete')->shouldDeselectRecordsAfterCompletion())->toBeFalse()
         ->and(BulkAction::make('delete')->deselectRecordsAfterCompletion()->shouldDeselectRecordsAfterCompletion())->toBeTrue();
+});
+
+/*
+ * The two record readers share one gate helper, so both the access flag and the
+ * host-shape check are asserted through each of them.
+ */
+it('refuses the selected records to an action that does not access them', function (): void {
+    expect(fn (): array => Action::make('archive')->getSelectedRecords())
+        ->toThrow(LogicException::class, 'The action [archive] is attempting to access the selected records from the table, but it is not using [accessSelectedRecords()], so they are not available.');
+});
+
+it('refuses the selected-records query to an action that does not access them', function (): void {
+    expect(fn (): QueryBuilder => Action::make('archive')->getSelectedRecordsQuery())
+        ->toThrow(LogicException::class, 'The action [archive] is attempting to access the selected records from the table');
+});
+
+it('refuses the selected records when the live component is no table host', function (): void {
+    $action = BulkAction::make('archive')->liveComponent(new BothContractsHostFixture());
+
+    expect(fn (): array => $action->getSelectedRecords())
+        ->toThrow(LogicException::class, InteractsWithTable::class);
+});
+
+it('refuses the selected records when the action has no live component at all', function (): void {
+    expect(fn (): array => BulkAction::make('archive')->getSelectedRecords())
+        ->toThrow(RuntimeException::class, 'Action is not part of LiveComponent');
 });

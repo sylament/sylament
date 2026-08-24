@@ -18,11 +18,12 @@ decides **data access** (whether the record readers throw).
 audited in [`action-group.md`](action-group.md), where the rest of the group
 surface it presets lives.
 
-**Status:** in progress — the flag pair, the failure accounting and the client
-visibility marker have landed; the record readers
-(`getSelectedRecords()` / `getSelectedRecordsQuery()`), their closure-injection
-arms and the post-call deselect land with the tables-side selection host in the
-same epic — see the [status vocabulary](../README.md#statuses).
+**Status:** in progress — the flag pair, the failure accounting, the client
+visibility marker, the two record readers (`getSelectedRecords()` /
+`getSelectedRecordsQuery()`), their closure-injection arms and the post-call
+deselect have all landed; what is left is the keyed failure-message buckets and
+the per-record authorization filter, each blocked on its own prerequisite — see
+the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
@@ -37,7 +38,12 @@ Reference — the Filament source this is diffed against:
 
 Covered by
 [`BulkActionTest`](../../../packages/actions/tests/Unit/BulkActionTest.php) for
-the preset, the marker and the accounting, by
+the preset, the marker, the accounting and the two readers' gates, by
+[`ActionTest`](../../../packages/actions/tests/Unit/ActionTest.php) for the
+gated-off injection arms on an ordinary action, by
+[`DeleteBulkActionTest`](../../../packages/tables/tests/Integration/DeleteBulkActionTest.php)
+in the **tables** suite for the minted counters and the two failure toasts they
+title (a real selection host and a real database are what mint them), by
 [`SylamentActionsBundleTest`](../../../packages/actions/tests/Integration/SylamentActionsBundleTest.php)
 for the service registration `make()` depends on, by
 [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php)
@@ -67,8 +73,8 @@ names what has to land first. _Detail_ carries a **detail** link to a
 | [`fetchSelectedRecords()` / `shouldFetchSelectedRecords()`](../../../packages/actions/src/Concerns/CanFetchSelectedRecords.php) | [`Concerns/CanFetchSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/CanFetchSelectedRecords.php) | done | — | — |
 | `chunkSelectedRecords()` / `getSelectedRecordsChunkSize()` | [`Concerns/CanFetchSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/CanFetchSelectedRecords.php) | skipped | — | [diverges](#chunking-is-not-ported) |
 | [`deselectRecordsAfterCompletion()` / `shouldDeselectRecordsAfterCompletion()`](../../../packages/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php) | [`Concerns/CanDeselectRecordsAfterCompletion.php`](../../../vendor/filament/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php) | done | — | — |
-| The `call()` `finally` that acts on that flag | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`call()`) | in progress | the tables selection host (same epic) | [detail](#the-record-readers-and-the-post-call-deselect-land-with-the-selection-host) |
-| `getSelectedRecords()` / `getSelectedRecordsQuery()` + their closure-injection arms | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | in progress | the tables selection host (same epic) | [detail](#the-record-readers-and-the-post-call-deselect-land-with-the-selection-host) |
+| The `call()` `finally` that acts on that flag | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`call()`) | done | — | [semantics](#the-post-call-deselect-reaches-its-host-through-the-nullable-accessor) |
+| [`getSelectedRecords()` / `getSelectedRecordsQuery()`](../../../packages/actions/src/Concerns/InteractsWithSelectedRecords.php) + their closure-injection arms | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | done | — | [semantics](#the-two-record-readers-share-one-gate-and-one-message) · [diverges](action.md#the-selected-record-injections-are-gated-on-the-access-flag) |
 | `getIndividuallyAuthorizedSelectedRecords()` + the grouped denial buckets | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | blocked | the authorization epic | [detail](#per-record-authorization-waits-on-the-authorization-epic) |
 | `getBulkProcessingFailureMessages()` + the keyed `bulkProcessingFailureMessages` buckets | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | todo | — | [diverges](#the-failure-reports-count-they-do-not-carry-keyed-messages) |
 
@@ -76,20 +82,6 @@ names what has to land first. _Detail_ carries a **detail** link to a
 
 Specifics for rows that are not finished — what is already in, what is left,
 and the next step. Delete a subsection when its row flips to **done**.
-
-### The record readers and the post-call deselect land with the selection host
-
-`getSelectedRecords()`, `getSelectedRecordsQuery()`, the
-`records`/`selectedRecords`/`recordsQuery`/`selectedRecordsQuery` by-name
-closure-injection arms, the `Doctrine\ORM\QueryBuilder` by-type arm, and the
-`try`/`finally` in [`Action::call()`](action.md#call-drops-the-post-call-cleanup)
-that fires `deselectAllTableRecords()` all read members the tables host does not
-declare yet: `InteractsWithTable::getSelectedTableRecords()`,
-`getSelectedTableRecordsQuery()` and `deselectAllTableRecords()`. Writing them
-before those exist would not type-check at level max, so they land in the task
-right after the tables selection host, in this same epic. What is already here
-is everything they need on the actions side: the access gate, the counters the
-readers mint into, and the two flags they consult.
 
 ### The failure notification carries four injections of Filament's nine
 
@@ -123,6 +115,58 @@ concern anywhere in the actions port (`CanBeAuthorized` is a **todo** row in the
 nothing to ask. **Blocked** on the parked authorization epic; port the filter
 and the buckets together when it lands.
 
+## Semantics
+
+Faithful ports whose behaviour is easy to misread. Permanent.
+
+### The two record readers share one gate and one message
+
+Filament writes the `accessSelectedRecords()` gate twice — once in
+`getSelectedRecords()`, once in `getSelectedRecordsQuery()` — with two messages
+differing only in *"the selected records"* versus *"the selected records
+query"*. The port resolves the host through one private
+`getSelectedRecordsHost()` both readers call, so both raise the
+`getSelectedRecords()` wording:
+
+> The action [archive] is attempting to access the selected records from the
+> table, but it is not using [accessSelectedRecords()], so they are not
+> available.
+
+The same helper carries a check Filament has no room for. Filament's
+`getLivewire()` is typed to a Livewire component and its `HasTable` methods are
+reached without narrowing; ours is typed `InteractsWithActions`, and the two
+selection members live on tables'
+[`InteractsWithTable`](../tables/has-table.md), which `sylament/actions` only
+`suggest`s. So the helper narrows with an `instanceof` and throws a second
+`LogicException` naming that contract when the host is not a table host — the
+same [guarded soft reference](has-actions.md#the-table-branch-reaches-tables-through-a-guarded-soft-reference)
+`resolveTableAction()` uses, one class over. An action with **no** live
+component at all does not reach either message: `getLiveComponent()` throws its
+own `RuntimeException` first, exactly as Filament's does.
+
+### The post-call deselect reaches its host through the nullable accessor
+
+`call()`'s `finally` is Filament's, minus the second branch — the port's
+[`CanBeHidden`](action.md#canbehidden-omits-authorization-group-and-table-cache-integration)
+has no visibility cache to clear — and plus a narrowing:
+
+```php
+if ($this->shouldDeselectRecordsAfterCompletion() && ($host = $this->getLiveComponentOrNull()) instanceof InteractsWithTable) {
+    $host->deselectAllTableRecords();
+}
+```
+
+Filament reaches `getLivewire()->deselectAllTableRecords()` unguarded, which is
+safe there only because the flag is set by bulk actions that always have a
+Livewire host. Here the throwing accessor would fatal any detached action
+carrying the flag — a unit test's `deselectRecordsAfterCompletion()` action, or
+one built with `new` — so the read goes through
+[`getLiveComponentOrNull()`](action.md#the-live-component-chain-narrows-inline-instead-of-through-a-second-getter),
+and the `instanceof` is a real narrowing of `?InteractsWithActions` rather than
+a dead check. The deselect is in a `finally`, so it also runs when the body
+throws or halts: a selection is cleared because the action *ran*, not because it
+succeeded.
+
 ## Divergences
 
 Deliberate departures from Filament. Permanent.
@@ -133,8 +177,11 @@ Filament hides a bulk trigger while nothing is selected with two Alpine
 attributes on the trigger — `x-cloak` plus
 `x-show="getSelectedRecordsCount()"`, evaluated against the `filamentTable`
 Alpine component. There is no Alpine here and no client-authoritative selection
-count to evaluate against, so the port stamps a bare **marker** instead:
-`getExtraAttributes()` returns `['data-sy-table-bulk-only' => true, ...parent::getExtraAttributes()]`,
+count to evaluate against, so the port stamps a **marker** instead:
+`getExtraAttributes()` returns `['data-sy-table-bulk-only' => true, ...parent::getExtraAttributes()]`
+— which the attribute bag renders as `data-sy-table-bulk-only="true"`, since it
+stringifies a boolean on a `data-*` key; the template and the controller both
+match on the attribute's *presence*, so the rendered value is incidental —
 and `BulkActionGroup::getExtraDropdownAttributes()` stamps the same marker on
 the **group's dropdown root** rather than on its trigger. The server renders
 `hidden` on every marked element while the table reports no selection, and the

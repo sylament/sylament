@@ -86,7 +86,7 @@ write-up in [Details](#details), **diverges** → the note in
 | [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` + `resolveAction()`'s method-discovery arm | in progress | — (the descriptor-array form and `$isMounting` have no blocker, only no consumer) | [detail](#getaction-ports-the-generic-method-discovery-arm-in-full) |
 | [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveActions()` | done | — | [diverges](#resolution-stops-at-the-first-null-frame-and-a-deeper-frame-reaches-schema-context-only-through-the-cache) · [diverges](#no-resolved-action-is-booted) · [diverges](#resolveactions-takes-no-ismounting-flag) · [diverges](#the-table-branch-reaches-tables-through-a-guarded-soft-reference) · [diverges](#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities) |
 | [`resolveAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveAction()` | done | — | — |
-| [`resolveTableAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveTableAction()` | in progress | table bulk actions (bulk arm) | [detail](#resolvetableaction-drops-the-bulk-arm) · [diverges](#the-table-branch-reaches-tables-through-a-guarded-soft-reference) · [diverges](#a-table-context-on-a-non-table-host-is-a-wiring-bug-not-a-miss) |
+| [`resolveTableAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveTableAction()` | done | — | [semantics](#a-client-supplied-record-key-is-type-checked-before-the-lookup) · [diverges](#the-table-branch-reaches-tables-through-a-guarded-soft-reference) · [diverges](#a-table-context-on-a-non-table-host-is-a-wiring-bug-not-a-miss) |
 | [`resolveSchemaComponentAction()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveSchemaComponentAction()` | done | — | [diverges](#schema-context-resolution-returns-null-instead-of-throwing) |
 | Action caching ([`cacheAction()`](../../../packages/actions/src/Concerns/HasActions.php), `$cachedActions`) | `Concerns/InteractsWithActions.php` `cacheAction()` / `mergeCachedActions()` / `cacheTraitActions()` | done | — | [diverges](#only-the-per-name-action-cache-is-ported) |
 | [`getActionsHostId()`](../../../packages/actions/src/Concerns/HasActions.php) + the `$actionsHostId` `#[LiveProp]` | `action-modal.blade.php`'s `$this->getId()` (Livewire component id) | done | — | [diverges](#the-host-id-is-a-round-tripped-liveprop-not-a-framework-component-id) |
@@ -305,34 +305,6 @@ whose loop calls this method once per frame, and the table-scoped and
 schema-scoped branches sit there too, one call above this one. **Next step:**
 the descriptor-array form, once a caller wants it.
 
-### `resolveTableAction()` drops the bulk arm
-
-Filament's `resolveTableAction()` resolves a nested frame the same way every
-other branch does — `array_last($parentActions)->getModalAction($name)`, throwing
-`ActionNotResolvableException` naming both actions on a miss — and, for a root
-frame, reads the action off the table: `getBulkAction($name)` when the descriptor
-carries `context['bulk']`, else `getAction($name)`, throwing when neither knows
-the name. Then, when `context['recordKey']` is filled, it looks the record up
-through `getTableRecord($recordKey)`, throws when it no longer exists, and binds
-it with `$resolvedAction->getRootGroup()?->record($record) ?? $resolvedAction->record($record)`
-— the group when the action is grouped, so every member of a dropdown shares one
-record, the action itself otherwise.
-The port's [`resolveTableAction()`](../../../packages/actions/src/Concerns/HasActions.php)
-carries all of that except the bulk arm: tables has no
-[bulk actions](../tables/README.md) yet, so there is no `getBulkAction()` to
-call and a `context['bulk']` descriptor resolves as a plain record action. Two
-deltas are permanent and written up below
-([the guarded soft reference to tables](#the-table-branch-reaches-tables-through-a-guarded-soft-reference)
-and [the non-table host throws a LogicException](#a-table-context-on-a-non-table-host-is-a-wiring-bug-not-a-miss)).
-The client-supplied `recordKey` also gets an `is_scalar()` check Filament has no
-need for: `context` is a client-writable `#[LiveArg]`, so the value reaching
-`getTableRecord(string $key)` could be an array or object. A filled non-scalar
-key throws `ActionNotResolvableException` naming its type, which the resolve
-pipeline swallows into the same graceful unmount a stale key gets — the throw is
-what keeps the record bind all-or-nothing, since skipping it instead would mount
-the action recordless and let a `fn (Song $record)` modal closure fatal further
-downstream. **Next step:** the bulk arm with table bulk actions.
-
 ### The per-mount schema is not seeded with a record or an operation
 
 `getMountedActionSchema()` builds
@@ -422,6 +394,30 @@ partial-render mechanism; low priority until render cost becomes a concern.
 
 Faithful behaviour subtle enough that the next reader would misread the code.
 Permanent, and outliving the detail sections above.
+
+### A client-supplied record key is type-checked before the lookup
+
+`resolveTableAction()` is Filament's whole body — the nested-frame
+`getModalAction()` hop, the bulk-then-record map read
+(`getBulkAction($name)` when the descriptor carries `context['bulk']`, `??=`
+falling through to `getAction($name)`, throwing when neither map knows the
+name), and the record bind
+`$resolvedAction->getRootGroup()?->record($record) ?? $resolvedAction->record($record)`
+that hands a grouped action's record to the group so every dropdown member
+shares one — plus one check Filament has no need for.
+
+`context` is a client-writable `#[LiveArg]`, so the value reaching
+`getTableRecord(string $key)` could be an array or an object. A filled
+non-scalar key therefore throws `ActionNotResolvableException` naming its type,
+which the resolve pipeline swallows into the same graceful unmount a stale key
+gets. The throw is what keeps the record bind all-or-nothing: skipping the bind
+instead would mount the action recordless and let a `fn (Song $record)` modal
+closure fatal further downstream. A bulk name absent from **both** maps takes
+that same path — the `ActionNotResolvableException` becomes an unmount, not a
+500. Covered by
+[`BulkActionsResolutionTest`](../../../packages/tables/tests/Integration/BulkActionsResolutionTest.php)
+in the tables suite, where a fixture registers one name in both maps so the
+resolved action names the map it came from.
 
 ### A host trait is analysed only through a class that composes it
 
@@ -532,7 +528,7 @@ resolves to nothing, rather than stamping a `null` over it. This is what lets a
 plain host page (no table, no schema) mount a record-bound confirm action.
 
 The table branch, now that it exists, supplies its own record exactly as
-Filament does — [`resolveTableAction()`](#resolvetableaction-drops-the-bulk-arm)
+Filament does — [`resolveTableAction()`](#a-client-supplied-record-key-is-type-checked-before-the-lookup)
 binds it at **resolve** time, before the action is ever called — so the seam
 stays out of that path: `getMountedActionRecord()` returns `null` for a frame a
 table host resolved, the same `null` that already means "leave the action's

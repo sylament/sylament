@@ -52,7 +52,11 @@ the exact inverse of Filament.
 The `Action` base, the prebuilt record / relationship / import / export actions,
 `ActionGroup`, and the bulk-action family — [`src/`](../../../vendor/filament/actions/src).
 `Action` heads the table; the rest follow alphabetically. (`ActionName` and the
-service provider live in [Supporting surface](#supporting-surface).)
+service provider live in [Supporting surface](#supporting-surface).) Two rows
+share a detail file with the class they preset, the way a component's concerns
+fold into its own file: `BulkActionGroup` into
+[`action-group.md`](action-group.md) and `DeleteBulkAction` into
+[`delete-action.md`](delete-action.md#deletebulkaction).
 
 | Component | Ports | Status | Detail |
 | --- | --- | --- | --- |
@@ -65,7 +69,7 @@ service provider live in [Supporting surface](#supporting-surface).)
 | ButtonAction | [`ButtonAction.php`](../../../vendor/filament/actions/src/ButtonAction.php) | todo | - |
 | [`CreateAction`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | in progress | [create-action.md](create-action.md) |
 | [`DeleteAction`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | in progress | [delete-action.md](delete-action.md) |
-| DeleteBulkAction | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | todo | - |
+| [`DeleteBulkAction`](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | in progress | [delete-action.md](delete-action.md#deletebulkaction) |
 | DetachAction | [`DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) | todo | - |
 | DetachBulkAction | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | todo | - |
 | DissociateAction | [`DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) | todo | - |

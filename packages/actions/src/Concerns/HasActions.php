@@ -702,7 +702,13 @@ trait HasActions
                 ?? throw new ActionNotResolvableException("Action [{$descriptor['name']}] was not found for action [{$parentAction->getName()}].");
         }
 
-        $resolvedAction = $this->getTable()->getAction($descriptor['name'])
+        $resolvedAction = null;
+
+        if ($descriptor['context']['bulk'] ?? false) {
+            $resolvedAction = $this->getTable()->getBulkAction($descriptor['name']);
+        }
+
+        $resolvedAction ??= $this->getTable()->getAction($descriptor['name'])
             ?? throw new ActionNotResolvableException("Action [{$descriptor['name']}] not found on table.");
 
         $recordKey = $descriptor['context']['recordKey'] ?? null;

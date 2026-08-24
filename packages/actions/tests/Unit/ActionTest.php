@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Unit;
 
+use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use Sylament\Actions\Action;
 use Sylament\Actions\Enums\ActionStatus;
@@ -455,4 +456,36 @@ it('falls through to the container walk when the item argument is blank', functi
 
     expect($action?->arguments(['item' => ''])->evaluate(fn ($schemaState): mixed => $schemaState))
         ->toBe(['rows' => []]);
+});
+
+/*
+ * The four selected-record injection arms are gated on `hasCanAccessSelectedRecords()`,
+ * not on the evaluated flag: an ordinary action naming a `$records` or
+ * `$recordsQuery` parameter — or type-hinting a `QueryBuilder` — must fall
+ * through to the parent resolution rather than throw the access gate at a
+ * caller who never asked for a selection.
+ */
+it('leaves a $records parameter to the parent resolution on an action that accesses no selected records', function (): void {
+    expect(Action::make('archive')->evaluate(fn (array $records = ['fallback']): array => $records))
+        ->toBe(['fallback']);
+});
+
+it('leaves a $recordsQuery parameter to the parent resolution on an action that accesses no selected records', function (): void {
+    expect(Action::make('archive')->evaluate(fn (?QueryBuilder $recordsQuery = null): ?QueryBuilder => $recordsQuery))
+        ->toBeNull();
+});
+
+it('leaves a QueryBuilder-typed parameter to the parent resolution on an action that accesses no selected records', function (): void {
+    expect(Action::make('archive')->evaluate(fn (?QueryBuilder $selection = null): ?QueryBuilder => $selection))
+        ->toBeNull();
+});
+
+/*
+ * The `call()` finally reaches its host through the nullable accessor, so a
+ * detached action carrying the deselect flag runs its closure and returns
+ * instead of fataling on a host that is not there.
+ */
+it('runs a detached action that deselects after completion without reaching for a host', function (): void {
+    expect(Action::make('archive')->deselectRecordsAfterCompletion()->action(fn (): string => 'ran')->call())
+        ->toBe('ran');
 });

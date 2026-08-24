@@ -7,6 +7,13 @@ reports `success()`. Unlike [`CreateAction`](create-action.md) and
 [`EditAction`](edit-action.md) it is **complete**: deleting needs no form, so
 there is no modal arm waiting on a schema resolver.
 
+Its bulk sibling
+[`DeleteBulkAction`](../../../packages/actions/src/DeleteBulkAction.php) is
+audited [at the bottom of this file](#deletebulkaction), the way
+[`BulkActionGroup`](action-group.md) rides along with the group it presets: it is
+the same delete over a table's selection instead of over one row, so the two are
+easier to read — and to keep honest — side by side than a file apart.
+
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -155,6 +162,11 @@ literal that has to become a translation key later; the icon in particular is an
 alias lookup (`ActionsIconAlias::DELETE_ACTION_MODAL`) with nothing to resolve
 against yet.
 
+[`DeleteBulkAction`](#deletebulkaction) splits the pair: it skips the modal icon
+for the same alias reason, but it *does* set `modalSubmitActionLabel('Delete')`,
+because the fallback `Confirm` reads wrong under a heading that already says
+*Delete selected* — Filament gives the bulk modal its own key there too.
+
 The visible cost, stated so it is not rediscovered as a defect: our delete
 confirmation is headed by the generic warning triangle every confirming action
 shows, where Filament's is headed by an outlined trash that says *what* is being
@@ -207,3 +219,111 @@ What is *not* here is the failure toast's counterpart: `DeleteAction` sets no
 `failureNotificationTitle()`, exactly as Filament sets none, so the
 [failure arm](action.md#the-notification-arm-is-a-guarded-soft-integration-not-a-require)
 stays silent unless a caller titles it.
+
+## DeleteBulkAction
+
+[`Sylament\Actions\DeleteBulkAction`](../../../packages/actions/src/DeleteBulkAction.php)
+— the same delete over a table's **selected records**. It extends
+[`BulkAction`](bulk-action.md) (so it arrives with `bulk()` and
+`accessSelectedRecords()` already on) and composes the same
+[`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php)
+`DeleteAction` does, so a caller replaces the whole body with `using()`.
+
+**Status:** in progress — the chrome, both delete arms and the counting failure
+notification ship; the two `missingBulk*NotificationMessage` hooks wait on the
+[keyed failure buckets](bulk-action.md#the-failure-reports-count-they-do-not-carry-keyed-messages)
+and the swallowed exception has nowhere to be logged — see the
+[status vocabulary](../README.md#statuses).
+
+Reference — the Filament source this is diffed against:
+
+- [`actions/src/DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php)
+  — the class this ports, whole
+
+Covered by
+[`DeleteBulkActionTest`](../../../packages/actions/tests/Unit/DeleteBulkActionTest.php)
+for the chrome, the inherited presets and the failure title's arithmetic, and end
+to end by
+[`DeleteBulkActionTest`](../../../packages/tables/tests/Integration/DeleteBulkActionTest.php)
+in the **tables** suite — the selection arms (keys, tracking, an active search,
+an unselectable record), both delete arms, the post-call deselect, the two
+failure toasts and the transaction wrap, each of the last written twice so the
+contrast with the unwrapped run is what proves it.
+
+### Surface
+
+| Feature | Ports | Status | Blocked by | Detail |
+| --- | --- | --- | --- | --- |
+| [`getDefaultName()`](../../../packages/actions/src/DeleteBulkAction.php) (`'delete'`) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | — |
+| [`setUp()` chrome — label, modal heading, submit label, success title, `defaultColor('danger')`, the trash icon, `requiresConfirmation()`, `deselectRecordsAfterCompletion()`](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | Filament's two `trans_choice` branches become two `sprintf`s over the same `successCount` / `totalCount` injections — [bulk-action.md](bulk-action.md#the-failure-notification-carries-four-injections-of-filaments-nine) |
+| [The `action()` body — remove each, one `flush()`](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | [diverges](#the-bulk-delete-is-atomic-where-filaments-is-per-record) |
+| [`deleteSelectedRecordsByKey()` — the `fetchSelectedRecords(false)` arm](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) (`getSelectedRecordsQuery()->delete()`) | done | — | [diverges](#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys) |
+| [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
+| Reporting the swallowed exception | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) (`report($exception)`) | todo | a logger on `Action` | [detail](#the-swallowed-exception-has-nowhere-to-go-yet) |
+| `missingBulkAuthorizationFailureNotificationMessage()` / `missingBulkProcessingFailureNotificationMessage()` | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | blocked | the [keyed failure buckets](bulk-action.md#the-failure-reports-count-they-do-not-carry-keyed-messages) | — |
+| `modalIcon()` | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | skipped | — | [diverges](#the-confirmation-chrome-is-left-to-the-defaults) |
+| `hidden()` for the trashed filter | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | skipped | — | [diverges](#there-is-no-soft-delete-arm-to-hide-behind) |
+
+### The swallowed exception has nowhere to go yet
+
+Filament calls Laravel's `report($exception)` in both of its catch blocks, so the
+counting notification is the *user-facing* answer while the log still carries the
+cause. `Action` has no logger — a `psr/log` optional setter is a non-`symfony/*`
+dependency and needs sign-off — so the port's catch swallows silently and the
+danger toast is the only trace. That is the one real cost of the
+[atomic body](#the-bulk-delete-is-atomic-where-filaments-is-per-record) and it is
+recorded rather than papered over. **Next step:** an optional
+`#[Required] ?LoggerInterface` setter on `Action`, on the
+[`CanUseDatabaseTransactions` registry pattern](#the-manager-registry-is-an-optional-required-injection),
+once the dependency is approved.
+
+### The bulk delete is atomic where Filament's is per-record
+
+Filament deletes inside `$records->each(...)`, catching per record so one failed
+row reports a single failure and the rest still go: `$record->delete() ||
+$action->reportBulkProcessingFailure()`. That shape presumes Eloquent's
+per-statement commit and a global error reporter. Doctrine's unit of work is not
+that: the port removes every record and issues **one** `flush()`, so any
+`Throwable` means the whole batch failed and the catch calls
+`reportCompleteBulkProcessingFailure()` — the danger, persistent
+*"Failed to delete N records"* toast — and **swallows**, which is the ported bulk
+contract rather than a 500.
+
+A rethrow was considered and rejected: it would skip the notification machinery
+the bulk family exists for, and turn one locked row into an unexplained error
+response. A per-record Doctrine port was considered too: it needs a flush per
+record, a `resetManager()` after each failure and a re-fetch of every entity the
+reset detached — complexity the first consumer does not earn. Revisit with the
+attach/dissociate bulk actions, whose bodies are association writes with a
+different failure shape.
+
+Two smaller shapes go with it. The record loop rejects a non-object record with a
+`LogicException` — a `records()` table whose rows are arrays has nothing to
+`remove()` — and that throw is caught by the same swallow, so an array-lane table
+reports a complete failure instead of fataling. And the manager is resolved from
+the **first** record's class through the registry and reused for the rest, rather
+than looked up per record: a table's rows are one entity class by construction,
+and one manager is what makes the single `flush()` atomic in the first place.
+
+### The by-key arm is a DQL delete over the plucked keys
+
+Under `fetchSelectedRecords(false)` Filament calls
+`$action->getSelectedRecordsQuery()->delete()` — Eloquent's builder deletes
+straight from the constrained query. Doctrine's DQL `DELETE` accepts no joins,
+and the table's selection query carries whatever the filters and the eager
+loading put on it, so the port splits it in two: the host has **already** plucked
+the selection to keys with the filters and the
+[selectability constraint](../tables/has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read)
+applied, and `deleteSelectedRecordsByKey()` issues one
+`DELETE <record class> WHERE <identifier> IN (:keys)` over exactly those. The
+affected-row count feeds `reportBulkProcessingSuccessfulRecordsCount()`, so the
+status is the comparison against the total the reader minted.
+
+Two semantics to know, both shared with Filament's own mass delete: a DQL delete
+**bypasses ORM cascades and lifecycle callbacks** (Filament's skips model events
+the same way), and it leaves the identity map holding rows that no longer exist —
+which is harmless here because the response re-renders from a fresh query. The
+arm throws rather than guessing when the table is on the records lane or names no
+entity manager: deleting by key is a query-lane capability, and a `records()`
+table has no statement to issue.

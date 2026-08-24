@@ -38,6 +38,7 @@ class SylamentActionsBundle extends SylamentBundle
             ->set(BulkActionGroup::class)
             ->set(CreateAction::class)
             ->set(DeleteAction::class)
+            ->set(DeleteBulkAction::class)
             ->set(EditAction::class);
     }
 

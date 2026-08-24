@@ -932,6 +932,8 @@ export default class extends Controller<HTMLElement> {
    * One live round trip per file, with the file key minted here so the queue, the multipart part
    * name and the state entry all agree. There is no byte progress to report over a live action, so
    * the indicator is indeterminate, and an abort can only be honoured once the request settles.
+   * The transform plugin hands back a named `Blob` rather than a `File`, so it is wrapped before
+   * the seam, which attaches the upload through a `DataTransfer` and takes nothing else.
    */
   #process(
     file: FilePond.ActualFileObject,
@@ -951,10 +953,15 @@ export default class extends Controller<HTMLElement> {
       return { abort: () => {} };
     }
 
+    const upload =
+      file instanceof File
+        ? file
+        : new File([file], file.name, { type: file.type, lastModified: file.lastModified });
+
     this.#activeUploads++;
     progress(false, 0, 0);
 
-    void uploadSchemaComponentFile(host, this.keyValue, fileKey, file as File).then(
+    void uploadSchemaComponentFile(host, this.keyValue, fileKey, upload).then(
       (result) => {
         this.#activeUploads--;
 

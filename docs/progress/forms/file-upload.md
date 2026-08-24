@@ -228,6 +228,15 @@ of the pipeline as an ordinary added file: validate, transform, `server.process`
 The schemas seam and the server need nothing new — an edit is just another
 upload.
 
+What reaches `server.process` after a transform is not a `File`, though. The
+transform plugin resolves its output as a `Blob` carrying a `name` and a
+`lastModified`, which FilePond types as `ActualFileObject` (`Blob & { name,
+lastModified }`) rather than `File` — so `#process()` wraps it into a real
+`File` before the seam, which attaches the upload through a `DataTransfer` and
+accepts nothing else. A field with no crop or resize configured hands over the
+browser's own `File` untouched, which is why M3·7's cast never failed and why
+every transformed field threw until the wrap landed.
+
 `removeFile(id, { revert: true })` has two arms (`filepond.esm.js:4879-4934`) and
 both are already ours. A file uploaded in this session is a processed item, so
 FilePond calls `server.revert` — our `removeUploadedFile`, which drops the

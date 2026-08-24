@@ -95,9 +95,9 @@ _Ports_ cell is `—` has no Filament counterpart.
 | [`panelLayout()` / `getPanelLayout()`](../../../packages/forms/src/Components/FileUpload.php) | [`panelLayout()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`loadingIndicatorPosition()` / `removeUploadedFileButtonPosition()` / `uploadButtonPosition()` / `uploadProgressIndicatorPosition()` and their getters](../../../packages/forms/src/Components/FileUpload.php) | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`mimeTypeMap()` / `getMimeTypeMap()`](../../../packages/forms/src/Components/FileUpload.php) | [`mimeTypeMap()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [diverges](#the-bundle-drops-fileponds-mime-database) |
-| `automaticallyCropImagesToAspectRatio()` and the whole resize family (`automaticallyResizeImagesMode()`, `automaticallyResizeImagesToHeight()`, `automaticallyResizeImagesToWidth()`, `automaticallyUpscaleImagesWhenResizing()`) | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
+| `automaticallyCropImagesToAspectRatio()` and the whole resize family (`automaticallyResizeImagesMode()`, `automaticallyResizeImagesToHeight()`, `automaticallyResizeImagesToWidth()`, `automaticallyUpscaleImagesWhenResizing()`) | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [diverges](#getimageeditoractions-carries-methods-and-params-not-alpine) |
 | `orientImagesFromExif()` / `shouldOrientImagesFromExif()` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
-| The image-editor family — `imageEditor()`, `circleCropper()`, `editableSvgs()`, `confirmSvgEditing()`, `automaticallyOpenImageEditorForAspectRatio()`, `imageEditorViewportWidth()` / `Height()`, `imageEditorMode()`, `imageEditorEmptyFillColor()`, `imageEditorAspectRatioOptions()`, `getImageEditorActions()` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
+| The image-editor family — `imageEditor()`, `circleCropper()`, `editableSvgs()`, `confirmSvgEditing()`, `automaticallyOpenImageEditorForAspectRatio()`, `imageEditorViewportWidth()` / `Height()`, `imageEditorMode()`, `imageEditorEmptyFillColor()`, `imageEditorAspectRatioOptions()`, `getImageEditorActions()` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [diverges](#getimageeditoractions-carries-methods-and-params-not-alpine) |
 | `idleLabel()` / `imageCropAspectRatio()` / `imageResizeMode()` / `imageResizeTargetHeight()` / `imageResizeTargetWidth()` / `imageResizeUpscale()` / `orientImageFromExif()` / `imageEditorAspectRatios()` and their deprecated getters | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | skipped | — | the port ships no deprecated surface |
 | `$publishedViewOverrideCheckPath` | [`FileUpload`](../../../vendor/filament/forms/src/Components/FileUpload.php) | skipped | — | there is no published-view mechanism to probe for |
 
@@ -109,7 +109,8 @@ two), the aspect-ratio constraints, the three record arms of
 visibility, the state cast, the PHP ceiling, and the hydration filter;
 [`Unit/Components/FileUploadTest`](../../../packages/forms/tests/Unit/Components/FileUploadTest.php)
 — Filament's twelve-call `avatar()`, the editor family's defaults,
-derivations and throws, and the FilePond-facing getters;
+derivations and throws, the aspect-ratio option map, the thirteen toolbar
+actions, the transform flag and the FilePond-facing getters;
 [`Integration/Components/FileUploadTest`](../../../packages/forms/tests/Integration/Components/FileUploadTest.php)
 — the DOM contract, both `{}` maps, the single extra-attribute spread, the
 `data-live-ignore` pond, and the public/absent URL arms;
@@ -349,6 +350,45 @@ writes it takes `string | Closure | null` and the getter that reads it returns
 browser as a JSON array the controller has no branch for. Ours is
 `string|Closure|null` throughout, so the type says what the surface does.
 
+### The circle cropper refuses an accept list without PNG at render
+
+`hasCircleCropper()` throws an `InvalidArgumentException` when the cropper is on
+and `acceptedFileTypes()` is filled with a list admitting neither `image/png`
+nor `image/*`. The editor's output is always a PNG, so such a field would let
+the picker through and then refuse every *edited* file client-side, on a message
+about the wrong type — the plugin validates the re-added file, whose type is
+`image/png` whatever the original was. Filament has no such guard and fails the
+same silent way; a getter that throws is how the rest of this family already
+reports a misconfiguration (`shouldAutomaticallyOpenImageEditorForAspectRatio()`
+carries three of Filament's own), so the failure surfaces on the first render
+instead. An empty or absent accept list admits everything and passes.
+
+### `getImageEditorActions()` carries methods and params, not Alpine
+
+Filament's entries are `label` / `iconHtml` / `alpineClickHandler`, the last a
+string of Alpine source (`editor.setDragMode('move')`) the markup drops into an
+`x-on:click`. Ours are `label` / `icon` / `alias` / `method` / `params`: the
+partial binds each button through `stimulus_action(controller, action.method,
+'click', action.params)`, so the same thirteen actions in the same three groups
+(`zoom`, `move`, `transform`) reach the controller as a method name plus a param
+map. The vocabulary is fixed — `editorSetDragMode {mode}`, `editorZoom {ratio}`,
+`editorZoomTo {ratio}`, `editorMove {x, y}`, `editorRotate {degrees}`,
+`editorFlip {axis}` — and a consumer overriding the getter extends the toolbar
+within it, which is what the Alpine strings amount to. `icon` is an icon name
+for the nine heroicons and a `Twig\Markup` for the four SVGs Filament ships as
+files of its own (`arrows-move`, `crop`, `flip-horizontal`, `flip-vertical`),
+inlined here as private constants because no bundle registers an icon set with
+ux-icons; `generateIconHtml()` renders the `Markup` arm raw.
+
+`getImageEditorAspectRatioOptionsForJs()` carries two deltas of its own. It
+normalises each ratio before calculating it, so `16/9` and `1.5` are accepted
+where Filament's — which calculates straight off the raw `x:y` string — drops
+them; the label keeps Filament's `str_replace('/', ':', …)` form, computed from
+the raw value. And a numeric-only entry such as `'2'` becomes an **integer**
+array key at runtime, in this port and in Filament alike, which the declared
+`array<string, float|string>` does not say; it renders identically, so the
+docblock keeps Filament's shape rather than widening to `array-key`.
+
 ### The bundle drops FilePond's mime database
 
 `mimeTypeMap()` ships as the extension→MIME override it is, and it is the only
@@ -372,6 +412,9 @@ how the M3 · 7 browser pass found it (the third map shipped uncast; the render
 test had pinned only the first two). There is no in-repo precedent (`Select`'s
 option map is never empty-and-object), so this is a deliberate new one; the
 render test pins all three as `{}`.
+
+A new value, `transformImages`, is a plain boolean; no fourth map exists — the
+aspect-ratio options render as buttons.
 
 The same method must not use `filter_var()` anywhere in the `maxFileSize`
 expression: with no filter it returns a **string**, which `min()` would then

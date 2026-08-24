@@ -7,7 +7,9 @@ namespace Sylament\Forms\Components;
 use Closure;
 use InvalidArgumentException;
 use Sylament\Forms\Components\Concerns\HasExtraInputAttributes;
+use Sylament\Forms\Twig\FormsIconAlias;
 use Sylament\Support\Components\Concerns\HasAlignment;
+use Twig\Markup;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
@@ -21,6 +23,14 @@ class FileUpload extends BaseFileUpload
 {
     use HasAlignment;
     use HasExtraInputAttributes;
+
+    private const string EDITOR_ICON_ARROWS_MOVE = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-slot="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 9l3 3l-3 3" /><path d="M15 12h6" /><path d="M6 9l-3 3l3 3" /><path d="M3 12h6" /><path d="M9 18l3 3l3 -3" /><path d="M12 15v6" /><path d="M15 6l-3 -3l-3 3" /><path d="M12 3v6" /></svg>';
+
+    private const string EDITOR_ICON_CROP = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-slot="icon"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 5v10a1 1 0 0 0 1 1h10" /><path d="M5 8h10a1 1 0 0 1 1 1v10" /></svg>';
+
+    private const string EDITOR_ICON_FLIP_HORIZONTAL = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" data-slot="icon"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m3 7l5 5l-5 5V7m18 0l-5 5l5 5V7m-9 13v2m0-8v2m0-8v2m0-8v2"/></svg>';
+
+    private const string EDITOR_ICON_FLIP_VERTICAL = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" data-slot="icon"><path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m17 3l-5 5l-5-5h10m0 18l-5-5l-5 5h10M4 12H2m8 0H8m8 0h-2m8 0h-2"/></svg>';
 
     protected string|Closure|null $template = '@SylamentForms/partials/FileUpload/index.html.twig';
 
@@ -491,7 +501,17 @@ class FileUpload extends BaseFileUpload
 
     public function hasCircleCropper(): bool
     {
-        return (bool) $this->evaluate($this->hasCircleCropper);
+        if (! $this->evaluate($this->hasCircleCropper)) {
+            return false;
+        }
+
+        $acceptedFileTypes = $this->getAcceptedFileTypes();
+
+        if ($acceptedFileTypes !== null && $acceptedFileTypes !== [] && array_intersect(['image/png', 'image/*'], $acceptedFileTypes) === []) {
+            throw new InvalidArgumentException('The [circleCropper()] output is always a PNG, so [acceptedFileTypes()] must admit image/png or image/*.');
+        }
+
+        return true;
     }
 
     public function canEditSvgs(): bool
@@ -547,7 +567,71 @@ class FileUpload extends BaseFileUpload
     }
 
     /**
-     * The six values the template cannot read off a single getter. The three maps are cast to an
+     * @return array<string, float|string>
+     */
+    public function getImageEditorAspectRatioOptionsForJs(): array
+    {
+        $ratios = array_values($this->evaluate($this->imageEditorAspectRatioOptions));
+
+        if (filled($automaticCropRatio = $this->getAutomaticallyCropImagesAspectRatio())) {
+            $ratios[] = $automaticCropRatio;
+        }
+
+        $options = [];
+
+        foreach (array_unique($ratios, SORT_REGULAR) as $ratio) {
+            if ($ratio === null) {
+                $options['Free'] = 'NaN';
+
+                continue;
+            }
+
+            $calculated = $this->calculateAspectRatio($this->normalizeAspectRatio($ratio));
+
+            if ($calculated === null) {
+                continue;
+            }
+
+            $options[str_replace('/', ':', $ratio)] = $calculated;
+        }
+
+        return count($options) < 2 ? [] : $options;
+    }
+
+    /**
+     * The editor toolbar, Filament's three groups and thirteen actions; each entry names the controller
+     * method and params the partial binds through `stimulus_action()`, where Filament carries an Alpine
+     * expression. A custom icon is a `Markup`, rendered raw by `generateIconHtml()`.
+     *
+     * @return array<string, list<array{label: string, icon: string|Markup, alias: string, method: string, params: array<string, int|float|string>}>>
+     */
+    public function getImageEditorActions(): array
+    {
+        return [
+            'zoom' => [
+                ['label' => 'Drag mode "move"', 'icon' => new Markup(self::EDITOR_ICON_ARROWS_MOVE, 'UTF-8'), 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_DRAG_MOVE, 'method' => 'editorSetDragMode', 'params' => ['mode' => 'move']],
+                ['label' => 'Drag mode "crop"', 'icon' => new Markup(self::EDITOR_ICON_CROP, 'UTF-8'), 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_DRAG_CROP, 'method' => 'editorSetDragMode', 'params' => ['mode' => 'crop']],
+                ['label' => 'Zoom in', 'icon' => 'heroicons:magnifying-glass-plus-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_IN, 'method' => 'editorZoom', 'params' => ['ratio' => 0.1]],
+                ['label' => 'Zoom out', 'icon' => 'heroicons:magnifying-glass-minus-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_OUT, 'method' => 'editorZoom', 'params' => ['ratio' => -0.1]],
+                ['label' => 'Zoom image to 100%', 'icon' => 'heroicons:arrows-pointing-out-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_100, 'method' => 'editorZoomTo', 'params' => ['ratio' => 1]],
+            ],
+            'move' => [
+                ['label' => 'Move image to left', 'icon' => 'heroicons:arrow-left-circle-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_LEFT, 'method' => 'editorMove', 'params' => ['x' => -10, 'y' => 0]],
+                ['label' => 'Move image to right', 'icon' => 'heroicons:arrow-right-circle-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_RIGHT, 'method' => 'editorMove', 'params' => ['x' => 10, 'y' => 0]],
+                ['label' => 'Move image up', 'icon' => 'heroicons:arrow-up-circle-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_UP, 'method' => 'editorMove', 'params' => ['x' => 0, 'y' => -10]],
+                ['label' => 'Move image down', 'icon' => 'heroicons:arrow-down-circle-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_MOVE_DOWN, 'method' => 'editorMove', 'params' => ['x' => 0, 'y' => 10]],
+            ],
+            'transform' => [
+                ['label' => 'Rotate image to left', 'icon' => 'heroicons:arrow-uturn-left-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ROTATE_LEFT, 'method' => 'editorRotate', 'params' => ['degrees' => -90]],
+                ['label' => 'Rotate image to right', 'icon' => 'heroicons:arrow-uturn-right-20-solid', 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ROTATE_RIGHT, 'method' => 'editorRotate', 'params' => ['degrees' => 90]],
+                ['label' => 'Flip image horizontally', 'icon' => new Markup(self::EDITOR_ICON_FLIP_HORIZONTAL, 'UTF-8'), 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_FLIP_HORIZONTAL, 'method' => 'editorFlip', 'params' => ['axis' => 'x']],
+                ['label' => 'Flip image vertically', 'icon' => new Markup(self::EDITOR_ICON_FLIP_VERTICAL, 'UTF-8'), 'alias' => FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_FLIP_VERTICAL, 'method' => 'editorFlip', 'params' => ['axis' => 'y']],
+            ],
+        ];
+    }
+
+    /**
+     * The seven values the template cannot read off a single getter. The three maps are cast to an
      * object so an empty one serialises as `{}` rather than `[]`: `StimulusAttributes` JSON-encodes
      * a non-scalar value, Stimulus's `Object` reader throws on an array, and the controller's
      * `Object` values want one shape whether or not the field holds a file.
@@ -560,6 +644,9 @@ class FileUpload extends BaseFileUpload
             'uploadedFiles' => (object) ($this->getUploadedFiles() ?? []),
             'stateMap' => (object) wrap($this->getRawState()),
             'mimeTypeMap' => (object) $this->getMimeTypeMap(),
+            'transformImages' => filled($this->getAutomaticallyCropImagesAspectRatio())
+                || filled($this->getAutomaticallyResizeImagesHeight())
+                || filled($this->getAutomaticallyResizeImagesWidth()),
             'maxFileSize' => min(
                 $this->getMaxSize() !== null ? $this->getMaxSize() * 1024 : PHP_INT_MAX,
                 $this->getMaxUploadSize(),

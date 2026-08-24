@@ -6,6 +6,10 @@ namespace Sylament\Forms\Tests\Unit\Components;
 
 use InvalidArgumentException;
 use Sylament\Forms\Components\FileUpload;
+use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Forms\Twig\FormsIconAlias;
+use Sylament\Schemas\Schema;
+use Twig\Markup;
 
 it("makes Filament's twelve avatar() calls, the three positions branching on the editor", function (): void {
     $avatar = FileUpload::make('avatar')->avatar();
@@ -157,4 +161,65 @@ it('carries the editor settings through their closures', function (): void {
         ->and($upload->isSvgEditingConfirmed())->toBeTrue()
         ->and($upload->shouldOrientImagesFromExif())->toBeFalse()
         ->and($upload->getImageEditorEmptyFillColor())->toBe('#ffffff');
+});
+
+it('keys the editor aspect-ratio options by label, with Free as NaN, and hides a lone option', function (): void {
+    $options = FileUpload::make('cover')
+        ->imageEditorAspectRatioOptions([null, '16:9', '4/3', '16:9', 'nonsense'])
+        ->getImageEditorAspectRatioOptionsForJs();
+
+    expect(array_keys($options))->toBe(['Free', '16:9', '4:3'])
+        ->and($options['Free'])->toBe('NaN')
+        ->and($options['16:9'])->toEqualWithDelta(16 / 9, 0.0001)
+        ->and($options['4:3'])->toEqualWithDelta(4 / 3, 0.0001);
+
+    expect(FileUpload::make('cover')->imageEditorAspectRatioOptions(['1:1'])->getImageEditorAspectRatioOptionsForJs())->toBe([])
+        ->and(FileUpload::make('cover')->getImageEditorAspectRatioOptionsForJs())->toBe([]);
+
+    $withCrop = FileUpload::make('cover')
+        ->imageEditorAspectRatioOptions([null])
+        ->imageAspectRatio('1:1')
+        ->automaticallyCropImagesToAspectRatio()
+        ->getImageEditorAspectRatioOptionsForJs();
+
+    expect(array_keys($withCrop))->toBe(['Free', '1:1']);
+});
+
+it("lists Filament's thirteen editor actions in three groups with their aliases, methods and params", function (): void {
+    $actions = FileUpload::make('cover')->getImageEditorActions();
+
+    expect(array_keys($actions))->toBe(['zoom', 'move', 'transform'])
+        ->and(array_sum(array_map(count(...), $actions)))->toBe(13)
+        ->and($actions['zoom'][0]['label'])->toBe('Drag mode "move"')
+        ->and($actions['zoom'][0]['alias'])->toBe(FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_DRAG_MOVE)
+        ->and($actions['zoom'][0]['method'])->toBe('editorSetDragMode')
+        ->and($actions['zoom'][0]['params'])->toBe(['mode' => 'move'])
+        ->and($actions['zoom'][0]['icon'])->toBeInstanceOf(Markup::class)
+        ->and($actions['zoom'][2]['icon'])->toBe('heroicons:magnifying-glass-plus-20-solid')
+        ->and($actions['zoom'][2]['params'])->toBe(['ratio' => 0.1])
+        ->and($actions['move'][0]['params'])->toBe(['x' => -10, 'y' => 0])
+        ->and($actions['transform'][0]['params'])->toBe(['degrees' => -90])
+        ->and($actions['transform'][2]['method'])->toBe('editorFlip')
+        ->and($actions['transform'][2]['params'])->toBe(['axis' => 'x']);
+});
+
+it('refuses a circle cropper on an accept list that admits no PNG', function (): void {
+    expect(FileUpload::make('avatar')->image()->circleCropper()->hasCircleCropper())->toBeTrue()
+        ->and(FileUpload::make('avatar')->acceptedFileTypes(['image/png'])->circleCropper()->hasCircleCropper())->toBeTrue()
+        ->and(FileUpload::make('avatar')->circleCropper()->hasCircleCropper())->toBeTrue();
+
+    expect(fn (): bool => FileUpload::make('avatar')->acceptedFileTypes(['image/jpeg'])->circleCropper()->hasCircleCropper())
+        ->toThrow(InvalidArgumentException::class, 'must admit image/png or image/*');
+});
+
+it('asks for the transform only when a crop ratio or a resize target is set', function (): void {
+    $wire = function (FileUpload $upload): FileUpload {
+        Schema::make(new FieldRenderHost())->statePath('data')->components([$upload])->getComponents();
+
+        return $upload;
+    };
+
+    expect($wire(FileUpload::make('cover'))->getExtraTemplateData()['transformImages'])->toBeFalse()
+        ->and($wire(FileUpload::make('cover')->automaticallyResizeImagesToWidth('800'))->getExtraTemplateData()['transformImages'])->toBeTrue()
+        ->and($wire(FileUpload::make('avatar')->avatar())->getExtraTemplateData()['transformImages'])->toBeTrue();
 });

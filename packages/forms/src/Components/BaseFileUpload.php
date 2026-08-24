@@ -465,17 +465,20 @@ abstract class BaseFileUpload extends Field implements AcceptsUploadedFiles
     }
 
     /**
-     * @return array<string>|null
+     * Always a list: a keyed iterable or array would serialise as a JSON object and the Stimulus
+     * `Array` value reader throws on one.
+     *
+     * @return list<string>|null
      */
     public function getAcceptedFileTypes(): ?array
     {
         $types = $this->evaluate($this->acceptedFileTypes);
 
         if ($types instanceof Traversable) {
-            return iterator_to_array($types);
+            return array_values(iterator_to_array($types));
         }
 
-        return $types;
+        return $types === null ? null : array_values($types);
     }
 
     public function getDirectory(): ?string
@@ -754,7 +757,7 @@ abstract class BaseFileUpload extends Field implements AcceptsUploadedFiles
         $acceptedFileTypes = $this->getAcceptedFileTypes();
 
         if (filled($acceptedFileTypes)) {
-            $constraints[] = new File(mimeTypes: array_values($acceptedFileTypes));
+            $constraints[] = new File(mimeTypes: $acceptedFileTypes);
         }
 
         if (filled($maxSize = $this->getMaxSize())) {

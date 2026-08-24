@@ -178,3 +178,12 @@ it('names the disk and the normalised directory', function (): void {
         ->and($store->getDirectory())->toBe('sylament tmp/nested')
         ->and($store->getDisk())->toBeInstanceOf(FilesystemOperator::class);
 });
+
+it('keeps the client extension on disk while the sidecar records the sniff, which is why the editor renames its output', function (): void {
+    [$store] = TemporaryUploadsRig::make();
+
+    $upload = $store->store(TemporaryUploadsRig::uploadedFile('photo.jpg', TemporaryUploadsRig::pngBytes()), 'data.cover');
+
+    expect($upload->getFilename())->toMatch('/^[0-9a-f]{40}\.jpg$/')
+        ->and($upload->getMimeType())->toBe('image/png');
+});

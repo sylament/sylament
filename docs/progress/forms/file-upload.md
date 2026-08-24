@@ -416,6 +416,12 @@ render test pins all three as `{}`.
 A new value, `transformImages`, is a plain boolean; no fourth map exists — the
 aspect-ratio options render as buttons.
 
+The same encoding rule runs one level down on the `Array` side, which is why
+`getAcceptedFileTypes()` now returns `array_values()` on both arms: a *keyed*
+iterable or array — the only latent hazard the epic's cast audit found — encodes
+as `{}`-shaped JSON and Stimulus's `array` reader throws on it exactly as its
+`object` reader throws on a list.
+
 The same method must not use `filter_var()` anywhere in the `maxFileSize`
 expression: with no filter it returns a **string**, which `min()` would then
 compare as a string and Stimulus would emit into a `Number` value.

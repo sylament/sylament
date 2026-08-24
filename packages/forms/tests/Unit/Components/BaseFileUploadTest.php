@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Sylament\Forms\Tests\Unit\Components;
 
+use ArrayIterator;
 use League\Flysystem\FilesystemOperator;
 use LogicException;
 use ReflectionMethod;
 use Sylament\Forms\Components\BaseFileUpload;
+use Sylament\Forms\Components\FileUpload;
 use Sylament\Forms\Tests\Fixtures\Components\FixtureFileUpload;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
 use Sylament\Forms\Tests\Fixtures\Records\Gallery;
@@ -363,4 +365,11 @@ it('answers the first violation and writes nothing when a constraint refuses the
     expect($result['ok'])->toBeFalse()
         ->and($result['message'])->toBeString()
         ->and($host->data)->toBe([]);
+});
+
+it('lists the accepted types even when given a keyed array or iterable, so the Stimulus array reader never sees an object', function (): void {
+    expect(FileUpload::make('cover')->acceptedFileTypes(new ArrayIterator(['png' => 'image/png', 'pdf' => 'application/pdf']))->getAcceptedFileTypes())
+        ->toBe(['image/png', 'application/pdf'])
+        ->and(FileUpload::make('cover')->acceptedFileTypes(['png' => 'image/png'])->getAcceptedFileTypes())
+        ->toBe(['image/png']);
 });

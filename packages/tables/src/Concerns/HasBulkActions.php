@@ -14,11 +14,9 @@ use Symfony\UX\LiveComponent\Attribute\LiveProp;
 trait HasBulkActions
 {
     /**
-     * The selected record keys. The property is renamed away from Filament's
-     * `$selectedTableRecords` because the dehydration pass reads every prop
-     * through its same-named getter, and `getSelectedTableRecords()` resolves
-     * records rather than keys; `fieldName:` keeps the wire and model name
-     * Filament's, so nothing outside this class sees the rename.
+     * The selected record keys, untrusted client input; `fieldName:` keeps the
+     * wire and model name Filament's, so the rename is invisible outside this
+     * class.
      *
      * @var list<string>
      */
@@ -119,9 +117,16 @@ trait HasBulkActions
         $identifier = $this->resolveTableRecordKeyExpression($query);
 
         if ($this->isTrackingDeselectedTableRecords) {
-            $query
-                ->andWhere(sprintf('%s NOT IN (:sylament_selected_record_keys)', $identifier))
-                ->setParameter('sylament_selected_record_keys', $this->normalizedSelectedTableRecordKeys($this->deselectedTableRecords));
+            $deselectedKeys = $this->normalizedSelectedTableRecordKeys($this->deselectedTableRecords);
+
+            // An empty exclusion set means every row, so the constraint is
+            // omitted rather than emitted: Doctrine expands an empty list
+            // parameter to NULL, and `NOT IN (NULL)` matches nothing.
+            if ($deselectedKeys !== []) {
+                $query
+                    ->andWhere(sprintf('%s NOT IN (:sylament_selected_record_keys)', $identifier))
+                    ->setParameter('sylament_selected_record_keys', $deselectedKeys);
+            }
         } else {
             $query
                 ->andWhere(sprintf('%s IN (:sylament_selected_record_keys)', $identifier))
@@ -183,10 +188,11 @@ trait HasBulkActions
     }
 
     /**
-     * The ceiling the selection banner counts against, or null where the table
-     * has no total to offer — a simple-paginated records() closure. Null is an
-     * answer, not a failure: the banner falls back to the in-page count and the
-     * select-all-across-pages link stays hidden.
+     * The ceiling the selection banner counts against. Null is an answer rather
+     * than a failure — the banner falls back to the in-page count and the
+     * select-all-across-pages link stays hidden — but no arm here reaches it:
+     * a table past the page-only branch always has a query, and a query always
+     * has a count.
      */
     public function getAllSelectableTableRecordsCount(): ?int
     {
@@ -209,13 +215,16 @@ trait HasBulkActions
 
         $records = $this->getTableRecords();
 
-        return $records instanceof Paginator ? $records->getTotalRecordCount() : count($records);
+        if (!$records instanceof Paginator) {
+            return count($records);
+        }
+
+        return $records->getTotalRecordCount() ?? $this->getAllTableRecordsCount();
     }
 
     /**
-     * The cross-page arm of "select all". Filament's client awaits the key list
-     * from a Livewire method and stores it itself; a UX Live action cannot
-     * answer, so this writes the keys into the prop and re-renders instead.
+     * The cross-page arm of "select all": it answers by writing the enumerated
+     * keys into the prop and re-rendering, never by returning them.
      */
     #[LiveAction]
     public function selectAllTableRecords(): void
@@ -227,8 +236,7 @@ trait HasBulkActions
     }
 
     /**
-     * Clears the server's own state, where Filament only dispatches a browser
-     * event and leaves its props holding the old selection.
+     * Clears the server's own selection state, memo included.
      */
     public function deselectAllTableRecords(): void
     {

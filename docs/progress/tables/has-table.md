@@ -717,9 +717,10 @@ Two members of the same lane deliberately stayed off.
 `getAllSelectableTableRecordKeys()` is called only by the `selectAllTableRecords()`
 live action beside it, and that action is called only over the wire — neither has
 a consumer outside the trait, and declaring members without consumers is exactly
-what this rule forbids. `getAllTableRecordsCount()` stayed off too, for a second
-reason: the banner needs a count that can [answer `null`](#the-selection-is-server-canonical-and-re-derived-on-every-read),
-and that one throws.
+what this rule forbids. `getAllTableRecordsCount()` stayed off too, although the
+selection [now calls it](#the-selection-is-server-canonical-and-re-derived-on-every-read)
+for the ceiling a total-less paginator cannot give: that call is trait-internal,
+and the template reads the selection count rather than the record count.
 
 The contract grows a method at a time as the
 features that need it land — a host must be able to satisfy it, so declaring the
@@ -776,11 +777,19 @@ same asymmetry [`getTableRecord()`](#gettablerecord-reads-fresh-when-the-render-
 already has. On the **query lane** it is a fresh query: `IN (:keys)`, or
 `NOT IN (:deselected)` while tracking, over the qualified single identifier —
 built the way `resolveQueryTableRecord()` builds its single-key constraint, and
-throwing the same `LogicException` on a composite identifier. An empty bag on
-that lane is safe rather than fatal: Doctrine expands an empty array parameter to
-`IN (NULL)`, which matches nothing, and `getSelectedTableRecords()` never gets
-that far anyway — it opens with the empty-and-not-tracking early-out and returns
-`[]` without touching the database.
+throwing the same `LogicException` on a composite identifier. An empty bag means
+opposite things on the two arms, and the port has to say so, because Doctrine
+says neither: DBAL expands an empty list parameter to `NULL`, so **both**
+`IN (NULL)` and `NOT IN (NULL)` match nothing. On the `IN` arm that is the right
+answer — an empty selection selects no rows — and `getSelectedTableRecords()`
+never reaches the query anyway, since it opens with the empty-and-not-tracking
+early-out and returns `[]` without touching the database. On the `NOT IN` arm it
+is the exact inversion of the truth: an empty exclusion set means **every** row,
+and it is the commonest state there is, since the default select-all flips
+tracking on and empties both bags. So the constraint is **omitted** rather than
+emitted while the deselection bag is empty. Laravel gives Filament that for free
+— its grammar compiles `whereKeyNot([])` to `1 = 1` — and a literal port loses
+it: a bulk delete after select-all would delete nothing at all, silently.
 
 `getSelectedTableRecordsQuery(false)` — the arm a bulk action takes when it means
 to write without hydrating — carries one extra constraint the fetching arm does
@@ -808,16 +817,27 @@ handed to a bulk action that may turn it into a DQL `DELETE`, which an
 `ORDER BY` would make invalid. And the `maxSelectableRecords` `limit()` is absent
 with the setting itself.
 
-`getAllSelectableTableRecordsCount()` is the banner's ceiling and the one member
-here that can answer **null**. With no selectability callback it is free — the
+`getAllSelectableTableRecordsCount()` is the banner's ceiling, and the one member
+here typed to answer **null**. With no selectability callback it is free — the
 page count where selection is page-only, the paginator's total otherwise. With a
 callback set it is Filament's documented performance cliff: the whole filtered
-set is hydrated and filtered, once per render. And on a simple-paginated
-`records()` closure there is no total at all, so it returns `null` rather than
-calling [`getAllTableRecordsCount()`](#the-all-records-count-answers-four-ways-where-filaments-answers-two),
-which throws for exactly that case. Null is an answer the chrome can render: the
-banner falls back to counting the page, and the select-all-across-pages link,
-which needs a ceiling, does not appear.
+set is hydrated and filtered, once per render. The one shape whose paginator
+carries no total is simple-mode pagination, and there it takes Filament's last
+arm and counts the filtered query, through
+[`getAllTableRecordsCount()`](#the-all-records-count-answers-four-ways-where-filaments-answers-two)
+— which cannot throw on that path, since everything past the page-only branch has
+a query (`selectsCurrentPageOnly()` is true for every `records()` table, so the
+lane that has no total to count is also the lane that never gets there). A
+simple-paginated table with selection on therefore pays one `COUNT` per render,
+exactly as Filament's does; the alternative was a ceiling-less banner on a table
+that can perfectly well be counted.
+
+So the `?int` is contract slack rather than a case this trait reaches: it is
+typed nullable because [the contract](#the-contract-is-seventeen-methods-of-filaments-forty-six)
+lets a host satisfy it without this trait, and because the chrome has to render
+*something* for a host that answers null — the banner falls back to counting the
+page, and the select-all-across-pages link, which needs a ceiling, does not
+appear.
 
 Not ported, with the settings they belong to: chunked resolution
 (`chunkSelectedRecords()`, `lazyById()` — no shipped action asks for it and

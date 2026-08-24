@@ -1094,7 +1094,7 @@ schema is still refused.
 Filament branches on the context key alone and can afford to, because its
 `Action::getContext()` never emits `schemaComponent` for a child frame (the
 port's `getContext()` has
-[the same early return](action.md#getcontext-drops-the-record-model-gate-and-the-bulk-flag)).
+[the same early return](action.md#getcontext-drops-the-record-model-gate)).
 But `context` is a client-supplied `#[LiveArg]`, so a hand-built descriptor
 could carry both a `schemaComponent` key and a nesting position — which is what
 the gate exists to answer.

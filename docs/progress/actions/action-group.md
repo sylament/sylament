@@ -2,7 +2,12 @@
 
 `Sylament\Actions\ActionGroup` — groups a list of `Action`/`ActionGroup` children
 behind a single trigger, so a table row or a toolbar can collapse many actions
-into one control. It composes `Sylament\Support\Components\ViewComponent`
+into one control. Its one prebuilt subclass,
+[`BulkActionGroup`](../../../packages/actions/src/BulkActionGroup.php), folds in
+here: it is a **preset**, adding no member beyond a `setUp()` of five defaults
+and one extra-attribute override, and it is not itself bulk — only its children
+are ([bulk-action.md](bulk-action.md) audits that side).
+It composes `Sylament\Support\Components\ViewComponent`
 (Twig-backed rendering, the same base `Action` extends) and folds in its own
 actions-package concern, `BelongsToGroup` — shared with `Action` (both now
 compose it), written up here rather than split into a third detail file, since
@@ -29,8 +34,9 @@ defaults propagated to it.
 triggers, submenus, and `render()` producing the complete dropdown or inline
 row) is complete, as is the per-row layer a table needs (the table binding, the
 root-group walk, and the deep clone), as is serialization through
-`toArray()`/`fromArray()`; the remaining rows are deferred
-(additional trigger kinds, auto-placement, bulk actions)
+`toArray()`/`fromArray()`, as is the `BulkActionGroup` preset; the remaining
+rows are deferred (additional trigger kinds, auto-placement,
+`hasNonBulkAction()`)
 — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -82,7 +88,10 @@ permanent note in [Divergences](#divergences).
 | Dropdown teleport (`dropdownTeleport()` / `defaultDropdownTeleport()`) | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) (`dropdownTeleport()`/`defaultDropdownTeleport()`/`hasDropdownTeleport()`) | done | — | [semantics](#dropdownteleport-is-a-positioning-strategy-not-a-dom-move-in-either-codebase) |
 | Dropdown auto-placement | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) (`dropdownAutoPlacement()`) | todo | — | [diverges](#dropdownwidth-is-a-css-string-and-dropdownautoplacement-is-deferred) |
 | `toArray()` / `fromArray()` — the 17 ported keys | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toArray()`/`fromArray()`) | done | — | [diverges](#the-groups-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened) · [semantics](#the-groups-serialized-key-list-drops-iconposition-and-vendors-view) · [semantics](#fromarrays-hasdropdownflip-fallback-is-false-where-the-property-defaults-to-true) · [semantics](#fromarray-restores-only-the-four-built-in-trigger-templates) |
-| `hasNonBulkAction()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`hasNonBulkAction()`) | blocked | BulkAction | [detail](#hasnonbulkaction-is-blocked-on-the-bulkaction-port) |
+| `hasNonBulkAction()` | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`hasNonBulkAction()`) | todo | — | [detail](#hasnonbulkaction-has-its-predicate-now-and-still-no-consumer) |
+| [`BulkActionGroup`](../../../packages/actions/src/BulkActionGroup.php) — the five `setUp()` defaults | [`BulkActionGroup.php`](../../../vendor/filament/actions/src/BulkActionGroup.php) | done | — | [diverges](#bulkactiongroup-sets-its-icon-explicitly-and-keeps-the-label-a-literal) |
+| [`BulkActionGroup::getExtraDropdownAttributes()`](../../../packages/actions/src/BulkActionGroup.php) — the bulk-only marker | [`BulkActionGroup.php`](../../../vendor/filament/actions/src/BulkActionGroup.php) | done | — | [diverges](bulk-action.md#bulk-only-visibility-is-a-data-marker-the-table-controller-flips-not-an-alpine-expression) |
+| `labeledFrom('sm')` on the bulk group | [`BulkActionGroup.php`](../../../vendor/filament/actions/src/BulkActionGroup.php) | todo | `CanBeLabeledFrom` | — |
 
 ## Details
 
@@ -177,16 +186,17 @@ for it and adds no CSS of its own. **Next step:** port the remaining
 which the `isButtonGroup()` predicate becomes portable and the stand-in can be
 retired.
 
-### `hasNonBulkAction()` is blocked on the BulkAction port
+### `hasNonBulkAction()` has its predicate now, and still no consumer
 
 Filament's `ActionGroup::hasNonBulkAction()` iterates `getFlatActions()`
-calling `$action->isBulk()`. The port has no `BulkAction` class and no
-`isBulk()` predicate on `Action`, so the method has nothing to ask — this is
-the group-side half of the same gap
-[`getContext()`'s missing `bulk` flag](action.md#getcontext-drops-the-record-model-gate-and-the-bulk-flag)
-tracks. **Blocked** on `BulkAction`; port both together. The other half of
-this row's former blocker is gone: `BelongsToTable` now ships
-([belongs-to-table.md](belongs-to-table.md)).
+calling `$action->isBulk()`. Both blockers this row once carried are gone —
+`BelongsToTable` ships ([belongs-to-table.md](belongs-to-table.md)) and so does
+[`Action::isBulk()`](bulk-action.md) — so the method is a three-line
+`array_any()` away. It is **todo** rather than written because its only reader
+is Filament's table toolbar, deciding whether a group of actions needs the
+non-bulk half of the toolbar rendered; that partition lands with the toolbar
+itself, in [`tables`](../tables/README.md), and the house rule is that a
+declared member arrives with its consumer. Write it in that change.
 
 ## Semantics
 
@@ -384,6 +394,39 @@ cosmetic: support's `ComponentAttributeBag` normalizes `class` to a token
 `null`/`false`, so a caller's `class` token-merges with the component root's
 own classes through `attributes.defaults()` instead of crashing. Filament has
 no such seam because its Blade side renders its own attribute bag directly.
+
+### `BulkActionGroup` sets its icon explicitly and keeps the label a literal
+
+Filament's `BulkActionGroup::setUp()` reads its label from the
+`filament-tables::` translation namespace and its icon from
+`FilamentIcon::resolve(TablesIconAlias::ACTIONS_OPEN_BULK_ACTIONS) ?? Heroicon::EllipsisVertical`
+— both of which reach **into the tables package from actions**. Neither crosses
+here. The label is the literal `'Bulk actions'`, matching every other prebuilt
+action's [literal chrome](delete-action.md#the-strings-are-literals-not-translation-keys);
+and the icon is set to `ActionGroup::DEFAULT_ICON` directly, because the alias
+would need a registry entry whose only reader would be this line — an alias
+lands with its reader, and the trigger templates read none.
+
+Setting the icon at all is the load-bearing part, and it is **not** redundant
+with the constant's other use: only
+[`IconButtonTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/IconButtonTrigger.html.twig)
+applies `DEFAULT_ICON` as a fallback (`group.getIcon(constant(…))`), while
+[`ButtonTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/ButtonTrigger.html.twig)
+reads `group.getIcon` bare — and this group is a **button** group, so without
+the explicit call it would render icon-less.
+
+Two more shape notes. The trigger is set through
+`defaultTriggerTemplate(static::BUTTON_TEMPLATE)`, not through the `button()`
+fluent method vendor calls. The two are indistinguishable to a consumer — both
+slots are written before any chained call — but they differ for a
+**nested** group: [`stampTriggerTemplates()`](../../../packages/actions/src/ActionGroup.php)
+pushes the parent's choice onto a child group through `defaultTriggerTemplate()`,
+so a bulk group inside another group's dropdown correctly becomes a grouped
+trigger when its own preset used the default slot, and stays a stray button when
+it used the user slot `button()` writes. And `static::BUTTON_TEMPLATE` here is
+`ActionGroup`'s constant — the trigger partial that receives a `group` variable
+— never `Action::BUTTON_TEMPLATE`, which is an action's own partial and would
+fatal on an undefined `component` inside the group's include.
 
 ### `dropdownWidth` is a CSS string and `dropdownAutoPlacement` is deferred
 

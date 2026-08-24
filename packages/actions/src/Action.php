@@ -17,7 +17,9 @@ use Sylament\Actions\Concerns\CanBeMounted;
 use Sylament\Actions\Concerns\CanBeOutlined;
 use Sylament\Actions\Concerns\CanCallParentAction;
 use Sylament\Actions\Concerns\CanClose;
+use Sylament\Actions\Concerns\CanDeselectRecordsAfterCompletion;
 use Sylament\Actions\Concerns\CanDispatchEvent;
+use Sylament\Actions\Concerns\CanFetchSelectedRecords;
 use Sylament\Actions\Concerns\CanNotify;
 use Sylament\Actions\Concerns\CanOpenModal;
 use Sylament\Actions\Concerns\CanOpenUrl;
@@ -40,6 +42,7 @@ use Sylament\Actions\Concerns\HasSchema;
 use Sylament\Actions\Concerns\HasSize;
 use Sylament\Actions\Concerns\HasWizard;
 use Sylament\Actions\Concerns\InteractsWithRecord;
+use Sylament\Actions\Concerns\InteractsWithSelectedRecords;
 use Sylament\Actions\Enums\ActionStatus;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
@@ -79,7 +82,9 @@ class Action extends ViewComponent
     use CanBeOutlined;
     use CanCallParentAction;
     use CanClose;
+    use CanDeselectRecordsAfterCompletion;
     use CanDispatchEvent;
+    use CanFetchSelectedRecords;
     use CanNotify;
     use CanOpenModal;
     use CanOpenUrl;
@@ -108,6 +113,7 @@ class Action extends ViewComponent
     use HasTooltip;
     use HasWizard;
     use InteractsWithRecord;
+    use InteractsWithSelectedRecords;
 
     protected string $evaluationIdentifier = 'action';
 
@@ -122,6 +128,8 @@ class Action extends ViewComponent
     public const string LINK_TEMPLATE = '@SylamentActions/partials/Action/Link.html.twig';
 
     protected string|Closure|null $defaultTemplate = self::BUTTON_TEMPLATE;
+
+    protected bool|Closure $isBulk = false;
 
     protected ?ActionStatus $status = null;
 
@@ -332,6 +340,18 @@ class Action extends ViewComponent
         throw new Halt()->rollBackDatabaseTransaction($shouldRollBackDatabaseTransaction);
     }
 
+    public function bulk(bool|Closure $condition = true): static
+    {
+        $this->isBulk = $condition;
+
+        return $this;
+    }
+
+    public function isBulk(): bool
+    {
+        return (bool) $this->evaluate($this->isBulk);
+    }
+
     public function success(): void
     {
         $this->status = ActionStatus::Success;
@@ -344,7 +364,19 @@ class Action extends ViewComponent
 
     public function getStatus(): ActionStatus
     {
-        return $this->status ?? ActionStatus::Success;
+        if ($this->status instanceof ActionStatus) {
+            return $this->status;
+        }
+
+        if (! $this->canAccessSelectedRecords()) {
+            return ActionStatus::Success;
+        }
+
+        if ($this->successfulSelectedRecordsCount === $this->totalSelectedRecordsCount) {
+            return ActionStatus::Success;
+        }
+
+        return ActionStatus::Failure;
     }
 
     public function nestingIndex(?int $index): static
@@ -393,6 +425,10 @@ class Action extends ViewComponent
 
         if ($this->hasTable()) {
             $context['table'] = true;
+        }
+
+        if ($this->hasTable() && $this->isBulk()) {
+            $context['bulk'] = true;
         }
 
         if (filled($schemaComponentKey = ($this->getSchemaContainer() ?? $this->getSchemaComponent())?->getKey())) {

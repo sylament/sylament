@@ -2,14 +2,15 @@
 
 `Sylament\Actions\Action` — the base class every actions-package action
 extends. It composes `Sylament\Support\Components\ViewComponent` (Twig-backed
-rendering) and folds in 22 actions-package concerns — `BelongsToLiveComponent`,
+rendering) and folds in 25 actions-package concerns — `BelongsToLiveComponent`,
 `CanBeDisabled`, `CanBeHidden`, `CanBeMarkedAsRead`, `CanBeOutlined`,
-`CanClose`, `CanDispatchEvent`,
+`CanClose`, `CanDeselectRecordsAfterCompletion`, `CanDispatchEvent`,
+`CanFetchSelectedRecords`,
 `CanNotify`, `CanOpenModal`, `CanOpenUrl`, `CanRedirect`,
 `CanRequireConfirmation`, `CanUseDatabaseTransactions`,
 `HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`,
 `HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasSize`,
-`InteractsWithRecord` — each a
+`InteractsWithRecord`, `InteractsWithSelectedRecords` — each a
 Surface row below with its own detail/divergence spliced in from its own
 audit. It also composes three multi-consumer actions-package concerns tracked
 outside this file — `BelongsToGroup` (shared with `ActionGroup`, written up in
@@ -49,15 +50,16 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | Construction & `make()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | — |
-| `call()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | blocked | bulk actions (`InteractsWithSelectedRecords`), visibility cache | [detail](#call-drops-the-post-call-cleanup) |
+| `call()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | blocked | the tables selection host (same epic), visibility cache | [detail](#call-drops-the-post-call-cleanup) |
 | `cancel(bool $shouldRollBackDatabaseTransaction = false)` / `halt(bool $shouldRollBackDatabaseTransaction = false)` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [semantics](#the-rollback-flags-setter-and-getter-disagree-on-casing) |
-| `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getstatus-drops-the-bulk-record-tally) |
+| `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | Filament-exact, tally included: an explicit `success()`/`failure()` wins, an action that accesses no selected records is `Success`, and a bulk one compares its two counters — [bulk-action.md](bulk-action.md) |
+| `bulk()` / `isBulk()` + `$isBulk` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | The routing half of the bulk pair — [bulk-action.md](bulk-action.md) |
 | `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | `InteractsWithSelectedRecords` (table bulk actions), the Action→schema record/operation hop | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-10-of-16-names) |
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | `InteractsWithSelectedRecords` (table bulk actions), the Action→schema record hop | [detail](#resolvedefaultclosuredependencyforevaluationbytype-carries-only-the-added-getset-arms) |
-| `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | bulk actions (`bulk` flag) | [diverges](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) |
+| `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getcontext-drops-the-record-model-gate) |
 | `getClone()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`getClone()`) | done | — | Filament-exact one-liner (`clone $this`). A shallow clone is the whole contract on this side: what a caller needs is an action whose `record()` / `table()` / `group()` bindings can be re-stamped per row without touching the declared original. `ActionGroup`'s override adds the member deep-clone ([there](action-group.md#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately)) |
 | `toArray()` / `fromArray()` — the 21 ported keys | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toArray()`/`fromArray()`) | done | — | [diverges](#the-serialized-enum-values-flatten-to-scalars-and-a-scalableicon-crosses-unflattened) · [semantics](#the-serialized-key-list-drops-alpineclickhandler-and-shouldposttourl) · [semantics](#fromarray-restores-only-the-five-built-in-templates) · [semantics](#fromarray-degrades-a-to-dispatch-with-no-target-component-to-a-plain-dispatch) |
-| `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php), `parentAction()` by [`prepareModalAction()`](#canopenmodals-unported-remainder) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) decidable |
+| `nestingIndex()` / `getNestingIndex()` + `parentAction()` / `getParentAction()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`$nestingIndex`, `$parentAction` and their accessors) | done | — | Both stamped by the host: `nestingIndex()` per frame in [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php), `parentAction()` by [`prepareModalAction()`](#canopenmodals-unported-remainder) on every action an action declares. `getParentAction()` is what makes the [`getContext()` child-frame short-circuit](#getcontext-drops-the-record-model-gate) decidable |
 | [`CanCallParentAction`](../../../packages/actions/src/Concerns/CanCallParentAction.php) | [`Concerns/CanCallParentAction.php`](../../../vendor/filament/actions/src/Concerns/CanCallParentAction.php) | done | — | Filament-exact two-method port (`callParent()` + getter). The getter is `getParentActionCallLiveComponentClickHandler()` against Filament's `…Livewire…`, the systematic Livewire → UX LiveComponent naming translation from the [rename table](../renames.md), not a rename of its own. Read by all five trigger templates, ranked **above** `shouldClose()` in the click precedence |
 | [`HasParentActions`](../../../packages/actions/src/Concerns/HasParentActions.php) | [`Concerns/HasParentActions.php`](../../../vendor/filament/actions/src/Concerns/HasParentActions.php) | done | — | Complete, method-for-method and body-for-body. Three of its accessors (`shouldCancelParentActionsOnClose()`, `shouldCancelAllParentActionsOnClose()`, `getParentActionToCancelToOnClose()`) have no consumer here — and none in `vendor/filament` either, so they are kept as declared API rather than trimmed |
 | Trigger rendering ([`Action/Button.html.twig`](../../../packages/actions/templates/partials/Action/Button.html.twig) + the [`Link`](../../../packages/actions/templates/partials/Action/Link.html.twig) / [`Badge`](../../../packages/actions/templates/partials/Action/Badge.html.twig) / [`Grouped`](../../../packages/actions/templates/partials/Action/Grouped.html.twig) / [`IconButton`](../../../packages/actions/templates/partials/Action/IconButton.html.twig) siblings) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`toButtonHtml`/`toLinkHtml`/`toBadgeHtml`/`toGroupedHtml`/`toIconButtonHtml`) | in progress | — | [detail](#tooltip-icon-position-and-extra-attribute-rendering-are-untested), [semantics](#an-uncolored-badge-or-link-action-renders-primary-not-gray), [diverges](#the-view-switch-renders-through-twig-templates-not-tohtml-fast-paths) |
@@ -75,9 +77,11 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanBeMarkedAsRead`](../../../packages/actions/src/Concerns/CanBeMarkedAsRead.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`markAsRead()`/`markAsUnread()`, `shouldMarkAsRead()`/`shouldMarkAsUnread()`, `hasMarkAsRead()`/`hasMarkAsUnread()`) | in progress | the database-notifications panel | [detail](#canbemarkedasread-carries-the-flags-nothing-reads-them-yet) |
 | [`CanBeOutlined`](../../../packages/actions/src/Concerns/CanBeOutlined.php) | [`Concerns/CanBeOutlined.php`](../../../vendor/filament/actions/src/Concerns/CanBeOutlined.php) | done | — | [diverges](#outlined-styling-is-a-state-class-not-a-color-map) |
 | [`CanClose`](../../../packages/actions/src/Concerns/CanClose.php) | [`Concerns/CanClose.php`](../../../vendor/filament/actions/src/Concerns/CanClose.php) | done | — | [diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
+| [`CanDeselectRecordsAfterCompletion`](../../../packages/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php) | [`Concerns/CanDeselectRecordsAfterCompletion.php`](../../../vendor/filament/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php) | done | — | [bulk-action.md](bulk-action.md) |
 | [`CanDispatchEvent`](../../../packages/actions/src/Concerns/CanDispatchEvent.php) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | done | — | Filament-exact port of the whole non-deprecated surface. `dispatch()` / `dispatchSelf()` / `dispatchTo()` store the event and its payload and stamp `$dispatchDirection` — `false` for a plain dispatch, `'self'`, `'to'` — with only `dispatchTo()` recording a target component; both directed setters route through `dispatch()` first, so a re-`dispatch()` after them resets the direction to `false` exactly as upstream. `eventData()` sets the payload alone, and `getEvent()` / `getEventData()` evaluate at read time, so a closure sees the action's state when it is read rather than when it was declared. Composed onto `Action` only — vendor's `ActionGroup` composes it nowhere either. All five trigger templates read the getters, as an arm of their shared click precedence that emits [payload attributes rather than a click binding](#a-dispatch-action-renders-payload-attributes-not-a-click-binding). Covered by [`CanDispatchEventTest`](../../../packages/actions/tests/Unit/Concerns/CanDispatchEventTest.php) and [`ActionDispatchRenderTest`](../../../packages/actions/tests/Integration/ActionDispatchRenderTest.php) |
 | `emit()` / `emitSelf()` / `emitTo()` (deprecated) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | skipped | — | [diverges](#the-deprecated-emit-aliases-are-not-ported) |
-| [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | — | [detail](#cannotify-sends-titles-only-the-notification-override-setters-are-missing) |
+| [`CanFetchSelectedRecords`](../../../packages/actions/src/Concerns/CanFetchSelectedRecords.php) | [`Concerns/CanFetchSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/CanFetchSelectedRecords.php) | in progress | — | [bulk-action.md](bulk-action.md) |
+| [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | — | [detail](#cannotify-sends-titles-only-the-notification-override-setters-are-missing), [bulk-action.md](bulk-action.md) |
 | [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#canopenmodals-unported-remainder), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
 | [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
 | POST-to-url support | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | skipped | — | [diverges](#post-to-url-support-is-not-ported) |
@@ -95,6 +99,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`HasName`](../../../packages/actions/src/Concerns/HasName.php) | [`Concerns/HasName.php`](../../../vendor/filament/actions/src/Concerns/HasName.php) | done | — | [diverges](#getname-tightens-its-return-type-to-non-nullable-string) |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | [diverges](#hassize-drops-the-optimized-render-fast-path-helper) |
 | [`InteractsWithRecord`](../../../packages/actions/src/Concerns/InteractsWithRecord.php) incl. `resolveRecordKey()` | [`Concerns/InteractsWithRecord.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithRecord.php) | in progress | — | [detail](#the-record-title-and-model-metadata-surface-is-not-ported), [diverges](#record-key-resolution-is-hoisted-to-hasactions) |
+| [`InteractsWithSelectedRecords`](../../../packages/actions/src/Concerns/InteractsWithSelectedRecords.php) | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | in progress | the tables selection host (same epic), the authorization epic | [bulk-action.md](bulk-action.md) |
 
 ## Details
 
@@ -110,12 +115,18 @@ in a `try`/`finally` that, on the way out, deselects table records
 and clears the visibility cache (`clearVisibilityCache()`). The port's
 [`call()`](../../../packages/actions/src/Action.php) is the bare
 `return $this->evaluate($this->getAction(), $parameters);` — no `finally`
-block at all. Both branches are unreachable today: bulk-record selection
-(`InteractsWithSelectedRecords`, `bulk()`) is not ported, and the port's
+block at all. The **flag** the first branch reads now ships —
+[`CanDeselectRecordsAfterCompletion`](../../../packages/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php),
+audited in [bulk-action.md](bulk-action.md) — but the member it would call,
+`InteractsWithTable::deselectAllTableRecords()`, is declared by the tables
+selection host landing later in this same epic, so the `finally` lands with it
+([why the split](bulk-action.md#the-record-readers-and-the-post-call-deselect-land-with-the-selection-host)).
+The second branch stays unreachable regardless: the port's
 [`CanBeHidden`](../../../packages/actions/src/Concerns/CanBeHidden.php) has no
 cache to clear ([the cache is dropped](#canbehidden-omits-authorization-group-and-table-cache-integration)).
-**Blocked** on
-those two concerns landing; add the `finally` block back in the same change.
+**Blocked** on the selection host; add the `finally` block in the same change,
+reaching the host through the **nullable** accessor so a detached action with
+the flag set does not fatal.
 
 ### `resolveDefaultClosureDependencyForEvaluationByName` covers 10 of 16 names
 
@@ -183,8 +194,9 @@ not chain the skip-toggle call either, unlike `Action`'s; both asymmetries are
 vendor-verified and kept). Still missing, each blocked on its backing concern: `model`
 (model metadata), `mountedActions` (mounted-actions introspection
 beyond today's `HasActions`), `selectedRecords`/`records` +
-`selectedRecordsQuery`/`recordsQuery` (`InteractsWithSelectedRecords` +
-`CanFetchSelectedRecords`), `schemaOperation`/`context`/`operation`
+`selectedRecordsQuery`/`recordsQuery` (the concerns ship, but the readers they
+resolve wait on the [tables selection host](bulk-action.md#the-record-readers-and-the-post-call-deselect-land-with-the-selection-host)),
+`schemaOperation`/`context`/`operation`
 (the value exists now — schemas' `Schema` has
 [`getOperation()`](../schemas/has-operation.md) — but no arm here reads it off
 the action's schema container; it waits on the record hop below),
@@ -203,9 +215,11 @@ to resolve `Builder::class` to the selected-records query,
 selected records, and `Model::class` (or the record's own class) to the current
 record — so `fn (Model $record)` or `fn (Builder $query)` resolves without naming
 the parameter. **None of those three arms are ported**, and each is blocked on a
-different prerequisite: the query and collection arms on
-tables/`InteractsWithSelectedRecords`, the record arm on the Action→schema record
-hop — until [`getRecord()`](#the-record-title-and-model-metadata-surface-is-not-ported)
+different prerequisite: the query arm on the
+[tables selection host](bulk-action.md#the-record-readers-and-the-post-call-deselect-land-with-the-selection-host)
+this same epic lands (there is no collection arm to port — a Doctrine read
+returns a plain `list`, so the `records` **name** carries it), the record arm on
+the Action→schema record hop — until [`getRecord()`](#the-record-title-and-model-metadata-surface-is-not-ported)
 walks to the schema container, a record arm would resolve `null` for every action
 bound to a record-carrying schema, so landing it first would be worse than not
 having it. A type-hinted record parameter therefore still falls through to
@@ -316,14 +330,24 @@ the only kernel that boots both bundles — with tables'
 [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php)
 proving the whole confirm→delete→toast shape.
 
-Two shape notes. The title is checked **before** the `Notification` is built,
+Three shape notes. The title is checked **before** the `Notification` is built,
 where Filament builds first and checks `filled($notification?->getTitle())`
 after; with no override setters to run in between (see below) the two are
 equivalent, and checking first means an untitled action touches the
-notifications package not at all. And `persistent()` on the failure side is
+notifications package not at all. `persistent()` on the failure side is
 Filament's (`->persistent()` on its failure notification, so an error toast
-waits to be dismissed) — the port keeps it, while Filament's partial-bulk
-`warning()` arm has no counterpart here, there being no `BulkAction`.
+waits to be dismissed). And the **partial-bulk `warning()` arm** is ported:
+an action that both accesses selected records and still has a non-zero
+successful count sends `warning()` rather than `danger()`, so "deleted 2 of 5"
+does not read as a total failure — written as an `if`/`else` where Filament
+chains `->when()`, since there is no `when()` on the port's `Notification`.
+`getFailureNotificationTitle()` evaluates its closure with the four counting
+injections that go with it — see
+[bulk-action.md](bulk-action.md#the-failure-notification-carries-four-injections-of-filaments-nine)
+for what those are and which five of Filament's nine are deferred. Both arms are
+pinned from the notifications suite's
+[`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php),
+the only kernel that boots both bundles.
 
 **Missing vs Filament:** the `successNotification()` / `failureNotification()`
 closure overrides (the `Notification|Closure|null` setters that let a user swap
@@ -335,11 +359,13 @@ Laravel's `Auth\Access\Response`) and `rateLimitedNotification()` /
 `rateLimitedNotificationTitle()` / `sendRateLimitedNotification()` (keyed off
 `DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException`) are also
 absent — there is no authorization-response or rate-limiting concern in the
-actions port yet for either to key off of. The bulk-only surface
-(`getFailureNotificationNamedInjections()`, `missingBulkAuthorizationFailureNotificationMessage()`,
-`missingBulkProcessingFailureNotificationMessage()`, and the bulk message
-formatting inside `getFailureNotificationBody()`) has no consumer either, since
-there is no `BulkAction` in the port yet. The deprecated
+actions port yet for either to key off of. Of the bulk-only surface,
+`getFailureNotificationNamedInjections()` ships in its four-injection form while
+`missingBulkAuthorizationFailureNotificationMessage()`,
+`missingBulkProcessingFailureNotificationMessage()` and the bulk message
+formatting inside `getFailureNotificationBody()` wait on the
+[keyed message buckets](bulk-action.md#the-failure-reports-count-they-do-not-carry-keyed-messages).
+The deprecated
 `successNotificationMessage()` / `failureNotificationMessage()` aliases are
 dropped outright — Filament itself deprecates them in favor of the `*Title()`
 setters this trait already carries, so nothing is lost.
@@ -349,7 +375,8 @@ override setters and `failureNotificationBody()`, evaluating the override with
 the built notification injected as `notification` the way Filament does.
 `unauthorizedNotification*` and
 `rateLimitedNotification*` wait on an authorization-response equivalent and a
-rate-limiting concern respectively; the bulk injections wait on `BulkAction`.
+rate-limiting concern respectively; the remaining five bulk injections wait on
+the keyed message buckets.
 
 ### CanOpenModal's unported remainder
 
@@ -490,7 +517,7 @@ alongside the schema-container/schema-component/live-component bindings, so
 every action an action declares — footer actions, `getModalAction()` targets —
 knows its parent. That single line is what makes the host's parent-modal
 descent addressable from the action side and what lets
-[`getContext()`](#getcontext-drops-the-record-model-gate-and-the-bulk-flag) recognize a
+[`getContext()`](#getcontext-drops-the-record-model-gate) recognize a
 child frame. The `instanceof` narrowing exists because the trait is also
 composed by non-`Action` classes; Filament passes `$this` unconditionally from
 a class that is always an `Action`.
@@ -1001,20 +1028,6 @@ same call; the `LogicException` names the actual problem, so the trade is an
 improvement. Reversible by deleting the two arms if upstream ever gives its
 own reason for the split.
 
-### `getStatus()` drops the bulk-record tally
-
-Filament's `getStatus()` falls through, when `$status` is unset, to
-`canAccessSelectedRecords()` and a `successfulSelectedRecordsCount ===
-totalSelectedRecordsCount` tally kept by `InteractsWithSelectedRecords` for
-bulk actions. The port's
-[`getStatus()`](../../../packages/actions/src/Action.php) is
-`return $this->status ?? ActionStatus::Success;` — bulk actions do not exist
-in the port (no `bulk()`, no `InteractsWithSelectedRecords`), so there is no
-tally to fall through to; every non-bulk action correctly defaults to
-`Success` until `success()`/`failure()` is called, which is what
-`ActionTest`'s "defaults the status to Success and flips to Failure on
-failure()" covers. Reversible in the same change that ports bulk actions.
-
 ### The view switch renders through Twig templates, not toHtml() fast paths
 
 Filament's five-way view switch is ported: `badge()`/`button()`/`grouped()`/
@@ -1219,7 +1232,7 @@ schemas-only-host refusal, and the unbound throw; the table hop by
 [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php),
 which lives in the tables suite because only there can a real `Table` be built.
 
-### `getContext()` drops the record model gate and the bulk flag
+### `getContext()` drops the record model gate
 
 Filament's `getContext()` assembles up to four entries: `recordKey` (via
 `resolveRecordKey()`, guarded by table-model type checks), an early return
@@ -1230,7 +1243,7 @@ them in the same order — `recordKey`, then (past the child-frame return)
 `table`, then `schemaComponent`, the key of the bound schema container falling
 back to the bound schema component.
 
-Two entries diverge. The **model gate** around `recordKey` is dropped:
+One entry diverges. The **model gate** around `recordKey` is dropped:
 Filament only emits a key when the record has no table, is not an Eloquent
 `Model`, the table declares no model, or the record's class matches it — a
 guard against a table whose rows are a different model than the action's own
@@ -1238,8 +1251,10 @@ record. Sylament's tables carry no model class at all (records are plain
 objects or arrays), so there is nothing to compare and the key is emitted
 whenever [`resolveRecordKey()`](#record-key-resolution-is-hoisted-to-hasactions)
 yields one. Restore the gate if `Table` ever grows a declared record class.
-The **`bulk` flag** waits on bulk actions: no `BulkAction` class and no
-`isBulk()` predicate exist in the port, so the entry has nothing to key off.
+The **`bulk` flag** is ported verbatim, in Filament's own position and with
+Filament's own double `hasTable()` test — a bulk action with no table emits
+neither key, which is what routes it to the record-action registry rather than
+the bulk one ([bulk-action.md](bulk-action.md)).
 
 The **child-frame short-circuit is ported** verbatim:
 `if ($this->parentAction instanceof self) { return $context; }` runs after the
@@ -1252,10 +1267,11 @@ binding it inherited from its parent. Without it, a nested frame would carry a
 try to resolve against the host's schema instead of its parent's declared modal
 actions. Covered by `ActionTest`'s context cases (empty without a binding,
 container key, component-key fallback, keyless container, an unresolvable
-record key, the emitted `recordKey`, and a bound-schema action whose
-`parentAction` suppresses the key the binding alone would emit) and by
+record key, the emitted `recordKey`, a bound-schema action whose
+`parentAction` suppresses the key the binding alone would emit, and a bulk
+action with no table emitting no `bulk` key) and by
 [`ActionsBelongsToTableTest`](../../../packages/tables/tests/Unit/ActionsBelongsToTableTest.php)
-for the two arms that need a real `Table` — the `table` flag and its
+for the arms that need a real `Table` — the `table` and `bulk` flags and their
 suppression on a nested frame.
 
 ### CanBeDisabled drops the authorization short-circuits
@@ -1549,7 +1565,7 @@ would need its own key-detection branch back.
 The opposite direction — record → key — is *not* hoisted:
 [`resolveRecordKey()`](../../../packages/actions/src/Concerns/InteractsWithRecord.php)
 lives on the trait exactly as Filament has it, and is what
-[`getContext()`](#getcontext-drops-the-record-model-gate-and-the-bulk-flag)
+[`getContext()`](#getcontext-drops-the-record-model-gate)
 emits. Its object arm is the one that had to be translated, since there is no
 `Model::getKey()` to call: it reads `id` through schemas'
 [`PropertyAccessor::getFromRecord()`](../../../packages/schemas/src/State/PropertyAccessor.php)

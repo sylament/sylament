@@ -207,6 +207,17 @@ it('keeps only recordKey on a nested frame', function (): void {
     expect($action->getContext())->toBe(['recordKey' => '7']);
 });
 
+it('carries no bulk flag by default and takes one from bulk()', function (): void {
+    expect(Action::make('delete')->isBulk())->toBeFalse()
+        ->and(Action::make('delete')->bulk()->isBulk())->toBeTrue()
+        ->and(Action::make('delete')->bulk(false)->isBulk())->toBeFalse()
+        ->and(Action::make('delete')->bulk(fn (): bool => true)->isBulk())->toBeTrue();
+});
+
+it('emits no bulk context key for a bulk action with no table', function (): void {
+    expect(Action::make('delete')->bulk()->getContext())->toBe([]);
+});
+
 it('clones an action independently of the original', function (): void {
     $action = Action::make('edit');
     $clone = $action->getClone()->record(['__key' => '1']);

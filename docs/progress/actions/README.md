@@ -17,16 +17,17 @@ source) to a real [status](../README.md#statuses) — **done**, **in progress**,
 gap, or real sub-structure earns one. A plain-text name is not built yet and
 stays **todo**.
 
-The 23 concerns Filament composes onto the `Action` base —
+The 26 concerns Filament composes onto the `Action` base —
 `BelongsToLiveComponent`, `CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`,
-`CanCallParentAction`, `CanClose`, `CanDispatchEvent`, `CanNotify`,
+`CanCallParentAction`, `CanClose`, `CanDeselectRecordsAfterCompletion`,
+`CanDispatchEvent`, `CanFetchSelectedRecords`, `CanNotify`,
 `CanOpenModal`, `CanOpenUrl`, `CanRedirect`, `CanRequireConfirmation`,
 `CanUseDatabaseTransactions`,
 `HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`,
 `HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasParentActions`,
-`HasSize`, and
-`InteractsWithRecord` — have folded into [`action.md`](action.md) and left the
-Features table, per
+`HasSize`,
+`InteractsWithRecord` and `InteractsWithSelectedRecords` — have folded into
+[`action.md`](action.md) and left the Features table, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing). Most are
 single-consumer in the port; the four `ActionGroup` also composes —
 `CanBeOutlined`, `HasGroupedIcon`, `HasLabel`, `HasSize` — stay written up once
@@ -59,8 +60,8 @@ service provider live in [Supporting surface](#supporting-surface).)
 | [`ActionGroup`](../../../packages/actions/src/ActionGroup.php) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | in progress | [action-group.md](action-group.md) |
 | AssociateAction | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | todo | - |
 | AttachAction | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | todo | - |
-| BulkAction | [`BulkAction.php`](../../../vendor/filament/actions/src/BulkAction.php) | todo | - |
-| BulkActionGroup | [`BulkActionGroup.php`](../../../vendor/filament/actions/src/BulkActionGroup.php) | todo | - |
+| [`BulkAction`](../../../packages/actions/src/BulkAction.php) | [`BulkAction.php`](../../../vendor/filament/actions/src/BulkAction.php) | in progress | [bulk-action.md](bulk-action.md) |
+| [`BulkActionGroup`](../../../packages/actions/src/BulkActionGroup.php) | [`BulkActionGroup.php`](../../../vendor/filament/actions/src/BulkActionGroup.php) | in progress | [action-group.md](action-group.md) |
 | ButtonAction | [`ButtonAction.php`](../../../vendor/filament/actions/src/ButtonAction.php) | todo | - |
 | [`CreateAction`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | in progress | [create-action.md](create-action.md) |
 | [`DeleteAction`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | in progress | [delete-action.md](delete-action.md) |
@@ -113,9 +114,7 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 | CanBeRateLimited | [`Concerns/CanBeRateLimited.php`](../../../vendor/filament/actions/src/Concerns/CanBeRateLimited.php) | todo | - |
 | CanBeSorted | [`Concerns/CanBeSorted.php`](../../../vendor/filament/actions/src/Concerns/CanBeSorted.php) | todo | - |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | Filament-exact, whole trait: `using()` stores one closure and `process(?Closure $default, array $parameters = [])` evaluates `$this->using ?? $default` — the single override point for a prebuilt action's persistence step, replacing the default **wholesale** rather than wrapping it. Composed by all three prebuilt actions ([create](create-action.md), [edit](edit-action.md), [delete](delete-action.md)) and by nothing else, so it stays a row rather than a file; `process()` returning `null` when neither closure is given is Filament's own shape, not a guard the port added. Covered by [`CanCustomizeProcessTest`](../../../packages/actions/tests/Unit/Concerns/CanCustomizeProcessTest.php) |
-| CanDeselectRecordsAfterCompletion | [`Concerns/CanDeselectRecordsAfterCompletion.php`](../../../vendor/filament/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php) | todo | - |
 | CanExportRecords | [`Concerns/CanExportRecords.php`](../../../vendor/filament/actions/src/Concerns/CanExportRecords.php) | todo | - |
-| CanFetchSelectedRecords | [`Concerns/CanFetchSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/CanFetchSelectedRecords.php) | todo | - |
 | [`CanSubmitForm`](../../../packages/actions/src/Concerns/CanSubmitForm.php) | [`Concerns/CanSubmitForm.php`](../../../vendor/filament/actions/src/Concerns/CanSubmitForm.php) | done | Full shape ported for API parity (`submit()`, `canSubmitForm()`, `getFormToSubmit()`, `formId()`, `getFormId()`). `canSubmitForm()` is the live consumer: the five trigger templates render `type="submit"` and suppress their live click binding from it, and [`CanOpenModal::getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php) branches on it. `getFormToSubmit()` / `getFormId()` have **no** consumer yet — in Filament they feed a `wire:target` loading scope and a `form=` attribute for a button rendered outside its form, neither of which exists here; ported anyway so a migrating `submit()` / `formId()` call does not fatal. Filament's `hasCanSubmitForm()` / `hasFormId()` are not ported — trivial duplicates with no caller in Filament's own tree |
 | [`HasActions`](../../../packages/actions/src/Concerns/HasActions.php) | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) | in progress | [has-actions.md](has-actions.md) |
 | [`HasData`](../../../packages/actions/src/Concerns/HasData.php) | [`Concerns/HasData.php`](../../../vendor/filament/actions/src/Concerns/HasData.php) | done | `data()` **replaces** wholesale rather than merging (unlike `HasArguments::mergeArguments()`), optionally through `mutateDataUsing()`; `resetData()` empties without mutating. `data()` adds a `TypeError` guard Filament has no need for — `mutateDataUsing` is a bare `?Closure` (no arity spec, per [the closure-typing convention](../../../CLAUDE.md)), so PHPStan cannot know the callback returned an array, and the explicit `is_array()` check supplies that guarantee instead of an unchecked assignment trusting a misbehaving callback; same shape as the guards in [`Schemas\Concerns\CanModifyActions`](../../../packages/schemas/src/Concerns/CanModifyActions.php). `getRawData()` reads the host's per-frame bag through [`InteractsWithActions::getMountedActionData()`](interacts-with-actions.md) instead of Filament's direct property read, and there is deliberately **no** `getMountedActionsData()` — [why](has-actions.md#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor). The deprecated `*FormData*` aliases (`formData()`, `getRawFormData()`) are not ported |
@@ -128,7 +127,6 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 | HasTableIcon | [`Concerns/HasTableIcon.php`](../../../vendor/filament/actions/src/Concerns/HasTableIcon.php) | todo | - |
 | HasTooltip | [`Concerns/HasTooltip.php`](../../../vendor/filament/actions/src/Concerns/HasTooltip.php) | todo | - |
 | [`HasWizard`](../../../packages/actions/src/Concerns/HasWizard.php) | [`Concerns/HasWizard.php`](../../../vendor/filament/actions/src/Concerns/HasWizard.php) | done | Filament-exact member for member, declaration order aside (`steps()` / `startOnStep()` / `skippableSteps()` / `modifyWizardUsing()` / `isWizard()` / `isWizardSkippable()` / `getWizardStartStep()`), with `$modifyWizardUsing` typed one member wider than its setter for the same level-max reason `Wizard::nextAction()` is. What it configures is the schema-side branch — [has-schema.md](has-schema.md#the-wizard-arm) |
-| InteractsWithSelectedRecords | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | todo | - |
 
 ## Supporting surface
 

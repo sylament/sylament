@@ -36,7 +36,20 @@ trait CanNotify
 
     public function getFailureNotificationTitle(): ?string
     {
-        return $this->evaluate($this->failureNotificationTitle);
+        return $this->evaluate($this->failureNotificationTitle, $this->getFailureNotificationNamedInjections());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    protected function getFailureNotificationNamedInjections(): array
+    {
+        return [
+            'failureCount' => $this->totalSelectedRecordsCount - $this->successfulSelectedRecordsCount,
+            'isAll' => $this->successfulSelectedRecordsCount === 0,
+            'successCount' => $this->successfulSelectedRecordsCount,
+            'totalCount' => $this->totalSelectedRecordsCount,
+        ];
     }
 
     public function sendSuccessNotification(): static
@@ -63,8 +76,15 @@ trait CanNotify
             return $this;
         }
 
-        Notification::make()
-            ->danger()
+        $notification = Notification::make();
+
+        if ($this->canAccessSelectedRecords() && $this->successfulSelectedRecordsCount > 0) {
+            $notification->warning();
+        } else {
+            $notification->danger();
+        }
+
+        $notification
             ->title($title)
             ->persistent()
             ->send();

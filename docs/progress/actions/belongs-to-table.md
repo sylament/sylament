@@ -9,7 +9,7 @@ branch on.
 Both [`Action`](action.md) and [`ActionGroup`](action-group.md) compose it, and
 three consumers read it today: the live-component chain's
 [table hop](action.md#the-live-component-chain-narrows-inline-instead-of-through-a-second-getter),
-[`getContext()`](action.md#getcontext-drops-the-record-model-gate-and-the-bulk-flag)'s
+[`getContext()`](action.md#getcontext-drops-the-record-model-gate)'s
 `table => true` entry, and the group fallback inside `getTable()` itself. It
 earns a file of its own only because of the divergence below, which constrains
 the trait rather than either consumer.

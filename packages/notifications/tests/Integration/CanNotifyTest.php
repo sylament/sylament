@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Notifications\Tests\Integration;
 
 use Sylament\Actions\Action;
+use Sylament\Actions\BulkAction;
 use Sylament\Notifications\Delivery\SessionNotifications;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -85,4 +86,39 @@ it('stays chainable', function (): void {
 
     expect($action->sendSuccessNotification())->toBe($action)
         ->and($action->sendFailureNotification())->toBe($action);
+});
+
+it('downgrades a partial bulk failure to a warning toast', function (): void {
+    $notifications = flashSession();
+
+    $action = BulkAction::make('delete')
+        ->failureNotificationTitle(fn (int $successCount): string => "Deleted {$successCount}");
+    $action->reportBulkProcessingSuccessfulRecordsCount(2);
+    $action->sendFailureNotification();
+
+    $pulled = $notifications->pull();
+
+    expect($pulled[0]['title'])->toBe('Deleted 2')
+        ->and($pulled[0]['status'])->toBe('warning')
+        ->and($pulled[0]['duration'])->toBe('persistent');
+});
+
+it('keeps a total bulk failure a danger toast', function (): void {
+    $notifications = flashSession();
+
+    $action = BulkAction::make('delete')->failureNotificationTitle('Failed to delete');
+    $action->reportCompleteBulkProcessingFailure();
+    $action->sendFailureNotification();
+
+    expect($notifications->pull()[0]['status'])->toBe('danger');
+});
+
+it('keeps a non-bulk failure a danger toast even with a moved successful count', function (): void {
+    $notifications = flashSession();
+
+    $action = Action::make('delete')->failureNotificationTitle('Could not delete');
+    $action->reportBulkProcessingSuccessfulRecordsCount(2);
+    $action->sendFailureNotification();
+
+    expect($notifications->pull()[0]['status'])->toBe('danger');
 });

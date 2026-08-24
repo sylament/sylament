@@ -106,8 +106,8 @@ not here.
 ## Supporting surface
 
 Everything with no user-facing UI class of its own: enums, contracts, colors, icons,
-assets, facades, the view layer, exceptions, events, CLI commands, Eloquent query
-services, root value classes, translations, and the bundle wiring —
+assets, storage, facades, the view layer, exceptions, events, CLI commands, Eloquent
+query services, root value classes, translations, and the bundle wiring —
 [`src/Enums`](../../../vendor/filament/support/src/Enums),
 [`src/Contracts`](../../../vendor/filament/support/src/Contracts),
 [`src/Colors`](../../../vendor/filament/support/src/Colors),
@@ -169,6 +169,7 @@ name.
 | [`ColorManager`](../../../packages/support/src/Colors/ColorManager.php) | [`Colors/ColorManager.php`](../../../vendor/filament/support/src/Colors/ColorManager.php) | in progress | [color-manager.md](color-manager.md) |
 | Heroicon | [`Icons/Heroicon.php`](../../../vendor/filament/support/src/Icons/Heroicon.php) | todo | — |
 | [`IconManager`](../../../packages/support/src/Icons/IconManager.php) | [`Icons/IconManager.php`](../../../vendor/filament/support/src/Icons/IconManager.php) | done | [icon-manager.md](icon-manager.md) |
+| [`FilesystemRegistry`](../../../packages/support/src/Filesystem/FilesystemRegistry.php) | — (Sylament-only; Filament reaches storage through Laravel's `Storage` facade) | done | [filesystem-registry.md](filesystem-registry.md) |
 | Asset | [`Assets/Asset.php`](../../../vendor/filament/support/src/Assets/Asset.php) | todo | — |
 | AlpineComponent | [`Assets/AlpineComponent.php`](../../../vendor/filament/support/src/Assets/AlpineComponent.php) | todo | — |
 | Css | [`Assets/Css.php`](../../../vendor/filament/support/src/Assets/Css.php) | todo | — |

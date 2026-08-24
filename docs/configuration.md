@@ -1,20 +1,30 @@
 # Configuration
 
 Sylament has a deliberately small configuration surface. One extension,
-`sylament`, with two keys — everything else is done in PHP or in your own CSS.
+`sylament`, with four keys — everything else is done in PHP or in your own CSS.
 
 ```yaml
 # config/packages/sylament.yaml
 sylament:
     colors: []
     icons: []
+    default_filesystem_disk: ~
+    temporary_file_url_expiry_minutes: 30
 ```
 
 `config:dump-reference sylament` prints this at any time.
 
-Higher packages would use their own `sylament_<package>` alias if they needed
-settings — a bundle cannot extend another bundle's config tree — but none do
-today.
+| Key | Means |
+| --- | --- |
+| `colors` | Palettes keyed by name — see [Colours](#colours). |
+| `icons` | Icon overrides keyed by alias — see [Icons](#icons). |
+| `default_filesystem_disk` | The flysystem storage uploads write to when a component names none — see [Storage](#storage). Unset by default, and there is no fallback. |
+| `temporary_file_url_expiry_minutes` | How long a temporary URL minted for a private file stays valid. Defaults to 30; must be at least 1. |
+
+Higher packages use their own `sylament_<package>` alias where they need settings
+of their own — a bundle cannot extend another bundle's config tree. `sylament_forms`
+is the first, carrying the temporary-upload settings `FileUpload` reads
+([forms-bundle.md](progress/forms/forms-bundle.md)).
 
 ## Colours
 
@@ -244,6 +254,78 @@ Everywhere else you pass an icon name directly, and no configuration is involved
 ```php
 Action::make('edit')->icon('heroicons:pencil-square');
 ```
+
+## Storage
+
+Anything that handles a file — `FileUpload` today — writes through a **flysystem
+storage**, named. Sylament ships no adapters and no storage configuration of its
+own: it resolves a name to a `League\Flysystem\FilesystemOperator` your
+application registered, and `sylament.default_filesystem_disk` says which name to
+use when a component does not pick one.
+
+The usual route is [`league/flysystem-bundle`](https://github.com/thephpleague/flysystem-bundle):
+
+```yaml
+# config/packages/flysystem.yaml
+flysystem:
+    storages:
+        public.storage:
+            local:
+                directory: '%kernel.project_dir%/public/uploads'
+            visibility: public
+            directory_visibility: public
+            public_url: '/uploads'
+
+        private.storage:
+            local:
+                directory: '%kernel.project_dir%/var/storage'
+```
+
+```yaml
+# config/packages/sylament.yaml
+sylament:
+    default_filesystem_disk: public.storage
+```
+
+Any component can then override it per instance, using the same name:
+
+```php
+FileUpload::make('contract')->disk('private.storage')->visibility('private');
+```
+
+The setter is called `disk()` because Filament's is — the value it takes is a
+flysystem storage name, not a Laravel disk key.
+
+**There is no fallback storage.** A component that names none, with
+`default_filesystem_disk` unset, throws on first use and names the key; an
+unknown name throws listing every storage that *is* registered. Both are
+deliberate — a toolkit that guessed would relocate your uploads the day you
+registered a second storage.
+
+You do not need the bundle. Any service implementing `FilesystemOperator` joins
+the registry by carrying the tag, with the name components will ask for:
+
+```yaml
+services:
+    app.uploads_storage:
+        class: League\Flysystem\Filesystem
+        arguments: ['@app.uploads_adapter']
+        tags:
+            - { name: 'flysystem.storage', storage: 'public.storage' }
+```
+
+### Private files and temporary URLs
+
+A file stored with `visibility('private')` has no public URL, so previews and
+download links are minted as **temporary URLs** — signed links that expire.
+`sylament.temporary_file_url_expiry_minutes` (default 30, minimum 1) sets how
+long one stays valid.
+
+This only works where the adapter supports it. `local` does not: it can neither
+sign a URL nor serve one, so a private file on a local storage renders without a
+preview and without download or open links. That is a real gap, not a
+misconfiguration — private previews need an adapter that generates temporary
+URLs (S3 and friends), or a route of your own.
 
 ## Theming without configuration
 

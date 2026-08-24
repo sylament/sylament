@@ -14,6 +14,7 @@ use Sylament\Support\DependencyInjection\ComponentResolver;
 use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
 use Sylament\Support\Evaluation\Invoker;
+use Sylament\Support\Filesystem\FilesystemRegistry;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\Twig\Extension\AttributeExtension;
 use Sylament\Support\Twig\Extension\ColorExtension;
@@ -29,6 +30,7 @@ use Symfony\UX\Icons\IconRendererInterface;
 
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_iterator;
+use function Symfony\Component\DependencyInjection\Loader\Configurator\tagged_locator;
 
 class SylamentSupportBundle extends SylamentBundle
 {
@@ -66,15 +68,30 @@ class SylamentSupportBundle extends SylamentBundle
                     ->normalizeKeys(false)
                     ->scalarPrototype()->end()
                 ->end()
+                ->scalarNode('default_filesystem_disk')
+                    ->info('The flysystem storage name file uploads and image columns use when a component names none, e.g. "public.storage".')
+                    ->defaultNull()
+                ->end()
+                ->integerNode('temporary_file_url_expiry_minutes')
+                    ->info('How long a temporary URL minted for a private file stays valid.')
+                    ->defaultValue(30)
+                    ->min(1)
+                ->end()
             ->end();
     }
 
     /**
-     * @param array{colors?: array<string, array<int, string>|string>, icons?: array<string, string>} $config
+     * @param array{colors?: array<string, array<int, string>|string>, icons?: array<string, string>, default_filesystem_disk: string|null, temporary_file_url_expiry_minutes: int} $config
      */
     public function loadExtension(array $config, ContainerConfigurator $configurator, ContainerBuilder $container): void
     {
-        $this->configureServices($configurator, $config['colors'] ?? [], $config['icons'] ?? []);
+        $this->configureServices(
+            $configurator,
+            $config['colors'] ?? [],
+            $config['icons'] ?? [],
+            $config['default_filesystem_disk'],
+            $config['temporary_file_url_expiry_minutes'],
+        );
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void
@@ -101,8 +118,13 @@ class SylamentSupportBundle extends SylamentBundle
      * @param array<string, array<int, string>|string> $colors
      * @param array<string, string> $icons
      */
-    private function configureServices(ContainerConfigurator $configurator, array $colors, array $icons): void
-    {
+    private function configureServices(
+        ContainerConfigurator $configurator,
+        array $colors,
+        array $icons,
+        ?string $defaultFilesystemDisk,
+        int $temporaryFileUrlExpiryMinutes,
+    ): void {
         $services = $configurator->services();
 
         $services
@@ -191,6 +213,15 @@ class SylamentSupportBundle extends SylamentBundle
             ])
             ->call('register', [$icons])
             ->alias(IconManager::class, 'sylament_support.icon_manager');
+
+        $services
+            ->set('sylament_support.filesystem_registry', FilesystemRegistry::class)
+            ->args([
+                '$storages' => tagged_locator('flysystem.storage', 'storage'),
+                '$defaultDiskName' => $defaultFilesystemDisk,
+                '$temporaryUrlExpiryMinutes' => $temporaryFileUrlExpiryMinutes,
+            ])
+            ->alias(FilesystemRegistry::class, 'sylament_support.filesystem_registry');
 
         $services
             ->set('sylament_support.component_resolver', ComponentResolver::class)

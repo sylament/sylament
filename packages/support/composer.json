@@ -21,6 +21,10 @@
         "symfony/ux-twig-component": "^3.1",
         "twig/twig": "^3.27"
     },
+    "suggest": {
+        "league/flysystem": "The storage contract FilesystemRegistry hands out; sylament/forms requires it for file uploads.",
+        "league/flysystem-bundle": "Wires named storages under flysystem.storages; FilesystemRegistry resolves them by that name."
+    },
     "autoload": {
         "files": [
             "src/helpers.php"

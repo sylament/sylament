@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Support\Tests\Integration;
 
+use League\Flysystem\FilesystemOperator;
+use LogicException;
 use Sylament\Support\Colors\Color;
 use Sylament\Support\Colors\ColorManager;
 use Sylament\Support\Colors\Components\BadgeComponent;
@@ -11,6 +13,7 @@ use Sylament\Support\Colors\Components\InputComponent\WrapperComponent\IconCompo
 use Sylament\Support\Configuration\ComponentManager;
 use Sylament\Support\DependencyInjection\Contracts\StaticInstance;
 use Sylament\Support\DependencyInjection\StaticInstanceRegistry;
+use Sylament\Support\Filesystem\FilesystemRegistry;
 use Sylament\Support\Icons\IconManager;
 use Sylament\Support\SylamentSupportBundle;
 use Sylament\Support\Tests\Fixtures\DependencyInjection\StaticInstanceFixture;
@@ -116,6 +119,34 @@ it('keeps a dashed alias key that config normalization would otherwise rewrite',
     expect($manager)->toBeInstanceOf(IconManager::class)
         ->and($manager->resolve('modal.close_button'))->toBeNull()
         ->and($manager->resolve('section.collapse_button'))->toBeNull();
+});
+
+it('collects the flysystem storages by name through the storage tag', function (): void {
+    $registry = $this::getContainer()->get(FilesystemRegistry::class);
+
+    expect($registry)->toBeInstanceOf(FilesystemRegistry::class)
+        ->and($registry->getNames())->toBe(['fixture.storage', 'second.storage'])
+        ->and($registry->get('fixture.storage'))->toBeInstanceOf(FilesystemOperator::class);
+});
+
+it('leaves both filesystem nodes at their defaults when nothing configures them', function (): void {
+    $registry = $this::getContainer()->get(FilesystemRegistry::class);
+
+    expect($registry)->toBeInstanceOf(FilesystemRegistry::class)
+        ->and($registry->getTemporaryUrlExpiryMinutes())->toBe(30)
+        ->and(fn (): string => $registry->getDefaultDiskName())
+        ->toThrow(LogicException::class, 'sylament.default_filesystem_disk');
+});
+
+it('resolves the configured default disk and expiry from the sylament config tree', function (): void {
+    $this::bootKernel(['environment' => 'filesystem']);
+
+    $registry = $this::getContainer()->get(FilesystemRegistry::class);
+
+    expect($registry)->toBeInstanceOf(FilesystemRegistry::class)
+        ->and($registry->getDefaultDiskName())->toBe('fixture.storage')
+        ->and($registry->get())->toBe($registry->get('fixture.storage'))
+        ->and($registry->getTemporaryUrlExpiryMinutes())->toBe(5);
 });
 
 it('claims the sylament extension alias rather than the name-derived one', function (): void {

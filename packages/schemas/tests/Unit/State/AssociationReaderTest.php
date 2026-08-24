@@ -119,6 +119,32 @@ it('refuses a composite identifier', function (): void {
         ->toThrow(LogicException::class, 'composite identifier');
 });
 
+it('finds a record key', function (): void {
+    $entityManager = EntityManagerFactory::create();
+    $author = new Author();
+    $author->setName('Ada');
+    EntityManagerFactory::seed($entityManager, $author);
+
+    $reader = new AssociationReader($entityManager);
+    $reloaded = $entityManager->find(Author::class, $author->getId());
+    assert($reloaded instanceof Author);
+
+    expect($reader->findRecordKey($reloaded))->toBe((string) $author->getId());
+});
+
+it('finds no record key for a record with no identifier set', function (): void {
+    $reader = new AssociationReader(EntityManagerFactory::create());
+
+    expect($reader->findRecordKey(new Author()))->toBeNull();
+});
+
+it('refuses a composite identifier when finding a record key', function (): void {
+    $reader = new AssociationReader(EntityManagerFactory::create());
+
+    expect(fn (): ?string => $reader->findRecordKey(new CompositePair(1, 2, 'pair')))
+        ->toThrow(LogicException::class, 'composite identifier');
+});
+
 it('references an entity by identifier', function (): void {
     $entityManager = EntityManagerFactory::create();
     $author = new Author();

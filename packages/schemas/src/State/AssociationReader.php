@@ -75,6 +75,16 @@ class AssociationReader
      */
     public function getRecordKey(object $entity): string
     {
+        return $this->findRecordKey($entity) ?? throw new LogicException(sprintf('Object records must expose a readable non-blank identifier; [%s] has none set.', $entity::class));
+    }
+
+    /**
+     * The same key {@see getRecordKey()} answers, or null when the entity carries
+     * no identifier yet — an unflushed record, which a caller that only wants to
+     * exclude an existing row has nothing to exclude for.
+     */
+    public function findRecordKey(object $entity): ?string
+    {
         $metadata = $this->requireEntityManager()->getClassMetadata($entity::class);
 
         if ($metadata->isIdentifierComposite) {
@@ -84,7 +94,7 @@ class AssociationReader
         $identifierValues = $metadata->getIdentifierValues($entity);
 
         if ($identifierValues === []) {
-            throw new LogicException(sprintf('Object records must expose a readable non-blank identifier; [%s] has none set.', $entity::class));
+            return null;
         }
 
         $key = array_first($identifierValues);

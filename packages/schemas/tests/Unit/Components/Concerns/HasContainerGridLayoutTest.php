@@ -20,6 +20,12 @@ it('defaults to one column with every breakpoint unset', function (): void {
     ]);
 });
 
+it('answers a single breakpoint against the defaults when grid was never called', function (): void {
+    expect(gridLayoutComponent()->getGridColumns('default'))->toBe(1)
+        ->and(gridLayoutComponent()->getGridColumns('lg'))->toBeNull()
+        ->and(gridLayoutComponent()->getGridColumns('nope'))->toBeNull();
+});
+
 it('treats a bare integer as the lg breakpoint', function (): void {
     expect(gridLayoutComponent()->grid(2)->getGridColumns())->toBe(['lg' => 2])
         ->and(gridLayoutComponent()->grid(3)->getGridColumns('lg'))->toBe(3)

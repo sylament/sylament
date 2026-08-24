@@ -45,20 +45,16 @@ trait HasContainerGridLayout
      */
     public function getGridColumns(?string $breakpoint = null): array|int|null
     {
-        if ($this->gridColumns === null) {
-            return [
-                'default' => 1,
-                'sm' => null,
-                'md' => null,
-                'lg' => null,
-                'xl' => null,
-                '2xl' => null,
-            ];
-        }
+        $columns = $this->gridColumns === null ? [
+            'default' => 1,
+            'sm' => null,
+            'md' => null,
+            'lg' => null,
+            'xl' => null,
+            '2xl' => null,
+        ] : [];
 
-        $columns = [];
-
-        foreach ($this->gridColumns as $gridColumnBreakpoint => $gridColumn) {
+        foreach ($this->gridColumns ?? [] as $gridColumnBreakpoint => $gridColumn) {
             $gridColumn = $this->evaluate($gridColumn);
 
             if (is_array($gridColumn)) {

@@ -130,7 +130,10 @@ Consumers never need Tailwind installed.
    page-wide font change reaches Sylament markup — and `body` is dropped. Two
    consequences: Filament component CSS can be ported essentially verbatim, and host
    content nested *inside* a Sylament container also gets preflight semantics
-   (unlayered host CSS still always wins).
+   (unlayered host CSS still always wins). The selector rewriter itself lives in
+   `assets/scripts/scope-css.mjs`, and the same machinery serves redistributed vendor
+   stylesheets (rule 11) — preflight's two adaptations are options it is called with,
+   not a second copy of the walker.
 8. **Everything ships inside cascade layers** (`theme`, `base`, `components`,
    `utilities` — the last carrying the `.sy-color-<palette>` swap classes), so any
    unlayered consumer CSS overrides Sylament without `!important`.
@@ -161,20 +164,34 @@ Consumers never need Tailwind installed.
     supplied through the library's own class settings, or — where the library
     hardcodes the class onto an element we render — qualified by that element's
     own `sy-` class. Never a bare vendor class at the top level, and never
-    re-emitted from Twig.** Rule 1 governs templates, and these classes are
+    re-emitted from Twig. And a redistributed vendor base stylesheet is rewritten
+    under the component's class by the build, never imported bare.** Rule 1 governs
+    templates, and these classes are
     JS-generated, so the question rule 1 does not answer is what a *stylesheet*
     may select. The stylesheet is page-wide and unscoped by nesting, so a
     top-level `.sortable-ghost` would silently style a host app's own widget of the
-    same name. The shipped case is support's drag-and-drop control: the
-    `sortable` controller hands SortableJS `ghostClass: 'sy-sortable-ghost'`, and
-    `components/sortable.css` selects that name alone — the first branch above, a
-    wrapper class supplied to the library rather than a vendor class selected
+    same name. The first branch's shipped case is support's drag-and-drop control
+    (M3 · 6): the `sortable` controller hands SortableJS `ghostClass:
+    'sy-sortable-ghost'`, and `components/sortable.css` selects that name alone —
+    a wrapper class supplied to the library rather than a vendor class selected
     bare, exactly as Filament does it (`support/resources/js/sortable.js` +
-    `resources/css/sortable.css`). Forms' select engine — a port of Filament's
-    own — is the other side of the rule: it builds its DOM itself, emits only
-    `sy-` classes, and leaves SortableJS's `sortable-ghost` / `sortable-chosen` /
-    `sortable-drag` unstyled, exactly as Filament's select does. The Tom Select
-    skin that used to ground this rule left with the engine swap
+    `resources/css/sortable.css`). The second branch's is forms' **FilePond**
+    skin (M3 · 7): the library hardcodes its `filepond--*` classes onto the DOM
+    it builds inside the `.sy-fo-file-upload` wrapper we render, so
+    [`file-upload.css`](../packages/forms/assets/src/styles/components/file-upload.css)
+    nests every override under that class. FilePond's **base** stylesheet is the
+    third: it selects those classes bare at top level and declares three global
+    `@keyframes` (`spin` collides with support's own), so support's
+    `assets/scripts/scope-vendor-css.mjs` regenerates it as the gitignored
+    `packages/forms/assets/src/styles/filepond.generated.css` — every rule
+    rewritten to the descendant variant, every keyframe renamed
+    `sy-fo-file-upload-*` with its `animation` references, and an MIT notice
+    composed from the installed packages heading the file. Forms' select engine —
+    a port of Filament's own — is the other side of the rule: it builds its DOM
+    itself, emits only `sy-` classes, and leaves SortableJS's `sortable-ghost` /
+    `sortable-chosen` / `sortable-drag` unstyled, exactly as Filament's select
+    does. The Tom Select skin that used to ground this rule left with the engine
+    swap
     ([forms styles.md](progress/forms/styles.md#the-js-select-skin-is-filaments-on-the-ported-controls-container)).
 
 ## How consumers customize

@@ -7,7 +7,9 @@ namespace Sylament\Forms\Tests\Unit\Validation;
 use SplFileInfo;
 use stdClass;
 use Sylament\Forms\Validation\MinFileSize;
+use Sylament\Forms\Validation\MinFileSizeValidator;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\Validator\Exception\UnexpectedValueException;
 use Symfony\Component\Validator\Validation;
 
 /**
@@ -88,8 +90,13 @@ it('flags a file that is not there rather than passing it', function (): void {
 });
 
 it('rejects a value type no file can be read from', function (): void {
-    // The validator throws `UnexpectedValueException`, which the recursive validator turns into
-    // a type violation rather than letting it escape — so the message is what a caller observes.
+    // The guard runs before `$this->context` is touched, so the validator can be called directly;
+    // the recursive validator then turns that throw into a type violation rather than letting it
+    // escape, which is what a caller actually observes.
+    expect(function (): void {
+        new MinFileSizeValidator()->validate(new stdClass(), new MinFileSize(kilobytes: 1));
+    })->toThrow(UnexpectedValueException::class);
+
     $violations = Validation::createValidator()->validate(new stdClass(), new MinFileSize(kilobytes: 1));
 
     expect($violations)->toHaveCount(1)

@@ -235,8 +235,8 @@ copy's own `BUNDLED_ENTRIES` table** — empty here, where support's bundles
 sortable one, and forms' bundles both of them into the select one, its `license`
 a list and its `inlines` naming the engine module — so every entry ships
 per-file and unbundled with its import specifiers verbatim. Keeping the copies
-in lockstep is manual, and the
-searchable-select epic is what that costs in practice: `licenseBanner()` had to
+in lockstep is manual, and the searchable-select epic is what that costs in
+practice: `licenseBanner()` had to
 change in all five at once, learning to trim each `LICENSE` line before matching
 the copyright (for Tom Select's indented notice at the time), and again for the
 select engine swap, when `licenseBanner()` learned to take a list and `inlines`

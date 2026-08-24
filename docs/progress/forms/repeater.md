@@ -390,11 +390,11 @@ rebuilding it key by key and, when `generateUuid()` answers `null`, inserts with
 following iteration overwrites with its own item. So a mid-list insert into
 positionally keyed state loses the new item and `fill()`s the neighbour that took
 its key; an insert after the last item is unaffected. The collision is shared
-with Filament's own `getAddBetweenAction()`, line for line, and it is unreachable
-in production — uuid keying is always on outside
-[`Repeater::fake()`](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid),
-the test-only null-uuid mode — so it is recorded here as a vendor-parity edge
-rather than fixed. Hardening it (rebuilding the list positionally, which every
+with Filament's own `getAddBetweenAction()`, line for line, and it sits off every
+default path — uuid keying is on unless the null-uuid mode is chosen, whether by
+[`Repeater::fake()`](#uuid-generation-is-a-mode-flag-and-generateuuidusingtrue-mints-a-real-uuid)
+or by a consumer's own `generateUuidUsing(false)` — so it is recorded here as a
+vendor-parity edge rather than fixed. Hardening it (rebuilding the list positionally, which every
 dehydrate renumbers anyway) is the sweep's to take.
 
 Neither between-item element is a sortable item — no `data-sortable-item` — so

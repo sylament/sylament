@@ -152,6 +152,9 @@ and the Stimulus controllers through `assets/controllers.json`:
             "modal":   { "enabled": true, "fetch": "eager" },
             "dropdown":{ "enabled": true, "fetch": "eager" },
             "sortable":{ "enabled": true, "fetch": "eager" }
+        },
+        "@sylament/tables": {
+            "table": { "enabled": true, "fetch": "eager" }
         }
     },
     "entrypoints": []
@@ -161,7 +164,8 @@ and the Stimulus controllers through `assets/controllers.json`:
 List a block for each Sylament package you installed. In a Flex app you do not
 write this by hand — `composer` runs the package-json synchronizer, which copies
 each package's declared `enabled`/`fetch` in for you; the block above is what it
-produces for `support`, `schemas`, `forms`, `notifications` and `actions` together.
+produces for `support`, `schemas`, `forms`, `notifications`, `actions` and
+`tables` together.
 
 Support's `core` controller carries the `autoimport` that pulls in the
 stylesheet; the other four power collapsible sections, modals, dropdown
@@ -198,6 +202,17 @@ hides it, and resets client-side state when the server asks. Leave `tabs` or
 `activeTab()` / `startOnStep()` or the query string names, which the server
 resolves — and stays there.
 
+Tables' single `table` controller is record selection. It sits on any table
+whose rows are selectable — one carrying a visible bulk action, or one you
+turned on with `selectable()` — and owns every tick: it writes the selection
+into the live component's client-side store, so ticking a hundred rows costs no
+requests at all, and it repaints the row checkboxes, the header checkbox's
+part-selected state, the "N records selected" banner and each bulk action's
+trigger after every render. Like `@sylament/actions` below, omitting it fails
+silently and fails total: the checkboxes render, nothing reacts to them, the
+banner never appears and no bulk action ever becomes available. A table with no
+bulk action and no `selectable()` renders no checkboxes and needs none of this.
+
 **`@sylament/actions` is easy to leave out and fails silently.** Its single
 `dispatch` controller binds to no element of its own — it registers one
 page-wide click listener that delivers every `dispatch()` / `dispatchSelf()` /
@@ -222,11 +237,15 @@ yourself from `vendor/sylament/support/assets/dist/`:
 The stylesheet is support's alone, but the controllers are not: serve
 `vendor/sylament/notifications/assets/dist/controllers/*.js`,
 `vendor/sylament/actions/assets/dist/controllers/*.js`,
-`vendor/sylament/forms/assets/dist/controllers/*.js` and
-`vendor/sylament/schemas/assets/dist/controllers/*.js` too if you installed those
+`vendor/sylament/forms/assets/dist/controllers/*.js`,
+`vendor/sylament/schemas/assets/dist/controllers/*.js` and
+`vendor/sylament/tables/assets/dist/controllers/*.js` too if you installed those
 packages and want toasts, action event dispatch, the checkbox-list and
 searchable-select controls, repeater item collapse and drag reorder, file
-uploads, or tabs and wizards.
+uploads, tabs and wizards, or table record selection. Where a package's `dist/`
+also holds a `utils/` directory — `forms`, `schemas` and `tables` do — serve it
+alongside its controllers and keep the relative layout: those controllers ship
+unbundled and import their helpers as `../utils/<name>.js`.
 
 Copy them into your public directory, or point your own build at them.
 </details>

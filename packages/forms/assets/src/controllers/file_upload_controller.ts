@@ -1223,9 +1223,8 @@ function errorMessage(error: unknown): string {
 }
 
 /**
- * Filament's `-vN` bump over the base name, with the port's one delta: the extension follows the
- * type of the blob the canvas produced, so a circle-cropped `photo.jpg` comes back as `photo-v1.png`
- * rather than a `.jpg` carrying PNG bytes (the temporary store keeps the client extension).
+ * Filament's unanchored `-vN` bump over the base name. The extension follows the type passed in,
+ * so a PNG blob from a `.jpg` or `.svg` source comes back `.png`. A dot-less name stays dot-less.
  */
 function versionedName(name: string, type: string): string {
   const dot = name.lastIndexOf(".");

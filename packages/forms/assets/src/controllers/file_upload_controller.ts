@@ -723,6 +723,7 @@ export default class extends Controller<HTMLElement> {
 
     if (!dialog.open) {
       dialog.showModal();
+      dialog.addEventListener("close", () => this.#closeEditor(), { once: true });
     }
 
     this.#destroyEditor();

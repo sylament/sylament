@@ -18953,6 +18953,7 @@ var file_upload_controller_default = class extends Controller {
     const dialog = this.editorTarget;
     if (!dialog.open) {
       dialog.showModal();
+      dialog.addEventListener("close", () => this.#closeEditor(), { once: true });
     }
     this.#destroyEditor();
     const options = {

@@ -613,6 +613,16 @@ force-false under `deselectAllRecordsWhenFiltered(false)`
 callback — every reader uses it to decide whether the per-record walk is worth
 running at all, so evaluating it there would cost the very thing it guards.
 
+`isRecordSelectable()` hands the callback the record twice: as the `record` named
+injection and as a typed injection keyed by `$record::class`. The typed half is
+**exact-class** matching, because support's `Invoker` compares class-strings
+rather than walking `is_a()`, so a Doctrine **proxy** would key under its proxy
+class and miss a `fn (Song $record)` hint. Nothing reaches that today — a root
+query's results are hydrated entities, never proxies — and the shape is shared
+with every other `::class`-keyed typed injection in the toolkit, so it is
+recorded here rather than worked around at this one call site: it would be fixed
+once, in the `Invoker`, if a proxy ever arrives.
+
 Not ported, each for a stated reason rather than by omission:
 
 - `maxSelectableRecords()` / `getMaxSelectableRecords()` — and with them
@@ -1626,7 +1636,14 @@ selected; "Deselect all" is visible whenever the banner is. The count is a
 controller-filled empty `<span>` seeded from two literal value strings
 (`1 record selected`, `:count records selected`) — Filament's `|`-separated
 Laravel plural string run through its own `window.pluralize` global, which the
-port does not ship; i18n takes both literals when it lands.
+port does not ship; i18n takes both literals when it lands. The controller
+formats the number it interpolates with `Intl.NumberFormat`, so it reads
+_"1,200 records selected"_, while the ceiling in the server-rendered
+_"Select all N"_ label is the bare integer. The two are deliberately not aligned:
+`Intl.NumberFormat()` groups by the **browser's** locale and Twig's
+`number_format` by the template's, so matching them would trade a visible
+inconsistency for a locale-dependent one. It resolves with i18n, on the same
+pass that takes the two count literals.
 
 The banner is server-gated on `isSelectionEnabled()` and client-gated on the
 count, as vendor's is, and it renders on an overflow (empty) page too: a

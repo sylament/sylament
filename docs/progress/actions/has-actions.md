@@ -227,7 +227,14 @@ carries ([the pair](action.md#the-rollback-flags-setter-and-getter-disagree-on-c
 `ValidationException` and the new bare `Throwable` arm roll back and rethrow —
 that arm exists **only** for the rollback and changes nothing else, since
 `Action::hasDatabaseTransactions()` is false by default and every transaction
-method is then a no-op. Rate limiting and authorization are still absent —
+method is then a no-op. That rollback is unguarded on purpose, Filament's shape
+exactly: no `hasBegun` flag is kept, so a `beginDatabaseTransaction()` that itself
+threw — an unreachable connection, a registry whose manager is not an ORM one — is
+followed by a `rollBackDatabaseTransaction()` that re-resolves the same connection
+and throws in turn, replacing the original cause. A flag would preserve the first
+exception, but it would also invent state Filament does not carry, on a path that
+is already a hard infrastructure failure rather than an action-level one.
+Rate limiting and authorization are still absent —
 neither `CanBeRateLimited` nor `CanBeAuthorized` is composed onto `Action` yet —
 as is the `ExposesStateToActionData` state merge (no such interface here, so the
 merge reduces to the schema's own state). Filament's sibling

@@ -89,6 +89,7 @@ it('answers null for a file key outside [A-Za-z0-9-]{1,64}', function (string $f
     'a traversal' => '../etc',
     'an underscore' => 'a_b',
     'empty' => '',
+    'a trailing newline' => ["abc\n"],
     'too long' => ['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'],
 ]);
 

@@ -214,7 +214,7 @@ trait HasSchemas
         $result = null;
         $component = $this->getSchemaComponent($componentKey);
 
-        if ($component instanceof AcceptsUploadedFiles && preg_match('/^[A-Za-z0-9-]{1,64}$/', $fileKey) === 1) {
+        if ($component instanceof AcceptsUploadedFiles && preg_match('/^[A-Za-z0-9-]{1,64}$/D', $fileKey) === 1) {
             $file = $request->files->get('sylament_upload_' . $fileKey);
 
             if ($file instanceof UploadedFile) {

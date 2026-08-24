@@ -345,7 +345,12 @@ then fenced:
 - **The file key is shape-checked before it names anything.** `$fileKey` must
   match `^[A-Za-z0-9-]{1,64}$`, checked *before* it is concatenated into a
   multipart part name and before an implementor may use it as a state key. A
-  refused key answers `null` with no part read.
+  refused key answers `null` with no part read. The pattern carries PHP's `D`
+  modifier, and that is what makes `$` mean *end of subject*: PCRE's default `$`
+  also matches before a trailing newline, so `"abc\n"` clears the undecorated
+  pattern. The file-key dataset in
+  [`HasSchemasUploadTest`](../../../packages/schemas/tests/Integration/Concerns/HasSchemasUploadTest.php)
+  has a newline row that fails without the modifier.
 - **The result is FIFO per `(componentKey, method, fileKey)`.** The action
   answers on the seam's own event, so the browser helper's matcher is reused
   unchanged — but the payload carries `fileKey`, because several uploads to

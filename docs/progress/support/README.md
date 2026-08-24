@@ -184,8 +184,8 @@ name.
 | DefaultLoadingIndicator | [`View/DefaultLoadingIndicator.php`](../../../vendor/filament/support/src/View/DefaultLoadingIndicator.php) | todo | — |
 | [Color policies](../../../packages/support/src/Colors/Components) | [`View/Components/`](../../../vendor/filament/support/src/View/Components) — the policy objects, `ColorMaps/` and `Contracts/` | in progress | [color-policies.md](color-policies.md) |
 | HTML generators | [`View/Concerns/`](../../../vendor/filament/support/src/View/Concerns) | todo | — |
-| [`Cancel`](../../../packages/support/src/Exceptions/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | in progress | [cancel.md](cancel.md) |
-| [`Halt`](../../../packages/support/src/Exceptions/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | in progress | [halt.md](halt.md) |
+| [`Cancel`](../../../packages/support/src/Exceptions/Cancel.php) | [`Exceptions/Cancel.php`](../../../vendor/filament/support/src/Exceptions/Cancel.php) | done | [cancel.md](cancel.md) |
+| [`Halt`](../../../packages/support/src/Exceptions/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | done | [halt.md](halt.md) |
 | FilamentUpgraded | [`Events/FilamentUpgraded.php`](../../../vendor/filament/support/src/Events/FilamentUpgraded.php) | todo | — |
 | Facades | [`Facades/`](../../../vendor/filament/support/src/Facades) | todo | — |
 | Commands | [`Commands/`](../../../vendor/filament/support/src/Commands) | todo | — |

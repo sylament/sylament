@@ -2,10 +2,11 @@
 
 `Sylament\Actions\Action` — the base class every actions-package action
 extends. It composes `Sylament\Support\Components\ViewComponent` (Twig-backed
-rendering) and folds in 20 actions-package concerns — `BelongsToLiveComponent`,
+rendering) and folds in 22 actions-package concerns — `BelongsToLiveComponent`,
 `CanBeDisabled`, `CanBeHidden`, `CanBeMarkedAsRead`, `CanBeOutlined`,
 `CanClose`, `CanDispatchEvent`,
-`CanNotify`, `CanOpenModal`, `CanOpenUrl`, `CanRequireConfirmation`,
+`CanNotify`, `CanOpenModal`, `CanOpenUrl`, `CanRedirect`,
+`CanRequireConfirmation`, `CanUseDatabaseTransactions`,
 `HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`,
 `HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasSize`,
 `InteractsWithRecord` — each a
@@ -49,7 +50,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | --- | --- | --- | --- | --- |
 | Construction & `make()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | — |
 | `call()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | blocked | bulk actions (`InteractsWithSelectedRecords`), visibility cache | [detail](#call-drops-the-post-call-cleanup) |
-| `cancel()` / `halt()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | Doctrine transaction integration | [detail](#cancel-and-halt-drop-the-rollback-flag) |
+| `cancel(bool $shouldRollBackDatabaseTransaction = false)` / `halt(bool $shouldRollBackDatabaseTransaction = false)` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [semantics](#the-rollback-flags-setter-and-getter-disagree-on-casing) |
 | `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getstatus-drops-the-bulk-record-tally) |
 | `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | `InteractsWithSelectedRecords` (table bulk actions), the Action→schema record/operation hop | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-10-of-16-names) |
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | `InteractsWithSelectedRecords` (table bulk actions), the Action→schema record hop | [detail](#resolvedefaultclosuredependencyforevaluationbytype-carries-only-the-added-getset-arms) |
@@ -80,14 +81,16 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#canopenmodals-unported-remainder), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
 | [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
 | POST-to-url support | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | skipped | — | [diverges](#post-to-url-support-is-not-ported) |
+| [`CanRedirect`](../../../packages/actions/src/Concerns/CanRedirect.php) | [`Concerns/CanRedirect.php`](../../../vendor/filament/actions/src/Concerns/CanRedirect.php) | done | — | Filament's four members verbatim (`successRedirectUrl()` / `failureRedirectUrl()` setters, `dispatchSuccessRedirect()` / `dispatchFailureRedirect()` resolving the action's own URL first and the host hooks [`getDefaultActionSuccessRedirectUrl()`/`getDefaultActionFailureRedirectUrl()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported) second), plus a fifth reader, `getPendingRedirectUrl()`, that is [Sylament-only by mechanism](has-actions.md#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag). `redirect()` loses Filament's `?bool $navigate` parameter with the SPA-mode facade behind it. The host read is the **nullable** accessor: a detached action dispatches nothing rather than throwing, and no `instanceof` re-check is written because `getLiveComponentOrNull()` already returns the contract that carries the two hooks — one would be provably always true and fail level max. Covered by [`CanRedirectTest`](../../../packages/actions/tests/Unit/Concerns/CanRedirectTest.php) and, end to end, by [`HasActionsRedirectTest`](../../../packages/actions/tests/Integration/Concerns/HasActionsRedirectTest.php) |
 | [`CanRequireConfirmation`](../../../packages/actions/src/Concerns/CanRequireConfirmation.php) | [`Concerns/CanRequireConfirmation.php`](../../../vendor/filament/actions/src/Concerns/CanRequireConfirmation.php) | done | — | [diverges](#confirmation-is-a-flag-not-a-modal-config-layer) |
+| [`CanUseDatabaseTransactions`](../../../packages/actions/src/Concerns/CanUseDatabaseTransactions.php) | [`Concerns/CanUseDatabaseTransactions.php`](../../../vendor/filament/actions/src/Concerns/CanUseDatabaseTransactions.php) | done | — | [diverges](#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade) |
 | [`HasAction`](../../../packages/actions/src/Concerns/HasAction.php) | [`Concerns/HasAction.php`](../../../vendor/filament/actions/src/Concerns/HasAction.php) | in progress | — | [detail](#hasaction-carries-the-click-gate-hasaction-is-the-one-gap-left), [diverges](#string-click-handlers-are-live-action-names-and-close-dismisses-client-side) |
 | [`HasArguments`](../../../packages/actions/src/Concerns/HasArguments.php) | [`Concerns/HasArguments.php`](../../../vendor/filament/actions/src/Concerns/HasArguments.php) | done | — | — |
 | [`HasGroupedIcon`](../../../packages/actions/src/Concerns/HasGroupedIcon.php) | [`Concerns/HasGroupedIcon.php`](../../../vendor/filament/actions/src/Concerns/HasGroupedIcon.php) | done | — | [diverges](#hasgroupedicon-narrows-its-icon-type-to-string) |
 | [`label()` / `getLabel()`](../../../packages/actions/src/Concerns/HasLabel.php) | [`label()` / `getLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | The name-derived default takes the segment **before the first dot** (`u($name)->before('.')`), which is Filament's own actions-side choice and differs from `Field`'s `afterLast('.')` — matched deliberately, not a slip to "fix" |
 | `hiddenLabel()` / `isLabelHidden()` | [`hiddenLabel()` / `isLabelHidden()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | done | — | A hidden label renders as an `aria-label` on the trigger root rather than as visible text — the [button](../../../packages/actions/templates/partials/Action/Button.html.twig) / [link](../../../packages/actions/templates/partials/Action/Link.html.twig) / [badge](../../../packages/actions/templates/partials/Action/Badge.html.twig) triggers read `isLabelHidden` for it, matching what Filament's `labelSrOnly` button prop does |
 | `translateLabel()` / `disableLabel()` (deprecated) | [`translateLabel()` / `disableLabel()`](../../../vendor/filament/actions/src/Concerns/HasLabel.php) | skipped | — | [diverges](#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported) |
-| [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | in progress | a Symfony event dispatch for `ActionCalling`/`ActionCalled` | [detail](#the-lifecycle-hooks-are-ported-actioncallingactioncalled-events-are-not) |
+| [`HasLifecycleHooks`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php) | [`Concerns/HasLifecycleHooks.php`](../../../vendor/filament/actions/src/Concerns/HasLifecycleHooks.php) | done | — | All six hooks and their runners (`before`/`after`, `beforeFormFilled`/`afterFormFilled`, `beforeFormValidated`/`afterFormValidated`), each evaluating its stored closure through `EvaluatesClosures` and a safe `null` no-op when unset — [`HasLifecycleHooksTest`](../../../packages/actions/tests/Unit/Concerns/HasLifecycleHooksTest.php) covers every pair. Where the `*FormValidated` pair fires is the host's business: [`callMountedAction()`](has-actions.md#callmountedaction-drops-rate-limiting-and-authorization) runs `callBeforeFormValidated()` before the mounted schema's `getState()` and `callAfterFormValidated()` immediately after it returns, so a failed validation — which throws out of `getState()` — never reaches the second. `callBefore()`/`callAfter()` also carry the two lifecycle events · [diverges](#the-lifecycle-events-are-dispatched-as-objects-where-filament-dispatches-a-class-string) |
 | [`HasMountableArguments`](../../../packages/actions/src/Concerns/HasMountableArguments.php) | [`Concerns/HasMountableArguments.php`](../../../vendor/filament/actions/src/Concerns/HasMountableArguments.php) | done | — | [diverges](#action-invocation-is-a-php-side-seam-only) |
 | [`HasName`](../../../packages/actions/src/Concerns/HasName.php) | [`Concerns/HasName.php`](../../../vendor/filament/actions/src/Concerns/HasName.php) | done | — | [diverges](#getname-tightens-its-return-type-to-non-nullable-string) |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | [diverges](#hassize-drops-the-optimized-render-fast-path-helper) |
@@ -113,23 +116,6 @@ block at all. Both branches are unreachable today: bulk-record selection
 cache to clear ([the cache is dropped](#canbehidden-omits-authorization-group-and-table-cache-integration)).
 **Blocked** on
 those two concerns landing; add the `finally` block back in the same change.
-
-### `cancel()` and `halt()` drop the rollback flag
-
-Filament's `cancel(bool $shouldRollBackDatabaseTransaction = false)` and
-`halt(bool $shouldRollBackDatabaseTransaction = false)` construct their
-exception and call `->rollBackDatabaseTransaction($condition)` on it before
-throwing; both
-[`Sylament\Support\Exceptions\Cancel`](../../../packages/support/src/Exceptions/Cancel.php)
-and [`Halt`](../../../packages/support/src/Exceptions/Halt.php) are plain
-`Exception` subclasses with no such flag or method. The port's
-[`cancel()`/`halt()`](../../../packages/actions/src/Action.php) take no
-parameter and just `throw new Cancel()` / `throw new Halt()`. Covered by
-`ActionTest`'s "throws Cancel from cancel() and Halt from halt()" for the
-throw itself, but the rollback-control surface has no test because it does
-not exist. **Blocked** on Doctrine transaction wiring (there is no database
-transaction to roll back yet); restore the parameter and the flag on both
-exception classes in the same change that lands it.
 
 ### `resolveDefaultClosureDependencyForEvaluationByName` covers 10 of 16 names
 
@@ -603,35 +589,6 @@ builds two bulk-toggle actions that must render as links and dispatch nothing,
 the click living on the `<span>` around each — Filament's own
 `livewireClickHandlerEnabled(false)` shape.
 
-### The lifecycle hooks are ported; ActionCalling/ActionCalled events are not
-
-**In:** all six hooks Filament declares — `before(?Closure)` /
-`after(?Closure)`, `beforeFormFilled(?Closure)` / `afterFormFilled(?Closure)`
-and `beforeFormValidated(?Closure)` / `afterFormValidated(?Closure)` — with
-their runners `callBefore()` / `callAfter()` / `callBeforeFormFilled()` /
-`callAfterFormFilled()` / `callBeforeFormValidated()` /
-`callAfterFormValidated()`, each evaluating the stored closure through
-`EvaluatesClosures`. Covered by
-[`HasLifecycleHooksTest`](../../../packages/actions/tests/Unit/Concerns/HasLifecycleHooksTest.php)
-via the
-[`HasLifecycleHooksFixture`](../../../packages/actions/tests/Fixtures/Concerns/HasLifecycleHooksFixture.php):
-each pair fires in order when set, and every `call*` method is a safe
-no-op (return `null`) when unset. `Action`
-(`../../../packages/actions/src/Action.php`) is the sole consumer. Where the
-`*FormValidated` pair fires is the host's business —
-[`HasActions::callMountedAction()`](has-actions.md#callmountedaction-drops-rate-limiting-authorization-transactions-and-redirects)
-runs `callBeforeFormValidated()` before the mounted schema's `getState()` and
-`callAfterFormValidated()` immediately after it returns, so a failed validation —
-which throws out of `getState()` — never reaches the second one.
-
-**Missing vs Filament:** Filament's `callBefore()` / `callAfter()`
-dispatch `ActionCalling` / `ActionCalled` events (`Event::dispatch(...)`, the
-latter from a `finally` block so it always fires); the port has no
-`Sylament\Actions\Events` namespace and dispatches nothing. **Next step:** the
-event dispatch has no named prerequisite yet and should be scoped (Symfony
-`EventDispatcher` port of `ActionCalling`/`ActionCalled`) when the mount/call
-pipeline is designed.
-
 ### The record title and model metadata surface is not ported
 
 **In:** `record(mixed $record): static` and `getRecord(): mixed`, the latter
@@ -792,6 +749,22 @@ expected, this is coverage-only.
 Faithful ports whose behaviour a reader would plausibly misread from the source.
 Permanent — these outlive the detail sections above.
 
+### The rollback flag's setter and getter disagree on casing
+
+[`cancel()`](../../../packages/actions/src/Action.php) and `halt()` take
+`bool $shouldRollBackDatabaseTransaction = false` and stamp it onto the
+exception they throw, so the [`callMountedAction()` catch
+arms](has-actions.md#callmountedaction-drops-rate-limiting-and-authorization)
+can commit or roll back per throw. Both defaults are `false`: a cancelled or
+halted action **commits** what ran before it unless it says otherwise. The pair
+on [`Cancel`](../../../packages/support/src/Exceptions/Cancel.php) and
+[`Halt`](../../../packages/support/src/Exceptions/Halt.php) reads wrong and is
+correct: the setter is `rollBackDatabaseTransaction()` with a capital B, the
+getter `shouldRollbackDatabaseTransaction()` with a lowercase one. That is
+Filament's own inconsistency, kept verbatim — normalising either half would be
+an API rename of a public method with no [renames.md](../renames.md) row, for a
+typo migrating users already grep for.
+
 ### The serialized key list drops `alpineClickHandler` and `shouldPostToUrl`
 
 [`toArray()`](../../../packages/actions/src/Action.php) writes 21 keys where
@@ -940,6 +913,61 @@ resolved — is
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
 These outlive the detail sections above.
+
+### The lifecycle events are dispatched as objects, where Filament dispatches a class-string
+
+[`callBefore()`](../../../packages/actions/src/Concerns/HasLifecycleHooks.php)
+dispatches `new ActionCalling($this)` before evaluating its closure, and
+`callAfter()` dispatches `new ActionCalled($this)` from a `finally`, so it fires
+even when the after-closure throws — position-for-position Filament's. What
+crosses the wire is not. Filament calls
+`Event::dispatch(ActionCalling::class, $this)`: Laravel's
+`parseEventAndPayload()` takes the object branch only when the *event* is an
+object, so a class-string event leaves the payload as `[$action]` and the event
+class is never constructed — a listener registered on `ActionCalling::class`
+receives an `Action`, and `getAction()` never runs. Symfony's
+`EventDispatcherInterface::dispatch(object $event, ?string $eventName = null)`
+requires a real object, so the port constructs one, and its listeners receive
+what Filament's own class shape implies:
+[`ActionCalling`](../../../packages/actions/src/Events/ActionCalling.php) /
+[`ActionCalled`](../../../packages/actions/src/Events/ActionCalled.php), final
+readonly, one promoted `Action`, one `getAction()`. Neither is stoppable or cancellable —
+parity, and `halt()` / `cancel()` remain the control channel. The dispatcher is
+a nullable
+`Symfony\Contracts\EventDispatcher\EventDispatcherInterface` on a `#[Required]`
+setter, the [`EvaluatesClosures` pattern](../support/component.md): an action
+built with `new` rather than through the container dispatches nothing — and the
+nullsafe call skips constructing the event at all, so nothing is built to be
+thrown away. Covered by
+[`HasActionsEventsTest`](../../../packages/actions/tests/Integration/Concerns/HasActionsEventsTest.php)
+(both events around one call, in order, carrying the same instance; the
+`finally` arm through a throwing after-closure).
+
+### The transaction trio resolves a Doctrine connection instead of a facade
+
+Filament's `CanUseDatabaseTransactions` is three imperative methods over
+Laravel's `DB` facade, each returning early unless `databaseTransaction()` was
+called — imperative rather than a `DB::transaction($callback)` wrapper because
+the pipeline decides commit-vs-rollback per exception type. The port keeps that
+shape and the `false` default exactly, and answers the "which connection?"
+question Laravel's facade answers globally:
+[`getDatabaseTransactionConnection()`](../../../packages/actions/src/Concerns/CanUseDatabaseTransactions.php)
+prefers the table's own query manager
+(`getTable()?->getQueryEntityManager()?->getConnection()` — reached through the
+same [guarded soft reference](belongs-to-table.md) the rest of the table surface
+uses, so nothing is required of a tables-less consumer) and falls back to the
+default manager of a `#[Required] ?ManagerRegistry`. That registry is the one
+[`DeleteAction`](delete-action.md) used to declare for itself and now inherits
+from here — one setter, one service, no duplicate. Both fallback failures throw
+rather than silently skipping the transaction: no registry (an action built
+outside the container) names the container in its message, and a non-ORM manager
+names the type it got. The ORM's own `wrapInTransaction()` is deliberately not
+used — it `close()`s the EntityManager on failure and cannot express the
+per-exception commit/rollback split the pipeline needs; DBAL 4 nests
+unconditionally through savepoints, so the wrap composes with an outer test
+transaction. Covered by
+[`CanUseDatabaseTransactionsTest`](../../../packages/actions/tests/Unit/Concerns/CanUseDatabaseTransactionsTest.php)
+for the default-off and fail-fast arms.
 
 ### `$get`/`$set` resolve by type as well as by name
 
@@ -1134,10 +1162,9 @@ siblings that *have* landed so the list cannot silently go stale:
   `getParentAction()`, `nestingIndex()`/`getNestingIndex()` and `getClone()`
   all have rows in the Surface table above).
 - **Authorization & policy**: `CanBeAuthorized`, `hasAuthorization()`.
-- **Rate limiting & transactions**: `CanBeRateLimited`,
-  `CanUseDatabaseTransactions` (see the `cancel()`/`halt()` rollback-flag
-  detail above).
-- **Redirect/dispatch/mark conveniences**: `CanRedirect`, `livewireTarget()`,
+- **Rate limiting**: `CanBeRateLimited`
+  (`CanUseDatabaseTransactions` is ported — Surface row above).
+- **Dispatch/mark conveniences**: `livewireTarget()`,
   custom `alpineClickHandler()`/`actionJs()` — the port's click wiring is the
   single `live_action('mountAction', …)` call baked into the template
   (`CanDispatchEvent` and `CanBeMarkedAsRead` are both ported, each with a

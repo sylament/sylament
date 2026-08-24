@@ -44,7 +44,7 @@ first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | `modalIcon()` / `modalSubmitActionLabel()` | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | skipped | — | [diverges](#the-confirmation-chrome-is-left-to-the-defaults) |
 | `keyBindings(['mod+d'])` | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | todo | `HasKeyBindings` | — |
 | `hidden()` for a soft-deleted record | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | skipped | — | [diverges](#there-is-no-soft-delete-arm-to-hide-behind) |
-| Success redirect after the delete | [`Concerns/CanRedirect.php`](../../../vendor/filament/actions/src/Concerns/CanRedirect.php) | blocked | `getDefaultActionSuccessRedirectUrl` host hook | [detail](#a-delete-on-a-record-page-does-not-redirect-yet) |
+| Success redirect after the delete | [`Concerns/CanRedirect.php`](../../../vendor/filament/actions/src/Concerns/CanRedirect.php) | in progress | the `EditRecord` page override (M4 · 2) | [detail](#a-delete-on-a-record-page-does-not-redirect-yet) |
 
 ## Details
 
@@ -70,15 +70,20 @@ hook land.
 
 In Filament, deleting the record you are editing redirects to the resource
 index — `dispatchSuccessRedirect()` reads
-`getDefaultActionSuccessRedirectUrl()` off the host page. Neither
-`CanRedirect` nor the hook is ported ([README](README.md#features) tracks the
-concern), so the port deletes the record and re-renders in place; on a table
-that is exactly right, and on a record page it leaves a page whose record no
-longer exists.
+`getDefaultActionSuccessRedirectUrl()` off the host page. The mechanism now
+ships on this side: [`CanRedirect`](action.md) is composed onto `Action`, the
+[host hook](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported)
+is on the trait and the contract, and a resolved URL leaves the pipeline as a
+[returned `RedirectResponse`](has-actions.md#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag).
+What is still missing is the **page-side override**: no panels page answers the
+hook, so a delete on an `EditRecord` page still re-renders in place and leaves a
+page whose record no longer exists. On a table that is exactly right, which is
+why nothing else needs it yet. A caller can already opt in per action with
+`->successRedirectUrl('/…')`.
 
-**Next step:** lands with `CanRedirect` and the success-redirect host hook —
-the pair is the one thing a resource `EditRecord` page needs before it can
-carry a `DeleteAction`.
+**Next step:** the `EditRecord` override — `getDefaultActionSuccessRedirectUrl()`
+returning the resource's index URL for a `DeleteAction` — which is
+[M4 · 2](../roadmap.md)'s row, not this concern's.
 
 ## Divergences
 
@@ -114,7 +119,11 @@ same widening every record-typed signature in the port carries.
 
 ### The manager registry is an optional `#[Required]` injection
 
-`setManagerRegistry(?ManagerRegistry $managerRegistry = null)` is nullable
+`setManagerRegistry(?ManagerRegistry $managerRegistry = null)` lives on
+[`CanUseDatabaseTransactions`](action.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade),
+which every `Action` composes, and this class inherits it rather than declaring
+a second copy — one setter, one service, whether the registry is wanted for a
+transaction or for this body's `getManagerForClass()`. It is nullable
 **with a default**, which is what lets a Doctrine-less container compile the
 service definition at all: Symfony's autowiring fills an optional argument with
 its default when no service matches the type, and throws only when the

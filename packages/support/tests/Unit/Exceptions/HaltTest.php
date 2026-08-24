@@ -22,3 +22,15 @@ it('is catchable as Halt', function (): void {
 
     expect($caught)->toBeTrue();
 });
+
+it('does not roll back the database transaction by default', function (): void {
+    expect(new Halt()->shouldRollbackDatabaseTransaction())->toBeFalse();
+});
+
+it('carries the rollback flag fluently', function (): void {
+    $exception = new Halt();
+
+    expect($exception->rollBackDatabaseTransaction())->toBe($exception)
+        ->and($exception->shouldRollbackDatabaseTransaction())->toBeTrue()
+        ->and($exception->rollBackDatabaseTransaction(false)->shouldRollbackDatabaseTransaction())->toBeFalse();
+});

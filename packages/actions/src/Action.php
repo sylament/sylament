@@ -21,8 +21,10 @@ use Sylament\Actions\Concerns\CanDispatchEvent;
 use Sylament\Actions\Concerns\CanNotify;
 use Sylament\Actions\Concerns\CanOpenModal;
 use Sylament\Actions\Concerns\CanOpenUrl;
+use Sylament\Actions\Concerns\CanRedirect;
 use Sylament\Actions\Concerns\CanRequireConfirmation;
 use Sylament\Actions\Concerns\CanSubmitForm;
+use Sylament\Actions\Concerns\CanUseDatabaseTransactions;
 use Sylament\Actions\Concerns\HasAction;
 use Sylament\Actions\Concerns\HasArguments;
 use Sylament\Actions\Concerns\HasData;
@@ -81,8 +83,10 @@ class Action extends ViewComponent
     use CanNotify;
     use CanOpenModal;
     use CanOpenUrl;
+    use CanRedirect;
     use CanRequireConfirmation;
     use CanSubmitForm;
+    use CanUseDatabaseTransactions;
     use HasAction;
     use HasArguments;
     use HasColor;
@@ -318,14 +322,14 @@ class Action extends ViewComponent
         return $this->evaluate($this->getAction(), $parameters);
     }
 
-    public function cancel(): void
+    public function cancel(bool $shouldRollBackDatabaseTransaction = false): void
     {
-        throw new Cancel();
+        throw new Cancel()->rollBackDatabaseTransaction($shouldRollBackDatabaseTransaction);
     }
 
-    public function halt(): void
+    public function halt(bool $shouldRollBackDatabaseTransaction = false): void
     {
-        throw new Halt();
+        throw new Halt()->rollBackDatabaseTransaction($shouldRollBackDatabaseTransaction);
     }
 
     public function success(): void

@@ -53,4 +53,16 @@ interface InteractsWithActions
      * the host has no page to send it to.
      */
     public function getDefaultActionUrl(Action $action): ?string;
+
+    /**
+     * The URL a successful action redirects to when it carries no
+     * `successRedirectUrl()` of its own — null when the host has none.
+     */
+    public function getDefaultActionSuccessRedirectUrl(Action $action): ?string;
+
+    /**
+     * The URL a failed action redirects to when it carries no
+     * `failureRedirectUrl()` of its own — null when the host has none.
+     */
+    public function getDefaultActionFailureRedirectUrl(Action $action): ?string;
 }

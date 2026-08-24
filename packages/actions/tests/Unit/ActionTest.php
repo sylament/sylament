@@ -110,6 +110,46 @@ it('throws Cancel from cancel() and Halt from halt()', function (): void {
     expect(fn () => Action::make('delete')->halt())->toThrow(Halt::class);
 });
 
+it('defaults the thrown Cancel and Halt to committing the database transaction', function (): void {
+    $cancel = null;
+    $halt = null;
+
+    try {
+        Action::make('delete')->cancel();
+    } catch (Cancel $exception) {
+        $cancel = $exception;
+    }
+
+    try {
+        Action::make('delete')->halt();
+    } catch (Halt $exception) {
+        $halt = $exception;
+    }
+
+    expect($cancel?->shouldRollbackDatabaseTransaction())->toBeFalse()
+        ->and($halt?->shouldRollbackDatabaseTransaction())->toBeFalse();
+});
+
+it('flags the thrown Cancel and Halt for rollback when asked', function (): void {
+    $cancel = null;
+    $halt = null;
+
+    try {
+        Action::make('delete')->cancel(true);
+    } catch (Cancel $exception) {
+        $cancel = $exception;
+    }
+
+    try {
+        Action::make('delete')->halt(true);
+    } catch (Halt $exception) {
+        $halt = $exception;
+    }
+
+    expect($cancel?->shouldRollbackDatabaseTransaction())->toBeTrue()
+        ->and($halt?->shouldRollbackDatabaseTransaction())->toBeTrue();
+});
+
 it('returns an empty context without a schema binding', function (): void {
     expect(Action::make('save')->getContext())->toBe([]);
 });

@@ -20,11 +20,13 @@ use Sylament\Schemas\Schema;
 use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
 use Sylament\Tables\Contracts\InteractsWithTable;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\Attribute\PostHydrate;
 use Symfony\UX\LiveComponent\ComponentToolsTrait;
+use Throwable;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
@@ -188,8 +190,11 @@ trait HasActions
 
         $result = null;
         $schema = null;
+        $hasFinalizedDatabaseTransaction = false;
 
         try {
+            $action->beginDatabaseTransaction();
+
             if ($this->mountedActionHasSchema($action)) {
                 $action->callBeforeFormValidated();
 
@@ -216,14 +221,28 @@ trait HasActions
 
             if ($action->getStatus() === ActionStatus::Success) {
                 $action->sendSuccessNotification();
+                $action->dispatchSuccessRedirect();
             } else {
                 $action->sendFailureNotification();
+                $action->dispatchFailureRedirect();
             }
-        } catch (Halt) {
+        } catch (Halt $exception) {
+            $exception->shouldRollbackDatabaseTransaction()
+                ? $action->rollBackDatabaseTransaction()
+                : $action->commitDatabaseTransaction();
+
             return null;
-        } catch (Cancel) {
+        } catch (Cancel $exception) {
+            $exception->shouldRollbackDatabaseTransaction()
+                ? $action->rollBackDatabaseTransaction()
+                : $action->commitDatabaseTransaction();
+
+            $hasFinalizedDatabaseTransaction = true;
+
             // Falls through to unmount — Cancel closes the modal.
         } catch (ValidationException $exception) {
+            $action->rollBackDatabaseTransaction();
+
             if (! $this->mountedActionShouldOpenModal($action)) {
                 $action->arguments($originalArguments);
                 $action->resetData();
@@ -231,6 +250,20 @@ trait HasActions
             }
 
             throw $exception;
+        } catch (Throwable $exception) {
+            $action->rollBackDatabaseTransaction();
+
+            throw $exception;
+        }
+
+        if (! $hasFinalizedDatabaseTransaction) {
+            $action->commitDatabaseTransaction();
+        }
+
+        if (filled($redirectUrl = $action->getPendingRedirectUrl())) {
+            $this->unmountAction();
+
+            return new RedirectResponse($redirectUrl);
         }
 
         $action->arguments($originalArguments);
@@ -576,6 +609,16 @@ trait HasActions
     }
 
     public function getDefaultActionUrl(Action $action): ?string
+    {
+        return null;
+    }
+
+    public function getDefaultActionSuccessRedirectUrl(Action $action): ?string
+    {
+        return null;
+    }
+
+    public function getDefaultActionFailureRedirectUrl(Action $action): ?string
     {
         return null;
     }

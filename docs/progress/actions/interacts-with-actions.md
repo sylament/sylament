@@ -58,7 +58,8 @@ note in [Semantics](#semantics).
 | `mergeMountedActionArguments()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | todo | — | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
 | `getMountedActionSchemaName()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | skipped | — | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
 | [`getDefaultActionUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
-| The other nine `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `panels` package | [detail](#the-panel-level-default-hooks-are-not-on-the-contract) |
+| [`getDefaultActionSuccessRedirectUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionFailureRedirectUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
+| The other eight `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `panels` package | [detail](#the-panel-level-default-hooks-are-not-on-the-contract) |
 
 ## Details
 
@@ -84,7 +85,7 @@ is a real gap rather than a naming one: `callMountedAction()` merges the caller'
 arguments transiently and restores them afterwards, so nothing writes them back
 into the persisted descriptor, which is what a form resubmit at the same frame
 would need. M1 · 1's
-[keep-modal-open validation loop](has-actions.md#callmountedaction-drops-rate-limiting-authorization-transactions-and-redirects)
+[keep-modal-open validation loop](has-actions.md#callmountedaction-drops-rate-limiting-and-authorization)
 resubmits exactly such a frame and landed without it: the client re-sends its
 `#[LiveArg]` arguments on every submit, so the persisted copy is not what the
 retry reads. **Next step:** it lands with the first caller that resubmits a
@@ -92,7 +93,7 @@ frame *without* re-sending the arguments it was mounted with.
 
 ### The panel-level default hooks are not on the contract
 
-Filament's contract declares ten `getDefaultAction*` hooks
+Filament's contract declares eleven `getDefaultAction*` hooks
 (`getDefaultActionRecord`, `getDefaultActionRecordTitle`,
 `getDefaultActionModel`, `getDefaultActionModelLabel`, `getDefaultActionUrl`,
 `getDefaultActionSuccessRedirectUrl`, `getDefaultActionFailureRedirectUrl`,
@@ -102,7 +103,12 @@ Filament's contract declares ten `getDefaultAction*` hooks
 them to land is `getDefaultActionUrl(Action $action): ?string`, which the
 [prebuilt `CreateAction`/`EditAction`](create-action.md) need to render as links
 to a resource's pages; it is declared on the interface and defaulted to `null`
-on the trait, so every existing host gains it for free. The remaining nine are
+on the trait, so every existing host gains it for free. The redirect pair
+`getDefaultActionSuccessRedirectUrl` / `getDefaultActionFailureRedirectUrl`
+followed the same way, with [`CanRedirect`](action.md) — the concern that reads
+them — and the same `null` defaults; the page-side overrides that make them do
+something (a delete on a record page sending the user back to the index) are
+[M4 · 2](../roadmap.md)'s. The remaining eight are
 still dropped. In Filament's
 own trait every one of them is a stub returning `null` — they exist purely as
 override points so a **panel resource or relation-manager page** can supply
@@ -120,9 +126,9 @@ a Doctrine equivalent of Eloquent's `Relation`, and that half is answered:
 [`AssociationTarget`](../schemas/association-reader.md) carries a described
 association, so only the host remains.
 
-**Next step:** each of the nine lands with the `Action`-side concern that reads
-it, the way the URL hook landed with the prebuilt actions —
-`getDefaultActionSuccessRedirectUrl` with `CanRedirect`,
+**Next step:** each of the eight lands with the `Action`-side concern that reads
+it, the way the URL hook landed with the prebuilt actions and the redirect pair
+with `CanRedirect` —
 `getDefaultActionSchemaResolver` with
 [modal-mode `CreateAction`/`EditAction`](create-action.md#modal-mode-is-a-fail-fast-stub-not-a-persistence-body),
 `getDefaultActionRecordTitle` with `getRecordTitle()`.

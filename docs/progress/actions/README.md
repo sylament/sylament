@@ -17,10 +17,11 @@ source) to a real [status](../README.md#statuses) — **done**, **in progress**,
 gap, or real sub-structure earns one. A plain-text name is not built yet and
 stays **todo**.
 
-The 21 concerns Filament composes onto the `Action` base —
+The 23 concerns Filament composes onto the `Action` base —
 `BelongsToLiveComponent`, `CanBeDisabled`, `CanBeHidden`, `CanBeOutlined`,
 `CanCallParentAction`, `CanClose`, `CanDispatchEvent`, `CanNotify`,
-`CanOpenModal`, `CanOpenUrl`, `CanRequireConfirmation`,
+`CanOpenModal`, `CanOpenUrl`, `CanRedirect`, `CanRequireConfirmation`,
+`CanUseDatabaseTransactions`,
 `HasAction`, `HasArguments`, `HasGroupedIcon`, `HasLabel`,
 `HasLifecycleHooks`, `HasMountableArguments`, `HasName`, `HasParentActions`,
 `HasSize`, and
@@ -85,7 +86,7 @@ service provider live in [Supporting surface](#supporting-surface).)
 
 Cross-cutting action concerns — [`src/Concerns`](../../../vendor/filament/actions/src/Concerns).
 Most are mixed onto the `Action` base; the `InteractsWith*` traits are host-side
-(mixed onto the Livewire / LiveComponent page that mounts actions). The 21
+(mixed onto the Livewire / LiveComponent page that mounts actions). The 23
 concerns `Action` composes are folded into [`action.md`](action.md) and no longer
 carry rows here — the remaining rows are the not-yet-started concerns, the
 host-side `HasActions` trait, and the two-method extra-modal-attribute traits
@@ -115,9 +116,7 @@ Sylament `HasActions` row (in the `H` block) is the port of Filament's
 | CanDeselectRecordsAfterCompletion | [`Concerns/CanDeselectRecordsAfterCompletion.php`](../../../vendor/filament/actions/src/Concerns/CanDeselectRecordsAfterCompletion.php) | todo | - |
 | CanExportRecords | [`Concerns/CanExportRecords.php`](../../../vendor/filament/actions/src/Concerns/CanExportRecords.php) | todo | - |
 | CanFetchSelectedRecords | [`Concerns/CanFetchSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/CanFetchSelectedRecords.php) | todo | - |
-| CanRedirect | [`Concerns/CanRedirect.php`](../../../vendor/filament/actions/src/Concerns/CanRedirect.php) | todo | - |
 | [`CanSubmitForm`](../../../packages/actions/src/Concerns/CanSubmitForm.php) | [`Concerns/CanSubmitForm.php`](../../../vendor/filament/actions/src/Concerns/CanSubmitForm.php) | done | Full shape ported for API parity (`submit()`, `canSubmitForm()`, `getFormToSubmit()`, `formId()`, `getFormId()`). `canSubmitForm()` is the live consumer: the five trigger templates render `type="submit"` and suppress their live click binding from it, and [`CanOpenModal::getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php) branches on it. `getFormToSubmit()` / `getFormId()` have **no** consumer yet — in Filament they feed a `wire:target` loading scope and a `form=` attribute for a button rendered outside its form, neither of which exists here; ported anyway so a migrating `submit()` / `formId()` call does not fatal. Filament's `hasCanSubmitForm()` / `hasFormId()` are not ported — trivial duplicates with no caller in Filament's own tree |
-| CanUseDatabaseTransactions | [`Concerns/CanUseDatabaseTransactions.php`](../../../vendor/filament/actions/src/Concerns/CanUseDatabaseTransactions.php) | todo | - |
 | [`HasActions`](../../../packages/actions/src/Concerns/HasActions.php) | [`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) | in progress | [has-actions.md](has-actions.md) |
 | [`HasData`](../../../packages/actions/src/Concerns/HasData.php) | [`Concerns/HasData.php`](../../../vendor/filament/actions/src/Concerns/HasData.php) | done | `data()` **replaces** wholesale rather than merging (unlike `HasArguments::mergeArguments()`), optionally through `mutateDataUsing()`; `resetData()` empties without mutating. `data()` adds a `TypeError` guard Filament has no need for — `mutateDataUsing` is a bare `?Closure` (no arity spec, per [the closure-typing convention](../../../CLAUDE.md)), so PHPStan cannot know the callback returned an array, and the explicit `is_array()` check supplies that guarantee instead of an unchecked assignment trusting a misbehaving callback; same shape as the guards in [`Schemas\Concerns\CanModifyActions`](../../../packages/schemas/src/Concerns/CanModifyActions.php). `getRawData()` reads the host's per-frame bag through [`InteractsWithActions::getMountedActionData()`](interacts-with-actions.md) instead of Filament's direct property read, and there is deliberately **no** `getMountedActionsData()` — [why](has-actions.md#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor). The deprecated `*FormData*` aliases (`formData()`, `getRawFormData()`) are not ported |
 | [`HasExtraModalOverlayAttributes`](../../../packages/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | [`Concerns/HasExtraModalOverlayAttributes.php`](../../../vendor/filament/actions/src/Concerns/HasExtraModalOverlayAttributes.php) | done | Filament-exact setter/getter pair (`$merge` appends, a non-merge call replaces the queue) folded through support's `ComponentAttributeBag`; renders onto the `<dialog>`, which is the overlay in the port ([why](../support/modal.md#the-modal-is-re-architected-onto-native-dialog)) |
@@ -174,8 +173,8 @@ that trait's mounted-action state.
 | --- | --- | --- | --- |
 | [`InteractsWithActions`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | in progress | [interacts-with-actions.md](interacts-with-actions.md) |
 | [`ActionStatus`](../../../packages/actions/src/Enums/ActionStatus.php) | [`Enums/ActionStatus.php`](../../../vendor/filament/actions/src/Enums/ActionStatus.php) | done | - |
-| ActionCalled | [`Events/ActionCalled.php`](../../../vendor/filament/actions/src/Events/ActionCalled.php) | todo | - |
-| ActionCalling | [`Events/ActionCalling.php`](../../../vendor/filament/actions/src/Events/ActionCalling.php) | todo | - |
+| [`ActionCalled`](../../../packages/actions/src/Events/ActionCalled.php) | [`Events/ActionCalled.php`](../../../vendor/filament/actions/src/Events/ActionCalled.php) | done | Final class, one promoted `Action`, one `getAction()`, dispatched from [`HasLifecycleHooks::callAfter()`](action.md)'s `finally` on Symfony's dispatcher — [as an object, where Filament dispatches a class-string](action.md#the-lifecycle-events-are-dispatched-as-objects-where-filament-dispatches-a-class-string) |
+| [`ActionCalling`](../../../packages/actions/src/Events/ActionCalling.php) | [`Events/ActionCalling.php`](../../../vendor/filament/actions/src/Events/ActionCalling.php) | done | The twin, dispatched from `callBefore()` before the closure runs — [same divergence](action.md#the-lifecycle-events-are-dispatched-as-objects-where-filament-dispatches-a-class-string) |
 | [`ActionNotResolvableException`](../../../packages/actions/src/Exceptions/ActionNotResolvableException.php) | [`Exceptions/ActionNotResolvableException.php`](../../../vendor/filament/actions/src/Exceptions/ActionNotResolvableException.php) | done | - |
 | ActionName | [`ActionName.php`](../../../vendor/filament/actions/src/ActionName.php) | todo | - |
 | Exporter | [`Exports/Exporter.php`](../../../vendor/filament/actions/src/Exports/Exporter.php) | todo | - |

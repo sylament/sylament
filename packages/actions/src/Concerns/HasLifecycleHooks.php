@@ -5,9 +5,15 @@ declare(strict_types=1);
 namespace Sylament\Actions\Concerns;
 
 use Closure;
+use Sylament\Actions\Events\ActionCalled;
+use Sylament\Actions\Events\ActionCalling;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
+use Symfony\Contracts\Service\Attribute\Required;
 
 trait HasLifecycleHooks
 {
+    protected ?EventDispatcherInterface $eventDispatcher = null;
+
     protected ?Closure $before = null;
 
     protected ?Closure $after = null;
@@ -19,6 +25,12 @@ trait HasLifecycleHooks
     protected ?Closure $beforeFormValidated = null;
 
     protected ?Closure $afterFormValidated = null;
+
+    #[Required]
+    public function setEventDispatcher(?EventDispatcherInterface $eventDispatcher = null): void
+    {
+        $this->eventDispatcher = $eventDispatcher;
+    }
 
     public function before(?Closure $callback): static
     {
@@ -64,12 +76,18 @@ trait HasLifecycleHooks
 
     public function callBefore(): mixed
     {
+        $this->eventDispatcher?->dispatch(new ActionCalling($this));
+
         return $this->evaluate($this->before);
     }
 
     public function callAfter(): mixed
     {
-        return $this->evaluate($this->after);
+        try {
+            return $this->evaluate($this->after);
+        } finally {
+            $this->eventDispatcher?->dispatch(new ActionCalled($this));
+        }
     }
 
     public function callBeforeFormFilled(): mixed

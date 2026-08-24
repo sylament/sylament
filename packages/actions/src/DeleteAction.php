@@ -4,26 +4,16 @@ declare(strict_types=1);
 
 namespace Sylament\Actions;
 
-use Doctrine\Persistence\ManagerRegistry;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
-use Symfony\Contracts\Service\Attribute\Required;
 
 class DeleteAction extends Action
 {
     use CanCustomizeProcess;
 
-    protected ?ManagerRegistry $managerRegistry = null;
-
     public static function getDefaultName(): ?string
     {
         return 'delete';
-    }
-
-    #[Required]
-    public function setManagerRegistry(?ManagerRegistry $managerRegistry = null): void
-    {
-        $this->managerRegistry = $managerRegistry;
     }
 
     protected function setUp(): void

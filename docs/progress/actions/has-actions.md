@@ -74,7 +74,7 @@ write-up in [Details](#details), **diverges** → the note in
 | [`resolveRecordUsing()`](../../../packages/actions/src/Concerns/HasActions.php) / `getMountedActionRecord()` | — (new; replaces Filament's per-source record resolution) | done | — | [diverges](#record-resolution-is-a-single-host-callback-not-per-source) |
 | [`$mountedActions`](../../../packages/actions/src/Concerns/HasActions.php) stack + `dehydrateMountedActions()` | `Concerns/InteractsWithActions.php` `$mountedActions` | done | — | [diverges](#the-mounted-action-stack-is-a-server-controlled-liveprop-not-a-client-writable-array) · [diverges](#the-mountedactions-liveprop-dehydrates-through-a-bridge-method) · [semantics](#the-mounted-action-descriptor-is-typed-string-keyed-and-the-client-fills-two-thirds-of-it) |
 | [`mountAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountAction()` | in progress | `CanBeAuthorized` | [detail](#mountaction-drops-authorization) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) |
-| [`callMountedAction(array $arguments = [])`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `callMountedAction()` | in progress | `CanBeRateLimited`, `CanBeAuthorized`, `CanUseDatabaseTransactions`, `CanRedirect` | [detail](#callmountedaction-drops-rate-limiting-authorization-transactions-and-redirects) |
+| [`callMountedAction(array $arguments = [])`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `callMountedAction()` | in progress | `CanBeRateLimited`, `CanBeAuthorized` | [detail](#callmountedaction-drops-rate-limiting-and-authorization) · [diverges](#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag) |
 | [`unmountAction(bool\|string\|null $cancelParentActions = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `unmountAction()` | in progress | `#[Url]` default-action state | [detail](#unmountaction-drops-the-default-action-reset) · [diverges](#the-stack-is-choreographed-declaratively-not-by-client-events) · [diverges](#the-error-bag-reset-is-scoped-to-one-frame-not-a-global-reset) |
 | [`replaceMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `replaceMountedAction()` | done | — | [diverges](#a-frame-carries-two-identities-an-index-scoped-dialog-and-a-name-scoped-wrapper) |
 | [`getMountedAction(?int $actionNestingIndex = null)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedAction()` | done | — | [diverges](#getmountedaction-never-guards-its-own-read-with-a-catch) |
@@ -97,7 +97,8 @@ write-up in [Details](#details), **diverges** → the note in
 | [`$mountedActionsData`](../../../packages/actions/src/Concerns/HasActions.php) + `getMountedActionData()` | `Concerns/InteractsWithActions.php` `mountedActions.{i}.data` | done | — | [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) |
 | `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | [detail](#url-bound-default-action-state-is-not-ported) |
 | [`getDefaultActionUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
-| The other ten `getDefaultAction*` host override hooks (Record/Title/Model/ModelLabel/SuccessRedirectUrl/FailureRedirectUrl/Relationship/SchemaResolver/AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionRecord()` etc. | todo | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
+| [`getDefaultActionSuccessRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionFailureRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSuccessRedirectUrl()` / `getDefaultActionFailureRedirectUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
+| The other eight `getDefaultAction*` host override hooks (Record/Title/Model/ModelLabel/Relationship/SchemaResolver/AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionRecord()` etc. | todo | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
 | `forceRender()` / `partiallyRenderActionParentSchema()` | `Concerns/InteractsWithActions.php` `forceRender()` / `partiallyRenderActionParentSchema()` | blocked | schemas partial-render infrastructure (`PartialsComponentHook`) | [detail](#partial-re-render-is-not-ported) |
 | [`afterActionCalled()`](../../../packages/actions/src/Concerns/HasActions.php) hook (empty protected method; runs after `callAfter()`, before the notification branch, happy path only — Filament-exact) | `Concerns/InteractsWithActions.php` `afterActionCalled()` | done | — | — |
 | `bootedInteractsWithActions()` boot wiring / `WithRateLimiting` | `Concerns/InteractsWithActions.php` `bootedInteractsWithActions()`, `DanHarrin\LivewireRateLimiting\WithRateLimiting` | skipped | — | [diverges](#there-is-no-boot-hook-or-rate-limiting-trait) |
@@ -148,7 +149,7 @@ Still absent: the authorization check (`hasAuthorizationNotification()` /
 the `ExposesStateToActionData` child-schema validation (no such interface here).
 **Next step:** land `CanBeAuthorized` for the authorization branch.
 
-### `callMountedAction()` drops rate limiting, authorization, transactions, and redirects
+### `callMountedAction()` drops rate limiting and authorization
 
 Filament's `callMountedAction()` accepts an `$arguments` array to merge, checks
 `isAuthorized()`, applies `getRateLimit()` via `WithRateLimiting::rateLimit()`
@@ -164,19 +165,27 @@ state from `ExposesStateToActionData` components and the action's own `Schema`
 underneath it (`replaceMountedAction()` mid-call) before deciding whether to
 unmount. The port's
 [`callMountedAction(array $arguments = [])`](../../../packages/actions/src/Concerns/HasActions.php)
-gained two of those in this epic — the caller-supplied `$arguments` merge and
-the replaced-stack guard. In full, it merges the caller's `#[LiveArg]` `$arguments`
+now carries all of that bar rate limiting, authorization and the
+`ExposesStateToActionData` merge, with the redirect reaching the browser through
+[a different channel](#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag).
+In full, it merges the caller's `#[LiveArg]` `$arguments`
 into the **top** action via `mergeArguments()` and restores the action's
 original arguments afterwards, resolves the record via
 `getMountedActionRecord()`, checks `isDisabled()`, runs
 `callBefore()` / `call()` / `callAfter()`, calls the `afterActionCalled()`
 hook (Filament-exact position: after `callAfter()`, before the notification
 branch, so `Halt`/`Cancel` skip it), sends a success or failure notification
-by `getStatus()`, catches `Halt` (keeps the action mounted), `Cancel`
-(falls through to unmount) and `ValidationException`, then compares the stack it started with against
+by `getStatus()` and dispatches the matching redirect straight after it —
+Filament's order, so the flashed notification survives the navigation — catches
+`Halt` (keeps the action mounted), `Cancel` (falls through to unmount),
+`ValidationException` and, new with the transaction wrap, any other `Throwable`,
+commits, returns a
+pending redirect if one resolved, then compares the stack it started with against
 the current one — names and contexts only, arguments ignored, Filament-exact —
 and returns without unmounting if a `replaceMountedAction()` swapped it
-mid-call. The schema arm is now Filament's own submit shape rather than a bare
+mid-call. The redirect read sits **above** that comparison, Filament's relative
+order, so an action that replaced the stack and asked for a redirect still
+navigates. The schema arm is now Filament's own submit shape rather than a bare
 state lift: guarded by `mountedActionHasSchema()`, it calls
 `callBeforeFormValidated()`, then `$schema->getState()`, then
 `callAfterFormValidated()`, `data($state)` and `callBefore()` in that order, so
@@ -208,13 +217,20 @@ method untouched when the action has a modal to keep open (the stack, the data
 bag and the error bag are all already correct, so the re-render *is* the
 retry), and only the modal-less case cleans up first — restoring
 `$originalArguments`, `resetData()`, `unmountAction()` — before rethrowing,
-because there is no dialog left on screen to hold the messages. Rate
-limiting, authorization, database transactions and redirects are
-all absent — none of the underlying `Action` concerns they depend on
-(`CanBeRateLimited`, `CanBeAuthorized`, `CanUseDatabaseTransactions`,
-`CanRedirect`) are composed yet either — as is the
-`ExposesStateToActionData` state merge (no such interface here, so the merge
-reduces to the schema's own state). Filament's sibling
+because there is no dialog left on screen to hold the messages. The database transaction is
+Filament's ordering verbatim: `beginDatabaseTransaction()` is the first
+statement inside the `try`, so schema validation, every hook, the body,
+`afterActionCalled()`, the notification and the redirect resolution all run
+inside it; `Halt` and `Cancel` commit or roll back per the flag their exception
+carries ([the pair](action.md#the-rollback-flags-setter-and-getter-disagree-on-casing)),
+`Cancel` marking the transaction finalized so the tail does not commit twice;
+`ValidationException` and the new bare `Throwable` arm roll back and rethrow —
+that arm exists **only** for the rollback and changes nothing else, since
+`Action::hasDatabaseTransactions()` is false by default and every transaction
+method is then a no-op. Rate limiting and authorization are still absent —
+neither `CanBeRateLimited` nor `CanBeAuthorized` is composed onto `Action` yet —
+as is the `ExposesStateToActionData` state merge (no such interface here, so the
+merge reduces to the schema's own state). Filament's sibling
 `mergeMountedActionArguments()` — which writes merged arguments back into the
 persisted top descriptor as well as the live `Action`, for a schema resubmit —
 also stays unported; it is tracked on the contract's own row in
@@ -225,8 +241,8 @@ validation pipeline is covered end to end by
 (invalid submit keeps the frame and fills the bag with the action never run,
 valid submit runs both hooks in order and unmounts, the invalid path stops
 after `beforeFormValidated`, a modal-less invalid submit unmounts and rethrows).
-**Next step:** each of the four missing concerns returns with its `Action`-level
-concern.
+**Next step:** rate limiting and authorization return with their
+`Action`-level concerns.
 
 ### `unmountAction()` drops the default-action reset
 
@@ -367,7 +383,7 @@ Filament declares eleven `getDefaultAction*(Action $action)` methods
 returning `null` by default — extension points a host page overrides to supply
 context-free defaults to any action it mounts.
 
-One is now ported. `getDefaultActionUrl(Action $action): ?string` is declared on
+Three are now ported. `getDefaultActionUrl(Action $action): ?string` is declared on
 [the contract](interacts-with-actions.md) and defaulted here to `return null;`,
 exactly as Filament's trait does, because the prebuilt
 [`CreateAction`](create-action.md) and [`EditAction`](edit-action.md) set no
@@ -377,8 +393,18 @@ wider interface with no edit — the pattern any of the remaining ten should
 follow. A host that overrides it
 [must discriminate by action](interacts-with-actions.md#a-host-answering-the-url-hook-must-discriminate-by-action).
 
-The other ten stay unported: the `Action` concerns that would consume them
-(`CanBeAuthorized`, `CanRedirect`, relation managers, …) are not ported either.
+`getDefaultActionSuccessRedirectUrl()` and `getDefaultActionFailureRedirectUrl()`
+followed with [`CanRedirect`](action.md), the concern that reads them: an action
+with no `successRedirectUrl()` / `failureRedirectUrl()` of its own falls through
+to the host, which is how a record page sends a delete back to the resource
+index. They default to `null` here and are declared on the contract, so the same
+no-edit widening applied. The same discrimination note holds — a host answering
+for every action redirects every action — and the page-side overrides
+themselves are [M4 · 2](../roadmap.md)'s, not this epic's: what shipped is the
+mechanism and the hooks.
+
+The other eight stay unported: the `Action` concerns that would consume them
+(`CanBeAuthorized`, relation managers, …) are not ported either.
 **Next step:** todo, add alongside the `Action`-level concerns that read them.
 
 ### Partial re-render is not ported
@@ -457,6 +483,31 @@ checksum before this trait ever saw it.
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
 These outlive the detail sections above.
+
+### A redirect leaves the pipeline as a returned response, not through a framework-side bag
+
+Filament's `CanRedirect::redirect()` calls Livewire's own
+`$component->redirect($url, navigate: …)`, which writes into Livewire's request
+store; `callMountedAction()` then reads `store($this)->has('redirect')` to decide
+whether to unmount and return early. UX LiveComponent has no such bag — a
+`#[LiveAction]` method **is** the controller (`LiveComponentSubscriber` sets
+`_controller` to it), so returning a `Symfony\Component\HttpFoundation\RedirectResponse`
+is the whole mechanism: the subscriber turns it into a `204` carrying
+`X-Live-Redirect` plus the `Location` header, and the client controller
+navigates. The port therefore stores the resolved URL on the action
+([`getPendingRedirectUrl()`](action.md), Sylament-only) and `callMountedAction()`
+reads it where Filament reads the store — after the commit, **before** the
+argument restore and the replaced-stack comparison, so an action that replaced
+the mounted stack still navigates. `mountAction()`'s auto-run path returns this
+method's value verbatim, so a modal-less action redirects too. Two consequences
+are load-bearing. The component is **not** re-rendered on that path, so
+`unmountAction()` runs *before* the return rather than being skipped as
+unnecessary; and Filament's `navigate:`/SPA-mode argument has no analogue and is
+dropped — there is one navigation channel here, and it is the browser's.
+Covered by
+[`HasActionsRedirectTest`](../../../packages/actions/tests/Integration/Concerns/HasActionsRedirectTest.php),
+which pins both the returned object and a real live request coming back as a
+redirection.
 
 ### Record resolution is a single host callback, not per-source
 

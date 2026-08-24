@@ -5,10 +5,10 @@ throws to stop the lifecycle cleanly while keeping its modal mounted (no failure
 notification). Filament keeps it in `support` because several packages throw it;
 [`actions`](../../../packages/actions/src/Action.php) is the port's first thrower
 and [`HasActions`](../../../packages/actions/src/Concerns/HasActions.php) its
-first catcher. Ported as a bare marker exception; its
-database-transaction rollback control is deferred (see [Details](#details)).
+first catcher. Ported whole: the marker exception plus its
+database-transaction rollback control.
 
-**Status:** in progress — see the
+**Status:** done — see the
 [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
@@ -19,33 +19,10 @@ Reference — the Filament source this is diffed against:
 ## Surface
 
 Every point of this exception. _Blocked by_ names what has to land first.
-_Detail_ links the write-up in [Details](#details), deleted once the row is
-**done**. Rows never disappear — only their detail sections do.
+_Detail_ carries the row's own note; a row that needed a Details section no
+longer has one. Rows never disappear — only their detail sections do.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [Marker exception](../../../packages/support/src/Exceptions/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | done | — | — |
-| Rollback control | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | blocked | panels DB-transaction pages | [detail](#details) |
-
-## Details
-
-Specifics for rows that are not finished — what is already in, what is left, and
-what the next step is. Delete a subsection when its row flips to **done**.
-
-### Rollback control
-
-Filament's `Halt` carries a `shouldRollbackDatabaseTransaction` flag plus its
-`rollBackDatabaseTransaction()` fluent setter and `shouldRollbackDatabaseTransaction()`
-reader, read where an action runs its handler inside a DB transaction:
-[`InteractsWithActions`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php)
-catches the `Halt` and, per the flag, calls the action's
-`rollBackDatabaseTransaction()` (the transaction mechanics live in
-[`CanUseDatabaseTransactions`](../../../vendor/filament/actions/src/Concerns/CanUseDatabaseTransactions.php);
-panel pages read the same flag). Sylament's `Halt` is a bare `extends Exception`:
-the `actions` we ported throw it from `halt()` and catch it in `HasActions` to
-keep the modal mounted, but never open a transaction, so the flag would have no
-reader. So the control is **blocked**, not a permanent divergence — it re-lands,
-flag and setter and reader and transaction wrapping together, in the same change
-as the first Doctrine-transaction-wrapping consumer (the panel pages), where it
-finally has behavior to test. Its sibling [`Cancel`](cancel.md) is blocked on the
-same layer for the same reason.
+| [Rollback control](../../../packages/support/src/Exceptions/Halt.php) | [`Exceptions/Halt.php`](../../../vendor/filament/support/src/Exceptions/Halt.php) | done | — | Filament's own casing pair is kept verbatim — the setter `rollBackDatabaseTransaction(bool $condition = true)` with a capital B, the reader `shouldRollbackDatabaseTransaction()` with a lowercase one — and the flag defaults to `false`, so a thrower **commits** what ran before it unless it opts out. Its reader is [`HasActions::callMountedAction()`](../actions/has-actions.md#callmountedaction-drops-rate-limiting-and-authorization), which catches the exception and calls the action's `rollBackDatabaseTransaction()` or `commitDatabaseTransaction()` accordingly; the mechanics live on [`CanUseDatabaseTransactions`](../actions/action.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade). The panel pages that read the same flag for their own save paths are still unported |

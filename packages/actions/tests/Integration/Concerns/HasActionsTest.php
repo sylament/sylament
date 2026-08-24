@@ -307,6 +307,37 @@ it('keeps the record a child frame inherited from its parent when the child is c
     expect($recordSeen)->toBe('ENTITY');
 });
 
+/*
+ * The rollback flag reaches the catch arms and the pipeline finalises the (absent)
+ * transaction without ever resolving a connection: transactions are off by default,
+ * so begin/commit/rollBack are no-ops and no manager registry is needed. The
+ * transactional halves of these paths are pinned against the Doctrine rig in tables.
+ */
+it('cancels with the rollback flag and still unmounts without a transaction', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->getAction('notify')?->action(function (Action $action): void {
+        $action->cancel(true);
+    });
+
+    $host->mountAction('notify');
+
+    expect($host->notified)->toBeFalse()
+        ->and($host->mountedActions)->toBe([]);
+});
+
+it('halts with the rollback flag and stays mounted without a transaction', function (): void {
+    $host = $this->createLiveComponent('ActionHost')->component();
+    $host->getAction('headed')?->action(function (Action $action): void {
+        $action->halt(true);
+    });
+
+    $host->mountAction('headed');
+    $host->callMountedAction();
+
+    expect($host->notified)->toBeFalse()
+        ->and($host->mountedActions)->toHaveCount(1);
+});
+
 it('does not unmount when the stack was replaced mid-call', function (): void {
     $host = $this->createLiveComponent('ActionHost')->component();
     $host->mountAction('replacer');

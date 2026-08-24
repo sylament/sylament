@@ -36,6 +36,20 @@ const TEMPORARY_TOKEN_PREFIX = "sylament-file:";
 const AVATAR_PANEL_LAYOUT = "compact circle";
 const PREVIEWABLE_TYPE = /^(audio|image|video)\//;
 
+/** The three types a canvas can encode, and the extension each is written with. */
+const ENCODED_EXTENSIONS: Record<string, string | undefined> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+const EXTENSION_TYPES: Record<string, string | undefined> = {
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
 /** `initfile` is a real event (filepond.esm.js:8842) the shipped types leave out of FilePondEvent. */
 const INIT_FILE_EVENT = "initfile" as FilePond.FilePondEvent;
 
@@ -271,6 +285,7 @@ export default class extends Controller<HTMLElement> {
     this.#activeUploads = 0;
     this.#editorSwapName = null;
     this.#editingFile = null;
+    this.#editorOpenedForAspectRatio = false;
   }
 
   stateValueChanged(): void {
@@ -666,7 +681,7 @@ export default class extends Controller<HTMLElement> {
           requestAnimationFrame(() => this.#editor?.replace(result));
         }
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(editingFile);
     });
   }
 
@@ -889,8 +904,9 @@ export default class extends Controller<HTMLElement> {
         return;
       }
 
+      const type = blob.type || outputType;
       const item = this.#editingItem();
-      const name = versionedName(editingFile.name, outputType);
+      const name = versionedName(editingFile.name, type);
 
       this.#editorSwapName = name;
 
@@ -899,7 +915,7 @@ export default class extends Controller<HTMLElement> {
       }
 
       pond
-        .addFile(new File([blob], name, { type: outputType, lastModified: Date.now() }))
+        .addFile(new File([blob], name, { type, lastModified: Date.now() }))
         .then(() => this.#closeEditor())
         .catch(() => {
           this.#editorSwapName = null;
@@ -1208,14 +1224,17 @@ function errorMessage(error: unknown): string {
 
 /**
  * Filament's `-vN` bump over the base name, with the port's one delta: the extension follows the
- * output type, so a circle-cropped `photo.jpg` comes back as `photo-v1.png` rather than a `.jpg`
- * carrying PNG bytes (the temporary store keeps the client extension).
+ * type of the blob the canvas produced, so a circle-cropped `photo.jpg` comes back as `photo-v1.png`
+ * rather than a `.jpg` carrying PNG bytes (the temporary store keeps the client extension).
  */
 function versionedName(name: string, type: string): string {
   const dot = name.lastIndexOf(".");
   let base = dot === -1 ? name : name.slice(0, dot);
   const original = dot === -1 ? "" : name.slice(dot + 1);
-  const extension = type === "image/png" ? "png" : original;
+  const extension =
+    EXTENSION_TYPES[original.toLowerCase()] === type
+      ? original
+      : (ENCODED_EXTENSIONS[type] ?? original);
   const version = /-v(\d+)/;
 
   base = version.test(base)

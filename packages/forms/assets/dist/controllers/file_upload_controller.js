@@ -18505,6 +18505,17 @@ var MAX_FILES_WARNING = "Max files";
 var TEMPORARY_TOKEN_PREFIX = "sylament-file:";
 var AVATAR_PANEL_LAYOUT = "compact circle";
 var PREVIEWABLE_TYPE = /^(audio|image|video)\//;
+var ENCODED_EXTENSIONS = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp"
+};
+var EXTENSION_TYPES = {
+  jpeg: "image/jpeg",
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp"
+};
 var INIT_FILE_EVENT = "initfile";
 var file_upload_controller_default = class extends Controller {
   static targets = [
@@ -18621,6 +18632,7 @@ var file_upload_controller_default = class extends Controller {
     this.#activeUploads = 0;
     this.#editorSwapName = null;
     this.#editingFile = null;
+    this.#editorOpenedForAspectRatio = false;
   }
   stateValueChanged() {
     this.#reconcile();
@@ -18910,7 +18922,7 @@ var file_upload_controller_default = class extends Controller {
           requestAnimationFrame(() => this.#editor?.replace(result));
         }
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(editingFile);
     });
   }
   /** An SVG sized only by its viewBox has no intrinsic size for Cropper to measure, so one is written on. */
@@ -19069,13 +19081,14 @@ var file_upload_controller_default = class extends Controller {
         this.#closeEditor();
         return;
       }
+      const type = blob.type || outputType;
       const item = this.#editingItem();
-      const name = versionedName(editingFile.name, outputType);
+      const name = versionedName(editingFile.name, type);
       this.#editorSwapName = name;
       if (item !== void 0) {
         pond.removeFile(item.id, { revert: true });
       }
-      pond.addFile(new File([blob], name, { type: outputType, lastModified: Date.now() })).then(() => this.#closeEditor()).catch(() => {
+      pond.addFile(new File([blob], name, { type, lastModified: Date.now() })).then(() => this.#closeEditor()).catch(() => {
         this.#editorSwapName = null;
         this.#closeEditor();
       });
@@ -19294,7 +19307,7 @@ function versionedName(name, type) {
   const dot = name.lastIndexOf(".");
   let base = dot === -1 ? name : name.slice(0, dot);
   const original = dot === -1 ? "" : name.slice(dot + 1);
-  const extension = type === "image/png" ? "png" : original;
+  const extension = EXTENSION_TYPES[original.toLowerCase()] === type ? original : ENCODED_EXTENSIONS[type] ?? original;
   const version = /-v(\d+)/;
   base = version.test(base) ? base.replace(version, (_match, number) => `-v${Number(number) + 1}`) : `${base}-v1`;
   return extension === "" ? base : `${base}.${extension}`;

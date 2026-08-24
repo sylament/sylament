@@ -643,10 +643,17 @@ save a `.jpg` (or `photo-v1.jpg` under `preserveFilenames()`) and report
 `image/png` for it. Livewire's store has the same shape, so Filament ships that
 mismatch too.
 
-We rename at the origin instead. `versionedName()` picks `png` whenever the
-output blob is `image/png` — the circle cropper, or an SVG source — and the
-original extension otherwise. One expression, the server untouched, and M3·7's
-naming semantics intact.
+We rename at the origin instead, and after the encoder rather than before it.
+The name follows the type the blob actually carries: `versionedName()` keeps the
+source extension when that extension already denotes the blob's type and writes
+the canonical one otherwise — `png`, `jpg` or `webp`, the only three a canvas
+encodes. So a circle-cropped `photo.jpg` still comes back as `photo-v1.png`, and
+the arm Filament's rule cannot reach is covered with it: `toBlob()` silently
+falls back to PNG for any type the engine cannot encode — `image/gif`,
+`image/bmp`, `image/tiff`, WebP where it is unsupported, or the empty type a
+stored item's `fetch()` may hand back — so keying the rename to the *requested*
+type would name PNG bytes `photo-v1.gif`, the same lie one source further along.
+One expression, the server untouched, and M3·7's naming semantics intact.
 
 Everything else in `saveEditor()` ports verbatim, including three things worth
 not "fixing". The circle mask is an ellipse inscribed in the crop box, so a
@@ -658,3 +665,18 @@ instead of gaining a `-v1` at the end — Filament's quirk, kept for parity and
 written down here rather than silently corrected. The transform plugin's own
 rename-on-type-change (its `ExtensionMap`) is never reached, because
 `imageTransformOutputMimeType` is never set.
+
+### The editor reads the dimension-fixed SVG, not the original
+
+`#fixImageDimensions()` exists to give Cropper something to measure: an SVG
+sized only by its `viewBox` has an intrinsic ratio and no intrinsic size, so the
+function rewrites the markup with `width`/`height` in `pt` taken from the
+viewBox and hands the rewritten copy on. Filament then reads the **original**
+into the `FileReader` that feeds the editor (`file-upload.js:808`), so the copy
+reaches only `editingFile`, the file the save is named and typed after — the
+rewrite never touches what the user sees. Cropper is left measuring the browser's
+fallback for a ratio-only replaced element (300×150 shrunk to the ratio, which
+the browser pass watched open a 400×300 viewBox at 200×150). Ours reads the fixed
+copy instead, so a viewBox-only SVG opens at its viewBox size and the crop box is
+dragged over the dimensions the saved file will have. The function itself ports
+verbatim, its `pt` unit and its three-spelling `viewBox` probe included.

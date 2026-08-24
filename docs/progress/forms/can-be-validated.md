@@ -75,6 +75,7 @@ _Blocked by_ names what has to land first. _Detail_ carries a **detail** link
 | `fieldComparisonRule()` / `multiFieldComparisonRule()` / `multiFieldValueComparisonRule()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | skipped | — | [diverges](#the-remaining-comparison-rule-string-builders-have-no-port) |
 | [`ValidDate`](../../../packages/forms/src/Validation/ValidDate.php) + its validator — no Filament source | [`DateTimePicker::setUp()`](../../../vendor/filament/forms/src/Components/DateTimePicker.php) — `rule('date')` | done | — | [diverges](#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings) · [diverges](date-time-picker.md#every-variant-validates-as-a-date-including-the-time-only-one) |
 | [`DateComparison`](../../../packages/forms/src/Validation/DateComparison.php) + its validator — no Filament source | [`CanBeValidated::dateComparisonRule()`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [diverges](#the-date-comparison-family-builds-constraints-where-filament-builds-rule-strings) |
+| [`MinFileSize`](../../../packages/forms/src/Validation/MinFileSize.php) + its validator — no Filament source | [`BaseFileUpload::minSize()`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) — `rule("min:{n}")` | done | — | [semantics](#a-file-field-validates-in-two-places-and-only-one-of-them-is-this-trait) |
 | Format sugar (`alpha`, `alphaDash`, `alphaNum`, `ascii`, `string`, `hexColor`, `json`, `macAddress`, `ip` / `ipv4` / `ipv6`, `uuid`, `ulid`, `activeUrl`) | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | — | [detail](#the-unsugared-rule-families-are-reachable-through-constraint) |
 | `regex()` / `notRegex()` / `getRegexPattern()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | — | [detail](#the-unsugared-rule-families-are-reachable-through-constraint) |
 | `in()` / `notIn()` / `getInValidationRule()` / `getInValidationRuleValues()` / `hasInValidationOnMultipleValues()` | [`CanBeValidated`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | todo | `HasOptions` / `HasEnum` | [detail](#the-unsugared-rule-families-are-reachable-through-constraint) |
@@ -632,6 +633,35 @@ sibling `dateComparisonRule()` is the exception and is
 callers already routed through, which is worth keeping because a user's own
 `dateComparisonRule()` call is part of the migrating surface.
 
+### A file field validates in two places, and only one of them is this trait
+
+[`BaseFileUpload`](file-upload.md) is the first field whose constraints do not
+all run at the same moment, and it splits them by **constraint class**:
+
+- every `instanceof File` entry — `File(mimeTypes:)` from `acceptedFileTypes()`,
+  `File(maxSize:)` from `maxSize()`, `Image` ratio bounds from
+  `imageAspectRatio()`, and any the user added through `constraint()` — plus the
+  first-party [`MinFileSize`](../../../packages/forms/src/Validation/MinFileSize.php)
+  leave through `getUploadedFileConstraints()` and are validated against the real
+  `UploadedFile` at **upload** time;
+- everything else — the required `NotBlank` this trait emits, `Count` for the
+  file counts, the path-tampering `Callback`, and every non-`File` user
+  constraint — stays on `buildValidationConstraints()` and validates the stored
+  **collection** at save.
+
+Symfony's `File` and `Image` validators need a local readable path, which a
+stored flysystem key is not, so the first group could not run at save at all.
+`MinFileSize` is filed here rather than with the field because it is a
+constraint like the two date ones beside it: Symfony's `File` caps a size and
+never floors it, so Laravel's `min:` rule for files — kibibytes, which is what
+`minSize()` means — needed a counterpart. Both halves go through
+[`applyValidationMessages()`](#validation-messages-apply-after-the-constraints-are-built),
+so a field's own message overrides reach an upload refusal too.
+
+The full write-up, including why the override sits on the builder rather than
+the getter, is
+[file-upload.md](file-upload.md#per-file-constraints-run-at-upload-time-collection-constraints-at-save).
+
 ### The subclass seam is a protected builder, not the public getter
 
 Filament's `getValidationRules()` is both the public read and the point a
@@ -639,7 +669,8 @@ subclass overrides to append its own arms. Here those split:
 `getValidationConstraints()` is the public read the
 [`HasValidationConstraints`](../../../packages/schemas/src/Components/Contracts/HasValidationConstraints.php)
 contract declares, and `buildValidationConstraints()` is the protected seam
-[`TextInput`](text-input.md) and [`Select`](select.md) override.
+[`TextInput`](text-input.md), [`Select`](select.md) and
+[`BaseFileUpload`](file-upload.md) override.
 
 The split exists because messages apply in a
 [post-pass](#validation-messages-apply-after-the-constraints-are-built) over the

@@ -26,7 +26,7 @@ stops mid-M2, M1 still demos on its own.
 
 ## Now
 
-**M3 · 8 — Validation completeness.** M2 closed with
+**M4 · 1 — Header, toolbar and bulk actions** (in flight). M2 closed with
 [M2 · 4](#m2--mini-admin-panel) (2026-08-17), and the next four milestones were
 planned the same day — breadth by layer, in dependency order:
 [M3 forms widening](#m3--forms-widening), [M4 tables widening](#m4--tables-widening),
@@ -54,8 +54,9 @@ same day, taking `FileUpload` over a scoped FilePond, support's
 `FilesystemRegistry` storage seam, forms' `TemporaryUploads` store with its
 signed tokens, schemas' `uploadSchemaComponentFile()` action and the
 vendor-stylesheet scoper with it — both 2026-08-17 seam decisions spent as
-recorded. Epic 8 is next: every deferred validation family on the M1 · 1
-constraint vocabulary. Epic 9 then closes the milestone against its stop line.
+recorded. M3 · 8 and M3 · 9 are deferred by decision (2026-08-24), and
+M4 · 1 opened the same day — the [M4](#m4--tables-widening) row for the header,
+toolbar and bulk actions, in flight.
 
 ## Pulled forward
 
@@ -284,7 +285,7 @@ column catalog — and a sections table scoped to one article._
 
 | # | Epic | Packages | Delivers | Status |
 | --- | --- | --- | --- | --- |
-| 1 | Header, toolbar and bulk actions | [tables](tables/README.md), [actions](actions/README.md), [support](support/README.md), **demo** | `headerActions()` in the toolbar; record selection — the checkbox column, select-all/deselect-all, `selectCurrentPageOnly()`, `checkIfRecordIsSelectableUsing()`, `deselectAllRecordsWhenFiltered()`, the selection state on the host; `bulkActions()` with `BulkAction`/`BulkActionGroup` and `DeleteBulkAction`; and the actions-core leftovers the actions showcase footnote carries — `CanRedirect` (`successRedirectUrl()`), the `ActionCalling`/`ActionCalled` events on Symfony's dispatcher, transactions around the record actions. Demo: bulk delete on `/admin/articles`. | todo |
+| 1 | Header, toolbar and bulk actions | [tables](tables/README.md), [actions](actions/README.md), [support](support/README.md), **demo** | `headerActions()` in the toolbar; record selection — the checkbox column, select-all/deselect-all, `selectCurrentPageOnly()`, `checkIfRecordIsSelectableUsing()`, `deselectAllRecordsWhenFiltered()`, the selection state on the host; `bulkActions()` with `BulkAction`/`BulkActionGroup` and `DeleteBulkAction`; and the actions-core leftovers the actions showcase footnote carries — `CanRedirect` (`successRedirectUrl()`), the `ActionCalling`/`ActionCalled` events on Symfony's dispatcher, transactions around the record actions. Demo: bulk delete on `/admin/articles`. | in progress |
 | 2 | Modal-mode record actions | [actions](actions/README.md), [panels](panels/README.md), **demo** | The arms M2 · 3 deferred: `CreateAction`/`EditAction`/`ViewAction` opening a modal instead of a page, `getDefaultActionSchemaResolver()` on the resource pages, `mutateFormDataUsing`, the success notification and redirect hooks, `ReplicateAction`; `ViewAction` in list rows as a modal until M5's page exists. Consumed by M6 · 1's relation managers. | todo |
 | 3 | Row behaviour and query-string state | [tables](tables/README.md), **demo** | `recordUrl()`/`recordAction()`/`openRecordUrlInNewTab()`, `recordClasses()`, `striped()`, `poll()`, `deferLoading()`, `heading()`/`description()`, the empty-state completeness; sort, search, filter and page state in the query string (Live Component `url:` props — the `#[Url]` sweep item), `persistSortInSession()`/`persistSearchInSession()`/`persistFiltersInSession()` as gaps or a session-attribute port; `reorderable()` over M3 · 6's drag-and-drop control; the filters-layout leftovers (`filtersLayout()`, `filtersFormColumns()`, `deferFilters()`, `filtersTriggerAction()`). | todo |
 | 4 | Column catalog | [tables](tables/README.md), [support](support/README.md), **demo** | `IconColumn` (with `boolean()`), `ImageColumn` (circular, stacked; over M3 · 7's [`FilesystemRegistry`](support/filesystem-registry.md) for uploads, plain URLs without it), `ColorColumn`, `ViewColumn`, and the **editable columns** — `ToggleColumn`, `CheckboxColumn`, `SelectColumn`, `TextInputColumn` — writing back to the record from the cell; plus the `TextColumn` remainder [15](#pulled-forward) left: `copyable()`, `tooltip()`, `html()`/`markdown()` behind [the sanitizer decision](tables/text-column.md#html--markdown-need-a-sanitizer-decision), the date family (`date()`/`dateTime()`/`since()`) and `money()`/`numeric()` over `intl`, `rowIndex()`, `url()`, `placeholder()`, `listWithLineBreaks()`/`bulleted()`/`limitList()`/`expandableLimitedList()`, and `Column`'s base surface (`verticalAlignment`, header attributes, `grow`, `wrapHeader`). `BadgeColumn`/`BooleanColumn`/`TagsColumn` are deprecated upstream — skipped rows. Demo: `featured` as a `ToggleColumn`, the author as an `ImageColumn`. | todo |

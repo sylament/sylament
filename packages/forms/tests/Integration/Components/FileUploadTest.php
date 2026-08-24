@@ -72,6 +72,7 @@ it('carries the whole value map, with both maps serialised as objects when empty
         // `Object` values one shape whether or not the field holds a file.
         ->and($root->attr('data-sylament--forms--file-upload-uploaded-files-value'))->toBe('{}')
         ->and($root->attr('data-sylament--forms--file-upload-state-value'))->toBe('{}')
+        ->and($root->attr('data-sylament--forms--file-upload-mime-type-map-value'))->toBe('{}')
         ->and($root->attr('data-sylament--forms--file-upload-download-action-label-value'))->toBe('Download')
         ->and($root->attr('data-sylament--forms--file-upload-open-action-label-value'))->toBe('Open in new tab')
         ->and($root->attr('data-sylament--forms--file-upload-panel-layout-value'))->toBe('compact');

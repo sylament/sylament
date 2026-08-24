@@ -220,10 +220,10 @@ class FileUpload extends BaseFileUpload
     }
 
     /**
-     * The five values the template cannot read off a single getter. Both maps are cast to an
+     * The six values the template cannot read off a single getter. The three maps are cast to an
      * object so an empty one serialises as `{}` rather than `[]`: `StimulusAttributes` JSON-encodes
-     * a non-scalar value, and the controller's `Object` values want one shape whether or not the
-     * field holds a file.
+     * a non-scalar value, Stimulus's `Object` reader throws on an array, and the controller's
+     * `Object` values want one shape whether or not the field holds a file.
      *
      * @return array<string, mixed>
      */
@@ -232,6 +232,7 @@ class FileUpload extends BaseFileUpload
         return [
             'uploadedFiles' => (object) ($this->getUploadedFiles() ?? []),
             'stateMap' => (object) wrap($this->getRawState()),
+            'mimeTypeMap' => (object) $this->getMimeTypeMap(),
             'maxFileSize' => min(
                 $this->getMaxSize() !== null ? $this->getMaxSize() * 1024 : PHP_INT_MAX,
                 $this->getMaxUploadSize(),

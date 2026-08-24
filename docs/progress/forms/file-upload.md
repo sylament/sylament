@@ -87,7 +87,7 @@ _Ports_ cell is `—` has no Filament counterpart.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [The partial](../../../packages/forms/templates/partials/FileUpload/index.html.twig) and its 32 Stimulus values | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [semantics](#the-dom-contract-is-the-controllers-only-input) |
-| [`getExtraTemplateData()`](../../../packages/forms/src/Components/FileUpload.php) | the `toEmbeddedHtml()` preamble | done | — | [diverges](#both-maps-are-object-cast-so-an-empty-one-serialises-as-) |
+| [`getExtraTemplateData()`](../../../packages/forms/src/Components/FileUpload.php) | the `toEmbeddedHtml()` preamble | done | — | [diverges](#the-three-maps-are-object-cast-so-an-empty-one-serialises-as-) |
 | [`avatar()` / `isAvatar()`](../../../packages/forms/src/Components/FileUpload.php) | [`avatar()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [diverges](#avatar-ships-reduced-and-sets-no-aspect-ratio) |
 | [`image()`](../../../packages/forms/src/Components/FileUpload.php) | [`image()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`appendFiles()` / `shouldAppendFiles()`](../../../packages/forms/src/Components/FileUpload.php) | [`appendFiles()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
@@ -350,15 +350,20 @@ handed to `fileValidateTypeDetectType` with nothing to go on. The server-side
 `File(mimeTypes:)` constraint still refuses it, so the failure mode is a
 server-side refusal rather than a client-side one.
 
-### Both maps are `(object)`-cast so an empty one serialises as `{}`
+### The three maps are `(object)`-cast so an empty one serialises as `{}`
 
-`getExtraTemplateData()` returns `uploadedFiles` and `stateMap` cast to
-`stdClass`. `StimulusAttributes::getFormattedValue()` JSON-encodes a non-scalar
-value, and PHP cannot tell an empty map from an empty list — so a bare `[]`
-would hand the controller's `Object` value an array on an empty field and an
-object on a filled one. There is no in-repo precedent (`Select`'s option map is
-never empty-and-object), so this is a deliberate new one; the render test pins
-both as `{}`.
+`getExtraTemplateData()` returns `uploadedFiles`, `stateMap` and `mimeTypeMap`
+cast to `stdClass`. `StimulusAttributes::getFormattedValue()` JSON-encodes a
+non-scalar value, and PHP cannot tell an empty map from an empty list — so a
+bare `[]` would hand the controller's `Object` value an array. That is not a
+cosmetic mismatch: Stimulus's `object` reader **throws** on an array, and the
+first read sits inside `#detectType`, whose synchronous throw the type plugin's
+promise chain turns into a refusal — an uncast empty `mimeTypeMap()` made every
+file on an `acceptedFileTypes()` field "of invalid type" client-side, which is
+how the M3 · 7 browser pass found it (the third map shipped uncast; the render
+test had pinned only the first two). There is no in-repo precedent (`Select`'s
+option map is never empty-and-object), so this is a deliberate new one; the
+render test pins all three as `{}`.
 
 The same method must not use `filter_var()` anywhere in the `maxFileSize`
 expression: with no filter it returns a **string**, which `min()` would then

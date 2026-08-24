@@ -168,3 +168,23 @@ it('is neither dehydrated nor validated when hidden and not dehydrated when hidd
 it('is not "neither" when dehydrated', function (): void {
     expect(StateField::make('title')->isNeitherDehydratedNorValidated())->toBeFalse();
 });
+
+it('does not mutate state for validation by default', function (): void {
+    $field = StateField::make('title');
+
+    expect($field->mutatesStateForValidation())->toBeFalse()
+        ->and($field->mutateStateForValidation('  x  '))->toBe('  x  ');
+});
+
+it('mutates state for validation through the configured closure, with the state injected by name', function (): void {
+    $field = StateField::make('title')->mutateStateForValidationUsing(fn (mixed $state): string => mb_strtoupper((string) $state));
+
+    expect($field->mutatesStateForValidation())->toBeTrue()
+        ->and($field->mutateStateForValidation('abc'))->toBe('ABC');
+});
+
+it('clears the validation mutation with null', function (): void {
+    $field = StateField::make('title')->mutateStateForValidationUsing(fn (): string => 'x')->mutateStateForValidationUsing(null);
+
+    expect($field->mutatesStateForValidation())->toBeFalse();
+});

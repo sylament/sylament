@@ -48,6 +48,8 @@ trait HasState
 
     protected ?Closure $mutateDehydratedStateUsing = null;
 
+    protected ?Closure $mutateStateForValidationUsing = null;
+
     /**
      * @var array<StateCast|Closure>
      */
@@ -415,6 +417,13 @@ trait HasState
         return $this;
     }
 
+    public function mutateStateForValidationUsing(?Closure $callback): static
+    {
+        $this->mutateStateForValidationUsing = $callback;
+
+        return $this;
+    }
+
     public function isDehydrated(): bool
     {
         $isDehydrated = $this->evaluate($this->isDehydrated) ?? $this->isSaved();
@@ -475,6 +484,22 @@ trait HasState
         }
 
         return $this->evaluate($this->mutateDehydratedStateUsing, [
+            'state' => $state,
+        ]);
+    }
+
+    public function mutatesStateForValidation(): bool
+    {
+        return $this->mutateStateForValidationUsing instanceof Closure;
+    }
+
+    public function mutateStateForValidation(mixed $state): mixed
+    {
+        if (! $this->mutateStateForValidationUsing instanceof Closure) {
+            return $state;
+        }
+
+        return $this->evaluate($this->mutateStateForValidationUsing, [
             'state' => $state,
         ]);
     }

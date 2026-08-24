@@ -93,7 +93,7 @@ twelve are ported
 [`select`](#the-select-controller-binds-a-port-of-filaments-select-utility-to-the-live-host)
 and [`file-upload`](#the-file-upload-controller-bundles-filepond-and-is-the-only-lazy-controller))
 and the other nine belong to fields that do not exist here yet. The workspace's
-fourth controller,
+other controller,
 [`repeater`](#the-repeater-controller-owns-the-items-collapse-state-and-bridges-the-drag-control-to-the-reorder-action),
 is not one of the twelve: Filament embeds the repeater's Alpine object in the
 component's own view rather than registering it as an asset. **Next step:**

@@ -63,7 +63,7 @@ final class TemporaryUploadsRig
 
         file_put_contents($path, $content);
 
-        return new UploadedFile($path, $name, null, null, true);
+        return new UploadedFile($path, $name, test: true);
     }
 
     public static function pngBytes(): string

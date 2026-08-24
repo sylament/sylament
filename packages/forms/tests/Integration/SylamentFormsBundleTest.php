@@ -9,8 +9,9 @@ use Symfony\Component\AssetMapper\AssetMapperInterface;
 
 it('wires the temporary upload store from the sylament_forms config tree', function (): void {
     // The bundle's first `configure()` tree. The disk is deliberately not asserted: it resolves
-    // through `sylament.default_filesystem_disk`, which this kernel does not set today and a
-    // later lane does — the directory and the sweep flag are what this wiring owns.
+    // through `sylament.default_filesystem_disk` (which this kernel sets for the live suites)
+    // and is covered by LiveFileUploadTest — the directory and the sweep flag are what this
+    // wiring owns.
     $store = $this::getContainer()->get(TemporaryUploads::class);
 
     expect($store)->toBeInstanceOf(TemporaryUploads::class)

@@ -61,8 +61,7 @@ class SylamentFormsBundle extends SylamentBundle
                 '$directory' => $config['temporary_file_upload']['directory'],
                 '$cleanup' => $config['temporary_file_upload']['cleanup'],
             ])
-            ->alias(TemporaryUploads::class, 'sylament_forms.temporary_uploads')
-            ->public();
+            ->alias(TemporaryUploads::class, 'sylament_forms.temporary_uploads');
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void

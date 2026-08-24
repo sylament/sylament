@@ -50,7 +50,7 @@ afterEach(function (): void {
 
 it('flags a file under the minimum, naming the size, the limit and the unit', function (): void {
     $violations = Validation::createValidator()->validate(
-        new UploadedFile(fileOfBytes(3), 'tiny.bin', null, null, true),
+        new UploadedFile(fileOfBytes(3), 'tiny.bin', test: true),
         new MinFileSize(kilobytes: 1),
     );
 
@@ -61,8 +61,8 @@ it('flags a file under the minimum, naming the size, the limit and the unit', fu
 it('accepts a file at or over the minimum', function (): void {
     $validator = Validation::createValidator();
 
-    expect($validator->validate(new UploadedFile(fileOfBytes(2048), 'big.bin', null, null, true), new MinFileSize(kilobytes: 1)))->toHaveCount(0)
-        ->and($validator->validate(new UploadedFile(fileOfBytes(1024), 'exact.bin', null, null, true), new MinFileSize(kilobytes: 1)))->toHaveCount(0);
+    expect($validator->validate(new UploadedFile(fileOfBytes(2048), 'big.bin', test: true), new MinFileSize(kilobytes: 1)))->toHaveCount(0)
+        ->and($validator->validate(new UploadedFile(fileOfBytes(1024), 'exact.bin', test: true), new MinFileSize(kilobytes: 1)))->toHaveCount(0);
 });
 
 it('accepts a plain path and an SplFileInfo, the value types FileValidator takes', function (): void {
@@ -105,7 +105,7 @@ it('rejects a value type no file can be read from', function (): void {
 
 it('carries a message the caller overrides', function (): void {
     $violations = Validation::createValidator()->validate(
-        new UploadedFile(fileOfBytes(3), 'tiny.bin', null, null, true),
+        new UploadedFile(fileOfBytes(3), 'tiny.bin', test: true),
         new MinFileSize(kilobytes: 1, message: 'Too small: {{ size }}/{{ limit }} {{ suffix }}.'),
     );
 

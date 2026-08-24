@@ -174,8 +174,8 @@ abstract class BaseFileUpload extends Field implements AcceptsUploadedFiles
     {
         parent::setUp();
 
-        // The disk-existence check runs only when state is hydrated from the record, never when a
-        // live request updates it, so it is not a boundary for a submitted path —
+        // Security: the disk-existence check runs only when state is hydrated from the record,
+        // never when a live request updates it, so it is not a boundary for a submitted path —
         // `preventFilePathTampering()` is.
         $this->afterStateHydrated(static function (BaseFileUpload $component): void {
             $component->hydrateFiles();

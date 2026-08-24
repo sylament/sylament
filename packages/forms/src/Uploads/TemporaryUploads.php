@@ -28,7 +28,7 @@ final readonly class TemporaryUploads
 
     private const int MAX_AGE_SECONDS = 86400;
 
-    private const string FILENAME_PATTERN = '/^[0-9a-f]{40}\.[a-z0-9]{1,16}$/';
+    private const string FILENAME_PATTERN = '/^[0-9a-f]{40}\.[a-z0-9]{1,16}$/D';
 
     private string $directory;
 

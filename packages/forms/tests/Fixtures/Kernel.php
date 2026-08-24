@@ -7,6 +7,7 @@ namespace Sylament\Forms\Tests\Fixtures;
 use League\FlysystemBundle\FlysystemBundle;
 use Sylament\Actions\SylamentActionsBundle;
 use Sylament\Forms\SylamentFormsBundle;
+use Sylament\Forms\Uploads\TemporaryUploads;
 use Sylament\Schemas\SylamentSchemasBundle;
 use Sylament\Support\SylamentSupportBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -97,6 +98,12 @@ class Kernel extends BaseKernel
         $container->extension('sylament', [
             'default_filesystem_disk' => 'test.storage',
         ]);
+
+        // The production alias is private; keep the store reachable by class-string through the
+        // test container even when no fixture references it.
+        $container->services()
+            ->alias('sylament_forms.tests.temporary_uploads', TemporaryUploads::class)
+            ->public();
 
         $container->import(__DIR__ . '/services_doctrine.php');
 

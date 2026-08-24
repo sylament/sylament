@@ -188,11 +188,11 @@ revealed only once a controller applies its first state. A `reorderable()`
 repeater falls back to whatever it was given otherwise — the move buttons if
 `reorderableWithButtons()` is on, nothing if the drag handle is the only route.
 `file-upload` is the one controller declared `"fetch": "lazy"`: it carries
-FilePond with it, and a page with no upload field on it should not pay for
-that. It is also the one whose omission fails total rather than partial —
-`FileUpload` falls back to the bare `<input type="file">` under its label, with
-nothing listening to it, so there is no drop zone, no preview, and a picked
-file never leaves the page.
+FilePond and Cropper.js with it, and a page with no upload field on it should
+not pay for that. It is also the one whose omission fails total rather than
+partial — `FileUpload` falls back to the bare `<input type="file">` under its
+label, with nothing listening to it, so there is no drop zone, no preview, and
+a picked file never leaves the page.
 
 Schemas' three are per-schema: `tabs` and `wizard` drive tab switching and the
 wizard's step navigation, and `schema` sits on every root schema — it reveals the

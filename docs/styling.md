@@ -186,7 +186,12 @@ Consumers never need Tailwind installed.
     `packages/forms/assets/src/styles/filepond.generated.css` — every rule
     rewritten to the descendant variant, every keyframe renamed
     `sy-fo-file-upload-*` with its `animation` references, and an MIT notice
-    composed from the installed packages heading the file. Forms' select engine —
+    composed from the installed packages heading the file. Cropper.js's
+    stylesheet is the second generated vendor sheet: `scope-vendor-css.mjs`
+    rewrites `cropperjs/dist/cropper.css` as forms' gitignored
+    `cropper.generated.css`, every rule scoped under
+    `.sy-fo-file-upload-editor` — the dialog's class rather than the field's,
+    since Cropper's DOM only ever lives inside it. Forms' select engine —
     a port of Filament's own — is the other side of the rule: it builds its DOM
     itself, emits only `sy-` classes, and leaves SortableJS's `sortable-ghost` /
     `sortable-chosen` / `sortable-drag` unstyled, exactly as Filament's select

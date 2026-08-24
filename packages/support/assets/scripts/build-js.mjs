@@ -28,6 +28,10 @@ const BUNDLED_ENTRIES = {
         external: ['@hotwired/stimulus'],
         license: '@floating-ui/dom',
     },
+    'controllers/sortable_controller.ts': {
+        external: ['@hotwired/stimulus'],
+        license: 'sortablejs',
+    },
 };
 
 const here = path.dirname(fileURLToPath(import.meta.url));

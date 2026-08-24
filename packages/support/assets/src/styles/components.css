@@ -15,3 +15,4 @@
 @import './components/input-wrapper.css' layer(components);
 @import './components/tabs.css' layer(components);
 @import './components/loading-indicator.css' layer(components);
+@import './components/sortable.css' layer(components);

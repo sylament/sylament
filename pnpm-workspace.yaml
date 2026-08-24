@@ -7,6 +7,7 @@ overrides:
   tailwindcss: "^4.3.0"
   "@tailwindcss/cli": "^4.3.0"
   typescript: "^6.0.3"
+  sortablejs: "^1.15.7"
 
 hoistPattern: []
 strictPeerDependencies: true

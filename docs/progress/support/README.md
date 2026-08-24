@@ -114,7 +114,11 @@ services, root value classes, translations, and the bundle wiring —
 [`src/Icons`](../../../vendor/filament/support/src/Icons),
 [`src/Assets`](../../../vendor/filament/support/src/Assets),
 [`src/View`](../../../vendor/filament/support/src/View),
-[`src/Commands`](../../../vendor/filament/support/src/Commands).
+[`src/Commands`](../../../vendor/filament/support/src/Commands) — plus the shipped
+front-end resources that back no `src/` class at all
+([`resources/js`](../../../vendor/filament/support/resources/js),
+[`resources/css`](../../../vendor/filament/support/resources/css)), whose ports are
+this package's Stimulus controllers and `assets/src/styles/components/*.css` rules.
 
 Three symbols in this package share the name `HasColor`, and Filament collides
 the same way. **[`Components\Concerns\HasColor`](../../../packages/support/src/Components/Concerns/HasColor.php)**
@@ -172,6 +176,7 @@ name.
 | Js | [`Assets/Js.php`](../../../vendor/filament/support/src/Assets/Js.php) | todo | — |
 | Theme | [`Assets/Theme.php`](../../../vendor/filament/support/src/Assets/Theme.php) | todo | — |
 | AssetManager | [`Assets/AssetManager.php`](../../../vendor/filament/support/src/Assets/AssetManager.php) | todo | — |
+| [Sortable control](../../../packages/support/assets/src/controllers/sortable_controller.ts) — the `sylament--support--sortable` Stimulus controller and its [ghost-class rule](../../../packages/support/assets/src/styles/components/sortable.css) | [`resources/js/sortable.js`](../../../vendor/filament/support/resources/js/sortable.js) · [`resources/css/sortable.css`](../../../vendor/filament/support/resources/css/sortable.css) | done | [sortable.md](sortable.md) |
 | [`ComponentAttributeBag`](../../../packages/support/src/Twig/ComponentAttributeBag.php) | [`View/ComponentAttributeBag.php`](../../../vendor/filament/support/src/View/ComponentAttributeBag.php) | done | [component-attribute-bag.md](component-attribute-bag.md) |
 | ViewManager | [`View/ViewManager.php`](../../../vendor/filament/support/src/View/ViewManager.php) | todo | — |
 | [`SupportIconAlias`](../../../packages/support/src/Twig/SupportIconAlias.php) | [`View/SupportIconAlias.php`](../../../vendor/filament/support/src/View/SupportIconAlias.php) | in progress | [support-icon-alias.md](support-icon-alias.md) |

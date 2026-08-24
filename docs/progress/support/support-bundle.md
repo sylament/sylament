@@ -46,6 +46,17 @@ confirms `AssetMapperInterface` exists and FrameworkBundle ships
 an optional dependency for production consumers. This is the faithful Symfony
 analog of Filament registering `Js::make('support', …)` with `FilamentAsset`.
 
+What lands in that directory is
+[`assets/scripts/build-js.mjs`](../../../packages/support/assets/scripts/build-js.mjs)'s
+business: every `src/**/*.ts` builds per-file and unbundled, its import specifiers
+shipped verbatim for the consuming app's importmap to resolve, except the entries
+in that script's `BUNDLED_ENTRIES` table — the `dropdown` controller, bundling
+`@floating-ui/dom`, and the `sortable` controller, bundling `sortablejs`
+([sortable.md](sortable.md#sortablejs-is-bundled-twice-pinned-to-one-version)) —
+which inline their library behind a licence banner composed from the installed
+package and keep `@hotwired/stimulus` external. So the prepended directory needs
+no importmap entry beyond Stimulus itself.
+
 What is missing: **no test.** Nothing asserts the path/alias is prepended when
 AssetMapper is present, and nothing exercises the negative branch of
 `isAssetMapperAvailable()` (the short-circuit that returns without prepending).

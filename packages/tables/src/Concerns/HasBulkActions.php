@@ -41,7 +41,7 @@ trait HasBulkActions
 
     public function isTableRecordSelected(string $key): bool
     {
-        if ($this->isTrackingDeselectedTableRecords) {
+        if ($this->tracksDeselectedTableRecords()) {
             return !in_array($key, $this->normalizedSelectedTableRecordKeys($this->deselectedTableRecords), true);
         }
 
@@ -50,7 +50,7 @@ trait HasBulkActions
 
     public function hasSelectedTableRecords(): bool
     {
-        return $this->isTrackingDeselectedTableRecords
+        return $this->tracksDeselectedTableRecords()
             || $this->normalizedSelectedTableRecordKeys($this->selectedTableRecordKeys) !== [];
     }
 
@@ -70,7 +70,7 @@ trait HasBulkActions
 
         $selectedKeys = $this->normalizedSelectedTableRecordKeys($this->selectedTableRecordKeys);
 
-        if ($selectedKeys === [] && !$this->isTrackingDeselectedTableRecords) {
+        if ($selectedKeys === [] && !$this->tracksDeselectedTableRecords()) {
             return $this->cachedSelectedTableRecords = [];
         }
 
@@ -79,7 +79,7 @@ trait HasBulkActions
         if (!$table->hasQuery()) {
             $records = $table->getRecords();
 
-            $resolvedRecords = $this->isTrackingDeselectedTableRecords
+            $resolvedRecords = $this->tracksDeselectedTableRecords()
                 ? array_diff_key($records, array_flip($this->normalizedSelectedTableRecordKeys($this->deselectedTableRecords)))
                 : array_intersect_key($records, array_flip($selectedKeys));
 
@@ -116,7 +116,7 @@ trait HasBulkActions
 
         $identifier = $this->resolveTableRecordKeyExpression($query);
 
-        if ($this->isTrackingDeselectedTableRecords) {
+        if ($this->tracksDeselectedTableRecords()) {
             $deselectedKeys = $this->normalizedSelectedTableRecordKeys($this->deselectedTableRecords);
 
             // An empty exclusion set means every row, so the constraint is
@@ -244,6 +244,32 @@ trait HasBulkActions
         $this->deselectedTableRecords = [];
         $this->isTrackingDeselectedTableRecords = false;
         $this->cachedSelectedTableRecords = null;
+    }
+
+    /**
+     * Whether the client's tracking flag is honoured. The flag is untrusted like
+     * the two bags, and it is the only one whose forgery *widens* the reach — an
+     * inverted selection with an empty exclusion bag means every row — so the
+     * gate the client renders its own checkbox behaviour from is re-derived
+     * here: a table that cannot track deselections at all, and a query-lane
+     * table that confines selection to the current page, resolve a forged flag
+     * as no tracking rather than as the whole set. A `records()` table is
+     * page-only by construction and is left alone, since its tracking arm
+     * resolves off the page collection the user was actually shown.
+     */
+    private function tracksDeselectedTableRecords(): bool
+    {
+        if (!$this->isTrackingDeselectedTableRecords) {
+            return false;
+        }
+
+        $table = $this->getTable();
+
+        if (!$table->canTrackDeselectedRecords()) {
+            return false;
+        }
+
+        return !$table->hasQuery() || !$table->selectsCurrentPageOnly();
     }
 
     /**

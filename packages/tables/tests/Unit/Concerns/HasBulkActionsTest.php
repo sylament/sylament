@@ -100,6 +100,50 @@ it('selects every filtered row while tracking an empty deselection bag', functio
         ->and($host->getSelectedTableRecordsQuery()->getDQL())->not->toContain('NOT IN');
 });
 
+/*
+ * The tracking flag is the one client value whose forgery *widens* the reach, so
+ * it is re-derived against the same gate the checkboxes render from: a page-only
+ * query table and a table that cannot track at all both resolve a forged flag as
+ * the plain key selection rather than as every filtered row.
+ */
+it('refuses a tracking flag the table would never have offered', function (): void {
+    $pageOnly = selectionHost(
+        selectableSongs(),
+        static fn (Table $table): Table => $table->selectCurrentPageOnly(),
+    );
+    $untracked = selectionHost(
+        selectableSongs(),
+        static fn (Table $table): Table => $table->deselectAllRecordsWhenFiltered(false),
+    );
+
+    foreach ([$pageOnly, $untracked] as $forged) {
+        $forged->isTrackingDeselectedTableRecords = true;
+        $forged->deselectedTableRecords = [];
+        $forged->selectedTableRecordKeys = ['1'];
+    }
+
+    expect($pageOnly->getSelectedTableRecords(shouldFetchSelectedRecords: false))->toBe(['1'])
+        ->and($pageOnly->isTableRecordSelected('2'))->toBeFalse()
+        ->and($pageOnly->getSelectedTableRecordsQuery()->getDQL())
+        ->toContain('song.id IN (:sylament_selected_record_keys)')
+        ->and($untracked->getSelectedTableRecords(shouldFetchSelectedRecords: false))->toBe(['1'])
+        ->and($untracked->isTableRecordSelected('2'))->toBeFalse()
+        ->and($untracked->getSelectedTableRecordsQuery()->getDQL())
+        ->toContain('song.id IN (:sylament_selected_record_keys)');
+});
+
+it('reports nothing selected for a forged tracking flag over an empty selection', function (): void {
+    $host = selectionHost(
+        selectableSongs(),
+        static fn (Table $table): Table => $table->selectCurrentPageOnly(),
+    );
+
+    $host->isTrackingDeselectedTableRecords = true;
+
+    expect($host->hasSelectedTableRecords())->toBeFalse()
+        ->and($host->getSelectedTableRecords())->toBe([]);
+});
+
 it('plucks the keys instead of hydrating when told not to fetch', function (): void {
     $host = selectionHost(selectableSongs());
 

@@ -768,6 +768,21 @@ all. Every read re-derives:
   comes back, in both universes. The
   [filter half is conditional](table.md#one-filter-setting-drives-three-selection-behaviours);
   the selectability half never is.
+- `tracksDeselectedTableRecords()` re-derives the **flag** itself, which is the
+  one client value whose forgery *widens* the reach: an inverted selection with
+  an empty exclusion bag means every row, so a `true` posted onto a table whose
+  UI never offers tracking would resolve a bulk write to the whole filtered set —
+  or, where `deselectAllRecordsWhenFiltered(false)` also turns the filter
+  re-application off, to the whole unfiltered base query. The controller offers
+  the inverted selection only when `canTrackDeselectedRecords()` and not
+  `selectsCurrentPageOnly()`, and the reader is that same gate on the server:
+  a table that cannot track at all, and a **query-lane** table that confines
+  selection to its page, both read a forged flag as no tracking and fall back to
+  the selected-keys bag. A `records()` table is page-only by construction and is
+  deliberately left alone — its tracking arm resolves off the page collection the
+  user was shown, so there is nothing to widen. Filament trusts the flag; this is
+  a divergence, and it costs nothing, because every path our own chrome can take
+  passes the gate.
 
 Two universes, as everywhere else on this trait. On the **records lane** the
 selection resolves off the current page collection — `array_intersect_key()` for

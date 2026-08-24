@@ -84,7 +84,7 @@ _Ports_ cell is `—` has no Filament counterpart.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
-| [The partial](../../../packages/forms/templates/partials/FileUpload/index.html.twig) and its 32 Stimulus values | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [semantics](#the-dom-contract-is-the-controllers-only-input) |
+| [The partial](../../../packages/forms/templates/partials/FileUpload/index.html.twig) and its 51 Stimulus values | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | [semantics](#the-dom-contract-is-the-controllers-only-input) |
 | [`getExtraTemplateData()`](../../../packages/forms/src/Components/FileUpload.php) | the `toEmbeddedHtml()` preamble | done | — | [diverges](#the-three-maps-are-object-cast-so-an-empty-one-serialises-as-) |
 | [`avatar()` / `isAvatar()`](../../../packages/forms/src/Components/FileUpload.php) | [`avatar()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
 | [`image()`](../../../packages/forms/src/Components/FileUpload.php) | [`image()`](../../../vendor/filament/forms/src/Components/FileUpload.php) | done | — | — |
@@ -171,7 +171,7 @@ reads the raw property in three of the four.
 
 ### The DOM contract is the controller's only input
 
-The partial renders the controller element with all 32 Stimulus values and a
+The partial renders the controller element with all 51 Stimulus values and a
 `data-live-ignore` subtree for FilePond to build into. That split is the whole
 contract: the element **morphs**, so every value is re-read after a live
 update — which is how `uploadedFiles` and `state` stay the server's truth,
@@ -179,6 +179,10 @@ exactly as the [select's option map](select.md) does — while the pond subtree
 never does, because FilePond owns its DOM after `create()`. A `disabled` flip
 therefore reaches the pond through its value and `setOptions()`, never through
 the `<input>`, whose attributes stop updating the moment FilePond adopts it.
+
+The editor dialog is a second `data-live-ignore` island beside the pond
+container, so its chrome — the aspect-ratio buttons, the group titles, the
+footer — is first-render only and never reacts to a later live update.
 
 ### `imageAspectRatio()` validates and `automaticallyCropImagesToAspectRatio()` crops
 
@@ -389,6 +393,37 @@ array key at runtime, in this port and in Filament alike, which the declared
 `array<string, float|string>` does not say; it renders identically, so the
 docblock keeps Filament's shape rather than widening to `array-key`.
 
+### The editor is a `<dialog>` island, not an overlay
+
+Filament renders the editor as a `role="dialog"` div pinned with `fixed inset-0
+z-50`, focus-trapped by `x-trap.noscroll`, closed by an Escape handler and
+backed by a decorative overlay div. Ours is a native `<dialog>` the controller
+opens with `showModal()`, and every one of those four pieces is the platform's
+instead: the top layer replaces the z-index (and cannot be clipped by a
+transformed or overflow-hidden ancestor, which a `position: fixed` div can), the
+browser's own focus trap and inert background replace `x-trap`, the `cancel`
+event replaces the Escape handler, and `::backdrop` replaces the overlay div —
+which had no click handler in Filament either. That is the mechanism support's
+[`Modal`](../support/modal.md) already runs on; the editor does not use `Modal`
+itself, because its client-side open path is a window event matched by id, its
+width presets and header/footer slots do not fit a full-viewport
+image-left/panel-right layout, and Filament likewise keeps the editor outside
+its own modal component — the editor is field chrome, not a modal.
+
+The **island** is the second half of the divergence and it is forced by the
+morph: Cropper injects its `.cropper-container` DOM beside the `<img>`, and
+outside a `data-live-ignore` subtree UX Live's `beforeNodeMorphed` inserts the
+server's node *after* a client-added one rather than replacing it, duplicating
+the whole editor on every render. Two costs, both recorded rather than fixed.
+The dialog's static chrome is first-render only, so a closure-valued
+`imageEditorAspectRatioOptions()` cannot react to a sibling field's state —
+exactly as in Filament — and `disabled()` flipping on through a live update
+leaves the dialog in the DOM, because a live-ignored node is never removed; the
+controller's `disabled` gate is what refuses to open it (flipping off adds the
+dialog, since added nodes are not blocked). And there is no body-scroll lock:
+support's modal has none either, so `noscroll`'s half of `x-trap` is the one
+piece of Filament's overlay with no replacement here.
+
 ### The bundle drops FilePond's mime database
 
 `mimeTypeMap()` ships as the extension→MIME override it is, and it is the only
@@ -502,3 +537,21 @@ for), `The %s field must not have more than %d items.` (the max-files message,
 `The submitted file path is not authorised.` (the tampering violation).
 `The file could not be uploaded.` is the controller-side default for a refusal
 that arrives with no message and lives with the JS.
+
+The editor adds the rest. On the dialog itself: `Image editor` (its
+`aria-label`), the footer's `Cancel`, `Reset` and `Save`, the five field labels
+`X` / `Y` / `Width` / `Height` / `Rotation` with the units `px` and `deg`, the
+aspect-ratio group's title `Aspect ratios`, the free-ratio option's label
+`Free`, and each ratio button's `Set aspect ratio to <ratio>` title. The
+thirteen toolbar labels come from `getImageEditorActions()` and serve as both
+`aria-label` and `title`: `Drag mode "move"`, `Drag mode "crop"`, `Zoom in`,
+`Zoom out`, `Zoom image to 100%`, `Move image to left`, `Move image to right`,
+`Move image up`, `Move image down`, `Rotate image to left`,
+`Rotate image to right`, `Flip image horizontally`, `Flip image vertically`. Two
+more ride to the browser as Stimulus values, because the controller shows them
+in a `confirm()` and an error: `Editing SVG files is not recommended as it can
+result in quality loss when scaling.` followed by a newline and `Are you sure
+you want to continue?` — Filament's single-quoted PHP leaves a literal
+backslash-n there that renders as two characters, so ours carries the newline
+that was meant — and `Editing SVG files is disabled as it can result in quality
+loss when scaling.`

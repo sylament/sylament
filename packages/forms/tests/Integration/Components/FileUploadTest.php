@@ -7,7 +7,9 @@ namespace Sylament\Forms\Tests\Integration\Components;
 use League\Flysystem\FilesystemOperator;
 use Sylament\Forms\Components\FileUpload;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Forms\Twig\FormsIconAlias;
 use Sylament\Schemas\Schema;
+use Sylament\Support\Icons\IconManager;
 use Symfony\Component\DomCrawler\Crawler;
 
 use function Sylament\Forms\Tests\renderToHtml;
@@ -192,4 +194,119 @@ it('hands the browser no url for a private file the storage cannot sign', functi
 
     expect($uploadedFiles['abc']['url'])->toBeNull()
         ->and($uploadedFiles['abc']['name'])->toBe('b.png');
+});
+
+it('carries the crop, resize, exif and transform values, absent when unset and defaulted when true', function (): void {
+    $bare = fileUploadRoot(FileUpload::make('cover'));
+    $avatar = fileUploadRoot(FileUpload::make('avatar')->avatar()->orientImagesFromExif(false));
+
+    expect($bare->attr('data-sylament--forms--file-upload-image-crop-aspect-ratio-value'))->toBeNull()
+        ->and($bare->attr('data-sylament--forms--file-upload-image-resize-target-width-value'))->toBeNull()
+        ->and($bare->attr('data-sylament--forms--file-upload-image-resize-upscale-value'))->toBeNull()
+        ->and($bare->attr('data-sylament--forms--file-upload-orient-images-from-exif-value'))->toBeNull()
+        ->and($bare->attr('data-sylament--forms--file-upload-transform-images-value'))->toBe('false')
+        ->and($bare->attr('data-sylament--forms--file-upload-image-editor-value'))->toBe('false')
+        ->and($bare->attr('data-sylament--forms--file-upload-image-editor-mode-value'))->toBe('1')
+        ->and($bare->attr('data-sylament--forms--file-upload-editable-svgs-value'))->toBeNull()
+        ->and($avatar->attr('data-sylament--forms--file-upload-image-crop-aspect-ratio-value'))->toBe('1:1')
+        ->and($avatar->attr('data-sylament--forms--file-upload-image-resize-mode-value'))->toBe('cover')
+        ->and($avatar->attr('data-sylament--forms--file-upload-image-resize-target-width-value'))->toBe('500')
+        ->and($avatar->attr('data-sylament--forms--file-upload-image-resize-target-height-value'))->toBe('500')
+        ->and($avatar->attr('data-sylament--forms--file-upload-image-resize-upscale-value'))->toBe('false')
+        ->and($avatar->attr('data-sylament--forms--file-upload-orient-images-from-exif-value'))->toBe('false')
+        ->and($avatar->attr('data-sylament--forms--file-upload-transform-images-value'))->toBe('true')
+        ->and($avatar->attr('data-sylament--forms--file-upload-image-editor-viewport-width-value'))->toBe('360');
+});
+
+it('carries the editor values, the nullable ones absent and the true-defaulted ones dropped', function (): void {
+    $editor = fileUploadRoot(
+        FileUpload::make('cover')->imageEditor()->circleCropper()->imageEditorEmptyFillColor('#ffffff')
+            ->imageEditorViewportWidth(800)->imageEditorViewportHeight(600)->confirmSvgEditing()->editableSvgs(false),
+    );
+    $auto = fileUploadRoot(FileUpload::make('cover')->imageAspectRatio('16:9')->automaticallyOpenImageEditorForAspectRatio());
+    $bare = fileUploadRoot(FileUpload::make('cover'));
+
+    expect($editor->attr('data-sylament--forms--file-upload-image-editor-value'))->toBe('true')
+        ->and($editor->attr('data-sylament--forms--file-upload-image-editor-explicitly-enabled-value'))->toBe('true')
+        ->and($editor->attr('data-sylament--forms--file-upload-circle-cropper-value'))->toBe('true')
+        ->and($editor->attr('data-sylament--forms--file-upload-image-editor-empty-fill-color-value'))->toBe('#ffffff')
+        ->and($editor->attr('data-sylament--forms--file-upload-image-editor-viewport-width-value'))->toBe('800')
+        ->and($editor->attr('data-sylament--forms--file-upload-image-editor-viewport-height-value'))->toBe('600')
+        ->and($editor->attr('data-sylament--forms--file-upload-confirm-svg-editing-value'))->toBe('true')
+        ->and($editor->attr('data-sylament--forms--file-upload-editable-svgs-value'))->toBe('false')
+        ->and($editor->attr('data-sylament--forms--file-upload-confirm-svg-editing-message-value'))->toStartWith('Editing SVG files is not recommended')
+        ->and($editor->attr('data-sylament--forms--file-upload-disabled-svg-editing-message-value'))->toBe('Editing SVG files is disabled as it can result in quality loss when scaling.')
+        ->and($auto->attr('data-sylament--forms--file-upload-image-editor-value'))->toBe('true')
+        ->and($auto->attr('data-sylament--forms--file-upload-image-editor-explicitly-enabled-value'))->toBe('false')
+        ->and((float) $auto->attr('data-sylament--forms--file-upload-automatically-open-image-editor-for-aspect-ratio-value'))->toEqualWithDelta(16 / 9, 0.0001)
+        ->and($bare->attr('data-sylament--forms--file-upload-image-resize-mode-value'))->toBeNull()
+        ->and($bare->attr('data-sylament--forms--file-upload-image-resize-target-height-value'))->toBeNull()
+        ->and($bare->attr('data-sylament--forms--file-upload-image-editor-empty-fill-color-value'))->toBeNull()
+        ->and($bare->attr('data-sylament--forms--file-upload-image-editor-viewport-height-value'))->toBeNull()
+        ->and($bare->attr('data-sylament--forms--file-upload-automatically-open-image-editor-for-aspect-ratio-value'))->toBeNull()
+        ->and($bare->attr('data-sylament--forms--file-upload-circle-cropper-value'))->toBe('false')
+        ->and($bare->attr('data-sylament--forms--file-upload-confirm-svg-editing-value'))->toBe('false');
+});
+
+it('renders no editor dialog unless the editor is on, and none while disabled', function (): void {
+    expect(renderFileUpload(FileUpload::make('cover'))->filter('dialog.sy-fo-file-upload-editor')->count())->toBe(0)
+        ->and(renderFileUpload(FileUpload::make('cover')->imageEditor()->disabled())->filter('dialog.sy-fo-file-upload-editor')->count())->toBe(0);
+});
+
+it('renders the editor as a live-ignored dialog with its toolbar, inputs and footer', function (): void {
+    $crawler = renderFileUpload(
+        FileUpload::make('cover')->imageEditor()->circleCropper()->imageEditorAspectRatioOptions([null, '16:9', '4:3']),
+    );
+    $dialog = $crawler->filter('dialog.sy-fo-file-upload-editor');
+
+    expect($dialog->count())->toBe(1)
+        ->and($dialog->attr('data-live-ignore'))->not->toBeNull()
+        ->and($dialog->attr('aria-label'))->toBe('Image editor')
+        ->and($dialog->attr('class'))->toContain('sy-fo-file-upload-editor-circle-cropper')
+        ->and($dialog->attr('class'))->not->toContain('sy-fo-file-upload-editor-crop-only')
+        ->and($dialog->attr('data-sylament--forms--file-upload-target'))->toBe('editor')
+        ->and($dialog->attr('data-action'))->toBe('cancel->sylament--forms--file-upload#editorCancel')
+        ->and($dialog->filter('img.sy-fo-file-upload-editor-image[data-sylament--forms--file-upload-target="editorImage"]')->count())->toBe(1)
+        ->and($dialog->filter('[data-sylament--forms--file-upload-target="editorField"]')->count())->toBe(5)
+        ->and($dialog->filter('[data-sylament--forms--file-upload-target="editorField"]')->first()->attr('data-sylament--forms--file-upload-field-param'))->toBe('x')
+        ->and($dialog->filter('[data-sylament--forms--file-upload-target="editorField"]')->first()->attr('data-action'))->toBe('keydown->sylament--forms--file-upload#editorApplyField blur->sylament--forms--file-upload#editorApplyField')
+        ->and($dialog->filter('.sy-fo-file-upload-editor-control-panel-main .sy-btn-group')->count())->toBe(4)
+        ->and($dialog->filter('button[data-action="click->sylament--forms--file-upload#editorZoom"]')->count())->toBe(2)
+        ->and($dialog->filter('button[data-action="click->sylament--forms--file-upload#editorMove"][data-sylament--forms--file-upload-x-param="-10"]')->count())->toBe(1)
+        ->and($dialog->filter('button[data-action="click->sylament--forms--file-upload#editorSetDragMode"]')->first()->attr('aria-label'))->toBe('Drag mode "move"')
+        ->and($dialog->filter('[data-sylament--forms--file-upload-target="editorRatio"]')->count())->toBe(3)
+        ->and($dialog->filter('[data-sylament--forms--file-upload-target="editorRatio"]')->first()->attr('data-sylament--forms--file-upload-ratio-param'))->toBe('NaN')
+        ->and($dialog->filter('[data-sylament--forms--file-upload-target="editorRatio"]')->first()->text())->toBe('Free')
+        ->and($dialog->filter('.sy-fo-file-upload-editor-control-panel-footer button')->count())->toBe(3)
+        ->and($dialog->filter('.sy-fo-file-upload-editor-control-panel-footer button')->last()->attr('data-action'))->toBe('click->sylament--forms--file-upload#editorSave');
+});
+
+it('renders the crop-only editor under the auto-open flag, with neither inputs nor toolbar', function (): void {
+    $dialog = renderFileUpload(FileUpload::make('cover')->imageAspectRatio('16:9')->automaticallyOpenImageEditorForAspectRatio())
+        ->filter('dialog.sy-fo-file-upload-editor');
+
+    expect($dialog->count())->toBe(1)
+        ->and($dialog->attr('class'))->toContain('sy-fo-file-upload-editor-crop-only')
+        ->and($dialog->filter('.sy-fo-file-upload-editor-control-panel-main')->count())->toBe(0)
+        ->and($dialog->filter('.sy-fo-file-upload-editor-control-panel-footer button')->count())->toBe(2)
+        ->and($dialog->filter('.sy-fo-file-upload-editor-control-panel-footer button')->first()->attr('data-action'))->toBe('click->sylament--forms--file-upload#editorSave');
+});
+
+it('renders the aspect-ratio group only from two options up, and all thirteen toolbar buttons', function (): void {
+    expect(renderFileUpload(FileUpload::make('cover')->imageEditor())->filter('[data-sylament--forms--file-upload-target="editorRatio"]')->count())->toBe(0)
+        ->and(renderFileUpload(FileUpload::make('cover')->imageEditor()->imageEditorAspectRatioOptions(['1:1']))->filter('[data-sylament--forms--file-upload-target="editorRatio"]')->count())->toBe(0)
+        ->and(renderFileUpload(FileUpload::make('cover')->imageEditor()->imageEditorAspectRatioOptions([null, '1:1']))->filter('[data-sylament--forms--file-upload-target="editorRatio"]')->count())->toBe(2)
+        ->and(renderFileUpload(FileUpload::make('cover')->imageEditor())->filter('.sy-fo-file-upload-editor-control-panel-main .sy-btn-group button')->count())->toBe(13);
+});
+
+it('lets a registered alias replace an editor toolbar icon at render time', function (): void {
+    // The heroicon the override names is the 24-box outline star, where the default is a 20-box solid icon.
+    $this::getContainer()->get(IconManager::class)->register([
+        FormsIconAlias::COMPONENTS_FILE_UPLOAD_EDITOR_ACTIONS_ZOOM_IN => 'heroicons:star',
+    ]);
+
+    $button = renderFileUpload(FileUpload::make('cover')->imageEditor())
+        ->filter('button[data-action="click->sylament--forms--file-upload#editorZoom"]')->first();
+
+    expect($button->filter('svg')->attr('viewBox'))->toBe('0 0 24 24');
 });

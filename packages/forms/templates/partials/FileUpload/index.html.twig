@@ -1,12 +1,21 @@
 {% set controller = 'sylament--forms--file-upload' %}
 {% set linkColorAttrs = colorAttributes('Sylament\\Support\\Colors\\Components\\LinkComponent', 'primary') %}
 
+{% set hasImageEditor = component.hasImageEditor %}
+{% set isImageEditorExplicitlyEnabled = component.isImageEditorExplicitlyEnabled %}
+{% set hasCircleCropper = component.hasCircleCropper %}
+{% set editorActions = hasImageEditor ? component.getImageEditorActions : [] %}
+{% set aspectRatioOptions = hasImageEditor ? component.getImageEditorAspectRatioOptionsForJs : [] %}
+
 {#
     The controller's value map, annotated here because a comment cannot live inside attrs():
       state            fileKey → token|path (the raw map, an object so an empty one is `{}`)
       uploadedFiles    fileKey → {name, size, type, url?, openableUrl?, downloadableUrl?} | null
       maxFileSize      bytes — min(maxSize, the PHP ceiling)
       minSize          "{n}KB" | null (FilePond's own unit spelling)
+      transformImages  whether a crop ratio or a resize target makes FilePond transform the bytes
+      imageResizeUpscale, orientImagesFromExif and editableSvgs are declared `default: true`, so
+      `x ? null : false` renders the attribute only to turn that default off
 #}
 <twig:SylamentForms:FieldWrapper :field="component" :labelAsHeading="true">
     <div {{ attrs({
@@ -36,6 +45,13 @@
         maxFilesMessage: maxFilesMessage,
         maxParallelUploads: component.getMaxParallelUploads,
         mimeTypeMap: mimeTypeMap,
+        imageCropAspectRatio: component.getAutomaticallyCropImagesAspectRatio,
+        imageResizeMode: component.getAutomaticallyResizeImagesMode,
+        imageResizeTargetWidth: component.getAutomaticallyResizeImagesWidth,
+        imageResizeTargetHeight: component.getAutomaticallyResizeImagesHeight,
+        imageResizeUpscale: component.shouldAutomaticallyUpscaleImagesWhenResizing ? null : false,
+        orientImagesFromExif: component.shouldOrientImagesFromExif ? null : false,
+        transformImages: transformImages,
         placeholder: component.getPlaceholder,
         imagePreviewHeight: component.getImagePreviewHeight,
         itemPanelAspectRatio: component.getItemPanelAspectRatio,
@@ -45,8 +61,20 @@
         removeUploadedFileButtonPosition: component.getRemoveUploadedFileButtonPosition,
         uploadButtonPosition: component.getUploadButtonPosition,
         uploadProgressIndicatorPosition: component.getUploadProgressIndicatorPosition,
+        imageEditor: hasImageEditor,
+        imageEditorExplicitlyEnabled: isImageEditorExplicitlyEnabled,
+        circleCropper: hasCircleCropper,
+        imageEditorMode: component.getImageEditorMode,
+        imageEditorEmptyFillColor: component.getImageEditorEmptyFillColor,
+        imageEditorViewportWidth: component.getImageEditorViewportWidth,
+        imageEditorViewportHeight: component.getImageEditorViewportHeight,
+        automaticallyOpenImageEditorForAspectRatio: component.getAutomaticallyOpenImageEditorForAspectRatio,
+        editableSvgs: component.canEditSvgs ? null : false,
+        confirmSvgEditing: component.isSvgEditingConfirmed,
         downloadActionLabel: 'Download',
         openActionLabel: 'Open in new tab',
+        confirmSvgEditingMessage: 'Editing SVG files is not recommended as it can result in quality loss when scaling.\nAre you sure you want to continue?',
+        disabledSvgEditingMessage: 'Editing SVG files is disabled as it can result in quality loss when scaling.',
     })) }}>
         <div {{ attrs({class: ['sy-fo-file-upload-input-ctn', linkColorAttrs.class], style: linkColorAttrs.style, 'data-live-ignore': true}, stimulus_target(controller, 'pond')) }}>
             <input {{ attrs({
@@ -58,5 +86,81 @@
         </div>
 
         <div class="sy-fo-file-upload-error-message" role="alert" hidden {{ stimulus_target(controller, 'error') }}></div>
+
+        {% if hasImageEditor and not component.isDisabled %}
+            <dialog {{ attrs({
+                class: ['sy-fo-file-upload-editor', {
+                    'sy-fo-file-upload-editor-circle-cropper': hasCircleCropper,
+                    'sy-fo-file-upload-editor-crop-only': not isImageEditorExplicitlyEnabled,
+                }],
+                'aria-label': 'Image editor',
+                'data-live-ignore': true,
+            }, stimulus_target(controller, 'editor'), stimulus_action(controller, 'editorCancel', 'cancel')) }}>
+                <div class="sy-fo-file-upload-editor-window">
+                    <div class="sy-fo-file-upload-editor-image-ctn">
+                        <img alt="" class="sy-fo-file-upload-editor-image" {{ stimulus_target(controller, 'editorImage') }}>
+                    </div>
+
+                    <div class="sy-fo-file-upload-editor-control-panel">
+                        {% if isImageEditorExplicitlyEnabled %}
+                            <div class="sy-fo-file-upload-editor-control-panel-main">
+                                <div class="sy-fo-file-upload-editor-control-panel-group">
+                                    {% for field, input in {
+                                        x: {label: 'X', unit: 'px'},
+                                        y: {label: 'Y', unit: 'px'},
+                                        width: {label: 'Width', unit: 'px'},
+                                        height: {label: 'Height', unit: 'px'},
+                                        rotation: {label: 'Rotation', unit: 'deg'},
+                                    } %}
+                                        <twig:SylamentSupport:InputWrapper :prefix="input.label" :suffix="input.unit">
+                                            <input {{ attrs({
+                                                type: 'text',
+                                                class: 'sy-fo-input',
+                                                'aria-label': input.label,
+                                            }, stimulus_target(controller, 'editorField')|stimulus_action(controller, 'editorApplyField', 'keydown', {field: field})|stimulus_action(controller, 'editorApplyField', 'blur', {field: field})) }}>
+                                        </twig:SylamentSupport:InputWrapper>
+                                    {% endfor %}
+                                </div>
+
+                                <div class="sy-fo-file-upload-editor-control-panel-group">
+                                    {% for group in editorActions %}
+                                        <div class="sy-btn-group">
+                                            {% for action in group %}
+                                                <twig:SylamentSupport:Button color="gray" :icon="action.icon" :iconAlias="action.alias" :aria-label="action.label" :title="action.label" {{ ...stimulus_action(controller, action.method, 'click', action.params) }} />
+                                            {% endfor %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                                {% if aspectRatioOptions is not empty %}
+                                    <div class="sy-fo-file-upload-editor-control-panel-group">
+                                        <div class="sy-fo-file-upload-editor-control-panel-group-title">Aspect ratios</div>
+
+                                        {% for chunk in aspectRatioOptions|batch(5) %}
+                                            <div class="sy-btn-group">
+                                                {% for label, ratio in chunk %}
+                                                    <twig:SylamentSupport:Button color="gray" :title="'Set aspect ratio to ' ~ label" {{ ...stimulus_target(controller, 'editorRatio') }} {{ ...stimulus_action(controller, 'editorSetAspectRatio', 'click', {ratio: ratio, label: label}) }}>{{ label }}</twig:SylamentSupport:Button>
+                                                {% endfor %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <div class="sy-fo-file-upload-editor-control-panel-footer">
+                            {% if isImageEditorExplicitlyEnabled %}
+                                <twig:SylamentSupport:Button color="gray" {{ ...stimulus_action(controller, 'editorCancel', 'click') }}>Cancel</twig:SylamentSupport:Button>
+                                <twig:SylamentSupport:Button color="danger" class="sy-fo-file-upload-editor-control-panel-reset-action" {{ ...stimulus_action(controller, 'editorReset', 'click') }}>Reset</twig:SylamentSupport:Button>
+                                <twig:SylamentSupport:Button color="success" {{ ...stimulus_action(controller, 'editorSave', 'click') }}>Save</twig:SylamentSupport:Button>
+                            {% else %}
+                                <twig:SylamentSupport:Button color="success" {{ ...stimulus_action(controller, 'editorSave', 'click') }}>Save</twig:SylamentSupport:Button>
+                                <twig:SylamentSupport:Button color="gray" {{ ...stimulus_action(controller, 'editorCancel', 'click') }}>Cancel</twig:SylamentSupport:Button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </dialog>
+        {% endif %}
     </div>
 </twig:SylamentForms:FieldWrapper>

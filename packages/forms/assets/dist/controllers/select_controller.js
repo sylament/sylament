@@ -9,9 +9,21 @@ var RESULT_EVENT = "sylament:schema-component-method-result";
 var ACTION = "callSchemaComponentMethod";
 var queues = /* @__PURE__ */ new WeakMap();
 function callSchemaComponentMethod(component, componentKey, method, args = {}) {
-  const queue = queueFor(component, `${componentKey}\0${method}`);
+  return awaitResult(
+    component,
+    queueKey(componentKey, method, null),
+    () => component.action(ACTION, { componentKey, method, arguments: args }),
+    `${ACTION}(${componentKey}, ${method})`
+  );
+}
+function queueKey(componentKey, method, fileKey) {
+  return `${componentKey}\0${method}\0${fileKey ?? ""}`;
+}
+function awaitResult(component, key, start, label) {
+  const byKey = queuesFor(component);
+  const queue = queueFor(byKey, key);
   return new Promise((resolve, reject) => {
-    const entry = { resolve, reject };
+    const entry = { resolve, reject, label };
     queue.push(entry);
     const settle = (reason) => {
       const index2 = queue.indexOf(entry);
@@ -19,20 +31,24 @@ function callSchemaComponentMethod(component, componentKey, method, args = {}) {
         queue.splice(index2, 1);
         reject(reason);
       }
+      dropQueueIfDrained(byKey, key, queue);
     };
-    component.action(ACTION, { componentKey, method, arguments: args }).then(
-      () => settle(new Error(`${ACTION}(${componentKey}, ${method}) answered without a result.`)),
-      (reason) => settle(reason instanceof Error ? reason : new Error(`${ACTION} request failed.`))
+    start().then(
+      () => settle(new Error(`${label} answered without a result.`)),
+      (reason) => settle(reason instanceof Error ? reason : new Error(`${label} request failed.`))
     );
   });
 }
-function queueFor(component, key) {
+function queuesFor(component) {
   let byKey = queues.get(component);
   if (byKey === void 0) {
     byKey = /* @__PURE__ */ new Map();
     queues.set(component, byKey);
     listen(component, byKey);
   }
+  return byKey;
+}
+function queueFor(byKey, key) {
   let queue = byKey.get(key);
   if (queue === void 0) {
     queue = [];
@@ -40,21 +56,32 @@ function queueFor(component, key) {
   }
   return queue;
 }
+function dropQueueIfDrained(byKey, key, queue) {
+  if (queue.length === 0 && byKey.get(key) === queue) {
+    byKey.delete(key);
+  }
+}
 function listen(component, byKey) {
   component.element.addEventListener(RESULT_EVENT, (event) => {
     if (event.target !== component.element || !(event instanceof CustomEvent)) {
       return;
     }
     const detail = event.detail ?? {};
-    const entry = byKey.get(`${String(detail.componentKey)}\0${String(detail.method)}`)?.shift();
-    entry?.resolve(detail.result);
+    const fileKey = detail.fileKey === void 0 || detail.fileKey === null ? null : String(detail.fileKey);
+    const key = queueKey(String(detail.componentKey), String(detail.method), fileKey);
+    const queue = byKey.get(key);
+    if (queue === void 0) {
+      return;
+    }
+    queue.shift()?.resolve(detail.result);
+    dropQueueIfDrained(byKey, key, queue);
   });
   component.on("response:error", () => {
-    const reason = new Error(`${ACTION} request failed.`);
-    for (const queue of byKey.values()) {
+    for (const [key, queue] of byKey) {
       for (const entry of queue.splice(0)) {
-        entry.reject(reason);
+        entry.reject(new Error(`${entry.label} request failed.`));
       }
+      byKey.delete(key);
     }
   });
 }

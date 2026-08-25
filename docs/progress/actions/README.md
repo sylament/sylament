@@ -72,8 +72,8 @@ fold into its own file: `BulkActionGroup` into
 | [`DeleteBulkAction`](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | in progress | [delete-action.md](delete-action.md#deletebulkaction) |
 | [`DetachAction`](../../../packages/actions/src/DetachAction.php) | [`DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) | done | [detach-action.md](detach-action.md) |
 | [`DetachBulkAction`](../../../packages/actions/src/DetachBulkAction.php) | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | in progress | [detach-action.md](detach-action.md#detachbulkaction) |
-| DissociateAction | [`DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) | todo | - |
-| DissociateBulkAction | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | todo | - |
+| [`DissociateAction`](../../../packages/actions/src/DissociateAction.php) | [`DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) | done | [dissociate-action.md](dissociate-action.md) |
+| [`DissociateBulkAction`](../../../packages/actions/src/DissociateBulkAction.php) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | in progress | [dissociate-action.md](dissociate-action.md#dissociatebulkaction) |
 | [`EditAction`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | [edit-action.md](edit-action.md) |
 | ExportAction | [`ExportAction.php`](../../../vendor/filament/actions/src/ExportAction.php) | todo | - |
 | ExportBulkAction | [`ExportBulkAction.php`](../../../vendor/filament/actions/src/ExportBulkAction.php) | todo | - |

@@ -43,6 +43,8 @@ class SylamentActionsBundle extends SylamentBundle
             ->set(DeleteBulkAction::class)
             ->set(DetachAction::class)
             ->set(DetachBulkAction::class)
+            ->set(DissociateAction::class)
+            ->set(DissociateBulkAction::class)
             ->set(EditAction::class)
             ->set(ReplicateAction::class)
             ->set(ViewAction::class);

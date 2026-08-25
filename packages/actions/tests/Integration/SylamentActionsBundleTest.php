@@ -6,11 +6,14 @@ namespace Sylament\Actions\Tests\Integration;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use Sylament\Actions\AssociateAction;
 use Sylament\Actions\AttachAction;
 use Sylament\Actions\BulkAction;
 use Sylament\Actions\BulkActionGroup;
 use Sylament\Actions\DetachAction;
 use Sylament\Actions\DetachBulkAction;
+use Sylament\Actions\DissociateAction;
+use Sylament\Actions\DissociateBulkAction;
 use Sylament\Actions\ReplicateAction;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Note;
 use Sylament\Actions\Tests\Fixtures\Doctrine\FixtureManagerRegistry;
@@ -80,4 +83,18 @@ it('boots the fixture entity manager, registry and notifications', function (): 
     Notification::make('rig')->title('Saved')->send();
 
     expect($container->get(SessionNotifications::class)->pull())->toHaveCount(1);
+});
+
+it('registers the associate family as non-shared services', function (): void {
+    $container = $this::getContainer();
+
+    expect($container->has(AssociateAction::class))->toBeTrue()
+        ->and($container->has(DissociateAction::class))->toBeTrue()
+        ->and($container->has(DissociateBulkAction::class))->toBeTrue()
+        ->and($container->get(AssociateAction::class))->toBeInstanceOf(AssociateAction::class)
+        ->and($container->get(AssociateAction::class))->not->toBe($container->get(AssociateAction::class))
+        ->and($container->get(DissociateAction::class))->toBeInstanceOf(DissociateAction::class)
+        ->and($container->get(DissociateAction::class))->not->toBe($container->get(DissociateAction::class))
+        ->and($container->get(DissociateBulkAction::class))->toBeInstanceOf(DissociateBulkAction::class)
+        ->and($container->get(DissociateBulkAction::class))->not->toBe($container->get(DissociateBulkAction::class));
 });

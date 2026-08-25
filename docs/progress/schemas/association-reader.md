@@ -16,7 +16,10 @@ It exists so that every later relation-aware component asks one collaborator the
 five questions the mapping can answer — what does this property relate to, how do
 I reference a related entity by id, what key does a record answer to, what query
 lists the options, and how do I delete an orphan — instead of each growing its
-own `EntityManager` dependency and its own metadata reads. The seam is also what
+own `EntityManager` dependency and its own metadata reads. The relationship arm
+adds three more to the list — which records does this owner's collection hold,
+which ones does it not, and how do I put one in or take one out — asked through
+the same collaborator and answered from the same mapping. The seam is also what
 keeps Doctrine optional at runtime: an application with no `EntityManager` gets a
 reader that reports [no association anywhere](#a-null-target-means-no-doctrine-answer-not-no-such-property)
 rather than a container that cannot compile.
@@ -46,7 +49,7 @@ a _Ports_ link.
 
 | Feature | Status | Blocked by | Detail |
 | --- | --- | --- | --- |
-| [`__construct(?EntityManagerInterface)`](../../../packages/schemas/src/State/AssociationReader.php) + [`hasEntityManager()`](../../../packages/schemas/src/State/AssociationReader.php) — the optional-Doctrine seam | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
+| [`__construct(?EntityManagerInterface, ?PropertyAccessor)`](../../../packages/schemas/src/State/AssociationReader.php) + [`hasEntityManager()`](../../../packages/schemas/src/State/AssociationReader.php) — the optional-Doctrine seam, and the accessor the writes go through | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
 | [`describe(string $class, string $property)`](../../../packages/schemas/src/State/AssociationReader.php) — the mapping at one property, or null | done | — | [semantics](#a-null-target-means-no-doctrine-answer-not-no-such-property) |
 | Transient / anonymous-class guarding inside `describe()` | done | — | [semantics](#istransient-answers-false-for-an-anonymous-class-so-it-is-not-the-whole-guard) |
 | [`getReference(string $class, int\|string $id)`](../../../packages/schemas/src/State/AssociationReader.php) — a managed reference without a load | done | — | [diverges](#getreference-throws-where-doctrine-returns-null) |
@@ -54,6 +57,13 @@ a _Ports_ link.
 | [`findRecordKey(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — the same key, or null for an entity that has none yet | done | — | [semantics](#findrecordkey-answers-null-where-getrecordkey-throws) |
 | [`getIdentifierFieldName(string $class)`](../../../packages/schemas/src/State/AssociationReader.php) — the mapped identifier's field name, for a caller that needs the property rather than the value | done | — | [diverges](#a-composite-identifier-is-refused-not-encoded) |
 | [`createOptionQuery(string $targetClass, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — the base query an option list narrows | done | — | [semantics](#the-option-query-is-a-starting-point-not-a-result) |
+| [`Relationship`](../../../packages/schemas/src/State/Relationship.php) — one owner record's association, by name | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
+| [`describeRelationship(Relationship)`](../../../packages/schemas/src/State/AssociationReader.php) — the mapping at a relationship, refused rather than null | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
+| [`createRelationshipQuery(Relationship, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — the owner's related records, rooted at the target | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
+| [`createRelationshipCandidateQuery(Relationship, string $alias = 'record')`](../../../packages/schemas/src/State/AssociationReader.php) — every target record NOT related to this owner | done | — | [semantics](#the-relationship-query-is-rooted-at-the-target-and-needs-no-inverse-mapping) |
+| [`attach(Relationship, object $related)`](../../../packages/schemas/src/State/AssociationReader.php) — make a record one of the owner's, in memory | done | — | [semantics](#a-write-lands-on-the-side-doctrine-persists) |
+| [`detach(Relationship, object $related)`](../../../packages/schemas/src/State/AssociationReader.php) — the mirror removal, after the dissociate refusals | done | — | [semantics](#a-write-lands-on-the-side-doctrine-persists) |
+| [`assertRelationshipAcceptsDetach(Relationship)`](../../../packages/schemas/src/State/AssociationReader.php) — the three dissociate refusals alone, for a bulk arm that writes by key | done | — | [semantics](#a-write-lands-on-the-side-doctrine-persists) |
 | [`remove(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) — delete an orphan through the unit of work | done | — | [semantics](#remove-is-here-so-orphan-deletion-does-not-grow-a-second-seam) |
 | [`persist(object $entity)`](../../../packages/schemas/src/State/AssociationReader.php) + [`flush()`](../../../packages/schemas/src/State/AssociationReader.php) — write a newly created related record | done | — | [semantics](#persist-and-flush-are-the-write-half-of-the-same-seam) |
 | [`AssociationTarget::$targetClass` / `$isToMany`](../../../packages/schemas/src/State/AssociationTarget.php) — what to load and in what shape | done | — | — |
@@ -75,7 +85,21 @@ class, an anonymous class), the four operations refusing without an entity
 manager, the record key against a persisted entity, and both key refusals — an
 unpersisted entity and the composite-identifier
 [`CompositePair`](../../../packages/schemas/tests/Fixtures/Doctrine/Entity/CompositePair.php)
-fixture carried over from tables.
+fixture carried over from tables. The relationship seam is covered beside them:
+`describeRelationship()`'s four refusals and its uninitialised-owner arm, both
+query shapes asserted as DQL character for character and as the SQL SQLite
+renders, the candidate negation with its mandatory `IS NULL` arm and a composed
+`andWhere()` proving the two arms stay bracketed, the owner-without-an-identifier
+refusal, and — over the Integration rig, which persists and flushes by hand
+because [`EntityManagerFactory::seed()`](../../../packages/schemas/tests/Fixtures/Doctrine/EntityManagerFactory.php)
+clears the identity map — attach and detach on a unidirectional many-to-many,
+on both directions of the bidirectional `Post::$categories` ↔ `Category::$posts`
+pair, the one-to-many associate/dissociate through `Author::$posts`, a detach
+handed a reference rather than a hydrated record, the no-op attach of an
+already-related record, and the three dissociate refusals one fixture each
+([`Post::$sections`](../../../packages/schemas/tests/Fixtures/Doctrine/Entity/Post.php)
+for orphan removal, `Post::$comments` for the NOT NULL join column, `Post::$replies`
+for the setter that rejects null).
 
 ## Semantics
 
@@ -195,7 +219,9 @@ Doctrine's job at flush time, but a component that *replaces* a collection has t
 delete what it dropped, and that is an `EntityManager::remove()` call. Routing it
 through the reader keeps the "only seam" property true: no relation-aware
 component holds an `EntityManager` of its own, and the null-manager refusal above
-covers deletion for free.
+covers deletion for free. [`attach()` and `detach()`](#a-write-lands-on-the-side-doctrine-persists)
+are the third arm of the same argument, one tier up: they write an association
+rather than a record, and they route through the reader for the same reason.
 
 The first component to replace a collection did **not** end up calling it. The
 [relationship repeater](../forms/repeater.md#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
@@ -229,6 +255,104 @@ in one pass should pay for one flush rather than one per record.
 `flush()` takes no entity because ORM 3's `EntityManager::flush(): void` takes
 none either — the single-entity flush ORM 2 offered is gone, so the reader has no
 narrower boundary to expose even if a caller wanted one.
+
+### The relationship query is rooted at the target and needs no inverse mapping
+
+A [`Relationship`](../../../packages/schemas/src/State/Relationship.php) is an
+owner object and a property name, and nothing else — Filament's counterpart is an
+Eloquent `Relation`, which is a query, a pair of models and a set of write
+primitives at once, and Doctrine has no such object to port. Every fact about it
+is read on demand, so the value object stays free of an `EntityManager` and the
+reader stays the only seam that holds one.
+
+`describeRelationship()` is `describe()` with the null answers turned into
+refusals, because a relation-scoped table has nothing to fall back to: no entity
+manager, an owner whose class is not mapped, a property Doctrine maps no
+association at, and a **single-valued** association each get a message naming the
+fix. The last is the mirror image of
+[`requireSingularRelationshipTarget()`](entangles-state-with-singular-relationship.md)
+one component over — that one refuses a collection where it wanted a record, this
+one refuses a record where it wanted a collection. The owner's class is read off
+the metadata rather than off `$owner::class`, so a Doctrine proxy answers as its
+entity; with native lazy objects (both rigs enable them) the two are already the
+same, and the metadata read is what keeps a classic proxy working.
+
+Both queries select the **target** entity as their single root under a
+caller-chosen alias, defaulting to `record`. That is load-bearing rather than
+stylistic: every consumer downstream reads `getRootAliases()[0]` and the first
+root entity to learn what the table lists, so a query rooted anywhere else would
+answer the wrong class. The narrowing is then per shape:
+
+- a many-to-many, either side, uni- or bidirectional, is
+  `record.<id> IN (SELECT sy_related.<id> FROM <Owner> sy_owner JOIN sy_owner.<name> sy_related WHERE sy_owner.<id> = :sylament_relationship_owner)`
+  — a subselect over the **owner's own** association, which is why no inverse
+  mapping is needed and why the outer query gains no join;
+- a one-to-many is `record.<mappedBy> = :sylament_relationship_owner`, straight
+  onto the target's own to-one field.
+
+The rejected shape was `SELECT record FROM Target record JOIN record.<inverse> …`:
+it needs the mapping to be bidirectional, multiplies rows, and puts the join
+cardinality in the way of the aggregate lane. `MEMBER OF` is the same objection —
+it needs an inverse mapping — and is kept only as a possible later optimisation
+for bidirectional mappings.
+
+The candidate query is the negation, and the one-to-many arm is where it stops
+being symmetrical: `record.<mappedBy> <> :owner` alone drops every record whose
+field is null, because SQL's `<>` is unknown against null — so the arm is
+`record.<mappedBy> IS NULL OR record.<mappedBy> <> :owner`, built as one `orX`
+composite so a caller's later `andWhere()` (a search clause, a by-key `IN`)
+brackets the pair instead of flattening the OR into the AND.
+
+Three names are reserved inside these builders and a caller must not reuse them:
+the aliases `sy_owner` and `sy_related`, and the parameter
+`sylament_relationship_owner`. The owner is bound as the **object** — Doctrine
+binds a managed entity by its identifier, typed as the column is — after
+`getRecordKey()` refuses an owner that has none yet, which is the difference
+between a clear refusal and a query that silently matches nothing. Neither query
+orders anything: the mapping's `#[ORM\OrderBy]` is the *table's* default sort, not
+the query's, so a clicked sort can replace it.
+
+### A write lands on the side Doctrine persists
+
+`attach()` and `detach()` write in memory and leave the flush to the caller, the
+same boundary [`persist()`](#persist-and-flush-are-the-write-half-of-the-same-seam)
+already draws. Both go through
+[`PropertyAccessor::setAssociationOnRecord()`](property-accessor.md) — Symfony's
+accessor diffs the whole desired list against what the property holds and calls
+the record's own adder and remover per element — so a domain adder with logic in
+it still runs, and the collection instance survives for Doctrine to diff. The
+contract that buys is the one forms already states: a collection-valued
+association needs an adder and a remover, a to-one a setter, or Symfony names
+what is missing.
+
+Which record is written is decided by the mapping, not by which side the caller
+named. An inverse-side collection write emits **zero SQL** at flush, so a
+relationship declared from the inverse side of a many-to-many is redirected: the
+write lands on the *related* record's `mappedBy` collection with the owner as the
+member. A one-to-many is always inverse, so it never writes a collection at all —
+it points the target's `mappedBy` field at the owner, or at null. Attaching a
+record the owner already holds is a no-op, caught by an identity check before the
+accessor is asked to diff.
+
+`detach()` runs `assertRelationshipAcceptsDetach()` first on every one-to-many,
+and the order of its three refusals is what makes each of them reachable:
+
+1. the owner's association declares `orphanRemoval` — removing from such a
+   collection *deletes* the record, so dissociating is not something the mapping
+   permits, and `DeleteAction` is the action that means what the caller meant;
+2. the target's join column is `nullable: false` — read as `isNullable` off
+   `describe($targetClass, $mappedBy)`, the owning side of the same association;
+3. the target's setter or property rejects null —
+   `PropertyAccessor::acceptsNullOnRecord()`, which is the PHP-level twin of (2)
+   and fires where the column is nullable but the type is not.
+
+Only the first of them fires on any one mapping, which is why the rig carries a
+separate fixture per refusal rather than one entity tripping all three. A
+many-to-many always passes: nothing is deleted and no column goes null, only a
+join row disappears. The method is public and separate from `detach()` because a
+bulk arm that dissociates **by key** — a DQL `UPDATE` rather than a per-record
+write — has to run the same refusals before its statement, with no record in hand
+to run them against.
 
 ### The owning-side and orphan-removal flags are what a writer needs, not trivia
 

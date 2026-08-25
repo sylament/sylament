@@ -85,7 +85,7 @@ class SylamentSchemasBundle extends SylamentBundle
 
         $services
             ->set('sylament_schemas.association_reader', AssociationReader::class)
-            ->args([service(EntityManagerInterface::class)->nullOnInvalid()])
+            ->args([service(EntityManagerInterface::class)->nullOnInvalid(), service(PropertyAccessor::class)])
             ->alias(AssociationReader::class, 'sylament_schemas.association_reader');
     }
 }

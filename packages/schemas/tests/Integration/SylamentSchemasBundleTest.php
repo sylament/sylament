@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Sylament\Schemas\Tests\Integration;
 
+use ReflectionProperty;
 use Sylament\Schemas\Colors\Components\IconComponent;
 use Sylament\Schemas\Colors\Components\TextComponent;
+use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\PropertyAccessor;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Twig\Environment;
@@ -22,6 +24,15 @@ it('exposes both colour policies on the public container', function (): void {
 it('injects the record type reader into the property accessor', function (): void {
     expect($this::getContainer()->get(PropertyAccessor::class))
         ->toBeInstanceOf(PropertyAccessor::class);
+});
+
+it('injects the container property accessor into the association reader', function (): void {
+    // The reader writes an association through the accessor; without the wiring it would
+    // silently fall back to one of its own, which no behavioural assertion could tell apart.
+    $reader = $this::getContainer()->get(AssociationReader::class);
+
+    expect(new ReflectionProperty(AssociationReader::class, 'propertyAccessor')->getValue($reader))
+        ->toBe($this::getContainer()->get(PropertyAccessor::class));
 });
 
 it('registers the renderSchema twig function', function (): void {

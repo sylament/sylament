@@ -24,7 +24,7 @@ class DeleteBulkAction extends BulkAction
 
         $this->label('Delete selected');
 
-        $this->modalHeading('Delete selected');
+        $this->modalHeading(fn (): string => ($label = $this->getTitleCasePluralRecordLabel()) === null ? 'Delete selected' : "Delete selected {$label}");
 
         $this->modalSubmitActionLabel('Delete');
 

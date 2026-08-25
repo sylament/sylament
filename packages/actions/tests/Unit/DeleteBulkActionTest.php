@@ -59,3 +59,8 @@ it('titles a complete failure with the total alone', function (): void {
 
     expect($action->getFailureNotificationTitle())->toBe('Failed to delete 0 records');
 });
+
+it('interpolates the title-cased plural record label into the modal heading', function (): void {
+    expect(DeleteBulkAction::make()->recordClass('App\\Entity\\BlogPost')->getModalHeading())->toBe('Delete selected Blog Posts')
+        ->and(DeleteBulkAction::make()->getModalHeading())->toBe('Delete selected');
+});

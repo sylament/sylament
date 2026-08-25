@@ -1143,7 +1143,7 @@ A mounted-action schema is a **root** schema — `getMountedActionSchema()` buil
 it from `makeSchema()`, so it has no parent component — and an action declared
 inside it belongs to no group and is bound to no component of its own. All three
 arms are `null`, and `Action`'s `get`/`set` injection arms deref that result
-[without a null-safe operator](action.md#resolvedefaultclosuredependencyforevaluationbyname-covers-13-of-16-names).
+[without a null-safe operator](action.md#resolvedefaultclosuredependencyforevaluationbyname-covers-14-of-16-names).
 
 **This is Filament parity, not a regression.**
 `vendor/filament/actions/src/Concerns/BelongsToSchemaComponent.php:28-31` is

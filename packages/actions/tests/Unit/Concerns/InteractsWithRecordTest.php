@@ -117,3 +117,15 @@ it('drops an ambient record that is not of the custom record class', function ()
 
     expect($fixture->getRecord())->toBeNull();
 });
+
+it('derives the plural record label from the singular and title-cases it', function (): void {
+    $fixture = new InteractsWithRecordFixture();
+
+    expect($fixture->getPluralRecordLabel())->toBeNull()
+        ->and($fixture->getCustomPluralRecordLabel())->toBeNull()
+        ->and($fixture->getTitleCasePluralRecordLabel())->toBeNull()
+        ->and($fixture->recordClass('App\\Entity\\BlogPost')->getPluralRecordLabel())->toBe('blog posts')
+        ->and($fixture->getTitleCasePluralRecordLabel())->toBe('Blog Posts')
+        ->and($fixture->pluralRecordLabel('people')->getCustomPluralRecordLabel())->toBe('people')
+        ->and($fixture->getPluralRecordLabel())->toBe('people');
+});

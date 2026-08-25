@@ -48,38 +48,35 @@ first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | [`icon('heroicons:trash-20-solid')`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) `tableIcon()` + `groupedIcon()` | done | — | [diverges](#one-plain-icon-replaces-filaments-table-and-grouped-pair) |
 | [The `action()` body — delete then `success()` / `failure()`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | done | — | [diverges](#the-delete-goes-through-a-doctrine-manager-registry-not-through-the-record) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
-| [`modalHeading('Delete')`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) (record title interpolated) | in progress | nothing — a sweep item | [detail](#the-modal-heading-is-a-bare-verb-with-both-halves-it-needs-already-here) |
+| [`modalHeading()` — `"Delete {record title}"`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) (record title interpolated) | done | — | [semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb) · [diverges](#the-strings-are-literals-not-translation-keys) |
 | `modalIcon()` / `modalSubmitActionLabel()` | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | skipped | — | [diverges](#the-confirmation-chrome-is-left-to-the-defaults) |
 | `keyBindings(['mod+d'])` | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | todo | `HasKeyBindings` | — |
 | `hidden()` for a soft-deleted record | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | skipped | — | [diverges](#there-is-no-soft-delete-arm-to-hide-behind) |
 | Success redirect after the delete | [`Concerns/CanRedirect.php`](../../../vendor/filament/actions/src/Concerns/CanRedirect.php) | done | — | [semantics](#a-delete-redirects-only-where-the-host-page-answers) |
 
-## Details
-
-Specifics for rows that are not finished — what is already in, what is left,
-and the next step.
-
-### The modal heading is a bare verb, with both halves it needs already here
-
-Filament's heading reads _"Delete Airbag"_ — `__('…delete.single.modal.heading',
-['label' => $this->getRecordTitle()])`. The port sets the bare `'Delete'`.
-Both halves that heading needs now exist:
-[`getRecordTitle()` and the whole record chain](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
-landed with M4 · 2, and so did the host hook that supplies a default,
-[`getDefaultActionRecordTitle()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-three-deferred).
-Wiring `DeleteAction`'s own heading through them is a **sweep item, out of that
-epic's scope** — it landed the chain, not every caller of it. Until the sweep, a
-caller who wants the record in the heading passes a closure, exactly as the
-demo's hand-built delete action does:
-`->modalHeading(fn (Article $record): string => sprintf('Delete "%s"?', $record->getTitle()))`.
-
-**Next step:** interpolate `getRecordTitle()` into the default heading — nothing
-blocks it now.
-
 ## Semantics
 
 Faithful ports whose obvious reading is wrong. Permanent, unlike the details
 above.
+
+### The headings interpolate, and fall back to the bare verb
+
+`DeleteAction`'s heading is
+`($title = $this->getRecordTitle()) === null ? 'Delete' : "Delete {$title}"` and
+`DeleteBulkAction`'s is the same shape over
+`getTitleCasePluralRecordLabel()` — the `ReplicateAction`/`EditAction` shape,
+Filament's `__('…delete.single.modal.heading', ['label' => …])` minus the
+catalogue.
+
+The fallback is what makes the pair safe to default. Both getters answer `null`
+for an action with nothing to name — no record, no record class, no table — so a
+hostless `DeleteAction` still reads `Delete` and a hostless `DeleteBulkAction`
+still reads `Delete selected`, exactly as before. Bind either to a table, or give
+it a record or a `recordClass()`, and the heading fills itself:
+_"Delete Airbag"_, _"Delete selected Songs"_. Where the title should be quoted or
+phrased differently a caller still passes a closure —
+`->modalHeading(fn (Article $record): string => sprintf('Delete "%s"?', $record->getTitle()))`
+— which is what the demo does.
 
 ### A delete redirects only where the host page answers
 
@@ -197,10 +194,14 @@ back to the plain icon.
 
 ### The strings are literals, not translation keys
 
-`label('Delete')`, `modalHeading('Delete')` and
-`successNotificationTitle('Deleted')` are English literals where Filament reads
+`label('Delete')`, `successNotificationTitle('Deleted')` and the `"Delete …"` /
+`"Delete selected …"` heading phrasings are English literals where Filament reads
 `__('filament-actions::delete.single…')` — same call as
 [create-action.md](create-action.md#the-strings-are-literals-not-translation-keys).
+The headings interpolate the record title and the plural label the way Filament's
+catalogue entries do
+([semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb)); only the
+surrounding phrase is fixed English.
 
 ### There is no soft-delete arm to hide behind
 
@@ -274,7 +275,7 @@ real rather than by injection.
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/DeleteBulkAction.php) (`'delete'`) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | — |
-| [`setUp()` chrome — label, modal heading, submit label, success title, `defaultColor('danger')`, the trash icon, `requiresConfirmation()`, `deselectRecordsAfterCompletion()`](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
+| [`setUp()` chrome — label, modal heading (`"Delete selected {title-case plural record label}"`), submit label, success title, `defaultColor('danger')`, the trash icon, `requiresConfirmation()`, `deselectRecordsAfterCompletion()`](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | [semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb) · [diverges](#the-strings-are-literals-not-translation-keys) |
 | [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | Filament's two `trans_choice` branches become two `sprintf`s over the same `successCount` / `totalCount` injections — [bulk-action.md](bulk-action.md#the-failure-notification-carries-four-injections-of-filaments-nine) |
 | [The `action()` body — remove each, one `flush()`](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | done | — | [diverges](#the-bulk-delete-is-atomic-where-filaments-is-per-record) |
 | [`deleteSelectedRecordsByKey()` — the `fetchSelectedRecords(false)` arm](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) (`getSelectedRecordsQuery()->delete()`) | done | — | [diverges](#the-by-key-arm-is-a-dql-delete-over-the-plucked-keys) |

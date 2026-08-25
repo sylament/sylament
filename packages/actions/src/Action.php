@@ -66,10 +66,12 @@ use Sylament\Support\Evaluation\ClosureParameter;
 use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
 use Sylament\Tables\Contracts\InteractsWithTable;
+use Sylament\Tables\Table;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
 use function Sylament\Support\get_record_label;
+use function Sylament\Support\plural;
 
 class Action extends ViewComponent
 {
@@ -472,6 +474,12 @@ class Action extends ViewComponent
             return $label;
         }
 
+        $label = $this->getTable()?->getRecordLabel();
+
+        if (filled($label)) {
+            return $label;
+        }
+
         $class = $this->getRecordClass();
         $host = $this->getLiveComponentOrNull();
 
@@ -486,11 +494,50 @@ class Action extends ViewComponent
         return get_record_label($class);
     }
 
+    public function getPluralRecordLabel(): ?string
+    {
+        $label = $this->getCustomPluralRecordLabel();
+
+        if (filled($label)) {
+            return $label;
+        }
+
+        $label = $this->getTable()?->getPluralRecordLabel();
+
+        if (filled($label)) {
+            return $label;
+        }
+
+        $singular = $this->getRecordLabel();
+
+        return $singular === null ? null : plural($singular);
+    }
+
     public function getRecordTitle(?object $record = null): ?string
     {
-        return $this->getCustomRecordTitle($record)
-            ?? $this->getLiveComponentOrNull()?->getDefaultActionRecordTitle($this)
+        $record ??= is_object($bound = $this->getRecord()) ? $bound : null;
+
+        if ($record !== null) {
+            $title = $this->getCustomRecordTitle($record);
+
+            if (filled($title)) {
+                return $title;
+            }
+
+            $title = $this->getTable()?->getRecordTitle($record);
+
+            if (filled($title)) {
+                return $title;
+            }
+        }
+
+        return $this->getLiveComponentOrNull()?->getDefaultActionRecordTitle($this)
             ?? $this->getRecordLabel();
+    }
+
+    public function getRecordTitleAttribute(): ?string
+    {
+        return $this->getCustomRecordTitleAttribute() ?? $this->getTable()?->getRecordTitleAttribute();
     }
 
     public function shouldClearRecordAfter(): bool
@@ -550,6 +597,7 @@ class Action extends ViewComponent
             'arguments' => ClosureParameter::make($this->getArguments()),
             'data' => ClosureParameter::make($this->getData()),
             'liveComponent' => ClosureParameter::make($this->getLiveComponent()),
+            'table' => ClosureParameter::make($this->getTable()),
             'records', 'selectedRecords' => $this->hasCanAccessSelectedRecords()
                 ? ClosureParameter::make($this->getSelectedRecords())
                 : parent::resolveDefaultClosureDependencyForEvaluationByName($parameterName),
@@ -573,6 +621,7 @@ class Action extends ViewComponent
                 ? ClosureParameter::make($this->getSelectedRecordsQuery())
                 : parent::resolveDefaultClosureDependencyForEvaluationByType($parameterType),
             Get::class => ClosureParameter::make($this->getSchemaComponentOrFail()->makeGetUtility()->skipComponentsChildContainersWhileSearching(false)),
+            Table::class => ClosureParameter::make($this->getTable()),
             Set::class => ClosureParameter::make($this->getSchemaComponentOrFail()->makeSetUtility()->skipComponentsChildContainersWhileSearching(false)),
             default => parent::resolveDefaultClosureDependencyForEvaluationByType($parameterType),
         };

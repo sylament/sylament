@@ -76,3 +76,12 @@ it('fails fast when the default process runs without an injected manager registr
     expect(fn (): mixed => $action->call())
         ->toThrow(LogicException::class, 'DeleteAction needs the container-built instance');
 });
+
+it('interpolates the record title into the modal heading', function (): void {
+    $record = new class {
+        public string $name = 'Alpha';
+    };
+
+    expect(DeleteAction::make()->record($record)->recordTitleAttribute('name')->getModalHeading())->toBe('Delete Alpha')
+        ->and(DeleteAction::make()->getModalHeading())->toBe('Delete');
+});

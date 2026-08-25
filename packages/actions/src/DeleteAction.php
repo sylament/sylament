@@ -22,7 +22,7 @@ class DeleteAction extends Action
 
         $this->label('Delete');
 
-        $this->modalHeading('Delete');
+        $this->modalHeading(fn (): string => ($title = $this->getRecordTitle()) === null ? 'Delete' : "Delete {$title}");
 
         $this->successNotificationTitle('Deleted');
 

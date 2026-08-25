@@ -13,6 +13,7 @@ use Symfony\Component\PropertyAccess\Exception\AccessException;
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 use function Sylament\Support\get_record_label;
+use function Sylament\Support\plural;
 use function Symfony\Component\String\u;
 
 trait InteractsWithRecord
@@ -25,6 +26,8 @@ trait InteractsWithRecord
     protected string|Closure|null $recordClass = null;
 
     protected string|Closure|null $recordLabel = null;
+
+    protected string|Closure|null $pluralRecordLabel = null;
 
     protected string|Closure|null $recordTitle = null;
 
@@ -50,6 +53,13 @@ trait InteractsWithRecord
     public function recordLabel(string|Closure|null $label): static
     {
         $this->recordLabel = $label;
+
+        return $this;
+    }
+
+    public function pluralRecordLabel(string|Closure|null $label): static
+    {
+        $this->pluralRecordLabel = $label;
 
         return $this;
     }
@@ -133,6 +143,31 @@ trait InteractsWithRecord
     public function getTitleCaseRecordLabel(): ?string
     {
         $label = $this->getRecordLabel();
+
+        return blank($label) ? null : u($label)->title(allWords: true)->toString();
+    }
+
+    public function getCustomPluralRecordLabel(): ?string
+    {
+        return $this->evaluate($this->pluralRecordLabel);
+    }
+
+    public function getPluralRecordLabel(): ?string
+    {
+        $label = $this->getCustomPluralRecordLabel();
+
+        if (filled($label)) {
+            return $label;
+        }
+
+        $singular = $this->getRecordLabel();
+
+        return $singular === null ? null : plural($singular);
+    }
+
+    public function getTitleCasePluralRecordLabel(): ?string
+    {
+        $label = $this->getPluralRecordLabel();
 
         return blank($label) ? null : u($label)->title(allWords: true)->toString();
     }

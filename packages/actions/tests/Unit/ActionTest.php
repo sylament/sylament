@@ -26,6 +26,7 @@ use Sylament\Schemas\State\Get;
 use Sylament\Schemas\State\Set;
 use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
+use Sylament\Tables\Table;
 
 it('exposes the name passed to make()', function (): void {
     expect(Action::make('delete')->getName())->toBe('delete');
@@ -564,4 +565,11 @@ it('stops at an own record object even when it is empty', function (): void {
     ActionGroup::make([$mismatched])->record(new DateTimeImmutable());
 
     expect($mismatched->getRecord())->toBeNull();
+});
+
+it('answers null for the table injections on a table-less action', function (): void {
+    $action = Action::make('x');
+
+    expect($action->evaluate(fn (?Table $table): ?Table => $table))->toBeNull()
+        ->and($action->evaluate(fn ($table): mixed => $table))->toBeNull();
 });

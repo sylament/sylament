@@ -74,3 +74,12 @@ it('reads a record as the array the form would be filled with', function (): voi
 
     expect($schema->getStateFromRecord($record))->toBe(['title' => 'Alpha', 'perex' => null]);
 });
+
+it('skips the validating read entirely when the state is supplied', function (): void {
+    $host = $this->createLiveComponent('RecordHost')->component();
+    $schema = $host->getSchema();
+
+    $record = $schema->getData(['title' => '']);
+
+    expect($record->getTitle())->toBe('');
+});

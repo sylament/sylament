@@ -17,7 +17,6 @@ use function Sylament\Support\get_record_label;
 use function Sylament\Support\only;
 use function Sylament\Support\sanitize_url;
 use function Sylament\Support\wrap;
-use function Symfony\Component\String\u;
 
 it('treats valueless input as blank', function (mixed $value): void {
     expect(blank($value))->toBeTrue()
@@ -103,7 +102,7 @@ it('honours a custom scheme allow-list', function (): void {
 it('derives a record label from a class basename the way the resource does', function (): void {
     expect(get_record_label('App\\Entity\\BlogPost'))->toBe('blog post')
         ->and(get_record_label('Article'))->toBe('article')
-        ->and(get_record_label('App\\Entity\\PDFDocument'))->toBe(u('PDFDocument')->kebab()->replace('-', ' ')->toString());
+        ->and(get_record_label('App\\Entity\\PDFDocument'))->toBe('pdf document');
 });
 
 it('keeps only the named keys', function (): void {

@@ -2,7 +2,7 @@
 
 `packages/support/src/helpers.php` — the `Sylament\Support`-namespaced global
 functions (composer `files` autoload, imported with `use function`). It ports
-Filament's own `helpers.php` **and** the Laravel global helpers Filament's file
+Filament's own `helpers.php` **and** the Laravel global helpers Filament's code
 leans on but never defines (`blank()`, `filled()`, `Arr::wrap()`, `Arr::only()`,
 `Arr::except()`) — Sylament has
 no Laravel runtime, so they are reimplemented here. Today the file holds those
@@ -231,8 +231,9 @@ derives the same label the same way, and the two must agree byte for byte or a
 resource page and a modal action disagree about what the record is called —
 `AbstractUnicodeString::kebab()`'s acronym handling (`PDFDocument` → `pdf
 document`, not `p-d-f document`) is not something a hand-rolled expression
-reproduces by accident. `Resource::getRecordLabel()` delegates here rather than
-keeping its own copy.
+reproduces by accident. `panels` keeps its own copy of the chain today;
+`Resource::getRecordLabel()` delegates here instead as of this epic's panels
+lane, leaving one definition.
 
 The consequence is a manifest line: support requires `symfony/string` from M4 · 2
 on, for this one function. It is the placement-by-source rule doing its job —
@@ -245,7 +246,8 @@ packages that already declare it carry, under the blanket `symfony/*` approval.
 `blank()`, `filled()`, `wrap()`, `only()` and `except()` are **not** Filament
 `helpers.php` functions — they are Laravel globals (`blank()` / `filled()`) and
 `Arr::wrap()` / `Arr::only()` / `Arr::except()` that
-Filament's file consumes without defining. Because Sylament ships no Laravel
+Filament's code consumes without defining — `blank()`/`filled()` in
+`helpers.php` itself, the three `Arr` methods in the actions package. Because Sylament ships no Laravel
 runtime, they are reimplemented here in the `Sylament\Support` namespace so the
 ported Filament helpers (and every downstream component) have them. `wrap()` is a
 free-function port of the static `Arr::wrap()` method, kept minimal (the

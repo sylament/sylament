@@ -3,4 +3,5 @@
     name="{{ component.getStatePath(false) }}"
     data-model="{{ component.getDataModel }}"
     value="{{ component.getState }}"
+    {{ attrs({disabled: component.isDisabled}) }}
 >

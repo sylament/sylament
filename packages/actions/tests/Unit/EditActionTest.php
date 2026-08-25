@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Unit;
 
-use LogicException;
 use Sylament\Actions\EditAction;
 use Sylament\Actions\Tests\Fixtures\Concerns\DefaultActionUrlHostFixture;
 
@@ -44,7 +43,15 @@ it('prefers its own url over the host hook', function (): void {
     expect($host->getAction('edit')?->url('/own')->getUrl())->toBe('/own');
 });
 
-it('fails fast when invoked with no url and no host answer', function (): void {
-    expect(fn (): mixed => EditAction::make()->call())
-        ->toThrow(LogicException::class, 'EditAction has no URL to open');
+it('interpolates the record title into the modal heading', function (): void {
+    $record = new class {
+        public string $name = 'Ada';
+    };
+
+    expect(EditAction::make()->record($record)->recordTitleAttribute('name')->getModalHeading())->toBe('Edit Ada')
+        ->and(EditAction::make()->getModalHeading())->toBe('Edit');
+});
+
+it('labels the modal submit button Save changes', function (): void {
+    expect(EditAction::make()->getModalSubmitActionLabel())->toBe('Save changes');
 });

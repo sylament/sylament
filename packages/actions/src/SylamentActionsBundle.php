@@ -39,7 +39,8 @@ class SylamentActionsBundle extends SylamentBundle
             ->set(CreateAction::class)
             ->set(DeleteAction::class)
             ->set(DeleteBulkAction::class)
-            ->set(EditAction::class);
+            ->set(EditAction::class)
+            ->set(ViewAction::class);
     }
 
     private function configureTwigComponents(ContainerConfigurator $configurator): void

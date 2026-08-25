@@ -44,11 +44,9 @@ trait CanMutateRecordData
      */
     protected function mutateRecordData(array $data): array
     {
-        if ($this->mutateRecordDataUsing === null) {
-            return $data;
+        if ($this->mutateRecordDataUsing !== null) {
+            $data = $this->evaluate($this->mutateRecordDataUsing, ['data' => $data]);
         }
-
-        $data = $this->evaluate($this->mutateRecordDataUsing, ['data' => $data]);
 
         if (! is_array($data)) {
             throw new TypeError(sprintf('%s::mutateRecordDataUsing() must return an array.', static::class));
@@ -64,11 +62,15 @@ trait CanMutateRecordData
     {
         $record = $this->getRecord();
 
-        if (! is_object($record) && ! is_array($record)) {
-            throw new LogicException(sprintf('The action [%s] fills its form from a record but none is bound — mount it from a table row, a record page, or call record().', $this->getName()));
+        if (is_object($record)) {
+            return $record;
         }
 
-        return $record;
+        if (is_array($record)) {
+            return array_filter($record, is_string(...), ARRAY_FILTER_USE_KEY);
+        }
+
+        throw new LogicException(sprintf('The action [%s] fills its form from a record but none is bound — mount it from a table row, a record page, or call record().', $this->getName()));
     }
 
     protected function getRecordOrFail(): object

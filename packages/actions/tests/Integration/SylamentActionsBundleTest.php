@@ -10,6 +10,7 @@ use Sylament\Actions\BulkAction;
 use Sylament\Actions\BulkActionGroup;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Note;
 use Sylament\Actions\Tests\Fixtures\Doctrine\FixtureManagerRegistry;
+use Sylament\Actions\ViewAction;
 use Sylament\Notifications\Delivery\SessionNotifications;
 use Sylament\Notifications\Notification;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
@@ -29,7 +30,7 @@ it('maps the built assets directory into AssetMapper under @sylament/actions', f
         ->and($asset->logicalPath)->toBe('@sylament/actions/controllers/dispatch_controller.js');
 });
 
-it('registers the bulk preset and its group as non-shared services, so their #[Required] setters run', function (): void {
+it('registers the prebuilt actions as non-shared services, so their #[Required] setters run', function (): void {
     // An action class the bundle does not `->set()` falls back to `new $class()` in
     // `ComponentResolver::instantiate()`, and every `#[Required]` injection on it — the
     // manager registry, the event dispatcher — silently never runs.
@@ -37,8 +38,11 @@ it('registers the bulk preset and its group as non-shared services, so their #[R
 
     expect($container->has(BulkAction::class))->toBeTrue()
         ->and($container->has(BulkActionGroup::class))->toBeTrue()
+        ->and($container->has(ViewAction::class))->toBeTrue()
         ->and($container->get(BulkAction::class))->toBeInstanceOf(BulkAction::class)
-        ->and($container->get(BulkAction::class))->not->toBe($container->get(BulkAction::class));
+        ->and($container->get(BulkAction::class))->not->toBe($container->get(BulkAction::class))
+        ->and($container->get(ViewAction::class))->toBeInstanceOf(ViewAction::class)
+        ->and($container->get(ViewAction::class))->not->toBe($container->get(ViewAction::class));
 });
 
 it('boots the fixture entity manager, registry and notifications', function (): void {

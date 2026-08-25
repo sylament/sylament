@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Fixtures\Twig\Components;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Actions\Action;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Actions\CreateAction;
+use Sylament\Actions\EditAction;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Note;
+use Sylament\Actions\ViewAction;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -37,12 +40,27 @@ class RecordWriteHost implements InteractsWithActions, InteractsWithSchemas
     #[LiveProp]
     public ?string $recordClass = Note::class;
 
+    public function __construct(EntityManagerInterface $entityManager)
+    {
+        $this->resolveRecordUsing(static fn (string $key): ?Note => $entityManager->find(Note::class, (int) $key));
+    }
+
     /**
      * @return class-string|null
      */
     public function getDefaultActionRecordClass(Action $action): ?string
     {
         return $this->recordClass;
+    }
+
+    /**
+     * The record-title hook the edit and view headings interpolate.
+     */
+    public function getDefaultActionRecordTitle(Action $action): ?string
+    {
+        $record = $action->getRecord();
+
+        return $record instanceof Note ? $record->getTitle() : null;
     }
 
     /**
@@ -89,5 +107,51 @@ class RecordWriteHost implements InteractsWithActions, InteractsWithSchemas
                 ActionSchemaField::make('body'),
             ])
             ->preserveFormDataWhenCreatingAnother(['body']);
+    }
+
+    public function editAction(): Action
+    {
+        return EditAction::make()
+            ->schema([
+                ActionSchemaField::make('title'),
+                ActionSchemaField::make('body'),
+            ]);
+    }
+
+    /**
+     * The fill-side rewrite: `mutateRecordDataUsing()` sits between the record
+     * and the form, so the modal opens on something the record does not say.
+     */
+    public function editMutatedAction(): Action
+    {
+        return EditAction::make('editMutated')
+            ->schema([
+                ActionSchemaField::make('title'),
+                ActionSchemaField::make('body'),
+            ])
+            ->mutateRecordDataUsing(fn (array $data): array => [...$data, 'title' => 'draft: ' . $data['title']]);
+    }
+
+    /**
+     * The asymmetry `CanMutateRecordData` draws: an array record is state the
+     * fill accepts and the default write body refuses.
+     */
+    public function editArrayAction(): Action
+    {
+        return EditAction::make('editArray')
+            ->record(['__key' => '1', 'title' => 'Loose', 'body' => null])
+            ->schema([
+                ActionSchemaField::make('title'),
+                ActionSchemaField::make('body'),
+            ]);
+    }
+
+    public function viewAction(): Action
+    {
+        return ViewAction::make()
+            ->schema([
+                ActionSchemaField::make('title'),
+                ActionSchemaField::make('body'),
+            ]);
     }
 }

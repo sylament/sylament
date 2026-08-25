@@ -7,6 +7,7 @@ namespace Sylament\Actions\Tests\Fixtures\Twig\Components;
 use Sylament\Actions\Action;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
+use Sylament\Actions\Tests\Fixtures\UntitledRecord;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -19,9 +20,12 @@ class RecordActionHost implements InteractsWithActions
     use HasActions;
 
     /**
-     * @var array<int, string>
+     * Row 3 is a record whose string cast is blank, which `blank()` calls blank
+     * — the shape a bind gating on `filled()` alone silently drops.
+     *
+     * @var array<int, mixed>
      */
-    protected array $rows = [1 => 'Ada', 2 => 'Grace'];
+    protected array $rows;
 
     /**
      * @var array<int, mixed>
@@ -31,7 +35,14 @@ class RecordActionHost implements InteractsWithActions
 
     public function __construct()
     {
+        $this->rows = [1 => 'Ada', 2 => 'Grace', 3 => new UntitledRecord()];
+
         $this->resolveRecordUsing(fn (mixed $key): mixed => $this->rows[$key] ?? null);
+    }
+
+    public function getRow(int $key): mixed
+    {
+        return $this->rows[$key] ?? null;
     }
 
     public function deleteAction(): Action

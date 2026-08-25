@@ -195,7 +195,7 @@ trait HasActions
         $originalArguments = $action->getArguments();
         $action->mergeArguments($arguments);
 
-        if (filled($record = $this->getMountedActionRecord())) {
+        if (is_object($record = $this->getMountedActionRecord()) || filled($record)) {
             $action->record($record);
         }
 
@@ -796,7 +796,7 @@ trait HasActions
 
         $resolvedAction = $this->getAction($descriptor['name']);
 
-        if ($resolvedAction !== null && filled($record = $this->resolveMountedActionRecord($descriptor))) {
+        if ($resolvedAction !== null && (is_object($record = $this->resolveMountedActionRecord($descriptor)) || filled($record))) {
             $resolvedAction->record($record);
         }
 

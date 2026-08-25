@@ -99,7 +99,7 @@ write-up in [Details](#details), **diverges** → the note in
 | [`getDefaultActionUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-three-deferred) |
 | [`getDefaultActionSuccessRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionFailureRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSuccessRedirectUrl()` / `getDefaultActionFailureRedirectUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-three-deferred) |
 | [`getDefaultActionSchemaResolver()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecord()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordTitle()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordClass()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordLabel()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSchemaResolver()` / `getDefaultActionRecord()` / `getDefaultActionRecordTitle()` / `getDefaultActionModel()` / `getDefaultActionModelLabel()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-three-deferred) |
-| The three remaining `getDefaultAction*` host override hooks (Relationship/AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionRelationship()` etc. | todo | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-three-deferred) |
+| The three remaining `getDefaultAction*` host override hooks (Relationship/AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionRelationship()` etc. | blocked | M4 · 8 (relationship), the authorization epic | [detail](#the-getdefaultaction-host-override-hooks-are-ported-three-deferred) |
 | `forceRender()` / `partiallyRenderActionParentSchema()` | `Concerns/InteractsWithActions.php` `forceRender()` / `partiallyRenderActionParentSchema()` | blocked | schemas partial-render infrastructure (`PartialsComponentHook`) | [detail](#partial-re-render-is-not-ported) |
 | [`afterActionCalled()`](../../../packages/actions/src/Concerns/HasActions.php) hook (empty protected method; runs after `callAfter()`, before the notification branch, happy path only — Filament-exact) | `Concerns/InteractsWithActions.php` `afterActionCalled()` | done | — | — |
 | `bootedInteractsWithActions()` boot wiring / `WithRateLimiting` | `Concerns/InteractsWithActions.php` `bootedInteractsWithActions()`, `DanHarrin\LivewireRateLimiting\WithRateLimiting` | skipped | — | [diverges](#there-is-no-boot-hook-or-rate-limiting-trait) |
@@ -368,8 +368,8 @@ redirect pair `getDefaultActionSuccessRedirectUrl()` /
 that walks to them. Four of those five are the chain's; the fifth,
 `getDefaultActionSchemaResolver()`, is read by
 [`HasSchema::getSchema()`](has-schema.md) instead — the record chain never walks
-to it — and that reader arrives in the same epic, one lane later, so the hook is
-declared here before anything calls it. The last two are renames, `getDefaultActionModel` and
+to it — and that reader landed in the same epic, so the hook was declared here
+before anything called it. The last two are renames, `getDefaultActionModel` and
 `getDefaultActionModelLabel` under the
 [record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record).
 A host answering any of them
@@ -664,6 +664,15 @@ resolved action before returning it. Timing is the point. A fill at mount, a
 hydrates, and a modal heading built from `getRecordTitle()` all happen before
 `callMountedAction()` is reached, and every one of them wants the record already
 there. The call-time bind stays as an idempotent second write.
+
+Both binds gate on `is_object($record) || filled($record)`, the same gate
+[`Action::getRecord()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
+uses for an action's own record, and for the same reason: a resolved record is
+opaque, and `blank()` calls a `Countable` of zero or a `Stringable` casting to
+`''` blank. An entity whose `__toString()` returns an empty name — an ordinary
+Symfony idiom — would otherwise never be bound, and the failure lands a layer
+away as *"fills its form from a record but none is bound"*. Only a **scalar or
+array** record still has to be non-blank, which is the arm the gate keeps.
 
 Which frames reach the resolver is the other half, and it is three guards rather
 than one. A frame carrying a `schemaComponent` context answers `null` — the

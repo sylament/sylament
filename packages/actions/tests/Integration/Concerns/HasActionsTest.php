@@ -458,6 +458,18 @@ it('binds a root frame resolved record at resolve time, before any fill', functi
     expect($host->getMountedAction()?->getRecord())->toBe('Ada');
 });
 
+it('binds a resolved record whose string cast is blank', function (): void {
+    $host = $this->createLiveComponent(RecordActionHost::class)->component();
+
+    $host->mountAction('delete', [], ['recordKey' => 3]);
+
+    expect($host->getMountedAction()?->getRecord())->toBe($host->getRow(3));
+
+    $host->callMountedAction();
+
+    expect($host->deleted)->toBe([$host->getRow(3)]);
+});
+
 it('clears a create-shaped action record once the stack empties', function (): void {
     $host = $this->createLiveComponent(ActionSchemaHost::class)->component();
     $host->mountAction('clearing');

@@ -507,7 +507,7 @@ evaluates to `true` in either class's context — `function.alreadyNarrowedType`
 Rather than suppress it, both classes override `getRecord()` directly, which is
 what the guarded trait method reduces to for a class that always has
 `getGroup()`. `ActionGroup`'s is that reduction verbatim — evaluate, return
-`ensureCorrectRecordType()` on a `filled()` own record, otherwise
+`ensureCorrectRecordType()` on an `is_object() || filled()` own record, otherwise
 `ensureCorrectRecordType($this->getGroup()?->getRecord())`. Both guard calls are
 part of the equivalence rather than additions to it: the trait runs the same two,
 matching Filament, which guards its own record *and* its parent-group hop

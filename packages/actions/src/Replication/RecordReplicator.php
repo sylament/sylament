@@ -18,9 +18,9 @@ final readonly class RecordReplicator
 
     /**
      * A new, unmanaged instance carrying the record's mapped fields, its to-one
-     * owning-side references and a clone of each embeddable — never its
-     * identifier, its version, a generated column, an inverse side or a
-     * collection, which start empty.
+     * owning-side references and a deep clone of each embeddable — never an
+     * identifier, whether a field or an association, nor the version, a
+     * generated column, an inverse side or a collection, which start empty.
      *
      * @param array<string> $excludedAttributes mapped field or association names left uncopied
      */
@@ -44,7 +44,7 @@ final readonly class RecordReplicator
 
             $value = $accessor->getValue($record);
 
-            $accessor->setValue($replica, is_object($value) ? clone $value : $value);
+            $accessor->setValue($replica, is_object($value) ? $this->cloneEmbeddable($value) : $value);
         }
 
         foreach ($metadata->associationMappings as $name => $mapping) {
@@ -54,7 +54,7 @@ final readonly class RecordReplicator
                 continue;
             }
 
-            if ($mapping->isOwningSide() && !in_array($name, $excludedAttributes, true) && $this->isInitialized($metadata, $record, $name)) {
+            if ($mapping->isOwningSide() && !$metadata->isIdentifier($name) && !in_array($name, $excludedAttributes, true) && $this->isInitialized($metadata, $record, $name)) {
                 $metadata->setFieldValue($replica, $name, $metadata->getFieldValue($record, $name));
             }
         }
@@ -122,6 +122,33 @@ final readonly class RecordReplicator
         }
 
         return $fields;
+    }
+
+    /**
+     * Doctrine maps a nested value object under a dotted key the owner has no
+     * property accessor for, so each level is reached through its own
+     * embeddable's metadata rather than through the record's.
+     */
+    private function cloneEmbeddable(object $value): object
+    {
+        $clone = clone $value;
+        $metadata = $this->entityManager->getClassMetadata($value::class);
+
+        foreach (array_keys($metadata->embeddedClasses) as $property) {
+            $accessor = $metadata->getPropertyAccessor($property);
+
+            if (!$accessor instanceof PropertyAccessor || !$accessor->getUnderlyingReflector()->isInitialized($clone)) {
+                continue;
+            }
+
+            $nested = $accessor->getValue($clone);
+
+            if (is_object($nested)) {
+                $accessor->setValue($clone, $this->cloneEmbeddable($nested));
+            }
+        }
+
+        return $clone;
     }
 
     /**

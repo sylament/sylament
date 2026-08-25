@@ -10,6 +10,7 @@ use LogicException;
 use Sylament\Actions\Replication\RecordReplicator;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Address;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\AssignedNote;
+use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Membership;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Note;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Tagged;
 
@@ -90,6 +91,48 @@ it('clones an embeddable instead of sharing it', function (): void {
     $replica->getAddress()->setStreet('Side St');
 
     expect($tagged->getAddress()->getStreet())->toBe('Main St');
+});
+
+it('clones a nested embeddable rather than sharing it with the original', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    $tagged = seededTagged();
+    $tagged->getAddress()->getGeo()->setCity('Prague');
+    $entityManager->flush();
+
+    $replica = replicator()->replicate($tagged);
+
+    expect(spl_object_id($replica->getAddress()))->not->toBe(spl_object_id($tagged->getAddress()))
+        ->and(spl_object_id($replica->getAddress()->getGeo()))->not->toBe(spl_object_id($tagged->getAddress()->getGeo()))
+        ->and($replica->getAddress()->getGeo()->getCity())->toBe('Prague');
+
+    $replica->getAddress()->getGeo()->setCity('Vienna');
+    $entityManager->persist($replica);
+    $entityManager->flush();
+    $entityManager->clear();
+
+    expect($entityManager->getRepository(Tagged::class)->find($tagged->getId())?->getAddress()->getGeo()->getCity())->toBe('Prague');
+});
+
+it('leaves an identifier association off the replica', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    $note = new Note();
+    $note->setTitle('linked');
+
+    $membership = new Membership();
+    $membership->setNote($note);
+    $membership->setRole('editor');
+    $membership->setLabel('Editors');
+
+    $entityManager->persist($note);
+    $entityManager->persist($membership);
+    $entityManager->flush();
+
+    $replica = replicator()->replicate($membership);
+
+    expect($replica->getLabel())->toBe('Editors')
+        ->and($replica->getRole())->toBe('')
+        ->and($replica->getNote())->toBeNull();
 });
 
 it('reads and writes the copied field bag', function (): void {

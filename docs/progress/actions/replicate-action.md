@@ -73,8 +73,12 @@ Faithful ports whose behaviour is easy to misread. Permanent.
 
 ### The write body reads the mounted schema from the host, not from a parameter
 
-Filament's process closure takes `?Schema $schema` and Livewire hands it the
-mounted one. Here [`Invoker::call()`](../../../packages/support/src/Evaluation/Invoker.php)
+Filament's process closure takes `?Schema $schema`, but nothing hands it the
+mounted container: `CanCustomizeProcess::process()` passes no injections at all,
+and vendor `Action.php:575` resolves `schema` to `[$this->getSchemaContainer()]`
+— the schema the *trigger* lives in, which is null for a table row action. So
+the explicit map below is a repair rather than a translation. Here
+[`Invoker::call()`](../../../packages/support/src/Evaluation/Invoker.php)
 resolves a `Schema $schema` parameter **by name** first, and
 [`Action`](action.md)'s named resolver answers `schema` with
 `getSchemaContainer()` — the schema the *trigger* lives in, which for a table
@@ -147,15 +151,29 @@ then, per mapping entry:
 - a field whose `generated` is not `GENERATED_NEVER` is not copied — the database
   produces it;
 - an **embeddable leaf** (`declaredField !== null`) is not copied as a field; the
-  owning embeddable is `clone`d instead, so a value object is never shared;
-- an embeddable **nested inside another** embeddable has no accessor of its own
-  on the root metadata and is skipped — its leaves were already declined, and the
-  owning embeddable's clone carries it;
+  owning embeddable is cloned instead, so a value object is never shared;
+- an embeddable **nested inside another** embeddable is cloned too, one level at
+  a time. Its leaves are declined as fields the same way, but `clone` is shallow,
+  so a bare `clone` of the owner would hand the replica the original's nested
+  instance — and a replicate form editing `address.geo.city` would then rewrite
+  the **original's** row at flush, because the still-managed original's changeset
+  reads the same object. Doctrine files a nested entry under a dotted key
+  (`address.geo`) whose accessor `wakeupReflection()` keeps in a local
+  `$parentAccessors` map rather than in the metadata's own, so
+  `getPropertyAccessor('address.geo')` answers null and the root loop cannot see
+  it; `cloneEmbeddable()` recurses through the *embeddable's* metadata instead,
+  where its children are undotted and do have accessors. The same null answer is
+  what skips the dotted keys at each level, so the recursion needs no name test
+  of its own;
 - a `notInsertable` field is not copied — the insert would not write it;
 - an excluded name is not copied, field or association alike;
 - a **to-one owning-side** association is copied as the same reference, so a
   proxy stays a proxy and stays uninitialised; an inverse side is left alone,
   since the owning row is what carries the foreign key;
+- an association that is **part of the identifier** (`#[Id] #[ManyToOne]`, or a
+  shared-primary-key `#[Id] #[OneToOne]`) is not copied either, symmetric with
+  the identifier field rule above — carrying the original's key over would turn
+  the deliberate missing-identifier failure into a duplicate-key one;
 - every **collection-valued** association is set to a fresh empty
   `ArrayCollection` — the constructor that would have initialised it never ran,
   and sharing the original's collection is the failure mode above;
@@ -182,7 +200,13 @@ is what has to be re-derived, not the copy.
 two coincide for a plain column and diverge for anything Doctrine names
 differently from its column, so the rule is: pass what the entity calls it, not
 what the table does. The same names filter the fill, so excluding `slug` both
-leaves it off the copy and keeps it out of the modal.
+leaves it off the copy and keeps it out of the modal — but only at the top
+level: the copy matches **mapped names**, while the fill drops **top-level keys**
+of the form's nested state array. So `excludeAttributes(['address.street'])`
+leaves the column off the copy and still shows the original's street in the
+modal, which `Schema::getData()` then writes onto the replica. Filament never
+meets this because `attributesToArray()` is flat; here, name an embeddable's
+owner (`address`) when the intent is to exclude what it holds.
 
 ### A unique column is not auto-excluded, and a violation is a 500
 

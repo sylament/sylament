@@ -58,10 +58,11 @@ Sylament-only.
 | [`getRecordClass()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getModel()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-record-vocabulary-collapses-onto-record) |
 | [`getRecord(bool $withParentComponentRecord = true)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getRecord()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | — |
 | [`getRecordInstance()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`getModelInstance()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#getrecordinstance-constructs-with-new-not-the-container) |
-| [`getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#reads-are-lenient-writes-are-strict) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#a-missing-singular-intermediate-is-constructed-from-its-declared-type) |
+| [`getData(?array $state = null)`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#reads-are-lenient-writes-are-strict) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#a-missing-singular-intermediate-is-constructed-from-its-declared-type) · [semantics](#a-caller-that-has-already-validated-hands-the-state-in) · [semantics](#a-refused-submit-on-the-query-lane-shows-in-the-row-until-the-next-request) |
 | [`getData()`'s record-validation tail](../../../packages/schemas/src/Concerns/BelongsToRecord.php) + [`getRecordViolationPathTranslator()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](can-be-validated.md#record-sourced-constraints-are-validated-on-the-mapped-object) · [diverges](can-be-validated.md#a-refused-submit-leaves-the-record-mutated) · [detail](violation-path-translator.md) |
 | [`getNullableBranches()` + the branch pass in `getData()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [diverges](#a-component-can-own-its-whole-record-subtree) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [semantics](#a-nullable-branch-with-no-state-path-is-refused-not-ignored) · [semantics](#branches-are-ordered-by-path-depth-because-tree-order-is-not-path-order) |
 | [`fill(object …)` object arm](../../../packages/schemas/src/Concerns/HasState.php) + [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [diverges](#fillobject-reads-only-the-paths-the-schema-declares) · [diverges](#mapping-walks-the-record-graph-by-declared-leaf-paths) · [diverges](#fillobject-does-not-bind-the-record) |
+| [`getStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | the public reading of `readStateFromRecord()` — Eloquent's `attributesToArray()` has no port target, so this is a gap fill rather than a rename. [Declared paths only](#fillobject-reads-only-the-paths-the-schema-declares), so a column the schema does not carry is absent; the fill-side mutators read it instead of filling twice. |
 | [`$record` property](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | [`public $model`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [diverges](#the-root-record-property-is-protected) |
 | `saveRelationships()` | [`saveRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
 | `loadStateFromRelationships()` | [`loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
@@ -555,6 +556,42 @@ through a memoized absolute path that predates a later `statePath()` change. Its
 test constructs that premise explicitly rather than implying the branch is
 ordinarily reachable; the sibling `getRecordPathMap()` carried the identical
 fallback before the convergence.
+
+### A caller that has already validated hands the state in
+
+`getData()` reads `getState()` — which validates first — so a caller that has
+*already* validated and then mutated the array it got back cannot write that
+array through the state bag: `rawState()` + `getData()` would validate the
+mutated values a second time (a hashed password against the `Length(max: 20)`
+that passed on the plaintext, a stamped slug against a uniqueness probe) and
+re-run every dehydration mutation the components declare, `Repeater`'s item
+walk and `FileUpload`'s store move among them. Handing the array in as `$state`
+skips exactly one step, `$this->getState()`, and nothing else: the nullable
+branch pass, the relationship save hooks and the closing
+`validateSchemaRecord()` all run against the supplied array, so record-level
+constraints are still answered on the object the mapping produced.
+
+The callers are the write-side seams that sit between validation and mapping —
+the modal actions' `CreateAction`/`EditAction` bodies after
+`mutateDataUsing()`, and the resource page bases after
+`mutateFormDataBeforeCreate()`/`mutateFormDataBeforeSave()`. Every
+zero-argument call site keeps the validating read.
+
+### A refused submit on the query lane shows in the row until the next request
+
+Mapping happens before the object-level validation, so a refused submit leaves
+the record mutated
+([the divergence that states it](can-be-validated.md#a-refused-submit-leaves-the-record-mutated)).
+On a table's query lane that mutation is visible: the row was rendered from a
+managed entity, an `EditAction` beneath it resolves the record through the same
+entity manager and the identity map hands back the *same instance*, so the
+re-render after the refusal paints the rejected values into the row even though
+nothing was flushed. The next request re-queries and the row is correct again.
+
+Filament's `$record->update($data)` has the same shape — it fills before it
+saves — so this is faithful rather than a defect, and the escape is the one the
+divergence above already names: never flush on the failure path, and refresh or
+discard the entity manager if the request continues past it.
 
 ## Divergences
 

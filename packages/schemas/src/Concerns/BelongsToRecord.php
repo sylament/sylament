@@ -323,6 +323,19 @@ trait BelongsToRecord
     }
 
     /**
+     * The same reading {@see HasState::fill()} does, handed back as an array
+     * instead of written into the state bag — the seam a fill-side mutator sits
+     * in, so the record reaches the form through one hydration pass rather than
+     * two.
+     *
+     * @return array<string, mixed>
+     */
+    public function getStateFromRecord(object $record): array
+    {
+        return $this->readStateFromRecord($record);
+    }
+
+    /**
      * Whether this object leaf is one the component's own state casts flatten
      * into a non-object. The state bag is a writable `array` LiveProp and the
      * hydrator refuses an object anywhere inside one, so the exemption from the
@@ -415,6 +428,12 @@ trait BelongsToRecord
      * never reach — is answered against the object the mapping produced rather
      * than against raw state.
      *
+     * A caller that has already validated the state and mutated the array it got
+     * back hands that array in as `$state`, which is then mapped as-is; `null`
+     * reads {@see getState()}, validating first.
+     *
+     * @param array<string, mixed>|null $state
+     *
      * @throws LogicException     when a declared branch names no property, names
      *                            one the record declares non-nullable, or composes
      *                            with a relationship save hook, or when a component
@@ -423,7 +442,7 @@ trait BelongsToRecord
      *                             declares — the record stays mutated, nothing here
      *                             having been flushed
      */
-    public function getData(): object
+    public function getData(?array $state = null): object
     {
         $record = $this->getRecord();
 
@@ -433,7 +452,7 @@ trait BelongsToRecord
         }
 
         $accessor = $this->getPropertyAccessor();
-        $state = $this->getState();
+        $state ??= $this->getState();
         $map = $this->getRecordPathMap();
         $recordPaths = array_map(strval(...), array_keys($map));
 

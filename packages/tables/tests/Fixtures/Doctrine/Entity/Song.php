@@ -65,4 +65,27 @@ class Song
     {
         return $this->genres;
     }
+
+    public function addGenre(Genre $genre): static
+    {
+        if (!$this->genres->contains($genre)) {
+            $this->genres->add($genre);
+        }
+
+        return $this;
+    }
+
+    public function removeGenre(Genre $genre): static
+    {
+        $this->genres->removeElement($genre);
+
+        return $this;
+    }
+
+    public function setArtist(?Artist $artist): static
+    {
+        $this->artist = $artist;
+
+        return $this;
+    }
 }

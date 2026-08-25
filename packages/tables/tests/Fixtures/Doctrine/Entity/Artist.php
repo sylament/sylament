@@ -15,6 +15,7 @@ class Artist
      * @var Collection<int, Song>
      */
     #[ORM\OneToMany(targetEntity: Song::class, mappedBy: 'artist')]
+    #[ORM\OrderBy(['title' => 'ASC'])]
     private Collection $songs;
 
     public function __construct(
@@ -57,5 +58,27 @@ class Artist
     public function getSongs(): Collection
     {
         return $this->songs;
+    }
+
+    public function addSong(Song $song): static
+    {
+        if (!$this->songs->contains($song)) {
+            $this->songs->add($song);
+        }
+
+        $song->setArtist($this);
+
+        return $this;
+    }
+
+    public function removeSong(Song $song): static
+    {
+        $this->songs->removeElement($song);
+
+        if ($song->getArtist() === $this) {
+            $song->setArtist(null);
+        }
+
+        return $this;
     }
 }

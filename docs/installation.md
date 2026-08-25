@@ -21,7 +21,12 @@ ships.
 | Twig | 3.27 or newer |
 
 Doctrine is **not** required. Schemas bind to plain PHP objects; an entity is
-just the case where the bound object happens to be managed by Doctrine.
+just the case where the bound object happens to be managed by Doctrine. It
+becomes conditional the way storage does below: nothing reaches for an entity
+manager until a field says `unique()` or `exists()`, or a `Select` /
+`CheckboxList` / `Repeater` says `relationship()` — and then the application
+needs `doctrine/doctrine-bundle` registered, which a record-bound form needs
+anyway.
 
 `symfony/asset-mapper` is optional but recommended — it is how the compiled CSS
 and the Stimulus controllers reach your pages without you wiring anything. See

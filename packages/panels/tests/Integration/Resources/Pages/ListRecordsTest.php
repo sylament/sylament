@@ -158,6 +158,19 @@ it('mounts a header action through actions method discovery', function (): void 
     expect((string) $component->call('callMountedAction')->render())->toContain('Purged');
 });
 
+it('re-resolves a header action no method declares, across the request boundary', function (): void {
+    [$client] = seededArticlesClient();
+
+    $component = $this->createLiveComponent(ListArticles::class, client: $client)
+        ->call('mountAction', ['name' => 'inline', 'arguments' => [], 'context' => []]);
+
+    expect((string) $component->render())->toContain('Are you sure you would like to do this?');
+
+    $component->call('callMountedAction');
+
+    expect($component->component()->inlineRan)->toBeTrue();
+});
+
 it('deletes a record through the row action and re-renders without it', function (): void {
     [$client, $entityManager] = seededArticlesClient();
 
@@ -302,6 +315,18 @@ it('views a note read-only with a Close button only', function (): void {
         ->and($host->getMountedActionSchema()?->isDisabled())->toBeTrue()
         ->and(array_keys($footerActions))->toBe(['cancel'])
         ->and($footerActions['cancel']->getLabel())->toBe('Close');
+});
+
+it('titles a row action modal with the record it is bound to', function (): void {
+    [$client, $entityManager] = seededNotesClient();
+
+    $key = noteKey($entityManager, 'Alpha');
+
+    $component = $this->createLiveComponent(ListNotes::class, client: $client)
+        ->call('mountAction', ['name' => 'view', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => $key]]);
+
+    expect($component->component()->getMountedAction()?->getModalHeading())->toBe('View Alpha')
+        ->and((string) $component->render())->toContain('View Alpha');
 });
 
 it('replicates a note through its modal', function (): void {

@@ -9,10 +9,18 @@ use Sylament\Actions\CreateAction;
 use Sylament\Notifications\Notification;
 use Sylament\Panels\Resources\Pages\ListRecords;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
+use Symfony\UX\LiveComponent\Attribute\LiveProp;
 
 final class ListArticles extends ListRecords
 {
     protected static string $resource = ArticleResource::class;
+
+    /**
+     * Flipped by the header action no `{name}Action()` method declares, so a
+     * case can tell that a second request re-resolved it from the list.
+     */
+    #[LiveProp]
+    public bool $inlineRan = false;
 
     /**
      * Declared as `<name>Action()` so a mounted header action resolves through
@@ -41,6 +49,13 @@ final class ListArticles extends ListRecords
         return [
             $this->cacheAction(CreateAction::make()),
             $this->purgeAction(),
+            $this->cacheAction(
+                Action::make('inline')
+                    ->requiresConfirmation()
+                    ->action(function (): void {
+                        $this->inlineRan = true;
+                    }),
+            ),
         ];
     }
 }

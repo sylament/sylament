@@ -62,6 +62,24 @@ abstract class ListRecords extends Page implements InteractsWithSchemas, Interac
     }
 
     /**
+     * A row action is bound to a record the page itself does not have, and
+     * tables ships no title hop of its own — so the resource titles it here.
+     * Null hands `Action::getRecordTitle()` back its record-label fallback,
+     * which is also what a resource naming no title attribute wants.
+     */
+    public function getDefaultActionRecordTitle(Action $action): ?string
+    {
+        $record = $action->getRecord();
+        $resource = $this->getResourceInstance();
+
+        if (! is_object($record) || ! $resource->hasRecordTitle()) {
+            return null;
+        }
+
+        return $resource->getRecordTitle($record);
+    }
+
+    /**
      * @return object|array<string, mixed>|string|null
      */
     protected function getMountedActionSchemaRecord(): object|array|string|null

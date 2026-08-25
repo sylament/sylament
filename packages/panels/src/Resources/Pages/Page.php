@@ -25,7 +25,9 @@ use function Sylament\Support\filled;
 
 abstract class Page extends BasePage implements InteractsWithActions
 {
-    use HasActions;
+    use HasActions {
+        getAction as private getCachedOrDeclaredAction;
+    }
 
     /**
      * @var class-string<Resource>
@@ -35,6 +37,8 @@ abstract class Page extends BasePage implements InteractsWithActions
     protected static ?string $breadcrumb = null;
 
     private ?ResourceRegistry $resourceRegistry = null;
+
+    private bool $hasCachedHeaderActions = false;
 
     #[Required]
     public function setResourceRegistry(ResourceRegistry $resourceRegistry): void
@@ -87,6 +91,38 @@ abstract class Page extends BasePage implements InteractsWithActions
     public function getHeaderActions(): array
     {
         return [];
+    }
+
+    /**
+     * The trait answers a cached action or a `{name}Action()` method, and the
+     * request that calls a mounted action renders no header — so a header action
+     * the page declares inline would resolve at mount and be gone by the call.
+     * Reading the list once per request re-caches it, which is what Filament's
+     * `bootedInteractsWithHeaderActions()` boot hook does there.
+     */
+    public function getAction(string $name): ?Action
+    {
+        $action = $this->getCachedOrDeclaredAction($name);
+
+        if ($action instanceof Action || $this->hasCachedHeaderActions) {
+            return $action;
+        }
+
+        $this->hasCachedHeaderActions = true;
+
+        foreach ($this->getHeaderActions() as $headerAction) {
+            if ($headerAction instanceof ActionGroup) {
+                foreach ($headerAction->getFlatActions() as $groupedAction) {
+                    $this->cacheAction($groupedAction);
+                }
+
+                continue;
+            }
+
+            $this->cacheAction($headerAction);
+        }
+
+        return $this->getCachedOrDeclaredAction($name);
     }
 
     public function getDefaultActionRecordClass(Action $action): ?string

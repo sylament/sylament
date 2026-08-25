@@ -236,6 +236,8 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
      */
     protected function afterActionCalled(Action $action): void
     {
+        parent::afterActionCalled($action);
+
         if (! $action instanceof EditAction || $action->getStatus() !== ActionStatus::Success || $this->record === null) {
             return;
         }

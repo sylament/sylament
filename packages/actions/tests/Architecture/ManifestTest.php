@@ -10,8 +10,10 @@ use function dirname;
 
 /**
  * Guards the package's declared dependencies, which nothing else in this suite can
- * see: the test kernel registers no forms bundle, so the manifest line could go away
- * without a single failure.
+ * see: the monorepo resolves every package out of one root vendor, so the `Select`
+ * the Unit tests build autoloads whether or not this package's manifest names
+ * `sylament/forms` — the line could go away without a single failure here, and break
+ * only the split repo.
  *
  * `sylament/forms` is a hard require because `AttachAction`/`AssociateAction` build a
  * `Select` unconditionally — the guarded-soft-dependency shape the table context uses

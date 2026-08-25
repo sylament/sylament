@@ -64,11 +64,11 @@ write-up in [Details](#details), and/or **diverges** → the permanent note in
 
 ## Details
 
-Specifics for the rows that are not finished. The eight `done` rows are covered
+Specifics for the rows that are not finished. The nine `done` rows are covered
 by [`tests/Unit/HelpersTest.php`](../../../packages/support/tests/Unit/HelpersTest.php)
 (`blank`/`filled` valueless-vs-meaningful data sets, the Markup text-semantics
 case, the `wrap` cases, the `sanitize_url` refusal set, the `get_record_label`
-derivations and the `only`/`except` key sets) and, for the icon row,
+derivations, the `only`/`except` key sets and the `plural()` last-word cases) and, for the icon row,
 [`tests/Unit/Twig/Extension/IconExtensionTest.php`](../../../packages/support/tests/Unit/Twig/Extension/IconExtensionTest.php)
 plus [its Integration counterpart](../../../packages/support/tests/Integration/Twig/Extension/IconExtensionTest.php)
 against the real ux-icons renderer; they carry no write-up here.

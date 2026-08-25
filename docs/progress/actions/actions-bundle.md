@@ -80,18 +80,19 @@ tagged `twig.extension`.
 covers the asset-registration row against the compiled container: it asks the
 real `AssetMapperInterface` for the built dispatch controller by source path and
 requires the logical path back, so a missing or misaliased prepend fails it. Its
-second case pins the explicit `->set()` registration list — `Action`,
-`ActionGroup`, `AssociateAction`, `AttachAction`, `BulkAction`,
-`BulkActionGroup`, `CreateAction`, `DeleteAction`, `DeleteBulkAction`,
-`DetachAction`, `DetachBulkAction`, `DissociateAction`, `DissociateBulkAction`,
-`EditAction`, `ReplicateAction` and `ViewAction`, every root-level action class
-the package ships — because one the bundle does not name
-falls back to `new $class()` in
+second and fourth cases pin the explicit `->set()` registration list — the
+second `AttachAction`, `BulkAction`, `BulkActionGroup`, `DetachAction`,
+`DetachBulkAction`, `ReplicateAction` and `ViewAction`, the fourth the associate
+family (`AssociateAction`, `DissociateAction`, `DissociateBulkAction`) — because
+one the bundle does not name falls back to `new $class()` in
 [`ComponentResolver::instantiate()`](../support/component.md), where every
 `#[Required]` setter on it (the manager registry a write body persists through,
-the event dispatcher) silently never runs and nothing errors. A new prebuilt
-action therefore lands with a line in `configureComponents()` and a name in that
-case, in the commit that creates it.
+the event dispatcher) silently never runs and nothing errors. The six the bundle
+also `->set()`s — `Action`, `ActionGroup`, `CreateAction`, `DeleteAction`,
+`DeleteBulkAction` and `EditAction` — are named by neither case, a standing gap
+rather than a decision. A new prebuilt action therefore lands with a line in
+`configureComponents()` and a name in one of those cases, in the commit that
+creates it.
 That is the shape
 [support's](../support/support-bundle.md#asset-registration) and
 [notifications'](../notifications/notifications-bundle.md#asset-registration)
@@ -496,10 +497,13 @@ declared cycle, `forms` requiring `actions` back for its own field-level actions
 and it is the edge Filament's manifests already carry (`filament/actions`
 requires `filament/forms`, and `filament/forms` requires `filament/actions`).
 The soft link and the hard one need the same kind of pin for opposite reasons —
-actions' test kernel registers no forms bundle, so no test in the suite resolves
-the `Select` and none would notice the manifest line going away:
+actions' Unit tests do build the `Select` (`AttachActionTest` and
+`AssociateActionTest` both assert its shape), but the monorepo resolves every
+package out of one root `vendor/`, so the class autoloads whether or not
+actions' own manifest names it: dropping that line would fail nothing here and
+would break only the split repo.
 [`ManifestTest`](../../../packages/actions/tests/Architecture/ManifestTest.php)
-reads `composer.json` and asserts the three hard requires and the two
+reads `composer.json` instead, asserting the three hard requires and the two
 suggestions directly.
 
 The notifications seam is the rule's **second** guarded soft integration, and

@@ -618,12 +618,18 @@ trait CanBeValidated
      * Every accepted value in both the cast and the wire spelling, because `Choice`
      * is strict (loose throws at validation time) while the raw bag speaks strings
      * and a filled record may speak ints. De-duplicated by **strict** identity —
-     * `array_unique()` collapses `1` and `'1'` under every sort flag.
+     * `array_unique()` collapses `1` and `'1'` under every sort flag. A comma string
+     * splits and trims first, the arm `notIn()` reaches through this method and
+     * `in()` through {@see getInValidationConstraintValues()}.
      *
      * @return list<mixed>
      */
     private function doubleChoiceSpellings(mixed $values): array
     {
+        if (is_string($values)) {
+            $values = array_map(mb_trim(...), explode(',', $values));
+        }
+
         $doubled = [];
 
         foreach (wrap($values) as $value) {
@@ -631,10 +637,12 @@ trait CanBeValidated
                 $value = $value->value;
             }
 
-            foreach ([$value, is_scalar($value) ? (string) $value : null] as $candidate) {
-                if ($candidate !== null && ! in_array($candidate, $doubled, true)) {
-                    $doubled[] = $candidate;
-                }
+            if (! in_array($value, $doubled, true)) {
+                $doubled[] = $value;
+            }
+
+            if (is_scalar($value) && ! in_array((string) $value, $doubled, true)) {
+                $doubled[] = (string) $value;
             }
         }
 

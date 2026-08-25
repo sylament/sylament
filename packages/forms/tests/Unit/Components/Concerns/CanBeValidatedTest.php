@@ -820,3 +820,8 @@ it('answers the in() slot values, comma-split and trimmed', function (): void {
         ->and(wireField(FixtureField::make('a'))->getInValidationConstraint())->toBeNull()
         ->and(wireField(FixtureField::make('a'))->hasInValidationOnMultipleValues())->toBeFalse();
 });
+
+it('splits and trims a comma string under notIn too, and never drops a null from either list', function (): void {
+    expect(constraintsOf(wireField(FixtureField::make('a')->notIn('x, y')), Choice::class)[0]->choices)->toBe(['x', 'y'])
+        ->and(constraintsOf(wireField(FixtureField::make('a')->in([null, 'a'])), Choice::class)[0]->choices)->toBe([null, 'a']);
+});

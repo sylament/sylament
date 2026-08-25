@@ -145,12 +145,20 @@ to the container being built — so a page may write `fn (Schema $schema)` or
 
 `getMountedSchema()` is the other half, and it has no Filament counterpart
 because Filament does not need one. A write body — a `CreateAction`'s process
-closure, an `EditAction`'s — has to read *the modal's* schema, and asking for it
-by closure parameter does not work here: `schema` resolves through
+closure, an `EditAction`'s — has to read *the modal's* schema. A closure the
+pipeline evaluates **with** the explicit pair does get it: `callMountedAction()`
+runs `$action->call(['form' => $schema, 'schema' => $schema])`, so an `action()`
+closure may take `Schema $schema` (`CreateAction::setUp()` does); `process()`
+forwards the same pair to a `using()` closure; and `fillForm()`'s closure gets it
+from `CanBeMounted`'s `mountUsing()` wrapper. What does not work is a closure the
+pipeline evaluates with **no** injection of its own — `before()`, `after()`, the
+four form hooks, `mutateRecordDataUsing()` (which is handed `data` alone) —
+because `schema` then falls through
 [`Action::resolveDefaultClosureDependencyForEvaluationByName()`](action.md) to
-`getSchemaContainer()`, which is the **containing** schema — the page's form on
-a record page, and `null` on a table row or a page header. So the read is
-explicit instead:
+`getSchemaContainer()`, which is the **containing** schema: the page's form on a
+record page, and `null` on a table row or a page header. The write bodies cannot
+take the pair as a parameter either, since they are what supplies it. So the read
+is explicit instead:
 `getLiveComponentOrNull()?->getMountedActionSchema(mountedAction: $this)`, which
 asks the host for the frame it built for *this* action, and answers `null` for a
 confirmation-shaped action that mounted with no schema at all, or for an action

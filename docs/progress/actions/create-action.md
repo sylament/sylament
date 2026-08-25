@@ -219,3 +219,26 @@ grouped one is its fallback. Setting `icon()` instead (what
 [`EditAction`](edit-action.md#one-plain-icon-replaces-filaments-table-and-grouped-pair)
 is forced into by the missing `HasTableIcon`) would put a plus on every trigger
 Filament leaves bare.
+
+### Two props widen Filament's `?Closure` to the closure's own result
+
+`$modifyCreateAnotherActionUsing` is `Action|Closure|null` here where vendor
+`CreateAction.php:28` has `?Closure`, and
+`$preserveFormDataWhenCreatingAnotherUsing` is `array|Closure|null` where vendor
+`:30` has `?Closure`. Both are Filament-exact in *name* and in what a consumer
+passes; the widening is the level-max gate rather than an API change.
+
+The reason is [`evaluate()`'s generic](../../../CLAUDE.md): it infers `T` by
+subtracting `Closure` from the property's declared union, so a `?Closure` prop
+evaluates to `?Closure` — the read then has to be narrowed by hand at every call
+site, which is the shape an inline `@phpstan-ignore` grows out of. Declaring the
+union the closure *results in* states the contract instead: the property holds
+either that value or a closure producing it, and `evaluate()` answers the value.
+[`HasWizard`](../../../packages/actions/src/Concerns/HasWizard.php) set the
+precedent with `Wizard|Closure|null $modifyWizardUsing`; every prop of this shape
+in the port follows it.
+
+A literal is a legitimate value on both, and Filament's is not: passing
+`modifyCreateAnotherActionUsing(Action::make(…))` works here and would be a type
+error there. That is a widening, never a narrowing, so migrating code is
+unaffected.

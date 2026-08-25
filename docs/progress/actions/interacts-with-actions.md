@@ -122,9 +122,9 @@ five landed with the
 [record chain on `Action`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
 that reads them; the schema resolver's reader is
 [`HasSchema::getSchema()`](has-schema.md)'s host fallback rather than the chain,
-and it arrives one lane later in the same epic — the one place the recipe's
-"land it with its reader" is stretched to "land it with its epic", so that the
-contract widens exactly once.
+and it landed later in the same epic — the one place the recipe's
+"land it with its reader" was stretched to "land it with its epic", so that the
+contract widened exactly once.
 The last two carry `renames.md` rows: `getDefaultActionModel` and
 `getDefaultActionModelLabel` speak the
 [record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record)

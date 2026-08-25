@@ -336,10 +336,15 @@ from the flash to the browser is the notifications package's own job
 turns each flashed entry into a `sylament:notification` browser event on a live
 request), so nothing here dispatches. The end-to-end pin lives in the
 notifications suite —
-[`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php),
-the only kernel that boots both bundles — with tables'
+[`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php)
+— with tables'
 [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php)
-proving the whole confirm→delete→toast shape.
+proving the whole confirm→delete→toast shape. Four fixture kernels register both
+bundles today (actions', notifications', panels' and tables'), so the write
+actions' own [`CreateActionTest`](../../../packages/actions/tests/Integration/CreateActionTest.php)
+and [`EditActionTest`](../../../packages/actions/tests/Integration/EditActionTest.php)
+read the `sylament:notification` event off the render here rather than one
+package over.
 
 Three shape notes. The title is checked **after** the `Notification` is built,
 where the port used to check it first and skip the build entirely. The object
@@ -360,7 +365,7 @@ injections that go with it — see
 for what those are and which five of Filament's nine are deferred. Both arms are
 pinned from the notifications suite's
 [`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php),
-the only kernel that boots both bundles.
+which is where the arm-by-arm coverage lives.
 
 **Missing vs Filament:** `failureNotificationBody()` and the `->body(...)` call
 that reads it while building the failure notification. `unauthorizedNotification()`
@@ -397,7 +402,9 @@ modal through the general predicate), `modalIcon` (falls back to
 `heroicons:exclamation-triangle` only when `isConfirmationRequired()`),
 `modalIconColor` (falls back to `getColor() ?? 'primary'`),
 `modalSubmitActionLabel` (`'Confirm'`/`'Submit'` by confirmation state),
-`modalCancelActionLabel` (`'Cancel'`), and `modalWidth` (`'md'`). These are the
+`modalCancelActionLabel` (`'Cancel'`), and `modalWidth` (Filament's own split:
+`'md'` when `isConfirmationRequired()`, `'4xl'` otherwise, so a confirmation stays
+a small box and a form modal gets room for two columns). These are the
 exact fields [`ActionModal/index.html.twig`](../../../packages/actions/templates/components/ActionModal/index.html.twig)
 reads to drive `<twig:SylamentSupport:Modal>`, and `ActionModalRenderTest`
 exercises the full mount → render path through `RecordActionHost`. The
@@ -498,9 +505,15 @@ Absent entirely, with no property, setter, or getter:
 **Type-shape narrowing** (not a functional gap, just less general): `modalIcon`
 is `string|Closure|null` here vs Filament's `string|BackedEnum|Htmlable|Closure|null`
 (no `Heroicon` enum or `Markup`-typed icon exists in Sylament yet); `modalWidth`
-is a bare string (`'md'`) vs Filament's `Width` enum (no `Width` enum ported to
+is a bare string vs Filament's `Width` enum (no `Width` enum ported to
 Sylament yet — every width value here is just whatever string a template's CSS
-happens to key on, e.g. `sy-modal-md`).
+happens to key on, e.g. `sy-modal-md`). The *defaults* are Filament's, not the
+shape: `Width::Medium`/`Width::FourExtraLarge`
+([vendor `CanOpenModal.php:653-664`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php))
+become `'md'`/`'4xl'`, which support's `modal.css` already knows. Answering `'md'`
+unconditionally, as the port did until M4 · 2's browser pass, squeezed a
+four-tab article form into a `max-w-md` box — the kind of defect only a browser
+finds, since every assertion about a width passes either way.
 
 `makeModalSubmitAction(string $name, ?array $arguments = null)` is **ported**,
 Filament's body exactly:
@@ -818,8 +831,8 @@ differently today (no shipped host answered the hook before this commit); the
 gate exists so that adding one does not start widening every trigger's context.
 
 **`shouldClearRecordAfter()` / `clearRecordAfter()`** are the pair a
-create-shaped action flips — [`CreateAction`](create-action.md) does, from this
-epic's `B` lane, and nothing overrides them yet: the base answers `false` and
+create-shaped action flips: [`CreateAction::shouldClearRecordAfter()`](create-action.md)
+returns `true` and nothing else overrides either — the base answers `false` and
 `clearRecordAfter()` returns without touching anything, so an action that never
 opts in cannot lose the record it was mounted with.
 
@@ -830,6 +843,11 @@ and `getTable()?->getRecordTitleAttribute()` in `getRecordTitleAttribute()`. Tab
 [`Table`](../tables/table.md) carries no label or title surface at all, so there is
 nothing for those hops to call; only `getRecordClass()`'s table hop exists here,
 because `Table::getRecordClass()` does. They land when the table grows the surface.
+Panels covers the visible half of the title gap in the meantime:
+[`ListRecords::getDefaultActionRecordTitle()`](../panels/README.md#listrecords)
+answers the host hook with the resource's title for a row action's record, so
+`/admin/notes`'s view modal reads *"View Alpha"* rather than *"View note"* — a
+page-side stand-in that becomes redundant, not wrong, once the table hop exists.
 The second is the **plural trio** — `pluralRecordLabel()`, `getPluralRecordLabel()`
 and `getTitleCasePluralRecordLabel()` (plus `getCustomPluralRecordLabel()`) — which
 only the bulk family reads, and which is deferred beside M4 · 1's
@@ -1124,6 +1142,14 @@ non-ORM `ObjectManager` names the type it got. [`DeleteAction`](delete-action.md
 and [`DeleteBulkAction`](bulk-action.md) keep resolving their own manager this
 epic, because their messages are pinned by tests; adopting the helper there is a
 sweep item.
+
+The precedence is the table's manager over the *record's class*, not merely over
+the registry: an action naming a `recordClass()` from a different manager than
+the table it sits on persists into the table's, and the mismatch surfaces as
+Doctrine's own `MappingException` at persist — loud, but with nothing in the
+message about the table. A record-class-first precedence would be the other
+half-wrong (a query-lane table exists precisely to say which manager reads), so
+the table wins on purpose; name the class on an action outside that table.
 
 Covered by
 [`CanUseDatabaseTransactionsTest`](../../../packages/actions/tests/Unit/Concerns/CanUseDatabaseTransactionsTest.php)

@@ -7,10 +7,12 @@ modal, fills a form from the bound record, disables it and offers a single
 is the same shape — "cannot submit" is the *absence* of a submit button and of an
 `action()` body, not a guard.
 
-It is modal-only here today. The URL arm every other record action carries lands
-on the panels side rather than on this class (a `getDefaultActionUrl()` arm keyed
-on a registered `view` page), and there is no view page to route to until
-M5 · 2 — at which point this class does not change.
+It is modal-only here today, but not for want of the URL arm: that arm lives on
+the panels side rather than on this class, and it already exists —
+[`Resources\Pages\Page::getDefaultActionUrl()`](../../../packages/panels/src/Resources/Pages/Page.php)
+answers `$resource->getUrl('view', …)` for a `ViewAction` on a resource whose
+`hasPage('view')`. What is missing is the page: no resource can register one
+until M5 · 2, so the arm never fires. This class does not change when it does.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 

@@ -123,8 +123,12 @@ are what a `using()` override reads instead.
 `$record->update($data)` reaches it through its own `getState()`; here
 `getData()` writes the associations as part of the mapping and Doctrine orders
 the writes itself at flush, so there is nothing left to do after `persist()`.
-`persist()` on an already-managed entity is a no-op that still cascade-persists,
-which is the shape Filament's own `EditRecord` page ships.
+`persist()` on an already-managed entity is a no-op that still cascade-persists.
+Filament's own page has no counterpart to compare against — its
+`EditRecord::handleRecordUpdate()` calls `$record->update($data)`; the
+persist-and-flush pair is the port's, and
+[`Panels\Resources\Pages\EditRecord::handleRecordUpdate()`](../panels/README.md#editrecord)
+is where it also lives page-side.
 
 **The default persistence step is a typed private method, not an inline
 closure**, for the reason

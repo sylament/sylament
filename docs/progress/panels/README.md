@@ -791,12 +791,27 @@ resource's record **class**, which is what a page showing no single record can
 seed a mounted schema with — the row actions get their record from the table
 frame instead.
 
+`getDefaultActionRecordTitle(Action)` is the page-side stand-in for a hop
+Filament puts on the table. There, `Table::getRecordTitle()` answers a row
+action's title; tables here ships no label/title surface yet
+([deferred](../actions/action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)),
+so a `ViewAction` on a row would read *"View note"* where Filament reads *"View
+Alpha"*. The list page answers instead: when the action carries an object record
+and the resource declares a `$recordTitleAttribute`, it returns
+`Resource::getRecordTitle($record)`; otherwise `null`, which hands
+`Action::getRecordTitle()` back its record-label fallback — the same string a
+resource naming no title attribute would have produced anyway. The edit page's
+override is the sibling shape and reads its *own* record instead, since a record
+page has one. When tables grows the hop this becomes a duplicate answer rather
+than a wrong one, and the deletion is one method.
+
 **Header actions.** `getHeaderActions()` returns the actions the template renders
 into the `Header` component's `actions` block — the same contract on all three
 page types, since the member is the [base's](#resource-pages). An action that
-mounts (a modal, a confirmation, an `action()` closure) must **also** be declared
-as a `<name>Action()` method on the page, and an action that opens a URL it does
-not carry itself must be **stamped with the page**; both rules and their failure
+mounts (a modal, a confirmation, an `action()` closure) may be declared either as
+a `<name>Action()` method on the page or inline in the list, since the base
+re-resolves the list once per request; an action that opens a URL it does not
+carry itself must be **stamped with the page**; both rules and their failure
 modes are in
 [header actions are read off the page at render](#header-actions-are-read-off-the-page-at-render-not-cached-at-boot):
 
@@ -894,7 +909,9 @@ record handlers per page too.
   method throws on the first render.
 - `getMountedActionSchemaRecord()` answers the resource's record **class**, so a
   header action's modal is seeded with the class rather than the record this page
-  has not created yet.
+  has not created yet — redundantly, since the seed chain reaches
+  `getDefaultActionRecordClass()` first and never asks
+  ([why it is kept](#the-mounted-schemas-record-answers-for-the-top-frame-and-depends-on-the-seeds-laziness)).
 - `create()` is the `#[LiveAction]` the form's submit posts.
 
 The lifecycle, ours against Filament's:
@@ -1074,7 +1091,8 @@ edit-page GET.
   [the edit page's own edit modal is a second tree](#the-edit-pages-own-edit-modal-is-a-second-tree-re-filled-after-it-saves).
 - `getMountedActionSchemaRecord()` is the resource's record class for a
   `CreateAction` and the guarded record otherwise —
-  [it answers for the top frame, and depends on the seed being lazy](#the-mounted-schemas-record-answers-for-the-top-frame-and-depends-on-the-seeds-laziness).
+  [it answers for the top frame, depends on the seed being lazy, and is
+  unreachable on every page shipped today](#the-mounted-schemas-record-answers-for-the-top-frame-and-depends-on-the-seeds-laziness).
 - `afterActionCalled()` re-fills the page form through `fillForm()` when an
   `EditAction` on the page's own record reports success, for the second-tree
   reason above. The hook is Filament's, the body is not — theirs resets a deleted
@@ -1590,7 +1608,12 @@ was never addressed to it.
 What it replaces is the third guard, the `resolveRecordUsing()` throw. In its
 place the key is checked for being scalar — a `recordKey` arrives off the wire, so
 a non-scalar is a malformed request rather than a missing record, and it raises
-`ActionNotResolvableException` — and then handed to
+`ActionNotResolvableException`. "Raises" is the accurate word rather than
+"surfaces": `HasActions::cacheMountedActions()` catches that exception into an
+empty stack, so a malformed key is a **silent non-mount** — the modal simply does
+not open — where the `NotFoundHttpException` below propagates all the way out as
+a 404. The two failures are deliberately asymmetric, one being a client sending
+nonsense and the other a record that is really gone. The key is then handed to
 `Resource::resolveRecordRouteBinding()`, with a `NotFoundHttpException` for a miss.
 Going through that method rather than `EntityManager::find()` is the whole point:
 it is [the resource's scoped query](#a-record-is-resolved-through-the-resources-own-query),
@@ -1629,6 +1652,20 @@ way, so the port keeps it, and the edit page's override reads `getMountedAction(
 with no index: the top frame. Under a nested modal that is the inner action, not
 the one that opened it. Nothing today depends on the distinction, and recording it
 is cheaper than re-deriving it the first time something does.
+
+On every resource page the port ships today, that override is in fact **dead
+code**. `resolveMountedActionSchemaRecord()` consults the host hook last, after
+`$action->getRecordClass(withDefault: true)` — and `withDefault` reaches
+`Page::getDefaultActionRecordClass()`, which always answers the resource's record
+class. So the chain returns one hop early and never asks the page. All three
+overrides (`ListRecords`', `EditRecord`'s, `CreateRecord`'s) are therefore
+redundant rather than load-bearing, and they are kept on purpose: each answers
+what the chain would have answered anyway, so an action that *does* opt out of the
+default class — `record(null)`, a `schemaComponent`-owned frame, a future page
+whose resource declares none — lands on the same value instead of `null`. Read
+the sections below as *what the hook says*, not as behaviour a shipped page
+exercises; nothing in the suite can distinguish them, which is why this paragraph
+exists rather than a test.
 
 The override is only *able* to read the mounted action because the seed's record
 is a closure. `getMountedActionSchema()` builds the schema with
@@ -2629,22 +2666,30 @@ Filament caches header actions into the page's action registry at boot:
 `getHeaderActions()`, stamps `->livewire($this)` on each group, sets a dropdown
 placement, and registers every action through `cacheAction()` — so the mounted
 name resolves out of that cache on the way back in. UX LiveComponent has no
-`booted*()`/`cache*()` trait hook to hang that on, so nothing caches: the
-template calls `this.getHeaderActions` at render, and the way back in is
-[actions' method discovery](../actions/has-actions.md) — `getAction($name)` looks
-for a `<name>Action()` or `<name>()` method returning an `Action`, calls it, and
-caches the result.
+`booted*()`/`cache*()` trait hook to hang that on, so
+[`Resources\Pages\Page`](../../../packages/panels/src/Resources/Pages/Page.php)
+does the same work lazily instead. The template still calls
+`this.getHeaderActions` at render; the way back in is `getAction()`, overridden
+on the base to try the trait's own lookup first — the action cache, then
+[actions' method discovery](../actions/has-actions.md), which finds a
+`<name>Action()` or `<name>()` method returning an `Action` — and, **only when
+that misses**, to walk `getHeaderActions()` once, `cacheAction()` every entry
+(and every `getFlatActions()` member of an `ActionGroup`), and look again. The
+trait is aliased rather than edited, and a `private bool` makes the walk once per
+request — which also keeps a `getHeaderActions()` implementation that itself
+calls `getAction()` from recursing.
 
-The consequence is a contract on the page rather than on the framework, and it
-has **two** clauses, one per kind of action.
+So both declaration forms work. `$this->fooAction()` listed in
+`getHeaderActions()` is still the Filament shape and still resolves through
+discovery; an action built **inline** in the list resolves too, where before it
+rendered its trigger fine and then did nothing when the browser posted the mount
+back — `getAction('foo')` found no method, the descriptor dropped, and the click
+was silent with no error anywhere. Render-time reading alone could never have
+covered it: the request that *calls* a mounted action renders no header at all,
+so nothing had populated the cache by the time the name was looked up.
 
-An action that **mounts** must exist as a method under its own name, and
-`getHeaderActions()` lists `$this->fooAction()`. An action built inline in
-`getHeaderActions()` renders its trigger fine and then cannot be resolved when
-the browser posts the mount back — `getAction('foo')` finds no method, the
-descriptor drops, and the click does nothing with no error.
-
-An action that **opens a URL it does not carry itself** must be stamped with the
+One clause does survive, and it is about binding rather than resolution. An
+action that **opens a URL it does not carry itself** must be stamped with the
 page, because `CanOpenUrl::getUrl()` reaches the page through
 `getLiveComponentOrNull()`, and that is null on an action nobody bound:
 
@@ -2663,10 +2708,12 @@ about the header.
 
 The discovery arm is the same one every other actions host already uses (the
 demo's form cards, the actions fixtures), so it is one rule rather than a
-page-specific one, and it is why the port did not grow a
-`getCachedHeaderActions()`: the cache Filament fills at boot would be filled here
-at render, one call before it is read. The stamping clause is the piece Filament's
-boot-time cache hides, and it is the price of not having a hook to run it in.
+page-specific one. What the port still does not grow is a
+`getCachedHeaderActions()` accessor: the template reads `getHeaderActions()`
+itself, and the resolution walk fills the action cache rather than a second list,
+so there is no cached array for anyone to read back. The stamping clause is the
+piece Filament's boot-time cache hides, and it is the price of not having a hook
+to run it in.
 
 ### The actions host sits on the base because a trait outranks an inherited method
 

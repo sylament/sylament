@@ -34,6 +34,7 @@ class SylamentActionsBundle extends SylamentBundle
                 ->autoconfigure()
             ->set(Action::class)
             ->set(ActionGroup::class)
+            ->set(AssociateAction::class)
             ->set(AttachAction::class)
             ->set(BulkAction::class)
             ->set(BulkActionGroup::class)

@@ -17,6 +17,16 @@ class Song
     #[ORM\ManyToMany(targetEntity: Genre::class)]
     private Collection $genres;
 
+    /**
+     * The owning side of the inverse many-to-many Artist reads back, so a
+     * relationship over Artist::$collaborations is an inverse-side many-to-many
+     * — the shape whose mapping still names a `mappedBy`.
+     *
+     * @var Collection<int, Artist>
+     */
+    #[ORM\ManyToMany(targetEntity: Artist::class, inversedBy: 'collaborations')]
+    private Collection $collaborators;
+
     public function __construct(
         #[ORM\Id]
         #[ORM\Column]
@@ -31,6 +41,7 @@ class Song
         private ?bool $isFeatured = null
     ) {
         $this->genres = new ArrayCollection();
+        $this->collaborators = new ArrayCollection();
     }
 
     public function getId(): int

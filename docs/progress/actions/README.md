@@ -62,7 +62,7 @@ fold into its own file: `BulkActionGroup` into
 | --- | --- | --- | --- |
 | [`Action`](../../../packages/actions/src/Action.php) | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | [action.md](action.md) |
 | [`ActionGroup`](../../../packages/actions/src/ActionGroup.php) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | in progress | [action-group.md](action-group.md) |
-| [`AssociateAction`](../../../packages/actions/src/AssociateAction.php) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | in progress | [associate-action.md](associate-action.md) |
+| [`AssociateAction`](../../../packages/actions/src/AssociateAction.php) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | [associate-action.md](associate-action.md) |
 | [`AttachAction`](../../../packages/actions/src/AttachAction.php) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | in progress | [attach-action.md](attach-action.md) |
 | [`BulkAction`](../../../packages/actions/src/BulkAction.php) | [`BulkAction.php`](../../../vendor/filament/actions/src/BulkAction.php) | in progress | [bulk-action.md](bulk-action.md) |
 | [`BulkActionGroup`](../../../packages/actions/src/BulkActionGroup.php) | [`BulkActionGroup.php`](../../../vendor/filament/actions/src/BulkActionGroup.php) | in progress | [action-group.md](action-group.md) |

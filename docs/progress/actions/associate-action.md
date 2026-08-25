@@ -12,9 +12,7 @@ The relationship it writes is the **table's** —
 one, and the action refuses with a `LogicException` naming that when a host
 mounts it without one.
 
-**Status:** in progress — the whole class ships except Filament's
-`tableSelect()` trio, which waits on forms' `TableSelect`; see the
-[status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
@@ -57,7 +55,7 @@ first. _Detail_ carries a **semantics** link to [Semantics](#semantics), a
 | [`multiple()` / `isMultiple()`](../../../packages/actions/src/AssociateAction.php) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | [diverges](#the-vendors-raw-ismultiple-read-is-not-copied) |
 | [`recordSelectSearchColumns()` / `getRecordSelectSearchColumns()`](../../../packages/actions/src/AssociateAction.php) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | — |
 | [`forceSearchCaseInsensitive()` / `isSearchForcedCaseInsensitive()`](../../../packages/actions/src/AssociateAction.php) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | — |
-| [`getRecordSelect()`](../../../packages/actions/src/AssociateAction.php) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | [semantics](#the-title-fast-path-projects-the-attribute) |
+| [`getRecordSelect()`](../../../packages/actions/src/AssociateAction.php) | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | done | — | [semantics](#the-title-fast-path-projects-the-attribute) · [diverges](#searchable-takes-a-re-keyed-list-not-the-raw-column-array) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
 | `getRelationCountHash()` self-join, `whereDoesntHave()`, `whereNotMorphedTo()` | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | skipped | — | [diverges](#the-candidate-query-needs-no-inverse-relationship) |
 | `getInverseRelationshipFor()` in the write | [`AssociateAction.php`](../../../vendor/filament/actions/src/AssociateAction.php) | skipped | — | [diverges](#the-candidate-query-needs-no-inverse-relationship) |
@@ -150,7 +148,21 @@ pivot columns and accessors Filament's attach family carries have no counterpart
 `sylament/actions` declares `sylament/forms` — the second deliberate cycle in the
 monorepo. Filament's `tableSelect()` / `getTableSelectConfiguration()` /
 `getTableRecordSelect()` trio, which swaps the select for a whole table picker,
-is **blocked** on forms' `TableSelect`, which has no port and no roadmap row.
+belongs to `AttachAction` alone (`AttachAction.php:36`, `:52`, `:57`, `:362`) —
+`AssociateAction` has no such member, so there is nothing to port here.
+
+### `searchable()` takes a re-keyed list, not the raw column array
+
+`recordSelectSearchColumns()` accepts any `array<string>`, but
+[`Select::searchable()`](../forms/select.md) takes `bool|Closure|list<string>|null`
+— a list, because the searchable columns are iterated positionally. Handing the
+raw array through as Filament does (`->searchable($this->getRecordSelectSearchColumns() ?? true)`)
+fails level max with *"Type #3 from the union: `array<int|string, string>` might
+not be a list"*, so the port reads the getter once and passes
+`$searchColumns === null ? true : array_values($searchColumns)`. It is the same
+value for every consumer who writes a list literal, which is all of them; a
+string-keyed array is simply re-keyed rather than rejected. This is the one line
+of `getRecordSelect()` that is not the vendor's byte for byte.
 
 ### The strings are literals, not translation keys
 

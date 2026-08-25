@@ -260,3 +260,24 @@ it('refuses to dissociate from an orphan-removal mapping, in both arms', functio
         ->toThrow(LogicException::class, 'orphanRemoval')
         ->and(array_filter($recorder->statements(), static fn (string $sql): bool => str_starts_with($sql, 'UPDATE')))->toBe([]);
 });
+
+it('refuses to dissociate an inverse-side many-to-many, in both arms', function (): void {
+    [$client, , $recorder] = seededArtistSongsClient();
+
+    $bulk = test()->createLiveComponent(ArtistSongsActionsTable::class, ['artistId' => 1, 'association' => 'collaborations', 'fetchesRecords' => false], client: $client)
+        ->set('selectedTableRecords', ['10'])
+        ->call('mountAction', ['name' => 'dissociate', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]]);
+
+    $recorder->reset();
+
+    expect(fn (): TestLiveComponent => $bulk->call('callMountedAction'))
+        ->toThrow(LogicException::class, 'DetachBulkAction')
+        ->and(array_filter($recorder->statements(), static fn (string $sql): bool => str_starts_with($sql, 'UPDATE')))->toBe([]);
+
+    $fetching = test()->createLiveComponent(ArtistSongsActionsTable::class, ['artistId' => 1, 'association' => 'collaborations'], client: $client)
+        ->set('selectedTableRecords', ['10'])
+        ->call('mountAction', ['name' => 'dissociate', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]]);
+
+    expect(fn (): TestLiveComponent => $fetching->call('callMountedAction'))
+        ->toThrow(LogicException::class, 'DetachBulkAction');
+});

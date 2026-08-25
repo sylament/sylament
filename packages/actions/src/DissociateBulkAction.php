@@ -69,8 +69,13 @@ class DissociateBulkAction extends BulkAction
         $reader->assertRelationshipAcceptsDetach($relationship);
 
         $target = $reader->describeRelationship($relationship);
+
+        if ($target->isManyToMany) {
+            throw new LogicException(sprintf('The action [%s] dissociates a one-to-many; [%s] is a many-to-many — use DetachBulkAction.', $this->getName(), $relationship->name));
+        }
+
         $mappedBy = $target->mappedBy
-            ?? throw new LogicException(sprintf('The action [%s] dissociates a one-to-many, which names its mapped-by field; [%s] is a many-to-many — use DetachBulkAction.', $this->getName(), $relationship->name));
+            ?? throw new LogicException(sprintf('The one-to-many [%s] names no mapped-by field, which Doctrine requires of every one-to-many.', $relationship->name));
 
         if (! $action->shouldFetchSelectedRecords()) {
             try {

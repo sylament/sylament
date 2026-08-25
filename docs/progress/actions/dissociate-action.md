@@ -169,9 +169,14 @@ raised outside the two `try` blocks so none is swallowed into the danger toast.
 [The three dissociate refusals](#dissociating-is-refused-where-the-mapping-forbids-it)
 are the first, so an orphan-removal mapping throws before any statement is issued
 rather than nulling a column the mapping treats as ownership; the fourth is that
-the relationship must be a **one-to-many** — a many-to-many names no `mappedBy`
-field to null, and the refusal says to use `DetachBulkAction` instead. The fourth
-gates the fetching arm too, even though `detach()` would quietly do a
-many-to-many removal there: the class is the one-to-many action on both arms, and
-a batch that succeeds or refuses depending on `fetchSelectedRecords()` is worse
-than one refusal naming the right action.
+the relationship must be a **one-to-many**, and the refusal says to use
+`DetachBulkAction` instead. That fourth one reads `AssociationTarget::$isManyToMany`
+rather than testing `$mappedBy` for null — Doctrine sets `mappedBy` on *every*
+inverse side, many-to-many included, so a null test would let an inverse-side
+many-to-many straight through to a DQL `UPDATE` of a collection-valued field and
+report it as a failed batch. It gates the fetching arm too, even though `detach()`
+would quietly do a many-to-many removal there: the class is the one-to-many action
+on both arms, and a batch that succeeds or refuses depending on
+`fetchSelectedRecords()` is worse than one refusal naming the right action.
+`$mappedBy` keeps its own `?? throw` behind that branch as a one-to-many sanity
+check, matching the reader's own.

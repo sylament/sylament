@@ -36,8 +36,9 @@ Covered by
 and end to end by
 [`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php)
 in the **tables** suite — the candidate list, the search, the closure-titled
-arm, the preloaded arm, the single and multiple submits, the attach-another arm
-and both smuggled-key refusals. It sits there for the reason
+arm, the preloaded arm, the single and multiple submits, the attach-another arm,
+both smuggled-key refusals and the empty-submission one. It sits there for the
+reason
 [`PrebuiltDeleteActionTest`](delete-action.md) does, one step further: only a
 table host supplies a relationship, and the actions test kernel registers
 neither the tables nor the forms bundle, so the record select could not even be
@@ -57,7 +58,7 @@ and/or **semantics** → the permanent note in [Semantics](#semantics).
 | [`extraModalFooterActions()` — the `attachAnother` submit](../../../packages/actions/src/AttachAction.php) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | done | — | [semantics](#the-another-arm-refills-the-schema-and-halts) |
 | [The `action()` body — resolve, bind, `process()`, another-or-success](../../../packages/actions/src/AttachAction.php) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | done | — | [semantics](#the-submitted-key-is-re-resolved-through-the-candidate-query) |
 | [`getRecordSelectOptionsQuery()` — the candidate query](../../../packages/actions/src/AttachAction.php) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) (`RelationshipJoiner::prepareQueryForNoConstraints()` + `whereDoesntHave()`) | done | — | [diverges](#the-candidate-query-needs-no-inverse-relationship) |
-| [`getRecordSelectOptions()` — search, limit, order, pluck-or-hydrate](../../../packages/actions/src/AttachAction.php) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) (`$getOptions`) | done | — | [semantics](#the-title-fast-path-projects-the-attribute) |
+| [`getRecordSelectOptions()` — search, limit, order, pluck-or-hydrate](../../../packages/actions/src/AttachAction.php) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) (`$getOptions`) | done | — | [semantics](#the-title-fast-path-projects-the-attribute), [diverges](#the-title-ordering-applies-to-both-arms-not-only-the-projected-one) |
 | [`getRecordSelect()`](../../../packages/actions/src/AttachAction.php) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | done | — | [diverges](#options-is-installed-only-on-the-preloaded-arm) |
 | [`recordSelect()`](../../../packages/actions/src/AttachAction.php) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | done | — | — |
 | [`recordSelectOptionsQuery()`](../../../packages/actions/src/AttachAction.php) | [`AttachAction.php`](../../../vendor/filament/actions/src/AttachAction.php) | done | — | [semantics](#recordselectoptionsquery-is-evaluated-with-query-and-search) |
@@ -89,6 +90,13 @@ attach throws rather than writing. Filament resolves the same way — its
 makes the count check explicit because a silently-dropped key would otherwise
 report success for a write that never happened.
 
+A submission carrying **no** key at all is refused before that check rather than
+by it, since zero resolved records equals zero submitted keys and the count check
+would pass. Filament has no equivalent guard because it does not need one: its
+`->first()` hands `null` to `$relationship->attach(null)`, which throws. The
+select's `required()` gates the ordinary browser path either way; this is the
+schema-bypassed one.
+
 There are two gates in front of that one, and the end-to-end test asserts both.
 The select's own validation runs first: an unlabelled value fails
 `Select`'s label probe, so the ordinary browser path answers with a validation
@@ -104,11 +112,9 @@ option list is read as one projection (`SELECT record.<id>, record.<title>`)
 rather than by hydrating every candidate. Otherwise the candidates are hydrated
 and titled one by one through `getRecordTitle($record)`, which is what lets a
 table's `recordTitle()` closure decide the option labels. This is Filament's
-`pluck()`-versus-`mapWithKeys()` branch, condition for condition.
-
-The ordering sits **before** that branch, not inside it: both paths order by the
-title attribute when the query carries no order of its own, so the two arms list
-alike.
+`pluck()`-versus-`mapWithKeys()` branch, condition for condition. What is *not*
+condition for condition is where the ordering sits —
+[a divergence](#the-title-ordering-applies-to-both-arms-not-only-the-projected-one).
 
 ### `recordSelectOptionsQuery()` is evaluated with `query` and `search`
 
@@ -131,6 +137,13 @@ unmapped name is a `LogicException` naming the action, the column and the class,
 not a Doctrine parse error further down. With no columns declared, the title
 attribute is the one searched column; with neither, a search matches everything
 the candidate query already admits.
+
+The pair is typed `list<string>` where Filament prints `array<string>`, and that
+narrowing is forced rather than incidental: the value is handed straight to
+[`Select::searchable()`](../forms/select.md), whose parameter is
+`bool|list<string>|Closure|null`, so an `array<string>` would not survive level
+max at that call site. Read it as the type the sibling actions agree on, not as
+one to "correct" back to the Filament signature.
 
 ### The "another" arm refills the schema and halts
 
@@ -176,6 +189,19 @@ Four Eloquent mechanics have no Doctrine referent and are skipped whole:
   `whereDoesntHave` subquery the port does not emit.
 - **`whereNotMorphedTo()` / `HasOneOrManyThrough`.** Doctrine maps no polymorphic
   association and no through-relation, so there is no shape to branch on.
+
+### The title ordering applies to both arms, not only the projected one
+
+Filament's `if (empty($relationshipQuery->getQuery()->orders)) { $relationshipQuery->orderBy($titleAttribute); }`
+sits **inside** the pluck branch
+([`AttachAction.php:289-300`](../../../vendor/filament/actions/src/AttachAction.php)),
+so the hydrate-and-title arm below it emits no `ORDER BY` at all and lists in
+whatever order the driver returns. The port applies the order **before** the
+branch: both arms order by the title attribute when the query carries no order of
+its own, so the option list reads the same whichever arm built it and a
+`recordTitle()` closure does not silently cost the sort. A caller wanting the
+unordered arm back orders the builder itself in `recordSelectOptionsQuery()` —
+any order of its own suppresses this one.
 
 ### The record select is a forms `Select`, which is why actions requires forms
 

@@ -182,6 +182,21 @@ it('refuses the same key in the action body when validation is bypassed', functi
         ->and(genreNamesOfSong($entityManager, 1))->toBe(['Rock', 'Pop', 'Jazz']);
 });
 
+it('refuses an empty submission in the action body rather than reporting success', function (): void {
+    [$client, $entityManager] = seededGenresClient();
+    $host = attachHost($client);
+
+    $host->mountAction('attach', [], ['table' => true]);
+
+    $schema = $host->getMountedActionSchema();
+    $action = $host->getMountedAction() ?? throw new LogicException('Nothing mounted.');
+    $action->data(['recordId' => null]);
+
+    expect(fn (): mixed => $action->call(['schema' => $schema, 'form' => $schema]))
+        ->toThrow(LogicException::class, 'submitted with no record to attach')
+        ->and(genreNamesOfSong($entityManager, 1))->toBe(['Rock', 'Pop', 'Jazz']);
+});
+
 it('answers the candidates without a search when the select is preloaded', function (): void {
     [$client] = seededGenresClient();
     $host = attachHost($client, ['preloads' => true]);

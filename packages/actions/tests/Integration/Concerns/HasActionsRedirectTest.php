@@ -60,3 +60,13 @@ it('passes the redirect through the live request as a real redirection', functio
     expect($response->isRedirection())->toBeTrue()
         ->and($response->headers->get('Location'))->toBe('/after');
 });
+
+it('does not carry a redirect into a second run of the same cached action', function (): void {
+    $host = $this->createLiveComponent('RedirectActionHost')->component();
+
+    $first = $host->mountAction('hostDefault');
+    $second = $host->mountAction('hostDefault');
+
+    expect($first)->toBeInstanceOf(RedirectResponse::class)
+        ->and($second)->not->toBeInstanceOf(RedirectResponse::class);
+});

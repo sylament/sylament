@@ -89,11 +89,12 @@ Filament's `actionSchemaModel(Model | string | Closure | null $model)` /
 and both of those now exist on the schemas `Component` —
 [`BelongsToRecord`](belongs-to-record.md) supplies `getRecord()` and
 `getRecordClass()`. Neither the property, the setter, nor the getter exist on the
-port, and the consumer does not either: what would read them is the action-side
-hop that seeds a mounted action's schema with a record, which is still unbuilt
-and carried by no epic — M1 · 6 bound a record to the *action* and left the
-action→schema hop alone
-([has-actions.md](../actions/has-actions.md#the-per-mount-schema-is-not-seeded-with-a-record-or-an-operation)).
-It lands with that hop, and its naming follows the record-only vocabulary the concern
-already speaks — recorded in [`renames.md`](../renames.md) with the rest of the
-set if the port drops `model` from these two names too.
+port. The consumer now does: the action-side hop that seeds a mounted action's
+schema with a record
+([has-actions.md](../actions/has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation))
+walks to the owning component — and reads `getRecord()` and `getRecordClass()`
+straight off it, which is what these two would have wrapped, so the seed is
+complete without them. They stay unported until a component wants to answer the
+mounted schema something *other* than its own record; the naming would then follow
+the record-only vocabulary the concern already speaks, recorded in
+[`renames.md`](../renames.md) with the rest of the set.

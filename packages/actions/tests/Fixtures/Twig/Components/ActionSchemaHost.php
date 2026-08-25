@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Fixtures\Twig\Components;
 
+use stdClass;
 use Sylament\Actions\Action;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
@@ -50,6 +51,28 @@ class ActionSchemaHost implements InteractsWithActions, InteractsWithSchemas
      */
     #[LiveProp]
     public ?string $injectedSchemaKey = null;
+
+    /**
+     * A writable prop with nothing behind it, so a case can drive one unrelated
+     * live update over a mounted frame.
+     */
+    #[LiveProp(writable: true)]
+    public ?string $probe = null;
+
+    /**
+     * The last link of the mounted schema's record chain, settable per case.
+     *
+     * @var object|array<string, mixed>|string|null
+     */
+    public object|array|string|null $mountedSchemaRecord = null;
+
+    /**
+     * @return object|array<string, mixed>|string|null
+     */
+    protected function getMountedActionSchemaRecord(): object|array|string|null
+    {
+        return $this->mountedSchemaRecord;
+    }
 
     /**
      * @return array<string>
@@ -150,6 +173,28 @@ class ActionSchemaHost implements InteractsWithActions, InteractsWithSchemas
             ->beforeFormFilled(function (): never {
                 throw new ValidationException(['guard' => ['Blocked at mount.']]);
             });
+    }
+
+    /**
+     * The create-shaped arm: an action that clears its record once the stack
+     * empties, which is the only thing `CreateAction` will change about the base
+     * behaviour. It carries a modal so the record is observable while mounted.
+     */
+    public function clearingAction(): Action
+    {
+        $action = new class () extends Action {
+            public function shouldClearRecordAfter(): bool
+            {
+                return true;
+            }
+        };
+
+        return $action
+            ->name('clearing')
+            ->configure()
+            ->modalHeading('Clearing')
+            ->record(new stdClass())
+            ->action(fn (): null => null);
     }
 
     /**

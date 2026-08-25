@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Integration\Concerns;
 
+use stdClass;
 use Sylament\Actions\Action;
 use Sylament\Actions\Exceptions\ActionNotResolvableException;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\ActionHost;
+use Sylament\Actions\Tests\Fixtures\Twig\Components\ActionSchemaHost;
+use Sylament\Actions\Tests\Fixtures\Twig\Components\RecordActionHost;
+use Sylament\Actions\Tests\Fixtures\Twig\Components\RecordBoundFormHost;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
@@ -427,4 +431,41 @@ it('keeps a parent open when a non-modal child halts on top of it', function ():
 
     expect($host->isMountedActionModalOpen(0))->toBeTrue()
         ->and($host->isMountedActionModalOpen(1))->toBeFalse();
+});
+
+/*
+ * The record-key half of the seed: a frame's key reaches the host resolver only
+ * when the frame is the host's own, and the record it resolves is bound while
+ * the action resolves rather than when it is called.
+ */
+
+it('mounts and calls a component-owned action on a record-bound form without a resolver', function (): void {
+    $host = $this->createLiveComponent(RecordBoundFormHost::class)->component();
+    $action = $host->getSchema('schema')->getAction('ping');
+
+    $host->mountAction('ping', [], $action?->getContext() ?? []);
+    $host->callMountedAction();
+
+    expect($host->getMountedActions())->toBe([])
+        ->and($host->getAction('ping'))->toBeNull();
+});
+
+it('binds a root frame resolved record at resolve time, before any fill', function (): void {
+    $host = $this->createLiveComponent(RecordActionHost::class)->component();
+
+    $host->mountAction('delete', [], ['recordKey' => 1]);
+
+    expect($host->getMountedAction()?->getRecord())->toBe('Ada');
+});
+
+it('clears a create-shaped action record once the stack empties', function (): void {
+    $host = $this->createLiveComponent(ActionSchemaHost::class)->component();
+    $host->mountAction('clearing');
+
+    expect($host->getAction('clearing')?->getRecord())->toBeInstanceOf(stdClass::class);
+
+    $host->callMountedAction();
+
+    expect($host->mountedActions)->toBe([])
+        ->and($host->getAction('clearing')?->getRecord())->toBeNull();
 });

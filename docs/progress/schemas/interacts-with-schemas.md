@@ -111,7 +111,7 @@ interface, so any host must expose the schema-name list and the host-bound schem
 factory even if it does not use the [`HasSchemas`](has-schemas.md) trait.
 `cacheSchema()` and `hasCachedSchema()` are promoted for the same reason, with a
 concrete forcing case: actions'
-[`HasActions::getMountedActionSchema()`](../actions/has-actions.md#the-per-mount-schema-is-not-seeded-with-a-record-or-an-operation)
+[`HasActions::getMountedActionSchema()`](../actions/has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation)
 narrows `$this` to *this interface* before registering a mounted action's schema,
 so under PHPStan level max the calls are only legal if the interface carries
 them. Consequence: the interface is a wider shape than Filament's, not a 1:1

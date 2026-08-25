@@ -25,6 +25,13 @@ class RedirectActionHost implements InteractsWithActions
     #[LiveProp]
     public bool $called = false;
 
+    /**
+     * The host answers `hostDefault`'s URL once and never again, so a second run
+     * of the same cached action redirects only if the first run's pending URL
+     * survived on it.
+     */
+    protected int $hostDefaultRedirects = 0;
+
     public function saveAction(): Action
     {
         return Action::make('save')
@@ -54,7 +61,11 @@ class RedirectActionHost implements InteractsWithActions
 
     public function getDefaultActionSuccessRedirectUrl(Action $action): ?string
     {
-        return $action->getName() === 'hostDefault' ? '/from-host' : null;
+        if ($action->getName() !== 'hostDefault') {
+            return null;
+        }
+
+        return $this->hostDefaultRedirects++ === 0 ? '/from-host' : null;
     }
 
     public function getDefaultActionFailureRedirectUrl(Action $action): ?string

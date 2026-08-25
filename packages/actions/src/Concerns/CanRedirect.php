@@ -67,4 +67,9 @@ trait CanRedirect
     {
         return $this->pendingRedirectUrl;
     }
+
+    public function resetPendingRedirect(): void
+    {
+        $this->pendingRedirectUrl = null;
+    }
 }

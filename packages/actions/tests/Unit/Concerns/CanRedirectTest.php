@@ -56,3 +56,11 @@ it('falls back to the host default when the action carries no url', function ():
     expect($action->getLiveComponent()->getDefaultActionSuccessRedirectUrl($action))->toBeNull()
         ->and($action->getLiveComponent()->getDefaultActionFailureRedirectUrl($action))->toBeNull();
 });
+
+it('clears the pending redirect on demand', function (): void {
+    $action = Action::make('save')->successRedirectUrl('/x');
+    $action->dispatchSuccessRedirect();
+    $action->resetPendingRedirect();
+
+    expect($action->getPendingRedirectUrl())->toBeNull();
+});

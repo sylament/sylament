@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Integration\Concerns;
 
+use stdClass;
+use Sylament\Actions\Tests\Fixtures\Twig\Components\ActionSchemaHost;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
@@ -197,4 +199,58 @@ it('runs a mounted-action-schema action and returns to the parent frame', functi
         ->and($component->component()->mountedActions)->toHaveCount(1)
         ->and($component->component()->mountedActions[0]['name'])->toBe('edit')
         ->and((string) $component->render())->toContain('data-archived');
+});
+
+/*
+ * The seed: Filament's mounted-action schema carries the action's record and
+ * the dotted operation, which is what a `visibleOn()` and a record-mapping
+ * write path both read off the container.
+ */
+
+it('seeds the mounted action schema with the action record and the action name as operation', function (): void {
+    $record = new stdClass();
+    $host = $this->createLiveComponent(ActionSchemaHost::class)->component();
+    $host->getAction('edit')?->record($record);
+
+    $host->mountAction('edit');
+    $schema = $host->getMountedActionSchema();
+
+    expect($schema?->getRecord())->toBe($record)
+        ->and($schema?->getOperation())->toBe('edit');
+});
+
+it('gives a nested frame the dotted operation', function (): void {
+    $host = $this->createLiveComponent(ActionSchemaHost::class)->component();
+
+    $host->mountAction('edit');
+    $host->mountAction('nested');
+
+    expect($host->getMountedActionSchema(1)?->getOperation())->toBe('edit.nested');
+});
+
+it('seeds the record class from the host when the action carries none', function (): void {
+    $host = $this->createLiveComponent(ActionSchemaHost::class)->component();
+    $host->mountedSchemaRecord = stdClass::class;
+
+    $host->mountAction('edit');
+
+    $schema = $host->getMountedActionSchema();
+
+    expect($schema?->getRecord())->toBeNull()
+        ->and($schema?->getRecordClass())->toBe(stdClass::class);
+});
+
+/*
+ * The port's `record()` is `mixed` where Filament's is a model, so a host
+ * resolver may answer a bare key. That is not a record the schema can bind.
+ */
+it('does not seed a bare key answered as a record', function (): void {
+    $host = $this->createLiveComponent(ActionSchemaHost::class)->component();
+    $host->getAction('edit')?->record('Ada');
+
+    $host->mountAction('edit');
+    $schema = $host->getMountedActionSchema();
+
+    expect($schema?->getRecord())->toBeNull()
+        ->and($schema?->getRecordClass())->toBeNull();
 });

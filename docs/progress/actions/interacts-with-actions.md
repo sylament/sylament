@@ -78,7 +78,7 @@ instance the mounted action's form validates against). Sylament's interface
 declares neither, even though the schema integration itself now exists
 (`getMountedActionSchema()` / `mountedActionHasSchema()` /
 `getMountedActionData()` are all on the contract — see
-[has-actions.md](has-actions.md#the-per-mount-schema-is-not-seeded-with-a-record-or-an-operation)).
+[has-actions.md](has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation)).
 `getMountedActionSchemaName()` has no port at all: the name is computed inline
 at the one place it is needed, so there is nothing to declare — **skipped**, and
 it returns only if a second caller ever wants it. `mergeMountedActionArguments()`

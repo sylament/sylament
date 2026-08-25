@@ -91,9 +91,10 @@ and [`EditRecord`](../panels/README.md) is the one page that answers it: for a
 `DeleteAction` it returns the resource's index URL, because the record the page
 is editing no longer exists once the action has run. Every other host — a table,
 a list page, a plain live component — answers `null`, so the same action deletes
-and re-renders in place, which on a table is exactly right. Filament's panels
-draw the line in the same place; that hook has no other non-null implementation
-there either.
+and re-renders in place, which on a table is exactly right. Filament draws the
+line in the same place: its `InteractsWithRecord` page trait answers the hook
+only for a delete or a force-delete, and only `EditRecord` composes the
+equivalent here until `ViewRecord` lands.
 
 Two consequences. The URL leaves the pipeline as a
 [returned `RedirectResponse`](has-actions.md#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag)

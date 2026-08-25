@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures\Resources\Pages;
 
+use Sylament\Actions\EditAction;
 use Sylament\Panels\Resources\Pages\EditRecord;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -31,6 +32,22 @@ final class EditHookedArticle extends EditRecord
      * `mutateFormDataBeforeSave()` upper-cases anything.
      */
     public ?string $titleSeenBeforeSave = null;
+
+    /**
+     * The header modal whose success refills this page — the pin for the refill
+     * running through `fillForm()` rather than a bare `fill()`.
+     */
+    public function editAction(): EditAction
+    {
+        return EditAction::make();
+    }
+
+    public function getHeaderActions(): array
+    {
+        return [
+            $this->cacheAction($this->editAction()),
+        ];
+    }
 
     protected function beforeFill(): void
     {
@@ -74,7 +91,9 @@ final class EditHookedArticle extends EditRecord
     {
         $this->calls[] = 'mutateFill';
 
-        return $data;
+        $title = $data['title'] ?? null;
+
+        return [...$data, 'title' => is_string($title) ? mb_strtolower($title) : $title];
     }
 
     /**

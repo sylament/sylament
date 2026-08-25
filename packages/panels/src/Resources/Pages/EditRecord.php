@@ -63,6 +63,11 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
     {
         $this->record = (string) $record;
 
+        $this->fillForm();
+    }
+
+    protected function fillForm(): void
+    {
         $this->callHook('beforeFill');
 
         $schema = $this->getSchema('form');
@@ -226,6 +231,8 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
     /**
      * The modal renders a second component tree over the same record, so the
      * page form is refilled from it rather than left showing pre-modal values.
+     * The refill goes through `fillForm()`, so a page that mutates or hooks on
+     * fill sees the same treatment it got at mount.
      */
     protected function afterActionCalled(Action $action): void
     {
@@ -234,7 +241,7 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
         }
 
         if ($action->getRecord() === $this->getRecord()) {
-            $this->getSchema('form')->fill($this->getRecord());
+            $this->fillForm();
         }
     }
 

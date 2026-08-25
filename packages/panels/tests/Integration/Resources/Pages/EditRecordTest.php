@@ -175,6 +175,30 @@ it('edits the record through the header modal and refreshes the page form', func
         ->and($host->mountedActions)->toBe([]);
 });
 
+it('refills through the fill mutator and hooks after a header edit', function (): void {
+    [$client, $entityManager, $key] = editRecordClient();
+
+    pushRequestWithSession();
+
+    $host = $this->createLiveComponent(EditHookedArticle::class, ['record' => $key], client: $client)->component();
+    $host->calls = [];
+
+    $host->mountAction('edit', [], []);
+    $host->mountedActionsData[0]['title'] = 'Alpha, edited';
+    $host->callMountedAction();
+
+    // The refill runs `fillForm()`, so the page's fill mutator lower-cases the
+    // saved title exactly as it did at mount; a bare `fill($record)` would show
+    // the record's own casing and skip both hooks.
+    $formTitle = $host->getSchema('form')->getRawState()['title'] ?? null;
+
+    $entityManager->clear();
+
+    expect($entityManager->find(Article::class, (int) $key)?->getTitle())->toBe('Alpha, edited')
+        ->and($formTitle)->toBe('alpha, edited')
+        ->and($host->calls)->toBe(['beforeFill', 'mutateFill', 'afterFill']);
+});
+
 it('deletes the record from the header and redirects to the index', function (): void {
     [$client, $entityManager, $key] = editRecordClient();
 

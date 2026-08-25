@@ -15,6 +15,7 @@
     "require": {
         "php": "^8.5",
         "doctrine/orm": "^3.6",
+        "sylament/forms": "self.version",
         "sylament/schemas": "self.version",
         "sylament/support": "self.version",
         "symfony/event-dispatcher-contracts": "^3.6",

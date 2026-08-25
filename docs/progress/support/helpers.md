@@ -3,11 +3,13 @@
 `packages/support/src/helpers.php` — the `Sylament\Support`-namespaced global
 functions (composer `files` autoload, imported with `use function`). It ports
 Filament's own `helpers.php` **and** the Laravel global helpers Filament's file
-leans on but never defines (`blank()`, `filled()`, `Arr::wrap()`) — Sylament has
+leans on but never defines (`blank()`, `filled()`, `Arr::wrap()`, `Arr::only()`,
+`Arr::except()`) — Sylament has
 no Laravel runtime, so they are reimplemented here. Today the file holds those
-three Laravel foundations plus `sanitize_url()`, a `Str` macro Filament declares
-in its service provider rather than in `helpers.php`; every function in it is
-pure, and that is now an invariant — see
+five Laravel foundations plus `sanitize_url()`, a `Str` macro Filament declares
+in its service provider rather than in `helpers.php`, and `get_record_label()`,
+the record-vocabulary port of Filament's `get_model_label()`; every function in
+it is pure, and that is now an invariant — see
 [the divergence below](#generate_icon_html-moved-to-the-twig-extension).
 The rest of Filament's `helpers.php` surface is not built yet.
 
@@ -24,7 +26,8 @@ Reference — the Filament source this is diffed against:
 - [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php)
   — Laravel's `blank()` / `filled()`, which Filament's file consumes
 - [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php)
-  — Laravel's `Arr::wrap()`, ported as the free function `wrap()`
+  — Laravel's `Arr::wrap()`, `Arr::only()` and `Arr::except()`, ported as the
+  free functions `wrap()`, `only()` and `except()`
 
 ## Surface
 
@@ -39,10 +42,12 @@ write-up in [Details](#details), and/or **diverges** → the permanent note in
 | [`filled()`](../../../packages/support/src/helpers.php) | [`Illuminate/Support/helpers.php`](../../../vendor/laravel/framework/src/Illuminate/Support/helpers.php) | done | — | — |
 | [`wrap()`](../../../packages/support/src/helpers.php) | [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
 | [`sanitize_url()`](../../../packages/support/src/helpers.php) | [`Str::sanitizeUrl` in `SupportServiceProvider.php`](../../../vendor/filament/support/src/SupportServiceProvider.php) | done | — | [diverges](#sanitize_url-is-a-helper-because-the-macro-target-does-not-exist-here) |
+| [`get_record_label()`](../../../packages/support/src/helpers.php) | [`get_model_label()`](../../../vendor/filament/support/src/helpers.php) | done | — | [diverges](#get_record_label-is-a-rename-and-it-is-what-put-symfonystring-in-supports-manifest) |
+| [`only()`](../../../packages/support/src/helpers.php) | [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
+| [`except()`](../../../packages/support/src/helpers.php) | [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
 | `generate_icon_html()` — lives on [`IconExtension`](../../../packages/support/src/Twig/Extension/IconExtension.php) | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | done | — | [diverges](#generate_icon_html-moved-to-the-twig-extension) · [diverges](#decorative-icon-defaults-rely-on-ux-icons-not-on-bundled-icon-sets) |
 | `format_money()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `format_number()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
-| `get_model_label()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `locale_has_pluralization()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `get_component_color_classes()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `prepare_inherited_attributes()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
@@ -58,24 +63,25 @@ write-up in [Details](#details), and/or **diverges** → the permanent note in
 
 ## Details
 
-Specifics for the rows that are not finished. The five `done` rows are covered
+Specifics for the rows that are not finished. The eight `done` rows are covered
 by [`tests/Unit/HelpersTest.php`](../../../packages/support/tests/Unit/HelpersTest.php)
 (`blank`/`filled` valueless-vs-meaningful data sets, the Markup text-semantics
-case, the `wrap` cases, and the `sanitize_url` refusal set) and, for the icon row,
+case, the `wrap` cases, the `sanitize_url` refusal set, the `get_record_label`
+derivations and the `only`/`except` key sets) and, for the icon row,
 [`tests/Unit/Twig/Extension/IconExtensionTest.php`](../../../packages/support/tests/Unit/Twig/Extension/IconExtensionTest.php)
 plus [its Integration counterpart](../../../packages/support/tests/Integration/Twig/Extension/IconExtensionTest.php)
 against the real ux-icons renderer; they carry no write-up here.
 
 ### The rest of Filament's `helpers.php`
 
-Fifteen functions remain **todo**. They split into clusters that will port only
+Fourteen functions remain **todo**. They split into clusters that will port only
 once their dependency lands, so none is built piecemeal now:
 
 - **Money / number formatting** — `format_money()`, `format_number()` are
   `@deprecated` in Filament (thin `Illuminate\Support\Number` wrappers); port
   their non-deprecated replacement, not these, if at all.
 - **Doctrine / query** — `generate_search_column_expression()`,
-  `generate_search_term_expression()`, `get_model_label()` are Eloquent/Query
+  `generate_search_term_expression()` are Eloquent/Query
   builder helpers that wait on the tables layer and a Doctrine translation.
 - **Laravel-runtime bound** — `locale_has_pluralization()`, `is_app_url()`,
   `original_request()`, `discover_app_classes()`, `prepare_inherited_attributes()`
@@ -210,10 +216,35 @@ regex are ASCII, so the two agree). One behavioural addition: a `null` from
 crash, because a sanitizer that cannot decode its input must not pass it
 through.
 
+### `get_record_label()` is a rename, and it is what put `symfony/string` in support's manifest
+
+The name follows the toolkit-wide
+[collapse of the model vocabulary onto record](../renames.md#the-model-vocabulary-collapses-onto-record);
+the body is Filament's, translated helper for helper —
+`str($model)->classBasename()->kebab()->replace('-', ' ')` becomes
+`u($class)->afterLast('\\')->kebab()->replace('-', ' ')`. The `class-string<Model>`
+parameter type loses its bound with Eloquent: any class-string is a record class
+here, and the function never loads one.
+
+It has to be `kebab()` rather than a regex. `panels`' `Resource::getRecordLabel()`
+derives the same label the same way, and the two must agree byte for byte or a
+resource page and a modal action disagree about what the record is called —
+`AbstractUnicodeString::kebab()`'s acronym handling (`PDFDocument` → `pdf
+document`, not `p-d-f document`) is not something a hand-rolled expression
+reproduces by accident. `Resource::getRecordLabel()` delegates here rather than
+keeping its own copy.
+
+The consequence is a manifest line: support requires `symfony/string` from M4 · 2
+on, for this one function. It is the placement-by-source rule doing its job —
+this is Filament-**support**'s helper, and both `actions` and `panels` read it,
+so it cannot move up into either — and the constraint is the `^8.1` the five
+packages that already declare it carry, under the blanket `symfony/*` approval.
+
 ### `wrap()` and the Laravel globals are reimplemented, not forwarded
 
-`blank()`, `filled()`, and `wrap()` are **not** Filament `helpers.php` functions
-— they are Laravel globals (`blank()` / `filled()`) and `Arr::wrap()` that
+`blank()`, `filled()`, `wrap()`, `only()` and `except()` are **not** Filament
+`helpers.php` functions — they are Laravel globals (`blank()` / `filled()`) and
+`Arr::wrap()` / `Arr::only()` / `Arr::except()` that
 Filament's file consumes without defining. Because Sylament ships no Laravel
 runtime, they are reimplemented here in the `Sylament\Support` namespace so the
 ported Filament helpers (and every downstream component) have them. `wrap()` is a
@@ -223,3 +254,10 @@ free-function port of the static `Arr::wrap()` method, kept minimal (the
 job here is guarding the `foreach (wrap($this->evaluate(…)))` shape the schemas
 and actions concerns use: a closure that returns `null` or a single item would
 otherwise silently empty the loop or fatal it.
+
+`only()` and `except()` are the same trade one layer up — one-line
+`array_intersect_key()` / `array_diff_key()` bodies over `array_flip($keys)`,
+without the `Collection`, `Arrayable` or dotted-path arms Laravel's methods
+carry, because their two consumers ask for neither: `CreateAction`'s
+`preserveFormDataWhenCreatingAnother()` keeps a flat list of field names, and
+`ReplicateAction`'s `excludeAttributes()` drops one.

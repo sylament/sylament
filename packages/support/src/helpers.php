@@ -8,6 +8,8 @@ use Countable;
 use Stringable;
 use Twig\Markup;
 
+use function Symfony\Component\String\u;
+
 /**
  * @phpstan-assert-if-false !null $value
  */
@@ -121,4 +123,45 @@ function wrap(mixed $value): array
     }
 
     return is_array($value) ? $value : [$value];
+}
+
+/**
+ * Filament's `get_model_label()` under the record vocabulary — the class
+ * basename, kebab-cased, dashes to spaces: `App\Entity\BlogPost` → `blog post`.
+ */
+function get_record_label(string $class): string
+{
+    return u($class)->afterLast('\\')->kebab()->replace('-', ' ')->toString();
+}
+
+/**
+ * Laravel's `Arr::only`.
+ *
+ * @template TKey of array-key
+ * @template TValue
+ *
+ * @param array<TKey, TValue> $array
+ * @param array<array-key> $keys
+ *
+ * @return array<TKey, TValue>
+ */
+function only(array $array, array $keys): array
+{
+    return array_intersect_key($array, array_flip($keys));
+}
+
+/**
+ * Laravel's `Arr::except`.
+ *
+ * @template TKey of array-key
+ * @template TValue
+ *
+ * @param array<TKey, TValue> $array
+ * @param array<array-key> $keys
+ *
+ * @return array<TKey, TValue>
+ */
+function except(array $array, array $keys): array
+{
+    return array_diff_key($array, array_flip($keys));
 }

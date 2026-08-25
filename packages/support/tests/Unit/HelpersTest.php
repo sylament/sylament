@@ -11,9 +11,13 @@ use Stringable;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
+use function Sylament\Support\except;
 use function Sylament\Support\filled;
+use function Sylament\Support\get_record_label;
+use function Sylament\Support\only;
 use function Sylament\Support\sanitize_url;
 use function Sylament\Support\wrap;
+use function Symfony\Component\String\u;
 
 it('treats valueless input as blank', function (mixed $value): void {
     expect(blank($value))->toBeTrue()
@@ -94,4 +98,20 @@ it("sanitizes urls the way Filament's Str::sanitizeUrl does", function (?string 
 it('honours a custom scheme allow-list', function (): void {
     expect(sanitize_url('mailto:a@b.c', ['mailto']))->toBe('mailto:a@b.c')
         ->and(sanitize_url('https://example.com', ['mailto']))->toBeNull();
+});
+
+it('derives a record label from a class basename the way the resource does', function (): void {
+    expect(get_record_label('App\\Entity\\BlogPost'))->toBe('blog post')
+        ->and(get_record_label('Article'))->toBe('article')
+        ->and(get_record_label('App\\Entity\\PDFDocument'))->toBe(u('PDFDocument')->kebab()->replace('-', ' ')->toString());
+});
+
+it('keeps only the named keys', function (): void {
+    expect(only(['a' => 1, 'b' => 2, 'c' => 3], ['a', 'c']))->toBe(['a' => 1, 'c' => 3])
+        ->and(only(['a' => 1], ['missing']))->toBe([]);
+});
+
+it('drops the named keys', function (): void {
+    expect(except(['a' => 1, 'b' => 2, 'c' => 3], ['b']))->toBe(['a' => 1, 'c' => 3])
+        ->and(except(['a' => 1], []))->toBe(['a' => 1]);
 });

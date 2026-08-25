@@ -729,7 +729,13 @@ re-renders from the page of records a mounted action's write just invalidated.
 It is the first member that is already public on `HasTable` before it is
 declared here — the trait has cached and flushed since the query lane — so
 declaring it cost every trait-using host nothing and `BareTableHost` one more
-stub.
+stub. Its end-to-end pin is a case in `RecordActionsResolutionTest` over the
+query-lane fixture `QueryRecordActionsTable`, whose record action reads
+`getTableRecords()` before it writes — and the write **adds** a row rather than
+mutating the bound one, because the identity map hands the query lane the very
+instance an action mutated, so only a changed *set* of records tells a stale page
+from a re-queried one; the action confirms first because a modal-less action runs
+during the mount, whose render is a request of its own and therefore a fresh host.
 
 The contract grows a method at a time as the
 features that need it land — a host must be able to satisfy it, so declaring the

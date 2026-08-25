@@ -8,6 +8,7 @@ use Sylament\Panels\Resources\Pages\EditRecord;
 use Sylament\Panels\Resources\Pages\ListRecords;
 use Sylament\Panels\Resources\Pages\Page as ResourcePage;
 use Sylament\Panels\Resources\Pages\PageRegistration;
+use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateArticle;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditArticle;
@@ -16,6 +17,20 @@ use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListArticles;
 final class UnwiredResourcePage extends ResourcePage
 {
     protected static string $resource = ArticleResource::class;
+}
+
+/**
+ * A Unit test boots no container, so the base's registry lookup would throw —
+ * this page hands back the resource the registry would have resolved.
+ */
+final class ResourceBoundPage extends ResourcePage
+{
+    protected static string $resource = ArticleResource::class;
+
+    public function getResourceInstance(): ArticleResource
+    {
+        return new ArticleResource();
+    }
 }
 
 it('names the resource it belongs to through the static', function (): void {
@@ -77,16 +92,15 @@ it('keeps every action hook declared on the base for every shipped resource page
 ])->with([ResourcePage::class, ListRecords::class, CreateRecord::class, EditRecord::class]);
 
 it('declines the create link for an action that names another record class', function (): void {
-    $page = new class extends ResourcePage {
-        protected static string $resource = ArticleResource::class;
-
-        public function getResourceInstance(): ArticleResource
-        {
-            return new ArticleResource();
-        }
-    };
-
     // The resource registers a create page, so only the record-class guard can
     // decline the link — and the un-injected resource would fatal on getUrl().
-    expect($page->getDefaultActionUrl(CreateAction::make()->recordClass(stdClass::class)))->toBeNull();
+    expect(new ResourceBoundPage()->getDefaultActionUrl(CreateAction::make()->recordClass(stdClass::class)))->toBeNull();
+});
+
+it('answers the host default record class and label off the resource', function (): void {
+    $page = new ResourceBoundPage();
+    $action = CreateAction::make();
+
+    expect($page->getDefaultActionRecordClass($action))->toBe(Article::class)
+        ->and($page->getDefaultActionRecordLabel($action))->toBe('article');
 });

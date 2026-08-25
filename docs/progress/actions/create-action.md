@@ -118,6 +118,19 @@ record, writes every declared path onto it, answers the record's own
 constraints, and hands it back to be persisted and flushed through
 [`getEntityManagerForRecord()`](action.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).
 
+**A mutated key the schema does not declare cannot reach the record.**
+`Schema::getData()` writes exactly the paths in
+[`getRecordPathMap()`](../schemas/belongs-to-record.md) — the paths the
+container's own components declare — so `mutateDataUsing()` can *change* a value
+a component owns but cannot *introduce* one. Filament's Eloquent
+`$record->fill($data)` mass-assigns any key the model permits, which is why
+`mutateFormDataUsing(fn ($data) => [...$data, 'position' => …])` is an idiom
+upstream; here that key is silently dropped. The port's shape for the same job
+is a component that owns the path — a `Hidden::make('position')->default(…)`
+in the create schema — which is what the demo's sections card does. Nothing
+warns: the record is simply constructed without it, so a non-nullable column
+fails at flush and a defaulted one quietly takes its default.
+
 Four things about that body are deliberate.
 
 **The re-point is load-bearing, not a belt.** The host seeds a mounted action's

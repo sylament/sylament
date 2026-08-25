@@ -7,13 +7,14 @@ object of the tables package, the counterpart to schemas'
 host builds through [`HasTable`](has-table.md), carrying the record data source
 and the empty-state copy. It ports Filament's
 [`Filament\Tables\Table`](../../../vendor/filament/tables/src/Table.php) together
-with the `Table\Concerns\` traits it composes — fifteen today
+with the `Table\Concerns\` traits it composes — sixteen today
 ([`BelongsToLiveComponent`](../../../packages/tables/src/Table/Concerns/BelongsToLiveComponent.php),
 [`HasRecords`](../../../packages/tables/src/Table/Concerns/HasRecords.php),
 [`HasQuery`](../../../packages/tables/src/Table/Concerns/HasQuery.php),
 [`HasEmptyState`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php),
 [`HasColumns`](../../../packages/tables/src/Table/Concerns/HasColumns.php),
 [`HasActions`](../../../packages/tables/src/Table/Concerns/HasActions.php),
+[`HasAggregateValues`](../../../packages/tables/src/Table/Concerns/HasAggregateValues.php),
 [`HasRecordActions`](../../../packages/tables/src/Table/Concerns/HasRecordActions.php),
 [`HasToolbarActions`](../../../packages/tables/src/Table/Concerns/HasToolbarActions.php),
 [`HasHeaderActions`](../../../packages/tables/src/Table/Concerns/HasHeaderActions.php),
@@ -23,8 +24,10 @@ with the `Table\Concerns\` traits it composes — fifteen today
 [`CanSearchRecords`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php),
 [`HasFilters`](../../../packages/tables/src/Table/Concerns/HasFilters.php),
 [`HasFilterIndicators`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php)),
-thirty-one in Filament. Ten of the fifteen are folded into the surface table
-below rather than earning rows upstairs, per
+thirty-one in Filament, which has no counterpart for `HasAggregateValues` — the
+side store the batched aggregate read fills is the port's own. Eleven of the
+sixteen are folded into the surface table below rather than earning rows
+upstairs, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing); the
 sixteen still unported keep a per-file row in the package
 [README](README.md#features), the way

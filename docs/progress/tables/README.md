@@ -66,12 +66,12 @@ against the deferred settings each names rather than **blocked**. (The
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 
-Thirty-three concerns the port has landed are **folded** into the detail file of
+Thirty-four concerns the port has landed are **folded** into the detail file of
 the class that composes them and carry no row here, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing) — ten
+[one row per file](../README.md#one-row-per-file-one-file-per-thing) — eleven
 `Table\Concerns\` traits (`BelongsToLivewire`, `CanPaginateRecords`,
-`CanSearchRecords`, `CanSortRecords`, `HasActions`, `HasColumns`,
-`HasEmptyState`, `HasQuery`, `HasRecordActions`, `HasRecords`) into
+`CanSearchRecords`, `CanSortRecords`, `HasActions`, `HasAggregateValues`,
+`HasColumns`, `HasEmptyState`, `HasQuery`, `HasRecordActions`, `HasRecords`) into
 [`table.md`](table.md), seven `Columns\Concerns\` traits
 (`BelongsToTable`, `CanBeSearchable`, `CanBeSortable`, `HasLabel`, `HasName`,
 `HasRecord`, `InteractsWithTableQuery`) into [`column.md`](column.md), five
@@ -200,7 +200,7 @@ The prefix is load-bearing rather than decorative: twenty trait names occur in
 two of these tiers and five (`BelongsToTable`, `CanBeHidden`, `HasColumns`,
 `HasLabel`, `InteractsWithTableQuery`) in three, which is the same
 [read-by-import, never by the bare `use`](../../../CLAUDE.md) trap the schemas
-tiers carry. The thirty-three landed concerns folded into their component's detail
+tiers carry. The thirty-four landed concerns folded into their component's detail
 file are named in the [preamble](#tables--port-progress) and carry no row here.
 
 `Contracts/HasTable.php` is not listed in

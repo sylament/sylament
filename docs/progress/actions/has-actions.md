@@ -81,7 +81,7 @@ write-up in [Details](#details), **diverges** → the note in
 | [`getMountedActions()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getMountedActions()` | done | — | [diverges](#the-mountedactions-liveprop-dehydrates-through-a-bridge-method) |
 | Resolved-frame cache ([`$cachedMountedActions`](../../../packages/actions/src/Concerns/HasActions.php), `cacheMountedActions()`) | `Concerns/InteractsWithActions.php` `$cachedMountedActions` | done | — | — |
 | The `#[PostHydrate]` stale-stack self-heal ([`afterMountedActionsHydrated()`](../../../packages/actions/src/Concerns/HasActions.php)) | `Concerns/InteractsWithActions.php` `bootedInteractsWithActions()`'s stale-stack drop | done | — | [diverges](#the-stale-stack-self-heal-is-a-posthydrate-hook-not-a-boot-hook) |
-| Per-frame schema re-cache at hydrate + the `#[PostHydrate(priority: 10)]` / `#[PostHydrate(priority: -10)]` ordering against [`HasSchemas::callAfterSchemaStateUpdated()`](../schemas/has-schemas.md) | `Concerns/InteractsWithActions.php` `resolveActions()`'s `$isMounting` schema caching (Livewire re-runs it per request; UX LiveComponent needs the explicit hook) | done | — | [diverges](#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities) |
+| Per-frame schema re-cache at hydrate + the `#[PostHydrate(priority: 10)]` / `#[PostHydrate(priority: -10)]` ordering against [`HasSchemas::callAfterSchemaStateUpdated()`](../schemas/has-schemas.md) | `Concerns/InteractsWithActions.php` `resolveActions()`'s `$isMounting` schema caching (Livewire re-runs it per request; UX LiveComponent needs the explicit hook) | done | — | [diverges](#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities) · [semantics](#a-mounted-modals-validation-errors-survive-an-unrelated-live-update) |
 | [`mountedActionShouldOpenModal()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `mountedActionShouldOpenModal()` | done | — | [diverges](#the-modal-open-gate-is-null-safe) |
 | [`getAction(string $name)`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getAction()` + `resolveAction()`'s method-discovery arm | in progress | — (the descriptor-array form and `$isMounting` have no blocker, only no consumer) | [detail](#getaction-ports-the-generic-method-discovery-arm-in-full) |
 | [`resolveActions()`](../../../packages/actions/src/Concerns/HasActions.php) (protected) | `Concerns/InteractsWithActions.php` `resolveActions()` | done | — | [diverges](#resolution-stops-at-the-first-null-frame-and-a-deeper-frame-reaches-schema-context-only-through-the-cache) · [diverges](#no-resolved-action-is-booted) · [diverges](#resolveactions-takes-no-ismounting-flag) · [diverges](#the-table-branch-reaches-tables-through-a-guarded-soft-reference) · [diverges](#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities) |
@@ -500,6 +500,28 @@ base answers `! $record->exists` — an Eloquent read of whether the bound model
 been persisted — and there is no Doctrine equivalent that does not need an entity
 manager the action may not have, so the port's base is a flat `false` and each
 create-shaped subclass overrides it.
+
+### A mounted modal's validation errors survive an unrelated live update
+
+A modal that failed validation keeps its messages while the client goes on typing
+elsewhere on the page, and the mechanism is an ordering rather than any code that
+preserves them. [`HasSchemas::revalidateValidatedSchemas()`](../schemas/has-schemas.md)
+runs at `#[PostHydrate(priority: -20)]` and re-validates every schema named in
+`$validatedSchemas` — a `#[LiveProp]`, so the *names* ride the wire where the
+messages never do — reading each by name; `resolveActions()` re-registers each
+mounted frame's schema at
+[`#[PostHydrate(priority: 10)]`](#the-mounted-action-schema-re-cache-runs-above-callafterschemastateupdated-by-explicit-posthydrate-priorities),
+which is **earlier**. So by the time the revalidation walks
+`mountedActionSchema0`, the cache holds it and it re-validates against the
+hydrated data, producing the same failures again.
+
+The obvious reading gets this wrong in both directions: the errors are not
+carried over the wire, and they are not preserved by anything either — they are
+re-derived every request, which is also why fixing the field clears them without
+a submit. Reverse the two priorities and the modal's messages vanish on the next
+unrelated update, which is what
+[`HasActionsValidationTest`](../../../packages/actions/tests/Integration/Concerns/HasActionsValidationTest.php)
+pins with a seeded frame and one write to an unrelated writable prop.
 
 ### A host trait is analysed only through a class that composes it
 

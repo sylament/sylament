@@ -99,3 +99,22 @@ it('unmounts and rethrows when a mount-time hook raises validation', function ()
     expect(fn () => $host->mountAction('guarded'))->toThrow(ValidationException::class)
         ->and($host->mountedActions)->toBe([]);
 });
+
+/*
+ * A mounted modal's errors are sticky across an unrelated live update: the
+ * client keeps typing elsewhere on the page and the modal keeps its messages.
+ */
+it('keeps a mounted modal validation errors across an unrelated live update', function (): void {
+    $component = $this->createLiveComponent('ActionSchemaHost', [
+        'mountedActions' => [['name' => 'publish', 'arguments' => [], 'context' => []]],
+        'mountedActionsData' => [0 => ['title' => null]],
+        'validatedSchemas' => ['mountedActionSchema0'],
+    ]);
+
+    $component->set('probe', 'x');
+
+    $host = $component->component();
+
+    expect($host->validatedSchemas)->toBe(['mountedActionSchema0'])
+        ->and($host->getErrorsForSchemaStatePath('mountedActionsData.0.title'))->toBe(['This value should not be blank.']);
+});

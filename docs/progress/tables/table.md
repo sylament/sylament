@@ -1138,8 +1138,12 @@ The relationship closure is evaluated **once** per table instance and memoised
 behind a `hasCachedRelationship` flag, because it usually resolves the owner and
 that is a database read; `relationship()` resets that memo along with the base
 query and the record-class memo, so re-declaring the lane re-reads it. A closure
-answering `null` is a table with no query at all rather than an error — a host
-whose owner has not been found yet renders empty.
+answering `null` leaves the table with no base query at all, and that is not a
+quieter empty state: `hasQuery()` is still true — no `records()` closure is set —
+so the render reaches the three-lane refusal, `Table [...] must have [records()],
+[query()] or [relationship()]`. A host whose owner may be missing therefore
+declares a `records()` fallback of its own (`->records(fn (): array => [])`)
+rather than relying on the relationship closure answering `null`.
 
 One rig caveat, because it decides where a delete test may live: the tables
 fixture SQLite enforces no foreign keys, so a by-key delete of a record a join
@@ -1157,6 +1161,14 @@ the rest, so `getDefaultSort()` falls back — when the table declares no
 `defaultSort()` and the relationship's target carries an `orderBy` — to the
 `QueryBuilder` arm of its own contract, `addOrderBy()`ing one qualified field per
 mapping entry and returning the builder.
+
+The fallback is gated on the relationship being the lane actually in force, which
+`isRelationshipBaseQuery()` answers off the flag `getBaseQuery()` sets as it
+picks a lane. A table declaring both `query()` and `relationship()` is a query
+table, and appending the mapping's fields to *that* builder would qualify the
+target's columns with the query's own root — invalid DQL against a different
+entity — so the fallback answers `null` there and the relationship closure, a
+database read, stays unevaluated on the render path.
 
 That arm is why nothing else had to move: the host applies the *user's* sort
 first and the default's parts after it

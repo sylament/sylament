@@ -22,6 +22,8 @@ trait HasQuery
 
     protected ?QueryBuilder $cachedBaseQuery = null;
 
+    protected bool $baseQueryIsRelationship = false;
+
     protected ?Relationship $cachedRelationship = null;
 
     protected bool $hasCachedRelationship = false;
@@ -113,8 +115,35 @@ trait HasQuery
         return $this->getBaseQuery()?->getEntityManager();
     }
 
+    /**
+     * Whether the relationship is the lane actually in force — a declared
+     * `query()` wins over one, so a table carrying both runs on the query and
+     * its relationship never becomes the base query.
+     */
+    public function isRelationshipBaseQuery(): bool
+    {
+        $this->getBaseQuery();
+
+        return $this->baseQueryIsRelationship;
+    }
+
     protected function getBaseQuery(): ?QueryBuilder
     {
-        return $this->cachedBaseQuery ??= ($this->evaluate($this->query) ?? $this->getRelationshipQuery());
+        if ($this->cachedBaseQuery instanceof QueryBuilder) {
+            return $this->cachedBaseQuery;
+        }
+
+        $query = $this->evaluate($this->query);
+
+        if ($query instanceof QueryBuilder) {
+            $this->baseQueryIsRelationship = false;
+
+            return $this->cachedBaseQuery = $query;
+        }
+
+        $relationshipQuery = $this->getRelationshipQuery();
+        $this->baseQueryIsRelationship = $relationshipQuery instanceof QueryBuilder;
+
+        return $this->cachedBaseQuery = $relationshipQuery;
     }
 }

@@ -90,10 +90,17 @@ trait CanSortRecords
      * The mapping's own order — `#[ORM\OrderBy]` on the association — appended
      * as the default when the table declares none, so the table lists the
      * collection in the order every other read of it uses; a clicked sort was
-     * applied before this runs and wins.
+     * applied before this runs and wins. Only the lane actually in force has a
+     * mapping to read, so a table whose `query()` won over its relationship is
+     * left alone — its root is the query's, which the mapping's fields do not
+     * name, and the closure that would resolve the owner stays unevaluated.
      */
     private function getRelationshipDefaultSort(QueryBuilder $query): ?QueryBuilder
     {
+        if (!$this->isRelationshipBaseQuery()) {
+            return null;
+        }
+
         $relationship = $this->getRelationship();
         $rootAlias = $query->getRootAliases()[0] ?? null;
 

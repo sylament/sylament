@@ -68,17 +68,21 @@ it('lists only the owner related records, rooted at the target', function (): vo
 it('composes search, sort and pagination over the relationship query', function (): void {
     [$client] = seededGenresClient();
 
+    // 'a' matches song 2's Metal too, so the term pins that the owner constraint
+    // survives the search clause rather than only narrowing song 1's own set.
     $searched = $this->createLiveComponent(SongGenresTable::class, ['songId' => 1], client: $client)
-        ->set('tableSearch', 'ro')
+        ->set('tableSearch', 'a')
         ->component();
 
-    expect(relatedGenreNames($searched))->toBe(['Rock']);
+    expect(relatedGenreNames($searched))->toBe(['Jazz']);
 
+    // Ascending, because the unsorted order is the key sort Rock, Pop, Jazz — the
+    // descending name order is identical to it, so it would pass unsorted too.
     $sorted = $this->createLiveComponent(SongGenresTable::class, ['songId' => 1], client: $client)
-        ->call('sortTable', ['column' => 'name', 'direction' => 'desc'])
+        ->call('sortTable', ['column' => 'name', 'direction' => 'asc'])
         ->component();
 
-    expect(relatedGenreNames($sorted))->toBe(['Rock', 'Pop', 'Jazz']);
+    expect(relatedGenreNames($sorted))->toBe(['Jazz', 'Pop', 'Rock']);
 
     $paginated = $this->createLiveComponent(SongGenresTable::class, ['songId' => 1], client: $client)
         ->set('tableRecordsPerPage', '2')
@@ -112,6 +116,15 @@ it('refuses a table with neither records(), query() nor relationship()', functio
         ->toThrow(LogicException::class, 'must have [records()], [query()] or [relationship()]');
 });
 
+it('refuses a relation-scoped table whose owner was not found', function (): void {
+    [, $entityManager] = seededGenresClient();
+    $host = new SongGenresTable($entityManager);
+    $host->songId = 999;
+
+    expect(static fn (): mixed => $host->getTableRecords())
+        ->toThrow(LogicException::class, 'must have [records()], [query()] or [relationship()]');
+});
+
 it('deletes related records through the no-fetch bulk arm over the relationship query', function (): void {
     [$client, $entityManager] = seededGenresClient();
     $artist = new Artist(1, 'Radiohead');
@@ -137,7 +150,7 @@ it('deletes related records through the no-fetch bulk arm over the relationship 
         ->and($component->component()->getTable()->getRecords())->toHaveCount(1);
 });
 
-it('resolves the entity manager of a record through the relationship table first', function (): void {
+it('answers a query entity manager on the relationship lane, and deletes a record through it', function (): void {
     [$client, $entityManager] = seededGenresClient();
     $artist = new Artist(1, 'Radiohead');
     $song = new Song(10, 'Karma Police', 300);
@@ -148,9 +161,10 @@ it('resolves the entity manager of a record through the relationship table first
 
     $component = $this->createLiveComponent(ArtistSongsTable::class, ['artistId' => 1], client: $client);
 
-    // getEntityManagerForRecord() is protected, so the table's manager is asserted
-    // directly and the delete landing in this in-memory SQLite is what proves the
-    // action reached it through the table rather than through the registry.
+    // getEntityManagerForRecord() prefers the table's manager over the registry's,
+    // and both are this container's one manager here — so what the rig can pin is
+    // that the relationship lane answers a manager at all and that the delete it
+    // hands the action lands in this in-memory SQLite, not which arm supplied it.
     expect($component->component()->getTable()->getQueryEntityManager())->toBe($entityManager);
 
     $component->call('mountAction', ['name' => 'delete', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => '10']])

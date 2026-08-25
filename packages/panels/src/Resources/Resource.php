@@ -28,6 +28,7 @@ use Twig\Markup;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
+use function Sylament\Support\get_record_label;
 use function Symfony\Component\String\u;
 
 abstract class Resource
@@ -89,6 +90,11 @@ abstract class Resource
         return $schema;
     }
 
+    public function infolist(Schema $schema): Schema
+    {
+        return $schema;
+    }
+
     public function table(Table $table): Table
     {
         return $table;
@@ -140,7 +146,7 @@ abstract class Resource
             return $label;
         }
 
-        return u($this->getRecordClass())->afterLast('\\')->kebab()->replace('-', ' ')->toString();
+        return get_record_label($this->getRecordClass());
     }
 
     public function getPluralRecordLabel(): string

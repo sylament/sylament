@@ -9,8 +9,11 @@ use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Pages\SettingsPage;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
+use Sylament\Schemas\Schema;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\RequestContext;
+
+use function Sylament\Support\get_record_label;
 
 final class BlogPost
 {
@@ -283,4 +286,14 @@ it('routes a blank url name to the index page', function (): void {
     expect($resource->getUrl(panel: $panel))->toBe('sylament.admin.resources.articles.index')
         ->and($resource->getUrl('', panel: $panel))->toBe('sylament.admin.resources.articles.index')
         ->and($resource->getUrl('  ', panel: $panel))->toBe('sylament.admin.resources.articles.index');
+});
+
+it('returns the schema untouched from infolist()', function (): void {
+    $schema = Schema::make();
+
+    expect(new ArticleResource()->infolist($schema))->toBe($schema);
+});
+
+it('derives the record label through the support helper', function (): void {
+    expect(new ArticleResource()->getRecordLabel())->toBe(get_record_label(Article::class));
 });

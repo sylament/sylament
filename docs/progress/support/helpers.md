@@ -231,9 +231,8 @@ derives the same label the same way, and the two must agree byte for byte or a
 resource page and a modal action disagree about what the record is called —
 `AbstractUnicodeString::kebab()`'s acronym handling (`PDFDocument` → `pdf
 document`, not `p-d-f document`) is not something a hand-rolled expression
-reproduces by accident. `panels` keeps its own copy of the chain today;
-`Resource::getRecordLabel()` delegates here instead as of this epic's panels
-lane, leaving one definition.
+reproduces by accident. `Resource::getRecordLabel()` delegates here rather than
+keeping `panels`' own copy of the chain, leaving one definition.
 
 The consequence is a manifest line: support requires `symfony/string` from M4 · 2
 on, for this one function. It is the placement-by-source rule doing its job —

@@ -112,7 +112,7 @@ it('renders the header actions the page declares', function (): void {
         ->and($purge->attr('data-action'))->toBe('live#action')
         ->and($purge->attr('data-live-action-param'))->toBe('mountAction')
         ->and($purge->attr('data-live-name-param'))->toBe('purge')
-        ->and($create->text())->toContain('Create')
+        ->and($create->text())->toContain('New article')
         ->and($create->attr('href'))->toEndWith('/admin/articles/create')
         ->and($create->attr('data-live-action-param'))->toBeNull();
 });

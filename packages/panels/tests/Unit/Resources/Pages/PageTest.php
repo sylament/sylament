@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Sylament\Actions\CreateAction;
 use Sylament\Panels\Resources\Pages\CreateRecord;
 use Sylament\Panels\Resources\Pages\EditRecord;
 use Sylament\Panels\Resources\Pages\ListRecords;
@@ -58,13 +59,34 @@ it('falls back to the page title for a resource page naming no crumb of its own'
 
 /*
  * PHP inserts a trait's members over an inherited class's, so a page that
- * re-`use`s actions' `HasActions` silently replaces the base's url hook with the
- * trait's null-returning default — every `CreateAction` on it would then render
+ * re-`use`s actions' `HasActions` silently replaces the base's hooks with the
+ * trait's null-returning defaults — every `CreateAction` on it would then render
  * with no href and no error. `getDeclaringClass()` on a trait method answers the
  * *using* class, so this reads as the base for exactly as long as no subclass
  * re-uses the trait.
  */
-it('keeps the url hook declared on the base for every shipped resource page', function (string $page): void {
-    expect(new ReflectionMethod($page, 'getDefaultActionUrl')->getDeclaringClass()->getName())
+it('keeps every action hook declared on the base for every shipped resource page', function (string $method, string $page): void {
+    expect(new ReflectionMethod($page, $method)->getDeclaringClass()->getName())
         ->toBe(ResourcePage::class);
-})->with([ResourcePage::class, ListRecords::class, CreateRecord::class, EditRecord::class]);
+})->with([
+    'getDefaultActionUrl',
+    'getDefaultActionRecordClass',
+    'getDefaultActionRecordLabel',
+    'resolveMountedActionRecord',
+    'callHook',
+])->with([ResourcePage::class, ListRecords::class, CreateRecord::class, EditRecord::class]);
+
+it('declines the create link for an action that names another record class', function (): void {
+    $page = new class extends ResourcePage {
+        protected static string $resource = ArticleResource::class;
+
+        public function getResourceInstance(): ArticleResource
+        {
+            return new ArticleResource();
+        }
+    };
+
+    // The resource registers a create page, so only the record-class guard can
+    // decline the link — and the un-injected resource would fatal on getUrl().
+    expect($page->getDefaultActionUrl(CreateAction::make()->recordClass(stdClass::class)))->toBeNull();
+});

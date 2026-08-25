@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\Persistence\ManagerRegistry;
 use Sylament\Panels\Navigation\NavigationGroup;
 use Sylament\Panels\Navigation\NavigationItem;
+use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
+use Sylament\Panels\Tests\Fixtures\Doctrine\FixtureManagerRegistry;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -43,4 +47,12 @@ it('injects container services into evaluated closures', function (): void {
     } finally {
         $stack->pop();
     }
+});
+
+it('resolves the fixture manager registry for a page host with no table', function (): void {
+    $container = $this::getContainer();
+
+    expect($container->get(ManagerRegistry::class))->toBeInstanceOf(FixtureManagerRegistry::class)
+        ->and($container->get(ManagerRegistry::class)->getManagerForClass(Article::class))
+        ->toBe($container->get(EntityManagerInterface::class));
 });

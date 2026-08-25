@@ -66,7 +66,7 @@ Filament's heading reads _"Delete Airbag"_ — `__('…delete.single.modal.headi
 Both halves that heading needs now exist:
 [`getRecordTitle()` and the whole record chain](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
 landed with M4 · 2, and so did the host hook that supplies a default,
-[`getDefaultActionRecordTitle()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported).
+[`getDefaultActionRecordTitle()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-three-deferred).
 Wiring `DeleteAction`'s own heading through them is a **sweep item, out of that
 epic's scope** — it landed the chain, not every caller of it. Until the sweep, a
 caller who wants the record in the heading passes a closure, exactly as the
@@ -86,7 +86,7 @@ above.
 `DeleteAction` sets no redirect of its own, and reading the class alone says it
 never redirects. It does — on exactly one host. `dispatchSuccessRedirect()`
 takes the action's own `successRedirectUrl()` first and falls back to the host's
-[`getDefaultActionSuccessRedirectUrl()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported),
+[`getDefaultActionSuccessRedirectUrl()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-three-deferred),
 and [`EditRecord`](../panels/README.md) is the one page that answers it: for a
 `DeleteAction` it returns the resource's index URL, because the record the page
 is editing no longer exists once the action has run. Every other host — a table,

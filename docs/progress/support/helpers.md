@@ -227,8 +227,9 @@ parameter type loses its bound with Eloquent: any class-string is a record class
 here, and the function never loads one.
 
 It has to be `kebab()` rather than a regex. `panels`' `Resource::getRecordLabel()`
-derives the same label the same way, and the two must agree byte for byte or a
-resource page and a modal action disagree about what the record is called —
+derived the same label the same way through its own copy of the chain, and the
+two had to agree byte for byte or a resource page and a modal action would
+disagree about what the record is called —
 `AbstractUnicodeString::kebab()`'s acronym handling (`PDFDocument` → `pdf
 document`, not `p-d-f document`) is not something a hand-rolled expression
 reproduces by accident. `Resource::getRecordLabel()` delegates here rather than
@@ -245,10 +246,14 @@ packages that already declare it carry, under the blanket `symfony/*` approval.
 `blank()`, `filled()`, `wrap()`, `only()` and `except()` are **not** Filament
 `helpers.php` functions — they are Laravel globals (`blank()` / `filled()`) and
 `Arr::wrap()` / `Arr::only()` / `Arr::except()` that
-Filament's code consumes without defining — `blank()`/`filled()` in
-`helpers.php` itself, the three `Arr` methods in the actions package. Because Sylament ships no Laravel
-runtime, they are reimplemented here in the `Sylament\Support` namespace so the
-ported Filament helpers (and every downstream component) have them. `wrap()` is a
+Filament's code consumes without defining: `blank()`/`filled()` in
+`helpers.php` itself, and the three `Arr` methods across the packages this port
+reads — `filament/support` alone calls all three (`Arr::only` in
+`Assets\AssetManager`, `Arr::except` in `Services\RelationshipJoiner`, six
+`Arr::wrap` sites), and `filament/actions` reads them too. Because Sylament
+ships no Laravel runtime, they are reimplemented here in the
+`Sylament\Support` namespace so the ported Filament helpers (and every
+downstream component) have them. `wrap()` is a
 free-function port of the static `Arr::wrap()` method, kept minimal (the
 `null → []`, array-passthrough, scalar-to-single-element contract) — no
 `Collection` or `Arrayable` handling, since nothing in the port needs it. Its one

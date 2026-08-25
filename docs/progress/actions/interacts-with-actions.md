@@ -59,8 +59,8 @@ note in [Semantics](#semantics).
 | `getMountedActionSchemaName()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | skipped | — | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
 | [`getDefaultActionUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
 | [`getDefaultActionSuccessRedirectUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionFailureRedirectUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
-| [`getDefaultActionSchemaResolver(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecord(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordTitle(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordClass(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordLabel(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [detail](#the-panel-level-default-hooks-are-not-on-the-contract) · [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
-| The three remaining `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | M4 · 8 (relationship), the authorization epic | [detail](#the-panel-level-default-hooks-are-not-on-the-contract) |
+| [`getDefaultActionSchemaResolver(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecord(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordTitle(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordClass(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordLabel(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [detail](#the-panel-level-default-hooks-are-on-the-contract-three-deferred) · [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
+| The three remaining `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | M4 · 8 (relationship), the authorization epic | [detail](#the-panel-level-default-hooks-are-on-the-contract-three-deferred) |
 
 ## Details
 
@@ -92,7 +92,7 @@ resubmits exactly such a frame and landed without it: the client re-sends its
 retry reads. **Next step:** it lands with the first caller that resubmits a
 frame *without* re-sending the arguments it was mounted with.
 
-### The panel-level default hooks are not on the contract
+### The panel-level default hooks are on the contract, three deferred
 
 Filament's contract declares eleven `getDefaultAction*` hooks
 (`getDefaultActionRecord`, `getDefaultActionRecordTitle`,
@@ -109,7 +109,7 @@ repeating them.
 
 **Eight are declared here now**, each landed the same way: on the interface and
 defaulted to `null` on
-[the trait](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported),
+[the trait](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-three-deferred),
 so every existing host gains it for free and no host needs an edit.
 `getDefaultActionUrl(Action $action): ?string` went first, for the
 [prebuilt `CreateAction`/`EditAction`](create-action.md) rendering as links to a

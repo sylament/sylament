@@ -12,7 +12,7 @@ persists it through Doctrine and reports `success()`.
 four record actions.**
 [`CanOpenUrl::getUrl()`](../../../packages/actions/src/Concerns/CanOpenUrl.php)
 answers the action's own `url()` and then the host's
-[`getDefaultActionUrl()`](interacts-with-actions.md#the-panel-level-default-hooks-are-not-on-the-contract)
+[`getDefaultActionUrl()`](interacts-with-actions.md#the-panel-level-default-hooks-are-on-the-contract-three-deferred)
 hook, and an action with a URL renders an anchor that is never mounted — so
 setting a modal heading, as this class now does, does not by itself open one.
 There are exactly three ways in: the host answers no URL (a resource that
@@ -102,7 +102,7 @@ and for a host-level action — one no schema component owns — that seed reads
 `getRecord(withDefault: true)`, i.e.
 [the whole chain](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
 down to the host's
-[`getDefaultActionRecord()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported).
+[`getDefaultActionRecord()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-three-deferred).
 On a record page that last hop answers the page's **record**, so the seed is the
 very object a create modal must not write into: `$schema->record($recordClass)`
 in the body is what re-points the container at the class, and it is the only

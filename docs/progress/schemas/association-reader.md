@@ -274,9 +274,14 @@ fix. The last is the mirror image of
 [`requireSingularRelationshipTarget()`](entangles-state-with-singular-relationship.md)
 one component over — that one refuses a collection where it wanted a record, this
 one refuses a record where it wanted a collection. The owner's class is read off
-the metadata rather than off `$owner::class`, so a Doctrine proxy answers as its
-entity; with native lazy objects (both rigs enable them) the two are already the
-same, and the metadata read is what keeps a classic proxy working.
+the metadata rather than off `$owner::class`, so what is reported and embedded in
+the DQL is the canonical mapped name; with native lazy objects (both rigs enable
+them) that is `$owner::class` already. The owner itself must be a hydrated entity
+or a PHP native lazy object: `getEntityClass()` runs `isTransient($owner::class)`
+*before* any metadata read, and a classic `Proxies\__CG__\…` subclass carries no
+entity attribute of its own — PHP does not inherit attributes — so the driver
+reports it transient and the owner is refused as not a managed entity. Nothing in
+this epic passes one.
 
 Both queries select the **target** entity as their single root under a
 caller-chosen alias, defaulting to `record`. That is load-bearing rather than

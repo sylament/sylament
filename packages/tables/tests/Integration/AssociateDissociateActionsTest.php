@@ -1,0 +1,261 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Sylament\Tables\Tests\Integration;
+
+use Doctrine\ORM\EntityManagerInterface;
+use LogicException;
+use Sylament\Schemas\Exceptions\ValidationException;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Album;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
+use Sylament\Tables\Tests\Fixtures\Doctrine\RecordingMiddleware;
+use Sylament\Tables\Tests\Fixtures\Twig\Components\ArtistSongsActionsTable;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
+use Symfony\UX\LiveComponent\Test\TestLiveComponent;
+
+uses(InteractsWithLiveComponents::class);
+
+/*
+ * The end-to-end pin for actions' associate family: only a table host supplies
+ * a relationship, and the actions test kernel registers neither tables nor
+ * forms — so, exactly as with `PrebuiltDeleteActionTest`, the behavioural cases
+ * sit here and the src-mirror rule is deliberately relaxed for this file.
+ *
+ * Kernel reboot is disabled throughout: the fixture database is an in-memory
+ * SQLite held by a container service, so a reboot between the mount and the
+ * confirmed call would hand the second request an empty one.
+ *
+ * The rig is seeded without `EntityManagerFactory::seed()` — that clears the
+ * identity map, and these cases read the same manager the live request writes
+ * through.
+ */
+
+/**
+ * Radiohead (1) owning songs 10/11/12, Portishead (2) owning song 20, and song
+ * 30 owned by nobody — the three arms of the one-to-many candidate query.
+ *
+ * @return array{KernelBrowser, EntityManagerInterface, RecordingMiddleware}
+ */
+function seededArtistSongsClient(): array
+{
+    $client = test()->getContainer()->get('test.client');
+    $client->disableReboot();
+
+    $entityManager = test()->getContainer()->get(EntityManagerInterface::class);
+    $recorder = test()->getContainer()->get(RecordingMiddleware::class);
+
+    $radiohead = new Artist(1, 'Radiohead');
+    $portishead = new Artist(2, 'Portishead');
+
+    foreach ([
+        $radiohead,
+        $portishead,
+        new Song(10, 'Airbag', 100, $radiohead),
+        new Song(11, 'Karma Police', 110, $radiohead),
+        new Song(12, 'No Surprises', 120, $radiohead),
+        new Song(20, 'Glory Box', 200, $portishead),
+        new Song(30, 'Orphan', 300),
+    ] as $entity) {
+        $entityManager->persist($entity);
+    }
+
+    $entityManager->flush();
+    $recorder->reset();
+
+    return [$client, $entityManager, $recorder];
+}
+
+/**
+ * @param array<string, mixed> $props
+ */
+function mountedAssociate(KernelBrowser $client, array $props = []): TestLiveComponent
+{
+    return test()->createLiveComponent(ArtistSongsActionsTable::class, [...['artistId' => 1], ...$props], client: $client)
+        ->call('mountAction', ['name' => 'associate', 'arguments' => [], 'context' => ['table' => true]]);
+}
+
+function artistIdOfSong(EntityManagerInterface $entityManager, int $id): ?int
+{
+    $entityManager->clear();
+
+    return $entityManager->find(Song::class, $id)?->getArtist()?->getId();
+}
+
+it("offers every song that is not this artist's and associates the picked one", function (): void {
+    [$client, $entityManager] = seededArtistSongsClient();
+
+    $component = mountedAssociate($client);
+    $host = $component->component();
+    $select = $host->getMountedActionSchema()?->getComponent('recordId');
+
+    // The `IS NULL OR <> :owner` arm: another artist's song and the unattributed
+    // one, never one of artist 1's own.
+    expect($select?->getSearchResults(''))->toBe([20 => 'Glory Box', 30 => 'Orphan'])
+        ->and($select?->getSearchResults('orph'))->toBe([30 => 'Orphan'])
+        ->and($select?->getSearchResults('airbag'))->toBe([]);
+
+    $component->set('mountedActionsData.0.recordId', 30)->call('callMountedAction');
+
+    expect(artistIdOfSong($entityManager, 30))->toBe(1);
+});
+
+it('re-points a song that belongs to another artist', function (): void {
+    [$client, $entityManager] = seededArtistSongsClient();
+
+    mountedAssociate($client)
+        ->set('mountedActionsData.0.recordId', 20)
+        ->call('callMountedAction');
+
+    expect(artistIdOfSong($entityManager, 20))->toBe(1);
+});
+
+it('toasts, unmounts and re-renders the table with the new row', function (): void {
+    [$client] = seededArtistSongsClient();
+
+    $component = mountedAssociate($client)
+        ->set('mountedActionsData.0.recordId', 30)
+        ->call('callMountedAction');
+
+    $html = (string) $component->render();
+
+    expect($component->component()->mountedActions)->toBe([])
+        ->and($html)->toContain('Associated')
+        ->and($html)->toContain('sy-status-success')
+        ->and($html)->toContain('Orphan');
+});
+
+it('keeps the modal open on a reset select when associating another', function (): void {
+    [$client, $entityManager] = seededArtistSongsClient();
+
+    $component = mountedAssociate($client)
+        ->set('mountedActionsData.0.recordId', 30)
+        ->call('callMountedAction', ['arguments' => ['another' => true]]);
+
+    expect(artistIdOfSong($entityManager, 30))->toBe(1)
+        ->and($component->component()->mountedActions)->toHaveCount(1)
+        ->and($component->component()->getMountedActionData(0))->toBe(['recordId' => null])
+        ->and((string) $component->render())->toContain('Associated');
+});
+
+it('associates two songs in one call when multiple() is on', function (): void {
+    [$client, $entityManager] = seededArtistSongsClient();
+
+    mountedAssociate($client, ['multiple' => true])
+        ->set('mountedActionsData.0.recordId', [20, 30])
+        ->call('callMountedAction');
+
+    expect(artistIdOfSong($entityManager, 20))->toBe(1)
+        ->and(artistIdOfSong($entityManager, 30))->toBe(1);
+});
+
+it('preloads the candidates as options when preloadRecordSelect() is on', function (): void {
+    [$client] = seededArtistSongsClient();
+
+    $select = mountedAssociate($client, ['preloads' => true])->component()->getMountedActionSchema()?->getComponent('recordId');
+
+    expect($select?->getOptions())->toBe([20 => 'Glory Box', 30 => 'Orphan']);
+});
+
+it("fails the select's own membership check on a key it never offered", function (): void {
+    [$client, $entityManager] = seededArtistSongsClient();
+
+    $component = mountedAssociate($client)->set('mountedActionsData.0.recordId', 11);
+
+    expect(fn (): TestLiveComponent => $component->call('callMountedAction'))
+        ->toThrow(ValidationException::class)
+        ->and(artistIdOfSong($entityManager, 11))->toBe(1);
+});
+
+it('re-resolves the submitted key through the candidate query and refuses a smuggled one', function (): void {
+    // The select is handed a static option map naming one of this artist's own
+    // songs, so validation passes and the action's own re-resolution is what
+    // refuses — the guard behind the select, which a reshaped recordSelect() is
+    // otherwise free to open.
+    [$client, $entityManager] = seededArtistSongsClient();
+
+    $component = mountedAssociate($client, ['offersEverySong' => true])->set('mountedActionsData.0.recordId', 11);
+
+    expect(fn (): TestLiveComponent => $component->call('callMountedAction'))
+        ->toThrow(LogicException::class, 'was asked to associate a record its select never offered')
+        ->and(artistIdOfSong($entityManager, 11))->toBe(1);
+});
+
+it('dissociates a row, titling the confirmation with the record', function (): void {
+    [$client, $entityManager] = seededArtistSongsClient();
+
+    $component = test()->createLiveComponent(ArtistSongsActionsTable::class, ['artistId' => 1], client: $client)
+        ->call('mountAction', ['name' => 'dissociate', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => '10']]);
+
+    expect((string) $component->render())->toContain('Dissociate Airbag');
+
+    $html = (string) $component->call('callMountedAction')->render();
+
+    expect(artistIdOfSong($entityManager, 10))->toBeNull()
+        ->and(artistIdOfSong($entityManager, 11))->toBe(1)
+        ->and($html)->toContain('Dissociated')
+        ->and($html)->toContain('sy-status-success');
+});
+
+it('dissociates the whole selection through the fetching arm in one flush', function (): void {
+    [$client, $entityManager, $recorder] = seededArtistSongsClient();
+
+    test()->createLiveComponent(ArtistSongsActionsTable::class, ['artistId' => 1], client: $client)
+        ->set('selectedTableRecords', ['10', '11', '12'])
+        ->call('mountAction', ['name' => 'dissociate', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]])
+        ->call('callMountedAction');
+
+    $updates = array_values(array_filter($recorder->statements(), static fn (string $sql): bool => str_starts_with($sql, 'UPDATE')));
+
+    expect(artistIdOfSong($entityManager, 10))->toBeNull()
+        ->and(artistIdOfSong($entityManager, 11))->toBeNull()
+        ->and(artistIdOfSong($entityManager, 12))->toBeNull()
+        ->and($updates)->toHaveCount(3);
+});
+
+it('dissociates the whole selection in one DQL update when the records are not fetched', function (): void {
+    [$client, $entityManager, $recorder] = seededArtistSongsClient();
+
+    $component = test()->createLiveComponent(ArtistSongsActionsTable::class, ['artistId' => 1, 'fetchesRecords' => false], client: $client)
+        ->set('selectedTableRecords', ['10', '11', '12'])
+        ->call('mountAction', ['name' => 'dissociate', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]]);
+
+    $recorder->reset();
+
+    $html = (string) $component->call('callMountedAction')->render();
+    $updates = array_values(array_filter($recorder->statements(), static fn (string $sql): bool => str_starts_with($sql, 'UPDATE')));
+
+    expect($updates)->toHaveCount(1)
+        ->and($updates[0])->toContain('IN (?, ?, ?)')
+        ->and(artistIdOfSong($entityManager, 10))->toBeNull()
+        ->and(artistIdOfSong($entityManager, 11))->toBeNull()
+        ->and(artistIdOfSong($entityManager, 12))->toBeNull()
+        ->and($html)->toContain('Dissociated')
+        ->and($html)->not->toContain('Failed to dissociate');
+});
+
+it('refuses to dissociate from an orphan-removal mapping, in both arms', function (): void {
+    [$client, $entityManager, $recorder] = seededArtistSongsClient();
+
+    $radiohead = $entityManager->find(Artist::class, 1) ?? throw new LogicException('The rig lost its artist.');
+    $entityManager->persist(new Album(1, 'OK Computer', $radiohead));
+    $entityManager->flush();
+
+    $row = test()->createLiveComponent(ArtistSongsActionsTable::class, ['artistId' => 1, 'association' => 'albums'], client: $client)
+        ->call('mountAction', ['name' => 'dissociate', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => '1']]);
+
+    expect(fn (): TestLiveComponent => $row->call('callMountedAction'))
+        ->toThrow(LogicException::class, 'orphanRemoval');
+
+    $bulk = test()->createLiveComponent(ArtistSongsActionsTable::class, ['artistId' => 1, 'association' => 'albums', 'fetchesRecords' => false], client: $client)
+        ->set('selectedTableRecords', ['1'])
+        ->call('mountAction', ['name' => 'dissociate', 'arguments' => [], 'context' => ['table' => true, 'bulk' => true]]);
+
+    $recorder->reset();
+
+    expect(fn (): TestLiveComponent => $bulk->call('callMountedAction'))
+        ->toThrow(LogicException::class, 'orphanRemoval')
+        ->and(array_filter($recorder->statements(), static fn (string $sql): bool => str_starts_with($sql, 'UPDATE')))->toBe([]);
+});

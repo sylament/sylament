@@ -18,6 +18,12 @@ class Artist
     #[ORM\OrderBy(['title' => 'ASC'])]
     private Collection $songs;
 
+    /**
+     * @var Collection<int, Album>
+     */
+    #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist', orphanRemoval: true)]
+    private Collection $albums;
+
     public function __construct(
         #[ORM\Id]
         #[ORM\Column]
@@ -30,6 +36,7 @@ class Artist
         private Address $address = new Address()
     ) {
         $this->songs = new ArrayCollection();
+        $this->albums = new ArrayCollection();
     }
 
     public function getId(): int
@@ -58,6 +65,14 @@ class Artist
     public function getSongs(): Collection
     {
         return $this->songs;
+    }
+
+    /**
+     * @return Collection<int, Album>
+     */
+    public function getAlbums(): Collection
+    {
+        return $this->albums;
     }
 
     public function addSong(Song $song): static

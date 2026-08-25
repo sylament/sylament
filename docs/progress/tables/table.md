@@ -98,7 +98,7 @@ Rows never disappear — only their detail sections do.
 | [The `query()` lane — `query()` / `getQuery()` / `modifyQueryUsing()` / `applyQueryScopes()` / `getQueryEntityManager()`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | done | — | [semantics](#every-read-clones-a-memoised-base-query) |
 | [`hasQuery()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::hasQuery()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#the-query-lane-is-on-exactly-while-no-records-closure-is-set) |
 | [`getRecordClass()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getModel()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [rename](../renames.md#renames) · [semantics](#the-record-class-is-read-off-the-base-querys-root-entity) |
-| [The relation-scoped table — `relationship()` / `getRelationship()` / `getRelationshipQuery()`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | done | — | [semantics](#the-relationship-query-is-the-base-query-rooted-at-the-target) · [semantics](#the-mappings-order-is-the-relation-scoped-tables-default-sort) |
+| [The relation-scoped table — `relationship()` / `getRelationship()` / `getRelationshipQuery()` / `isRelationshipBaseQuery()`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | done | — | [semantics](#the-relationship-query-is-the-base-query-rooted-at-the-target) · [semantics](#the-mappings-order-is-the-relation-scoped-tables-default-sort) |
 | The inverse-name derivation — `inverseRelationship()`, `getInverseRelationship()`, `getInverseRelationshipFor()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | skipped | — | [diverges](#the-inverse-relationship-is-read-off-the-mapping-not-derived) |
 | [`paginated()` / `isPaginated()` / `paginationPageOptions()` / `getPaginationPageOptions()` / `defaultPaginationPageOption()` / `getDefaultPaginationPageOption()` / `extremePaginationLinks()` / `hasExtremePaginationLinks()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | [diverges](#the-ten-per-page-default-is-matched-strictly) · [diverges](#ispaginated-has-no-groups-only-arm) |
 | [`paginationMode()` / `getPaginationMode()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) + [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | its `Cursor` arm — a keyset carrier ([pagination.md](../support/pagination.md)) | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) · [has-table.md](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half) |
@@ -742,9 +742,12 @@ a closure doing real work — a repository call, an ACL scope — would run thre
 times. `query()` resets both the base cache and the record-class cache, so a
 re-declared query re-evaluates.
 
-The memoisation is a `??=`, so it can hold a builder and cannot hold a `null`: a
-declaration evaluating to null — no `query()` at all, or a closure that returns
-one — is re-evaluated on every read. That is exactly the case the value-plus-flag
+The memo holds a builder and never a `null`, so a declaration evaluating to null
+— no `query()` at all, or a closure that returns one — is re-evaluated on every
+read. It is a branch rather than a `??=` because the read has a second job: it
+records which lane answered, in the flag
+[`isRelationshipBaseQuery()`](#the-mappings-order-is-the-relation-scoped-tables-default-sort)
+reports. That is exactly the case the value-plus-flag
 pair [`getRecordClass()` keeps](#the-record-class-is-read-off-the-base-querys-root-entity)
 exists to cover on its side, and it is deliberately not kept here, because the
 null means *this table has no query*: every reader branches on it at once and

@@ -51,7 +51,8 @@ carrier rather than against an epic. The _relation arm
 [relationship traversal](column.md#relationship-traversal-ships-as-a-value-walk-a-side-store-and-one-kept-member),
 the aggregates and eager loading are in, so `InteractsWithTableQuery` folded into
 [`column.md`](column.md) and lost its row here, and what it did **not** take on —
-the relation-scoped table — now has a destination instead of an open question.
+the relation-scoped table — was left with a destination rather than an open
+question, which [M4 · 8](../roadmap.md#m4--tables-widening) then shipped.
 _Table bulk actions_ was the fourth, closed by
 [M4 · 1](../roadmap.md#m4--tables-widening): the `BulkAction` family landed in
 [`actions`](../actions/README.md), and the selection machinery it needed — the

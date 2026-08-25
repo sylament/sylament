@@ -22,13 +22,13 @@ use Sylament\Tables\Table;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\String\Inflector\EnglishInflector;
 use Symfony\Contracts\Service\Attribute\Required;
 use Twig\Markup;
 
 use function Sylament\Support\blank;
 use function Sylament\Support\filled;
 use function Sylament\Support\get_record_label;
+use function Sylament\Support\plural;
 use function Symfony\Component\String\u;
 
 abstract class Resource
@@ -135,7 +135,7 @@ abstract class Resource
             $basename = $basename->beforeLast('Resource');
         }
 
-        return u($this->pluralize($basename->toString()))->kebab()->toString();
+        return u(plural($basename->toString()))->kebab()->toString();
     }
 
     public function getRecordLabel(): string
@@ -157,11 +157,7 @@ abstract class Resource
             return $label;
         }
 
-        $words = explode(' ', $this->getRecordLabel());
-        $lastWord = array_key_last($words);
-        $words[$lastWord] = $this->pluralize($words[$lastWord]);
-
-        return implode(' ', $words);
+        return plural($this->getRecordLabel());
     }
 
     public function getTitleCaseRecordLabel(): string
@@ -403,14 +399,6 @@ abstract class Resource
     protected function getPropertyAccessor(): PropertyAccessor
     {
         return $this->propertyAccessor ?? throw $this->missingServices();
-    }
-
-    private function pluralize(string $word): string
-    {
-        $candidates = new EnglishInflector()->pluralize($word);
-        $lastCandidate = array_key_last($candidates);
-
-        return $lastCandidate === null ? $word : $candidates[$lastCandidate];
     }
 
     /**

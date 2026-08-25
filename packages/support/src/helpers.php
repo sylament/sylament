@@ -6,6 +6,7 @@ namespace Sylament\Support;
 
 use Countable;
 use Stringable;
+use Symfony\Component\String\Inflector\EnglishInflector;
 use Twig\Markup;
 
 use function Symfony\Component\String\u;
@@ -132,6 +133,27 @@ function wrap(mixed $value): array
 function get_record_label(string $class): string
 {
     return u($class)->afterLast('\\')->kebab()->replace('-', ' ')->toString();
+}
+
+/**
+ * Laravel's `Str::plural`, as far as the port needs it: the last word of
+ * `$value` inflected through symfony/string's `EnglishInflector`, taking its
+ * last candidate, the other words untouched — `blog post` → `blog posts`.
+ * English only: i18n is deferred, so Filament's `locale_has_pluralization()`
+ * guard has no port yet.
+ */
+function plural(string $value): string
+{
+    $words = explode(' ', $value);
+    $lastWord = array_key_last($words);
+    $candidates = new EnglishInflector()->pluralize($words[$lastWord]);
+    $lastCandidate = array_key_last($candidates);
+
+    if ($lastCandidate !== null) {
+        $words[$lastWord] = $candidates[$lastCandidate];
+    }
+
+    return implode(' ', $words);
 }
 
 /**

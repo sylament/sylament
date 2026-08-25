@@ -4,9 +4,9 @@
 functions (composer `files` autoload, imported with `use function`). It ports
 Filament's own `helpers.php` **and** the Laravel global helpers Filament's code
 leans on but never defines (`blank()`, `filled()`, `Arr::wrap()`, `Arr::only()`,
-`Arr::except()`) — Sylament has
-no Laravel runtime, so they are reimplemented here. Today the file holds those
-five Laravel foundations plus `sanitize_url()`, a `Str` macro Filament declares
+`Arr::except()`, `Str::plural()`) — Sylament has no Laravel runtime, so they are
+reimplemented here. Today the file holds those six Laravel foundations plus
+`sanitize_url()`, a `Str` macro Filament declares
 in its service provider rather than in `helpers.php`, and `get_record_label()`,
 the record-vocabulary port of Filament's `get_model_label()`; every function in
 it is pure, and that is now an invariant — see
@@ -45,10 +45,11 @@ write-up in [Details](#details), and/or **diverges** → the permanent note in
 | [`get_record_label()`](../../../packages/support/src/helpers.php) | [`get_model_label()`](../../../vendor/filament/support/src/helpers.php) | done | — | [diverges](#get_record_label-is-a-rename-and-it-is-what-put-symfonystring-in-supports-manifest) |
 | [`only()`](../../../packages/support/src/helpers.php) | [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
 | [`except()`](../../../packages/support/src/helpers.php) | [`Illuminate/Collections/Arr.php`](../../../vendor/laravel/framework/src/Illuminate/Collections/Arr.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
+| [`plural()`](../../../packages/support/src/helpers.php) | [`Str::plural()`](../../../vendor/laravel/framework/src/Illuminate/Support/Str.php) | done | — | [diverges](#wrap-and-the-laravel-globals-are-reimplemented-not-forwarded) |
 | `generate_icon_html()` — lives on [`IconExtension`](../../../packages/support/src/Twig/Extension/IconExtension.php) | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | done | — | [diverges](#generate_icon_html-moved-to-the-twig-extension) · [diverges](#decorative-icon-defaults-rely-on-ux-icons-not-on-bundled-icon-sets) |
 | `format_money()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `format_number()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
-| `locale_has_pluralization()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
+| `locale_has_pluralization()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | the port pluralises English unconditionally through [`plural()`](../../../packages/support/src/helpers.php); the guard lands with i18n |
 | `get_component_color_classes()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `prepare_inherited_attributes()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
 | `is_slot_empty()` | [`helpers.php`](../../../vendor/filament/support/src/helpers.php) | todo | — | — |
@@ -243,9 +244,10 @@ packages that already declare it carry, under the blanket `symfony/*` approval.
 
 ### `wrap()` and the Laravel globals are reimplemented, not forwarded
 
-`blank()`, `filled()`, `wrap()`, `only()` and `except()` are **not** Filament
-`helpers.php` functions — they are Laravel globals (`blank()` / `filled()`) and
-`Arr::wrap()` / `Arr::only()` / `Arr::except()` that
+`blank()`, `filled()`, `wrap()`, `only()`, `except()` and `plural()` are **not**
+Filament `helpers.php` functions — they are Laravel globals (`blank()` /
+`filled()`) and `Arr::wrap()` / `Arr::only()` / `Arr::except()` / `Str::plural()`
+that
 Filament's code consumes without defining: `blank()`/`filled()` in
 `helpers.php` itself, and the three `Arr` methods across the packages this port
 reads — `filament/support` alone calls all three (`Arr::only` in
@@ -267,3 +269,16 @@ without the `Collection`, `Arrayable` or dotted-path arms Laravel's methods
 carry, because their two consumers ask for neither: `CreateAction`'s
 `preserveFormDataWhenCreatingAnother()` keeps a flat list of field names, and
 `ReplicateAction`'s `excludeAttributes()` drops one.
+
+`plural()` is that trade a third time, and the one whose body is not a
+one-liner: Laravel's `Str::plural` runs the **last word** of a phrase through an
+inflector and leaves the rest alone, so `blog post` pluralises to `blog posts`
+rather than `blog posts` by accident. symfony/string's `EnglishInflector` is the
+inflector — `pluralize()` returns *candidates* rather than one answer (`person`
+→ `['persons', 'people']`), and the port takes the last, which is the rule
+panels' `Resource` had already settled on when it carried a private copy of this
+body. That copy is gone: two implementations of one inflection would drift, and
+the helpers rule says the port lives here. Laravel's `$count`/`$prependCount`
+arms are not ported (nothing asks), and neither is its
+`locale_has_pluralization()` guard — i18n is deferred, so the port pluralises
+English unconditionally.

@@ -15,6 +15,7 @@ use function Sylament\Support\except;
 use function Sylament\Support\filled;
 use function Sylament\Support\get_record_label;
 use function Sylament\Support\only;
+use function Sylament\Support\plural;
 use function Sylament\Support\sanitize_url;
 use function Sylament\Support\wrap;
 
@@ -114,3 +115,13 @@ it('drops the named keys', function (): void {
     expect(except(['a' => 1, 'b' => 2, 'c' => 3], ['b']))->toBe(['a' => 1, 'c' => 3])
         ->and(except(['a' => 1], []))->toBe(['a' => 1]);
 });
+
+it('pluralises the last word of a label', function (string $label, string $expected): void {
+    expect(plural($label))->toBe($expected);
+})->with([
+    ['article', 'articles'],
+    ['blog post', 'blog posts'],
+    ['category', 'categories'],
+    ['record', 'records'],
+    ['', ''],
+]);

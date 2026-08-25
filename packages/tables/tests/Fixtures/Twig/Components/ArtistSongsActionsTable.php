@@ -55,6 +55,21 @@ class ArtistSongsActionsTable implements InteractsWithActions, InteractsWithSche
     #[LiveProp]
     public bool $titlesByClosure = false;
 
+    /**
+     * Puts a `recordTitle()` closure on the **action** rather than the table —
+     * the arm the action's own custom title has to win, and which no table-level
+     * title can stand in for.
+     */
+    #[LiveProp]
+    public bool $actionTitlesByClosure = false;
+
+    /**
+     * Puts a `recordTitleAttribute()` on the **action**, which overrides a table
+     * that titles its records by closure.
+     */
+    #[LiveProp]
+    public ?string $actionTitleAttribute = null;
+
     #[LiveProp]
     public string $association = 'songs';
 
@@ -123,7 +138,9 @@ class ArtistSongsActionsTable implements InteractsWithActions, InteractsWithSche
                     ->forceSearchCaseInsensitive($this->forcesCaseInsensitiveSearch)
                     ->recordSelectSearchColumns($this->searchColumns)
                     ->recordSelectOptionsQuery($this->optionsQueryCallback())
-                    ->recordSelect($this->offersEverySong ? static fn (Select $select): Select => $select->getOptionLabelUsing(static fn (): string => 'Karma Police') : null),
+                    ->recordSelect($this->offersEverySong ? static fn (Select $select): Select => $select->getOptionLabelUsing(static fn (): string => 'Karma Police') : null)
+                    ->recordTitle($this->actionTitlesByClosure ? static fn (Song $record): string => "Song: {$record->getTitle()}" : null)
+                    ->recordTitleAttribute($this->actionTitleAttribute),
             ])
             ->recordActions([DissociateAction::make()])
             ->toolbarActions([DissociateBulkAction::make()->fetchSelectedRecords($this->fetchesRecords)])

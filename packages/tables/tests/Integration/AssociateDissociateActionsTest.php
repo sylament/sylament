@@ -355,6 +355,29 @@ it('hydrates and titles the candidates one by one once the table titles them its
     expect($select->getSearchResults(''))->toBe([30 => 'EXIT MUSIC', 20 => 'GLORY BOX']);
 });
 
+it("titles the options through the action's own record-title closure, which no table title can stand in for", function (): void {
+    [$client] = seededArtistSongsClient();
+    $select = associateRecordSelect(associateHost($client, ['actionTitlesByClosure' => true]));
+
+    // The projection arm reads the title column, which says `Exit Music`; only
+    // the hydrating arm runs the action's own recordTitle().
+    expect($select->getSearchResults(''))->toBe([30 => 'Song: Exit Music', 20 => 'Song: Glory Box']);
+});
+
+it("projects the action's own title attribute over a table that titles by closure", function (): void {
+    [$client, $entityManager] = seededArtistSongsClient();
+    $select = associateRecordSelect(associateHost($client, ['titlesByClosure' => true, 'actionTitleAttribute' => 'title']));
+
+    $entityManager->clear();
+
+    // The action's own attribute overrides the table's closure, so the answer
+    // is the raw column rather than the closure's `EXIT MUSIC` — and, because
+    // both arms would read the same column here, the projection is what the
+    // empty identity map proves: nothing was hydrated to title anything.
+    expect($select->getSearchResults(''))->toBe([30 => 'Exit Music', 20 => 'Glory Box'])
+        ->and($entityManager->getUnitOfWork()->tryGetById(30, Song::class))->toBeFalse();
+});
+
 it('leaves an options query that orders itself alone', function (): void {
     [$client] = seededArtistSongsClient();
     $select = associateRecordSelect(associateHost($client, ['optionsQueryArm' => 'order']));

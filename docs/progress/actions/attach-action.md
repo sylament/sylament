@@ -36,7 +36,8 @@ Covered by
 and end to end by
 [`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php)
 in the **tables** suite — the candidate list, the search, the closure-titled
-arm, the preloaded arm, the single and multiple submits, the attach-another arm,
+arm (the table's closure, the action's own closure, and the action's own title
+attribute overriding a table that titles by closure), the preloaded arm, the single and multiple submits, the attach-another arm,
 both smuggled-key refusals and the empty-submission one, and beside those the
 select's own arms: the title ordering (over song 2, whose two candidates sort by
 title in the opposite order to their keys, so the assertion is on the `ORDER BY`
@@ -125,6 +126,14 @@ table's `recordTitle()` closure decide the option labels. This is Filament's
 `pluck()`-versus-`mapWithKeys()` branch, condition for condition. What is *not*
 condition for condition is where the ordering sits —
 [a divergence](#the-title-ordering-applies-to-both-arms-not-only-the-projected-one).
+
+Each of the three conditions has a witness, and the third one's is not an
+assertion on the labels: when the action sets its own title attribute, both arms
+answer the *same* strings — the hydrating arm's `getRecordTitle()` falls through
+the action's own attribute exactly as the projection reads it, so the table's
+closure is never consulted either way. What the two arms do not share is the
+hydration, so that case clears the identity map and asserts the candidate was
+never loaded into it.
 
 ### `recordSelectOptionsQuery()` is evaluated with `query` and `search`
 

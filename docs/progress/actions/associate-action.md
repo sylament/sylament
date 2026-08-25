@@ -35,7 +35,9 @@ beside those the select's own arms: the title ordering (the candidate list's
 unowned song is titled so that title order and key order disagree, which is what
 makes the assertion an assertion on the `ORDER BY`) on the projecting branch and,
 through a table-level `recordTitle()` closure whose upper-cased answers no
-projection could return, on the hydrating one,
+projection could return, on the hydrating one, the action's own `recordTitle()`
+closure that no table title can stand in for, the action's own title attribute
+overriding a table that titles by closure,
 `recordSelectOptionsQuery()` narrowing the candidates through each of its two
 documented injections — the builder by parameter name with the search beside it,
 and the builder by type hint — a third arm that orders the builder itself, whose
@@ -112,6 +114,14 @@ builder carries no order of its own) sits **before** that branch, because
 Filament orders both paths. A `recordSelectOptionsQuery()` that orders the
 builder itself keeps its order — that is the documented escape hatch, and
 `AttachAction` carries the same one.
+
+Each of the three conditions has a witness, and the third one's is not an
+assertion on the labels: when the action sets its own title attribute, both arms
+answer the *same* strings — the hydrating arm's `getRecordTitle()` falls through
+the action's own attribute exactly as the projection reads it, so the table's
+closure is never consulted either way. What the two arms do not share is the
+hydration, so that case clears the identity map and asserts the candidate was
+never loaded into it.
 
 ### Preloading is what decides whether the select carries a membership check
 

@@ -54,6 +54,21 @@ class SongGenresActionsTable implements InteractsWithActions, InteractsWithSchem
     #[LiveProp]
     public bool $titlesByClosure = false;
 
+    /**
+     * Puts a `recordTitle()` closure on the **action** rather than the table —
+     * the arm the action's own custom title has to win, and which no table-level
+     * title can stand in for.
+     */
+    #[LiveProp]
+    public bool $actionTitlesByClosure = false;
+
+    /**
+     * Puts a `recordTitleAttribute()` on the **action**, which overrides a table
+     * that titles its records by closure.
+     */
+    #[LiveProp]
+    public ?string $actionTitleAttribute = null;
+
     #[LiveProp]
     public ?bool $forcesCaseInsensitiveSearch = null;
 
@@ -99,7 +114,9 @@ class SongGenresActionsTable implements InteractsWithActions, InteractsWithSchem
                     ->preloadRecordSelect($this->preloads)
                     ->forceSearchCaseInsensitive($this->forcesCaseInsensitiveSearch)
                     ->recordSelectSearchColumns($this->searchColumns)
-                    ->recordSelectOptionsQuery($this->optionsQueryCallback()),
+                    ->recordSelectOptionsQuery($this->optionsQueryCallback())
+                    ->recordTitle($this->actionTitlesByClosure ? static fn (Genre $record): string => "Genre: {$record->getName()}" : null)
+                    ->recordTitleAttribute($this->actionTitleAttribute),
             ])
             ->recordActions([DetachAction::make()])
             ->toolbarActions([DetachBulkAction::make()->fetchSelectedRecords($this->fetchesRecords)])

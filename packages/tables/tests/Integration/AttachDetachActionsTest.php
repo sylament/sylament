@@ -105,6 +105,34 @@ it("titles the options through the table's record-title closure when it has one"
     expect(mountedRecordSelect($host)->getSearchResults(''))->toBe([4 => 'METAL']);
 });
 
+it("titles the options through the action's own record-title closure, which no table title can stand in for", function (): void {
+    [$client] = seededGenresClient();
+    $host = attachHost($client, ['actionTitlesByClosure' => true]);
+
+    $host->mountAction('attach', [], ['table' => true]);
+
+    // The projection arm reads the title column, which says `Metal`; only the
+    // hydrating arm runs the action's own recordTitle().
+    expect(mountedRecordSelect($host)->getSearchResults(''))->toBe([4 => 'Genre: Metal']);
+});
+
+it("projects the action's own title attribute over a table that titles by closure", function (): void {
+    [$client, $entityManager] = seededGenresClient();
+    $host = attachHost($client, ['titlesByClosure' => true, 'actionTitleAttribute' => 'name']);
+
+    $host->mountAction('attach', [], ['table' => true]);
+
+    $select = mountedRecordSelect($host);
+    $entityManager->clear();
+
+    // The action's own attribute overrides the table's closure, so the answer
+    // is the raw column rather than the closure's `METAL` — and, because both
+    // arms would read the same column here, the projection is what the empty
+    // identity map proves: nothing was hydrated to title anything.
+    expect($select->getSearchResults(''))->toBe([4 => 'Metal'])
+        ->and($entityManager->getUnitOfWork()->tryGetById(4, Genre::class))->toBeFalse();
+});
+
 it('attaches the picked genre, toasts and unmounts', function (): void {
     [$client, $entityManager] = seededGenresClient();
     $host = attachHost($client);

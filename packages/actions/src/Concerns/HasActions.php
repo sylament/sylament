@@ -623,6 +623,49 @@ trait HasActions
         return null;
     }
 
+    public function getDefaultActionSchemaResolver(Action $action): ?Closure
+    {
+        return null;
+    }
+
+    /**
+     * @return object|array<string, mixed>|null
+     */
+    public function getDefaultActionRecord(Action $action): object|array|null
+    {
+        return null;
+    }
+
+    public function getDefaultActionRecordTitle(Action $action): ?string
+    {
+        return null;
+    }
+
+    /**
+     * @return class-string|null
+     */
+    public function getDefaultActionRecordClass(Action $action): ?string
+    {
+        return null;
+    }
+
+    public function getDefaultActionRecordLabel(Action $action): ?string
+    {
+        return null;
+    }
+
+    /**
+     * The record or class the mounted action's schema binds when the action's
+     * own chain answers nothing — a list page answers its resource's class, a
+     * record page its record.
+     *
+     * @return object|array<string, mixed>|string|null
+     */
+    protected function getMountedActionSchemaRecord(): object|array|string|null
+    {
+        return null;
+    }
+
     public function cacheAction(Action $action): Action
     {
         $action->liveComponent($this);

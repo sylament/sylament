@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Contracts;
 
+use Closure;
 use Sylament\Actions\Action;
 use Sylament\Schemas\Schema;
 
@@ -65,4 +66,40 @@ interface InteractsWithActions
      * `failureRedirectUrl()` of its own — null when the host has none.
      */
     public function getDefaultActionFailureRedirectUrl(Action $action): ?string;
+
+    /**
+     * The closure that builds a mounted action's schema when the action declares
+     * none of its own — a resource page answers with its resource's form; null
+     * when the host has nothing to offer.
+     */
+    public function getDefaultActionSchemaResolver(Action $action): ?Closure;
+
+    /**
+     * The record an action falls through to when nothing bound one — a record
+     * page answers with the record it shows; null when the host has none. An
+     * object or an array record: a default is never a bare key.
+     *
+     * @return object|array<string, mixed>|null
+     */
+    public function getDefaultActionRecord(Action $action): object|array|null;
+
+    /**
+     * The title a record-bound action interpolates into its modal heading when
+     * it carries no recordTitle() of its own — null when the host has none.
+     */
+    public function getDefaultActionRecordTitle(Action $action): ?string;
+
+    /**
+     * The class an action creates into when nothing names one — a resource page
+     * answers with its resource's record class; null when the host has none.
+     *
+     * @return class-string|null
+     */
+    public function getDefaultActionRecordClass(Action $action): ?string;
+
+    /**
+     * The label an action interpolates when it carries no recordLabel() and its
+     * class is the host's default class — null when the host has none.
+     */
+    public function getDefaultActionRecordLabel(Action $action): ?string;
 }

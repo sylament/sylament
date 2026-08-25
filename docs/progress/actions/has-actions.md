@@ -98,7 +98,8 @@ write-up in [Details](#details), **diverges** → the note in
 | `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | [detail](#url-bound-default-action-state-is-not-ported) |
 | [`getDefaultActionUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
 | [`getDefaultActionSuccessRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionFailureRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSuccessRedirectUrl()` / `getDefaultActionFailureRedirectUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
-| The other eight `getDefaultAction*` host override hooks (Record/Title/Model/ModelLabel/Relationship/SchemaResolver/AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionRecord()` etc. | todo | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
+| [`getDefaultActionSchemaResolver()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecord()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordTitle()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordClass()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordLabel()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSchemaResolver()` / `getDefaultActionRecord()` / `getDefaultActionRecordTitle()` / `getDefaultActionModel()` / `getDefaultActionModelLabel()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
+| The three remaining `getDefaultAction*` host override hooks (Relationship/AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionRelationship()` etc. | todo | — | [detail](#the-getdefaultaction-host-override-hooks-are-not-ported) |
 | `forceRender()` / `partiallyRenderActionParentSchema()` | `Concerns/InteractsWithActions.php` `forceRender()` / `partiallyRenderActionParentSchema()` | blocked | schemas partial-render infrastructure (`PartialsComponentHook`) | [detail](#partial-re-render-is-not-ported) |
 | [`afterActionCalled()`](../../../packages/actions/src/Concerns/HasActions.php) hook (empty protected method; runs after `callAfter()`, before the notification branch, happy path only — Filament-exact) | `Concerns/InteractsWithActions.php` `afterActionCalled()` | done | — | — |
 | `bootedInteractsWithActions()` boot wiring / `WithRateLimiting` | `Concerns/InteractsWithActions.php` `bootedInteractsWithActions()`, `DanHarrin\LivewireRateLimiting\WithRateLimiting` | skipped | — | [diverges](#there-is-no-boot-hook-or-rate-limiting-trait) |
@@ -325,7 +326,7 @@ absorbed `model()` under the record-only vocabulary) and
 [`operation()`](../schemas/has-operation.md) — so what is missing is the
 action-side chain that supplies the values, the same hop that leaves
 `Action::getRecord()` stopping at its group
-([action.md](action.md#the-record-title-and-model-metadata-surface-is-not-ported)).
+([action.md](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)).
 `getMountedActionSchemaName()` and `getMountedActionSchemaModel()` still have no
 port — the name is computed inline where it is used, and the record hook has no
 consumer until the chain exists. One guard is Sylament-only: a schema-bearing action
@@ -338,7 +339,7 @@ M1 · 6 (record actions) was expected to land it and did not — it bound a reco
 to the **action** (`InteractsWithRecord`, `resolveTableAction()`) and stopped
 there, so the chain that would supply a schema's `record()`/`operation()` is
 still the missing piece, the same one that leaves
-[`Action::getRecord()`](action.md#the-record-title-and-model-metadata-surface-is-not-ported)
+[`Action::getRecord()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
 stopping at its group.
 
 ### `#[Url]`-bound default-action state is not ported
@@ -362,29 +363,53 @@ Filament declares eleven `getDefaultAction*(Action $action)` methods
 returning `null` by default — extension points a host page overrides to supply
 context-free defaults to any action it mounts.
 
-Three are now ported. `getDefaultActionUrl(Action $action): ?string` is declared on
-[the contract](interacts-with-actions.md) and defaulted here to `return null;`,
-exactly as Filament's trait does, because the prebuilt
-[`CreateAction`](create-action.md) and [`EditAction`](edit-action.md) set no
-`url()` of their own and reach their resource page through it. Contract and
-trait moved together, so every host that already uses this trait satisfies the
-wider interface with no edit — the pattern any of the remaining ten should
-follow. A host that overrides it
-[must discriminate by action](interacts-with-actions.md#a-host-answering-the-url-hook-must-discriminate-by-action).
+**Eight are now ported, and every one of them landed by the same recipe:**
+declare it on [the contract](interacts-with-actions.md), default it to
+`return null;` here, and land it *with* the `Action`-side concern that reads it.
+Contract and trait move together, so every host that already uses this trait
+satisfies the wider interface with no edit — which is the whole reason the recipe
+works, and it is the one to follow for the three that remain.
+[`getDefaultActionUrl()`](interacts-with-actions.md) went first, with the
+prebuilt [`CreateAction`](create-action.md) / [`EditAction`](edit-action.md),
+which set no `url()` of their own and reach their resource page through it; the
+redirect pair `getDefaultActionSuccessRedirectUrl()` /
+`getDefaultActionFailureRedirectUrl()` followed with
+[`CanRedirect`](action.md); and the record cluster —
+`getDefaultActionSchemaResolver()`, `getDefaultActionRecord()`,
+`getDefaultActionRecordTitle()`, `getDefaultActionRecordClass()` and
+`getDefaultActionRecordLabel()` — with the
+[record chain on `Action`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
+that walks to them. The last two are renames, `getDefaultActionModel` and
+`getDefaultActionModelLabel` under the
+[record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record).
+A host answering any of them
+[must discriminate by action](interacts-with-actions.md#a-host-answering-the-url-hook-must-discriminate-by-action) —
+one answer for every action it mounts is almost never what a page means.
 
-`getDefaultActionSuccessRedirectUrl()` and `getDefaultActionFailureRedirectUrl()`
-followed with [`CanRedirect`](action.md), the concern that reads them: an action
-with no `successRedirectUrl()` / `failureRedirectUrl()` of its own falls through
-to the host, which is how a record page sends a delete back to the resource
-index. They default to `null` here and are declared on the contract, so the same
-no-edit widening applied. The same discrimination note holds — a host answering
-for every action redirects every action — and the page-side overrides
-themselves are [M4 · 2](../roadmap.md)'s, not this epic's: what shipped is the
-mechanism and the hooks.
+`getDefaultActionRecord()` returns `object|array<string, mixed>|null`, which is
+**narrower than the `record(mixed)` setter it feeds**. That is deliberate: the
+setter's width exists so a host can bind a bare key and let
+[`resolveRecordUsing()`](#a-client-supplied-record-key-is-type-checked-before-the-lookup)
+turn it into a record, but a *default* is answered by the host itself, which has
+no reason to hand back a key it would then have to resolve for itself. Object or
+array record, nothing else.
 
-The other eight stay unported: the `Action` concerns that would consume them
-(`CanBeAuthorized`, relation managers, …) are not ported either.
-**Next step:** todo, add alongside the `Action`-level concerns that read them.
+Beside the five, this trait also gained one **protected** member,
+`getMountedActionSchemaRecord(): object|array|string|null` (Filament's
+`getMountedActionSchemaModel()`), defaulted to `null`. It is the last link of the
+chain that seeds a mounted action's schema with a record; the rest of that chain,
+and its write-up, belong to the seed itself — the row for `getMountedActionSchema()`
+above carries them.
+
+The remaining three stay unported for the same reason as ever — the `Action`
+concerns that would consume them are not ported either. `getDefaultActionRelationship`
+is M4 · 8's: its return type is a Doctrine design that epic owns, and the value
+half is already answered by
+[`AssociationTarget`](../schemas/association-reader.md). The two authorization
+hooks (`getDefaultActionAuthorizationResponse`,
+`getDefaultActionIndividualRecordAuthorizationResponseResolver`) wait on the
+parked authorization epic, alongside `CanBeAuthorized`.
+**Next step:** each lands with the `Action`-side concern that reads it.
 
 ### Partial re-render is not ported
 
@@ -973,7 +998,7 @@ A mounted-action schema is a **root** schema — `getMountedActionSchema()` buil
 it from `makeSchema()`, so it has no parent component — and an action declared
 inside it belongs to no group and is bound to no component of its own. All three
 arms are `null`, and `Action`'s `get`/`set` injection arms deref that result
-[without a null-safe operator](action.md#resolvedefaultclosuredependencyforevaluationbyname-covers-10-of-16-names).
+[without a null-safe operator](action.md#resolvedefaultclosuredependencyforevaluationbyname-covers-11-of-16-names).
 
 **This is Filament parity, not a regression.**
 `vendor/filament/actions/src/Concerns/BelongsToSchemaComponent.php:28-31` is

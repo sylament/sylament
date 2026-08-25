@@ -335,7 +335,27 @@ class ActionGroup extends ViewComponent
 
     public function getRecord(): mixed
     {
-        return $this->evaluate($this->record) ?? $this->getGroup()?->getRecord();
+        return $this->ensureCorrectRecordType($this->evaluate($this->record)) ?? $this->getGroup()?->getRecord();
+    }
+
+    /**
+     * @return class-string|null
+     */
+    public function getRecordClass(): ?string
+    {
+        $class = $this->getCustomRecordClass();
+
+        if ($class !== null) {
+            return $class;
+        }
+
+        $record = $this->getRecord();
+
+        if (is_object($record)) {
+            return $record::class;
+        }
+
+        return $this->getGroup()?->getRecordClass();
     }
 
     public function getLabel(): string|Markup|null

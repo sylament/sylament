@@ -59,7 +59,8 @@ note in [Semantics](#semantics).
 | `getMountedActionSchemaName()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | skipped | — | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
 | [`getDefaultActionUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
 | [`getDefaultActionSuccessRedirectUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionFailureRedirectUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
-| The other eight `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | `panels` package | [detail](#the-panel-level-default-hooks-are-not-on-the-contract) |
+| [`getDefaultActionSchemaResolver(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecord(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordTitle(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordClass(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordLabel(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [detail](#the-panel-level-default-hooks-are-not-on-the-contract) · [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
+| The three remaining `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | M4 · 8 (relationship), the authorization epic | [detail](#the-panel-level-default-hooks-are-not-on-the-contract) |
 
 ## Details
 
@@ -99,39 +100,42 @@ Filament's contract declares eleven `getDefaultAction*` hooks
 `getDefaultActionSuccessRedirectUrl`, `getDefaultActionFailureRedirectUrl`,
 `getDefaultActionRelationship`, `getDefaultActionSchemaResolver`,
 `getDefaultActionAuthorizationResponse`, and
-`getDefaultActionIndividualRecordAuthorizationResponseResolver`). The first of
-them to land is `getDefaultActionUrl(Action $action): ?string`, which the
-[prebuilt `CreateAction`/`EditAction`](create-action.md) need to render as links
-to a resource's pages; it is declared on the interface and defaulted to `null`
-on the trait, so every existing host gains it for free. The redirect pair
-`getDefaultActionSuccessRedirectUrl` / `getDefaultActionFailureRedirectUrl`
-followed the same way, with [`CanRedirect`](action.md) — the concern that reads
-them — and the same `null` defaults; the page-side overrides that make them do
-something (a delete on a record page sending the user back to the index) are
-[M4 · 2](../roadmap.md)'s. The remaining eight are
-still dropped. In Filament's
+`getDefaultActionIndividualRecordAuthorizationResponseResolver`). In Filament's
 own trait every one of them is a stub returning `null` — they exist purely as
 override points so a **panel resource or relation-manager page** can supply
-implicit record/model/URL/redirect/relationship/schema-resolver/authorization
-defaults for every action it mounts, without each action call site repeating
-them. Sylament's actions package ships
-[`InteractsWithRecord`](../../../packages/actions/src/Concerns/InteractsWithRecord.php)
-(`record()` / `getRecord()`), but that is an explicit per-`Action` setter, not
-a host-resolved default, and the `panels` package — the layer that would
-supply page-level defaults — is `todo` (per [the top-level progress
-table](../README.md#packages)). Dropping the whole cluster is consistent with
-that: no host exists yet that could implement it meaningfully. **Blocked** on
-the `panels` package landing. `getDefaultActionRelationship` additionally wanted
-a Doctrine equivalent of Eloquent's `Relation`, and that half is answered:
-[`AssociationTarget`](../schemas/association-reader.md) carries a described
-association, so only the host remains.
+implicit record / class / URL / redirect / relationship / schema-resolver /
+authorization defaults for every action it mounts, without each action call site
+repeating them.
 
-**Next step:** each of the eight lands with the `Action`-side concern that reads
-it, the way the URL hook landed with the prebuilt actions and the redirect pair
-with `CanRedirect` —
-`getDefaultActionSchemaResolver` with
-[modal-mode `CreateAction`/`EditAction`](create-action.md#modal-mode-is-a-fail-fast-stub-not-a-persistence-body),
-`getDefaultActionRecordTitle` with `getRecordTitle()`.
+**Eight are declared here now**, each landed the same way: on the interface and
+defaulted to `null` on
+[the trait](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported),
+so every existing host gains it for free and no host needs an edit.
+`getDefaultActionUrl(Action $action): ?string` went first, for the
+[prebuilt `CreateAction`/`EditAction`](create-action.md) rendering as links to a
+resource's pages; the redirect pair followed with
+[`CanRedirect`](action.md); and the record cluster —
+`getDefaultActionSchemaResolver(Action $action): ?Closure` plus
+`getDefaultActionRecord()`, `getDefaultActionRecordTitle()`,
+`getDefaultActionRecordClass()` and `getDefaultActionRecordLabel()` — landed with
+the [record chain on `Action`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host).
+The last two carry `renames.md` rows: `getDefaultActionModel` and
+`getDefaultActionModelLabel` speak the
+[record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record)
+here. The other three already spoke "record" and carried over unchanged.
+
+The three that stay out are the ones with no consumer on this side. Sylament's
+actions package ships
+[`InteractsWithRecord`](../../../packages/actions/src/Concerns/InteractsWithRecord.php),
+so the record half is answered; what is left is
+`getDefaultActionRelationship` — M4 · 8's, since its return type is a Doctrine
+design that epic owns, even though the value half already exists as
+[`AssociationTarget`](../schemas/association-reader.md) — and the two
+authorization hooks, which wait on the parked authorization epic alongside
+`CanBeAuthorized`.
+
+**Next step:** each of the three lands with the `Action`-side concern that reads
+it, the way the eight before them did.
 
 ## Semantics
 

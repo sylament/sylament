@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Unit;
 
+use DateTimeImmutable;
 use LogicException;
 use stdClass;
 use Sylament\Actions\Action;
@@ -343,4 +344,23 @@ it('propagates the grouped trigger template default to nested groups', function 
 
     expect($sub->getTriggerTemplate())->toBe(ActionGroup::GROUPED_TEMPLATE)
         ->and($sub->iconButton()->getTriggerTemplate())->toBe(ActionGroup::ICON_BUTTON_TEMPLATE);
+});
+
+it('answers a record class from its own class, then its record, then its parent group', function (): void {
+    $group = ActionGroup::make();
+
+    expect($group->getRecordClass())->toBeNull()
+        ->and($group->record(new stdClass())->getRecordClass())->toBe(stdClass::class)
+        ->and($group->recordClass(DateTimeImmutable::class)->getRecordClass())->toBe(DateTimeImmutable::class);
+
+    $nested = ActionGroup::make();
+    ActionGroup::make([$nested])->recordClass(DateTimeImmutable::class);
+
+    expect($nested->getRecordClass())->toBe(DateTimeImmutable::class);
+});
+
+it('drops a group record that is not of the group record class', function (): void {
+    $group = ActionGroup::make()->record(new stdClass())->recordClass(DateTimeImmutable::class);
+
+    expect($group->getRecord())->toBeNull();
 });

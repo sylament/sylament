@@ -6,12 +6,14 @@ namespace Sylament\Actions\Tests\Unit;
 
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
+use stdClass;
 use Sylament\Actions\Action;
 use Sylament\Actions\Enums\ActionStatus;
 use Sylament\Actions\Tests\Fixtures\Components\ItemActionsContainer;
 use Sylament\Actions\Tests\Fixtures\Concerns\BothContractsHostFixture;
 use Sylament\Actions\Tests\Fixtures\DefaultNamedActionFixture;
 use Sylament\Actions\Tests\Fixtures\StateFieldFixture;
+use Sylament\Actions\Tests\Fixtures\Twig\Components\DefaultRecordHost;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Schema;
@@ -488,4 +490,35 @@ it('leaves a QueryBuilder-typed parameter to the parent resolution on an action 
 it('runs a detached action that deselects after completion without reaching for a host', function (): void {
     expect(Action::make('archive')->deselectRecordsAfterCompletion()->action(fn (): string => 'ran')->call())
         ->toBe('ran');
+});
+
+it('walks the record chain to its schema container and component before the host', function (): void {
+    $schema = Schema::make()->record($record = new stdClass());
+    $action = Action::make('x')->schemaContainer($schema);
+
+    expect($action->getRecord())->toBe($record)
+        ->and($action->getRecordClass())->toBe(stdClass::class);
+});
+
+it('injects the record class into a closure as recordClass', function (): void {
+    $action = Action::make('x')->recordClass(stdClass::class);
+
+    expect($action->evaluate(fn (string $recordClass): string => $recordClass))->toBe(stdClass::class);
+});
+
+it('keeps a host-default record out of its context', function (): void {
+    $host = new DefaultRecordHost();
+    $action = Action::make('x')->liveComponent($host);
+
+    expect($action->getRecord())->toBe($host->record)
+        ->and($action->getContext())->not->toHaveKey('recordKey');
+});
+
+it('clears its record after the run only when it says so', function (): void {
+    $action = Action::make('x')->record($record = new stdClass());
+
+    $action->clearRecordAfter();
+
+    expect($action->getRecord())->toBe($record)
+        ->and($action->shouldClearRecordAfter())->toBeFalse();
 });

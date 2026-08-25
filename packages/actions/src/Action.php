@@ -69,6 +69,7 @@ use Sylament\Tables\Contracts\InteractsWithTable;
 use Twig\Markup;
 
 use function Sylament\Support\filled;
+use function Sylament\Support\get_record_label;
 
 class Action extends ViewComponent
 {
@@ -411,9 +412,99 @@ class Action extends ViewComponent
         return $this->parentAction;
     }
 
-    public function getRecord(): mixed
+    public function getRecord(bool $withDefault = true): mixed
     {
-        return $this->evaluate($this->record) ?? $this->getGroup()?->getRecord();
+        $record = $this->ensureCorrectRecordType($this->evaluate($this->record));
+
+        if ($record !== null) {
+            return $record;
+        }
+
+        $record = $this->getGroup()?->getRecord()
+            ?? $this->getSchemaContainer()?->getRecord()
+            ?? $this->getSchemaComponent()?->getRecord();
+
+        if ($record !== null) {
+            return $this->ensureCorrectRecordType($record);
+        }
+
+        if (! $withDefault) {
+            return null;
+        }
+
+        return $this->ensureCorrectRecordType($this->getLiveComponentOrNull()?->getDefaultActionRecord($this));
+    }
+
+    /**
+     * @return class-string|null
+     */
+    public function getRecordClass(bool $withDefault = true): ?string
+    {
+        $class = $this->getCustomRecordClass()
+            ?? $this->getTable()?->getRecordClass();
+
+        if ($class !== null) {
+            return $class;
+        }
+
+        $record = $this->getRecord($withDefault);
+
+        if (is_object($record)) {
+            return $record::class;
+        }
+
+        $class = $this->getGroup()?->getRecordClass()
+            ?? $this->getSchemaContainer()?->getRecordClass()
+            ?? $this->getSchemaComponent()?->getRecordClass();
+
+        if ($class !== null || ! $withDefault) {
+            return $class;
+        }
+
+        return $this->getLiveComponentOrNull()?->getDefaultActionRecordClass($this);
+    }
+
+    public function getRecordLabel(): ?string
+    {
+        $label = $this->getCustomRecordLabel();
+
+        if (filled($label)) {
+            return $label;
+        }
+
+        $class = $this->getRecordClass();
+        $host = $this->getLiveComponentOrNull();
+
+        if ($class === null) {
+            return $host?->getDefaultActionRecordLabel($this);
+        }
+
+        if ($class === $host?->getDefaultActionRecordClass($this)) {
+            return $host->getDefaultActionRecordLabel($this) ?? get_record_label($class);
+        }
+
+        return get_record_label($class);
+    }
+
+    public function getRecordTitle(?object $record = null): ?string
+    {
+        return $this->getCustomRecordTitle($record)
+            ?? $this->getLiveComponentOrNull()?->getDefaultActionRecordTitle($this)
+            ?? $this->getRecordLabel();
+    }
+
+    public function shouldClearRecordAfter(): bool
+    {
+        return false;
+    }
+
+    public function clearRecordAfter(): void
+    {
+        if (! $this->shouldClearRecordAfter()) {
+            return;
+        }
+
+        $this->record(null);
     }
 
     /**
@@ -423,7 +514,7 @@ class Action extends ViewComponent
     {
         $context = [];
 
-        if (filled($recordKey = $this->resolveRecordKey($this->getRecord()))) {
+        if (filled($recordKey = $this->resolveRecordKey($this->getRecord(withDefault: false)))) {
             $context['recordKey'] = $recordKey;
         }
 
@@ -455,6 +546,7 @@ class Action extends ViewComponent
     {
         return match ($parameterName) {
             'record' => ClosureParameter::make($this->getRecord()),
+            'recordClass' => ClosureParameter::make($this->getRecordClass()),
             'arguments' => ClosureParameter::make($this->getArguments()),
             'data' => ClosureParameter::make($this->getData()),
             'liveComponent' => ClosureParameter::make($this->getLiveComponent()),

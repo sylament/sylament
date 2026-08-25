@@ -77,7 +77,7 @@ permanent note in [Divergences](#divergences).
 | `HasDropdown` | [`Concerns/HasDropdown.php`](../../../vendor/filament/actions/src/Concerns/HasDropdown.php) | done | — | [diverges](#dropdownwidth-is-a-css-string-and-dropdownautoplacement-is-deferred) |
 | Visibility composition (`isHidden()` group-iteration) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`isHidden()`/`resolveIsHidden()`) | done | — | [diverges](#no-ishiddeningroup-or-visibility-caching) |
 | Context propagation to children (`liveComponent()`, `getRecord()` fallback, default-template push onto `Action` children) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`liveComponent()`/`getActions()`) | done | — | [diverges](#livecomponent-propagates-eagerly-unlike-filaments-lazy-getgroup-fallback), [diverges](#getrecord-is-duplicated-onto-action-and-actiongroup-to-satisfy-phpstan), [diverges](#getactions-always-pushes-a-concrete-default-template-never-null) |
-| Closure dependency resolution (`resolveDefaultClosureDependencyForEvaluationByName()` / `…ByType()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | in progress | tables (`table`), the Action→schema record hop | By name: `record`, `liveComponent`, `schema`, `schemaComponent`/`component`, `schemaGet`/`get`, `schemaComponentState`/`state`, `schemaState` — Filament's `model`, `mountedActions` and `table` are unported, and it has no `set` arm either (upstream gives the group `get` only). By type: `Get::class`, which [diverges](action.md#getset-resolve-by-type-as-well-as-by-name) — Filament resolves nothing by type here but the record. The record arm waits on the same `getRecord()` schema walk as `Action`'s |
+| Closure dependency resolution (`resolveDefaultClosureDependencyForEvaluationByName()` / `…ByType()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) | in progress | tables (`table`) | By name: `record`, `liveComponent`, `schema`, `schemaComponent`/`component`, `schemaGet`/`get`, `schemaComponentState`/`state`, `schemaState` — Filament's `model`, `mountedActions` and `table` are unported, and it has no `set` arm either (upstream gives the group `get` only). By type: `Get::class`, which [diverges](action.md#getset-resolve-by-type-as-well-as-by-name) — Filament resolves nothing by type here but the record. `Action` has since gained the `recordClass` arm Filament spells `model`; the group is left without one deliberately, matching upstream's own group subset, and the by-type record arm stays out for [the reason it does on `Action`](action.md#resolvedefaultclosuredependencyforevaluationbytype-carries-only-the-added-getset-arms) |
 | Trigger-template-default propagation to nested groups (`defaultTriggerTemplate()`) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`getActions()`, `defaultTriggerView()`) | done | — | [diverges](#the-child-template-split-keys-off-hasdropdown-where-filament-keys-off-isbuttongroup) |
 | Grouped item template | [`components/dropdown/list/item.blade.php`](../../../vendor/filament/support/resources/views/components/dropdown/list/item.blade.php) | done | — | - |
 | Grouped **trigger** template ([`action-group/GroupedTrigger.html.twig`](../../../packages/actions/templates/partials/ActionGroup/GroupedTrigger.html.twig)) | [`ActionGroup.php`](../../../vendor/filament/actions/src/ActionGroup.php) (`toGroupedTriggerHtml()`) | in progress | badge support | [detail](#the-grouped-trigger-drops-the-badge-and-filaments-default-ellipsis-icon) |
@@ -504,15 +504,31 @@ for a class that composes it standalone (the `InteractsWithRecordFixture` test
 fixture). Both `Action` and `ActionGroup` compose `BelongsToGroup` alongside
 `InteractsWithRecord`, so PHPStan (level max) proves that guard always
 evaluates to `true` in either class's context — `function.alreadyNarrowedType`.
-Rather than suppress it, both classes override `getRecord()` directly with the
-same one-line, unguarded body (`$this->evaluate($this->record) ??
-$this->getGroup()?->getRecord()`), which is what the guarded trait method
-reduces to for a class that always has `getGroup()`. The trait's own guarded
+Rather than suppress it, both classes override `getRecord()` directly, which is
+what the guarded trait method reduces to for a class that always has
+`getGroup()`. On `ActionGroup` that is still one line
+(`$this->ensureCorrectRecordType($this->evaluate($this->record)) ??
+$this->getGroup()?->getRecord()`); the `ensureCorrectRecordType()` call is part
+of the equivalence rather than an addition to it — the trait runs the same guard,
+so a group carrying `->recordClass(X::class)` drops an ambient record of another
+class exactly as the trait would. `Action`'s override has since grown the
+[full chain](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
+and is no longer a restatement of the trait at all, which is the same split
+Filament gets from gating that chain on `$this instanceof Action`: a group never
+reaches past its own group in either codebase. The trait's own guarded
 version is unreached by `src/` code today and stays solely for a future class
 that mixes in `InteractsWithRecord` without `BelongsToGroup`. Reversible only
 by relaxing the guard's shape (e.g. an interface `BelongsToGroup` doesn't
 currently pair with) enough that PHPStan can no longer prove it either way —
 not attempted here since it would add a type purely to dodge the checker.
+
+`getRecordClass()` splits the same three ways, and there the group's body is a
+real third variant rather than a restatement: the trait stops at the resolved
+record's class, `ActionGroup` adds the parent-group hop after it, and `Action`
+carries the whole walk. Covered by
+[`ActionGroupTest`](../../../packages/actions/tests/Unit/ActionGroupTest.php) —
+the custom class, the record's class, the nested-group hop, and the type guard
+dropping a mismatched group record.
 
 ### `getClone()` rebuilds the flat map from the cloned members rather than cloning it separately
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions\Tests\Fixtures;
 
 use Sylament\Actions\SylamentActionsBundle;
+use Sylament\Notifications\SylamentNotificationsBundle;
 use Sylament\Schemas\SylamentSchemasBundle;
 use Sylament\Support\SylamentSupportBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
@@ -33,6 +34,7 @@ class Kernel extends BaseKernel
             new LiveComponentBundle(),
 
             new SylamentActionsBundle(),
+            new SylamentNotificationsBundle(),
             new SylamentSchemasBundle(),
             new SylamentSupportBundle(),
         ];
@@ -48,6 +50,12 @@ class Kernel extends BaseKernel
         $container->extension('framework', [
             'secret' => 'SECRET',
             'test' => true,
+            // `SessionNotifications` drains the flash bag through
+            // `RequestStack::getSession()`, which throws on a sessionless framework, so
+            // the rig configures the session every consuming application already has.
+            'session' => [
+                'storage_factory_id' => 'session.storage.factory.mock_file',
+            ],
         ]);
 
         $container->extension('ux_icons', [
@@ -68,11 +76,17 @@ class Kernel extends BaseKernel
             'defaults' => [],
         ]);
 
+        $container->import(__DIR__ . '/services_doctrine.php');
+
         $container->services()
             ->defaults()
                 ->autowire()
                 ->autoconfigure()
             ->load('Sylament\\Actions\\Tests\\Fixtures\\', __DIR__ . '/*')
-                ->exclude([__DIR__ . '/Kernel.php']);
+                ->exclude([
+                    __DIR__ . '/Kernel.php',
+                    __DIR__ . '/Doctrine/Entity',
+                    __DIR__ . '/services_doctrine.php',
+                ]);
     }
 }

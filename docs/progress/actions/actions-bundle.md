@@ -84,7 +84,15 @@ That is the shape
 [support's](../support/support-bundle.md#asset-registration) and
 [notifications'](../notifications/notifications-bundle.md#asset-registration)
 identical rows still want, and it is written once here to be copied — both point
-back at it. The unported
+back at it. It also covers the Doctrine rig the suite grew for the record
+actions —
+[`tests/Fixtures/services_doctrine.php`](../../../packages/actions/tests/Fixtures/services_doctrine.php)
+registering an in-memory SQLite `EntityManagerInterface` and the single-manager
+[`FixtureManagerRegistry`](../../../packages/actions/tests/Fixtures/Doctrine/FixtureManagerRegistry.php)
+behind `ManagerRegistry` — beside `SylamentNotificationsBundle` and a mock-file
+session on the fixture Kernel, because a record action's write body persists
+through the registry and sends a titled toast, and `Notification::send()` throws
+on an instance the container did not build. The unported
 responsibilities have no coverage because they have no code.
 
 ## Details

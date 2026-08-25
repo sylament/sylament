@@ -26,9 +26,9 @@ stops mid-M2, M1 still demos on its own.
 
 ## Now
 
-**M3 · 9 — Small fields and the shipped-field sweep.** M2 closed with
-[M2 · 4](#m2--mini-admin-panel) (2026-08-17), and the next four milestones were
-planned the same day — breadth by layer, in dependency order:
+**M4 · 8 — Relation-scoped tables and relationship actions** (in flight). M2
+closed with [M2 · 4](#m2--mini-admin-panel) (2026-08-17), and the next four
+milestones were planned the same day — breadth by layer, in dependency order:
 [M3 forms widening](#m3--forms-widening), [M4 tables widening](#m4--tables-widening),
 [M5 view page + infolists](#m5--view-page--infolists), [M6 panel depth](#m6--panel-depth).
 Each is horizontal where M1 and M2 were vertical, so each carries a **stop
@@ -75,10 +75,15 @@ and opened and closed on 2026-08-25, taking the modal-mode `CreateAction`/
 five host hooks with the resource pages answering them, the record chain on
 `Action`, and the two schemas seams (`getData($state)`, `getStateFromRecord()`)
 with it — plus three fidelity fixes it found on the way (the `4xl` form modal,
-per-request header actions on a resource page, list-row record titles). M3 · 9
-is next and closes that milestone against its stop line: `TagsInput`,
-`KeyValue`, and the sweep over every **in progress** row the seven shipped
-fields still carry; the cursor then moves to [M4 · 3](#m4--tables-widening).
+per-request header actions on a resource page, list-row record titles). M4 · 8
+runs ahead of M3 · 9 by decision — the same call M4 · 1 and M4 · 2 made — and,
+for the first time, out of M4's own order (rows 3–7 stay todo): it takes
+`Table::relationship()`, the six relationship actions and `CreateAction`'s
+auto-attach arm, which M6 · 1's relation managers consume and which the tables
+showcase has pointed at since M2. M3 · 9 is next and closes that milestone
+against its stop line: `TagsInput`, `KeyValue`, and the sweep over every
+**in progress** row the seven shipped fields still carry; the cursor then moves
+to [M4 · 3](#m4--tables-widening).
 
 ## Pulled forward
 
@@ -335,7 +340,7 @@ column catalog — and a sections table scoped to one article._
 | 5 | Column manager and per-column search | [tables](tables/README.md), **demo** | `toggleable()`/`toggledHiddenByDefault()` with the column-manager dropdown (`columnManagerColumns()`), and `searchable(isIndividual: true)` — the per-column search Beyond has carried since [11](#pulled-forward) — with its own indicator and the query-string state from epic 3. | todo |
 | 6 | Grouping and summaries | [tables](tables/README.md), **demo** | `groups()`/`defaultGroup()`/`Group` (collapsible groups, titles and descriptions, `date()` groups, `orderQueryUsing`), the grouping selector in the toolbar, and `summarize()` with `Sum`/`Average`/`Count`/`Range`/`Values` over the aggregate query lane [20](#pulled-forward) built, rendered in the footer per page and per group. | todo |
 | 7 | Layout columns | [tables](tables/README.md), **demo** | `Split`/`Stack`/`Panel`/`Grid` under `Columns\Layout` and `contentGrid()` — the card-style record layouts — with `collapsible()` panels. | todo |
-| 8 | Relation-scoped tables and relationship actions | [tables](tables/README.md), [actions](actions/README.md), [schemas](schemas/README.md), **demo** | `Table::relationship()` — the whole query is one owner record's association, built from Doctrine metadata through the association reader (Filament's `InteractsWithRelationshipTable`; the tables showcase footnote has pointed here since M2), with `AttachAction`/`DetachAction`/`DetachBulkAction` for a many-to-many and `AssociateAction`/`DissociateAction`/`DissociateBulkAction` for a one-to-many inverse; `AttachAction`'s record select rides on M3 · 4. Consumed by M6 · 1's relation managers; demoable now as an article-sections card. | todo |
+| 8 | Relation-scoped tables and relationship actions | [tables](tables/README.md), [actions](actions/README.md), [schemas](schemas/README.md), **demo** | `Table::relationship()` — the whole query is one owner record's association, built from Doctrine metadata through the association reader (Filament's `InteractsWithRelationshipTable`; the tables showcase footnote has pointed here since M2), with `AttachAction`/`DetachAction`/`DetachBulkAction` for a many-to-many and `AssociateAction`/`DissociateAction`/`DissociateBulkAction` for a one-to-many inverse; `AttachAction`'s record select rides on M3 · 4. Consumed by M6 · 1's relation managers; demoable now as three showcase cards — sections of one article, topics of one article (attach/detach), articles of one author (associate/dissociate). | in progress |
 
 **Out of scope:** import/export (`ImportAction`/`ExportAction` — Messenger-backed
 jobs, [Beyond](#beyond)); the soft-delete actions (`RestoreAction`/

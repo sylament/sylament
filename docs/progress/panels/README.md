@@ -2661,11 +2661,17 @@ that ships a broken page.
 
 ### Header actions are read off the page at render, not cached at boot
 
-Filament caches header actions into the page's action registry at boot:
-`cacheInteractsWithHeaderActions()` is a Livewire trait hook that walks
-`getHeaderActions()`, stamps `->livewire($this)` on each group, sets a dropdown
-placement, and registers every action through `cacheAction()` — so the mounted
-name resolves out of that cache on the way back in. UX LiveComponent has no
+Filament caches header actions into the page's action registry at boot, through
+three hops: Livewire's `bootedInteractsWithActions()`
+(`vendor/filament/actions/src/Concerns/InteractsWithActions.php:118`) calls
+`cacheTraitActions()` (`:487`), which `class_uses_recursive()`-walks the class
+for every `cache<TraitBasename>` method and so reaches
+`cacheInteractsWithHeaderActions()`
+(`vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php:18`).
+That last one walks `getHeaderActions()`, stamps `->livewire($this)` on each
+group, sets a dropdown placement, and registers every action through
+`cacheAction()` — so the mounted name resolves out of that cache on the way back
+in. UX LiveComponent has no
 `booted*()`/`cache*()` trait hook to hang that on, so
 [`Resources\Pages\Page`](../../../packages/panels/src/Resources/Pages/Page.php)
 does the same work lazily instead. The template still calls

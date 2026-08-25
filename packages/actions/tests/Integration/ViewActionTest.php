@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Actions\Tests\Integration;
 
 use Doctrine\ORM\EntityManagerInterface;
+use RuntimeException;
 use Sylament\Actions\Action;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Note;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\RecordWriteHost;
@@ -36,13 +37,14 @@ function viewedNote(string $title, ?string $body = null): Note
 
 /**
  * The one `<input>` a schema field rendered for `$name`, so a case can read its
- * attributes without matching the word anywhere else on the page.
+ * attributes without matching the word anywhere else on the page. A miss throws
+ * rather than answering `''`, which every `not->toContain()` would pass.
  */
 function renderedInput(string $html, string $name): string
 {
     preg_match('/<input[^>]+name="' . $name . '"[^>]*>/', $html, $matches);
 
-    return $matches[0] ?? '';
+    return $matches[0] ?? throw new RuntimeException("The render carries no input named [{$name}].");
 }
 
 it('fills the modal from the record and disables the schema', function (): void {

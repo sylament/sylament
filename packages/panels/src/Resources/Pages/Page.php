@@ -93,13 +93,6 @@ abstract class Page extends BasePage implements InteractsWithActions
         return [];
     }
 
-    /**
-     * The trait answers a cached action or a `{name}Action()` method, and the
-     * request that calls a mounted action renders no header — so a header action
-     * the page declares inline would resolve at mount and be gone by the call.
-     * Reading the list once per request re-caches it, which is what Filament's
-     * `bootedInteractsWithHeaderActions()` boot hook does there.
-     */
     public function getAction(string $name): ?Action
     {
         $action = $this->getCachedOrDeclaredAction($name);

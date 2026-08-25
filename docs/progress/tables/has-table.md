@@ -92,7 +92,7 @@ Reference — the Filament source this is diffed against:
 - [`tables/src/Concerns/HasBulkActions.php`](../../../vendor/filament/tables/src/Concerns/HasBulkActions.php)
   — the host-side selection state, its two resolution seams and the key enumeration
 - [`tables/src/Contracts/HasTable.php`](../../../vendor/filament/tables/src/Contracts/HasTable.php)
-  — the 46-method interface this reduces to seventeen
+  — the 46-method interface this reduces to eighteen
 
 ## Surface
 
@@ -110,8 +110,8 @@ instead.
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
 | [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-seven-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#the-missing-data-source-error-does-not-name-relationship) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
-| [`InteractsWithTable` — seventeen methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-seventeen-methods-of-filaments-forty-six) |
-| [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | — |
+| [`InteractsWithTable` — eighteen methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-eighteen-methods-of-filaments-forty-six) |
+| [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | on the contract since M4 · 2 — actions' `callMountedAction()` calls it in a `finally` after any mounted action runs on a table host. [detail](#the-contract-is-eighteen-methods-of-filaments-forty-six) |
 | [`getTableHostId()` + the `$tableHostId` `LiveProp`](../../../packages/tables/src/Concerns/HasTable.php) | [`Livewire\Component::getId()`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-host-id-is-a-random-liveprop-rather-than-a-framework-component-id) |
 | [`getTableRecordKey(object\|array $record): string`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecordKey()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#object-records-are-keyed-by-a-readable-id-rather-than-an-eloquent-key) |
 | [`getTableRecord(?string $key)` with its `resolveQueryTableRecord()` query arm](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecord()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | [diverges](#gettablerecord-reads-fresh-when-the-render-cache-is-cold) · [diverges](#record-resolution-applies-no-limit-1-where-filaments-find-does) |
@@ -623,7 +623,7 @@ Of the search **indicators**, the global one ships —
 term, labelled `Search: <term>` (Filament's
 `filament-tables::table.fields.search.indicator` at its English value,
 [hardcoded like the rest of the copy](table.md#the-empty-state-heading-hardcodes-no-records)),
-and is the [tenth contract method](#the-contract-is-seventeen-methods-of-filaments-forty-six).
+and is the [tenth contract method](#the-contract-is-eighteen-methods-of-filaments-forty-six).
 [`Table::getFilterIndicators()`](indicator.md#removal-is-structured-not-a-click-handler-string)
 pairs it with the `resetTableSearch` live action and puts it first in
 [the row](table.md#the-chip-is-one-badge-and-the-delete-affordance-is-supports),
@@ -635,11 +635,11 @@ of the filters' own chips. On the records lane none of this runs:
 the `search` injection hands the closure a string and the closure decides what
 matching means.
 
-### The contract is seventeen methods of Filament's forty-six
+### The contract is eighteen methods of Filament's forty-six
 
 `Contracts\HasTable` declares 46 methods — the full host API a Filament table,
 column, filter, action, or test helper may call back into. Sylament's
-`InteractsWithTable` declares the seventeen the shipped surface actually calls:
+`InteractsWithTable` declares the eighteen the shipped surface actually calls:
 `getTable()` (the template and the column layer need the table from the host),
 `getTableRecords()` (which [`Table::getRecords()`](table.md#getrecords-delegates-to-the-host-and-fetches-nothing)
 delegates to), and three that arrived with the record-action lane (M1 · 6) —
@@ -721,6 +721,15 @@ what this rule forbids. `getAllTableRecordsCount()` stayed off too, although the
 selection [now calls it](#the-selection-is-server-canonical-and-re-derived-on-every-read)
 for the ceiling a total-less paginator cannot give: that call is trait-internal,
 and the template reads the selection count rather than the record count.
+
+M4 · 2 added the eighteenth, `flushCachedTableRecords()`, a **cross-package** read
+of the same shape as the selection's three: actions' `callMountedAction()` calls
+it in a `finally` on any host that `instanceof`s this interface, so a table never
+re-renders from the page of records a mounted action's write just invalidated.
+It is the first member that is already public on `HasTable` before it is
+declared here — the trait has cached and flushed since the query lane — so
+declaring it cost every trait-using host nothing and `BareTableHost` one more
+stub.
 
 The contract grows a method at a time as the
 features that need it land — a host must be able to satisfy it, so declaring the
@@ -848,7 +857,7 @@ exactly as Filament's does; the alternative was a ceiling-less banner on a table
 that can perfectly well be counted.
 
 So the `?int` is contract slack rather than a case this trait reaches: it is
-typed nullable because [the contract](#the-contract-is-seventeen-methods-of-filaments-forty-six)
+typed nullable because [the contract](#the-contract-is-eighteen-methods-of-filaments-forty-six)
 lets a host satisfy it without this trait, and because the chrome has to render
 *something* for a host that answers null — the banner falls back to counting the
 page, and the select-all-across-pages link, which needs a ceiling, does not
@@ -1940,7 +1949,7 @@ fall-through counts it.
 Nothing in the package reads the method yet. Filament's two callers are its
 `assertCountTableRecords()` test helper and panels' `ExposesTableToWidgets`,
 which hands the number to a page's widgets; neither is ported. So it stays off
-the [contract](#the-contract-is-seventeen-methods-of-filaments-forty-six), which grows
+the [contract](#the-contract-is-eighteen-methods-of-filaments-forty-six), which grows
 only for members a shipped consumer calls, and it ships whole rather than in the
 half the closure lane could have answered on its own.
 

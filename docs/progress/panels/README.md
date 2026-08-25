@@ -489,8 +489,10 @@ What is ported, by cluster:
 
 Deferred, all todo: authorization (`canAccess()` and the whole `HasAuthorization`
 cluster), global search, widgets, sub-navigation, clusters, tenancy,
-nested/parent resources, resource configurations, `getRelations()`, and
-`configureTable()`'s seeding of table-level labels. The title-case **toggle** is
+nested/parent resources, resource configurations, and `getRelations()`.
+`configureTable()`'s seeding of table-level labels landed with the tables label
+surface — on [`ListRecords::table()`](#the-list-pages-table-is-stamped-query-first-and-resource-last),
+the instance seam that stands in for Filament's static one. The title-case **toggle** is
 unported with them — Filament's `$hasTitleCaseModelLabel` (default `true`) with
 `hasTitleCaseModelLabel()` and `titleCaseModelLabel(bool)` — so
 `getTitleCaseRecordLabel()` title-cases unconditionally and a subclass declaring
@@ -757,8 +759,8 @@ trait's own package, not here.
   heading with no table and no error anywhere. It repeats the generic partial's
   [three-element page skeleton](#routing) rather than extending it, so the
   rhythm rules land on the same three classes here.
-- `table(Table $table): Table` stamps the resource's query and then hands the
-  table to the resource —
+- `table(Table $table): Table` stamps the resource's query and its record
+  labels and title attribute, then hands the table to the resource —
   [query first, resource last](#the-list-pages-table-is-stamped-query-first-and-resource-last).
 - `getTitle()` is `static::$title ?? $resource->getTitleCasePluralRecordLabel()`,
   Filament verbatim with the static hop replaced by the instance one. It runs
@@ -791,19 +793,19 @@ resource's record **class**, which is what a page showing no single record can
 seed a mounted schema with — the row actions get their record from the table
 frame instead.
 
-`getDefaultActionRecordTitle(Action)` is the page-side stand-in for a hop
-Filament puts on the table. There, `Table::getRecordTitle()` answers a row
-action's title; tables here ships no label/title surface yet
-([deferred](../actions/action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)),
-so a `ViewAction` on a row would read *"View note"* where Filament reads *"View
-Alpha"*. The list page answers instead: when the action carries an object record
-and the resource declares a `$recordTitleAttribute`, it returns
-`Resource::getRecordTitle($record)`; otherwise `null`, which hands
-`Action::getRecordTitle()` back its record-label fallback — the same string a
-resource naming no title attribute would have produced anyway. The edit page's
-override is the sibling shape and reads its *own* record instead, since a record
-page has one. When tables grows the hop this becomes a duplicate answer rather
-than a wrong one, and the deletion is one method.
+`getDefaultActionRecordTitle(Action)` answers a mounted action's title for the
+actions the page itself owns. A **row** action no longer reaches it: `table()`
+pushes the resource's `recordLabel()`, `pluralRecordLabel()` and
+`recordTitleAttribute()` onto the table — Filament's `Resource::configureTable()`
+— and `Action::getRecordTitle()` hops through the table before the host hook
+([semantics](../actions/action.md#a-table-bound-action-titles-and-labels-through-its-table)),
+so a `ViewAction` on a row reads *"View Alpha"* through the table's own title
+read. The hook still serves the page's header actions, which carry no table: when
+the action holds an object record and the resource declares a
+`$recordTitleAttribute` it returns `Resource::getRecordTitle($record)`, otherwise
+`null`, handing `Action::getRecordTitle()` back its record-label fallback. The
+edit page's override is the sibling shape and reads its *own* record instead,
+since a record page has one.
 
 **Header actions.** `getHeaderActions()` returns the actions the template renders
 into the `Header` component's `actions` block — the same contract on all three
@@ -2624,17 +2626,28 @@ no-op passthrough that `makeTable()` never calls. Ours is two lines in `table()`
 ```php
 $resource = $this->getResourceInstance();
 
-return $resource->table($table->query(fn (): QueryBuilder => $resource->getRecordQuery()));
+return $resource->table($table
+    ->query(fn (): QueryBuilder => $resource->getRecordQuery())
+    ->recordLabel($resource->getRecordLabel(...))
+    ->pluralRecordLabel($resource->getPluralRecordLabel(...))
+    ->recordTitleAttribute($resource->getRecordTitleAttribute(...)));
 ```
 
-The **ordering** is what carries over: the query is stamped before the resource
-sees the table, so `Resource::table()` can override it (`->query()` again,
-`->modifyQueryUsing()`), and the resource's configuration is applied last so it
-wins. What is gone is the middle of the chain, each piece with its own reason —
-the deprecated `getTableQuery()` / `modelLabel()` / `pluralModelLabel()` seeding
-has nothing to seed (our `Table` carries no label surface), tabs and parent
-records are deferred features, and `configureTable()`'s five-value stamp is
-Filament routing resource metadata into table properties we have not ported.
+The **ordering** is what carries over: the query and the labels are stamped
+before the resource sees the table, so `Resource::table()` can override any of
+them (`->query()` again, `->modifyQueryUsing()`, `->recordLabel()`), and the
+resource's configuration is applied last so it wins. The three label setters are
+Filament's `configureTable()` stamp, arriving here rather than on `Resource`
+because ours is an instance seam and Filament's is a static one; they are passed
+as first-class callables, so the table evaluates each only if it reads it. What
+they buy is the whole [record-title chain](../actions/action.md#a-table-bound-action-titles-and-labels-through-its-table)
+for row actions — a `ViewAction`'s heading reads the record, and the empty state
+reads *"No articles"* rather than *"No records"*. What is still gone is the
+middle of the chain, each piece with its own reason — the deprecated
+`getTableQuery()` seeding is a deprecated delegate, tabs and parent records are
+deferred features, and the rest of `configureTable()`'s stamp (`recordTitle()`,
+`authorizeReorder()`) is resource metadata whose table-side surface is unported
+or, for `recordTitle()`, redundant with the attribute already stamped.
 
 The one that will be missed is **row-click defaulting**. Filament's `recordUrl`
 and `recordAction` closures make a table row clickable — falling through the

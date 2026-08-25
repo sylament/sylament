@@ -54,7 +54,7 @@ first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | [`groupedIcon('heroicons:plus-20-solid')`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#icons-are-literal-heroicon-names-with-no-alias-indirection) |
 | [Create-another (`createAnother()`, `canCreateAnother()`, `createAnotherAction()`, `getCreateAnotherAction()`, `preserveFormDataWhenCreatingAnother()`)](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-modal-arm-persists-through-the-schemas-record-class) |
 | [`shouldClearRecordAfter()`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [detail](has-actions.md#clearrecordafter-runs-at-both-of-filaments-sites) |
-| [`record(null)`](../../../packages/actions/src/CreateAction.php) (clears an inherited record in `setUp()`) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-modal-arm-persists-through-the-schemas-record-class) |
+| [`record(null)`](../../../packages/actions/src/CreateAction.php) (Filament-verbatim in `setUp()`; clears only a `configureUsing()`-bound record) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-modal-arm-persists-through-the-schemas-record-class) |
 | `forceRenderAfterCreateAnother()` / `shouldForceRenderAfterCreateAnother()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#two-create-another-members-are-not-ported) |
 | `disableCreateAnother()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#two-create-another-members-are-not-ported) |
 | `relationship()` / `getRelationship()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | todo | relation managers | [detail](#the-relationship-arm-waits-on-relation-managers) |
@@ -95,16 +95,28 @@ constraints, and hands it back to be persisted and flushed through
 
 Four things about that body are deliberate.
 
-**The re-point is a belt to the seed's brace.** The host already seeds a mounted
-action's schema with a record
+**The re-point is load-bearing, not a belt.** The host seeds a mounted action's
+schema with a record
 ([`HasActions`](has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation)),
-and on a record page that seed is a class-string rather than the page's record —
-but `$schema->record($recordClass)` in the body makes it impossible for a create
-action hosted beside an edit form to map onto the record being edited. It is one
-line and it removes a whole class of accident. `setUp()`'s `record(null)` is the
-same guard one layer out, and is meaningful for the first time now that the
-[`getDefaultActionRecord()`](has-actions.md#record-resolution-is-a-single-host-callback-not-per-source)
-host hook ships: without it an unset record would inherit a record page's own.
+and for a host-level action — one no schema component owns — that seed reads
+`getRecord(withDefault: true)`, i.e.
+[the whole chain](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
+down to the host's
+[`getDefaultActionRecord()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported).
+On a record page that last hop answers the page's **record**, so the seed is the
+very object a create modal must not write into: `$schema->record($recordClass)`
+in the body is what re-points the container at the class, and it is the only
+thing standing between a create action hosted beside an edit form and the record
+being edited.
+
+`setUp()`'s `record(null)` is Filament-verbatim and narrower than it reads. The
+property starts `null` and `getRecord()`'s fallback chain never consults it, so
+the host default is inherited with or without the line. What it clears is a
+record bound by a `configureUsing()` closure registered on `Action` or another
+ancestor: [`ComponentManager::configure()`](../support/component-manager.md)
+walks the hierarchy root-first, running each class's registrations at that
+class's position, so an ancestor's closure has already run when
+`CreateAction::setUp()` fires.
 
 **`saveRelationships()` is not ported, and nothing replaces it.** Filament needs
 a second pass because Eloquent must know the parent's key before it can save a

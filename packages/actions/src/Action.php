@@ -515,7 +515,7 @@ class Action extends ViewComponent
 
     public function getRecordTitle(?object $record = null): ?string
     {
-        $record ??= is_object($bound = $this->getRecord()) ? $bound : null;
+        $record ??= $this->getRecordObject();
 
         if ($record !== null) {
             $title = $this->getCustomRecordTitle($record);

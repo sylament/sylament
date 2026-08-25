@@ -32,7 +32,7 @@ trait CanBeMounted
     public function fillForm(array|Closure|null $data): static
     {
         $this->mountUsing(function (?Schema $schema) use ($data): void {
-            $schema?->fill($this->evaluate($data));
+            $schema?->fill($this->evaluate($data, ['form' => $schema, 'schema' => $schema]));
         });
 
         return $this;

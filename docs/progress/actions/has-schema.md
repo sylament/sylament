@@ -20,9 +20,10 @@ one addressable home to link the other from.
 
 **Status:** done — see the
 [status vocabulary](../README.md#statuses). Every ported row is **done**; the
-two unported ones (the host schema-resolver fallback and the deprecated aliases)
-are permanent omissions with their reasons recorded below. The wizard arm was
-the last outstanding row and landed with M3 · 5.
+one unported row (the deprecated aliases) is a permanent omission with its
+reason recorded below. The host schema-resolver fallback was the last
+outstanding row and landed with M4 · 2, when the hook family it calls finally
+existed to be called.
 
 Reference — the Filament source this is diffed against:
 
@@ -43,11 +44,12 @@ write-up in [Details](#details), and/or **diverges** → the note in
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
 | [`schema(array\|Closure\|null $schema)`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `schema()` | done | — | Filament-exact setter. The backing property is one member wider than the parameter — [diverges](#the-schema-property-is-one-member-wider-than-its-setter) |
-| [`getSchema(Schema $schema): ?Schema`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `getSchema()` | done | — | Its three named injections (`form` / `schema` / `infolist`, all the container being built) win over `Action`'s own `resolveDefaultClosureDependencyForEvaluationByName('schema')`, which resolves `getSchemaContainer()` — [`Invoker::call()`](../../../packages/support/src/Evaluation/Invoker.php) checks `$namedInjections` by `array_key_exists()` before it ever calls the `$resolveParameter` callback — so a `fn (Schema $schema) => [...]` passed to `schema()` receives *this* call's container, never the action's pre-existing one. [diverges](#getschema-returns-null-for-an-empty-schema-not-an-empty-schema) · [diverges](#getschema-has-no-host-schema-resolver-fallback) · [detail](#the-wizard-arm) |
+| [`getSchema(Schema $schema): ?Schema`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `getSchema()` | done | — | Its three named injections (`form` / `schema` / `infolist`, all the container being built) win over `Action`'s own `resolveDefaultClosureDependencyForEvaluationByName('schema')`, which resolves `getSchemaContainer()` — [`Invoker::call()`](../../../packages/support/src/Evaluation/Invoker.php) checks `$namedInjections` by `array_key_exists()` before it ever calls the `$resolveParameter` callback — so a `fn (Schema $schema) => [...]` passed to `schema()` receives *this* call's container, never the action's pre-existing one. [diverges](#getschema-returns-null-for-an-empty-schema-not-an-empty-schema) · [detail](#the-host-resolver-answers-only-when-the-action-declares-nothing) · [detail](#the-wizard-arm) |
 | [`disabledSchema(bool\|Closure $condition = true)` / `isSchemaDisabled()`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `disabledSchema()` / `isSchemaDisabled()` | done | — | Filament-exact, body for body. Usable only because schemas' [`CanBeDisabled`](../schemas/can-be-disabled.md) pair landed in the same epic — `getSchema()`'s disabled arm calls `Schema::disabled()`, which did not exist before it |
 | [`formWrapper(bool\|Closure\|null $condition = true)` / `hasFormWrapper()`](../../../packages/actions/src/Concerns/HasSchema.php) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `formWrapper()` / `hasFormWrapper()` | done | — | [diverges](#hasformwrapper-stays-true-for-a-wizard). Two consumers: [`CanOpenModal::getModalSubmitAction()`](../../../packages/actions/src/Concerns/CanOpenModal.php)'s `->submit(…)` / `->action(…)` branch, and [`ActionModal`](../../../packages/actions/templates/components/ActionModal/index.html.twig), which derives its `submitHandler` prop from it |
 | `getSchema()`'s wizard branch (the `isWizard()` arm and its `modifyWizardUsing()` hook) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `getSchema()` | done | — | [detail](#the-wizard-arm) · [diverges](#the-wizard-arm-drops-the-alpine-submit-handler). The sibling [`HasWizard`](../../../packages/actions/src/Concerns/HasWizard.php) concern the arm reads keeps its own row in [the package README](README.md#features) |
-| Host schema-resolver fallback (`getDefaultActionSchemaResolver()`) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `getSchema()`'s `??` arm | skipped | — | [diverges](#getschema-has-no-host-schema-resolver-fallback) |
+| Host schema-resolver fallback (`getDefaultActionSchemaResolver()`) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) `getSchema()`'s `??` arm | done | — | A status reversal: the row read **skipped** for as long as the [`getDefaultAction*` family](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported) had no method to call, and flipped when that family landed with M4 · 2 — [detail](#the-host-resolver-answers-only-when-the-action-declares-nothing) |
+| [`getMountedSchema(): ?Schema`](../../../packages/actions/src/Concerns/HasSchema.php) | — (Sylament-only; Filament's write bodies never need the modal schema, because they read the record with Eloquent's `attributesToArray()`) | done | — | The unambiguous read a write body uses — asking for `schema` by closure parameter resolves to the *containing* schema instead. [detail](#the-host-resolver-answers-only-when-the-action-declares-nothing) |
 | Deprecated aliases (`form()`, `getForm()`, `disableForm()`, `disabledForm()`, `isFormDisabled()`) | [`Concerns/HasSchema.php`](../../../vendor/filament/actions/src/Concerns/HasSchema.php) | skipped | — | The project has never ported a deprecated Filament surface; each is a one-line delegate to the current name, all five of which are ported above |
 
 This table has no [unaudited row](../README.md#an-unaudited-table-says-so), and
@@ -121,6 +123,42 @@ user error the wizard surfaces at render, where `Wizard::getSteps()` filters by
 `instanceof Step` and simply omits it. Reverses if the array arm ever narrows its
 own type by the wizard flag.
 
+### The host resolver answers only when the action declares nothing
+
+`getSchema()` resolves
+`$this->schema ?? $this->getLiveComponentOrNull()?->getDefaultActionSchemaResolver($this)`,
+Filament's own line — so a resource page supplies one form to every action it
+mounts and no action has to repeat it. Three things about the `??` are worth
+stating, because each is load-bearing and none is obvious.
+
+It fires on `null` alone, so an action that declared `schema([])` never reaches
+the host: `[]` is not null, the resolver is not consulted, and the
+`=== []` guard below returns `null` — an explicit empty declaration stays a
+*decision*, not a gap for the host to fill. The host read is the **nullable**
+accessor, the same rule [`CanRedirect`](action.md) follows: a detached action
+resolves nothing rather than throwing, and no `instanceof` re-check is written
+because `getLiveComponentOrNull()` already returns the contract carrying the
+hook. And the resolver's closure is evaluated with the three named injections
+the declaration arm already passes — `form`, `schema` and `infolist`, all bound
+to the container being built — so a page may write `fn (Schema $schema)` or
+`fn ($form)` and get the same object.
+
+`getMountedSchema()` is the other half, and it has no Filament counterpart
+because Filament does not need one. A write body — a `CreateAction`'s process
+closure, an `EditAction`'s — has to read *the modal's* schema, and asking for it
+by closure parameter does not work here: `schema` resolves through
+[`Action::resolveDefaultClosureDependencyForEvaluationByName()`](action.md) to
+`getSchemaContainer()`, which is the **containing** schema — the page's form on
+a record page, and `null` on a table row or a page header. So the read is
+explicit instead:
+`getLiveComponentOrNull()?->getMountedActionSchema(mountedAction: $this)`, which
+asks the host for the frame it built for *this* action, and answers `null` for a
+confirmation-shaped action that mounted with no schema at all, or for an action
+with no host. Filament's own bodies sidestep the problem by reading
+`$record->attributesToArray()` rather than a schema; ours read
+[`Schema::getStateFromRecord()`](../schemas/belongs-to-record.md), which needs the
+schema to read it *from*.
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
@@ -168,18 +206,6 @@ here as `$modifiedSchema === []`, and two things downstream depend on it:
 `shouldOpenModal(checkForSchemaUsing:)` stays honest — an action whose only
 declared modal content is an empty schema does not silently acquire a modal it
 has nothing to put in.
-
-### `getSchema()` has no host schema-resolver fallback
-
-Filament resolves `$this->schema ?? $this->getHasActionsLivewire()?->getDefaultActionSchemaResolver($this)`,
-so a panel page can supply an implicit schema for every action it mounts without
-each action declaring one. That hook belongs to the
-`getDefaultAction*` family, which is tracked unported in
-[has-actions.md](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported)
-— there is no method to call, so the `??` arm is not written. `$this->schema`
-alone drives resolution here; a caller wanting a dynamic default passes a
-closure to `schema()` directly. It returns with that hook family, which in turn
-waits on the `panels` package.
 
 ### The `$schema` property is one member wider than its setter
 

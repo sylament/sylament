@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Unit\Concerns;
 
+use Sylament\Actions\Action;
 use Sylament\Actions\Tests\Fixtures\Concerns\HasSchemaFixture;
+use Sylament\Actions\Tests\Fixtures\Twig\Components\DefaultRecordHost;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Text;
 use Sylament\Schemas\Schema;
@@ -92,4 +94,41 @@ it('applies disabledSchema() to a closure-returned schema too', function (): voi
         ->disabledSchema();
 
     expect($fixture->getSchema(Schema::make())->isDisabled())->toBeTrue();
+});
+
+it('falls back to the host schema resolver when the action declares none', function (): void {
+    $action = Action::make('ping')->liveComponent(new DefaultRecordHost());
+
+    $components = $action->getSchema(Schema::make())?->getComponents();
+
+    expect($components)->toHaveCount(1)
+        ->and($components[0])->toBeInstanceOf(Text::class)
+        ->and($components[0]->getContent())->toBe('resolved');
+});
+
+it('keeps an empty schema declaration null rather than reaching the host resolver', function (): void {
+    $action = Action::make('ping')
+        ->liveComponent(new DefaultRecordHost())
+        ->schema([]);
+
+    expect($action->getSchema(Schema::make()))->toBeNull();
+});
+
+it('lets the action own declaration win over the host schema resolver', function (): void {
+    $own = new Component();
+    $action = Action::make('ping')
+        ->liveComponent(new DefaultRecordHost())
+        ->schema([$own]);
+
+    expect($action->getSchema(Schema::make())->getComponents())->toBe([$own]);
+});
+
+it('answers no mounted schema without a host', function (): void {
+    expect(Action::make('ping')->getMountedSchema())->toBeNull();
+});
+
+it('answers no mounted schema while the host has nothing mounted', function (): void {
+    $action = Action::make('ping')->liveComponent(new DefaultRecordHost());
+
+    expect($action->getMountedSchema())->toBeNull();
 });

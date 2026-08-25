@@ -81,4 +81,33 @@ trait CanUseDatabaseTransactions
 
         return $manager->getConnection();
     }
+
+    /**
+     * The manager that owns a record's class — the table query's when the action
+     * has a query-lane table, else the registry's.
+     *
+     * @param object|class-string $recordOrClass
+     */
+    protected function getEntityManagerForRecord(object|string $recordOrClass): EntityManagerInterface
+    {
+        $manager = $this->getTable()?->getQueryEntityManager();
+
+        if ($manager instanceof EntityManagerInterface) {
+            return $manager;
+        }
+
+        $class = is_object($recordOrClass) ? $recordOrClass::class : $recordOrClass;
+
+        $registry = $this->managerRegistry
+            ?? throw new LogicException(sprintf('The action [%s] persists a record, which needs the container-built instance — register it as a service so the manager registry is injected.', $this->getName()));
+
+        $manager = $registry->getManagerForClass($class)
+            ?? throw new LogicException(sprintf('No Doctrine manager handles %s.', $class));
+
+        if (! $manager instanceof EntityManagerInterface) {
+            throw new LogicException(sprintf('The action [%s] needs an ORM entity manager for %s, got %s.', $this->getName(), $class, get_debug_type($manager)));
+        }
+
+        return $manager;
+    }
 }

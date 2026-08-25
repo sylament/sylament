@@ -47,7 +47,7 @@ trait HasSchema
 
     public function getSchema(Schema $schema): ?Schema
     {
-        $modifiedSchema = $this->evaluate($this->schema, [
+        $modifiedSchema = $this->evaluate($this->schema ?? $this->getLiveComponentOrNull()?->getDefaultActionSchemaResolver($this), [
             'form' => $schema,
             'schema' => $schema,
             'infolist' => $schema,
@@ -87,6 +87,15 @@ trait HasSchema
         }
 
         return $modifiedSchema;
+    }
+
+    /**
+     * The schema the host mounted for this action — null when it opened with
+     * none (a confirmation), or when there is no host.
+     */
+    public function getMountedSchema(): ?Schema
+    {
+        return $this->getLiveComponentOrNull()?->getMountedActionSchema(mountedAction: $this);
     }
 
     public function formWrapper(bool|Closure|null $condition = true): static

@@ -81,7 +81,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`CanDispatchEvent`](../../../packages/actions/src/Concerns/CanDispatchEvent.php) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | done | — | Filament-exact port of the whole non-deprecated surface. `dispatch()` / `dispatchSelf()` / `dispatchTo()` store the event and its payload and stamp `$dispatchDirection` — `false` for a plain dispatch, `'self'`, `'to'` — with only `dispatchTo()` recording a target component; both directed setters route through `dispatch()` first, so a re-`dispatch()` after them resets the direction to `false` exactly as upstream. `eventData()` sets the payload alone, and `getEvent()` / `getEventData()` evaluate at read time, so a closure sees the action's state when it is read rather than when it was declared. Composed onto `Action` only — vendor's `ActionGroup` composes it nowhere either. All five trigger templates read the getters, as an arm of their shared click precedence that emits [payload attributes rather than a click binding](#a-dispatch-action-renders-payload-attributes-not-a-click-binding). Covered by [`CanDispatchEventTest`](../../../packages/actions/tests/Unit/Concerns/CanDispatchEventTest.php) and [`ActionDispatchRenderTest`](../../../packages/actions/tests/Integration/ActionDispatchRenderTest.php) |
 | `emit()` / `emitSelf()` / `emitTo()` (deprecated) | [`Concerns/CanDispatchEvent.php`](../../../vendor/filament/actions/src/Concerns/CanDispatchEvent.php) | skipped | — | [diverges](#the-deprecated-emit-aliases-are-not-ported) |
 | [`CanFetchSelectedRecords`](../../../packages/actions/src/Concerns/CanFetchSelectedRecords.php) | [`Concerns/CanFetchSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/CanFetchSelectedRecords.php) | in progress | — | [bulk-action.md](bulk-action.md) |
-| [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | — | [detail](#cannotify-sends-titles-only-the-notification-override-setters-are-missing), [bulk-action.md](bulk-action.md) |
+| [`CanNotify`](../../../packages/actions/src/Concerns/CanNotify.php) | [`Concerns/CanNotify.php`](../../../vendor/filament/actions/src/Concerns/CanNotify.php) | in progress | — | [detail](#cannotifys-remainder-is-the-failure-body-and-the-two-keyed-off-families), [bulk-action.md](bulk-action.md) |
 | [`CanOpenModal`](../../../packages/actions/src/Concerns/CanOpenModal.php) | [`Concerns/CanOpenModal.php`](../../../vendor/filament/actions/src/Concerns/CanOpenModal.php) | in progress | — | [detail](#canopenmodals-unported-remainder), [diverges](#getmodalicons-confirmation-fallback-bypasses-icon-alias-resolution) |
 | [`CanOpenUrl`](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | in progress | — | [detail](#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
 | POST-to-url support | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) | skipped | — | [diverges](#post-to-url-support-is-not-ported) |
@@ -300,25 +300,35 @@ So `->markAsRead()` currently changes nothing a user can see.
 database-notifications panel lands, alongside the notification-side surface
 [`notifications/README.md`](../notifications/README.md) tracks.
 
-### CanNotify sends titles only; the notification override setters are missing
+### CanNotify's remainder is the failure body and the two keyed-off families
 
-**In:** `successNotificationTitle()` / `failureNotificationTitle()` setters and
-their `getSuccessNotificationTitle()` / `getFailureNotificationTitle()`
-evaluated getters — method-for-method identical to Filament's non-bulk path and
-covered by
+**In:** `successNotificationTitle()` / `failureNotificationTitle()` and their
+`getSuccessNotificationTitle()` / `getFailureNotificationTitle()` evaluated
+getters, plus — since M4 · 2 — the object arms `successNotification()` /
+`failureNotification()`: the `Notification|Closure|null` setters that let a
+caller replace or amend the whole notification, each deriving
+`isSuccessNotificationDisabled` / `isFailureNotificationDisabled` from a `null`
+argument exactly as Filament derives them. Method for method identical to
+Filament's non-bulk path, and covered by
 [`CanNotifyTest`](../../../packages/actions/tests/Unit/Concerns/CanNotifyTest.php)
 via the
 [`CanNotifyFixture`](../../../packages/actions/tests/Fixtures/Concerns/CanNotifyFixture.php).
 `sendSuccessNotification()` / `sendFailureNotification()` are called from
 [`HasActions::callMountedAction()`](../../../packages/actions/src/Concerns/HasActions.php)
-exactly where Filament's `callMountedAction()` calls them, and they now **send**:
-each resolves its title, and — when the title is filled and
-`class_exists(Sylament\Notifications\Notification::class)` — builds
-`Notification::make()->success()` / `->danger()->persistent()`, titles it and
-`send()`s it onto the session flash. That last condition is a
+exactly where Filament's `callMountedAction()` calls them, and each now runs
+Filament's own order: return early when the matching disable flag is set or
+`class_exists(Sylament\Notifications\Notification::class)` is false; build
+`Notification::make()->success()` / `->danger()->persistent()` and title it; hand
+that built object to the override, evaluated with `notification` injected, its
+return replacing the built one and a `null` return keeping it; and `send()` only
+when a title survives. Those are two different ways to say *not this one* —
+`successNotification(null)` disables the send outright, and a closure returning
+`$notification->title(null)` suppresses it — and both are Filament's. The
+`class_exists()` condition is a
 [guarded soft integration](#the-notification-arm-is-a-guarded-soft-integration-not-a-require),
-not a `require`. Delivery from the flash to the browser is the notifications
-package's own job
+not a `require`: the imported symbol is reached only inside these two bodies, and
+naming it in a property or parameter *type* never triggers autoload. Delivery
+from the flash to the browser is the notifications package's own job
 ([`LiveDeliverySubscriber`](../../../packages/notifications/src/Delivery/LiveDeliverySubscriber.php)
 turns each flashed entry into a `sylament:notification` browser event on a live
 request), so nothing here dispatches. The end-to-end pin lives in the
@@ -328,14 +338,16 @@ the only kernel that boots both bundles — with tables'
 [`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php)
 proving the whole confirm→delete→toast shape.
 
-Three shape notes. The title is checked **before** the `Notification` is built,
-where Filament builds first and checks `filled($notification?->getTitle())`
-after; with no override setters to run in between (see below) the two are
-equivalent, and checking first means an untitled action touches the
-notifications package not at all. `persistent()` on the failure side is
-Filament's (`->persistent()` on its failure notification, so an error toast
-waits to be dismissed). And the **partial-bulk `warning()` arm** is ported:
-an action that both accesses selected records and still has a non-zero
+Three shape notes. The title is checked **after** the `Notification` is built,
+where the port used to check it first and skip the build entirely. The object
+arms are what forced the reorder: an override closure is entitled to title an
+otherwise untitled notification, and a pre-check would have skipped a send
+Filament makes. The cost is one throwaway `Notification` per untitled, unoverridden
+action — accepted, and the reason the `class_exists()` guard now sits alone in
+the early return rather than sharing it with a `blank($title)`. `persistent()` on
+the failure side is Filament's (`->persistent()` on its failure notification, so
+an error toast waits to be dismissed). And the **partial-bulk `warning()` arm** is
+ported: an action that both accesses selected records and still has a non-zero
 successful count sends `warning()` rather than `danger()`, so "deleted 2 of 5"
 does not read as a total failure — written as an `if`/`else` where Filament
 chains `->when()`, since there is no `when()` on the port's `Notification`.
@@ -347,19 +359,17 @@ pinned from the notifications suite's
 [`CanNotifyTest`](../../../packages/notifications/tests/Integration/CanNotifyTest.php),
 the only kernel that boots both bundles.
 
-**Missing vs Filament:** the `successNotification()` / `failureNotification()`
-closure overrides (the `Notification|Closure|null` setters that let a user swap
-the whole notification object), `failureNotificationBody()`, and the
-`isSuccessNotificationDisabled` / `isFailureNotificationDisabled` toggle that
-Filament derives from passing `null` to those setters. `unauthorizedNotification()`
+**Missing vs Filament:** `failureNotificationBody()` and the `->body(...)` call
+that reads it while building the failure notification. `unauthorizedNotification()`
 / `unauthorizedNotificationTitle()` / `sendUnauthorizedNotification()` (keyed off
 Laravel's `Auth\Access\Response`) and `rateLimitedNotification()` /
 `rateLimitedNotificationTitle()` / `sendRateLimitedNotification()` (keyed off
 `DanHarrin\LivewireRateLimiting\Exceptions\TooManyRequestsException`) are also
 absent — there is no authorization-response or rate-limiting concern in the
-actions port yet for either to key off of. Of the bulk-only surface,
-`getFailureNotificationNamedInjections()` ships in its four-injection form while
-`missingBulkAuthorizationFailureNotificationMessage()`,
+actions port yet for either to key off of, and each would otherwise be the same
+build-evaluate-send body the two arms above already run. Of the bulk-only
+surface, `getFailureNotificationNamedInjections()` ships in its four-injection
+form while `missingBulkAuthorizationFailureNotificationMessage()`,
 `missingBulkProcessingFailureNotificationMessage()` and the bulk message
 formatting inside `getFailureNotificationBody()` wait on the
 [keyed message buckets](bulk-action.md#the-failure-reports-count-they-do-not-carry-keyed-messages).
@@ -368,13 +378,10 @@ The deprecated
 dropped outright — Filament itself deprecates them in favor of the `*Title()`
 setters this trait already carries, so nothing is lost.
 
-**Next step:** add the `successNotification()` / `failureNotification()`
-override setters and `failureNotificationBody()`, evaluating the override with
-the built notification injected as `notification` the way Filament does.
-`unauthorizedNotification*` and
-`rateLimitedNotification*` wait on an authorization-response equivalent and a
-rate-limiting concern respectively; the remaining five bulk injections wait on
-the keyed message buckets.
+**Next step:** add `failureNotificationBody()` and read it into the failure
+build. `unauthorizedNotification*` and `rateLimitedNotification*` wait on an
+authorization-response equivalent and a rate-limiting concern respectively; the
+remaining five bulk injections wait on the keyed message buckets.
 
 ### CanOpenModal's unported remainder
 
@@ -1097,9 +1104,31 @@ names the type it got. The ORM's own `wrapInTransaction()` is deliberately not
 used — it `close()`s the EntityManager on failure and cannot express the
 per-exception commit/rollback split the pipeline needs; DBAL 4 nests
 unconditionally through savepoints, so the wrap composes with an outer test
-transaction. Covered by
+transaction.
+
+M4 · 2 put a fourth member beside the trio, for the write actions rather than for
+a transaction:
+[`getEntityManagerForRecord(object|class-string $recordOrClass): EntityManagerInterface`](../../../packages/actions/src/Concerns/CanUseDatabaseTransactions.php)
+answers *which manager owns this record's class*, on the same precedence the
+connection resolver uses — the table's `getQueryEntityManager()` when the action
+has a query-lane table, else the registry's `getManagerForClass()`. It lives here
+because this is the trait that already carries the `#[Required] ?ManagerRegistry`
+every action inherits, and it has no Filament counterpart at all: Eloquent
+resolves a model's connection from the model. It is `protected`, and it throws
+rather than degrading on each of its three misses — no registry names the
+container-built instance, no manager for the class names the class, and a
+non-ORM `ObjectManager` names the type it got. [`DeleteAction`](delete-action.md)
+and [`DeleteBulkAction`](bulk-action.md) keep resolving their own manager this
+epic, because their messages are pinned by tests; adopting the helper there is a
+sweep item.
+
+Covered by
 [`CanUseDatabaseTransactionsTest`](../../../packages/actions/tests/Unit/Concerns/CanUseDatabaseTransactionsTest.php)
-for the default-off and fail-fast arms.
+for the default-off and fail-fast arms, and for all four arms of the record
+resolver through
+[`CanUseDatabaseTransactionsFixture`](../../../packages/actions/tests/Fixtures/Concerns/CanUseDatabaseTransactionsFixture.php),
+which exists to expose the protected method — the shipped write bodies reach it
+through `$this` and no public surface reveals it.
 
 ### The selected-record injections are gated on the access flag
 
@@ -1559,7 +1588,11 @@ already uses, and the one support's `isAssetMapperAvailable()` established:
 - **the guard** — `class_exists(Notification::class)` in front of every use.
   `Notification::class` on an imported name is a compile-time string and
   autoloads nothing, so in an install without the package the symbol is never
-  resolved and both send methods stay the chainable no-ops they were.
+  resolved and both send methods stay the chainable no-ops they were. The object
+  arms M4 · 2 added *type* two properties and two setter parameters
+  `Notification|Closure|null`, which is inert for the same reason: PHP resolves a
+  property or parameter type lazily, only when a value meets it — and a caller
+  with a `Notification` to pass demonstrably has the package.
 - **the declaration** — `sylament/notifications` is a composer `suggest` on
   `sylament/actions`, the strongest declaration an optional integration gets.
 - **the pin** — a soft reference fails *silently* when it rots (a renamed or

@@ -81,3 +81,24 @@ it('fillForm() fills the mounted schema with data resolved from a closure', func
 
     expect($schema->filledWith)->toBe(['title' => 'From closure']);
 });
+
+it('fillForm() hands the mounted schema to a closure asking for it', function (): void {
+    $fixture = new CanBeMountedFixture();
+    $fixture->fillForm(fn (Schema $schema): array => ['key' => $schema->getKey()]);
+
+    $schema = new class extends Schema {
+        public object|array|null $filledWith = null;
+
+        public function fill(object|array|null $state = null): static
+        {
+            $this->filledWith = $state;
+
+            return $this;
+        }
+    };
+    $schema->key('mountedActionSchema0');
+
+    $fixture->mount(['form' => $schema, 'schema' => $schema]);
+
+    expect($schema->filledWith)->toBe(['key' => 'mountedActionSchema0']);
+});

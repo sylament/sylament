@@ -15,6 +15,14 @@ trait CanNotify
 
     protected string|Closure|null $failureNotificationTitle = null;
 
+    protected Notification|Closure|null $successNotification = null;
+
+    protected bool $isSuccessNotificationDisabled = false;
+
+    protected Notification|Closure|null $failureNotification = null;
+
+    protected bool $isFailureNotificationDisabled = false;
+
     public function successNotificationTitle(string|Closure|null $title): static
     {
         $this->successNotificationTitle = $title;
@@ -25,6 +33,22 @@ trait CanNotify
     public function failureNotificationTitle(string|Closure|null $title): static
     {
         $this->failureNotificationTitle = $title;
+
+        return $this;
+    }
+
+    public function successNotification(Notification|Closure|null $notification): static
+    {
+        $this->successNotification = $notification;
+        $this->isSuccessNotificationDisabled = $notification === null;
+
+        return $this;
+    }
+
+    public function failureNotification(Notification|Closure|null $notification): static
+    {
+        $this->failureNotification = $notification;
+        $this->isFailureNotificationDisabled = $notification === null;
 
         return $this;
     }
@@ -54,25 +78,28 @@ trait CanNotify
 
     public function sendSuccessNotification(): static
     {
-        $title = $this->getSuccessNotificationTitle();
-
-        if (!class_exists(Notification::class) || blank($title)) {
+        if ($this->isSuccessNotificationDisabled || !class_exists(Notification::class)) {
             return $this;
         }
 
-        Notification::make()
+        $notification = Notification::make()
             ->success()
-            ->title($title)
-            ->send();
+            ->title($this->getSuccessNotificationTitle());
+
+        $notification = $this->evaluate($this->successNotification, ['notification' => $notification]) ?? $notification;
+
+        if (blank($notification->getTitle())) {
+            return $this;
+        }
+
+        $notification->send();
 
         return $this;
     }
 
     public function sendFailureNotification(): static
     {
-        $title = $this->getFailureNotificationTitle();
-
-        if (!class_exists(Notification::class) || blank($title)) {
+        if ($this->isFailureNotificationDisabled || !class_exists(Notification::class)) {
             return $this;
         }
 
@@ -85,9 +112,16 @@ trait CanNotify
         }
 
         $notification
-            ->title($title)
-            ->persistent()
-            ->send();
+            ->title($this->getFailureNotificationTitle())
+            ->persistent();
+
+        $notification = $this->evaluate($this->failureNotification, ['notification' => $notification]) ?? $notification;
+
+        if (blank($notification->getTitle())) {
+            return $this;
+        }
+
+        $notification->send();
 
         return $this;
     }

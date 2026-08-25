@@ -103,7 +103,9 @@ toolkit-wide change.
 
 i18n is deferred toolkit-wide, so both classes hardcode Filament's `en` strings:
 `Dissociate` / `Dissociate :label` / `Dissociated`, and `Dissociate selected` /
-`Dissociate selected :label` / `Dissociated` with the counting failure title.
+`Dissociate selected :label` / `Dissociated`. The counting failure title beside
+them has no `en` source — it is
+[an addition the atomic shape forces](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of).
 
 ## DissociateBulkAction
 
@@ -116,9 +118,7 @@ so a caller replaces the whole body with `using()`.
 
 **Status:** in progress — the chrome, both arms and the counting failure
 notification ship; the `report($exception)` call has nowhere to go
-([the same gap `DeleteBulkAction` records](delete-action.md#the-swallowed-exception-has-nowhere-to-go-yet))
-and the two `missingBulk*NotificationMessage` hooks wait on the
-[keyed failure buckets](bulk-action.md#the-failure-reports-count-they-do-not-carry-keyed-messages).
+([the same gap `DeleteBulkAction` records](delete-action.md#the-swallowed-exception-has-nowhere-to-go-yet)).
 
 Covered by
 [`DissociateBulkActionTest`](../../../packages/actions/tests/Unit/DissociateBulkActionTest.php)
@@ -135,13 +135,12 @@ before any statement does.
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/DissociateBulkAction.php) (`'dissociate'`) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | done | — | — |
 | [`setUp()` chrome — label, modal heading (`"Dissociate selected {title-case plural record label}"`), submit label, success title, `defaultColor('danger')`, both icons, `requiresConfirmation()`, `deselectRecordsAfterCompletion()`](../../../packages/actions/src/DissociateBulkAction.php) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) · [diverges](#the-icons-are-literal-names-not-resolved-aliases) |
-| [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DissociateBulkAction.php) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | done | — | Filament's `trans_choice` branches become two `sprintf`s over the same injections — [bulk-action.md](bulk-action.md#the-failure-notification-carries-four-injections-of-filaments-nine) |
+| [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DissociateBulkAction.php) | — | done | — | [diverges](detach-action.md#the-counting-failure-title-is-an-addition-filament-has-neither-of) |
 | [The fetching arm — `detach()` per record, one `flush()`](../../../packages/actions/src/DissociateBulkAction.php) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) (`$records->each(…)`) | done | — | [diverges](#the-fetching-arm-is-atomic-where-filaments-is-per-record) |
 | [`dissociateSelectedRecordsByKey()` — the `fetchSelectedRecords(false)` arm](../../../packages/actions/src/DissociateBulkAction.php) | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) (`getSelectedRecordsQuery()->update([…=> null])`) | done | — | [diverges](#the-by-key-arm-is-a-dql-update-over-the-plucked-keys) |
 | [The mapping refusals as a pre-flight](../../../packages/actions/src/DissociateBulkAction.php) | — | done | — | [diverges](#dissociating-is-refused-where-the-mapping-forbids-it) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
 | Reporting the swallowed exception | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) (`report($exception)`) | todo | a logger on `Action` | [delete-action.md](delete-action.md#the-swallowed-exception-has-nowhere-to-go-yet) |
-| `missingBulkAuthorizationFailureNotificationMessage()` / `missingBulkProcessingFailureNotificationMessage()` | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | blocked | the [keyed failure buckets](bulk-action.md#the-failure-reports-count-they-do-not-carry-keyed-messages) | — |
 
 ### The fetching arm is atomic where Filament's is per-record
 

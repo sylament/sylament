@@ -140,7 +140,7 @@ the reason `DeleteBulkAction`'s does — the swallowed exception has nowhere to 
 | --- | --- | --- | --- | --- |
 | [`getDefaultName()`](../../../packages/actions/src/DetachBulkAction.php) (`'detach'`) | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | done | — | — |
 | [`setUp()` chrome — label, modal heading (`"Detach selected {title-case plural record label}"`), submit label, success title, `defaultColor('danger')`, both icons, `requiresConfirmation()`, `deselectRecordsAfterCompletion()`](../../../packages/actions/src/DetachBulkAction.php) | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | done | — | [semantics](#the-headings-interpolate-and-fall-back-to-the-bare-verb) · [diverges](#the-strings-are-literals-not-translation-keys) |
-| [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DetachBulkAction.php) | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | done | — | Filament's two `trans_choice` branches become two `sprintf`s over the same `successCount` / `totalCount` injections — [bulk-action.md](bulk-action.md#the-failure-notification-carries-four-injections-of-filaments-nine) |
+| [`failureNotificationTitle()` — the counting closure](../../../packages/actions/src/DetachBulkAction.php) | — | done | — | [diverges](#the-counting-failure-title-is-an-addition-filament-has-neither-of) |
 | [The fetching arm — `detach()` per hydrated record, one `flush()`](../../../packages/actions/src/DetachBulkAction.php) | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | done | — | [diverges](#the-bulk-detach-is-atomic-where-filaments-fetching-arm-is-per-record) |
 | [The `fetchSelectedRecords(false)` arm — `getReference()` per key, then the same](../../../packages/actions/src/DetachBulkAction.php) | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) (`$relationship->detach($records)`) | done | — | [diverges](#the-no-fetch-arm-detaches-through-references-not-a-join-table-delete) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | The default body is [`detachRecords()`](../../../packages/actions/src/DetachBulkAction.php), taking the action and the selection. |
@@ -186,6 +186,25 @@ about what landed.
 The identity-map caveat `DeleteBulkAction` records applies here too: after the
 flush the detached references are still managed objects, and a test re-reading
 through the same manager must `clear()` or `refresh()` first.
+
+### The counting failure title is an addition Filament has neither of
+
+`DetachBulkAction` sets a `failureNotificationTitle()` closure answering
+`Detached %d of %d` and `Failed to detach %d records`. Filament's does not, and
+there is nothing to port: `vendor/filament/actions/src/DetachBulkAction.php`
+declares no `failureNotificationTitle()`, and `resources/lang/en/detach.php`
+carries no `*_partial` or `*_none` key — only `delete.php` does, for
+`DeleteBulkAction`'s three soft-delete siblings.
+
+The addition is forced by the atomic shape above. Filament's per-record arm
+reports each failure as it happens through `reportBulkProcessingFailure()`, so a
+partial outcome describes itself; one flush has no per-record outcome to
+describe, and without a title `CanNotify::sendFailureNotification()` guards on
+`filled($notification?->getTitle())` and sends nothing at all — a silently
+half-done batch. The wording follows `DeleteBulkAction`'s, whose title *is* a port — the two
+`sprintf`s and their `successCount` / `totalCount`
+[injections](bulk-action.md#the-failure-notification-carries-four-injections-of-filaments-nine)
+come from there, not from vendor's detach.
 
 ### The swallowed exception has nowhere to go yet
 

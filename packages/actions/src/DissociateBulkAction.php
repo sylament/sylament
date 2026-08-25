@@ -6,7 +6,7 @@ namespace Sylament\Actions;
 
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
-use Sylament\Schemas\State\Relationship;
+use Sylament\Schemas\State\AssociationTarget;
 use Throwable;
 
 class DissociateBulkAction extends BulkAction
@@ -55,8 +55,9 @@ class DissociateBulkAction extends BulkAction
      * The fetching arm nulls each record's owner through the reader and flushes
      * once; the by-key arm is one DQL UPDATE over the plucked keys, bypassing the
      * UnitOfWork the way DeleteBulkAction's delete does — already-managed entities
-     * keep their stale owner until reloaded. The mapping refusals run first, as
-     * developer errors rather than a toast.
+     * keep their stale owner until reloaded. Every mapping refusal runs before
+     * either arm — the three detach refusals and the many-to-many one — so all
+     * four propagate as developer errors rather than a toast.
      *
      * @param array<mixed> $records
      */
@@ -67,9 +68,13 @@ class DissociateBulkAction extends BulkAction
         $reader = $this->getAssociationReader();
         $reader->assertRelationshipAcceptsDetach($relationship);
 
+        $target = $reader->describeRelationship($relationship);
+        $mappedBy = $target->mappedBy
+            ?? throw new LogicException(sprintf('The action [%s] dissociates a one-to-many, which names its mapped-by field; [%s] is a many-to-many — use DetachBulkAction.', $this->getName(), $relationship->name));
+
         if (! $action->shouldFetchSelectedRecords()) {
             try {
-                $action->reportBulkProcessingSuccessfulRecordsCount($this->dissociateSelectedRecordsByKey($relationship, $records));
+                $action->reportBulkProcessingSuccessfulRecordsCount($this->dissociateSelectedRecordsByKey($target, $mappedBy, $records));
             } catch (Throwable) {
                 // One statement means the whole batch failed; the danger toast says so instead of a 500.
                 $action->reportCompleteBulkProcessingFailure();
@@ -100,17 +105,13 @@ class DissociateBulkAction extends BulkAction
     /**
      * @param array<mixed> $keys
      */
-    private function dissociateSelectedRecordsByKey(Relationship $relationship, array $keys): int
+    private function dissociateSelectedRecordsByKey(AssociationTarget $target, string $mappedBy, array $keys): int
     {
         if ($keys === []) {
             return 0;
         }
 
-        $reader = $this->getAssociationReader();
-        $target = $reader->describeRelationship($relationship);
-        $mappedBy = $target->mappedBy
-            ?? throw new LogicException(sprintf('The action [%s] dissociates a one-to-many, which names its mapped-by field; [%s] is a many-to-many — use DetachBulkAction.', $this->getName(), $relationship->name));
-        $identifier = $reader->getIdentifierFieldName($target->targetClass);
+        $identifier = $this->getAssociationReader()->getIdentifierFieldName($target->targetClass);
         $entityManager = $this->getEntityManagerForRecord($target->targetClass);
 
         $affectedRows = $entityManager->createQueryBuilder()

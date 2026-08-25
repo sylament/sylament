@@ -233,6 +233,7 @@ it('dissociates the whole selection in one DQL update when the records are not f
         ->and(artistIdOfSong($entityManager, 11))->toBeNull()
         ->and(artistIdOfSong($entityManager, 12))->toBeNull()
         ->and($html)->toContain('Dissociated')
+        ->and($html)->toContain('sy-status-success')
         ->and($html)->not->toContain('Failed to dissociate');
 });
 

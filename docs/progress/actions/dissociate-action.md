@@ -164,9 +164,14 @@ does for the delete. It carries that arm's caveat too: a DQL `UPDATE` bypasses
 the `UnitOfWork`, so an entity already in the identity map keeps its stale owner
 until it is reloaded or the manager is cleared.
 
-Two things run before the statement. The relationship must be a **one-to-many** —
-a many-to-many names no `mappedBy` field to null, and the refusal says to use
-`DetachBulkAction` instead — and
-[the three dissociate refusals](#dissociating-is-refused-where-the-mapping-forbids-it)
-run as a pre-flight, so an orphan-removal mapping throws before any statement is
-issued rather than nulling a column the mapping treats as ownership.
+Four refusals run before either arm picks up, all of them `LogicException`s
+raised outside the two `try` blocks so none is swallowed into the danger toast.
+[The three dissociate refusals](#dissociating-is-refused-where-the-mapping-forbids-it)
+are the first, so an orphan-removal mapping throws before any statement is issued
+rather than nulling a column the mapping treats as ownership; the fourth is that
+the relationship must be a **one-to-many** — a many-to-many names no `mappedBy`
+field to null, and the refusal says to use `DetachBulkAction` instead. The fourth
+gates the fetching arm too, even though `detach()` would quietly do a
+many-to-many removal there: the class is the one-to-many action on both arms, and
+a batch that succeeds or refuses depending on `fetchSelectedRecords()` is worse
+than one refusal naming the right action.

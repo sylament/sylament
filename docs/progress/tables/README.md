@@ -103,10 +103,10 @@ detail file follows.
 
 Two consequences of that split are worth stating, because they are where a
 reader would otherwise look and find nothing. The **record-label machinery**
-(`modelLabel()`, `pluralModelLabel()`, `recordTitle()`) and **record identity**
-(`getRecordKey()`) live in `Table\Concerns\HasRecords`, which is landed and
-folded — their status is [`table.md`](table.md)'s _Record labels_ and _Record
-identity_ rows. The **`TextColumn` formatting catalog** (`limit()`, `words()`,
+(`recordLabel()`, `pluralRecordLabel()`, `recordTitle()`,
+`recordTitleAttribute()`) and **record identity** (`getRecordKey()`) live in
+`Table\Concerns\HasRecords`, which is landed and folded — their status is
+[`table.md`](table.md)'s _Record labels and titles_ and _Record identity_ rows. The **`TextColumn` formatting catalog** (`limit()`, `words()`,
 `prefix()`, `date()`, `money()`, `badge()`, …) lives in
 `Columns\Concerns\CanFormatState`, likewise landed and folded — its status is
 [`text-column.md`](text-column.md)'s formatting rows.

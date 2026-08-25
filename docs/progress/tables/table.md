@@ -78,14 +78,14 @@ Rows never disappear — only their detail sections do.
 | [`records()` / `getDataSource()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::records()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [has-table.md](has-table.md#the-records-injections-stop-at-seven-of-filaments-eight) |
 | [`getRecords()` — always the current page's keyed array](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getRecords()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#getrecords-delegates-to-the-host-and-fetches-nothing) · [semantics](#getrecords-unwraps-the-paginator-and-getpaginator-is-the-only-seam-to-it) |
 | [`getPaginator(): ?Paginator`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | — (Sylament-only; Filament's `getRecords()` **is** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#getrecords-unwraps-the-paginator-and-getpaginator-is-the-only-seam-to-it) |
-| [`emptyStateHeading()` / `getEmptyStateHeading()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | done | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
-| [`emptyStateDescription()` / `getEmptyStateDescription()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | in progress | — | [detail](#the-create-action-default-description-waits-on-the-model-label) |
+| [`emptyStateHeading()` / `getEmptyStateHeading()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | done | its translation layer — no catalogue ships | [semantics](#the-empty-state-texts-read-the-record-labels) |
+| [`emptyStateDescription()` / `getEmptyStateDescription()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) + [the `setUp()` default](../../../packages/tables/src/Table.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php), [`Table::setUp()`](../../../vendor/filament/tables/src/Table.php) | done | its translation layer — no catalogue ships | [semantics](#the-empty-state-texts-read-the-record-labels) |
 | [`emptyStateIcon()` / `getEmptyStateIcon()`](../../../packages/tables/src/Table/Concerns/HasEmptyState.php) | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | done | — | [diverges](#the-empty-state-icon-getter-returns-null-and-the-fallback-lives-in-the-template) |
 | [`$evaluationIdentifier = 'table'` + the `$liveComponent` name injection](../../../packages/tables/src/Table.php) | [`Table::resolveDefaultClosureDependencyForEvaluationByName()`](../../../vendor/filament/tables/src/Table.php) | done | — | — |
 | [`$template`](../../../packages/tables/src/Table.php) + [the partial it names](../../../packages/tables/templates/partials/Table/index.html.twig) | [`$view = 'filament-tables::index'`](../../../vendor/filament/tables/src/Table.php), [`index.blade.php`](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) · [diverges](#every-rule-in-tablecss-is-scoped-under-the-sy-ta-root-one-class-above-vendors) · [diverges](#a-markup-header-label-does-not-switch-the-sortable-header-to-a-span) · [semantics](#aria-sort-is-dropped-with-null-because-false-would-render-as-a-string) · [diverges](#the-selection-cells-carry-no-header-cell-class-and-their-checkbox-skin-is-supports) |
 | `emptyState()` (a whole replacement view) | [`HasEmptyState::emptyState()`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | todo | — | — |
 | `emptyStateActions()` / `pushEmptyStateActions()` | [`HasEmptyState`](../../../vendor/filament/tables/src/Table/Concerns/HasEmptyState.php) | todo | — | — |
-| Record labels — `modelLabel()`, `pluralModelLabel()`, `recordTitle()`, `recordTitleAttribute()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | todo | — | [diverges](#the-empty-state-heading-hardcodes-no-records) |
+| [Record labels and titles — `recordLabel()` / `pluralRecordLabel()` / `recordTitle()` / `recordTitleAttribute()` / `getRecordLabel()` / `getPluralRecordLabel()` / `getRecordTitle()` / `getRecordTitleAttribute()` / `hasCustomRecordTitle()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [rename](../renames.md#renames) · [semantics](#the-record-title-reads-the-attribute-through-the-accessor-and-falls-back-to-the-label) · [semantics](#the-empty-state-texts-read-the-record-labels) |
 | [Record identity — `getRecordKey()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getRecordKey()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#getrecords-delegates-to-the-host-and-fetches-nothing) |
 | [Morph-stable row and cell keys](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `wire:key` stamps](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-morph-key-is-an-id-attribute-not-wirekey) · [semantics](#the-row-and-cell-morph-keys-disagree-on-record-vs-records) |
 | [The filters trigger — the toolbar dropdown, the funnel icon button and the active-count badge](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `FiltersLayout::Dropdown` branch](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-trigger-badge-is-composed-in-the-table-partial-because-iconbutton-has-no-slot) · [diverges](#the-filters-panel-teleports-because-the-scroll-container-wraps-the-toolbar-too) |
@@ -459,23 +459,6 @@ indicator gives a table that silently changes under the reader, which is worse
 than one that does not poll. They land together, once support has a loading
 affordance to render.
 
-### The create-action default description waits on the model label
-
-Filament's `Table::setUp()` registers a default `emptyStateDescription()` closure
-that returns *"Create a `<model label>` to get started"* — but only when the
-table has an action named `create`, and `null` otherwise. The action half is now
-answerable: [`hasAction('create')`](#the-flat-action-map-keeps-one-trim-and-its-caller)
-reads the flat map a `recordActions()`, `headerActions()` or `toolbarActions()`
-call fills. The **model label** is still
-missing, with the rest of the
-[label machinery](#the-empty-state-heading-hardcodes-no-records), so there is no
-string to interpolate. Sylament's `Table` therefore does not override `setUp()`
-at all, and `getEmptyStateDescription()` returns `null` until a user sets one.
-The default returns in the same change as the label machinery. Note what
-`hasAction('create')` will read by then: the flat map is shared across every
-registration lane, so a `create` action declared as a header or toolbar action
-counts too — both lanes fill it now.
-
 ### Record actions register without the per-action modifier hook
 
 `recordActions()`, `pushRecordActions()`, `getRecordActions()` and
@@ -514,8 +497,8 @@ renders only the second, with the English literal `aria-label="Actions"`.
 Both halves of the first arm are missing rather than declined:
 `recordActionsColumnLabel()` is the **todo** row above, and there is no label to
 read; the pluralisation `trans_choice(..., $flatRecordActionsCount)` needs the
-[i18n layer](#the-empty-state-heading-hardcodes-no-records) nothing in the port
-has, the same reason `'No records'` is a literal. The setter and the `{% if %}`
+[i18n layer](#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships)
+nothing in the port has, the same reason every fixed string is a literal. The setter and the `{% if %}`
 that reads it land together, at which point the literal becomes the fallback of
 the second arm rather than the only arm.
 
@@ -1122,6 +1105,45 @@ before assuming which one you have. This matches Filament, whose
 `Table\Concerns\BelongsToLivewire` is likewise non-nullable against schemas'
 nullable one.
 
+### The empty-state texts read the record labels
+
+`getEmptyStateHeading()` falls back to `"No {plural record label}"` and
+`Table::setUp()` — the first `setUp()` the class declares — stores a default
+`emptyStateDescription()` closure answering *"Create a `<record label>` to get
+started."* when the table carries an action named `create`, `null` otherwise.
+Both are Filament's, minus the translation layer: Filament reads
+`__('filament-tables::table.empty.heading', ['model' => …])`, and no message
+catalogue ships in this port, so the interpolation happens in PHP and the string
+is English. The i18n pass turns both into catalogue lookups without changing what
+they interpolate.
+
+Two consequences worth naming. The heading says `No records` only where the table
+has no record class to read — a `records()` table, or one configured with
+neither; a `query()` table over `Song` says `No songs`, through
+[`plural()`](../support/helpers.md). And the description is a *stored closure*
+rather than a getter fallback, which is what makes `emptyStateDescription(null)`
+clear it: the setter overwrites the closure, so a caller can turn the default
+off, exactly as in Filament. `hasAction('create')` reads the
+[shared flat map](#the-flat-action-map-keeps-one-trim-and-its-caller), so a
+`create` action declared as a record, header or toolbar action all count.
+
+### The record title reads the attribute through the accessor and falls back to the label
+
+`getRecordTitle()` tries the `recordTitle()` closure first — the record injected
+by name and by type — then `recordTitleAttribute()` read through schemas'
+[`PropertyAccessor::getFromRecord()`](../schemas/property-accessor.md), then the
+record label. The attribute arm swallows an `AccessException` and treats a blank
+or non-scalar value as absent, so a missing property, a null column and an object
+column all answer the label rather than throwing or rendering an empty title —
+the body panels' `Resource::getRecordTitle()` already carries, now shared by
+the table.
+
+The return type is therefore `string`, never null: the label always answers. That
+is what makes actions' unconditional table hop
+([action.md](../actions/action.md#a-table-bound-action-titles-and-labels-through-its-table))
+terminal — a table-bound action never reaches its host's title hook, because the
+table's answer is always filled.
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
@@ -1459,30 +1481,26 @@ one `{% if %}` around the trigger element, and the accessible name is the same
 either way. Note what does **not** reverse it: a `Markup` label with no
 interactive content renders correctly inside the button today.
 
-### The empty state heading hardcodes "No records"
+### The copy is English and hardcoded, because no i18n layer ships
 
 Filament's `getEmptyStateHeading()` falls back to
 `__('filament-tables::table.empty.heading', ['model' => $this->getPluralModelLabel()])`
-— a translated string interpolating the table's plural model label, which is
-itself derived from the Eloquent model class when not set explicitly. Sylament
-returns the literal `'No records'`.
+— a *translated* string interpolating the table's plural model label. Sylament
+interpolates the same label
+([semantics](#the-empty-state-texts-read-the-record-labels)) and emits English
+directly.
 
-Two prerequisites are missing, and neither is a table concern. The **label
-machinery** (`modelLabel()` / `pluralModelLabel()` / `getRecordTitle()`) needs a
-record-class → human-label derivation that the record vocabulary has not grown
-yet, plus a pluralizer — Filament reaches `Str::plural()` behind a
-`locale_has_pluralization()` guard, and the Symfony equivalent
-(`symfony/string`'s inflector) is a decision of its own. **i18n** is not wired
-anywhere in the port: no `translation` component is a dependency of any bundle
-and no message catalogue ships, so there is nothing for a translation key to
-resolve against.
+Only the translation half is missing, and it is not a table concern: **i18n is
+not wired anywhere in the port** — no `translation` component is a dependency of
+any bundle and no message catalogue ships, so there is nothing for a translation
+key to resolve against. Every fixed string the toolkit renders sits in the same
+position, which is why this section is the anchor the other packages' copy rows
+cite.
 
-The literal is therefore a placeholder that reads correctly in English rather
-than an API claim, and it is the only user-visible string the tables package
-hardcodes. It reverses in two steps: the label machinery makes the heading say
-*"No articles"*, and the i18n pass turns it into a catalogue lookup. Until then a
-consumer wanting either writes `->emptyStateHeading(...)` explicitly, which is
-fully ported.
+The literals read correctly in English rather than making an API claim. They
+reverse in one step: an i18n pass turns each into a catalogue lookup. Until then
+a consumer wanting other copy sets it explicitly, which is fully ported
+everywhere it applies.
 
 ### The empty state icon getter returns null, and the fallback lives in the template
 
@@ -1528,9 +1546,10 @@ The wrappers are not markup for their own sake in Filament: they exist so Livewi
 DOM morph finds the same nodes before and after a toolbar's visibility flips,
 which is why they render empty rather than being wrapped in an `@if`. The ones
 still missing cannot flip yet — `sy-ta-header` exists to hold a heading and a
-description, both **todo** rows above, and the `<table>`'s `aria-label` needs the
-[record labels](#the-empty-state-heading-hardcodes-no-records) those same rows
-wait on. A wrapper emitted now would be a permanently empty node with a class no
+description, both **todo** rows above, and the `<table>`'s `aria-label` prefers the
+heading, falling back to the
+[plural record label](#the-empty-state-texts-read-the-record-labels) that now
+exists — so it waits on those same rows too. A wrapper emitted now would be a permanently empty node with a class no
 stylesheet targets. `HeaderActionsPosition::Adaptive` is accepted with no CSS
 behind it for exactly that reason: the band it would position against does not
 exist yet, so header actions render in the toolbar's start group whichever case

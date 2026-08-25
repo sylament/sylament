@@ -104,7 +104,7 @@ against the builder's aliases. A fix, not a mirror; recorded in the
 values are that catalogue's English ones, so the rendered chip and the two
 options match Filament byte for byte — but there is no catalogue to look them up
 in, the same
-[hardcoded-copy gap](table.md#the-empty-state-heading-hardcodes-no-records) the
+[hardcoded-copy gap](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) the
 empty state and the search chip carry, and it lifts with the toolkit-wide i18n
 epic. The `'-'` placeholder is not part of it: Filament hardcodes that one too.
 

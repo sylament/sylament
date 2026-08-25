@@ -56,7 +56,7 @@ divergence carrying it.
 | A `Pagination\Item` component of its own | [`pagination/item.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/item.blade.php) | skipped | — | Filament's item exists to be reused by two call sites in one file; here the item markup is six lines inlined at its three uses, and a component whose only job is to pick between an icon and a label would be indirection without a second consumer |
 | [Simple paging — the null-total branch: an overview with no total, prev/next with no window](../../../packages/support/templates/components/Pagination/index.html.twig) | the `$isSimple` arms of [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | done | — | [diverges](#the-simple-footer-keeps-the-overview-and-the-item-list-where-filament-drops-both) |
 | Cursor paging — the `CursorPaginator` arm, whose clicks carry an encoded cursor rather than a page number | [`pagination/index.blade.php`](../../../vendor/filament/support/resources/views/components/pagination/index.blade.php) | blocked | a keyset carrier ([table.md](../tables/table.md#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features)) | — |
-| Number formatting and translated copy | `Number::format()`, `trans_choice()` in the same view | blocked | i18n ([table.md](../tables/table.md#the-empty-state-heading-hardcodes-no-records)) | — |
+| Number formatting and translated copy | `Number::format()`, `trans_choice()` in the same view | blocked | i18n ([table.md](../tables/table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships)) | — |
 | [Styles — the footer, the overview, the item list and its items](../../../packages/support/assets/src/styles/components/pagination.css) | [`.fi-pagination`, `.fi-pagination-overview`, `.fi-pagination-items`, `.fi-pagination-item*`](../../../vendor/filament/support/resources/css/components/pagination.css) | done | — | [diverges](#the-item-styles-collapse-filaments-three-elements-onto-one) |
 | [Styles — the per-page select and its label](../../../packages/support/assets/src/styles/components/pagination.css) | [`.fi-pagination-records-per-page-select*`](../../../vendor/filament/support/resources/css/components/pagination.css) with [`input/wrapper.css`](../../../vendor/filament/support/resources/css/components/input/wrapper.css) and [`input/select.css`](../../../vendor/filament/support/resources/css/components/input/select.css) | in progress | — | [detail](#the-selects-compact-twin-is-the-last-unported-arm) · [diverges](#the-per-page-select-carries-the-input-wrappers-chrome-because-it-has-no-wrapper) |
 | Vendor's responsive layout arms — the `hidden` bases on the overview and the item list, their `@4xl:`/`md:` swaps, the `@container` declaration and both `@supports` blocks | [`pagination.css`](../../../vendor/filament/support/resources/css/components/pagination.css) | skipped | — | [diverges](#the-responsive-arms-are-dropped-with-the-mobile-layout-they-serve) |
@@ -346,7 +346,7 @@ simple paginator answers them too. What forces Filament's hand is the
 translation: `'{1} Showing 1 result|[2,*] Showing :first to :last of :total results'`
 is one key with no totals-free arm, so a simple footer there can only say
 nothing about where the user is. When
-[i18n](../tables/table.md#the-empty-state-heading-hardcodes-no-records) lands,
+[i18n](../tables/table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) lands,
 the second arm is a second key rather than a re-decision.
 
 The **item list** stays because the port renders
@@ -371,7 +371,7 @@ renders the LTR chevrons unconditionally and ships none of the four constants.
 
 The branch is unreachable rather than dropped: `$isRtl` reads
 `__('filament-panels::layout.direction')`, a translated string from the panel
-layer, and neither [i18n](../tables/table.md#the-empty-state-heading-hardcodes-no-records)
+layer, and neither [i18n](../tables/table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships)
 nor panels exists in the port — there is nothing to ask which direction the page
 runs. The four constants follow the
 [alias growth order](support-icon-alias.md#pagination-rtl-aliases)

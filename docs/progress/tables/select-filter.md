@@ -130,7 +130,7 @@ field matches Filament's copy verbatim — a filter's placeholder says *"All"*,
 not the generic form-select *"Select an option"* our own
 [`Select`](../forms/select.md) seeds. What is left is the mechanism rather than
 the copy — the same
-[hardcoded-copy gap](table.md#the-empty-state-heading-hardcodes-no-records) the
+[hardcoded-copy gap](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships) the
 empty state, the search chip and the
 [ternary arm labels](ternary-filter.md#the-arm-labels-are-hardcoded-english)
 carry, lifting with the toolkit-wide i18n epic. The branch returns with it,

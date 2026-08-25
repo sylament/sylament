@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables;
 
 use Closure;
+use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\Evaluation\ClosureParameter;
 use Sylament\Tables\Contracts\InteractsWithTable;
@@ -28,6 +29,7 @@ use Sylament\Tables\Table\Concerns\HasToolbarActions;
 class Table extends ViewComponent
 {
     use BelongsToLiveComponent;
+    use CanAccessProperties;
     use CanPaginateRecords;
     use CanSearchRecords;
     use CanSortRecords;
@@ -57,6 +59,15 @@ class Table extends ViewComponent
         $table->configure();
 
         return $table;
+    }
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->emptyStateDescription(fn (Table $table): ?string => $table->hasAction('create')
+            ? sprintf('Create a %s to get started.', $table->getRecordLabel())
+            : null);
     }
 
     protected function resolveDefaultClosureDependencyForEvaluationByName(string $parameterName): ?ClosureParameter

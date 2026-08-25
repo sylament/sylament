@@ -222,11 +222,11 @@ about them, and doing tables first would fix a shape the other eight then inheri
 [`resources/lang/`](../../../vendor/filament/tables/resources/lang) — the column
 labels, the empty-state heading and description, the filter and bulk-action
 strings, the pagination summary. Unported, and the immediate consequence is
-visible in [`table.md`](table.md#the-empty-state-heading-hardcodes-no-records):
-`getEmptyStateHeading()` returns the English literal `'No records'` because there
-is no catalogue to look it up in. **Next step:** port with the toolkit-wide i18n
-pass, which the empty-state heading divergence already names as its second
-reversal step.
+visible in [`table.md`](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships):
+`getEmptyStateHeading()` interpolates the plural record label into an English
+`"No …"` in PHP, because there is no catalogue to look the phrase up in.
+**Next step:** port with the toolkit-wide i18n pass, which that divergence names
+as its one reversal step.
 
 ## Divergences
 

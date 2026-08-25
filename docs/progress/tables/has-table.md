@@ -622,7 +622,7 @@ Of the search **indicators**, the global one ships —
 `getTableSearchIndicator()` mints the `Filters\Indicator` chip for the current
 term, labelled `Search: <term>` (Filament's
 `filament-tables::table.fields.search.indicator` at its English value,
-[hardcoded like the rest of the copy](table.md#the-empty-state-heading-hardcodes-no-records)),
+[hardcoded like the rest of the copy](table.md#the-copy-is-english-and-hardcoded-because-no-i18n-layer-ships)),
 and is the [tenth contract method](#the-contract-is-eighteen-methods-of-filaments-forty-six).
 [`Table::getFilterIndicators()`](indicator.md#removal-is-structured-not-a-click-handler-string)
 pairs it with the `resetTableSearch` live action and puts it first in

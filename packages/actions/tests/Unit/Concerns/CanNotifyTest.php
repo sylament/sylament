@@ -81,3 +81,28 @@ it('lets a failure closure title an otherwise untitled notification into a send'
     expect(fn (): mixed => $fixture->sendFailureNotification())
         ->toThrow(LogicException::class, 'needs the container-built instance');
 });
+
+it('spreads the failure injections into the failure notification closure', function (): void {
+    $injected = [];
+
+    $fixture = new CanNotifyFixture()
+        ->failureNotificationTitle('Could not delete')
+        ->failureNotification(function (Notification $notification, int $failureCount, bool $isAll, int $successCount, int $totalCount) use (&$injected): Notification {
+            $injected = [
+                'failureCount' => $failureCount,
+                'isAll' => $isAll,
+                'successCount' => $successCount,
+                'totalCount' => $totalCount,
+            ];
+
+            return $notification->title(null);
+        });
+
+    expect($fixture->sendFailureNotification())->toBe($fixture)
+        ->and($injected)->toBe([
+            'failureCount' => 0,
+            'isAll' => true,
+            'successCount' => 0,
+            'totalCount' => 0,
+        ]);
+});

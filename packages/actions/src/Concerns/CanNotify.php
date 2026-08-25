@@ -115,7 +115,10 @@ trait CanNotify
             ->title($this->getFailureNotificationTitle())
             ->persistent();
 
-        $notification = $this->evaluate($this->failureNotification, ['notification' => $notification]) ?? $notification;
+        $notification = $this->evaluate($this->failureNotification, [
+            ...$this->getFailureNotificationNamedInjections(),
+            'notification' => $notification,
+        ]) ?? $notification;
 
         if (blank($notification->getTitle())) {
             return $this;

@@ -319,9 +319,12 @@ exactly where Filament's `callMountedAction()` calls them, and each now runs
 Filament's own order: return early when the matching disable flag is set or
 `class_exists(Sylament\Notifications\Notification::class)` is false; build
 `Notification::make()->success()` / `->danger()->persistent()` and title it; hand
-that built object to the override, evaluated with `notification` injected, its
-return replacing the built one and a `null` return keeping it; and `send()` only
-when a title survives. Those are two different ways to say *not this one* —
+that built object to the override, evaluated with `notification` injected — and,
+on the failure side, with `getFailureNotificationNamedInjections()` spread in
+beside it, so a `failureNotification()` closure reads the same four counts
+(`failureCount`, `isAll`, `successCount`, `totalCount`) its title closure does —
+its return replacing the built one and a `null` return keeping it; and `send()`
+only when a title survives. Those are two different ways to say *not this one* —
 `successNotification(null)` disables the send outright, and a closure returning
 `$notification->title(null)` suppresses it — and both are Filament's. The
 `class_exists()` condition is a

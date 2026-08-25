@@ -1183,8 +1183,11 @@ it, exactly as a hand-written `defaultSort(fn ($query) => …)` would. The
 direction is read off the mapping rather than off the table, and anything that is
 not `desc` is `asc` — Doctrine's own docblock says `'asc'|'desc'` while its
 metadata hands `'ASC'` through untouched, so the comparison is
-case-insensitive. Filament has no counterpart: an Eloquent relation carries no
-readable default order, so this is an addition rather than a divergence.
+case-insensitive. `Artist::$albums` is declared `DESC` for exactly that reason:
+it is the only fixture mapping whose direction disagrees with the caller's, so
+without it the map would be indistinguishable from a hardcoded `'asc'`.
+Filament has no counterpart: an Eloquent relation carries no readable default
+order, so this is an addition rather than a divergence.
 
 ## Divergences
 

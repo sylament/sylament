@@ -37,7 +37,15 @@ and end to end by
 [`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php)
 in the **tables** suite — the candidate list, the search, the closure-titled
 arm, the preloaded arm, the single and multiple submits, the attach-another arm,
-both smuggled-key refusals and the empty-submission one. It sits there for the
+both smuggled-key refusals and the empty-submission one, and beside those the
+select's own arms: the title ordering (over song 2, whose two candidates sort by
+title in the opposite order to their keys, so the assertion is on the `ORDER BY`
+rather than on the insertion order) on both the plucking and the hydrating
+branch, `recordSelectOptionsQuery()` narrowing the candidates through each of
+its two documented injections — the builder by parameter name with the search
+beside it, and the builder by type hint — the unmapped-search-column refusal,
+and the `LOWER()` that `forceSearchCaseInsensitive()` puts in the emitted SQL and
+its absence without the flag. It sits there for the
 reason
 [`PrebuiltDeleteActionTest`](delete-action.md) does, one step further: only a
 table host supplies a relationship, and the actions test kernel registers

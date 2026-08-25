@@ -29,6 +29,20 @@ it('orders a relation-scoped table by its mapping until a default sort is declar
         ->and($unordered->getDefaultSort($unordered->getQuery() ?? throw new LogicException(), 'asc'))->toBeNull();
 });
 
+it("appends the mapping's own direction, not a hardcoded ascending one", function (): void {
+    // `Artist::$albums` is the one fixture mapping ordered DESC, so this is the
+    // only case that can tell the direction map apart from a literal 'asc' —
+    // and the caller's own direction is the opposite of the one that lands.
+    $artist = new Artist(1, 'Radiohead');
+    $table = relationshipTable(fn (): Relationship => new Relationship($artist, 'albums'));
+
+    $query = $table->getQuery();
+    assert($query instanceof QueryBuilder);
+
+    expect($table->getDefaultSort($query, 'asc'))->toBe($query)
+        ->and($query->getDQL())->toEndWith('ORDER BY record.title desc');
+});
+
 it('leaves a table whose query() won over its relationship unordered, with the closure unevaluated', function (): void {
     $entityManager = EntityManagerFactory::create();
     $artist = new Artist(1, 'Radiohead');

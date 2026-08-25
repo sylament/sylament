@@ -289,3 +289,119 @@ function detachStatements(KernelBrowser $client, RecordingMiddleware $recorder, 
 
     return $recorder->statements();
 }
+
+/*
+ * The select's own scope, ordering, search columns and case folding — the arms
+ * the chrome cases above leave untouched. Song 2 is the fixture that can carry
+ * them: its two candidates, Rock (1) and Pop (2), sort by title in the opposite
+ * order to their keys, so an assertion on the answer is an assertion on the
+ * `ORDER BY` rather than on the insertion order.
+ */
+
+it('answers the candidates in title order, which is not their key order', function (): void {
+    [$client] = seededGenresClient();
+    $host = attachHost($client, ['songId' => 2]);
+
+    $host->mountAction('attach', [], ['table' => true]);
+
+    expect(mountedRecordSelect($host)->getSearchResults(''))->toBe([2 => 'Pop', 1 => 'Rock']);
+});
+
+it('orders the hydrating arm by title too', function (): void {
+    [$client] = seededGenresClient();
+    $host = attachHost($client, ['songId' => 2, 'titlesByClosure' => true]);
+
+    $host->mountAction('attach', [], ['table' => true]);
+
+    expect(mountedRecordSelect($host)->getSearchResults(''))->toBe([2 => 'POP', 1 => 'ROCK']);
+});
+
+it('narrows the candidates through recordSelectOptionsQuery(), handed the builder by name and the search beside it', function (): void {
+    [$client] = seededGenresClient();
+    $host = attachHost($client, ['songId' => 2, 'optionsQueryArm' => 'name']);
+
+    $host->mountAction('attach', [], ['table' => true]);
+
+    $select = mountedRecordSelect($host);
+
+    expect($select->getSearchResults(''))->toBe([2 => 'Pop'])
+        ->and($select->getSearchResults('pop'))->toBe([2 => 'Pop'])
+        ->and($host->optionsQuerySearches)->toBe(['', 'pop']);
+});
+
+it('hands recordSelectOptionsQuery() the builder by type as well, and scopes the preloaded options with it', function (): void {
+    [$client] = seededGenresClient();
+    $host = attachHost($client, ['songId' => 2, 'optionsQueryArm' => 'type', 'preloads' => true]);
+
+    $host->mountAction('attach', [], ['table' => true]);
+
+    expect(mountedRecordSelect($host)->getOptions())->toBe([1 => 'Rock']);
+});
+
+it('refuses a search column the target class maps no field for', function (): void {
+    [$client] = seededGenresClient();
+    $host = attachHost($client, ['songId' => 2, 'searchColumns' => ['nope']]);
+
+    $host->mountAction('attach', [], ['table' => true]);
+
+    $select = mountedRecordSelect($host);
+
+    expect(fn (): mixed => $select->getSearchResults('rock'))
+        ->toThrow(LogicException::class, sprintf('The action [attach] searches [nope] on [%s], which maps no such field.', Genre::class));
+});
+
+it('folds the search to lower case only when forceSearchCaseInsensitive() says so', function (): void {
+    [$client, , $recorder] = seededGenresClient();
+
+    $plain = attachHost($client, ['songId' => 2]);
+    $plain->mountAction('attach', [], ['table' => true]);
+
+    $recorder->reset();
+    mountedRecordSelect($plain)->getSearchResults('RoC');
+    $withoutFlag = $recorder->statements();
+
+    $folded = attachHost($client, ['songId' => 2, 'forcesCaseInsensitiveSearch' => true]);
+    $folded->mountAction('attach', [], ['table' => true]);
+
+    $recorder->reset();
+    mountedRecordSelect($folded)->getSearchResults('RoC');
+    $withFlag = $recorder->statements();
+
+    expect(lowercasingSelections($withoutFlag))->toBe([])
+        ->and(lowercasingSelections($withFlag))->toHaveCount(1);
+});
+
+/**
+ * The statements whose LIKE folds its column — SQLite renders the DQL `LOWER()`
+ * as `LOWER(g0_.name) LIKE ?`, and nothing else in this rig emits one.
+ *
+ * @param list<string> $statements
+ *
+ * @return list<string>
+ */
+function lowercasingSelections(array $statements): array
+{
+    return array_values(array_filter(
+        $statements,
+        static fn (string $sql): bool => (bool) preg_match('/LOWER\(\w+\.name_?\d*\) LIKE/i', $sql),
+    ));
+}
+
+/*
+ * A table whose `relationship()` closure answers null cannot render, so the bulk
+ * action's hostless refusal is unreachable through a mounted request: the host
+ * comes from the container instead, wired exactly as a request's would be, and
+ * is driven directly. The selection stays empty because resolving a non-empty
+ * one wants the table's query, which that same missing relationship denies —
+ * the refusal under test runs before the batch is touched either way. The row
+ * and non-bulk refusals need no table at all and are pinned in the actions suite.
+ */
+
+it('refuses to detach a selection without a table declaring a relationship', function (): void {
+    $host = $this::getContainer()->get(SongGenresActionsTable::class);
+    $host->songId = 999;
+    $host->mountAction('detach', [], ['table' => true, 'bulk' => true]);
+
+    expect(fn (): mixed => $host->callMountedAction())
+        ->toThrow(LogicException::class, 'detaches selected records from a relationship, which only a table declaring relationship() can supply');
+});

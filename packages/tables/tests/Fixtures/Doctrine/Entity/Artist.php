@@ -19,9 +19,14 @@ class Artist
     private Collection $songs;
 
     /**
+     * Ordered **descending**, the one mapping order in either fixture repo that
+     * is: it is what tells the default sort's direction map apart from a
+     * hardcoded `asc`.
+     *
      * @var Collection<int, Album>
      */
     #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist', orphanRemoval: true)]
+    #[ORM\OrderBy(['title' => 'DESC'])]
     private Collection $albums;
 
     /**

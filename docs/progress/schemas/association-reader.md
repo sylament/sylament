@@ -79,9 +79,11 @@ Every row is **done** or **skipped** — the unit suite
 ([`AssociationReaderTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderTest.php))
 covers all four association shapes the fixture entities declare (many-to-one,
 the inverse one-to-many with orphan removal, the owning many-to-many, and the
-**inverse** one-to-one), the five mapping-shape fields across six shapes (both
-sides of a bidirectional many-to-many, a unidirectional one, an ordered
-one-to-many, and a nullable and a not-null to-one), all three null answers (a scalar property, a non-entity
+**inverse** one-to-one), the five mapping-shape fields across seven shapes (both
+sides of a bidirectional many-to-many, a unidirectional one, an ascending and a
+**descending** ordered one-to-many — the descending one being what tells the
+pass-through apart from a normalised direction — and a nullable and a not-null
+to-one), all three null answers (a scalar property, a non-entity
 class, an anonymous class), the four operations refusing without an entity
 manager, the record key against a persisted entity, and both key refusals — an
 unpersisted entity and the composite-identifier
@@ -95,8 +97,9 @@ refusal, and — over the Integration rig, which persists and flushes by hand
 because [`EntityManagerFactory::seed()`](../../../packages/schemas/tests/Fixtures/Doctrine/EntityManagerFactory.php)
 clears the identity map — attach and detach on a unidirectional many-to-many,
 on both directions of the bidirectional `Post::$categories` ↔ `Category::$posts`
-pair, the one-to-many associate/dissociate through `Author::$posts`, a detach
-handed a reference rather than a hydrated record, the no-op attach of an
+pair (the owning direction re-read across a `clear()`, the inverse one written
+through the owning collection), the one-to-many associate/dissociate through
+`Author::$posts`, a detach handed a reference rather than a hydrated record, the no-op attach of an
 already-related record, and the three dissociate refusals one fixture each
 ([`Post::$sections`](../../../packages/schemas/tests/Fixtures/Doctrine/Entity/Post.php)
 for orphan removal, `Post::$comments` for the NOT NULL join column, `Post::$replies`

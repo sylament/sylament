@@ -28,11 +28,14 @@ Reference — the Filament source this is diffed against:
 
 Covered by
 [`DissociateActionTest`](../../../packages/actions/tests/Unit/DissociateActionTest.php)
-for the confirmation chrome and the record-titled heading, and end to end by
+for the confirmation chrome, the record-titled heading and the hostless refusal,
+and end to end by
 [`AssociateDissociateActionsTest`](../../../packages/tables/tests/Integration/AssociateDissociateActionsTest.php)
 in the **tables** suite — the row dissociate with its `Dissociate Airbag`
-heading, the surviving siblings, the success toast, and the orphan-removal
-refusal on both arms. It sits there for the reason
+heading, the surviving siblings, the success toast, the orphan-removal
+refusal on both arms, and `DissociateBulkAction`'s own hostless refusal — that
+last one driven against a container-built host rather than a mounted request,
+because a table whose `relationship()` answers null cannot render at all. It sits there for the reason
 [`PrebuiltDeleteActionTest`](delete-action.md) does: only a table host supplies a
 relationship, and the actions test kernel registers neither tables nor forms.
 

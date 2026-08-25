@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Fixtures\Twig\Components;
 
+use Closure;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Actions\AssociateAction;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
@@ -60,6 +62,31 @@ class ArtistSongsActionsTable implements InteractsWithActions, InteractsWithSche
     #[LiveProp]
     public bool $offersEverySong = false;
 
+    #[LiveProp]
+    public ?bool $forcesCaseInsensitiveSearch = null;
+
+    /**
+     * @var list<string>|null
+     */
+    #[LiveProp]
+    public ?array $searchColumns = null;
+
+    /**
+     * Which arm of `recordSelectOptionsQuery()` to install: `'name'` takes the
+     * builder by parameter name and the search beside it, `'type'` takes the
+     * builder by type hint alone.
+     */
+    #[LiveProp]
+    public ?string $optionsQueryArm = null;
+
+    /**
+     * Every `$search` the options-query closure was handed, in call order — the
+     * only way to see the second documented argument arrive.
+     *
+     * @var list<string|null>
+     */
+    public array $optionsQuerySearches = [];
+
     public function __construct(private readonly EntityManagerInterface $entityManager)
     {
     }
@@ -89,10 +116,31 @@ class ArtistSongsActionsTable implements InteractsWithActions, InteractsWithSche
                 AssociateAction::make()
                     ->multiple($this->multiple)
                     ->preloadRecordSelect($this->preloads)
+                    ->forceSearchCaseInsensitive($this->forcesCaseInsensitiveSearch)
+                    ->recordSelectSearchColumns($this->searchColumns)
+                    ->recordSelectOptionsQuery($this->optionsQueryCallback())
                     ->recordSelect($this->offersEverySong ? static fn (Select $select): Select => $select->getOptionLabelUsing(static fn (): string => 'Karma Police') : null),
             ])
             ->recordActions([DissociateAction::make()])
             ->toolbarActions([DissociateBulkAction::make()->fetchSelectedRecords($this->fetchesRecords)])
             ->paginated([10]);
+    }
+
+    /**
+     * `'name'` leaves the builder untyped, so only the by-name injection can
+     * fill it; `'type'` names it something else, so only the by-type one can.
+     */
+    private function optionsQueryCallback(): ?Closure
+    {
+        return match ($this->optionsQueryArm) {
+            'name' => function (mixed $query, ?string $search): QueryBuilder {
+                $this->optionsQuerySearches[] = $search;
+                assert($query instanceof QueryBuilder);
+
+                return $query->andWhere("record.title <> 'Glory Box'");
+            },
+            'type' => static fn (QueryBuilder $builder): QueryBuilder => $builder->andWhere("record.title <> 'Exit Music'"),
+            default => null,
+        };
     }
 }

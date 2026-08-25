@@ -288,6 +288,7 @@ it('describes the mapping shape of every association kind', function (string $cl
     'owning bidirectional many-to-many' => [Post::class, 'categories', ['isManyToMany' => true, 'mappedBy' => null, 'inversedBy' => 'posts', 'isNullable' => true, 'orderBy' => []]],
     'inverse many-to-many' => [Category::class, 'posts', ['isManyToMany' => true, 'mappedBy' => 'categories', 'inversedBy' => null, 'isNullable' => true, 'orderBy' => []]],
     'ordered one-to-many' => [Post::class, 'sections', ['isManyToMany' => false, 'mappedBy' => 'post', 'inversedBy' => null, 'isNullable' => true, 'orderBy' => ['position' => 'ASC']]],
+    'descending one-to-many' => [Post::class, 'replies', ['isManyToMany' => false, 'mappedBy' => 'post', 'inversedBy' => null, 'isNullable' => true, 'orderBy' => ['body' => 'DESC']]],
     'nullable to-one' => [Post::class, 'author', ['isManyToMany' => false, 'mappedBy' => null, 'inversedBy' => 'posts', 'isNullable' => true, 'orderBy' => []]],
     'not-null to-one' => [PostSection::class, 'post', ['isManyToMany' => false, 'mappedBy' => null, 'inversedBy' => 'sections', 'isNullable' => false, 'orderBy' => []]],
 ]);

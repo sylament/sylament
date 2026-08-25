@@ -71,3 +71,8 @@ it('evaluates multiple() rather than reading the raw property, unlike the vendor
     expect(AssociateAction::make()->multiple(fn (): bool => false)->isMultiple())->toBeFalse()
         ->and(AssociateAction::make()->multiple(fn (): bool => true)->isMultiple())->toBeTrue();
 });
+
+it('refuses to associate without a table declaring a relationship', function (): void {
+    expect(fn (): mixed => AssociateAction::make()->getRecordSelect()->getSearchResults('x'))
+        ->toThrow('associates records through a relationship, which only a table declaring relationship() can supply');
+});

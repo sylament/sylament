@@ -35,3 +35,12 @@ it("is named dissociate and confirms with Filament's chrome", function (): void 
 it('keeps an explicit name over the default', function (): void {
     expect(DissociateAction::make('unlink')->getName())->toBe('unlink');
 });
+
+it('refuses to dissociate without a table declaring a relationship', function (): void {
+    $action = DissociateAction::make()->record(new class {
+        public string $name = 'Alpha';
+    });
+
+    expect(fn (): mixed => $action->call())
+        ->toThrow('dissociates a record through a relationship, which only a table declaring relationship() can supply');
+});

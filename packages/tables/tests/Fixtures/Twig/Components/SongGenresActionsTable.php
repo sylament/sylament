@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Sylament\Tables\Tests\Fixtures\Twig\Components;
 
+use Closure;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use Sylament\Actions\AttachAction;
 use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
@@ -52,6 +54,31 @@ class SongGenresActionsTable implements InteractsWithActions, InteractsWithSchem
     #[LiveProp]
     public bool $titlesByClosure = false;
 
+    #[LiveProp]
+    public ?bool $forcesCaseInsensitiveSearch = null;
+
+    /**
+     * @var list<string>|null
+     */
+    #[LiveProp]
+    public ?array $searchColumns = null;
+
+    /**
+     * Which arm of `recordSelectOptionsQuery()` to install: `'name'` takes the
+     * builder by parameter name and the search beside it, `'type'` takes the
+     * builder by type hint alone.
+     */
+    #[LiveProp]
+    public ?string $optionsQueryArm = null;
+
+    /**
+     * Every `$search` the options-query closure was handed, in call order — the
+     * only way to see the second documented argument arrive.
+     *
+     * @var list<string|null>
+     */
+    public array $optionsQuerySearches = [];
+
     public function __construct(private readonly EntityManagerInterface $entityManager)
     {
     }
@@ -69,7 +96,10 @@ class SongGenresActionsTable implements InteractsWithActions, InteractsWithSchem
             ->headerActions([
                 AttachAction::make()
                     ->multiple($this->multiple)
-                    ->preloadRecordSelect($this->preloads),
+                    ->preloadRecordSelect($this->preloads)
+                    ->forceSearchCaseInsensitive($this->forcesCaseInsensitiveSearch)
+                    ->recordSelectSearchColumns($this->searchColumns)
+                    ->recordSelectOptionsQuery($this->optionsQueryCallback()),
             ])
             ->recordActions([DetachAction::make()])
             ->toolbarActions([DetachBulkAction::make()->fetchSelectedRecords($this->fetchesRecords)])
@@ -88,5 +118,23 @@ class SongGenresActionsTable implements InteractsWithActions, InteractsWithSchem
     public function schemas(): array
     {
         return [];
+    }
+
+    /**
+     * `'name'` leaves the builder untyped, so only the by-name injection can
+     * fill it; `'type'` names it something else, so only the by-type one can.
+     */
+    private function optionsQueryCallback(): ?Closure
+    {
+        return match ($this->optionsQueryArm) {
+            'name' => function (mixed $query, ?string $search): QueryBuilder {
+                $this->optionsQuerySearches[] = $search;
+                assert($query instanceof QueryBuilder);
+
+                return $query->andWhere("record.name <> 'Rock'");
+            },
+            'type' => static fn (QueryBuilder $builder): QueryBuilder => $builder->andWhere("record.name <> 'Pop'"),
+            default => null,
+        };
     }
 }

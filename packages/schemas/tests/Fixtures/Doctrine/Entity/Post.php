@@ -54,9 +54,13 @@ class Post
     private Collection $comments;
 
     /**
+     * Ordered **descending**, the one mapping order here that is, so a reader
+     * that upper-cased or hardcoded the direction could not pass unnoticed.
+     *
      * @var Collection<int, Reply>
      */
     #[ORM\OneToMany(targetEntity: Reply::class, mappedBy: 'post')]
+    #[ORM\OrderBy(['body' => 'DESC'])]
     private Collection $replies;
 
     public function __construct()

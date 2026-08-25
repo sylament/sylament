@@ -39,7 +39,9 @@ for the chrome, the presets and the counting titles, and end to end by
 [`AttachDetachActionsTest`](../../../packages/tables/tests/Integration/AttachDetachActionsTest.php)
 in the **tables** suite — a row detach with its record-titled heading and its
 toast, and the bulk detach on both arms with the no-fetch arm proved never to
-hydrate the selection. It sits there for the reason
+hydrate the selection, plus `DetachBulkAction`'s own hostless refusal — that one
+driven against a container-built host rather than a mounted request, because a
+table whose `relationship()` answers null cannot render at all. It sits there for the reason
 [`PrebuiltDeleteActionTest`](delete-action.md) does: only a table host supplies a
 relationship, a bound row record and a selection, and the actions test kernel has
 none of the three.

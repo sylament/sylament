@@ -25,12 +25,21 @@ Reference — the Filament source this is diffed against:
 
 Covered by
 [`AssociateActionTest`](../../../packages/actions/tests/Unit/AssociateActionTest.php)
-for the chrome, the footer action, the select's shape and the evaluated
-`multiple()`, and end to end by
+for the chrome, the footer action, the select's shape, the evaluated
+`multiple()` and the hostless refusal, and end to end by
 [`AssociateDissociateActionsTest`](../../../packages/tables/tests/Integration/AssociateDissociateActionsTest.php)
 in the **tables** suite — the candidate list, the association, the re-point of
 another owner's record, the toast and unmount, the "associate another" arm, the
-multiple arm, the preloaded options and both refusals of a smuggled key. It sits
+multiple arm, the preloaded options and both refusals of a smuggled key, and
+beside those the select's own arms: the title ordering (the candidate list's
+unowned song is titled so that title order and key order disagree, which is what
+makes the assertion an assertion on the `ORDER BY`),
+`recordSelectOptionsQuery()` narrowing the candidates through each of its two
+documented injections — the builder by parameter name with the search beside it,
+and the builder by type hint — `recordSelectSearchColumns()` searching a mapped
+**non-title** field with the title no longer matching, the unmapped-column
+refusal, and the `LOWER()` that `forceSearchCaseInsensitive()` puts in the
+emitted SQL and its absence without the flag. It sits
 there for the reason
 [`PrebuiltDeleteActionTest`](delete-action.md) does: only a table host supplies a
 relationship, and the actions test kernel registers neither tables nor forms.

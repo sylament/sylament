@@ -65,6 +65,41 @@ it('attaches and detaches through the owning collection of a unidirectional many
     expect(relatedIds($reader, $post, 'tags'))->toBe([]);
 });
 
+it('attaches and detaches through the owning side of a bidirectional many-to-many', function (): void {
+    [$reader, $entityManager] = rig();
+
+    $post = new Post();
+    $post->setTitle('Alpha');
+
+    $category = new Category();
+    $category->setName('news');
+
+    $entityManager->persist($post);
+    $entityManager->persist($category);
+    $entityManager->flush();
+
+    $reader->attach(new Relationship($post, 'categories'), $category);
+    $entityManager->flush();
+    $entityManager->clear();
+
+    $reloaded = $entityManager->find(Post::class, $post->getId());
+    assert($reloaded instanceof Post);
+
+    expect(relatedIds($reader, $reloaded, 'categories'))->toBe([(string) $category->getId()]);
+
+    $related = $entityManager->find(Category::class, $category->getId());
+    assert($related instanceof Category);
+
+    $reader->detach(new Relationship($reloaded, 'categories'), $related);
+    $entityManager->flush();
+    $entityManager->clear();
+
+    $again = $entityManager->find(Post::class, $post->getId());
+    assert($again instanceof Post);
+
+    expect(relatedIds($reader, $again, 'categories'))->toBe([]);
+});
+
 it('attaches from the inverse side of a bidirectional many-to-many by writing the owning collection', function (): void {
     [$reader, $entityManager] = rig();
 

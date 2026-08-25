@@ -138,12 +138,15 @@ not a Doctrine parse error further down. With no columns declared, the title
 attribute is the one searched column; with neither, a search matches everything
 the candidate query already admits.
 
-The pair is typed `list<string>` where Filament prints `array<string>`, and that
-narrowing is forced rather than incidental: the value is handed straight to
-[`Select::searchable()`](../forms/select.md), whose parameter is
-`bool|list<string>|Closure|null`, so an `array<string>` would not survive level
-max at that call site. Read it as the type the sibling actions agree on, not as
-one to "correct" back to the Filament signature.
+The pair keeps Filament's `array<string>`, and the one line of `getRecordSelect()`
+that is not the vendor's byte for byte is what pays for it:
+[`Select::searchable()`](../forms/select.md) takes `bool|Closure|list<string>|null`
+— a list, because the searchable columns are iterated positionally — so handing
+the getter through as Filament does fails level max with *"Type #3 from the union:
+`array<int|string, string>` might not be a list"*. The port reads the getter once
+and passes `$searchColumns === null ? true : array_values($searchColumns)`, which
+is the same value for every consumer who writes a list literal, and re-keys rather
+than rejects a string-keyed array. `AssociateAction` pays it identically.
 
 ### The "another" arm refills the schema and halts
 

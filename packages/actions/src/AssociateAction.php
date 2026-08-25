@@ -296,7 +296,9 @@ class AssociateAction extends Action
 
     /**
      * The submitted key(s), re-resolved through the candidate query — a key
-     * the select never offered is simply absent, and refused.
+     * the select never offered is simply absent, and refused. An empty
+     * submission is refused first, because the count check cannot tell zero
+     * resolved records from zero submitted keys.
      *
      * @param array<mixed> $data
      * @return list<object>
@@ -304,6 +306,11 @@ class AssociateAction extends Action
     protected function findRecordsToAssociate(Relationship $relationship, array $data): array
     {
         $keys = array_values(array_filter(wrap($data['recordId'] ?? null), static fn (mixed $value): bool => is_int($value) || is_string($value)));
+
+        if ($keys === []) {
+            throw new LogicException(sprintf('The action [%s] was submitted with no record to associate.', $this->getName()));
+        }
+
         $records = $this->findCandidatesByKey($keys);
 
         if (count($records) !== count($keys)) {

@@ -31,7 +31,7 @@ class AttachAction extends Action
     protected bool|Closure $isMultiple = false;
 
     /**
-     * @var list<string>|Closure|null
+     * @var array<string>|Closure|null
      */
     protected array|Closure|null $recordSelectSearchColumns = null;
 
@@ -139,7 +139,7 @@ class AttachAction extends Action
     }
 
     /**
-     * @param list<string>|Closure|null $columns
+     * @param array<string>|Closure|null $columns
      */
     public function recordSelectSearchColumns(array|Closure|null $columns): static
     {
@@ -149,7 +149,7 @@ class AttachAction extends Action
     }
 
     /**
-     * @return list<string>|null
+     * @return array<string>|null
      */
     public function getRecordSelectSearchColumns(): ?array
     {
@@ -168,29 +168,21 @@ class AttachAction extends Action
         return $this->evaluate($this->isSearchForcedCaseInsensitive);
     }
 
-    /**
-     * Filament installs `options()` unconditionally, its closure answering null
-     * when the select is not preloaded. Here it is installed only for the
-     * preloaded arm, because the port's `Select::hasFullOptionMap()` reads any
-     * `options()` as the whole truth about a legal value and would then validate
-     * a searched pick against an empty map.
-     */
     public function getRecordSelect(): Select
     {
+        $searchColumns = $this->getRecordSelectSearchColumns();
+
         $select = Select::make('recordId')
             ->label('Record')
             ->required()
             ->multiple($this->isMultiple())
-            ->searchable($this->getRecordSelectSearchColumns() ?? true)
+            ->searchable($searchColumns === null ? true : array_values($searchColumns))
             ->getSearchResultsUsing(fn (Select $component, string $search): array => $this->getRecordSelectOptions($component->getOptionsLimit(), $search, $component->getSearchColumns()))
             ->getOptionLabelUsing(fn (mixed $value): ?string => (is_int($value) || is_string($value)) ? ($this->getRecordSelectOptionLabels([$value])[$value] ?? null) : null)
             ->getOptionLabelsUsing(fn (array $values): array => $this->getRecordSelectOptionLabels(array_values(array_filter($values, static fn (mixed $value): bool => is_int($value) || is_string($value)))))
+            ->options($this->isRecordSelectPreloaded() ? fn (Select $component): array => $this->getRecordSelectOptions($component->getOptionsLimit()) : null)
             ->dynamicOptions(fn (): ?bool => $this->isRecordSelectPreloaded() ? null : false)
             ->hiddenLabel();
-
-        if ($this->isRecordSelectPreloaded()) {
-            $select->options(fn (Select $component): array => $this->getRecordSelectOptions($component->getOptionsLimit()));
-        }
 
         return $this->evaluate($this->modifyRecordSelectUsing, ['select' => $select]) ?? $select;
     }
@@ -223,7 +215,7 @@ class AttachAction extends Action
      * orders itself, and read as one projection when the title is a plain
      * attribute — else hydrated and titled record by record.
      *
-     * @param list<string>|null $searchColumns
+     * @param array<string>|null $searchColumns
      *
      * @return array<int|string, string>
      */

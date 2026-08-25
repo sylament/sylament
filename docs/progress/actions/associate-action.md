@@ -82,6 +82,13 @@ body runs. The re-resolution is the second line, and it is what still holds when
 a consumer's `recordSelect()` reshapes the labelling — which is exactly how the
 Integration case reaches it.
 
+An **empty** submission is refused first, before the count check, because that
+check cannot tell zero resolved records from zero submitted keys: `0 !== 0` is
+false, the loop runs over nothing and the action falls through to its success
+toast, reporting a write that never happened. The select is `required()`, so the
+mounted path never reaches it — the guard exists for a `using()` or direct-call
+consumer, and `AttachAction` carries the same one.
+
 ### The title fast path projects the attribute
 
 When the table names a `recordTitleAttribute()`, the action has no custom title

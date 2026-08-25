@@ -183,6 +183,24 @@ it('re-resolves the submitted key through the candidate query and refuses a smug
         ->and(artistIdOfSong($entityManager, 11))->toBe(1);
 });
 
+it('refuses an empty submission in the action body rather than reporting success', function (): void {
+    // The select is `required()`, so the mounted path never reaches the body —
+    // the guard is for a `using()` or direct-call consumer, and is what stops a
+    // write that never happened from toasting "Associated".
+    [$client, $entityManager] = seededArtistSongsClient();
+
+    $host = test()->createLiveComponent(ArtistSongsActionsTable::class, ['artistId' => 1], client: $client)->component();
+    $host->mountAction('associate', [], ['table' => true]);
+
+    $schema = $host->getMountedActionSchema();
+    $action = $host->getMountedAction() ?? throw new LogicException('Nothing mounted.');
+    $action->data(['recordId' => null]);
+
+    expect(fn (): mixed => $action->call(['schema' => $schema, 'form' => $schema]))
+        ->toThrow(LogicException::class, 'submitted with no record to associate')
+        ->and(artistIdOfSong($entityManager, 30))->toBeNull();
+});
+
 it('dissociates a row, titling the confirmation with the record', function (): void {
     [$client, $entityManager] = seededArtistSongsClient();
 

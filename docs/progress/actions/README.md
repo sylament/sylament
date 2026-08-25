@@ -67,14 +67,14 @@ fold into its own file: `BulkActionGroup` into
 | [`BulkAction`](../../../packages/actions/src/BulkAction.php) | [`BulkAction.php`](../../../vendor/filament/actions/src/BulkAction.php) | in progress | [bulk-action.md](bulk-action.md) |
 | [`BulkActionGroup`](../../../packages/actions/src/BulkActionGroup.php) | [`BulkActionGroup.php`](../../../vendor/filament/actions/src/BulkActionGroup.php) | in progress | [action-group.md](action-group.md) |
 | ButtonAction | [`ButtonAction.php`](../../../vendor/filament/actions/src/ButtonAction.php) | todo | - |
-| [`CreateAction`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | in progress | [create-action.md](create-action.md) |
+| [`CreateAction`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | [create-action.md](create-action.md) |
 | [`DeleteAction`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | in progress | [delete-action.md](delete-action.md) |
 | [`DeleteBulkAction`](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | in progress | [delete-action.md](delete-action.md#deletebulkaction) |
 | DetachAction | [`DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) | todo | - |
 | DetachBulkAction | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | todo | - |
 | DissociateAction | [`DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) | todo | - |
 | DissociateBulkAction | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | todo | - |
-| [`EditAction`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | in progress | [edit-action.md](edit-action.md) |
+| [`EditAction`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | [edit-action.md](edit-action.md) |
 | ExportAction | [`ExportAction.php`](../../../vendor/filament/actions/src/ExportAction.php) | todo | - |
 | ExportBulkAction | [`ExportBulkAction.php`](../../../vendor/filament/actions/src/ExportBulkAction.php) | todo | - |
 | ForceDeleteAction | [`ForceDeleteAction.php`](../../../vendor/filament/actions/src/ForceDeleteAction.php) | todo | - |

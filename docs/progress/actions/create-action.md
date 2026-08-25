@@ -12,7 +12,7 @@ persists it through Doctrine and reports `success()`.
 four record actions.**
 [`CanOpenUrl::getUrl()`](../../../packages/actions/src/Concerns/CanOpenUrl.php)
 answers the action's own `url()` and then the host's
-[`getDefaultActionUrl()`](interacts-with-actions.md#the-panel-level-default-hooks-are-on-the-contract-three-deferred)
+[`getDefaultActionUrl()`](interacts-with-actions.md#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred)
 hook, and an action with a URL renders an anchor that is never mounted — so
 setting a modal heading, as this class now does, does not by itself open one.
 There are exactly three ways in: the host answers no URL (a resource that
@@ -21,7 +21,7 @@ absence of a page, not a feature), `->modal()` forces one (a hard `true` from
 `hasModal()` short-circuits `getUrl()` to `null` before either arm is read), or
 the action names a `recordClass()` its host declines to route.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
@@ -33,15 +33,22 @@ Reference — the Filament source this is diffed against:
 
 Covered by
 [`CreateActionTest`](../../../packages/actions/tests/Unit/CreateActionTest.php)
-(the chrome, the label interpolation and the create-another footer action) and
+(the chrome, the label interpolation, the create-another footer action and the
+three-hop relationship chain),
 [`CreateActionTest`](../../../packages/actions/tests/Integration/CreateActionTest.php)
-(the modal arm end to end against the fixture entity manager).
+(the modal arm end to end against the fixture entity manager) and
+[`CreateActionRelationshipTest`](../../../packages/tables/tests/Integration/CreateActionRelationshipTest.php)
+(the relationship arm, in tables' suite because only that kernel boots a table
+and a forms field — the src-mirror rule is relaxed there for the same reason
+[`PrebuiltDeleteActionTest`](../../../packages/tables/tests/Integration/PrebuiltDeleteActionTest.php)
+relaxes it).
 
 ## Surface
 
 Every member Filament's class carries. _Blocked by_ names what has to land
-first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
-**diverges** link to [Divergences](#divergences), or `—`.
+first. _Detail_ carries a **detail** link to another file's write-up, a
+**semantics** link to [Semantics](#semantics), a **diverges** link to
+[Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -57,24 +64,42 @@ first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | [`record(null)`](../../../packages/actions/src/CreateAction.php) (Filament-verbatim in `setUp()`; clears only a `configureUsing()`-bound record) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-modal-arm-persists-through-the-schemas-record-class) |
 | `forceRenderAfterCreateAnother()` / `shouldForceRenderAfterCreateAnother()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#two-create-another-members-are-not-ported) |
 | `disableCreateAnother()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#two-create-another-members-are-not-ported) |
-| `relationship()` / `getRelationship()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | todo | relation managers | [detail](#the-relationship-arm-waits-on-relation-managers) |
+| [`relationship()` / `getRelationship()`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [semantics](#the-created-record-joins-the-relationship-in-the-same-flush) |
+| The `BelongsToMany` pivot-column split inside the relationship arm | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | The whole pivot surface is skipped one layer down — a Doctrine association table carrying payload is an entity of its own, so there are no pivot columns to split out of the data ([`table.md`](../tables/table.md#surface)) |
 
-## Details
+## Semantics
 
-Specifics for rows that are not finished — what is already in, what is left,
-and the next step. Delete a subsection when its row flips to **done**.
+Faithful ports subtle enough to be misread from the source alone — permanent,
+addressable by anchor.
 
-### The relationship arm waits on relation managers
+### The created record joins the relationship in the same flush
 
-`relationship()` / `getRelationship()` answer *where* the created record is
-saved: Filament's body branches on the relation type, saving through a
-`BelongsToMany` with its pivot columns split out of the data, or through the
-relation object otherwise. The port's body always persists the mapped record
-through the entity manager that owns its class, which is the whole of the
-non-relationship arm and everything a resource page needs.
+`getRelationship()` walks three hops, Filament-verbatim: the action's own
+`relationship()` closure, then
+[the table's](../tables/table.md#the-relationship-query-is-the-base-query-rooted-at-the-target),
+then the host's
+[`getDefaultActionRelationship()`](interacts-with-actions.md#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred).
+An action inside a relation-scoped table therefore needs no configuration at
+all, and one that names its own owner overrides the table it sits in.
 
-**Next step:** it lands with relation managers, together with the pivot-column
-split the `BelongsToMany` arm needs.
+The arm itself sits **between** `persist()` and `flush()` in `createRecord()`,
+and each of those three lines is load-bearing. `persist()` stays explicit
+because the membership write is not a cascade: the owner's association may
+declare none, and an unpersisted record that a collection merely holds is not
+inserted by a mapping that does not cascade. The attach runs on the object
+graph rather than as its own write —
+[`AssociationReader::attach()`](../schemas/association-reader.md) sets the
+owning collection or the target's mapped-by field through the property
+accessor — so the single `flush()` writes the record and its membership
+together, and a failure of either rolls back both.
+
+Filament's three-way branch collapses to two. It splits `BelongsToMany` (save
+with pivot data) from `HasOneOrManyThrough` (save the record alone) from
+everything else (save through the relation), because those arms differ in
+Eloquent. Here they do not: the pivot surface is skipped whole (the row above),
+`through` relations have no Doctrine equivalent, and the reader already knows
+from the mapping which of the two shapes the write takes. So the port branches
+only on whether a relationship resolved at all.
 
 ## Divergences
 
@@ -102,7 +127,7 @@ and for a host-level action — one no schema component owns — that seed reads
 `getRecord(withDefault: true)`, i.e.
 [the whole chain](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
 down to the host's
-[`getDefaultActionRecord()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-three-deferred).
+[`getDefaultActionRecord()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred).
 On a record page that last hop answers the page's **record**, so the seed is the
 very object a create modal must not write into: `$schema->record($recordClass)`
 in the body is what re-points the container at the class, and it is the only

@@ -96,10 +96,11 @@ write-up in [Details](#details), **diverges** → the note in
 | [Action-schema integration](../../../packages/actions/src/Concerns/HasActions.php) (`getMountedActionSchema()` incl. `resolveMountedActionSchemaRecord()` / `getMountedActionSchemaOperation()`, `mountedActionHasSchema()`, deprecated `mountedActionHasForm`/`getMountedActionForm`, `getMountedActionSchemaName()`, `getMountedActionSchemaRecord()`) | `Concerns/InteractsWithActions.php` (same methods) | in progress | — | [has-schema.md](has-schema.md) · [semantics](#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation) · [detail](#the-schema-integrations-remainder-is-a-name-and-two-deprecated-aliases) · [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) · [diverges](#the-has-schema-check-is-memoised-separately-because-the-schema-cache-cannot-hold-null) · [diverges](#set-and-get-are-unavailable-to-an-action-inside-a-mounted-action-schema) |
 | [`$mountedActionsData`](../../../packages/actions/src/Concerns/HasActions.php) + `getMountedActionData()` | `Concerns/InteractsWithActions.php` `mountedActions.{i}.data` | done | — | [diverges](#per-mount-form-state-lives-in-a-sibling-bag-not-in-the-stack-descriptor) |
 | `#[Url]`-bound default-action state (`defaultAction`, `defaultActionArguments`, `defaultActionContext`, `defaultTableAction*`) | `Concerns/InteractsWithActions.php` public `#[Url]` properties | todo | — | [detail](#url-bound-default-action-state-is-not-ported) |
-| [`getDefaultActionUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-three-deferred) |
-| [`getDefaultActionSuccessRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionFailureRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSuccessRedirectUrl()` / `getDefaultActionFailureRedirectUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-three-deferred) |
-| [`getDefaultActionSchemaResolver()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecord()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordTitle()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordClass()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordLabel()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSchemaResolver()` / `getDefaultActionRecord()` / `getDefaultActionRecordTitle()` / `getDefaultActionModel()` / `getDefaultActionModelLabel()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-three-deferred) |
-| The three remaining `getDefaultAction*` host override hooks (Relationship/AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionRelationship()` etc. | blocked | M4 · 8 (relationship), the authorization epic | [detail](#the-getdefaultaction-host-override-hooks-are-ported-three-deferred) |
+| [`getDefaultActionUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
+| [`getDefaultActionSuccessRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionFailureRedirectUrl()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSuccessRedirectUrl()` / `getDefaultActionFailureRedirectUrl()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
+| [`getDefaultActionSchemaResolver()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecord()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordTitle()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordClass()`](../../../packages/actions/src/Concerns/HasActions.php) / [`getDefaultActionRecordLabel()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionSchemaResolver()` / `getDefaultActionRecord()` / `getDefaultActionRecordTitle()` / `getDefaultActionModel()` / `getDefaultActionModelLabel()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
+| [`getDefaultActionRelationship()`](../../../packages/actions/src/Concerns/HasActions.php) | `Concerns/InteractsWithActions.php` `getDefaultActionRelationship()` | done | — | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
+| The two remaining `getDefaultAction*` host override hooks (AuthorizationResponse/IndividualRecordAuthorizationResponseResolver) | `Concerns/InteractsWithActions.php` `getDefaultActionAuthorizationResponse()` etc. | blocked | the authorization epic | [detail](#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred) |
 | `forceRender()` / `partiallyRenderActionParentSchema()` | `Concerns/InteractsWithActions.php` `forceRender()` / `partiallyRenderActionParentSchema()` | blocked | schemas partial-render infrastructure (`PartialsComponentHook`) | [detail](#partial-re-render-is-not-ported) |
 | [`afterActionCalled()`](../../../packages/actions/src/Concerns/HasActions.php) hook (empty protected method; runs after `callAfter()`, before the notification branch, happy path only — Filament-exact) | `Concerns/InteractsWithActions.php` `afterActionCalled()` | done | — | — |
 | `bootedInteractsWithActions()` boot wiring / `WithRateLimiting` | `Concerns/InteractsWithActions.php` `bootedInteractsWithActions()`, `DanHarrin\LivewireRateLimiting\WithRateLimiting` | skipped | — | [diverges](#there-is-no-boot-hook-or-rate-limiting-trait) |
@@ -340,7 +341,7 @@ them to auto-mount an action, exist in the port. **Next step:** todo, no
 current consumer; would need the UX LiveComponent `#[LiveProp]`/query-string
 binding equivalent of Livewire's `#[Url]`.
 
-### The `getDefaultAction*` host override hooks are ported, three deferred
+### The `getDefaultAction*` host override hooks are ported, the authorization pair deferred
 
 Filament declares eleven `getDefaultAction*(Action $action)` methods
 (`Record`, `Title`, `Model`, `ModelLabel`, `Url`, `SuccessRedirectUrl`,
@@ -349,7 +350,7 @@ Filament declares eleven `getDefaultAction*(Action $action)` methods
 returning `null` by default — extension points a host page overrides to supply
 context-free defaults to any action it mounts.
 
-**Eight are now ported, and every one of them landed by the same recipe:**
+**Nine are now ported, and every one of them landed by the same recipe:**
 declare it on [the contract](interacts-with-actions.md), default it to
 `return null;` here, and land it *with* the `Action`-side concern that reads it.
 Contract and trait move together, so every host that already uses this trait
@@ -369,9 +370,15 @@ that walks to them. Four of those five are the chain's; the fifth,
 `getDefaultActionSchemaResolver()`, is read by
 [`HasSchema::getSchema()`](has-schema.md) instead — the record chain never walks
 to it — and that reader landed in the same epic, so the hook was declared here
-before anything called it. The last two are renames, `getDefaultActionModel` and
-`getDefaultActionModelLabel` under the
+before anything called it. Two of the cluster are renames, `getDefaultActionModel`
+and `getDefaultActionModelLabel` under the
 [record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record).
+The ninth, `getDefaultActionRelationship()`, landed with its reader the same way
+— [`CreateAction::getRelationship()`](create-action.md#the-created-record-joins-the-relationship-in-the-same-flush),
+whose last hop it is — once
+[`Relationship`](../schemas/association-reader.md) existed to be its return type;
+no host in the toolkit overrides it yet, a relation manager being the first that
+will.
 A host answering any of them
 [must discriminate by action](interacts-with-actions.md#a-host-answering-the-url-hook-must-discriminate-by-action) —
 one answer for every action it mounts is almost never what a page means.
@@ -391,14 +398,11 @@ chain that seeds a mounted action's schema with a record; the rest of that chain
 and its write-up, belong to the seed itself — the row for `getMountedActionSchema()`
 above carries them.
 
-The remaining three stay unported for the same reason as ever — the `Action`
-concerns that would consume them are not ported either. `getDefaultActionRelationship`
-is M4 · 8's: its return type is a Doctrine design that epic owns, and the value
-half is already answered by
-[`AssociationTarget`](../schemas/association-reader.md). The two authorization
+The remaining two stay unported for the same reason as ever — the `Action`
+concerns that would consume them are not ported either. Both are authorization
 hooks (`getDefaultActionAuthorizationResponse`,
-`getDefaultActionIndividualRecordAuthorizationResponseResolver`) wait on the
-parked authorization epic, alongside `CanBeAuthorized`.
+`getDefaultActionIndividualRecordAuthorizationResponseResolver`), waiting on the
+parked authorization epic alongside `CanBeAuthorized`.
 **Next step:** each lands with the `Action`-side concern that reads it.
 
 ### Partial re-render is not ported

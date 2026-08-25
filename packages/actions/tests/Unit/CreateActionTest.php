@@ -6,6 +6,9 @@ namespace Sylament\Actions\Tests\Unit;
 
 use Sylament\Actions\Action;
 use Sylament\Actions\CreateAction;
+use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Note;
+use Sylament\Actions\Tests\Fixtures\Twig\Components\DefaultRecordHost;
+use Sylament\Schemas\State\Relationship;
 
 it('names itself create', function (): void {
     expect(CreateAction::make()->getName())->toBe('create')
@@ -72,4 +75,21 @@ it('hands the create-another action to a modifier closure', function (): void {
 
 it('clears its record after the run', function (): void {
     expect(CreateAction::make()->shouldClearRecordAfter())->toBeTrue();
+});
+
+it('takes its relationship from its own closure', function (): void {
+    $relationship = new Relationship(new Note(), 'tags');
+
+    expect(CreateAction::make()->relationship(fn (): Relationship => $relationship)->getRelationship())->toBe($relationship);
+});
+
+it('names no relationship without a closure, a table or a host', function (): void {
+    expect(CreateAction::make()->getRelationship())->toBeNull();
+});
+
+it('falls through to the host hook, which a non-creating action never reaches', function (): void {
+    $host = new DefaultRecordHost();
+
+    expect($host->getAction('create')?->getRelationship())->toBe($host->relationship)
+        ->and($host->getDefaultActionRelationship(Action::make('ping')))->toBeNull();
 });

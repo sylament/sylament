@@ -80,3 +80,7 @@ it('refuses the host record class without a default', function (): void {
 
     expect($action->getRecordClass(withDefault: false))->toBeNull();
 });
+
+it('defaults the relationship hook to null', function (): void {
+    expect(new RecordResolutionFixture()->getDefaultActionRelationship(Action::make('x')))->toBeNull();
+});

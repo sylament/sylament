@@ -8,6 +8,7 @@ use Closure;
 use LogicException;
 use Sylament\Actions\Concerns\CanCustomizeProcess;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Relationship;
 
 use function Sylament\Support\only;
 
@@ -23,6 +24,8 @@ class CreateAction extends Action
      * @var array<string, mixed>|Closure|null
      */
     protected array|Closure|null $preserveFormDataWhenCreatingAnotherUsing = null;
+
+    protected Relationship|Closure|null $getRelationshipUsing = null;
 
     public static function getDefaultName(): ?string
     {
@@ -124,6 +127,24 @@ class CreateAction extends Action
         return $this;
     }
 
+    public function relationship(?Closure $relationship): static
+    {
+        $this->getRelationshipUsing = $relationship;
+
+        return $this;
+    }
+
+    /**
+     * Own closure, then the table's relationship, then the host's default — the
+     * relationship the created record joins, or null for a plain create.
+     */
+    public function getRelationship(): ?Relationship
+    {
+        return $this->evaluate($this->getRelationshipUsing)
+            ?? $this->getTable()?->getRelationship()
+            ?? $this->getLiveComponentOrNull()?->getDefaultActionRelationship($this);
+    }
+
     public function shouldClearRecordAfter(): bool
     {
         return true;
@@ -132,7 +153,8 @@ class CreateAction extends Action
     /**
      * The default persistence step `using()` replaces: map the validated —
      * and, where `mutateDataUsing()` asked, mutated — state onto a new record
-     * of the action's class, then flush it.
+     * of the action's class, then flush it. A relationship in force joins the
+     * record to its owner in the same flush.
      *
      * @param array<string, mixed> $data
      * @param class-string $recordClass
@@ -143,6 +165,13 @@ class CreateAction extends Action
 
         $manager = $this->getEntityManagerForRecord($record);
         $manager->persist($record);
+
+        $relationship = $this->getRelationship();
+
+        if ($relationship instanceof Relationship) {
+            $this->getAssociationReader()->attach($relationship, $record);
+        }
+
         $manager->flush();
 
         return $record;

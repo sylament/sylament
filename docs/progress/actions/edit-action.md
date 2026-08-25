@@ -9,7 +9,7 @@ onto that record and flushes it. The page-beats-a-modal rule is stated once for
 all four record actions at the top of
 [create-action.md](create-action.md) and holds here unchanged.
 
-**Status:** in progress — see the [status vocabulary](../README.md#statuses).
+**Status:** done — see the [status vocabulary](../README.md#statuses).
 
 Reference — the Filament source this is diffed against:
 
@@ -34,7 +34,7 @@ against the
 ## Surface
 
 Every member Filament's class carries. _Blocked by_ names what has to land
-first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
+first. _Detail_ carries a **detail** link to another file's write-up, a
 **diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
@@ -47,26 +47,7 @@ first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | [Modal mode — `fillForm()` from the record and the `action()` body that updates it](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#the-modal-arm-maps-the-validated-state-onto-the-bound-record) |
 | [`modalHeading()` / `modalSubmitActionLabel()`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
 | [`mutateRecordDataUsing()`](../../../packages/actions/src/Concerns/CanMutateRecordData.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | — | [diverges](#mutaterecorddatausing-is-one-shared-trait-not-three-copies) |
-| The `BelongsToMany` pivot-column split in the fill and the write | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | todo | relation managers | [detail](#the-pivot-arm-waits-on-relation-managers) |
-
-## Details
-
-Specifics for rows that are not finished — what is already in, what is left,
-and the next step. Delete a subsection when its row flips to **done**.
-
-### The pivot arm waits on relation managers
-
-Filament's fill closure and its `process()` body both branch on the table's
-relationship: for a `BelongsToMany` they read the pivot record's attributes into
-the form beside the record's own, and on save they split the pivot columns back
-out of the data and update the pivot separately. The port has no relationship
-lane on a table yet, so there is nothing to branch on — the fill reads the
-record and the write maps the whole array onto it, which is the entirety of the
-non-relationship arm.
-
-**Next step:** it lands with relation managers, together with the same pivot
-split [`CreateAction`](create-action.md#the-relationship-arm-waits-on-relation-managers)
-owes.
+| The `BelongsToMany` pivot-column split in the fill and the write | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | skipped | — | The pivot surface is skipped whole one layer down — a Doctrine association table carrying payload is an entity of its own, so a relation-scoped table's row has no pivot attributes to fill from or write back ([`table.md`](../tables/table.md#surface), [`create-action.md`](create-action.md#the-created-record-joins-the-relationship-in-the-same-flush)) |
 
 ## Divergences
 

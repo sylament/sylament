@@ -59,8 +59,9 @@ note in [Semantics](#semantics).
 | `getMountedActionSchemaName()` (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | skipped | — | [detail](#schema-mount-plumbing-is-not-on-the-contract) |
 | [`getDefaultActionUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
 | [`getDefaultActionSuccessRedirectUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionFailureRedirectUrl(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
-| [`getDefaultActionSchemaResolver(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecord(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordTitle(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordClass(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordLabel(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [detail](#the-panel-level-default-hooks-are-on-the-contract-three-deferred) · [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
-| The three remaining `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | M4 · 8 (relationship), the authorization epic | [detail](#the-panel-level-default-hooks-are-on-the-contract-three-deferred) |
+| [`getDefaultActionSchemaResolver(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecord(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordTitle(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordClass(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) / [`getDefaultActionRecordLabel(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [detail](#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) · [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
+| [`getDefaultActionRelationship(Action $action)`](../../../packages/actions/src/Contracts/InteractsWithActions.php) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | done | — | [detail](#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) · [semantics](#a-host-answering-the-url-hook-must-discriminate-by-action) |
+| The two remaining `getDefaultAction*` hooks (declared by Filament, dropped here) | [`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php) | blocked | the authorization epic | [detail](#the-panel-level-default-hooks-are-on-the-contract-the-authorization-pair-deferred) |
 
 ## Details
 
@@ -92,7 +93,7 @@ resubmits exactly such a frame and landed without it: the client re-sends its
 retry reads. **Next step:** it lands with the first caller that resubmits a
 frame *without* re-sending the arguments it was mounted with.
 
-### The panel-level default hooks are on the contract, three deferred
+### The panel-level default hooks are on the contract, the authorization pair deferred
 
 Filament's contract declares eleven `getDefaultAction*` hooks
 (`getDefaultActionRecord`, `getDefaultActionRecordTitle`,
@@ -109,7 +110,7 @@ repeating them.
 
 **Eight are declared here now**, each landed the same way: on the interface and
 defaulted to `null` on
-[the trait](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-three-deferred),
+[the trait](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred),
 so every existing host gains it for free and no host needs an edit.
 `getDefaultActionUrl(Action $action): ?string` went first, for the
 [prebuilt `CreateAction`/`EditAction`](create-action.md) rendering as links to a
@@ -125,23 +126,23 @@ that reads them; the schema resolver's reader is
 and it landed later in the same epic — the one place the recipe's
 "land it with its reader" was stretched to "land it with its epic", so that the
 contract widened exactly once.
-The last two carry `renames.md` rows: `getDefaultActionModel` and
+Two of the cluster carry `renames.md` rows: `getDefaultActionModel` and
 `getDefaultActionModelLabel` speak the
 [record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record)
 here. The other three already spoke "record" and carried over unchanged.
+`getDefaultActionRelationship(Action $action): ?Relationship` is the ninth,
+declared with the reader that walks to it —
+[`CreateAction::getRelationship()`](create-action.md#the-created-record-joins-the-relationship-in-the-same-flush) —
+and typed by
+[`Sylament\Schemas\State\Relationship`](../schemas/association-reader.md),
+which is where Filament's `Relation` return type lands under Doctrine.
 
-The three that stay out are the ones with no consumer on this side. Sylament's
-actions package ships
-[`InteractsWithRecord`](../../../packages/actions/src/Concerns/InteractsWithRecord.php),
-so the record half is answered; what is left is
-`getDefaultActionRelationship` — M4 · 8's, since its return type is a Doctrine
-design that epic owns, even though the value half already exists as
-[`AssociationTarget`](../schemas/association-reader.md) — and the two
+The two that stay out are the ones with no consumer on this side: the
 authorization hooks, which wait on the parked authorization epic alongside
 `CanBeAuthorized`.
 
-**Next step:** each of the three lands with the `Action`-side concern that reads
-it, the way the eight before them did.
+**Next step:** each of the two lands with the `Action`-side concern that reads
+it, the way the nine before them did.
 
 ## Semantics
 

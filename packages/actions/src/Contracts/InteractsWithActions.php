@@ -7,6 +7,7 @@ namespace Sylament\Actions\Contracts;
 use Closure;
 use Sylament\Actions\Action;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Relationship;
 
 interface InteractsWithActions
 {
@@ -102,4 +103,11 @@ interface InteractsWithActions
      * class is the host's default class — null when the host has none.
      */
     public function getDefaultActionRecordLabel(Action $action): ?string;
+
+    /**
+     * The relationship a creating action attaches its record to when neither the
+     * action nor its table names one — a relation manager answers here; null when
+     * the host has none.
+     */
+    public function getDefaultActionRelationship(Action $action): ?Relationship;
 }

@@ -83,7 +83,7 @@ phrased differently a caller still passes a closure —
 `DeleteAction` sets no redirect of its own, and reading the class alone says it
 never redirects. It does — on exactly one host. `dispatchSuccessRedirect()`
 takes the action's own `successRedirectUrl()` first and falls back to the host's
-[`getDefaultActionSuccessRedirectUrl()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-three-deferred),
+[`getDefaultActionSuccessRedirectUrl()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred),
 and [`EditRecord`](../panels/README.md) is the one page that answers it: for a
 `DeleteAction` it returns the resource's index URL, because the record the page
 is editing no longer exists once the action has run. Every other host — a table,

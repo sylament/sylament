@@ -18,6 +18,7 @@ use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\Relationship;
 use Sylament\Support\Exceptions\Cancel;
 use Sylament\Support\Exceptions\Halt;
 use Sylament\Tables\Contracts\InteractsWithTable;
@@ -719,6 +720,11 @@ trait HasActions
     }
 
     public function getDefaultActionRecordLabel(Action $action): ?string
+    {
+        return null;
+    }
+
+    public function getDefaultActionRelationship(Action $action): ?Relationship
     {
         return null;
     }

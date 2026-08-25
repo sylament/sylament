@@ -34,6 +34,17 @@ function viewedNote(string $title, ?string $body = null): Note
     return $note;
 }
 
+/**
+ * The one `<input>` a schema field rendered for `$name`, so a case can read its
+ * attributes without matching the word anywhere else on the page.
+ */
+function renderedInput(string $html, string $name): string
+{
+    preg_match('/<input[^>]+name="' . $name . '"[^>]*>/', $html, $matches);
+
+    return $matches[0] ?? '';
+}
+
 it('fills the modal from the record and disables the schema', function (): void {
     $note = viewedNote('Alpha', 'the body');
 
@@ -77,10 +88,10 @@ it('renders its fields disabled where the edit modal renders them writable', fun
         ->call('mountAction', ['name' => 'edit', 'arguments' => [], 'context' => ['recordKey' => (string) $note->getId()]])
         ->render();
 
-    expect($viewHtml)->toContain('value="Alpha"')
-        ->and($viewHtml)->toContain('disabled=""')
-        ->and($editHtml)->toContain('value="Alpha"')
-        ->and($editHtml)->not->toContain('disabled');
+    expect(renderedInput($viewHtml, 'title'))->toContain('value="Alpha"')->toContain('disabled=""')
+        ->and(renderedInput($viewHtml, 'body'))->toContain('disabled=""')
+        ->and(renderedInput($editHtml, 'title'))->toContain('value="Alpha"')->not->toContain('disabled')
+        ->and(renderedInput($editHtml, 'body'))->not->toContain('disabled');
 });
 
 it('writes nothing when the modal is dismissed', function (): void {

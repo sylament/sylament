@@ -92,5 +92,5 @@ it('reads the search columns and the case-insensitivity flag back', function ():
 
 it('refuses to attach without a table declaring a relationship', function (): void {
     expect(fn (): mixed => AttachAction::make()->getRecordSelect()->getSearchResults('x'))
-        ->toThrow('attaches records to a relationship');
+        ->toThrow('attaches records to a relationship, which only a table declaring relationship() can supply');
 });

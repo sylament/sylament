@@ -346,6 +346,24 @@ it('hands recordSelectOptionsQuery() the builder by type as well, and scopes the
         ->toBe([20 => 'Glory Box']);
 });
 
+it('hydrates and titles the candidates one by one once the table titles them itself', function (): void {
+    [$client] = seededArtistSongsClient();
+    $select = associateRecordSelect(associateHost($client, ['titlesByClosure' => true]));
+
+    // The projection arm cannot answer these: it reads the title column, which
+    // says `Exit Music`. Only the hydrating arm runs the table's recordTitle().
+    expect($select->getSearchResults(''))->toBe([30 => 'EXIT MUSIC', 20 => 'GLORY BOX']);
+});
+
+it('leaves an options query that orders itself alone', function (): void {
+    [$client] = seededArtistSongsClient();
+    $select = associateRecordSelect(associateHost($client, ['optionsQueryArm' => 'order']));
+
+    // By title it is Exit Music then Glory Box; by plays it is the other way
+    // round, so this answer is the caller's ORDER BY rather than the action's.
+    expect($select->getSearchResults(''))->toBe([20 => 'Glory Box', 30 => 'Exit Music']);
+});
+
 it('searches the columns recordSelectSearchColumns() names rather than the title', function (): void {
     [$client] = seededArtistSongsClient();
     $select = associateRecordSelect(associateHost($client, ['searchColumns' => ['plays']]));

@@ -53,18 +53,20 @@ class Category
         return $this->posts;
     }
 
+    /**
+     * Deliberately does NOT call back to {@see Post::addCategory()}: the inverse
+     * side heals nothing, so a write mis-routed here is lost at flush exactly as
+     * Doctrine's mapping says it is.
+     */
     public function addPost(Post $post): void
     {
         if (! $this->posts->contains($post)) {
             $this->posts->add($post);
         }
-
-        $post->addCategory($this);
     }
 
     public function removePost(Post $post): void
     {
         $this->posts->removeElement($post);
-        $post->removeCategory($this);
     }
 }

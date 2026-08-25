@@ -21,6 +21,7 @@ use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
 use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Artist;
+use Sylament\Tables\Tests\Fixtures\Doctrine\Entity\Song;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -52,6 +53,9 @@ class ArtistSongsActionsTable implements InteractsWithActions, InteractsWithSche
     public bool $preloads = false;
 
     #[LiveProp]
+    public bool $titlesByClosure = false;
+
+    #[LiveProp]
     public string $association = 'songs';
 
     /**
@@ -74,7 +78,7 @@ class ArtistSongsActionsTable implements InteractsWithActions, InteractsWithSche
     /**
      * Which arm of `recordSelectOptionsQuery()` to install: `'name'` takes the
      * builder by parameter name and the search beside it, `'type'` takes the
-     * builder by type hint alone.
+     * builder by type hint alone, and `'order'` orders the builder itself.
      */
     #[LiveProp]
     public ?string $optionsQueryArm = null;
@@ -104,7 +108,7 @@ class ArtistSongsActionsTable implements InteractsWithActions, InteractsWithSche
 
     public function table(Table $table): Table
     {
-        return $table
+        $table
             ->relationship(function (): ?Relationship {
                 $artist = $this->entityManager->find(Artist::class, $this->artistId);
 
@@ -124,11 +128,19 @@ class ArtistSongsActionsTable implements InteractsWithActions, InteractsWithSche
             ->recordActions([DissociateAction::make()])
             ->toolbarActions([DissociateBulkAction::make()->fetchSelectedRecords($this->fetchesRecords)])
             ->paginated([10]);
+
+        if ($this->titlesByClosure) {
+            $table->recordTitle(fn (Song $record): string => mb_strtoupper($record->getTitle()));
+        }
+
+        return $table;
     }
 
     /**
      * `'name'` leaves the builder untyped, so only the by-name injection can
-     * fill it; `'type'` names it something else, so only the by-type one can.
+     * fill it; `'type'` names it something else, so only the by-type one can;
+     * `'order'` sorts by plays, which puts the candidates in the opposite order
+     * to their titles.
      */
     private function optionsQueryCallback(): ?Closure
     {
@@ -140,6 +152,7 @@ class ArtistSongsActionsTable implements InteractsWithActions, InteractsWithSche
                 return $query->andWhere("record.title <> 'Glory Box'");
             },
             'type' => static fn (QueryBuilder $builder): QueryBuilder => $builder->andWhere("record.title <> 'Exit Music'"),
+            'order' => static fn (QueryBuilder $builder): QueryBuilder => $builder->orderBy('record.plays', 'ASC'),
             default => null,
         };
     }

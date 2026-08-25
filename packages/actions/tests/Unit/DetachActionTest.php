@@ -45,5 +45,5 @@ it('refuses to detach without a table declaring a relationship', function (): vo
     });
 
     expect(fn (): mixed => $action->call())
-        ->toThrow('detaches a record from a relationship');
+        ->toThrow('detaches a record from a relationship, which only a table declaring relationship() can supply');
 });

@@ -98,7 +98,11 @@ because [`EntityManagerFactory::seed()`](../../../packages/schemas/tests/Fixture
 clears the identity map — attach and detach on a unidirectional many-to-many,
 on both directions of the bidirectional `Post::$categories` ↔ `Category::$posts`
 pair (the owning direction re-read across a `clear()`, the inverse one written
-through the owning collection), the one-to-many associate/dissociate through
+through the owning collection, and both named in one case that reads the
+untouched inverse collections as proof of where each write landed —
+[`Category`](../../../packages/schemas/tests/Fixtures/Doctrine/Entity/Category.php)'s
+adders deliberately heal nothing, so a mis-routed write really does lose the row),
+the one-to-many associate/dissociate through
 `Author::$posts`, a detach handed a reference rather than a hydrated record, the no-op attach of an
 already-related record, and the three dissociate refusals one fixture each
 ([`Post::$sections`](../../../packages/schemas/tests/Fixtures/Doctrine/Entity/Post.php)
@@ -342,6 +346,14 @@ member. A one-to-many is always inverse, so it never writes a collection at all 
 it points the target's `mappedBy` field at the owner, or at null. Attaching a
 record the owner already holds is a no-op, caught by an identity check before the
 accessor is asked to diff.
+
+That redirection is only witnessable against an entity that does **not** heal it.
+A bidirectional adder that calls its counterpart back (`Category::addPost()`
+calling `Post::addCategory()`, the shape `make:entity` generates) makes a
+wrong-side write land on the owning collection anyway, so the branch selector
+above passes every assertion no matter which arm it picks. The fixture pair drops
+those callbacks for exactly that reason: the inverse collection stays untouched
+after a write, and the case reads it as the evidence of which side was written.
 
 `detach()` runs `assertRelationshipAcceptsDetach()` first on every one-to-many,
 and the order of its three refusals is what makes each of them reachable:

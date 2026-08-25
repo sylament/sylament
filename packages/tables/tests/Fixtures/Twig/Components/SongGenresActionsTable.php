@@ -66,7 +66,7 @@ class SongGenresActionsTable implements InteractsWithActions, InteractsWithSchem
     /**
      * Which arm of `recordSelectOptionsQuery()` to install: `'name'` takes the
      * builder by parameter name and the search beside it, `'type'` takes the
-     * builder by type hint alone.
+     * builder by type hint alone, and `'order'` orders the builder itself.
      */
     #[LiveProp]
     public ?string $optionsQueryArm = null;
@@ -122,7 +122,9 @@ class SongGenresActionsTable implements InteractsWithActions, InteractsWithSchem
 
     /**
      * `'name'` leaves the builder untyped, so only the by-name injection can
-     * fill it; `'type'` names it something else, so only the by-type one can.
+     * fill it; `'type'` names it something else, so only the by-type one can;
+     * `'order'` sorts by name descending, the opposite of the title order the
+     * action would impose.
      */
     private function optionsQueryCallback(): ?Closure
     {
@@ -134,6 +136,7 @@ class SongGenresActionsTable implements InteractsWithActions, InteractsWithSchem
                 return $query->andWhere("record.name <> 'Rock'");
             },
             'type' => static fn (QueryBuilder $builder): QueryBuilder => $builder->andWhere("record.name <> 'Pop'"),
+            'order' => static fn (QueryBuilder $builder): QueryBuilder => $builder->orderBy('record.name', 'DESC'),
             default => null,
         };
     }

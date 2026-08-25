@@ -338,6 +338,17 @@ it('hands recordSelectOptionsQuery() the builder by type as well, and scopes the
     expect(mountedRecordSelect($host)->getOptions())->toBe([1 => 'Rock']);
 });
 
+it('leaves an options query that orders itself alone', function (): void {
+    [$client] = seededGenresClient();
+    $host = attachHost($client, ['songId' => 2, 'optionsQueryArm' => 'order']);
+
+    $host->mountAction('attach', [], ['table' => true]);
+
+    // By title the pair is Pop then Rock; the closure asks for name descending,
+    // so this answer is the caller's ORDER BY rather than the action's.
+    expect(mountedRecordSelect($host)->getSearchResults(''))->toBe([1 => 'Rock', 2 => 'Pop']);
+});
+
 it('refuses a search column the target class maps no field for', function (): void {
     [$client] = seededGenresClient();
     $host = attachHost($client, ['songId' => 2, 'searchColumns' => ['nope']]);

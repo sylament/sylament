@@ -100,6 +100,66 @@ it('attaches and detaches through the owning side of a bidirectional many-to-man
     expect(relatedIds($reader, $again, 'categories'))->toBe([]);
 });
 
+it('writes the owning collection whichever side of a bidirectional many-to-many the relationship names', function (): void {
+    [$reader, $entityManager] = rig();
+
+    $post = new Post();
+    $post->setTitle('Alpha');
+
+    $news = new Category();
+    $news->setName('news');
+
+    $sport = new Category();
+    $sport->setName('sport');
+
+    foreach ([$post, $news, $sport] as $entity) {
+        $entityManager->persist($entity);
+    }
+
+    $entityManager->flush();
+
+    $reader->attach(new Relationship($post, 'categories'), $news);
+    $reader->attach(new Relationship($sport, 'posts'), $post);
+
+    // Category::addPost() heals nothing, so an untouched inverse collection is
+    // what proves both writes landed on Post::$categories, the side Doctrine
+    // persists — a mis-routed one would be discarded at flush.
+    expect($post->getCategories()->toArray())->toBe([$news, $sport])
+        ->and($news->getPosts())->toBeEmpty()
+        ->and($sport->getPosts())->toBeEmpty();
+
+    $entityManager->flush();
+    $entityManager->clear();
+
+    $reloaded = $entityManager->find(Post::class, $post->getId());
+    assert($reloaded instanceof Post);
+
+    $reloadedNews = $entityManager->find(Category::class, $news->getId());
+    $reloadedSport = $entityManager->find(Category::class, $sport->getId());
+    assert($reloadedNews instanceof Category && $reloadedSport instanceof Category);
+
+    $keys = relatedIds($reader, $reloaded, 'categories');
+    sort($keys);
+
+    expect($keys)->toBe([(string) $news->getId(), (string) $sport->getId()]);
+
+    $reader->detach(new Relationship($reloaded, 'categories'), $reloadedNews);
+    $reader->detach(new Relationship($reloadedSport, 'posts'), $reloaded);
+
+    // Both removals came off the owning collection, the inverse-named one
+    // included; a lazy inverse collection still reads the DB row that is only
+    // dropped by the flush below, so it is not evidence either way.
+    expect($reloaded->getCategories())->toBeEmpty();
+
+    $entityManager->flush();
+    $entityManager->clear();
+
+    $again = $entityManager->find(Post::class, $post->getId());
+    assert($again instanceof Post);
+
+    expect(relatedIds($reader, $again, 'categories'))->toBe([]);
+});
+
 it('attaches from the inverse side of a bidirectional many-to-many by writing the owning collection', function (): void {
     [$reader, $entityManager] = rig();
 

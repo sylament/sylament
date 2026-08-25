@@ -43,7 +43,9 @@ title in the opposite order to their keys, so the assertion is on the `ORDER BY`
 rather than on the insertion order) on both the plucking and the hydrating
 branch, `recordSelectOptionsQuery()` narrowing the candidates through each of
 its two documented injections — the builder by parameter name with the search
-beside it, and the builder by type hint — the unmapped-search-column refusal,
+beside it, and the builder by type hint — a third arm that orders the builder
+itself, whose order survives (the escape hatch below), the unmapped-search-column
+refusal,
 and the `LOWER()` that `forceSearchCaseInsensitive()` puts in the emitted SQL and
 its absence without the flag. It sits there for the
 reason

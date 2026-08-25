@@ -33,10 +33,13 @@ another owner's record, the toast and unmount, the "associate another" arm, the
 multiple arm, the preloaded options and both refusals of a smuggled key, and
 beside those the select's own arms: the title ordering (the candidate list's
 unowned song is titled so that title order and key order disagree, which is what
-makes the assertion an assertion on the `ORDER BY`),
+makes the assertion an assertion on the `ORDER BY`) on the projecting branch and,
+through a table-level `recordTitle()` closure whose upper-cased answers no
+projection could return, on the hydrating one,
 `recordSelectOptionsQuery()` narrowing the candidates through each of its two
 documented injections — the builder by parameter name with the search beside it,
-and the builder by type hint — `recordSelectSearchColumns()` searching a mapped
+and the builder by type hint — a third arm that orders the builder itself, whose
+order survives, `recordSelectSearchColumns()` searching a mapped
 **non-title** field with the title no longer matching, the unmapped-column
 refusal, and the `LOWER()` that `forceSearchCaseInsensitive()` puts in the
 emitted SQL and its absence without the flag. It sits
@@ -106,7 +109,9 @@ custom title, the options are read as one `SELECT record.<id>, record.<title>`
 projection rather than hydrated. Otherwise every candidate is hydrated and titled
 through `getRecordTitle()`. The title ordering (`orderBy record.<title>` when the
 builder carries no order of its own) sits **before** that branch, because
-Filament orders both paths.
+Filament orders both paths. A `recordSelectOptionsQuery()` that orders the
+builder itself keeps its order — that is the documented escape hatch, and
+`AttachAction` carries the same one.
 
 ### Preloading is what decides whether the select carries a membership check
 

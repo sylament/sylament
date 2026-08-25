@@ -635,7 +635,7 @@ trait CanOpenModal
 
     public function getModalWidth(): string
     {
-        return $this->evaluate($this->modalWidth) ?? 'md';
+        return $this->evaluate($this->modalWidth) ?? ($this->isConfirmationRequired() ? 'md' : '4xl');
     }
 
     public function getModalAlignment(): Alignment|string

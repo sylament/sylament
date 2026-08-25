@@ -44,10 +44,12 @@ it('defaults the submit label to Confirm when confirming, else Submit', function
         ->and(Action::make('delete')->modalSubmitActionLabel('Yes')->getModalSubmitActionLabel())->toBe('Yes');
 });
 
-it('defaults the cancel label and modal width', function (): void {
+it('defaults the cancel label, and the modal width to 4xl unless the action confirms', function (): void {
     expect(Action::make('delete')->getModalCancelActionLabel())->toBe('Cancel')
-        ->and(Action::make('delete')->getModalWidth())->toBe('md')
-        ->and(Action::make('delete')->modalWidth('lg')->getModalWidth())->toBe('lg');
+        ->and(Action::make('delete')->getModalWidth())->toBe('4xl')
+        ->and(Action::make('delete')->requiresConfirmation()->getModalWidth())->toBe('md')
+        ->and(Action::make('delete')->modalWidth('lg')->getModalWidth())->toBe('lg')
+        ->and(Action::make('delete')->requiresConfirmation()->modalWidth('lg')->getModalWidth())->toBe('lg');
 });
 
 it('does not open a modal for a bare action', function (): void {

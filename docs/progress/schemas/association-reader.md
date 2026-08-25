@@ -59,6 +59,7 @@ a _Ports_ link.
 | [`AssociationTarget::$targetClass` / `$isToMany`](../../../packages/schemas/src/State/AssociationTarget.php) — what to load and in what shape | done | — | — |
 | [`AssociationTarget::$isOwningSide`](../../../packages/schemas/src/State/AssociationTarget.php) — whether writing this side writes the database | done | — | [semantics](#the-owning-side-and-orphan-removal-flags-are-what-a-writer-needs-not-trivia) |
 | [`AssociationTarget::$isOrphanRemoval`](../../../packages/schemas/src/State/AssociationTarget.php) — whether detaching an item deletes it | done | — | [diverges](#orphanremoval-is-a-plain-bool-on-the-orm-3-mapping-object) |
+| [`AssociationTarget::$isManyToMany` / `$mappedBy` / `$inversedBy` / `$isNullable` / `$orderBy`](../../../packages/schemas/src/State/AssociationTarget.php) — the cardinality, the two bidirectional field names, the join column's nullability and the collection's declared order | done | — | [semantics](#the-owning-side-and-orphan-removal-flags-are-what-a-writer-needs-not-trivia) |
 | [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.association_reader` plus a class alias, with an ignore-on-invalid `EntityManagerInterface` argument | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
 | Composite identifiers | skipped | — | [diverges](#a-composite-identifier-is-refused-not-encoded) |
 | Through-relations, morphs, pivot data | skipped | — | [diverges](#only-the-shapes-doctrine-states-in-one-mapping-are-read) |
@@ -67,7 +68,9 @@ Every row is **done** or **skipped** — the unit suite
 ([`AssociationReaderTest`](../../../packages/schemas/tests/Unit/State/AssociationReaderTest.php))
 covers all four association shapes the fixture entities declare (many-to-one,
 the inverse one-to-many with orphan removal, the owning many-to-many, and the
-**inverse** one-to-one), all three null answers (a scalar property, a non-entity
+**inverse** one-to-one), the five mapping-shape fields across six shapes (both
+sides of a bidirectional many-to-many, a unidirectional one, an ordered
+one-to-many, and a nullable and a not-null to-one), all three null answers (a scalar property, a non-entity
 class, an anonymous class), the four operations refusing without an entity
 manager, the record key against a persisted entity, and both key refusals — an
 unpersisted entity and the composite-identifier
@@ -229,7 +232,7 @@ narrower boundary to expose even if a caller wanted one.
 
 ### The owning-side and orphan-removal flags are what a writer needs, not trivia
 
-`AssociationTarget` carries four fields because a writer cannot act correctly on
+`AssociationTarget` carries nine fields because a writer cannot act correctly on
 fewer. `targetClass` and `isToMany` say what to load and in what shape.
 `isOwningSide` says whether writing this side changes the database at all — an
 inverse side is a read-through, so a component that writes one without also
@@ -238,6 +241,24 @@ entities pin (`Post::$profile` is the **inverse** one-to-one; `Profile::$post`
 owns it). `isOrphanRemoval` says whether dropping an item deletes the entity or
 merely detaches it — the difference between a cleanup and data loss, and not
 something a caller may guess.
+
+The five the relationship seam added answer the questions a *relationship* writer
+asks on top of those. `isManyToMany` picks between the two query shapes and the
+two write shapes — a many-to-many is a collection on both sides, everything else
+has a to-one field somewhere. `mappedBy` names the owning field on the target and
+is read on inverse sides only (an owning side has none, and Doctrine's
+`getAssociationMappedByTargetField()` throws rather than answering null there);
+`inversedBy` is its mirror, the inverse field on the target, read on owning sides
+only and null where the mapping is unidirectional. Between them they are how a
+write reaches the side Doctrine persists, and how a one-to-many query finds the
+field to filter on. `isNullable` is a to-one owning side's join column, and
+deliberately `true` for every other shape — a collection and an inverse side have
+no column of their own to be null, so the flag reads as "nothing here forbids a
+null" rather than as a claim about a column that does not exist. `orderBy` is the
+mapping's own collection order, exactly as declared: Doctrine's docblock types it
+`array<string, 'asc'|'desc'>` but hands `#[ORM\OrderBy(['position' => 'ASC'])]`
+back as `'ASC'`, so the field is typed `array<string, string>` and a consumer that
+needs a canonical direction lower-cases it.
 
 ## Divergences
 

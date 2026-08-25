@@ -2,15 +2,58 @@
 
 declare(strict_types=1);
 
+use Doctrine\ORM\EntityManager;
 use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\AssociationTarget;
+use Sylament\Schemas\State\PropertyAccessor;
+use Sylament\Schemas\State\RecordTypeReader;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Author;
+use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Category;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\CompositePair;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\PostSection;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Profile;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Tests\Fixtures\Doctrine\EntityManagerFactory;
+use Symfony\Component\PropertyAccess\PropertyAccess;
+
+/**
+ * One manager shared by the relationship cases below, so a case that clears the
+ * identity map clears the one the reader holds. The cases above build their own.
+ */
+function entityManager(): EntityManager
+{
+    static $entityManager = null;
+
+    return $entityManager ??= EntityManagerFactory::create();
+}
+
+function reader(): AssociationReader
+{
+    return new AssociationReader(entityManager(), new PropertyAccessor(PropertyAccess::createPropertyAccessor(), new RecordTypeReader()));
+}
+
+function seededRelationshipPost(): Post
+{
+    $post = new Post();
+    $post->setTitle('Alpha');
+
+    entityManager()->persist($post);
+    entityManager()->flush();
+
+    return $post;
+}
+
+function seededRelationshipCategory(): Category
+{
+    $category = new Category();
+    $category->setName('news');
+
+    entityManager()->persist($category);
+    entityManager()->flush();
+
+    return $category;
+}
 
 it('describes a to-one association', function (): void {
     $reader = new AssociationReader(EntityManagerFactory::create());
@@ -226,3 +269,23 @@ it('persists an entity through the entity manager and flushes it', function (): 
 
     expect($entityManager->find(Author::class, $id))->toBeInstanceOf(Author::class);
 });
+
+it('describes the mapping shape of every association kind', function (string $class, string $property, array $expected): void {
+    $target = reader()->describe($class, $property);
+
+    expect($target)->toBeInstanceOf(AssociationTarget::class)
+        ->and([
+            'isManyToMany' => $target?->isManyToMany,
+            'mappedBy' => $target?->mappedBy,
+            'inversedBy' => $target?->inversedBy,
+            'isNullable' => $target?->isNullable,
+            'orderBy' => $target?->orderBy,
+        ])->toBe($expected);
+})->with([
+    'owning unidirectional many-to-many' => [Post::class, 'tags', ['isManyToMany' => true, 'mappedBy' => null, 'inversedBy' => null, 'isNullable' => true, 'orderBy' => []]],
+    'owning bidirectional many-to-many' => [Post::class, 'categories', ['isManyToMany' => true, 'mappedBy' => null, 'inversedBy' => 'posts', 'isNullable' => true, 'orderBy' => []]],
+    'inverse many-to-many' => [Category::class, 'posts', ['isManyToMany' => true, 'mappedBy' => 'categories', 'inversedBy' => null, 'isNullable' => true, 'orderBy' => []]],
+    'ordered one-to-many' => [Post::class, 'sections', ['isManyToMany' => false, 'mappedBy' => 'post', 'inversedBy' => null, 'isNullable' => true, 'orderBy' => ['position' => 'ASC']]],
+    'nullable to-one' => [Post::class, 'author', ['isManyToMany' => false, 'mappedBy' => null, 'inversedBy' => 'posts', 'isNullable' => true, 'orderBy' => []]],
+    'not-null to-one' => [PostSection::class, 'post', ['isManyToMany' => false, 'mappedBy' => null, 'inversedBy' => 'sections', 'isNullable' => false, 'orderBy' => []]],
+]);

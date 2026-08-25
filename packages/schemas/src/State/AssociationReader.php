@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Sylament\Schemas\State;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Mapping\InverseSideMapping;
+use Doctrine\ORM\Mapping\OwningSideMapping;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use ReflectionClass;
@@ -47,11 +49,23 @@ class AssociationReader
             return null;
         }
 
+        $mapping = $metadata->getAssociationMapping($property);
+        $isNullable = true;
+
+        if ($mapping->isToOneOwningSide()) {
+            $isNullable = $mapping->joinColumns[0]->nullable ?? true;
+        }
+
         return new AssociationTarget(
             targetClass: $metadata->getAssociationTargetClass($property),
             isToMany: $metadata->isCollectionValuedAssociation($property),
             isOwningSide: ! $metadata->isAssociationInverseSide($property),
-            isOrphanRemoval: $metadata->getAssociationMapping($property)->orphanRemoval,
+            isOrphanRemoval: $mapping->orphanRemoval,
+            isManyToMany: $mapping->isManyToMany(),
+            mappedBy: $mapping instanceof InverseSideMapping ? $mapping->mappedBy : null,
+            inversedBy: $mapping instanceof OwningSideMapping ? $mapping->inversedBy : null,
+            isNullable: $isNullable,
+            orderBy: $mapping->isToMany() ? $mapping->orderBy() : [],
         );
     }
 

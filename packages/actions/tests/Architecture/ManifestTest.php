@@ -39,7 +39,7 @@ function actionsManifest(): array
     return $manifest;
 }
 
-it('requires the two sylament packages its src resolves unconditionally', function (): void {
+it('requires the three sylament packages its src resolves unconditionally', function (): void {
     expect(actionsManifest()['require'])
         ->toHaveKey('sylament/forms', 'self.version')
         ->toHaveKey('sylament/schemas', 'self.version')

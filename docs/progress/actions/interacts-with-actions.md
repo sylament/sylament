@@ -108,7 +108,7 @@ implicit record / class / URL / redirect / relationship / schema-resolver /
 authorization defaults for every action it mounts, without each action call site
 repeating them.
 
-**Eight are declared here now**, each landed the same way: on the interface and
+**Nine are declared here now**, each landed the same way: on the interface and
 defaulted to `null` on
 [the trait](has-actions.md#the-getdefaultaction-host-override-hooks-are-ported-the-authorization-pair-deferred),
 so every existing host gains it for free and no host needs an edit.

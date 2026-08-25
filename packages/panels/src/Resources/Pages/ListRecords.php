@@ -4,9 +4,15 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Resources\Pages;
 
+use Closure;
 use Doctrine\ORM\QueryBuilder;
+use Sylament\Actions\Action;
+use Sylament\Actions\CreateAction;
+use Sylament\Actions\EditAction;
+use Sylament\Actions\ViewAction;
 use Sylament\Schemas\Concerns\HasSchemas;
 use Sylament\Schemas\Contracts\InteractsWithSchemas;
+use Sylament\Schemas\Schema;
 use Sylament\Tables\Concerns\HasTable;
 use Sylament\Tables\Contracts\InteractsWithTable;
 use Sylament\Tables\Table;
@@ -36,10 +42,38 @@ abstract class ListRecords extends Page implements InteractsWithSchemas, Interac
         return static::$breadcrumb ?? 'List';
     }
 
+    public function form(Schema $schema): Schema
+    {
+        return $this->getResourceInstance()->form($schema);
+    }
+
+    public function infolist(Schema $schema): Schema
+    {
+        return $this->getResourceInstance()->infolist($schema);
+    }
+
+    public function getDefaultActionSchemaResolver(Action $action): ?Closure
+    {
+        return match (true) {
+            $action instanceof CreateAction, $action instanceof EditAction => fn (Schema $schema): Schema => $this->form($schema->hasCustomColumns() ? $schema : $schema->columns(2)),
+            $action instanceof ViewAction => fn (Schema $schema): Schema => $this->infolist($this->form($schema->hasCustomColumns() ? $schema : $schema->columns(2))),
+            default => null,
+        };
+    }
+
+    /**
+     * @return object|array<string, mixed>|string|null
+     */
+    protected function getMountedActionSchemaRecord(): object|array|string|null
+    {
+        return $this->getResourceInstance()->getRecordClass();
+    }
+
     /**
      * The filters form is cache-only and a list page declares no form of its
      * own — so the discovery list is empty rather than the default `schema`,
-     * which would demand a `schema()` method on every dehydrate.
+     * which would demand a `schema()` method on every dehydrate. `form()` and
+     * `infolist()` exist for the action schema resolver and are not discovered.
      *
      * @return array<string>
      */

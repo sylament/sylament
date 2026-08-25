@@ -48,7 +48,11 @@ abstract class CreateRecord extends Page implements InteractsWithSchemas
 
     public function mount(): void
     {
+        $this->callHook('beforeFill');
+
         $this->getSchema('form')->fill();
+
+        $this->callHook('afterFill');
     }
 
     public function form(Schema $schema): Schema
@@ -76,13 +80,43 @@ abstract class CreateRecord extends Page implements InteractsWithSchemas
     #[LiveAction]
     public function create(): ?RedirectResponse
     {
-        $record = $this->getSchema('form')->getData();
+        $schema = $this->getSchema('form');
 
-        $this->record = $this->handleRecordCreation($record);
+        $this->callHook('beforeValidate');
+
+        $data = $schema->getState();
+
+        $this->callHook('afterValidate');
+
+        $data = $this->mutateFormDataBeforeCreate($data);
+
+        $this->callHook('beforeCreate');
+
+        $this->record = $this->handleRecordCreation($schema->getData($data));
+
+        $this->callHook('afterCreate');
 
         $this->getCreatedNotification()?->send();
 
         return new RedirectResponse($this->getRedirectUrl());
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     *
+     * @return array<string, mixed>
+     */
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        return $data;
+    }
+
+    /**
+     * @return object|array<string, mixed>|string|null
+     */
+    protected function getMountedActionSchemaRecord(): object|array|string|null
+    {
+        return $this->getResourceInstance()->getRecordClass();
     }
 
     public function getRecord(): ?object

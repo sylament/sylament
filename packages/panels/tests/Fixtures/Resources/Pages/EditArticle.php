@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Sylament\Panels\Tests\Fixtures\Resources\Pages;
 
+use Sylament\Actions\CreateAction;
+use Sylament\Actions\DeleteAction;
 use Sylament\Actions\EditAction;
 use Sylament\Panels\Resources\Pages\EditRecord;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
@@ -22,10 +24,30 @@ final class EditArticle extends EditRecord
         return EditAction::make()->record($this->getRecord());
     }
 
+    /**
+     * The delete whose success redirect the page answers: the record it removes
+     * is the one this page shows, so staying here would leave a page whose
+     * record no longer exists.
+     */
+    public function deleteAction(): DeleteAction
+    {
+        return DeleteAction::make();
+    }
+
+    /**
+     * Never a header action — it exists so a create modal can be mounted on a
+     * record page, where the page's own record must not reach it.
+     */
+    public function createAction(): CreateAction
+    {
+        return CreateAction::make();
+    }
+
     public function getHeaderActions(): array
     {
         return [
             $this->cacheAction($this->editAction()),
+            $this->cacheAction($this->deleteAction()),
         ];
     }
 }

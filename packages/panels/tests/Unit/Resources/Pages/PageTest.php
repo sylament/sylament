@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Sylament\Actions\CreateAction;
+use Sylament\Actions\Exceptions\ActionNotResolvableException;
 use Sylament\Panels\Resources\Pages\CreateRecord;
 use Sylament\Panels\Resources\Pages\EditRecord;
 use Sylament\Panels\Resources\Pages\ListRecords;
@@ -30,6 +31,23 @@ final class ResourceBoundPage extends ResourcePage
     public function getResourceInstance(): ArticleResource
     {
         return new ArticleResource();
+    }
+}
+
+/**
+ * Exposes the base's record resolver, which is protected and has no other route
+ * into a Unit test.
+ */
+final class RecordResolvingPage extends ResourcePage
+{
+    protected static string $resource = ArticleResource::class;
+
+    /**
+     * @param array{name: string, arguments: array<string, mixed>, context: array<string, mixed>} $descriptor
+     */
+    public function resolveRecord(array $descriptor): mixed
+    {
+        return $this->resolveMountedActionRecord($descriptor);
     }
 }
 
@@ -103,4 +121,11 @@ it('answers the host default record class and label off the resource', function 
 
     expect($page->getDefaultActionRecordClass($action))->toBe(Article::class)
         ->and($page->getDefaultActionRecordLabel($action))->toBe('article');
+});
+
+it('refuses a record key that is not an identifier before it reaches the resource', function (): void {
+    // The guard runs ahead of the resource lookup, so the un-injected page never
+    // has to answer one.
+    expect(fn (): mixed => new RecordResolvingPage()->resolveRecord(['name' => 'edit', 'arguments' => [], 'context' => ['recordKey' => ['not', 'a', 'key']]]))
+        ->toThrow(ActionNotResolvableException::class, 'Record key of type [array]');
 });

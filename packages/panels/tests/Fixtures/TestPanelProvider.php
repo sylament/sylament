@@ -9,6 +9,7 @@ use Sylament\Panels\Panel;
 use Sylament\Panels\PanelProvider;
 use Sylament\Panels\Tests\Fixtures\Pages\SettingsPage;
 use Sylament\Panels\Tests\Fixtures\Resources\ArticleResource;
+use Sylament\Panels\Tests\Fixtures\Resources\NoteResource;
 
 final class TestPanelProvider extends PanelProvider
 {
@@ -21,6 +22,6 @@ final class TestPanelProvider extends PanelProvider
             ->brandName('Test Admin')
             ->navigationGroups(['Content'])
             ->pages([Dashboard::class, SettingsPage::class])
-            ->resources([ArticleResource::class]);
+            ->resources([ArticleResource::class, NoteResource::class]);
     }
 }

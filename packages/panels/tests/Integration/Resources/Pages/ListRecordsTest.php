@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
+use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Note;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListArticles;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\ListNotes;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\DomCrawler\Crawler;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
@@ -177,4 +179,150 @@ it('deletes a record through the row action and re-renders without it', function
         ->and($rows->text())->toContain('Alpha')
         ->and((string) $rendered)->toContain('sylament:notification')
         ->and($entityManager->getRepository(Article::class)->findOneBy(['slug' => 'beta']))->toBeNull();
+});
+
+/**
+ * @return array{KernelBrowser, EntityManagerInterface}
+ */
+function seededNotesClient(): array
+{
+    $client = test()->getContainer()->get('test.client');
+    $client->disableReboot();
+
+    $entityManager = test()->getContainer()->get(EntityManagerInterface::class);
+
+    $alpha = new Note();
+    $alpha->setTitle('Alpha');
+    $alpha->setBody('the alpha body');
+
+    $beta = new Note();
+    $beta->setTitle('Beta');
+    $beta->setBody('the beta body');
+
+    EntityManagerFactory::seed($entityManager, $alpha, $beta);
+
+    return [$client, $entityManager];
+}
+
+function noteKey(EntityManagerInterface $entityManager, string $title): string
+{
+    $note = $entityManager->getRepository(Note::class)->findOneBy(['title' => $title]);
+
+    expect($note)->toBeInstanceOf(Note::class);
+
+    return (string) $note?->getId();
+}
+
+it('mounts a header create action as a modal carrying the resource form on a resource with no create page', function (): void {
+    [$client] = seededNotesClient();
+
+    $crawler = $client->request('GET', '/admin/notes');
+    $create = $crawler->filter('.sy-pa-header-actions button');
+
+    // No create page is registered, so the url hook declines and the trigger
+    // mounts rather than linking — the whole of what "simple resource" means.
+    expect($crawler->filter('.sy-pa-header-actions a')->count())->toBe(0)
+        ->and($create->text())->toContain('New note')
+        ->and($create->attr('data-live-name-param'))->toBe('create');
+
+    $modal = $this->createLiveComponent(ListNotes::class, client: $client)
+        ->call('mountAction', ['name' => 'create', 'arguments' => [], 'context' => []])
+        ->render();
+
+    expect((string) $modal)->toContain('Create Note')
+        ->and($modal->crawler()->filter('input[data-model$="mountedActionsData.0.title"]')->count())->toBe(1)
+        ->and($modal->crawler()->filter('input[data-model$="mountedActionsData.0.body"]')->count())->toBe(1);
+});
+
+it('creates a note from the modal, toasts and re-renders the new row', function (): void {
+    [$client, $entityManager] = seededNotesClient();
+
+    $rendered = $this->createLiveComponent(ListNotes::class, client: $client)
+        ->call('mountAction', ['name' => 'create', 'arguments' => [], 'context' => []])
+        ->set('mountedActionsData.0.title', 'Gamma')
+        ->call('callMountedAction')
+        ->render();
+
+    $rows = $rendered->crawler()->filter('tbody .sy-ta-row');
+    $rowText = implode(' ', $rows->each(fn (Crawler $row): string => $row->text()));
+
+    $entityManager->clear();
+
+    expect($rows->count())->toBe(3)
+        ->and($rowText)->toContain('Gamma')
+        ->and((string) $rendered)->toContain('sylament:notification')
+        ->and($entityManager->getRepository(Note::class)->findOneBy(['title' => 'Gamma']))->toBeInstanceOf(Note::class);
+});
+
+it('creates another and keeps the modal open', function (): void {
+    [$client, $entityManager] = seededNotesClient();
+
+    $component = $this->createLiveComponent(ListNotes::class, client: $client)
+        ->call('mountAction', ['name' => 'create', 'arguments' => [], 'context' => []])
+        ->set('mountedActionsData.0.title', 'Gamma')
+        ->call('callMountedAction', ['arguments' => ['another' => true]]);
+
+    $entityManager->clear();
+
+    expect($component->component()->mountedActions)->toHaveCount(1)
+        ->and($component->component()->getMountedActionData(0))->toBe(['title' => null, 'body' => null])
+        ->and($entityManager->getRepository(Note::class)->findOneBy(['title' => 'Gamma']))->toBeInstanceOf(Note::class);
+});
+
+it('edits a note through the row modal', function (): void {
+    [$client, $entityManager] = seededNotesClient();
+
+    $key = noteKey($entityManager, 'Alpha');
+
+    $component = $this->createLiveComponent(ListNotes::class, client: $client)
+        ->call('mountAction', ['name' => 'edit', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => $key]]);
+
+    expect($component->component()->getMountedActionData(0))->toBe(['title' => 'Alpha', 'body' => 'the alpha body']);
+
+    $component->set('mountedActionsData.0.title', 'Alpha, edited')->call('callMountedAction');
+
+    $entityManager->clear();
+
+    expect($entityManager->find(Note::class, (int) $key)?->getTitle())->toBe('Alpha, edited')
+        ->and($component->component()->mountedActions)->toBe([]);
+});
+
+it('views a note read-only with a Close button only', function (): void {
+    [$client, $entityManager] = seededNotesClient();
+
+    $key = noteKey($entityManager, 'Alpha');
+
+    $host = $this->createLiveComponent(ListNotes::class, client: $client)
+        ->call('mountAction', ['name' => 'view', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => $key]])
+        ->component();
+
+    $footerActions = $host->getMountedAction()?->getVisibleModalFooterActions() ?? [];
+
+    expect($host->getMountedActionData(0))->toBe(['title' => 'Alpha', 'body' => 'the alpha body'])
+        ->and($host->getMountedActionSchema()?->isDisabled())->toBeTrue()
+        ->and(array_keys($footerActions))->toBe(['cancel'])
+        ->and($footerActions['cancel']->getLabel())->toBe('Close');
+});
+
+it('replicates a note through its modal', function (): void {
+    [$client, $entityManager] = seededNotesClient();
+
+    $key = noteKey($entityManager, 'Alpha');
+
+    $component = $this->createLiveComponent(ListNotes::class, client: $client)
+        ->call('mountAction', ['name' => 'replicate', 'arguments' => [], 'context' => ['table' => true, 'recordKey' => $key]]);
+
+    // The replicate modal declares only the title, so the body rides the
+    // metadata copy rather than the form.
+    expect($component->component()->getMountedActionData(0))->toBe(['title' => 'Alpha']);
+
+    $component->set('mountedActionsData.0.title', 'Alpha (copy)')->call('callMountedAction');
+
+    $entityManager->clear();
+
+    $replica = $entityManager->getRepository(Note::class)->findOneBy(['title' => 'Alpha (copy)']);
+
+    expect($replica)->toBeInstanceOf(Note::class)
+        ->and($replica?->getBody())->toBe('the alpha body')
+        ->and($entityManager->getRepository(Note::class)->count([]))->toBe(3);
 });

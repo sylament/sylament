@@ -38,7 +38,8 @@ test kernel has neither a table nor a database.
 
 Every member Filament's class carries. _Blocked by_ names what has to land
 first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
-**diverges** link to [Divergences](#divergences), or `—`.
+**semantics** link to [Semantics](#semantics), a **diverges** link to
+[Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -51,7 +52,7 @@ first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | `modalIcon()` / `modalSubmitActionLabel()` | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | skipped | — | [diverges](#the-confirmation-chrome-is-left-to-the-defaults) |
 | `keyBindings(['mod+d'])` | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | todo | `HasKeyBindings` | — |
 | `hidden()` for a soft-deleted record | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | skipped | — | [diverges](#there-is-no-soft-delete-arm-to-hide-behind) |
-| Success redirect after the delete | [`Concerns/CanRedirect.php`](../../../vendor/filament/actions/src/Concerns/CanRedirect.php) | in progress | the `EditRecord` page override (M4 · 2) | [detail](#a-delete-on-a-record-page-does-not-redirect-yet) |
+| Success redirect after the delete | [`Concerns/CanRedirect.php`](../../../vendor/filament/actions/src/Concerns/CanRedirect.php) | done | — | [semantics](#a-delete-redirects-only-where-the-host-page-answers) |
 
 ## Details
 
@@ -75,24 +76,31 @@ demo's hand-built delete action does:
 **Next step:** interpolate `getRecordTitle()` into the default heading — nothing
 blocks it now.
 
-### A delete on a record page does not redirect yet
+## Semantics
 
-In Filament, deleting the record you are editing redirects to the resource
-index — `dispatchSuccessRedirect()` reads
-`getDefaultActionSuccessRedirectUrl()` off the host page. The mechanism now
-ships on this side: [`CanRedirect`](action.md) is composed onto `Action`, the
-[host hook](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported)
-is on the trait and the contract, and a resolved URL leaves the pipeline as a
-[returned `RedirectResponse`](has-actions.md#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag).
-What is still missing is the **page-side override**: no panels page answers the
-hook, so a delete on an `EditRecord` page still re-renders in place and leaves a
-page whose record no longer exists. On a table that is exactly right, which is
-why nothing else needs it yet. A caller can already opt in per action with
-`->successRedirectUrl('/…')`.
+Faithful ports whose obvious reading is wrong. Permanent, unlike the details
+above.
 
-**Next step:** the `EditRecord` override — `getDefaultActionSuccessRedirectUrl()`
-returning the resource's index URL for a `DeleteAction` — which is
-[M4 · 2](../roadmap.md)'s row, not this concern's.
+### A delete redirects only where the host page answers
+
+`DeleteAction` sets no redirect of its own, and reading the class alone says it
+never redirects. It does — on exactly one host. `dispatchSuccessRedirect()`
+takes the action's own `successRedirectUrl()` first and falls back to the host's
+[`getDefaultActionSuccessRedirectUrl()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported),
+and [`EditRecord`](../panels/README.md) is the one page that answers it: for a
+`DeleteAction` it returns the resource's index URL, because the record the page
+is editing no longer exists once the action has run. Every other host — a table,
+a list page, a plain live component — answers `null`, so the same action deletes
+and re-renders in place, which on a table is exactly right. Filament's panels
+draw the line in the same place; that hook has no other non-null implementation
+there either.
+
+Two consequences. The URL leaves the pipeline as a
+[returned `RedirectResponse`](has-actions.md#a-redirect-leaves-the-pipeline-as-a-returned-response-not-through-a-framework-side-bag)
+from `callMountedAction()`, so the request ends before the page re-renders —
+which is why the port needs no counterpart to Filament's nulling of a deleted
+record before dehydration. And a caller can have the redirect on any host by
+naming it per action with `->successRedirectUrl('/…')`.
 
 ## Divergences
 

@@ -6,7 +6,12 @@ use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Doctrine\EntityManagerFactory;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditArticle;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\EditHookedArticle;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
@@ -129,4 +134,107 @@ it('saves in place, stays on the page and dispatches the toast browser event', f
         ->and($reloaded)->toBeInstanceOf(Article::class)
         ->and($reloaded?->getTitle())->toBe('Alpha, edited')
         ->and($entityManager->getRepository(Article::class)->count([]))->toBe(1);
+});
+
+/*
+ * The cases below run in-process on one host object: a `->call()` is a fresh
+ * request that rebuilds the page and its cached actions, so the mounted stack a
+ * case sets up would not be the one it then calls, and the page-state a case
+ * asserts (the refilled form, the recorded hooks) would be read off a different
+ * instance. A success notification is a session flash — `Notification::send()`
+ * reads the session off the `RequestStack` — so those cases push a request
+ * carrying one first, the way actions' own modal suites do.
+ */
+
+function pushRequestWithSession(): void
+{
+    $request = new Request();
+    $request->setSession(test()->getContainer()->get('session.factory')->createSession());
+
+    test()->getContainer()->get(RequestStack::class)->push($request);
+}
+
+it('edits the record through the header modal and refreshes the page form', function (): void {
+    [$client, $entityManager, $key] = editRecordClient();
+
+    pushRequestWithSession();
+
+    $host = $this->createLiveComponent(EditArticle::class, ['record' => $key], client: $client)->component();
+    $host->mountAction('edit', [], []);
+    $host->mountedActionsData[0]['title'] = 'Alpha, edited';
+    $host->callMountedAction();
+
+    // The page form is a second component tree over the same record, so the
+    // page would keep showing the pre-modal values without the refill.
+    $formTitle = $host->getSchema('form')->getRawState()['title'] ?? null;
+
+    $entityManager->clear();
+
+    expect($entityManager->find(Article::class, (int) $key)?->getTitle())->toBe('Alpha, edited')
+        ->and($formTitle)->toBe('Alpha, edited')
+        ->and($host->mountedActions)->toBe([]);
+});
+
+it('deletes the record from the header and redirects to the index', function (): void {
+    [$client, $entityManager, $key] = editRecordClient();
+
+    pushRequestWithSession();
+
+    $host = $this->createLiveComponent(EditArticle::class, ['record' => $key], client: $client)->component();
+    $host->mountAction('delete', [], []);
+
+    $redirect = $host->callMountedAction();
+
+    $entityManager->clear();
+
+    expect($redirect)->toBeInstanceOf(RedirectResponse::class)
+        ->and($redirect instanceof RedirectResponse ? $redirect->getTargetUrl() : null)->toEndWith('/admin/articles')
+        ->and($entityManager->find(Article::class, (int) $key))->toBeNull();
+});
+
+it('fills and saves through the mutators and hooks in Filament order', function (): void {
+    [$client, $entityManager, $key] = editRecordClient();
+
+    pushRequestWithSession();
+
+    $host = $this->createLiveComponent(EditHookedArticle::class, ['record' => $key], client: $client)->component();
+
+    expect($host->calls)->toBe(['beforeFill', 'mutateFill', 'afterFill']);
+
+    $host->calls = [];
+    $host->data = ['title' => 'alpha, edited', 'slug' => 'alpha'];
+    $host->save();
+
+    $entityManager->clear();
+
+    // `beforeSave` fires *inside* the state read, before the mutator — a
+    // normalised order would be a silent divergence from Filament.
+    expect($host->calls)->toBe(['beforeValidate', 'afterValidate', 'beforeSave', 'mutateSave', 'afterSave'])
+        ->and($host->titleSeenBeforeSave)->toBe('alpha, edited')
+        ->and($entityManager->find(Article::class, (int) $key)?->getTitle())->toBe('ALPHA, EDITED');
+});
+
+it('keeps a create modal on the edit page anonymous', function (): void {
+    [$client, , $key] = editRecordClient();
+
+    $host = $this->createLiveComponent(EditArticle::class, ['record' => $key], client: $client)->component();
+    $host->mountAction('create', [], []);
+
+    $schema = $host->getMountedActionSchema();
+
+    // A create modal on a record page must not inherit the page's record, or the
+    // form would open as an edit of it — the class alone is what it needs.
+    expect($schema?->getRecord())->toBeNull()
+        ->and($schema?->getRecordClass())->toBe(Article::class);
+});
+
+it('404s when a mounted frame names a record the resource cannot resolve', function (): void {
+    [$client, , $key] = editRecordClient();
+
+    $host = $this->createLiveComponent(EditArticle::class, ['record' => $key], client: $client)->component();
+
+    // The page is no table host, so the frame's key reaches the resource's
+    // scoped binding — which answers nothing for a record that never existed.
+    expect(fn (): mixed => $host->mountAction('edit', [], ['recordKey' => '999999']))
+        ->toThrow(NotFoundHttpException::class, 'No record matching [999999]');
 });

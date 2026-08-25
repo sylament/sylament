@@ -5,8 +5,11 @@ declare(strict_types=1);
 use Doctrine\ORM\EntityManagerInterface;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateArticle;
+use Sylament\Panels\Tests\Fixtures\Resources\Pages\CreateHookedArticle;
 use Sylament\Schemas\Exceptions\ValidationException;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Test\InteractsWithLiveComponents;
 
 uses(InteractsWithLiveComponents::class);
@@ -99,4 +102,29 @@ it('rejects an invalid submit with a validation error and persists nothing', fun
     $entityManager->clear();
 
     expect($entityManager->getRepository(Article::class)->count([]))->toBe(0);
+});
+
+it('runs mutateFormDataBeforeCreate and the hooks in order', function (): void {
+    [$client, $entityManager] = createRecordClient();
+
+    // The created toast is a session flash, and an in-process `create()` reads
+    // the session off the `RequestStack` rather than off the browser's request.
+    $request = new Request();
+    $request->setSession($this::getContainer()->get('session.factory')->createSession());
+    $this::getContainer()->get(RequestStack::class)->push($request);
+
+    $host = $this->createLiveComponent(CreateHookedArticle::class, client: $client)->component();
+
+    expect($host->calls)->toBe(['beforeFill', 'afterFill']);
+
+    $host->calls = [];
+    $host->data = ['title' => 'gamma', 'slug' => 'gamma'];
+    $host->create();
+
+    $entityManager->clear();
+
+    // The create page mutates *before* its write hook, where the edit page
+    // mutates after one — Filament's asymmetry, kept.
+    expect($host->calls)->toBe(['beforeValidate', 'afterValidate', 'mutateCreate', 'beforeCreate', 'afterCreate'])
+        ->and($entityManager->getRepository(Article::class)->findOneBy(['slug' => 'gamma'])?->getTitle())->toBe('GAMMA');
 });

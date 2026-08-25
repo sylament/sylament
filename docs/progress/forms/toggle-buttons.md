@@ -55,7 +55,7 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 | `getEnumDefaultStateCast()` — `EnumStateCast`, or `EnumArrayStateCast` when multiple | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [detail](has-enum.md) |
 | `getIconAlias()` — no Filament source; which of the `boolean()` icons is an overridable default | — | done | — | [semantics](#the-boolean-icons-resolve-their-alias-at-render-not-at-call-time) |
 | `hasNullableBooleanState()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](field.md#hasnullablebooleanstate-has-exactly-one-consumer) |
-| `getInValidationRuleValues()` / `hasInValidationOnMultipleValues()` → `buildValidationConstraints()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) · [semantics](select.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) |
+| `getInValidationConstraintValues()` / `hasInValidationOnMultipleValues()` → `buildValidationConstraints()` — replaced by a user `in()` list | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) · [semantics](select.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) · [semantics](can-be-validated.md#a-user-in-list-is-emitted-in-both-spellings-and-replaces-the-derived-check) |
 | `required()` — the standard `NotBlank`, in both multiplicities | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-means-at-least-one-answer-in-both-multiplicities) |
 | Tooltips — the per-option hover text | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [diverges](#a-tooltip-renders-as-a-native-title) |
 | The grid, and its `Column` default | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | done | — | [semantics](has-grid-direction.md#the-column-default-belongs-to-the-field-not-to-this-getter) |
@@ -66,9 +66,9 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 | [`HasColors`](../../../packages/forms/src/Components/Concerns/HasColors.php) | [`Concerns/HasColors.php`](../../../vendor/filament/forms/src/Components/Concerns/HasColors.php) | done | — | [semantics](#hascolors-hasicons-and-hastooltips-are-this-fields-alone) · [diverges](#the-arrayable-arm-is-dropped-from-all-three-maps) |
 | [`HasIcons`](../../../packages/forms/src/Components/Concerns/HasIcons.php) | [`Concerns/HasIcons.php`](../../../vendor/filament/forms/src/Components/Concerns/HasIcons.php) | done | — | [semantics](#hascolors-hasicons-and-hastooltips-are-this-fields-alone) · [diverges](#the-arrayable-arm-is-dropped-from-all-three-maps) |
 | [`HasTooltips`](../../../packages/forms/src/Components/Concerns/HasTooltips.php) | [`Concerns/HasTooltips.php`](../../../vendor/filament/forms/src/Components/Concerns/HasTooltips.php) | done | — | [semantics](#hascolors-hasicons-and-hastooltips-are-this-fields-alone) · [diverges](#the-arrayable-arm-is-dropped-from-all-three-maps) · [diverges](#gettooltips-return-is-narrowed) |
-| `HasNestedRecursiveValidationRules` | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | skipped | — | [diverges](#the-nested-recursive-rules-trait-is-dead-api-in-filaments-own-class) |
+| [`HasNestedRecursiveValidationConstraints`](../../../packages/forms/src/Components/Concerns/HasNestedRecursiveValidationConstraints.php) | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | done | — | [diverges](#the-nested-recursive-rules-trait-is-dead-api-in-filaments-own-class) |
 | `getPublishedViewOverrideCheckPath()` | [`Components/ToggleButtons.php`](../../../vendor/filament/forms/src/Components/ToggleButtons.php) | skipped | — | [diverges](#there-is-nothing-to-publish-a-view-override-against) |
-| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `distinct()` (M3 · 8) · repeater-item context (M3 · 6) | [detail](radio.md#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
+| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — | [detail](radio.md#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
 | `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | blocked | repeater-item context (M3 · 6) | [detail](radio.md#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
 
 Coverage: the default tree (container role, per-option `div`, hidden input, the
@@ -582,11 +582,12 @@ therefore false for this class in Filament, so the `{$statePath}.*` error path
 never fires even in `multiple()` mode and `nestedRecursiveRules()` configures
 nothing that is ever read. It looks like a vendor bug rather than a design.
 
-Porting the trait here would reproduce the inert API rather than the behaviour, so
-the row is **skipped** and not blocked: the concern itself is `todo` in the
-[feature table](README.md#features) and lands with a field that implements the
-contract. If Filament fixes the omission, this row becomes a plain port of
-whatever the contract then does.
+The port **fixes the omission**: `ToggleButtons` takes both the
+[concern and the contract](can-be-validated.md#nested-constraints-land-as-one-all-where-laravel-keys-a-path)
+here, so `nestedRecursiveConstraints()` configures something the builder actually
+reads. Reproducing an inert API faithfully would have been the worse call — there
+is no consumer relying on the members doing nothing, and the divergence is one a
+migrating user only ever notices as the feature working.
 
 ### There is nothing to publish a view override against
 

@@ -34,9 +34,9 @@ _Detail_ links the write-up in [Details](#details), deleted once the row is
 | Disable Grammarly (`CanDisableGrammarly`) | [`Concerns/CanDisableGrammarly.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableGrammarly.php) | todo | — | [detail](#the-input-attribute-concerns-are-not-ported) |
 | [Extra input attributes (`HasExtraInputAttributes`)](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) |
 | Extra Alpine attributes (`HasExtraAlpineAttributes`) | [`support/Concerns/HasExtraAlpineAttributes.php`](../../../vendor/filament/support/src/Concerns/HasExtraAlpineAttributes.php) | todo | — | [detail](#the-input-attribute-concerns-are-not-ported) |
-| Trim state (`CanTrimState`) | [`schemas/Concerns/CanTrimState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanTrimState.php) | blocked | schemas state-mutation surface | [detail](#the-state-mutation-surface-is-blocked-on-schemas) |
-| Strip characters (`CanStripCharactersFromState`) | [`schemas/Concerns/CanStripCharactersFromState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | blocked | schemas state-cast infrastructure | [detail](#the-state-mutation-surface-is-blocked-on-schemas) |
-| State casts + `mutate*` / `mutates*` hooks | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | blocked | schemas state-cast infrastructure | [detail](#the-state-mutation-surface-is-blocked-on-schemas) |
+| [Trim state (`CanTrimState`)](../../../packages/schemas/src/Components/Concerns/CanTrimState.php) | [`schemas/Concerns/CanTrimState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanTrimState.php) | done | — | [semantics](#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag) |
+| [Strip characters (`CanStripCharactersFromState`)](../../../packages/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | [`schemas/Concerns/CanStripCharactersFromState.php`](../../../vendor/filament/schemas/src/Components/Concerns/CanStripCharactersFromState.php) | done | — | [semantics](#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag) |
+| [State casts + `mutate*` / `mutates*` hooks](../../../packages/forms/src/Components/Textarea.php) | [`Components/Textarea.php`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | [semantics](#trim-reaches-the-saved-value-strip-reaches-it-through-a-cast-neither-reaches-the-raw-bag) |
 | [Native constraint attributes drop when concealed](../../../packages/forms/templates/partials/Textarea/index.html.twig) — `required`, `minlength`, `maxlength` | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Textarea.php) | done | — | [can-be-concealed.md](../schemas/can-be-concealed.md) |
 
 ## Details
@@ -70,20 +70,29 @@ element. Filament composes three more alongside them,
 [`CanBeAutocompleted`](can-be-autocompleted.md); all three are absent from this
 list because they have landed.
 
-### The state-mutation surface is blocked on schemas
+## Semantics
 
-Filament's `Textarea` overrides `getDefaultStateCasts()` (appending a
-`StripCharactersStateCast`), `mutateDehydratedState()` /
-`mutateStateForValidation()` (via `CanTrimState` + `CanStripCharactersFromState`),
-and the matching `mutatesDehydratedState()` / `mutatesStateForValidation()`
-guards. None is ported. These depend on the schemas state-cast and
-state-mutation infrastructure (`StateCast`, `CanTrimState`,
-`CanStripCharactersFromState`, and the
-[`mutateStateForValidation` layer](../schemas/schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer)),
-which is itself unported — the validation vertical that landed validates the raw
-client state. **Blocked** until that schemas infrastructure lands; it returns in
-the same change, together with the field-side
-[`mutateStateForValidation()` hooks](can-be-validated.md#the-validation-state-mutation-hooks-wait-on-schemas).
+### trim() reaches the saved value, strip reaches it through a cast, neither reaches the raw bag
+
+`Textarea` composes schemas' `CanTrimState` and `CanStripCharactersFromState` and
+overrides the four mutation members plus `getDefaultStateCasts()`, exactly as
+[`TextInput`](text-input.md) does — the two surfaces are identical upstream, and
+`Textarea::stripCharacters()` is undocumented there but fully wired, so it ships.
+
+The asymmetry is the feature, and it is Filament's:
+
+- `trim()` reaches the **validated** value through `mutateStateForValidation()`
+  and the **saved** value through `mutateDehydratedState()`.
+- `stripCharacters()` reaches the validated value the same way, but reaches the
+  saved value through a `StripCharactersStateCast` appended to the default casts —
+  not through the dehydration hook.
+- **Neither reaches the raw bag** the browser wrote, so what the user typed stays
+  on screen while what is validated and stored is cleaned.
+
+`mutatesStateForValidation()` is `parent || hasStripCharacters() || isTrimmed()`,
+so a `Textarea` with neither set costs the mutation walk nothing.
+[The walk itself](../schemas/schema.md#getstate-validates-without-a-prepareforvalidation-mutation-layer)
+is schemas'. `TagsInput`, the third upstream consumer, is M3 · 9's.
 
 ## Divergences
 

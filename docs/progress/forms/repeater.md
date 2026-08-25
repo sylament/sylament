@@ -114,8 +114,8 @@ live in their own files — the record-walk changes in
 [belongs-to-record.md](../schemas/belongs-to-record.md), the hydration order in
 [schema.md](../schemas/schema.md#hasstate-still-lacks-constant-state-relationships-and-partial-rendering),
 the wrapper heading arm in [field.md](field.md#labeltag-is-a-boolean-labelasheading),
-and `distinct()`'s blocker in
-[can-be-validated.md](can-be-validated.md#cross-field-rules-need-a-validation-context-the-per-path-runner-does-not-build).
+and `distinct()`'s three arms in
+[can-be-validated.md](can-be-validated.md#distinct-is-three-arms-of-one-first-party-constraint-not-laravels-rule).
 
 ## Semantics
 

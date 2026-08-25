@@ -60,7 +60,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | The grid, and its `Column` default — applied unconditionally, no `inline()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](has-grid-direction.md#the-column-default-belongs-to-the-field-not-to-this-getter) |
 | `getEnumDefaultStateCast()` — `EnumArrayStateCast` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-list-rests-at-an-array-and-that-is-load-bearing) |
 | `getDefaultStateCasts()` — `[OptionsArrayStateCast]` unless custom casts or an enum | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-list-rests-at-an-array-and-that-is-load-bearing) |
-| `getInValidationRuleValues()` / `hasInValidationOnMultipleValues()` → `buildValidationConstraints()`, a `Choice(multiple: true)` over the enabled options | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-three-server-side-guards-are-ordered-so-they-never-collide) |
+| `getInValidationConstraintValues()` / `hasInValidationOnMultipleValues()` → `buildValidationConstraints()`, a `Choice(multiple: true)` over the enabled options — replaced by a user `in()` list | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-three-server-side-guards-are-ordered-so-they-never-collide) · [semantics](can-be-validated.md#a-user-in-list-is-emitted-in-both-spellings-and-replaces-the-derived-check) |
 | `required()` — the standard `NotBlank` | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-rejects-the-empty-list-with-notblank-alone) |
 | `bulkToggleable()` / `isBulkToggleable()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) |
 | `getSelectAllAction()` / `selectAllAction()` / `getSelectAllActionName()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [diverges](#the-bulk-toggle-actions-render-but-never-dispatch) · [diverges](#the-bulk-toggle-labels-are-untranslated-literals) |
@@ -82,8 +82,8 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`CanLimitItemsLength`](../../../packages/forms/src/Components/Concerns/CanLimitItemsLength.php) — `minItems()` / `maxItems()` as a `Count` | [`Concerns/CanLimitItemsLength.php`](../../../vendor/filament/forms/src/Components/Concerns/CanLimitItemsLength.php) | done | — | [detail](can-limit-items-length.md) · [semantics](#the-three-server-side-guards-are-ordered-so-they-never-collide) |
 | The search field's magnifying-glass icon and its [input wrapper](../support/input-wrapper.md) prefix slot | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | done | — | [semantics](#the-search-box-is-the-one-wrapper-a-template-opens-by-hand) |
 | `HasPivotData` — `pivotData()` on the save arm | [`Concerns/HasPivotData.php`](../../../vendor/filament/forms/src/Components/Concerns/HasPivotData.php) | blocked | a join-entity mapping (M3 · 9) | [detail](#haspivotdata-has-no-join-row-to-write-to) |
-| `HasNestedRecursiveValidationRules` + its contract — the `{statePath}.*` error path | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | blocked | the validation families (M3 · 8) | [detail](#the-nested-recursive-rules-are-real-here-and-deferred-with-the-rest-of-validation) |
-| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `distinct()` (M3 · 8) · repeater-item context (M3 · 6) | [detail](radio.md#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
+| [`HasNestedRecursiveValidationConstraints` + its contract](../../../packages/forms/src/Components/Concerns/HasNestedRecursiveValidationConstraints.php) — the per-element constraints | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | done | — | [diverges](can-be-validated.md#nested-constraints-land-as-one-all-where-laravel-keys-a-path) |
+| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — | [detail](radio.md#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
 | `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | blocked | repeater-item context (M3 · 6) | [detail](radio.md#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
 | `getPublishedViewOverrideCheckPath()` | [`Components/CheckboxList.php`](../../../vendor/filament/forms/src/Components/CheckboxList.php) | skipped | — | [semantics](toggle-buttons.md#there-is-nothing-to-publish-a-view-override-against) |
 
@@ -145,22 +145,6 @@ as its own entity, which is
 [M3 · 9](../roadmap.md#m3--forms-widening)'s call for `Select` too; the row is
 **blocked** on the same decision rather than skipped, and the concern stays
 `blocked` in the [feature table](README.md#features) pointing at `Select`.
-
-### The nested-recursive rules are real here, and deferred with the rest of validation
-
-Unlike [`ToggleButtons`](toggle-buttons.md#the-nested-recursive-rules-trait-is-dead-api-in-filaments-own-class),
-`CheckboxList` **implements** `Contracts\HasNestedRecursiveValidationRules`, so
-Filament's `{$statePath}.*` error path and per-item rule registration genuinely
-fire for it. That is a real capability gap, not an inert API being skipped.
-
-It is deferred to [M3 · 8](../roadmap.md#m3--forms-widening) with the rest of
-the validation families because it is not a checkbox-list feature: it is a
-schemas-level question about whether a component can register constraints
-against a wildcard child path at all, which the port's
-[error bag](field.md#error-display-shows-every-message-for-the-path) and
-`Schema`'s validation walk both have to answer. The item-level guard this field
-needs today — that every submitted value is a known option — is already the
-`Choice(multiple: true)`, which validates element by element.
 
 ## Semantics
 
@@ -320,7 +304,7 @@ Filament reaches the same three answers through a different mechanism —
 `hasInValidationOnMultipleValues(): true` moves its `In` rule onto
 `"{$statePath}.*"`, and `minItems`/`maxItems` become `array|min:|max:` rules —
 which the port has no wildcard path for
-([above](#the-nested-recursive-rules-are-real-here-and-deferred-with-the-rest-of-validation));
+([why](can-be-validated.md#nested-constraints-land-as-one-all-where-laravel-keys-a-path));
 `Choice(multiple: true)` validates element by element natively, so the
 per-element check lands on the one path without one.
 

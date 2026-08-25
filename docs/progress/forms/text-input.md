@@ -45,7 +45,7 @@ _Detail_ links a permanent note in [Semantics](#semantics) /
 | [`getInputMode()`](../../../packages/forms/src/Components/TextInput.php) | [`Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | done | — | [diverges](#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
 | `HasInputMode` (concern) | [`Concerns/HasInputMode.php`](../../../vendor/filament/forms/src/Components/Concerns/HasInputMode.php) | skipped | — | [diverges](#input-mode-is-a-bespoke-getter-not-the-hasinputmode-concern) |
 | [`integer()` / `isInteger()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [semantics](#integer-delegates-to-numeric-so-both-arms-ship-and-the-step-order-matters) · [diverges](#integer-validates-with-a-regex-not-a-type-constraint) · [diverges](#numeric-seeds-the-step-through-isnumeric-not-the-captured-condition) |
-| [`tel()` / `telRegex()` / `isTel()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
+| [`tel()` / `telRegex()` / `isTel()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#tel-writes-the-shared-regex-slot) |
 | [`url()` / `isUrl()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-type-sugar-constraint-arms-live-in-an-override-not-in-the-setters) |
 | `currentPassword()` | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | todo | authentication layer | — |
 | [`maxValue()` / `minValue()` / `getMaxValue()` / `getMinValue()`](../../../packages/forms/src/Components/TextInput.php) | [`TextInput.php`](../../../vendor/filament/forms/src/Components/TextInput.php) | done | — | [diverges](#the-value-bounds-are-comparison-constraints-not-laravels-min-and-max) |
@@ -112,13 +112,11 @@ they flip `isEmail` / `isInteger` / `isNumeric` / `isTel` / `isUrl`, and
 while
 [`buildValidationConstraints()`](../../../packages/forms/src/Components/TextInput.php)
 overrides the parent to append `Email()` / `Type('numeric')` /
-[integer `Regex`](#integer-validates-with-a-regex-not-a-type-constraint) /
-`Regex(getTelRegex())` / `Url()` behind those flags. Same observable API and same
-laziness. `tel()` needs no `regex()` setter as plumbing — the override is already
-where every type arm lands — which is not a claim that `regex()` will never
-exist: [`can-be-validated.md`](can-be-validated.md) carries it **todo**, and when
-it lands it is a peer arm in this same override rather than something `tel()`
-routes through.
+[integer `Regex`](#integer-validates-with-a-regex-not-a-type-constraint) / `Url()`
+behind those flags. Same observable API and same laziness. `tel()` is the one arm
+that left the override: [`regex()`](can-be-validated.md) has since shipped, and
+`tel()` [writes its slot](#tel-writes-the-shared-regex-slot) rather than appending
+a second `Regex` beside it.
 
 The reason is **composition order**. These arms must land last — the order is
 `NotBlank` → length → escape hatch → type arms, pinned by `TextInputTest` — and a
@@ -170,29 +168,34 @@ changes what the default *means*. Asserting the literal against `getTelRegex()`
 would be a tautology — both sides read the same getter — and pinning the literal
 string would break on the next formatter pass.
 
-One consequence of the peer-arm shape needs deciding when `regex()` is actually
-built. Filament can afford routing `tel()` through `regex()` because `regex()`
-writes a single `$regexPattern` property that `getValidationRules()` emits once,
-so `->tel()->regex('/…/')` keeps the later call and yields **one** rule. A peer
-arm built to the
-[recipe](can-be-validated.md#the-unsugared-rule-families-are-reachable-through-constraint)
-does not: `->tel()->regex('/…/')` stacks **two** `Regex` constraints — nothing in
-`buildValidationConstraints()` de-duplicates by class — and the message post-pass
-matches by class across the whole list, so a `Regex::class` message lands on both.
-Whoever ports `regex()` chooses between accepting that (two patterns, both
-enforced, two identical messages) and standing the tel arm down when an explicit
-pattern is set. It is a `regex()` decision, not a `tel()` one.
+### `tel()` writes the shared regex slot
 
-That collision is already reachable without `regex()`. `integer()` contributes a
-`Regex` of its own, so `->tel()->integer()` builds two today and a `Regex::class`
-message reaches both. Nothing guards it, and nothing should — an input is not
-sensibly both a phone number and an integer, so the pairing is meaningless rather
-than merely unsupported. Filament has no equivalent because its message keys are
-rule names, and there the two arms key `regex` and `integer` separately; the
-shared key is what
+`tel()` no longer appends its own `Regex` in the override. It writes the same
+single `$regexPattern` slot [`regex()`](can-be-validated.md) writes, as a closure
+answering the tel pattern while `isTel()` holds — so `->tel()->regex('/…/')` keeps
+the later call and `->regex('/…/')->tel()` keeps the tel pattern, yielding exactly
+**one** `Regex` either way. That is Filament's own behaviour.
+
+This tree previously flagged the collision as "a `regex()` decision, not a
+`tel()` one", and the decision came out on the upstream side: both patterns were
+only ever enforced together because no `regex()` existed to collide with. The
+observable change is position — the pattern now lands where the regex slot sits
+(after the `in` `Choice`, before the escape-hatch pairs) rather than at the tail
+of the override — which is why `TextInputTest`'s pinned emission order moved with
+it. Message order is the only thing a consumer can see.
+
+The class-key collision survives the move, one arm over. `integer()` contributes a
+`Regex` of its own — upstream it is `rule('integer')`, not the slot, so it stays in
+the override — and `->tel()->integer()` therefore still builds two, with a
+`Regex::class` message reaching both. Nothing guards it, and nothing should: an
+input is not sensibly both a phone number and an integer, so the pairing is
+meaningless rather than merely unsupported. Filament has no equivalent because its
+message keys are rule names, and there the two arms key `regex` and `integer`
+separately; the shared key is what
 [class-keyed messages](can-be-validated.md#validation-messages-apply-after-the-constraints-are-built)
-cost. Worth knowing before a third `Regex` arm lands on a combination that *is*
-sensible.
+cost. The same cost now applies to
+[`gte()`/`minValue()`](can-be-validated.md#the-ordering-arms-compare-with-php-not-with-laravels-size-table),
+which share `GreaterThanOrEqual::class`.
 
 ### `numeric()` seeds the step through `isNumeric()`, not the captured condition
 

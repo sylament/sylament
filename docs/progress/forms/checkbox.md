@@ -35,7 +35,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`CanBeAccepted`](../../../packages/forms/src/Components/Concerns/CanBeAccepted.php) | [`Concerns/CanBeAccepted.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeAccepted.php) | done | — | [detail](can-be-accepted.md) |
 | Checked state rendered server-side | [`Checkbox::toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | [diverges](#the-checked-attribute-is-rendered-server-side) |
 | [`isBlankStateValue()`](../../../packages/forms/src/Components/Checkbox.php) — an untouched box reads blank | — | done | — | [semantics](../schemas/belongs-to-record.md#the-built-in-blank-test-asks-the-branchs-own-leaves) |
-| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `Repeater` | — |
+| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — | — |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#the-checkboxs-extra-input-attributes-win-where-filaments-lose) |
 | [`required` drops when concealed](../../../packages/forms/templates/partials/Checkbox/index.html.twig) | [`toEmbeddedHtml()`](../../../vendor/filament/forms/src/Components/Checkbox.php) | done | — | [can-be-concealed.md](../schemas/can-be-concealed.md) |
 
@@ -61,9 +61,11 @@ Specifics for rows that are not finished. Delete a subsection when its row flips
 to **done**.
 
 The one unfinished row is not partly ported. `CanFixIndistinctState` exists to
-disambiguate identically-pathed checkboxes inside a `Repeater`. The repeater and
-the parent-repeater lookup the hook walks both ship now, so the row is
-**blocked** on `distinct()` alone — the same reading
+disambiguate identically-pathed checkboxes inside a `Repeater`. Every dependency
+ships now — the repeater, the parent-repeater lookup the hook walks, and
+[`distinct()`](can-be-validated.md#distinct-is-three-arms-of-one-first-party-constraint-not-laravels-rule)
+as of M3 · 8 — leaving the hook itself for
+[M3 · 9](../roadmap.md#m3--forms-widening)'s field sweep, the same reading
 [`Toggle`](toggle.md#fixindistinctstate-awaits-the-repeater) gives it.
 
 ## Semantics

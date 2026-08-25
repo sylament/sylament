@@ -76,7 +76,7 @@ _Ports_ cell is `—` has no Filament counterpart.
 | [`getMaxUploadSize(): int`](../../../packages/forms/src/Components/BaseFileUpload.php) | — | done | — | [diverges](#the-client-side-size-ceiling-is-the-minimum-of-the-fields-and-phps) |
 | [`setTemporaryUploads()` / `setFilesystemRegistry()` / `setValidator()` and their getters](../../../packages/forms/src/Components/BaseFileUpload.php) | — (Filament reaches `Storage::` and `Validator::` facades) | done | — | [diverges](#the-three-services-arrive-by-required-setter-not-by-facade) |
 | `uploadingMessage()` / `HasUploadingMessage` | [`Concerns/HasUploadingMessage.php`](../../../vendor/filament/forms/src/Components/Concerns/HasUploadingMessage.php) | blocked | a form-processing channel | [diverges](#uploadingmessage-has-no-render-site) |
-| `HasNestedRecursiveValidationRules` | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | todo | — | [diverges](#per-file-constraints-run-at-upload-time-collection-constraints-at-save) |
+| [`HasNestedRecursiveValidationConstraints`](../../../packages/forms/src/Components/Concerns/HasNestedRecursiveValidationConstraints.php) | [`Concerns/HasNestedRecursiveValidationRules.php`](../../../vendor/filament/forms/src/Components/Concerns/HasNestedRecursiveValidationRules.php) | done | — | [diverges](#per-file-constraints-run-at-upload-time-collection-constraints-at-save) |
 | `RestrictsFileUploadsToSchemaComponents` | [`schemas/…/RestrictsFileUploadsToSchemaComponents.php`](../../../vendor/filament/schemas/src/Concerns/RestrictsFileUploadsToSchemaComponents.php) | skipped | — | [diverges](#the-upload-action-is-closed-by-construction-so-there-is-nothing-to-restrict) |
 | `enableDownload()` / `enableOpen()` / `enableReordering()` / `disablePreview()` / `moveFile()` / `storeFile()` | [`BaseFileUpload`](../../../vendor/filament/forms/src/Components/BaseFileUpload.php) | skipped | — | the port ships no deprecated surface |
 
@@ -322,9 +322,11 @@ hook and none the getter. `getUploadedFileConstraints()` returns through
 `applyValidationMessages()` too, so a field's own message overrides reach an
 upload refusal.
 
-`HasNestedRecursiveValidationRules` collapses into this split for this field and
-stays **todo** for its other consumers. `ARRAY_VALIDATION_RULES` and
-`isArrayValidationRule()` have nothing left to do.
+`HasNestedRecursiveValidationConstraints` is composed here as of M3 · 8, and it
+lands on the **collection** side of this split: what it emits is an `All`, a
+non-`File` constraint, so it runs at save over the whole set rather than per file
+at upload time. `ARRAY_VALIDATION_RULES` and `isArrayValidationRule()` have
+nothing left to do.
 
 ### The tampering gate reads the record's current value
 

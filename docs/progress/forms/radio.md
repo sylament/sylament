@@ -45,7 +45,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | `getDefaultState()` — a `bool` default coerced to `1`/`0` | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | — |
 | `getDefaultStateCasts()` — `OptionStateCast(isNullable: true)` unless custom casts or an enum | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](#the-cast-chain-collapses-to-whatever-boolean-installs) |
 | `hasNullableBooleanState()` | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](field.md#hasnullablebooleanstate-has-exactly-one-consumer) |
-| `getInValidationRuleValues()` → `buildValidationConstraints()`, a `Choice` over the enabled options | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) · [semantics](select.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) |
+| `getInValidationConstraintValues()` → `buildValidationConstraints()`, a `Choice` over the enabled options — replaced by a user `in()` list | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](select.md#the-choice-constraint-is-the-fields-only-server-side-guard) · [semantics](select.md#the-choice-choices-cover-both-forms-the-raw-state-can-take) · [semantics](can-be-validated.md#a-user-in-list-is-emitted-in-both-spellings-and-replaces-the-derived-check) |
 | `required()` — the standard `NotBlank` | [`Concerns/CanBeValidated.php`](../../../vendor/filament/forms/src/Components/Concerns/CanBeValidated.php) | done | — | [semantics](#required-means-presence-and-needs-no-override) |
 | The grid, and its `Column` default | [`Components/Radio.php`](../../../vendor/filament/forms/src/Components/Radio.php) | done | — | [semantics](has-grid-direction.md#the-column-default-belongs-to-the-field-not-to-this-getter) |
 | [`HasOptions`](../../../packages/forms/src/Components/Concerns/HasOptions.php) | [`Concerns/HasOptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasOptions.php) | done | — | [detail](has-options.md) |
@@ -53,7 +53,7 @@ _Detail_ links the write-up in [Details](#details) or a permanent note in
 | [`HasDescriptions`](../../../packages/forms/src/Components/Concerns/HasDescriptions.php) | [`Concerns/HasDescriptions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasDescriptions.php) | done | — | [detail](has-descriptions.md) |
 | [`HasGridDirection`](../../../packages/forms/src/Components/Concerns/HasGridDirection.php) | [`Concerns/HasGridDirection.php`](../../../vendor/filament/forms/src/Components/Concerns/HasGridDirection.php) | done | — | [detail](has-grid-direction.md) |
 | [`HasExtraInputAttributes`](../../../packages/forms/src/Components/Concerns/HasExtraInputAttributes.php) | [`Concerns/HasExtraInputAttributes.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraInputAttributes.php) | done | — | [detail](has-extra-input-attributes.md) · [diverges](#extraattributes-stays-on-the-field-wrapper) |
-| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | blocked | `distinct()` (M3 · 8) · repeater-item context (M3 · 6) | [detail](#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
+| `CanFixIndistinctState` | [`Concerns/CanFixIndistinctState.php`](../../../vendor/filament/forms/src/Components/Concerns/CanFixIndistinctState.php) | todo | — | [detail](#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
 | `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` | [`Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php`](../../../vendor/filament/forms/src/Components/Concerns/CanDisableOptionsWhenSelectedInSiblingRepeaterItems.php) | blocked | repeater-item context (M3 · 6) | [detail](#the-two-repeater-sibling-concerns-have-nothing-to-build-on) |
 
 Coverage: one input per option with the shared group name and per-option ids and
@@ -92,17 +92,19 @@ to **done**.
 
 ### The two repeater-sibling concerns have nothing to build on
 
-Neither is partly ported; each is **blocked** rather than skipped, because both
-are wanted for parity.
+Neither is partly ported; each is **todo** rather than skipped, because both are
+wanted for parity.
 
 `CanFixIndistinctState` composes `distinct()`, `live()` and an
 `afterStateUpdated()` hook that walks up to the parent `Repeater` and clears the
-same option from every sibling item. The parent-repeater lookup the hook needs
-now ships — schemas' `CanBeRepeated` gives every component
+same option from every sibling item. Every dependency now ships: the
+parent-repeater lookup — schemas' `CanBeRepeated` gives every component
 `getParentRepeater()` / `getParentRepeaterItem()` / `getParentRepeaterItemIndex()`
-([repeater.md](repeater.md)) — so the only thing still missing is `distinct()`,
-[deferred to M3 · 8](can-be-validated.md) with the rest of the validation
-families. The same reading [`Checkbox`](checkbox.md) and
+([repeater.md](repeater.md)) — and, as of M3 · 8,
+[`distinct()`](can-be-validated.md#distinct-is-three-arms-of-one-first-party-constraint-not-laravels-rule)
+itself. What is left is roughly sixty lines of hook over the same sibling read,
+scheduled for [M3 · 9](../roadmap.md#m3--forms-widening)'s field sweep. The same
+reading [`Checkbox`](checkbox.md) and
 [`Toggle`](toggle.md#fixindistinctstate-awaits-the-repeater) give it.
 
 `CanDisableOptionsWhenSelectedInSiblingRepeaterItems` is the same lookup wearing

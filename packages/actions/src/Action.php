@@ -414,10 +414,10 @@ class Action extends ViewComponent
 
     public function getRecord(bool $withDefault = true): mixed
     {
-        $record = $this->ensureCorrectRecordType($this->evaluate($this->record));
+        $record = $this->evaluate($this->record);
 
-        if ($record !== null) {
-            return $record;
+        if (filled($record)) {
+            return $this->ensureCorrectRecordType($record);
         }
 
         $record = $this->getGroup()?->getRecord()

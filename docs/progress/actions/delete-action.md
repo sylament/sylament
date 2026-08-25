@@ -61,17 +61,19 @@ and the next step.
 ### The modal heading is a bare verb until a record title exists
 
 Filament's heading reads _"Delete Airbag"_ — `__('…delete.single.modal.heading',
-['label' => $this->getRecordTitle()])`. `getRecordTitle()` is part of the
-[unported record-title and model-metadata surface](action.md#the-record-title-and-model-metadata-surface-is-not-ported),
-and the host hook that would supply a default
-(`getDefaultActionRecordTitle()`) is part of the
-[deferred hook cluster](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported).
-So the port sets the bare `'Delete'`. A caller who wants the record in the
-heading passes a closure, exactly as the demo's hand-built delete action does:
+['label' => $this->getRecordTitle()])`. The port sets the bare `'Delete'`.
+Both halves that heading needs now exist:
+[`getRecordTitle()` and the whole record chain](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
+landed with M4 · 2, and so did the host hook that supplies a default,
+[`getDefaultActionRecordTitle()`](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported).
+Wiring `DeleteAction`'s own heading through them is a **sweep item, out of that
+epic's scope** — it landed the chain, not every caller of it. Until the sweep, a
+caller who wants the record in the heading passes a closure, exactly as the
+demo's hand-built delete action does:
 `->modalHeading(fn (Article $record): string => sprintf('Delete "%s"?', $record->getTitle()))`.
 
-**Next step:** interpolate the record title once `getRecordTitle()` and its host
-hook land.
+**Next step:** interpolate `getRecordTitle()` into the default heading — nothing
+blocks it now.
 
 ### A delete on a record page does not redirect yet
 

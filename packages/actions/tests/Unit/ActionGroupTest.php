@@ -364,3 +364,9 @@ it('drops a group record that is not of the group record class', function (): vo
 
     expect($group->getRecord())->toBeNull();
 });
+
+it('injects its record class into evaluated closures via $recordClass', function (): void {
+    $group = ActionGroup::make()->recordClass(stdClass::class);
+
+    expect($group->evaluate(fn (string $recordClass): string => $recordClass))->toBe(stdClass::class);
+});

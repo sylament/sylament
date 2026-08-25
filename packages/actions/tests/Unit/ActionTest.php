@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Unit;
 
+use DateTimeImmutable;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
 use stdClass;
 use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
 use Sylament\Actions\Enums\ActionStatus;
 use Sylament\Actions\Tests\Fixtures\Components\ItemActionsContainer;
 use Sylament\Actions\Tests\Fixtures\Concerns\BothContractsHostFixture;
@@ -16,6 +18,7 @@ use Sylament\Actions\Tests\Fixtures\StateFieldFixture;
 use Sylament\Actions\Tests\Fixtures\Twig\Components\DefaultRecordHost;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
+use Sylament\Schemas\Components\Text;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\State\Get;
@@ -521,4 +524,28 @@ it('clears its record after the run only when it says so', function (): void {
 
     expect($action->getRecord())->toBe($record)
         ->and($action->shouldClearRecordAfter())->toBeFalse();
+});
+
+it('stops at its own record when the record class does not match, rather than walking on', function (): void {
+    $action = Action::make('x')->record(new stdClass())->recordClass(DateTimeImmutable::class);
+
+    ActionGroup::make([$action])->record(new DateTimeImmutable());
+
+    expect($action->getRecord())->toBeNull();
+});
+
+it('walks the record chain to its schema component', function (): void {
+    $action = Action::make('x')->schemaComponent(Text::make('t')->record($record = new stdClass()));
+
+    expect($action->getRecord())->toBe($record)
+        ->and($action->getRecordClass())->toBe(stdClass::class);
+});
+
+it('derives the record label from its own class with no host to ask', function (): void {
+    expect(Action::make('x')->getRecordLabel())->toBeNull()
+        ->and(Action::make('x')->recordClass('App\\Entity\\BlogPost')->getRecordLabel())->toBe('blog post');
+});
+
+it('falls to the record label when nothing supplies a title', function (): void {
+    expect(Action::make('x')->recordClass('App\\Entity\\BlogPost')->getRecordTitle())->toBe('blog post');
 });

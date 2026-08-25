@@ -379,7 +379,11 @@ redirect pair `getDefaultActionSuccessRedirectUrl()` /
 `getDefaultActionRecordTitle()`, `getDefaultActionRecordClass()` and
 `getDefaultActionRecordLabel()` — with the
 [record chain on `Action`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
-that walks to them. The last two are renames, `getDefaultActionModel` and
+that walks to them. Four of those five are the chain's; the fifth,
+`getDefaultActionSchemaResolver()`, is read by
+[`HasSchema::getSchema()`](has-schema.md) instead — the record chain never walks
+to it — and that reader arrives in the same epic, one lane later, so the hook is
+declared here before anything calls it. The last two are renames, `getDefaultActionModel` and
 `getDefaultActionModelLabel` under the
 [record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record).
 A host answering any of them
@@ -998,7 +1002,7 @@ A mounted-action schema is a **root** schema — `getMountedActionSchema()` buil
 it from `makeSchema()`, so it has no parent component — and an action declared
 inside it belongs to no group and is bound to no component of its own. All three
 arms are `null`, and `Action`'s `get`/`set` injection arms deref that result
-[without a null-safe operator](action.md#resolvedefaultclosuredependencyforevaluationbyname-covers-11-of-16-names).
+[without a null-safe operator](action.md#resolvedefaultclosuredependencyforevaluationbyname-covers-13-of-16-names).
 
 **This is Filament parity, not a regression.**
 `vendor/filament/actions/src/Concerns/BelongsToSchemaComponent.php:28-31` is

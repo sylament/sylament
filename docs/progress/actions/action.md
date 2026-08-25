@@ -54,7 +54,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | `cancel(bool $shouldRollBackDatabaseTransaction = false)` / `halt(bool $shouldRollBackDatabaseTransaction = false)` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [semantics](#the-rollback-flags-setter-and-getter-disagree-on-casing) |
 | `success()` / `failure()` / `getStatus()` + `$status` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | Filament-exact, tally included: an explicit `success()`/`failure()` wins, an action that accesses no selected records is `Success`, and a bulk one compares its two counters — [bulk-action.md](bulk-action.md) |
 | `bulk()` / `isBulk()` + `$isBulk` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | The routing half of the bulk pair — [bulk-action.md](bulk-action.md) |
-| `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | mounted-actions introspection | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-11-of-16-names) · [diverges](#the-selected-record-injections-are-gated-on-the-access-flag) |
+| `resolveDefaultClosureDependencyForEvaluationByName()` + `$evaluationIdentifier` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | mounted-actions introspection | [detail](#resolvedefaultclosuredependencyforevaluationbyname-covers-13-of-16-names) · [diverges](#the-selected-record-injections-are-gated-on-the-access-flag) |
 | `resolveDefaultClosureDependencyForEvaluationByType()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | in progress | — | [detail](#resolvedefaultclosuredependencyforevaluationbytype-carries-only-the-added-getset-arms) · [diverges](#the-selected-record-injections-are-gated-on-the-access-flag) |
 | `getContext()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) | done | — | [diverges](#getcontext-drops-the-record-model-gate) |
 | `getClone()` | [`Action.php`](../../../vendor/filament/actions/src/Action.php) (`getClone()`) | done | — | Filament-exact one-liner (`clone $this`). A shallow clone is the whole contract on this side: what a caller needs is an action whose `record()` / `table()` / `group()` bindings can be re-stamped per row without touching the declared original. `ActionGroup`'s override adds the member deep-clone ([there](action-group.md#getclone-rebuilds-the-flat-map-from-the-cloned-members-rather-than-cloning-it-separately)) |
@@ -98,7 +98,7 @@ what has to land first. _Detail_ links the write-up in [Details](#details)
 | [`HasMountableArguments`](../../../packages/actions/src/Concerns/HasMountableArguments.php) | [`Concerns/HasMountableArguments.php`](../../../vendor/filament/actions/src/Concerns/HasMountableArguments.php) | done | — | [diverges](#action-invocation-is-a-php-side-seam-only) |
 | [`HasName`](../../../packages/actions/src/Concerns/HasName.php) | [`Concerns/HasName.php`](../../../vendor/filament/actions/src/Concerns/HasName.php) | done | — | [diverges](#getname-tightens-its-return-type-to-non-nullable-string) |
 | [`HasSize`](../../../packages/actions/src/Concerns/HasSize.php) | [`Concerns/HasSize.php`](../../../vendor/filament/actions/src/Concerns/HasSize.php) | done | — | [diverges](#hassize-drops-the-optimized-render-fast-path-helper) |
-| [`InteractsWithRecord`](../../../packages/actions/src/Concerns/InteractsWithRecord.php) incl. `resolveRecordKey()` | [`Concerns/InteractsWithRecord.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithRecord.php) | done | — | The record, record-class, record-label and record-title chains all land, `ensureCorrectRecordType()` with them, and `getRecord()`/`getRecordClass()` carry Filament's `bool $withDefault` gate — [semantics](#the-record-chain-reaches-the-schema-the-component-and-the-host), which also names the **two hops deferred with them**: the table label and title hops (`getTable()?->getModelLabel()` / `->getRecordTitle()` — tables' `Table` carries no label or title surface at all) and the plural label trio (`pluralRecordLabel()` / `getPluralRecordLabel()` / `getTitleCasePluralRecordLabel()`, which only the bulk family reads, deferred beside M4 · 1's `CanBeLabeledFrom`) · [diverges](#record-key-resolution-is-hoisted-to-hasactions) |
+| [`InteractsWithRecord`](../../../packages/actions/src/Concerns/InteractsWithRecord.php) incl. `resolveRecordKey()` | [`Concerns/InteractsWithRecord.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithRecord.php) | in progress | — | The record, record-class, record-label and record-title chains all land, `ensureCorrectRecordType()` with them, and `getRecord()`/`getRecordClass()` carry Filament's `bool $withDefault` gate — [semantics](#the-record-chain-reaches-the-schema-the-component-and-the-host), which also names the **two hops deferred with them**: the table label and title hops (`getTable()?->getModelLabel()` / `->getRecordTitle()` — tables' `Table` carries no label or title surface at all) and the plural label trio (`pluralRecordLabel()` / `getPluralRecordLabel()` / `getTitleCasePluralRecordLabel()`, which only the bulk family reads, deferred beside M4 · 1's `CanBeLabeledFrom`) · [diverges](#record-key-resolution-is-hoisted-to-hasactions) |
 | [`InteractsWithSelectedRecords`](../../../packages/actions/src/Concerns/InteractsWithSelectedRecords.php) | [`Concerns/InteractsWithSelectedRecords.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithSelectedRecords.php) | in progress | the tables selection host (same epic), the authorization epic | [bulk-action.md](bulk-action.md) |
 
 ## Details
@@ -107,7 +107,7 @@ Specifics for rows that are not finished — what is already in, what is left,
 and the next step. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
 
-### `resolveDefaultClosureDependencyForEvaluationByName` covers 11 of 16 names
+### `resolveDefaultClosureDependencyForEvaluationByName` covers 13 of 16 names
 
 Filament's override resolves 16 dependency-name groups: `arguments`, `data`,
 `livewire`, `model`, `mountedActions`, `record`, `selectedRecords`/`records`,
@@ -115,7 +115,7 @@ Filament's override resolves 16 dependency-name groups: `arguments`, `data`,
 `schemaOperation`/`context`/`operation`, `schemaGet`/`get`, `schemaSet`/`set`,
 `schemaComponentState`/`state`, `schemaState`, `table`. The port's
 [`resolveDefaultClosureDependencyForEvaluationByName()`](../../../packages/actions/src/Action.php)
-resolves 11 of them: `record`, `recordClass` (Filament's `model`, under the
+resolves 13 of them: `record`, `recordClass` (Filament's `model`, under the
 [record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record) —
 it resolves [`getRecordClass()`](#the-record-chain-reaches-the-schema-the-component-and-the-host),
 so a closure can name the class an action will create into before any record
@@ -767,6 +767,15 @@ bound to something else without silently inheriting the wrong record. It is a
 pass-through for a non-object (an array record, a bare key), because a class
 guard has nothing to say about either.
 
+A **set** record that fails the guard **stops the chain** rather than falling
+through it, which is Filament's shape and is easy to get backwards: its
+`if ($record) { return $this->ensureCorrectRecordType($record); }` returns `null`
+without ever reaching the group. So `->record($a)->recordClass(B::class)` inside a
+group holding a real `B` answers `null`, not the group's record — an explicit
+binding that does not fit is an error to surface, not a reason to inherit
+something else. Only an **absent** own record hands the walk on. Pinned by
+`ActionTest`'s "stops at its own record when the record class does not match".
+
 **The title is guarded on the record existing.** `getCustomRecordTitle()` returns
 `null` the moment there is no record, *before* evaluating the `recordTitle()`
 closure or reading `recordTitleAttribute()` — Filament's `if ($record)` gate.
@@ -798,10 +807,41 @@ back, and stamping it would only re-send the host its own state. Nothing renders
 differently today (no shipped host answered the hook before this commit); the
 gate exists so that adding one does not start widening every trigger's context.
 
-**`shouldClearRecordAfter()` / `clearRecordAfter()`** are the pair
-[`CreateAction`](create-action.md) flips: the base answers `false` and
+**`shouldClearRecordAfter()` / `clearRecordAfter()`** are the pair a
+create-shaped action flips — [`CreateAction`](create-action.md) does, from this
+epic's `B` lane, and nothing overrides them yet: the base answers `false` and
 `clearRecordAfter()` returns without touching anything, so an action that never
 opts in cannot lose the record it was mounted with.
+
+**Two hops of Filament's are deferred rather than dropped.** The label and title
+chains each hop through the table before falling back — `getTable()?->getModelLabel()`
+in `getModelLabel()`, `getTable()?->getRecordTitle($record)` in `getRecordTitle()`,
+and `getTable()?->getRecordTitleAttribute()` in `getRecordTitleAttribute()`. Tables'
+[`Table`](../tables/table.md) carries no label or title surface at all, so there is
+nothing for those hops to call; only `getRecordClass()`'s table hop exists here,
+because `Table::getRecordClass()` does. They land when the table grows the surface.
+The second is the **plural trio** — `pluralRecordLabel()`, `getPluralRecordLabel()`
+and `getTitleCasePluralRecordLabel()` (plus `getCustomPluralRecordLabel()`) — which
+only the bulk family reads, and which is deferred beside M4 · 1's
+`CanBeLabeledFrom`; Filament's own `getPluralModelLabel()` additionally branches on
+`locale_has_pluralization()`, and [i18n is parked](../roadmap.md), so the arm would
+have nothing to ask.
+
+**Four guards read `!== null` where Filament reads `filled()`**, and one arm is `??`
+where Filament tests `filled()`. `getRecordClass()`'s custom-class check,
+`ensureCorrectRecordType()`'s, and `hasCustomRecordTitle()` all use `!== null`
+(`hasCustomRecordTitleAttribute()` is `!== null` upstream too, so the pair is now
+consistent rather than split); `getRecordTitle()`'s host arm is
+`getCustomRecordTitle($record) ?? $host?->getDefaultActionRecordTitle($this) ?? …`
+where Filament wraps each in `filled()`. The difference is only ever an **empty
+string**: `->recordClass('')` is not a class, `->recordTitle('')` counts as custom
+here and does not upstream, and a host answering `''` stops the title chain here
+where Filament would fall through to the label. One more delta, in the same family:
+Filament's `getRecordTitle()` nulls a `$record` **argument** that is not of the
+custom record class before using it; ours passes the caller's argument straight to
+`getCustomRecordTitle()`, on the reading that an explicitly-passed record is the
+caller's assertion, not an ambient one to be second-guessed —
+`ensureCorrectRecordType()` still guards every record the chain *resolves*.
 
 The class-string is injectable now: `resolveDefaultClosureDependencyForEvaluationByName()`
 resolves **`recordClass`**, which is the surface
@@ -809,17 +849,25 @@ resolves **`recordClass`**, which is the surface
 Filament's `$model` closure parameter becomes. The rename rows this landed —
 `model()`/`getModel()`/`getCustomModel()`,
 `modelLabel()`/`getModelLabel()`/`getTitleCaseModelLabel()`/`getCustomModelLabel()`,
-`get_model_label()`, `getDefaultActionModel`, `getDefaultActionModelLabel`, and
-`$model` → `$recordClass` — are all in that table, under the
+`get_model_label()`, `getDefaultActionModel`, `getDefaultActionModelLabel`,
+`getMountedActionSchemaModel`, and `$model` → `$recordClass` — are all in that
+table, under the
 [record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record).
 
 Covered by
 [`InteractsWithRecordTest`](../../../packages/actions/tests/Unit/Concerns/InteractsWithRecordTest.php)
 (the trait's own chains, the guarded title and the type guard),
-[`ActionTest`](../../../packages/actions/tests/Unit/ActionTest.php) (the schema
-walk, the `recordClass` injection, the context gate and the clear-after pair) and
+[`ActionTest`](../../../packages/actions/tests/Unit/ActionTest.php) (both schema
+hops — container and component separately, since a root container's
+`getParentComponent()` is null and so the container case never reaches the
+component arm — the own-record stop, the `recordClass` injection, the context
+gate, the hostless label arm, the fall-to-label title and the clear-after pair)
+and
 [`HasActionsRecordTest`](../../../packages/actions/tests/Unit/Concerns/HasActionsRecordTest.php)
-(all four host hooks answering at once, and `withDefault: false` refusing them).
+(all four host hooks answering at once, `withDefault: false` refusing both the
+record and the class, the derive-anyway fallback for a host that owns the class
+but answers no label, and the host label being ignored for a class that is not
+the host's).
 
 ### The rollback flag's setter and getter disagree on casing
 

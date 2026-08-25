@@ -75,14 +75,14 @@ trait InteractsWithRecord
 
     public function getRecord(): mixed
     {
-        $record = $this->ensureCorrectRecordType($this->evaluate($this->record));
+        $record = $this->evaluate($this->record);
 
-        if ($record !== null) {
-            return $record;
+        if (filled($record)) {
+            return $this->ensureCorrectRecordType($record);
         }
 
         if (method_exists($this, 'getGroup')) {
-            return $this->getGroup()?->getRecord();
+            return $this->ensureCorrectRecordType($this->getGroup()?->getRecord());
         }
 
         return null;

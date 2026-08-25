@@ -117,8 +117,14 @@ resource's pages; the redirect pair followed with
 [`CanRedirect`](action.md); and the record cluster —
 `getDefaultActionSchemaResolver(Action $action): ?Closure` plus
 `getDefaultActionRecord()`, `getDefaultActionRecordTitle()`,
-`getDefaultActionRecordClass()` and `getDefaultActionRecordLabel()` — landed with
-the [record chain on `Action`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host).
+`getDefaultActionRecordClass()` and `getDefaultActionRecordLabel()`. Four of the
+five landed with the
+[record chain on `Action`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
+that reads them; the schema resolver's reader is
+[`HasSchema::getSchema()`](has-schema.md)'s host fallback rather than the chain,
+and it arrives one lane later in the same epic — the one place the recipe's
+"land it with its reader" is stretched to "land it with its epic", so that the
+contract widens exactly once.
 The last two carry `renames.md` rows: `getDefaultActionModel` and
 `getDefaultActionModelLabel` speak the
 [record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record)

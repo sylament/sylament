@@ -12,7 +12,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 
 /**
  * Answers all four record hooks for every action it hosts, so the fall-through
- * end of the record chain can be asserted without a panel page.
+ * end of the record chain can be asserted without a panel page. `$recordLabel`
+ * is public and nullable so a case can build the one host shape the label chain
+ * treats specially: one that owns the class but answers no label.
  */
 #[AsLiveComponent(name: 'DefaultRecordHost', template: '@ActionsFixtures/components/DefaultRecordHost.html.twig')]
 class DefaultRecordHost implements InteractsWithActions
@@ -21,6 +23,8 @@ class DefaultRecordHost implements InteractsWithActions
     use HasActions;
 
     public object $record;
+
+    public ?string $recordLabel = 'thing';
 
     public function __construct()
     {
@@ -51,7 +55,7 @@ class DefaultRecordHost implements InteractsWithActions
 
     public function getDefaultActionRecordLabel(Action $action): ?string
     {
-        return 'thing';
+        return $this->recordLabel;
     }
 
     public function getDefaultActionRecordTitle(Action $action): ?string

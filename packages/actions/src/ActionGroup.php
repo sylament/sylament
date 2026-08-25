@@ -335,7 +335,13 @@ class ActionGroup extends ViewComponent
 
     public function getRecord(): mixed
     {
-        return $this->ensureCorrectRecordType($this->evaluate($this->record)) ?? $this->getGroup()?->getRecord();
+        $record = $this->evaluate($this->record);
+
+        if (filled($record)) {
+            return $this->ensureCorrectRecordType($record);
+        }
+
+        return $this->ensureCorrectRecordType($this->getGroup()?->getRecord());
     }
 
     /**
@@ -487,6 +493,7 @@ class ActionGroup extends ViewComponent
     {
         return match ($parameterName) {
             'record' => ClosureParameter::make($this->getRecord()),
+            'recordClass' => ClosureParameter::make($this->getRecordClass()),
             'liveComponent' => ClosureParameter::make($this->getLiveComponent()),
             'schema' => ClosureParameter::make($this->getSchemaContainer()),
             'schemaComponent', 'component' => ClosureParameter::make($this->getSchemaComponent()),

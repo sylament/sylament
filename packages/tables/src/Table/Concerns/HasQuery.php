@@ -7,6 +7,7 @@ namespace Sylament\Tables\Table\Concerns;
 use Closure;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\QueryBuilder;
+use Sylament\Schemas\State\Relationship;
 
 trait HasQuery
 {
@@ -17,7 +18,13 @@ trait HasQuery
      */
     protected array $queryScopes = [];
 
+    protected Relationship|Closure|null $getRelationshipUsing = null;
+
     protected ?QueryBuilder $cachedBaseQuery = null;
+
+    protected ?Relationship $cachedRelationship = null;
+
+    protected bool $hasCachedRelationship = false;
 
     public function query(QueryBuilder|Closure|null $query): static
     {
@@ -27,6 +34,44 @@ trait HasQuery
         $this->hasCachedRecordClass = false;
 
         return $this;
+    }
+
+    public function relationship(?Closure $relationship): static
+    {
+        $this->getRelationshipUsing = $relationship;
+        $this->cachedBaseQuery = null;
+        $this->cachedRecordClass = null;
+        $this->hasCachedRecordClass = false;
+        $this->cachedRelationship = null;
+        $this->hasCachedRelationship = false;
+
+        return $this;
+    }
+
+    /**
+     * The owner record's association this table lists, evaluated once — the
+     * closure usually resolves the owner, which is a database read.
+     */
+    public function getRelationship(): ?Relationship
+    {
+        if ($this->hasCachedRelationship) {
+            return $this->cachedRelationship;
+        }
+
+        $this->hasCachedRelationship = true;
+
+        return $this->cachedRelationship = $this->evaluate($this->getRelationshipUsing);
+    }
+
+    /**
+     * The related records as a builder rooted at the target entity — the base
+     * query a table with a relationship and no query() runs on.
+     */
+    public function getRelationshipQuery(): ?QueryBuilder
+    {
+        $relationship = $this->getRelationship();
+
+        return $relationship instanceof Relationship ? $this->getAssociationReader()->createRelationshipQuery($relationship) : null;
     }
 
     public function modifyQueryUsing(Closure $callback): static
@@ -70,6 +115,6 @@ trait HasQuery
 
     protected function getBaseQuery(): ?QueryBuilder
     {
-        return $this->cachedBaseQuery ??= $this->evaluate($this->query);
+        return $this->cachedBaseQuery ??= ($this->evaluate($this->query) ?? $this->getRelationshipQuery());
     }
 }

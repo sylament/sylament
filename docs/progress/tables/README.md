@@ -32,11 +32,12 @@ wait on — so a row whose detail file already names a prerequisite would be
 false as **todo**. These tables carry the same four columns as every package
 README, so a **blocked** row names its prerequisite at the head of _Detail_,
 ahead of the detail-file link that carries the full write-up: _relation
-managers_ is the one most rows here wait on today — the
-[relation-scoped table](table.md#the-relation-scoped-table-arm-travels-with-relation-managers),
-`Table::relationship()` and the pivot surface around it, which is a **data lane**
-rather than a column path and belongs to the feature that supplies a parent
-record.
+managers_ is the one most rows here wait on today. The
+[relation-scoped table](table.md#the-relationship-query-is-the-base-query-rooted-at-the-target)
+is no longer one of them — `Table::relationship()` is a **data lane**, a third
+case beside `records()` and `query()`, and it shipped with M4 · 8 *ahead* of
+relation managers rather than inside them, because a relation manager is one
+consumer of that lane and the actions that write through it are another.
 Four more stood here until their epics landed. _Table upgrades
 ([pulled forward · 11](../roadmap.md#pulled-forward))_ went first: its rows are
 now **done**, **in progress** or — where what was left is Eloquent query
@@ -80,14 +81,11 @@ into
 `HasSchema`, `InteractsWithTableQuery`) into
 [`base-filter.md`](base-filter.md). Filament's `resources/views/index.blade.php`
 folds the same way, into `table.md`'s `$template` row.
-`Table\Concerns\HasQuery`, `Table\Concerns\HasFilters` and
-`Table\Concerns\HasFilterIndicators` are three landed concerns that keep a row
-anyway, all for the same reason: `HasQuery`'s `query()` arm is built and folded
-into [`table.md`](table.md) while its relation-scoped arm beside it is deferred
-whole, and the two filter concerns are built and folded into
-[`table.md`](table.md) while the trigger, apply and remove-all actions, the
-`filtersFormSchema()` override and the column-search indicators are not — so each
-row is where the deferred half stays findable. `Filters\Concerns\HasOptions` and
+`Table\Concerns\HasFilters` and `Table\Concerns\HasFilterIndicators` are two
+landed concerns that keep a row anyway, for the same reason: both are built and
+folded into [`table.md`](table.md) while the trigger, apply and remove-all
+actions, the `filtersFormSchema()` override and the column-search indicators are
+not — so each row is where the deferred half stays findable. `Filters\Concerns\HasOptions` and
 `Filters\Concerns\HasPlaceholder` keep rows for a different reason: they ship for
 `SelectFilter` alone, so they fold into
 [`select-filter.md`](select-filter.md) rather than into `base-filter.md` with the
@@ -244,7 +242,6 @@ pairs with, so it shares the first row below.
 | Table / HasHeader | [`Table/Concerns/HasHeader.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php) | todo | — |
 | [`Table / HasHeaderActions`](../../../packages/tables/src/Table/Concerns/HasHeaderActions.php) | [`Table/Concerns/HasHeaderActions.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeaderActions.php) | in progress | [table.md](table.md#the-header-and-toolbar-setters-are-destructive-because-the-flat-bulk-map-is-the-checkbox-switch) |
 | Table / HasHeadings | [`Table/Concerns/HasHeadings.php`](../../../vendor/filament/tables/src/Table/Concerns/HasHeadings.php) | todo | — |
-| [`Table / HasQuery`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table/Concerns/HasQuery.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | in progress | relation managers, for the relation-scoped arm only — [table.md](table.md#the-relation-scoped-table-arm-travels-with-relation-managers) |
 | Table / HasQueryStringIdentifier | [`Table/Concerns/HasQueryStringIdentifier.php`](../../../vendor/filament/tables/src/Table/Concerns/HasQueryStringIdentifier.php) | todo | — |
 | Table / HasRecordAction | [`Table/Concerns/HasRecordAction.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordAction.php) | todo | — |
 | Table / HasRecordClasses | [`Table/Concerns/HasRecordClasses.php`](../../../vendor/filament/tables/src/Table/Concerns/HasRecordClasses.php) | todo | — |

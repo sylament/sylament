@@ -21,6 +21,7 @@ use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
 use Sylament\Schemas\Components\Text;
 use Sylament\Schemas\Schema;
+use Sylament\Schemas\State\AssociationReader;
 use Sylament\Schemas\State\Casts\BooleanStateCast;
 use Sylament\Schemas\State\Get;
 use Sylament\Schemas\State\Set;
@@ -572,4 +573,11 @@ it('answers null for the table injections on a table-less action', function (): 
 
     expect($action->evaluate(fn (?Table $table): ?Table => $table))->toBeNull()
         ->and($action->evaluate(fn ($table): mixed => $table))->toBeNull();
+});
+
+it('reaches an association reader outside the container', function (): void {
+    $reader = Action::make('x')->getAssociationReader();
+
+    expect($reader)->toBeInstanceOf(AssociationReader::class)
+        ->and($reader->hasEntityManager())->toBeFalse();
 });

@@ -91,19 +91,20 @@ Rows never disappear — only their detail sections do.
 | [The filters trigger — the toolbar dropdown, the funnel icon button and the active-count badge](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `FiltersLayout::Dropdown` branch](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-trigger-badge-is-composed-in-the-table-partial-because-iconbutton-has-no-slot) · [diverges](#the-filters-panel-teleports-because-the-scroll-container-wraps-the-toolbar-too) |
 | [The filters panel — `<twig:SylamentTables:Filters>`](../../../packages/tables/templates/components/Filters/index.html.twig) | [`views/components/filters.blade.php`](../../../vendor/filament/tables/resources/views/components/filters.blade.php) | done | — | [diverges](#the-panel-is-fixed-chrome-with-no-action-objects-behind-it) |
 | [The indicators row — the active-filters label, the chips and the remove-all button](../../../packages/tables/templates/partials/Table/index.html.twig) | [`index.blade.php`'s `fi-ta-filter-indicators` block](../../../vendor/filament/tables/resources/views/index.blade.php) | done | — | [diverges](#the-chip-is-one-badge-and-the-delete-affordance-is-supports) |
-| Pivot record identity — `hasPivotRecordKeys()`, `allowDuplicates()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | skipped | — | The `BelongsToMany` pivot arm — it stays unported with the [relation-scoped table surface](#the-relation-scoped-table-arm-travels-with-relation-managers) it belongs to, and a Doctrine association table carrying payload is an entity of its own rather than a pivot |
+| The pivot surface — `hasPivotRecordKeys()`, `allowDuplicates()`, `selectPivotDataInQuery()` | [`HasRecords`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php), [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | skipped | — | The `BelongsToMany` pivot arm: a Doctrine association table carrying payload is an entity of its own rather than a pivot with casts, so there is no pivot model to key rows by, to allow duplicates of, or to alias columns out of |
 | [`columns()` / `getColumns()` / `getColumn()`](../../../packages/tables/src/Table/Concerns/HasColumns.php) | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | in progress | — | [column.md](column.md) · [detail](#columns-takes-columns-only-and-does-not-push) |
 | Column grouping and layouts — `pushColumns()`, `getColumnsLayout()`, `hasColumnGroups()` | [`Table\Concerns\HasColumns`](../../../vendor/filament/tables/src/Table/Concerns/HasColumns.php) | todo | — | [detail](#columns-takes-columns-only-and-does-not-push) |
 | The column manager — user-toggleable column visibility | [`HasColumnManager`](../../../vendor/filament/tables/src/Table/Concerns/HasColumnManager.php) | todo | — | — |
 | [The `query()` lane — `query()` / `getQuery()` / `modifyQueryUsing()` / `applyQueryScopes()` / `getQueryEntityManager()`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | done | — | [semantics](#every-read-clones-a-memoised-base-query) |
 | [`hasQuery()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::hasQuery()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [semantics](#the-query-lane-is-on-exactly-while-no-records-closure-is-set) |
 | [`getRecordClass()`](../../../packages/tables/src/Table/Concerns/HasRecords.php) | [`HasRecords::getModel()`](../../../vendor/filament/tables/src/Table/Concerns/HasRecords.php) | done | — | [rename](../renames.md#renames) · [semantics](#the-record-class-is-read-off-the-base-querys-root-entity) |
-| The relation-scoped table — `relationship()`, `inverseRelationship()`, `getRelationship()`, `getRelationshipQuery()`, `getInverseRelationship()`, `getInverseRelationshipFor()`, `selectPivotDataInQuery()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | blocked | relation managers | [detail](#the-relation-scoped-table-arm-travels-with-relation-managers) |
+| [The relation-scoped table — `relationship()` / `getRelationship()` / `getRelationshipQuery()`](../../../packages/tables/src/Table/Concerns/HasQuery.php) | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | done | — | [semantics](#the-relationship-query-is-the-base-query-rooted-at-the-target) · [semantics](#the-mappings-order-is-the-relation-scoped-tables-default-sort) |
+| The inverse-name derivation — `inverseRelationship()`, `getInverseRelationship()`, `getInverseRelationshipFor()` | [`Table\Concerns\HasQuery`](../../../vendor/filament/tables/src/Table/Concerns/HasQuery.php) | skipped | — | [diverges](#the-inverse-relationship-is-read-off-the-mapping-not-derived) |
 | [`paginated()` / `isPaginated()` / `paginationPageOptions()` / `getPaginationPageOptions()` / `defaultPaginationPageOption()` / `getDefaultPaginationPageOption()` / `extremePaginationLinks()` / `hasExtremePaginationLinks()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | done | — | [diverges](#the-ten-per-page-default-is-matched-strictly) · [diverges](#ispaginated-has-no-groups-only-arm) |
 | [`paginationMode()` / `getPaginationMode()`](../../../packages/tables/src/Table/Concerns/CanPaginateRecords.php) + [`PaginationMode`](../../../packages/tables/src/Enums/PaginationMode.php) | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php), [`Enums/PaginationMode`](../../../vendor/filament/tables/src/Enums/PaginationMode.php) | in progress | its `Cursor` arm — a keyset carrier ([pagination.md](../support/pagination.md)) | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) · [has-table.md](has-table.md#the-page-state-has-its-query-lane-and-no-session-or-url-half) |
 | `paginatedWhileReordering()`, `scrollToTopOnPageChange()` | [`Table\Concerns\CanPaginateRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanPaginateRecords.php) | todo | — | [detail](#the-pagination-mode-ships-two-cases-and-two-setters-wait-on-their-features) |
 | [`getSortableVisibleColumn()` / `getSortColumn()` / `getSortDirection()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [diverges](#getsortablevisiblecolumn-has-no-hidden-arm-to-check) |
-| [`defaultSort()` / `getDefaultSort()` / `getDefaultSortDirection()` / `defaultKeySort()` / `hasDefaultKeySort()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [semantics](#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker) · [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [has-table.md](has-table.md#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) |
+| [`defaultSort()` / `getDefaultSort()` / `getDefaultSortDirection()` / `defaultKeySort()` / `hasDefaultKeySort()`](../../../packages/tables/src/Table/Concerns/CanSortRecords.php) | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | done | — | [semantics](#the-default-sort-is-a-secondary-order-and-its-direction-rules-the-tiebreaker) · [has-table.md](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker) · [has-table.md](has-table.md#a-default-sort-closures-replacement-builder-reaches-the-caller-where-filaments-is-discarded) · [semantics](#the-mappings-order-is-the-relation-scoped-tables-default-sort) |
 | `defaultSortOptionLabel()` / `getDefaultSortOptionLabel()` | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | skipped | — | It labels the "unsorted" entry of the mobile sort **dropdown**, which the port does not render and nothing else reads; it belongs to that layout rather than to sorting, and lands only if the layout does |
 | `persistSortInSession()` / `persistsSortInSession()` | [`Table\Concerns\CanSortRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSortRecords.php) | todo | — | The session half of sorting, and the [toolkit-wide omission](has-table.md#no-table-state-is-persisted-in-the-session) recorded on the host side — it returns with that decision rather than with sorting, the way the `persistSearchInSession()` row below does |
 | [`searchable()` / `isSearchable()` / `getExtraSearchableColumns()`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php) | [`Table\Concerns\CanSearchRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSearchRecords.php) | done | — | [semantics](#a-table-is-searchable-when-a-column-says-so-and-searchable-overrides-in-both-directions) |
@@ -315,49 +316,6 @@ bound once and reused — the single bug the per-record clone exists to prevent.
 Specifics for rows that are not finished — what is already in, what is left, and
 what the next step is. Delete a subsection when its row flips to **done**; the
 table row and any divergence it earned stay behind.
-
-### The relation-scoped table arm travels with relation managers
-
-Filament's `HasQuery` is two declarations, not one: `query()` hands over a
-builder, and `relationship()` hands over a closure returning an Eloquent
-`Relation`, from which `getRelationshipQuery()` derives the builder instead. The
-first arm is ported; the second is not, and its seven members
-(`relationship()`, `inverseRelationship()`, `getRelationship()`,
-`getRelationshipQuery()`, `getInverseRelationship()`,
-`getInverseRelationshipFor()`, `selectPivotDataInQuery()`) are the row above.
-`getQuery()` loses the second of its two arms with them: Filament falls back to
-the relationship query when no builder was declared, and here a declared query is
-the only source.
-
-**This is the whole-table face of relations, and it is a different feature from
-the column one.** The [relation arm](../roadmap.md#pulled-forward) shipped the
-column face — a name that reads, sorts, searches and counts *through* an
-association — deliberately without touching this, because `relationship()` does
-not resolve a path: it makes the table's entire data source one parent record's
-collection, which is a **data lane** decision. Adopting it means a third case
-beside `records()` and `query()` in `hasQuery()` and in both "must have"
-messages, an inverse side to write back through, and a parent record to bind —
-none of which a column path needs and all of which a relation manager supplies.
-So the destination is now named rather than open: **relation managers**, listed
-out of scope for the panel milestone and unordered beyond it.
-
-Two of the seven exist only to work around Eloquent's own shapes —
-`getRelationshipQuery()` is mostly the `HasOneOrManyThrough`
-`select($table . '.*')` patch and the `withCasts()` call on the pivot class, and
-`selectPivotDataInQuery()` is pivot-column aliasing whole — and neither has a
-Doctrine referent: a Doctrine association is reached by joining from the owning
-entity, and an association table with payload is an entity of its own rather than
-a pivot with casts. `getInverseRelationship()` is likewise Eloquent-shaped,
-guessing the inverse accessor's name by singularising or pluralising the parent's
-class basename, where Doctrine already carries the inverse side on the mapping
-(`inversedBy` / `mappedBy`) and a guess would be strictly worse than a read — and
-that read is [`AssociationReader`](../schemas/association-reader.md), shipped and
-reusable, which is why nothing here waits on machinery any more, only on the
-feature that needs it. The likely shape stands as the earlier draft left it: a
-`QueryBuilder` with the join already applied, which `query()` accepts today,
-leaving `relationship()` to add only the inverse-side knowledge a nested create
-needs. Filament's `hasPivotRecordKeys()` / `allowDuplicates()` pair is already
-**skipped** in the surface table on the same grounds.
 
 ### The pagination mode ships two cases, and two setters wait on their features
 
@@ -814,9 +772,17 @@ would filter it by a term the aggregated relation has no field for.
 `getQueryEntityManager()` is Sylament-only: an Eloquent builder carries
 its connection and every Filament consumer reaches the model statically, where
 Doctrine's read side needs the `EntityManagerInterface` explicitly — so the
-entity manager behind the declared query needs a seam, and it is read off the
-base query rather than injected, which keeps a `Table` free of container
-dependencies it would otherwise carry only for this.
+entity manager behind the base query needs a seam, and on the `query()` lane it
+is read off the builder the caller handed over rather than injected. The
+relationship lane is the case that stance did not foresee: there is no builder to
+read from until something has *built* one, and building it is a mapping read. So
+`Table` composes
+[`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php)
+— the reader arrives the way it reaches every schemas component, through a
+`#[Required]` setter on the container-built table, with an entity-manager-less
+fallback for one built outside the container that refuses at use rather than at
+construction. A `Table` therefore carries exactly one container dependency for
+this, and only the relationship lane consults it.
 
 ### A dotted name is resolved against the mapping before it is refused
 
@@ -1144,10 +1110,96 @@ is what makes actions' unconditional table hop
 terminal — a table-bound action never reaches its host's title hook, because the
 table's answer is always filled.
 
+### The relationship query is the base query, rooted at the target
+
+`relationship()` is the third data lane, and it lands in one slot:
+`getBaseQuery()` — the single memo every reader funnels through — falls back from
+the declared `query()` to
+[`AssociationReader::createRelationshipQuery()`](../schemas/association-reader.md).
+Precedence is `records()` › `query()` › `relationship()` › the refusal, and
+`hasQuery()` is unmoved: it still asks only whether a `records()` closure is set,
+because a relationship table is a query table.
+
+Everything downstream picks the lane up with no change of its own, which is the
+point of putting it there. `getRecordClass()` reads the first root entity and the
+root is the **target**, always — the many-to-many arm narrows by a subselect over
+the owner's own association rather than by joining back through an inverse side,
+and the one-to-many arm narrows by the target's `mappedBy` field — so the record
+class is `Genre` for `Song.genres`, `getQueryEntityManager()` answers the
+reader's manager, columns resolve their paths from the target, and search, sort,
+pagination, the aggregate batch and the selection lane compose over the
+constraint instead of around it. `getTableRecord($key)` is scoped for free and no
+ownership check exists anywhere: the constraint lives in the base query, which
+record resolution narrows *further* by key, so a key outside the owner's
+collection resolves to `null` — which is also what makes a smuggled key harmless
+on the two by-key bulk arms.
+
+The relationship closure is evaluated **once** per table instance and memoised
+behind a `hasCachedRelationship` flag, because it usually resolves the owner and
+that is a database read; `relationship()` resets that memo along with the base
+query and the record-class memo, so re-declaring the lane re-reads it. A closure
+answering `null` is a table with no query at all rather than an error — a host
+whose owner has not been found yet renders empty.
+
+One rig caveat, because it decides where a delete test may live: the tables
+fixture SQLite enforces no foreign keys, so a by-key delete of a record a join
+table still references leaves the join row dangling here where a real Postgres
+would refuse the statement. That is why the relation-scoped delete pins delete
+`Song`s through `Artist.songs`, whose rows own their own foreign key, and never
+`Genre`s through `Song.genres`, whose join table is `Song`'s mapping.
+
+### The mapping's order is the relation-scoped table's default sort
+
+Doctrine applies `#[ORM\OrderBy]` when it hydrates a collection, so every other
+read of `Artist::$songs` comes back title-ascending. A relation-scoped table that
+ignored it would be the one view of that association ordered differently from all
+the rest, so `getDefaultSort()` falls back — when the table declares no
+`defaultSort()` and the relationship's target carries an `orderBy` — to the
+`QueryBuilder` arm of its own contract, `addOrderBy()`ing one qualified field per
+mapping entry and returning the builder.
+
+That arm is why nothing else had to move: the host applies the *user's* sort
+first and the default's parts after it
+([the composition](has-table.md#sorting-composes-the-users-order-the-default-and-the-identifier-tiebreaker)),
+so a clicked header wins and the mapping order degrades to a tiebreaker beneath
+it, exactly as a hand-written `defaultSort(fn ($query) => …)` would. The
+direction is read off the mapping rather than off the table, and anything that is
+not `desc` is `asc` — Doctrine's own docblock says `'asc'|'desc'` while its
+metadata hands `'ASC'` through untouched, so the comparison is
+case-insensitive. Filament has no counterpart: an Eloquent relation carries no
+readable default order, so this is an addition rather than a divergence.
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold. Say
 what would reverse the decision when it is provisional.
+
+### The inverse relationship is read off the mapping, not derived
+
+Filament's relation-scoped table carries three members the port does not:
+`inverseRelationship()`, `getInverseRelationship()` and
+`getInverseRelationshipFor()`. They exist because Eloquent cannot be asked what
+the other side of a relation is called, so Filament *guesses* it — the parent
+class's basename, singularised and camel-cased — reached through a magic dynamic
+call on the relation object, and `inverseRelationship()` is the setter that
+overrides the guess when it is wrong.
+
+Doctrine already carries the answer: an association mapping names its counterpart
+(`mappedBy` on an inverse side, `inversedBy` on an owning one) and
+[`AssociationTarget`](../../../packages/schemas/src/State/AssociationTarget.php)
+surfaces both. So the two jobs Filament needs the inverse name for are already
+done without it — the write side reaches the target's owning field through
+`mappedBy`, and the candidate query excludes already-related records with a
+negated subselect that needs no inverse mapping at all. A setter with nothing
+left to override would be an API that does nothing, which is worse than an
+absence; the guess itself is exactly the kind of internal
+[principles §1](../../principles.md) rejects. Three `— not ported` rows in
+[renames.md](../renames.md) carry the names.
+
+Reversal is cheap but unmotivated: it needs a *reader* to want the inverse name
+by itself, and the only known caller — Filament's own
+`RelationManager::makeTable()` — reaches it from a `@deprecated` static property
+this port will not carry either.
 
 ### `HeaderActionsPosition` files under `Enums/`, where Filament keeps it under `Actions/`
 

@@ -13,15 +13,19 @@ schemas and actions already carry, recorded in the
 [rename table](../renames.md#interface-and-trait-names-are-swapped). ⚠️ Reading
 either name across the two codebases means checking which side it is on first.
 
-`HasTable` itself is seventeen methods wide: `table()`, `getTable()`,
+`HasTable` itself is twenty-one methods wide: `table()`, `getTable()`,
 `makeTable()`, the three filtered-query seams `getFilteredTableQuery()`,
 `filterTableQuery()` and `getFilteredSortedTableQuery()`, `getTableRecords()`,
-the `resolveTableRecords()` half it caches and the `keyTableRecords()` half that
-re-keys, `getTablePaginator()`, `getTableRecordKey()` with its
+the `resolveTableRecords()` half it caches and the two keying halves
+`keyDataSourceRecords()` and `keyTableRecords()` — the second reading
+`isFieldKeyedRecord()` to tell an array record's own key column from a list
+index — `getTablePaginator()`, `getTableRecordKey()` with its
 `resolveQueryRecordKey()` helper that reads an entity's identity off the mapping
-metadata, `getTableRecord()` with its `resolveQueryTableRecord()` helper that
+metadata and its `toRecordKey()` helper that decides which scalars are printable
+as one, `getTableRecord()` with its `resolveQueryTableRecord()` helper that
 re-queries for a single one, `getAllTableRecordsCount()`,
-`flushCachedTableRecords()` and `getTableHostId()`.
+`fillTableAggregateValues()`, `flushCachedTableRecords()` and
+`getTableHostId()`.
 It builds the table once per request, resolves its data source once per
 request — a `records()` closure, or
 the Doctrine query those three seams assemble — and hands back an array **keyed
@@ -108,7 +112,7 @@ instead.
 | [`table(Table $table): Table` — the identity default a host overrides](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::table()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | — |
 | [`getTable(): Table` — build once, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::getTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#the-table-is-built-lazily-on-first-gettable-not-in-a-booted-hook) |
 | [`makeTable(): Table`](../../../packages/tables/src/Concerns/HasTable.php) | [`InteractsWithTable::makeTable()`](../../../vendor/filament/tables/src/Concerns/InteractsWithTable.php) | done | — | [diverges](#maketable-seeds-nothing-from-deprecated-host-getters) |
-| [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-seven-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#the-missing-data-source-error-does-not-name-relationship) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
+| [`getTableRecords()` — resolve the data source once, eager-load, re-key, fill the aggregate store, cache](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::getTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | in progress | — | [detail](#the-records-injections-stop-at-seven-of-filaments-eight) · [semantics](#a-records-closure-resolves-public-container-services-by-type) · [diverges](#gettablerecords-returns-a-keyed-array-or-a-paginator-never-a-collection) · [diverges](#eager-loading-runs-over-every-column-on-the-page-clone-alone) |
 | [`getTablePaginator(): ?Paginator` — the carrier, unwrapped for the footer](../../../packages/tables/src/Concerns/HasTable.php) | — (Sylament-only; Filament's records **are** the paginator) | done | — | [pagination.md](../support/pagination.md) · [semantics](#the-paginator-is-a-return-value-not-a-state-holder) |
 | [`InteractsWithTable` — eighteen methods](../../../packages/tables/src/Contracts/InteractsWithTable.php) | [`Contracts\HasTable`](../../../vendor/filament/tables/src/Contracts/HasTable.php) | in progress | — | [detail](#the-contract-is-eighteen-methods-of-filaments-forty-six) |
 | [`flushCachedTableRecords()`](../../../packages/tables/src/Concerns/HasTable.php) | [`Concerns\HasRecords::flushCachedTableRecords()`](../../../vendor/filament/tables/src/Concerns/HasRecords.php) | done | — | on the contract since M4 · 2 — actions' `callMountedAction()` calls it in a `finally` after any mounted action runs on a table host. [detail](#the-contract-is-eighteen-methods-of-filaments-forty-six) |
@@ -1667,26 +1671,6 @@ two agree again with no change here. It is the third arm of this family the port
 declines to carry as written, beside
 [`searchable()`'s closure condition](column.md#a-closure-condition-on-searchable-is-evaluated-not-filed-as-a-search-column)
 and [`applySort()`'s reversal](column.md#sort-columns-apply-in-declared-order-where-filament-reverses-them).
-
-### The missing-data-source error does not name `relationship()`
-
-Filament throws `"Table [{$livewireClass}] must have a [query()], [relationship()],
-or [records()]."` — three ways to give a table data, and the message lists all
-three so the reader can pick. Sylament's is
-`"Table [%s] must have [records()] or [query()]."`: it names the two lanes that
-exist and leaves out the third, which travels with
-[relation managers](table.md#the-relation-scoped-table-arm-travels-with-relation-managers).
-Naming an API the package does not ship would send a reader
-looking for a method they cannot call — which is why the message grew its
-`query()` half in the change that landed the lane rather than ahead of it, and why
-it grows `relationship()` the same way. Provisional, and mechanically so.
-
-The [relation arm](../roadmap.md#pulled-forward) is what makes that worth
-restating rather than repeating: relations reached the tables package in · 20 and
-this message did **not** change, because what · 20 shipped is relation-aware
-*column paths* — a name that reads, sorts and searches through an association on
-a table whose data source is still its own `query()`. The third lane is a
-different feature, and the message grows only with it.
 
 ### `getTableRecords()` returns a keyed array or a `Paginator`, never a `Collection`
 

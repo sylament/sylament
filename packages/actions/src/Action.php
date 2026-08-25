@@ -46,6 +46,7 @@ use Sylament\Actions\Concerns\InteractsWithRecord;
 use Sylament\Actions\Concerns\InteractsWithSelectedRecords;
 use Sylament\Actions\Enums\ActionStatus;
 use Sylament\Schemas\Components\Component;
+use Sylament\Schemas\Components\Concerns\CanAccessAssociations;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Schemas\Components\Contracts\HasExtraItemActions;
 use Sylament\Schemas\Schema;
@@ -79,6 +80,7 @@ class Action extends ViewComponent
     use BelongsToLiveComponent;
     use BelongsToSchemaComponent;
     use BelongsToTable;
+    use CanAccessAssociations;
     use CanAccessProperties;
     use CanBeDisabled;
     use CanBeHidden;

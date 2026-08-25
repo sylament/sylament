@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sylament\Tables;
 
 use Closure;
+use Sylament\Schemas\Components\Concerns\CanAccessAssociations;
 use Sylament\Schemas\Components\Concerns\CanAccessProperties;
 use Sylament\Support\Components\ViewComponent;
 use Sylament\Support\Evaluation\ClosureParameter;
@@ -29,6 +30,7 @@ use Sylament\Tables\Table\Concerns\HasToolbarActions;
 class Table extends ViewComponent
 {
     use BelongsToLiveComponent;
+    use CanAccessAssociations;
     use CanAccessProperties;
     use CanPaginateRecords;
     use CanSearchRecords;

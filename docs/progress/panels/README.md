@@ -424,8 +424,12 @@ definitions and anything tagged that is not a `Resource`. Both throws name the
 fix: an unregistered class-string says so, and a locator answering with a
 non-resource says that.
 
-Because it is a service, the whole surface is instance methods. `form(Schema)`
-and `table(Table)` are Filament's identity defaults verbatim; the five services
+Because it is a service, the whole surface is instance methods. `form(Schema)`,
+`infolist(Schema)` and `table(Table)` are Filament's identity defaults verbatim —
+`infolist()` ships ahead of infolists themselves because it is what a
+[`ViewAction`](../actions/view-action.md) mounted on a resource page resolves its
+modal schema through, and [M5 · 2](../roadmap.md#m5--view-page--infolists) fills
+it in; the five services
 the rest needs — `EntityManagerInterface`, `UrlGeneratorInterface`,
 `CurrentPanel`, `PanelRegistry` and schemas' `PropertyAccessor` — arrive through
 one `#[Required] setResourceServices()` setter, so a subclass declaring its own
@@ -438,7 +442,11 @@ What is ported, by cluster:
 - **Record class and labels.** `$recordClass` plus `getRecordClass()`;
   `$recordLabel` / `$pluralRecordLabel` and the four getters, deriving from the
   record class basename through Filament's exact pipeline (`BlogPost` →
-  `blog post` → `blog posts` → `Blog Post` / `Blog Posts`). Title case is
+  `blog post` → `blog posts` → `Blog Post` / `Blog Posts`). The singular step is
+  support's [`get_record_label()`](../support/helpers.md) rather than a second
+  copy of that derivation — actions' record family reads the same label off a
+  bare class-string, so the pipeline lives in one place and the resource
+  delegates to it. Title case is
   `u($label)->title(allWords: true)`, the house `Str::ucwords` equivalent
   [`Page`](#page) already uses.
 - **Slug.** `$slug`, else the class basename minus a trailing `Resource`,
@@ -551,7 +559,7 @@ silently shadowed by `HasActions`' null-returning default in any subclass that
 re-`use`d the trait —
 [the actions host sits on the base because a trait outranks an inherited method](#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method).
 
-Seven members. `protected static string $resource` is the class-string a subclass
+Eleven members. `protected static string $resource` is the class-string a subclass
 declares and `getResource()` reads — untyped-default exactly as in Filament, so a
 page that forgets it fails on the first read rather than resolving something
 plausible. `route(string $path): PageRegistration` is the registration factory a
@@ -568,19 +576,25 @@ self-enforcing: PHP refuses to narrow visibility in an override, so a user
 copying Filament's `protected function getHeaderActions()` gets a fatal at class
 load rather than a silently empty header. `getDefaultActionUrl(Action): ?string`
 is the fifth — actions' [url fallthrough hook](../actions/interacts-with-actions.md),
-answering for exactly the two prebuilt actions a resource has a page for:
+answering for exactly the three prebuilt actions a resource can have a page for:
 
 ```php
 public function getDefaultActionUrl(Action $action): ?string
 {
     $resource = $this->getResourceInstance();
+    $recordClass = $action->getRecordClass();
+    $ownsRecordClass = $recordClass === null || $recordClass === $resource->getRecordClass();
 
-    if ($action instanceof CreateAction && $resource->hasPage('create')) {
+    if ($action instanceof CreateAction && $resource->hasPage('create') && $ownsRecordClass) {
         return $resource->getUrl('create');
     }
 
-    if ($action instanceof EditAction && $resource->hasPage('edit') && ! $this instanceof EditRecord && $action->getRecord() !== null) {
+    if ($action instanceof EditAction && $resource->hasPage('edit') && ! $this instanceof EditRecord && $ownsRecordClass && $action->getRecord() !== null) {
         return $resource->getUrl('edit', ['record' => $action->getRecord()]);
+    }
+
+    if ($action instanceof ViewAction && $resource->hasPage('view') && $ownsRecordClass && $action->getRecord() !== null) {
+        return $resource->getUrl('view', ['record' => $action->getRecord()]);
     }
 
     return null;
@@ -592,11 +606,55 @@ Every clause earns its place. The `instanceof` discrimination is what keeps a
 nothing — the hook is asked for **every** url-less action the page renders, and
 any non-null answer wins, which is why Filament writes the same chain of guards.
 `! $this instanceof EditRecord` stops an edit page linking a record-bound
-`EditAction` at the page already showing that record. And `getRecord() !== null`
-replaces Filament's `blank($actionModel) || $actionModel === …::getModel()` pair:
-we have no `Action::model()` surface to compare against, and the URL needs a
-record either way. Two arms of Filament's chain are missing with their features —
-the `ViewAction` arm (no view page) and the model guard (no `model()`).
+`EditAction` at the page already showing that record; the `ViewAction` arm below
+it carries no `! $this instanceof ViewRecord` twin only because there is no view
+page class to name yet — that clause lands with
+[M5 · 2](../roadmap.md#m5--view-page--infolists), and its absence changes nothing
+until it does. `getRecord() !== null` guards the two record arms, because a URL
+for a record the action does not carry would be generated with a null parameter.
+
+`$ownsRecordClass` is Filament's `blank($actionModel) || $actionModel === …::getModel()`
+pair under [the record vocabulary](../renames.md#the-model-vocabulary-collapses-onto-record),
+hoisted out of the three arms because it asks one question for all of them: an
+action bound to a record class this resource does not own must not be linked at
+this resource's pages — a `CreateAction::make()->recordClass(Comment::class)` on
+an articles page mounts its modal instead. It is almost always `true`, and
+deliberately so: `Action::getRecordClass()` walks its chain down to
+`getDefaultActionRecordClass()`, which on a resource page is the resource's own
+class, so the two sides of the comparison agree unless the action was told
+otherwise.
+
+The `=== null` half is Filament's `blank($actionModel)` kept verbatim, and on a
+resource page it is very nearly unreachable. The hook is only ever entered
+through `CanOpenUrl::getUrl()`'s `getLiveComponentOrNull()?->getDefaultActionUrl($this)`,
+so the action always has a host by the time it is asked; that host is this page,
+whose `getDefaultActionRecordClass()` is the last hop of the chain and never
+answers null (the record pair below says why). It is kept because it is half of a
+ported pair and because a subclass is free to override that hook with null, not
+because a resource page can reach it.
+
+The record pair is sixth and seventh. `getDefaultActionRecordClass(Action)` and
+`getDefaultActionRecordLabel(Action)` answer the last hop of actions'
+[record chain](../actions/action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
+off the resource — its record class and its singular label — so every prebuilt
+record action mounted on a resource page knows what it is acting on, and a
+`DeleteAction`'s "Delete article" heading comes out right with nothing declared
+on the action. The contract types the class hook `?string`, but **it can never
+answer null from a resource page**: `Resource::getRecordClass()`
+[throws for a resource that declares none](#the-record-class-is-declared-never-derived-from-an-application-namespace)
+rather than returning null, which is the right shape — a resource without a
+record class is broken, not unopinionated — and the null the interface allows is
+for hosts with no resource behind them.
+
+`resolveMountedActionRecord(array $descriptor)` is the eighth: the class-body
+override that resolves a mounted frame's record key through the resource's own
+scoped query rather than a bare lookup, keeping both of the trait's skip guards
+and replacing its third —
+[the whole shape is a semantics note](#a-mounted-frames-record-key-resolves-through-the-resources-own-query).
+`callHook(string $hook)` is the ninth, Filament's convention dispatcher for the
+page lifecycle: [a hook is a method name, not a registration](#a-page-lifecycle-hook-is-a-method-name-not-a-registration).
+Both are `protected`, and both are on this base for the same reason the URL hook
+is — [a trait outranks an inherited method](#the-actions-host-sits-on-the-base-because-a-trait-outranks-an-inherited-method).
 
 Filament's own three-branch method is `static::getResource()::hasPage(…)` all the
 way down; ours goes through `getResourceInstance()` for the same reason every
@@ -712,6 +770,23 @@ trait's own package, not here.
   to live; the tables fixture `SchemaTableHost` and the demo's `FiltersTableCard`
   carry the same override for the same reason.
 
+**Modal record actions.** A resource that registers only an `index` page still
+gets every prebuilt record action — that *is* what Filament calls a simple
+resource, the absence of registered pages rather than a feature. The URL hook
+answers null, the action mounts, and the schema inside the modal comes from
+`getDefaultActionSchemaResolver(Action)`, Filament's three arms verbatim: a
+`CreateAction` or `EditAction` takes `$this->form($schema)`, a `ViewAction`
+`$this->infolist($this->form($schema))`, each over a schema given `columns(2)`
+unless the action set columns of its own. `form(Schema)` and `infolist(Schema)`
+are public delegations to the resource that exist **for that resolver** and are
+deliberately not added to `schemas()`, which stays `[]`: that list is the
+de/hydration walk, and a modal's schema is built per mount by
+[the actions host](../actions/has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation),
+never persisted with the page. `getMountedActionSchemaRecord()` answers the
+resource's record **class**, which is what a page showing no single record can
+seed a mounted schema with — the row actions get their record from the table
+frame instead.
+
 **Header actions.** `getHeaderActions()` returns the actions the template renders
 into the `Header` component's `actions` block — the same contract on all three
 page types, since the member is the [base's](#resource-pages). An action that
@@ -766,8 +841,8 @@ Deferred, all todo: tabs (`HasTabs`, `$activeTab`, `modifyQueryWithActiveTab()`)
 props and none of our tables props are url-bound either, so this is a tables-wide
 gap rather than a list-page one — `recordUrl` / `recordAction` row-click
 defaulting (see the divergence), the parent-record scoping arm, the deprecated
-`getTableQuery()` / `modelLabel()` seeding, `getDefaultActionSchemaResolver()`,
-`content()` and its `EmbeddedTable`, and the `ManageRecords` subclass.
+`getTableQuery()` / `modelLabel()` seeding, `content()` and its `EmbeddedTable`,
+and the `ManageRecords` subclass.
 
 Two divergences are the list page's:
 [the table is stamped query-first and resource-last](#the-list-pages-table-is-stamped-query-first-and-resource-last)
@@ -799,9 +874,11 @@ same container-registration `LogicException`
 setter again rather than sharing a trait — two classes, and Filament keeps its
 record handlers per page too.
 
-- `mount()` is `$this->getSchema('form')->fill()` — no argument, so
-  `Schema::fill(null)` hydrates with `applyDefaults: true` and every component's
-  `default()` lands.
+- `mount()` is `callHook('beforeFill')`, `$this->getSchema('form')->fill()` and
+  `callHook('afterFill')`. The fill takes no argument, so `Schema::fill(null)`
+  hydrates with `applyDefaults: true` and every component's `default()` lands;
+  there is no fill mutator here, because Filament has none on its create page
+  either.
 - `form(Schema)` stamps `statePath('data')`, `record($resource->getRecordClass())`
   — the **class-string** arm of `BelongsToRecord`, which defers `new $class()` to
   `getRecordInstance()` at save time — and `operation(Operation::Create->value)`,
@@ -811,6 +888,9 @@ record handlers per page too.
 - `schemas()` returns `['form']`, replacing the trait's `['schema']` default: the
   de/hydration hooks walk exactly this list, and naming a schema that has no
   method throws on the first render.
+- `getMountedActionSchemaRecord()` answers the resource's record **class**, so a
+  header action's modal is seeded with the class rather than the record this page
+  has not created yet.
 - `create()` is the `#[LiveAction]` the form's submit posts.
 
 The lifecycle, ours against Filament's:
@@ -820,22 +900,26 @@ The lifecycle, ours against Filament's:
 | re-entry guard | `$this->isCreating` | — (no SPA history restore to guard) |
 | authorization | `authorizeAccess()` | — deferred with the auth cluster |
 | transaction | `beginDatabaseTransaction()` | — deferred |
-| validate | `callHook('beforeValidate')` → `$this->form->getState()` → `callHook('afterValidate')` | `$this->getSchema('form')->getData()` — validation happens **inside** it |
-| mutate | `mutateFormDataBeforeCreate($data)` | — deferred |
-| write | `callHook('beforeCreate')` → `handleRecordCreation($data)` → `saveRelationships()` → `callHook('afterCreate')` | `handleRecordCreation($record)` — `persist()` + `flush()` |
+| validate | `callHook('beforeValidate')` → `$this->form->getState()` → `callHook('afterValidate')` | the same three steps, over `$this->getSchema('form')` |
+| mutate | `mutateFormDataBeforeCreate($data)` | same, an identity default a page overrides |
+| write | `callHook('beforeCreate')` → `handleRecordCreation($data)` → `saveRelationships()` → `callHook('afterCreate')` | `callHook('beforeCreate')` → `handleRecordCreation($schema->getData($data))` → `callHook('afterCreate')` — `persist()` + `flush()`, no relationship pass |
 | events | `RecordCreated`, `RecordSaved` | — no event layer |
 | remember | `rememberData()` | — no unsaved-changes alert |
 | notify | `getCreatedNotification()?->send()` | same |
 | create another | the `$another` branch | — deferred |
 | redirect | `$this->redirect($this->getRedirectUrl())` | `return new RedirectResponse($this->getRedirectUrl())` |
 
-Three things about that table are load-bearing. **Validation is not a step** —
-`Schema::getData()` calls `getState()`, which opens with `validate()`, so a
-failing submit throws `ValidationException` (a 422
-`UnprocessableEntityHttpException`) before anything is written; there is no
-`try`/`catch`, because ux-live-component's `LiveComponentSubscriber` re-renders
-the mutated component for exactly that status and the client morphs the errors
-in. **`handleRecordCreation()` takes the record, not an array** — the Filament
+Three things about that table are load-bearing. **Validation is the `getState()`
+step and mapping is the `getData($data)` step**, and the split is what makes the
+mutator possible: `getState()` opens with `validate()`, so a failing submit
+throws `ValidationException` (a 422 `UnprocessableEntityHttpException`) before
+the mutator, the write hook or anything else runs — there is no `try`/`catch`,
+because ux-live-component's `LiveComponentSubscriber` re-renders the mutated
+component for exactly that status and the client morphs the errors in — and
+`Schema::getData($data)` then maps that already-validated, already-mutated array
+onto a fresh record. Handing `getData()` the array rather than letting it read
+state back is [the schemas seam](../schemas/belongs-to-record.md) this epic
+added for exactly this. **`handleRecordCreation()` takes the record, not an array** — the Filament
 signature is `(array $data): Model` because Eloquent mass-assigns, while our
 `getData()` already returns the mapped object, so the hook's job shrinks to
 persisting; the name and the override role are kept. And **the notification is
@@ -861,9 +945,10 @@ which belongs to no input, so without
 appears to do nothing. The demo hand-rolled this block for the same reason; this
 is the shipped version of it.
 
-Deferred, all todo: the `callHook()` lifecycle (`beforeFill` … `afterCreate`),
-`mutateFormDataBeforeCreate()`, create-another (`$canCreateAnother`,
-`createAnother()`, `preserveFormDataWhenCreatingAnother()`), database
+Deferred, all todo: page-level create-another (`$canCreateAnother`,
+`createAnother()`, `preserveFormDataWhenCreatingAnother()` — the
+[`CreateAction` modal](../actions/create-action.md) has its own, this is the
+page's submit-and-stay button), database
 transactions (`CanUseDatabaseTransactions`), `previousUrl` and the
 cancel-via-history action, the unsaved-changes alert, the record events, the
 authorization arms, `getFormActions()` as `Action` objects (the submit is a plain
@@ -894,8 +979,13 @@ wire, and each has its own divergence:
 `protected ?object $resolvedRecord` memoises the resolution for the request.
 `#[Required] setRecordPersistence()` is the create page's, verbatim.
 
-- `mount(int|string $record)` assigns `(string) $record`, then fills the form from
-  `getRecord()`. The union is on the **mount parameter**, which is Filament's
+- `mount(int|string $record)` assigns `(string) $record`, then calls
+  `fillForm()`: `callHook('beforeFill')`, a fill from
+  `mutateFormDataBeforeFill($schema->getStateFromRecord($record))`, and
+  `callHook('afterFill')`. `fillForm()` is Filament's own method name and it is
+  extracted rather than inlined because it has a second caller —
+  `afterActionCalled()` below, which must give a refill the same treatment mount
+  gave the first fill. The union is on the **mount parameter**, which is Filament's
   signature and is legal there; the property underneath it cannot be one. Route
   parameters arrive as strings ([`componentProps`](#routing)), so the cast is a
   formality for a hand-mounted component.
@@ -917,15 +1007,16 @@ The lifecycle, ours against Filament's:
 | --- | --- | --- |
 | authorization | `authorizeAccess()` | — deferred |
 | transaction | `beginDatabaseTransaction()` | — deferred |
-| validate | `callHook('beforeValidate')` → `$this->form->getState(afterValidate: …)` | `$this->getSchema('form')->getData()` — validates, then maps onto the managed entity |
-| mutate | `mutateFormDataBeforeSave($data)` | — deferred |
-| write | `handleRecordUpdate($record, $data)` → `callHook('afterSave')` | `handleRecordUpdate($record)` — `persist()` + `flush()` |
+| validate | `callHook('beforeValidate')` → `$this->form->getState(afterValidate: …)` | same, and the callback is Filament's pair: `callHook('afterValidate')` then `callHook('beforeSave')` |
+| mutate | `mutateFormDataBeforeSave($data)` | same — **after** `beforeSave`, which fired inside the state read |
+| write | `handleRecordUpdate($record, $data)` → `callHook('afterSave')` | `handleRecordUpdate($schema->getData($data))` → `callHook('afterSave')` — `persist()` + `flush()` |
 | events | `RecordUpdated`, `RecordSaved` | — no event layer |
 | remember | `rememberData()` | — no unsaved-changes alert |
 | notify | `getSavedNotification()?->send()` when `$shouldSendSavedNotification` | `getSavedNotification()?->send()` |
 | redirect | `redirect($url)` when `$shouldRedirect` and `getRedirectUrl()` is filled | `getRedirectUrl()` is `null`, so `save()` returns `null` and the page stays |
 
-The **`getData()` step mutates before it can refuse**: a record-level violation
+`getData($data)` is where the state reaches the record, and it **mutates before
+it can refuse**: a record-level violation
 (`UniqueEntity`) is raised after the state has been written onto the managed
 entity, so the unit of work holds a dirty entity that is never flushed. Nothing
 else in the request may flush, which is why `handleRecordUpdate()` is the only
@@ -947,27 +1038,66 @@ because `getTitle()` is read off an **un-mounted** page for the document
 and the visible consequence is that the browser tab says `Edit Article` while the
 page heading says `Edit Alpha`.
 
+**The action host hooks.** The edit page is the resource page that answers the
+record family, and every answer is guarded on `$this->record` being filled —
+`PageController` reads a page's title, and through it these hooks' neighbours,
+off an **un-mounted** instance, so an unguarded `getRecord()` would 404 every
+edit-page GET.
+
+- `getDefaultActionRecord()` is the page's record for every action **except a
+  `CreateAction`**, which gets `null` —
+  [a create modal on a record page is anonymous](#a-create-modal-on-a-record-page-is-anonymous).
+- `getDefaultActionRecordTitle()` is the already-guarded `getRecordTitle()`, so a
+  mounted action's modal heading names the record rather than the record type.
+- `getDefaultActionSuccessRedirectUrl()` answers the resource's index URL for a
+  `DeleteAction` and `null` for everything else — the one non-null body of the
+  hook anywhere in Filament's panels (it lives on the record-page concern edit
+  and view share, and `ManageRelatedRecords` only *narrows* it, returning null
+  for a table-context action), and what sends a header delete back to the list
+  instead of re-rendering a page whose record is gone. Filament's `match` carries
+  a `ForceDeleteAction` arm too, absent here with soft deletes. The redirect ends
+  the request before any re-render, which is also why Filament's other use of
+  `afterActionCalled()` on that concern — nulling `$this->record` after a delete
+  so Livewire does not try to dehydrate a row that no longer exists — is recorded
+  rather than ported: there is no re-render left to protect. Its one caveat is inherited
+  rather than new: the URL is generated inside a `#[LiveAction]`, so
+  [the default panel answers](#url-generation-inside-a-live-action-resolves-the-default-panel)
+  — right for every single-panel application, wrong for a resource mounted only
+  in a non-default panel, and one more instance against
+  [M6 · 6](../roadmap.md#m6--panel-depth)'s multi-panel URL row.
+- `getDefaultActionSchemaResolver()` is the list page's three arms, over the
+  **resource's** `form()` rather than this page's schema —
+  [the edit page's own edit modal is a second tree](#the-edit-pages-own-edit-modal-is-a-second-tree-re-filled-after-it-saves).
+- `getMountedActionSchemaRecord()` is the resource's record class for a
+  `CreateAction` and the guarded record otherwise —
+  [it answers for the top frame, and depends on the seed being lazy](#the-mounted-schemas-record-answers-for-the-top-frame-and-depends-on-the-seeds-laziness).
+- `afterActionCalled()` re-fills the page form through `fillForm()` when an
+  `EditAction` on the page's own record reports success, for the second-tree
+  reason above. The hook is Filament's, the body is not — theirs resets a deleted
+  record, which the redirect above makes unnecessary here.
+
 **The template.** `partials/EditRecord/index.html.twig` is the create page's with
 `live_action('save:prevent', event: 'submit')` and a `Save` button — same root
 class family (`sy-pa-resource-edit-record-page`), same required record-level error
 outlet, same `Modals` outlet.
 
-Deferred, all todo: the `callHook()` lifecycle, `mutateFormDataBeforeFill()` /
-`mutateFormDataBeforeSave()`, `refreshFormData()`, `saveFormComponentOnly()`,
+Deferred, all todo: `refreshFormData()` (it needs a partial fill),
+`saveFormComponentOnly()`,
 database transactions, `previousUrl` and cancel-via-history, the unsaved-changes
 alert, the record events, the authorization arms, relation managers
-(`HasRelationManagers` and the content tabs), `getDefaultActionSchemaResolver()`
-(the modal-mode `CreateAction`/`EditAction`/`ViewAction` schemas),
+(`HasRelationManagers` and the content tabs),
 `getFormActions()` as `Action` objects, `content()`, and the navigation-icon /
 navigation-label statics Filament's edit page carries for sub-navigation.
 
-Divergences, the three shared with the create page plus three of its own:
+Divergences, the three shared with the create page plus five of its own:
 [the notification titles are literals](#the-create-and-save-notification-titles-are-literals-not-translation-keys),
 [the schema is named `form`](#the-record-pages-schema-is-named-form-and-schemas-is-narrowed-to-it),
 [URL generation inside a live action resolves the default panel](#url-generation-inside-a-live-action-resolves-the-default-panel),
 [the record prop carries the route key and needs a dehydration bridge](#the-record-prop-carries-the-route-key-and-needs-a-dehydration-bridge),
 [staying on the page is a `null` redirect](#staying-on-the-page-after-a-save-is-a-null-redirect-not-a-caught-authorization-exception),
-and [the document title carries the record label](#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title).
+[the document title carries the record label](#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title),
+[a create modal on it is anonymous](#a-create-modal-on-a-record-page-is-anonymous),
+and [its own edit modal is a second tree](#the-edit-pages-own-edit-modal-is-a-second-tree-re-filled-after-it-saves).
 
 ## Features
 
@@ -1436,6 +1566,75 @@ the mirror image: embedding `Layout` **inside** a live component, which is what
 the demo's `PanelShellCard` does to show the shell as a showcase card. It works
 there today because the card does not re-render; a card that did would watch its
 switcher's aria state go stale.
+
+### A mounted frame's record key resolves through the resource's own query
+
+`HasActions::resolveMountedActionRecord()` turns a mounted frame's `recordKey`
+context into a record, and the trait cannot do it alone: it ends at a
+`resolveRecordUsing()` callback the host must register, throwing a `LogicException`
+when a key arrives and none was. Every resource page overrides it in the class
+body instead, and so no resource page ever registers that callback.
+
+The override keeps both of the trait's **skip** guards verbatim, because they are
+not about resolution at all — they are about which frames the host owns. A frame
+carrying a `schemaComponent` belongs to a component inside a schema, which
+resolves its own record; a frame carrying a `table` on a host that is an
+`InteractsWithTable` belongs to the table, whose row already knows its record.
+Both answer `null`, and dropping either would have the page resolve a key that
+was never addressed to it.
+
+What it replaces is the third guard, the `resolveRecordUsing()` throw. In its
+place the key is checked for being scalar — a `recordKey` arrives off the wire, so
+a non-scalar is a malformed request rather than a missing record, and it raises
+`ActionNotResolvableException` — and then handed to
+`Resource::resolveRecordRouteBinding()`, with a `NotFoundHttpException` for a miss.
+Going through that method rather than `EntityManager::find()` is the whole point:
+it is [the resource's scoped query](#a-record-is-resolved-through-the-resources-own-query),
+so a row outside the resource's scope 404s instead of being mounted into a modal
+by primary key. A row action on a scoped list is exactly where that would leak,
+and it would leak silently.
+
+### A page lifecycle hook is a method name, not a registration
+
+`callHook(string $hook)` is `method_exists($this, $hook)` and then a dynamic call,
+which is the whole implementation and is Filament's. Nothing registers a hook and
+nothing declares one: a page opts into `beforeSave` by *writing a method called*
+`beforeSave`, and a page that writes none pays one `method_exists()` per site.
+
+Two consequences are worth stating because the shape hides them. A **typo is
+silent** — `beforeSve()` is simply never called, with no error at load or at run,
+which is the cost Filament accepts for a zero-ceremony extension point and which
+we accept with it. And the hooks are not an interface, so nothing on the base
+declares them; the list of names is the contract, and it lives in the two page
+sections above rather than in code. The sites and their order are Filament's
+exactly: `beforeFill` / `afterFill` around a fill, `beforeValidate` /
+`afterValidate` around the state read, `beforeCreate` / `afterCreate` around the
+create write, and `beforeSave` / `afterSave` around the save — with `beforeSave`
+firing *inside* the state read, before the mutator, which
+[the edit page's lifecycle table](#editrecord) flags because normalising it would
+be a divergence nobody would notice.
+
+### The mounted schema's record answers for the top frame, and depends on the seed's laziness
+
+`getMountedActionSchemaRecord()` takes no arguments. It is the last fallback in
+[the host's seed chain](../actions/has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation),
+consulted only when the action, its schema container and its schema component all
+answer nothing — and the chain runs **per frame**, while the hook is asked without
+being told which frame is asking. Filament's is frame-agnostic in exactly the same
+way, so the port keeps it, and the edit page's override reads `getMountedAction()`
+with no index: the top frame. Under a nested modal that is the inner action, not
+the one that opened it. Nothing today depends on the distinction, and recording it
+is cheaper than re-deriving it the first time something does.
+
+The override is only *able* to read the mounted action because the seed's record
+is a closure. `getMountedActionSchema()` builds the schema with
+`->record(fn () => $this->resolveMountedActionSchemaRecord($mountedAction))` and
+caches it; the closure runs later, when the schema is first asked for its record.
+Were the seed eager, resolving it would call `getMountedActionSchemaRecord()`,
+which calls `getMountedAction()`, which caches the whole mounted stack — from
+inside the very call that is building and caching a frame's schema. The laziness
+is what keeps that from re-entering, and it is why this override is safe where an
+apparently equivalent eager one would not be.
 
 ## Divergences
 
@@ -2639,3 +2838,68 @@ component name the [page pass](#pages-register-as-live-components-through-a-comp
 registers) and pass `panel:` explicitly to `getUrl()`. Deferred rather than
 declined — it wants a decision about where panel identity lives on a live
 component, which multi-panel navigation will force anyway.
+
+### A create modal on a record page is anonymous
+
+`EditRecord::getDefaultActionRecord()` answers `null` for a `CreateAction` and the
+page's record for everything else. Filament's record-page concern has no such arm —
+its `getDefaultActionRecord()` is `$this->hasRecord() ? $this->getRecord() : null`,
+so a `CreateAction` mounted on an edit page is handed the record that page is
+editing.
+
+That is coherent in Filament because a create modal on a record page is nearly
+always a *relationship* create, where the page record is the parent the new row
+hangs off, and Eloquent's relationship arm reads it as exactly that. We have no
+relationship arm on `CreateAction` yet — it waits on relation managers — so the
+same default would be read the only other way it can be: as the record the create
+is *about*. A `CreateAction` seeded with an existing record fills its modal from
+that record and, on submit, maps state onto it. The create modal would silently
+become an edit of the page's record.
+
+Filament's own `ManageRelatedRecords` is the shape borrowed here: it is the page
+that hands a create action the *parent*, deliberately and explicitly, rather than
+letting the ambient record stand in. Until that seam exists, `null` is the honest
+answer — a create modal on a record page belongs to no record, and the resource's
+record class (which `getMountedActionSchemaRecord()` still answers) is all the
+schema needs to build a blank form.
+
+Revisit with relation managers ([M6 · 1](../roadmap.md#m6--panel-depth)), which
+is when a create modal on a record page will have a parent to be told about and a
+relationship arm to read it.
+
+### The edit page's own edit modal is a second tree, re-filled after it saves
+
+Filament's `EditRecord::getDefaultActionSchemaResolver()` gives an `EditAction`
+`fn (Schema $schema) => $schema->components([EmbeddedSchema::make('form')])` — the
+modal renders the page's *own* `form` schema, the same object the page beneath it
+is bound to. One tree, one state path; saving in the modal and saving on the page
+are the same form.
+
+`EmbeddedSchema` does not exist here, and this arm is its only M4·2 consumer, so
+the port folds the `EditAction` arm into the `CreateAction` one: both build
+`$resource->form($schema->hasCustomColumns() ? $schema : $schema->columns(2))`
+over the schema the host seeds. That renders a **second component tree** over the
+same record — its own state path, its own validation, its own components — which
+is fine for the modal itself (it fills from the record and writes to the record,
+so the round trip is correct) and wrong for the page behind it, which is still
+showing the values it was filled with at mount.
+
+`afterActionCalled()` is what closes that gap: when an `EditAction` reports
+`ActionStatus::Success` and its record is identical to the page's, the page calls
+`fillForm()` again. Going through `fillForm()` rather than inlining a `fill()` is
+deliberate — it is the same method `mount()` uses, so a page that declares
+`mutateFormDataBeforeFill()` or a `beforeFill` / `afterFill` hook gets that
+treatment on the refill too, which an inlined copy would quietly skip.
+
+The identity check (`$action->getRecord() === $this->getRecord()`) is what keeps
+this narrow: a row's `EditAction` in a table on some other page, or an edit of a
+different record, must not trigger a refill of a form it has nothing to do with.
+On the edit page the two are the same managed entity, so identity is the right
+comparison rather than a key match.
+
+The residue is that the two trees can disagree while the modal is open — the page
+form holds pre-modal values until the modal's save lands — and that a page-level
+validation error and a modal-level one are separate error bags. Both go away with
+`EmbeddedSchema`, which belongs to [M5 · 2](../roadmap.md#m5--view-page--infolists)
+and [M6 · 1](../roadmap.md#m6--panel-depth) — the view page and relation managers
+are what make an embedded schema pay for itself.

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Unit;
 
+use ArrayObject;
 use DateTimeImmutable;
 use Doctrine\ORM\QueryBuilder;
 use LogicException;
@@ -548,4 +549,19 @@ it('derives the record label from its own class with no host to ask', function (
 
 it('falls to the record label when nothing supplies a title', function (): void {
     expect(Action::make('x')->recordClass('App\\Entity\\BlogPost')->getRecordTitle())->toBe('blog post');
+});
+
+it('stops at an own record object even when it is empty', function (): void {
+    $empty = new ArrayObject();
+    $action = Action::make('x')->record($empty);
+
+    ActionGroup::make([$action])->record(new DateTimeImmutable());
+
+    expect($action->getRecord())->toBe($empty);
+
+    $mismatched = Action::make('y')->record(new ArrayObject())->recordClass(DateTimeImmutable::class);
+
+    ActionGroup::make([$mismatched])->record(new DateTimeImmutable());
+
+    expect($mismatched->getRecord())->toBeNull();
 });

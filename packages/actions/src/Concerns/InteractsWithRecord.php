@@ -77,7 +77,7 @@ trait InteractsWithRecord
     {
         $record = $this->evaluate($this->record);
 
-        if (filled($record)) {
+        if (is_object($record) || filled($record)) {
             return $this->ensureCorrectRecordType($record);
         }
 

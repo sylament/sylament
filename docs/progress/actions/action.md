@@ -827,11 +827,12 @@ only the bulk family reads, and which is deferred beside M4 · 1's
 `locale_has_pluralization()`, and [i18n is parked](../roadmap.md), so the arm would
 have nothing to ask.
 
-**Four guards read `!== null` where Filament reads `filled()`**, and one arm is `??`
+**Three guards read `!== null` where Filament reads `filled()`**, and one arm is `??`
 where Filament tests `filled()`. `getRecordClass()`'s custom-class check,
 `ensureCorrectRecordType()`'s, and `hasCustomRecordTitle()` all use `!== null`
-(`hasCustomRecordTitleAttribute()` is `!== null` upstream too, so the pair is now
-consistent rather than split); `getRecordTitle()`'s host arm is
+(`hasCustomRecordTitleAttribute()` is not one of the three — it is `!== null`
+upstream too, at `InteractsWithRecord.php:249`, so the pair is now consistent
+rather than split); `getRecordTitle()`'s host arm is
 `getCustomRecordTitle($record) ?? $host?->getDefaultActionRecordTitle($this) ?? …`
 where Filament wraps each in `filled()`. The difference is only ever an **empty
 string**: `->recordClass('')` is not a class, `->recordTitle('')` counts as custom
@@ -842,6 +843,17 @@ custom record class before using it; ours passes the caller's argument straight 
 `getCustomRecordTitle()`, on the reading that an explicitly-passed record is the
 caller's assertion, not an ambient one to be second-guessed —
 `ensureCorrectRecordType()` still guards every record the chain *resolves*.
+
+The own-record gate is the one place that split had to be **repaired rather than
+recorded**. Filament's gate is bare truthiness (`if ($record)`), which is `true`
+for *every* object; a plain `filled()` is not — it counts a `Countable`-empty or
+whitespace-only `Stringable` object as blank, so an empty collection bound as a
+record would have fallen through to the group instead of stopping. The gate is
+therefore `is_object($record) || filled($record)`: an object always stops, exactly
+as upstream, and a scalar key stops when it is filled. The residual delta is
+scalars only — `->record(0)` stops here and falls through upstream — which is the
+same empty-string family as the rest of this paragraph. Pinned by `ActionTest`'s
+"stops at an own record object even when it is empty".
 
 The class-string is injectable now: `resolveDefaultClosureDependencyForEvaluationByName()`
 resolves **`recordClass`**, which is the surface

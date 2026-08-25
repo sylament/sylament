@@ -712,7 +712,11 @@ authorization concerns, and `ViewRecord` / `ManageRecords` / `ManageRelatedRecor
 ### ListRecords
 
 The resource's index page: a live component that hosts a table the resource
-configures. The whole class is a composition plus four members.
+configures. The whole class is a composition plus nine members: `$template`,
+`table()`, `getTitle()` and `schemas()` below, `getBreadcrumb()` — narrowed to
+a plain `List` off the [base](#resource-pages) — and the four the modal record
+actions add, `form()`, `infolist()`, `getDefaultActionSchemaResolver()` and
+`getMountedActionSchemaRecord()`.
 
 ```php
 abstract class ListRecords extends Page implements InteractsWithSchemas, InteractsWithTable

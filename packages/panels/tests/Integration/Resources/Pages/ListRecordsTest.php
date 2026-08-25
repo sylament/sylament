@@ -317,6 +317,21 @@ it('views a note read-only with a Close button only', function (): void {
         ->and($footerActions['cancel']->getLabel())->toBe('Close');
 });
 
+it('stamps the resource record title onto the table, so an override reaches a row action', function (): void {
+    [$client, $entityManager] = seededArticlesClient();
+
+    $article = $entityManager->getRepository(Article::class)->findOneBy(['slug' => 'alpha']);
+
+    $table = $this->createLiveComponent(ListArticles::class, client: $client)->component()->getTable();
+
+    // `hasCustomRecordTitle()` is only ever true through the stamp, and it is
+    // what routes the title through `Resource::getRecordTitle()` — the
+    // overridable seam — rather than through the table's own attribute read.
+    expect($table->hasCustomRecordTitle())->toBeTrue()
+        ->and($article)->toBeInstanceOf(Article::class)
+        ->and($table->getRecordTitle($article))->toBe('Alpha');
+});
+
 it('titles a row action modal with the record it is bound to', function (): void {
     [$client, $entityManager] = seededNotesClient();
 

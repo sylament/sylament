@@ -33,7 +33,8 @@ abstract class ListRecords extends Page implements InteractsWithSchemas, Interac
             ->query(fn (): QueryBuilder => $resource->getRecordQuery())
             ->recordLabel($resource->getRecordLabel(...))
             ->pluralRecordLabel($resource->getPluralRecordLabel(...))
-            ->recordTitleAttribute($resource->getRecordTitleAttribute(...)));
+            ->recordTitleAttribute($resource->getRecordTitleAttribute(...))
+            ->recordTitle($resource->getRecordTitle(...)));
     }
 
     public function getTitle(): string|Markup

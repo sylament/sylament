@@ -2630,24 +2630,29 @@ return $resource->table($table
     ->query(fn (): QueryBuilder => $resource->getRecordQuery())
     ->recordLabel($resource->getRecordLabel(...))
     ->pluralRecordLabel($resource->getPluralRecordLabel(...))
-    ->recordTitleAttribute($resource->getRecordTitleAttribute(...)));
+    ->recordTitleAttribute($resource->getRecordTitleAttribute(...))
+    ->recordTitle($resource->getRecordTitle(...)));
 ```
 
 The **ordering** is what carries over: the query and the labels are stamped
 before the resource sees the table, so `Resource::table()` can override any of
 them (`->query()` again, `->modifyQueryUsing()`, `->recordLabel()`), and the
-resource's configuration is applied last so it wins. The three label setters are
+resource's configuration is applied last so it wins. The four label setters are
 Filament's `configureTable()` stamp, arriving here rather than on `Resource`
 because ours is an instance seam and Filament's is a static one; they are passed
-as first-class callables, so the table evaluates each only if it reads it. What
+as first-class callables, so the table evaluates each only if it reads it.
+`recordTitle()` is the one that looks redundant beside the attribute already
+stamped and is not: `Resource::getRecordTitle()` is overridable, and without the
+stamp the table would read the raw attribute through its own accessor and the
+override would never reach a row action. What
 they buy is the whole [record-title chain](../actions/action.md#a-table-bound-action-titles-and-labels-through-its-table)
 for row actions — a `ViewAction`'s heading reads the record, and the empty state
 reads *"No articles"* rather than *"No records"*. What is still gone is the
 middle of the chain, each piece with its own reason — the deprecated
 `getTableQuery()` seeding is a deprecated delegate, tabs and parent records are
-deferred features, and the rest of `configureTable()`'s stamp (`recordTitle()`,
-`authorizeReorder()`) is resource metadata whose table-side surface is unported
-or, for `recordTitle()`, redundant with the attribute already stamped.
+deferred features, and the rest of `configureTable()`'s stamp
+(`authorizeReorder()`) is resource metadata whose table-side surface is
+unported.
 
 The one that will be missed is **row-click defaulting**. Filament's `recordUrl`
 and `recordAction` closures make a table row clickable — falling through the

@@ -71,6 +71,7 @@ a _Ports_ link.
 | [`AssociationTarget::$isOrphanRemoval`](../../../packages/schemas/src/State/AssociationTarget.php) — whether detaching an item deletes it | done | — | [diverges](#orphanremoval-is-a-plain-bool-on-the-orm-3-mapping-object) |
 | [`AssociationTarget::$isManyToMany` / `$mappedBy` / `$inversedBy` / `$isNullable` / `$orderBy`](../../../packages/schemas/src/State/AssociationTarget.php) — the cardinality, the two bidirectional field names, the join column's nullability and the collection's declared order | done | — | [semantics](#the-owning-side-and-orphan-removal-flags-are-what-a-writer-needs-not-trivia) |
 | [Service wiring](../../../packages/schemas/src/SylamentSchemasBundle.php) — `sylament_schemas.association_reader` plus a class alias, with an ignore-on-invalid `EntityManagerInterface` argument | done | — | [semantics](#the-entity-manager-is-optional-and-the-two-halves-answer-differently) |
+| [`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) — the `#[Required]` setter every consumer tier reaches the reader through | done | — | [semantics](#the-accessor-trait-is-shared-with-the-table-and-action-tiers) |
 | Composite identifiers | skipped | — | [diverges](#a-composite-identifier-is-refused-not-encoded) |
 | Through-relations, morphs, pivot data | skipped | — | [diverges](#only-the-shapes-doctrine-states-in-one-mapping-are-read) |
 
@@ -383,6 +384,34 @@ mapping's own collection order, exactly as declared: Doctrine's docblock types i
 `array<string, 'asc'|'desc'>` but hands `#[ORM\OrderBy(['position' => 'ASC'])]`
 back as `'ASC'`, so the field is typed `array<string, string>` and a consumer that
 needs a canonical direction lower-cases it.
+
+### The accessor trait is shared with the table and action tiers
+
+The reader is injected onto a consumer by a `#[Required]` setter with a
+`new AssociationReader()` fallback, the same idiom
+[`CanBeValidated`](../forms/can-be-validated.md) uses for `RecordTypeReader`: a
+container-built consumer gets the container's reader, one built with `new` gets
+an entity-manager-less one that answers `hasEntityManager()` false and throws on
+everything needing an EM.
+
+The pair lived on the component-tier
+[`BelongsToRecord`](belongs-to-record.md) until the relationship seam gave two
+non-components the same need — `Table` builds its base query through the reader
+and `Action` writes an association through it — so it is
+[`CanAccessAssociations`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php)
+now, composed by `BelongsToRecord` unchanged. It keeps the `Components/Concerns/`
+namespace under the repo's placement rule: a trait a component uses at all lives
+there, whether or not something else uses it too.
+
+The blast radius is worth stating because it is wider than it looks.
+`BelongsToRecord` sits on the base `Component`, so **every** schemas component —
+and every component of every package built on schemas — consumes the reader
+service, where before nothing did and the container pruned it. The service's
+`EntityManagerInterface` argument is `nullOnInvalid()` for exactly that reason:
+the schemas bundle boots inside forms', actions', notifications' and tables' test
+kernels, none of which registers Doctrine, and the setter has to autowire cleanly
+there. A container-compile failure in one of those suites is the signal that the
+nullability wiring broke.
 
 ## Divergences
 

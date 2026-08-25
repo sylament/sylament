@@ -5,21 +5,19 @@ declare(strict_types=1);
 namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
-use Sylament\Schemas\State\AssociationReader;
-use Symfony\Contracts\Service\Attribute\Required;
 
 use function Sylament\Support\filled;
 
 trait BelongsToRecord
 {
+    use CanAccessAssociations;
+
     /** @var object|array<string, mixed>|class-string|null */
     protected object|array|string|null $record = null;
 
     protected ?Closure $loadStateFromRelationshipsUsing = null;
 
     protected ?Closure $saveRelationshipsUsing = null;
-
-    protected ?AssociationReader $associationReader = null;
 
     /**
      * A bound instance, raw record data, a class-string declaring the class
@@ -179,16 +177,5 @@ trait BelongsToRecord
         ], [
             $record::class => $record,
         ]);
-    }
-
-    #[Required]
-    public function setAssociationReader(AssociationReader $associationReader): void
-    {
-        $this->associationReader = $associationReader;
-    }
-
-    public function getAssociationReader(): AssociationReader
-    {
-        return $this->associationReader ??= new AssociationReader();
     }
 }

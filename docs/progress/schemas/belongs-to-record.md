@@ -81,7 +81,7 @@ Sylament-only.
 | [`nullWhenBlank()` / `isNullableBranch()` / `shouldNullBranch()` / `isBlankStateValue()`](../../../packages/schemas/src/Components/Concerns/HasNullableBranch.php) | — | done | — | [diverges](#a-declared-branch-is-nulled-whole-before-its-leaves-are-written) · [semantics](#the-built-in-blank-test-asks-the-branchs-own-leaves) · [semantics](#a-branch-the-bag-no-longer-carries-is-skipped-not-nulled) · [semantics](#a-branch-the-record-cannot-null-is-refused-loudly) · [diverges](#a-nullwhenblank-closure-sees-two-different-bags) · [diverges](#a-doctrine-embeddable-cannot-be-nulled) |
 | [`loadStateFromRelationshipsUsing()` / `hasLoadStateFromRelationships()` / `loadStateFromRelationships(object $record)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`loadStateFromRelationshipsUsing()` / `loadStateFromRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#a-hook-the-record-path-map-does-not-carry-is-refused) |
 | [`saveRelationshipsUsing()` / `hasSaveRelationships()` / `saveRelationships(object $record, mixed $state)`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | [`saveRelationshipsUsing()` / `saveRelationships()`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | done | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) · [diverges](#the-exists-guarded-members-are-not-ported) · [semantics](#a-hook-the-record-path-map-does-not-carry-is-refused) · [semantics](#nullwhenblank-cannot-compose-with-a-save-hook) |
-| [`setAssociationReader()` / `getAssociationReader()`](../../../packages/schemas/src/Components/Concerns/BelongsToRecord.php) | — | done | — | [semantics](#every-component-reaches-the-association-reader-through-a-required-setter) |
+| [`setAssociationReader()` / `getAssociationReader()`](../../../packages/schemas/src/Components/Concerns/CanAccessAssociations.php) — composed from `CanAccessAssociations` | — | done | — | [semantics](#every-component-reaches-the-association-reader-through-a-required-setter) |
 | `saveRelationshipsBeforeChildrenUsing()` / `saveRelationshipsBeforeChildren()` | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
 | `saveRelationshipsWhenDisabled()` / `saveRelationshipsWhenHidden()` / their `should*` readers | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-exists-guarded-members-are-not-ported) |
 | `castStateAfterLoadingFromRelationships()` | [`Components/Concerns/BelongsToModel.php`](../../../vendor/filament/schemas/src/Components/Concerns/BelongsToModel.php) | skipped | — | [diverges](#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk) |
@@ -268,22 +268,11 @@ wrong independently of where it sits.
 
 ### Every component reaches the association reader through a `#[Required]` setter
 
-[`AssociationReader`](association-reader.md) is injected onto the component tier
-by a `#[Required]` setter with a `new AssociationReader()` fallback, the same
-idiom [`CanBeValidated`](../forms/can-be-validated.md) uses for
-`RecordTypeReader`: a container-built component gets the container's reader, a
-component built with `new` gets an entity-manager-less one that answers
-`hasEntityManager()` false and throws on everything needing an EM.
-
-The blast radius is worth stating because it is wider than it looks. The trait
-sits on the base `Component`, so **every** schemas component — and every
-component of every package built on schemas — now consumes the reader service,
-where before Task 4 nothing did and the container pruned it. The service's
-`EntityManagerInterface` argument is `nullOnInvalid()` for exactly that reason:
-the schemas bundle boots inside forms', actions', notifications' and tables'
-test kernels, none of which registers Doctrine, and the setter has to autowire
-cleanly there. A container-compile failure in one of those suites is the signal
-that the nullability wiring broke.
+The two members are
+[`CanAccessAssociations`](association-reader.md#the-accessor-trait-is-shared-with-the-table-and-action-tiers),
+composed here — the trait is shared with `Table` and `Action`, which need the
+reader for the relationship seam and are not components. The note that used to
+sit here lives with it.
 
 ### The built-in blank test asks the branch's own leaves
 

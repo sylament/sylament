@@ -8,6 +8,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Sylament\Actions\BulkAction;
 use Sylament\Actions\BulkActionGroup;
+use Sylament\Actions\ReplicateAction;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Note;
 use Sylament\Actions\Tests\Fixtures\Doctrine\FixtureManagerRegistry;
 use Sylament\Actions\ViewAction;
@@ -39,10 +40,13 @@ it('registers the prebuilt actions as non-shared services, so their #[Required] 
     expect($container->has(BulkAction::class))->toBeTrue()
         ->and($container->has(BulkActionGroup::class))->toBeTrue()
         ->and($container->has(ViewAction::class))->toBeTrue()
+        ->and($container->has(ReplicateAction::class))->toBeTrue()
         ->and($container->get(BulkAction::class))->toBeInstanceOf(BulkAction::class)
         ->and($container->get(BulkAction::class))->not->toBe($container->get(BulkAction::class))
         ->and($container->get(ViewAction::class))->toBeInstanceOf(ViewAction::class)
-        ->and($container->get(ViewAction::class))->not->toBe($container->get(ViewAction::class));
+        ->and($container->get(ViewAction::class))->not->toBe($container->get(ViewAction::class))
+        ->and($container->get(ReplicateAction::class))->toBeInstanceOf(ReplicateAction::class)
+        ->and($container->get(ReplicateAction::class))->not->toBe($container->get(ReplicateAction::class));
 });
 
 it('boots the fixture entity manager, registry and notifications', function (): void {

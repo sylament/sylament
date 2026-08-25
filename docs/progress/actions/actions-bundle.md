@@ -82,9 +82,9 @@ real `AssetMapperInterface` for the built dispatch controller by source path and
 requires the logical path back, so a missing or misaliased prepend fails it. Its
 second case pins the explicit `->set()` registration list — `Action`,
 `ActionGroup`, `BulkAction`, `BulkActionGroup`, `CreateAction`, `DeleteAction`,
-`DeleteBulkAction`, `EditAction` and `ViewAction`, every root-level action class
-the package ships — because one the bundle does not name falls back to
-`new $class()` in
+`DeleteBulkAction`, `EditAction`, `ReplicateAction` and `ViewAction`, every
+root-level action class the package ships — because one the bundle does not name
+falls back to `new $class()` in
 [`ComponentResolver::instantiate()`](../support/component.md), where every
 `#[Required]` setter on it (the manager registry a write body persists through,
 the event dispatcher) silently never runs and nothing errors. A new prebuilt

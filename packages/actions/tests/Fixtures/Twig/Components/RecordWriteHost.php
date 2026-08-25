@@ -10,6 +10,7 @@ use Sylament\Actions\Concerns\HasActions;
 use Sylament\Actions\Contracts\InteractsWithActions;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\EditAction;
+use Sylament\Actions\ReplicateAction;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Note;
 use Sylament\Actions\ViewAction;
 use Sylament\Schemas\Concerns\HasSchemas;
@@ -39,6 +40,13 @@ class RecordWriteHost implements InteractsWithActions, InteractsWithSchemas
      */
     #[LiveProp]
     public ?string $recordClass = Note::class;
+
+    /**
+     * Where the bare replicate arm's `after()` hook records the row it landed,
+     * so a case can prove the hook saw the saved replica rather than the
+     * original.
+     */
+    public ?int $replicatedId = null;
 
     public function __construct(EntityManagerInterface $entityManager)
     {
@@ -144,6 +152,33 @@ class RecordWriteHost implements InteractsWithActions, InteractsWithSchemas
                 ActionSchemaField::make('title'),
                 ActionSchemaField::make('body'),
             ]);
+    }
+
+    /**
+     * The modal arm: a one-field schema, so the fill and the write both go
+     * through the mounted container while the untouched columns ride the
+     * metadata copy, and `mutateRecordDataUsing()` marks the copy in the form.
+     */
+    public function replicateAction(): Action
+    {
+        return ReplicateAction::make()
+            ->schema([
+                ActionSchemaField::make('title'),
+            ])
+            ->mutateRecordDataUsing(fn (array $data): array => [...$data, 'title' => $data['title'] . ' (copy)']);
+    }
+
+    /**
+     * The no-schema arm: nothing opens a form, so the same mutator runs over
+     * the replicator's own field bag instead of over form state.
+     */
+    public function replicateBareAction(): Action
+    {
+        return ReplicateAction::make('replicateBare')
+            ->mutateRecordDataUsing(fn (array $data): array => [...$data, 'title' => $data['title'] . ' (copy)'])
+            ->after(function (object $replica): void {
+                $this->replicatedId = $replica instanceof Note ? $replica->getId() : null;
+            });
     }
 
     public function viewAction(): Action

@@ -81,7 +81,7 @@ fold into its own file: `BulkActionGroup` into
 | ForceDeleteBulkAction | [`ForceDeleteBulkAction.php`](../../../vendor/filament/actions/src/ForceDeleteBulkAction.php) | todo | - |
 | IconButtonAction | [`IconButtonAction.php`](../../../vendor/filament/actions/src/IconButtonAction.php) | todo | - |
 | ImportAction | [`ImportAction.php`](../../../vendor/filament/actions/src/ImportAction.php) | todo | - |
-| ReplicateAction | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | todo | - |
+| [`ReplicateAction`](../../../packages/actions/src/ReplicateAction.php) | [`ReplicateAction.php`](../../../vendor/filament/actions/src/ReplicateAction.php) | done | [replicate-action.md](replicate-action.md) |
 | RestoreAction | [`RestoreAction.php`](../../../vendor/filament/actions/src/RestoreAction.php) | todo | - |
 | RestoreBulkAction | [`RestoreBulkAction.php`](../../../vendor/filament/actions/src/RestoreBulkAction.php) | todo | - |
 | SelectAction | [`SelectAction.php`](../../../vendor/filament/actions/src/SelectAction.php) | todo | - |

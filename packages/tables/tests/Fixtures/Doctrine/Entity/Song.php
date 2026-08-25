@@ -20,11 +20,11 @@ class Song
     public function __construct(
         #[ORM\Id]
         #[ORM\Column]
-        private int $id,
+        private int $id = 0,
         #[ORM\Column]
-        private string $title,
+        private string $title = '',
         #[ORM\Column]
-        private int $plays,
+        private int $plays = 0,
         #[ORM\ManyToOne(targetEntity: Artist::class, inversedBy: 'songs')]
         private ?Artist $artist = null,
         #[ORM\Column(nullable: true)]
@@ -78,6 +78,27 @@ class Song
     public function removeGenre(Genre $genre): static
     {
         $this->genres->removeElement($genre);
+
+        return $this;
+    }
+
+    public function setId(int $id): static
+    {
+        $this->id = $id;
+
+        return $this;
+    }
+
+    public function setTitle(string $title): static
+    {
+        $this->title = $title;
+
+        return $this;
+    }
+
+    public function setPlays(int $plays): static
+    {
+        $this->plays = $plays;
 
         return $this;
     }

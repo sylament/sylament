@@ -53,7 +53,8 @@ carrier rather than against an epic. The _relation arm
 the aggregates and eager loading are in, so `InteractsWithTableQuery` folded into
 [`column.md`](column.md) and lost its row here, and what it did **not** take on —
 the relation-scoped table — was left with a destination rather than an open
-question, which [M4 · 8](../roadmap.md#m4--tables-widening) then shipped.
+question, which [M4 · 8](../roadmap.md#m4--tables-widening) then shipped,
+folding `HasQuery` into [`table.md`](table.md) and taking its row with it.
 _Table bulk actions_ was the fourth, closed by
 [M4 · 1](../roadmap.md#m4--tables-widening): the `BulkAction` family landed in
 [`actions`](../actions/README.md), and the selection machinery it needed — the
@@ -199,7 +200,7 @@ The prefix is load-bearing rather than decorative: twenty trait names occur in
 two of these tiers and five (`BelongsToTable`, `CanBeHidden`, `HasColumns`,
 `HasLabel`, `InteractsWithTableQuery`) in three, which is the same
 [read-by-import, never by the bare `use`](../../../CLAUDE.md) trap the schemas
-tiers carry. The thirty-two landed concerns folded into their component's detail
+tiers carry. The thirty-three landed concerns folded into their component's detail
 file are named in the [preamble](#tables--port-progress) and carry no row here.
 
 `Contracts/HasTable.php` is not listed in

@@ -23,14 +23,13 @@ with the `Table\Concerns\` traits it composes — fifteen today
 [`CanSearchRecords`](../../../packages/tables/src/Table/Concerns/CanSearchRecords.php),
 [`HasFilters`](../../../packages/tables/src/Table/Concerns/HasFilters.php),
 [`HasFilterIndicators`](../../../packages/tables/src/Table/Concerns/HasFilterIndicators.php)),
-thirty-one in Filament. Nine of the fifteen are folded into the surface table
+thirty-one in Filament. Ten of the fifteen are folded into the surface table
 below rather than earning rows upstairs, per
 [one row per file](../README.md#one-row-per-file-one-file-per-thing); the
 sixteen still unported keep a per-file row in the package
 [README](README.md#features), the way
 [`actions`](../actions/README.md#features) tracks the concerns `Action` has not
-reached yet — as do `HasQuery`, ported but keeping its row for the relation arm
-it still owes, the three action sets landed by
+reached yet — as do the three action sets landed by
 [M4 · 1](../roadmap.md#m4--tables-widening), keeping theirs because the two
 selection ones still owe the settings [listed below](#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed)
 and `HasToolbarActions` is simply **done** where a reader looks for it, and the

@@ -9,6 +9,8 @@ use Doctrine\Persistence\ManagerRegistry;
 use Sylament\Actions\AttachAction;
 use Sylament\Actions\BulkAction;
 use Sylament\Actions\BulkActionGroup;
+use Sylament\Actions\DetachAction;
+use Sylament\Actions\DetachBulkAction;
 use Sylament\Actions\ReplicateAction;
 use Sylament\Actions\Tests\Fixtures\Doctrine\Entity\Note;
 use Sylament\Actions\Tests\Fixtures\Doctrine\FixtureManagerRegistry;
@@ -48,7 +50,9 @@ it('registers the prebuilt actions as non-shared services, so their #[Required] 
         ->and($container->get(ViewAction::class))->not->toBe($container->get(ViewAction::class))
         ->and($container->get(ReplicateAction::class))->toBeInstanceOf(ReplicateAction::class)
         ->and($container->get(ReplicateAction::class))->not->toBe($container->get(ReplicateAction::class))
-        ->and($container->get(AttachAction::class))->toBeInstanceOf(AttachAction::class);
+        ->and($container->get(AttachAction::class))->toBeInstanceOf(AttachAction::class)
+        ->and($container->get(DetachAction::class))->toBeInstanceOf(DetachAction::class)
+        ->and($container->get(DetachBulkAction::class))->toBeInstanceOf(DetachBulkAction::class);
 });
 
 it('boots the fixture entity manager, registry and notifications', function (): void {

@@ -70,8 +70,8 @@ fold into its own file: `BulkActionGroup` into
 | [`CreateAction`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | [create-action.md](create-action.md) |
 | [`DeleteAction`](../../../packages/actions/src/DeleteAction.php) | [`DeleteAction.php`](../../../vendor/filament/actions/src/DeleteAction.php) | in progress | [delete-action.md](delete-action.md) |
 | [`DeleteBulkAction`](../../../packages/actions/src/DeleteBulkAction.php) | [`DeleteBulkAction.php`](../../../vendor/filament/actions/src/DeleteBulkAction.php) | in progress | [delete-action.md](delete-action.md#deletebulkaction) |
-| DetachAction | [`DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) | todo | - |
-| DetachBulkAction | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | todo | - |
+| [`DetachAction`](../../../packages/actions/src/DetachAction.php) | [`DetachAction.php`](../../../vendor/filament/actions/src/DetachAction.php) | done | [detach-action.md](detach-action.md) |
+| [`DetachBulkAction`](../../../packages/actions/src/DetachBulkAction.php) | [`DetachBulkAction.php`](../../../vendor/filament/actions/src/DetachBulkAction.php) | in progress | [detach-action.md](detach-action.md#detachbulkaction) |
 | DissociateAction | [`DissociateAction.php`](../../../vendor/filament/actions/src/DissociateAction.php) | todo | - |
 | DissociateBulkAction | [`DissociateBulkAction.php`](../../../vendor/filament/actions/src/DissociateBulkAction.php) | todo | - |
 | [`EditAction`](../../../packages/actions/src/EditAction.php) | [`EditAction.php`](../../../vendor/filament/actions/src/EditAction.php) | done | [edit-action.md](edit-action.md) |

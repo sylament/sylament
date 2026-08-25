@@ -48,20 +48,20 @@ Deliberate deviations from Filament — permanent, and the reason they hold.
 
 ### Modal mode is a fail-fast stub, not an update body
 
-The same split [`CreateAction`](create-action.md#modal-mode-is-a-fail-fast-stub-not-a-persistence-body)
-carries, for the same reason: url mode is complete, and the modal arm — a
-`fillForm()` that reads the record's attributes into the form plus an
-`action()` body that writes them back — needs the host schema-resolver hook
-that is not ported. `setUp()` therefore registers an `action()` closure
-throwing a `LogicException`:
+The split [`CreateAction`](create-action.md#the-modal-arm-persists-through-the-schemas-record-class)
+carried until its own modal arm landed: url mode is complete, and the modal arm
+— a `fillForm()` that reads the record's declared paths into the form plus an
+`action()` body that writes them back — has not been written here yet.
+`setUp()` therefore still registers an `action()` closure throwing a
+`LogicException`:
 
 > EditAction has no URL to open — give it url() or host it on a resource page
 > with an edit page; the modal arm is not ported yet.
 
-`CanCustomizeProcess` is composed anyway, for the reason
-[create-action.md](create-action.md#modal-mode-is-a-fail-fast-stub-not-a-persistence-body)
-gives: `using()` is API surface a migrating user reaches for, and it gains its
-consumer when modal mode lands.
+`CanCustomizeProcess` is composed anyway: `using()` is API surface a migrating
+user reaches for, and it gains its consumer when modal mode lands — which is
+what it did on
+[`CreateAction`](create-action.md#the-modal-arm-persists-through-the-schemas-record-class).
 
 `mutateRecordDataUsing()` is modal-mode-only surface (it rewrites the data
 between the record and the form) and lands with it. `modalHeading()` is unset

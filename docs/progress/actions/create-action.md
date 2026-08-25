@@ -1,13 +1,25 @@
 # CreateAction (actions)
 
 [`Sylament\Actions\CreateAction`](../../../packages/actions/src/CreateAction.php)
-— the prebuilt "new record" action a resource's list page puts in its header.
-It ships **url mode only**: it sets no `url()` of its own and falls through to
-the host's
+— the prebuilt "new record" action a resource's list page puts in its header. It
+works both of Filament's ways off one class. With a create page to link to it
+renders as a link; without one it opens a modal, fills a form from whatever
+[`HasSchema::getSchema()`](has-schema.md#the-host-resolver-answers-only-when-the-action-declares-nothing)
+resolves, maps the validated state onto a new record of the action's class,
+persists it through Doctrine and reports `success()`.
+
+**A page beats a modal, and the rule is Filament's — stated here once for all
+four record actions.**
+[`CanOpenUrl::getUrl()`](../../../packages/actions/src/Concerns/CanOpenUrl.php)
+answers the action's own `url()` and then the host's
 [`getDefaultActionUrl()`](interacts-with-actions.md#the-panel-level-default-hooks-are-not-on-the-contract)
-hook, so a page that has a create page to send it to renders it as a link. A
-host that answers `null` gets a trigger whose invocation throws — see the
-divergence below.
+hook, and an action with a URL renders an anchor that is never mounted — so
+setting a modal heading, as this class now does, does not by itself open one.
+There are exactly three ways in: the host answers no URL (a resource that
+registers no create page, which is all a "simple (modal) resource" is — the
+absence of a page, not a feature), `->modal()` forces one (a hard `true` from
+`hasModal()` short-circuits `getUrl()` to `null` before either arm is read), or
+the action names a `recordClass()` its host declines to route.
 
 **Status:** in progress — see the [status vocabulary](../README.md#statuses).
 
@@ -20,7 +32,10 @@ Reference — the Filament source this is diffed against:
   [README](README.md#features))
 
 Covered by
-[`CreateActionTest`](../../../packages/actions/tests/Unit/CreateActionTest.php).
+[`CreateActionTest`](../../../packages/actions/tests/Unit/CreateActionTest.php)
+(the chrome, the label interpolation and the create-another footer action) and
+[`CreateActionTest`](../../../packages/actions/tests/Integration/CreateActionTest.php)
+(the modal arm end to end against the fixture entity manager).
 
 ## Surface
 
@@ -34,86 +49,132 @@ first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
 | [`setUp()` label + success-notification title](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
 | [`CanCustomizeProcess`](../../../packages/actions/src/Concerns/CanCustomizeProcess.php) (`using()` / `process()`) | [`Concerns/CanCustomizeProcess.php`](../../../vendor/filament/actions/src/Concerns/CanCustomizeProcess.php) | done | — | — |
 | [URL mode — the host-hook fallthrough](../../../packages/actions/src/Concerns/CanOpenUrl.php) | [`Concerns/CanOpenUrl.php`](../../../vendor/filament/actions/src/Concerns/CanOpenUrl.php) `getUrl()` | done | — | [detail](action.md#geturl-carries-the-host-fallback-the-new-tab-introspection-helper-is-missing) |
-| Modal mode — the `action()` body that persists a new record | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | blocked | host schema-resolver hook | [diverges](#modal-mode-is-a-fail-fast-stub-not-a-persistence-body) |
-| `modalHeading()` / `modalSubmitActionLabel()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | blocked | model-label host hooks | [diverges](#modal-mode-is-a-fail-fast-stub-not-a-persistence-body) |
+| [Modal mode — the `action()` body that persists a new record](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-modal-arm-persists-through-the-schemas-record-class) |
+| [`modalHeading()` / `modalSubmitActionLabel()`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-strings-are-literals-not-translation-keys) |
 | [`groupedIcon('heroicons:plus-20-solid')`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#icons-are-literal-heroicon-names-with-no-alias-indirection) |
-| Create-another (`createAnother()`, `getCreateAnotherAction()`, `preserveFormDataWhenCreatingAnother()`, `forceRenderAfterCreateAnother()`) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | todo | modal mode | [detail](#the-create-another-family-waits-on-modal-mode) |
-| `relationship()` / `getRelationship()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | todo | relation managers | [detail](#the-create-another-family-waits-on-modal-mode) |
-| `record(null)` (Filament clears the inherited record in `setUp()`) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#recordnull-has-nothing-to-clear-here) |
+| [Create-another (`createAnother()`, `canCreateAnother()`, `createAnotherAction()`, `getCreateAnotherAction()`, `preserveFormDataWhenCreatingAnother()`)](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-modal-arm-persists-through-the-schemas-record-class) |
+| [`shouldClearRecordAfter()`](../../../packages/actions/src/CreateAction.php) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [detail](has-actions.md#clearrecordafter-runs-at-both-of-filaments-sites) |
+| [`record(null)`](../../../packages/actions/src/CreateAction.php) (clears an inherited record in `setUp()`) | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | done | — | [diverges](#the-modal-arm-persists-through-the-schemas-record-class) |
+| `forceRenderAfterCreateAnother()` / `shouldForceRenderAfterCreateAnother()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#two-create-another-members-are-not-ported) |
+| `disableCreateAnother()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | skipped | — | [diverges](#two-create-another-members-are-not-ported) |
+| `relationship()` / `getRelationship()` | [`CreateAction.php`](../../../vendor/filament/actions/src/CreateAction.php) | todo | relation managers | [detail](#the-relationship-arm-waits-on-relation-managers) |
 
 ## Details
 
 Specifics for rows that are not finished — what is already in, what is left,
 and the next step. Delete a subsection when its row flips to **done**.
 
-### The create-another family waits on modal mode
+### The relationship arm waits on relation managers
 
-`createAnother()`, `getCreateAnotherAction()`,
-`preserveFormDataWhenCreatingAnother()` and `forceRenderAfterCreateAnother()`
-are all *modal*-mode surface: they add a second submit button to the action's
-modal footer, and the branch that reads them lives inside the `action()` body
-Filament runs after the form validates. With
-[modal mode a stub](#modal-mode-is-a-fail-fast-stub-not-a-persistence-body)
-there is nothing for them to configure, and a partial port would ship setters
-that silently do nothing. `relationship()` / `getRelationship()` are the same
-story one layer out — they answer *where* the created record is saved, which
-only matters once something saves.
+`relationship()` / `getRelationship()` answer *where* the created record is
+saved: Filament's body branches on the relation type, saving through a
+`BelongsToMany` with its pivot columns split out of the data, or through the
+relation object otherwise. The port's body always persists the mapped record
+through the entity manager that owns its class, which is the whole of the
+non-relationship arm and everything a resource page needs.
 
-**Next step:** they land with modal mode, and `relationship()` with relation
-managers.
+**Next step:** it lands with relation managers, together with the pivot-column
+split the `BelongsToMany` arm needs.
 
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
 These outlive the detail sections above.
 
-### Modal mode is a fail-fast stub, not a persistence body
+### The modal arm persists through the schema's record class
 
-Filament's `CreateAction` works two ways off one class. With a create page to
-link to it renders as a URL; without one it opens a modal, fills a form from
-`ListRecords::getDefaultActionSchemaResolver()`, and its `action()` body builds
-the model, fills it, saves it and reports `success()`. The port ships the first
-half only. The second needs a host hook family that does not exist yet — the
-schema resolver that supplies the modal's form (tracked on
-[`HasSchema`](has-schema.md#getschema-has-no-host-schema-resolver-fallback)) —
-so rather than half-wire it, `setUp()` registers an `action()` closure that
-throws a `LogicException` naming both exits:
+Filament builds the record with `new $model` and `$record->fill($data)`, then
+calls `$schema->model($record)->saveRelationships()` in a second pass. Doctrine
+has no `fill()` and no second pass, so the port maps through the schema instead:
+the body re-points the mounted container at the action's record **class** and
+calls [`Schema::getData()`](../schemas/belongs-to-record.md) with the validated
+— and, where `mutateDataUsing()` asked, mutated — array, which constructs the
+record, writes every declared path onto it, answers the record's own
+constraints, and hands it back to be persisted and flushed through
+[`getEntityManagerForRecord()`](action.md#the-transaction-trio-resolves-a-doctrine-connection-instead-of-a-facade).
 
-> CreateAction has no URL to open — give it url() or host it on a resource page
-> with a create page; the modal arm is not ported yet.
+Four things about that body are deliberate.
 
-`CanCustomizeProcess` is composed anyway, for API parity: `using()` is where a
-migrating user overrides the persistence step, so it exists on the class from
-the start even though the throwing body never reaches `process()` — the trait
-gains its consumer with modal mode, not a new call site.
+**The re-point is a belt to the seed's brace.** The host already seeds a mounted
+action's schema with a record
+([`HasActions`](has-actions.md#the-per-mount-schema-is-seeded-with-the-actions-record-and-the-dotted-operation)),
+and on a record page that seed is a class-string rather than the page's record —
+but `$schema->record($recordClass)` in the body makes it impossible for a create
+action hosted beside an edit form to map onto the record being edited. It is one
+line and it removes a whole class of accident. `setUp()`'s `record(null)` is the
+same guard one layer out, and is meaningful for the first time now that the
+[`getDefaultActionRecord()`](has-actions.md#record-resolution-is-a-single-host-callback-not-per-source)
+host hook ships: without it an unset record would inherit a record page's own.
 
-The alternative — leaving `action()` unset — mounts the action, runs nothing,
-and reports success, which is the silent-fallback shape the repo's rules
-forbid. Throwing costs nothing in url mode: an action with a URL renders an
-anchor and is never mounted, so the closure is only reached by exactly the
-configuration that has no other outcome. `modalHeading()` and
-`modalSubmitActionLabel()` are unset for the same reason, plus a second one:
-Filament's heading interpolates the *model label*, which needs the
-`getDefaultActionModelLabel()` host hook.
+**`saveRelationships()` is not ported, and nothing replaces it.** Filament needs
+a second pass because Eloquent must know the parent's key before it can save a
+`HasMany`; `getData()` writes the associations as part of the mapping and
+Doctrine orders the inserts itself at flush, so there is nothing left to do
+after `persist()`. The absence is the port working, not a gap.
+
+**The create-another branch sends its own notification.** `halt()` returns from
+[`callMountedAction()`](has-actions.md#callmountedaction-drops-rate-limiting-and-authorization)
+before that method's own dispatch block, so the branch calls `callAfter()` and
+`sendSuccessNotification()` itself, clears the record, re-fills the schema from
+the class, merges back whatever `preserveFormDataWhenCreatingAnother()` kept,
+re-hydrates without re-firing the hydration hooks, null-fills and dispatches the
+client-side state reset. Filament's trailing `return;` after `halt()` is kept
+for readers even though `halt()` throws. The `Select` create-option body reached
+the same shape first and omits the notification, which is that path's one parity
+miss rather than a decision.
+
+**The default persistence step is a typed private method, not an inline
+closure.** Filament writes it inline as `function (array $data, …)`, and the
+port cannot: PHPStan 2.2 reads no `@param` docblock on a closure — not above the
+expression, not above the assignment, and not as `@phpstan-param` — so the
+closure's `array $data` stays `array<mixed, mixed>` and cannot be handed to
+`getData(array<string, mixed> $state)` at level max without the inline `@var`
+suppression the repo forbids. `private createRecord(array $data, Schema $schema,
+string $recordClass): object` carries those types on a real signature, and the
+[`Invoker`](../support/component.md) resolves a first-class callable's
+parameters exactly as it resolves a closure's, so `using()`'s injection contract
+is unchanged: `data` off the action, `schema` / `form` and `recordClass` off the
+`process()` parameter map.
+
+`successNotification()` and `successNotification(null)` work here as on every
+prebuilt action — the object arm replaces the title-only toast, `null`
+suppresses it — through the `CanNotify` row in [action.md](action.md), which
+stays in progress for the members neither arm needs.
+
+### Two create-another members are not ported
+
+`forceRenderAfterCreateAnother()` and its reader defeat a Livewire
+partial-render optimisation: Livewire can skip re-rendering a component whose
+props did not change, and a create-another run that resets the form back to the
+values it started with can look unchanged. UX LiveComponent has no such
+optimisation — every action call re-renders — so the setter would be a no-op
+that reads as meaningful, which is the shape the repo's rules forbid. It is
+**skipped**, not blocked: nothing will make it necessary.
+
+`disableCreateAnother()` is `@deprecated` upstream in favour of
+`createAnother(false)`, and the port ships no deprecated surface.
 
 ### The strings are literals, not translation keys
 
 Filament reads every user-visible string through
 `__('filament-actions::create.single…')`. The port sets the English literals
-directly — `label('Create')`, `successNotificationTitle('Created')` — because
-no translation catalogue is ported yet (the `Translations` row in
-[README](README.md#supporting-surface) tracks it). The label is doubly
-redundant today, since
-[`HasLabel::getLabel()`](action.md#label-translation-and-the-deprecated-disablelabel-alias-are-not-ported)
-already derives `Create` from the name; it is written anyway so the string has
-one place to become a translation key.
+directly, read from
+[`resources/lang/en/create.php`](../../../vendor/filament/actions/resources/lang/en/create.php):
+`New :label` for the trigger, `Create :label` for the modal heading, `Create`
+for the submit button, `Create & create another` for the extra footer button and
+`Created` for the success toast — because no translation catalogue is ported yet
+(the `Translations` row in [README](README.md#supporting-surface) tracks it).
 
-The label also loses a *word*, not just a catalogue lookup: Filament's
-`create.single.label` is `New :label` interpolated with `getModelLabel()`, so
-its button reads **New article** where the port's reads a bare **Create**. The
-missing half is the `getDefaultActionModelLabel()` host hook the modal heading
-waits on too, so it is tracked with the modal arm rather than as a translation
-gap.
+The two `:label` interpolations become string interpolation over
+[`Action::getRecordLabel()`](action.md#the-record-chain-reaches-the-schema-the-component-and-the-host)
+and `getTitleCaseRecordLabel()`, which is why they are closures rather than
+literals: neither label is known until the action is hosted. Both carry a
+fallback Filament does not have — when nothing names a record class the label is
+`null`, and Filament would render a trailing-space `New ` and `Create `, so the
+port falls back to the bare verb `Create` for each. That fallback is reachable
+only by an action with no record class from any source, which is a
+misconfiguration everywhere except url mode, where the trigger's text is all
+that renders.
 
 ### Icons are literal heroicon names with no alias indirection
 
@@ -146,14 +207,3 @@ grouped one is its fallback. Setting `icon()` instead (what
 [`EditAction`](edit-action.md#one-plain-icon-replaces-filaments-table-and-grouped-pair)
 is forced into by the missing `HasTableIcon`) would put a plus on every trigger
 Filament leaves bare.
-
-### `record(null)` has nothing to clear here
-
-Filament's `setUp()` calls `$this->record(null)` so a create action mounted on
-a *record* page does not inherit that page's record. The port's
-[`InteractsWithRecord`](action.md#record-key-resolution-is-hoisted-to-hasactions)
-defaults `$record` to null already and has no
-`getDefaultActionRecord()` host fallback to suppress — the hook cluster is
-[not ported](has-actions.md#the-getdefaultaction-host-override-hooks-are-not-ported) —
-so the call would be a no-op that reads as meaningful. It returns with the
-record hook.

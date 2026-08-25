@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sylament\Actions\Tests\Unit;
 
-use LogicException;
+use Sylament\Actions\Action;
 use Sylament\Actions\CreateAction;
 
 it('names itself create', function (): void {
@@ -38,7 +38,38 @@ it('takes an explicit url', function (): void {
     expect(CreateAction::make()->url('/articles/new')->getUrl())->toBe('/articles/new');
 });
 
-it('fails fast when invoked with no url and no host answer', function (): void {
-    expect(fn (): mixed => CreateAction::make()->call())
-        ->toThrow(LogicException::class, 'CreateAction has no URL to open');
+it('interpolates the record label into the trigger and the heading', function (): void {
+    $action = CreateAction::make()->recordClass('App\\Entity\\BlogPost');
+
+    expect($action->getLabel())->toBe('New blog post')
+        ->and($action->getModalHeading())->toBe('Create Blog Post');
+});
+
+it('falls back to the bare verb when nothing names a record class', function (): void {
+    $action = CreateAction::make();
+
+    expect($action->getLabel())->toBe('Create')
+        ->and($action->getModalHeading())->toBe('Create')
+        ->and($action->getModalSubmitActionLabel())->toBe('Create');
+});
+
+it('carries the create-another footer action by default and drops it on createAnother(false)', function (): void {
+    $footerActions = CreateAction::make()->getExtraModalFooterActions();
+
+    expect($footerActions)->toHaveKey('createAnother')
+        ->and($footerActions['createAnother']->getLabel())->toBe('Create & create another')
+        ->and($footerActions['createAnother']->getArguments())->toBe(['another' => true])
+        ->and(CreateAction::make()->createAnother(false)->getExtraModalFooterActions())->toBe([]);
+});
+
+it('hands the create-another action to a modifier closure', function (): void {
+    $footerActions = CreateAction::make()
+        ->createAnotherAction(fn (Action $action): Action => $action->label('Save & add another'))
+        ->getExtraModalFooterActions();
+
+    expect($footerActions['createAnother']->getLabel())->toBe('Save & add another');
+});
+
+it('clears its record after the run', function (): void {
+    expect(CreateAction::make()->shouldClearRecordAfter())->toBeTrue();
 });

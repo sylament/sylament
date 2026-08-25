@@ -237,10 +237,13 @@ reproduces by accident. `Resource::getRecordLabel()` delegates here rather than
 keeping `panels`' own copy of the chain, leaving one definition.
 
 The consequence is a manifest line: support requires `symfony/string` from M4 · 2
-on, for this one function. It is the placement-by-source rule doing its job —
-this is Filament-**support**'s helper, and both `actions` and `panels` read it,
-so it cannot move up into either — and the constraint is the `^8.1` the five
-packages that already declare it carry, under the blanket `symfony/*` approval.
+on — for this one function until M4 · 8, when
+[`plural()`](../../../packages/support/src/helpers.php) became its second
+consumer through `EnglishInflector`. It is the placement-by-source rule doing
+its job — this is Filament-**support**'s helper, and both `actions` and `panels`
+read it, so it cannot move up into either — and the constraint is the `^8.1`
+the five packages that already declare it carry, under the blanket `symfony/*`
+approval.
 
 ### `wrap()` and the Laravel globals are reimplemented, not forwarded
 

@@ -37,9 +37,8 @@ test kernel has neither a table nor a database.
 ## Surface
 
 Every member Filament's class carries. _Blocked by_ names what has to land
-first. _Detail_ carries a **detail** link to a [Details](#details) write-up, a
-**semantics** link to [Semantics](#semantics), a **diverges** link to
-[Divergences](#divergences), or `—`.
+first. _Detail_ carries a **semantics** link to [Semantics](#semantics), a
+**diverges** link to [Divergences](#divergences), or `—`.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |

@@ -81,9 +81,11 @@ covers the asset-registration row against the compiled container: it asks the
 real `AssetMapperInterface` for the built dispatch controller by source path and
 requires the logical path back, so a missing or misaliased prepend fails it. Its
 second case pins the explicit `->set()` registration list — `Action`,
-`ActionGroup`, `BulkAction`, `BulkActionGroup`, `CreateAction`, `DeleteAction`,
-`DeleteBulkAction`, `EditAction`, `ReplicateAction` and `ViewAction`, every
-root-level action class the package ships — because one the bundle does not name
+`ActionGroup`, `AssociateAction`, `AttachAction`, `BulkAction`,
+`BulkActionGroup`, `CreateAction`, `DeleteAction`, `DeleteBulkAction`,
+`DetachAction`, `DetachBulkAction`, `DissociateAction`, `DissociateBulkAction`,
+`EditAction`, `ReplicateAction` and `ViewAction`, every root-level action class
+the package ships — because one the bundle does not name
 falls back to `new $class()` in
 [`ComponentResolver::instantiate()`](../support/component.md), where every
 `#[Required]` setter on it (the manager registry a write body persists through,
@@ -482,6 +484,23 @@ what the [CLAUDE.md omission list](../../../CLAUDE.md) already reasons from
 (`doctrine/dbal` is undeclared everywhere on exactly this transitive-guarantee
 argument). Revisit if a split `sylament/actions` is ever consumed by an
 application that wants Doctrine's persistence contracts without the ORM.
+
+`sylament/forms` is where the rule cuts the other way, and the epic that built
+the [six relationship actions](README.md#components) is what forced it.
+[`AttachAction::getRecordSelect()`](attach-action.md#the-record-select-is-a-forms-select-which-is-why-actions-requires-forms)
+and [`AssociateAction`'s](associate-action.md#the-record-select-is-a-forms-select-which-is-why-actions-needs-forms)
+build a `Sylament\Forms\Components\Select` and **return** it, so the class is
+resolved on every mount of either modal and no `instanceof` could stand in front
+of it: `actions` requires `sylament/forms`. That closes the rule's second
+declared cycle, `forms` requiring `actions` back for its own field-level actions,
+and it is the edge Filament's manifests already carry (`filament/actions`
+requires `filament/forms`, and `filament/forms` requires `filament/actions`).
+The soft link and the hard one need the same kind of pin for opposite reasons —
+actions' test kernel registers no forms bundle, so no test in the suite resolves
+the `Select` and none would notice the manifest line going away:
+[`ManifestTest`](../../../packages/actions/tests/Architecture/ManifestTest.php)
+reads `composer.json` and asserts the three hard requires and the two
+suggestions directly.
 
 The notifications seam is the rule's **second** guarded soft integration, and
 the first one forced by a cycle rather than by weight.

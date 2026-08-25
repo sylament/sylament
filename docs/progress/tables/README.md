@@ -31,12 +31,13 @@ the [vocabulary](../README.md#statuses) defines **todo** as having nothing to
 wait on — so a row whose detail file already names a prerequisite would be
 false as **todo**. These tables carry the same four columns as every package
 README, so a **blocked** row names its prerequisite at the head of _Detail_,
-ahead of the detail-file link that carries the full write-up: _relation
-managers_ is the one most rows here wait on today. The
+ahead of the detail-file link that carries the full write-up. No row here is
+**blocked** today, and _relation managers_ — what most rows here once waited on
+— was the last prerequisite to go: the
 [relation-scoped table](table.md#the-relationship-query-is-the-base-query-rooted-at-the-target)
-is no longer one of them — `Table::relationship()` is a **data lane**, a third
-case beside `records()` and `query()`, and it shipped with M4 · 8 *ahead* of
-relation managers rather than inside them, because a relation manager is one
+turned out not to need it, because `Table::relationship()` is a **data lane**, a
+third case beside `records()` and `query()`, and it shipped with M4 · 8 *ahead*
+of relation managers rather than inside them — a relation manager is one
 consumer of that lane and the actions that write through it are another.
 Four more stood here until their epics landed. _Table upgrades
 ([pulled forward · 11](../roadmap.md#pulled-forward))_ went first: its rows are
@@ -64,12 +65,12 @@ against the deferred settings each names rather than **blocked**. (The
 precedence — **todo** upstairs, **blocked** in the component's file — so the two
 packages disagree until that one is revisited.)
 
-Thirty-two concerns the port has landed are **folded** into the detail file of
+Thirty-three concerns the port has landed are **folded** into the detail file of
 the class that composes them and carry no row here, per
-[one row per file](../README.md#one-row-per-file-one-file-per-thing) — nine
+[one row per file](../README.md#one-row-per-file-one-file-per-thing) — ten
 `Table\Concerns\` traits (`BelongsToLivewire`, `CanPaginateRecords`,
 `CanSearchRecords`, `CanSortRecords`, `HasActions`, `HasColumns`,
-`HasEmptyState`, `HasRecordActions`, `HasRecords`) into
+`HasEmptyState`, `HasQuery`, `HasRecordActions`, `HasRecords`) into
 [`table.md`](table.md), seven `Columns\Concerns\` traits
 (`BelongsToTable`, `CanBeSearchable`, `CanBeSortable`, `HasLabel`, `HasName`,
 `HasRecord`, `InteractsWithTableQuery`) into [`column.md`](column.md), five

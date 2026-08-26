@@ -48,9 +48,13 @@ to a future `HasColumnsTest`); nothing behavioral is missing.
 ### `hasCustomColumns()` — has-user-set-columns predicate
 
 Ported (`$this->columns !== null`) ahead of any consumer — no reference in
-schemas `src/`, templates, or tests. Next step: wire it in when a caller needs to
-branch on whether columns were user-set (Filament uses it in layout heuristics),
-then cover it.
+schemas `src/`, templates, or tests. Panels' resource pages were briefly the one
+caller, mirroring Filament's `columns(2)` default for a modal schema, and
+[dropped the guard with the default](../panels/README.md#a-modals-schema-keeps-the-resource-forms-own-column-count):
+the schema it guards is the blank one the host seeds per mount, so it can never
+see what the resource's own `form()` set one call later. Next step: wire it in
+when a caller needs to branch on whether columns were user-set (Filament uses it
+in layout heuristics), then cover it.
 
 ## Divergences
 

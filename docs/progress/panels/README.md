@@ -780,10 +780,11 @@ trait's own package, not here.
 gets every prebuilt record action — that *is* what Filament calls a simple
 resource, the absence of registered pages rather than a feature. The URL hook
 answers null, the action mounts, and the schema inside the modal comes from
-`getDefaultActionSchemaResolver(Action)`, Filament's three arms verbatim: a
-`CreateAction` or `EditAction` takes `$this->form($schema)`, a `ViewAction`
-`$this->infolist($this->form($schema))`, each over a schema given `columns(2)`
-unless the action set columns of its own. `form(Schema)` and `infolist(Schema)`
+`getDefaultActionSchemaResolver(Action)`, Filament's three arms minus their grid
+default: a `CreateAction` or `EditAction` takes `$this->form($schema)`, a
+`ViewAction` `$this->infolist($this->form($schema))`, each over the seeded schema
+untouched — which leaves the create/edit arm a bare `$this->form(...)` — so
+[the resource form's own column count survives into the modal](#a-modals-schema-keeps-the-resource-forms-own-column-count). `form(Schema)` and `infolist(Schema)`
 are public delegations to the resource that exist **for that resolver** and are
 deliberately not added to `schemas()`, which stays `[]`: that list is the
 de/hydration walk, and a modal's schema is built per mount by
@@ -864,9 +865,10 @@ defaulting (see the divergence), the parent-record scoping arm, the deprecated
 `getTableQuery()` / `modelLabel()` seeding, `content()` and its `EmbeddedTable`,
 and the `ManageRecords` subclass.
 
-Two divergences are the list page's:
-[the table is stamped query-first and resource-last](#the-list-pages-table-is-stamped-query-first-and-resource-last)
-and [header actions are bound lazily](#header-actions-are-bound-lazily-rather-than-at-boot).
+Three divergences are the list page's:
+[the table is stamped query-first and resource-last](#the-list-pages-table-is-stamped-query-first-and-resource-last),
+[header actions are bound lazily](#header-actions-are-bound-lazily-rather-than-at-boot)
+and [a modal's schema keeps the resource form's own column count](#a-modals-schema-keeps-the-resource-forms-own-column-count).
 
 ### CreateRecord
 
@@ -1112,7 +1114,7 @@ alert, the record events, the authorization arms, relation managers
 `getFormActions()` as `Action` objects, `content()`, and the navigation-icon /
 navigation-label statics Filament's edit page carries for sub-navigation.
 
-Divergences, the three shared with the create page plus five of its own:
+Divergences, the three shared with the create page plus six of its own:
 [the notification titles are literals](#the-create-and-save-notification-titles-are-literals-not-translation-keys),
 [the schema is named `form`](#the-record-pages-schema-is-named-form-and-schemas-is-narrowed-to-it),
 [URL generation inside a live action resolves the default panel](#url-generation-inside-a-live-action-resolves-the-default-panel),
@@ -1120,7 +1122,8 @@ Divergences, the three shared with the create page plus five of its own:
 [staying on the page is a `null` redirect](#staying-on-the-page-after-a-save-is-a-null-redirect-not-a-caught-authorization-exception),
 [the document title carries the record label](#the-document-title-of-an-edit-page-carries-the-record-label-not-the-record-title),
 [a create modal on it is anonymous](#a-create-modal-on-a-record-page-is-anonymous),
-and [its own edit modal is a second tree](#the-edit-pages-own-edit-modal-is-a-second-tree-re-filled-after-it-saves).
+[its own edit modal is a second tree](#the-edit-pages-own-edit-modal-is-a-second-tree-re-filled-after-it-saves),
+and [a modal's schema keeps the resource form's own column count](#a-modals-schema-keeps-the-resource-forms-own-column-count).
 
 ## Features
 
@@ -2955,9 +2958,10 @@ is bound to. One tree, one state path; saving in the modal and saving on the pag
 are the same form.
 
 `EmbeddedSchema` does not exist here, and this arm is its only M4·2 consumer, so
-the port folds the `EditAction` arm into the `CreateAction` one: both build
-`$resource->form($schema->hasCustomColumns() ? $schema : $schema->columns(2))`
-over the schema the host seeds. That renders a **second component tree** over the
+the port folds the `EditAction` arm into the `CreateAction` one: both are
+`$resource->form(...)` over the schema the host seeds, Filament's
+`columns(2)` default dropped
+[for the reason the list page's is](#a-modals-schema-keeps-the-resource-forms-own-column-count). That renders a **second component tree** over the
 same record — its own state path, its own validation, its own components — which
 is fine for the modal itself (it fills from the record and writes to the record,
 so the round trip is correct) and wrong for the page behind it, which is still
@@ -2982,3 +2986,36 @@ validation error and a modal-level one are separate error bags. Both go away wit
 `EmbeddedSchema`, which belongs to [M5 · 2](../roadmap.md#m5--view-page--infolists)
 and [M6 · 1](../roadmap.md#m6--panel-depth) — the view page and relation managers
 are what make an embedded schema pay for itself.
+
+### A modal's schema keeps the resource form's own column count
+
+Filament's resource pages force a two-column grid onto every modal schema they
+resolve: `ListRecords`, `EditRecord` and `ViewRecord` each build
+`$schema->hasCustomColumns() ? $schema : $schema->columns(2)` before handing it
+to the resource's `form()`, and the full-page `defaultForm()` does the same with
+an inline-labels arm (`vendor/filament/filament/src/Resources/Pages/ListRecords.php:94`,
+`EditRecord.php:300`, `CreateRecord.php:315`). The port's resolvers pass the
+seeded schema through untouched:
+
+```php
+$action instanceof CreateAction, $action instanceof EditAction => $this->form(...),
+```
+
+(the arrow function collapses to a first-class callable once the wrapper is gone
+— the schema still arrives by name, `HasSchema::getSchema()` injecting `$schema`
+along with `form` and `infolist`).
+
+The `hasCustomColumns()` guard reads as "the *action* may override it", but the
+schema it guards is the blank one the host seeds per mount — a resource form is
+configured **inside** `Resource::form()`, one call later, so the guard can never
+see what the resource itself set. The result is that a resource whose `form()`
+declares a single-column layout renders one way on its own create/edit page and
+two-up in a modal, for no reason a reader of that form can find. Dropping the
+default makes the resource form the only thing that decides, and a page or action
+that wants the two-column grid still says `$schema->columns(2)` — the same call
+Filament makes, moved to where its intent is visible.
+
+The full-page arms need no equivalent decision: `defaultForm()` is not ported —
+`CreateRecord::form()` and `EditRecord::form()` stamp a state path, a record and
+an operation and hand the schema to the resource — so a page form already renders
+exactly what the resource declared, and this only aligns the modal with it.

@@ -205,8 +205,8 @@ abstract class EditRecord extends Page implements InteractsWithSchemas
         $resource = $this->getResourceInstance();
 
         return match (true) {
-            $action instanceof CreateAction, $action instanceof EditAction => fn (Schema $schema): Schema => $resource->form($schema->hasCustomColumns() ? $schema : $schema->columns(2)),
-            $action instanceof ViewAction => fn (Schema $schema): Schema => $resource->infolist($resource->form($schema->hasCustomColumns() ? $schema : $schema->columns(2))),
+            $action instanceof CreateAction, $action instanceof EditAction => $resource->form(...),
+            $action instanceof ViewAction => fn (Schema $schema): Schema => $resource->infolist($resource->form($schema)),
             default => null,
         };
     }

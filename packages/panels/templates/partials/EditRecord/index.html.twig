@@ -1,7 +1,7 @@
 {% set breadcrumbs = this.getBreadcrumbs %}
 {% set heading = this.getHeading %}
 {% set subheading = this.getSubheading %}
-{% set headerActions = this.getHeaderActions %}
+{% set headerActions = this.getCachedHeaderActions %}
 
 <div {{ attrs({class: 'sy sy-pa-page sy-pa-resource-edit-record-page'}, attributes.all) }}>
     <div class="sy-pa-page-header-main-ctn">

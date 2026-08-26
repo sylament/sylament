@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Sylament\Actions\Action;
+use Sylament\Actions\ActionGroup;
 use Sylament\Actions\CreateAction;
 use Sylament\Actions\Exceptions\ActionNotResolvableException;
 use Sylament\Panels\Resources\Pages\CreateRecord;
@@ -31,6 +33,30 @@ final class ResourceBoundPage extends ResourcePage
     public function getResourceInstance(): ArticleResource
     {
         return new ArticleResource();
+    }
+}
+
+/**
+ * Declares its header list the way a user page does — nothing bound by hand —
+ * and counts the reads so the walk's memoisation can be observed.
+ */
+final class HeaderActionsPage extends ResourcePage
+{
+    protected static string $resource = ArticleResource::class;
+
+    public int $headerActionReads = 0;
+
+    /**
+     * @return array<Action|ActionGroup>
+     */
+    public function getHeaderActions(): array
+    {
+        $this->headerActionReads++;
+
+        return [
+            CreateAction::make(),
+            ActionGroup::make([Action::make('archive')]),
+        ];
     }
 }
 
@@ -69,6 +95,33 @@ it('fails fast when the resource registry setter never fired', function (): void
 
 it('defaults the header actions to none', function (): void {
     expect(new UnwiredResourcePage()->getHeaderActions())->toBe([]);
+});
+
+it('binds every header action to the page and registers it under its own name', function (): void {
+    // The binding is what a trigger renders from: an unbound action reaches no
+    // host hook, so a `CreateAction` would render with no href at all. The
+    // registration is the way back in — the request that calls a mounted action
+    // renders no header.
+    $page = new HeaderActionsPage();
+
+    [$create, $group] = $page->getCachedHeaderActions();
+    $grouped = $group->getFlatActions()['archive'];
+
+    expect($create->getLiveComponent())->toBe($page)
+        ->and($group->getLiveComponent())->toBe($page)
+        ->and($grouped->getLiveComponent())->toBe($page)
+        ->and($page->getAction('create'))->toBe($create)
+        ->and($page->getAction('archive'))->toBe($grouped);
+});
+
+it('reads the declared header list once, however it is reached', function (): void {
+    $page = new HeaderActionsPage();
+
+    $page->getCachedHeaderActions();
+    $page->getCachedHeaderActions();
+
+    expect($page->getAction('nothing'))->toBeNull()
+        ->and($page->headerActionReads)->toBe(1);
 });
 
 it('names the trail crumb of each shipped resource page', function (string $page, string $breadcrumb): void {

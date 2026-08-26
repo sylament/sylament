@@ -661,8 +661,8 @@ is — [a trait outranks an inherited method](#the-actions-host-sits-on-the-base
 Filament's own three-branch method is `static::getResource()::hasPage(…)` all the
 way down; ours goes through `getResourceInstance()` for the same reason every
 other hop does. An action only reaches the hook when it is **stamped with the
-live component** — see [header actions](#header-actions-are-read-off-the-page-at-render-not-cached-at-boot)
-for the one line that does it, and note that a table record action needs nothing,
+live component** — see [header actions](#header-actions-are-bound-lazily-rather-than-at-boot)
+for where the page does that, and note that a table record action needs nothing,
 since `BelongsToLiveComponent` already falls through the table to its host.
 
 `getResourceInstance()` is **new API**, with no Filament counterpart to preserve:
@@ -809,13 +809,12 @@ since a record page has one.
 
 **Header actions.** `getHeaderActions()` returns the actions the template renders
 into the `Header` component's `actions` block — the same contract on all three
-page types, since the member is the [base's](#resource-pages). An action that
-mounts (a modal, a confirmation, an `action()` closure) may be declared either as
-a `<name>Action()` method on the page or inline in the list, since the base
-re-resolves the list once per request; an action that opens a URL it does not
-carry itself must be **stamped with the page**; both rules and their failure
-modes are in
-[header actions are read off the page at render](#header-actions-are-read-off-the-page-at-render-not-cached-at-boot):
+page types, since the member is the [base's](#resource-pages). Declare them any
+way that reads well: a `<name>Action()` method on the page, or an action built
+inline in the list. Nothing is bound or registered by hand — the base's
+`getCachedHeaderActions()` is what the templates read, and it stamps and
+registers the list on the way through, once per request
+([how, and why the walk is lazy](#header-actions-are-bound-lazily-rather-than-at-boot)):
 
 ```php
 public function purgeAction(): Action
@@ -825,7 +824,7 @@ public function purgeAction(): Action
 
 public function getHeaderActions(): array
 {
-    return [$this->cacheAction(CreateAction::make()), $this->purgeAction()];
+    return [CreateAction::make(), $this->purgeAction()];
 }
 ```
 
@@ -867,7 +866,7 @@ and the `ManageRecords` subclass.
 
 Two divergences are the list page's:
 [the table is stamped query-first and resource-last](#the-list-pages-table-is-stamped-query-first-and-resource-last)
-and [header actions are read off the page at render](#header-actions-are-read-off-the-page-at-render-not-cached-at-boot).
+and [header actions are bound lazily](#header-actions-are-bound-lazily-rather-than-at-boot).
 
 ### CreateRecord
 
@@ -2677,7 +2676,7 @@ subtly — tables refuses a configured table with neither `records()` nor
 `query()` — so this is a note about *where* the failure comes from, not a trap
 that ships a broken page.
 
-### Header actions are read off the page at render, not cached at boot
+### Header actions are bound lazily rather than at boot
 
 Filament caches header actions into the page's action registry at boot, through
 three hops: Livewire's `bootedInteractsWithActions()`
@@ -2688,56 +2687,61 @@ for every `cache<TraitBasename>` method and so reaches
 (`vendor/filament/filament/src/Pages/Concerns/InteractsWithHeaderActions.php:18`).
 That last one walks `getHeaderActions()`, stamps `->livewire($this)` on each
 group, sets a dropdown placement, and registers every action through
-`cacheAction()` — so the mounted name resolves out of that cache on the way back
-in. UX LiveComponent has no
-`booted*()`/`cache*()` trait hook to hang that on, so
-[`Resources\Pages\Page`](../../../packages/panels/src/Resources/Pages/Page.php)
-does the same work lazily instead. The template still calls
-`this.getHeaderActions` at render; the way back in is `getAction()`, overridden
-on the base to try the trait's own lookup first — the action cache, then
-[actions' method discovery](../actions/has-actions.md), which finds a
-`<name>Action()` or `<name>()` method returning an `Action` — and, **only when
-that misses**, to walk `getHeaderActions()` once, `cacheAction()` every entry
-(and every `getFlatActions()` member of an `ActionGroup`), and look again. The
-trait is aliased rather than edited, and a `private bool` makes the walk once per
-request — which also keeps a `getHeaderActions()` implementation that itself
-calls `getAction()` from recursing.
+`cacheAction()`; Blade then renders `getCachedHeaderActions()`, the already-bound
+list. UX LiveComponent has no `booted*()`/`cache*()` trait hook to hang that on,
+so [`Resources\Pages\Page`](../../../packages/panels/src/Resources/Pages/Page.php)
+does the same work **lazily**, at whichever of the two reads comes first.
 
-So both declaration forms work. `$this->fooAction()` listed in
-`getHeaderActions()` is still the Filament shape and still resolves through
-discovery; an action built **inline** in the list resolves too, where before it
-rendered its trigger fine and then did nothing when the browser posted the mount
-back — `getAction('foo')` found no method, the descriptor dropped, and the click
-was silent with no error anywhere. Render-time reading alone could never have
-covered it: the request that *calls* a mounted action renders no header at all,
-so nothing had populated the cache by the time the name was looked up.
+`getCachedHeaderActions()` is that walk. It memoises into a
+`?array $cachedHeaderActions` — set to `[]` *before* `getHeaderActions()` is
+called, so a declaration that itself reaches `getAction()` cannot recurse —
+stamps every `ActionGroup` with `liveComponent($this)` (which propagates to its
+members) and `cacheAction()`s every plain entry and every `getFlatActions()`
+member of a group, then keeps and returns the declared list. `cacheAction()` is
+what does both halves in one call: it stamps `liveComponent($this)` *and*
+registers the action under its own name.
 
-One clause does survive, and it is about binding rather than resolution. An
-action that **opens a URL it does not carry itself** must be stamped with the
-page, because `CanOpenUrl::getUrl()` reaches the page through
-`getLiveComponentOrNull()`, and that is null on an action nobody bound:
+The two reads are the two directions, and each needs a different half:
 
-```php
-return [$this->cacheAction(CreateAction::make()), $this->purgeAction()];
-```
+- **Out**, at render: the three page templates read `this.getCachedHeaderActions`
+  rather than `this.getHeaderActions`, because the *binding* is what a trigger
+  renders from. `CanOpenUrl::getUrl()` reaches the page through
+  `getLiveComponentOrNull()`, so an unbound `CreateAction` renders as a
+  `<button>` with no href instead of an `<a>` to the resource's create page —
+  and `getDefaultActionRecordClass()`, `getDefaultActionRecordLabel()` and
+  `getDefaultActionRecordTitle()` are skipped with it. No error anywhere, which
+  is why the shipped fixture pins the rendered `href`.
+- **In**, when the browser posts a mount back: `getAction()` is overridden on the
+  base to try the trait's own lookup first — the action cache, then
+  [actions' method discovery](../actions/has-actions.md), which finds a
+  `<name>Action()` or `<name>()` method returning an `Action` — and, **only when
+  that misses**, to run the walk once and look again. Render-time reading alone
+  could never cover this: the request that *calls* a mounted action renders no
+  header at all, so nothing would have populated the cache by the time the name
+  was looked up.
 
-`HasActions::cacheAction()` does both jobs in one call — it stamps
-`liveComponent($this)` *and* fills the action cache, which incidentally makes the
-discovery arm unnecessary for that action. Without it a `CreateAction` renders as
-a `<button>` with **no href and no click binding**: a button that does nothing,
-with no error anywhere, which is why the shipped fixture pins the rendered
-`href`. A table **record** action needs none of this — `BelongsToLiveComponent`
-falls through the action's table to the table's host — so the rule is specifically
-about the header.
+So every declaration form works and none of them is stamped by hand.
+`$this->fooAction()` listed in `getHeaderActions()` is the Filament shape and
+still resolves through discovery; an action built **inline** in the list resolves
+too, and renders its URL, because the list the template renders is the bound one.
+An earlier arrangement had the walk on the way in only, leaving the template on
+the raw `getHeaderActions()` and a user's own `cacheAction()` call as the price
+of a working href — an easy line to forget, and silent when forgotten. A table
+**record** action needs none of this either way: `BelongsToLiveComponent` falls
+through the action's table to the table's host.
 
-The discovery arm is the same one every other actions host already uses (the
-demo's form cards, the actions fixtures), so it is one rule rather than a
-page-specific one. What the port still does not grow is a
-`getCachedHeaderActions()` accessor: the template reads `getHeaderActions()`
-itself, and the resolution walk fills the action cache rather than a second list,
-so there is no cached array for anyone to read back. The stamping clause is the
-piece Filament's boot-time cache hides, and it is the price of not having a hook
-to run it in.
+Two members of Filament's hook are not ported and are plain todo:
+`headerActionsAlignment` (the page has no alignment surface at all yet) and the
+`dropdownPlacement('bottom-end')` default the hook stamps on a placement-less
+group — `HasDropdown` carries the setter, so a header group renders with the
+component default until someone sets one by hand.
+
+The residue is the memoisation's scope. Filament's cache is per boot and ours is
+per request object, which is the same thing for a page — but a
+`getHeaderActions()` that returns a *different* list depending on state read
+after the first call would be read once and frozen, where Filament would have
+frozen it at boot instead. Both are caches of a declaration, and a declaration
+that varies mid-request is out of contract in either framework.
 
 ### The actions host sits on the base because a trait outranks an inherited method
 

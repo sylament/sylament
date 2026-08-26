@@ -45,7 +45,7 @@ final class EditHookedArticle extends EditRecord
     public function getHeaderActions(): array
     {
         return [
-            $this->cacheAction($this->editAction()),
+            $this->editAction(),
         ];
     }
 

@@ -40,22 +40,20 @@ final class ListArticles extends ListRecords
     }
 
     /**
-     * `cacheAction()` is what stamps `liveComponent($this)` on the action, and
-     * without it the url fallthrough `getDefaultActionUrl()` answers is never
-     * consulted — the create button renders with no href at all.
+     * Three declaration forms in one list: a prebuilt action built inline, one
+     * reached through a `<name>Action()` method, and an inline action no method
+     * declares — the page binds and registers all three itself.
      */
     public function getHeaderActions(): array
     {
         return [
-            $this->cacheAction(CreateAction::make()),
+            CreateAction::make(),
             $this->purgeAction(),
-            $this->cacheAction(
-                Action::make('inline')
-                    ->requiresConfirmation()
-                    ->action(function (): void {
-                        $this->inlineRan = true;
-                    }),
-            ),
+            Action::make('inline')
+                ->requiresConfirmation()
+                ->action(function (): void {
+                    $this->inlineRan = true;
+                }),
         ];
     }
 }

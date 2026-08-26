@@ -26,7 +26,7 @@ final class ListNotes extends ListRecords
     public function getHeaderActions(): array
     {
         return [
-            $this->cacheAction($this->createAction()),
+            $this->createAction(),
         ];
     }
 }

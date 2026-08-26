@@ -46,8 +46,8 @@ final class EditArticle extends EditRecord
     public function getHeaderActions(): array
     {
         return [
-            $this->cacheAction($this->editAction()),
-            $this->cacheAction($this->deleteAction()),
+            $this->editAction(),
+            $this->deleteAction(),
         ];
     }
 }

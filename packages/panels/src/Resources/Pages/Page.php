@@ -38,7 +38,10 @@ abstract class Page extends BasePage implements InteractsWithActions
 
     private ?ResourceRegistry $resourceRegistry = null;
 
-    private bool $hasCachedHeaderActions = false;
+    /**
+     * @var array<Action|ActionGroup>|null
+     */
+    private ?array $cachedHeaderActions = null;
 
     #[Required]
     public function setResourceRegistry(ResourceRegistry $resourceRegistry): void
@@ -93,18 +96,26 @@ abstract class Page extends BasePage implements InteractsWithActions
         return [];
     }
 
-    public function getAction(string $name): ?Action
+    /**
+     * The header list every page template renders, each entry bound to this page
+     * and registered under its own name, so an action built inline in the
+     * declaration reaches the host hooks its trigger renders from.
+     *
+     * @return array<Action|ActionGroup>
+     */
+    public function getCachedHeaderActions(): array
     {
-        $action = $this->getCachedOrDeclaredAction($name);
-
-        if ($action instanceof Action || $this->hasCachedHeaderActions) {
-            return $action;
+        if ($this->cachedHeaderActions !== null) {
+            return $this->cachedHeaderActions;
         }
 
-        $this->hasCachedHeaderActions = true;
+        $this->cachedHeaderActions = [];
+        $headerActions = $this->getHeaderActions();
 
-        foreach ($this->getHeaderActions() as $headerAction) {
+        foreach ($headerActions as $headerAction) {
             if ($headerAction instanceof ActionGroup) {
+                $headerAction->liveComponent($this);
+
                 foreach ($headerAction->getFlatActions() as $groupedAction) {
                     $this->cacheAction($groupedAction);
                 }
@@ -114,6 +125,19 @@ abstract class Page extends BasePage implements InteractsWithActions
 
             $this->cacheAction($headerAction);
         }
+
+        return $this->cachedHeaderActions = $headerActions;
+    }
+
+    public function getAction(string $name): ?Action
+    {
+        $action = $this->getCachedOrDeclaredAction($name);
+
+        if ($action instanceof Action || $this->cachedHeaderActions !== null) {
+            return $action;
+        }
+
+        $this->getCachedHeaderActions();
 
         return $this->getCachedOrDeclaredAction($name);
     }

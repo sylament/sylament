@@ -333,6 +333,16 @@ their own terms; the derivation is
 [the one `getRecordStatePath()` uses](#getrecordstatepath-is-the-one-definition-of-record-relative-and-both-walks-must-share-it),
 against the schema's own state path rather than the root's.
 
+Filament needs none of this machinery for the nested to-one, and not because its
+walk is richer: its select is conventionally named for the **foreign-key
+column** and stays dehydrated (`Select::relationship()` sets
+`dehydrated(fn (Select $component): bool => (! $component->isMultiple()) && $component->isSaved())`),
+so `$record->fill($itemData)` writes `author_id` as an ordinary attribute and
+the hook is not load-bearing there. Doctrine maps the association and no
+foreign-key scalar beside it, so the write has no attribute to land on and the
+hook is the only route — which is why the port met a wall Filament does not,
+and why closing it was mapper work rather than transcription.
+
 ### The nearest record frame is the first node above a component that binds one
 
 `getRecordStatePath()` is root-framed: it strips the **root** container's state

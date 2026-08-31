@@ -95,6 +95,29 @@ it('renders the actions block inside the header actions wrapper', function (): v
     expect($html)->toMatch('/<div class="sy-pa-header-actions">\s*<button type="button" id="header-action">Create<\/button>\s*<\/div>/');
 });
 
+it('leaves the topbar without a global search field by default', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Layout', [
+        'navigation' => [],
+        'brandName' => 'X',
+    ], content: '<p>Body</p>');
+
+    expect($html)->not->toContain('sy-pa-global-search');
+});
+
+it('threads the global search flag through the layout into the topbar', function (): void {
+    $html = (string) $this->renderTwigComponent('SylamentPanels:Layout', [
+        'navigation' => [],
+        'brandName' => 'X',
+        'hasGlobalSearch' => true,
+    ], content: '<p>Body</p>');
+
+    expect($html)
+        ->toContain('sy-pa-global-search-ctn')
+        ->toContain('id="sy-pa-global-search-input"')
+        // The field opens the topbar end, ahead of the end slot and the user menu.
+        ->toMatch('/sy-pa-topbar-end.+sy-pa-global-search-ctn.+sy-pa-user-menu/s');
+});
+
 it('carries the user menu in the topbar end with no end block given', function (): void {
     $html = (string) $this->renderTwigComponent('SylamentPanels:Topbar', ['brandName' => 'X']);
 

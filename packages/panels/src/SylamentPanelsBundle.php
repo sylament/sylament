@@ -74,7 +74,10 @@ class SylamentPanelsBundle extends SylamentBundle
                 ->tag('controller.service_arguments')
             ->set('sylament_panels.route_loader', PanelRouteLoader::class)
                 ->autowire()
-                ->tag('routing.route_loader');
+                ->tag('routing.route_loader')
+            ->load(__NAMESPACE__ . '\\Twig\\Components\\', __DIR__ . '/Twig/Components/')
+                ->autowire()
+                ->autoconfigure();
     }
 
     public function prependExtension(ContainerConfigurator $configurator, ContainerBuilder $container): void

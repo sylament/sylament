@@ -1,6 +1,7 @@
 {% props
     navigation = [],
     brandName = null,
+    hasGlobalSearch = false,
 
     content = markup(block('content') ?? null)
 %}
@@ -12,7 +13,7 @@
 <div {{ attrs({class: 'sy sy-pa-body'}, sidebarStimulus, attributes.all) }}>
     <a href="#sy-pa-main" class="sy-pa-skip-link">Skip to content</a>
 
-    <twig:SylamentPanels:Topbar :brandName="brandName" />
+    <twig:SylamentPanels:Topbar :brandName="brandName" :hasGlobalSearch="hasGlobalSearch" />
 
     <div class="sy-pa-layout">
         <div {{ attrs({class: 'sy-pa-sidebar-overlay'}, stimulus_action(sidebarController, 'close', 'click')) }}></div>

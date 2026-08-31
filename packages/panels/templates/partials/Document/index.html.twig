@@ -24,7 +24,11 @@
         {% endblock javascripts %}
     </head>
     <body>
-        <twig:SylamentPanels:Layout :navigation="panel.getNavigation" :brandName="panel.getBrandName">
+        <twig:SylamentPanels:Layout
+            :navigation="panel.getNavigation"
+            :brandName="panel.getBrandName"
+            :hasGlobalSearch="panel.isGlobalSearchEnabled"
+        >
             <twig:block name="content">
                 {{ component(componentName, componentProps) }}
             </twig:block>

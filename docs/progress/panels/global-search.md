@@ -66,6 +66,11 @@ do.
 | `globalSearchPosition` | `HasGlobalSearch::globalSearch()`'s `$position` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
 | `globalSearchFieldKeyBindingSuffix()` | `Panel\Concerns\HasGlobalSearch::globalSearchFieldKeyBindingSuffix()` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
 | `globalSearchResourceOptIn()` | `Panel\Concerns\HasGlobalSearch::globalSearchResourceOptIn()` | skipped | — | [diverges](#the-panels-position-platform-suffix-and-opt-in-arms-are-not-ported) |
+| [`GlobalSearch` component](../../../packages/panels/src/Twig/Components/GlobalSearch.php) | [`Livewire/GlobalSearch.php`](../../../vendor/filament/filament/src/Livewire/GlobalSearch.php) | done | — | [semantics](#the-component-restores-its-panel-onto-a-live-request) · [diverges](#nothing-dispatches-an-open-event-a-morph-reopens-the-panel) |
+| [Search template](../../../packages/panels/templates/components/GlobalSearch/index.html.twig) | [`livewire/global-search.blade.php`](../../../vendor/filament/filament/resources/views/livewire/global-search.blade.php) | done | — | [semantics](#the-stimulus-controller-rides-the-inner-element-not-the-live-root) |
+| [Topbar mount](../../../packages/panels/templates/components/Topbar/index.html.twig) | [`livewire/topbar.blade.php`](../../../vendor/filament/filament/resources/views/livewire/topbar.blade.php)'s `fi-topbar-end` | done | — | [semantics](#the-topbar-mount-is-a-threaded-flag-rather-than-a-facade-call) |
+| [`PanelsIconAlias::GLOBAL_SEARCH_FIELD`](../../../packages/panels/src/Twig/PanelsIconAlias.php) | `PanelsIconAlias::GLOBAL_SEARCH_FIELD` | done | — | — |
+| Render hooks around the field | `PanelsRenderHook::GLOBAL_SEARCH_*` | skipped | — | [diverges](#the-render-hooks-around-the-field-have-no-port-target) |
 | _rest not audited yet_ | | | | |
 
 ## Details
@@ -124,9 +129,66 @@ memoises the answer per request because each resource's check runs an
 authorization policy; ours only asks whether a resource named searchable
 attributes, so it re-reads them instead.
 
+### The component restores its panel onto a live request
+
+The topbar field is the shell's first live component, so it is the first thing
+here that re-renders on a request carrying no panel route default —
+`_sylament_panel` is a default of the *page* routes, and a live request goes to
+ux-live-component's own route instead. `mount()` therefore reads the panel once
+(`CurrentPanel::get() ?? PanelRegistry::getDefault()`) into a `LiveProp`, and a
+`#[PostHydrate]` hook stamps that id back onto the request every subsequent
+round trip. Without the stamp the provider would silently search the **default**
+panel's resources and every `Resource::getUrl()` underneath would generate
+against it — right on a single-panel application, wrong the moment there are
+two.
+
+### The Stimulus controller rides the inner element, not the live root
+
+The root `div` renders the live component's own `attributes` bag, which always
+carries `data-controller="live"`, and
+[`attrs()`](../../../packages/support/src/Twig/Extension/AttributeExtension.php)
+resolves a repeated scalar attribute by letting the later source win rather than
+by appending — so a `stimulus_controller()` merged into that same bag would
+replace the live binding and take the whole component down with it. The search
+controller sits on the inner `.sy-pa-global-search` element instead, and every
+target and action it owns is inside that element.
+
+### The topbar mount is a threaded flag rather than a facade call
+
+Filament's topbar blade asks the `filament()` facade
+(`isGlobalSearchEnabled()`) mid-template. There is no facade here, and a panel
+is reached through `CurrentPanel`/`PanelRegistry` rather than from Twig, so the
+answer is computed once where the panel already is —
+`Document/index.html.twig` — and threaded down as `hasGlobalSearch` through
+`Layout` into `Topbar`, defaulting to `false` so a shell rendered outside a
+panel — a `Layout` or `Topbar` invoked as a bare tag, which is how the showcase
+demonstrates it — carries no field. The position inside
+`.sy-pa-topbar-end` is Filament's: the search opens the group, ahead of the end
+slot and the user menu.
+
 ## Divergences
 
 Deliberate deviations from Filament — permanent, and the reason they hold.
+
+### Nothing dispatches an open event; a morph reopens the panel
+
+Filament's component dispatches `open-global-search-results` from
+`getResults()`, and the results container listens for it on the window to set
+its Alpine `isOpen` back to true. We need no such event: the container is only
+in the markup when `getResults()` answered non-null, and every live morph
+re-stamps the server's markup over whatever the client did — so a client-set
+`hidden` from the close action is wiped by the next search response, which is
+exactly the reopen Filament buys with the event. Behaviour identical, one less
+moving part.
+
+### The render hooks around the field have no port target
+
+`PanelsRenderHook::GLOBAL_SEARCH_START`/`END` (inside the component) and
+`GLOBAL_SEARCH_BEFORE`/`AFTER` (around the topbar mount) are four of Filament's
+render hooks, and the render-hook system as a whole has no port — it is listed
+among panels' unported pieces in [the panels README](README.md). Nothing here
+is specific to global search: the hooks come back with the system, or not at
+all.
 
 ### The searchability check and the result URL ladder drop Filament's authorization gates
 

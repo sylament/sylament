@@ -1,5 +1,6 @@
 {% props
     brandName = null,
+    hasGlobalSearch = false,
 
     end = markup(block('end') ?? null)
 %}
@@ -27,6 +28,10 @@
         </div>
 
         <div class="sy-pa-topbar-end">
+            {% if hasGlobalSearch %}
+                <twig:SylamentPanels:GlobalSearch />
+            {% endif %}
+
             {% if hasEnd %}
                 {{ end }}
             {% endif %}

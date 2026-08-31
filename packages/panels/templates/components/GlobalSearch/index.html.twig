@@ -1,0 +1,96 @@
+{% set searchController = 'sylament--panels--global-search' %}
+
+{% set panel = this.getPanel %}
+{% set results = this.getResults %}
+
+<div {{ attrs({class: 'sy sy-pa-global-search-ctn'}, attributes.all) }}>
+    {# The search controller must never merge into the live root's bag above: that
+       bag carries `data-controller="live"`, and `attrs()` replaces a repeated
+       attribute rather than appending to it. #}
+    <div {{ attrs(
+        {class: 'sy-pa-global-search'},
+        stimulus_controller(searchController, {keyBindings: panel.getGlobalSearchKeyBindings}),
+    ) }}>
+        <div class="sy-pa-global-search-field">
+            <label for="sy-pa-global-search-input" class="sy-pa-global-search-label">Global search</label>
+
+            <twig:SylamentSupport:InputWrapper
+                prefixIcon="heroicons:magnifying-glass-20-solid"
+                :prefixIconAlias="constant('Sylament\\Panels\\Twig\\PanelsIconAlias::GLOBAL_SEARCH_FIELD')"
+                :inlinePrefix="true"
+                :suffix="panel.getGlobalSearchFieldSuffix"
+                :inlineSuffix="true"
+            >
+                <input {{ attrs({
+                    class: 'sy-pa-global-search-input',
+                    type: 'search',
+                    id: 'sy-pa-global-search-input',
+                    'data-model': 'debounce(' ~ panel.getGlobalSearchDebounceMilliseconds ~ ')|search',
+                    placeholder: 'Search',
+                    autocomplete: 'off',
+                    maxlength: 1000,
+                }, stimulus_target(searchController, 'input')|stimulus_action(searchController, 'focusFirstResult', 'keydown.down')) }}>
+            </twig:SylamentSupport:InputWrapper>
+        </div>
+
+        {% if results is not null %}
+            <div {{ attrs(
+                {class: 'sy-pa-global-search-results-ctn'},
+                stimulus_target(searchController, 'resultsPanel')|stimulus_action(searchController, 'navigate', 'keydown'),
+            ) }}>
+                {% if results.getCategories is empty %}
+                    <p class="sy-pa-global-search-no-results-message">No search results found.</p>
+                {% else %}
+                    <ul class="sy-pa-global-search-results">
+                        {% for group, groupResults in results.getCategories %}
+                            <li class="sy-pa-global-search-result-group">
+                                <h3 class="sy-pa-global-search-result-group-header">{{ group }}</h3>
+
+                                <ul class="sy-pa-global-search-result-group-results">
+                                    {% for result in groupResults %}
+                                        {% set visibleActions = result.getVisibleActions %}
+
+                                        <li {{ attrs({
+                                            class: ['sy-pa-global-search-result', {
+                                                'sy-pa-global-search-result-has-actions': visibleActions is not empty,
+                                            }],
+                                        }) }}>
+                                            <a {{ attrs({
+                                                class: 'sy-pa-global-search-result-link',
+                                                href: result.url,
+                                            }, stimulus_action(searchController, 'close')) }}>
+                                                <h4 class="sy-pa-global-search-result-heading">{{ result.title }}</h4>
+
+                                                {% if result.details is not empty %}
+                                                    <dl class="sy-pa-global-search-result-details">
+                                                        {% for label, value in result.details %}
+                                                            <div class="sy-pa-global-search-result-detail">
+                                                                {% if result.hasDetailLabels %}
+                                                                    <dt class="sy-pa-global-search-result-detail-label">{{ label }}:</dt>
+                                                                {% endif %}
+
+                                                                <dd class="sy-pa-global-search-result-detail-value">{{ value }}</dd>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </dl>
+                                                {% endif %}
+                                            </a>
+
+                                            {% if visibleActions is not empty %}
+                                                <div class="sy-pa-global-search-result-actions">
+                                                    {% for action in visibleActions %}
+                                                        {{ renderComponent(action) }}
+                                                    {% endfor %}
+                                                </div>
+                                            {% endif %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div>

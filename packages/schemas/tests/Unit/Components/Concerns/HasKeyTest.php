@@ -123,3 +123,25 @@ it('does not cache the relative key', function (): void {
 
     expect($calls)->toBe(2);
 });
+
+it('composes the live-component key from the host id and the absolute key', function (): void {
+    $host = new HasSchemasFixture();
+    $component = new Component()->key('name');
+    Schema::make($host)->key('form')->components([$component])->getComponents();
+
+    expect($component->getLiveComponentKey())->toBe($host->getSchemasHostId() . '.form.name');
+});
+
+it('has no live-component key without a live host', function (): void {
+    $component = new Component()->key('name');
+    Schema::make()->components([$component])->getComponents();
+
+    expect($component->getLiveComponentKey())->toBeNull();
+});
+
+it('has no live-component key without a key', function (): void {
+    $component = new Component();
+    Schema::make(new HasSchemasFixture())->components([$component])->getComponents();
+
+    expect($component->getLiveComponentKey())->toBeNull();
+});

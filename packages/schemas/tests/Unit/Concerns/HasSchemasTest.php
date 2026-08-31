@@ -197,3 +197,20 @@ it('returns null for a schema component key with no dot', function (): void {
 it('returns null for a schema component key naming an unknown schema', function (): void {
     expect(new HasSchemasFixture()->getSchemaComponent('unknown.title'))->toBeNull();
 });
+
+it('mints a schemas host id lazily and keeps it', function (): void {
+    $fixture = new HasSchemasFixture();
+
+    expect($fixture->schemasHostId)->toBeNull();
+
+    $hostId = $fixture->getSchemasHostId();
+
+    expect($hostId)->toMatch('/^[0-9a-f]{8}$/')
+        ->and($fixture->getSchemasHostId())->toBe($hostId)
+        ->and($fixture->schemasHostId)->toBe($hostId);
+});
+
+it('mints a distinct schemas host id per host', function (): void {
+    expect(new HasSchemasFixture()->getSchemasHostId())
+        ->not->toBe(new HasSchemasFixture()->getSchemasHostId());
+});

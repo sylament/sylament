@@ -36,6 +36,13 @@ trait HasSchemas
     use ComponentToolsTrait;
 
     /**
+     * The prefix every schema component of this host stamps its live-component
+     * key with — a `LiveProp` so the same ids come back on a re-render.
+     */
+    #[LiveProp]
+    public ?string $schemasHostId = null;
+
+    /**
      * @var array<string, mixed>
      */
     #[LiveProp]
@@ -70,6 +77,11 @@ trait HasSchemas
         return [
             'schema',
         ];
+    }
+
+    public function getSchemasHostId(): string
+    {
+        return $this->schemasHostId ??= bin2hex(random_bytes(4));
     }
 
     public function getSchema(string $name = 'schema'): Schema

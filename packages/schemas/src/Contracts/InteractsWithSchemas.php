@@ -20,6 +20,15 @@ interface InteractsWithSchemas
     public function getSchema(string $name): Schema;
 
     /**
+     * The identity every schema component of this host prefixes its
+     * live-component key with — minted on first read and carried across
+     * renders, so a child mounted from a schema keeps the same id. It stands
+     * in for Livewire's component id, which UX LiveComponent never exposes to
+     * the component itself.
+     */
+    public function getSchemasHostId(): string;
+
+    /**
      * Resolve a schema by name the way a browser-supplied `schemaComponent`
      * key must: a cached schema wins; otherwise a `<name>()` / `<name>Schema()`
      * method is accepted only after a reflection gate — it may not be a member

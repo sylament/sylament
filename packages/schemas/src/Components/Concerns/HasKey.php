@@ -105,6 +105,28 @@ trait HasKey
         return $this->isKeyInheritable;
     }
 
+    /**
+     * The DOM-stable identity of this component across renders,
+     * `{host id}.{absolute key}` — null when the component has no key, and
+     * null when its schema is bound to no live host.
+     */
+    public function getLiveComponentKey(): ?string
+    {
+        $liveComponent = $this->getLiveComponentOrNull();
+
+        if ($liveComponent === null) {
+            return null;
+        }
+
+        $key = $this->getKey();
+
+        if ($key === null || $key === '') {
+            return null;
+        }
+
+        return $liveComponent->getSchemasHostId() . '.' . $key;
+    }
+
     protected function cacheAbsoluteKey(?string $key): ?string
     {
         try {

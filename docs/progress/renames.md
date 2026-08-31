@@ -161,7 +161,7 @@ the table above.
 | Laravel / Filament | Sylament | Example |
 | --- | --- | --- |
 | `Htmlable` | `Twig\Markup` | — |
-| Livewire | UX LiveComponent | `getLivewire()` → `getLiveComponent()`, `livewireProperty()` → [`liveComponentProperty()`](schemas/tabs.md) |
+| Livewire | UX LiveComponent | `getLivewire()` → `getLiveComponent()`, `livewireProperty()` → [`liveComponentProperty()`](schemas/tabs.md), `Schemas\Components\Livewire` → [`LiveComponent`](schemas/live-component.md), `getLivewireKey()` → [`getLiveComponentKey()`](schemas/live-component.md#the-host-id-is-minted-by-the-host-because-ux-has-no-stable-component-id) |
 | Livewire's `WithPagination` trait (`gotoPage()`, `nextPage()`, `previousPage()`, `resetPage()`, the query-string page name) | a `#[LiveProp] int $tablePage` on the host and one `#[LiveAction]` that moves it | `gotoPage($page, $pageName)` → [`gotoTablePage(page)`](tables/has-table.md#gototablepage-replaces-livewires-paginator-trio) |
 | Eloquent | Doctrine | — |
 | `Carbon\CarbonInterface` / `Illuminate\Support\Carbon` | `DateTimeInterface` / `DateTimeImmutable` | `minDate(CarbonInterface \| string \| Closure \| null $date)` → [`minDate(DateTimeInterface\|string\|Closure\|null $date)`](forms/date-time-picker.md). Carbon is a Laravel-ecosystem package with no place here; every Filament signature naming a Carbon type takes the PHP interface it extends, and a value the port constructs is a `DateTimeImmutable`. The lost surface is Carbon's fluent parsing and formatting sugar, which the two consumers so far replace with `DateTimeImmutable::createFromFormat()` and `->format()` ([the cast](schemas/date-time-state-cast.md), [the pickers](forms/date-time-picker.md)). |

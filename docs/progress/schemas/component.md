@@ -53,7 +53,7 @@ only their detail sections do.
 | [`HasChildComponents`](../../../packages/schemas/src/Components/Concerns/HasChildComponents.php) | [`Concerns/HasChildComponents.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasChildComponents.php) | in progress | — | [detail](#haschildcomponents-only-the-materialization-core-is-ported) · [semantics](#childcomponents-replaces-a-keys-contents-instead-of-appending) |
 | [`HasId`](../../../packages/schemas/src/Components/Concerns/HasId.php) | [`Concerns/HasId.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasId.php) | done | — | — |
 | [`HasState`](../../../packages/schemas/src/Components/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasState.php) | in progress | — | [detail](#hasstate-the-getset-core-and-validation-flags-are-in-relationship-and-partial-render-state-are-out) · [semantics](#a-defaults-fill-nulls-a-defaultless-component-and-the-shared-record-is-what-protects-a-containers-default) · [semantics](#dehydration-prunes-around-shared-state-paths-and-pathless-components) |
-| [`HasKey`](../../../packages/schemas/src/Components/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasKey.php) | in progress | — | [detail](#getlivewirekey-is-deferred-to-the-live-component-layer) |
+| [`HasKey`](../../../packages/schemas/src/Components/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasKey.php) | done | — | [live-component.md](live-component.md#the-host-id-is-minted-by-the-host-because-ux-has-no-stable-component-id) |
 | [`HasHeadings`](../../../packages/schemas/src/Components/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Components/Concerns/HasHeadings.php) | done | — | — |
 
 ## Details
@@ -204,18 +204,6 @@ of their own. Next step: add a `formatStateUsing` test; port the absent families
 under their respective epics (the
 [relationship-derived state](#relationship-derived-and-constant-state-are-dropped-from-the-component-trait)
 families below, `CanPartiallyRender`).
-
-### getLivewireKey() is deferred to the live-component layer
-
-The whole key model — `key()` setter with inheritability, relative/absolute
-`getKey()` with the state-path fallback, `getInheritanceKey()`, sanitization, and
-absolute caching — is ported byte-for-byte and fully covered by
-[`HasKeyTest`](../../../packages/schemas/tests/Unit/Components/Concerns/HasKeyTest.php).
-The one method left is `getLivewireKey()`, which composes
-`{getLiveComponent()->getId()}.{key}` — it depends on the live-component layer's
-id contract, so it is **blocked**, not skipped. Next step: port it as
-`getLiveComponentKey()` (recorded in the [rename table](../renames.md)) in the
-change that wires `getLiveComponent()->getId()`, with a render/id test.
 
 ## Semantics
 

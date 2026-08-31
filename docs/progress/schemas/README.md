@@ -58,14 +58,14 @@ concerns, so it ships in `sylament/forms` and its row here points there —
 | [`Wizard\Step`](../../../packages/schemas/src/Components/Wizard/Step.php) | [`Components/Wizard/Step.php`](../../../vendor/filament/schemas/src/Components/Wizard/Step.php) | in progress | [step.md](step.md) |
 | [`Actions`](../../../packages/schemas/src/Components/Actions.php) | [`Components/Actions.php`](../../../vendor/filament/schemas/src/Components/Actions.php) | in progress | [actions.md](actions.md) |
 | `Callout` | [`Components/Callout.php`](../../../vendor/filament/schemas/src/Components/Callout.php) | todo | — |
-| `EmbeddedSchema` | [`Components/EmbeddedSchema.php`](../../../vendor/filament/schemas/src/Components/EmbeddedSchema.php) | todo | — |
+| [`EmbeddedSchema`](../../../packages/schemas/src/Components/EmbeddedSchema.php) | [`Components/EmbeddedSchema.php`](../../../vendor/filament/schemas/src/Components/EmbeddedSchema.php) | done | [embedded-schema.md](embedded-schema.md) |
 | `EmbeddedTable` | [`Components/EmbeddedTable.php`](../../../vendor/filament/schemas/src/Components/EmbeddedTable.php) | todo | — |
 | `EmptyState` | [`Components/EmptyState.php`](../../../vendor/filament/schemas/src/Components/EmptyState.php) | todo | — |
 | `Form` | [`Components/Form.php`](../../../vendor/filament/schemas/src/Components/Form.php) | todo | — |
 | [`Html`](../../../packages/schemas/src/Components/Html.php) | [`Components/Html.php`](../../../vendor/filament/schemas/src/Components/Html.php) | done | — |
 | [`Icon`](../../../packages/schemas/src/Components/Icon.php) | [`Components/Icon.php`](../../../vendor/filament/schemas/src/Components/Icon.php) | in progress | [icon.md](icon.md) |
 | `Image` | [`Components/Image.php`](../../../vendor/filament/schemas/src/Components/Image.php) | todo | — |
-| `Livewire` | [`Components/Livewire.php`](../../../vendor/filament/schemas/src/Components/Livewire.php) | todo | — |
+| [`Livewire`](../../../packages/schemas/src/Components/LiveComponent.php) | [`Components/Livewire.php`](../../../vendor/filament/schemas/src/Components/Livewire.php) | in progress | [live-component.md](live-component.md) |
 | `RenderHook` | [`Components/RenderHook.php`](../../../vendor/filament/schemas/src/Components/RenderHook.php) | todo | — |
 | [`Text`](../../../packages/schemas/src/Components/Text.php) | [`Components/Text.php`](../../../vendor/filament/schemas/src/Components/Text.php) | in progress | [text.md](text.md) |
 | `UnorderedList` | [`Components/UnorderedList.php`](../../../vendor/filament/schemas/src/Components/UnorderedList.php) | todo | — |

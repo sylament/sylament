@@ -68,7 +68,7 @@ their detail sections do.
 | [`HasState`](../../../packages/schemas/src/Concerns/HasState.php) | [`Concerns/HasState.php`](../../../vendor/filament/schemas/src/Concerns/HasState.php) | in progress | — | [detail](#hasstate-still-lacks-constant-state-relationships-and-partial-rendering) · [diverges](#getstate-validates-without-a-prepareforvalidation-mutation-layer) |
 | [`fill(object\|array\|null $state = null)` — the object arm](../../../packages/schemas/src/Concerns/HasState.php) | — | done | — | [belongs-to-record.md](belongs-to-record.md#fillobject-reads-only-the-paths-the-schema-declares) |
 | [`readStateFromRecord()`](../../../packages/schemas/src/Concerns/BelongsToRecord.php) | — | done | — | [belongs-to-record.md](belongs-to-record.md#reads-are-lenient-writes-are-strict) |
-| [`HasKey`](../../../packages/schemas/src/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Concerns/HasKey.php) | in progress | live-component id | [detail](#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) |
+| [`HasKey`](../../../packages/schemas/src/Concerns/HasKey.php) | [`Concerns/HasKey.php`](../../../vendor/filament/schemas/src/Concerns/HasKey.php) | in progress | — | [detail](#haskey-ports-the-schema-key-chain-minus-the-state-path-fallback) |
 | [`HasHeadings`](../../../packages/schemas/src/Concerns/HasHeadings.php) | [`Concerns/HasHeadings.php`](../../../vendor/filament/schemas/src/Concerns/HasHeadings.php) | done | — | — |
 | [`CanModifyActions`](../../../packages/schemas/src/Concerns/CanModifyActions.php) | [`Concerns/CanModifyActions.php`](../../../vendor/filament/schemas/src/Concerns/CanModifyActions.php) | done | — | [diverges](#modifyaction-and-modifyactiongroup-guard-a-callbacks-return-type-at-runtime) |
 | [`HasFieldWrapper`](../../../packages/schemas/src/Concerns/HasFieldWrapper.php) | [`Concerns/HasFieldWrapper.php`](../../../vendor/filament/schemas/src/Concerns/HasFieldWrapper.php) | done | — | [diverges](#the-field-wrapper-view-is-opaque-data-with-no-closure-arm-and-no-parent-walk) |
@@ -230,8 +230,11 @@ The schema-scope key model — `key()` setter, absolute prefix from the parent
 component's inheritance key, `getInheritanceKey()` fallback, attribute/JS-char
 sanitization, and absolute/inheritance-key caching with flush hooks — is ported
 and covered. **Left:** two pieces. `getLiveComponentKey()` (Filament's
-`getLivewireKey()`, the DOM key from the live-component id) is **blocked** on the
-live-component id being reachable. More importantly, `getKey()` silently omits
+`getLivewireKey()`, the DOM key from the live-component id) is no longer blocked
+— the host id it needs shipped as
+[`getSchemasHostId()`](live-component.md#the-host-id-is-minted-by-the-host-because-ux-has-no-stable-component-id)
+with the component-tier port, and the schema tier simply has no consumer yet.
+More importantly, `getKey()` silently omits
 Filament's `?? getStatePath(isAbsolute: false)` fallback even though
 `getStatePath()` is live on the schema via `HasState` and the sibling
 component-level `HasKey` keeps it — an unflagged, untested deviation, not a
@@ -298,8 +301,8 @@ now exist:
 announces `form-validation-error`, and `dispatchClientSideStateReset()` is
 ported here as a one-method surface on `Schema` announcing
 `reset-schema-component-state` with `{schemaKey: getKey()}` (Filament sends
-`livewireId` beside the key; there is no live-component id producer on this
-side). Nothing in the port **calls** the reset yet — Filament's callers are
+`livewireId` beside the key; a browser event dispatched on the host's own root
+has nothing left for an id to disambiguate — [renames.md](../renames.md#idiom)). Nothing in the port **calls** the reset yet — Filament's callers are
 `CreateRecord`'s create-another and `CreateAction`, neither of which has landed —
 so it ships as the announcement half of a wired pair, exercised by a fixture
 action in `HasSchemasValidationTest`.

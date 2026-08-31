@@ -2,7 +2,8 @@
 
 The Twig templates in
 [`packages/schemas/templates/partials/`](../../../packages/schemas/templates/partials)
-— `Actions`, `Fieldset`, `Flex`, `Grid`, `Group`, `Html`, `Icon`, `Schema`,
+— `Actions`, `EmbeddedSchema`, `Fieldset`, `Flex`, `Grid`, `Group`, `Html`,
+`Icon`, `LiveComponent`, `Schema`,
 `Section`, `Step`, `Tab`, `Tabs`, `Text`, `Wizard` — that render the
 schemas components through Support's
 [`ViewComponent`](../support/component.md). Each ports the HTML that a Filament
@@ -12,6 +13,7 @@ cross-index over those templates; per-feature specifics live in the
 per-component files ([`actions.md`](actions.md), [`fieldset.md`](fieldset.md),
 [`flex.md`](flex.md),
 [`grid.md`](grid.md), [`group.md`](group.md), [`icon.md`](icon.md),
+[`live-component.md`](live-component.md), [`embedded-schema.md`](embedded-schema.md),
 [`tab.md`](tab.md), [`tabs.md`](tabs.md),
 [`text.md`](text.md), [`section.md`](section.md), [`schema.md`](schema.md),
 [`wizard.md`](wizard.md), [`step.md`](step.md)),
@@ -33,6 +35,8 @@ Reference — the Filament source this is diffed against:
   [`Tabs.php`](../../../vendor/filament/schemas/src/Components/Tabs.php),
   [`Tabs/Tab.php`](../../../vendor/filament/schemas/src/Components/Tabs/Tab.php),
   [`Text.php`](../../../vendor/filament/schemas/src/Components/Text.php),
+  [`Livewire.php`](../../../vendor/filament/schemas/src/Components/Livewire.php),
+  [`EmbeddedSchema.php`](../../../vendor/filament/schemas/src/Components/EmbeddedSchema.php),
   [`Schema.php`](../../../vendor/filament/schemas/src/Schema.php)
   — the `toEmbeddedHtml()` methods each template translates to Twig
 - [`schemas/resources/views/components/`](../../../vendor/filament/schemas/resources/views/components)
@@ -53,6 +57,8 @@ in-progress features, a **diverges** note here for a structural one, or `—`.
 | [`Grid/index.html.twig`](../../../packages/schemas/templates/partials/Grid/index.html.twig) | [`Grid::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Grid.php) | done | — | [grid.md](grid.md) |
 | [`Group/index.html.twig`](../../../packages/schemas/templates/partials/Group/index.html.twig) | [`Group::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Group.php) | done | — | [group.md](group.md) |
 | [`Html/index.html.twig`](../../../packages/schemas/templates/partials/Html/index.html.twig) | [`Html::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Html.php) | done | — | — |
+| [`EmbeddedSchema/index.html.twig`](../../../packages/schemas/templates/partials/EmbeddedSchema/index.html.twig) | [`EmbeddedSchema::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/EmbeddedSchema.php) | done | — | [embedded-schema.md](embedded-schema.md#the-partial-renders-the-schema-object-not-the-name) |
+| [`LiveComponent/index.html.twig`](../../../packages/schemas/templates/partials/LiveComponent/index.html.twig) | [`Livewire::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Livewire.php) | done | — | [live-component.md](live-component.md#the-mount-is-a-twig-frame-not-a-php-call) |
 | [`Icon/index.html.twig`](../../../packages/schemas/templates/partials/Icon/index.html.twig) | [`Icon::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Icon.php) | in progress | — | [icon.md](icon.md) |
 | [`Schema/index.html.twig`](../../../packages/schemas/templates/partials/Schema/index.html.twig) | [`Schema::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Schema.php) | done | — | [diverges](#the-schema-template-omits-the-livecomponent-wiring-hidden-placeholders-and-grid-liberation) |
 | [`Section/index.html.twig`](../../../packages/schemas/templates/partials/Section/index.html.twig) | [`Section::toEmbeddedHtml()`](../../../vendor/filament/schemas/src/Components/Section.php) | done | — | [section.md](section.md) |

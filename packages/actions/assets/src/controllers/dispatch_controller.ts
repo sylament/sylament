@@ -1,6 +1,8 @@
 import { Controller } from "@hotwired/stimulus";
 import { type Component, getComponent } from "@symfony/ux-live-component";
 
+const LIVE_CONNECT_TIMEOUT_MS = 2000;
+
 let listening = false;
 
 export default class extends Controller<HTMLElement> {
@@ -17,33 +19,30 @@ export default class extends Controller<HTMLElement> {
 }
 
 /**
- * The live component that owns `element`: its closest live root, resolved through UX Live's
- * registry, retried once after `live:connect` when the registry is not ready yet (the live
- * controller may connect after ours; `getComponent()` polls for ~55 ms and then rejects).
- *
- * A deliberate copy of schemas' `utils/live_host.ts`: the per-file build ships specifiers
- * verbatim, so a cross-package import would have to be a bare specifier every consuming app's
- * importmap resolves.
+ * The live component rooted at `root`, retried once after that element's `live:connect` when UX
+ * Live's registry is not ready yet (the live controller may connect after ours; `getComponent()`
+ * polls for ~55 ms and then rejects). The wait is bounded: a root whose live controller never
+ * connects rejects instead of leaving a listener and a pending promise behind for every click.
  */
-async function resolveLiveHost(element: Element): Promise<Component> {
-  const root = element.closest<HTMLElement>('[data-controller~="live"]');
-
-  if (root === null) {
-    throw new Error("No live component host above the element.");
-  }
-
+async function resolveComponent(root: HTMLElement): Promise<Component> {
   try {
     return await getComponent(root);
   } catch {
-    await new Promise<void>((resolve) => {
-      const onConnect = (event: Event): void => {
+    await new Promise<void>((resolve, reject) => {
+      const timer = window.setTimeout(() => {
+        root.removeEventListener("live:connect", onConnect);
+        reject(new Error("The live controller above the dispatch trigger never connected."));
+      }, LIVE_CONNECT_TIMEOUT_MS);
+
+      function onConnect(event: Event): void {
         if (event.target !== root) {
           return;
         }
 
+        window.clearTimeout(timer);
         root.removeEventListener("live:connect", onConnect);
         resolve();
-      };
+      }
 
       root.addEventListener("live:connect", onConnect);
     });
@@ -71,20 +70,23 @@ async function handleDispatchClick(event: Event): Promise<void> {
   const raw = trigger.dataset.sylamentActionEventData;
   const data = raw === undefined ? {} : (JSON.parse(raw) as Record<string, unknown>);
   const to = trigger.dataset.sylamentActionDispatchTo;
+  const nearest = trigger.closest<HTMLElement>('[data-controller~="live"]');
 
   try {
-    const host = await resolveLiveHost(trigger);
-
-    if (trigger.dataset.sylamentActionDispatchSelf !== undefined) {
-      host.emitSelf(name, data);
+    if (trigger.dataset.sylamentActionDispatchSelf !== undefined && nearest !== null) {
+      (await resolveComponent(nearest)).emitSelf(name, data);
 
       return;
     }
 
-    host.emit(name, data, to === undefined || to === "" ? null : to);
+    const host = nearest ?? document.querySelector<HTMLElement>('[data-controller~="live"]');
+    if (host === null) {
+      return;
+    }
+
+    (await resolveComponent(host)).emit(name, data, to === undefined || to === "" ? null : to);
   } catch {
-    // resolveLiveHost throws for a trigger with no live ancestor, and getComponent rejects for
-    // an element not yet registered (lazy/boot race); a dispatch with no reachable live
-    // component is silent, matching Livewire.
+    // resolveComponent rejects for an element the live application never registers (a lazy or
+    // boot race); a dispatch with no reachable live component is silent, matching Livewire.
   }
 }

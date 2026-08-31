@@ -360,45 +360,62 @@ itself out of the DOM.
 
 **The arms, in order.** From `event.target` the handler walks
 `closest('[data-sylament-action-event]')`; a trigger with no event name is not a
-dispatch and is dropped. Then, inside one `try`, it resolves **one** host — the
-trigger's nearest live component — and both emit arms run on it:
+dispatch and is dropped. It then reads the trigger's *nearest* live root once —
+`closest('[data-controller~="live"]')`, `null` when the trigger sits outside every
+live component — and, inside one `try`, takes exactly one of these:
 
-1. The host is `resolveLiveHost(trigger)`: the trigger's *closest*
-   `[data-controller~="live"]` ancestor, resolved through UX Live's registry and
-   retried once after that element's `live:connect` when the registry is not ready
-   yet. It is a deliberate copy of schemas'
-   [`utils/live_host.ts`](../../../packages/schemas/assets/src/utils/live_host.ts),
-   inlined into the controller file rather than imported: the per-file build ships
-   specifiers verbatim, so a cross-package import would have to be a bare specifier
-   every consuming app's importmap resolves — the same trade
-   [tables' copy](../tables/tables-bundle.md#asset-registration) carries.
-2. `data-sylament-action-dispatch-self` present → `emitSelf(name, data)` on that
-   host. This is what gives `dispatchSelf()` real self semantics: all five trigger
-   templates
+1. `data-sylament-action-dispatch-self` present **and** a nearest root exists →
+   `emitSelf(name, data)` on that root's component. This is what gives
+   `dispatchSelf()` real self semantics: all five trigger templates
    [emit the marker](action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding)
    whenever the direction is `'self'`. The read is a **presence** test, matching a
    marker that carries no value.
-3. No self marker → `emit(name, data, to)` on the same host, with
-   `data-sylament-action-dispatch-to` passed as `emit()`'s third argument and
-   `null` when absent or empty. Live's `emit()` broadcasts to every component on
-   the page and `dispatchTo`'s name filter narrows globally, so *which* host emits
-   does not change who receives — but it does decide who the emitter is, and the
-   emitter is the one component `emitSelf()` and a self-scoped listener can mean.
-4. Anything that rejects — `getComponent()` on an element the live application has
-   not registered yet (a lazy or boot race), or a trigger with no live ancestor at
-   all, which `resolveLiveHost()` throws for — is **silent**. That matches a
-   dispatch nobody listens to, and it is why the `catch` is empty but for its
-   why-swallow comment.
+2. Anything else — no self marker, or a self marker with no live ancestor to be
+   self of — → `emit(name, data, to)`, with `data-sylament-action-dispatch-to`
+   passed as `emit()`'s third argument and `null` when absent or empty. The emitter
+   is the nearest root when there is one and the page's **first**
+   `[data-controller~="live"]` element otherwise; with neither, the dispatch is
+   dropped.
+3. Anything that rejects — `getComponent()` on an element the live application
+   never registers — is **silent**. That matches a dispatch nobody listens to, and
+   it is why the `catch` is empty but for its why-swallow comment.
 
-The nearest-host resolution replaced a page-**first** `document.querySelector`
-lookup for the non-self arm. With one live component per page the two agree; the
-moment a page nests live components — a relation manager inside a resource edit
-page — the first root in document order is the outer page, so an action rendered
-inside the nested component emitted from the wrong component and a self-scoped
-listener on the nested one never fired. A trigger outside every live component
-now dispatches nowhere instead of borrowing the page's first host; nothing in the
-toolkit renders one there, and a silent no-op is the arm this controller already
-takes for an unreachable component.
+Each root resolves through `resolveComponent()`: UX Live's registry, retried once
+after that element's `live:connect` when the registry is not ready yet. That is
+the piece of schemas'
+[`utils/live_host.ts`](../../../packages/schemas/assets/src/utils/live_host.ts)
+this controller carries, minus the `closest()` half the arms need separately —
+inlined rather than imported, the same per-file-build trade
+[tables' copy](../tables/tables-bundle.md#asset-registration) records. It
+diverges from both copies in one way, and the reason is where it runs: those two
+resolve once per controller connect, this one runs from a page-wide click
+listener, so an unbounded wait would leave one pending promise and one
+`live:connect` listener behind per click on a root that never connects. The wait
+is bounded by a timeout that rejects into arm 3.
+
+**What the nearest-root preference in arm 2 does and does not buy.** It does not
+change delivery: `Component.emit()` routes through
+`performEmit(…, emitUp: false, …)` → `findComponents(this, false, matchingName)`,
+which iterates the whole component registry and skips the current-component filter
+entirely unless `onlyParents` is true (`findComponents()` in
+`vendor/symfony/ux-live-component/assets/dist/live_controller.js`), so a listener
+on a nested relation manager hears a `dispatch()` emitted from the outer page
+exactly as it hears one emitted from itself. What it buys is a truthful emitter
+identity for anything that ever reads one, at no cost. Arm 1 is where the nearest
+root is load-bearing, and it resolved that way before this controller grew the
+retry — the change there is the retry, not the lookup.
+
+**The page-first fallback in arm 2 is load-bearing, not a leftover.** A toast is
+the live case: notifications' outlet is a plain `<div>` and panels'
+[`Document`](../../../packages/panels/templates/partials/Document/index.html.twig)
+renders it as a **sibling** of the layout that embeds the page component, so every
+action inside a toast has no live ancestor at all. Dropping the fallback makes
+`dispatch()`, `dispatch()->close()` and a grouped `dispatchTo()` in a toast silent
+no-ops while the close half still fires — the toast collapses and the event goes
+nowhere, the same dark failure shape a missing `controllers.json` entry has above.
+It is also the arm
+[`dispatchSelf()` in a toast](../notifications/notification.md#the-toast-root-owns-the-click-and-the-dispatch-arm-carries-only-payload)
+falls through to.
 
 **Close is deliberately not handled here.** `data-sylament-action-close` is a
 neutral marker meaning *this action closes its context*, and only the context

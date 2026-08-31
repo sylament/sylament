@@ -72,9 +72,11 @@ it('renders its heading and the owner records the association holds', function (
     $rows = $crawler->filter('tbody .sy-ta-row');
     $rowText = implode(' ', $rows->each(fn (Crawler $row): string => $row->text()));
 
-    // The heading is the relationship-name fallback, and the rows are the
+    // The heading is the relationship-name fallback, seeded onto the table by
+    // makeTable() and rendered inside the table's own header block — Filament's
+    // shape, where the manager owns no chrome of its own. The rows are the
     // owner's tasks alone — the second project's `Delta` is the scoping miss.
-    expect($crawler->filter('section.sy-pa-relation-manager > .sy-pa-relation-manager-header > .sy-pa-relation-manager-heading')->text())->toBe('Tasks')
+    expect($crawler->filter('section.sy-pa-relation-manager .sy-ta-header > div > h2.sy-ta-header-heading')->text())->toBe('Tasks')
         ->and($crawler->filter('section.sy-pa-relation-manager > .sy-ta')->count())->toBe(1)
         ->and($rows->count())->toBe(3)
         ->and($rowText)->toContain('Alpha')

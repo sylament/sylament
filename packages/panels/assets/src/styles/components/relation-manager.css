@@ -1,11 +1,3 @@
 .sy-pa-relation-manager {
     @apply flex flex-col gap-y-4;
 }
-
-.sy-pa-relation-manager-header {
-    @apply flex items-center gap-x-3;
-}
-
-.sy-pa-relation-manager-heading {
-    @apply text-base font-semibold text-gray-950 dark:text-white;
-}

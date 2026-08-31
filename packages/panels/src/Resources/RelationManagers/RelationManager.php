@@ -265,6 +265,7 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
             ->relationship(fn (): Relationship => new Relationship(
                 $this->getOwnerRecord(),
                 static::getRelationshipName(),
-            ));
+            ))
+            ->heading(fn (): string => static::getTitle($this->getOwnerRecord(), $this->getPageClass()));
     }
 }

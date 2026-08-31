@@ -265,7 +265,9 @@ that wants two columns says `->columns(2)` in its own `form()`.
 `@deprecated` in Filament, with "override the `table()` method" as the
 replacement — and the four `when()` arms of `makeTable()` exist only to apply
 them. Porting them would port a deprecation on the day the class ships. Only
-Filament's heading arm of `makeTable()` survives, and it moves to the template.
+Filament's heading arm of `makeTable()` survives verbatim — the seed is
+`->heading(fn () => static::getTitle(...))`, rendered by the table's own header
+band.
 
 ### The manager renders a template, not a content schema
 
@@ -273,10 +275,12 @@ Filament's `content()` returns a schema holding the manager's own record-filter
 tabs, two render hooks and an `EmbeddedTable`. All four are deferred —
 `EmbeddedTable` and render hooks are unported, and the record-filter tabs ride
 with list-page tabs — which would leave a content schema wrapping one table and
-nothing else. So the manager renders a partial instead: its heading, the table,
-and its own `<twig:SylamentActions:Modals />`. The heading is
-`static::getTitle()` rather than a ported `Table::heading()`, which is the same
-value Filament's `makeTable()` puts there.
+nothing else. So the manager renders a partial instead: the table and its own
+`<twig:SylamentActions:Modals />`, nothing more. The heading needs no chrome of
+the manager's — `makeTable()` seeds `Table::heading()` with `static::getTitle()`
+exactly as Filament's does, and the table's `sy-ta-header` band renders it
+inside the container, so the tab label and the table heading stay one string by
+construction.
 
 The `Modals` outlet is not optional decoration: without it every action a
 manager mounts renders **nothing at all**, with no error anywhere. The

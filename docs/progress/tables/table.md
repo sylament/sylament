@@ -137,7 +137,8 @@ Rows never disappear — only their detail sections do.
 | [The selection settings — `bulkActions()` / `pushBulkActions()` / `groupedBulkActions()` / `selectable()` / `isSelectionEnabled()` / `selectCurrentPageOnly()` / `selectsCurrentPageOnly()` / `checkIfRecordIsSelectableUsing()` / `checksIfRecordIsSelectable()` / `isRecordSelectable()` / `trackDeselectedRecords()` / `canTrackDeselectedRecords()` / `recordCheckboxPosition()` / `getRecordCheckboxPosition()` / `getAllSelectableRecordsCount()`](../../../packages/tables/src/Table/Concerns/HasBulkActions.php) + [`RecordCheckboxPosition`](../../../packages/tables/src/Enums/RecordCheckboxPosition.php) | [`Table\Concerns\HasBulkActions`](../../../vendor/filament/tables/src/Table/Concerns/HasBulkActions.php), [`Enums/RecordCheckboxPosition`](../../../vendor/filament/tables/src/Enums/RecordCheckboxPosition.php) | in progress | — | [detail](#the-selection-settings-ship-as-a-subset-and-the-rest-are-listed) · [semantics](#one-filter-setting-drives-three-selection-behaviours) · [has-table.md](has-table.md#the-selection-is-server-canonical-and-re-derived-on-every-read) |
 | Grouping and summaries — `groups()`, `defaultGroup()`, the summarizers | [`CanGroupRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanGroupRecords.php), [`CanSummarizeRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanSummarizeRecords.php) | todo | — | — |
 | Reordering — `reorderable()` | [`CanReorderRecords`](../../../vendor/filament/tables/src/Table/Concerns/CanReorderRecords.php) | todo | — | — |
-| Presentation — `striped()`, `stackedOnMobile()`, `content()`, `header()`, the headings, `recordClasses()` | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) and five siblings | todo | — | — |
+| [`heading()` / `description()`](../../../packages/tables/src/Table/Concerns/HasHeader.php) + [`rootHeadingLevel()` / `getHeadingLevel()` / `getHeadingTag()`](../../../packages/tables/src/Table/Concerns/HasHeadings.php) | [`Table\Concerns\HasHeader`](../../../vendor/filament/tables/src/Table/Concerns/HasHeader.php), [`Table\Concerns\HasHeadings`](../../../vendor/filament/tables/src/Table/Concerns/HasHeadings.php) | in progress | `header()` — the custom-header arm takes a Blade `View`, and its Twig analogue waits for a consumer | [detail](#the-partial-emits-no-header-scaffolding-and-no-content-wrapper) |
+| Presentation — `striped()`, `stackedOnMobile()`, `content()`, `recordClasses()` | [`CanBeStriped`](../../../vendor/filament/tables/src/Table/Concerns/CanBeStriped.php) and its siblings | todo | — | — |
 | `HasArguments`, `HasExtraAttributes`, `HasDefaultDataFormattingSettings` | [`Table.php`'s remaining composed traits](../../../vendor/filament/tables/src/Table.php) | todo | — | — |
 
 The twenty-three **done** rows are `make()`, the host binding, the data-source
@@ -1609,23 +1610,24 @@ containers inside `fi-ta-main` (`fi-ta-header-ctn`, `fi-ta-header-toolbar`) are
 emitted **unconditionally**, hidden with `x-cloak` + `x-show` when the table has
 no heading, description or toolbar action. Sylament's partial is three deep —
 `sy sy-ta` > `sy-ta-ctn` > `table.sy-ta-table` or `div.sy-ta-empty-state` — with
-no `sy-ta-main`, no `sy-ta-content-ctn`, no `sy-ta-header-ctn`, no `sy-ta-header`
-band and no `aria-label` on the `<table>`; `sy-ta-header-toolbar` is the one
-container that does render, and only when something would go in it — a search
-field, a filters trigger, a header action or a toolbar action.
+no `sy-ta-main`, no `sy-ta-content-ctn`, no `sy-ta-header-ctn`, and no
+`aria-label` on the `<table>`; the two bands that do render — `sy-ta-header`
+(heading, description and the header actions, landed with the heading rows) and
+`sy-ta-header-toolbar` (toolbar actions, search, the filters trigger) — render
+only when something would go in them, where Filament emits both unconditionally
+behind `x-cloak` + `x-show`.
 
 The wrappers are not markup for their own sake in Filament: they exist so Livewire's
 DOM morph finds the same nodes before and after a toolbar's visibility flips,
-which is why they render empty rather than being wrapped in an `@if`. The ones
-still missing cannot flip yet — `sy-ta-header` exists to hold a heading and a
-description, both **todo** rows above, and the `<table>`'s `aria-label` prefers the
-heading, falling back to the
-[plural record label](#the-empty-state-texts-read-the-record-labels) that now
-exists — so it waits on those same rows too. A wrapper emitted now would be a permanently empty node with a class no
-stylesheet targets. `HeaderActionsPosition::Adaptive` is accepted with no CSS
-behind it for exactly that reason: the band it would position against does not
-exist yet, so header actions render in the toolbar's start group whichever case
-is set.
+which is why they render empty rather than being wrapped in an `@if`. Live
+morphs survive the conditional rendering here because the whole partial
+re-renders server-side. The `sy-ta-header` band landed with the heading and
+description rows, `header.css` behind it, and `HeaderActionsPosition::Adaptive`
+now has its CSS — the adaptive class rides the band when header actions are
+present. The `aria-label` half of the old prediction dissolved on inspection:
+vendor 5.7.6 puts no `aria-label` on its `<table>` at all — the
+`{{ $pluralModelLabel }}` label sits on the `role="list"` wrapper of the
+unported grid-content layout, so it waits there, not here.
 
 Provisional, and the reversal is mechanical: each container comes back in the
 change that lands the first feature it holds, at which point its emptiness is
@@ -1669,12 +1671,15 @@ same work. The stylesheet addition is one rule, `max-w-full shrink-0` — vendor
 `& > * { flex min-h-9 items-center gap-x-4 }` already supplies.
 
 The group's contents keep Filament's order exactly — [reorder trigger]
-[header actions] [toolbar actions] [grouping selector] — with the first and last
-as comment slots (M4 · 3 and M4 · 6), and the end group reserving a third for the
-column manager (M4 · 5). Getting that order wrong is what forces a restructure two
-epics later, so the comments are load-bearing rather than decorative. The two
-action lists are walked as one `merge`d loop rather than two, because a bulk-only
-member of either wraps the same way and the slot order is unaffected by the join.
+[toolbar actions] [grouping selector] — with the first and last as comment slots
+(M4 · 3 and M4 · 6), and the end group reserving a third for the column manager
+(M4 · 5). Getting that order wrong is what forces a restructure two epics later,
+so the comments are load-bearing rather than decorative. Header actions rendered
+here as a stopgap while no `sy-ta-header` band existed; they moved into the band
+(`sy-ta-header-actions` — named, not `fi-ta-actions`, for the same
+record-actions-collision reason as the start group) when the heading rows
+landed, which is Filament's own placement, and each list wraps its bulk-only
+members the same way wherever it renders.
 
 ### A bulk-only trigger is hidden by a wrapper span
 

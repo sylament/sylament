@@ -7,10 +7,14 @@ makes `profile` the component's state path, so its fields nest under the relatio
 name, and makes the component own that path in the record walks: `fill()` reads
 the related record's leaves through the load hook, and `getData()` writes them
 back onto it — mutating the record already there, constructing one when there is
-none, and deleting it when the declared condition turns the relationship off.
+none, and deleting it when the declared condition turns the relationship off. The
+subtree is re-rooted onto that related record, and the relationship hooks declared
+inside it are [routed there](#the-subtree-is-re-rooted-and-its-nested-hooks-are-routed-onto-the-related-record)
+too — so a relation-backed field maps the *related* record's own associations.
 
-Four components compose it — [`Section`](section.md), [`Grid`](grid.md),
-[`Group`](group.md) and [`Fieldset`](fieldset.md) — each implementing the
+Five components compose it — [`Section`](section.md), [`Grid`](grid.md),
+[`Group`](group.md), [`Fieldset`](fieldset.md) and [`Flex`](flex.md) — each
+implementing the
 [`CanEntangleWithSingularRelationships`](../../../packages/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php)
 contract, which is what the wired hook closures type-hint.
 
@@ -51,8 +55,8 @@ permanent note in [Divergences](#divergences).
 | [`CanEntangleWithSingularRelationships`](../../../packages/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php) | [`Contracts/CanEntangleWithSingularRelationships.php`](../../../vendor/filament/schemas/src/Components/Contracts/CanEntangleWithSingularRelationships.php) | done | — | [diverges](#the-contract-carries-the-two-hook-bodies-not-the-cache-surface) |
 | Sibling merge across components sharing one relationship | [both closures' `findComponentsWithThisRelationship`](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | skipped | — | [diverges](#two-components-entangling-one-relationship-throw-rather-than-merge) |
 | `cachedExistingRecord()` / `getCachedExistingRecord()` / `clearCachedExistingRecord()` | [the cache trio](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | skipped | — | [diverges](#the-existing-record-is-read-off-the-graph-rather-than-cached-on-the-component) |
-| Child schema re-rooted onto the related record | [`getChildSchema()` override](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | todo | — | [detail](#the-child-schema-is-not-re-rooted-onto-the-related-record) |
-| Relation-backed fields inside the entangled subtree | [`Schema::saveRelationships()`'s tree walk](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | blocked | [nested hook delegation](belongs-to-record.md#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire) | [detail](#a-relation-backed-field-cannot-sit-inside-the-entangled-subtree) |
+| [Child schema re-rooted onto the related record](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`getChildSchema()` override](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | done | — | [semantics](#the-subtree-is-re-rooted-and-its-nested-hooks-are-routed-onto-the-related-record) · [diverges](#the-stamp-is-a-closure-floored-at-the-target-class) |
+| [Relation-backed fields inside the entangled subtree](../../../packages/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | [`Schema::saveRelationships()`'s tree walk](../../../vendor/filament/schemas/src/Concerns/BelongsToModel.php) | done | — | [semantics](#the-subtree-is-re-rooted-and-its-nested-hooks-are-routed-onto-the-related-record) |
 | `mutateRelationshipDataBeforeFill/Create/Save` | [the three mutation hooks](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | todo | — | [detail](#the-three-mutation-hooks-are-not-ported-here-yet) |
 | Hidden-component skip (`shouldSaveRelationshipsWhenHidden()`) | [the save closure's `isHidden()` guard](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | todo | `shouldSaveRelationshipsWhenHidden()` | [detail](#the-hidden-component-skip-waits-on-its-flag) |
 | Translatable content driver | [`makeFilamentTranslatableContentDriver()` branches](../../../vendor/filament/schemas/src/Components/Concerns/EntanglesStateWithSingularRelationship.php) | skipped | — | [diverges](#the-translatable-content-driver-has-no-port) |
@@ -65,7 +69,19 @@ profile's identity across a flush, a create-when-missing that the cascade
 persists, a `condition: false` save that is gone after the flush, a nested
 container whose *leaves* are written rather than its own path, and the four
 refusals (duplicate siblings, a property with no association, a to-many
-association, a `relationship()` naming nothing). One case runs over a second
+association, a `relationship()` naming nothing). The re-rooting and the nested
+hooks are pinned there too: a nested component resolving the related record —
+and, with no related record bound, the target class rather than the outer record
+— every child-schema key stamped including a decoration one, `Section`'s own
+child-key configuration surviving the `getChildSchema()` override, a hooked leaf
+filling from and saving onto the related record while the ordinary leaves keep
+their walk, a hook declared in a decoration schema routed like any other, and a
+`condition: false` save that removes the branch without running a nested hook. The
+end-to-end shape — a `Select` mapping the *related* record's own association —
+lives in forms, where a relation-backed field can actually be built:
+[`EntangledNestedRelationshipTest`](../../../packages/forms/tests/Integration/Components/EntangledNestedRelationshipTest.php)
+drives `Select::make('handle')` inside `Section::make()->relationship('author')`
+through fill, a changed selection and a cleared one. One case runs over a second
 association, `Post::$byline`, mapped deliberately **without** `orphanRemoval`:
 switching that relationship off still deletes the row, which is the property the
 [explicit removal](#a-switched-off-relationship-nulls-the-property-and-removes-the-record-explicitly)
@@ -76,41 +92,6 @@ exists for and the one an `orphanRemoval` association could never distinguish.
 Specifics for rows that are not finished — what is already in, what is left, and
 the next step. Delete a subsection when its row flips to **done**; the table row
 and any divergence it earned stay behind.
-
-### The child schema is not re-rooted onto the related record
-
-Filament overrides `getChildSchema()` to `->model($cachedExistingRecord ??
-$relatedModel)`, so the fields inside the entangled component see the *related*
-record rather than the schema's. The port leaves the child schema bound to the
-outer record, and nothing inside it reads the wrong one today: state lives in the
-live bag, and the model-sourced validation constraints read
-`getRootContainer()->getRecordClass()` — the root schema — so re-rooting an
-intermediate child schema would not reach them anyway. What it would buy is a
-nested component asking `getRecord()` for the related object — which is exactly
-what a nested relationship hook would need, and half of why
-[a relation-backed field cannot sit inside the subtree](#a-relation-backed-field-cannot-sit-inside-the-entangled-subtree).
-Next step: give the trait a `configureChildSchema()` override once a consumer
-needs it, and move the constraint lookup off the root container in the same
-change, so the two agree.
-
-### A relation-backed field cannot sit inside the entangled subtree
-
-The same wall the forms
-[`Repeater`](../forms/repeater.md#a-relation-backed-field-cannot-sit-inside-a-relationship-repeater)
-meets, one owner over: this component
-[owns its record subtree](belongs-to-record.md#a-component-can-own-its-whole-record-subtree),
-so the mapper drops the paths beneath it and
-[refuses](belongs-to-record.md#a-hook-the-record-path-map-does-not-carry-is-refused)
-a nested component's relationship hook — a `Select` mapping the related record's
-own to-one association throws at map time rather than saving.
-`getRelatedStatePaths()` collects leaves and `getStateFromRelationship()` skips
-an object-valued one, so the walk carries scalar columns and nothing else, and
-the child schema is not bound to the related record either (the row above). The grounds, and why Filament
-needs no equivalent, are in
-[the schemas write-up](belongs-to-record.md#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire).
-
-**Next step:** [M3 · 10](../roadmap.md#m3--forms-widening) — the re-rooting above
-is one of its pieces, so the two rows close together.
 
 ### The three mutation hooks are not ported here yet
 
@@ -135,6 +116,68 @@ still doing anything the pruning does not.
 ## Semantics
 
 Faithful-but-subtle behaviour — permanent notes that are not deviations.
+
+### The subtree is re-rooted, and its nested hooks are routed, onto the related record
+
+Two halves of one move. The **re-root** is a trait-level `getChildSchema()`
+override — Filament's own seam — that binds every child schema to the record this
+component maps, so a component nested inside asks `getRecord()` and gets the
+*related* object. Every child-schema key is stamped, decoration keys included:
+Filament's override does not discriminate, and `getRelatedStatePaths()` already
+walks them all, so stamping a subset would leave the two disagreeing about which
+record a path belongs to. It is deliberately **not** `configureChildSchema()`,
+the seam this trait would otherwise reach for:
+[`Section`](../../../packages/schemas/src/Components/Section.php) — the trait's
+primary consumer — declares a class-level `configureChildSchema()`, and a class
+method silently shadows a same-named trait method, so a trait-side one would
+never run for a `Section` and would break its own key configuration if it did.
+`getChildSchema()` shadows only the one inherited from the base `Component`, and
+`parent::` reaches it, the same shape the trait's own `ownsRecordSubtree()`
+already uses. A test pins that `Section`'s child-key configuration still applies
+underneath.
+
+The **routing** is what makes a relation-backed field inside the subtree work at
+all. This component
+[owns its record subtree](belongs-to-record.md#a-component-can-own-its-whole-record-subtree),
+so the mapper drops every path beneath it and would
+[refuse](belongs-to-record.md#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused)
+a nested relationship hook as unreachable. It vouches instead —
+`routesNestedRelationshipHookAt()` answers from the same walk the two hook bodies
+route from, `Schema::getNestedRelationshipHooks()` merged across
+`getChildSchemas()` — and then runs those hooks itself against the related
+record: the fill sets each **load**-hooked path from its hook, the save hands each
+**save**-hooked path to its hook, presence-gated exactly as the root edge gates
+its own, after the leaf writes and before the attach-if-new tail.
+
+Subtraction is **per edge**, mirroring the root: a load-hooked path leaves the
+leaf read and a save-hooked one leaves the leaf write, so a hook on one edge keeps
+its ordinary walk on the other. A claim covers the hook's own path and everything
+nested under it, which is what lets a nested owner — itself one hooked entry —
+carry the leaves `getRelatedStatePaths()` still collects beneath it. A
+`condition: false` component vouches and still fills, but its save nulls and
+removes the branch without running a nested hook: the branch is being deleted, not
+written.
+
+The merge walks `getChildSchemas()` in its natural order and lets the last
+assignment win, which is the order the root's flat walk visits an owner's child
+schemas in — so the component the discovery keeps for a shared path is the one the
+record path map kept, and
+[the mapper's last-claimant rule](belongs-to-record.md#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused)
+and this walk cannot name different survivors.
+
+### Every closure inside the subtree now sees the related record
+
+Accepted consequence of the re-root, and Filament's semantics: a closure on a
+component in a stamped subtree receives the related record through `$record`
+injection, and `getRecordClass()` answers the related class. That is what makes a
+nested field's own target resolution correct — a relation-backed field reads
+`getRecordClass()` to find the association it maps — and it re-points the
+`unique()` / `exists()` default probe class with it. The constraint half of that
+agreement is not this trait's to make: the derivations that used to frame on the
+root container — `isRequiredByRecord()`, `DateTimePicker`'s object class — read
+the component-tier
+[nearest-record frame](belongs-to-record.md#the-nearest-record-frame-is-the-first-node-above-a-component-that-binds-one)
+instead, whose class-and-path pair resolves to the very record this stamp binds.
 
 ### Subtree ownership, not `dehydrated(false)`, is what makes the hooks fire
 
@@ -212,6 +255,31 @@ Without that filter a plain `Section` at `post` around a field at `post.title`
 would yield both, and the save's first write would hand the whole subtree array
 to the object property — the write
 [the mapper refuses](property-accessor.md#a-missing-singular-intermediate-is-constructed-an-object-collection-is-refused).
+
+### The stamp is a closure, floored at the target class
+
+Filament binds the child schema to a value it has already resolved —
+`$this->getCachedExistingRecord() ?? $this->getRelatedModel()`, an instance or a
+class-string. Ours is a closure instead, re-applied on every uncached
+`getChildSchema()` call, and its resolution is **soft**: the association object
+when the record holds one, else the target class the mapping names, else null.
+Two facts force the shape. A record that evaluates to `null` falls through to the
+parent, so a stamp resolving null in a bound tree would hand the subtree the
+*outer* record — the one record it must never see — and the class-string floor
+makes that fallthrough unreachable wherever the mapping answers. And the stamp is
+evaluated from structural reads (rendering, flat walks, the map build), so target
+resolution goes through
+[`AssociationReader::describe()`](association-reader.md) rather than the
+refusing `getRelationshipTarget()`: a misconfigured relationship stays reported by
+the fill and save edges, where the message can say what to do, instead of
+throwing out of every tree walk.
+
+The root-tier getters memoize the evaluated record back onto the schema, so a
+cached default child schema freezes whatever the first read produced — the
+class-string, where the related object did not exist yet. Harmless: the hooks
+receive the record explicitly, and target resolution and the constraint frame need
+only the class. It holds per schema object within one request, which is the only
+lifetime a schema tree has.
 
 ### A switched-off relationship nulls the property and removes the record explicitly
 

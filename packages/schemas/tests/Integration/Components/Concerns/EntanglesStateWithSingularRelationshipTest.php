@@ -6,8 +6,10 @@ namespace Sylament\Schemas\Tests\Integration\Components\Concerns;
 
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
+use RuntimeException;
 use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Section;
+use Sylament\Schemas\Components\Text;
 use Sylament\Schemas\Schema;
 use Sylament\Schemas\Tests\Fixtures\Components\StateField;
 use Sylament\Schemas\Tests\Fixtures\Concerns\StateHostFixture;
@@ -297,4 +299,172 @@ it('refuses a relationship that holds a collection', function (): void {
 it('refuses a relationship declared without a name', function (): void {
     expect(fn (): Section => Section::make()->relationship())
         ->toThrow(LogicException::class, 'names no association property');
+});
+
+it('re-roots the child schema onto the related record', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    [$post, $profile] = seedProfiledPost($entityManager);
+
+    $field = StateField::make('bio');
+
+    $section = Section::make()
+        ->relationship('profile')
+        ->components([$field]);
+
+    [$schema] = wireEntangledComponents($post, $section);
+
+    $schema->fill($post);
+
+    expect($field->getRecord())->toBe($profile)
+        ->and($field->getRecordClass())->toBe(Profile::class);
+});
+
+it('floors the re-rooted child schema at the target class when the record holds none', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    $post = seedProfilelessPost($entityManager);
+
+    $field = StateField::make('bio');
+
+    $section = Section::make()
+        ->relationship('profile')
+        ->components([$field]);
+
+    [$schema] = wireEntangledComponents($post, $section);
+
+    $schema->fill($post);
+
+    expect($field->getRecord())->toBeNull()
+        ->and($field->getRecordClass())->toBe(Profile::class);
+});
+
+it('stamps every child-schema key, decoration schemas included', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    [$post, $profile] = seedProfiledPost($entityManager);
+
+    $section = Section::make()
+        ->relationship('profile')
+        ->components([StateField::make('bio')])
+        ->belowContent([Text::make('note')]);
+
+    wireEntangledComponents($post, $section);
+
+    expect($section->getChildSchema(Section::BELOW_CONTENT_SCHEMA_KEY)?->getRecord())->toBe($profile);
+});
+
+it("keeps the section's own child-key configuration beneath the override", function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    [$post] = seedProfiledPost($entityManager);
+
+    $section = Section::make()
+        ->relationship('profile')
+        ->components([StateField::make('bio')])
+        ->belowContent([Text::make('note')]);
+
+    wireEntangledComponents($post, $section);
+
+    $belowContent = $section->getChildSchema(Section::BELOW_CONTENT_SCHEMA_KEY);
+
+    expect($belowContent?->isInline())->toBeTrue()
+        ->and($belowContent?->isEmbeddedInParentComponent())->toBeTrue();
+});
+
+it('fills a nested hooked path from the related record', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    [$post] = seedProfiledPost($entityManager);
+
+    $section = Section::make()
+        ->relationship('profile')
+        ->components([
+            StateField::make('bio')
+                ->loadStateFromRelationshipsUsing(static fn (Profile $record): string => 'hooked:' . $record->getBio()),
+            Section::make()->statePath('post')->components([StateField::make('title')]),
+        ]);
+
+    [$schema, $host] = wireEntangledComponents($post, $section);
+
+    $schema->fill($post);
+
+    expect($host->data['profile']['bio'])->toBe('hooked:seeded')
+        ->and($host->data['profile']['post']['title'])->toBe('t');
+});
+
+it('routes a hooked path declared in any child-schema key', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    [$post] = seedProfiledPost($entityManager);
+
+    $section = Section::make()
+        ->relationship('profile')
+        ->components([
+            StateField::make('bio')->loadStateFromRelationshipsUsing(static fn (): string => 'from-default'),
+        ])
+        ->belowContent([
+            StateField::make('post')
+                ->loadStateFromRelationshipsUsing(static fn (Profile $record): string => 'post:' . $record->getPost()?->getTitle()),
+        ]);
+
+    [$schema, $host] = wireEntangledComponents($post, $section);
+
+    $schema->fill($post);
+
+    expect($host->data['profile']['bio'])->toBe('from-default')
+        ->and($host->data['profile']['post'])->toBe('post:t');
+});
+
+it('saves a nested hooked path onto the related record', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    [$post, $profile] = seedProfiledPost($entityManager);
+
+    $section = Section::make()
+        ->relationship('profile')
+        ->components([
+            StateField::make('bio'),
+            StateField::make('post')->saveRelationshipsUsing(static function (Profile $record, mixed $state): void {
+                $record->setBio($record->getBio() . '+' . $state);
+            }),
+        ]);
+
+    [$schema, $host] = wireEntangledComponents($post, $section);
+
+    $schema->fill($post);
+
+    $host->data['profile']['bio'] = 'edited';
+    $host->data['profile']['post'] = 'from-client';
+
+    expect($schema->getData())->toBe($post)
+        ->and($profile->getBio())->toBe('edited+from-client');
+});
+
+it('runs no nested hooks when the relationship condition is off', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+
+    [$post, $profile] = seedProfiledPost($entityManager);
+    $profileId = $profile->getId();
+
+    $section = Section::make()
+        ->relationship('profile', condition: false)
+        ->components([
+            StateField::make('bio')->saveRelationshipsUsing(static function (): void {
+                throw new RuntimeException('the nested save hook ran');
+            }),
+        ]);
+
+    [$schema, $host] = wireEntangledComponents($post, $section);
+
+    $schema->fill($post);
+    $host->data['profile']['bio'] = 'edited';
+
+    $schema->getData();
+
+    expect($post->getProfile())->toBeNull();
+
+    $entityManager->flush();
+
+    expect($entityManager->find(Profile::class, $profileId))->toBeNull();
 });

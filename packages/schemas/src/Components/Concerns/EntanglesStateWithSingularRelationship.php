@@ -6,7 +6,9 @@ namespace Sylament\Schemas\Components\Concerns;
 
 use Closure;
 use LogicException;
+use Sylament\Schemas\Components\Component;
 use Sylament\Schemas\Components\Contracts\CanEntangleWithSingularRelationships;
+use Sylament\Schemas\Schema;
 use Sylament\Schemas\State\AssociationTarget;
 use Symfony\Component\PropertyAccess\Exception\AccessException;
 
@@ -21,6 +23,12 @@ use function Sylament\Support\filled;
  *
  * The association itself — the name, the target and the refusals — comes from
  * {@see BelongsToRelationship}, shared with the relation-backed fields.
+ *
+ * The subtree is re-rooted onto the related record and the relationship hooks
+ * declared inside it are routed there too: the record path map drops every path
+ * beneath a subtree owner, so a nested component's hook only fires because this
+ * component takes delegation of it
+ * ({@see \Sylament\Schemas\Concerns\BelongsToRecord::getNestedRelationshipHooks()}).
  */
 trait EntanglesStateWithSingularRelationship
 {
@@ -82,7 +90,45 @@ trait EntanglesStateWithSingularRelationship
         return filled($this->relationship) || parent::ownsRecordSubtree();
     }
 
+    public function routesNestedRelationshipHookAt(string $path): bool
+    {
+        return filled($this->relationship)
+            && array_key_exists($path, $this->getMergedNestedRelationshipHooks());
+    }
+
     /**
+     * Every child schema is re-rooted onto the record this component maps, so a
+     * component nested inside reads the *related* record — what its closures are
+     * handed, and what its own relationship target resolves against. Decoration
+     * keys are stamped with the rest: the leaf walks below consult every child
+     * schema, so the two would otherwise disagree about which record a path
+     * belongs to.
+     *
+     * The binding is a closure floored at the association's target class rather
+     * than at null, because a null record falls through to the parent — an
+     * unbound branch would hand the subtree the outer record, the one record it
+     * must never see. Resolving that class is deliberately soft: the stamp is
+     * evaluated from structural reads, and a refusal belongs on the fill and save
+     * edges rather than in every tree walk.
+     */
+    public function getChildSchema(?string $key = null): ?Schema
+    {
+        $schema = parent::getChildSchema($key);
+
+        if (($schema === null) || ! filled($this->relationship)) {
+            return $schema;
+        }
+
+        return $schema->record(fn (): object|string|null => $this->getRelatedRecord() ?? $this->getSoftRelationshipTargetClass());
+    }
+
+    /**
+     * Read the subtree off the related record: the paths a nested relationship
+     * hook loads come from that hook, everything else from the declared leaves.
+     * A load-hooked path leaves the leaf read exactly as
+     * {@see \Sylament\Schemas\Concerns\BelongsToRecord::readStateFromRecord()}
+     * skips it at the root — a save-only hook keeps its ordinary read.
+     *
      * @return array<string, mixed>
      */
     public function getStateFromRelationship(object $record): array
@@ -96,9 +142,24 @@ trait EntanglesStateWithSingularRelationship
             return [];
         }
 
+        $hooks = array_filter(
+            $this->getMergedNestedRelationshipHooks(),
+            static fn (Component $component): bool => $component->hasLoadStateFromRelationships(),
+        );
+
         $state = [];
 
+        foreach ($hooks as $statePath => $component) {
+            $accessor->setInArray($state, $statePath, $component->loadStateFromRelationships($related));
+        }
+
+        $claimedStatePaths = array_keys($hooks);
+
         foreach ($this->getRelatedStatePaths() as $statePath) {
+            if ($this->isClaimedByNestedHook($statePath, $claimedStatePaths)) {
+                continue;
+            }
+
             try {
                 $value = $accessor->getFromRecord($related, $statePath);
             } catch (AccessException) {
@@ -121,7 +182,11 @@ trait EntanglesStateWithSingularRelationship
      * pointing at it — survives the save; a record holding none takes a freshly
      * constructed one, which the association's cascade persists. A relationship
      * the condition turned off nulls the property and removes the record that was
-     * there, so an entanglement switched off deletes rather than orphans.
+     * there, so an entanglement switched off deletes rather than orphans — and
+     * runs no nested hook, since the branch is being removed rather than written.
+     * The paths a nested relationship hook saves are routed to that hook,
+     * presence-gated exactly as the root edge gates its own, and leave the leaf
+     * write; a load-only hook keeps its ordinary write.
      *
      * @throws LogicException when the property cannot be nulled, or when the
      *                        association's target cannot be built without
@@ -156,9 +221,26 @@ trait EntanglesStateWithSingularRelationship
         /** @var array<string, mixed> $state */
         $state = is_array($state) ? $state : [];
 
+        $hooks = array_filter(
+            $this->getMergedNestedRelationshipHooks(),
+            static fn (Component $component): bool => $component->hasSaveRelationships(),
+        );
+
+        $claimedStatePaths = array_keys($hooks);
+
         foreach ($this->getRelatedStatePaths() as $statePath) {
+            if ($this->isClaimedByNestedHook($statePath, $claimedStatePaths)) {
+                continue;
+            }
+
             if ($accessor->hasInArray($state, $statePath)) {
                 $accessor->setOnRecord($related, $statePath, $accessor->getFromArray($state, $statePath));
+            }
+        }
+
+        foreach ($hooks as $statePath => $component) {
+            if ($accessor->hasInArray($state, $statePath)) {
+                $component->saveRelationships($related, $accessor->getFromArray($state, $statePath));
             }
         }
 
@@ -208,6 +290,83 @@ trait EntanglesStateWithSingularRelationship
         }
 
         return $statePaths;
+    }
+
+    /**
+     * Every relationship hook this component's own walks route, merged across all
+     * of its child-schema keys — decoration keys included, since
+     * {@see getRelatedStatePaths()} walks them too — keyed relative to the
+     * related record, the terms both leaf walks already speak. Merging in
+     * {@see HasChildComponents::getChildSchemas()} order is what makes the last
+     * assignment win the component the record path map keeps for a shared path:
+     * the root's flat walk visits an owner's child schemas in that same order.
+     *
+     * @return array<string, Component>
+     */
+    private function getMergedNestedRelationshipHooks(): array
+    {
+        $hooks = [];
+
+        foreach ($this->getChildSchemas() as $childSchema) {
+            foreach ($childSchema->getNestedRelationshipHooks() as $statePath => $component) {
+                $hooks[$statePath] = $component;
+            }
+        }
+
+        return $hooks;
+    }
+
+    /**
+     * Whether a nested hook already owns a leaf path — its own key, and
+     * everything nested under it, because a hooked component owning its record
+     * subtree still contributes its descendants' leaves to
+     * {@see getRelatedStatePaths()}.
+     *
+     * @param list<string> $claimedStatePaths
+     */
+    private function isClaimedByNestedHook(string $statePath, array $claimedStatePaths): bool
+    {
+        return array_any($claimedStatePaths, fn (string $claimedStatePath): bool => ($statePath === $claimedStatePath) || str_starts_with($statePath, $claimedStatePath . '.'));
+    }
+
+    /**
+     * The object the entangled association currently holds, null wherever the
+     * record is unbound, unreadable or holds nothing yet.
+     */
+    private function getRelatedRecord(): ?object
+    {
+        $record = $this->getRecord();
+
+        if (! is_object($record)) {
+            return null;
+        }
+
+        try {
+            $related = $this->getPropertyAccessor()->getFromRecord($record, $this->getRelationshipNameOrFail());
+        } catch (AccessException) {
+            return null;
+        }
+
+        return is_object($related) ? $related : null;
+    }
+
+    /**
+     * The association's target class where the mapping answers, null where it
+     * does not — {@see BelongsToRelationship::getRelationshipTarget()}'s refusals
+     * kept off the structural reads the child-schema stamp is evaluated from.
+     *
+     * @return class-string|null
+     */
+    private function getSoftRelationshipTargetClass(): ?string
+    {
+        $name = $this->getRelationshipName();
+        $recordClass = $this->getRecordClass();
+
+        if (! filled($name) || ($recordClass === null)) {
+            return null;
+        }
+
+        return $this->getAssociationReader()->describe($recordClass, $name)?->targetClass;
     }
 
     /**

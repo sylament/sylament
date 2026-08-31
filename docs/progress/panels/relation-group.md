@@ -51,6 +51,18 @@ hides; `$label` stays **required**, exactly as Filament has it, and `$managers`
 takes an empty default because a group with none is a well-formed (if useless)
 object here where Filament would fatal.
 
+Reaching that locator at all takes a service definition, and the group gets an
+explicit one in
+[`SylamentPanelsBundle::loadExtension()`](../../../packages/panels/src/SylamentPanelsBundle.php)
+— `->set(RelationGroup::class)->autowire()->autoconfigure()` — rather than a
+glob, because it is the only `Component` under `Resources/RelationManagers/`
+(the other two classes there are a live component and a value object). Without
+it `newInstance()` silently falls back to `new`, `EvaluatesClosures::getInvoker()`
+builds an `Invoker` over an empty `Container`, and every closure the group
+evaluates — `label()`, `managers()`, the four badge/icon setters, `tab()` —
+resolves no service at all. The panels bundle Integration suite pins the invoker
+identity, the same pin tables' suite carries for `BaseFilter`/`Indicator`.
+
 ### The closure manager list is evaluated; Filament's is returned raw
 
 Filament types `$managers` as `array | Closure`, but the early return in

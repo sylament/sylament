@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use Sylament\Actions\Action;
+use Sylament\Actions\CreateAction;
+use Sylament\Actions\EditAction;
 use Sylament\Panels\Resources\RelationManagers\RelationManager;
 use Sylament\Panels\Resources\RelationManagers\RelationManagerConfiguration;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Project;
@@ -42,6 +45,18 @@ final class TitledRelationManager extends RelationManager
 
 final class RelationlessRelationManager extends RelationManager
 {
+}
+
+final class OwnedRelationManager extends RelationManager
+{
+    protected static string $relationship = 'tasks';
+
+    private ?Project $owner = null;
+
+    public function getOwnerRecord(): Project
+    {
+        return $this->owner ??= new Project();
+    }
 }
 
 final class CountingRelationManager extends RelationManager
@@ -131,6 +146,16 @@ it('refuses to resolve an owner it carries no key for', function (): void {
 
 it('refuses to answer a page class it was never mounted with', function (): void {
     expect(new CountingRelationManager()->getPageClass(...))->toThrow(LogicException::class);
+});
+
+it('answers the host relationship hook for a create action and nothing else', function (): void {
+    $relationManager = new OwnedRelationManager();
+    $relationship = $relationManager->getDefaultActionRelationship(CreateAction::make());
+
+    expect($relationship?->owner)->toBe($relationManager->getOwnerRecord())
+        ->and($relationship?->name)->toBe('tasks')
+        ->and($relationManager->getDefaultActionRelationship(EditAction::make()))->toBeNull()
+        ->and($relationManager->getDefaultActionRelationship(Action::make('ping')))->toBeNull();
 });
 
 it('renders through the relation-manager partial', function (): void {

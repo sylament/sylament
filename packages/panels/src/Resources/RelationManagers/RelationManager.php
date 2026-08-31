@@ -241,6 +241,10 @@ abstract class RelationManager implements InteractsWithActions, InteractsWithSch
 
     public function getDefaultActionRelationship(Action $action): ?Relationship
     {
+        if (! $action instanceof CreateAction) {
+            return null;
+        }
+
         return new Relationship($this->getOwnerRecord(), static::getRelationshipName());
     }
 

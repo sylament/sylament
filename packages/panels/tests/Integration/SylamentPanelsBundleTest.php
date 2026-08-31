@@ -6,8 +6,10 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
 use Sylament\Panels\Navigation\NavigationGroup;
 use Sylament\Panels\Navigation\NavigationItem;
+use Sylament\Panels\Resources\RelationManagers\RelationGroup;
 use Sylament\Panels\Tests\Fixtures\Doctrine\Entity\Article;
 use Sylament\Panels\Tests\Fixtures\Doctrine\FixtureManagerRegistry;
+use Sylament\Support\Evaluation\Invoker;
 use Symfony\Component\AssetMapper\AssetMapperInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -29,6 +31,13 @@ it('builds navigation items through the container, non-shared', function (): voi
     $this::getContainer();
 
     expect(NavigationItem::make('A'))->not->toBe(NavigationItem::make('A'));
+});
+
+it('builds relation groups through the container so their closures reach it', function (): void {
+    $invoker = $this::getContainer()->get(Invoker::class);
+
+    expect(RelationGroup::make('Content')->getInvoker())->toBe($invoker)
+        ->and(RelationGroup::make('Content'))->not->toBe(RelationGroup::make('Content'));
 });
 
 it('injects container services into evaluated closures', function (): void {

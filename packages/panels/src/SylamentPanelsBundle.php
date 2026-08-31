@@ -14,6 +14,7 @@ use Sylament\Panels\GlobalSearch\Providers\Contracts\GlobalSearchProvider;
 use Sylament\Panels\GlobalSearch\Providers\DefaultGlobalSearchProvider;
 use Sylament\Panels\Pages\Dashboard;
 use Sylament\Panels\Pages\Page;
+use Sylament\Panels\Resources\RelationManagers\RelationGroup;
 use Sylament\Panels\Resources\RelationManagers\RelationManager;
 use Sylament\Panels\Resources\Resource;
 use Sylament\Panels\Resources\ResourceRegistry;
@@ -58,6 +59,9 @@ class SylamentPanelsBundle extends SylamentBundle
     {
         $configurator->services()
             ->load(__NAMESPACE__ . '\\Navigation\\', __DIR__ . '/Navigation/*.php')
+                ->autowire()
+                ->autoconfigure()
+            ->set(RelationGroup::class)
                 ->autowire()
                 ->autoconfigure()
             ->set(Panel::class)

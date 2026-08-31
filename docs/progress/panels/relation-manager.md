@@ -42,7 +42,7 @@ Reference — the Filament source this is diffed against:
 | [`getComponentName()` / `getTemplate()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `$view` + Livewire's component-name registration | done | — | [diverges](#the-manager-stands-beside-the-resource-page-base-rather-than-under-it) |
 | [`makeTable()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) — the relationship seed | [`InteractsWithRelationshipTable::makeTable()`](../../../vendor/filament/filament/src/Resources/Concerns/InteractsWithRelationshipTable.php) | done | — | [semantics](#the-relationship-is-seeded-in-maketable-and-table-is-never-redeclared) |
 | [`form()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) + [`getDefaultActionSchemaResolver()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | same two | done | — | [semantics](#the-view-arm-shares-the-form-builder-because-viewaction-disables-its-own-schema), [diverges](#the-defaultform-two-column-wrapper-does-not-port) |
-| [`getDefaultActionRelationship()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | no Filament counterpart — Livewire's `CreateAction` reads the relationship off the table alone | done | — | [semantics](#the-manager-answers-the-hosts-relationship-hook-as-well-as-the-tables) |
+| [`getDefaultActionRelationship()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | [`Concerns/InteractsWithActions::getDefaultActionRelationship()`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php) — Filament's manager inherits the `null` default | done | — | [diverges](#the-manager-answers-the-hosts-relationship-hook-where-filaments-leaves-it-null) |
 | [`schemas()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | no counterpart — Livewire has no schema-discovery list | done | — | — |
 | [`canViewForRecord()`](../../../packages/panels/src/Resources/RelationManagers/RelationManager.php) | `canViewForRecord()` | in progress | the authorization epic | [answers `true` unconditionally](#every-registered-manager-is-reachable-by-anyone-until-the-authorization-epic) |
 | `isReadOnly()` / `canReorder()`'s read-only arm | `isReadOnly()`, `canReorder()` | todo | the authorization epic | [inventory](#every-registered-manager-is-reachable-by-anyone-until-the-authorization-epic) |
@@ -61,8 +61,9 @@ Reference — the Filament source this is diffed against:
 [`Unit/Resources/RelationManagers/RelationManagerTest`](../../../packages/panels/tests/Unit/Resources/RelationManagers/RelationManagerTest.php)
 covers the statics, the title fallback and its override, the tab component in
 both its badged and bare arms, `make()`'s configuration, the component name, and
-the two refusals (no relationship, no page class) — plus the load-bearing
-pin that `getTable()` applies the subclass `table()` hook **once**.
+the two refusals (no relationship, no page class) and the `CreateAction`-only
+gate on the host relationship hook — plus the load-bearing pin that `getTable()`
+applies the subclass `table()` hook **once**.
 [`Integration/Resources/RelationManagers/RelationManagerTest`](../../../packages/panels/tests/Integration/Resources/RelationManagers/RelationManagerTest.php)
 mounts real managers over the fixture `Project`/`Task` pair: the heading and the
 association-scoped rows, the live root, an action modal rendering inside the
@@ -85,6 +86,20 @@ doubled — a manager reaches records the page itself never names. `isReadOnly()
 (and the `canReorder()` arm that consults it) parks with the rest: it exists in
 Filament to make managers read-only on view pages, which is a panel-level
 authorization default, not a separate feature.
+
+### Every URL a manager generates resolves the default panel
+
+A manager has no GET route of its own — it lives entirely inside live requests —
+so it carries the toolkit's **highest** exposure to
+[URL generation inside a live action resolving the default panel](README.md#url-generation-inside-a-live-action-resolves-the-default-panel):
+`CurrentPanel::get()` is null on every request a manager will ever serve, so
+`PanelRegistry::getDefault()` answers all of them. Right for a single-panel
+application and for any resource mounted in the default panel; wrong for a
+manager whose resource lives **only** in a non-default one, where the generated
+route name does not exist and `UrlGenerator` throws `RouteNotFoundException`.
+Inventoried here, fixed with the rest of that defect (M6 · 6) — the shape is the
+same either way: carry the panel id on the live component and pass `panel:`
+explicitly.
 
 ## Semantics
 
@@ -121,14 +136,6 @@ counting fixture.
 [`ViewAction`](../actions/view-action.md) already calls `disabledSchema()` in its
 `setUp()`, so the read-only rendering is the action's doing rather than the
 resolver's. When infolists land, the arm splits.
-
-### The manager answers the host's relationship hook as well as the table's
-
-`CreateAction::getRelationship()` reads its own closure, then the table's, then
-the host's `getDefaultActionRelationship()`. A manager's table always carries
-the relationship, so the host hook is a fallback for an action mounted on the
-manager but not through its table — and it is what makes the hook's own
-docblock ("a relation manager answers here") true.
 
 ### A delete on a manager redirects nowhere
 
@@ -207,6 +214,33 @@ method ships answering `[]` because it is the seam a subclass overrides.
 Revisit for single-manager pages with heavy tables — adopt UX's `loading:
 'lazy'`, don't rebuild Livewire's semantics. Corollary invariant: **no expensive
 work in a manager's `mount()`**.
+
+### The manager answers the host's relationship hook where Filament's leaves it null
+
+The hook is not ours: it is declared on Filament's host contract
+([`Contracts/HasActions.php`](../../../vendor/filament/actions/src/Contracts/HasActions.php)),
+defaulted to `null` in
+[`Concerns/InteractsWithActions.php`](../../../vendor/filament/actions/src/Concerns/InteractsWithActions.php),
+and read by
+[`CreateAction::getRelationship()`](../../../vendor/filament/actions/src/CreateAction.php)
+as the third fallback — own closure, then the table's relationship, then the
+host's — which the shipped [`CreateAction`](../actions/create-action.md) mirrors
+exactly. What is ours is the **override**: Filament's `RelationManager` inherits
+the null default, and only
+[`Resources/Pages/Page`](../../../vendor/filament/filament/src/Resources/Pages/Page.php)
+and
+[`Resources/Pages/ManageRelatedRecords`](../../../vendor/filament/filament/src/Resources/Pages/ManageRelatedRecords.php)
+answer it.
+
+We answer it because `Action::getTable()` is null for an action the table never
+configured, so a `CreateAction` mounted straight on the manager — through a
+schema, or a group outside the table — would otherwise reach no relationship at
+all and create a record attached to nothing. The gate is Filament's own — both of
+its implementations answer for a `CreateAction` and `null` for everything else —
+and it is also the house rule for the whole hook cluster: a host answering one of
+them [must discriminate by action](../actions/interacts-with-actions.md#a-host-answering-the-url-hook-must-discriminate-by-action).
+A manager's table always carries the relationship, so this arm is unreachable
+from the shipped table path and the Unit suite pins it directly.
 
 ### The `defaultForm()` two-column wrapper does not port
 

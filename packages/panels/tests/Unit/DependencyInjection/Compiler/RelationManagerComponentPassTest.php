@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Sylament\Panels\Controllers\PageController;
 use Sylament\Panels\DependencyInjection\Compiler\RelationManagerComponentPass;
 use Sylament\Panels\Resources\RelationManagers\RelationManager;
+use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\PaginatedTasksRelationManager;
 use Sylament\Panels\Tests\Fixtures\Resources\RelationManagers\TasksRelationManager;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -97,7 +98,10 @@ it('throws when two relation managers derive the same component name', function 
 
 it('skips abstract definitions', function (): void {
     $container = relationManagerComponentContainer();
-    $abstract = new Definition(RelationManager::class);
+    // The class is a concrete, attribute-carrying manager on purpose: a definition
+    // of the abstract base would be skipped by the `is_subclass_of()` guard instead,
+    // leaving the abstract one unpinned.
+    $abstract = new Definition(PaginatedTasksRelationManager::class);
     $abstract->setAbstract(true);
     $abstract->addTag('sylament.panels.relation_manager');
 

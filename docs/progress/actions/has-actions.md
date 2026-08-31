@@ -376,9 +376,11 @@ and `getDefaultActionModelLabel` under the
 The ninth, `getDefaultActionRelationship()`, landed with its reader the same way
 — [`CreateAction::getRelationship()`](create-action.md#the-created-record-joins-the-relationship-in-the-same-flush),
 whose last hop it is — once
-[`Relationship`](../schemas/association-reader.md) existed to be its return type;
-no host in the toolkit overrides it yet, a relation manager being the first that
-will.
+[`Relationship`](../schemas/association-reader.md) existed to be its return type.
+The [relation manager](../panels/relation-manager.md#the-manager-answers-the-hosts-relationship-hook-where-filaments-leaves-it-null)
+is its first and so far only override — and, since Filament's own manager leaves
+it at the null default, the one place the toolkit answers it where Filament does
+not.
 A host answering any of them
 [must discriminate by action](interacts-with-actions.md#a-host-answering-the-url-hook-must-discriminate-by-action) —
 one answer for every action it mounts is almost never what a page means.

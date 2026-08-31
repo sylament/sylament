@@ -93,8 +93,22 @@ mapper delegates to a vouching owner instead of refusing, both owners stamp
 their subtrees and route the discovered hooks against the child record, the
 three root-anchored constraint sites moved onto the nearest record frame, and
 the demo's article form grew the contributors vertical that proved it in a
-browser. M3 · 9 remains next and now closes the milestone alone; the cursor
-moves to [M4 · 3](#m4--tables-widening) once it lands.
+browser. **M6 · 4** then ran ahead of M3 · 9 by decision — the same call
+M4 · 1, 2 and 8 made, and the second row taken out of a milestone's own order —
+opening and closing on 2026-08-31: the topbar `GlobalSearch` live component
+(the shell's first live root, and the first `#[AsLiveComponent]` in
+`packages/*/src`), `HasGlobalSearch` on `Resource` over tables'
+`SearchConstraint` machinery (the word splitter hoisted to
+`Tables\Query\SearchTermSplitter` on the way), the
+`GlobalSearchResult`/`GlobalSearchResults` value objects,
+`DefaultGlobalSearchProvider` behind its contract with a tag-collected
+provider registry, and the panel's `globalSearch()`/`globalSearchDebounce()`/
+`globalSearchKeyBindings()`/`globalSearchFieldSuffix()` knobs — demoed over
+articles, authors and topics with an `author.name` dot-path and browser-proven
+end to end ([global-search.md](panels/global-search.md) carries the
+divergences: the auth-less URL ladder chief among them). M3 · 9 remains next
+and now closes the milestone alone; the cursor moves to
+[M4 · 3](#m4--tables-widening) once it lands.
 
 ## Pulled forward
 
@@ -398,7 +412,7 @@ dashboard with stats, a chart and a latest-articles table._
 | 1 | Relation managers | [panels](panels/README.md), [schemas](schemas/README.md), **demo** | `RelationManager` as a live component (table + actions + schemas host; `ownerRecord`, `$relationship`, `table()`/`form()`, `RelationManagerConfiguration`, `RelationGroup`, labels/icons/badges), `Resource::getRelations()`, `HasRelationManagers` on the edit and view pages over a **`content()` schema** on the record pages (deferred at M2 · 3), and a schemas embed component for a live component — Filament's `Livewire` schema component under the systematic Livewire → LiveComponent translation — inside M3 · 5's `Tabs`. Composes M4 · 1, 2 and 8. Demo: `SectionsRelationManager` and `TopicsRelationManager`. **Not on any roadmap row yet:** list-page tabs (`ListRecords::getTabs()` / panels' `HasTabs`) — M3 · 5 ships `Tab::query()`/`modifyQueryUsing()` as their seam; add them to M4 or here when scheduling. | todo |
 | 2 | Custom pages | [panels](panels/README.md), **demo** | Header actions on the plain `Page` (`InteractsWithHeaderActions` moves up from the resource-page base — [deferred there](panels/README.md#page)), the form-hosting page (`InteractsWithFormActions` + a schemas host on `Page` — the settings-page shape), `SimplePage`, `HasMaxWidth`, `HasUnsavedDataChangesAlert`, custom resource pages with a `{record}` through `getPages()`. Panels-only, so it can run beside the M3/M4 lanes. Demo: `/admin/settings`. | todo |
 | 3 | Nested resources and sub-navigation | [panels](panels/README.md), **demo** | `BelongsToParent` (`$parentResource`, `asParent()`, `ParentResourceRegistration` — the inverse relationship discovered from Doctrine metadata rather than Eloquent's relation objects), parent-scoped routes and `getUrl()` with parent parameters (`shouldGuessMissingParameters`), sidebar suppression for nested resources, breadcrumb chains over the visual-parity Breadcrumbs, `RelationManager::$relatedResource`, `ManageRelatedRecords`, `HasSubNavigation` with `SubNavigationPosition` over the support tabs. Demo: `SectionResource` nested under articles. | todo |
-| 4 | Global search | [panels](panels/README.md), **demo** | `HasGlobalSearch` on `Resource` (`getGloballySearchableAttributes()`, `getGlobalSearchResults()`, result title/details/url/actions, `GlobalSearchResult`/`GlobalSearchResults`, `DefaultGlobalSearchProvider` behind a contract), the topbar `GlobalSearch` live component, `globalSearchKeyBindings()`/`globalSearchDebounce()`/`globalSearchFieldSuffix()` on the panel. Demo: articles, authors and topics from the topbar. | todo |
+| 4 | Global search | [panels](panels/README.md), **demo** | `HasGlobalSearch` on `Resource` (`getGloballySearchableAttributes()`, `getGlobalSearchResults()`, result title/details/url/actions, `GlobalSearchResult`/`GlobalSearchResults`, `DefaultGlobalSearchProvider` behind a contract), the topbar `GlobalSearch` live component, `globalSearchKeyBindings()`/`globalSearchDebounce()`/`globalSearchFieldSuffix()` on the panel. Demo: articles, authors and topics from the topbar. **Done 2026-08-31** (ran ahead of M3 · 9 by decision): everything named plus the provider registry, the `global-search` Stimulus controller (⌘K/Ctrl+K, escape/click-away, roving focus) and the demo's Author/Topic resources — browser-proven; [global-search.md](panels/global-search.md) carries the surface table, the deferred arms (position, resource opt-in, key-binding suffix, the loading affordance) and the auth-less divergences. | done |
 | 5 | Widgets and the dashboard | [widgets](widgets/README.md), [panels](panels/README.md), **demo** | `sylament/widgets` from its placeholder: `Widget`, `StatsOverviewWidget` + `Stat` (with its sparkline), `ChartWidget` and the typed chart subclasses over `symfony/ux-chartjs` (pre-approved), `TableWidget`, `WidgetConfiguration`, polling; `Dashboard::getWidgets()`/`getColumns()` and the page header/footer widget slots (`getHeaderWidgets()`/`getFooterWidgets()`, `ExposesTableToWidgets`). Demo: article counts, an articles-per-month chart, a latest-articles table. | todo |
 | 6 | Shell completeness | [panels](panels/README.md), **demo** | Desktop sidebar collapse (`sidebarCollapsibleOnDesktop()`/`sidebarFullyCollapsibleOnDesktop()`), `topNavigation()`, `Panel::favicon()`, `brandLogo()`/`darkModeBrandLogo()`, `maxContentWidth()`, `unsavedChangesAlerts()`, `renderHook()` (a Twig-side design — the trail decides between blocks and an event), and the multi-panel URL defect the M2 · 3 sweep recorded (a live action resolves the default panel). | todo |
 

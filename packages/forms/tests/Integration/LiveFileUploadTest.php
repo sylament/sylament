@@ -182,6 +182,27 @@ it('stores the held file under the directory on save and clears the temporary on
         ->and($component->component()->data['cover'])->toBe(['abc' => $saved]);
 });
 
+it("stores a repeater item's held file on save, through the renders before it", function (): void {
+    $component = $this->createLiveComponent('RepeaterFileUploadForm', ['data' => ['shots' => ['one' => []]]]);
+
+    upload($component, 'schema.shots.one.file', 'abc', fixtureFile());
+
+    // The render is the point: `Repeater::getItemLabel()` reads a state snapshot of every item on
+    // every request, and a snapshot must not run the `beforeStateDehydrated` hooks — the file
+    // field's hook is the store pass, which moves the held file onto its disk and deletes the
+    // temporary one. Running it from a render consumed the upload before the save could claim it,
+    // leaving the field null and any non-nullable column it maps to unwritable.
+    $component->render();
+
+    $component->call('save');
+
+    $saved = $component->component()->savedState['shots'][0]['file'];
+
+    expect($saved)->toMatch('#^gallery/[0-9A-HJKMNP-TV-Z]{26}\.png$#')
+        ->and(liveStorage()->fileExists($saved))->toBeTrue()
+        ->and(temporaryFiles())->toBe([]);
+});
+
 it('keeps a multiple field in order and reorders it on request', function (): void {
     $component = $this->createLiveComponent('FileUploadForm', ['isReorderable' => true]);
 

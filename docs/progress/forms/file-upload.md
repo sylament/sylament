@@ -159,6 +159,15 @@ forgetting to). A storage failure is **not** swallowed: `UnableToWriteFile` and
 `UnableToMoveFile` propagate, because a file the user was told was saved must
 not vanish quietly.
 
+Deleting the temporary file is what makes the store pass a **commit**, and it is
+the reason a state *read* must never reach a `beforeStateDehydrated` hook: the
+pass can run only once per held file, and a second run resolves the same token
+against a temporary file that is no longer there, drops the entry, and leaves the
+field null. That is exactly what a repeater item's per-render state snapshot used
+to do to a nested file field —
+[schema.md](../schemas/schema.md#getstatesnapshot-never-runs-the-beforestatedehydrated-hooks)
+carries the reasoning and the two pins.
+
 ### The filename map keeps Filament's resolved-vs-raw asymmetry
 
 `storeFileName()`, `removeStoredFileName()` and `getStoredFileNames()` address

@@ -175,11 +175,17 @@ trait HasState
     }
 
     /**
+     * The dehydrated state as a read, with neither the validation pass
+     * {@see getState()} runs nor the `beforeStateDehydrated` hooks — those hooks
+     * are where a component *commits* its state (a file field moves its
+     * temporary upload onto its disk and deletes the temporary one), so running
+     * them from a read consumes the commit that the save is still to make.
+     *
      * @return array<string, mixed>
      */
     public function getStateSnapshot(): array
     {
-        return $this->assembleDehydratedState();
+        return $this->assembleDehydratedState(shouldCallHooksBefore: false);
     }
 
     /**

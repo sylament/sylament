@@ -171,8 +171,10 @@ including the Sylament-only object arm (`fill($record)` →
 with the absolute-path cache; and both dehydrated reads — the validating
 `getState(bool $shouldCallHooksBefore = true, ?Closure $afterValidate = null)`
 (`validate()` on entry, before any dehydration; `$afterValidate` invoked with
-the final state) and the non-validating `getStateSnapshot()`, sharing one
-assembly (`callBeforeStateDehydrated` — guarded by `$shouldCallHooksBefore` —
+the final state) and the hook-free, non-validating `getStateSnapshot()`, sharing
+one assembly (`callBeforeStateDehydrated` — guarded by `$shouldCallHooksBefore`,
+which the snapshot passes `false`
+([below](#getstatesnapshot-never-runs-the-beforestatedehydrated-hooks)) —
 → `dehydrateState` → `mutateDehydratedState` → unwrap) including
 `hasDehydratedComponent()`/`buildDehydratedComponentsCache()`
 and the shared-state-path sibling handling. **Left**, all unported:
@@ -402,6 +404,39 @@ cache exists. `$afterValidate` is invoked plainly with the final dehydrated stat
 The child-schema `isHiddenAndNotDehydratedWhenHidden()` guards remain
 un-mirrored, consistent with hidden-guarding living at component level
 ([can-be-validated.md](can-be-validated.md#the-collection-walk-cannot-skip-directly-hidden-child-schemas)).
+
+### `getStateSnapshot()` never runs the `beforeStateDehydrated` hooks
+
+Filament's `getStateSnapshot()` is `dehydrateState()` + `mutateDehydratedState()`
+and nothing else; only `getState()` reaches `callBeforeStateDehydrated()`. Ours
+shares one assembly with `getState()`, so the snapshot passes
+`shouldCallHooksBefore: false` to keep that line — and the line is load-bearing
+rather than cosmetic, because a `beforeStateDehydrated` hook is where a component
+*commits* its state rather than merely reading it. The live case is
+[`BaseFileUpload`](../forms/file-upload.md), whose hook is the store pass: it
+moves each held upload onto the field's disk and **deletes** the temporary one,
+so the hook can only be run once per held file.
+
+That makes any snapshot taken during a render destructive, and a repeater takes
+one per item per request —
+[`Repeater::getItemLabel()`](../forms/repeater.md) computes its `state` injection
+eagerly, whether or not an `itemLabel()` was ever declared. A file field inside a
+repeater item therefore had its upload consumed by the render that followed it:
+the store ran against a throwaway pass whose `rawState()` write never reached the
+wire, the browser posted the same token back, and the save's own pass could no
+longer resolve it — the token's temporary file was gone. The entry was dropped,
+`FileUploadStateCast::get()` answered `null` for the emptied map, and the field
+saved as null. Mapped onto a non-nullable column that surfaced as
+`PropertyAccessor`'s `Expected argument of type "string", "null" given`; mapped
+onto a nullable one it was silent data loss. Pinned at both levels: the hook-free
+snapshot in
+[`HasStateTest`](../../../packages/schemas/tests/Unit/Concerns/HasStateTest.php),
+and the repeater-item upload surviving its renders in
+[`LiveFileUploadTest`](../../../packages/forms/tests/Integration/LiveFileUploadTest.php).
+
+`Repeater::getItemState()` already passed `shouldCallHooksBefore: false` for the
+same reason; `getRawItemState()` and `getItemLabel()` reach the hooks only
+through `getStateSnapshot()`, so both are covered by fixing it there.
 
 ### `getRawState()` seeds an empty array on a blank or top-level path
 

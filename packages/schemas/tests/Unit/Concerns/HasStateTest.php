@@ -272,6 +272,22 @@ it('fires beforeStateDehydrated and re-syncs mutated state when asked', function
         ->and($state)->toBe(['title' => 'rewritten']);
 });
 
+it('leaves beforeStateDehydrated unfired in getStateSnapshot()', function (): void {
+    $host = new StateHostFixture();
+    $fired = 0;
+    $schema = Schema::make($host)->statePath('data')->components([
+        StateField::make('title')->beforeStateDehydrated(function () use (&$fired): void {
+            $fired++;
+        }),
+    ]);
+    $schema->fill(['title' => 'original']);
+
+    $snapshot = $schema->getStateSnapshot();
+
+    expect($fired)->toBe(0)
+        ->and($snapshot)->toBe(['title' => 'original']);
+});
+
 it('fills state from a record object, scoped to the schema paths', function (): void {
     $record = new RecordFixture();
     $record->setTitle('Hello');

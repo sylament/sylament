@@ -32,7 +32,10 @@ three partials, the record round-trip, the
 [value-object item mode](#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam)
 and the
 [relationship mode](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
-over a Doctrine collection. What is left is the one **blocked** row,
+over a Doctrine collection —
+[relation-backed fields inside an item](#a-nested-relation-backed-field-is-routed-by-the-item-not-by-the-map)
+included, repeaters nested in repeaters with them. What is left is the one
+**blocked** row,
 `partiallyRenderAfterActionsCalled()`, which wants a UX LiveComponent
 partial-render equivalent.
 
@@ -70,10 +73,9 @@ this table, so it carries no [unaudited row](../README.md#an-unaudited-table-say
 
 Every point of Filament's class and its concerns, grouped where a family shares
 one fate. _Blocked by_ names what has to land first. _Detail_ carries a
-**detail** link (the write-up in [Details](#details), deleted once the row is
-**done**), a **semantics** link (a permanent note in [Semantics](#semantics)),
-and/or a **diverges** link (the permanent note in [Divergences](#divergences)),
-or `—`. A row with no _Ports_ link is Sylament-only.
+**semantics** link (a permanent note in [Semantics](#semantics)) and/or a
+**diverges** link (the permanent note in [Divergences](#divergences)), or `—`.
+A row with no _Ports_ link is Sylament-only.
 
 | Feature | Ports | Status | Blocked by | Detail |
 | --- | --- | --- | --- | --- |
@@ -97,58 +99,14 @@ or `—`. A row with no _Ports_ link is Sylament-only.
 | `extraItemActions()` (`HasExtraItemActions`) | [`HasExtraItemActions.php`](../../../vendor/filament/forms/src/Components/Concerns/HasExtraItemActions.php) | done | — | [semantics](#an-extra-item-action-reads-its-items-state) |
 | Items grid (`HasContainerGridLayout`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#the-items-grid-is-supports-grid) |
 | `table()` mode (`table()` / `getTableColumns()` / `isTable()` / `toTableEmbeddedHtml()`; the `TableColumn` class keeps [its own README row](README.md#components)) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#table-mode-pairs-columns-by-position) · [diverges](#hidden-fields-render-in-a-trailing-hidden-cell) |
-| Relationship family — **shipped**: `relationship()`, `hasRelationship()` / `getRelationshipName()`, `orderColumn()` / `getOrderColumn()`, the three setters `mutateRelationshipDataBeforeFillUsing()` / `mutateRelationshipDataBeforeCreateUsing()` / `mutateRelationshipDataBeforeSaveUsing()`, the fill and save arms (Filament's `fillFromRelationship()` / `getStateFromRelatedRecords()` / `saveToRelationship()`, here the two [component-tier hooks](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)). **Not ported**: `getRelationship()` / `getRelatedModel()` (Eloquent objects with no Doctrine counterpart — `AssociationTarget` answers both), `getCachedExistingRecords()` / `clearCachedExistingRecords()`, `afterCreate()` / `afterUpdate()` / `afterDelete()`, the three public callers `mutateRelationshipDataBeforeFill()` / `mutateRelationshipDataBeforeCreate()` / `mutateRelationshipDataBeforeSave()` (the arms call the callbacks through one private helper instead), the `getLabel()` override, item `constantState()` / record stamping — whose record half now carries [a row of its own](#a-relation-backed-field-cannot-sit-inside-a-relationship-repeater), since a nested relationship hook cannot fire without it | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) · [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
-| Relation-backed fields inside an item — Filament's `$item->model($record)->saveRelationships()` recursion, plus the item-schema record stamp it needs | [`Repeater::saveToRelationship()`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | schemas' [nested hook delegation](../schemas/belongs-to-record.md#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire) | [detail](#a-relation-backed-field-cannot-sit-inside-a-relationship-repeater) |
+| Relationship family — **shipped**: `relationship()`, `hasRelationship()` / `getRelationshipName()`, `orderColumn()` / `getOrderColumn()`, the three setters `mutateRelationshipDataBeforeFillUsing()` / `mutateRelationshipDataBeforeCreateUsing()` / `mutateRelationshipDataBeforeSaveUsing()`, the fill and save arms (Filament's `fillFromRelationship()` / `getStateFromRelatedRecords()` / `saveToRelationship()`, here the two [component-tier hooks](../schemas/belongs-to-record.md#the-relationship-hooks-are-consulted-by-the-two-mapping-edges-not-by-a-schema-level-walk)). **Not ported**: `getRelationship()` / `getRelatedModel()` (Eloquent objects with no Doctrine counterpart — `AssociationTarget` answers both), `getCachedExistingRecords()` / `clearCachedExistingRecords()`, `afterCreate()` / `afterUpdate()` / `afterDelete()`, the three public callers `mutateRelationshipDataBeforeFill()` / `mutateRelationshipDataBeforeCreate()` / `mutateRelationshipDataBeforeSave()` (the arms call the callbacks through one private helper instead), the `getLabel()` override, item `constantState()` (its record half [ships](#a-nested-relation-backed-field-is-routed-by-the-item-not-by-the-map), since a nested relationship hook cannot fire without it) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection) · [diverges](#the-relationship-family-loses-its-caches-its-lifecycle-hooks-and-its-query-scope) |
+| Relation-backed fields inside an item — Filament's `$item->model($record)->saveRelationships()` recursion, plus the item-schema record stamp it needs | [`Repeater::saveToRelationship()`](../../../vendor/filament/forms/src/Components/Repeater.php) | done | — | [semantics](#a-nested-relation-backed-field-is-routed-by-the-item-not-by-the-map) · [diverges](#a-mutate-callback-can-rewrite-what-a-nested-hook-consumes) |
 | `partiallyRenderAfterActionsCalled()` / `shouldPartiallyRenderAfterActionsCalled()` | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | blocked | UX LiveComponent partial-render equivalent | — |
 | `array_move_before()` / `array_move_after()` (`packages/forms/src/helpers.php`, the reorder bodies) | [`helpers.php`](../../../vendor/filament/forms/src/helpers.php) | done | — | — |
 | Deprecated members (`createItemButtonLabel()`, `disableItemCreation()` / `disableItemDeletion()` / `disableItemMovement()`, `orderable()`, `inset()`) | [`Repeater.php`](../../../vendor/filament/forms/src/Components/Repeater.php) | skipped | — | [diverges](#deprecated-filament-members-are-not-ported) |
 | `nullWhenBlank()` composition — an empty repeater as `null` instead of `[]` | — | done | — | [semantics](#the-blank-test-judges-a-repeater-by-its-own-value) · [diverges](#a-repeater-owns-its-record-subtree) |
 | Early object-collection refusal at hydration | — | done | — | [diverges](#object-collections-stay-refused-until-a-relationship-supplies-the-identity) |
 | `itemsAs()` value-object item mode — explicit item class + optional denormalize/normalize pair over schemas' [`ObjectStateCast`](../schemas/object-state-cast.md) | — | done | — | [semantics](#a-cast-item-is-schema-complete-so-unmanaged-keys-stop-riding) · [diverges](#the-item-cast-fires-at-the-repeaters-two-pipeline-boundaries-not-in-the-generic-seam) · [diverges](#item-class-inference-is-deferred-the-declaration-stays-explicit) |
-
-## Details
-
-Specifics for rows that are not finished. Delete a subsection when its rows flip
-to **done**; the permanent halves live under [Semantics](#semantics) and
-[Divergences](#divergences), and the notes that constrain *other* components
-live in their own files — the record-walk changes in
-[belongs-to-record.md](../schemas/belongs-to-record.md), the hydration order in
-[schema.md](../schemas/schema.md#hasstate-still-lacks-constant-state-relationships-and-partial-rendering),
-the wrapper heading arm in [field.md](field.md#labeltag-is-a-boolean-labelasheading),
-and `distinct()`'s three arms in
-[can-be-validated.md](can-be-validated.md#distinct-is-three-arms-of-one-first-party-constraint-not-laravels-rule).
-
-### A relation-backed field cannot sit inside a `relationship()` repeater
-
-`Select::make('author')->relationship()` inside
-`Repeater::make('contributors')->relationship()` — the join-entity-with-a-payload
-shape — throws at map time rather than saving: the repeater
-[owns its record subtree](#a-repeater-owns-its-record-subtree), so the mapper
-drops the field's path and then
-[refuses its hook](../schemas/belongs-to-record.md#a-hook-the-record-path-map-does-not-carry-is-refused),
-correctly, because nothing here would ever run it. The refusal fires from
-`fill()` as well as `getData()`, so an owner record that already holds such an
-item breaks its edit page too, and a repeater standing empty is what defers the
-throw to the first save.
-
-Two halves are missing on this side, and
-[the schemas write-up](../schemas/belongs-to-record.md#a-relationship-hook-beneath-a-subtree-owner-has-nowhere-to-fire)
-carries the third. `getItemsFromRelationship()` skips an object-valued leaf and
-`saveItemsToRelationship()` writes each leaf through
-`PropertyAccessor::setOnRecord()`, so the item walk can carry a scalar column and
-nothing else — an association needs an entity written, not the identifier the
-field speaks. And no item schema is stamped with the child it maps, the record
-half of
-[the stamp this epic did not do](#an-item-schema-carries-no-constant-state-or-inline-label-stamp),
-so a hook that did fire would receive the root record rather than the item's.
-
-The workarounds do not reach it either. `mutateRelationshipDataBeforeSaveUsing()`
-receives the child and could set the association by hand, but its create sibling
-runs before the child exists and `mutateRelationshipDataBeforeFillUsing()`
-receives no record at all, so the fill side cannot be recovered from a callback.
-
-**Next step:** [M3 · 10](../roadmap.md#m3--forms-widening), whose schemas half
-lands first.
 
 ## Semantics
 
@@ -356,6 +314,97 @@ Filament's truthy `reorderable($column)` does, so a closure-valued column is
 resolved at evaluation time rather than counted as truthy while unresolved, and
 `orderColumn(null)` reads as not reorderable rather than as the literal `null`
 Filament would hand `reorderable()`.
+
+### A nested relation-backed field is routed by the item, not by the map
+
+`Select::make('author')->relationship()` inside a `relationship()` repeater —
+the join-entity-with-a-payload shape — maps nothing of its own: the repeater
+[owns its record subtree](#a-repeater-owns-its-record-subtree), so the mapper
+drops every path beneath it, and a hook on a dropped path
+[is refused](../schemas/belongs-to-record.md#a-hook-the-record-path-map-does-not-carry-is-refused)
+unless the owner
+[speaks for it](../schemas/belongs-to-record.md#a-hook-a-subtree-owner-routes-is-delegated-rather-than-refused).
+`routesNestedRelationshipHookAt()` is the repeater speaking: an owner-relative
+path naming an item and then something the item template declares a hook at is
+one this repeater routes, and both edges then run it against the *child*, which
+is the only record the hook could ever have meant.
+
+The vouch answers from the walk that routes, so the two cannot disagree — and
+the walk is [`Schema::getNestedRelationshipHooks()`](../schemas/belongs-to-record.md),
+whose keys are already item-relative. What that leaves refused is deliberate and
+loud: a hooked component in a **decoration** schema (`belowContent()` and its
+nine siblings hang off the repeater itself, and neither edge walks them) carries
+no item segment, so the vouch says no and the map refuses it by name rather than
+letting it never fire.
+
+The two edges discover from different places, and the asymmetry is forced.
+`fill()` runs before a single item exists — the raw state is still empty, so
+`getDefaultChildSchemas()` has no keys to build from — and reads the **template**
+child schema, off a clone, the same discipline
+[`getItemStatePaths()`](#every-item-schema-is-keyed-as-well-as-re-pathed) uses.
+The save has the real thing, so it reads the **per-item** schema, whose
+components are the very ones the map dropped. It asks for that schema only where
+the template declares a hook to route, which is what keeps an item a caller added
+by hand to the array it passed `getData()` on the leaf-only path it always took;
+where a hook *is* routed, an item with no schema is a broken invariant and
+throws.
+
+Claimed paths leave the leaf walk — the hook's own key and everything under
+`key.` — and the subtraction is **per edge**, mirroring the root edges exactly:
+the fill routes the load-hooked keys and leaves save-only ones their ordinary
+leaf read, the save routes the save-hooked keys and leaves load-only ones their
+ordinary `setOnRecord()`. `getItemStatePaths()` itself is untouched: the
+delegated paths stay in it, because the
+[violation translator](../schemas/violation-path-translator.md) attributes item
+violations through it.
+
+Order inside one item is mutate → construct → leaves → nested hooks → order
+stamp → collection write, so the
+[identity pairing](#a-save-records-which-collection-key-each-item-was-written-to)
+that follows the write sees children nothing is still going to touch. An added
+item needs no exists-gate: the hook mutates the in-memory child and the caller's
+single flush sorts the INSERTs. And recursion needs no code at all — a nested
+relationship repeater is itself a hook-carrying component, so the discovery
+yields it as one delegated entry, and its own body repeats the whole scheme one
+level down against the child it was handed.
+
+### An item schema is stamped with the child it maps
+
+The routing above would still hand a nested field the *wrong* record without a
+stamp, so each item schema carries one, in Filament's own two arms: a `record-`
+item resolves the child off the owner's collection by
+[record key](../schemas/association-reader.md), and a client-added item, having
+no child yet, floors at the association's target class-string. Ours stamps the
+class-string one level earlier as well — on the item **template**, and through it
+on every child schema of a relationship repeater — because the fill discovers
+from that template, before an item schema exists to have been stamped.
+
+The floor is load-bearing rather than tidy. `Schema`'s record getters walk to the
+parent when their own binding evaluates to `null`, so a stamp that could resolve
+null would silently hand a nested `Select::make('author')` the **owner's** record
+— and an owner mapping an association of the same name is exactly the shape a
+join entity sits in, so the wrong answer would be a working one. A class-string
+never falls through, so the only tree where a stamp resolves nothing is one with
+no record class anywhere, where the parent chain answers nothing either.
+
+Resolution is **soft** on both arms — the association is described, never
+required — because the stamps are read from rendering, from `getItemStatePaths()`
+and from every flat walk, and an eager `require*()` there would relocate the fill
+and save edges' refusals into all of them. The cost is one accepted freeze:
+`Schema` memoizes its evaluated record, so the first read of an item schema wins
+and a structural read taken before the owner was bound can leave the class-string
+where a later read would have produced the instance. Correctness does not depend
+on it — a hook receives its record explicitly, and target resolution and the
+constraint frame need only the class.
+
+The stamp reaches past the routing, and that is the point rather than a side
+effect: every closure inside a stamped item is injected the **child** as
+`$record`, and everything derived from `getRecordClass()` follows it — a nested
+field's own association resolution, and the entity a `unique()` or `exists()`
+probes when it names none. Filament reads the same way (`getRecord()` walks to
+the nearest `model()`), and it is what makes the field's target and the record it
+is validated against agree; a component that means the *owner's* record inside an
+item has to name it.
 
 ### The drag reorder round-trip accepts the client's order
 
@@ -585,6 +634,30 @@ that pair fails: the simple pluck would reduce a related record to one scalar,
 and a freshly constructed value object would throw away the identity the
 relationship exists to preserve.
 
+### A mutate callback can rewrite what a nested hook consumes
+
+The [nested routing](#a-nested-relation-backed-field-is-routed-by-the-item-not-by-the-map)
+runs mutate → leaves → hooks per item, so
+`mutateRelationshipDataBeforeSaveUsing()` sees the raw item array **including**
+the delegated keys and may rewrite the identifier a nested `Select` submitted
+before the hook reads it. Filament orders the two the other way around: its
+schema tree walk runs a nested component's `saveRelationships()` children-first,
+*before* `saveToRelationship()` reaches the item's own
+`mutateRelationshipDataBeforeSave()` and `fill()`, so over there the callback
+cannot reach what a nested hook already consumed.
+
+The inversion is a consequence of the stance rather than a preference about
+callbacks: we have no tree walk to run first, because the
+[single-flush invariant](#a-relationship-repeater-keys-its-items-by-identity-and-diffs-the-collection)
+collapses the whole recursion into the two owner bodies, and once the hook runs
+inside the item loop the only question left is which side of the mutate callback
+it lands on. Rewritable is the more useful of the two contracts — a callback that
+can normalise or substitute a nested identifier is worth more than one that
+cannot — so the hook reads what the callback returned. A callback declining the
+item (returning `null`) skips its nested hooks along with everything else, since
+the item as a whole is declined.
+
+
 ### The order stamp is 0-based, written onto the child, and out of the callbacks' reach
 
 Filament stamps `$itemData[$orderColumn] = $itemOrder` with `$itemOrder`
@@ -655,10 +728,12 @@ Filament builds each item schema with `->constantState(null)` and
 `->inlineLabel(false)`; ours builds neither, and both are waiting rather than
 rejected. Constant state is
 [unported for want of a consumer](../schemas/component.md#relationship-derived-and-constant-state-are-dropped-from-the-component-trait) —
-the Doctrine relation layer did not bring one, and the only thing that would set
-it on an item is the record stamping this epic does not do — and schemas'
-`HasInlineLabel` is unported (deferred in M1 · 3), so an item schema has no
-inherited inline-label state to switch off. Each stamp lands with its owner.
+the Doctrine relation layer did not bring one, and the
+[record stamp](#an-item-schema-is-stamped-with-the-child-it-maps) that would be
+its natural companion resolves the child directly rather than through a constant
+— and schemas' `HasInlineLabel` is unported (deferred in M1 · 3), so an item
+schema has no inherited inline-label state to switch off. Each stamp lands with
+its owner.
 
 ### Object collections stay refused until a relationship supplies the identity
 
@@ -678,7 +753,14 @@ component declares one for. A repeater also refuses *early*:
 `hydrateItems()` asks the type reader at the repeater's own record path and
 throws when the declared type is an object collection — otherwise `fill()`
 silently skips the object-valued read, the repeater renders empty, and the
-developer meets the mapper's refusal only on first save. A
+developer meets the mapper's refusal only on first save. That path is read
+against the **nearest** record frame rather than against the root container, so
+the early refusal reaches one shape it used to miss whole: a plain-array repeater
+sitting inside a
+[stamped item schema](#an-item-schema-is-stamped-with-the-child-it-maps), whose
+`record-<id>` segment used to defeat the type walk and leave the check inert.
+Such a repeater over a collection-typed property of the *child* now refuses at
+hydration, in the same words, with the path relative to the record it names. A
 DTO list typed only by docblock (`/** @var list<Money> */ private array $items`)
 remains invisible to both checks and takes the array path — the repeater will
 overwrite it with value-shaped arrays, the

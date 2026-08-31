@@ -6,12 +6,16 @@ namespace Sylament\Forms\Tests\Integration\Components;
 
 use Doctrine\ORM\EntityManagerInterface;
 use LogicException;
+use Sylament\Forms\Components\CheckboxList;
 use Sylament\Forms\Components\Repeater;
 use Sylament\Forms\Components\Select;
 use Sylament\Forms\Components\TextInput;
 use Sylament\Forms\Tests\Fixtures\Concerns\FieldRenderHost;
+use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Author;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Post;
 use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\PostSection;
+use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\SectionNote;
+use Sylament\Forms\Tests\Fixtures\Doctrine\Entity\Tag;
 use Sylament\Schemas\Schema;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -68,6 +72,67 @@ function seedSectionedPost(EntityManagerInterface $entityManager): array
     $entityManager->flush();
 
     return [$post, $one, $two];
+}
+
+/**
+ * Two flushed authors, so a nested relation select has one to fill from and a
+ * second to swap to.
+ *
+ * @return array{Author, Author}
+ */
+function seedSectionAuthorPair(EntityManagerInterface $entityManager): array
+{
+    $one = new Author();
+    $one->setName('ada');
+
+    $two = new Author();
+    $two->setName('bob');
+
+    $entityManager->persist($one);
+    $entityManager->persist($two);
+    $entityManager->flush();
+
+    return [$one, $two];
+}
+
+/**
+ * Three flushed tags, so a nested to-many can keep one, drop one and add one.
+ *
+ * @return array{Tag, Tag, Tag}
+ */
+function seedSectionTagTrio(EntityManagerInterface $entityManager): array
+{
+    $tags = [];
+
+    foreach (['a', 'b', 'c'] as $name) {
+        $tag = new Tag();
+        $tag->setName($name);
+
+        $entityManager->persist($tag);
+
+        $tags[] = $tag;
+    }
+
+    $entityManager->flush();
+
+    return [$tags[0], $tags[1], $tags[2]];
+}
+
+/**
+ * A flushed note on a section, so a nested relationship repeater has children to
+ * fill from.
+ */
+function seedSectionNote(EntityManagerInterface $entityManager, PostSection $section, string $body): SectionNote
+{
+    $note = new SectionNote();
+    $note->setBody($body);
+
+    $section->addNote($note);
+
+    $entityManager->persist($note);
+    $entityManager->flush();
+
+    return $note;
 }
 
 /**
@@ -324,22 +389,252 @@ it('keeps refusing an object collection without relationship()', function (): vo
         ->toThrow(LogicException::class, 'Declare relationship() on this repeater');
 });
 
-it('refuses a relation-backed field declared inside a relationship item', function (): void {
+it("fills a nested relation select from each item's own child", function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one] = seedSectionedPost($entityManager);
+    [$ada] = seedSectionAuthorPair($entityManager);
+
+    $one->setAuthor($ada);
+    $entityManager->flush();
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([TextInput::make('heading'), Select::make('author')->relationship(titleAttribute: 'name')]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    expect($host->data['sections']['record-' . $one->getId()]['author'])->toBe((string) $ada->getId())
+        ->and($host->data['sections']['record-' . $one->getId()]['heading'])->toBe('one')
+        ->and(array_last($host->data['sections'])['author'])->toBeNull();
+});
+
+it("saves a changed nested association onto the item's child", function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one] = seedSectionedPost($entityManager);
+    [$ada, $bob] = seedSectionAuthorPair($entityManager);
+
+    $one->setAuthor($ada);
+    $entityManager->flush();
+
+    $oneId = $one->getId();
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([TextInput::make('heading'), Select::make('author')->relationship(titleAttribute: 'name')]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $host->data['sections']['record-' . $oneId]['author'] = (string) $bob->getId();
+
+    expect($schema->getData())->toBe($post)
+        ->and($one->getAuthor())->toBe($bob);
+
+    $entityManager->clear();
+
+    $reloaded = $entityManager->find(PostSection::class, $oneId);
+    assert($reloaded instanceof PostSection);
+
+    expect($reloaded->getAuthor()?->getName())->toBe('ada');
+});
+
+it('clears a nested association to null', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one] = seedSectionedPost($entityManager);
+    [$ada] = seedSectionAuthorPair($entityManager);
+
+    $one->setAuthor($ada);
+    $entityManager->flush();
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([TextInput::make('heading'), Select::make('author')->relationship(titleAttribute: 'name')]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $host->data['sections']['record-' . $one->getId()]['author'] = '';
+
+    $schema->getData();
+
+    expect($one->getAuthor())->toBeNull();
+});
+
+it('creates an added item carrying a nested association', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post] = seedSectionedPost($entityManager);
+    [, $bob] = seedSectionAuthorPair($entityManager);
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([TextInput::make('heading'), Select::make('author')->relationship(titleAttribute: 'name')]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $filledKeys = array_map(strval(...), array_keys($host->data['sections']));
+
+    $repeater->getAction($repeater->getAddActionName())?->call();
+
+    $addedKey = addedItemKey($host->data['sections'], $filledKeys);
+
+    $host->data['sections'][$addedKey]['heading'] = 'three';
+    $host->data['sections'][$addedKey]['author'] = (string) $bob->getId();
+
+    $schema->getData();
+
+    $added = $post->getSections()->last();
+    assert($added instanceof PostSection);
+
+    expect($added->getHeading())->toBe('three')
+        ->and($added->getAuthor())->toBe($bob);
+});
+
+it("round-trips a nested to-many through the item's child", function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one] = seedSectionedPost($entityManager);
+    [$a, $b, $c] = seedSectionTagTrio($entityManager);
+
+    $one->addTag($a);
+    $one->addTag($b);
+
+    $entityManager->flush();
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([TextInput::make('heading'), CheckboxList::make('tags')->relationship(titleAttribute: 'name')]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    expect($host->data['sections']['record-' . $one->getId()]['tags'])
+        ->toBe([(string) $a->getId(), (string) $b->getId()]);
+
+    $host->data['sections']['record-' . $one->getId()]['tags'] = [(string) $b->getId(), (string) $c->getId()];
+
+    $schema->getData();
+
+    expect($one->getTags()->contains($a))->toBeFalse()
+        ->and($one->getTags()->contains($b))->toBeTrue()
+        ->and($one->getTags()->contains($c))->toBeTrue();
+});
+
+it('recurses into a nested relationship repeater', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one, $two] = seedSectionedPost($entityManager);
+
+    $kept = seedSectionNote($entityManager, $one, 'kept');
+    $dropped = seedSectionNote($entityManager, $one, 'dropped');
+    $droppedId = $dropped->getId();
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([
+            TextInput::make('heading'),
+            Repeater::make('notes')->relationship()->components([TextInput::make('body')]),
+        ]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    expect(array_keys($host->data['sections']['record-' . $one->getId()]['notes']))
+        ->toBe(['record-' . $kept->getId(), 'record-' . $droppedId])
+        ->and($host->data['sections']['record-' . $one->getId()]['notes']['record-' . $kept->getId()]['body'])->toBe('kept')
+        ->and($host->data['sections']['record-' . $two->getId()]['notes'])->toBe([]);
+
+    $notes = $host->data['sections']['record-' . $one->getId()]['notes'];
+
+    unset($notes['record-' . $droppedId]);
+
+    $notes['record-' . $kept->getId()]['body'] = 'edited';
+    $notes['added-note'] = ['body' => 'added'];
+
+    $host->data['sections']['record-' . $one->getId()]['notes'] = $notes;
+
+    $schema->getData();
+
+    expect(array_map(static fn (SectionNote $note): string => $note->getBody(), $one->getNotes()->getValues()))
+        ->toBe(['edited', 'added'])
+        ->and($one->getNotes()->last()->getSection())->toBe($one);
+
+    $entityManager->flush();
+    $entityManager->clear();
+
+    expect($entityManager->find(SectionNote::class, $droppedId))->toBeNull();
+});
+
+it('stamps item schemas with the child record', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one] = seedSectionedPost($entityManager);
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->components([TextInput::make('heading')]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    $filledKeys = array_map(strval(...), array_keys($host->data['sections']));
+
+    $repeater->getAction($repeater->getAddActionName())?->call();
+
+    $loadedField = $repeater->getChildSchema('record-' . $one->getId())?->getFlatComponents(withActions: false)[0] ?? null;
+    $addedField = $repeater->getChildSchema(addedItemKey($host->data['sections'], $filledKeys))?->getFlatComponents(withActions: false)[0] ?? null;
+
+    expect($loadedField?->getRecord())->toBe($one)
+        ->and($loadedField?->getRecordClass())->toBe(PostSection::class)
+        ->and($addedField?->getRecord())->toBeNull()
+        ->and($addedField?->getRecordClass())->toBe(PostSection::class);
+});
+
+it('lets a mutate hook rewrite a delegated key', function (): void {
+    $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
+    [$post, $one] = seedSectionedPost($entityManager);
+    [$ada, $bob] = seedSectionAuthorPair($entityManager);
+
+    $one->setAuthor($ada);
+    $entityManager->flush();
+
+    $bobId = (string) $bob->getId();
+
+    $repeater = Repeater::make('sections')
+        ->relationship()
+        ->mutateRelationshipDataBeforeSaveUsing(static fn (array $state): array => [...$state, 'author' => $bobId])
+        ->components([TextInput::make('heading'), Select::make('author')->relationship(titleAttribute: 'name')]);
+
+    [$schema, $host] = wireRelationshipRepeater($repeater, $post);
+
+    $schema->fill($post);
+
+    expect($host->data['sections']['record-' . $one->getId()]['author'])->toBe((string) $ada->getId());
+
+    $schema->getData();
+
+    expect($one->getAuthor())->toBe($bob);
+});
+
+it('refuses a hooked select in a decoration schema loudly', function (): void {
     $entityManager = $this::getContainer()->get(EntityManagerInterface::class);
     [$post] = seedSectionedPost($entityManager);
 
     [$schema] = wireRelationshipRepeater(
-        Repeater::make('sections')->relationship()->components([
-            TextInput::make('heading'),
-            Select::make('post')->relationship(titleAttribute: 'title'),
-        ]),
+        Repeater::make('sections')
+            ->relationship()
+            ->belowContent([Select::make('author')->relationship(titleAttribute: 'name')])
+            ->components([TextInput::make('heading')]),
         $post,
     );
 
-    $schema->fill($post);
-
-    expect(fn (): object => $schema->getData())
-        ->toThrow(LogicException::class, 'owns its record subtree');
+    expect(fn (): Schema => $schema->fill($post))
+        ->toThrow(LogicException::class, 'without routing the hooks beneath it');
 });
 
 it('refuses relationship() beside another item mode', function (): void {

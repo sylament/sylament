@@ -360,26 +360,45 @@ itself out of the DOM.
 
 **The arms, in order.** From `event.target` the handler walks
 `closest('[data-sylament-action-event]')`; a trigger with no event name is not a
-dispatch and is dropped. Then, inside one `try`:
+dispatch and is dropped. Then, inside one `try`, it resolves **one** host — the
+trigger's nearest live component — and both emit arms run on it:
 
-1. `data-sylament-action-dispatch-self` present → resolve the trigger's *closest*
-   `[data-controller~="live"]` ancestor and `emitSelf(name, data)` on it. This is
-   the only arm that reads the DOM relative to the trigger, and it is what gives
-   `dispatchSelf()` real self semantics: all five trigger templates
+1. The host is `resolveLiveHost(trigger)`: the trigger's *closest*
+   `[data-controller~="live"]` ancestor, resolved through UX Live's registry and
+   retried once after that element's `live:connect` when the registry is not ready
+   yet. It is a deliberate copy of schemas'
+   [`utils/live_host.ts`](../../../packages/schemas/assets/src/utils/live_host.ts),
+   inlined into the controller file rather than imported: the per-file build ships
+   specifiers verbatim, so a cross-package import would have to be a bare specifier
+   every consuming app's importmap resolves — the same trade
+   [tables' copy](../tables/tables-bundle.md#asset-registration) carries.
+2. `data-sylament-action-dispatch-self` present → `emitSelf(name, data)` on that
+   host. This is what gives `dispatchSelf()` real self semantics: all five trigger
+   templates
    [emit the marker](action.md#a-dispatch-action-renders-payload-attributes-not-a-click-binding)
    whenever the direction is `'self'`. The read is a **presence** test, matching a
    marker that carries no value.
-2. No self marker, or no live ancestor to be self of → the page's **first**
-   `[data-controller~="live"]` element, `emit(name, data, to)`, with
+3. No self marker → `emit(name, data, to)` on the same host, with
    `data-sylament-action-dispatch-to` passed as `emit()`'s third argument and
-   `null` when absent or empty. Any host works as the emitter: live's `emit()`
-   broadcasts to every component on the page, and `dispatchTo`'s name filter
-   narrows globally, which is what lets an action rendered outside every live
-   component dispatch into one at all.
-3. Anything that rejects or resolves to nothing — `getComponent()` on an element
-   the live application has not registered yet (a lazy or boot race), or a page
-   with no live component at all — is **silent**. That matches a dispatch nobody
-   listens to, and it is why the `catch` is empty but for its why-swallow comment.
+   `null` when absent or empty. Live's `emit()` broadcasts to every component on
+   the page and `dispatchTo`'s name filter narrows globally, so *which* host emits
+   does not change who receives — but it does decide who the emitter is, and the
+   emitter is the one component `emitSelf()` and a self-scoped listener can mean.
+4. Anything that rejects — `getComponent()` on an element the live application has
+   not registered yet (a lazy or boot race), or a trigger with no live ancestor at
+   all, which `resolveLiveHost()` throws for — is **silent**. That matches a
+   dispatch nobody listens to, and it is why the `catch` is empty but for its
+   why-swallow comment.
+
+The nearest-host resolution replaced a page-**first** `document.querySelector`
+lookup for the non-self arm. With one live component per page the two agree; the
+moment a page nests live components — a relation manager inside a resource edit
+page — the first root in document order is the outer page, so an action rendered
+inside the nested component emitted from the wrong component and a self-scoped
+listener on the nested one never fired. A trigger outside every live component
+now dispatches nowhere instead of borrowing the page's first host; nothing in the
+toolkit renders one there, and a silent no-op is the arm this controller already
+takes for an unreachable component.
 
 **Close is deliberately not handled here.** `data-sylament-action-close` is a
 neutral marker meaning *this action closes its context*, and only the context
